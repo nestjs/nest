@@ -17,11 +17,11 @@ export class NestRoutesResolver {
         const modules = this.container.getModules();
 
         modules.forEach((module) => {
-            this.resolveRouters(module.routes, expressInstance);
+            this.setupRouters(module.routes, expressInstance);
         });
     }
 
-    private resolveRouters(routes: Map<Route, InstanceWrapper<Route>>, expressInstance: Express) {
+    private setupRouters(routes: Map<Route, InstanceWrapper<Route>>, expressInstance: Express) {
         routes.forEach(({ instance }, routePrototype: Function) => {
             const { path, router } = this.routerBuilder.build(instance, routePrototype);
 

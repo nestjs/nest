@@ -5,6 +5,7 @@ import { NestInjector } from "./core/injector";
 import { NestRoutesResolver } from "./core/routes-resolver";
 import { NestContainer } from "./core/container";
 import { SocketModule } from "./socket/socket-module";
+import { MiddlewaresModule } from "./core/middlewares/module";
 
 export class NestRunner {
     private static container = new NestContainer();
@@ -25,14 +26,16 @@ export class NestRunner {
 
     private static setupModules() {
         SocketModule.setup(NestRunner.container);
+        MiddlewaresModule.setup(NestRunner.container);
     }
 
     private static setupApplication<T extends NestApplicationFactory>(app: { new(app): T }): NestApplication {
         try {
             const expressInstance = express();
-            this.routesResolver.resolve(expressInstance);
-
             const appInstance = new app(expressInstance);
+
+            MiddlewaresModule.setupMiddlewares(expressInstance);
+            this.routesResolver.resolve(expressInstance);
             return appInstance;
         }
         catch(e) {

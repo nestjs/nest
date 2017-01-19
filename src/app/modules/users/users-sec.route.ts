@@ -5,17 +5,16 @@ import { UsersQueryService } from "./users-query.service";
 import { RequestMethod } from "../../../nest/core/enums/request-method.enum";
 
 @Route({ path: "users" })
-export class UsersRoute {
+export class UsersSecRoute {
 
-    constructor(
-        private usersQueryService: UsersQueryService) {}
+    constructor(private usersQueryService: UsersQueryService) {}
 
     @RequestMapping({
         path: "/",
         method: RequestMethod.GET
     })
     async getAllUsers(req: Request, res: Response, next: NextFunction) {
-        console.log("xd");
+        console.log("sxd");
         try {
             const users = await this.usersQueryService.getAllUsers();
             res.status(201).json(users);

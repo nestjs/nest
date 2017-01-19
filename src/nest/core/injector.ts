@@ -16,14 +16,14 @@ export class NestInjector {
     }
 
     private createInstancesOfComponents(module: ModuleDependencies) {
-        module.components.forEach((wrapper, type) => {
-            this.instanceLoader.loadInstanceOfComponent(type, module.components);
+        module.components.forEach((wrapper, componentType) => {
+            this.instanceLoader.loadInstanceOfComponent(componentType, module);
         });
     }
 
     private createInstancesOfRoutes(module: ModuleDependencies) {
-        module.routes.forEach((wrapper, type) => {
-            this.instanceLoader.loadInstanceOfRoute(type, module.routes, module.components);
+        module.routes.forEach((wrapper, routeType) => {
+            this.instanceLoader.loadInstanceOfRoute(routeType, module);
         });
     }
 

@@ -3,3 +3,6 @@
 
 # IDE
 /.idea
+
+# misc
+npm-debug.log

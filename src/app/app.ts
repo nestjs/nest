@@ -1,10 +1,13 @@
-import * as express from "express";
+import* as express from "express";
 import { ExpressConfig } from "./config";
 import { NestApplication } from "./../nest/core/interfaces";
+import { PassportJWTConfig } from "./config/passport-jwt.config";
 
 export class Application implements NestApplication {
-    constructor(private app: express.Express) {
+
+    constructor(private app: express.Application) {
         ExpressConfig.setupConfig(this.app);
+        PassportJWTConfig.setupConfig(this.app);
     }
 
     public start() {
@@ -12,5 +15,5 @@ export class Application implements NestApplication {
             console.log("Application listen on port:", 3030);
         });
     }
-
+ 
 }

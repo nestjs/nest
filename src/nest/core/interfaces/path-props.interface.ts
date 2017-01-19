@@ -1,6 +1,6 @@
 import { RequestMethod } from "./../enums";
 
-export interface PathProps {
+export interface RequestMappingProps {
     path: string,
-    requestMethod?: RequestMethod
+    method?: RequestMethod
 }

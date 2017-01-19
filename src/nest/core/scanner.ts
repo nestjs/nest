@@ -24,17 +24,32 @@ export class NestDependenciesScanner {
 
     private scanModulesForDependencies() {
         const modules = this.container.getModules();
+
         modules.forEach((deps, module) => {
+            const modules = Reflect.getMetadata('modules', module) || [];
+            modules.map((related) => this.storeRelatedModule(related, module));
+
             const components = Reflect.getMetadata('components', module) || [];
             components.map((component) => this.storeComponent(component, module));
 
             const routes = Reflect.getMetadata('routes', module) || [];
             routes.map((route) => this.storeRoute(route, module));
+
+            const exports = Reflect.getMetadata('exports', module) || [];
+            exports.map((exportedComponent) => this.storeExportedComponent(exportedComponent, module));
         });
+    }
+
+    private storeRelatedModule(related, module: AppModule) {
+        this.container.addRelatedModule(related, module);
     }
 
     private storeComponent(component, module: AppModule) {
         this.container.addComponent(component, module);
+    }
+
+    private storeExportedComponent(exportedComponent, module: AppModule) {
+        this.container.addExportedComponent(exportedComponent, module);
     }
 
     private storeRoute(route: Route, module: AppModule) {
