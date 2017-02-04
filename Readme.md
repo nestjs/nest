@@ -22,9 +22,7 @@ $ npm install nest.js
 
 ## Quick Start
 
-```bash
-```#app.ts
-```
+# `app.ts`
 ```ts
 import { NestApplication } from "nest";
 
