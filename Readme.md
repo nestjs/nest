@@ -27,13 +27,13 @@ $ npm install nest.js
 import { NestApplication } from "nest";
 
 export class Application implements NestApplication {
-    constructor(private application) {
+    constructor(private express) {
         // some configuration stuff
     }
 
     start() {
         // do something before server start
-        this.application.listen(3030, () => {
+        this.express.listen(3030, () => {
             console.log("Application listen on port:", 3030);
         });
     }
@@ -54,7 +54,23 @@ import { Application } from "./app";
 
 NestRunner.run(Application, ApplicationModule);
 ```
-That's it! As you can see, it is possible to 
+That's it! As you can see, it is possible to add some code between two 'lifecycle' events of [Express](https://github.com/expressjs/express) instance - after server creation and before server listening (which means after all framework stuff). Why it is important? Cause right now, you could simply put here some necessary configurations, for example setup [body-parser](https://github.com/expressjs/body-parser) middleware or [morgan](https://github.com/expressjs/morgan) logger.
+
+## Setup first controller
+
+Controllers layer is responsible for handling HTTP requests. This is how we create controller in Nest application:
+
+```ts
+@Controller({ path: "users" })
+class UsersController {
+    
+    @RequestMapping({ path: "/" })
+    getAllUsers(res, req, next) {
+        res.status(201).json({});
+    }
+    
+}
+```
 
 ## License
 
