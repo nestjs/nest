@@ -3,6 +3,10 @@
 
 # IDE
 /.idea
+/.awcache
 
 # misc
 npm-debug.log
+
+# example
+/.example

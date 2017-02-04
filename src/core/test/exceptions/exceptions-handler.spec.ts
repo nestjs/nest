@@ -1,0 +1,46 @@
+import * as sinon from "sinon";
+import { expect } from "chai";
+import { ExceptionsHandler } from "../../exceptions/exceptions-handler";
+import { Exception } from "../../exceptions/exception";
+
+describe('ExceptionsHandler', () => {
+    let handler: ExceptionsHandler;
+    let statusStub: sinon.SinonStub;
+    let jsonStub: sinon.SinonStub;
+    let response;
+
+    beforeEach(() => {
+        handler = new ExceptionsHandler();
+        statusStub = sinon.stub();
+        jsonStub = sinon.stub();
+
+        response = {
+            status: statusStub,
+            json: jsonStub
+        };
+        response.status.returns(response);
+        response.json.returns(response);
+    });
+
+    describe('next', () => {
+
+        it('should method send expected response status code and message when exception is unknown', () => {
+            handler.next(new Error(), response);
+
+            expect(statusStub.calledWith(500)).to.be.true;
+            expect(jsonStub.calledWith({ message: "Unkown exception" })).to.be.true;
+        });
+
+        it('should method send expected response status code and message when exception is instance of Exception', () => {
+            const status = 401;
+            const message = "Unauthorized";
+
+            handler.next(new Exception(message, status), response);
+
+            expect(statusStub.calledWith(status)).to.be.true;
+            expect(jsonStub.calledWith({ message })).to.be.true;
+        });
+
+    });
+
+});
