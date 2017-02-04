@@ -1,11 +1,26 @@
 [![Nest Logo](http://kamilmysliwiec.com/public/nest-logo.png)](http://kamilmysliwiec.com/)
 
-  Modern, fast, powerful web framework for [node](http://nodejs.org).
+  Modern, powerful web application framework for [Node.js](http://nodejs.org).
 
   [![NPM Version][npm-image]][npm-url]
   [![NPM Downloads][downloads-image]][downloads-url]
-  [![Linux Build][travis-image]][travis-url]
-  [![Windows Build][appveyor-image]][appveyor-url]
+
+## Description
+
+Nest is a powerful web framework for [Node.js](http://nodejs.org), which allows you to easily build efficient, scalable applications.
+It uses modern JavaScript, is built with [TypeScript](http://www.typescriptlang.org) and introduces best concepts to JavaScript back-end world such as
+Dependency Injection (with IoC Container) and Separation of Concerns.
+
+It is not just another framework. You do not have to wait on large community, because Nest is built with awesome, popular well-known libraries
+- [Express](https://github.com/expressjs/express) and [socket.io](https://github.com/socketio/socket.io)! It means, that you could quickly start using framework with no worries about a third party plugins.
+
+Nest is inspired by [Spring](https://spring.io) and [Angular](https://angular.io/) and is very much still a work in progress.
+
+## Installation
+
+```bash
+$ npm install nest.js
+```
 
 ## License
 
@@ -15,13 +30,3 @@
 [npm-url]: https://npmjs.org/package/nest.js
 [downloads-image]: https://img.shields.io/npm/dm/nest.js.svg
 [downloads-url]: https://npmjs.org/package/nest.js
-[travis-image]: https://img.shields.io/travis/nest.jsjs/nest.js/master.svg?label=linux
-[travis-url]: https://travis-ci.org/nest.jsjs/nest.js
-[appveyor-image]: https://img.shields.io/appveyor/ci/dougwilson/nest.js/master.svg?label=windows
-[appveyor-url]: https://ci.appveyor.com/project/dougwilson/nest.js
-[coveralls-image]: https://img.shields.io/coveralls/nest.jsjs/nest.js/master.svg
-[coveralls-url]: https://coveralls.io/r/nest.jsjs/nest.js?branch=master
-[gratipay-image-visionmedia]: https://img.shields.io/gratipay/visionmedia.svg
-[gratipay-url-visionmedia]: https://gratipay.com/visionmedia/
-[gratipay-image-dougwilson]: https://img.shields.io/gratipay/dougwilson.svg
-[gratipay-url-dougwilson]: https://gratipay.com/dougwilson/
