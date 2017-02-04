@@ -11,8 +11,7 @@ Nest is a powerful web framework for [Node.js](http://nodejs.org), which allows 
 It uses modern JavaScript, is built with [TypeScript](http://www.typescriptlang.org) and introduces best concepts to JavaScript back-end world such as
 Dependency Injection (with IoC Container) and Separation of Concerns.
 
-It is not just another framework. You do not have to wait on large community, because Nest is built with awesome, popular well-known libraries
-- [Express](https://github.com/expressjs/express) and [socket.io](https://github.com/socketio/socket.io)! It means, that you could quickly start using framework with no worries about a third party plugins.
+It is not just another framework. You do not have to wait on large community, because Nest is built with awesome, popular well-known libraries - [Express](https://github.com/expressjs/express) and [socket.io](https://github.com/socketio/socket.io)! It means, that you could quickly start using framework with no worries about a third party plugins.
 
 Nest is inspired by [Spring](https://spring.io) and [Angular](https://angular.io/) and is very much still a work in progress.
 
