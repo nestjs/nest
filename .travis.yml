@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-      - "iojs"
+      - "7"
 before_install:
   - export CHROME_BIN=chromium-browser
   - export DISPLAY=:99.0
