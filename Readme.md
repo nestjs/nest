@@ -31,8 +31,8 @@ We want to create scalable, modern and easy to maintain applications. Nest is a 
 ## Features
 
 - Compatible with both TypeScript and ES6 (I recommend to use [TypeScript](http://www.typescriptlang.org))
-- Based on well-known libraries ([Express](https://github.com/expressjs/express) / [socket.io](https://github.com/socketio/socket.io)) so you could easily use your experiance 
-- Easy to learn - syntax is really similar to [Angular](https://angular.io/) / [Spring](https://spring.io) (Java)
+- Based on well-known libraries ([Express](https://github.com/expressjs/express) / [socket.io](https://github.com/socketio/socket.io)) so you could share your experiance 
+- Easy to learn - syntax is similar to [Angular](https://angular.io/) / [Spring](https://spring.io) (Java)
 - Dependency Injection, Inversion of Control Container
 - Exceptions handler layer (helps to focus on logic)
 - Own modularity system
