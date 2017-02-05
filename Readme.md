@@ -38,6 +38,10 @@ We want to create scalable, modern and easy to maintain applications. Nest is a 
 - Own modularity system
 - Sockets module
 
+## Documentation & Quick Start
+
+Coming soon. [Read more](https://kamilmysliwiec.gitbooks.io/nest/content/)
+
 ## Future
 
 Nest is very much still a work in progress. There is still some things to finish:
@@ -47,13 +51,9 @@ Nest is very much still a work in progress. There is still some things to finish
 - Config provider
 - and more...
 
-## Documentation & Quick Start
-
-Coming soon. [Read more](https://kamilmysliwiec.gitbooks.io/nest/content/)
-
 ## People
 
-Author [Kamil Myśliwiec](http://kamilmysliwiec.com)
+Author - [Kamil Myśliwiec](http://kamilmysliwiec.com)
 
 ## License
 
