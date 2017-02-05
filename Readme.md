@@ -22,73 +22,38 @@ $ npm install nest.js
 
 ## Philosophy
 
-JavaScript is awesome. This language is no longer just a trash to create simple animations in the browser. Right now, the front end world is rich in variety of tools. We have a lot of amazing frameworks / libraries such as Angular, React or Vue, which improves our development process and makes our applications fast and flexible. 
+JavaScript is awesome. This language is no longer just a trash to create simple animations in the browser. Right now, the front end world is rich in variety of tools. We have a lot of amazing frameworks / libraries such as [Angular](https://angular.io/), [React](https://github.com/facebook/react) or [Vue](https://github.com/vuejs/vue), which improves our development process and makes our applications fast and flexible. 
 
-Node.js gave us a possibility to use this language also on the server side. There are a lot of awesome libraries, helpers and tools for node, but non of them do not solve the main problem - the architecture. They just helps us to create faster, easier and produce cleaner code.
+[Node.js](http://nodejs.org) gave us a possibility to use this language also on the server side. There are a lot of awesome libraries, helpers and tools for node, but non of them do not solve the main problem - the architecture. They just helps us to create faster, easier and produce cleaner code.
 
-We want to create scalable, modern and ease to maintain applications. Nest is a solution.
+We want to create scalable, modern and easy to maintain applications. Nest is a solution.
 
 ## Features
 
-- Compatible with both TypeScript and ES6 (I recommend to use TypeScript)
-- Based on well-known libraries (Express / socket.io) so you could easily use your experiance 
-- Easy to learn - syntax is really similar to Angular / Spring (Java)
+- Compatible with both TypeScript and ES6 (I recommend to use [TypeScript](http://www.typescriptlang.org))
+- Based on well-known libraries ([Express](https://github.com/expressjs/express) / [socket.io](https://github.com/socketio/socket.io)) so you could easily use your experiance 
+- Easy to learn - syntax is really similar to [Angular](https://angular.io/) / [Spring](https://spring.io) (Java)
+- Dependency Injection, Inversion of Control Container
+- Exceptions handler layer (helps to focus on logic)
+- Own modularity system
+- Sockets module
+
+## Future
+
+Nest is very much still a work in progress. There is still some things to finish:
+
+- Test utilities
+- Starter repos
+- Config provider
+- and more...
 
 ## Documentation & Quick Start
 
-Coming soon.
+Coming soon. [Read more](https://kamilmysliwiec.gitbooks.io/nest/content/)
 
-## Quick Start
+## People
 
-####`app.ts`
-```ts
-import { NestApplication } from "nest";
-
-export class Application implements NestApplication {
-    constructor(private express) {
-        // some configuration stuff
-    }
-
-    start() {
-        // do something before server start
-        this.express.listen(3030, () => {
-            console.log("Application listen on port:", 3030);
-        });
-    }
-}
-```
-####`app.module.ts`
-```ts
-import { Module } from "nest";
-
-@Module({})
-export class ApplicationModule {}
-```
-####`server.ts`
-```ts
-import { NestRunner } from "nest";
-import { ApplicationModule } from "./app.module";
-import { Application } from "./app";
-
-NestRunner.run(Application, ApplicationModule);
-```
-That's it! As you can see, it is possible to add some code between two 'lifecycle' events of [Express](https://github.com/expressjs/express) instance - after server creation and before server listening (which means after all framework stuff). Why it is important? Cause right now, you could simply put here some necessary configurations, for example setup [body-parser](https://github.com/expressjs/body-parser) middleware or [morgan](https://github.com/expressjs/morgan) logger.
-
-## Setup first controller
-
-Controllers layer is responsible for handling HTTP requests. This is how we create controller in Nest application:
-
-```ts
-@Controller({ path: "users" })
-class UsersController {
-    
-    @RequestMapping({ path: "/" })
-    getAllUsers(res, req, next) {
-        res.status(201).json({});
-    }
-    
-}
-```
+Author [Kamil Myśliwiec](http://kamilmysliwiec.com)
 
 ## License
 
