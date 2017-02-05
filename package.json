@@ -1,7 +1,7 @@
 {
-  "name": "tracker-server",
-  "version": "1.0.0",
-  "description": "Server side of tracker application",
+  "name": "nest",
+  "version": "1.0.0-alpha",
+  "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
     "start": "npm run build:live",
@@ -13,7 +13,12 @@
   "author": "Kamil Mysliwiec",
   "license": "ISC",
   "dependencies": {
-    "typescript": "^2.1.4"
+    "typescript": "^2.1.4",
+    "cli-color": "^1.1.0",
+    "express": "^4.14.0",
+    "reflect-metadata": "^0.1.9",
+    "rxjs": "^5.0.3",
+    "socket.io": "^1.7.2"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
@@ -40,12 +45,5 @@
     "sinon-chai": "^2.8.0",
     "ts-node": "^2.0.0",
     "webpack": "^1.14.0"
-  },
-  "peerDependencies": {
-    "cli-color": "^1.1.0",
-    "express": "^4.14.0",
-    "reflect-metadata": "^0.1.9",
-    "rxjs": "^5.0.3",
-    "socket.io": "^1.7.2"
   }
 }
