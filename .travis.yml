@@ -1,7 +1,9 @@
 language: node_js
 node_js:
-  - "6"
-  - "6.1"
-  - "5.11"
-  - "0.6"
-  - "iojs"
+      - "6"
+      - "7"
+script:
+      - npm run lint
+      - npm test
+      - npm run test:cov
+      - npm run compile
