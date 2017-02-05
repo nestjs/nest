@@ -7,6 +7,7 @@ export class Application implements NestApplication {
     start() {
         this.app.listen(3030, () => {
             console.log("Application listen on port:", 3030);
+            this.app.close();
         });
     }
  
