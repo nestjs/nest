@@ -3,7 +3,7 @@ const webpackConfig = require('./webpack.config.test');
 
 module.exports = function (config) {
     config.set({
-        browsers: [ 'Chrome', 'ChromeCanary' ],
+        browsers: [ 'Firefox' ],
         colors: true,
         reporters: [ 'mocha' ],
         frameworks: [ 'mocha', 'chai', 'sinon' ],
@@ -14,12 +14,12 @@ module.exports = function (config) {
             'tests.webpack.js': [ 'webpack' ]
         },
         webpack: webpackConfig,
-        customLaunchers: {
+        /*customLaunchers: {
             Chrome_travis_ci: {
                 base: 'Chrome',
                 flags: ['--no-sandbox']
             }
-        },
+        },*/
         singleRun: true
     });
 
