@@ -20,6 +20,24 @@ Nest is inspired by [Spring](https://spring.io) and [Angular](https://angular.io
 $ npm install nest.js
 ```
 
+## Philosophy
+
+JavaScript is awesome. This language is no longer just a trash to create simple animations in the browser. Right now, the front end world is rich in variety of tools. We have a lot of amazing frameworks / libraries such as Angular, React or Vue, which improves our development process and makes our applications fast and flexible. 
+
+Node.js gave us a possibility to use this language also on the server side. There are a lot of awesome libraries, helpers and tools for node, but non of them do not solve the main problem - the architecture. They just helps us to create faster, easier and produce cleaner code.
+
+We want to create scalable, modern and ease to maintain applications. Nest is a solution.
+
+## Features
+
+- Compatible with both TypeScript and ES6 (I recommend to use TypeScript)
+- Based on well-known libraries (Express / socket.io) so you could easily use your experiance 
+- Easy to learn - syntax is really similar to Angular / Spring (Java)
+
+## Documentation & Quick Start
+
+Coming soon.
+
 ## Quick Start
 
 ####`app.ts`
