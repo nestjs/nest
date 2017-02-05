@@ -3,7 +3,7 @@ const webpackConfig = require('./webpack.config.test');
 
 module.exports = function (config) {
     config.set({
-        browsers: [ 'Chrome' ],
+        browsers: [ 'Chrome', 'ChromeCanary' ],
         colors: true,
         reporters: [ 'mocha' ],
         frameworks: [ 'mocha', 'chai', 'sinon' ],

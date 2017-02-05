@@ -2,13 +2,10 @@ language: node_js
 node_js:
       - "6"
       - "7"
-before_script:
-  - 'export CHROME_BIN=chromium-browser'
-  - 'export DISPLAY=:99.0'
-  - 'sh -e /etc/init.d/xvfb start'
-  - 'npm install -g bower karma grunt-cli jshint'
-  - 'npm install'
-  - 'bower install'
+before_install:
+  - export CHROME_BIN=chromium-browser
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
 script:
       - npm test
       - npm run build
