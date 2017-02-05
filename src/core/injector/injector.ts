@@ -44,7 +44,7 @@ export class Injector {
     loadInstance(type, collection, module: ModuleDependencies) {
         const currentFetchedInstance = collection.get(type);
         if (typeof currentFetchedInstance === 'undefined') {
-            throw new RuntimeException("");
+            throw new RuntimeException('');
         }
         if (!currentFetchedInstance.isResolved) {
             this.resolveConstructorParams(type, module, (argsInstances) => {
@@ -70,7 +70,7 @@ export class Injector {
     }
 
     private resolveSingleParam(targetType, param, module: ModuleDependencies) {
-        if (typeof param === "undefined") {
+        if (typeof param === 'undefined') {
             throw new CircularDependencyException(targetType);
         }
 

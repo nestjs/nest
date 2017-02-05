@@ -3,7 +3,6 @@ import { Middleware } from "./interfaces/middleware.interface";
 import { MiddlewareProto } from "./interfaces/middleware-proto.interface";
 import { RoutesMapper } from "./routes-mapper";
 import { NestModule } from "../../common/interfaces/nest-module.interface";
-import { UnkownModuleException } from "../../errors/exceptions/unkown-module.exception";
 
 export class MiddlewaresContainer {
     private readonly middlewares = new Map<NestModule, Map<MiddlewareProto, Middleware>>();
@@ -12,10 +11,7 @@ export class MiddlewaresContainer {
     constructor(private routesMapper: RoutesMapper) {}
 
     getMiddlewares(module: NestModule): Map<MiddlewareProto, Middleware> {
-        if (!this.middlewares.has(module)) {
-            throw new UnkownModuleException();
-        }
-        return this.middlewares.get(module);
+        return this.middlewares.get(module) || new Map();
     }
 
     getConfigs(): Map<NestModule, Set<MiddlewareConfiguration>> {
