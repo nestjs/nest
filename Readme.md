@@ -5,6 +5,7 @@
   [![NPM Version][npm-image]][npm-url]
   [![NPM Downloads][downloads-image]][downloads-url]
   [![Travis][travis-image]][travis-url]
+  [![Linux][linux-image]][linux-url]
   [![Coverage Status](https://coveralls.io/repos/github/kamilmysliwiec/nest/badge.svg?branch=master)](https://coveralls.io/github/kamilmysliwiec/nest?branch=master)
 
 ## Description
@@ -67,3 +68,5 @@ Author - [Kamil Myśliwiec](http://kamilmysliwiec.com)
 [downloads-url]: https://npmjs.org/package/nest.js
 [travis-image]: https://api.travis-ci.org/kamilmysliwiec/nest.svg?branch=master
 [travis-url]: https://travis-ci.org/kamilmysliwiec/nest
+[linux-image]: https://img.shields.io/travis/kamilmysliwiec/nest/master.svg?label=linux
+[linux-url]: https://travis-ci.org/kamilmysliwiec/nest
