@@ -7,8 +7,29 @@
     "start": "npm run build:live",
     "build:live": "nodemon -e ts --watch src index.js",
     "build": "node index.js",
-    "compile": "tsc -p tsconfig.prod.json",
-    "test": "karma start"
+    "compile": "tsc -p configs/tsconfig.prod.json",
+    "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
+    "coverage": "nyc report --reporter=text-lcov | coveralls"
+  },
+  "nyc": {
+    "include": [
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "node_modules/"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
   },
   "author": "Kamil Mysliwiec",
   "license": "ISC",
@@ -28,7 +49,9 @@
     "awesome-typescript-loader": "^3.0.0-beta.18",
     "chai": "^3.5.0",
     "core-js": "^2.4.1",
+    "coveralls": "^2.11.16",
     "imports-loader": "^0.7.0",
+    "istanbul": "^0.4.5",
     "json-loader": "^0.5.4",
     "karma": "^1.4.0",
     "karma-chai": "^0.1.0",
@@ -42,6 +65,7 @@
     "karma-webpack": "^2.0.1",
     "mocha": "^3.2.0",
     "nodemon": "^1.11.0",
+    "nyc": "^10.1.2",
     "sinon": "^2.0.0-pre.2",
     "sinon-chai": "^2.8.0",
     "ts-node": "^2.0.0",

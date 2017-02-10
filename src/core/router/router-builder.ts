@@ -90,7 +90,7 @@ export class RouterBuilder {
 
 }
 
-interface RoutePathProperties {
+export interface RoutePathProperties {
     path: string,
     requestMethod: RequestMethod,
     targetCallback: RouterProxyCallback,

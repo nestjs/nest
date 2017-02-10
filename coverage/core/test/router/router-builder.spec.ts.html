@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for core/test/router/router-builder.spec.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="..\..\..\prettify.css" />
+    <link rel="stylesheet" href="..\..\..\base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(..\..\..\sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="..\..\..\index.html">All files</a> / <a href="index.html">core/test/router</a> router-builder.spec.ts
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>38/38</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/0</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">66.67% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>8/12</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>37/37</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74</td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import * as sinon from "sinon";
+import { expect } from "chai";
+import { RouterBuilder } from "../../router/router-builder";
+import { Controller } from "../../../common/utils/controller.decorator";
+import { RequestMapping } from "../../../common/utils/request-mapping.decorator";
+import { RequestMethod } from "../../../common/enums/request-method.enum";
+&nbsp;
+describe('RouterBuilder', () =&gt; {
+    @Controller({ path: "global" })
+    class TestRoute {
+        @RequestMapping({ path: "test" })
+<span class="fstat-no" title="function not covered" >        getTest</span>() {}
+&nbsp;
+        @RequestMapping({ path: "test", method: RequestMethod.POST })
+<span class="fstat-no" title="function not covered" >        postTest</span>() {}
+&nbsp;
+        @RequestMapping({ path: "another-test", method: RequestMethod.ALL })
+<span class="fstat-no" title="function not covered" >        anotherTest</span>() {}
+&nbsp;
+        private <span class="fstat-no" title="function not covered" >simplePlainMethod</span>() {}
+    }
+&nbsp;
+    let routerBuilder: RouterBuilder;
+    beforeEach(() =&gt; {
+        routerBuilder = new RouterBuilder(null, null);
+    });
+&nbsp;
+    describe('scanForPathsFromPrototype', () =&gt; {
+&nbsp;
+        it('should method return expected list of route paths', () =&gt; {
+            const paths = routerBuilder.scanForPathsFromPrototype(new TestRoute(), TestRoute.prototype);
+&nbsp;
+            expect(paths).to.have.length(3);
+&nbsp;
+            expect(paths[0].path).to.eql("/test");
+            expect(paths[1].path).to.eql("/test");
+            expect(paths[2].path).to.eql("/another-test");
+&nbsp;
+            expect(paths[0].requestMethod).to.eql(RequestMethod.GET);
+            expect(paths[1].requestMethod).to.eql(RequestMethod.POST);
+            expect(paths[2].requestMethod).to.eql(RequestMethod.ALL);
+        });
+&nbsp;
+    });
+&nbsp;
+    describe('exploreMethodMetadata', () =&gt; {
+&nbsp;
+        it('should method return expected object which represent single route', () =&gt; {
+            const instance = new TestRoute();
+            const instanceProto = Object.getPrototypeOf(instance);
+&nbsp;
+            const route = routerBuilder.exploreMethodMetadata(new TestRoute(), instanceProto, "getTest");
+&nbsp;
+            expect(route.path).to.eql("/test");
+            expect(route.requestMethod).to.eql(RequestMethod.GET);
+        });
+&nbsp;
+    });
+&nbsp;
+    describe('applyPathsToRouterProxy', () =&gt; {
+&nbsp;
+        it('should method return expected object which represent single route', () =&gt; {
+            const bindStub = sinon.stub(routerBuilder, "bindMethodToRouterProxy");
+            const paths = [ null, null ];
+&nbsp;
+            routerBuilder.applyPathsToRouterProxy(null, paths);
+&nbsp;
+            expect(bindStub.calledWith(null, null)).to.be.true;
+            expect(bindStub.callCount).to.be.eql(paths.length);
+        });
+&nbsp;
+    });
+&nbsp;
+});</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Fri Feb 10 2017 19:35:41 GMT+0100 (Środkowoeuropejski czas stand.)
+</div>
+</div>
+<script src="..\..\..\prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="..\..\..\sorter.js"></script>
+</body>
+</html>
