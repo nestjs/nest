@@ -43,7 +43,6 @@
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
-    "@types/karma": "^0.13.33",
     "@types/mocha": "^2.2.38",
     "@types/sinon": "^1.16.34",
     "awesome-typescript-loader": "^3.0.0-beta.18",
@@ -53,22 +52,11 @@
     "imports-loader": "^0.7.0",
     "istanbul": "^0.4.5",
     "json-loader": "^0.5.4",
-    "karma": "^1.4.0",
-    "karma-chai": "^0.1.0",
-    "karma-chrome-launcher": "^2.0.0",
-    "karma-coverage": "^1.1.1",
-    "karma-firefox-launcher": "^1.0.0",
-    "karma-mocha": "^1.3.0",
-    "karma-mocha-reporter": "^2.2.2",
-    "karma-sinon": "^1.0.5",
-    "karma-typescript": "^2.1.7",
-    "karma-webpack": "^2.0.1",
     "mocha": "^3.2.0",
     "nodemon": "^1.11.0",
     "nyc": "^10.1.2",
     "sinon": "^2.0.0-pre.2",
     "sinon-chai": "^2.8.0",
-    "ts-node": "^2.0.0",
-    "webpack": "^1.14.0"
+    "ts-node": "^2.0.0"
   }
 }
