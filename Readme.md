@@ -43,7 +43,7 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 ## Documentation & Quick Start
 
-Coming soon. [Read more](https://kamilmysliwiec.gitbooks.io/nest/content/)
+[Documentation & Tutorial](https://kamilmysliwiec.gitbooks.io/nest/content/)
 
 ## Future
 
@@ -51,7 +51,7 @@ Nest is very much still a work in progress. There is still some things to finish
 
 - Test utilities
 - Starter repos
-- Config provider
+- Validation helpers
 - and more...
 
 ## People
