@@ -3,7 +3,7 @@ import { SubscribeMessage } from '../../../src/socket/utils/subscribe-message.de
 import { Subject } from 'rxjs/Subject';
 import { GatewayServer } from '../../../src/socket/utils/gateway-server.decorator';
 
-@SocketGateway()
+@SocketGateway({ port: 2000 })
 export class ChatGateway {
     private msg$ = new Subject<any>();
 
