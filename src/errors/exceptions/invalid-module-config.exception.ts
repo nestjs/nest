@@ -1,9 +1,8 @@
 import { RuntimeException } from "./runtime.exception";
+import { getInvalidModuleConfigMessage } from '../messages';
 
 export class InvalidModuleConfigException extends RuntimeException {
-
     constructor(property: string) {
-        super(`Invalid property [${property}] in @Module({}) annotation.`);
+        super(getInvalidModuleConfigMessage(property));
     }
-
 }

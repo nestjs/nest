@@ -1,14 +1,15 @@
-import * as sinon from "sinon";
-import { expect } from "chai";
-import { MiddlewaresResolver } from "../../middlewares/resolver";
-import { MiddlewaresContainer } from "../../middlewares/container";
-import { Component } from "../../../common/utils/component.decorator";
-import { Middleware } from "../../middlewares/interfaces/middleware.interface";
-import { RoutesMapper } from "../../middlewares/routes-mapper";
+import * as sinon from 'sinon';
+import { expect } from 'chai';
+import { MiddlewaresResolver } from '../../middlewares/resolver';
+import { MiddlewaresContainer } from '../../middlewares/container';
+import { Component } from '../../../common/utils/component.decorator';
+import { NestMiddleware } from '../../middlewares/interfaces/nest-middleware.interface';
+import { RoutesMapper } from '../../middlewares/routes-mapper';
+import { NestMode } from '../../../common/enums/nest-mode.enum';
 
 describe('MiddlewaresResolver', () => {
     @Component()
-    class TestMiddleware implements Middleware {
+    class TestMiddleware implements NestMiddleware {
         resolve() {
             return (req, res, next) => {}
         }
@@ -20,16 +21,19 @@ describe('MiddlewaresResolver', () => {
 
     beforeEach(() => {
         container = new MiddlewaresContainer(new RoutesMapper());
-        resolver = new MiddlewaresResolver(container);
+        resolver = new MiddlewaresResolver(container, NestMode.TEST);
         mockContainer = sinon.mock(container);
     });
 
     it('should resolve middleware instances from container', () => {
-        const loadInstanceOfMiddleware = sinon.stub(resolver["instanceLoader"], "loadInstanceOfMiddleware");
+        const loadInstanceOfMiddleware = sinon.stub(resolver['instanceLoader'], 'loadInstanceOfMiddleware');
         const middlewares = new Map();
-        middlewares.set(TestMiddleware, null);
+        middlewares.set('TestMiddleware', {
+            instance: { metatype: {} },
+            metatype: TestMiddleware
+        });
 
-        mockContainer.expects("getMiddlewares").returns(middlewares);
+        mockContainer.expects('getMiddlewares').returns(middlewares);
         resolver.resolveInstances(null, null);
 
         expect(loadInstanceOfMiddleware.callCount).to.be.equal(middlewares.size);

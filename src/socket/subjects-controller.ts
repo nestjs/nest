@@ -1,20 +1,22 @@
-import "reflect-metadata";
-import { Gateway } from "./interfaces/gateway.interface";
-import { Injectable } from "../common/interfaces/injectable.interface";
-import { ObservableSocketServer } from "./interfaces/observable-socket-server.interface";
-import { InvalidSocketPortException } from "./exceptions/invalid-socket-port.exception";
-import { GatewayMetadataExplorer, MessageMappingProperties } from "./gateway-metadata-explorer";
-import { Subject } from "rxjs";
-import { SocketServerProvider } from "./socket-server-provider";
+import 'reflect-metadata';
+import { NestGateway } from './interfaces/nest-gateway.interface';
+import { Injectable } from '../common/interfaces/injectable.interface';
+import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
+import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exception';
+import { GatewayMetadataExplorer, MessageMappingProperties } from './gateway-metadata-explorer';
+import { Subject } from 'rxjs/Subject';
+import { SocketServerProvider } from './socket-server-provider';
+import { NAMESPACE_METADATA, PORT_METADATA } from './constants';
 
 export class SubjectsController {
+    private readonly CONNECTION_EVENT = 'connection';
+    private readonly DISCONNECT_EVENT = 'disconnect';
 
-    constructor(
-        private socketServerProvider: SocketServerProvider) {}
+    constructor(private socketServerProvider: SocketServerProvider) {}
 
-    hookGatewayIntoServer(instance: Gateway, componentType: Injectable) {
-        const namespace = Reflect.getMetadata("namespace", componentType) || "";
-        const port = Reflect.getMetadata("port", componentType) || 80;
+    hookGatewayIntoServer(instance: NestGateway, componentType: Injectable) {
+        const namespace = Reflect.getMetadata(NAMESPACE_METADATA, componentType) || '';
+        const port = Reflect.getMetadata(PORT_METADATA, componentType) || 80;
 
         if (!Number.isInteger(port)) {
             throw new InvalidSocketPortException(port, componentType);
@@ -22,7 +24,7 @@ export class SubjectsController {
         this.subscribeObservableServer(instance, namespace, port);
     }
 
-    private subscribeObservableServer(instance: Gateway, namespace: string, port: number) {
+    private subscribeObservableServer(instance: NestGateway, namespace: string, port: number) {
         const messageHandlers = GatewayMetadataExplorer.explore(instance);
         const observableServer = this.socketServerProvider.scanForSocketServer(namespace, port);
 
@@ -30,14 +32,14 @@ export class SubjectsController {
         this.subscribeEvents(instance, messageHandlers, observableServer);
     }
 
-    private hookServerToProperties(instance: Gateway, server) {
+    private hookServerToProperties(instance: NestGateway, server) {
         for (const propertyKey of GatewayMetadataExplorer.scanForServerHooks(instance)) {
             Reflect.set(instance, propertyKey, server);
         }
     }
 
     private subscribeEvents(
-        instance: Gateway,
+        instance: NestGateway,
         messageHandlers: MessageMappingProperties[],
         observableServer: ObservableSocketServer) {
 
@@ -49,37 +51,38 @@ export class SubjectsController {
         } = observableServer;
 
         this.subscribeInitEvent(instance, init);
-        init.next(server);
 
-        server.on("connection", (client) => {
+        init.next(server);
+        server.on(this.CONNECTION_EVENT, (client) => {
             this.subscribeConnectionEvent(instance, connection);
             connection.next(client);
 
             this.subscribeMessages(messageHandlers, client, instance);
             this.subscribeDisconnectEvent(instance, disconnect);
-            client.on("disconnect", (client) => disconnect.next(client));
+
+            client.on(this.DISCONNECT_EVENT, (client) => disconnect.next(client));
         });
     }
 
-    private subscribeInitEvent(instance: Gateway, event: Subject<any>) {
+    private subscribeInitEvent(instance: NestGateway, event: Subject<any>) {
         if (instance.afterInit) {
             event.subscribe(instance.afterInit.bind(instance));
         }
     }
 
-    private subscribeConnectionEvent(instance: Gateway, event: Subject<any>) {
+    private subscribeConnectionEvent(instance: NestGateway, event: Subject<any>) {
         if (instance.handleConnection) {
             event.subscribe(instance.handleConnection.bind(instance));
         }
     }
 
-    private subscribeDisconnectEvent(instance: Gateway, event: Subject<any>) {
+    private subscribeDisconnectEvent(instance: NestGateway, event: Subject<any>) {
         if (instance.handleDisconnect) {
             event.subscribe(instance.handleDisconnect.bind(instance));
         }
     }
 
-    private subscribeMessages(messageHandlers: MessageMappingProperties[], client, instance: Gateway) {
+    private subscribeMessages(messageHandlers: MessageMappingProperties[], client, instance: NestGateway) {
         messageHandlers.map(({ message, targetCallback }) => {
             client.on(
                 message,

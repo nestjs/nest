@@ -1,2 +1,2 @@
-export * from "./middleware-configuration.interface";
-export * from "./middleware.interface";
+export * from './middleware-configuration.interface';
+export * from './nest-middleware.interface';

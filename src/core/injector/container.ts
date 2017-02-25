@@ -1,76 +1,66 @@
-import { Controller, Injectable, NestModule } from "../../common/interfaces/";
-import { UnkownExportException } from "../../errors/exceptions/unkown-export.exception";
+import { Controller, Injectable } from '../../common/interfaces/';
+import { Module } from './module';
+import { UnkownModuleException } from '../../errors/exceptions/unkown-module.exception';
+import { NestModuleMetatype } from '../../common/interfaces/module-metatype.interface';
+import { Metatype } from '../../common/interfaces/metatype.interface';
 
 export class NestContainer {
-    private readonly modules = new Map<NestModule, ModuleDependencies>();
+    private readonly modules = new Map<string, Module>();
 
-    addModule(moduleClass) {
-        if(!this.modules.has(moduleClass)) {
-            this.modules.set(moduleClass, {
-                instance: new moduleClass(),
-                relatedModules: new Set<ModuleDependencies>(),
-                components: new Map<Injectable, InstanceWrapper<Injectable>>(),
-                routes: new Map<Controller, InstanceWrapper<Controller>>(),
-                exports: new Set<Injectable>(),
-            });
-        }
+    addModule(metatype: NestModuleMetatype) {
+        if (this.modules.has(metatype.name)) { return; }
+
+        this.modules.set(metatype.name, new Module(metatype));
     }
 
-    getModules(): Map<NestModule, ModuleDependencies> {
+    getModules(): Map<string, Module> {
         return this.modules;
     }
 
-    addRelatedModule(relatedModule: NestModule, module: NestModule) {
-        if(this.modules.has(module)) {
-            const storedModule = this.modules.get(module);
-            const related = this.modules.get(relatedModule);
+    addRelatedModule(relatedModule: NestModuleMetatype, target: NestModuleMetatype) {
+        if (!this.modules.has(target.name)) { return; }
 
-            storedModule.relatedModules.add(related);
-        }
+        const storedModule = this.modules.get(target.name);
+        const related = this.modules.get(relatedModule.name);
+
+        storedModule.addRelatedModule(related);
     }
 
-    addComponent(component: Injectable, module: NestModule) {
-        if(this.modules.has(module)) {
-            const storedModule = this.modules.get(module);
-            storedModule.components.set(component, {
-                instance: null,
-                isResolved: false,
-            });
-        }
-    }
-
-    addExportedComponent(exportedComponent: Injectable, module: NestModule) {
-        if(this.modules.has(module)) {
-            const storedModule = this.modules.get(module);
-            if (!storedModule.components.get(exportedComponent)) {
-                throw new UnkownExportException();
-            }
-            storedModule.exports.add(exportedComponent);
+    addComponent(component: Metatype<Injectable>, metatype: NestModuleMetatype) {
+        if (!this.modules.has(metatype.name)) {
+            throw new UnkownModuleException();
         }
 
+        const storedModule = this.modules.get(metatype.name);
+        storedModule.addComponent(component);
     }
 
-    addRoute(route: Controller, module: NestModule) {
-        if(this.modules.has(module)) {
-            const storedModule = this.modules.get(module);
-            storedModule.routes.set(route, {
-                instance: null,
-                isResolved: false,
-            });
+    addExportedComponent(exportedComponent: Metatype<Injectable>, metatype: NestModuleMetatype) {
+        if (!this.modules.has(metatype.name)) {
+            throw new UnkownModuleException();
         }
+
+        const storedModule = this.modules.get(metatype.name);
+        storedModule.addExportedComponent(exportedComponent);
     }
 
-}
+    addRoute(controller: Metatype<Controller>, metatype: NestModuleMetatype) {
+        if(!this.modules.has(metatype.name)) {
+            throw new UnkownModuleException();
+        }
 
-export interface ModuleDependencies {
-    instance: NestModule;
-    relatedModules?: Set<ModuleDependencies>;
-    components?: Map<Injectable, InstanceWrapper<Injectable>>;
-    routes?: Map<Controller, InstanceWrapper<Controller>>;
-    exports?: Set<Injectable>;
+        const storedModule = this.modules.get(metatype.name);
+        storedModule.addRoute(controller);
+    }
+
+    clear() {
+        this.modules.clear();
+    }
+
 }
 
 export interface InstanceWrapper<T> {
+    metatype: Metatype<T>;
     instance: T;
     isResolved: boolean;
 }

@@ -1,4 +1,5 @@
-import { Subject, ReplaySubject } from "rxjs";
+import { ReplaySubject } from 'rxjs/ReplaySubject';
+import { Subject } from 'rxjs/Subject';
 
 export interface ObservableSocketServer {
     server: any;

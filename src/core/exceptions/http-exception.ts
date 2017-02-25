@@ -1,4 +1,4 @@
-export class Exception {
+export class HttpException {
 
     constructor(
         private readonly message: string,

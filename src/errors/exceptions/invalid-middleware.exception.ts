@@ -1,9 +1,8 @@
 import { RuntimeException } from "./runtime.exception";
+import { getInvalidMiddlewareMessage } from '../messages';
 
 export class InvalidMiddlewareException extends RuntimeException {
-
-    constructor() {
-        super(`You are trying to setup middleware without "resolve" method.`);
+    constructor(name: string) {
+        super(getInvalidMiddlewareMessage(name));
     }
-
 }

@@ -1,15 +1,15 @@
-import * as sinon from "sinon";
-import { DependenciesScanner } from "./../scanner";
-import { NestContainer } from "./../injector/container";
-import { Module } from "../../common/utils/module.decorator";
-import { NestModule } from "../../common/interfaces/nest-module.interface";
-import { Component } from "../../common/utils/component.decorator";
-import { Controller } from "../../common/utils/controller.decorator";
+import * as sinon from 'sinon';
+import { DependenciesScanner } from './../scanner';
+import { NestContainer } from './../injector/container';
+import { Module } from '../../common/utils/module.decorator';
+import { NestModule } from '../../common/interfaces/nest-module.interface';
+import { Component } from '../../common/utils/component.decorator';
+import { Controller } from '../../common/utils/controller.decorator';
 
 describe('DependenciesScanner', () => {
 
     @Component() class TestComponent {}
-    @Controller({ path: "" }) class TestRoute {}
+    @Controller({ path: '' }) class TestRoute {}
 
     @Module({
         components: [ TestComponent ],
@@ -43,14 +43,14 @@ describe('DependenciesScanner', () => {
     });
 
     it('should "storeModule" call twice (2 modules) container method "addModule"', () => {
-        const expectation = mockContainer.expects("addModule").twice();
+        const expectation = mockContainer.expects('addModule').twice();
         scanner.scan(TestModule);
         expectation.verify();
     });
 
     it('should "storeComponent" call twice (2 components) container method "addComponent"', () => {
-        const expectation = mockContainer.expects("addComponent").twice();
-        const stub = sinon.stub(scanner, "storeExportedComponent");
+        const expectation = mockContainer.expects('addComponent').twice();
+        const stub = sinon.stub(scanner, 'storeExportedComponent');
 
         scanner.scan(TestModule);
         expectation.verify();
@@ -58,13 +58,13 @@ describe('DependenciesScanner', () => {
     });
 
     it('should "storeRoute" call twice (2 components) container method "addRoute"', () => {
-        const expectation = mockContainer.expects("addRoute").twice();
+        const expectation = mockContainer.expects('addRoute').twice();
         scanner.scan(TestModule);
         expectation.verify();
     });
 
     it('should "storeExportedComponent" call once (1 component) container method "addExportedComponent"', () => {
-        const expectation = mockContainer.expects("addExportedComponent").once();
+        const expectation = mockContainer.expects('addExportedComponent').once();
         scanner.scan(TestModule);
         expectation.verify();
     });

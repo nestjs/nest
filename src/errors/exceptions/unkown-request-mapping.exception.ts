@@ -1,9 +1,8 @@
 import { RuntimeException } from "./runtime.exception";
+import { UNKOWN_REQUEST_MAPPING } from '../messages';
 
 export class UnkownRequestMappingException extends RuntimeException {
-
     constructor() {
-        super(`RequestMapping not defined in @RequestMapping() annotation!`);
+        super(UNKOWN_REQUEST_MAPPING);
     }
-
 }

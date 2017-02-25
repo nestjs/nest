@@ -1,5 +1,5 @@
-import { UsersModule } from "./users/users.module";
-import { Module } from "./../../src/";
+import { Module } from './../../src/';
+import { UsersModule } from './users/users.module';
 
 @Module({
     modules: [ UsersModule ]

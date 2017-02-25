@@ -1,4 +1,4 @@
-import { RuntimeException } from "../../errors/exceptions/runtime.exception";
+import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 
 export class InvalidSocketPortException extends RuntimeException {
 

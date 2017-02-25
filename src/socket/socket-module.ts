@@ -1,10 +1,11 @@
-import "reflect-metadata";
-import { NestContainer, InstanceWrapper } from "../core/injector/container";
-import { Gateway } from "./interfaces/gateway.interface";
-import { SocketsContainer } from "./container";
-import { SubjectsController } from "./subjects-controller";
-import { Injectable } from "../common/interfaces/injectable.interface";
-import { SocketServerProvider } from "./socket-server-provider";
+import 'reflect-metadata';
+import { NestContainer, InstanceWrapper } from '../core/injector/container';
+import { NestGateway } from './interfaces/nest-gateway.interface';
+import { SocketsContainer } from './container';
+import { SubjectsController } from './subjects-controller';
+import { Injectable } from '../common/interfaces/injectable.interface';
+import { SocketServerProvider } from './socket-server-provider';
+import { GATEWAY_METADATA } from './constants';
 
 export class SocketModule {
     private static socketsContainer = new SocketsContainer();
@@ -18,17 +19,14 @@ export class SocketModule {
         modules.forEach(({ components }) => this.hookGatewaysIntoServers(components));
     }
 
-    static hookGatewaysIntoServers(components: Map<Injectable, InstanceWrapper<Injectable>>) {
-        components.forEach(({ instance }, componentType) => {
-            const metadataKeys = Reflect.getMetadataKeys(componentType);
-
-            if (metadataKeys.indexOf("__isGateway") < 0) {
-                return;
-            }
+    static hookGatewaysIntoServers(components: Map<string, InstanceWrapper<Injectable>>) {
+        components.forEach(({ instance, metatype }) => {
+            const metadataKeys = Reflect.getMetadataKeys(metatype);
+            if (metadataKeys.indexOf(GATEWAY_METADATA) < 0) { return; }
 
             this.subjectsController.hookGatewayIntoServer(
-                <Gateway>instance,
-                componentType
+                <NestGateway>instance,
+                metatype
             );
         });
     }

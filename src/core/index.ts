@@ -1,3 +1,3 @@
-export { Exception } from './exceptions/exception';
-export { Middleware, MiddlewareConfiguration } from './middlewares/interfaces';
+export { HttpException } from './exceptions/http-exception';
+export { NestMiddleware, MiddlewareConfiguration } from './middlewares/interfaces';
 export { MiddlewareBuilder } from './middlewares/builder';

@@ -1,9 +1,8 @@
-import { expect } from "chai";
-import { NestContainer, ModuleDependencies, InstanceWrapper } from "../../injector/container";
-import { Module } from "../../../common/utils/module.decorator";
-import { Injectable } from "../../../common/interfaces/injectable.interface";
-import { Controller } from "../../../common/interfaces/controller.interface";
-import { UnkownExportException } from "../../../errors/exceptions/unkown-export.exception";
+import { expect } from 'chai';
+import * as sinon from 'sinon';
+import { NestContainer } from '../../injector/container';
+import { Module } from '../../../common/utils/module.decorator';
+import { UnkownModuleException } from '../../../errors/exceptions/unkown-module.exception';
 
 describe('NestContainer', () => {
     let container: NestContainer;
@@ -15,25 +14,27 @@ describe('NestContainer', () => {
         container = new NestContainer();
     });
 
-    it('should create module instance and collections for dependencies', () => {
+    it('should not add module if already exists in collection', () => {
+        const modules = new Map();
+        const setSpy = sinon.spy(modules, 'set');
+        (container as any)['modules'] = modules;
+
+        container.addModule(TestModule);
         container.addModule(TestModule);
 
-        expect(container["modules"].get(TestModule)).to.be.deep.equal({
-            instance: new TestModule(),
-            relatedModules: new Set<ModuleDependencies>(),
-            components: new Map<Injectable, InstanceWrapper<any>>(),
-            routes: new Map<Controller, InstanceWrapper<Controller>>(),
-            exports: new Set<Injectable>(),
-        })
+        expect(setSpy.calledOnce).to.be.true;
     });
 
+    it('should "addComponent" throw "UnkownModuleException" when module is not stored in collection', () => {
+        expect(() => container.addComponent(null, TestModule)).throw(UnkownModuleException);
+    });
 
-    it('should throw "UnkownExportException" when given exported component is not a part of components array', () => {
-        container.addModule(TestModule);
+    it('should "addRoute" throw "UnkownModuleException" when module is not stored in collection', () => {
+        expect(() => container.addRoute(null, TestModule)).throw(UnkownModuleException);
+    });
 
-        expect(
-            container.addExportedComponent.bind(container, <any>"Test", TestModule)
-        ).throws(UnkownExportException);
+    it('should "addExportedComponent" throw "UnkownModuleException" when module is not stored in collection', () => {
+        expect(() => container.addExportedComponent(null, TestModule)).throw(UnkownModuleException);
     });
 
 });

@@ -1,31 +1,31 @@
-import { expect } from "chai";
-import * as sinon from "sinon";
-import { Middleware } from "../../middlewares/interfaces/middleware.interface";
-import { Component } from "../../../common/utils/component.decorator";
-import { MiddlewareBuilder } from "../../middlewares/builder";
-import { MiddlewaresModule } from "../../middlewares/middlewares-module";
-import { UnkownMiddlewareException } from "../../../errors/exceptions/unkown-middleware.exception";
-import { InvalidMiddlewareException } from "../../../errors/exceptions/invalid-middleware.exception";
-import { RequestMethod } from "../../../common/enums/request-method.enum";
-import { Controller } from "../../../common/utils/controller.decorator";
-import { RequestMapping } from "../../../common/utils/request-mapping.decorator";
+import { expect } from 'chai';
+import * as sinon from 'sinon';
+import { NestMiddleware } from '../../middlewares/interfaces/nest-middleware.interface';
+import { Component } from '../../../common/utils/component.decorator';
+import { MiddlewareBuilder } from '../../middlewares/builder';
+import { MiddlewaresModule } from '../../middlewares/middlewares-module';
+import { UnkownMiddlewareException } from '../../../errors/exceptions/unkown-middleware.exception';
+import { InvalidMiddlewareException } from '../../../errors/exceptions/invalid-middleware.exception';
+import { RequestMethod } from '../../../common/enums/request-method.enum';
+import { Controller } from '../../../common/utils/controller.decorator';
+import { RequestMapping } from '../../../common/utils/request-mapping.decorator';
 
 describe('MiddlewaresModule', () => {
-    @Controller({ path: "test" })
+    @Controller({ path: 'test' })
     class AnotherRoute { }
 
-    @Controller({ path: "test" })
+    @Controller({ path: 'test' })
     class TestRoute {
 
-        @RequestMapping({ path: "test" })
+        @RequestMapping({ path: 'test' })
         getTest() {}
 
-        @RequestMapping({ path: "another", method: RequestMethod.DELETE })
+        @RequestMapping({ path: 'another', method: RequestMethod.DELETE })
         getAnother() {}
     }
 
     @Component()
-    class TestMiddleware implements Middleware {
+    class TestMiddleware implements NestMiddleware {
         resolve() {
             return (req, res, next) => {}
         }
@@ -39,7 +39,7 @@ describe('MiddlewaresModule', () => {
                 configure: configureSpy
             };
 
-            MiddlewaresModule.loadConfiguration(<any>mockModule, <any>"Test");
+            MiddlewaresModule.loadConfiguration(<any>mockModule, <any>'Test');
 
             expect(configureSpy.calledOnce).to.be.true;
             expect(configureSpy.calledWith(new MiddlewareBuilder())).to.be.true;
@@ -49,7 +49,7 @@ describe('MiddlewaresModule', () => {
     describe('setupRouteMiddleware', () => {
 
         it('should throw "UnkownMiddlewareException" exception when middlewares is not stored in container', () => {
-            const route = { path: "Test" };
+            const route = { path: 'Test' };
             const configuration = {
                 middlewares: [ TestMiddleware ],
                 forRoutes: [ TestRoute ]
@@ -59,7 +59,7 @@ describe('MiddlewaresModule', () => {
             const app = { use: useSpy };
 
             expect(MiddlewaresModule.setupRouteMiddleware.bind(
-                MiddlewaresModule, route, configuration, <any>"Test", <any>app
+                MiddlewaresModule, route, configuration, <any>'Test', <any>app
             )).throws(UnkownMiddlewareException);
         });
 
@@ -67,7 +67,7 @@ describe('MiddlewaresModule', () => {
             @Component()
             class InvalidMiddleware {}
 
-            const route = { path: "Test" };
+            const route = { path: 'Test' };
             const configuration = {
                 middlewares: [ InvalidMiddleware ],
                 forRoutes: [ TestRoute ]
@@ -77,11 +77,14 @@ describe('MiddlewaresModule', () => {
             const app = { use: useSpy };
 
             const container = MiddlewaresModule.getContainer();
-            const moduleKey = <any>"Test";
+            const moduleKey = <any>'Test';
             container.addConfig([ <any>configuration ], moduleKey);
 
             const instance = new InvalidMiddleware();
-            container.getMiddlewares(moduleKey).set(<any>InvalidMiddleware, <any>instance);
+            container.getMiddlewares(moduleKey).set('InvalidMiddleware', <any>{
+                metatype: InvalidMiddleware,
+                instance
+            });
 
             expect(MiddlewaresModule.setupRouteMiddleware.bind(
                 MiddlewaresModule, route, configuration, moduleKey, <any>app
@@ -89,10 +92,10 @@ describe('MiddlewaresModule', () => {
         });
 
         it('should store middlewares when middleware is stored in container', () => {
-            const route = { path: "Test", method: RequestMethod.GET };
+            const route = { path: 'Test', method: RequestMethod.GET };
             const configuration = {
                 middlewares: [ TestMiddleware ],
-                forRoutes: [ { path: "test" }, AnotherRoute, TestRoute ]
+                forRoutes: [ { path: 'test' }, AnotherRoute, TestRoute ]
             };
 
             const useSpy = sinon.spy();
@@ -101,11 +104,14 @@ describe('MiddlewaresModule', () => {
             };
 
             const container = MiddlewaresModule.getContainer();
-            const moduleKey = <any>"Test";
+            const moduleKey = <any>'Test';
             container.addConfig([ configuration ], moduleKey);
 
             const instance = new TestMiddleware();
-            container.getMiddlewares(moduleKey).set(TestMiddleware, instance);
+            container.getMiddlewares(moduleKey).set('TestMiddleware', {
+                metatype: TestMiddleware,
+                instance
+            });
 
             MiddlewaresModule.setupRouteMiddleware(route, configuration, moduleKey, <any>app);
             expect(useSpy.calledOnce).to.be.true;

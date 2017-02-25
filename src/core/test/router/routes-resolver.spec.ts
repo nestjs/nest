@@ -1,17 +1,18 @@
-import * as sinon from "sinon";
-import { expect } from "chai";
-import { RoutesResolver } from "../../router/routes-resolver";
-import { Controller } from "../../../common/utils/controller.decorator";
-import { RequestMapping } from "../../../common/utils/request-mapping.decorator";
-import { RequestMethod } from "../../../common/enums/request-method.enum";
+import * as sinon from 'sinon';
+import { expect } from 'chai';
+import { RoutesResolver } from '../../router/routes-resolver';
+import { Controller } from '../../../common/utils/controller.decorator';
+import { RequestMapping } from '../../../common/utils/request-mapping.decorator';
+import { RequestMethod } from '../../../common/enums/request-method.enum';
+import { NestMode } from '../../../common/enums/nest-mode.enum';
 
 describe('RoutesResolver', () => {
-    @Controller({ path: "global" })
+    @Controller({ path: 'global' })
     class TestRoute {
-        @RequestMapping({ path: "test" })
+        @RequestMapping({ path: 'test' })
         getTest() {}
 
-        @RequestMapping({ path: "another-test", method: RequestMethod.POST })
+        @RequestMapping({ path: 'another-test', method: RequestMethod.POST })
         anotherTest() {}
     }
 
@@ -28,14 +29,17 @@ describe('RoutesResolver', () => {
     beforeEach(() => {
         routesResolver = new RoutesResolver(null, {
             createRouter: () => router,
-        });
+        }, NestMode.TEST);
     });
 
     describe('setupRouters', () => {
 
         it('should method setup controllers to express application instance', () => {
             const routes = new Map();
-            routes.set(TestRoute, { instance: new TestRoute() });
+            routes.set('TestRoute', {
+                instance: new TestRoute(),
+                metatype: TestRoute
+            });
 
             const use = sinon.spy();
             const applicationMock = { use };

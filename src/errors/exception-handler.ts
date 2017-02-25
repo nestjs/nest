@@ -1,16 +1,14 @@
-import * as clc from "cli-color";
 import { RuntimeException } from "./exceptions/runtime.exception";
+import { Logger } from '../common/services/logger.service';
 
 export class ExceptionHandler {
-    handle(e: RuntimeException | Error) {
-        var error = clc.red.bold;
-        var warn = clc.xterm(214);
+    private readonly logger = new Logger(ExceptionHandler.name);
 
-        if (e instanceof RuntimeException) {
-            console.log(error("[Nest] Runtime error!"));
-            console.log(warn(e.what()));
+    handle(exception: RuntimeException | Error) {
+        if (!(exception instanceof RuntimeException)) {
+            this.logger.error(exception.message, exception.stack);
+            return;
         }
-        console.log(error("Stack trace:"));
-        console.log(e.stack);
+        this.logger.error(exception.what(), exception.stack);
     }
 }

@@ -1,12 +1,11 @@
-import "reflect-metadata";
-import { expect } from "chai";
-import { RequestMapping } from "../../utils/request-mapping.decorator";
-import { RequestMethod } from "../../enums/request-method.enum";
-import { InvalidPathVariableException } from "../../../errors/exceptions/invalid-path-variable.exception";
+import 'reflect-metadata';
+import { expect } from 'chai';
+import { RequestMapping } from '../../utils/request-mapping.decorator';
+import { RequestMethod } from '../../enums/request-method.enum';
 
 describe('@RequestMapping', () => {
     const requestProps = {
-        path: "test",
+        path: 'test',
         method: RequestMethod.ALL
     };
 
@@ -25,7 +24,7 @@ describe('@RequestMapping', () => {
 
     it('should set request method on GET by default', () => {
         class Test {
-            @RequestMapping({ path: "" })
+            @RequestMapping({ path: '' })
             static test() {}
         }
 
@@ -33,8 +32,14 @@ describe('@RequestMapping', () => {
         expect(method).to.be.eql(RequestMethod.GET);
     });
 
-    it('should throw exception when path variable is not set', () => {
-        expect(RequestMapping.bind(null, {})).throw(InvalidPathVariableException);
+    it('should set path on "/" by default', () => {
+        class Test {
+            @RequestMapping({})
+            static test() {}
+        }
+
+        const method = Reflect.getMetadata('path', Test.test);
+        expect(method).to.be.eql('/');
     });
 
 });

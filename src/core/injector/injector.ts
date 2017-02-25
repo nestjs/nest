@@ -1,85 +1,89 @@
-import "reflect-metadata";
-import { ModuleDependencies, InstanceWrapper } from "./container";
-import { Middleware } from "../middlewares/interfaces/middleware.interface";
-import { CircularDependencyException } from "../../errors/exceptions/circular-dependency.exception";
-import { UnkownDependenciesException } from "../../errors/exceptions/unkown-dependencies.exception";
-import { MiddlewareProto } from "../middlewares/interfaces/middleware-proto.interface";
-import { RuntimeException } from "../../errors/exceptions/runtime.exception";
+import 'reflect-metadata';
+import { InstanceWrapper } from './container';
+import { UnkownDependenciesException } from '../../errors/exceptions/unkown-dependencies.exception';
+import { MiddlewareMetatype } from '../middlewares/interfaces/middleware-metatype.interface';
+import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { Module } from './module';
+import { Metatype } from '../../common/interfaces/metatype.interface';
+import { Controller } from '../../common/interfaces/controller.interface';
+import { Injectable } from '../../common/interfaces/injectable.interface';
+import { MiddlewareWrapper } from '../middlewares/container';
+import { isUndefined } from '../../common/utils/shared.utils';
+import { PARAMTYPES_METADATA } from '../../common/constants';
 
 export class Injector {
 
     loadInstanceOfMiddleware(
-        middlewareType,
-        collection: Map<MiddlewareProto, Middleware>,
-        module: ModuleDependencies) {
+        metatype: MiddlewareMetatype,
+        collection: Map<string, MiddlewareWrapper>,
+        module: Module) {
 
-        const currentFetchedMiddleware = collection.get(middlewareType);
+        const currentFetchedMiddleware = collection.get(metatype.name);
+        if (currentFetchedMiddleware.instance !== null) return;
 
-        if(currentFetchedMiddleware === null) {
-            this.resolveConstructorParams(middlewareType, module, (argsInstances) => {
-                collection.set(middlewareType, new middlewareType(...argsInstances))
-            });
-        }
-    }
-
-    loadInstanceOfRoute(routeType, module: ModuleDependencies) {
-        const routes = module.routes;
-        this.loadInstance(routeType, routes, module);
-    }
-
-    loadPrototypeOfInstance<T>(type, collection: Map<T, InstanceWrapper<T>>) {
-        if (!collection) { return; }
-
-        collection.set(type, {
-            ...collection.get(type),
-            instance: Object.create(type.prototype),
+        this.resolveConstructorParams(metatype, module, (argsInstances) => {
+            collection.set(metatype.name, {
+                instance: new metatype(...argsInstances),
+                metatype
+            })
         });
     }
 
-    loadInstanceOfComponent(componentType, module: ModuleDependencies) {
-        const components = module.components;
-        this.loadInstance(componentType, components, module);
+    loadInstanceOfRoute(metatype: Metatype<Controller>, module: Module) {
+        const routes = module.routes;
+        this.loadInstance<Controller>(metatype, routes, module);
     }
 
-    loadInstance(type, collection, module: ModuleDependencies) {
-        const currentFetchedInstance = collection.get(type);
-        if (typeof currentFetchedInstance === 'undefined') {
+    loadPrototypeOfInstance<T>(metatype: Metatype<T>, collection: Map<string, InstanceWrapper<T>>) {
+        if (!collection || collection.get(metatype.name).isResolved) { return; }
+
+        collection.set(metatype.name, {
+            ...collection.get(metatype.name),
+            instance: Object.create(metatype.prototype),
+        });
+    }
+
+    loadInstanceOfComponent(metatype: Metatype<Injectable>, module: Module) {
+        const components = module.components;
+        this.loadInstance<Injectable>(metatype, components, module);
+    }
+
+    loadInstance<T>(type: Metatype<T>, collection, module: Module) {
+        const currentFetchedInstance = collection.get(type.name);
+        if (isUndefined(currentFetchedInstance)) {
             throw new RuntimeException('');
         }
-        if (!currentFetchedInstance.isResolved) {
-            this.resolveConstructorParams(type, module, (argsInstances) => {
-                currentFetchedInstance.instance = Object.assign(
-                    currentFetchedInstance.instance,
-                    new type(...argsInstances),
-                );
-                currentFetchedInstance.isResolved = true;
-            });
-        }
+        if (currentFetchedInstance.isResolved) return;
+
+        this.resolveConstructorParams<T>(type, module, (argsInstances) => {
+            currentFetchedInstance.instance = Object.assign(
+                currentFetchedInstance.instance,
+                new type(...argsInstances),
+            );
+            currentFetchedInstance.isResolved = true;
+        });
     }
 
-    private resolveConstructorParams(type, module, callback) {
-        let constructorParams = Reflect.getMetadata('design:paramtypes', type) || [];
-
+    private resolveConstructorParams<T>(type: Metatype<T>, module: Module, callback: Function) {
+        let constructorParams = Reflect.getMetadata(PARAMTYPES_METADATA, type) || [];
         if ((<any>type).dependencies) {
             constructorParams = (<any>type).dependencies;
         }
-        const argsInstances = constructorParams.map((param) => (
-            this.resolveSingleParam(type, param, module)
-        ));
+
+        const argsInstances = constructorParams.map(param => this.resolveSingleParam<T>(type, param, module));
         callback(argsInstances);
     }
 
-    private resolveSingleParam(targetType, param, module: ModuleDependencies) {
-        if (typeof param === 'undefined') {
-            throw new CircularDependencyException(targetType);
+    private resolveSingleParam<T>(type: Metatype<T>, param: Metatype<any>, module: Module) {
+        if (isUndefined(param)) {
+            throw new RuntimeException('');
         }
-
-        return this.resolveComponentInstance(module, param, targetType);
+        return this.resolveComponentInstance<T>(module, param, type);
     }
 
-    private resolveComponentInstance(module: ModuleDependencies, param, componentType) {
+    private resolveComponentInstance<T>(module: Module, param: Metatype<any>, metatype: Metatype<T>) {
         const components = module.components;
-        const instanceWrapper = this.scanForComponent(components, param, module, componentType);
+        const instanceWrapper = this.scanForComponent<T>(components, param, module, metatype);
 
         if (instanceWrapper.instance === null) {
             this.loadInstanceOfComponent(param, module);
@@ -87,32 +91,34 @@ export class Injector {
         return instanceWrapper.instance;
     }
 
-    private scanForComponent(components, param, module, componentType) {
-        if (!components.has(param)) {
-            const instanceWrapper = this.scanForComponentInRelatedModules(module, param);
+    private scanForComponent<T>(
+        components: Map<string, any>,
+        param: Metatype<any>,
+        module: Module,
+        metatype: Metatype<T>) {
 
-            if (instanceWrapper === null) {
-                throw new UnkownDependenciesException(componentType);
-            }
-            return instanceWrapper;
+        if (components.has(param.name)) {
+            return components.get(param.name);
         }
-        return components.get(param);
+
+        const instanceWrapper = this.scanForComponentInRelatedModules(module, param);
+        if (instanceWrapper === null) {
+            throw new UnkownDependenciesException(metatype.name);
+        }
+        return instanceWrapper;
     }
 
-    private scanForComponentInRelatedModules(module: ModuleDependencies, componentType) {
+    private scanForComponentInRelatedModules(module: Module, metatype: Metatype<any>) {
         const relatedModules = module.relatedModules;
         let component = null;
 
         relatedModules.forEach((relatedModule) => {
             const { components, exports } = relatedModule;
+            if (!exports.has(metatype.name) || !components.has(metatype.name)) { return; }
 
-            if (!exports.has(componentType) || !components.has(componentType)) {
-                return;
-            }
-
-            component = components.get(componentType);
+            component = components.get(metatype.name);
             if (!component.isResolved) {
-                this.loadInstanceOfComponent(componentType, relatedModule);
+                this.loadInstanceOfComponent(metatype, relatedModule);
             }
         });
         return component;

@@ -1,4 +1,4 @@
-import { ExceptionsHandler } from "../exceptions/exceptions-handler";
+import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 
 export class RouterProxy {
 

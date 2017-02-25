@@ -1,5 +1,5 @@
-import { NestModule } from "./nest-module.interface";
-import { Controller } from "./controller.interface";
+import { NestModule } from './nest-module.interface';
+import { Controller } from './controller.interface';
 
 export interface ModuleMetadata {
     modules?: NestModule[],

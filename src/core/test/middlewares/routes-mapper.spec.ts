@@ -1,19 +1,18 @@
-import * as sinon from "sinon";
-import { expect } from "chai";
-import { RoutesMapper } from "../../middlewares/routes-mapper";
-import { Controller } from "../../../common/utils/controller.decorator";
-import { RequestMapping } from "../../../common/utils/request-mapping.decorator";
-import { RequestMethod } from "../../../common/enums/request-method.enum";
-import { UnkownRequestMappingException } from "../../../errors/exceptions/unkown-request-mapping.exception";
+import { expect } from 'chai';
+import { RoutesMapper } from '../../middlewares/routes-mapper';
+import { Controller } from '../../../common/utils/controller.decorator';
+import { RequestMapping } from '../../../common/utils/request-mapping.decorator';
+import { RequestMethod } from '../../../common/enums/request-method.enum';
+import { UnkownRequestMappingException } from '../../../errors/exceptions/unkown-request-mapping.exception';
 
 describe('RoutesMapper', () => {
-    @Controller({ path: "test" })
+    @Controller({ path: 'test' })
     class TestRoute {
 
-        @RequestMapping({ path: "test" })
+        @RequestMapping({ path: 'test' })
         getTest() {}
 
-        @RequestMapping({ path: "another", method: RequestMethod.DELETE })
+        @RequestMapping({ path: 'another', method: RequestMethod.DELETE })
         getAnother() {}
     }
 
@@ -25,26 +24,26 @@ describe('RoutesMapper', () => {
 
     it('should map @Controller() to "ControllerMetadata" in forRoutes', () => {
         const config = {
-            middlewares: "Test",
+            middlewares: 'Test',
             forRoutes: [
-                { path: "test", method: RequestMethod.GET },
+                { path: 'test', method: RequestMethod.GET },
                 TestRoute
             ]
         };
 
         expect(mapper.mapRouteToRouteProps(config.forRoutes[0])).to.deep.equal([{
-            path: "/test", method: RequestMethod.GET
+            path: '/test', method: RequestMethod.GET
         }]);
 
         expect(mapper.mapRouteToRouteProps(config.forRoutes[1])).to.deep.equal([
-            { path: "/test/test", method: RequestMethod.GET },
-            { path: "/test/another", method: RequestMethod.DELETE },
+            { path: '/test/test', method: RequestMethod.GET },
+            { path: '/test/another', method: RequestMethod.DELETE },
         ]);
     });
 
     it('should throw exception when invalid object was passed as route', () => {
         const config = {
-            middlewares: "Test",
+            middlewares: 'Test',
             forRoutes: [
                 { method: RequestMethod.GET }
             ]

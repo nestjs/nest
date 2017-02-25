@@ -1,4 +1,4 @@
-import * as express from "express";
+import * as express from 'express';
 
 export class ExpressAdapter {
 

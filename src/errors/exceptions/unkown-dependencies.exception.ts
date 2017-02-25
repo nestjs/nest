@@ -1,9 +1,8 @@
 import { RuntimeException } from "./runtime.exception";
+import { getUnkownDependenciesMessage } from '../messages';
 
 export class UnkownDependenciesException extends RuntimeException {
-
-    constructor(type) {
-        super(`Can't recognize dependencies of ${type}.`);
+    constructor(type: string) {
+        super(getUnkownDependenciesMessage(type));
     }
-
 }

@@ -1,10 +1,10 @@
-import "reflect-metadata";
-import { expect } from "chai";
-import { SocketGateway } from "../../utils/socket-gateway.decorator";
+import 'reflect-metadata';
+import { expect } from 'chai';
+import { SocketGateway } from '../../utils/socket-gateway.decorator';
 
 describe('@SocketGateway', () => {
 
-    @SocketGateway({ port: 80, namespace: "/" })
+    @SocketGateway({ port: 80, namespace: '/' })
     class TestGateway {}
 
     it('should decorate type with expected metadata', () => {
@@ -14,7 +14,7 @@ describe('@SocketGateway', () => {
 
         expect(isGateway).to.be.eql(true);
         expect(port).to.be.eql(80);
-        expect(namespace).to.be.eql("/");
+        expect(namespace).to.be.eql('/');
     });
 
 });

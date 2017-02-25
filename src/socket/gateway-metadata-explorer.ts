@@ -1,41 +1,49 @@
-import { Gateway } from "./interfaces/gateway.interface";
+import { NestGateway } from './interfaces/nest-gateway.interface';
+import { isUndefined, isConstructor, isFunction } from '../common/utils/shared.utils';
+import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA, SOCKET_SERVER_METADATA } from './constants';
 
 export class GatewayMetadataExplorer {
 
-    static explore(instance: Gateway): MessageMappingProperties[] {
+    static explore(instance: NestGateway): MessageMappingProperties[] {
         const instancePrototype = Object.getPrototypeOf(instance);
         return this.scanForHandlersFromPrototype(instance, instancePrototype)
     }
 
-    static scanForHandlersFromPrototype(instance: Gateway, instancePrototype): MessageMappingProperties[] {
+    static scanForHandlersFromPrototype(instance: NestGateway, instancePrototype): MessageMappingProperties[] {
         return Object.getOwnPropertyNames(instancePrototype)
-            .filter((method) => method !== "constructor" && typeof instancePrototype[method] === "function")
+            .filter((method) => {
+                const descriptor = Object.getOwnPropertyDescriptor(instancePrototype, method);
+                if (descriptor.set || descriptor.get) {
+                    return false;
+                }
+                return !isConstructor(method) && isFunction(instancePrototype[method]);
+            })
             .map((methodName) => this.exploreMethodMetadata(instance, instancePrototype, methodName))
             .filter((mapper) => mapper !== null);
     }
 
     static exploreMethodMetadata(instance, instancePrototype, methodName: string): MessageMappingProperties {
         const callbackMethod = instancePrototype[methodName];
-        const isMessageMapping = Reflect.getMetadata("__isMessageMapping", callbackMethod);
+        const isMessageMapping = Reflect.getMetadata(MESSAGE_MAPPING_METADATA, callbackMethod);
 
-        if(typeof isMessageMapping === "undefined") {
+        if (isUndefined(isMessageMapping)) {
             return null;
         }
-
-        const message = Reflect.getMetadata("message", callbackMethod);
+        const message = Reflect.getMetadata(MESSAGE_METADATA, callbackMethod);
         return {
             targetCallback: (<Function>callbackMethod).bind(instance),
             message,
         };
     }
 
-    static *scanForServerHooks(instance: Gateway): IterableIterator<string> {
+    static *scanForServerHooks(instance: NestGateway): IterableIterator<string> {
         for (const propertyKey in instance) {
-            if (typeof propertyKey === "function") {
+            if (isFunction(propertyKey)) {
                 continue;
             }
-            const isServer = Reflect.getMetadata("__isSocketServer", instance, String(propertyKey));
-            if (typeof isServer !== "undefined") {
+            
+            const isServer = Reflect.getMetadata(SOCKET_SERVER_METADATA, instance, String(propertyKey));
+            if (!isUndefined(isServer)) {
                 yield String(propertyKey);
             }
         }

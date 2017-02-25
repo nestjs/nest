@@ -1,19 +1,29 @@
-import "reflect-metadata";
-import { Controller } from "../../common/interfaces/controller.interface";
-import { RequestMethod } from "../../common/enums/request-method.enum";
-import { RouterProxy, RouterProxyCallback } from "./router-proxy";
-import { UnkownRequestMappingException } from "../../errors/exceptions/unkown-request-mapping.exception";
-import { ExpressAdapter } from "../adapters/express-adapter";
+import 'reflect-metadata';
+import { Controller } from '../../common/interfaces/controller.interface';
+import { RequestMethod } from '../../common/enums/request-method.enum';
+import { RouterProxy, RouterProxyCallback } from './router-proxy';
+import { UnkownRequestMappingException } from '../../errors/exceptions/unkown-request-mapping.exception';
+import { ExpressAdapter } from '../adapters/express-adapter';
+import { Metatype } from '../../common/interfaces/metatype.interface';
+import { isUndefined, isConstructor, validatePath } from '../../common/utils/shared.utils';
+import { RouterMethodFactory } from '../helpers/router-method-factory';
+import { PATH_METADATA, METHOD_METADATA } from '../../common/constants';
+import { Logger } from '../../common/services/logger.service';
+import { getRouteMappedMessage } from '../helpers/messages';
+import { NestMode } from '../../common/enums/nest-mode.enum';
 
 export class RouterBuilder {
+    private readonly routerMethodFactory = new RouterMethodFactory();
+    private readonly logger = new Logger(RouterBuilder.name);
 
     constructor(
         private routerProxy?: RouterProxy,
-        private expressAdapter?: ExpressAdapter) {}
+        private expressAdapter?: ExpressAdapter,
+        private mode = NestMode.RUN) {}
 
-    public build(instance: Controller, routePrototype: Function) {
+    public build(instance: Controller, metatype: Metatype<Controller>) {
         const router = (<any>this.expressAdapter).createRouter();
-        const path = this.fetchRouterPath(routePrototype);
+        const path = this.fetchRouterPath(metatype);
         const routerPaths = this.scanForPaths(instance);
 
         this.applyPathsToRouterProxy(router, routerPaths);
@@ -28,20 +38,26 @@ export class RouterBuilder {
 
     scanForPathsFromPrototype(instance: Controller, instancePrototype) {
         return Object.getOwnPropertyNames(instancePrototype)
-            .filter((method) => method !== "constructor")
+            .filter((method) => {
+                const descriptor = Object.getOwnPropertyDescriptor(instancePrototype, method);
+                if (descriptor.set || descriptor.get) {
+                    return false;
+                }
+                return !isConstructor(method);
+            })
             .map((methodName) => this.exploreMethodMetadata(instance, instancePrototype, methodName))
             .filter((path) => path !== null);
     }
 
-    exploreMethodMetadata(instance, instancePrototype, methodName: string): RoutePathProperties {
+    exploreMethodMetadata(instance: Controller, instancePrototype, methodName: string): RoutePathProperties {
         const callbackMethod = instancePrototype[methodName];
 
-        const routePath = Reflect.getMetadata("path", callbackMethod);
-        if(typeof routePath === "undefined") {
+        const routePath = Reflect.getMetadata(PATH_METADATA, callbackMethod);
+        if (isUndefined(routePath)) {
             return null;
         }
 
-        const requestMethod: RequestMethod = Reflect.getMetadata("method", callbackMethod);
+        const requestMethod: RequestMethod = Reflect.getMetadata(METHOD_METADATA, callbackMethod);
         return {
             targetCallback: (<Function>callbackMethod).bind(instance),
             path: this.validateRoutePath(routePath),
@@ -58,34 +74,25 @@ export class RouterBuilder {
     private bindMethodToRouterProxy(router, pathProperties: RoutePathProperties) {
         const { path, requestMethod, targetCallback } = pathProperties;
 
-        const routerMethod = this.findRouterMethod(router, requestMethod).bind(router);
+        const routerMethod = this.routerMethodFactory.get(router, requestMethod).bind(router);
         const proxy = this.routerProxy.createProxy(targetCallback);
-
         routerMethod(path, proxy);
-    }
 
-    private findRouterMethod(router, requestMethod: RequestMethod) {
-        switch(requestMethod) {
-            case RequestMethod.POST: { return router.post; }
-            case RequestMethod.ALL: { return router.all; }
-            case RequestMethod.DELETE: { return router.delete; }
-            case RequestMethod.PUT: { return router.put; }
-            default: {
-                return router.get;
-            }
+        if (this.mode === NestMode.RUN) {
+            this.logger.log(getRouteMappedMessage(path, requestMethod));
         }
     }
 
-    private fetchRouterPath(routePrototype: Function) {
-        const path = Reflect.getMetadata("path", routePrototype);
+    private fetchRouterPath(metatype: Metatype<Controller>) {
+        const path = Reflect.getMetadata(PATH_METADATA, metatype);
         return this.validateRoutePath(path);
     }
 
-    private validateRoutePath(routePath: string): string {
-        if(typeof routePath === "undefined") {
+    private validateRoutePath(path: string): string {
+        if (isUndefined(path)) {
             throw new UnkownRequestMappingException();
         }
-        return (routePath.charAt(0) !== '/') ? '/' + routePath : routePath;
+        return validatePath(path);
     }
 
 }

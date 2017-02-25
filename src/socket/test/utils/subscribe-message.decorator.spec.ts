@@ -1,11 +1,11 @@
-import "reflect-metadata";
-import { expect } from "chai";
-import { SubscribeMessage } from "../../utils/subscribe-message.decorator";
+import 'reflect-metadata';
+import { expect } from 'chai';
+import { SubscribeMessage } from '../../utils/subscribe-message.decorator';
 
 describe('@SubscribeMessage', () => {
 
     class TestGateway {
-        @SubscribeMessage({ value: "filter" })
+        @SubscribeMessage({ value: 'filter' })
         static fn() {}
     }
 
@@ -14,7 +14,7 @@ describe('@SubscribeMessage', () => {
         const message = Reflect.getMetadata('message', TestGateway.fn);
 
         expect(isMessageMapping).to.be.true;
-        expect(message).to.be.eql("filter");
+        expect(message).to.be.eql('filter');
     });
 
 });

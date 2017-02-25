@@ -1,7 +1,7 @@
-import * as sinon from "sinon";
-import { expect } from "chai";
-import { ExceptionsHandler } from "../../exceptions/exceptions-handler";
-import { Exception } from "../../exceptions/exception";
+import * as sinon from 'sinon';
+import { expect } from 'chai';
+import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
+import { HttpException } from '../../exceptions/http-exception';
 
 describe('ExceptionsHandler', () => {
     let handler: ExceptionsHandler;
@@ -28,14 +28,14 @@ describe('ExceptionsHandler', () => {
             handler.next(new Error(), response);
 
             expect(statusStub.calledWith(500)).to.be.true;
-            expect(jsonStub.calledWith({ message: "Unkown exception" })).to.be.true;
+            expect(jsonStub.calledWith({ message: 'Unkown exception' })).to.be.true;
         });
 
-        it('should method send expected response status code and message when exception is instance of Exception', () => {
+        it('should method send expected response status code and message when exception is instance of HttpException', () => {
             const status = 401;
-            const message = "Unauthorized";
+            const message = 'Unauthorized';
 
-            handler.next(new Exception(message, status), response);
+            handler.next(new HttpException(message, status), response);
 
             expect(statusStub.calledWith(status)).to.be.true;
             expect(jsonStub.calledWith({ message })).to.be.true;

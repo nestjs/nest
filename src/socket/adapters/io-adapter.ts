@@ -1,4 +1,4 @@
-import * as io from "socket.io";
+import * as io from 'socket.io';
 
 export class IoAdapter {
 

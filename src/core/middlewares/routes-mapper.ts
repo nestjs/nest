@@ -1,21 +1,22 @@
-import "reflect-metadata";
-import { RouterBuilder } from "../router/router-builder";
-import { UnkownRequestMappingException } from "../../errors/exceptions/unkown-request-mapping.exception";
-import { RequestMethod } from "../../common/enums/request-method.enum";
+import 'reflect-metadata';
+import { RouterBuilder } from '../router/router-builder';
+import { UnkownRequestMappingException } from '../../errors/exceptions/unkown-request-mapping.exception';
+import { RequestMethod } from '../../common/enums/request-method.enum';
+import { isUndefined, validatePath } from '../../common/utils/shared.utils';
+import { PATH_METADATA } from '../../common/constants';
 
 export class RoutesMapper {
     private readonly routerBuilder = new RouterBuilder();
 
-    mapRouteToRouteProps(routeProto) {
-        const routePath: string = Reflect.getMetadata("path", routeProto);
-
-        if (typeof routePath === "undefined") {
-            return [ this.mapObjectToRouteProps(routeProto) ];
+    mapRouteToRouteProps(routeMetatype) {
+        const routePath: string = Reflect.getMetadata(PATH_METADATA, routeMetatype);
+        if (isUndefined(routePath)) {
+            return [ this.mapObjectToRouteProps(routeMetatype) ];
         }
 
         const paths = this.routerBuilder.scanForPathsFromPrototype(
-            Object.create(routeProto),
-            routeProto.prototype
+            Object.create(routeMetatype),
+            routeMetatype.prototype
         );
 
         return paths.map((singlePath) => ({
@@ -25,18 +26,19 @@ export class RoutesMapper {
     }
 
     private mapObjectToRouteProps(route) {
-        if (typeof route.path === "undefined") {
+        const { path, method } = route;
+        if (isUndefined(path)) {
             throw new UnkownRequestMappingException();
         }
 
         return {
-            path: this.validateRoutePath(route.path),
-            method: (typeof route.method === "undefined") ? RequestMethod.ALL : route.method
+            path: this.validateRoutePath(path),
+            method: (isUndefined(method)) ? RequestMethod.ALL : method
         };
     }
 
-    private validateRoutePath(routePath: string): string {
-        return (routePath.charAt(0) !== '/') ? '/' + routePath : routePath;
+    private validateRoutePath(path: string): string {
+        return validatePath(path);
     }
 
 }

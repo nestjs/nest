@@ -1,9 +1,8 @@
 import { RuntimeException } from "./runtime.exception";
+import { INVALID_MIDDLEWARE_CONFIGURATION } from '../messages';
 
 export class InvalidMiddlewareConfigurationException extends RuntimeException {
-
     constructor() {
-        super(`Invalid middleware configuration passed in module "configure()" method.`);
+        super(INVALID_MIDDLEWARE_CONFIGURATION);
     }
-
 }

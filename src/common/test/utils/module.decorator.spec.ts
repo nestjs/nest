@@ -1,14 +1,14 @@
-import "reflect-metadata";
-import { expect } from "chai";
-import { Module } from "../../utils/module.decorator";
-import { InvalidModuleConfigException } from "../../../errors/exceptions/invalid-module-config.exception";
+import 'reflect-metadata';
+import { expect } from 'chai';
+import { Module } from '../../utils/module.decorator';
+import { InvalidModuleConfigException } from '../../../errors/exceptions/invalid-module-config.exception';
 
 describe('@Module', () => {
     const moduleProps = {
-        components: [ "Test" ],
-        modules: [ "Test" ],
-        exports: [ "Test" ],
-        controllers: [ "Test" ]
+        components: [ 'Test' ],
+        modules: [ 'Test' ],
+        exports: [ 'Test' ],
+        controllers: [ 'Test' ]
     };
 
     @Module(moduleProps)

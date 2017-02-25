@@ -1,20 +1,17 @@
-import "reflect-metadata";
-import { SocketsContainer } from "./container";
-import { ObservableSocket } from "./observable-socket";
-import { ObservableSocketServer } from "./interfaces/observable-socket-server.interface";
-import { IoAdapter } from "./adapters/io-adapter";
+import 'reflect-metadata';
+import { SocketsContainer } from './container';
+import { ObservableSocket } from './observable-socket';
+import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
+import { IoAdapter } from './adapters/io-adapter';
+import { validatePath } from '../common/utils/shared.utils';
 
 export class SocketServerProvider {
 
     constructor(private socketsContainer: SocketsContainer) {}
 
     public scanForSocketServer(namespace: string, port: number): ObservableSocketServer {
-        let observableServer = this.socketsContainer.getSocketSubjects(namespace, port);
-
-        if (!observableServer) {
-            observableServer = this.createSocketServer(namespace, port);
-        }
-        return observableServer;
+        const observableServer = this.socketsContainer.getSocketSubjects(namespace, port);
+        return observableServer ? observableServer : this.createSocketServer(namespace, port);
     }
 
     private createSocketServer(namespace: string, port: number) {
@@ -33,10 +30,7 @@ export class SocketServerProvider {
     }
 
     private validateNamespace(namespace: string): string {
-        if(namespace.charAt(0) !== '/') {
-            return '/' + namespace;
-        }
-        return namespace;
+        return validatePath(namespace);
     }
 
 }
