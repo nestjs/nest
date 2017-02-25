@@ -1,4 +1,3 @@
-const process = require('process');
 import * as clc from 'cli-color';
 
 export class Logger {
