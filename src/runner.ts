@@ -42,7 +42,7 @@ export class NestRunner {
     private static startApplication(applicationMetatype: NestApplicationFactory) {
         const appInstance = this.setupApplication(applicationMetatype);
 
-        this.logger.log(APPLICATION_READY)
+        this.logger.log(APPLICATION_READY);
         appInstance.start();
     }
 

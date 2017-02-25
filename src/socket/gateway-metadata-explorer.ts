@@ -1,6 +1,6 @@
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { isUndefined, isConstructor, isFunction } from '../common/utils/shared.utils';
-import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA, SOCKET_SERVER_METADATA } from './constants';
+import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA, GATEWAY_SERVER_METADATA } from './constants';
 
 export class GatewayMetadataExplorer {
 
@@ -42,7 +42,7 @@ export class GatewayMetadataExplorer {
                 continue;
             }
             
-            const isServer = Reflect.getMetadata(SOCKET_SERVER_METADATA, instance, String(propertyKey));
+            const isServer = Reflect.getMetadata(GATEWAY_SERVER_METADATA, instance, String(propertyKey));
             if (!isUndefined(isServer)) {
                 yield String(propertyKey);
             }
