@@ -4,11 +4,11 @@ import { NestMiddleware } from '../../middlewares/interfaces/nest-middleware.int
 import { Component } from '../../../common/utils/component.decorator';
 import { MiddlewareBuilder } from '../../middlewares/builder';
 import { MiddlewaresModule } from '../../middlewares/middlewares-module';
-import { UnkownMiddlewareException } from '../../../errors/exceptions/unkown-middleware.exception';
 import { InvalidMiddlewareException } from '../../../errors/exceptions/invalid-middleware.exception';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { Controller } from '../../../common/utils/controller.decorator';
 import { RequestMapping } from '../../../common/utils/request-mapping.decorator';
+import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
 
 describe('MiddlewaresModule', () => {
     @Controller({ path: 'test' })
@@ -48,7 +48,7 @@ describe('MiddlewaresModule', () => {
 
     describe('setupRouteMiddleware', () => {
 
-        it('should throw "UnkownMiddlewareException" exception when middlewares is not stored in container', () => {
+        it('should throw "RuntimeException" exception when middlewares is not stored in container', () => {
             const route = { path: 'Test' };
             const configuration = {
                 middlewares: [ TestMiddleware ],
@@ -60,7 +60,7 @@ describe('MiddlewaresModule', () => {
 
             expect(MiddlewaresModule.setupRouteMiddleware.bind(
                 MiddlewaresModule, route, configuration, <any>'Test', <any>app
-            )).throws(UnkownMiddlewareException);
+            )).throws(RuntimeException);
         });
 
         it('should throw "InvalidMiddlewareException" exception when middlewares does not have "resolve" method', () => {
