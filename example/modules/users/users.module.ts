@@ -9,7 +9,7 @@ import { NotificationService } from './notification.service';
 
 @Module({
     controllers: [ UsersController ],
-    components: [ UsersService, ChatGateway, ChatService, NotificationService ],
+    components: [ UsersService ],
     exports: [ UsersService ],
 })
 export class UsersModule {
