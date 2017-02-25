@@ -27,7 +27,7 @@ $ npm install nest.js
 
 JavaScript is awesome. This language is no longer just a trash to create simple animations in the browser. Right now, the front end world is rich in variety of tools. We have a lot of amazing frameworks / libraries such as [Angular](https://angular.io/), [React](https://github.com/facebook/react) or [Vue](https://github.com/vuejs/vue), which improves our development process and makes our applications fast and flexible. 
 
-[Node.js](http://nodejs.org) gave us a possibility to use this language also on the server side. There are a lot of awesome libraries, helpers and tools for node, but non of them do not solve the main problem - the architecture. 
+[Node.js](http://nodejs.org) gave us a possibility to use this language also on the server side. There are a lot of superb libraries, helpers and tools for node, but non of them do not solve the main problem - the architecture. 
 
 We want to create scalable, modern and easy to maintain applications. Nest helps us with it.
 
@@ -43,7 +43,7 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 ## Documentation & Quick Start
 
-Coming soon. [Read more](https://kamilmysliwiec.gitbooks.io/nest/content/)
+[Documentation & Tutorial](https://kamilmysliwiec.gitbooks.io/nest/content/)
 
 ## Future
 
@@ -51,7 +51,7 @@ Nest is very much still a work in progress. There is still some things to finish
 
 - Test utilities
 - Starter repos
-- Config provider
+- Validation helpers
 - and more...
 
 ## People
