@@ -6,5 +6,5 @@
  */
 
 export * from './common'
-export * from './runner';
+export * from './nest-factory';
 export * from './core';

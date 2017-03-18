@@ -1,2 +1,5 @@
-export const APPLICATION_START = `Starting Nest application...`;
-export const APPLICATION_READY = `Nest application is ready!`
+export const messages = {
+    APPLICATION_START: `Starting Nest application...`,
+    APPLICATION_READY: `Nest application is ready!`,
+    UNKOWN_EXCEPTION_MESSAGE: 'Unkown exception'
+};

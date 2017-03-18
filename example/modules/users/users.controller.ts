@@ -1,5 +1,6 @@
 import { UsersService } from "./users.service";
 import { RequestMethod, Controller, RequestMapping } from "./../../../src/";
+import { Inject } from '../../../src/common/utils/inject.decorator';
 
 @Controller({ path: 'users' })
 export class UsersController {

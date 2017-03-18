@@ -5,12 +5,11 @@ import { RouterProxy, RouterProxyCallback } from './router-proxy';
 import { UnkownRequestMappingException } from '../../errors/exceptions/unkown-request-mapping.exception';
 import { ExpressAdapter } from '../adapters/express-adapter';
 import { Metatype } from '../../common/interfaces/metatype.interface';
-import { isUndefined, isConstructor, validatePath } from '../../common/utils/shared.utils';
+import { isUndefined, isConstructor, validatePath, isFunction } from '../../common/utils/shared.utils';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { PATH_METADATA, METHOD_METADATA } from '../../common/constants';
 import { Logger } from '../../common/services/logger.service';
 import { getRouteMappedMessage } from '../helpers/messages';
-import { NestMode } from '../../common/enums/nest-mode.enum';
 
 export class RouterBuilder {
     private readonly routerMethodFactory = new RouterMethodFactory();
@@ -18,8 +17,7 @@ export class RouterBuilder {
 
     constructor(
         private routerProxy?: RouterProxy,
-        private expressAdapter?: ExpressAdapter,
-        private mode = NestMode.RUN) {}
+        private expressAdapter?: ExpressAdapter) {}
 
     public build(instance: Controller, metatype: Metatype<Controller>) {
         const router = (<any>this.expressAdapter).createRouter();
@@ -43,7 +41,7 @@ export class RouterBuilder {
                 if (descriptor.set || descriptor.get) {
                     return false;
                 }
-                return !isConstructor(method);
+                return !isConstructor(method) && isFunction(instancePrototype[method]);
             })
             .map((methodName) => this.exploreMethodMetadata(instance, instancePrototype, methodName))
             .filter((path) => path !== null);
@@ -78,9 +76,7 @@ export class RouterBuilder {
         const proxy = this.routerProxy.createProxy(targetCallback);
         routerMethod(path, proxy);
 
-        if (this.mode === NestMode.RUN) {
-            this.logger.log(getRouteMappedMessage(path, requestMethod));
-        }
+        this.logger.log(getRouteMappedMessage(path, requestMethod));
     }
 
     private fetchRouterPath(metatype: Metatype<Controller>) {

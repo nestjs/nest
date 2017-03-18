@@ -23,7 +23,7 @@ describe('RouterBuilder', () => {
 
     let routerBuilder: RouterBuilder;
     beforeEach(() => {
-        routerBuilder = new RouterBuilder(null, null, NestMode.TEST);
+        routerBuilder = new RouterBuilder(null, null);
     });
 
     describe('scanForPathsFromPrototype', () => {

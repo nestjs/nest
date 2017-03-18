@@ -1,13 +1,13 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { SocketGateway } from '../../utils/socket-gateway.decorator';
+import { WebSocketGateway } from '../../utils/socket-gateway.decorator';
 
-describe('@SocketGateway', () => {
+describe('@WebSocketGateway', () => {
 
-    @SocketGateway({ port: 80, namespace: '/' })
+    @WebSocketGateway({ port: 80, namespace: '/' })
     class TestGateway {}
 
-    it('should decorate type with expected metadata', () => {
+    it('should decorate transport with expected metadata', () => {
         const isGateway = Reflect.getMetadata('__isGateway', TestGateway);
         const port = Reflect.getMetadata('port', TestGateway);
         const namespace = Reflect.getMetadata('namespace', TestGateway);

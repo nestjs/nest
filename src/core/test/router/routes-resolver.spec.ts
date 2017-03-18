@@ -4,7 +4,6 @@ import { RoutesResolver } from '../../router/routes-resolver';
 import { Controller } from '../../../common/utils/controller.decorator';
 import { RequestMapping } from '../../../common/utils/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { NestMode } from '../../../common/enums/nest-mode.enum';
 
 describe('RoutesResolver', () => {
     @Controller({ path: 'global' })
@@ -29,7 +28,7 @@ describe('RoutesResolver', () => {
     beforeEach(() => {
         routesResolver = new RoutesResolver(null, {
             createRouter: () => router,
-        }, NestMode.TEST);
+        });
     });
 
     describe('setupRouters', () => {

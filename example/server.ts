@@ -1,5 +1,10 @@
-import { NestRunner } from './../src/';
-import { Application } from './app';
+import { NestFactory } from './../src/';
 import { ApplicationModule } from './modules/app.module';
 
-NestRunner.run(Application, ApplicationModule);
+const port = 3001;
+const app = NestFactory.create(ApplicationModule);
+
+const server = app.listen(port, () => {
+    console.log('Application listen on port:', port);
+    server.close();
+});

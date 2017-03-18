@@ -3,9 +3,6 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { AuthMiddleware } from './auth.middleware';
 import { MiddlewareBuilder } from '../../../src/core/middlewares/builder';
-import { ChatGateway } from './chat.gateway';
-import { ChatService } from './chat.service';
-import { NotificationService } from './notification.service';
 
 @Module({
     controllers: [ UsersController ],

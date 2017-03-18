@@ -4,12 +4,12 @@ import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA, GATEWAY_SERVER_METADATA } f
 
 export class GatewayMetadataExplorer {
 
-    static explore(instance: NestGateway): MessageMappingProperties[] {
+    explore(instance: NestGateway): MessageMappingProperties[] {
         const instancePrototype = Object.getPrototypeOf(instance);
         return this.scanForHandlersFromPrototype(instance, instancePrototype)
     }
 
-    static scanForHandlersFromPrototype(instance: NestGateway, instancePrototype): MessageMappingProperties[] {
+    scanForHandlersFromPrototype(instance: NestGateway, instancePrototype): MessageMappingProperties[] {
         return Object.getOwnPropertyNames(instancePrototype)
             .filter((method) => {
                 const descriptor = Object.getOwnPropertyDescriptor(instancePrototype, method);
@@ -22,7 +22,7 @@ export class GatewayMetadataExplorer {
             .filter((mapper) => mapper !== null);
     }
 
-    static exploreMethodMetadata(instance, instancePrototype, methodName: string): MessageMappingProperties {
+    exploreMethodMetadata(instance, instancePrototype, methodName: string): MessageMappingProperties {
         const callbackMethod = instancePrototype[methodName];
         const isMessageMapping = Reflect.getMetadata(MESSAGE_MAPPING_METADATA, callbackMethod);
 
@@ -36,15 +36,14 @@ export class GatewayMetadataExplorer {
         };
     }
 
-    static *scanForServerHooks(instance: NestGateway): IterableIterator<string> {
+    *scanForServerHooks(instance: NestGateway): IterableIterator<string> {
         for (const propertyKey in instance) {
-            if (isFunction(propertyKey)) {
-                continue;
-            }
-            
-            const isServer = Reflect.getMetadata(GATEWAY_SERVER_METADATA, instance, String(propertyKey));
+            if (isFunction(propertyKey)) continue;
+
+            const property = String(propertyKey);
+            const isServer = Reflect.getMetadata(GATEWAY_SERVER_METADATA, instance, property);
             if (!isUndefined(isServer)) {
-                yield String(propertyKey);
+                yield property;
             }
         }
     }

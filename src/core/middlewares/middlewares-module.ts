@@ -78,8 +78,8 @@ export class MiddlewaresModule {
         const { path, method } = route;
 
         [].concat(config.middlewares).map((middlewareMetatype) => {
-            const middlewaresCollection = this.container.getMiddlewares(module);
-            const middleware: MiddlewareWrapper = middlewaresCollection.get(middlewareMetatype.name);
+            const collection = this.container.getMiddlewares(module);
+            const middleware: MiddlewareWrapper = collection.get(middlewareMetatype.name);
             if (isUndefined(middleware)) {
                 throw new RuntimeException();
             }

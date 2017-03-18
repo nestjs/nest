@@ -2,12 +2,16 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
 import { HttpException } from '../../exceptions/http-exception';
+import { Logger } from '../../../common/services/logger.service';
+import { NestMode } from '../../../common/enums/nest-mode.enum';
 
 describe('ExceptionsHandler', () => {
     let handler: ExceptionsHandler;
     let statusStub: sinon.SinonStub;
     let jsonStub: sinon.SinonStub;
     let response;
+
+    before(() => Logger.setMode(NestMode.TEST));
 
     beforeEach(() => {
         handler = new ExceptionsHandler();

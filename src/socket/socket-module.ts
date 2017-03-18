@@ -13,7 +13,8 @@ export class SocketModule {
 
     static setup(container: NestContainer) {
         this.subjectsController = new SubjectsController(
-            new SocketServerProvider(this.socketsContainer));
+            new SocketServerProvider(this.socketsContainer)
+        );
 
         const modules = container.getModules();
         modules.forEach(({ components }) => this.hookGatewaysIntoServers(components));

@@ -9,7 +9,7 @@ describe('@RequestMapping', () => {
         method: RequestMethod.ALL
     };
 
-    it('should decorate type with expected request metadata', () => {
+    it('should enhance transport with expected request metadata', () => {
         class Test {
             @RequestMapping(requestProps)
             static test() {}

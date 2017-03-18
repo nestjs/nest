@@ -7,25 +7,27 @@ import { GatewayMetadataExplorer, MessageMappingProperties } from './gateway-met
 import { Subject } from 'rxjs/Subject';
 import { SocketServerProvider } from './socket-server-provider';
 import { NAMESPACE_METADATA, PORT_METADATA } from './constants';
+import { Metatype } from '../common/interfaces/metatype.interface';
 
 export class SubjectsController {
+    private readonly metadataExplorer = new GatewayMetadataExplorer();
     private readonly CONNECTION_EVENT = 'connection';
     private readonly DISCONNECT_EVENT = 'disconnect';
 
     constructor(private socketServerProvider: SocketServerProvider) {}
 
-    hookGatewayIntoServer(instance: NestGateway, componentType: Injectable) {
-        const namespace = Reflect.getMetadata(NAMESPACE_METADATA, componentType) || '';
-        const port = Reflect.getMetadata(PORT_METADATA, componentType) || 80;
+    hookGatewayIntoServer(instance: NestGateway, metatype: Metatype<Injectable>) {
+        const namespace = Reflect.getMetadata(NAMESPACE_METADATA, metatype) || '';
+        const port = Reflect.getMetadata(PORT_METADATA, metatype) || 80;
 
         if (!Number.isInteger(port)) {
-            throw new InvalidSocketPortException(port, componentType);
+            throw new InvalidSocketPortException(port, metatype);
         }
         this.subscribeObservableServer(instance, namespace, port);
     }
 
     private subscribeObservableServer(instance: NestGateway, namespace: string, port: number) {
-        const messageHandlers = GatewayMetadataExplorer.explore(instance);
+        const messageHandlers = this.metadataExplorer.explore(instance);
         const observableServer = this.socketServerProvider.scanForSocketServer(namespace, port);
 
         this.hookServerToProperties(instance, observableServer.server);
@@ -33,7 +35,7 @@ export class SubjectsController {
     }
 
     private hookServerToProperties(instance: NestGateway, server) {
-        for (const propertyKey of GatewayMetadataExplorer.scanForServerHooks(instance)) {
+        for (const propertyKey of this.metadataExplorer.scanForServerHooks(instance)) {
             Reflect.set(instance, propertyKey, server);
         }
     }

@@ -3,15 +3,14 @@ import { RequestMappingMetadata } from '../interfaces/request-mapping-metadata.i
 import { RequestMethod } from '../enums/request-method.enum';
 import { PATH_METADATA, METHOD_METADATA } from '../constants';
 
-const defaultMetadata = { path: '/', method: RequestMethod.GET };
+const defaultMetadata = { [PATH_METADATA]: '/', [METHOD_METADATA]: RequestMethod.GET };
 export const RequestMapping = (metadata: RequestMappingMetadata = defaultMetadata): MethodDecorator => {
-    const path = metadata.path || '/';
-    const requestMethod = metadata.method || RequestMethod.GET;
+    const path = metadata[PATH_METADATA] || '/';
+    const requestMethod = metadata[METHOD_METADATA] || RequestMethod.GET;
 
-    return function(target, key, descriptor: PropertyDescriptor) {
+    return (target, key, descriptor: PropertyDescriptor) => {
         Reflect.defineMetadata(PATH_METADATA, path, descriptor.value);
         Reflect.defineMetadata(METHOD_METADATA, requestMethod, descriptor.value);
-
         return descriptor;
     }
 };

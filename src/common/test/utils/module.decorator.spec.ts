@@ -14,7 +14,7 @@ describe('@Module', () => {
     @Module(moduleProps)
     class TestModule {}
 
-    it('should decorate type with expected module metadata', () => {
+    it('should enhance transport with expected module metadata', () => {
         const modules = Reflect.getMetadata('modules', TestModule);
         const components = Reflect.getMetadata('components', TestModule);
         const exports = Reflect.getMetadata('exports', TestModule);

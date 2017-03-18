@@ -48,5 +48,31 @@ describe('Module', () => {
         }]);
     });
 
+    it('should add provider instead of component when object is passed', () => {
+        const addProvider = sinon.spy();
+        module.addProvider = addProvider;
+
+        const type = () => {};
+        const provider = { provide: type, useValue: 'test' };
+
+        module.addComponent(<any>provider);
+        expect((<sinon.SinonSpy>addProvider).called).to.be.true;
+    });
+
+    it('should add provider', () => {
+        const collection = new Map();
+        const setSpy = sinon.spy(collection, 'set');
+        (<any>module)['_components'] = collection;
+
+        const type = () => {};
+        const provider = { provide: type, useValue: 'test' };
+
+        module.addProvider(provider);
+        expect(setSpy.getCall(0).args).to.deep.equal([ type.name, {
+            metatype: type,
+            instance: provider.useValue,
+            isResolved: true,
+        }]);
+    });
 
 });

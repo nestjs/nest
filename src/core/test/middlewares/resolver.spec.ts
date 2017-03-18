@@ -5,6 +5,7 @@ import { MiddlewaresContainer } from '../../middlewares/container';
 import { Component } from '../../../common/utils/component.decorator';
 import { NestMiddleware } from '../../middlewares/interfaces/nest-middleware.interface';
 import { RoutesMapper } from '../../middlewares/routes-mapper';
+import { Logger } from '../../../common/services/logger.service';
 import { NestMode } from '../../../common/enums/nest-mode.enum';
 
 describe('MiddlewaresResolver', () => {
@@ -19,9 +20,11 @@ describe('MiddlewaresResolver', () => {
     let container: MiddlewaresContainer;
     let mockContainer: sinon.SinonMock;
 
+    before(() => Logger.setMode(NestMode.TEST));
+
     beforeEach(() => {
         container = new MiddlewaresContainer(new RoutesMapper());
-        resolver = new MiddlewaresResolver(container, NestMode.TEST);
+        resolver = new MiddlewaresResolver(container);
         mockContainer = sinon.mock(container);
     });
 
@@ -33,14 +36,15 @@ describe('MiddlewaresResolver', () => {
             metatype: TestMiddleware
         });
 
+        const module = <any>{ metatype: { name: '' }};
         mockContainer.expects('getMiddlewares').returns(middlewares);
-        resolver.resolveInstances(null, null);
+        resolver.resolveInstances(module, null);
 
         expect(loadInstanceOfMiddleware.callCount).to.be.equal(middlewares.size);
         expect(loadInstanceOfMiddleware.calledWith(
             TestMiddleware,
             middlewares,
-            null
+            module
         )).to.be.true;
 
         loadInstanceOfMiddleware.restore();

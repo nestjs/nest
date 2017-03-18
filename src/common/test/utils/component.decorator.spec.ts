@@ -3,7 +3,7 @@ import 'mocha';
 import { expect } from 'chai';
 import { Component } from '../../utils/component.decorator';
 
-describe('@Injectable', () => {
+describe('@Component', () => {
 
     @Component()
     class TestComponent {
@@ -12,7 +12,7 @@ describe('@Injectable', () => {
             test: string) {}
     }
 
-    it('should decorate type with "design:paramtypes" metadata', () => {
+    it('should enhance transport with "design:paramtypes" metadata', () => {
         const constructorParams = Reflect.getMetadata('design:paramtypes', TestComponent);
 
         expect(constructorParams[0]).to.be.eql(Number);

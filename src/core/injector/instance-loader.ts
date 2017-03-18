@@ -5,15 +5,12 @@ import { Controller } from '../../common/interfaces/controller.interface';
 import { Module } from './module';
 import { Logger } from '../../common/services/logger.service';
 import { getModuleInitMessage } from '../helpers/messages';
-import { NestMode } from '../../common/enums/nest-mode.enum';
 
 export class InstanceLoader {
     private injector = new Injector();
     private readonly logger = new Logger(InstanceLoader.name);
 
-    constructor(
-        private container: NestContainer,
-        private mode = NestMode.RUN) {}
+    constructor(private container: NestContainer) {}
 
     createInstancesOfDependencies() {
         const modules = this.container.getModules();
@@ -33,10 +30,7 @@ export class InstanceLoader {
         modules.forEach((module, name) => {
             this.createInstancesOfComponents(module);
             this.createInstancesOfRoutes(module);
-
-            if (this.mode === NestMode.RUN) {
-                this.logger.log(getModuleInitMessage(name))
-            }
+            this.logger.log(getModuleInitMessage(name));
         })
     }
 

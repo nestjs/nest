@@ -9,13 +9,14 @@
     "experimentalDecorators": true,
     "target": "es6",
     "sourceMap": false,
-    "outDir": "node_modules/nest"
+    "outDir": "node_modules/nest.js"
   },
   "files": [
     "src/index.ts"
   ],
   "include": [
-    "src/socket/utils/**.ts"
+    "src/socket/**/*.ts",
+    "src/testing/*.ts"
   ],
   "exclude": [
     "node_modules"

@@ -1,13 +1,15 @@
 {
   "name": "nest.js",
-  "version": "1.0.0-alpha-10",
+  "version": "1.0.0-alpha-14",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
-    "start": "npm run build:live",
+    "start": "concurrently \"npm run build:live\" \"npm run microservice:live\"",
     "build:live": "nodemon -e ts --watch src index.js",
     "build": "node index.js",
-    "compile": "tsc -p configs/tsconfig.prod.json",
+    "microservice:live": "nodemon -e ts --watch src microservice.js",
+    "microservice": "node microservice.js",
+    "compile": "tsc -p tsconfig.prod.json",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
@@ -34,20 +36,25 @@
   "author": "Kamil Mysliwiec",
   "license": "ISC",
   "dependencies": {
-    "typescript": "^2.1.4",
+    "amqplib": "^0.5.1",
     "cli-color": "^1.1.0",
     "express": "^4.14.0",
+    "json-socket": "^0.2.1",
+    "redis": "^2.6.5",
     "reflect-metadata": "^0.1.9",
     "rxjs": "^5.0.3",
-    "socket.io": "^1.7.2"
+    "socket.io": "^1.7.2",
+    "typescript": "^2.2.1"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
     "@types/mocha": "^2.2.38",
     "@types/node": "^7.0.5",
+    "@types/redis": "^0.12.36",
     "@types/sinon": "^1.16.34",
     "awesome-typescript-loader": "^3.0.0-beta.18",
     "chai": "^3.5.0",
+    "concurrently": "^3.4.0",
     "core-js": "^2.4.1",
     "coveralls": "^2.11.16",
     "imports-loader": "^0.7.0",

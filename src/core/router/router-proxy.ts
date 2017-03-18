@@ -7,7 +7,10 @@ export class RouterProxy {
     createProxy(targetCallback: RouterProxyCallback) {
         return (req, res, next) => {
             try {
-                Promise.resolve(targetCallback(req, res, next)).catch((e) => {
+                Promise
+                    .resolve(targetCallback(req, res, next))
+                    .catch((e) => {
+
                     this.exceptionsHandler.next(e, res);
                 });
             }

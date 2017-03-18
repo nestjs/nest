@@ -10,11 +10,11 @@ export class SocketsContainer {
         });
     }
 
-    storeSocketSubjects(namespace: string, port: number, observableServer: ObservableSocketServer) {
+    storeSocketSubjects(namespace: string, port: number, server: ObservableSocketServer) {
         this.socketSubjects.set({
             namespace,
             port
-        }, observableServer);
+        }, server);
     }
 
 }

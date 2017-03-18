@@ -64,24 +64,20 @@ export class Injector {
         });
     }
 
-    private resolveConstructorParams<T>(type: Metatype<T>, module: Module, callback: Function) {
-        let constructorParams = Reflect.getMetadata(PARAMTYPES_METADATA, type) || [];
-        if ((<any>type).dependencies) {
-            constructorParams = (<any>type).dependencies;
-        }
-
+    resolveConstructorParams<T>(type: Metatype<T>, module: Module, callback: Function) {
+        const constructorParams = Reflect.getMetadata(PARAMTYPES_METADATA, type) || [];
         const argsInstances = constructorParams.map(param => this.resolveSingleParam<T>(type, param, module));
         callback(argsInstances);
     }
 
-    private resolveSingleParam<T>(type: Metatype<T>, param: Metatype<any>, module: Module) {
+    resolveSingleParam<T>(type: Metatype<T>, param: Metatype<any>, module: Module) {
         if (isUndefined(param)) {
             throw new RuntimeException('');
         }
         return this.resolveComponentInstance<T>(module, param, type);
     }
 
-    private resolveComponentInstance<T>(module: Module, param: Metatype<any>, metatype: Metatype<T>) {
+    resolveComponentInstance<T>(module: Module, param: Metatype<any>, metatype: Metatype<T>) {
         const components = module.components;
         const instanceWrapper = this.scanForComponent<T>(components, param, module, metatype);
 
@@ -91,7 +87,7 @@ export class Injector {
         return instanceWrapper.instance;
     }
 
-    private scanForComponent<T>(
+    scanForComponent<T>(
         components: Map<string, any>,
         param: Metatype<any>,
         module: Module,
@@ -108,11 +104,11 @@ export class Injector {
         return instanceWrapper;
     }
 
-    private scanForComponentInRelatedModules(module: Module, metatype: Metatype<any>) {
-        const relatedModules = module.relatedModules;
+    scanForComponentInRelatedModules(module: Module, metatype: Metatype<any>) {
+        const relatedModules = module.relatedModules || [];
         let component = null;
 
-        relatedModules.forEach((relatedModule) => {
+        (<Array<any>>relatedModules).forEach((relatedModule) => {
             const { components, exports } = relatedModule;
             if (!exports.has(metatype.name) || !components.has(metatype.name)) { return; }
 

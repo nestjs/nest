@@ -47,8 +47,8 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 ## Starter repos
 
-- [TypeScript] (https://github.com/kamilmysliwiec/nest-typescript-starter)
-- [Babel] (https://github.com/kamilmysliwiec/nest-babel-starter/)
+- [TypeScript](https://github.com/kamilmysliwiec/nest-typescript-starter)
+- [Babel](https://github.com/kamilmysliwiec/nest-babel-starter/)
 
 ## Future
 

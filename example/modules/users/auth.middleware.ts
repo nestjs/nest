@@ -1,4 +1,4 @@
-import { UsersService } from "./users.service";
+import { UsersService } from './users.service';
 import { HttpException } from '../../../src/core/exceptions/http-exception';
 import { Middleware } from '../../../src/common/utils';
 import { NestMiddleware } from '../../../src/core/middlewares/interfaces/nest-middleware.interface';
@@ -10,7 +10,7 @@ export class AuthMiddleware implements NestMiddleware {
 
     resolve() {
         return (req, res, next) => {
-            const userName = req.headers["x-access-token"];
+            const userName = req.headers['x-access-token'];
             const users = this.usersService.getUsers();
 
             const user = users.find((user) => user.name === userName);

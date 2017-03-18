@@ -7,7 +7,7 @@ import { validatePath } from '../common/utils/shared.utils';
 
 export class SocketServerProvider {
 
-    constructor(private socketsContainer: SocketsContainer) {}
+    constructor(private readonly socketsContainer: SocketsContainer,) {}
 
     public scanForSocketServer(namespace: string, port: number): ObservableSocketServer {
         const observableServer = this.socketsContainer.getSocketSubjects(namespace, port);

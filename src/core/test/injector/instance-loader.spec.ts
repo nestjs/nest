@@ -6,6 +6,7 @@ import { Injector } from '../../injector/injector';
 import { Controller } from '../../../common/utils/controller.decorator';
 import { Component } from '../../../common/utils/component.decorator';
 import { NestMode } from '../../../common/enums/nest-mode.enum';
+import { Logger } from '../../../common/services/logger.service';
 
 describe('InstanceLoader', () => {
     let loader: InstanceLoader;
@@ -18,9 +19,11 @@ describe('InstanceLoader', () => {
     @Component()
     class TestComponent {}
 
+    before(() => Logger.setMode(NestMode.TEST));
+
     beforeEach(() => {
         container = new NestContainer();
-        loader = new InstanceLoader(container, NestMode.TEST);
+        loader = new InstanceLoader(container);
         mockContainer = sinon.mock(container);
     });
 

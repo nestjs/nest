@@ -1,14 +1,13 @@
-import { SocketGateway } from '../../../src/socket/utils/socket-gateway.decorator';
+import { WebSocketGateway } from '../../../src/socket/utils/socket-gateway.decorator';
 import { SubscribeMessage } from '../../../src/socket/utils/subscribe-message.decorator';
 import { Subject } from 'rxjs/Subject';
 import { GatewayServer } from '../../../src/socket/utils/gateway-server.decorator';
 
-@SocketGateway({ port: 2000 })
+@WebSocketGateway({ port: 2000 })
 export class ChatGateway {
     private msg$ = new Subject<any>();
 
-    @GatewayServer
-    server;
+    @GatewayServer server;
 
     get msgStream() {
         return this.msg$.asObservable();
