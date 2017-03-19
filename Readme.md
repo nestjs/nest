@@ -32,7 +32,7 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 ## Features
 
-- Microservices support with message patterns (transport via TCP / [Redis](https://redis.io/))
+- Reactive **microservices** support with message patterns (transport via TCP / [Redis](https://redis.io/))
 - Compatible with both TypeScript and ES6 (I strongly recommend to use [TypeScript](http://www.typescriptlang.org))
 - Based on well-known libraries ([Express](https://github.com/expressjs/express) / [socket.io](https://github.com/socketio/socket.io)) so you could share your experience 
 - Easy to learn - syntax is similar to [Angular](https://angular.io/) / [Spring](https://spring.io) (Java)
