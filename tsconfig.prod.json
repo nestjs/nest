@@ -15,7 +15,8 @@
     "src/index.ts"
   ],
   "include": [
-    "src/socket/**/*.ts",
+    "src/websockets/**/*.ts",
+    "src/microservices/**/*.ts",
     "src/testing/*.ts"
   ],
   "exclude": [
