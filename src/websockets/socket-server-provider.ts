@@ -7,10 +7,10 @@ import { validatePath } from '../common/utils/shared.utils';
 
 export class SocketServerProvider {
 
-    constructor(private readonly socketsContainer: SocketsContainer,) {}
+    constructor(private readonly socketsContainer: SocketsContainer) {}
 
     public scanForSocketServer(namespace: string, port: number): ObservableSocketServer {
-        const observableServer = this.socketsContainer.getSocketSubjects(namespace, port);
+        const observableServer = this.socketsContainer.getSocketServer(namespace, port);
         return observableServer ? observableServer : this.createSocketServer(namespace, port);
     }
 
@@ -18,7 +18,7 @@ export class SocketServerProvider {
         const server = this.getServerOfNamespace(namespace, port);
         const observableSocket = ObservableSocket.create(server);
 
-        this.socketsContainer.storeSocketSubjects(namespace, port, observableSocket);
+        this.socketsContainer.storeObservableServer(namespace, port, observableSocket);
         return observableSocket;
     }
 

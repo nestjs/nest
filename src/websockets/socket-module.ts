@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { NestContainer, InstanceWrapper } from '../core/injector/container';
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { SocketsContainer } from './container';
-import { SubjectsController } from './subjects-controller';
+import { WebSocketsController } from './web-sockets-controller';
 import { Injectable } from '../common/interfaces/injectable.interface';
 import { SocketServerProvider } from './socket-server-provider';
 import { GATEWAY_METADATA } from './constants';
@@ -12,7 +12,7 @@ export class SocketModule {
     private static subjectsController;
 
     static setup(container: NestContainer) {
-        this.subjectsController = new SubjectsController(
+        this.subjectsController = new WebSocketsController(
             new SocketServerProvider(this.socketsContainer)
         );
 

@@ -19,7 +19,7 @@ export class GatewayMetadataExplorer {
                 return !isConstructor(method) && isFunction(instancePrototype[method]);
             })
             .map((methodName) => this.exploreMethodMetadata(instance, instancePrototype, methodName))
-            .filter((mapper) => mapper !== null);
+            .filter((metadata) => metadata !== null);
     }
 
     exploreMethodMetadata(instance, instancePrototype, methodName: string): MessageMappingProperties {
@@ -42,9 +42,9 @@ export class GatewayMetadataExplorer {
 
             const property = String(propertyKey);
             const isServer = Reflect.getMetadata(GATEWAY_SERVER_METADATA, instance, property);
-            if (!isUndefined(isServer)) {
-                yield property;
-            }
+            if (isUndefined(isServer)) continue;
+
+            yield property;
         }
     }
 

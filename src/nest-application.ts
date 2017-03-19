@@ -1,6 +1,6 @@
 import { Application } from 'express';
 import { MiddlewaresModule } from './core/middlewares/middlewares-module';
-import { SocketModule } from './socket/socket-module';
+import { SocketModule } from './websockets/socket-module';
 import { NestContainer } from './core/injector/container';
 import { ExpressAdapter } from './core/adapters/express-adapter';
 import { RoutesResolver } from './core/router/routes-resolver';

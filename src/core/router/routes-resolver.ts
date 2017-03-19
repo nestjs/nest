@@ -16,20 +16,20 @@ export class RoutesResolver {
         this.routerBuilder = new RouterBuilder(this.routerProxy, expressAdapter);
     }
 
-    resolve(expressInstance: Application) {
+    resolve(express: Application) {
         const modules = this.container.getModules();
-        modules.forEach(({ routes }) => this.setupRouters(routes, expressInstance));
+        modules.forEach(({ routes }) => this.setupRouters(routes, express));
     }
 
     setupRouters(
         routes: Map<string, InstanceWrapper<Controller>>,
-        expressInstance: Application) {
+        express: Application) {
 
         routes.forEach(({ instance, metatype }) => {
             this.logger.log(getControllerMappingMessage(metatype.name));
 
             const { path, router } = this.routerBuilder.build(instance, metatype);
-            expressInstance.use(path, router);
+            express.use(path, router);
         });
     }
 }

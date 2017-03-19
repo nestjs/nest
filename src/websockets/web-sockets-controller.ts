@@ -9,7 +9,7 @@ import { SocketServerProvider } from './socket-server-provider';
 import { NAMESPACE_METADATA, PORT_METADATA } from './constants';
 import { Metatype } from '../common/interfaces/metatype.interface';
 
-export class SubjectsController {
+export class WebSocketsController {
     private readonly metadataExplorer = new GatewayMetadataExplorer();
     private readonly CONNECTION_EVENT = 'connection';
     private readonly DISCONNECT_EVENT = 'disconnect';
@@ -26,7 +26,7 @@ export class SubjectsController {
         this.subscribeObservableServer(instance, namespace, port);
     }
 
-    private subscribeObservableServer(instance: NestGateway, namespace: string, port: number) {
+    subscribeObservableServer(instance: NestGateway, namespace: string, port: number) {
         const messageHandlers = this.metadataExplorer.explore(instance);
         const observableServer = this.socketServerProvider.scanForSocketServer(namespace, port);
 
@@ -34,13 +34,7 @@ export class SubjectsController {
         this.subscribeEvents(instance, messageHandlers, observableServer);
     }
 
-    private hookServerToProperties(instance: NestGateway, server) {
-        for (const propertyKey of this.metadataExplorer.scanForServerHooks(instance)) {
-            Reflect.set(instance, propertyKey, server);
-        }
-    }
-
-    private subscribeEvents(
+    subscribeEvents(
         instance: NestGateway,
         messageHandlers: MessageMappingProperties[],
         observableServer: ObservableSocketServer) {
@@ -53,44 +47,60 @@ export class SubjectsController {
         } = observableServer;
 
         this.subscribeInitEvent(instance, init);
-
         init.next(server);
-        server.on(this.CONNECTION_EVENT, (client) => {
-            this.subscribeConnectionEvent(instance, connection);
-            connection.next(client);
 
-            this.subscribeMessages(messageHandlers, client, instance);
-            this.subscribeDisconnectEvent(instance, disconnect);
-
-            client.on(this.DISCONNECT_EVENT, (client) => disconnect.next(client));
-        });
+        server.on(
+            this.CONNECTION_EVENT,
+            this.getConnectionHandler(this, instance, messageHandlers, disconnect, connection)
+        );
     }
 
-    private subscribeInitEvent(instance: NestGateway, event: Subject<any>) {
+    getConnectionHandler(
+        context: WebSocketsController,
+        instance: NestGateway,
+        messageHandlers: MessageMappingProperties[],
+        disconnect: Subject<any>,
+        connection: Subject<any>) {
+
+        return (client) => {
+            context.subscribeConnectionEvent(instance, connection);
+            connection.next(client);
+
+            context.subscribeMessages(messageHandlers, client, instance);
+            context.subscribeDisconnectEvent(instance, disconnect);
+
+            client.on(context.DISCONNECT_EVENT, (client) => disconnect.next(client));
+        }
+    }
+
+    subscribeInitEvent(instance: NestGateway, event: Subject<any>) {
         if (instance.afterInit) {
             event.subscribe(instance.afterInit.bind(instance));
         }
     }
 
-    private subscribeConnectionEvent(instance: NestGateway, event: Subject<any>) {
+    subscribeConnectionEvent(instance: NestGateway, event: Subject<any>) {
         if (instance.handleConnection) {
             event.subscribe(instance.handleConnection.bind(instance));
         }
     }
 
-    private subscribeDisconnectEvent(instance: NestGateway, event: Subject<any>) {
+    subscribeDisconnectEvent(instance: NestGateway, event: Subject<any>) {
         if (instance.handleDisconnect) {
             event.subscribe(instance.handleDisconnect.bind(instance));
         }
     }
 
-    private subscribeMessages(messageHandlers: MessageMappingProperties[], client, instance: NestGateway) {
+    subscribeMessages(messageHandlers: MessageMappingProperties[], client, instance: NestGateway) {
         messageHandlers.map(({ message, targetCallback }) => {
-            client.on(
-                message,
-                targetCallback.bind(instance, client),
-            );
+            client.on(message, targetCallback.bind(instance, client));
         });
+    }
+
+    private hookServerToProperties(instance: NestGateway, server) {
+        for (const propertyKey of this.metadataExplorer.scanForServerHooks(instance)) {
+            Reflect.set(instance, propertyKey, server);
+        }
     }
 
 }

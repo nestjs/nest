@@ -15,14 +15,18 @@ export class ClientTCP extends ClientProxy {
         this.host = host || this.DEFAULT_HOST;
     }
 
-    sendSingleMessage(msg, callback) {
-        jsocket.sendSingleMessageAndReceive(this.port, this.host, msg, (err, res) => {
+    sendSingleMessage(msg, callback: Function) {
+        jsocket.sendSingleMessageAndReceive(this.port, this.host, msg, this.createCallback(callback));
+    }
+
+    createCallback(callback: Function) {
+        return (err, res) => {
             if (err) {
                 callback(err);
                 return;
             }
             callback(res.err, res.response);
-        });
+        }
     }
 
 }

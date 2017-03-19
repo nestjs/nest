@@ -7,6 +7,7 @@ export class ClientRedis extends ClientProxy {
     private readonly logger = new Logger(ClientProxy.name);
     private readonly DEFAULT_URL = 'redis://localhost:6379';
     private readonly url: string;
+
     private pub: redis.RedisClient;
     private sub: redis.RedisClient;
 
@@ -19,17 +20,27 @@ export class ClientRedis extends ClientProxy {
 
     sendSingleMessage(msg, callback: Function) {
         const pattern = JSON.stringify(msg.pattern);
-        const listener = (channel, msg) => {
+        const subscription = (channel, msg) => {
             const { err, response } = JSON.parse(msg);
             callback(err, response);
 
             this.sub.unsubscribe(this.getResPatternName(pattern));
-            this.sub.removeListener('message', listener);
+            this.sub.removeListener('message', subscription);
         };
-        this.sub.on('message', listener);
 
+        this.sub.on('message', subscription);
         this.sub.subscribe(this.getResPatternName(pattern));
         this.pub.publish(this.getAckPatternName(pattern), JSON.stringify(msg));
+
+        return subscription;
+    }
+
+    getAckPatternName(pattern: string): string {
+        return `${pattern}_ack`;
+    }
+
+    getResPatternName(pattern: string): string {
+        return `${pattern}_res`;
     }
 
     private init() {
@@ -46,14 +57,6 @@ export class ClientRedis extends ClientProxy {
 
     private handleErrors(stream) {
         stream.on('error', (err) => this.logger.error(err));
-    }
-
-    private getAckPatternName(pattern: string): string {
-        return `${pattern}_ack`;
-    }
-
-    private getResPatternName(pattern: string): string {
-        return `${pattern}_res`;
     }
 
 }

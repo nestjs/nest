@@ -14,10 +14,9 @@ export class Test {
 
     static createTestingModule(metadata: ModuleMetadata) {
         Logger.setMode(NestMode.TEST);
-
         this.restart();
-        const module = this.createModule(metadata);
 
+        const module = this.createModule(metadata);
         this.scanner.scan(module);
         this.instanceLoader.createInstancesOfDependencies();
     }

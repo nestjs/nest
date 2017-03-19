@@ -25,7 +25,7 @@ export class ListenerMetadataExplorer {
                 return !isConstructor(method) && isFunction(instancePrototype[method]);
             })
             .map((methodName) => this.exploreMethodMetadata(instance, instancePrototype, methodName))
-            .filter((mapper) => mapper !== null);
+            .filter((metadata) => metadata !== null);
     }
 
     exploreMethodMetadata(instance, instancePrototype, methodName: string): PatternProperties {
@@ -48,12 +48,10 @@ export class ListenerMetadataExplorer {
 
             const property = String(propertyKey);
             const isClient = Reflect.getMetadata(CLIENT_METADATA, instance, property);
-            if (!isUndefined(isClient)) {
-                const metadata = Reflect.getMetadata(CLIENT_CONFIGURATION_METADATA, instance, property);
-                yield {
-                    property, metadata
-                };
-            }
+            if (isUndefined(isClient)) continue;
+
+            const metadata = Reflect.getMetadata(CLIENT_CONFIGURATION_METADATA, instance, property);
+            yield { property, metadata };
         }
     }
 

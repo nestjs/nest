@@ -13,21 +13,29 @@ export class ServerRedis extends Server {
     }
 
     listen(callback?: () => void) {
-        const sub = redis.createClient({ url: this.url });
-        const pub = redis.createClient({ url: this.url });
+        const sub = this.createRedisClient();
+        const pub = this.createRedisClient();
 
         sub.on('connect', () => this.handleConnection(callback, sub, pub));
     }
 
-    private handleConnection(callback, sub, pub) {
-        sub.on('message', (channel, buffer) => this.handleMessage(channel, buffer, pub));
+    createRedisClient() {
+        return redis.createClient({ url: this.url });
+    }
+
+    handleConnection(callback, sub, pub) {
+        sub.on('message', this.getMessageHandler(pub).bind(this));
 
         const patterns = Object.keys(this.msgHandlers);
         patterns.forEach((pattern) => sub.subscribe(this.getAckQueueName(pattern)));
         callback && callback();
     }
 
-    private handleMessage(channel, buffer, pub) {
+    getMessageHandler(pub) {
+        return (channel, buffer) => this.handleMessage(channel, buffer, pub);
+    }
+
+    handleMessage(channel, buffer, pub) {
         const msg = this.tryParse(buffer);
         const pattern = channel.replace(/_ack$/, '');
         const publish = this.getPublisher(pub, pattern);
@@ -37,10 +45,10 @@ export class ServerRedis extends Server {
             return;
         }
         const handler = this.msgHandlers[pattern];
-        handler(msg.data, this.handleMessageCallback(pub, pattern).bind(this));
+        handler(msg.data, this.getMessageHandlerCallback(pub, pattern).bind(this));
     }
 
-    private handleMessageCallback(pub, pattern) {
+    getMessageHandlerCallback(pub, pattern) {
         return (err, response) => {
             const publish = this.getPublisher(pub, pattern);
             if (!response) {
@@ -52,7 +60,7 @@ export class ServerRedis extends Server {
         }
     }
 
-    private getPublisher(pub, pattern) {
+    getPublisher(pub, pattern) {
         return (respond) => {
             pub.publish(
                 this.getResQueueName(pattern),
@@ -61,7 +69,7 @@ export class ServerRedis extends Server {
         }
     }
 
-    private tryParse(content) {
+    tryParse(content) {
         try {
             return JSON.parse(content);
         }
@@ -70,11 +78,11 @@ export class ServerRedis extends Server {
         }
     }
 
-    private getAckQueueName(pattern) {
+    getAckQueueName(pattern) {
         return `${pattern}_ack`;
     }
 
-    private getResQueueName(pattern) {
+    getResQueueName(pattern) {
         return `${pattern}_res`;
     }
 }
