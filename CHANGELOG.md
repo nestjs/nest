@@ -1,4 +1,4 @@
-## 1.0.0-ALPHA-23
+## 1.0.0-ALPHA-23 (19.03.2017)
 
 - Microservices support (TCP & Redis transports)
 - NestRunner -> NestFactory
