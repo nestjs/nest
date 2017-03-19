@@ -69,7 +69,7 @@ Author - [Kamil Myśliwiec](http://kamilmysliwiec.com)
 
   [MIT](LICENSE)
 
-[npm-image]: https://img.shields.io/npm/v/nest.js.svg
+[npm-image]: https://badge.fury.io/js/nest.js.svg
 [npm-url]: https://npmjs.org/package/nest.js
 [downloads-image]: https://img.shields.io/npm/dm/nest.js.svg
 [downloads-url]: https://npmjs.org/package/nest.js
