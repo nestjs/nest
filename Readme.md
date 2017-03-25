@@ -10,8 +10,7 @@
 
 ## Description
 
-Nest is a powerful web framework for [Node.js](http://nodejs.org), which allows you to easily build efficient, scalable applications.
-It uses modern JavaScript, is built with [TypeScript](http://www.typescriptlang.org) and bring best concepts to JavaScript back-end world such as Dependency Injection (with IoC Container) and Separation of Concerns.
+Nest is a powerful web framework for [Node.js](http://nodejs.org), which helps you to effortlessly build efficient, scalable applications. It uses modern JavaScript, is built with [TypeScript](http://www.typescriptlang.org) and combines best concepts from both OOP (Object Oriented Progamming) and FP (Functional Programming).
 
 It is not just another framework. You do not have to wait on large community, because Nest is built with awesome, popular well-known libraries - [Express](https://github.com/expressjs/express) and [socket.io](https://github.com/socketio/socket.io)! It means, that you could quickly start using framework with no worries about a third party plugins.
 
@@ -33,13 +32,15 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 ## Features
 
-- Compatible with both TypeScript and ES6 (I recommend to use [TypeScript](http://www.typescriptlang.org))
+- Reactive **microservices** support with messages patterns (transport via TCP / [Redis](https://redis.io/))
+- Compatible with both TypeScript and ES6 (I strongly recommend to use [TypeScript](http://www.typescriptlang.org))
 - Based on well-known libraries ([Express](https://github.com/expressjs/express) / [socket.io](https://github.com/socketio/socket.io)) so you could share your experience 
 - Easy to learn - syntax is similar to [Angular](https://angular.io/) / [Spring](https://spring.io) (Java)
-- Dependency Injection, Inversion of Control Container
+- Dependency Injection, built-in **Inversion of Control** container
 - Exceptions handler layer (helps to focus on logic)
-- Own modularity system
-- Sockets module (based on [socket.io](https://github.com/socketio/socket.io))
+- Own modularity system (split your system into reusable modules)
+- **WebSockets** module (based on [socket.io](https://github.com/socketio/socket.io))
+- Testing utilities
 
 ## Documentation & Quick Start
 
@@ -54,11 +55,9 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 Nest is very much still a work in progress. There is still some things to finish:
 
-- Better test utilities
+- Examples(!)
 - Exception filters
-- Starter repos
 - Validation helpers
-- Increase test coverage
 - Gateways middleware
 - and more...
 
@@ -70,7 +69,7 @@ Author - [Kamil Myśliwiec](http://kamilmysliwiec.com)
 
   [MIT](LICENSE)
 
-[npm-image]: https://img.shields.io/npm/v/nest.js.svg
+[npm-image]: https://badge.fury.io/js/nest.js.svg
 [npm-url]: https://npmjs.org/package/nest.js
 [downloads-image]: https://img.shields.io/npm/dm/nest.js.svg
 [downloads-url]: https://npmjs.org/package/nest.js
