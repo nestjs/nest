@@ -9,10 +9,10 @@ import { GATEWAY_METADATA } from './constants';
 
 export class SocketModule {
     private static socketsContainer = new SocketsContainer();
-    private static subjectsController;
+    private static webSocketsController: WebSocketsController;
 
     static setup(container: NestContainer) {
-        this.subjectsController = new WebSocketsController(
+        this.webSocketsController = new WebSocketsController(
             new SocketServerProvider(this.socketsContainer)
         );
 
@@ -21,11 +21,13 @@ export class SocketModule {
     }
 
     static hookGatewaysIntoServers(components: Map<string, InstanceWrapper<Injectable>>) {
-        components.forEach(({ instance, metatype }) => {
+        components.forEach(({ instance, metatype, isNotMetatype }) => {
+            if (isNotMetatype) { return; }
+
             const metadataKeys = Reflect.getMetadataKeys(metatype);
             if (metadataKeys.indexOf(GATEWAY_METADATA) < 0) { return; }
 
-            this.subjectsController.hookGatewayIntoServer(
+            this.webSocketsController.hookGatewayIntoServer(
                 <NestGateway>instance,
                 metatype
             );

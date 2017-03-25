@@ -29,6 +29,7 @@ describe('Module', () => {
         class Test {}
         module.addRoute(Test);
         expect(setSpy.getCall(0).args).to.deep.equal([ 'Test', {
+            name: 'Test',
             metatype: Test,
             instance: null,
             isResolved: false,
@@ -42,37 +43,51 @@ describe('Module', () => {
 
         module.addComponent(TestComponent);
         expect(setSpy.getCall(0).args).to.deep.equal([ 'TestComponent', {
+            name: 'TestComponent',
             metatype: TestComponent,
             instance: null,
             isResolved: false,
         }]);
     });
 
-    it('should add provider instead of component when object is passed', () => {
-        const addProvider = sinon.spy();
-        module.addProvider = addProvider;
+    it('should call "addCustomComponent" when "provide" property exists', () => {
+        const addCustomComponent = sinon.spy();
+        module.addCustomComponent = addCustomComponent;
 
-        const type = () => {};
-        const provider = { provide: type, useValue: 'test' };
+        const provider = { provide: 'test', useValue: 'test' };
 
         module.addComponent(<any>provider);
-        expect((<sinon.SinonSpy>addProvider).called).to.be.true;
+        expect((<sinon.SinonSpy>addCustomComponent).called).to.be.true;
     });
 
-    it('should add provider', () => {
-        const collection = new Map();
-        const setSpy = sinon.spy(collection, 'set');
-        (<any>module)['_components'] = collection;
+    it('should call "addCustomClass" when "useClass" property exists', () => {
+        const addCustomClass = sinon.spy();
+        module.addCustomClass = addCustomClass;
 
-        const type = () => {};
-        const provider = { provide: type, useValue: 'test' };
+        const provider = { provide: 'test', useClass: () => null };
 
-        module.addProvider(provider);
-        expect(setSpy.getCall(0).args).to.deep.equal([ type.name, {
-            metatype: type,
-            instance: provider.useValue,
-            isResolved: true,
-        }]);
+        module.addCustomComponent(<any>provider);
+        expect((<sinon.SinonSpy>addCustomClass).called).to.be.true;
+    });
+
+    it('should call "addCustomValue" when "useValue" property exists', () => {
+        const addCustomValue = sinon.spy();
+        module.addCustomValue = addCustomValue;
+
+        const provider = { provide: 'test', useValue: () => null };
+
+        module.addCustomComponent(<any>provider);
+        expect((<sinon.SinonSpy>addCustomValue).called).to.be.true;
+    });
+
+    it('should call "addCustomFactory" when "useFactory" property exists', () => {
+        const addCustomFactory = sinon.spy();
+        module.addCustomFactory = addCustomFactory;
+
+        const provider = { provide: 'test', useFactory: () => null };
+
+        module.addCustomComponent(<any>provider);
+        expect((<sinon.SinonSpy>addCustomFactory).called).to.be.true;
     });
 
 });

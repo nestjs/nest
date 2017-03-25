@@ -35,8 +35,11 @@ describe('InstanceLoader', () => {
             components: new Map(),
             routes: new Map(),
         };
-        module.components.set('TestComponent', { instance: null, metatype: TestComponent });
-        module.routes.set('TestRoute', { instance: null, metatype: TestRoute });
+        const componentWrapper = { instance: null, metatype: TestComponent };
+        const routeWrapper = { instance: null, metatype: TestRoute };
+
+        module.components.set('TestComponent', componentWrapper);
+        module.routes.set('TestRoute', routeWrapper);
 
         const modules = new Map();
         modules.set('Test', module);
@@ -48,8 +51,8 @@ describe('InstanceLoader', () => {
         sinon.stub(injector, 'loadInstanceOfComponent');
 
         loader.createInstancesOfDependencies();
-        expect(loadComponentPrototypeStub.calledWith(TestComponent, module.components)).to.be.true;
-        expect(loadComponentPrototypeStub.calledWith(TestRoute, module.components)).to.be.true;
+        expect(loadComponentPrototypeStub.calledWith(componentWrapper, module.components)).to.be.true;
+        expect(loadComponentPrototypeStub.calledWith(routeWrapper, module.components)).to.be.true;
     });
 
     it('should call "loadInstanceOfComponent" for each component in each module', () => {
@@ -60,7 +63,9 @@ describe('InstanceLoader', () => {
             components: new Map(),
             routes: new Map(),
         };
-        module.components.set('TestComponent', { instance: null, metatype: TestComponent });
+        const testComp = { instance: null, metatype: TestComponent, name: 'TestComponent' };
+
+        module.components.set('TestComponent', testComp);
 
         const modules = new Map();
         modules.set('Test', module);
@@ -70,7 +75,7 @@ describe('InstanceLoader', () => {
         sinon.stub(injector, 'loadInstanceOfRoute');
 
         loader.createInstancesOfDependencies();
-        expect(loadComponentStub.calledWith(TestComponent, module)).to.be.true;
+        expect(loadComponentStub.calledWith(module.components.get('TestComponent'), module)).to.be.true;
     });
 
     it('should call "loadInstanceOfRoute" for each route in each module', () => {
@@ -81,7 +86,8 @@ describe('InstanceLoader', () => {
             components: new Map(),
             routes: new Map(),
         };
-        module.routes.set('TestRoute', { instance: null, metatype: TestRoute });
+        const wrapper = { name: 'TestRoute', instance: null, metatype: TestRoute };
+        module.routes.set('TestRoute', wrapper);
 
         const modules = new Map();
         modules.set('Test', module);
@@ -91,7 +97,7 @@ describe('InstanceLoader', () => {
         const loadRoutesStub = sinon.stub(injector, 'loadInstanceOfRoute');
 
         loader.createInstancesOfDependencies();
-        expect(loadRoutesStub.calledWith(TestRoute, module)).to.be.true;
+        expect(loadRoutesStub.calledWith(module.routes.get('TestRoute'), module)).to.be.true;
     });
 
 });

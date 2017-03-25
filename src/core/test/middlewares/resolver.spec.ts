@@ -31,10 +31,11 @@ describe('MiddlewaresResolver', () => {
     it('should resolve middleware instances from container', () => {
         const loadInstanceOfMiddleware = sinon.stub(resolver['instanceLoader'], 'loadInstanceOfMiddleware');
         const middlewares = new Map();
-        middlewares.set('TestMiddleware', {
+        const wrapper = {
             instance: { metatype: {} },
             metatype: TestMiddleware
-        });
+        };
+        middlewares.set('TestMiddleware', wrapper);
 
         const module = <any>{ metatype: { name: '' }};
         mockContainer.expects('getMiddlewares').returns(middlewares);
@@ -42,7 +43,7 @@ describe('MiddlewaresResolver', () => {
 
         expect(loadInstanceOfMiddleware.callCount).to.be.equal(middlewares.size);
         expect(loadInstanceOfMiddleware.calledWith(
-            TestMiddleware,
+            wrapper,
             middlewares,
             module
         )).to.be.true;

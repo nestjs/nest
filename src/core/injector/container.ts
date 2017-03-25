@@ -20,10 +20,10 @@ export class NestContainer {
     addRelatedModule(relatedModule: NestModuleMetatype, target: NestModuleMetatype) {
         if (!this.modules.has(target.name)) { return; }
 
-        const storedModule = this.modules.get(target.name);
+        const module = this.modules.get(target.name);
         const related = this.modules.get(relatedModule.name);
 
-        storedModule.addRelatedModule(related);
+        module.addRelatedModule(related);
     }
 
     addComponent(component: Metatype<Injectable>, metatype: NestModuleMetatype) {
@@ -31,8 +31,8 @@ export class NestContainer {
             throw new UnkownModuleException();
         }
 
-        const storedModule = this.modules.get(metatype.name);
-        storedModule.addComponent(component);
+        const module = this.modules.get(metatype.name);
+        module.addComponent(component);
     }
 
     addExportedComponent(exportedComponent: Metatype<Injectable>, metatype: NestModuleMetatype) {
@@ -40,17 +40,17 @@ export class NestContainer {
             throw new UnkownModuleException();
         }
 
-        const storedModule = this.modules.get(metatype.name);
-        storedModule.addExportedComponent(exportedComponent);
+        const module = this.modules.get(metatype.name);
+        module.addExportedComponent(exportedComponent);
     }
 
-    addRoute(controller: Metatype<Controller>, metatype: NestModuleMetatype) {
+    addController(controller: Metatype<Controller>, metatype: NestModuleMetatype) {
         if(!this.modules.has(metatype.name)) {
             throw new UnkownModuleException();
         }
 
-        const storedModule = this.modules.get(metatype.name);
-        storedModule.addRoute(controller);
+        const module = this.modules.get(metatype.name);
+        module.addRoute(controller);
     }
 
     clear() {
@@ -60,7 +60,10 @@ export class NestContainer {
 }
 
 export interface InstanceWrapper<T> {
+    name: any;
     metatype: Metatype<T>;
     instance: T;
     isResolved: boolean;
+    inject?: Metatype<any>[];
+    isNotMetatype?: boolean;
 }

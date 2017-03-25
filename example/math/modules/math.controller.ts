@@ -3,14 +3,9 @@ import { MessagePattern } from '../../../src/microservices/utils/pattern.decorat
 
 @Controller()
 export class MathController {
-
     @MessagePattern({ command: 'add' })
-    multiply(data, respond) {
-        if (!data) {
-            respond(new Error('Invalid arguments'));
-            return;
-        }
-        const numbers = data.numbers || [];
+    add(data, respond) {
+        const numbers = data || [];
         respond(null, numbers.reduce((a, b) => a + b));
     }
 }

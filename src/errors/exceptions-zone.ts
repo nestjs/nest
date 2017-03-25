@@ -9,6 +9,7 @@ export class ExceptionsZone {
         }
         catch(e) {
             this.exceptionHandler.handle(e);
+            throw e;
         }
     }
 }

@@ -36,25 +36,25 @@ export class InstanceLoader {
 
     private createPrototypesOfComponents(module: Module) {
         module.components.forEach((wrapper) => {
-            this.injector.loadPrototypeOfInstance<Injectable>(wrapper.metatype, module.components);
+            this.injector.loadPrototypeOfInstance<Injectable>(wrapper, module.components);
         });
     }
 
     private createInstancesOfComponents(module: Module) {
         module.components.forEach((wrapper) => {
-            this.injector.loadInstanceOfComponent(wrapper.metatype, module);
+            this.injector.loadInstanceOfComponent(wrapper, module);
         });
     }
 
     private createPrototypesOfRoutes(module: Module) {
         module.routes.forEach((wrapper) => {
-            this.injector.loadPrototypeOfInstance<Controller>(wrapper.metatype, module.routes);
+            this.injector.loadPrototypeOfInstance<Controller>(wrapper, module.routes);
         });
     }
 
     private createInstancesOfRoutes(module: Module) {
         module.routes.forEach((wrapper) => {
-            this.injector.loadInstanceOfRoute(wrapper.metatype, module);
+            this.injector.loadInstanceOfRoute(wrapper, module);
         });
     }
 

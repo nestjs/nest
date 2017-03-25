@@ -14,19 +14,19 @@ export class MiddlewaresResolver {
     resolveInstances(module: Module, moduleName: string) {
         const middlewares = this.middlewaresContainer.getMiddlewares(moduleName);
 
-        middlewares.forEach(({ metatype }) => {
-            this.resolveMiddlewareInstance(metatype, middlewares, module);
-            this.logger.log(getMiddlewareInitMessage(metatype.name, module.metatype.name));
+        middlewares.forEach((wrapper) => {
+            this.resolveMiddlewareInstance(wrapper, middlewares, module);
+            this.logger.log(getMiddlewareInitMessage(wrapper.metatype.name, module.metatype.name));
         });
     }
 
     private resolveMiddlewareInstance(
-        metatype: MiddlewareMetatype,
+        wrapper: MiddlewareWrapper,
         middlewares: Map<string, MiddlewareWrapper>,
         module: Module) {
 
         this.instanceLoader.loadInstanceOfMiddleware(
-            metatype,
+            wrapper,
             middlewares,
             module
         );

@@ -2,7 +2,7 @@ import { Controller } from '../../../src/common/utils/controller.decorator';
 import { Client } from '../../../src/microservices/utils/client.decorator';
 import { RequestMapping } from '../../../src/common/utils/request-mapping.decorator';
 import { ClientProxy } from '../../../src/microservices/client/client-proxy';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { Transport } from '../../../src/common/enums/transport.enum';
 import 'rxjs/add/operator/catch';
 
@@ -13,9 +13,12 @@ export class ClientController {
     client: ClientProxy;
 
     @RequestMapping({ path: 'client' })
-    sendCommand() {
-        this.client.send({ command: 'add' }, { numbers: [ 1, 2, 3 ] })
+    sendMessage(req, res) {
+        const pattern = { command: 'add' };
+        const data = [ 1, 2, 3, 4, 5 ];
+
+        this.client.send(pattern, data)
             .catch((err) => Observable.empty())
-            .subscribe((val) => console.log(val))
+            .subscribe((result) => res.status(200).json({ result }));
     }
 }

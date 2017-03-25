@@ -1,11 +1,14 @@
 import { UsersService } from "./users.service";
 import { RequestMethod, Controller, RequestMapping } from "./../../../src/";
-import { Inject } from '../../../src/common/utils/inject.decorator';
+import { ModuleRef } from '../../../src/core/injector/module-ref';
+import { UsersModule } from './users.module';
 
 @Controller({ path: 'users' })
 export class UsersController {
 
-    constructor(private usersService: UsersService) {}
+    constructor(
+        private usersService: UsersService,
+        private moduleRef: ModuleRef) {}
 
     @RequestMapping()
     async getAllUsers(req, res) {
@@ -26,4 +29,6 @@ export class UsersController {
     }
 
 }
+
+
 

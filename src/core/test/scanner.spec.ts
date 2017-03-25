@@ -57,8 +57,8 @@ describe('DependenciesScanner', () => {
         stub.restore();
     });
 
-    it('should "storeRoute" call twice (2 components) container method "addRoute"', () => {
-        const expectation = mockContainer.expects('addRoute').twice();
+    it('should "storeRoute" call twice (2 components) container method "addController"', () => {
+        const expectation = mockContainer.expects('addController').twice();
         scanner.scan(TestModule);
         expectation.verify();
     });

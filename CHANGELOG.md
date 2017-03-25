@@ -1,3 +1,9 @@
+## 1.0.0-BETA-1
+
+- @Inject -> @Dependencies
+- @Inject decorator for custom constructor parameters,
+- Custom providers support (useClass, useValue, useFactory)
+
 ## 1.0.0-ALPHA-23
 
 - Microservices support (TCP & Redis transports)

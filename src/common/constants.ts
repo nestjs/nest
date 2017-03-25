@@ -7,4 +7,5 @@ export const metadata = {
 
 export const PATH_METADATA = 'path';
 export const PARAMTYPES_METADATA = 'design:paramtypes';
+export const SELF_PARAMS_METADATA = 'self:paramtypes';
 export const METHOD_METADATA = 'method';

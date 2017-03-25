@@ -29,8 +29,8 @@ describe('NestContainer', () => {
         expect(() => container.addComponent(null, TestModule)).throw(UnkownModuleException);
     });
 
-    it('should "addRoute" throw "UnkownModuleException" when module is not stored in collection', () => {
-        expect(() => container.addRoute(null, TestModule)).throw(UnkownModuleException);
+    it('should "addController" throw "UnkownModuleException" when module is not stored in collection', () => {
+        expect(() => container.addController(null, TestModule)).throw(UnkownModuleException);
     });
 
     it('should "addExportedComponent" throw "UnkownModuleException" when module is not stored in collection', () => {

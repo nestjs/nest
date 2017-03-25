@@ -1,8 +1,13 @@
 import 'reflect-metadata';
-import { PARAMTYPES_METADATA } from '../constants';
+import { SELF_PARAMS_METADATA } from '../constants';
+import { isFunction } from './shared.utils';
 
-export const Inject = (metadata: any[]): ClassDecorator => {
-    return (target: Object) => {
-        Reflect.defineMetadata(PARAMTYPES_METADATA, metadata, target);
+export const Inject = (param): ParameterDecorator => {
+    return (target, key, index) => {
+        const selfArgs = Reflect.getMetadata(SELF_PARAMS_METADATA, target) || [];
+        const type = isFunction(param) ? param.name : param;
+
+        selfArgs.push({ index, param: type });
+        Reflect.defineMetadata(SELF_PARAMS_METADATA, selfArgs, target);
     }
 };

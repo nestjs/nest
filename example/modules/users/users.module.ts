@@ -6,10 +6,15 @@ import { MiddlewareBuilder } from '../../../src/core/middlewares/builder';
 
 @Module({
     controllers: [ UsersController ],
-    components: [ UsersService ],
-    exports: [ UsersService ],
+    components: [
+        UsersService
+    ],
 })
 export class UsersModule {
+    getContext() {
+        return 'Test';
+    }
+
     configure(builder: MiddlewareBuilder) {
         builder.use({
             middlewares: [ AuthMiddleware ],

@@ -70,7 +70,7 @@ export class DependenciesScanner {
     }
 
     private storeRoute(route: Metatype<Controller>, module: NestModuleMetatype) {
-        this.container.addRoute(route, module);
+        this.container.addController(route, module);
     }
     
     private reflectMetadata(module: NestModuleMetatype, metadata: string) {
