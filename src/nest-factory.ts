@@ -21,27 +21,17 @@ export class NestFactory {
         module: NestModuleMetatype,
         express = ExpressAdapter.create()): NestApplication {
 
-        let instance = null;
-        try {
-            this.initialize(module);
-            instance = this.createNestInstance<NestApplication>(
-                new NestApplication(this.container, express)
-            );
-        }
-        catch(e) {}
-        return instance;
+        this.initialize(module);
+        return this.createNestInstance<NestApplication>(
+            new NestApplication(this.container, express)
+        );
     }
 
     static createMicroservice(module: NestModuleMetatype, config?: MicroserviceConfiguration): NestMicroservice {
-        let instance = null;
-        try {
-            this.initialize(module);
-            instance = this.createNestInstance<NestMicroservice>(
-                new NestMicroservice(this.container, config)
-            );
-        }
-        catch(e) {}
-        return instance;
+        this.initialize(module);
+        return this.createNestInstance<NestMicroservice>(
+            new NestMicroservice(this.container, config)
+        );
     }
 
     private static createNestInstance<T>(instance: T) {

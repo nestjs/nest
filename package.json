@@ -1,6 +1,6 @@
 {
   "name": "nest.js",
-  "version": "1.0.0-rc-1",
+  "version": "1.0.0-rc2",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {

@@ -9,6 +9,7 @@ import 'rxjs/add/operator/catch';
 @Controller()
 export class ClientController {
 
+    constructor(private i : number) {}
     @Client({ transport: Transport.TCP, port: 5667 })
     client: ClientProxy;
 
