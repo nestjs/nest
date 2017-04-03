@@ -1,4 +1,3 @@
-import { Application } from 'express';
 import { MiddlewaresModule } from './core/middlewares/middlewares-module';
 import { SocketModule } from './websockets/socket-module';
 import { NestContainer } from './core/injector/container';
@@ -14,7 +13,7 @@ export class NestApplication {
 
     constructor(
         private readonly container: NestContainer,
-        private readonly express: Application) {
+        private readonly express) {
 
         this.routesResolver = new RoutesResolver(container, ExpressAdapter);
     }
@@ -33,11 +32,11 @@ export class NestApplication {
         return this.express.listen(port, callback);
     }
 
-    private setupMiddlewares(instance: Application) {
+    private setupMiddlewares(instance) {
         MiddlewaresModule.setupMiddlewares(instance);
     }
 
-    private setupRoutes(instance: Application) {
+    private setupRoutes(instance) {
         this.routesResolver.resolve(instance);
     }
 }
