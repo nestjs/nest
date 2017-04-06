@@ -18,7 +18,7 @@ describe('ServerRedis', () => {
             client = {
                 on: onSpy
             };
-            createRedisClient = sinon.stub(server, 'createRedisClient', () => client);
+            createRedisClient = sinon.stub(server, 'createRedisClient').callsFake(() => client);
         });
         it('should bind "connect" event to handler', () => {
             server.listen(null);
@@ -71,8 +71,8 @@ describe('ServerRedis', () => {
 
         beforeEach(() => {
             getPublisherSpy = sinon.spy();
-            sinon.stub(server, 'getPublisher', () => getPublisherSpy);
-            sinon.stub(server, 'tryParse', () => ({ data }))
+            sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
+            sinon.stub(server, 'tryParse').callsFake(() => ({ data }));
         });
         it(`should publish NO_PATTERN_MESSAGE if pattern not exists in msgHandlers object`, () => {
             server.handleMessage(channel, {}, null);
@@ -92,7 +92,7 @@ describe('ServerRedis', () => {
         let publisherSpy: sinon.SinonSpy, handler;
         beforeEach(() => {
             publisherSpy = sinon.spy();
-            sinon.stub(server, 'getPublisher', () => publisherSpy);
+            sinon.stub(server, 'getPublisher').callsFake(() => publisherSpy);
             handler = server.getMessageHandlerCallback(null, null);
         });
         it(`should return function`, () => {

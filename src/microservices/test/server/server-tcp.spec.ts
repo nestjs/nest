@@ -13,7 +13,7 @@ describe('ServerTCP', () => {
         let getSocketInstance;
         const socket = { on: sinon.spy() };
         beforeEach(() => {
-            getSocketInstance = sinon.stub(server, 'getSocketInstance', () => socket);
+            getSocketInstance = sinon.stub(server, 'getSocketInstance').callsFake(() => socket);
         });
         it('should bind message event to handler', () => {
             server.bindHandler(null);
