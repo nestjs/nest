@@ -8,6 +8,3 @@ export const getRouteMappedMessage =
 
 export const getControllerMappingMessage =
     (name: string) => `${name}:`;
-
-export const getMiddlewareInitMessage =
-    (middleware: string, module: string) => `${middleware} injected into ${module}`;

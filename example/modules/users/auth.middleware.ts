@@ -5,7 +5,6 @@ import { NestMiddleware } from '../../../src/core/middlewares/interfaces/nest-mi
 
 @Middleware()
 export class AuthMiddleware implements NestMiddleware {
-
     constructor(private usersService: UsersService) {}
 
     resolve() {

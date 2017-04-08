@@ -1,12 +1,8 @@
 import { MiddlewaresContainer, MiddlewareWrapper } from './container';
 import { Injector } from '../injector/injector';
 import { Module } from '../injector/module';
-import { MiddlewareMetatype } from './interfaces/middleware-metatype.interface';
-import { Logger } from '../../common/services/logger.service';
-import { getMiddlewareInitMessage } from '../helpers/messages';
 
 export class MiddlewaresResolver {
-    private readonly logger = new Logger(MiddlewaresResolver.name);
     private readonly instanceLoader = new Injector();
 
     constructor(private middlewaresContainer: MiddlewaresContainer) {}
@@ -16,7 +12,6 @@ export class MiddlewaresResolver {
 
         middlewares.forEach((wrapper) => {
             this.resolveMiddlewareInstance(wrapper, middlewares, module);
-            this.logger.log(getMiddlewareInitMessage(wrapper.metatype.name, module.metatype.name));
         });
     }
 

@@ -18,12 +18,13 @@ export class MiddlewaresContainer {
     }
 
     addConfig(configList: MiddlewareConfiguration[], module: string) {
-        const currentMiddlewares = this.getCurrentMiddlewares(module);
+        const middlewares = this.getCurrentMiddlewares(module);
         const currentConfig = this.getCurrentConfig(module);
 
         (configList || []).map((config) => {
             [].concat(config.middlewares).map((metatype) => {
-                currentMiddlewares.set(metatype.name, {
+                const token = metatype.name;
+                middlewares.set(token, {
                     instance: null,
                     metatype
                 });

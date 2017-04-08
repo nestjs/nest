@@ -36,7 +36,6 @@
   "author": "Kamil Mysliwiec",
   "license": "ISC",
   "dependencies": {
-    "amqplib": "^0.5.1",
     "cli-color": "^1.1.0",
     "express": "^4.14.0",
     "json-socket": "^0.2.1",
@@ -51,7 +50,7 @@
     "@types/mocha": "^2.2.38",
     "@types/node": "^7.0.5",
     "@types/redis": "^0.12.36",
-    "@types/sinon": "^1.16.34",
+    "@types/sinon": "^1.16.36",
     "awesome-typescript-loader": "^3.0.0-beta.18",
     "chai": "^3.5.0",
     "concurrently": "^3.4.0",
@@ -63,7 +62,7 @@
     "mocha": "^3.2.0",
     "nodemon": "^1.11.0",
     "nyc": "^10.1.2",
-    "sinon": "^2.0.0-pre.2",
+    "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
     "ts-node": "^2.0.0"
   }

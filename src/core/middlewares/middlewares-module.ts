@@ -49,11 +49,11 @@ export class MiddlewaresModule {
 
         const middlewaresBuilder = new MiddlewareBuilder();
         instance.configure(middlewaresBuilder);
+        if (!(middlewaresBuilder instanceof MiddlewareBuilder))
+            return;
 
-        if (middlewaresBuilder instanceof MiddlewareBuilder) {
-            const config = middlewaresBuilder.build();
-            this.container.addConfig(config, module);
-        }
+        const config = middlewaresBuilder.build();
+        this.container.addConfig(config, module);
     }
 
     static setupMiddlewares(app: Application) {
