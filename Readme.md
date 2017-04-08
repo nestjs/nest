@@ -14,8 +14,6 @@ Nest is a powerful web framework for [Node.js](http://nodejs.org), which helps y
 
 It is not just another framework. You do not have to wait for a large community, because Nest is built with awesome, popular well-known libraries - [Express](https://github.com/expressjs/express) and [socket.io](https://github.com/socketio/socket.io)! It means, that you could quickly start using framework without worrying about a third party plugins.
 
-Nest is inspired by [Spring](https://spring.io) and [Angular](https://angular.io/).
-
 ## Installation
 
 ```bash
