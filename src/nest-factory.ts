@@ -50,12 +50,12 @@ export class NestFactory {
 
     private static createProxy(target) {
         return new Proxy(target, {
-            get: this.createExceptionMethodProxy(),
-            set: this.createExceptionMethodProxy()
+            get: this.createExceptionProxy(),
+            set: this.createExceptionProxy()
         });
     }
 
-    private static createExceptionMethodProxy() {
+    private static createExceptionProxy() {
         return (receiver, prop) => {
             if (!(prop in receiver)) { return undefined; }
 

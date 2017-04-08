@@ -5,3 +5,4 @@ export * from './module.decorator';
 export * from './dependencies.decorator';
 export * from './inject.decorator';
 export { Component as Middleware } from './component.decorator';
+export * from './provide-values.util';

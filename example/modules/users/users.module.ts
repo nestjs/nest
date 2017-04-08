@@ -3,6 +3,11 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { AuthMiddleware } from './auth.middleware';
 import { MiddlewareBuilder } from '../../../src/core/middlewares/builder';
+import { ProvideValues } from '../../../src/common/utils/provide-values.util';
+
+const ProvideRoles = ProvideValues({
+    role: ['admin', 'user']
+});
 
 @Module({
     controllers: [ UsersController ],
@@ -17,8 +22,12 @@ export class UsersModule {
 
     configure(builder: MiddlewareBuilder) {
         builder.use({
-            middlewares: [ AuthMiddleware ],
-            forRoutes: [ UsersController ],
-        })
+            middlewares: [
+                ProvideRoles(AuthMiddleware)
+            ],
+            forRoutes: [ UsersController]
+        });
     }
 }
+
+
