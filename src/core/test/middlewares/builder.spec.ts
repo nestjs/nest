@@ -22,17 +22,12 @@ describe('MiddlewareBuilder', () => {
             });
             describe('when "forRoutes()" called', () => {
                 class Test {}
-                it('should throws "InvalidMiddlewareConfigurationException" when passed argument is undefined', () => {
-                   expect(() => configProxy.forRoutes()).to.throws(
-                       InvalidMiddlewareConfigurationException
-                   );
-                });
                 it('should store configuration passed as argument', () => {
-                    configProxy.forRoutes(Test);
+                    configProxy.forRoutes(Test, 'test');
 
                     expect(builder.build()).to.deep.equal([{
                         middlewares: [],
-                        forRoutes: [ Test ]
+                        forRoutes: [ Test, 'test' ]
                     }]);
                 });
             });
