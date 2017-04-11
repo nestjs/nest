@@ -17,15 +17,8 @@ export class UsersModule {
 
     configure(builder: MiddlewareBuilder) {
        builder.apply(AuthMiddleware)
-            .with('admin', 'creator', 'editor')
+            .with('admin')
             .forRoutes(UsersController);
-
-       /* builder.use({
-            middlewares: [
-               AuthMiddleware
-            ],
-            forRoutes: [ UsersController ]
-        });*/
     }
 }
 
