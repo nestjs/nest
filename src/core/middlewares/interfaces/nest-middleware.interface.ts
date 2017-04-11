@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 
 export interface NestMiddleware {
-    resolve: () => (req?: Request, res?: Response, next?: NextFunction) => void;
+    resolve(...args): (req?: Request, res?: Response, next?: NextFunction) => void;
 }

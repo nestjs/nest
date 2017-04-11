@@ -1,13 +1,13 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { ProvideValues } from '../../utils/provide-values.util';
+import { MergeWithValues } from '../../utils/merge-with-values.util';
 
-describe('ProvideValues', () => {
+describe('MergeWithValues', () => {
     let type, data = { test: [ 1, 2, 3 ] };
     class Test {}
 
     beforeEach(() => {
-        type = ProvideValues(data)(Test);
+        type = MergeWithValues(data)(Test);
     });
     it('should enrich prototype with given values', () => {
         expect(type.prototype).to.contain(data);

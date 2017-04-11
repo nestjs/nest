@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-import 'mocha';
 import { expect } from 'chai';
 import { Component } from '../../utils/component.decorator';
 
