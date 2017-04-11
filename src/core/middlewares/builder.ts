@@ -16,13 +16,10 @@ export class MiddlewareBuilder {
                 resolveParams = data;
                 return configProxy as MiddlewareConfigProxy;
             },
-            forRoutes: (routes) => {
-                if (isUndefined(routes)) {
-                    throw new InvalidMiddlewareConfigurationException();
-                }
+            forRoutes: (...routes) => {
                 const configuration = {
                     middlewares: this.bindValuesToResolve(metatypes, resolveParams),
-                    forRoutes: [].concat(routes)
+                    forRoutes: routes
                 };
                 this.middlewaresCollection.add(<MiddlewareConfiguration>configuration);
                 return this;
@@ -62,5 +59,5 @@ export class MiddlewareBuilder {
 
 export interface MiddlewareConfigProxy {
     with: (...data) => MiddlewareConfigProxy;
-    forRoutes: (routes) => MiddlewareBuilder;
+    forRoutes: (...routes) => MiddlewareBuilder;
 }
