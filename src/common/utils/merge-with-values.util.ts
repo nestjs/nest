@@ -1,14 +1,14 @@
 import 'reflect-metadata';
 
-interface Constructor<T> {
+export interface Constructor<T> {
     new(...args: any[]): T
 }
 
-export const ProvideValues = <T extends Constructor<{}>>(data) => {
-    return (metatype: T) => {
+export const MergeWithValues = <T extends Constructor<{}>>(data: { [param: string]: any }) => {
+    return (metatype: T): any => {
         const type = class extends metatype {
             constructor(...args) {
-                super(args);
+                super(...args);
             }
         };
         const token = metatype.name + JSON.stringify(data);
