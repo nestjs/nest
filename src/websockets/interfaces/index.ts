@@ -5,3 +5,4 @@ export * from './web-socket-server.interface';
 export * from './on-gateway-init.interface';
 export * from './on-gateway-connection.interface';
 export * from './on-gateway-disconnect.interface';
+export * from './gateway-middleware.interface';
