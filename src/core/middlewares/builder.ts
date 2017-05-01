@@ -3,36 +3,25 @@ import { InvalidMiddlewareConfigurationException } from '../../errors/exceptions
 import { isUndefined, isNil } from '../../common/utils/shared.utils';
 import { BindResolveMiddlewareValues } from '../../common/utils/bind-resolve-values.util';
 import { Logger } from '../../common/services/logger.service';
-import { Metatype } from '../../common/interfaces/metatype.interface';
+import { Metatype, MiddlewaresConsumer } from '../../common/interfaces';
+import { MiddlewareConfigProxy } from '../../index';
+import { RoutesMapper } from './routes-mapper';
 
-export class MiddlewareBuilder {
-    private middlewaresCollection = new Set<MiddlewareConfiguration>();
-    private logger = new Logger(MiddlewareBuilder.name);
+export class MiddlewareBuilder implements MiddlewaresConsumer {
+    private readonly middlewaresCollection = new Set<MiddlewareConfiguration>();
+    private readonly logger = new Logger(MiddlewareBuilder.name);
 
-    apply(metatypes: Metatype<any> | Array<Metatype<any>>): MiddlewareConfigProxy {
-        let resolveParams = null;
-        const configProxy = {
-            with: (...data) => {
-                resolveParams = data;
-                return configProxy as MiddlewareConfigProxy;
-            },
-            forRoutes: (...routes) => {
-                const configuration = {
-                    middlewares: this.bindValuesToResolve(metatypes, resolveParams),
-                    forRoutes: routes
-                };
-                this.middlewaresCollection.add(<MiddlewareConfiguration>configuration);
-                return this;
-            }
-        };
-        return configProxy;
+    constructor(private readonly routesMapper: RoutesMapper) {}
+
+    public apply(metatypes: Metatype<any> | Metatype<any>[]): MiddlewareConfigProxy {
+        return new MiddlewareBuilder.ConfigProxy(this, metatypes);
     }
 
     /**
      * @deprecated
      * Since version RC.6 this method is deprecated. Use apply() instead.
      */
-    use(configuration: MiddlewareConfiguration) {
+    public use(configuration: MiddlewareConfiguration) {
         this.logger.warn('DEPRECATED! Since version RC.6 `use()` method is deprecated. Use `apply()` instead.');
 
         const { middlewares, forRoutes } = configuration;
@@ -44,20 +33,48 @@ export class MiddlewareBuilder {
         return this;
     }
 
-    build() {
+    public build() {
         return [ ...this.middlewaresCollection ];
     }
 
-    private bindValuesToResolve(middlewares: Metatype<any> | Array<Metatype<any>>, resolveParams: Array<any>) {
+    private bindValuesToResolve(middlewares: Metatype<any> | Metatype<any>[], resolveParams: any[]) {
         if (isNil(resolveParams)) {
             return middlewares;
         }
         const bindArgs = BindResolveMiddlewareValues(resolveParams);
         return [].concat(middlewares).map(bindArgs);
     }
-}
 
-export interface MiddlewareConfigProxy {
-    with: (...data) => MiddlewareConfigProxy;
-    forRoutes: (...routes) => MiddlewareBuilder;
+    private static ConfigProxy = class implements MiddlewareConfigProxy {
+        private contextArgs = null;
+
+        constructor(
+            private readonly builder: MiddlewareBuilder,
+            private readonly includedRoutes: Metatype<any> | Metatype<any>[]) {}
+
+        public with(...args): this {
+            this.contextArgs = args;
+            return this;
+        }
+
+        public forRoutes(...routes): MiddlewaresConsumer {
+            const { middlewaresCollection, bindValuesToResolve, routesMapper } = this.builder;
+
+            const forRoutes = this.mapRoutesToFlatList(
+                routes.map((route) => routesMapper.mapRouteToRouteProps(route),
+            ));
+            const configuration = {
+                middlewares: bindValuesToResolve(
+                    this.includedRoutes, this.contextArgs,
+                ),
+                forRoutes,
+            };
+            middlewaresCollection.add(configuration);
+            return this.builder;
+        }
+
+        private mapRoutesToFlatList(forRoutes) {
+            return forRoutes.reduce((a, b) => a.concat(b));
+        }
+    };
 }

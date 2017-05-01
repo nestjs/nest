@@ -1,28 +1,21 @@
 import { NestGateway } from './interfaces/nest-gateway.interface';
-import { isUndefined, isConstructor, isFunction } from '../common/utils/shared.utils';
+import { isUndefined, isFunction } from '../common/utils/shared.utils';
 import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA, GATEWAY_SERVER_METADATA } from './constants';
+import { MetadataScanner } from '../core/metadata-scanner';
 
 export class GatewayMetadataExplorer {
+    constructor(private readonly metadataScanner: MetadataScanner) {}
 
-    explore(instance: NestGateway): MessageMappingProperties[] {
+    public explore(instance: NestGateway): MessageMappingProperties[] {
         const instancePrototype = Object.getPrototypeOf(instance);
-        return this.scanForHandlersFromPrototype(instance, instancePrototype)
+        return this.metadataScanner.scanFromPrototype<NestGateway, MessageMappingProperties>(
+            instance,
+            instancePrototype,
+            (method) => this.exploreMethodMetadata(instance, instancePrototype, method),
+        );
     }
 
-    scanForHandlersFromPrototype(instance: NestGateway, instancePrototype): MessageMappingProperties[] {
-        return Object.getOwnPropertyNames(instancePrototype)
-            .filter((method) => {
-                const descriptor = Object.getOwnPropertyDescriptor(instancePrototype, method);
-                if (descriptor.set || descriptor.get) {
-                    return false;
-                }
-                return !isConstructor(method) && isFunction(instancePrototype[method]);
-            })
-            .map((methodName) => this.exploreMethodMetadata(instance, instancePrototype, methodName))
-            .filter((metadata) => metadata !== null);
-    }
-
-    exploreMethodMetadata(instance, instancePrototype, methodName: string): MessageMappingProperties {
+    public exploreMethodMetadata(instance, instancePrototype, methodName: string): MessageMappingProperties {
         const callbackMethod = instancePrototype[methodName];
         const isMessageMapping = Reflect.getMetadata(MESSAGE_MAPPING_METADATA, callbackMethod);
 
@@ -31,12 +24,12 @@ export class GatewayMetadataExplorer {
         }
         const message = Reflect.getMetadata(MESSAGE_METADATA, callbackMethod);
         return {
-            targetCallback: (<Function>callbackMethod).bind(instance),
+            targetCallback: (callbackMethod as MessageMappingProperties['targetCallback']).bind(instance),
             message,
         };
     }
 
-    *scanForServerHooks(instance: NestGateway): IterableIterator<string> {
+    public *scanForServerHooks(instance: NestGateway): IterableIterator<string> {
         for (const propertyKey in instance) {
             if (isFunction(propertyKey)) continue;
 
@@ -51,6 +44,6 @@ export class GatewayMetadataExplorer {
 }
 
 export interface MessageMappingProperties {
-    message: string,
-    targetCallback: Function,
+    message: string;
+    targetCallback: (...args) => any;
 }

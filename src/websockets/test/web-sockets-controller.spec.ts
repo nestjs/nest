@@ -5,6 +5,7 @@ import { WebSocketsController } from '../web-sockets-controller';
 import { WebSocketGateway } from '../utils/socket-gateway.decorator';
 import { InvalidSocketPortException } from '../exceptions/invalid-socket-port.exception';
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
+import { MetadataScanner } from '../../core/metadata-scanner';
 
 describe('WebSocketsController', () => {
     let instance: WebSocketsController;
@@ -20,12 +21,12 @@ describe('WebSocketsController', () => {
     beforeEach(() => {
         provider = new SocketServerProvider(null);
         mockProvider = sinon.mock(provider);
-        instance = new WebSocketsController(provider);
+        instance = new WebSocketsController(provider, null);
     });
     describe('hookGatewayIntoServer', () => {
         let subscribeObservableServer: sinon.SinonSpy;
 
-        @WebSocketGateway(<any>{ port: 'test' })
+        @WebSocketGateway({ port: 'test' } as any)
         class InvalidGateway {}
 
         @WebSocketGateway()
@@ -33,21 +34,21 @@ describe('WebSocketsController', () => {
 
         beforeEach(() => {
             subscribeObservableServer = sinon.spy();
-            instance['subscribeObservableServer'] = subscribeObservableServer;
+            (instance as any).subscribeObservableServer = subscribeObservableServer;
         });
         it('should throws "InvalidSocketPortException" when port is not a number', () => {
             expect(
-                () => instance.hookGatewayIntoServer(new InvalidGateway(), InvalidGateway)
+                () => instance.hookGatewayIntoServer(new InvalidGateway(), InvalidGateway, ''),
             ).throws(InvalidSocketPortException);
         });
         it('should call "subscribeObservableServer" with default values when metadata is empty', () => {
             const gateway = new DefaultGateway();
-            instance.hookGatewayIntoServer(gateway, DefaultGateway);
+            instance.hookGatewayIntoServer(gateway, DefaultGateway, '');
             expect(subscribeObservableServer.calledWith(gateway, '', 80)).to.be.true;
         });
         it('should call "subscribeObservableServer" when metadata is valid', () => {
             const gateway = new Test();
-            instance.hookGatewayIntoServer(gateway, Test);
+            instance.hookGatewayIntoServer(gateway, Test, '');
             expect(subscribeObservableServer.calledWith(gateway, namespace, port)).to.be.true;
         });
     });
@@ -60,9 +61,9 @@ describe('WebSocketsController', () => {
 
         beforeEach(() => {
             gateway = new Test();
-            explorer = new GatewayMetadataExplorer();
+            explorer = new GatewayMetadataExplorer(new MetadataScanner());
             mockExplorer = sinon.mock(explorer);
-            (<any>instance)['metadataExplorer'] = explorer;
+            (instance as any).metadataExplorer = explorer;
 
             handlers = [ 'test' ];
             server = { server: 'test' };
@@ -73,15 +74,17 @@ describe('WebSocketsController', () => {
             hookServerToProperties = sinon.spy();
             subscribeEvents = sinon.spy();
 
-            instance['hookServerToProperties'] = hookServerToProperties;
-            instance['subscribeEvents'] = subscribeEvents;
+            (instance as any).hookServerToProperties = hookServerToProperties;
+            (instance as any).subscribeEvents = subscribeEvents;
+
+            sinon.stub(instance, 'injectMiddlewares').returns(0);
         });
         it('should call "hookServerToProperties" with expected arguments', () => {
-            instance.subscribeObservableServer(gateway, namespace, port);
+            instance.subscribeObservableServer(gateway, namespace, port, '');
             expect(hookServerToProperties.calledWith(gateway, server.server));
         });
         it('should call "subscribeEvents" with expected arguments', () => {
-            instance.subscribeObservableServer(gateway, namespace, port);
+            instance.subscribeObservableServer(gateway, namespace, port, '');
             expect(subscribeEvents.calledWith(gateway, handlers, server));
         });
     });
@@ -104,7 +107,7 @@ describe('WebSocketsController', () => {
             handlers = [ 'test' ];
             server = {
                 init: {
-                    next: nextSpy
+                    next: nextSpy,
                 },
                 server: {
                     on: onSpy,
@@ -113,30 +116,30 @@ describe('WebSocketsController', () => {
                 },
             };
 
-            instance['subscribeInitEvent'] = subscribeInitEvent;
-            instance['getConnectionHandler'] = getConnectionHandler;
+            (instance as any).subscribeInitEvent = subscribeInitEvent;
+            (instance as any).getConnectionHandler = getConnectionHandler;
         });
 
         it('should call "next" method of server object with expected argument', () => {
-            instance.subscribeEvents(gateway, handlers, <any>server);
+            instance.subscribeEvents(gateway, handlers, server as any);
             expect(nextSpy.calledWith(server.server)).to.be.true;
         });
         it('should call "subscribeInitEvent" with expected arguments', () => {
-            instance.subscribeEvents(gateway, handlers, <any>server);
+            instance.subscribeEvents(gateway, handlers, server as any);
             expect(subscribeInitEvent.calledWith(gateway, server.init)).to.be.true;
         });
         it('should bind connection handler to server', () => {
-            instance.subscribeEvents(gateway, handlers, <any>server);
+            instance.subscribeEvents(gateway, handlers, server as any);
             expect(onSpy.calledWith('connection', getConnectionHandler())).to.be.true;
         });
         it('should call "getConnectionHandler" with expected arguments', () => {
-            instance.subscribeEvents(gateway, handlers, <any>server);
+            instance.subscribeEvents(gateway, handlers, server as any);
             expect(getConnectionHandler.calledWith(
                 instance,
                 gateway,
                 handlers,
                 server.disconnect,
-                server.connection
+                server.connection,
             )).to.be.true;
         });
     });
@@ -160,14 +163,14 @@ describe('WebSocketsController', () => {
 
             handlers = [ 'test' ];
             connection = {
-                next: nextSpy
+                next: nextSpy,
             };
             client = {
                 on: onSpy,
             };
-            instance['subscribeDisconnectEvent'] = subscribeDisconnectEvent;
-            instance['subscribeConnectionEvent'] = subscribeConnectionEvent;
-            instance['subscribeMessages'] = subscribeMessages;
+            (instance as any).subscribeDisconnectEvent = subscribeDisconnectEvent;
+            (instance as any).subscribeConnectionEvent = subscribeConnectionEvent;
+            (instance as any).subscribeMessages = subscribeMessages;
 
             fn = instance.getConnectionHandler(instance, gateway, handlers, null, connection);
             fn(client);
@@ -205,7 +208,7 @@ describe('WebSocketsController', () => {
             expect(subscribe.called).to.be.false;
         });
         it('should call subscribe method of event object with expected arguments when "afterInit" exists', () => {
-            gateway['afterInit'] = () => {};
+            (gateway as any).afterInit = () => {};
             instance.subscribeInitEvent(gateway, event);
             expect(subscribe.called).to.be.true;
         });
@@ -223,7 +226,7 @@ describe('WebSocketsController', () => {
             expect(subscribe.called).to.be.false;
         });
         it('should call subscribe method of event object with expected arguments when "handleConnection" exists', () => {
-            gateway['handleConnection'] = () => {};
+            (gateway as any).handleConnection = () => {};
             instance.subscribeConnectionEvent(gateway, event);
             expect(subscribe.called).to.be.true;
         });
@@ -241,7 +244,7 @@ describe('WebSocketsController', () => {
             expect(subscribe.called).to.be.false;
         });
         it('should call subscribe method of event object with expected arguments when "handleDisconnect" exists', () => {
-            gateway['handleDisconnect'] = () => {};
+            (gateway as any).handleDisconnect = () => {};
             instance.subscribeDisconnectEvent(gateway, event);
             expect(subscribe.called).to.be.true;
         });

@@ -4,6 +4,7 @@ import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 import { MessagePattern } from '../utils/pattern.decorator';
 import { Client } from '../utils/client.decorator';
 import { Transport } from '../../common/enums/transport.enum';
+import { MetadataScanner } from '../../core/metadata-scanner';
 
 describe('ListenerMetadataExplorer', () => {
     const pattern = { pattern: 'test' };
@@ -12,8 +13,8 @@ describe('ListenerMetadataExplorer', () => {
     const clientSecMetadata = { transport: Transport.REDIS };
 
     class Test {
-        @Client(clientMetadata) client;
-        @Client(clientSecMetadata) redisClient;
+        @Client(clientMetadata) public client;
+        @Client(clientSecMetadata) public redisClient;
 
         get testGet() { return 0; }
         set testSet(val) {}
@@ -21,29 +22,32 @@ describe('ListenerMetadataExplorer', () => {
         constructor() {}
 
         @MessagePattern(pattern)
-        test() {}
+        public test() {}
 
         @MessagePattern(secPattern)
-        testSec() {}
+        public testSec() {}
 
-        noPattern() {}
+        public noPattern() {}
     }
-
+    let scanner: MetadataScanner;
     let instance: ListenerMetadataExplorer;
 
     beforeEach(() => {
-        instance = new ListenerMetadataExplorer();
+        scanner = new MetadataScanner();
+        instance = new ListenerMetadataExplorer(scanner);
     });
     describe('explore', () => {
-        let scanForHandlersFromPrototype: sinon.SinonSpy;
+        let scanFromPrototype: sinon.SinonSpy;
         beforeEach(() => {
-            scanForHandlersFromPrototype = sinon.spy();
-            instance.scanForHandlersFromPrototype = scanForHandlersFromPrototype
+            scanFromPrototype = sinon.spy(scanner, 'scanFromPrototype');
         });
-        it(`should call "scanForHandlersFromPrototype" with expected arguments`, () => {
+        it(`should call "scanFromPrototype" with expected arguments`, () => {
             const obj = new Test();
             instance.explore(obj);
-            expect(scanForHandlersFromPrototype.calledWith(obj, Object.getPrototypeOf(obj))).to.be.true;
+
+            const { args } = scanFromPrototype.getCall(0);
+            expect(args[0]).to.be.eql(obj);
+            expect(args[1]).to.be.eql(Object.getPrototypeOf(obj));
         });
     });
     describe('exploreMethodMetadata', () => {
@@ -59,16 +63,6 @@ describe('ListenerMetadataExplorer', () => {
             const metadata = instance.exploreMethodMetadata(test, Object.getPrototypeOf(test), 'test');
             expect(metadata).to.have.keys([ 'targetCallback', 'pattern' ]);
             expect(metadata.pattern).to.eql(pattern);
-        });
-    });
-    describe('scanForHandlersFromPrototype', () => {
-        it(`should returns only methods with @MessagePattern decorator`, () => {
-            const obj = new Test();
-            const handlers = instance.scanForHandlersFromPrototype(obj, Object.getPrototypeOf(obj));
-
-            expect(handlers).to.have.length(2);
-            expect(handlers[0].pattern).to.eq(pattern);
-            expect(handlers[1].pattern).to.eq(secPattern);
         });
     });
     describe('scanForClientHooks', () => {

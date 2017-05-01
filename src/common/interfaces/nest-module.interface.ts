@@ -1,5 +1,6 @@
 import { MiddlewareBuilder } from '../../core/middlewares/builder';
+import { MiddlewaresConsumer } from './middlewares-consumer.interface';
 
 export interface NestModule {
-    configure?: (router: MiddlewareBuilder) => MiddlewareBuilder;
+    configure?: (consumer: MiddlewaresConsumer) => MiddlewaresConsumer | void;
 }

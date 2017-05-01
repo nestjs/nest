@@ -1,4 +1,4 @@
-import { Module } from '../../../src/common/utils/module.decorator';
+import { Module } from '../../../src/common/utils/decorators/module.decorator';
 import { MathController } from './math.controller';
 
 @Module({

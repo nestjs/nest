@@ -7,7 +7,7 @@ describe('@MessagePattern', () => {
     const pattern = { role: 'test' };
     class TestComponent {
         @MessagePattern(pattern)
-        static test() {}
+        public static test() {}
     }
     it(`should enhance method with ${PATTERN_METADATA} metadata`, () => {
         const metadata = Reflect.getMetadata(PATTERN_METADATA, TestComponent.test);

@@ -6,8 +6,9 @@ import { Server } from './microservices/server/server';
 import { MicroserviceConfiguration } from './microservices/interfaces/microservice-configuration.interface';
 import { ServerFactory } from './microservices/server/server-factory';
 import { Transport } from './common/enums/transport.enum';
+import { INestMicroservice } from './common/interfaces';
 
-export class NestMicroservice {
+export class NestMicroservice implements INestMicroservice {
     private readonly logger = new Logger(NestMicroservice.name);
     private readonly server: Server;
     private readonly config: MicroserviceConfiguration;
@@ -23,12 +24,12 @@ export class NestMicroservice {
         this.server = ServerFactory.create(this.config);
     }
 
-    setupModules() {
+    public setupModules() {
         MicroservicesModule.setupClients(this.container);
         MicroservicesModule.setupListeners(this.container, this.server);
     }
 
-    listen(callback: () => void) {
+    public listen(callback: () => void) {
         this.logger.log(messages.APPLICATION_READY);
         this.server.listen(callback);
     }

@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { Server } from '../../server/server';
 
 class TestServer extends Server {
-    listen(callback: () => void) {}
+    public listen(callback: () => void) {}
 }
 
 describe('Server', () => {

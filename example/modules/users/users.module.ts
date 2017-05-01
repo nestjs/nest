@@ -1,25 +1,16 @@
 import { Module } from './../../../src/';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
-import { MiddlewareBuilder } from '../../../src/core/middlewares/builder';
 import { AuthMiddleware } from './auth.middleware';
+import { NestModule, MiddlewaresConsumer } from '../../../src/common/index';
+import { ChatGateway } from './chat.gateway';
 
 @Module({
     controllers: [ UsersController ],
-    components: [
-        UsersService
-    ],
+    components: [ UsersService, ChatGateway ],
 })
-export class UsersModule {
-    getContext() {
-        return 'Test';
-    }
-
-    configure(builder: MiddlewareBuilder) {
-       builder.apply(AuthMiddleware)
-            .with('admin')
-            .forRoutes(UsersController);
+export class UsersModule implements NestModule {
+    public configure(consumer: MiddlewaresConsumer) {
+        consumer.apply(AuthMiddleware).forRoutes(UsersController);
     }
 }
-
-

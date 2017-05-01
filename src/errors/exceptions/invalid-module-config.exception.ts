@@ -1,8 +1,8 @@
-import { RuntimeException } from "./runtime.exception";
-import { getInvalidModuleConfigMessage } from '../messages';
+import { RuntimeException } from './runtime.exception';
+import { InvalidModuleConfigMessage } from '../messages';
 
 export class InvalidModuleConfigException extends RuntimeException {
     constructor(property: string) {
-        super(getInvalidModuleConfigMessage(property));
+        super(InvalidModuleConfigMessage(property));
     }
 }

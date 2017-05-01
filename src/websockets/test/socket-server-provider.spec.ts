@@ -19,12 +19,14 @@ describe('SocketServerProvider', () => {
         const port = 30;
 
         beforeEach(() => {
-            createSocketServerSpy = sinon.spy();
-            instance['createSocketServer'] = createSocketServerSpy;
+            createSocketServerSpy = sinon.spy(instance, 'createSocketServer');
+        });
+        afterEach(() => {
+            mockContainer.restore();
         });
         it(`should returns stored server`, () => {
             const server = { test: 'test' };
-            mockContainer.expects('getSocketServer').returns(server);
+            mockContainer.expects('getServer').returns(server);
 
             const result = instance.scanForSocketServer(namespace, port);
 
@@ -32,7 +34,7 @@ describe('SocketServerProvider', () => {
             expect(result).to.eq(server);
         });
         it(`should call "createSocketServer" when server is not stored already`, () => {
-            mockContainer.expects('getSocketServer').returns(null);
+            mockContainer.expects('getServer').returns(null);
 
             instance.scanForSocketServer(namespace, port);
             expect(createSocketServerSpy.called).to.be.true;

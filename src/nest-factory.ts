@@ -10,6 +10,7 @@ import { NestMicroservice } from './nest-microservice';
 import { isFunction } from './common/utils/shared.utils';
 import { MicroserviceConfiguration } from './microservices/interfaces/microservice-configuration.interface';
 import { ExpressAdapter } from './core/adapters/express-adapter';
+import { INestApplication, INestMicroservice } from './common/interfaces';
 
 export class NestFactory {
     private static container = new NestContainer();
@@ -17,20 +18,20 @@ export class NestFactory {
     private static instanceLoader = new InstanceLoader(NestFactory.container);
     private static logger = new Logger(NestFactory.name);
 
-    static create(
+    public static create(
         module: NestModuleMetatype,
-        express = ExpressAdapter.create()): NestApplication {
+        express = ExpressAdapter.create()): INestApplication {
 
         this.initialize(module);
         return this.createNestInstance<NestApplication>(
-            new NestApplication(this.container, express)
+            new NestApplication(this.container, express),
         );
     }
 
-    static createMicroservice(module: NestModuleMetatype, config?: MicroserviceConfiguration): NestMicroservice {
+    public static createMicroservice(module: NestModuleMetatype, config?: MicroserviceConfiguration): INestMicroservice {
         this.initialize(module);
         return this.createNestInstance<NestMicroservice>(
-            new NestMicroservice(this.container, config)
+            new NestMicroservice(this.container, config),
         );
     }
 
@@ -41,23 +42,25 @@ export class NestFactory {
     }
 
     private static initialize(module: NestModuleMetatype) {
+        this.logger.log(messages.APPLICATION_START);
         ExceptionsZone.run(() => {
-            this.logger.log(messages.APPLICATION_START);
             this.dependenciesScanner.scan(module);
             this.instanceLoader.createInstancesOfDependencies();
         });
     }
 
     private static createProxy(target) {
+        const proxy = this.createExceptionProxy();
         return new Proxy(target, {
-            get: this.createExceptionProxy(),
-            set: this.createExceptionProxy()
+            get: proxy,
+            set: proxy,
         });
     }
 
     private static createExceptionProxy() {
         return (receiver, prop) => {
-            if (!(prop in receiver)) { return undefined; }
+            if (!(prop in receiver))
+                return;
 
             if (isFunction(receiver[prop])) {
                 return (...args) => ExceptionsZone.run(() => {
@@ -65,7 +68,7 @@ export class NestFactory {
                 });
             }
             return receiver[prop];
-        }
+        };
     }
 
 }

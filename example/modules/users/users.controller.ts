@@ -1,34 +1,34 @@
-import { UsersService } from "./users.service";
-import { RequestMethod, Controller, RequestMapping } from "./../../../src/";
-import { ModuleRef } from '../../../src/core/injector/module-ref';
-import { UsersModule } from './users.module';
-import { Get, Post } from '../../../src/common/utils/request-mapping.decorator';
+import * as express from 'express';
+import { UsersService } from './users.service';
+import { Controller, Response, Body, Param } from './../../../src/';
+import { Get, Post } from '../../../src/common/utils/decorators/request-mapping.decorator';
+import { HttpStatus } from '../../../src/common/index';
+import { ExceptionFilters } from '../../../src/common/utils/decorators/exception-filters.decorator';
+import { CustomExceptionFilter } from './exception.filter';
 
-@Controller({ path: 'users' })
+@Controller('users')
+@ExceptionFilters(CustomExceptionFilter)
 export class UsersController {
-
     constructor(
-        private usersService: UsersService,
-        private moduleRef: ModuleRef) {}
+        private usersService: UsersService) {}
 
     @Get()
-    async getAllUsers(req, res) {
+    public async getAllUsers(@Response() res: express.Response) {
         const users = await this.usersService.getAllUsers();
-        res.status(200).json(users);
+        res.status(HttpStatus.OK).json(users);
     }
 
     @Get('/:id')
-    async getUser(req, res) {
-        const user = await this.usersService.getUser(req.params.id);
-        res.status(200).json(user);
+    public async getUser(@Response() res: express.Response, @Param('id') id) {
+        const user = await this.usersService.getUser(id);
+        res.status(HttpStatus.OK).json(user);
     }
 
     @Post()
-    async addUser(req, res) {
-        const msg = await this.usersService.getUser(req.body.user);
-        res.status(201).json(msg);
+    public async addUser(@Response() res: express.Response, @Body('user') user) {
+        const msg = await this.usersService.getUser(user);
+        res.status(HttpStatus.CREATED).json(msg);
     }
-
 }
 
 

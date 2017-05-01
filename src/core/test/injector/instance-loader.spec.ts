@@ -3,9 +3,9 @@ import { expect } from 'chai';
 import { InstanceLoader } from '../../injector/instance-loader';
 import { NestContainer } from '../../injector/container';
 import { Injector } from '../../injector/injector';
-import { Controller } from '../../../common/utils/controller.decorator';
-import { Component } from '../../../common/utils/component.decorator';
-import { NestMode } from '../../../common/enums/nest-mode.enum';
+import { Controller } from '../../../common/utils/decorators/controller.decorator';
+import { Component } from '../../../common/utils/decorators/component.decorator';
+import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
 import { Logger } from '../../../common/services/logger.service';
 
 describe('InstanceLoader', () => {
@@ -19,7 +19,7 @@ describe('InstanceLoader', () => {
     @Component()
     class TestComponent {}
 
-    before(() => Logger.setMode(NestMode.TEST));
+    before(() => Logger.setMode(NestEnvironment.TEST));
 
     beforeEach(() => {
         container = new NestContainer();
@@ -29,7 +29,7 @@ describe('InstanceLoader', () => {
 
     it('should call "loadPrototypeOfInstance" for each component and route in each module', () => {
         const injector = new Injector();
-        loader['injector'] = injector;
+        (loader as any).injector = injector;
 
         const module = {
             components: new Map(),
@@ -57,7 +57,7 @@ describe('InstanceLoader', () => {
 
     it('should call "loadInstanceOfComponent" for each component in each module', () => {
         const injector = new Injector();
-        loader['injector'] = injector;
+        (loader as any).injector = injector;
 
         const module = {
             components: new Map(),
@@ -80,7 +80,7 @@ describe('InstanceLoader', () => {
 
     it('should call "loadInstanceOfRoute" for each route in each module', () => {
         const injector = new Injector();
-        loader['injector'] = injector;
+        (loader as any).injector = injector;
 
         const module = {
             components: new Map(),

@@ -7,18 +7,17 @@ import { NestMiddleware } from '../../../src/core/middlewares/interfaces/nest-mi
 export class AuthMiddleware implements NestMiddleware {
     constructor(private usersService: UsersService) {}
 
-    resolve() {
+    public resolve() {
         return (req, res, next) => {
-            const userName = req.headers['x-access-token'];
+            const username = req.headers['x-access-token'];
             const users = this.usersService.getUsers();
-
-            const user = users.find((user) => user.name === userName);
+            const user = users.find(({ name }) => name === username);
             if (!user) {
                 throw new HttpException('User not found.', 401);
             }
             req.user = user;
             next();
-        }
+        };
     }
 
 }

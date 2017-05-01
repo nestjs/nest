@@ -1,11 +1,11 @@
 import 'reflect-metadata';
-import { RequestMappingMetadata } from '../interfaces/request-mapping-metadata.interface';
-import { RequestMethod } from '../enums/request-method.enum';
-import { PATH_METADATA, METHOD_METADATA } from '../constants';
+import { RequestMappingMetadata } from '../../interfaces/request-mapping-metadata.interface';
+import { RequestMethod } from '../../enums/request-method.enum';
+import { PATH_METADATA, METHOD_METADATA } from '../../constants';
 
 const defaultMetadata = {
     [PATH_METADATA]: '/',
-    [METHOD_METADATA]: RequestMethod.GET
+    [METHOD_METADATA]: RequestMethod.GET,
 };
 
 export const RequestMapping = (metadata: RequestMappingMetadata = defaultMetadata): MethodDecorator => {
@@ -16,13 +16,13 @@ export const RequestMapping = (metadata: RequestMappingMetadata = defaultMetadat
         Reflect.defineMetadata(PATH_METADATA, path, descriptor.value);
         Reflect.defineMetadata(METHOD_METADATA, requestMethod, descriptor.value);
         return descriptor;
-    }
+    };
 };
 
 const createMappingDecorator = (method: RequestMethod) => (path?: string): MethodDecorator => {
     return RequestMapping({
         [PATH_METADATA]: path,
-        [METHOD_METADATA]: method
+        [METHOD_METADATA]: method,
     });
 };
 

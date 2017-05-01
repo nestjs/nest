@@ -6,3 +6,8 @@ export * from './injectable.interface';
 export * from './controller-metadata.interface';
 export * from './module-metadata.interface';
 export * from './metatype.interface';
+export * from './nest-application.interface';
+export * from './nest-microservice.interface';
+export * from './middlewares-consumer.interface';
+export * from './on-init.interface';
+export * from './middleware-config-proxy.interface';

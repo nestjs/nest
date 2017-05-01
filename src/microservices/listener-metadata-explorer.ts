@@ -1,34 +1,27 @@
 import { Controller } from '../common/interfaces/controller.interface';
-import { isConstructor, isFunction } from '../common/utils/shared.utils';
+import { isFunction } from '../common/utils/shared.utils';
 import {
     PATTERN_METADATA, PATTERN_HANDLER_METADATA, CLIENT_CONFIGURATION_METADATA,
-    CLIENT_METADATA
+    CLIENT_METADATA,
 } from './constants';
 import { isUndefined } from 'util';
 import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 import { ClientMetadata } from './interfaces/client-metadata.interface';
+import { MetadataScanner } from './../core/metadata-scanner';
 
 export class ListenerMetadataExplorer {
+    constructor(private readonly metadataScanner: MetadataScanner) {}
 
-    explore(instance: Controller): PatternProperties[] {
+    public explore(instance: Controller): PatternProperties[] {
         const instancePrototype = Object.getPrototypeOf(instance);
-        return this.scanForHandlersFromPrototype(instance, instancePrototype)
+        return this.metadataScanner.scanFromPrototype<Controller, PatternProperties>(
+            instance,
+            instancePrototype,
+            (method) => this.exploreMethodMetadata(instance, instancePrototype, method),
+        );
     }
 
-    scanForHandlersFromPrototype(instance: Controller, instancePrototype): PatternProperties[] {
-        return Object.getOwnPropertyNames(instancePrototype)
-            .filter((method) => {
-                const descriptor = Object.getOwnPropertyDescriptor(instancePrototype, method);
-                if (descriptor.set || descriptor.get) {
-                    return false;
-                }
-                return !isConstructor(method) && isFunction(instancePrototype[method]);
-            })
-            .map((methodName) => this.exploreMethodMetadata(instance, instancePrototype, methodName))
-            .filter((metadata) => metadata !== null);
-    }
-
-    exploreMethodMetadata(instance, instancePrototype, methodName: string): PatternProperties {
+    public exploreMethodMetadata(instance, instancePrototype, methodName: string): PatternProperties {
         const callbackMethod = instancePrototype[methodName];
         const isPattern = Reflect.getMetadata(PATTERN_HANDLER_METADATA, callbackMethod);
 
@@ -37,12 +30,12 @@ export class ListenerMetadataExplorer {
         }
         const pattern = Reflect.getMetadata(PATTERN_METADATA, callbackMethod);
         return {
-            targetCallback: (<Function>callbackMethod).bind(instance),
+            targetCallback: (callbackMethod as PatternProperties['targetCallback']).bind(instance),
             pattern,
         };
     }
 
-    *scanForClientHooks(instance: Controller): IterableIterator<ClientProperties> {
+    public *scanForClientHooks(instance: Controller): IterableIterator<ClientProperties> {
         for (const propertyKey in instance) {
             if (isFunction(propertyKey)) continue;
 
@@ -63,6 +56,6 @@ export interface ClientProperties {
 }
 
 export interface PatternProperties {
-    pattern: PatternMetadata,
-    targetCallback: Function,
+    pattern: PatternMetadata;
+    targetCallback: (...args) => any;
 }

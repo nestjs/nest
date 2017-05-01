@@ -2,6 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ListenersController } from '../listeners-controller';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
+import { MetadataScanner } from '../../core/metadata-scanner';
 
 describe('ListenersController', () => {
     let instance: ListenersController,
@@ -11,22 +12,22 @@ describe('ListenersController', () => {
         addSpy: sinon.SinonSpy;
 
     before(() => {
-        metadataExplorer = new ListenerMetadataExplorer();
+        metadataExplorer = new ListenerMetadataExplorer(new MetadataScanner());
         explorer = sinon.mock(metadataExplorer);
     });
     beforeEach(() => {
         instance = new ListenersController();
-        (<any>instance)['metadataExplorer'] = metadataExplorer;
+        (instance as any).metadataExplorer = metadataExplorer;
         addSpy = sinon.spy();
         server = {
-            add: addSpy
-        }
+            add: addSpy,
+        };
     });
     describe('bindPatternHandlers', () => {
         it(`should call add method of server for each pattern handler`, () => {
             const handlers = [
                 { pattern: 'test', targetCallback: 'tt' },
-                { pattern: 'test2', targetCallback: '2' }
+                { pattern: 'test2', targetCallback: '2' },
             ];
             explorer.expects('explore').returns(handlers);
             instance.bindPatternHandlers(null, server);

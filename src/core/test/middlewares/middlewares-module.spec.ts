@@ -1,14 +1,15 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NestMiddleware } from '../../middlewares/interfaces/nest-middleware.interface';
-import { Component } from '../../../common/utils/component.decorator';
+import { Component } from '../../../common/utils/decorators/component.decorator';
 import { MiddlewareBuilder } from '../../middlewares/builder';
 import { MiddlewaresModule } from '../../middlewares/middlewares-module';
 import { InvalidMiddlewareException } from '../../../errors/exceptions/invalid-middleware.exception';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { Controller } from '../../../common/utils/controller.decorator';
-import { RequestMapping } from '../../../common/utils/request-mapping.decorator';
+import { Controller } from '../../../common/utils/decorators/controller.decorator';
+import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
 import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
+import { RoutesMapper } from "../../middlewares/routes-mapper";
 
 describe('MiddlewaresModule', () => {
     @Controller({ path: 'test' })
@@ -18,16 +19,16 @@ describe('MiddlewaresModule', () => {
     class TestRoute {
 
         @RequestMapping({ path: 'test' })
-        getTest() {}
+        public getTest() {}
 
         @RequestMapping({ path: 'another', method: RequestMethod.DELETE })
-        getAnother() {}
+        public getAnother() {}
     }
 
     @Component()
     class TestMiddleware implements NestMiddleware {
-        resolve() {
-            return (req, res, next) => {}
+        public resolve() {
+            return (req, res, next) => {};
         }
     }
 
@@ -36,13 +37,13 @@ describe('MiddlewaresModule', () => {
         it('should call "configure" method if method is implemented', () => {
             const configureSpy = sinon.spy();
             const mockModule = {
-                configure: configureSpy
+                configure: configureSpy,
             };
 
-            MiddlewaresModule.loadConfiguration(<any>mockModule, <any>'Test');
+            MiddlewaresModule.loadConfiguration(mockModule as any, 'Test' as any);
 
             expect(configureSpy.calledOnce).to.be.true;
-            expect(configureSpy.calledWith(new MiddlewareBuilder())).to.be.true;
+            expect(configureSpy.calledWith(new MiddlewareBuilder(new RoutesMapper()))).to.be.true;
         });
     });
 
@@ -59,7 +60,7 @@ describe('MiddlewaresModule', () => {
             const app = { use: useSpy };
 
             expect(MiddlewaresModule.setupRouteMiddleware.bind(
-                MiddlewaresModule, route, configuration, <any>'Test', <any>app
+                MiddlewaresModule, route, configuration, 'Test' as any, app as any,
             )).throws(RuntimeException);
         });
 
@@ -70,24 +71,24 @@ describe('MiddlewaresModule', () => {
             const route = { path: 'Test' };
             const configuration = {
                 middlewares: [ InvalidMiddleware ],
-                forRoutes: [ TestRoute ]
+                forRoutes: [ TestRoute ],
             };
 
             const useSpy = sinon.spy();
             const app = { use: useSpy };
 
             const container = MiddlewaresModule.getContainer();
-            const moduleKey = <any>'Test';
-            container.addConfig([ <any>configuration ], moduleKey);
+            const moduleKey = 'Test' as any;
+            container.addConfig([ configuration as any ], moduleKey);
 
             const instance = new InvalidMiddleware();
-            container.getMiddlewares(moduleKey).set('InvalidMiddleware', <any>{
+            container.getMiddlewares(moduleKey).set('InvalidMiddleware', {
                 metatype: InvalidMiddleware,
-                instance
-            });
+                instance,
+            } as any);
 
             expect(MiddlewaresModule.setupRouteMiddleware.bind(
-                MiddlewaresModule, route, configuration, moduleKey, <any>app
+                MiddlewaresModule, route, configuration, moduleKey, app as any,
             )).throws(InvalidMiddlewareException);
         });
 
@@ -95,25 +96,25 @@ describe('MiddlewaresModule', () => {
             const route = { path: 'Test', method: RequestMethod.GET };
             const configuration = {
                 middlewares: [ TestMiddleware ],
-                forRoutes: [ { path: 'test' }, AnotherRoute, TestRoute ]
+                forRoutes: [ { path: 'test' }, AnotherRoute, TestRoute ],
             };
 
             const useSpy = sinon.spy();
             const app = {
-                get: useSpy
+                get: useSpy,
             };
 
             const container = MiddlewaresModule.getContainer();
-            const moduleKey = <any>'Test';
+            const moduleKey = 'Test' as any;
             container.addConfig([ configuration ], moduleKey);
 
             const instance = new TestMiddleware();
             container.getMiddlewares(moduleKey).set('TestMiddleware', {
                 metatype: TestMiddleware,
-                instance
+                instance,
             });
 
-            MiddlewaresModule.setupRouteMiddleware(route, configuration, moduleKey, <any>app);
+            MiddlewaresModule.setupRouteMiddleware(route, configuration, moduleKey, app as any);
             expect(useSpy.calledOnce).to.be.true;
         });
 

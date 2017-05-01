@@ -1,35 +1,31 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterBuilder } from '../../router/router-builder';
-import { Controller } from '../../../common/utils/controller.decorator';
-import { RequestMapping } from '../../../common/utils/request-mapping.decorator';
+import { ExpressRouterExplorer } from '../../router/router-explorer';
+import { Controller } from '../../../common/utils/decorators/controller.decorator';
+import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { NestMode } from '../../../common/enums/nest-mode.enum';
+import { MetadataScanner } from '../../metadata-scanner';
 
-describe('RouterBuilder', () => {
+describe('RouterExplorer', () => {
     @Controller({ path: 'global' })
     class TestRoute {
         @RequestMapping({ path: 'test' })
-        getTest() {}
+        public getTest() {}
 
         @RequestMapping({ path: 'test', method: RequestMethod.POST })
-        postTest() {}
+        public postTest() {}
 
         @RequestMapping({ path: 'another-test', method: RequestMethod.ALL })
-        anotherTest() {}
-
-        private simplePlainMethod() {}
+        public anotherTest() {}
     }
 
-    let routerBuilder: RouterBuilder;
+    let routerBuilder: ExpressRouterExplorer;
     beforeEach(() => {
-        routerBuilder = new RouterBuilder(null, null);
+        routerBuilder = new ExpressRouterExplorer(new MetadataScanner(), null);
     });
-
-    describe('scanForPathsFromPrototype', () => {
-
+    describe('scanForPaths', () => {
         it('should method return expected list of route paths', () => {
-            const paths = routerBuilder.scanForPathsFromPrototype(new TestRoute(), TestRoute.prototype);
+            const paths = routerBuilder.scanForPaths(new TestRoute());
 
             expect(paths).to.have.length(3);
 
@@ -41,11 +37,8 @@ describe('RouterBuilder', () => {
             expect(paths[1].requestMethod).to.eql(RequestMethod.POST);
             expect(paths[2].requestMethod).to.eql(RequestMethod.ALL);
         });
-
     });
-
     describe('exploreMethodMetadata', () => {
-
         it('should method return expected object which represent single route', () => {
             const instance = new TestRoute();
             const instanceProto = Object.getPrototypeOf(instance);
@@ -55,21 +48,19 @@ describe('RouterBuilder', () => {
             expect(route.path).to.eql('/test');
             expect(route.requestMethod).to.eql(RequestMethod.GET);
         });
-
     });
-
     describe('applyPathsToRouterProxy', () => {
-
         it('should method return expected object which represent single route', () => {
-            const bindStub = sinon.stub(routerBuilder, 'bindMethodToRouterProxy');
-            const paths = [ null, null ];
+            const bindStub = sinon.stub(routerBuilder, 'applyCallbackToRouter');
+            const paths = [
+                { path: '', requestMethod: RequestMethod.GET },
+                { path: 'test', requestMethod: RequestMethod.GET },
+            ];
 
-            routerBuilder.applyPathsToRouterProxy(null, paths);
+            routerBuilder.applyPathsToRouterProxy(null, paths as any, null, '');
 
-            expect(bindStub.calledWith(null, null)).to.be.true;
+            expect(bindStub.calledWith(null, paths[0], null)).to.be.true;
             expect(bindStub.callCount).to.be.eql(paths.length);
         });
-
     });
-
 });

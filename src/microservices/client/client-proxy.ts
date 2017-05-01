@@ -4,10 +4,9 @@ import { isNil } from '../../common/utils/shared.utils';
 import { InvalidMessageException } from '../exceptions/invalid-message.exception';
 
 export abstract class ClientProxy {
+    public abstract sendSingleMessage(pattern, callback);
 
-    abstract sendSingleMessage(pattern, callback);
-
-    send<T>(pattern, data): Observable<T> {
+    public send<T>(pattern, data): Observable<T> {
         if (isNil(pattern) || isNil(data)) {
             return Observable.throw(new InvalidMessageException());
         }
@@ -16,15 +15,15 @@ export abstract class ClientProxy {
         });
     }
 
-    createObserver<T>(observer: Observer<T>) {
+    public createObserver<T>(observer: Observer<T>) {
         return (err, result) => {
             if (err) {
-                (<any>observer).error(err);
+                (observer as any).error(err);
                 return;
             }
             observer.next(result);
             observer.complete();
-        }
+        };
     }
 
 }

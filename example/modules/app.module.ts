@@ -4,6 +4,6 @@ import { ClientController } from './client/client.controller';
 
 @Module({
     modules: [ UsersModule ],
-    controllers: [ ClientController ]
+    controllers: [ ClientController ],
 })
 export class ApplicationModule {}

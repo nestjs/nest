@@ -1,14 +1,13 @@
 export class HttpException {
-
     constructor(
-        private readonly message: string,
+        private readonly response: string | object,
         private readonly status: number) {}
 
-    getMessage() {
-        return this.message;
+    public getResponse(): string | object {
+        return this.response;
     }
 
-    getStatus() {
+    public getStatus(): number {
         return this.status;
     }
 }

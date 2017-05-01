@@ -1,4 +1,4 @@
-import { RuntimeException } from "./runtime.exception";
+import { RuntimeException } from './runtime.exception';
 import { UNKOWN_REQUEST_MAPPING } from '../messages';
 
 export class UnkownRequestMappingException extends RuntimeException {

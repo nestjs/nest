@@ -1,12 +1,14 @@
 import { expect } from 'chai';
 import { MiddlewareBuilder } from '../../middlewares/builder';
 import { InvalidMiddlewareConfigurationException } from '../../../errors/exceptions/invalid-middleware-configuration.exception';
+import { RoutesMapper } from '../../middlewares/routes-mapper';
+import { Controller, Get } from '../../../index';
 
 describe('MiddlewareBuilder', () => {
     let builder: MiddlewareBuilder;
 
     beforeEach(() => {
-        builder = new MiddlewareBuilder();
+        builder = new MiddlewareBuilder(new RoutesMapper());
     });
     describe('apply', () => {
         let configProxy;
@@ -14,20 +16,29 @@ describe('MiddlewareBuilder', () => {
             configProxy = builder.apply([]);
         });
         it('should return configuration proxy', () => {
-            expect(configProxy).to.have.keys('with', 'forRoutes');
+            const metatype = (MiddlewareBuilder as any).ConfigProxy;
+            expect(configProxy instanceof metatype).to.be.true;
         });
         describe('configuration proxy', () => {
             it('should returns itself on "with()" call', () => {
                 expect(configProxy.with()).to.be.eq(configProxy);
             });
             describe('when "forRoutes()" called', () => {
-                class Test {}
+                @Controller('path')
+                class Test {
+                    @Get('route')
+                    public getAll() {}
+                }
+                const route = { path: '/test', method: 0 };
                 it('should store configuration passed as argument', () => {
-                    configProxy.forRoutes(Test, 'test');
+                    configProxy.forRoutes(route, Test);
 
                     expect(builder.build()).to.deep.equal([{
                         middlewares: [],
-                        forRoutes: [ Test, 'test' ]
+                        forRoutes: [route, {
+                            path: '/path/route',
+                            method: 0,
+                        }],
                     }]);
                 });
             });
@@ -36,31 +47,31 @@ describe('MiddlewareBuilder', () => {
 
     describe('use', () => {
         it('should store configuration passed as argument', () => {
-            builder.use(<any>{
+            builder.use({
                 middlewares: 'Test',
-                forRoutes: 'Test'
-            });
+                forRoutes: 'Test',
+            } as any);
 
             expect(builder.build()).to.deep.equal([{
                 middlewares: 'Test',
-                forRoutes: 'Test'
+                forRoutes: 'Test',
             }]);
         });
 
         it('should be possible to chain "use" calls', () => {
-            builder.use(<any>{
+            builder.use({
                 middlewares: 'Test',
-                forRoutes: 'Test'
-            }).use(<any>{
+                forRoutes: 'Test',
+            } as any).use({
                 middlewares: 'Test',
-                forRoutes: 'Test'
-            });
-            expect(builder.build()).to.deep.equal([<any>{
+                forRoutes: 'Test',
+            } as any);
+            expect(builder.build()).to.deep.equal([{
                 middlewares: 'Test',
-                forRoutes: 'Test'
-            }, <any>{
+                forRoutes: 'Test',
+            }, {
                 middlewares: 'Test',
-                forRoutes: 'Test'
+                forRoutes: 'Test',
             }]);
         });
 

@@ -12,30 +12,32 @@ import { RoutesMapper } from './routes-mapper';
 import { RouterProxy } from '../router/router-proxy';
 import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 import { Module } from '../injector/module';
-import { isUndefined } from 'util';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { NestMiddleware } from './interfaces/nest-middleware.interface';
 import { Metatype } from '../../common/interfaces/metatype.interface';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { isUndefined } from '../../common/utils/shared.utils';
 
 export class MiddlewaresModule {
-    private static container = new MiddlewaresContainer(new RoutesMapper());
+    private static routesMapper = new RoutesMapper();
+    private static container = new MiddlewaresContainer();
     private static resolver: MiddlewaresResolver;
-    private static routerProxy = new RouterProxy(new ExceptionsHandler());
+    private static exceptionHandler = new ExceptionsHandler();
+    private static routerProxy = new RouterProxy();
     private static routerMethodFactory = new RouterMethodFactory();
 
-    static getContainer(): MiddlewaresContainer {
+    public static getContainer(): MiddlewaresContainer {
         return this.container;
     }
 
-    static setup(container: NestContainer) {
+    public static setup(container: NestContainer) {
         this.resolver = new MiddlewaresResolver(this.container);
 
         const modules = container.getModules();
         this.resolveMiddlewares(modules);
     }
 
-    static resolveMiddlewares(modules: Map<string, Module>) {
+    public static resolveMiddlewares(modules: Map<string, Module>) {
         modules.forEach((module, name) => {
             const instance = module.instance;
 
@@ -44,10 +46,10 @@ export class MiddlewaresModule {
         });
     }
 
-    static loadConfiguration(instance: NestModule, module: string) {
-        if (!instance.configure) { return; }
+    public static loadConfiguration(instance: NestModule, module: string) {
+        if (!instance.configure) return;
 
-        const middlewaresBuilder = new MiddlewareBuilder();
+        const middlewaresBuilder = new MiddlewareBuilder(this.routesMapper);
         instance.configure(middlewaresBuilder);
         if (!(middlewaresBuilder instanceof MiddlewareBuilder))
             return;
@@ -56,7 +58,7 @@ export class MiddlewaresModule {
         this.container.addConfig(config, module);
     }
 
-    static setupMiddlewares(app: Application) {
+    public static setupMiddlewares(app: Application) {
         const configs = this.container.getConfigs();
 
         configs.forEach((moduleConfigs, module: string) => {
@@ -69,7 +71,7 @@ export class MiddlewaresModule {
         });
     }
 
-    static setupRouteMiddleware(
+    public static setupRouteMiddleware(
         route: ControllerMetadata & { method: RequestMethod },
         config: MiddlewareConfiguration,
         module: string,
@@ -77,15 +79,16 @@ export class MiddlewaresModule {
 
         const { path, method } = route;
 
-        [].concat(config.middlewares).map((middlewareMetatype) => {
+        const middlewares = [].concat(config.middlewares);
+        middlewares.map((metatype: Metatype<NestMiddleware>) => {
             const collection = this.container.getMiddlewares(module);
-            const middleware: MiddlewareWrapper = collection.get(middlewareMetatype.name);
+            const middleware = collection.get(metatype.name);
             if (isUndefined(middleware)) {
                 throw new RuntimeException();
             }
 
-            const instance = middleware.instance;
-            this.setupHandler(instance, middlewareMetatype, app, method, path);
+            const { instance } = (middleware as MiddlewareWrapper);
+            this.setupHandler(instance, metatype, app, method, path);
         });
     }
 
@@ -100,7 +103,7 @@ export class MiddlewaresModule {
             throw new InvalidMiddlewareException(metatype.name);
         }
         const router = this.routerMethodFactory.get(app, method).bind(app);
-        const proxy = this.routerProxy.createProxy(instance.resolve());
+        const proxy = this.routerProxy.createProxy(instance.resolve(), this.exceptionHandler);
 
         router(path, proxy);
     }

@@ -5,12 +5,12 @@ import { BindResolveMiddlewareValues } from '../../utils/bind-resolve-values.uti
 import { NestMiddleware } from '../../../core/middlewares/interfaces/nest-middleware.interface';
 
 describe('BindResolveMiddlewareValues', () => {
-    let type,
-        arg1 = 3,
+    let type;
+    const arg1 = 3,
         arg2 = 4;
 
     class Test implements NestMiddleware {
-        resolve(a, b) {
+        public resolve(a, b) {
             return () => [a, b];
         }
     }
@@ -24,6 +24,6 @@ describe('BindResolveMiddlewareValues', () => {
         expect(hof()).to.deep.equal([arg1, arg2]);
     });
     it('should set name of metatype', () => {
-        expect(type.name).to.eq((<any>Test).name + JSON.stringify([ arg1, arg2 ]));
+        expect(type.name).to.eq((Test as any).name + JSON.stringify([ arg1, arg2 ]));
     });
 });

@@ -4,7 +4,7 @@ import { RequestMethod } from '../../../common/enums/request-method.enum';
 
 describe('RouterMethodFactory', () => {
     let factory: RouterMethodFactory;
-    let target = {
+    const target = {
         get: () => {},
         post: () => {},
         all: () => {},

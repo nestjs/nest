@@ -1,4 +1,4 @@
 export enum Transport {
     TCP,
-    REDIS
+    REDIS,
 }

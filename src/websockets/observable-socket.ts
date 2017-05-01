@@ -3,8 +3,7 @@ import { ReplaySubject } from 'rxjs/ReplaySubject';
 import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
 
 export class ObservableSocket {
-
-    static create(server): ObservableSocketServer {
+    public static create(server): ObservableSocketServer {
         return {
             init: new ReplaySubject(),
             connection: new Subject(),
@@ -12,5 +11,4 @@ export class ObservableSocket {
             server,
         };
     }
-
 }

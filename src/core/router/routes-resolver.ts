@@ -1,34 +1,45 @@
 import { Application } from 'express';
 import { NestContainer, InstanceWrapper } from '../injector/container';
-import { RouterBuilder } from './router-builder';
 import { RouterProxy } from './router-proxy';
-import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 import { Controller } from '../../common/interfaces/controller.interface';
 import { Logger } from '../../common/services/logger.service';
-import { getControllerMappingMessage } from '../helpers/messages';
+import { ControllerMappingMessage } from '../helpers/messages';
+import { Resolver } from './interfaces/resolver.interface';
+import { RouterExceptionFilters } from './router-exception-filters';
+import { MetadataScanner } from '../metadata-scanner';
+import { RouterExplorer } from './interfaces/explorer.inteface';
+import { ExpressRouterExplorer } from './router-explorer';
 
-export class RoutesResolver {
+export class RoutesResolver implements Resolver {
     private readonly logger = new Logger(RoutesResolver.name);
-    private readonly routerProxy = new RouterProxy(new ExceptionsHandler());
-    private routerBuilder: RouterBuilder;
+    private readonly routerProxy = new RouterProxy();
+    private readonly routerExceptionsFilter: RouterExceptionFilters;
+    private readonly routerBuilder: RouterExplorer;
 
     constructor(private container: NestContainer, expressAdapter) {
-        this.routerBuilder = new RouterBuilder(this.routerProxy, expressAdapter);
+        this.routerExceptionsFilter = new RouterExceptionFilters(container);
+        this.routerBuilder = new ExpressRouterExplorer(
+            new MetadataScanner(),
+            this.routerProxy,
+            expressAdapter,
+            this.routerExceptionsFilter,
+        );
     }
 
-    resolve(express: Application) {
+    public resolve(express: Application) {
         const modules = this.container.getModules();
-        modules.forEach(({ routes }) => this.setupRouters(routes, express));
+        modules.forEach(({ routes }, moduleName) => this.setupRouters(routes, moduleName, express));
     }
 
-    setupRouters(
+    public setupRouters(
         routes: Map<string, InstanceWrapper<Controller>>,
+        moduleName: string,
         express: Application) {
 
         routes.forEach(({ instance, metatype }) => {
-            this.logger.log(getControllerMappingMessage(metatype.name));
+            this.logger.log(ControllerMappingMessage(metatype.name));
 
-            const { path, router } = this.routerBuilder.build(instance, metatype);
+            const { path, router } = this.routerBuilder.explore(instance, metatype, moduleName);
             express.use(path, router);
         });
     }

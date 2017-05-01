@@ -1,4 +1,4 @@
-import { Controller } from '../../../src/common/utils/controller.decorator';
+import { Controller } from '../../../src/common/utils/decorators/controller.decorator';
 import { MessagePattern } from '../../../src/microservices/utils/pattern.decorator';
 
 @Controller()

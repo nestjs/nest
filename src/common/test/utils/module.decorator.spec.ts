@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { Module } from '../../utils/module.decorator';
+import { Module } from '../../utils/decorators/module.decorator';
 import { InvalidModuleConfigException } from '../../../errors/exceptions/invalid-module-config.exception';
 
 describe('@Module', () => {
@@ -14,7 +14,7 @@ describe('@Module', () => {
     @Module(moduleProps)
     class TestModule {}
 
-    it('should enhance transport with expected module metadata', () => {
+    it('should enhance class with expected module metadata', () => {
         const modules = Reflect.getMetadata('modules', TestModule);
         const components = Reflect.getMetadata('components', TestModule);
         const exports = Reflect.getMetadata('exports', TestModule);
@@ -29,7 +29,7 @@ describe('@Module', () => {
     it('should throw exception when module properties are invalid', () => {
         const invalidProps = {
             ...moduleProps,
-            test: []
+            test: [],
         };
 
         expect(Module.bind(null, invalidProps)).to.throw(InvalidModuleConfigException);

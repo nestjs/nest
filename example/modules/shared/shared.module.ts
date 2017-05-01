@@ -1,8 +1,8 @@
-import { Module } from '../../../src/common/utils/module.decorator';
+import { Module } from '../../../src/common/utils/decorators/module.decorator';
 import { ChatGateway } from '../users/chat.gateway';
 
 @Module({
     components: [ ChatGateway ],
-    exports: [ ChatGateway ]
+    exports: [ ChatGateway ],
 })
 export class SharedModule {}

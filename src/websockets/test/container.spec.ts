@@ -21,14 +21,14 @@ describe('SocketsContainer', () => {
     });
     describe('getSocketServer', () => {
         it(`should call "observableServers" get method with expected arguments`, () => {
-            instance.getSocketServer(namespace, port);
+            instance.getServer(namespace, port);
             expect(getSpy.calledWith({ namespace, port }));
         });
     });
     describe('storeObservableServer', () => {
         it(`should call "observableServers" set method with expected arguments`, () => {
             const server = {};
-            instance.storeObservableServer(namespace, port, <any>server);
+            instance.addServer(namespace, port, <any>server);
             expect(setSpy.calledWith({ namespace, port }, server));
         });
     });
