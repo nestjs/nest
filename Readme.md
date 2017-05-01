@@ -54,9 +54,8 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 Nest is very much still a work in progress. There is still some things to finish:
 
 - Examples(!)
-- Exception filters
 - Validation helpers
-- Gateways middleware
+- More test utilities
 - and more...
 
 ## People
