@@ -5,7 +5,7 @@ import { Server } from './server';
 import { Transport } from '../../common/enums/transport.enum';
 
 export class ServerFactory {
-    static create(config: MicroserviceConfiguration): Server {
+    public static create(config: MicroserviceConfiguration): Server {
         const { transport } = config;
 
         switch (transport) {

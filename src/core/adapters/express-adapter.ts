@@ -1,12 +1,11 @@
 import * as express from 'express';
 
 export class ExpressAdapter {
-
-    static create(): any {
+    public static create(): any {
         return express();
     }
 
-    static createRouter(): any {
+    public static createRouter(): any {
         return express.Router();
     }
 }

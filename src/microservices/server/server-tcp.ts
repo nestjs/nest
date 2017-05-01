@@ -15,16 +15,16 @@ export class ServerTCP extends Server {
         this.init();
     }
 
-    listen(callback: () => void) {
+    public listen(callback: () => void) {
         this.server.listen(this.port, callback);
     }
 
-    bindHandler(socket) {
+    public bindHandler(socket) {
         const sock = this.getSocketInstance(socket);
         sock.on('message', (msg) => this.handleMessage(sock, msg));
     }
 
-    handleMessage(socket, msg: { pattern: any, data: {} }) {
+    public handleMessage(socket, msg: { pattern: any, data: {} }) {
         const pattern = JSON.stringify(msg.pattern);
         if (!this.msgHandlers[pattern]) {
             socket.sendMessage({ err: NO_PATTERN_MESSAGE });
@@ -35,7 +35,7 @@ export class ServerTCP extends Server {
         handler(msg.data, this.getMessageHandler(socket));
     }
 
-    getMessageHandler(socket) {
+    public getMessageHandler(socket) {
         return (err, response) => {
             if (!response) {
                 const respond = err;
@@ -43,7 +43,7 @@ export class ServerTCP extends Server {
                 return;
             }
             socket.sendMessage({ err, response });
-        }
+        };
     }
 
     private init() {
@@ -52,7 +52,7 @@ export class ServerTCP extends Server {
     }
 
     private getSocketInstance(socket) {
-        return new JsonSocket(socket)
+        return new JsonSocket(socket);
     }
 
 }

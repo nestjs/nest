@@ -8,7 +8,7 @@ describe('@Client', () => {
     const pattern = { role: 'test' };
     class TestComponent {
         @Client(pattern)
-        static instance;
+        public static instance;
     }
     it(`should enhance property with metadata`, () => {
         const isClient = Reflect.getOwnMetadata(CLIENT_METADATA, TestComponent, 'instance');

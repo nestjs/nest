@@ -3,7 +3,8 @@ import { expect } from 'chai';
 import { MergeWithValues } from '../../utils/merge-with-values.util';
 
 describe('MergeWithValues', () => {
-    let type, data = { test: [ 1, 2, 3 ] };
+    let type;
+    const data = { test: [ 1, 2, 3 ] };
     class Test {}
 
     beforeEach(() => {

@@ -1,44 +1,34 @@
 import { MiddlewareConfiguration } from './interfaces/middleware-configuration.interface';
 import { NestMiddleware } from './interfaces/nest-middleware.interface';
-import { RoutesMapper } from './routes-mapper';
 import { Metatype } from '../../common/interfaces/metatype.interface';
 
 export class MiddlewaresContainer {
     private readonly middlewares = new Map<string, Map<string, MiddlewareWrapper>>();
     private readonly configs = new Map<string, Set<MiddlewareConfiguration>>();
 
-    constructor(private routesMapper: RoutesMapper) {}
-
-    getMiddlewares(module: string): Map<string, MiddlewareWrapper> {
+    public getMiddlewares(module: string): Map<string, MiddlewareWrapper> {
         return this.middlewares.get(module) || new Map();
     }
 
-    getConfigs(): Map<string, Set<MiddlewareConfiguration>> {
+    public getConfigs(): Map<string, Set<MiddlewareConfiguration>> {
         return this.configs;
     }
 
-    addConfig(configList: MiddlewareConfiguration[], module: string) {
+    public addConfig(configList: MiddlewareConfiguration[], module: string) {
         const middlewares = this.getCurrentMiddlewares(module);
         const currentConfig = this.getCurrentConfig(module);
 
-        (configList || []).map((config) => {
+        const configurations = configList || [];
+        configurations.map((config) => {
             [].concat(config.middlewares).map((metatype) => {
                 const token = metatype.name;
                 middlewares.set(token, {
                     instance: null,
-                    metatype
+                    metatype,
                 });
             });
-
-            config.forRoutes = this.mapRoutesToFlatList(config.forRoutes);
             currentConfig.add(config);
         });
-    }
-
-    private mapRoutesToFlatList(forRoutes) {
-        return forRoutes.map((route) => (
-            this.routesMapper.mapRouteToRouteProps(route)
-        )).reduce((a, b) => a.concat(b));
     }
 
     private getCurrentMiddlewares(module: string) {
@@ -57,6 +47,6 @@ export class MiddlewaresContainer {
 }
 
 export interface MiddlewareWrapper {
-    instance: NestMiddleware,
-    metatype: Metatype<NestMiddleware>
+    instance: NestMiddleware;
+    metatype: Metatype<NestMiddleware>;
 }

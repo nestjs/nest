@@ -1,27 +1,23 @@
 import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 
+export type RouterProxyCallback = (req?, res?, next?) => void;
+
 export class RouterProxy {
-
-    constructor(private exceptionsHandler: ExceptionsHandler) {}
-
-    createProxy(targetCallback: RouterProxyCallback) {
+    public createProxy(
+        targetCallback: RouterProxyCallback,
+        exceptionsHandler: ExceptionsHandler,
+    ) {
         return (req, res, next) => {
             try {
-                Promise
-                    .resolve(targetCallback(req, res, next))
+                Promise.resolve(targetCallback(req, res, next))
                     .catch((e) => {
-
-                    this.exceptionsHandler.next(e, res);
-                });
+                        exceptionsHandler.next(e, res);
+                    });
             }
-            catch(e) {
-                this.exceptionsHandler.next(e, res);
+            catch (e) {
+                exceptionsHandler.next(e, res);
             }
-        }
+        };
     }
 
-}
-
-export interface RouterProxyCallback {
-    (req?, res?, next?): void;
 }

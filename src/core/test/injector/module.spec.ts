@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Module as ModuleDecorator } from '../../../common/utils/module.decorator';
+import { Module as ModuleDecorator } from '../../../common/utils/decorators/module.decorator';
 import { UnkownExportException } from '../../../errors/exceptions/unkown-export.exception';
 import { Module } from '../../injector/module';
-import { Component } from '../../../common/utils/component.decorator';
+import { Component } from '../../../common/utils/decorators/component.decorator';
+import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
 
 describe('Module', () => {
     let module: Module;
@@ -17,14 +18,14 @@ describe('Module', () => {
 
     it('should throw "UnkownExportException" when given exported component is not a part of components array', () => {
         expect(
-            () => module.addExportedComponent(TestComponent)
+            () => module.addExportedComponent(TestComponent),
         ).throws(UnkownExportException);
     });
 
     it('should add route', () => {
         const collection = new Map();
         const setSpy = sinon.spy(collection, 'set');
-        (<any>module)['_routes'] = collection;
+        (module as any)._routes = collection;
 
         class Test {}
         module.addRoute(Test);
@@ -39,7 +40,7 @@ describe('Module', () => {
     it('should add component', () => {
         const collection = new Map();
         const setSpy = sinon.spy(collection, 'set');
-        (<any>module)['_components'] = collection;
+        (module as any)._components = collection;
 
         module.addComponent(TestComponent);
         expect(setSpy.getCall(0).args).to.deep.equal([ 'TestComponent', {
@@ -56,8 +57,8 @@ describe('Module', () => {
 
         const provider = { provide: 'test', useValue: 'test' };
 
-        module.addComponent(<any>provider);
-        expect((<sinon.SinonSpy>addCustomComponent).called).to.be.true;
+        module.addComponent(provider as any);
+        expect((addCustomComponent as sinon.SinonSpy).called).to.be.true;
     });
 
     it('should call "addCustomClass" when "useClass" property exists', () => {
@@ -66,8 +67,8 @@ describe('Module', () => {
 
         const provider = { provide: 'test', useClass: () => null };
 
-        module.addCustomComponent(<any>provider);
-        expect((<sinon.SinonSpy>addCustomClass).called).to.be.true;
+        module.addCustomComponent(provider as any);
+        expect((addCustomClass as sinon.SinonSpy).called).to.be.true;
     });
 
     it('should call "addCustomValue" when "useValue" property exists', () => {
@@ -76,8 +77,8 @@ describe('Module', () => {
 
         const provider = { provide: 'test', useValue: () => null };
 
-        module.addCustomComponent(<any>provider);
-        expect((<sinon.SinonSpy>addCustomValue).called).to.be.true;
+        module.addCustomComponent(provider as any);
+        expect((addCustomValue as sinon.SinonSpy).called).to.be.true;
     });
 
     it('should call "addCustomFactory" when "useFactory" property exists', () => {
@@ -86,8 +87,107 @@ describe('Module', () => {
 
         const provider = { provide: 'test', useFactory: () => null };
 
-        module.addCustomComponent(<any>provider);
-        expect((<sinon.SinonSpy>addCustomFactory).called).to.be.true;
+        module.addCustomComponent(provider as any);
+        expect((addCustomFactory as sinon.SinonSpy).called).to.be.true;
+    });
+
+    describe('addCustomClass', () => {
+        const type = { name: 'TypeTest' };
+        const component = { provide: type, useClass: type };
+        let setSpy;
+        beforeEach(() => {
+            const collection = new Map();
+            setSpy = sinon.spy(collection, 'set');
+            (module as any)._components = collection;
+        });
+        it('should store component', () => {
+            module.addCustomClass(component as any);
+            expect(setSpy.calledWith(type.name, {
+                name: type.name,
+                metatype: type,
+                instance: null,
+                isResolved: false,
+            })).to.be.true;
+        });
+    });
+
+    describe('addCustomValue', () => {
+        let setSpy;
+        beforeEach(() => {
+            const collection = new Map();
+            setSpy = sinon.spy(collection, 'set');
+            (module as any)._components = collection;
+        });
+        describe('when value is a function', () => {
+            const value = () => ({});
+            const component = { provide: value, useValue: value };
+
+            it('should store component', () => {
+                module.addCustomValue(component as any);
+                expect(setSpy.calledWith(value.name, {
+                    name: value.name,
+                    metatype: null,
+                    instance: value,
+                    isResolved: true,
+                    isNotMetatype: true,
+                })).to.be.true;
+            });
+        });
+        describe('when value is not a function', () => {
+            const value = 'Test';
+            const component = { provide: value, useValue: value };
+
+            it('should store component', () => {
+                module.addCustomValue(component as any);
+                expect(setSpy.calledWith(value, {
+                    name: value,
+                    metatype: null,
+                    instance: value,
+                    isResolved: true,
+                    isNotMetatype: true,
+                })).to.be.true;
+            });
+        });
+    });
+
+    describe('addCustomFactory', () => {
+        const type = { name: 'TypeTest' };
+        const inject = [1, 2, 3];
+        const component = { provide: type, useFactory: type, inject };
+
+        let setSpy;
+        beforeEach(() => {
+            const collection = new Map();
+            setSpy = sinon.spy(collection, 'set');
+            (module as any)._components = collection;
+        });
+        it('should store component', () => {
+            module.addCustomFactory(component as any);
+            expect(setSpy.getCall(0).args).to.deep.equal([type, {
+                name: type,
+                metatype: type,
+                instance: null,
+                isResolved: false,
+                inject,
+                isNotMetatype: true,
+            }]);
+        });
+    });
+
+    describe('when get instance', () => {
+        describe('when metatype does not exists in components collection', () => {
+            beforeEach(() => {
+                sinon.stub((module as any)._components, 'has').returns(false);
+            });
+            it('should throws RuntimeException', () => {
+                expect(() => module.instance).to.throws(RuntimeException);
+            });
+        });
+        describe('when metatype exists in components collection', () => {
+            it('should returns null', () => {
+                expect(module.instance).to.be.eql(null);
+            });
+        });
     });
 
 });

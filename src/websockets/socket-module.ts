@@ -11,25 +11,27 @@ export class SocketModule {
     private static socketsContainer = new SocketsContainer();
     private static webSocketsController: WebSocketsController;
 
-    static setup(container: NestContainer) {
+    public static setup(container: NestContainer) {
         this.webSocketsController = new WebSocketsController(
-            new SocketServerProvider(this.socketsContainer)
+            new SocketServerProvider(this.socketsContainer),
+            container,
         );
 
         const modules = container.getModules();
-        modules.forEach(({ components }) => this.hookGatewaysIntoServers(components));
+        modules.forEach(({ components }, moduleName) => this.hookGatewaysIntoServers(components, moduleName));
     }
 
-    static hookGatewaysIntoServers(components: Map<string, InstanceWrapper<Injectable>>) {
+    public static hookGatewaysIntoServers(components: Map<string, InstanceWrapper<Injectable>>, moduleName: string) {
         components.forEach(({ instance, metatype, isNotMetatype }) => {
-            if (isNotMetatype) { return; }
+            if (isNotMetatype) return;
 
             const metadataKeys = Reflect.getMetadataKeys(metatype);
-            if (metadataKeys.indexOf(GATEWAY_METADATA) < 0) { return; }
+            if (metadataKeys.indexOf(GATEWAY_METADATA) < 0) return;
 
             this.webSocketsController.hookGatewayIntoServer(
-                <NestGateway>instance,
-                metatype
+                instance as NestGateway,
+                metatype,
+                moduleName,
             );
         });
     }

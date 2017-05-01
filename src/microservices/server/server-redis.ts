@@ -12,18 +12,18 @@ export class ServerRedis extends Server {
         this.url = config.url || this.DEFAULT_URL;
     }
 
-    listen(callback?: () => void) {
+    public listen(callback?: () => void) {
         const sub = this.createRedisClient();
         const pub = this.createRedisClient();
 
         sub.on('connect', () => this.handleConnection(callback, sub, pub));
     }
 
-    createRedisClient() {
+    public createRedisClient() {
         return redis.createClient({ url: this.url });
     }
 
-    handleConnection(callback, sub, pub) {
+    public handleConnection(callback, sub, pub) {
         sub.on('message', this.getMessageHandler(pub).bind(this));
 
         const patterns = Object.keys(this.msgHandlers);
@@ -31,11 +31,11 @@ export class ServerRedis extends Server {
         callback && callback();
     }
 
-    getMessageHandler(pub) {
+    public getMessageHandler(pub) {
         return (channel, buffer) => this.handleMessage(channel, buffer, pub);
     }
 
-    handleMessage(channel, buffer, pub) {
+    public handleMessage(channel, buffer, pub) {
         const msg = this.tryParse(buffer);
         const pattern = channel.replace(/_ack$/, '');
         const publish = this.getPublisher(pub, pattern);
@@ -48,7 +48,7 @@ export class ServerRedis extends Server {
         handler(msg.data, this.getMessageHandlerCallback(pub, pattern).bind(this));
     }
 
-    getMessageHandlerCallback(pub, pattern) {
+    public getMessageHandlerCallback(pub, pattern) {
         return (err, response) => {
             const publish = this.getPublisher(pub, pattern);
             if (!response) {
@@ -57,32 +57,32 @@ export class ServerRedis extends Server {
                 return;
             }
             publish({ err, response });
-        }
+        };
     }
 
-    getPublisher(pub, pattern) {
+    public getPublisher(pub, pattern) {
         return (respond) => {
             pub.publish(
                 this.getResQueueName(pattern),
-                JSON.stringify(respond)
+                JSON.stringify(respond),
             );
-        }
+        };
     }
 
-    tryParse(content) {
+    public  tryParse(content) {
         try {
             return JSON.parse(content);
         }
-        catch(e) {
+        catch (e) {
             return content;
         }
     }
 
-    getAckQueueName(pattern) {
+    public getAckQueueName(pattern) {
         return `${pattern}_ack`;
     }
 
-    getResQueueName(pattern) {
+    public getResQueueName(pattern) {
         return `${pattern}_res`;
     }
 }

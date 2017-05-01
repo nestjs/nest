@@ -10,7 +10,7 @@ export class RuntimeException extends Error {
         super(msg);
     }
 
-    what() {
+    public what() {
         return this.msg;
     }
 }

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { Controller } from '../../utils/controller.decorator';
+import { Controller } from '../../utils/decorators/controller.decorator';
 
 describe('@Controller', () => {
     const props = {
@@ -11,7 +11,7 @@ describe('@Controller', () => {
     @Controller() class EmptyDecorator {}
     @Controller({}) class AnotherTest {}
 
-    it('should enhance transport with expected path metadata', () => {
+    it('should enhance controller with expected path metadata', () => {
         const path = Reflect.getMetadata('path', Test);
         expect(path).to.be.eql(props.path);
     });

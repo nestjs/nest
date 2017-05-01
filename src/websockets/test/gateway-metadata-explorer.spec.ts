@@ -4,6 +4,7 @@ import { WebSocketGateway } from '../utils/socket-gateway.decorator';
 import { WebSocketServer } from '../utils/gateway-server.decorator';
 import { SubscribeMessage } from '../utils/subscribe-message.decorator';
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
+import { MetadataScanner } from '../../core/metadata-scanner';
 
 describe('GatewayMetadataExplorer', () => {
     const message = 'test';
@@ -11,8 +12,8 @@ describe('GatewayMetadataExplorer', () => {
 
     @WebSocketGateway()
     class Test {
-        @WebSocketServer() server;
-        @WebSocketServer() anotherServer;
+        @WebSocketServer() public server;
+        @WebSocketServer() public anotherServer;
 
         get testGet() { return 0; }
         set testSet(val) {}
@@ -20,28 +21,32 @@ describe('GatewayMetadataExplorer', () => {
         constructor() {}
 
         @SubscribeMessage({ value: message })
-        test() {}
+        public test() {}
 
         @SubscribeMessage({ value: secMessage })
-        testSec() {}
+        public testSec() {}
 
-        noMessage() {}
+        public noMessage() {}
     }
     let instance: GatewayMetadataExplorer;
+    let scanner: MetadataScanner;
 
     beforeEach(() => {
-        instance = new GatewayMetadataExplorer();
+        scanner = new MetadataScanner();
+        instance = new GatewayMetadataExplorer(scanner);
     });
     describe('explore', () => {
-        let scanForHandlersFromPrototype: sinon.SinonSpy;
+        let scanFromPrototype: sinon.SinonSpy;
         beforeEach(() => {
-            scanForHandlersFromPrototype = sinon.spy();
-            instance.scanForHandlersFromPrototype = scanForHandlersFromPrototype
+            scanFromPrototype = sinon.spy(scanner, 'scanFromPrototype');
         });
-        it(`should call "scanForHandlersFromPrototype" with expected arguments`, () => {
+        it(`should call "scanFromPrototype" with expected arguments`, () => {
             const obj = new Test();
-            instance.explore(<any>obj);
-            expect(scanForHandlersFromPrototype.calledWith(obj, Object.getPrototypeOf(obj))).to.be.true;
+            instance.explore(obj as any);
+
+            const [ argObj, argProto ] = scanFromPrototype.getCall(0).args;
+            expect(argObj).to.be.eql(obj);
+            expect(argProto).to.be.eql(Object.getPrototypeOf(obj));
         });
     });
     describe('exploreMethodMetadata', () => {
@@ -59,20 +64,10 @@ describe('GatewayMetadataExplorer', () => {
             expect(metadata.message).to.eql(message);
         });
     });
-    describe('scanForHandlersFromPrototype', () => {
-        it(`should returns only methods with @MessagePattern decorator`, () => {
-            const obj = new Test();
-            const handlers = instance.scanForHandlersFromPrototype(<any>obj, Object.getPrototypeOf(obj));
-
-            expect(handlers).to.have.length(2);
-            expect(handlers[0].message).to.eq(message);
-            expect(handlers[1].message).to.eq(secMessage);
-        });
-    });
     describe('scanForServerHooks', () => {
         it(`should returns properties with @Client decorator`, () => {
             const obj = new Test();
-            const servers = [ ...instance.scanForServerHooks(<any>obj) ];
+            const servers = [ ...instance.scanForServerHooks(obj as any) ];
 
             expect(servers).to.have.length(2);
             expect(servers).to.deep.eq([ 'server', 'anotherServer' ]);

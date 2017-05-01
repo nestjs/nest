@@ -1,21 +1,21 @@
 import { WebSocketGateway } from '../../../src/websockets/utils/socket-gateway.decorator';
 import { SubscribeMessage } from '../../../src/websockets/utils/subscribe-message.decorator';
-import { Subject } from 'rxjs/Subject';
 import { WebSocketServer } from '../../../src/websockets/utils/gateway-server.decorator';
+import { OnGatewayInit, OnGatewayConnection } from '../../../src/websockets/index';
+import { ChatMiddleware } from './chat.middleware';
 
-@WebSocketGateway({ port: 2000 })
-export class ChatGateway {
-    private msg$ = new Subject<any>();
+@WebSocketGateway({
+    port: 2000,
+    middlewares: [ ChatMiddleware ],
+})
+export class ChatGateway implements OnGatewayInit, OnGatewayConnection {
+    @WebSocketServer() private server;
 
-    @WebSocketServer() server;
+    public afterInit(server) {}
+    public handleConnection(client) {}
 
-    get msgStream() {
-        return this.msg$.asObservable();
+    @SubscribeMessage('event')
+    public onMessage(client, data) {
+        client.emit('event', data);
     }
-
-    @SubscribeMessage({ value: 'message' })
-    onMessage(client, data) {
-        this.msg$.next({ client, data });
-    }
-
 }

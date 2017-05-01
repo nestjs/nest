@@ -5,7 +5,7 @@ import { Transport } from '../../common/enums/transport.enum';
 import { ClientProxy } from './client-proxy';
 
 export class ClientProxyFactory {
-    static create(metadata: ClientMetadata): ClientProxy {
+    public static create(metadata: ClientMetadata): ClientProxy {
         const { transport } = metadata;
 
         switch (transport) {

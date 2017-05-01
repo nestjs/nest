@@ -6,9 +6,11 @@ import { RoutesResolver } from './core/router/routes-resolver';
 import { Logger } from './common/services/logger.service';
 import { messages } from './core/constants';
 import { MicroservicesModule } from './microservices/microservices-module';
+import { Resolver } from './core/router/interfaces/resolver.interface';
+import { INestApplication } from './common/interfaces';
 
-export class NestApplication {
-    private readonly routesResolver: RoutesResolver;
+export class NestApplication implements INestApplication {
+    private readonly routesResolver: Resolver;
     private readonly logger = new Logger(NestApplication.name);
 
     constructor(
@@ -18,13 +20,13 @@ export class NestApplication {
         this.routesResolver = new RoutesResolver(container, ExpressAdapter);
     }
 
-    setupModules() {
+    public setupModules() {
         SocketModule.setup(this.container);
         MiddlewaresModule.setup(this.container);
         MicroservicesModule.setupClients(this.container);
     }
 
-    listen(port: number, callback: () => void) {
+    public listen(port: number, callback?: () => void) {
         this.setupMiddlewares(this.express);
         this.setupRoutes(this.express);
 

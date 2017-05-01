@@ -7,18 +7,18 @@ import { Metatype } from '../../common/interfaces/metatype.interface';
 export class NestContainer {
     private readonly modules = new Map<string, Module>();
 
-    addModule(metatype: NestModuleMetatype) {
-        if (this.modules.has(metatype.name)) { return; }
+    public addModule(metatype: NestModuleMetatype) {
+        if (this.modules.has(metatype.name)) return;
 
         this.modules.set(metatype.name, new Module(metatype));
     }
 
-    getModules(): Map<string, Module> {
+    public getModules(): Map<string, Module> {
         return this.modules;
     }
 
-    addRelatedModule(relatedModule: NestModuleMetatype, target: NestModuleMetatype) {
-        if (!this.modules.has(target.name)) { return; }
+    public addRelatedModule(relatedModule: NestModuleMetatype, target: NestModuleMetatype) {
+        if (!this.modules.has(target.name)) return;
 
         const module = this.modules.get(target.name);
         const related = this.modules.get(relatedModule.name);
@@ -26,34 +26,31 @@ export class NestContainer {
         module.addRelatedModule(related);
     }
 
-    addComponent(component: Metatype<Injectable>, metatype: NestModuleMetatype) {
+    public addComponent(component: Metatype<Injectable>, metatype: NestModuleMetatype) {
         if (!this.modules.has(metatype.name)) {
             throw new UnkownModuleException();
         }
-
         const module = this.modules.get(metatype.name);
         module.addComponent(component);
     }
 
-    addExportedComponent(exportedComponent: Metatype<Injectable>, metatype: NestModuleMetatype) {
+    public addExportedComponent(exportedComponent: Metatype<Injectable>, metatype: NestModuleMetatype) {
         if (!this.modules.has(metatype.name)) {
             throw new UnkownModuleException();
         }
-
         const module = this.modules.get(metatype.name);
         module.addExportedComponent(exportedComponent);
     }
 
-    addController(controller: Metatype<Controller>, metatype: NestModuleMetatype) {
-        if(!this.modules.has(metatype.name)) {
+    public addController(controller: Metatype<Controller>, metatype: NestModuleMetatype) {
+        if (!this.modules.has(metatype.name)) {
             throw new UnkownModuleException();
         }
-
         const module = this.modules.get(metatype.name);
         module.addRoute(controller);
     }
 
-    clear() {
+    public clear() {
         this.modules.clear();
     }
 

@@ -7,5 +7,5 @@ export const MessagePattern = (metadata?: PatternMetadata | string): MethodDecor
         Reflect.defineMetadata(PATTERN_METADATA, metadata, descriptor.value);
         Reflect.defineMetadata(PATTERN_HANDLER_METADATA, true, descriptor.value);
         return descriptor;
-    }
+    };
 };

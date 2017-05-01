@@ -4,13 +4,13 @@ export abstract class Server {
     private readonly logger = new Logger(Server.name);
     protected readonly msgHandlers = {};
 
-    abstract listen(callback: () => void);
+    public abstract listen(callback: () => void);
 
-    getHandlers() {
+    public getHandlers() {
         return this.msgHandlers;
     }
 
-    add(pattern, callback) {
+    public add(pattern, callback) {
         this.msgHandlers[JSON.stringify(pattern)] = callback;
     }
 

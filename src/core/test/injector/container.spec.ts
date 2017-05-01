@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NestContainer } from '../../injector/container';
-import { Module } from '../../../common/utils/module.decorator';
+import { Module } from '../../../common/utils/decorators/module.decorator';
 import { UnkownModuleException } from '../../../errors/exceptions/unkown-module.exception';
 
 describe('NestContainer', () => {
@@ -17,7 +17,7 @@ describe('NestContainer', () => {
     it('should not add module if already exists in collection', () => {
         const modules = new Map();
         const setSpy = sinon.spy(modules, 'set');
-        (container as any)['modules'] = modules;
+        (container as any).modules = modules;
 
         container.addModule(TestModule);
         container.addModule(TestModule);

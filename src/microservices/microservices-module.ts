@@ -5,12 +5,12 @@ import { ListenersController } from './listeners-controller';
 export class MicroservicesModule {
     private static readonly listenersController = new ListenersController();
 
-    static setupListeners(container: NestContainer, server) {
+    public static setupListeners(container: NestContainer, server) {
         const modules = container.getModules();
         modules.forEach(({ routes }) => this.bindListeners(routes, server));
     }
 
-    static setupClients(container: NestContainer) {
+    public static setupClients(container: NestContainer) {
         const modules = container.getModules();
         modules.forEach(({ routes, components }) => {
             this.bindClients(routes);
@@ -18,13 +18,13 @@ export class MicroservicesModule {
         });
     }
 
-    static bindListeners(controllers: Map<string, InstanceWrapper<Controller>>, server) {
+    public static bindListeners(controllers: Map<string, InstanceWrapper<Controller>>, server) {
         controllers.forEach(({ instance }) => {
             this.listenersController.bindPatternHandlers(instance, server);
         });
     }
 
-    static bindClients(controllers: Map<string, InstanceWrapper<Controller>>,) {
+    public static bindClients(controllers: Map<string, InstanceWrapper<Controller>>) {
         controllers.forEach(({ instance }) => {
             this.listenersController.bindClientsToProperties(instance);
         });

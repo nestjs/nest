@@ -1,4 +1,3 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ObservableSocket } from '../observable-socket';
 import { ReplaySubject } from 'rxjs/ReplaySubject';

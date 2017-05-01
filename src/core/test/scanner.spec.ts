@@ -1,10 +1,10 @@
 import * as sinon from 'sinon';
 import { DependenciesScanner } from './../scanner';
 import { NestContainer } from './../injector/container';
-import { Module } from '../../common/utils/module.decorator';
+import { Module } from '../../common/utils/decorators/module.decorator';
 import { NestModule } from '../../common/interfaces/nest-module.interface';
-import { Component } from '../../common/utils/component.decorator';
-import { Controller } from '../../common/utils/controller.decorator';
+import { Component } from '../../common/utils/decorators/component.decorator';
+import { Controller } from '../../common/utils/decorators/controller.decorator';
 
 describe('DependenciesScanner', () => {
 
@@ -14,7 +14,7 @@ describe('DependenciesScanner', () => {
     @Module({
         components: [ TestComponent ],
         controllers: [ TestRoute ],
-        exports: [ TestComponent ]
+        exports: [ TestComponent ],
     })
     class AnotherTestModule implements NestModule {}
 

@@ -16,7 +16,7 @@ describe('ServerRedis', () => {
         beforeEach(() => {
             onSpy = sinon.spy();
             client = {
-                on: onSpy
+                on: onSpy,
             };
             createRedisClient = sinon.stub(server, 'createRedisClient').callsFake(() => client);
         });
@@ -35,7 +35,7 @@ describe('ServerRedis', () => {
             subscribeSpy = sinon.spy();
             sub = {
                 on: onSpy,
-                subscribe: subscribeSpy
+                subscribe: subscribeSpy,
             };
         });
         it('should bind "message" event to handler', () => {
@@ -45,7 +45,7 @@ describe('ServerRedis', () => {
         it('should subscribe each acknowledge patterns', () => {
             const pattern = 'test';
             const handler = sinon.spy();
-            (<any>server)['msgHandlers'] = {
+            (server as any).msgHandlers = {
                 [pattern]: handler,
             };
             server.handleConnection(null, sub, null);
@@ -80,7 +80,7 @@ describe('ServerRedis', () => {
         });
         it(`should call handler with expected arguments`, () => {
             const handler = sinon.spy();
-            (<any>server)['msgHandlers'] = {
+            (server as any).msgHandlers = {
                 [channel]: handler,
             };
 
@@ -120,7 +120,7 @@ describe('ServerRedis', () => {
         beforeEach(() => {
             publisherSpy = sinon.spy();
             pub = {
-                publish: publisherSpy
+                publish: publisherSpy,
             };
             publisher = server.getPublisher(pub, pattern);
         });

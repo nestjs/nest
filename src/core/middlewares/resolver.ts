@@ -7,12 +7,9 @@ export class MiddlewaresResolver {
 
     constructor(private middlewaresContainer: MiddlewaresContainer) {}
 
-    resolveInstances(module: Module, moduleName: string) {
+    public resolveInstances(module: Module, moduleName: string) {
         const middlewares = this.middlewaresContainer.getMiddlewares(moduleName);
-
-        middlewares.forEach((wrapper) => {
-            this.resolveMiddlewareInstance(wrapper, middlewares, module);
-        });
+        middlewares.forEach((wrapper) => this.resolveMiddlewareInstance(wrapper, middlewares, module));
     }
 
     private resolveMiddlewareInstance(
@@ -23,7 +20,7 @@ export class MiddlewaresResolver {
         this.instanceLoader.loadInstanceOfMiddleware(
             wrapper,
             middlewares,
-            module
+            module,
         );
     }
 

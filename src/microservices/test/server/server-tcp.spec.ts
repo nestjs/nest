@@ -23,19 +23,19 @@ describe('ServerTCP', () => {
     describe('listen', () => {
         const serverMock = { listen: sinon.spy() };
         beforeEach(() => {
-            server['server'] = <any>serverMock;
+            (server as any).server = serverMock;
         });
         it('should call native listen method with expected arguments', () => {
             const callback = () => {};
             server.listen(callback);
-            expect(serverMock.listen.calledWith(server['port'], callback)).to.be.true;
+            expect(serverMock.listen.calledWith((server as any).port, callback)).to.be.true;
         });
     });
     describe('handleMessage', () => {
         let socket;
         const msg = {
             pattern: 'test',
-            data: 'tests'
+            data: 'tests',
         };
         beforeEach(() => {
             socket = {
@@ -48,7 +48,7 @@ describe('ServerTCP', () => {
         });
         it('should call handler if exists in handlers object', () => {
             const handler = sinon.spy();
-            (<any>server)['msgHandlers'] = {
+            (server as any).msgHandlers = {
                 [JSON.stringify(msg.pattern)]: handler
             };
             server.handleMessage(socket, msg);

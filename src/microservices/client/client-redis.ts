@@ -18,10 +18,10 @@ export class ClientRedis extends ClientProxy {
         this.init();
     }
 
-    sendSingleMessage(msg, callback: Function) {
+    public sendSingleMessage(msg, callback: (...args) => any) {
         const pattern = JSON.stringify(msg.pattern);
-        const subscription = (channel, msg) => {
-            const { err, response } = JSON.parse(msg);
+        const subscription = (channel, message) => {
+            const { err, response } = JSON.parse(message);
             callback(err, response);
 
             this.sub.unsubscribe(this.getResPatternName(pattern));
@@ -35,11 +35,11 @@ export class ClientRedis extends ClientProxy {
         return subscription;
     }
 
-    getAckPatternName(pattern: string): string {
+    public getAckPatternName(pattern: string): string {
         return `${pattern}_ack`;
     }
 
-    getResPatternName(pattern: string): string {
+    public getResPatternName(pattern: string): string {
         return `${pattern}_res`;
     }
 
@@ -58,5 +58,4 @@ export class ClientRedis extends ClientProxy {
     private handleErrors(stream) {
         stream.on('error', (err) => this.logger.error(err));
     }
-
 }

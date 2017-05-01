@@ -7,17 +7,18 @@ import { HttpException } from '../../exceptions/http-exception';
 describe('RouterProxy', () => {
     let routerProxy: RouterProxy;
     let handlerMock: sinon.SinonMock;
+    let handler: ExceptionsHandler;
 
     beforeEach(() => {
-        const handler = new ExceptionsHandler();
+        handler = new ExceptionsHandler();
         handlerMock = sinon.mock(handler);
-        routerProxy = new RouterProxy(handler);
+        routerProxy = new RouterProxy();
     });
 
     describe('createProxy', () => {
 
         it('should method return thunk', () => {
-            const proxy = routerProxy.createProxy(() => {});
+            const proxy = routerProxy.createProxy(() => {}, handler);
             expect(typeof proxy === 'function').to.be.true;
         });
 
@@ -25,7 +26,7 @@ describe('RouterProxy', () => {
             const expectation = handlerMock.expects('next').once();
             const proxy = routerProxy.createProxy((req, res, next) => {
                 throw new HttpException('test', 500);
-            });
+            }, handler);
             proxy(null, null, null);
             expectation.verify();
         });
@@ -34,7 +35,7 @@ describe('RouterProxy', () => {
             const expectation = handlerMock.expects('next').once();
             const proxy = routerProxy.createProxy(async (req, res, next) => {
                 throw new HttpException('test', 500);
-            });
+            }, handler);
             proxy(null, null, null);
 
             setTimeout(() => {

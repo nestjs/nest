@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { SocketsContainer } from './container';
 import { ObservableSocket } from './observable-socket';
 import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
@@ -6,11 +5,10 @@ import { IoAdapter } from './adapters/io-adapter';
 import { validatePath } from '../common/utils/shared.utils';
 
 export class SocketServerProvider {
-
     constructor(private readonly socketsContainer: SocketsContainer) {}
 
     public scanForSocketServer(namespace: string, port: number): ObservableSocketServer {
-        const observableServer = this.socketsContainer.getSocketServer(namespace, port);
+        const observableServer = this.socketsContainer.getServer(namespace, port);
         return observableServer ? observableServer : this.createSocketServer(namespace, port);
     }
 
@@ -18,7 +16,7 @@ export class SocketServerProvider {
         const server = this.getServerOfNamespace(namespace, port);
         const observableSocket = ObservableSocket.create(server);
 
-        this.socketsContainer.storeObservableServer(namespace, port, observableSocket);
+        this.socketsContainer.addServer(namespace, port, observableSocket);
         return observableSocket;
     }
 
@@ -32,5 +30,4 @@ export class SocketServerProvider {
     private validateNamespace(namespace: string): string {
         return validatePath(namespace);
     }
-
 }

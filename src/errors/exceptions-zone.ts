@@ -1,15 +1,16 @@
-import { ExceptionHandler } from "./exception-handler";
+import { ExceptionHandler } from './exception-handler';
+import { UNHANDLED_RUNTIME_EXCEPTION } from './messages';
 
 export class ExceptionsZone {
     private static readonly exceptionHandler = new ExceptionHandler();
 
-    static run(fn: () => void) {
+    public static run(fn: () => void) {
         try {
             fn();
         }
-        catch(e) {
+        catch (e) {
             this.exceptionHandler.handle(e);
-            throw 'Unhandled Nest application Runtime Exception';
+            throw UNHANDLED_RUNTIME_EXCEPTION;
         }
     }
 }

@@ -1,33 +1,33 @@
-import { NestMode } from '../enums/nest-mode.enum';
+import { NestEnvironment } from '../enums/nest-environment.enum';
 
-declare var process;
+declare const process;
 import * as clc from 'cli-color';
 
 export class Logger {
-    private static mode = NestMode.RUN;
+    private static mode = NestEnvironment.RUN;
     private readonly yellow = clc.xterm(3);
 
     constructor(private context: string) {}
 
-    static setMode(mode: NestMode) {
+    public static setMode(mode: NestEnvironment) {
         this.mode = mode;
     }
 
-    log(message: string) {
+    public log(message: string) {
         this.logMessage(message, clc.green);
     }
 
-    error(message: string, trace = '') {
+    public error(message: string, trace = '') {
         this.logMessage(message, clc.red);
         this.printStackTrace(trace);
     }
 
-    warn(message: string) {
+    public warn(message: string) {
         this.logMessage(message, clc.yellow);
     }
 
-    private logMessage(message: string, color: Function) {
-        if (Logger.mode === NestMode.TEST) { return; }
+    private logMessage(message: string, color: (msg: string) => string) {
+        if (Logger.mode === NestEnvironment.TEST) return;
 
         process.stdout.write(color(`[Nest] ${process.pid}   - `));
         process.stdout.write(`${new Date(Date.now()).toLocaleString()}   `);
@@ -37,7 +37,7 @@ export class Logger {
     }
 
     private printStackTrace(trace: string) {
-        if (Logger.mode === NestMode.TEST) { return; }
+        if (Logger.mode === NestEnvironment.TEST) return;
 
         process.stdout.write(trace);
         process.stdout.write(`\n`);

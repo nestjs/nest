@@ -2,17 +2,16 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { MiddlewaresResolver } from '../../middlewares/resolver';
 import { MiddlewaresContainer } from '../../middlewares/container';
-import { Component } from '../../../common/utils/component.decorator';
+import { Component } from '../../../common/utils/decorators/component.decorator';
 import { NestMiddleware } from '../../middlewares/interfaces/nest-middleware.interface';
-import { RoutesMapper } from '../../middlewares/routes-mapper';
 import { Logger } from '../../../common/services/logger.service';
-import { NestMode } from '../../../common/enums/nest-mode.enum';
+import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
 
 describe('MiddlewaresResolver', () => {
     @Component()
     class TestMiddleware implements NestMiddleware {
-        resolve() {
-            return (req, res, next) => {}
+        public resolve() {
+            return (req, res, next) => {};
         }
     }
 
@@ -20,10 +19,10 @@ describe('MiddlewaresResolver', () => {
     let container: MiddlewaresContainer;
     let mockContainer: sinon.SinonMock;
 
-    before(() => Logger.setMode(NestMode.TEST));
+    before(() => Logger.setMode(NestEnvironment.TEST));
 
     beforeEach(() => {
-        container = new MiddlewaresContainer(new RoutesMapper());
+        container = new MiddlewaresContainer();
         resolver = new MiddlewaresResolver(container);
         mockContainer = sinon.mock(container);
     });

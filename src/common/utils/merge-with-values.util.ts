@@ -1,19 +1,19 @@
 import 'reflect-metadata';
 
 export interface Constructor<T> {
-    new(...args: any[]): T
+    new(...args: any[]): T;
 }
 
 export const MergeWithValues = <T extends Constructor<{}>>(data: { [param: string]: any }) => {
-    return (metatype: T): any => {
-        const type = class extends metatype {
+    return (Metatype: T): any => {
+        const Type = class extends Metatype {
             constructor(...args) {
                 super(...args);
             }
         };
-        const token = metatype.name + JSON.stringify(data);
-        Object.defineProperty(type, 'name', { value: token });
-        Object.assign(type.prototype, data);
-        return type;
-    }
+        const token = Metatype.name + JSON.stringify(data);
+        Object.defineProperty(Type, 'name', { value: token });
+        Object.assign(Type.prototype, data);
+        return Type;
+    };
 };

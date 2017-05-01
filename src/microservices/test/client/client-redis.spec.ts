@@ -40,11 +40,11 @@ describe('ClientRedis', () => {
                 subscribe: subscribeSpy,
                 on: onSpy,
                 removeListener: removeListenerSpy,
-                unsubscribe: unsubscribeSpy
+                unsubscribe: unsubscribeSpy,
             };
             pub = { publish: publishSpy };
-            client['sub'] = sub;
-            client['pub'] = pub;
+            (client as any).sub = sub;
+            (client as any).pub = pub;
         });
         it('should subscribe to response pattern name', () => {
             client.sendSingleMessage(msg, () => {});
@@ -62,7 +62,7 @@ describe('ClientRedis', () => {
             const callback = sinon.spy();
             const resMsg = {
                 err: 'err',
-                response: 'test'
+                response: 'test',
             };
             let subscription;
 

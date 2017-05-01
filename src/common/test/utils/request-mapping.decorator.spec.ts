@@ -1,18 +1,18 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { RequestMapping } from '../../utils/request-mapping.decorator';
+import { RequestMapping } from '../../utils/decorators/request-mapping.decorator';
 import { RequestMethod } from '../../enums/request-method.enum';
 
 describe('@RequestMapping', () => {
     const requestProps = {
         path: 'test',
-        method: RequestMethod.ALL
+        method: RequestMethod.ALL,
     };
 
-    it('should enhance transport with expected request metadata', () => {
+    it('should enhance class with expected request metadata', () => {
         class Test {
             @RequestMapping(requestProps)
-            static test() {}
+            public static test() {}
         }
 
         const path = Reflect.getMetadata('path', Test.test);
@@ -25,7 +25,7 @@ describe('@RequestMapping', () => {
     it('should set request method on GET by default', () => {
         class Test {
             @RequestMapping({ path: '' })
-            static test() {}
+            public static test() {}
         }
 
         const method = Reflect.getMetadata('method', Test.test);
@@ -35,7 +35,7 @@ describe('@RequestMapping', () => {
     it('should set path on "/" by default', () => {
         class Test {
             @RequestMapping({})
-            static test() {}
+            public static test() {}
         }
 
         const method = Reflect.getMetadata('path', Test.test);

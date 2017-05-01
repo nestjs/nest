@@ -4,7 +4,7 @@ import { ClientProxy } from '../../client/client-proxy';
 import { Observable } from 'rxjs';
 
 class TestClientProxy extends ClientProxy {
-    sendSingleMessage(pattern, callback) {}
+    public sendSingleMessage(pattern, callback) {}
 }
 
 describe('ClientProxy', () => {
@@ -40,7 +40,7 @@ describe('ClientProxy', () => {
                 observer = {
                     error,
                     next,
-                    complete
+                    complete,
                 };
 
             before(() => {

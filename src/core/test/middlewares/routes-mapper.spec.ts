@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { RoutesMapper } from '../../middlewares/routes-mapper';
-import { Controller } from '../../../common/utils/controller.decorator';
-import { RequestMapping } from '../../../common/utils/request-mapping.decorator';
+import { Controller } from '../../../common/utils/decorators/controller.decorator';
+import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { UnkownRequestMappingException } from '../../../errors/exceptions/unkown-request-mapping.exception';
 
@@ -10,14 +10,13 @@ describe('RoutesMapper', () => {
     class TestRoute {
 
         @RequestMapping({ path: 'test' })
-        getTest() {}
+        public getTest() {}
 
         @RequestMapping({ path: 'another', method: RequestMethod.DELETE })
-        getAnother() {}
+        public getAnother() {}
     }
 
     let mapper: RoutesMapper;
-
     beforeEach(() => {
         mapper = new RoutesMapper();
     });
@@ -27,12 +26,12 @@ describe('RoutesMapper', () => {
             middlewares: 'Test',
             forRoutes: [
                 { path: 'test', method: RequestMethod.GET },
-                TestRoute
-            ]
+                TestRoute,
+            ],
         };
 
         expect(mapper.mapRouteToRouteProps(config.forRoutes[0])).to.deep.equal([{
-            path: '/test', method: RequestMethod.GET
+            path: '/test', method: RequestMethod.GET,
         }]);
 
         expect(mapper.mapRouteToRouteProps(config.forRoutes[1])).to.deep.equal([
@@ -45,12 +44,12 @@ describe('RoutesMapper', () => {
         const config = {
             middlewares: 'Test',
             forRoutes: [
-                { method: RequestMethod.GET }
-            ]
+                { method: RequestMethod.GET },
+            ],
         };
 
         expect(
-            mapper.mapRouteToRouteProps.bind(mapper, config.forRoutes[0])
+            mapper.mapRouteToRouteProps.bind(mapper, config.forRoutes[0]),
         ).throws(UnkownRequestMappingException);
     });
 
