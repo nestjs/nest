@@ -11,3 +11,4 @@ export * from './nest-microservice.interface';
 export * from './middlewares-consumer.interface';
 export * from './on-init.interface';
 export * from './middleware-config-proxy.interface';
+export * from './exception-filter.interface';

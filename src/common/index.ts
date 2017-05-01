@@ -7,4 +7,5 @@ export {
     MiddlewareConfigProxy,
     MiddlewaresConsumer,
     OnModuleInit,
+    ExceptionFilter,
 } from './interfaces';
