@@ -40,7 +40,7 @@
     "instrument": true
   },
   "author": "Kamil Mysliwiec",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "cli-color": "^1.1.0",
     "express": "^4.14.0",
