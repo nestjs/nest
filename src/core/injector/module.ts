@@ -111,12 +111,21 @@ export class Module {
 
     public addCustomClass(component: CustomClass) {
         const { provide: metatype, useClass } = component;
-        this._components.set(metatype.name, {
-            name: metatype.name,
+        const isMetatypeConstructor = Boolean(metatype.name)
+        const customClassEntry: any = {
+            name: null,
             metatype: useClass,
             instance: null,
             isResolved: false,
-        });
+        };
+
+        if (!isMetatypeConstructor) {
+            customClassEntry.name = metatype;
+        } else {
+            customClassEntry.name = metatype.name;
+        }
+
+        this._components.set(name, customClassEntry);
     }
 
     public addCustomValue(component: CustomValue) {
