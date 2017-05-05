@@ -39,7 +39,14 @@
     "sourceMap": true,
     "instrument": true
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kamilmysliwiec/nest.git"
+  },
   "author": "Kamil Mysliwiec",
+  "bugs": {
+    "url": "https://github.com/kamilmysliwiec/nest/issues"
+  },
   "license": "ISC",
   "dependencies": {
     "cli-color": "^1.1.0",
