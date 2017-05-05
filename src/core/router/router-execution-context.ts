@@ -19,7 +19,7 @@ export class RouterExecutionContext {
         if (isUndefined(metadata)) {
             return callback.bind(instance);
         }
-        const keys = Object.keys(metadata).map(Number);
+        const keys = Object.keys(metadata);
         const argsLength = this.getArgumentsLength(keys, metadata);
         const args = this.createNullArray(argsLength);
 
@@ -30,11 +30,16 @@ export class RouterExecutionContext {
         };
     }
 
+    public mapParamType(key: string): RouteParamtypes {
+        const keyPair = key.split(':');
+        return Number(keyPair[0]);
+    }
+
     public reflectCallbackMetadata(instance: Controller, callback: (...args) => any): RouteParamsMetadata {
         return Reflect.getMetadata(ROUTE_ARGS_METADATA, instance, callback.name);
     }
 
-    public getArgumentsLength(keys: RouteParamtypes[], metadata: RouteParamsMetadata): number {
+    public getArgumentsLength(keys: string[], metadata: RouteParamsMetadata): number {
         return Math.max(...keys.map(key => metadata[key].index)) + 1;
     }
 
@@ -42,10 +47,14 @@ export class RouterExecutionContext {
         return Array.apply(null, { length }).fill(null);
     }
 
-    public exchangeKeysForValues(keys: RouteParamtypes[], metadata: RouteParamsMetadata, { req, res, next }): IndexValuePair[] {
+    public exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata, { req, res, next }): IndexValuePair[] {
         return keys.map(key => ({
             index: metadata[key].index,
-            value: this.paramsFactory.exchangeKeyForValue(key, metadata[key].data, { req, res, next }),
+            value: this.paramsFactory.exchangeKeyForValue(
+                this.mapParamType(key),
+                metadata[key].data,
+                { req, res, next },
+            ),
         }));
-    }
+    } 
 }

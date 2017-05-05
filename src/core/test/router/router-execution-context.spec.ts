@@ -69,7 +69,7 @@ describe('RouterExecutionContext', () => {
                         proxyContext(request, response, next);
                     });
                     it('should call "exchangeKeysForValues" with expected arguments', () => {
-                        const keys = Object.keys(metadata).map(Number);
+                        const keys = Object.keys(metadata);
 
                         expect(exchangeKeysForValuesSpy.called).to.be.true;
                         expect(
@@ -93,11 +93,11 @@ describe('RouterExecutionContext', () => {
             const instance = new TestController();
             const metadata = contextCreator.reflectCallbackMetadata(instance, instance.callback);
             const expectedMetadata = {
-                [RouteParamtypes.REQUEST]: {
+                [`${RouteParamtypes.REQUEST}:0`]: {
                     index: 0,
                     data: undefined,
                 },
-                [RouteParamtypes.BODY]: {
+                [`${RouteParamtypes.BODY}:1`]: {
                     index: 1,
                     data: undefined,
                 },
@@ -115,7 +115,7 @@ describe('RouterExecutionContext', () => {
                 },
             };
             expect(
-                contextCreator.getArgumentsLength(Object.keys(metadata).map(Number), metadata),
+                contextCreator.getArgumentsLength(Object.keys(metadata), metadata),
             ).to.be.eq(max + 1);
         });
     });
@@ -137,7 +137,7 @@ describe('RouterExecutionContext', () => {
                     index: 2,
                 },
             };
-            const keys = Object.keys(metadata).map(Number);
+            const keys = Object.keys(metadata);
             const values = contextCreator.exchangeKeysForValues(keys, metadata, { res, req, next });
             const expectedValues = [
                 { index: 0, value: req },
