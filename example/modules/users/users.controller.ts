@@ -2,7 +2,7 @@ import * as express from 'express';
 import { UsersService } from './users.service';
 import { Controller, Response, Body, Param } from './../../../src/';
 import { Get, Post } from '../../../src/common/utils/decorators/request-mapping.decorator';
-import { HttpStatus } from '../../../src/common/index';
+import { HttpStatus, Inject } from '../../../src/common/index';
 import { ExceptionFilters } from '../../../src/common/utils/decorators/exception-filters.decorator';
 import { CustomExceptionFilter } from './exception.filter';
 
@@ -10,7 +10,7 @@ import { CustomExceptionFilter } from './exception.filter';
 @ExceptionFilters(CustomExceptionFilter)
 export class UsersController {
     constructor(
-        private usersService: UsersService) {}
+        @Inject('UsersService') private usersService) {}
 
     @Get()
     public async getAllUsers(@Response() res: express.Response) {
