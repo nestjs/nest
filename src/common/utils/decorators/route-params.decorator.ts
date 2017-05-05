@@ -16,7 +16,10 @@ const assignMetadata = (
     index: number,
     data?: ParamData) => ({
     ...args,
-    [paramtype]: { index, data },
+    [`${paramtype}:${index}`]: {
+        index,
+        data,
+    },
 });
 
 const createRouteParamDecorator = (paramtype: RouteParamtypes) => {

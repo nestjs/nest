@@ -23,6 +23,7 @@
       "src/**/*.spec.ts",
       "src/common/services/logger.service.ts",
       "src/microservices/exceptions/",
+      "src/microservices/microservices-module.ts",
       "src/core/adapters/*.ts",
       "src/websockets/adapters/*.ts"
     ],
