@@ -9,6 +9,7 @@ import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 
 export interface CustomComponent {
     provide: any;
+    name: string;
 }
 export type OpaqueToken = string | symbol | object | Metatype<any>;
 export type CustomClass = CustomComponent & { useClass: Metatype<any> };
@@ -91,10 +92,17 @@ export class Module {
         return !isNil((component as CustomComponent).provide);
     }
 
-    public addCustomComponent(component: ComponentMetatype) {
-        if (this.isCustomClass(component)) this.addCustomClass(component);
-        else if (this.isCustomValue(component)) this.addCustomValue(component);
-        else if (this.isCustomFactory(component)) this.addCustomFactory(component);
+    public addCustomComponent(component: CustomFactory | CustomValue | CustomClass) {
+        const { provide } = component;
+        const name = isFunction(provide) ? provide.name : provide;
+        const comp = {
+            ...component,
+            name,
+        };
+
+        if (this.isCustomClass(comp)) this.addCustomClass(comp);
+        else if (this.isCustomValue(comp)) this.addCustomValue(comp);
+        else if (this.isCustomFactory(comp)) this.addCustomFactory(comp);
     }
 
     public isCustomClass(component): component is CustomClass {
@@ -110,9 +118,9 @@ export class Module {
     }
 
     public addCustomClass(component: CustomClass) {
-        const { provide: metatype, useClass } = component;
-        this._components.set(metatype.name, {
-            name: metatype.name,
+        const { provide, name, useClass } = component;
+        this._components.set(name, {
+            name,
             metatype: useClass,
             instance: null,
             isResolved: false,
@@ -120,9 +128,7 @@ export class Module {
     }
 
     public addCustomValue(component: CustomValue) {
-        const { provide, useValue: value } = component;
-        const name = isFunction(provide) ? provide.name : provide;
-
+        const { provide, name, useValue: value } = component;
         this._components.set(name, {
             name,
             metatype: null,
@@ -133,7 +139,7 @@ export class Module {
     }
 
     public addCustomFactory(component: CustomFactory){
-        const { provide: name, useFactory: factory, inject } = component;
+        const { provide, name, useFactory: factory, inject } = component;
         this._components.set(name, {
             name,
             metatype: factory as any,
