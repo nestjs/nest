@@ -93,7 +93,7 @@ describe('Module', () => {
 
     describe('addCustomClass', () => {
         const type = { name: 'TypeTest' };
-        const component = { provide: type, useClass: type };
+        const component = { provide: type, useClass: type, name: 'test' };
         let setSpy;
         beforeEach(() => {
             const collection = new Map();
@@ -102,8 +102,8 @@ describe('Module', () => {
         });
         it('should store component', () => {
             module.addCustomClass(component as any);
-            expect(setSpy.calledWith(type.name, {
-                name: type.name,
+            expect(setSpy.calledWith(component.name, {
+                name: component.name,
                 metatype: type,
                 instance: null,
                 isResolved: false,
@@ -113,47 +113,32 @@ describe('Module', () => {
 
     describe('addCustomValue', () => {
         let setSpy;
+        const value = () => ({});
+        const name = 'test';
+        const component = { provide: value, name, useValue: value };
+
         beforeEach(() => {
             const collection = new Map();
             setSpy = sinon.spy(collection, 'set');
             (module as any)._components = collection;
         });
-        describe('when value is a function', () => {
-            const value = () => ({});
-            const component = { provide: value, useValue: value };
 
-            it('should store component', () => {
-                module.addCustomValue(component as any);
-                expect(setSpy.calledWith(value.name, {
-                    name: value.name,
-                    metatype: null,
-                    instance: value,
-                    isResolved: true,
-                    isNotMetatype: true,
-                })).to.be.true;
-            });
-        });
-        describe('when value is not a function', () => {
-            const value = 'Test';
-            const component = { provide: value, useValue: value };
-
-            it('should store component', () => {
-                module.addCustomValue(component as any);
-                expect(setSpy.calledWith(value, {
-                    name: value,
-                    metatype: null,
-                    instance: value,
-                    isResolved: true,
-                    isNotMetatype: true,
-                })).to.be.true;
-            });
+        it('should store component', () => {
+            module.addCustomValue(component as any);
+            expect(setSpy.calledWith(name, {
+                name,
+                metatype: null,
+                instance: value,
+                isResolved: true,
+                isNotMetatype: true,
+            })).to.be.true;
         });
     });
 
     describe('addCustomFactory', () => {
         const type = { name: 'TypeTest' };
         const inject = [1, 2, 3];
-        const component = { provide: type, useFactory: type, inject };
+        const component = { provide: type, useFactory: type, name: 'test', inject };
 
         let setSpy;
         beforeEach(() => {
@@ -163,8 +148,8 @@ describe('Module', () => {
         });
         it('should store component', () => {
             module.addCustomFactory(component as any);
-            expect(setSpy.getCall(0).args).to.deep.equal([type, {
-                name: type,
+            expect(setSpy.getCall(0).args).to.deep.equal([component.name, {
+                name: component.name,
                 metatype: type,
                 instance: null,
                 isResolved: false,

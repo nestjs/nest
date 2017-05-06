@@ -30,6 +30,3 @@ export class UsersController {
         res.status(HttpStatus.CREATED).json(msg);
     }
 }
-
-
-
