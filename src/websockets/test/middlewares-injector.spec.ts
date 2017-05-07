@@ -63,7 +63,7 @@ describe('MiddlewaresInjector', () => {
             server = {
                 use: sinon.spy(),
             };
-            sinon.stub(injector, 'bindMiddleware', a => a);
+            sinon.stub(injector, 'bindMiddleware').callsFake(a => a);
         });
         it('should apply expected middlewares', () => {
             injector.applyMiddlewares(server, null, tokens.map(setAsName) as any);

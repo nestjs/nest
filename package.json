@@ -47,7 +47,7 @@
     "express": "^4.14.0",
     "json-socket": "^0.2.1",
     "redis": "^2.6.5",
-    "reflect-metadata": "^0.1.9",
+    "reflect-metadata": "0.1.10",
     "rxjs": "^5.0.3",
     "socket.io": "^1.7.2",
     "typescript": "^2.2.1"
