@@ -1,6 +1,6 @@
 import { InstanceWrapper } from './container';
 import { Injectable, Controller, NestModule } from '../../common/interfaces';
-import { UnkownExportException } from '../../errors/exceptions/unkown-export.exception';
+import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception';
 import { NestModuleMetatype } from '../../common/interfaces/module-metatype.interface';
 import { Metatype } from '../../common/interfaces/metatype.interface';
 import { ModuleRef } from './module-ref';
@@ -152,7 +152,7 @@ export class Module {
 
     public addExportedComponent(exportedComponent: Metatype<Injectable>) {
         if (!this._components.get(exportedComponent.name)) {
-            throw new UnkownExportException(exportedComponent.name);
+            throw new UnknownExportException(exportedComponent.name);
         }
         this._exports.add(exportedComponent.name);
     }
