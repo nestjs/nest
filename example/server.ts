@@ -8,5 +8,5 @@ const app = NestFactory.create(ApplicationModule);
 
 app.listen(port, () => {
     console.log('Application listen on port:', port);
-    //process.exit();
-}); 
+    process.exit();
+});
