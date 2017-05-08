@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Module as ModuleDecorator } from '../../../common/utils/decorators/module.decorator';
-import { UnkownExportException } from '../../../errors/exceptions/unkown-export.exception';
+import { UnknownExportException } from '../../../errors/exceptions/unknown-export.exception';
 import { Module } from '../../injector/module';
 import { Component } from '../../../common/utils/decorators/component.decorator';
 import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
@@ -16,10 +16,10 @@ describe('Module', () => {
         module = new Module(TestModule);
     });
 
-    it('should throw "UnkownExportException" when given exported component is not a part of components array', () => {
+    it('should throw "UnknownExportException" when given exported component is not a part of components array', () => {
         expect(
             () => module.addExportedComponent(TestComponent),
-        ).throws(UnkownExportException);
+        ).throws(UnknownExportException);
     });
 
     it('should add route', () => {

@@ -5,7 +5,7 @@ import { Injector } from '../../injector/injector';
 import { Component } from '../../../common/utils/decorators/component.decorator';
 import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
 import { Module } from '../../injector/module';
-import { UnkownDependenciesException } from '../../../errors/exceptions/unkown-dependencies.exception';
+import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception';
 
 describe('Injector', () => {
     let injector: Injector;
@@ -178,7 +178,7 @@ describe('Injector', () => {
             expect(scanForComponentInRelatedModules.called).to.be.true;
         });
 
-        it('should throw "UnkownDependenciesException" instanceWrapper is null', () => {
+        it('should throw "UnknownDependenciesException" instanceWrapper is null', () => {
             scanForComponentInRelatedModules.returns(null);
             const collection = {
                 has: () => false,
@@ -186,17 +186,17 @@ describe('Injector', () => {
 
             expect(
                 () => injector.scanForComponent(collection as any, metatype.name, null, metatype)
-            ).throws(UnkownDependenciesException);
+            ).throws(UnknownDependenciesException);
         });
 
-        it('should not throw "UnkownDependenciesException" instanceWrapper is not null', () => {
+        it('should not throw "UnknownDependenciesException" instanceWrapper is not null', () => {
             scanForComponentInRelatedModules.returns({});
             const collection = {
                 has: () => false,
             };
             expect(
                 () => injector.scanForComponent(collection as any, metatype.name, null, metatype)
-            ).not.throws(UnkownDependenciesException);
+            ).not.throws(UnknownDependenciesException);
         });
 
     });
