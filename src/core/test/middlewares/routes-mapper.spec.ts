@@ -3,7 +3,7 @@ import { RoutesMapper } from '../../middlewares/routes-mapper';
 import { Controller } from '../../../common/utils/decorators/controller.decorator';
 import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { UnkownRequestMappingException } from '../../../errors/exceptions/unkown-request-mapping.exception';
+import { UnknownRequestMappingException } from '../../../errors/exceptions/unknown-request-mapping.exception';
 
 describe('RoutesMapper', () => {
     @Controller({ path: 'test' })
@@ -50,7 +50,7 @@ describe('RoutesMapper', () => {
 
         expect(
             mapper.mapRouteToRouteProps.bind(mapper, config.forRoutes[0]),
-        ).throws(UnkownRequestMappingException);
+        ).throws(UnknownRequestMappingException);
     });
 
 });

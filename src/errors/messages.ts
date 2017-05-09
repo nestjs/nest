@@ -4,12 +4,13 @@ export const InvalidMiddlewareMessage = (name: string) =>
 export const InvalidModuleConfigMessage = (property: string) =>
     `Invalid property '${property}' in @Module() decorator.`;
 
-export const UnkownDependenciesMessage = (type: string) =>
+export const UnknownDependenciesMessage = (type: string) =>
     `Nest could not resolves dependencies of ${type}.`;
 
-export const UnkownExportMessage = (name: string) =>
+export const UnknownExportMessage = (name: string) =>
     `You are trying to export unkown component (${name}). Remember - your component should be listed both in exports and components arrays!`;
+
 export const INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuration passed in module 'configure()' method.`;
-export const UNKOWN_REQUEST_MAPPING = `Request mapping properties not defined in @RequestMapping() annotation!`;
+export const UNKNOWN_REQUEST_MAPPING = `Request mapping properties not defined in @RequestMapping() annotation!`;
 export const UNHANDLED_RUNTIME_EXCEPTION = `Unhandled Nest application Runtime Exception.`;
 export const INVALID_EXCEPTION_FILTER = `Invalid Exception Filters (@ExceptionFilters()).`;

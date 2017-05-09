@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { InstanceWrapper } from './container';
-import { UnkownDependenciesException } from '../../errors/exceptions/unkown-dependencies.exception';
+import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { Module } from './module';
 import { Metatype } from '../../common/interfaces/metatype.interface';
@@ -122,7 +122,7 @@ export class Injector {
 
         const instanceWrapper = this.scanForComponentInRelatedModules(module, name);
         if (isNil(instanceWrapper)) {
-            throw new UnkownDependenciesException(metatype.name);
+            throw new UnknownDependenciesException(metatype.name);
         }
         return instanceWrapper;
     }

@@ -7,7 +7,10 @@ import { ChatGateway } from './chat.gateway';
 
 @Module({
     controllers: [ UsersController ],
-    components: [ UsersService, ChatGateway ],
+    components: [
+        UsersService,
+        ChatGateway,
+    ],
 })
 export class UsersModule implements NestModule {
     public configure(consumer: MiddlewaresConsumer) {

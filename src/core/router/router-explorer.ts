@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { Controller } from '../../common/interfaces/controller.interface';
 import { RequestMethod } from '../../common/enums/request-method.enum';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
-import { UnkownRequestMappingException } from '../../errors/exceptions/unkown-request-mapping.exception';
+import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception';
 import { ExpressAdapter } from '../adapters/express-adapter';
 import { Metatype } from '../../common/interfaces/metatype.interface';
 import { isUndefined, validatePath } from '../../common/utils/shared.utils';
@@ -90,7 +90,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
 
     private validateRoutePath(path: string): string {
         if (isUndefined(path)) {
-            throw new UnkownRequestMappingException();
+            throw new UnknownRequestMappingException();
         }
         return validatePath(path);
     }
