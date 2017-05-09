@@ -8,7 +8,7 @@ import { ChatGateway } from './chat.gateway';
 @Module({
     controllers: [ UsersController ],
     components: [
-        { provide: 'UsersService', useClass: UsersService },
+        UsersService,
         ChatGateway,
     ],
 })

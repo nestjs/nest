@@ -138,7 +138,7 @@ export class Module {
         });
     }
 
-    public addCustomFactory(component: CustomFactory){
+    public addCustomFactory(component: CustomFactory) {
         const { provide, name, useFactory: factory, inject } = component;
         this._components.set(name, {
             name,
@@ -150,11 +150,19 @@ export class Module {
         });
     }
 
-    public addExportedComponent(exportedComponent: Metatype<Injectable>) {
+    public addExportedComponent(exportedComponent: ComponentMetatype) {
+        if (this.isCustomComponent(exportedComponent)) {
+            this.addCustomExportedComponent(exportedComponent);
+            return;
+        }
         if (!this._components.get(exportedComponent.name)) {
             throw new UnknownExportException(exportedComponent.name);
         }
         this._exports.add(exportedComponent.name);
+    }
+
+    public addCustomExportedComponent(exportedComponent: CustomFactory | CustomValue | CustomClass) {
+        this._exports.add(exportedComponent.provide);
     }
 
     public addRoute(route: Metatype<Controller>) {
