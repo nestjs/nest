@@ -3,5 +3,6 @@ export enum RequestMethod {
     POST,
     PUT,
     DELETE,
+    PATCH,
     ALL,
 }
