@@ -13,7 +13,7 @@ export class ExceptionsHandler {
         if (this.invokeCustomFilters(exception, response)) return;
 
         if (!(exception instanceof HttpException)) {
-            response.status(500).json({ message: messages.UNKOWN_EXCEPTION_MESSAGE });
+            response.status(500).json({ message: messages.UNKNOWN_EXCEPTION_MESSAGE });
 
             this.logger.error(exception.message, exception.stack);
             return;
