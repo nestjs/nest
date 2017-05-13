@@ -1,6 +1,6 @@
 import { RuntimeException } from './runtime.exception';
 
-export class UnkownModuleException extends RuntimeException {
+export class UnknownModuleException extends RuntimeException {
     constructor() {
         super();
     }

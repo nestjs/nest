@@ -6,7 +6,7 @@ import { isEmpty, isFunction } from '../../common/utils/shared.utils';
 import { Metatype } from '../../common/interfaces/index';
 import { ExceptionFilterMetadata } from '../../common/interfaces/exception-filter-metadata.interface';
 import { NestContainer } from '../injector/container';
-import { UnkownModuleException } from '../../errors/exceptions/unkown-module.exception';
+import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { ExceptionFilter } from '../../common/interfaces/exception-filter.interface';
 
 export class RouterExceptionFilters {
@@ -45,7 +45,7 @@ export class RouterExceptionFilters {
     public findExceptionsFilterInstance(metatype: Metatype<any>, moduleName: string): ExceptionFilter {
         const modules = this.container.getModules();
         if (!modules.has(moduleName)) {
-            throw new UnkownModuleException();
+            throw new UnknownModuleException();
         }
         const { components } = modules.get(moduleName);
         const { instance } =  components.get(metatype.name);
