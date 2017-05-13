@@ -27,6 +27,7 @@ export class NestApplication implements INestApplication {
     }
 
     public listen(port: number, callback?: () => void) {
+        console.log(this.container.getModules());
         this.setupMiddlewares(this.express);
         this.setupRoutes(this.express);
 

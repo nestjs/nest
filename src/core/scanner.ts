@@ -19,7 +19,7 @@ export class DependenciesScanner {
         this.storeModule(module);
 
         const importedModules = this.reflectMetadata(module, metadata.MODULES);
-        importedModules.map((imported) => this.scanForModules(imported));
+        importedModules.map((innerModule) => this.scanForModules(innerModule));
     }
 
     private storeModule(module: NestModuleMetatype) {

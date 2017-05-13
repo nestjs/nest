@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { NestContainer, InstanceWrapper } from '../core/injector/container';
 import { NestGateway } from './index';
 import { GATEWAY_MIDDLEWARES } from './constants';
-import { UnkownModuleException } from '../errors/exceptions/unkown-module.exception';
+import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { Injectable } from '../common/interfaces/injectable.interface';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { GatewayMiddleware } from './interfaces/gateway-middleware.interface';
@@ -15,7 +15,7 @@ export class MiddlewaresInjector {
         const opaqueTokens = this.reflectMiddlewaresTokens(instance);
         const modules = this.container.getModules();
         if (!modules.has(module)) {
-            throw new UnkownModuleException();
+            throw new UnknownModuleException();
         }
         const { components } = modules.get(module);
         this.applyMiddlewares(server, components, opaqueTokens);
