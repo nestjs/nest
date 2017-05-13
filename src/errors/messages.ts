@@ -8,7 +8,7 @@ export const UnknownDependenciesMessage = (type: string) =>
     `Nest could not resolves dependencies of ${type}.`;
 
 export const UnknownExportMessage = (name: string) =>
-    `You are trying to export unkown component (${name}). Remember - your component should be listed both in exports and components arrays!`;
+    `You are trying to export unknown component (${name}). Remember - your component should be listed both in exports and components arrays!`;
 
 export const INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuration passed in module 'configure()' method.`;
 export const UNKNOWN_REQUEST_MAPPING = `Request mapping properties not defined in @RequestMapping() annotation!`;

@@ -32,7 +32,7 @@ describe('ExceptionsHandler', () => {
             handler.next(new Error(), response);
 
             expect(statusStub.calledWith(500)).to.be.true;
-            expect(jsonStub.calledWith({ message: 'Unkown exception' })).to.be.true;
+            expect(jsonStub.calledWith({ message: 'Unknown exception' })).to.be.true;
         });
         describe('when exception is instance of HttpException', () => {
             it('should method send expected response status code and json object', () => {
