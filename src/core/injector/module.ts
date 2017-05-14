@@ -23,9 +23,16 @@ export class Module {
     private _routes = new Map<string, InstanceWrapper<Controller>>();
     private _exports = new Set<string>();
 
-    constructor(private _metatype: NestModuleMetatype) {
+    constructor(
+        private _metatype: NestModuleMetatype,
+        private _scope: NestModuleMetatype[]) {
+
         this.addModuleRef();
         this.addModuleAsComponent();
+    }
+
+    get scope(): NestModuleMetatype[] {
+        return this._scope;
     }
 
     get relatedModules(): Set<Module> {
@@ -188,6 +195,6 @@ export class Module {
 
                 return exists ? this.components.get(name).instance as T : null;
             }
-        }
+        };
     }
 }

@@ -19,22 +19,22 @@ describe('NestContainer', () => {
         const setSpy = sinon.spy(modules, 'set');
         (container as any).modules = modules;
 
-        container.addModule(TestModule);
-        container.addModule(TestModule);
+        container.addModule(TestModule, []);
+        container.addModule(TestModule, []);
 
         expect(setSpy.calledOnce).to.be.true;
     });
 
     it('should "addComponent" throw "UnknownModuleException" when module is not stored in collection', () => {
-        expect(() => container.addComponent(null, TestModule)).throw(UnknownModuleException);
+        expect(() => container.addComponent(null, 'TestModule')).throw(UnknownModuleException);
     });
 
     it('should "addController" throw "UnknownModuleException" when module is not stored in collection', () => {
-        expect(() => container.addController(null, TestModule)).throw(UnknownModuleException);
+        expect(() => container.addController(null, 'TestModule')).throw(UnknownModuleException);
     });
 
     it('should "addExportedComponent" throw "UnknownModuleException" when module is not stored in collection', () => {
-        expect(() => container.addExportedComponent(null, TestModule)).throw(UnknownModuleException);
+        expect(() => container.addExportedComponent(null, 'TestModule')).throw(UnknownModuleException);
     });
 
 });

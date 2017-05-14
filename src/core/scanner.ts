@@ -15,78 +15,80 @@ export class DependenciesScanner {
         this.scanModulesForDependencies();
     }
 
-    private scanForModules(module: NestModuleMetatype) {
-        this.storeModule(module);
+    private scanForModules(module: NestModuleMetatype, scope: NestModuleMetatype[] = []) {
+        this.storeModule(module, scope);
 
         const importedModules = this.reflectMetadata(module, metadata.MODULES);
-        importedModules.map((innerModule) => this.scanForModules(innerModule));
+        importedModules.map((innerModule) => {
+            this.scanForModules(innerModule, [].concat(scope, module));
+        });
     }
 
-    private storeModule(module: NestModuleMetatype) {
-        this.container.addModule(module);
+    private storeModule(module: NestModuleMetatype, scope: NestModuleMetatype[]) {
+        this.container.addModule(module, scope);
     }
 
     private scanModulesForDependencies() {
         const modules = this.container.getModules();
 
-        modules.forEach(({ metatype }) => {
-            this.reflectRelatedModules(metatype);
-            this.reflectComponents(metatype);
-            this.reflectControllers(metatype);
-            this.reflectExports(metatype);
+        modules.forEach(({ metatype }, token) => {
+            this.reflectRelatedModules(metatype, token);
+            this.reflectComponents(metatype, token);
+            this.reflectControllers(metatype, token);
+            this.reflectExports(metatype, token);
         });
     }
 
-    private reflectRelatedModules(module: NestModuleMetatype) {
+    private reflectRelatedModules(module: NestModuleMetatype, token: string) {
         const modules = this.reflectMetadata(module, metadata.MODULES);
-        modules.map((related) => this.storeRelatedModule(related, module));
+        modules.map((related) => this.storeRelatedModule(related, token));
     }
 
-    private reflectComponents(module: NestModuleMetatype) {
+    private reflectComponents(module: NestModuleMetatype, token: string) {
         const components = this.reflectMetadata(module, metadata.COMPONENTS);
         components.map((component) => {
-            this.storeComponent(component, module);
-            this.reflectGatewaysMiddlewares(component, module);
+            this.storeComponent(component, token);
+            this.reflectGatewaysMiddlewares(component, token);
         });
     }
 
-    private reflectControllers(module: NestModuleMetatype) {
+    private reflectControllers(module: NestModuleMetatype, token: string) {
         const routes = this.reflectMetadata(module, metadata.CONTROLLERS);
         routes.map((route) => {
-            this.storeRoute(route, module);
-            this.reflectExceptionFilters(route, module);
+            this.storeRoute(route, token);
+            this.reflectExceptionFilters(route, token);
         });
     }
 
-    private reflectExports(module: NestModuleMetatype) {
+    private reflectExports(module: NestModuleMetatype, token: string) {
         const exports = this.reflectMetadata(module, metadata.EXPORTS);
-        exports.map((exportedComponent) => this.storeExportedComponent(exportedComponent, module));
+        exports.map((exportedComponent) => this.storeExportedComponent(exportedComponent, token));
     }
 
-    private reflectExceptionFilters(component: Metatype<Injectable>, module: NestModuleMetatype) {
+    private reflectExceptionFilters(component: Metatype<Injectable>, token: string) {
         const filters = this.reflectMetadata(component, EXCEPTION_FILTERS_METADATA);
-        filters.map((filter) => this.storeComponent(filter, module));
+        filters.map((filter) => this.storeComponent(filter, token));
     }
 
-    private reflectGatewaysMiddlewares(component: Metatype<Injectable>, module: NestModuleMetatype) {
+    private reflectGatewaysMiddlewares(component: Metatype<Injectable>, token: string) {
         const middlewares = this.reflectMetadata(component, GATEWAY_MIDDLEWARES);
-        middlewares.map((middleware) => this.storeComponent(middleware, module));
+        middlewares.map((middleware) => this.storeComponent(middleware, token));
     }
 
-    private storeRelatedModule(related: NestModuleMetatype, module: NestModuleMetatype) {
-        this.container.addRelatedModule(related, module);
+    private storeRelatedModule(related: NestModuleMetatype, token: string) {
+        this.container.addRelatedModule(related, token);
     }
 
-    private storeComponent(component: Metatype<Injectable>, module: NestModuleMetatype) {
-        this.container.addComponent(component, module);
+    private storeComponent(component: Metatype<Injectable>, token: string) {
+        this.container.addComponent(component, token);
     }
 
-    private storeExportedComponent(exportedComponent: Metatype<Injectable>, module: NestModuleMetatype) {
-        this.container.addExportedComponent(exportedComponent, module);
+    private storeExportedComponent(exportedComponent: Metatype<Injectable>, token: string) {
+        this.container.addExportedComponent(exportedComponent, token);
     }
 
-    private storeRoute(route: Metatype<Controller>, module: NestModuleMetatype) {
-        this.container.addController(route, module);
+    private storeRoute(route: Metatype<Controller>, token: string) {
+        this.container.addController(route, token);
     }
 
     private reflectMetadata(module: NestModuleMetatype, metadata: string) {

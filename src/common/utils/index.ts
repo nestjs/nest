@@ -8,3 +8,4 @@ export { Component as Middleware } from './decorators/component.decorator';
 export * from './decorators/route-params.decorator';
 export * from './decorators/catch.decorator';
 export * from './decorators/exception-filters.decorator';
+export * from './decorators/shared.decorator';

@@ -25,7 +25,8 @@ export class MicroservicesModule {
     }
 
     public static bindClients(controllers: Map<string, InstanceWrapper<Controller>>) {
-        controllers.forEach(({ instance }) => {
+        controllers.forEach(({ instance, isNotMetatype }) => {
+            if (isNotMetatype) return;
             this.listenersController.bindClientsToProperties(instance);
         });
     }

@@ -1,3 +1,6 @@
+- Hierarchical injector. Injector improvements,
+- @Shared() decorator for scoped Modules,
+
 ## 1.0.0 (Final - 01.05.2017)
 
 - Added **Gateway Middlewares** support:

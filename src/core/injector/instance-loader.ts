@@ -29,11 +29,12 @@ export class InstanceLoader {
     }
 
     private createInstances(modules: Map<string, Module>) {
-        modules.forEach((module, name) => {
+        modules.forEach((module) => {
             this.createInstancesOfComponents(module);
             this.createInstancesOfRoutes(module);
             this.callModuleInitHook(module);
 
+            const { name } = module.metatype;
             this.logger.log(ModuleInitMessage(name));
         });
     }

@@ -1,4 +1,4 @@
-import { Module } from './../../../src/';
+import { Module, Shared } from './../../../src/';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { AuthMiddleware } from './auth.middleware';
