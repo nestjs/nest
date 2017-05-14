@@ -17,7 +17,10 @@ It is not just another framework. You do not have to wait for a large community,
 ## Installation
 
 ```bash
-$ npm install nest.js
+$ git clone https://github.com/kamilmysliwiec/nest-typescript-starter.git project
+$ cd project
+$ npm install
+$ npm run start
 ```
 
 ## Philosophy
@@ -30,14 +33,15 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 ## Features
 
+- Easy to learn - syntax is similar to [Angular](https://angular.io/)
 - Compatible with both TypeScript and ES6 (I strongly recommend to use [TypeScript](http://www.typescriptlang.org))
 - Based on well-known libraries ([Express](https://github.com/expressjs/express) / [socket.io](https://github.com/socketio/socket.io)) so you could share your experience 
-- Easy to learn - syntax is similar to [Angular](https://angular.io/) / [Spring](https://spring.io) (Java)
-- Dependency Injection, built-in **Inversion of Control** container
-- Exceptions handler layer (helps to focus on logic)
+- Supremely useful Dependency Injection, built-in **Inversion of Control** container
+- **Hierarchical injector** - increase abstraction in your application by creating reusable modules with type injection
 - Own modularity system (split your system into reusable modules)
 - **WebSockets** module (based on [socket.io](https://github.com/socketio/socket.io))
 - Reactive **microservices** support with messages patterns (transport via TCP / [Redis](https://redis.io/))
+- Exceptions handler layer
 - Testing utilities
 
 ## Documentation & Quick Start
@@ -49,14 +53,14 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 - [TypeScript](https://github.com/kamilmysliwiec/nest-typescript-starter)
 - [Babel](https://github.com/kamilmysliwiec/nest-babel-starter/)
 
-## Future
+## Modules
 
-Nest is very much still a work in progress. There is still some things to finish:
+- [CQRS - Event-Driven Architecture](https://github.com/kamilmysliwiec/nest-cqrs) 
 
-- Examples(!)
-- Validation helpers
-- More test utilities
-- and more...
+## Examples
+
+- [Auth0](https://github.com/cdiaz/nestjs-auth0.git) by [@cdiaz](https://github.com/cdiaz)
+- [TypeORM](https://github.com/zachgrayio/nest-typeorm-example) by [@zachgrayio](https://github.com/zachgrayio/)
 
 ## People
 
@@ -66,10 +70,10 @@ Author - [Kamil Myśliwiec](http://kamilmysliwiec.com)
 
   [MIT](LICENSE)
 
-[npm-image]: https://badge.fury.io/js/nest.js.svg
-[npm-url]: https://npmjs.org/package/nest.js
+[npm-image]: https://badge.fury.io/js/%40nestjs%2Fcore.svg
+[npm-url]: https://www.npmjs.com/~nestjs
 [downloads-image]: https://img.shields.io/npm/dm/nest.js.svg
-[downloads-url]: https://npmjs.org/package/nest.js
+[downloads-url]: https://www.npmjs.com/~nestjs
 [travis-image]: https://api.travis-ci.org/kamilmysliwiec/nest.svg?branch=master
 [travis-url]: https://travis-ci.org/kamilmysliwiec/nest
 [linux-image]: https://img.shields.io/travis/kamilmysliwiec/nest/master.svg?label=linux
