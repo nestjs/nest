@@ -1,6 +1,6 @@
 {
-  "name": "@nestjs",
-  "version": "2.0.0",
+  "name": "nestjs",
+  "version": "2.0.1",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
