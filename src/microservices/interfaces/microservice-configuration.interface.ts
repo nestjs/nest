@@ -1,4 +1,4 @@
-import { Transport } from '@nestjs/common/enums/transport.enum';
+import { Transport } from '../enums/transport.enum';
 
 export interface MicroserviceConfiguration {
     transport?: Transport;
