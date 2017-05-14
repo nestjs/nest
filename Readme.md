@@ -16,11 +16,17 @@ It is not just another framework. You do not have to wait for a large community,
 
 ## Installation
 
+**Git:**
 ```bash
 $ git clone https://github.com/kamilmysliwiec/nest-typescript-starter.git project
 $ cd project
 $ npm install
 $ npm run start
+```
+
+**NPM:**
+```bash
+$ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websockets @nestjs/testing reflect-metadata rxjs redis
 ```
 
 ## Philosophy
