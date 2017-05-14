@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import iterate from 'iterare';
 import { Controller } from '../../common/interfaces/controller.interface';
 import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 import { EXCEPTION_FILTERS_METADATA, FILTER_CATCH_EXCEPTIONS } from '../../common/constants';
@@ -30,7 +31,7 @@ export class RouterExceptionFilters {
     }
 
     public resolveFiltersMetatypes(filters: Metatype<any>[], moduleName: string): ExceptionFilterMetadata[] {
-        return filters.filter(metatype => isFunction(metatype))
+        return iterate(filters).filter(metatype => isFunction(metatype))
                 .map(metatype => ({
                     instance: this.findExceptionsFilterInstance(metatype, moduleName),
                     metatype,
@@ -39,7 +40,8 @@ export class RouterExceptionFilters {
                 .map(({ instance, metatype }) => ({
                     func: instance.catch.bind(instance),
                     exceptionMetatypes: this.reflectCatchExceptions(metatype),
-                }));
+                }))
+                .toArray();
     }
 
     public findExceptionsFilterInstance(metatype: Metatype<any>, moduleName: string): ExceptionFilter {

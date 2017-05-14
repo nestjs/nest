@@ -1,3 +1,4 @@
+import iterate from 'iterare';
 import { NestContainer } from './container';
 import { Injector } from './injector';
 import { Injectable } from '../../common/interfaces/injectable.interface';
@@ -65,7 +66,7 @@ export class InstanceLoader {
 
     private callModuleInitHook(module: Module) {
         const components = [...module.routes, ...module.components];
-        components.map(([key, {instance}]) => instance)
+        iterate(components).map(([key, {instance}]) => instance)
                 .filter((instance) => !isNil(instance))
                 .filter(this.hasOnModuleInitHook)
                 .forEach((instance) => (instance as OnModuleInit).onModuleInit());

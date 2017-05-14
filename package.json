@@ -45,6 +45,7 @@
   "dependencies": {
     "cli-color": "^1.1.0",
     "express": "^4.14.0",
+    "iterare": "0.0.8",
     "json-socket": "^0.2.1",
     "redis": "^2.6.5",
     "reflect-metadata": "0.1.10",

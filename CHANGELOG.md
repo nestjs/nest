@@ -1,5 +1,6 @@
-- Hierarchical injector. Injector improvements,
-- @Shared() decorator for scoped Modules,
+- Hierarchical injector improvements,
+- `@Shared(token?: string)` decorator for scoped Modules,
+- Added `iterare` library for applying multiple transformations to a collection,
 
 ## 1.0.0 (Final - 01.05.2017)
 

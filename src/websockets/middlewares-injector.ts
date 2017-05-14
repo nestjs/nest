@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import iterate from 'iterare';
 import { NestContainer, InstanceWrapper } from '../core/injector/container';
 import { NestGateway } from './index';
 import { GATEWAY_MIDDLEWARES } from './constants';
@@ -27,9 +28,9 @@ export class MiddlewaresInjector {
     }
 
     public applyMiddlewares(server, components: Map<string, InstanceWrapper<Injectable>>, tokens: any[]) {
-        tokens.map(token => this.bindMiddleware(token.name, components))
+        iterate(tokens).map(token => this.bindMiddleware(token.name, components))
             .filter(middleware => !isNil(middleware))
-            .map(middleware => server.use(middleware));
+            .forEach(middleware => server.use(middleware));
     }
 
     public bindMiddleware(token: string, components: Map<string, InstanceWrapper<Injectable>>) {

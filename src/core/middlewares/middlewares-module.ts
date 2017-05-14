@@ -62,9 +62,8 @@ export class MiddlewaresModule {
         const configs = this.container.getConfigs();
 
         configs.forEach((moduleConfigs, module: string) => {
-            [ ...moduleConfigs ].map((config: MiddlewareConfiguration) => {
-
-                config.forRoutes.map((route: ControllerMetadata & { method: RequestMethod }) => {
+            [ ...moduleConfigs ].forEach((config: MiddlewareConfiguration) => {
+                config.forRoutes.forEach((route: ControllerMetadata & { method: RequestMethod }) => {
                     this.setupRouteMiddleware(route, config, module, app);
                 });
             });
