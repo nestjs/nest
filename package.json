@@ -47,7 +47,7 @@
   "dependencies": {
     "@nestjs/common": "2.0.2",
     "@nestjs/core": "2.0.2",
-    "@nestjs/microservices": "2.0.2",
+    "@nestjs/microservices": "2.0.3",
     "@nestjs/testing": "2.0.2",
     "@nestjs/websockets": "2.0.2",
     "cli-color": "^1.1.0",

@@ -5,7 +5,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { Server } from '@nestjs/microservices/server/server';
 import { MicroserviceConfiguration } from '@nestjs/microservices/interfaces/microservice-configuration.interface';
 import { ServerFactory } from '@nestjs/microservices/server/server-factory';
-import { Transport } from '@nestjs/common/enums/transport.enum';
+import { Transport } from '@nestjs/microservices/enums/transport.enum';
 import { INestMicroservice } from '@nestjs/common';
 
 export class NestMicroservice implements INestMicroservice {
