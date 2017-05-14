@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { MiddlewaresInjector } from '../middlewares-injector';
-import { UnkownModuleException } from '../../errors/exceptions/unkown-module.exception';
+import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { WebSocketGateway } from '../index';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 
@@ -23,11 +23,11 @@ describe('MiddlewaresInjector', () => {
         beforeEach(() => {
             sinon.stub(injector, 'reflectMiddlewaresTokens').returns(tokens);
         });
-        it('should throws "UnkownModuleException" when module is not known', () => {
+        it('should throws "UnknownModuleException" when module is not known', () => {
             sinon.stub(modules, 'has').returns(false);
             expect(
                 () => injector.inject(null, null, ''),
-            ).to.throws(UnkownModuleException);
+            ).to.throws(UnknownModuleException);
         });
         it('should call "applyMiddlewares" with expected arguments', () => {
             const components = {};

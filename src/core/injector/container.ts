@@ -1,6 +1,6 @@
 import { Controller, Injectable } from '../../common/interfaces/';
 import { Module } from './module';
-import { UnkownModuleException } from '../../errors/exceptions/unkown-module.exception';
+import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { NestModuleMetatype } from '../../common/interfaces/module-metatype.interface';
 import { Metatype } from '../../common/interfaces/metatype.interface';
 
@@ -28,7 +28,7 @@ export class NestContainer {
 
     public addComponent(component: Metatype<Injectable>, metatype: NestModuleMetatype) {
         if (!this.modules.has(metatype.name)) {
-            throw new UnkownModuleException();
+            throw new UnknownModuleException();
         }
         const module = this.modules.get(metatype.name);
         module.addComponent(component);
@@ -36,7 +36,7 @@ export class NestContainer {
 
     public addExportedComponent(exportedComponent: Metatype<Injectable>, metatype: NestModuleMetatype) {
         if (!this.modules.has(metatype.name)) {
-            throw new UnkownModuleException();
+            throw new UnknownModuleException();
         }
         const module = this.modules.get(metatype.name);
         module.addExportedComponent(exportedComponent);
@@ -44,7 +44,7 @@ export class NestContainer {
 
     public addController(controller: Metatype<Controller>, metatype: NestModuleMetatype) {
         if (!this.modules.has(metatype.name)) {
-            throw new UnkownModuleException();
+            throw new UnknownModuleException();
         }
         const module = this.modules.get(metatype.name);
         module.addRoute(controller);
