@@ -67,6 +67,7 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 - [Auth0](https://github.com/cdiaz/nestjs-auth0.git) by [@cdiaz](https://github.com/cdiaz)
 - [TypeORM](https://github.com/zachgrayio/nest-typeorm-example) by [@zachgrayio](https://github.com/zachgrayio/)
+- [CQRS, Event-Driven Architecture](https://github.com/kamilmysliwiec/nest-cqrs-example) by [@kamilmysliwiec](https://github.com/kamilmysliwiec/)
 
 ## People
 
