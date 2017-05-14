@@ -2,7 +2,7 @@ import 'mocha';
 import 'reflect-metadata';
 import { expect } from 'chai';
 import { BindResolveMiddlewareValues } from '../../utils/bind-resolve-values.util';
-import { NestMiddleware } from '../../../core/middlewares/interfaces/nest-middleware.interface';
+import { NestMiddleware } from '../../interfaces/middlewares/nest-middleware.interface';
 
 describe('BindResolveMiddlewareValues', () => {
     let type;

@@ -1,9 +1,9 @@
 import 'reflect-metadata';
-import { ROUTE_ARGS_METADATA } from '../../common/constants';
-import { isUndefined } from '../../common/utils/shared.utils';
-import { RouteParamtypes } from '../../common/enums/route-paramtypes.enum';
-import { Controller } from '../../common/interfaces';
-import { RouteParamsMetadata } from '../../index';
+import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+import { Controller } from '@nestjs/common/interfaces';
+import { RouteParamsMetadata } from '@nestjs/common/utils';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 
 export interface IndexValuePair {

@@ -3,7 +3,7 @@ import { Client } from '../../../src/microservices/utils/client.decorator';
 import { RequestMapping } from '../../../src/common/utils/decorators/request-mapping.decorator';
 import { ClientProxy } from '../../../src/microservices/client/client-proxy';
 import { Observable } from 'rxjs';
-import { Transport } from '../../../src/common/enums/transport.enum';
+import { Transport } from '../../../src/microservices/enums/transport.enum';
 import 'rxjs/add/operator/catch';
 
 const MicroserviceClient = { transport: Transport.TCP, port: 5667 };

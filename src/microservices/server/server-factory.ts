@@ -2,7 +2,7 @@ import { ServerTCP } from './server-tcp';
 import { ServerRedis } from './server-redis';
 import { MicroserviceConfiguration } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
-import { Transport } from '../../common/enums/transport.enum';
+import { Transport } from '@nestjs/common/enums/transport.enum';
 
 export class ServerFactory {
     public static create(config: MicroserviceConfiguration): Server {

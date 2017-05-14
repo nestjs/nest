@@ -1,13 +1,13 @@
-import { MiddlewaresModule } from './core/middlewares/middlewares-module';
-import { SocketModule } from './websockets/socket-module';
-import { NestContainer } from './core/injector/container';
-import { ExpressAdapter } from './core/adapters/express-adapter';
-import { RoutesResolver } from './core/router/routes-resolver';
-import { Logger } from './common/services/logger.service';
-import { messages } from './core/constants';
-import { MicroservicesModule } from './microservices/microservices-module';
-import { Resolver } from './core/router/interfaces/resolver.interface';
-import { INestApplication } from './common/interfaces';
+import { MiddlewaresModule } from './middlewares/middlewares-module';
+import { SocketModule } from '@nestjs/websockets/socket-module';
+import { NestContainer } from './injector/container';
+import { ExpressAdapter } from './adapters/express-adapter';
+import { RoutesResolver } from './router/routes-resolver';
+import { Logger } from '@nestjs/common/services/logger.service';
+import { messages } from './constants';
+import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
+import { Resolver } from './router/interfaces/resolver.interface';
+import { INestApplication } from '@nestjs/common';
 
 export class NestApplication implements INestApplication {
     private readonly routesResolver: Resolver;
@@ -27,7 +27,6 @@ export class NestApplication implements INestApplication {
     }
 
     public listen(port: number, callback?: () => void) {
-        console.log(this.container.getModules());
         this.setupMiddlewares(this.express);
         this.setupRoutes(this.express);
 

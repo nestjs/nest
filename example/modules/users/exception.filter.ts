@@ -1,4 +1,4 @@
-import { ExceptionFilter } from '../../../src/common/interfaces/exception-filter.interface';
+import { ExceptionFilter } from '../../../src/common/interfaces/exceptions/exception-filter.interface';
 import { Catch } from '../../../src/common/utils/decorators/catch.decorator';
 import { UsersService } from './users.service';
 

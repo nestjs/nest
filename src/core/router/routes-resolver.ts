@@ -1,8 +1,8 @@
 import { Application } from 'express';
 import { NestContainer, InstanceWrapper } from '../injector/container';
 import { RouterProxy } from './router-proxy';
-import { Controller } from '../../common/interfaces/controller.interface';
-import { Logger } from '../../common/services/logger.service';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { Logger } from '@nestjs/common/services/logger.service';
 import { ControllerMappingMessage } from '../helpers/messages';
 import { Resolver } from './interfaces/resolver.interface';
 import { RouterExceptionFilters } from './router-exception-filters';

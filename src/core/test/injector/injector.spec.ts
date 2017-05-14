@@ -3,9 +3,9 @@ import { expect } from 'chai';
 import { InstanceWrapper } from '../../injector/container';
 import { Injector } from '../../injector/injector';
 import { Component } from '../../../common/utils/decorators/component.decorator';
-import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
+import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { Module } from '../../injector/module';
-import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception';
+import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
 
 describe('Injector', () => {
     let injector: Injector;
@@ -33,7 +33,7 @@ describe('Injector', () => {
         let mainTest, depOne, depTwo;
 
         beforeEach(() => {
-            moduleDeps = new Module(DependencyTwo);
+            moduleDeps = new Module(DependencyTwo, []);
             mainTest = {
                 name: 'MainTest',
                 metatype: MainTest,
@@ -89,7 +89,7 @@ describe('Injector', () => {
         let test;
 
         beforeEach(() => {
-            moduleDeps = new Module(Test);
+            moduleDeps = new Module(Test, []);
             test = {
                 name: 'Test',
                 metatype: Test,
@@ -113,7 +113,7 @@ describe('Injector', () => {
 
     describe('resolveSingleParam', () => {
         it('should throw "RuntimeException" when param is undefined', () => {
-            expect(() => injector.resolveSingleParam(null, undefined, null)).throws(RuntimeException);
+            expect(() => injector.resolveSingleParam(null, undefined, null, [])).throws(RuntimeException);
         });
     });
 
@@ -178,14 +178,14 @@ describe('Injector', () => {
             expect(scanForComponentInRelatedModules.called).to.be.true;
         });
 
-        it('should throw "UnknownDependenciesException" instanceWrapper is null', () => {
+        it('should throw "UnknownDependenciesException" when instanceWrapper is null and "exports" collection does not contain token', () => {
             scanForComponentInRelatedModules.returns(null);
             const collection = {
                 has: () => false,
             };
-
+            const module = { exports: collection };
             expect(
-                () => injector.scanForComponent(collection as any, metatype.name, null, metatype)
+                () => injector.scanForComponent(collection as any, metatype.name, module as any, { metatype }),
             ).throws(UnknownDependenciesException);
         });
 
@@ -194,8 +194,9 @@ describe('Injector', () => {
             const collection = {
                 has: () => false,
             };
+            const module = { exports: collection };
             expect(
-                () => injector.scanForComponent(collection as any, metatype.name, null, metatype)
+                () => injector.scanForComponent(collection as any, metatype.name, module as any, metatype),
             ).not.throws(UnknownDependenciesException);
         });
 
@@ -214,7 +215,7 @@ describe('Injector', () => {
         });
 
         it('should return null when there is no related modules', () => {
-            const result = injector.scanForComponentInRelatedModules(module as any, null);
+            const result = injector.scanForComponentInRelatedModules(module as any, null, []);
             expect(result).to.be.eq(null);
         });
 
@@ -229,7 +230,7 @@ describe('Injector', () => {
                     },
                 }],
             };
-            expect(injector.scanForComponentInRelatedModules(module as any, metatype as any)).to.be.eq(null);
+            expect(injector.scanForComponentInRelatedModules(module as any, metatype as any, [])).to.be.eq(null);
 
             module = {
                 relatedModules: [{
@@ -241,7 +242,7 @@ describe('Injector', () => {
                     },
                 }],
             };
-            expect(injector.scanForComponentInRelatedModules(module as any, metatype as any)).to.be.eq(null);
+            expect(injector.scanForComponentInRelatedModules(module as any, metatype as any, [])).to.be.eq(null);
         });
 
         it('should call "loadInstanceOfComponent" when component is not resolved', () => {
@@ -258,7 +259,7 @@ describe('Injector', () => {
                     },
                 }],
             };
-            injector.scanForComponentInRelatedModules(module as any, metatype as any);
+            injector.scanForComponentInRelatedModules(module as any, metatype as any, []);
             expect(loadInstanceOfComponent.called).to.be.true;
         });
 
@@ -276,10 +277,32 @@ describe('Injector', () => {
                     },
                 }],
             };
-            injector.scanForComponentInRelatedModules(module as any, metatype as any);
+            injector.scanForComponentInRelatedModules(module as any, metatype as any, []);
             expect(loadInstanceOfComponent.called).to.be.false;
         });
 
     });
 
+    describe('scanForComponentInScopes', () => {
+        it('should returns null when component is not available in any scope', () => {
+            expect(injector.scanForComponentInScopes([], '', {})).to.be.null;
+        });
+        it('should returns wrapper when component is available in any scope', () => {
+            const component = 'test';
+            sinon.stub(injector, 'scanForComponentInScope').returns(component);
+            expect(injector.scanForComponentInScopes([{}] as any, '', {})).to.be.eql(component);
+        });
+    });
+
+    describe('scanForComponentInScope', () => {
+        it('should returns null when scope throws exception', () => {
+            sinon.stub(injector, 'scanForComponent').throws('exception');
+            expect(injector.scanForComponentInScope({} as any, '', {})).to.be.null;
+        });
+        it('should returns instance when scope does not throws exception', () => {
+            const component = 'test';
+            sinon.stub(injector, 'scanForComponent').returns(component);
+            expect(injector.scanForComponentInScopes([{}] as any, '', {})).to.be.eql(component);
+        });
+    });
 });

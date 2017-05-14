@@ -1,13 +1,14 @@
 import 'reflect-metadata';
-import { Controller } from '../../common/interfaces/controller.interface';
+import iterate from 'iterare';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { ExceptionsHandler } from '../exceptions/exceptions-handler';
-import { EXCEPTION_FILTERS_METADATA, FILTER_CATCH_EXCEPTIONS } from '../../common/constants';
-import { isEmpty, isFunction } from '../../common/utils/shared.utils';
-import { Metatype } from '../../common/interfaces/index';
-import { ExceptionFilterMetadata } from '../../common/interfaces/exception-filter-metadata.interface';
+import { EXCEPTION_FILTERS_METADATA, FILTER_CATCH_EXCEPTIONS } from '@nestjs/common/constants';
+import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
+import { Metatype } from '@nestjs/common/interfaces/index';
+import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
 import { NestContainer } from '../injector/container';
-import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
-import { ExceptionFilter } from '../../common/interfaces/exception-filter.interface';
+import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
+import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';
 
 export class RouterExceptionFilters {
     constructor(private container: NestContainer) {}
@@ -30,7 +31,7 @@ export class RouterExceptionFilters {
     }
 
     public resolveFiltersMetatypes(filters: Metatype<any>[], moduleName: string): ExceptionFilterMetadata[] {
-        return filters.filter(metatype => isFunction(metatype))
+        return iterate(filters).filter(metatype => isFunction(metatype))
                 .map(metatype => ({
                     instance: this.findExceptionsFilterInstance(metatype, moduleName),
                     metatype,
@@ -39,7 +40,8 @@ export class RouterExceptionFilters {
                 .map(({ instance, metatype }) => ({
                     func: instance.catch.bind(instance),
                     exceptionMetatypes: this.reflectCatchExceptions(metatype),
-                }));
+                }))
+                .toArray();
     }
 
     public findExceptionsFilterInstance(metatype: Metatype<any>, moduleName: string): ExceptionFilter {

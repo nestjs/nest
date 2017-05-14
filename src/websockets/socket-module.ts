@@ -1,9 +1,9 @@
 import 'reflect-metadata';
-import { NestContainer, InstanceWrapper } from '../core/injector/container';
+import { NestContainer, InstanceWrapper } from '@nestjs/core/injector/container';
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { SocketsContainer } from './container';
 import { WebSocketsController } from './web-sockets-controller';
-import { Injectable } from '../common/interfaces/injectable.interface';
+import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { SocketServerProvider } from './socket-server-provider';
 import { GATEWAY_METADATA } from './constants';
 
@@ -11,7 +11,7 @@ export class SocketModule {
     private static socketsContainer = new SocketsContainer();
     private static webSocketsController: WebSocketsController;
 
-    public static setup(container: NestContainer) {
+    public static setup(container) {
         this.webSocketsController = new WebSocketsController(
             new SocketServerProvider(this.socketsContainer),
             container,

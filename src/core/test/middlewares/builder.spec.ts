@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { MiddlewareBuilder } from '../../middlewares/builder';
-import { InvalidMiddlewareConfigurationException } from '../../../errors/exceptions/invalid-middleware-configuration.exception';
+import { InvalidMiddlewareConfigurationException } from '../../errors/exceptions/invalid-middleware-configuration.exception';
 import { RoutesMapper } from '../../middlewares/routes-mapper';
 import { Controller, Get } from '../../../index';
 
