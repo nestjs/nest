@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
 import { RequestMethod } from '../../enums/request-method.enum';
-import { Get, Post, Delete, All, Put } from '../../index';
+import { Get, Post, Delete, All, Put, Patch } from '../../index';
 
 describe('@Get', () => {
     const requestPath = 'test';
@@ -150,6 +150,37 @@ describe('@Put', () => {
     it('should set path on "/" by default', () => {
         class Test {
             @Put()
+            public static test() {}
+        }
+        const path = Reflect.getMetadata('path', Test.test);
+        expect(path).to.be.eql('/');
+    });
+
+});
+
+describe('@Patch', () => {
+    const requestPath = 'test';
+    const requestProps = {
+        path: requestPath,
+        method: RequestMethod.PATCH,
+    };
+
+    it('should enhance class with expected request metadata', () => {
+        class Test {
+            @Patch(requestPath)
+            public static test() {}
+        }
+
+        const path = Reflect.getMetadata('path', Test.test);
+        const method = Reflect.getMetadata('method', Test.test);
+
+        expect(method).to.be.eql(requestProps.method);
+        expect(path).to.be.eql(requestPath);
+    });
+
+    it('should set path on "/" by default', () => {
+        class Test {
+            @Patch()
             public static test() {}
         }
         const path = Reflect.getMetadata('path', Test.test);
