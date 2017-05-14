@@ -1,16 +1,16 @@
-import { NestContainer, InstanceWrapper } from '../core/injector/container';
-import { Controller } from '../common/interfaces/controller.interface';
+import { InstanceWrapper } from '@nestjs/core/injector/container';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { ListenersController } from './listeners-controller';
 
 export class MicroservicesModule {
     private static readonly listenersController = new ListenersController();
 
-    public static setupListeners(container: NestContainer, server) {
+    public static setupListeners(container, server) {
         const modules = container.getModules();
         modules.forEach(({ routes }) => this.bindListeners(routes, server));
     }
 
-    public static setupClients(container: NestContainer) {
+    public static setupClients(container) {
         const modules = container.getModules();
         modules.forEach(({ routes, components }) => {
             this.bindClients(routes);
@@ -25,9 +25,9 @@ export class MicroservicesModule {
     }
 
     public static bindClients(controllers: Map<string, InstanceWrapper<Controller>>) {
-        controllers.forEach(({ instance }) => {
+        controllers.forEach(({ instance, isNotMetatype }) => {
+            if (isNotMetatype) return;
             this.listenersController.bindClientsToProperties(instance);
         });
     }
-
 }

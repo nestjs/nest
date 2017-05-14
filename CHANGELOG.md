@@ -1,3 +1,25 @@
+## 2.0.3 (15.05.2017)
+**@nestjs/common**
+- `Req()` (`Request()`) and `Res()` (`Response()`) aliases to avoid conflicts with express typings
+
+## 2.0.0 (14.05.2017)
+
+- **Hierarchical injector** improvements
+- `@Shared(token?: string)` decorator for **scoped**, shared Modules
+- Modules **are not singletons** anymore
+- Added `iterare` library for applying multiple transformations to a collection
+- `Logger` service is public,
+- Nest is now splitted into feature packages:
+```typescript
+@nestjs/core
+@nestjs/common
+@nestjs/microservices
+@nestjs/testing
+@nestjs/websockets
+```
+- `rxjs`, `redis` and `reflect-metadata` moved into `peerDependencies`
+- `@Patch()` support
+
 ## 1.0.0 (Final - 01.05.2017)
 
 - Added **Gateway Middlewares** support:

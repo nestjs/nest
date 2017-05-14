@@ -1,9 +1,6 @@
 export const InvalidMiddlewareMessage = (name: string) =>
     `Your middleware doesn't have "resolve" method (${name})`;
 
-export const InvalidModuleConfigMessage = (property: string) =>
-    `Invalid property '${property}' in @Module() decorator.`;
-
 export const UnknownDependenciesMessage = (type: string) =>
     `Nest could not resolves dependencies of ${type}.`;
 

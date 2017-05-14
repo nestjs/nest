@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ClientProxyFactory } from '../../client/client-proxy-factory';
 import { ClientTCP } from '../../client/client-tcp';
-import { Transport } from '../../../common/enums/transport.enum';
+import { Transport } from '../../enums/transport.enum';
 import { ClientRedis } from '../../client/client-redis';
 
 describe('ClientProxyFactory', () => {

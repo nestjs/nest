@@ -10,6 +10,7 @@ describe('RouterMethodFactory', () => {
         all: () => {},
         delete: () => {},
         put: () => {},
+        patch: () => {},
     };
     beforeEach(() => {
         factory = new RouterMethodFactory();
@@ -21,5 +22,6 @@ describe('RouterMethodFactory', () => {
         expect(factory.get(target, RequestMethod.ALL)).to.equal(target.all);
         expect(factory.get(target, RequestMethod.PUT)).to.equal(target.put);
         expect(factory.get(target, RequestMethod.GET)).to.equal(target.get);
+        expect(factory.get(target, RequestMethod.PATCH)).to.equal(target.patch);
     });
 });

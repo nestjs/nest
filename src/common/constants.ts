@@ -5,6 +5,8 @@ export const metadata = {
     EXPORTS: 'exports',
 };
 
+export const SHARED_MODULE_METADATA = '__sharedModule__';
+
 export const PATH_METADATA = 'path';
 export const PARAMTYPES_METADATA = 'design:paramtypes';
 export const SELF_DECLARED_DEPS_METADATA = 'self:paramtypes';

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import { ModuleMetadata } from '../../interfaces/module-metadata.interface';
-import { InvalidModuleConfigException } from '../../../errors/exceptions/invalid-module-config.exception';
+import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface';
+import { InvalidModuleConfigException } from '../../exceptions/invalid-module-config.exception';
 import { metadata } from '../../constants';
 
 const metadataKeys = [

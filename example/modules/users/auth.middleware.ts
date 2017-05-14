@@ -1,7 +1,7 @@
 import { UsersService } from './users.service';
 import { HttpException } from '../../../src/core/exceptions/http-exception';
 import { Middleware } from '../../../src/common/utils';
-import { NestMiddleware } from '../../../src/core/middlewares/interfaces/nest-middleware.interface';
+import { NestMiddleware } from '../../../src/common/interfaces/middlewares/nest-middleware.interface';
 
 @Middleware()
 export class AuthMiddleware implements NestMiddleware {

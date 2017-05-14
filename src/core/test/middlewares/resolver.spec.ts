@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { MiddlewaresResolver } from '../../middlewares/resolver';
 import { MiddlewaresContainer } from '../../middlewares/container';
 import { Component } from '../../../common/utils/decorators/component.decorator';
-import { NestMiddleware } from '../../middlewares/interfaces/nest-middleware.interface';
+import { NestMiddleware } from '../../../common/interfaces/middlewares/nest-middleware.interface';
 import { Logger } from '../../../common/services/logger.service';
 import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
 

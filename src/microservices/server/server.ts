@@ -1,4 +1,4 @@
-import { Logger } from '../../common/services/logger.service';
+import { Logger } from '@nestjs/common/services/logger.service';
 
 export abstract class Server {
     private readonly logger = new Logger(Server.name);

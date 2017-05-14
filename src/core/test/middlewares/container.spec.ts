@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { MiddlewaresContainer } from '../../middlewares/container';
-import { MiddlewareConfiguration } from '../../middlewares/interfaces/middleware-configuration.interface';
-import { NestMiddleware } from '../../middlewares/interfaces/nest-middleware.interface';
+import { MiddlewareConfiguration } from '../../../common/interfaces/middlewares/middleware-configuration.interface';
+import { NestMiddleware } from '../../../common/interfaces/middlewares/nest-middleware.interface';
 import { Component } from '../../../common/utils/decorators/component.decorator';
 import { Controller } from '../../../common/utils/decorators/controller.decorator';
 import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
