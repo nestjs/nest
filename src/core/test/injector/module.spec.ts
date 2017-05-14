@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Module as ModuleDecorator } from '../../../common/utils/decorators/module.decorator';
-import { UnknownExportException } from '../../../errors/exceptions/unknown-export.exception';
+import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception';
 import { Module } from '../../injector/module';
 import { Component } from '../../../common/utils/decorators/component.decorator';
-import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
+import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 
 describe('Module', () => {
     let module: Module;

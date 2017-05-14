@@ -1,11 +1,11 @@
 import { InstanceWrapper } from './container';
-import { Injectable, Controller, NestModule } from '../../common/interfaces';
-import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception';
-import { NestModuleMetatype } from '../../common/interfaces/module-metatype.interface';
-import { Metatype } from '../../common/interfaces/metatype.interface';
+import { Injectable, Controller, NestModule } from '@nestjs/common/interfaces';
+import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { ModuleRef } from './module-ref';
-import { isFunction, isNil, isUndefined } from '../../common/utils/shared.utils';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { RuntimeException } from '../errors/exceptions/runtime.exception';
 
 export interface CustomComponent {
     provide: any;

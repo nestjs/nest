@@ -1,7 +1,7 @@
 import { NestGateway } from './interfaces/nest-gateway.interface';
-import { isUndefined, isFunction } from '../common/utils/shared.utils';
+import { isUndefined, isFunction } from '@nestjs/common/utils/shared.utils';
 import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA, GATEWAY_SERVER_METADATA } from './constants';
-import { MetadataScanner } from '../core/metadata-scanner';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 
 export class GatewayMetadataExplorer {
     constructor(private readonly metadataScanner: MetadataScanner) {}

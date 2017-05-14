@@ -1,9 +1,9 @@
 import 'reflect-metadata';
-import { Controller } from '../common/interfaces/controller.interface';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { ListenerMetadataExplorer } from './listener-metadata-explorer';
 import { Server } from './server/server';
 import { ClientProxyFactory } from './client/client-proxy-factory';
-import { MetadataScanner } from '../core/metadata-scanner';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 
 export class ListenersController {
     private readonly metadataExplorer = new ListenerMetadataExplorer(new MetadataScanner());

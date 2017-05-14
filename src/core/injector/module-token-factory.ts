@@ -1,6 +1,6 @@
-import { isUndefined } from '../../common/utils/shared.utils';
-import { NestModuleMetatype } from '../../common/interfaces/module-metatype.interface';
-import { SHARED_MODULE_METADATA } from '../../common/constants';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { SHARED_MODULE_METADATA } from '@nestjs/common/constants';
 
 export class ModuleTokenFactory {
     public create(metatype: NestModuleMetatype, scope: NestModuleMetatype[]) {

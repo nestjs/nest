@@ -1,14 +1,14 @@
 import 'reflect-metadata';
 import { InstanceWrapper } from './container';
-import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
+import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { Module } from './module';
-import { Metatype } from '../../common/interfaces/metatype.interface';
-import { Controller } from '../../common/interfaces/controller.interface';
-import { Injectable } from '../../common/interfaces/injectable.interface';
+import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { MiddlewareWrapper } from '../middlewares/container';
-import { isUndefined, isNil, isFunction } from '../../common/utils/shared.utils';
-import { PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '../../common/constants';
+import { isUndefined, isNil, isFunction } from '@nestjs/common/utils/shared.utils';
+import { PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
 
 export class Injector {
     public loadInstanceOfMiddleware(

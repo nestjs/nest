@@ -1,11 +1,11 @@
 import 'reflect-metadata';
 import { NestContainer } from './injector/container';
-import { Controller } from '../common/interfaces/controller.interface';
-import { Injectable } from '../common/interfaces/injectable.interface';
-import { metadata, EXCEPTION_FILTERS_METADATA } from '../common/constants';
-import { NestModuleMetatype } from '../common/interfaces/module-metatype.interface';
-import { Metatype } from '../common/interfaces/metatype.interface';
-import { GATEWAY_MIDDLEWARES } from '../websockets/constants';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { metadata, EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
+import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { GATEWAY_MIDDLEWARES } from '@nestjs/websockets/constants';
 
 export class DependenciesScanner {
     constructor(private container: NestContainer) {}

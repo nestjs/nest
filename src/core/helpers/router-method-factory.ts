@@ -1,4 +1,4 @@
-import { RequestMethod } from '../../common/enums/request-method.enum';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 
 export class RouterMethodFactory {
     public get(target, requestMethod: RequestMethod) {

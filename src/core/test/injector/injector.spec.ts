@@ -3,9 +3,9 @@ import { expect } from 'chai';
 import { InstanceWrapper } from '../../injector/container';
 import { Injector } from '../../injector/injector';
 import { Component } from '../../../common/utils/decorators/component.decorator';
-import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
+import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { Module } from '../../injector/module';
-import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception';
+import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
 
 describe('Injector', () => {
     let injector: Injector;

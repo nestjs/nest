@@ -1,5 +1,5 @@
 import { Constructor } from './merge-with-values.util';
-import { NestMiddleware } from '../../core/middlewares/interfaces/nest-middleware.interface';
+import { NestMiddleware } from '../interfaces/middlewares/nest-middleware.interface';
 
 export const BindResolveMiddlewareValues = <T extends Constructor<NestMiddleware>>(data: Array<any>) => {
     return (Metatype: T): any => {

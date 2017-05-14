@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
-import { isNil } from '../../common/utils/shared.utils';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import { InvalidMessageException } from '../exceptions/invalid-message.exception';
 
 export abstract class ClientProxy {

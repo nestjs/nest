@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { DependenciesScanner } from './../scanner';
 import { NestContainer } from './../injector/container';
 import { Module } from '../../common/utils/decorators/module.decorator';
-import { NestModule } from '../../common/interfaces/nest-module.interface';
+import { NestModule } from '../../common/interfaces/modules/nest-module.interface';
 import { Component } from '../../common/utils/decorators/component.decorator';
 import { Controller } from '../../common/utils/decorators/controller.decorator';
 

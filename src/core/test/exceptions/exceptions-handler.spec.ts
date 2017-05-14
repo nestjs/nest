@@ -4,7 +4,7 @@ import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
 import { HttpException } from '../../exceptions/http-exception';
 import { Logger } from '../../../common/services/logger.service';
 import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
-import { InvalidExceptionFilterException } from '../../../errors/exceptions/invalid-exception-filter.exception';
+import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
 
 describe('ExceptionsHandler', () => {
     let handler: ExceptionsHandler;

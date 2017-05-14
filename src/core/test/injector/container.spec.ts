@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NestContainer } from '../../injector/container';
 import { Module } from '../../../common/utils/decorators/module.decorator';
-import { UnknownModuleException } from '../../../errors/exceptions/unknown-module.exception';
+import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 
 describe('NestContainer', () => {
     let container: NestContainer;

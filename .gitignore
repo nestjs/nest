@@ -8,9 +8,15 @@
 
 # misc
 npm-debug.log
+/src/common/npm-debug.log
+/src/core/npm-debug.log
+/src/testing/npm-debug.log
+/src/microservices/npm-debug.log
+/src/websockets/npm-debug.log
 
 # example
 /quick-start
+/example_dist
 
 # tests
 /test

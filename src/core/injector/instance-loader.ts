@@ -1,13 +1,12 @@
 import iterate from 'iterare';
 import { NestContainer } from './container';
 import { Injector } from './injector';
-import { Injectable } from '../../common/interfaces/injectable.interface';
-import { Controller } from '../../common/interfaces/controller.interface';
+import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Module } from './module';
-import { Logger } from '../../common/services/logger.service';
+import { Logger, OnModuleInit } from '@nestjs/common';
 import { ModuleInitMessage } from '../helpers/messages';
-import { isUndefined, isNil } from '../../common/utils/shared.utils';
-import { OnModuleInit } from '../../common/interfaces/index';
+import { isUndefined, isNil } from '@nestjs/common/utils/shared.utils';
 
 export class InstanceLoader {
     private injector = new Injector();

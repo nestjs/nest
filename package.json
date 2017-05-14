@@ -1,6 +1,6 @@
 {
-  "name": "nest.js",
-  "version": "1.0.6",
+  "name": "@nestjs",
+  "version": "2.0.0",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
@@ -19,7 +19,9 @@
     ],
     "exclude": [
       "node_modules/",
-      "src/*.ts",
+      "src/core/nest-application.ts",
+      "src/core/nest-factory.ts",
+      "src/core/nest-microservice.ts",
       "src/**/*.spec.ts",
       "src/common/services/logger.service.ts",
       "src/microservices/exceptions/",
@@ -54,11 +56,13 @@
     "typescript": "^2.2.1"
   },
   "devDependencies": {
+    "@nestjs/common": "^1.0.0",
     "@types/chai": "^3.4.34",
     "@types/express": "^4.0.35",
     "@types/mocha": "^2.2.38",
     "@types/node": "^7.0.5",
     "@types/redis": "^0.12.36",
+    "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "^1.16.36",
     "@types/socket.io": "^1.4.29",
     "awesome-typescript-loader": "^3.0.0-beta.18",

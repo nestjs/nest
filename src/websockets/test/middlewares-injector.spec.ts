@@ -1,9 +1,9 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { MiddlewaresInjector } from '../middlewares-injector';
-import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
+import { UnknownModuleException } from '../../core/errors/exceptions/unknown-module.exception';
 import { WebSocketGateway } from '../index';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { RuntimeException } from '../../core/errors/exceptions/runtime.exception';
 
 describe('MiddlewaresInjector', () => {
     let injector: MiddlewaresInjector;
@@ -23,11 +23,11 @@ describe('MiddlewaresInjector', () => {
         beforeEach(() => {
             sinon.stub(injector, 'reflectMiddlewaresTokens').returns(tokens);
         });
-        it('should throws "UnknownModuleException" when module is not known', () => {
+        it('should throws exception when module is not known', () => {
             sinon.stub(modules, 'has').returns(false);
             expect(
                 () => injector.inject(null, null, ''),
-            ).to.throws(UnknownModuleException);
+            ).to.throws(Error);
         });
         it('should call "applyMiddlewares" with expected arguments', () => {
             const components = {};
@@ -74,11 +74,11 @@ describe('MiddlewaresInjector', () => {
     describe('bindMiddleware', () => {
         let stub: sinon.SinonStub;
         const components = new Map();
-        it('should throws "RuntimeException" when middleware does not exists in collection', () => {
+        it('should throws exception when middleware does not exists in collection', () => {
             stub = sinon.stub(components, 'has').returns(false);
             expect(
                 () => injector.bindMiddleware('', components),
-            ).to.throws(RuntimeException);
+            ).to.throws(Error);
         });
         describe('when components collection "has" method returns true', () => {
             let getStub: sinon.SinonStub;
