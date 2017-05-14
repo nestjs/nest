@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/testing",
-  "version": "2.0.1",
+  "version": "2.0.3",
   "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -8,7 +8,7 @@
     "compile": "tsc -p tsconfig.json"
   },
   "peerDependencies": {
-    "@nestjs/common": "^1.0.0",
-    "@nestjs/core": "^1.0.0"
+    "@nestjs/common": "~2.*",
+    "@nestjs/core": "~2.*"
   }
 }

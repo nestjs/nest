@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/websockets",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Nest - modern, fast, powerful node.js web framework (@websockets)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -12,8 +12,8 @@
     "socket.io": "^1.7.2"
   },
   "peerDependencies": {
-    "@nestjs/common": "^1.0.0",
-    "@nestjs/core": "^1.0.0",
+    "@nestjs/common": "~2.*",
+    "@nestjs/core": "~2.*",
     "reflect-metadata": "0.1.10",
     "rxjs": "^5.0.3"
   }
