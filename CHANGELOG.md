@@ -1,3 +1,7 @@
+## 2.0.3 (15.05.2017)
+**@nestjs/common**
+- `Req()` (`Request()`) and `Res()` (`Response()`) aliases to avoid conflicts with express typings
+
 ## 2.0.0 (14.05.2017)
 
 - **Hierarchical injector** improvements
