@@ -70,8 +70,8 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 ## People
 
-Author - [Kamil Myśliwiec](http://kamilmysliwiec.com)
-Website - [http://nestjs.com](http://nestjs.com/)
+- Author - [Kamil Myśliwiec](http://kamilmysliwiec.com)
+- Website - [http://nestjs.com](http://nestjs.com/)
 
 ## License
 
