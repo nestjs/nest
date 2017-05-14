@@ -9,4 +9,4 @@ export {
     OnModuleInit,
     ExceptionFilter,
 } from './interfaces';
-export * from './services';
+export * from './services/logger.service';
