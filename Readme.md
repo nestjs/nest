@@ -26,7 +26,7 @@ $ npm run start
 
 **NPM:**
 ```bash
-$ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websockets @nestjs/testing reflect-metadata rxjs redis
+$ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websockets @nestjs/testing reflect-metadata rxjs
 ```
 
 ## Philosophy
