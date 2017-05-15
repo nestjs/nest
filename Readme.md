@@ -43,7 +43,7 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 - Compatible with both TypeScript and ES6 (I strongly recommend to use [TypeScript](http://www.typescriptlang.org))
 - Based on well-known libraries ([Express](https://github.com/expressjs/express) / [socket.io](https://github.com/socketio/socket.io)) so you could share your experience 
 - Supremely useful Dependency Injection, built-in **Inversion of Control** container
-- **Hierarchical injector** - increase abstraction in your application by creating reusable modules with type injection
+- **Hierarchical injector** - increase abstraction in your application by creating reusable, loosely coupled modules with type injection
 - Own modularity system (split your system into reusable modules)
 - **WebSockets** module (based on [socket.io](https://github.com/socketio/socket.io))
 - Reactive **microservices** support with messages patterns (transport via TCP / [Redis](https://redis.io/))
