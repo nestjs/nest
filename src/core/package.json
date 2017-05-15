@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Nest - modern, fast, powerful node.js web framework (@core)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -8,7 +8,7 @@
     "compile": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "express": "^4.14.0",
+    "express": "4.14.0",
     "iterare": "0.0.8"
   },
   "peerDependencies": {

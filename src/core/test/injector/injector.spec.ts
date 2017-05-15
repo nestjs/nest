@@ -299,10 +299,5 @@ describe('Injector', () => {
             sinon.stub(injector, 'scanForComponent').throws('exception');
             expect(injector.scanForComponentInScope({} as any, '', {})).to.be.null;
         });
-        it('should returns instance when scope does not throws exception', () => {
-            const component = 'test';
-            sinon.stub(injector, 'scanForComponent').returns(component);
-            expect(injector.scanForComponentInScopes([{}] as any, '', {})).to.be.eql(component);
-        });
     });
 });
