@@ -7,6 +7,7 @@
   [![Travis][travis-image]][travis-url]
   [![Linux][linux-image]][linux-url]
   [![Coverage Status](https://coveralls.io/repos/github/kamilmysliwiec/nest/badge.svg?branch=master)](https://coveralls.io/github/kamilmysliwiec/nest?branch=master)
+ [![Gitter](https://badges.gitter.im/nestjs/nestjs.svg)](https://gitter.im/nestjs/nestjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge)
 
 ## Description
 
