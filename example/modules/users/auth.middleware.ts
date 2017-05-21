@@ -7,7 +7,7 @@ import { NestMiddleware } from '../../../src/common/interfaces/middlewares/nest-
 export class AuthMiddleware implements NestMiddleware {
     constructor(private usersService: UsersService) {}
 
-    public resolve() {
+    public resolve(): (req, res, next) => void {
         return (req, res, next) => {
             const username = req.headers['x-access-token'];
             const users = this.usersService.getUsers();
@@ -19,6 +19,5 @@ export class AuthMiddleware implements NestMiddleware {
             next();
         };
     }
-
 }
 
