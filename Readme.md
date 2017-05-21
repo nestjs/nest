@@ -60,15 +60,11 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 - [TypeScript](https://github.com/kamilmysliwiec/nest-typescript-starter)
 - [Babel](https://github.com/kamilmysliwiec/nest-babel-starter/)
 
-## Modules
+## Useful references
 
-- [CQRS - Event-Driven Architecture](https://github.com/kamilmysliwiec/nest-cqrs) 
-
-## Examples
-
-- [Auth0](https://github.com/cdiaz/nestjs-auth0.git) by [@cdiaz](https://github.com/cdiaz)
-- [TypeORM](https://github.com/zachgrayio/nest-typeorm-example) by [@zachgrayio](https://github.com/zachgrayio/)
-- [CQRS, Event-Driven Architecture](https://github.com/kamilmysliwiec/nest-cqrs-example) by [@kamilmysliwiec](https://github.com/kamilmysliwiec/)
+- [Modules](https://kamilmysliwiec.gitbooks.io/nest/content/modules.html) 
+- [Examples](https://kamilmysliwiec.gitbooks.io/nest/content/examples.html)
+- [API Reference](https://kamilmysliwiec.gitbooks.io/nest/content/api-reference.html)
 
 ## People
 
