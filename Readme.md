@@ -53,7 +53,7 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 ## Documentation & Quick Start
 
-[Documentation & Tutorial](https://kamilmysliwiec.gitbooks.io/nest/content/)
+[Documentation & Tutorial](http://docs.nestjs.com)
 
 ## Starter repos
 
@@ -62,9 +62,9 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 ## Useful references
 
-- [Modules](https://kamilmysliwiec.gitbooks.io/nest/content/modules.html) 
-- [Examples](https://kamilmysliwiec.gitbooks.io/nest/content/examples.html)
-- [API Reference](https://kamilmysliwiec.gitbooks.io/nest/content/api-reference.html)
+- [Modules](http://docs.nestjs.com/modules.html) 
+- [Examples](http://docs.nestjs.com/examples.html)
+- [API Reference](http://docs.nestjs.com/api-reference.html)
 
 ## People
 
