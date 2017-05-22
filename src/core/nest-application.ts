@@ -8,10 +8,13 @@ import { messages } from './constants';
 import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { INestApplication } from '@nestjs/common';
+import { ApplicationConfig } from './application-config';
+import { validatePath } from '@nestjs/common/utils/shared.utils';
 
 export class NestApplication implements INestApplication {
-    private readonly routesResolver: Resolver;
+    private readonly config = new ApplicationConfig();
     private readonly logger = new Logger(NestApplication.name);
+    private readonly routesResolver: Resolver;
 
     constructor(
         private readonly container: NestContainer,
@@ -26,12 +29,27 @@ export class NestApplication implements INestApplication {
         MicroservicesModule.setupClients(this.container);
     }
 
-    public listen(port: number, callback?: () => void) {
-        this.setupMiddlewares(this.express);
-        this.setupRoutes(this.express);
+    public init() {
+        const router = ExpressAdapter.createRouter();
+        this.setupMiddlewares(router);
+        this.setupRoutes(router);
+
+        this.express.use(
+            validatePath(this.config.getGlobalPrefix()),
+            router,
+        );
 
         this.logger.log(messages.APPLICATION_READY);
-        return this.express.listen(port, callback);
+    }
+
+    public listen(port: number, callback?: () => void) {
+        const server = this.express.listen(port, () => {
+            callback && callback.call(callback, server);
+        });
+    }
+
+    public setGlobalPrefix(prefix: string) {
+        this.config.setGlobalPrefix(prefix);
     }
 
     private setupMiddlewares(instance) {

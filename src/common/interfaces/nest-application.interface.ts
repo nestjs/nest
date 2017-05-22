@@ -1,3 +1,5 @@
 export interface INestApplication {
-    listen(port: number, callback?: () => void);
+    init(): void;
+    listen(port: number, callback?: (server?) => void): void;
+    setGlobalPrefix(prefix: string): void;
 }
