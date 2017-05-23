@@ -75,7 +75,7 @@ We want to create scalable, modern and easy to maintain applications. Nest helps
 
 ## Backers
 
-Support us with a monthly donation and help us continue our activities. [[Become a backer](https://opencollective.com/nest#backer)]
+I am on a mission to create truly flexible, scalable and modern architecture for Node.js developers. It takes a lot of time, so if you want to support me, let's [become a backer / sponsor]((https://opencollective.com/nest#backer)). I'll appreciate each help. Thanks!
 
 <a href="https://opencollective.com/nest/backer/0/website" target="_blank"><img src="https://opencollective.com/nest/backer/0/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/1/website" target="_blank"><img src="https://opencollective.com/nest/backer/1/avatar.svg"></a>
