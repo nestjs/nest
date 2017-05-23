@@ -42,3 +42,5 @@ export const Body: (property?: string) => ParameterDecorator = createRouteParamD
 export const Param: (property?: string) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.PARAM);
 export const Session: () => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.SESSION);
 export const Headers: (property?: string) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.HEADERS);
+export const Req = Request;
+export const Res = Response;

@@ -135,8 +135,8 @@ export class Injector {
         if (component) {
             return component;
         }
-        return components.has(name) ? components.get(name) :
-                this.scanForComponentInExports(components, name, module, metatype, context);
+        const scanInExports = () => this.scanForComponentInExports(components, name, module, metatype, context);
+        return components.has(name) ? components.get(name) : scanInExports();
     }
 
     public scanForComponentInExports(components: Map<string, any>, name: any, module: Module, { metatype }, context: Module[] = []) {
@@ -166,9 +166,13 @@ export class Injector {
 
     public scanForComponentInScope(context: Module, name: any, metatype) {
         try {
-            return this.scanForComponent(
+            const component = this.scanForComponent(
                 context.components, name, context, { metatype }, null,
             );
+            if (!component.isResolved) {
+                this.loadInstanceOfComponent(component, context);
+            }
+            return component;
         }
         catch (e) {
             return null;

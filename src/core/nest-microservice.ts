@@ -26,11 +26,19 @@ export class NestMicroservice implements INestMicroservice {
 
     public setupModules() {
         MicroservicesModule.setupClients(this.container);
+        this.setupListeners();
+    }
+
+    public setupListeners() {
         MicroservicesModule.setupListeners(this.container, this.server);
     }
 
     public listen(callback: () => void) {
-        this.logger.log(messages.APPLICATION_READY);
+        this.logger.log(messages.MICROSERVICE_READY);
         this.server.listen(callback);
+    }
+
+    public close() {
+        this.server.close();
     }
 }

@@ -20,6 +20,16 @@ describe('ServerTCP', () => {
             expect(socket.on.called).to.be.true;
         });
     });
+    describe('close', () => {
+        const tcpServer = { close: sinon.spy() };
+        beforeEach(() => {
+            (server as any).server = tcpServer;
+        });
+        it('should close server', () => {
+            server.close();
+            expect(tcpServer.close.called).to.be.true;
+        });
+    });
     describe('listen', () => {
         const serverMock = { listen: sinon.spy() };
         beforeEach(() => {

@@ -9,7 +9,7 @@ import { ModuleInitMessage } from '../helpers/messages';
 import { isUndefined, isNil } from '@nestjs/common/utils/shared.utils';
 
 export class InstanceLoader {
-    private injector = new Injector();
+    private readonly injector = new Injector();
     private readonly logger = new Logger(InstanceLoader.name);
 
     constructor(private container: NestContainer) {}

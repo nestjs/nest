@@ -19,6 +19,10 @@ export class ServerTCP extends Server {
         this.server.listen(this.port, callback);
     }
 
+    public close() {
+        this.server.close();
+    }
+
     public bindHandler(socket) {
         const sock = this.getSocketInstance(socket);
         sock.on('message', (msg) => this.handleMessage(sock, msg));

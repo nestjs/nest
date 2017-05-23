@@ -25,6 +25,20 @@ describe('ServerRedis', () => {
             expect(onSpy.getCall(0).args[0]).to.be.equal('connect');
         });
     });
+    describe('close', () => {
+        const pub = { quit: sinon.spy() };
+        const sub = { quit: sinon.spy() };
+        beforeEach(() => {
+            (server as any).pub = pub;
+            (server as any).sub = sub;
+        });
+        it('should close pub & sub server', () => {
+            server.close();
+
+            expect(pub.quit.called).to.be.true;
+            expect(sub.quit.called).to.be.true;
+        });
+    });
     describe('handleConnection', () => {
         let onSpy: sinon.SinonSpy,
             subscribeSpy: sinon.SinonSpy,

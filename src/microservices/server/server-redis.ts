@@ -3,20 +3,28 @@ import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
 import { MicroserviceConfiguration } from '../interfaces/microservice-configuration.interface';
 
+const DEFAULT_URL = 'redis://localhost:6379';
+
 export class ServerRedis extends Server {
     private readonly url: string;
-    private readonly DEFAULT_URL = 'redis://localhost:6379';
+    private sub = null;
+    private pub = null;
 
     constructor(config: MicroserviceConfiguration) {
         super();
-        this.url = config.url || this.DEFAULT_URL;
+        this.url = config.url || DEFAULT_URL;
     }
 
     public listen(callback?: () => void) {
-        const sub = this.createRedisClient();
-        const pub = this.createRedisClient();
+        this.sub = this.createRedisClient();
+        this.pub = this.createRedisClient();
 
-        sub.on('connect', () => this.handleConnection(callback, sub, pub));
+        this.sub.on('connect', () => this.handleConnection(callback, this.sub, this.pub));
+    }
+
+    public close() {
+        this.pub && this.pub.quit();
+        this.sub && this.sub.quit();
     }
 
     public createRedisClient() {
@@ -69,7 +77,7 @@ export class ServerRedis extends Server {
         };
     }
 
-    public  tryParse(content) {
+    public tryParse(content) {
         try {
             return JSON.parse(content);
         }

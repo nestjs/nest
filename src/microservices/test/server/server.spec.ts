@@ -3,6 +3,7 @@ import { Server } from '../../server/server';
 
 class TestServer extends Server {
     public listen(callback: () => void) {}
+    public close() {}
 }
 
 describe('Server', () => {

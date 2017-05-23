@@ -16,7 +16,7 @@ export class RoutesMapper {
         }
         const paths = this.routerExplorer.scanForPaths(Object.create(routeMetatype), routeMetatype.prototype);
         return paths.map((route) => ({
-            path: this.validateRoutePath(routePath) + this.validateRoutePath(route.path),
+            path: this.validateGlobalPath(routePath) + this.validateRoutePath(route.path),
             method: route.requestMethod,
         }));
     }
@@ -30,6 +30,11 @@ export class RoutesMapper {
             path: this.validateRoutePath(path),
             method: isUndefined(method) ? RequestMethod.ALL : method,
         };
+    }
+
+    private validateGlobalPath(path: string): string {
+        const prefix = validatePath(path);
+        return prefix === '/' ? '' : prefix;
     }
 
     private validateRoutePath(path: string): string {

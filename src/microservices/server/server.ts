@@ -5,6 +5,7 @@ export abstract class Server {
     protected readonly msgHandlers = {};
 
     public abstract listen(callback: () => void);
+    public abstract close(): void;
 
     public getHandlers() {
         return this.msgHandlers;
