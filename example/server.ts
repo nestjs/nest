@@ -1,12 +1,15 @@
-import { NestFactory } from './../src/';
+import { NestFactory } from './../src/core';
 import { ApplicationModule } from './modules/app.module';
+import { Transport } from '../src/microservices/index';
 
 const port = 3001;
 const app = NestFactory.create(ApplicationModule);
-
-app.init();
-app.listen(port, (server) => {
+const microservice = app.connectMicroservice({
+    transport: Transport.TCP,
+    port: 5667,
+});
+microservice.listen(() => ({}));
+app.listen(port, () => {
     console.log('Application listen on port:', port);
-    server.close();
-    process.exit();
+    //app.close();
 });

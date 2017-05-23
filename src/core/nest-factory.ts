@@ -63,9 +63,13 @@ export class NestFactory {
                 return;
 
             if (isFunction(receiver[prop])) {
-                return (...args) => ExceptionsZone.run(() => {
-                    receiver[prop](...args);
-                });
+                return (...args) => {
+                    let result;
+                    ExceptionsZone.run(() => {
+                        result = receiver[prop](...args);
+                    });
+                    return result;
+                };
             }
             return receiver[prop];
         };
