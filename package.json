@@ -11,7 +11,8 @@
     "microservice": "node microservice.js",
     "compile": "tsc -p tsconfig.prod.json",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
-    "coverage": "nyc report --reporter=text-lcov | coveralls"
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "postinstall": "opencollective postinstall"
   },
   "nyc": {
     "include": [
@@ -84,5 +85,10 @@
     "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
     "ts-node": "^2.0.0"
+  },
+  "collective": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/nest",
+    "logo": "https://opencollective.com/opencollective/logo.txt"
   }
 }
