@@ -108,23 +108,6 @@ Support us with a monthly donation and help us continue our activities. [[Become
 <a href="https://opencollective.com/nest/backer/28/website" target="_blank"><img src="https://opencollective.com/nest/backer/28/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/29/website" target="_blank"><img src="https://opencollective.com/nest/backer/29/avatar.svg"></a>
 
-
-## Sponsors
-
-Become a sponsor and get your logo on our README on Github with a link to your site. [[Become a sponsor](https://opencollective.com/nest#sponsor)]
-
-<a href="https://opencollective.com/nest/sponsor/0/website" target="_blank"><img src="https://opencollective.com/nest/sponsor/0/avatar.svg"></a>
-<a href="https://opencollective.com/nest/sponsor/1/website" target="_blank"><img src="https://opencollective.com/nest/sponsor/1/avatar.svg"></a>
-<a href="https://opencollective.com/nest/sponsor/2/website" target="_blank"><img src="https://opencollective.com/nest/sponsor/2/avatar.svg"></a>
-<a href="https://opencollective.com/nest/sponsor/3/website" target="_blank"><img src="https://opencollective.com/nest/sponsor/3/avatar.svg"></a>
-<a href="https://opencollective.com/nest/sponsor/4/website" target="_blank"><img src="https://opencollective.com/nest/sponsor/4/avatar.svg"></a>
-<a href="https://opencollective.com/nest/sponsor/5/website" target="_blank"><img src="https://opencollective.com/nest/sponsor/5/avatar.svg"></a>
-<a href="https://opencollective.com/nest/sponsor/6/website" target="_blank"><img src="https://opencollective.com/nest/sponsor/6/avatar.svg"></a>
-<a href="https://opencollective.com/nest/sponsor/7/website" target="_blank"><img src="https://opencollective.com/nest/sponsor/7/avatar.svg"></a>
-<a href="https://opencollective.com/nest/sponsor/8/website" target="_blank"><img src="https://opencollective.com/nest/sponsor/8/avatar.svg"></a>
-<a href="https://opencollective.com/nest/sponsor/9/website" target="_blank"><img src="https://opencollective.com/nest/sponsor/9/avatar.svg"></a>
-
-
 ## License
 
   [MIT](LICENSE)
