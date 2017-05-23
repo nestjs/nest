@@ -8,8 +8,9 @@ const microservice = app.connectMicroservice({
     transport: Transport.TCP,
     port: 5667,
 });
-microservice.listen(() => ({}));
+
+app.startAllMicroservices(() => console.log('All microservices are listening...'));
 app.listen(port, () => {
     console.log('Application listen on port:', port);
-    //app.close();
+    app.close();
 });
