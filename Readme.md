@@ -7,8 +7,8 @@
   [![Travis][travis-image]][travis-url]
   [![Linux][linux-image]][linux-url]
   [![Coverage Status](https://coveralls.io/repos/github/kamilmysliwiec/nest/badge.svg?branch=master)](https://coveralls.io/github/kamilmysliwiec/nest?branch=master)
-  [![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](#backers)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](#sponsors)
+  [![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)
  [![Gitter](https://badges.gitter.im/nestjs/nestjs.svg)](https://gitter.im/nestjs/nestjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge)
 
 ## Description
