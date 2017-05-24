@@ -6,14 +6,15 @@ import { WebSocketsController } from './web-sockets-controller';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { SocketServerProvider } from './socket-server-provider';
 import { GATEWAY_METADATA } from './constants';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 
 export class SocketModule {
     private static socketsContainer = new SocketsContainer();
     private static webSocketsController: WebSocketsController;
 
-    public static setup(container) {
+    public static setup(container, config) {
         this.webSocketsController = new WebSocketsController(
-            new SocketServerProvider(this.socketsContainer),
+            new SocketServerProvider(this.socketsContainer, config),
             container,
         );
 

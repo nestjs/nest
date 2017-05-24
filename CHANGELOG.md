@@ -1,3 +1,13 @@
+## 2.1.1 (24.05.2017)
+**@nestjs/common**, **@nestjs/microservices**
+- `INestApplication` and `INestMicroservice` has new method now - `setIoAdapter()`,
+- Ability to use custom `IoAdapter`
+
+## 2.1.0 (22.05.2017)
+**@nestjs/common**, **@nestjs/core**
+- `INestApplication` has new methods now - `init()`, `setGlobalPrefix()`, `connectMicroservice()`, `close()`, `startAllMicroservices()`,
+- `INestMicroservice` has new method - `close()`
+
 ## 2.0.3 (15.05.2017)
 **@nestjs/common**
 - `Req()` (`Request()`) and `Res()` (`Response()`) aliases to avoid conflicts with express typings

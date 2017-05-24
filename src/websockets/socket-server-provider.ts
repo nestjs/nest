@@ -1,11 +1,13 @@
 import { SocketsContainer } from './container';
 import { ObservableSocket } from './observable-socket';
 import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
-import { IoAdapter } from './adapters/io-adapter';
 import { validatePath } from '@nestjs/common/utils/shared.utils';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 
 export class SocketServerProvider {
-    constructor(private readonly socketsContainer: SocketsContainer) {}
+    constructor(
+        private readonly socketsContainer: SocketsContainer,
+        private readonly applicationConfig: ApplicationConfig) {}
 
     public scanForSocketServer(namespace: string, port: number): ObservableSocketServer {
         const observableServer = this.socketsContainer.getServer(namespace, port);
@@ -21,10 +23,11 @@ export class SocketServerProvider {
     }
 
     private getServerOfNamespace(namespace: string, port: number) {
+        const adapter = this.applicationConfig.getIoAdapter();
         if (namespace) {
-            return IoAdapter.createWithNamespace(port, this.validateNamespace(namespace));
+            return adapter.createWithNamespace(port, this.validateNamespace(namespace));
         }
-        return IoAdapter.create(port);
+        return adapter.create(port);
     }
 
     private validateNamespace(namespace: string): string {

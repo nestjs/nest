@@ -12,6 +12,7 @@ import { ApplicationConfig } from './application-config';
 import { validatePath } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices';
 import { NestMicroservice } from './index';
+import { SocketIoAdapter } from '@nestjs/common/interfaces';
 
 export class NestApplication implements INestApplication {
     private readonly config = new ApplicationConfig();
@@ -29,7 +30,7 @@ export class NestApplication implements INestApplication {
     }
 
     public setupModules() {
-        SocketModule.setup(this.container);
+        SocketModule.setup(this.container, this.config);
         MiddlewaresModule.setup(this.container);
         MicroservicesModule.setupClients(this.container);
     }
@@ -77,6 +78,10 @@ export class NestApplication implements INestApplication {
 
     public setGlobalPrefix(prefix: string) {
         this.config.setGlobalPrefix(prefix);
+    }
+
+    public setIoAdapter(adapter: SocketIoAdapter) {
+        this.config.setIoAdapter(adapter);
     }
 
     private setupMiddlewares(instance) {
