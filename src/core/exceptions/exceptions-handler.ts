@@ -1,9 +1,9 @@
 import { HttpException } from './http-exception';
 import { messages } from '../constants';
-import { Logger } from '../../common/services/logger.service';
-import { ExceptionFilterMetadata } from '../../common/interfaces/exception-filter-metadata.interface';
-import { isEmpty, isObject } from '../../common/utils/shared.utils';
-import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
+import { Logger } from '@nestjs/common';
+import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
+import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
+import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
 
 export class ExceptionsHandler {
     private readonly logger = new Logger(ExceptionsHandler.name);
@@ -13,7 +13,7 @@ export class ExceptionsHandler {
         if (this.invokeCustomFilters(exception, response)) return;
 
         if (!(exception instanceof HttpException)) {
-            response.status(500).json({ message: messages.UNKOWN_EXCEPTION_MESSAGE });
+            response.status(500).json({ message: messages.UNKNOWN_EXCEPTION_MESSAGE });
 
             this.logger.error(exception.message, exception.stack);
             return;

@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import { ExpressRouterExplorer } from '../router/router-explorer';
-import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception';
-import { RequestMethod } from '../../common/enums/request-method.enum';
-import { isUndefined, validatePath } from '../../common/utils/shared.utils';
-import { PATH_METADATA } from '../../common/constants';
+import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
+import { PATH_METADATA } from '@nestjs/common/constants';
 import { MetadataScanner } from '../metadata-scanner';
 
 export class RoutesMapper {
@@ -16,7 +16,7 @@ export class RoutesMapper {
         }
         const paths = this.routerExplorer.scanForPaths(Object.create(routeMetatype), routeMetatype.prototype);
         return paths.map((route) => ({
-            path: this.validateRoutePath(routePath) + this.validateRoutePath(route.path),
+            path: this.validateGlobalPath(routePath) + this.validateRoutePath(route.path),
             method: route.requestMethod,
         }));
     }
@@ -30,6 +30,11 @@ export class RoutesMapper {
             path: this.validateRoutePath(path),
             method: isUndefined(method) ? RequestMethod.ALL : method,
         };
+    }
+
+    private validateGlobalPath(path: string): string {
+        const prefix = validatePath(path);
+        return prefix === '/' ? '' : prefix;
     }
 
     private validateRoutePath(path: string): string {

@@ -1,6 +1,6 @@
 {
-  "name": "nest.js",
-  "version": "1.0.6",
+  "name": "nestjs",
+  "version": "2.0.1",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,8 @@
     "microservice": "node microservice.js",
     "compile": "tsc -p tsconfig.prod.json",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
-    "coverage": "nyc report --reporter=text-lcov | coveralls"
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "postinstall": "opencollective postinstall"
   },
   "nyc": {
     "include": [
@@ -19,7 +20,9 @@
     ],
     "exclude": [
       "node_modules/",
-      "src/*.ts",
+      "src/core/nest-application.ts",
+      "src/core/nest-factory.ts",
+      "src/core/nest-microservice.ts",
       "src/**/*.spec.ts",
       "src/common/services/logger.service.ts",
       "src/microservices/exceptions/",
@@ -50,21 +53,30 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@nestjs/common": "*",
+    "@nestjs/core": "*",
+    "@nestjs/microservices": "*",
+    "@nestjs/testing": "2.0.2",
+    "@nestjs/websockets": "*",
     "cli-color": "^1.1.0",
     "express": "^4.14.0",
+    "iterare": "0.0.8",
     "json-socket": "^0.2.1",
-    "redis": "^2.6.5",
-    "reflect-metadata": "0.1.10",
-    "rxjs": "^5.0.3",
+    "opencollective": "^1.0.3",
+    "redis": "^2.7.1",
+    "reflect-metadata": "^0.1.10",
+    "rxjs": "^5.4.0",
     "socket.io": "^1.7.2",
     "typescript": "^2.2.1"
   },
   "devDependencies": {
+    "@nestjs/common": "^1.0.0",
     "@types/chai": "^3.4.34",
     "@types/express": "^4.0.35",
     "@types/mocha": "^2.2.38",
     "@types/node": "^7.0.5",
     "@types/redis": "^0.12.36",
+    "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "^1.16.36",
     "@types/socket.io": "^1.4.29",
     "awesome-typescript-loader": "^3.0.0-beta.18",
@@ -81,5 +93,10 @@
     "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
     "ts-node": "^2.0.0"
+  },
+  "collective": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/nest",
+    "logo": "https://opencollective.com/opencollective/logo.txt"
   }
 }

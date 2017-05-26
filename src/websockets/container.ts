@@ -3,6 +3,10 @@ import { WebSocketServerData, ObservableSocketServer } from './interfaces';
 export class SocketsContainer {
     private readonly observableServers = new Map<WebSocketServerData, ObservableSocketServer>();
 
+    public getAllServers(): Map<WebSocketServerData, ObservableSocketServer> {
+        return this.observableServers;
+    }
+
     public getServer(namespace: string, port: number): ObservableSocketServer {
         return this.observableServers.get({
             namespace,

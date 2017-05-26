@@ -9,8 +9,7 @@ import { CustomExceptionFilter } from './exception.filter';
 @Controller('users')
 @ExceptionFilters(CustomExceptionFilter)
 export class UsersController {
-    constructor(
-        private usersService: UsersService) {}
+    constructor(private usersService: UsersService) {}
 
     @Get()
     public async getAllUsers(@Response() res: express.Response) {

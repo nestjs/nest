@@ -1,15 +1,15 @@
 import 'reflect-metadata';
 import { NestGateway } from './interfaces/nest-gateway.interface';
-import { Injectable } from '../common/interfaces/injectable.interface';
+import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
 import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exception';
 import { GatewayMetadataExplorer, MessageMappingProperties } from './gateway-metadata-explorer';
 import { Subject } from 'rxjs/Subject';
 import { SocketServerProvider } from './socket-server-provider';
 import { NAMESPACE_METADATA, PORT_METADATA, CONNECTION_EVENT, DISCONNECT_EVENT } from './constants';
-import { Metatype } from '../common/interfaces/metatype.interface';
-import { MetadataScanner } from '../core/metadata-scanner';
-import { NestContainer } from '../core/injector/container';
+import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { NestContainer } from '@nestjs/core/injector/container';
 import { MiddlewaresInjector } from './middlewares-injector';
 
 export class WebSocketsController {

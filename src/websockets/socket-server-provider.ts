@@ -2,7 +2,7 @@ import { SocketsContainer } from './container';
 import { ObservableSocket } from './observable-socket';
 import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
 import { IoAdapter } from './adapters/io-adapter';
-import { validatePath } from '../common/utils/shared.utils';
+import { validatePath } from '@nestjs/common/utils/shared.utils';
 
 export class SocketServerProvider {
     constructor(private readonly socketsContainer: SocketsContainer) {}

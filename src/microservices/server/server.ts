@@ -1,10 +1,11 @@
-import { Logger } from '../../common/services/logger.service';
+import { Logger } from '@nestjs/common/services/logger.service';
 
 export abstract class Server {
     private readonly logger = new Logger(Server.name);
     protected readonly msgHandlers = {};
 
     public abstract listen(callback: () => void);
+    public abstract close(): void;
 
     public getHandlers() {
         return this.msgHandlers;

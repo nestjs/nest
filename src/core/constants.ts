@@ -1,5 +1,6 @@
 export const messages = {
     APPLICATION_START: `Starting Nest application...`,
     APPLICATION_READY: `Nest application is ready!`,
-    UNKOWN_EXCEPTION_MESSAGE: 'Unkown exception',
+    MICROSERVICE_READY: `Nest microservice is ready!`,
+    UNKNOWN_EXCEPTION_MESSAGE: 'Unknown exception',
 };

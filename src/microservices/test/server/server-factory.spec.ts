@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { ServerFactory } from '../../server/server-factory';
 import { ServerTCP } from '../../server/server-tcp';
 import { ServerRedis } from '../../server/server-redis';
-import { Transport } from '../../../common/enums/transport.enum';
+import { Transport } from '../../enums/transport.enum';
 
 describe('ServerFactory', () => {
     describe('create', () => {

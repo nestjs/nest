@@ -34,6 +34,7 @@ describe('InstanceLoader', () => {
         const module = {
             components: new Map(),
             routes: new Map(),
+            metatype: { name: 'test' },
         };
         const componentWrapper = { instance: null, metatype: TestComponent };
         const routeWrapper = { instance: null, metatype: TestRoute };
@@ -62,6 +63,7 @@ describe('InstanceLoader', () => {
         const module = {
             components: new Map(),
             routes: new Map(),
+            metatype: { name: 'test' },
         };
         const testComp = { instance: null, metatype: TestComponent, name: 'TestComponent' };
 
@@ -85,6 +87,7 @@ describe('InstanceLoader', () => {
         const module = {
             components: new Map(),
             routes: new Map(),
+            metatype: { name: 'test' },
         };
         const wrapper = { name: 'TestRoute', instance: null, metatype: TestRoute };
         module.routes.set('TestRoute', wrapper);

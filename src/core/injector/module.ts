@@ -1,11 +1,11 @@
 import { InstanceWrapper } from './container';
-import { Injectable, Controller, NestModule } from '../../common/interfaces';
-import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception';
-import { NestModuleMetatype } from '../../common/interfaces/module-metatype.interface';
-import { Metatype } from '../../common/interfaces/metatype.interface';
+import { Injectable, Controller, NestModule } from '@nestjs/common/interfaces';
+import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { ModuleRef } from './module-ref';
-import { isFunction, isNil, isUndefined } from '../../common/utils/shared.utils';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { RuntimeException } from '../errors/exceptions/runtime.exception';
 
 export interface CustomComponent {
     provide: any;
@@ -23,9 +23,16 @@ export class Module {
     private _routes = new Map<string, InstanceWrapper<Controller>>();
     private _exports = new Set<string>();
 
-    constructor(private _metatype: NestModuleMetatype) {
+    constructor(
+        private _metatype: NestModuleMetatype,
+        private _scope: NestModuleMetatype[]) {
+
         this.addModuleRef();
         this.addModuleAsComponent();
+    }
+
+    get scope(): NestModuleMetatype[] {
+        return this._scope;
     }
 
     get relatedModules(): Set<Module> {
@@ -188,6 +195,6 @@ export class Module {
 
                 return exists ? this.components.get(name).instance as T : null;
             }
-        }
+        };
     }
 }
