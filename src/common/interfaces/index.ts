@@ -11,4 +11,4 @@ export * from './nest-microservice.interface';
 export * from './modules/on-init.interface';
 export * from './exceptions/exception-filter.interface';
 export * from './middlewares';
-export * from './socket-io-adapter.interface';
+export * from './web-socket-adapter.interface';

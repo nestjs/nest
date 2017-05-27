@@ -1,5 +1,10 @@
+## 2.1.3 (27.05.2017)
+**@nestjs/common**, **@nestjs/websockets**
+- `INestApplication` and `INestMicroservice` has new method now - `setIoAdapter()`,
+- Ability to use custom `IoAdapter`
+
 ## 2.1.1 (24.05.2017)
-**@nestjs/common**, **@nestjs/microservices**
+**@nestjs/common**, **@nestjs/websockets**, **@nestjs/microservices**
 - `INestApplication` and `INestMicroservice` has new method now - `setIoAdapter()`,
 - Ability to use custom `IoAdapter`
 

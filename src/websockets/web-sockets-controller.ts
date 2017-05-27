@@ -6,20 +6,22 @@ import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exc
 import { GatewayMetadataExplorer, MessageMappingProperties } from './gateway-metadata-explorer';
 import { Subject } from 'rxjs/Subject';
 import { SocketServerProvider } from './socket-server-provider';
-import { NAMESPACE_METADATA, PORT_METADATA, CONNECTION_EVENT, DISCONNECT_EVENT } from './constants';
+import { NAMESPACE_METADATA, PORT_METADATA } from './constants';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { MiddlewaresInjector } from './middlewares-injector';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 
 export class WebSocketsController {
     private readonly metadataExplorer = new GatewayMetadataExplorer(new MetadataScanner());
     private readonly middlewaresInjector: MiddlewaresInjector;
 
     constructor(
-        private socketServerProvider: SocketServerProvider,
-        container: NestContainer) {
-            this.middlewaresInjector = new MiddlewaresInjector(container);
+        private readonly socketServerProvider: SocketServerProvider,
+        private readonly container: NestContainer,
+        private readonly config: ApplicationConfig) {
+            this.middlewaresInjector = new MiddlewaresInjector(container, config);
         }
 
     public hookGatewayIntoServer(instance: NestGateway, metatype: Metatype<Injectable>, module: string) {
@@ -51,12 +53,13 @@ export class WebSocketsController {
         observableServer: ObservableSocketServer) {
 
         const { init, disconnect, connection, server } = observableServer;
+        const adapter = this.config.getIoAdapter();
 
         this.subscribeInitEvent(instance, init);
         init.next(server);
 
         const handler = this.getConnectionHandler(this, instance, messageHandlers, disconnect, connection);
-        server.on(CONNECTION_EVENT, handler);
+        adapter.bindClientConnect(server, handler);
     }
 
     public getConnectionHandler(
@@ -66,6 +69,7 @@ export class WebSocketsController {
         disconnect: Subject<any>,
         connection: Subject<any>) {
 
+        const adapter = this.config.getIoAdapter();
         return (client) => {
             context.subscribeConnectionEvent(instance, connection);
             connection.next(client);
@@ -73,7 +77,8 @@ export class WebSocketsController {
             context.subscribeMessages(messageHandlers, client, instance);
             context.subscribeDisconnectEvent(instance, disconnect);
 
-            client.on(DISCONNECT_EVENT, socket => disconnect.next(socket));
+            const disconnectHook = adapter.bindClientDisconnect;
+            disconnectHook && disconnectHook(client, socket => disconnect.next(socket));
         };
     }
 
@@ -96,9 +101,12 @@ export class WebSocketsController {
     }
 
     public subscribeMessages(messageHandlers: MessageMappingProperties[], client, instance: NestGateway) {
-        messageHandlers.map(({ message, targetCallback }) => {
-            client.on(message, targetCallback.bind(instance, client));
-        });
+        const adapter = this.config.getIoAdapter();
+        const handlers = messageHandlers.map(({ callback, message }) => ({
+            message,
+            callback: callback.bind(instance, client),
+        }));
+        adapter.bindMessageHandlers(client, handlers);
     }
 
     private hookServerToProperties(instance: NestGateway, server) {

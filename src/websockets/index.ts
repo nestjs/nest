@@ -7,3 +7,4 @@
 
 export * from './interfaces';
 export * from './utils';
+export { MessageMappingProperties } from './gateway-metadata-explorer';

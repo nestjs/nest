@@ -3,11 +3,12 @@ import { expect } from 'chai';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { ExceptionFilters } from '../../../common/utils/decorators/exception-filters.decorator';
 import { Catch } from '../../../common/utils/decorators/catch.decorator';
+import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 
 describe('RouterExceptionFilters', () => {
-
     let moduleName: string;
     let exceptionFilter: RouterExceptionFilters;
+    let container: { getModules: sinon.SinonStub };
 
     class CustomException {}
     @Catch(CustomException)
@@ -16,8 +17,11 @@ describe('RouterExceptionFilters', () => {
     }
 
     beforeEach(() => {
+        container = {
+            getModules: sinon.stub(),
+        };
         moduleName = 'Test';
-        exceptionFilter = new RouterExceptionFilters({} as any);
+        exceptionFilter = new RouterExceptionFilters(container as any);
     });
     describe('create', () => {
         describe('when filters metadata is empty', () => {
@@ -52,7 +56,16 @@ describe('RouterExceptionFilters', () => {
         });
     });
     describe('findExceptionsFilterInstance', () => {
-        
+        beforeEach(() => {
+            container.getModules.returns({
+                has: (arg) => false,
+            });
+        });
+        it('should throws "UnknownModuleException" when module does not exists', () => {
+            expect(
+                () => exceptionFilter.findExceptionsFilterInstance(null, 'test'),
+            ).to.throws(UnknownModuleException);
+        });
     });
     describe('reflectCatchExceptions', () => {
         it('should returns FILTER_CATCH_EXCEPTIONS metadata', () => {

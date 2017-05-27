@@ -24,7 +24,7 @@ export class SocketServerProvider {
 
     private getServerOfNamespace(namespace: string, port: number) {
         const adapter = this.applicationConfig.getIoAdapter();
-        if (namespace) {
+        if (namespace && adapter.createWithNamespace) {
             return adapter.createWithNamespace(port, this.validateNamespace(namespace));
         }
         return adapter.create(port);

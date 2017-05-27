@@ -12,7 +12,7 @@ import { ApplicationConfig } from './application-config';
 import { validatePath } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices';
 import { NestMicroservice } from './index';
-import { SocketIoAdapter } from '@nestjs/common/interfaces';
+import { WebSocketAdapter } from '@nestjs/common/interfaces';
 
 export class NestApplication implements INestApplication {
     private readonly config = new ApplicationConfig();
@@ -36,6 +36,8 @@ export class NestApplication implements INestApplication {
     }
 
     public init() {
+        this.setupModules();
+
         const router = ExpressAdapter.createRouter();
         this.setupMiddlewares(router);
         this.setupRoutes(router);
@@ -45,11 +47,13 @@ export class NestApplication implements INestApplication {
             router,
         );
         this.logger.log(messages.APPLICATION_READY);
+        this.isInitialized = true;
     }
 
     public connectMicroservice(config: MicroserviceConfiguration): INestMicroservice {
         const instance = new NestMicroservice(this.container, config);
         instance.setupListeners();
+        instance.setIsInitialized(true);
 
         this.microservices.push(instance);
         return instance;
@@ -80,7 +84,7 @@ export class NestApplication implements INestApplication {
         this.config.setGlobalPrefix(prefix);
     }
 
-    public setIoAdapter(adapter: SocketIoAdapter) {
+    public useWebSocketAdapter(adapter: WebSocketAdapter) {
         this.config.setIoAdapter(adapter);
     }
 

@@ -25,7 +25,7 @@ export class ServerTCP extends Server {
 
     public bindHandler(socket) {
         const sock = this.getSocketInstance(socket);
-        sock.on('message', (msg) => this.handleMessage(sock, msg));
+        sock.on('message', msg => this.handleMessage(sock, msg));
     }
 
     public handleMessage(socket, msg: { pattern: any, data: {} }) {

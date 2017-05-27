@@ -6,10 +6,12 @@ import { WebSocketGateway } from '../utils/socket-gateway.decorator';
 import { InvalidSocketPortException } from '../exceptions/invalid-socket-port.exception';
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
 import { MetadataScanner } from '../../core/metadata-scanner';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 
 describe('WebSocketsController', () => {
     let instance: WebSocketsController;
     let provider: SocketServerProvider,
+        config: ApplicationConfig,
         mockProvider: sinon.SinonMock;
 
     const port = 90, namespace = '/';
@@ -19,9 +21,10 @@ describe('WebSocketsController', () => {
     }
 
     beforeEach(() => {
-        provider = new SocketServerProvider(null);
+        config = new ApplicationConfig();
+        provider = new SocketServerProvider(null, config);
         mockProvider = sinon.mock(provider);
-        instance = new WebSocketsController(provider, null);
+        instance = new WebSocketsController(provider, null, config);
     });
     describe('hookGatewayIntoServer', () => {
         let subscribeObservableServer: sinon.SinonSpy;
@@ -260,8 +263,8 @@ describe('WebSocketsController', () => {
             client = { on: onSpy };
 
             handlers = [
-                { message: 'test', targetCallback: { bind: () => 'testCallback' }},
-                { message: 'test2', targetCallback: { bind: () => 'testCallback2' }},
+                { message: 'test', callback: { bind: () => 'testCallback' }},
+                { message: 'test2', callback: { bind: () => 'testCallback2' }},
             ];
         });
         it('should bind each handler to client', () => {

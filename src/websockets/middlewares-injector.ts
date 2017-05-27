@@ -8,11 +8,18 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
 import { GatewayMiddleware } from './interfaces/gateway-middleware.interface';
 import { isUndefined, isFunction, isNil } from '@nestjs/common/utils/shared.utils';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 
 export class MiddlewaresInjector {
-    constructor(private container: NestContainer) {}
+    constructor(
+        private readonly container: NestContainer,
+        private readonly config: ApplicationConfig) {}
 
     public inject(server, instance: NestGateway, module: string) {
+        const adapter = this.config.getIoAdapter();
+        if (!adapter.bindMiddleware) {
+            return;
+        }
         const opaqueTokens = this.reflectMiddlewaresTokens(instance);
         const modules = this.container.getModules();
         if (!modules.has(module)) {
@@ -28,9 +35,10 @@ export class MiddlewaresInjector {
     }
 
     public applyMiddlewares(server, components: Map<string, InstanceWrapper<Injectable>>, tokens: any[]) {
+        const adapter = this.config.getIoAdapter();
         iterate(tokens).map(token => this.bindMiddleware(token.name, components))
             .filter(middleware => !isNil(middleware))
-            .forEach(middleware => server.use(middleware));
+            .forEach(middleware => adapter.bindMiddleware(server, middleware));
     }
 
     public bindMiddleware(token: string, components: Map<string, InstanceWrapper<Injectable>>) {

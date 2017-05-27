@@ -17,6 +17,6 @@ export {
     MiddlewaresConsumer,
     OnModuleInit,
     ExceptionFilter,
-    SocketIoAdapter,
+    WebSocketAdapter,
 } from './interfaces';
 export * from './services/logger.service';

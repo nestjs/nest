@@ -3,11 +3,11 @@ import { UsersService } from './users.service';
 import { Controller, Response, Body, Param } from './../../../src/';
 import { Get, Post } from '../../../src/common/utils/decorators/request-mapping.decorator';
 import { HttpStatus } from '../../../src/common/index';
-import { ExceptionFilters } from '../../../src/common/utils/decorators/exception-filters.decorator';
+import { UseFilters } from '../../../src/common/utils/decorators/exception-filters.decorator';
 import { CustomExceptionFilter } from './exception.filter';
 
 @Controller('users')
-@ExceptionFilters(CustomExceptionFilter)
+@UseFilters(CustomExceptionFilter)
 export class UsersController {
     constructor(private usersService: UsersService) {}
 

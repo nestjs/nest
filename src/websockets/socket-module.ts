@@ -16,6 +16,7 @@ export class SocketModule {
         this.webSocketsController = new WebSocketsController(
             new SocketServerProvider(this.socketsContainer, config),
             container,
+            config,
         );
 
         const modules = container.getModules();

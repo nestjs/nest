@@ -1,9 +1,9 @@
 import { IoAdapter } from '@nestjs/websockets/adapters/io-adapter';
-import { SocketIoAdapter } from '@nestjs/common/interfaces';
+import { WebSocketAdapter } from '@nestjs/common/interfaces';
 
 export class ApplicationConfig {
     private globalPrefix = '';
-    private ioAdapter: SocketIoAdapter = IoAdapter as any;
+    private ioAdapter: WebSocketAdapter = IoAdapter as any;
 
     public setGlobalPrefix(prefix: string) {
         this.globalPrefix = prefix;
@@ -13,11 +13,11 @@ export class ApplicationConfig {
         return this.globalPrefix;
     }
 
-    public setIoAdapter(ioAdapter: SocketIoAdapter) {
+    public setIoAdapter(ioAdapter: WebSocketAdapter) {
         this.ioAdapter = ioAdapter;
     }
 
-    public getIoAdapter(): SocketIoAdapter {
+    public getIoAdapter(): WebSocketAdapter {
         return this.ioAdapter;
     }
 }
