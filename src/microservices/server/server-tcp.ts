@@ -1,17 +1,25 @@
 import * as net from 'net';
-import { Server as NetSocket } from 'net';
 import * as JsonSocket from 'json-socket';
+import { Server as NetSocket } from 'net';
 import { NO_PATTERN_MESSAGE } from '../constants';
 import { Server } from './server';
+import { CustomTransportStrategy } from './../interfaces';
+import { Observable } from 'rxjs/Observable';
+import 'rxjs/add/operator/catch';
+import 'rxjs/add/observable/empty';
+import 'rxjs/add/operator/finally';
 
-export class ServerTCP extends Server {
-    private readonly DEFAULT_PORT = 3000;
+const DEFAULT_PORT = 3000;
+const MESSAGE_EVENT = 'message';
+const ERROR_EVENT = 'error';
+
+export class ServerTCP extends Server implements CustomTransportStrategy {
     private readonly port: number;
     private server: NetSocket;
 
     constructor(config) {
         super();
-        this.port = config.port || this.DEFAULT_PORT;
+        this.port = config.port || DEFAULT_PORT;
         this.init();
     }
 
@@ -25,34 +33,24 @@ export class ServerTCP extends Server {
 
     public bindHandler(socket) {
         const sock = this.getSocketInstance(socket);
-        sock.on('message', msg => this.handleMessage(sock, msg));
+        sock.on(MESSAGE_EVENT, msg => this.handleMessage(sock, msg));
     }
 
     public handleMessage(socket, msg: { pattern: any, data: {} }) {
         const pattern = JSON.stringify(msg.pattern);
-        if (!this.msgHandlers[pattern]) {
+        if (!this.messageHandlers[pattern]) {
             socket.sendMessage({ err: NO_PATTERN_MESSAGE });
             return;
         }
 
-        const handler = this.msgHandlers[pattern];
-        handler(msg.data, this.getMessageHandler(socket));
-    }
-
-    public getMessageHandler(socket) {
-        return (err, response) => {
-            if (!response) {
-                const respond = err;
-                socket.sendMessage({ err: null, response: respond });
-                return;
-            }
-            socket.sendMessage({ err, response });
-        };
+        const handler = this.messageHandlers[pattern];
+        const response$ = handler(msg.data) as Observable<any>;
+        response$ && this.send(response$, socket.sendMessage.bind(socket));
     }
 
     private init() {
         this.server = net.createServer(this.bindHandler.bind(this));
-        this.server.on('error', this.handleError.bind(this));
+        this.server.on(ERROR_EVENT, this.handleError.bind(this));
     }
 
     private getSocketInstance(socket) {

@@ -4,11 +4,12 @@ import { ListenerMetadataExplorer } from './listener-metadata-explorer';
 import { Server } from './server/server';
 import { ClientProxyFactory } from './client/client-proxy-factory';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { CustomTransportStrategy } from './interfaces';
 
 export class ListenersController {
     private readonly metadataExplorer = new ListenerMetadataExplorer(new MetadataScanner());
 
-    public bindPatternHandlers(instance: Controller, server: Server) {
+    public bindPatternHandlers(instance: Controller, server: Server & CustomTransportStrategy) {
         const patternHandlers = this.metadataExplorer.explore(instance);
         patternHandlers.forEach(({ pattern, targetCallback }) => server.add(pattern, targetCallback));
     }

@@ -1,18 +1,24 @@
 import 'reflect-metadata';
-import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { ROUTE_ARGS_METADATA, PARAMTYPES_METADATA } from '@nestjs/common/constants';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { Controller } from '@nestjs/common/interfaces';
+import { Controller, Transform } from '@nestjs/common/interfaces';
 import { RouteParamsMetadata } from '@nestjs/common/utils';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
+import { PipesContextCreator } from './../pipes/pipes-context-creator';
+import { PipesConsumer } from './../pipes/pipes-consumer';
 
-export interface IndexValuePair {
+export interface ParamProperties {
     index: number;
     value: any;
+    type: RouteParamtypes;
 }
 
 export class RouterExecutionContext {
-    constructor(private paramsFactory: IRouteParamsFactory) {}
+    constructor(
+        private readonly paramsFactory: IRouteParamsFactory,
+        private readonly pipesContextCreator: PipesContextCreator,
+        private readonly pipesConsumer: PipesConsumer) {}
 
     public create(instance: Controller, callback: (...args) => any) {
         const metadata = this.reflectCallbackMetadata(instance, callback);
@@ -22,10 +28,14 @@ export class RouterExecutionContext {
         const keys = Object.keys(metadata);
         const argsLength = this.getArgumentsLength(keys, metadata);
         const args = this.createNullArray(argsLength);
+        const pipes = this.pipesContextCreator.create(instance, callback);
+        const paramtypes = this.reflectCallbackParamtypes(instance, callback);
 
         return (req, res, next) => {
-            const indexValuePairs = this.exchangeKeysForValues(keys, metadata, { req, res, next });
-            indexValuePairs.forEach(pair => args[pair.index] = pair.value);
+            const paramProperties = this.exchangeKeysForValues(keys, metadata, { req, res, next });
+            paramProperties.forEach((param) => {
+                args[param.index] = this.getParamValue(param.value, paramtypes[param.index], param.type, pipes);
+            });
             return callback.apply(instance, args);
         };
     }
@@ -39,6 +49,10 @@ export class RouterExecutionContext {
         return Reflect.getMetadata(ROUTE_ARGS_METADATA, instance, callback.name);
     }
 
+    public reflectCallbackParamtypes(instance: Controller, callback: (...args) => any): any[] {
+        return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
+    }
+
     public getArgumentsLength(keys: string[], metadata: RouteParamsMetadata): number {
         return Math.max(...keys.map(key => metadata[key].index)) + 1;
     }
@@ -47,14 +61,28 @@ export class RouterExecutionContext {
         return Array.apply(null, { length }).fill(null);
     }
 
-    public exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata, { req, res, next }): IndexValuePair[] {
-        return keys.map(key => ({
-            index: metadata[key].index,
-            value: this.paramsFactory.exchangeKeyForValue(
-                this.mapParamType(key),
-                metadata[key].data,
-                { req, res, next },
-            ),
-        }));
-    } 
+    public exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata, { req, res, next }): ParamProperties[] {
+        return keys.map(key => {
+            const type = this.mapParamType(key);
+            return {
+                index: metadata[key].index,
+                value: this.paramsFactory.exchangeKeyForValue(
+                    type,
+                    metadata[key].data,
+                    { req, res, next },
+                ),
+                type,
+            };
+        });
+    }
+
+    public getParamValue<T>(value: T, metatype, paramtype: RouteParamtypes, transforms: Transform<any>[]) {
+        if (paramtype === RouteParamtypes.BODY
+            || paramtype === RouteParamtypes.QUERY
+            || paramtype === RouteParamtypes.PARAM) {
+
+            return this.pipesConsumer.apply(value, metatype, paramtype, transforms);
+        }
+        return value;
+    }
 }

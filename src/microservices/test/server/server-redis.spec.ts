@@ -2,6 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { NO_PATTERN_MESSAGE } from '../../constants';
 import { ServerRedis } from '../../server/server-redis';
+import { Observable } from 'rxjs/Observable';
 
 describe('ServerRedis', () => {
     let server: ServerRedis;
@@ -59,7 +60,7 @@ describe('ServerRedis', () => {
         it('should subscribe each acknowledge patterns', () => {
             const pattern = 'test';
             const handler = sinon.spy();
-            (server as any).msgHandlers = {
+            (server as any).messageHandlers = {
                 [pattern]: handler,
             };
             server.handleConnection(null, sub, null);
@@ -88,42 +89,18 @@ describe('ServerRedis', () => {
             sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
             sinon.stub(server, 'tryParse').callsFake(() => ({ data }));
         });
-        it(`should publish NO_PATTERN_MESSAGE if pattern not exists in msgHandlers object`, () => {
+        it(`should publish NO_PATTERN_MESSAGE if pattern not exists in messageHandlers object`, () => {
             server.handleMessage(channel, {}, null);
             expect(getPublisherSpy.calledWith({ err: NO_PATTERN_MESSAGE })).to.be.true;
         });
         it(`should call handler with expected arguments`, () => {
             const handler = sinon.spy();
-            (server as any).msgHandlers = {
+            (server as any).messageHandlers = {
                 [channel]: handler,
             };
 
             server.handleMessage(channel, {}, null);
-            expect(handler.getCall(0).args[0]).to.eql(data);
-        });
-    });
-    describe('getMessageHandlerCallback', () => {
-        let publisherSpy: sinon.SinonSpy, handler;
-        beforeEach(() => {
-            publisherSpy = sinon.spy();
-            sinon.stub(server, 'getPublisher').callsFake(() => publisherSpy);
-            handler = server.getMessageHandlerCallback(null, null);
-        });
-        it(`should return function`, () => {
-            expect(typeof server.getMessageHandlerCallback(null, '')).to.be.eql('function');
-        });
-        it(`should change order when second parameter is undefined or null`, () => {
-            const response = 'test';
-            handler(response);
-
-            expect(publisherSpy.calledWith({ err: null, response })).to.be.true;
-        });
-        it(`should call publish with expected message object`, () => {
-            const err = 'err';
-            const response = 'test';
-            handler(err, response);
-
-            expect(publisherSpy.calledWith({ err, response })).to.be.true;
+            expect(handler.calledWith(data)).to.be.true;
         });
     });
     describe('getPublisher', () => {

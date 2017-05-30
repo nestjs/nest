@@ -15,3 +15,5 @@ export const METHOD_METADATA = 'method';
 export const ROUTE_ARGS_METADATA = '__routeArguments__';
 export const EXCEPTION_FILTERS_METADATA = '__exceptionFilters__';
 export const FILTER_CATCH_EXCEPTIONS = '__filterCatchExceptions__';
+
+export const PIPES_METADATA = '__pipes__';

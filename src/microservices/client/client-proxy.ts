@@ -11,18 +11,24 @@ export abstract class ClientProxy {
             return Observable.throw(new InvalidMessageException());
         }
         return Observable.create((observer: Observer<T>) => {
-            this.sendSingleMessage({ pattern, data }, this.createObserver(observer));
+            this.sendSingleMessage(
+                { pattern, data },
+                this.createObserver(observer),
+            );
         });
     }
 
     public createObserver<T>(observer: Observer<T>) {
-        return (err, result) => {
+        return (err, result, disposed) => {
             if (err) {
-                (observer as any).error(err);
+                observer.error(err);
+                return;
+            }
+            else if (disposed) {
+                observer.complete();
                 return;
             }
             observer.next(result);
-            observer.complete();
         };
     }
 

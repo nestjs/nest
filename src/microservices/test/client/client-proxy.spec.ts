@@ -59,9 +59,9 @@ describe('ClientProxy', () => {
                 expect(next.calledWith(data)).to.be.true;
             });
 
-            it(`"complete" when first parameter is null or undefined`, () => {
+            it(`"complete" when third parameter is true`, () => {
                 const data = 'test';
-                fn(null, data);
+                fn(null, data, true);
                 expect(complete.called).to.be.true;
             });
         });

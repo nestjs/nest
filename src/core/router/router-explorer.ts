@@ -15,24 +15,35 @@ import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
 import { RouteParamsFactory } from './route-params-factory';
 import { RouterExplorer } from './interfaces/explorer.inteface';
 import { MetadataScanner } from '../metadata-scanner';
+import { ApplicationConfig } from './../application-config';
+import { PipesContextCreator } from './../pipes/pipes-context-creator';
+import { PipesConsumer } from './../pipes/pipes-consumer';
 
 export class ExpressRouterExplorer implements RouterExplorer {
-    private readonly executionContextCreator = new RouterExecutionContext(new RouteParamsFactory());
+    private readonly executionContextCreator: RouterExecutionContext;
     private readonly routerMethodFactory = new RouterMethodFactory();
     private readonly logger = new Logger('RouterExplorer');
 
     constructor(
-        private metadataScanner?: MetadataScanner,
-        private routerProxy?: RouterProxy,
-        private expressAdapter?: ExpressAdapter,
-        private exceptionsFilter?: ExceptionsFilter) {}
+        private readonly metadataScanner?: MetadataScanner,
+        private readonly routerProxy?: RouterProxy,
+        private readonly expressAdapter?: ExpressAdapter,
+        private readonly exceptionsFilter?: ExceptionsFilter,
+        private readonly config?: ApplicationConfig) {
 
-    public explore(instance: Controller, metatype: Metatype<Controller>, moduleName: string) {
+        this.executionContextCreator = new RouterExecutionContext(
+            new RouteParamsFactory(),
+            new PipesContextCreator(config),
+            new PipesConsumer(),
+        );
+    }
+
+    public explore(instance: Controller, metatype: Metatype<Controller>) {
         const router = (this.expressAdapter as any).createRouter();
         const path = this.fetchRouterPath(metatype);
         const routerPaths = this.scanForPaths(instance);
 
-        this.applyPathsToRouterProxy(router, routerPaths, instance, moduleName);
+        this.applyPathsToRouterProxy(router, routerPaths, instance);
         return { path, router };
     }
 
@@ -60,25 +71,25 @@ export class ExpressRouterExplorer implements RouterExplorer {
         };
     }
 
-    public applyPathsToRouterProxy(router, routePaths: RoutePathProperties[], instance: Controller, moduleName: string) {
+    public applyPathsToRouterProxy(router, routePaths: RoutePathProperties[], instance: Controller) {
         (routePaths || []).map((pathProperties) => {
             const { path, requestMethod } = pathProperties;
-            this.applyCallbackToRouter(router, pathProperties, instance, moduleName);
+            this.applyCallbackToRouter(router, pathProperties, instance);
             this.logger.log(RouteMappedMessage(path, requestMethod));
         });
     }
 
-    private applyCallbackToRouter(router, pathProperties: RoutePathProperties, instance: Controller, moduleName: string) {
+    private applyCallbackToRouter(router, pathProperties: RoutePathProperties, instance: Controller) {
         const { path, requestMethod, targetCallback } = pathProperties;
 
         const routerMethod = this.routerMethodFactory.get(router, requestMethod).bind(router);
-        const proxy = this.createCallbackProxy(instance, targetCallback, moduleName);
+        const proxy = this.createCallbackProxy(instance, targetCallback);
         routerMethod(path, proxy);
     }
 
-    private createCallbackProxy(instance: Controller, callback: RoutePathProperties['targetCallback'], moduleName: string) {
+    private createCallbackProxy(instance: Controller, callback: RouterProxyCallback) {
         const executionContext = this.executionContextCreator.create(instance, callback);
-        const exceptionFilter = this.exceptionsFilter.create(instance, moduleName);
+        const exceptionFilter = this.exceptionsFilter.create(instance, callback);
 
         return this.routerProxy.createProxy(executionContext, exceptionFilter);
     }

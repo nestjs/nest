@@ -4,10 +4,10 @@ import { Get } from '../../../src/common/utils/decorators/request-mapping.decora
 import { ClientProxy } from '../../../src/microservices/client/client-proxy';
 import { Observable } from 'rxjs';
 import { Transport } from '../../../src/microservices/enums/transport.enum';
-import 'rxjs/add/operator/catch';
 import { MessagePattern } from '../../../src/microservices/index';
+import 'rxjs/add/operator/catch';
 
-const MicroserviceClient = { transport: Transport.TCP, port: 5667 };
+const MicroserviceClient = { transport: Transport.REDIS };
 
 @Controller()
 export class ClientController {
@@ -25,8 +25,8 @@ export class ClientController {
     }
 
     @MessagePattern({ command: 'add' })
-    public add(data, respond) {
+    public add(data): Observable<number> {
         const numbers = data || [];
-        respond(null, numbers.reduce((a, b) => a + b));
+        return Observable.of(numbers.reduce((a, b) => a + b));
     }
 }

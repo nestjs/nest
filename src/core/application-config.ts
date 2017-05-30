@@ -1,9 +1,11 @@
 import { IoAdapter } from '@nestjs/websockets/adapters/io-adapter';
-import { WebSocketAdapter } from '@nestjs/common/interfaces';
+import { PipeTransform, WebSocketAdapter, ExceptionFilter } from '@nestjs/common';
 
 export class ApplicationConfig {
-    private globalPrefix = '';
+    private globalPipes: PipeTransform[] = [];
+    private globalFilters: ExceptionFilter[] = [];
     private ioAdapter: WebSocketAdapter = IoAdapter as any;
+    private globalPrefix = '';
 
     public setGlobalPrefix(prefix: string) {
         this.globalPrefix = prefix;
@@ -19,5 +21,21 @@ export class ApplicationConfig {
 
     public getIoAdapter(): WebSocketAdapter {
         return this.ioAdapter;
+    }
+
+    public useGlobalPipes(...pipes: PipeTransform[]) {
+        this.globalPipes = pipes;
+    }
+
+    public getGlobalFilters(): ExceptionFilter[] {
+        return this.globalFilters;
+    }
+
+    public useGlobalFilters(...filters: ExceptionFilter[]) {
+        this.globalFilters = filters;
+    }
+
+    public getGlobalPipes(): PipeTransform[] {
+        return this.globalPipes;
     }
 }

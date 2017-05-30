@@ -18,5 +18,7 @@ export {
     OnModuleInit,
     ExceptionFilter,
     WebSocketAdapter,
+    PipeTransform,
+    Paramtype,
 } from './interfaces';
 export * from './services/logger.service';

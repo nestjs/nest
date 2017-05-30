@@ -4,27 +4,73 @@ import { ClientTCP } from '../../client/client-tcp';
 
 describe('ClientTCP', () => {
     const client = new ClientTCP({});
+    let socket: {
+        connect: sinon.SinonSpy,
+        sendMessage: sinon.SinonSpy,
+        on: sinon.SinonStub,
+        close: sinon.SinonSpy,
+    };
+    let createSocketStub: sinon.SinonStub;
 
-    describe('createCallback', () => {
-        it(`should return function`, () => {
-            expect(typeof client.createCallback(null)).to.be.eql('function');
+    beforeEach(() => {
+        socket = {
+            connect: sinon.spy(),
+            sendMessage: sinon.spy(),
+            on: sinon.stub().callsFake((event, callback) => callback({})),
+            close: sinon.spy(),
+        };
+        createSocketStub = sinon.stub(client, 'createSocket').callsFake(() => socket);
+    });
+    afterEach(() => {
+        createSocketStub.restore();
+    });
+    describe('sendSingleMessage', () => {
+        let msg;
+        beforeEach(() => {
+            msg = { test: 3 };
+            client.sendSingleMessage(msg, () => ({}));
         });
-        describe('callback', () => {
-            const callback: sinon.SinonSpy = sinon.spy();
-            let fn;
-
+        it('should connect to server', () => {
+            expect(socket.connect.called).to.be.true;
+        });
+        describe('after connection', () => {
+            it('should send message', () => {
+                expect(socket.sendMessage.called).to.be.true;
+                expect(socket.sendMessage.calledWith(msg)).to.be.true;
+            });
+            it('should listen on messages', () => {
+                expect(socket.on.called).to.be.true;
+            });
+        });
+    });
+    describe('handleResponse', () => {
+        let callback;
+        describe('when disposed', () => {
             beforeEach(() => {
-                fn = client.createCallback(callback);
+                callback = sinon.spy();
+                client.handleResponse(socket, callback, { disposed: true });
             });
-            it('should call callback with error when "err" is truthy', () => {
-                const error = 'test';
-                fn(error, null);
-                expect(callback.calledWith(error)).to.be.true;
+            it('should close server', () => {
+                expect(socket.close.called).to.be.true;
             });
-            it('should call callback with response when "err" is not truthy', () => {
-                const response = { err: 'test', response: 'restest' };
-                fn(null, response);
-                expect(callback.calledWith(response.err, response.response)).to.be.true;
+            it('should emit disposed callback', () => {
+                expect(callback.called).to.be.true;
+                expect(callback.calledWith(null, null, true)).to.be.true;
+            });
+        });
+        describe('when not disposed', () => {
+            let buffer;
+            beforeEach(() => {
+                buffer = { err: 'test', response: 'res' };
+                callback = sinon.spy();
+                client.handleResponse(socket, callback, buffer);
+            });
+            it('should not close server', () => {
+                expect(socket.close.called).to.be.false;
+            });
+            it('should call callback with error and response data', () => {
+                expect(callback.called).to.be.true;
+                expect(callback.calledWith(buffer.err, buffer.response)).to.be.true;
             });
         });
     });

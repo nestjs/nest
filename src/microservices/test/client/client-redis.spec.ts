@@ -58,26 +58,45 @@ describe('ClientRedis', () => {
             client.sendSingleMessage(msg, () => {});
             expect(onSpy.called).to.be.true;
         });
-        describe('subscription', () => {
-            const callback = sinon.spy();
+        describe('responseCallback', () => {
+            let callback, subscription;
             const resMsg = {
                 err: 'err',
                 response: 'test',
             };
-            let subscription;
 
-            beforeEach(() => {
-                subscription = client.sendSingleMessage(msg, callback);
-                subscription(null, JSON.stringify(resMsg));
+            describe('not disposed', () => {
+                beforeEach(() => {
+                    callback = sinon.spy();
+                    subscription = client.sendSingleMessage(msg, callback);
+                    subscription(null, JSON.stringify(resMsg));
+                });
+                it('should call callback with expected arguments', () => {
+                    expect(callback.calledWith(resMsg.err, resMsg.response)).to.be.true;
+                });
+                it('should not unsubscribe to response pattern name', () => {
+                    expect(unsubscribeSpy.calledWith(`"${pattern}"_res`)).to.be.false;
+                });
+                it('should not remove listener', () => {
+                    expect(removeListenerSpy.called).to.be.false;
+                });
             });
-            it('should call callback with expected arguments', () => {
-                expect(callback.calledWith(resMsg.err, resMsg.response)).to.be.true;
-            });
-            it('should unsubscribe to response pattern name', () => {
-                expect(unsubscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;
-            });
-            it('should remove listener', () => {
-                expect(removeListenerSpy.called).to.be.true;
+            describe('disposed', () => {
+                beforeEach(() => {
+                    callback = sinon.spy();
+                    subscription = client.sendSingleMessage(msg, callback);
+                    subscription(null, JSON.stringify({ disposed: true }));
+                });
+                it('should call callback with dispose param', () => {
+                    expect(callback.called).to.be.true;
+                    expect(callback.calledWith(null, null, true)).to.be.true;
+                });
+                it('should unsubscribe to response pattern name', () => {
+                    expect(unsubscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;
+                });
+                it('should remove listener', () => {
+                    expect(removeListenerSpy.called).to.be.true;
+                });
             });
         });
     });

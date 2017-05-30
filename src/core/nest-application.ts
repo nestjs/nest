@@ -1,3 +1,4 @@
+import iterate from 'iterare';
 import { MiddlewaresModule } from './middlewares/middlewares-module';
 import { SocketModule } from '@nestjs/websockets/socket-module';
 import { NestContainer } from './injector/container';
@@ -9,10 +10,11 @@ import { MicroservicesModule } from '@nestjs/microservices/microservices-module'
 import { Resolver } from './router/interfaces/resolver.interface';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
 import { ApplicationConfig } from './application-config';
-import { validatePath } from '@nestjs/common/utils/shared.utils';
+import { validatePath, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices';
 import { NestMicroservice } from './index';
-import { WebSocketAdapter } from '@nestjs/common/interfaces';
+import { WebSocketAdapter, OnModuleDestroy } from '@nestjs/common/interfaces';
+import { Module } from './injector/module';
 
 export class NestApplication implements INestApplication {
     private readonly config = new ApplicationConfig();
@@ -26,7 +28,9 @@ export class NestApplication implements INestApplication {
         private readonly container: NestContainer,
         private readonly express) {
 
-        this.routesResolver = new RoutesResolver(container, ExpressAdapter);
+        this.routesResolver = new RoutesResolver(
+            container, ExpressAdapter, this.config,
+        );
     }
 
     public setupModules() {
@@ -76,8 +80,13 @@ export class NestApplication implements INestApplication {
 
     public close() {
         SocketModule.close();
+
         this.server && this.server.close();
-        this.microservices.forEach((microservice) => microservice.close());
+        this.microservices.forEach((microservice) => {
+            microservice.isTerminated(true);
+            microservice.close();
+        });
+        this.callDestroyHook();
     }
 
     public setGlobalPrefix(prefix: string) {
@@ -100,5 +109,24 @@ export class NestApplication implements INestApplication {
         return new Promise((resolve, reject) => {
             microservice.listen(resolve);
         });
+    }
+
+    private callDestroyHook() {
+        const modules = this.container.getModules();
+        modules.forEach((module) => {
+            this.callModuleDestroyHook(module);
+        });
+    }
+
+    private callModuleDestroyHook(module: Module) {
+        const components = [...module.routes, ...module.components];
+        iterate(components).map(([key, {instance}]) => instance)
+                .filter((instance) => !isNil(instance))
+                .filter(this.hasOnModuleDestroyHook)
+                .forEach((instance) => (instance as OnModuleDestroy).onModuleDestroy());
+    }
+
+    private hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
+        return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
     }
 }

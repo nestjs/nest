@@ -1,3 +1,8 @@
-import { MicroserviceConfiguration } from './microservice-configuration.interface';
+import { Transport } from './../enums/transport.enum';
 
-export interface ClientMetadata extends MicroserviceConfiguration {}
+export interface ClientMetadata {
+    transport?: Transport;
+    url?: string;
+    port?: number;
+    host?: string;
+}

@@ -2,10 +2,17 @@ import * as redis from 'redis';
 import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
 import { MicroserviceConfiguration } from '../interfaces/microservice-configuration.interface';
+import { CustomTransportStrategy } from './../interfaces';
+import { Observable } from 'rxjs/Observable';
+import 'rxjs/add/operator/catch';
+import 'rxjs/add/observable/empty';
+import 'rxjs/add/operator/finally';
 
 const DEFAULT_URL = 'redis://localhost:6379';
+const CONNECT_EVENT = 'connect';
+const MESSAGE_EVENT = 'message';
 
-export class ServerRedis extends Server {
+export class ServerRedis extends Server implements CustomTransportStrategy {
     private readonly url: string;
     private sub = null;
     private pub = null;
@@ -15,16 +22,21 @@ export class ServerRedis extends Server {
         this.url = config.url || DEFAULT_URL;
     }
 
-    public listen(callback?: () => void) {
+    public listen(callback: () => void) {
         this.sub = this.createRedisClient();
         this.pub = this.createRedisClient();
+        this.start(callback);
+    }
 
-        this.sub.on('connect', () => this.handleConnection(callback, this.sub, this.pub));
+    public start(callback?: () => void) {
+        this.sub.on(CONNECT_EVENT, () => this.handleConnection(callback, this.sub, this.pub));
     }
 
     public close() {
         this.pub && this.pub.quit();
         this.sub && this.sub.quit();
+        this.pub = null;
+        this.sub = null;
     }
 
     public createRedisClient() {
@@ -32,9 +44,9 @@ export class ServerRedis extends Server {
     }
 
     public handleConnection(callback, sub, pub) {
-        sub.on('message', this.getMessageHandler(pub).bind(this));
+        sub.on(MESSAGE_EVENT, this.getMessageHandler(pub).bind(this));
 
-        const patterns = Object.keys(this.msgHandlers);
+        const patterns = Object.keys(this.messageHandlers);
         patterns.forEach((pattern) => sub.subscribe(this.getAckQueueName(pattern)));
         callback && callback();
     }
@@ -48,24 +60,13 @@ export class ServerRedis extends Server {
         const pattern = channel.replace(/_ack$/, '');
         const publish = this.getPublisher(pub, pattern);
 
-        if (!this.msgHandlers[pattern]) {
+        if (!this.messageHandlers[pattern]) {
             publish({ err: NO_PATTERN_MESSAGE });
             return;
         }
-        const handler = this.msgHandlers[pattern];
-        handler(msg.data, this.getMessageHandlerCallback(pub, pattern).bind(this));
-    }
-
-    public getMessageHandlerCallback(pub, pattern) {
-        return (err, response) => {
-            const publish = this.getPublisher(pub, pattern);
-            if (!response) {
-                const respond = err;
-                publish({ err: null, response: respond });
-                return;
-            }
-            publish({ err, response });
-        };
+        const handler = this.messageHandlers[pattern];
+        const response$ = handler(msg.data) as Observable<any>;
+        response$ && this.send(response$, publish);
     }
 
     public getPublisher(pub, pattern) {

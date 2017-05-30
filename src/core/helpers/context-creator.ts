@@ -1,0 +1,34 @@
+import 'reflect-metadata';
+import iterate from 'iterare';
+import { Controller } from '@nestjs/common/interfaces';
+import { isUndefined, isFunction } from '@nestjs/common/utils/shared.utils';
+import { ApplicationConfig } from './../application-config';
+
+export abstract class ContextCreator {
+    public abstract createConcreteContext<T extends any[], R extends any[]>(metadata: T): R;
+    public abstract getGlobalMetadata<T extends any[]>(): T;
+
+    public createContext<T extends any[], R extends any[]>(
+        instance: Controller,
+        callback: (...args) => any,
+        metadataKey: string): R {
+
+        const globalMetadata = this.getGlobalMetadata<T>();
+        const classMetadata = this.reflectClassMetadata<T>(instance, metadataKey);
+        const methodMetadata = this.reflectMethodMetadata<T>(callback, metadataKey);
+        return [
+            ...this.createConcreteContext<T, R>(globalMetadata),
+            ...this.createConcreteContext<T, R>(classMetadata),
+            ...this.createConcreteContext<T, R>(methodMetadata),
+        ] as R;
+    }
+
+    public reflectClassMetadata<T>(instance: Controller, metadataKey: string): T {
+        const prototype = Object.getPrototypeOf(instance);
+        return Reflect.getMetadata(metadataKey, prototype.constructor);
+    }
+
+    public reflectMethodMetadata<T>(callback: (...args) => any, metadataKey: string): T {
+        return Reflect.getMetadata(metadataKey, callback);
+    }
+}
