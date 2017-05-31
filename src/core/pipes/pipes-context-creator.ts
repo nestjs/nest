@@ -19,12 +19,12 @@ export class PipesContextCreator extends ContextCreator {
         if (isUndefined(metadata) || isEmpty(metadata)) {
             return [];
         }
-        return iterate(metadata).filter((pipe) => pipe.transform && isFunction(pipe.transform))
+        return iterate(metadata).filter((pipe) => pipe && pipe.transform && isFunction(pipe.transform))
                 .map((pipe) => pipe.transform.bind(pipe))
                 .toArray();
     }
 
     public getGlobalMetadata(): PipeTransform[] {
-        return [];
+        return this.config.getGlobalPipes();
     }
 }

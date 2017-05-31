@@ -16,7 +16,7 @@ describe('ClientTCP', () => {
         socket = {
             connect: sinon.spy(),
             sendMessage: sinon.spy(),
-            on: sinon.stub().callsFake((event, callback) => callback({})),
+            on: sinon.stub().callsFake((event, callback) => event !== 'error' && event !== 'close' && callback({})),
             close: sinon.spy(),
         };
         createSocketStub = sinon.stub(client, 'createSocket').callsFake(() => socket);
@@ -28,18 +28,33 @@ describe('ClientTCP', () => {
         let msg;
         beforeEach(() => {
             msg = { test: 3 };
-            client.sendSingleMessage(msg, () => ({}));
         });
-        it('should connect to server', () => {
-            expect(socket.connect.called).to.be.true;
+        it('should connect to server when is not connected', (done) => {
+            client.sendSingleMessage(msg, () => ({})).then(() => {
+                expect(socket.connect.calledOnce).to.be.true;
+                done();
+            });
+        });
+        it('should not connect to server when is already connected', () => {
+            (client as any).isConnected = true;
+            client.sendSingleMessage(msg, () => ({}));
+            expect(socket.connect.called).to.be.false;
         });
         describe('after connection', () => {
-            it('should send message', () => {
-                expect(socket.sendMessage.called).to.be.true;
-                expect(socket.sendMessage.calledWith(msg)).to.be.true;
+            it('should send message', (done) => {
+                (client as any).isConnected = false;
+                client.sendSingleMessage(msg, () => ({})).then(() => {
+                    expect(socket.sendMessage.called).to.be.true;
+                    expect(socket.sendMessage.calledWith(msg)).to.be.true;
+                    done();
+                });
             });
-            it('should listen on messages', () => {
-                expect(socket.on.called).to.be.true;
+            it('should listen on messages', (done) => {
+                (client as any).isConnected = false;
+                client.sendSingleMessage(msg, () => ({})).then(() => {
+                    expect(socket.on.called).to.be.true;
+                    done();
+                });
             });
         });
     });
@@ -72,6 +87,22 @@ describe('ClientTCP', () => {
                 expect(callback.called).to.be.true;
                 expect(callback.calledWith(buffer.err, buffer.response)).to.be.true;
             });
+        });
+    });
+    describe('close', () => {
+        beforeEach(() => {
+            (client as any).socket = socket;
+            (client as any).isConnected = true;
+            client.close();
+        });
+        it('should close() socket', () => {
+            expect(socket.close.called).to.be.true;
+        });
+        it('should set "isConnected" to false', () => {
+            expect((client as any).isConnected).to.be.false;
+        });
+        it('should set "socket" to null', () => {
+            expect((client as any).socket).to.be.null;
         });
     });
 });

@@ -7,8 +7,6 @@
     "start": "concurrently \"npm run build:live\" \"npm run microservice:live\"",
     "build:live": "nodemon -e ts --watch src index.js",
     "build": "node index.js",
-    "microservice:live": "nodemon -e ts --watch src microservice.js",
-    "microservice": "node microservice.js",
     "compile": "tsc -p tsconfig.prod.json",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
     "coverage": "nyc report --reporter=text-lcov | coveralls",

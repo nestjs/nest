@@ -10,8 +10,13 @@ import { UnknownModuleException } from '../errors/exceptions/unknown-module.exce
 import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';
 import { RouterProxyCallback } from './../router/router-proxy';
 import { ContextCreator } from './../helpers/context-creator';
+import { ApplicationConfig } from './../application-config';
 
 export class RouterExceptionFilters extends ContextCreator {
+    constructor(private readonly config: ApplicationConfig) {
+        super();
+    }
+
     public create(instance: Controller, callback: RouterProxyCallback): ExceptionsHandler {
         const exceptionHandler = new ExceptionsHandler();
         const filters = this.createContext(instance, callback, EXCEPTION_FILTERS_METADATA);
@@ -22,8 +27,8 @@ export class RouterExceptionFilters extends ContextCreator {
         return exceptionHandler;
     }
 
-    public getGlobalMetadata<T extends any[]>(): T {
-        return [] as T;
+    public getGlobalMetadata(): ExceptionFilter[] {
+        return this.config.getGlobalFilters();
     }
 
      public createConcreteContext(metadata: ExceptionFilter[]): ExceptionFilterMetadata[] {

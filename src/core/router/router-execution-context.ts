@@ -31,11 +31,12 @@ export class RouterExecutionContext {
         const pipes = this.pipesContextCreator.create(instance, callback);
         const paramtypes = this.reflectCallbackParamtypes(instance, callback);
 
-        return (req, res, next) => {
+        return async (req, res, next) => {
             const paramProperties = this.exchangeKeysForValues(keys, metadata, { req, res, next });
-            paramProperties.forEach((param) => {
-                args[param.index] = this.getParamValue(param.value, paramtypes[param.index], param.type, pipes);
-            });
+            for (const param of paramProperties) {
+                const { index, value, type } = param;
+                args[index] = await this.getParamValue(value, paramtypes[index], type, pipes);
+            }
             return callback.apply(instance, args);
         };
     }
@@ -76,13 +77,18 @@ export class RouterExecutionContext {
         });
     }
 
-    public getParamValue<T>(value: T, metatype, paramtype: RouteParamtypes, transforms: Transform<any>[]) {
+    public async getParamValue<T>(
+        value: T,
+        metatype,
+        paramtype: RouteParamtypes,
+        transforms: Transform<any>[]): Promise<any> {
+
         if (paramtype === RouteParamtypes.BODY
             || paramtype === RouteParamtypes.QUERY
             || paramtype === RouteParamtypes.PARAM) {
 
-            return this.pipesConsumer.apply(value, metatype, paramtype, transforms);
+            return await this.pipesConsumer.apply(value, metatype, paramtype, transforms);
         }
-        return value;
+        return Promise.resolve(value);
     }
 }

@@ -41,5 +41,6 @@ export class SocketModule {
     public static close() {
         const servers = this.socketsContainer.getAllServers();
         servers.forEach(({ server }) => server.close());
+        this.socketsContainer.clear();
     }
 }

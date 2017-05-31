@@ -5,8 +5,15 @@ import { ParamsTokenFactory } from './../pipes/params-token-factory';
 export class PipesConsumer {
     private readonly paramsTokenFactory = new ParamsTokenFactory();
 
-    public apply(value, metatype, type: RouteParamtypes, transforms: Transform<any>[]) {
+    public async apply(value, metatype, type: RouteParamtypes, transforms: Transform<any>[]) {
         const token = this.paramsTokenFactory.exchangeEnumForString(type);
-        return transforms.reduce((val, fn) => fn(val, metatype, token), value);
+        return await transforms.reduce(async (defferedValue, fn) => {
+            const val = await defferedValue;
+            const result = fn(val, { metatype, type: token });
+            if (result instanceof Promise) {
+                return result;
+            }
+            return Promise.resolve(result);
+        }, Promise.resolve(value));
     }
 }

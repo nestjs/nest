@@ -32,7 +32,6 @@ export class InstanceLoader {
         modules.forEach((module) => {
             this.createInstancesOfComponents(module);
             this.createInstancesOfRoutes(module);
-            this.callModuleInitHook(module);
 
             const { name } = module.metatype;
             this.logger.log(ModuleInitMessage(name));
@@ -61,17 +60,5 @@ export class InstanceLoader {
         module.routes.forEach((wrapper) => {
             this.injector.loadInstanceOfRoute(wrapper, module);
         });
-    }
-
-    private callModuleInitHook(module: Module) {
-        const components = [...module.routes, ...module.components];
-        iterate(components).map(([key, {instance}]) => instance)
-                .filter((instance) => !isNil(instance))
-                .filter(this.hasOnModuleInitHook)
-                .forEach((instance) => (instance as OnModuleInit).onModuleInit());
-    }
-
-    private hasOnModuleInitHook(instance: Controller | Injectable): instance is OnModuleInit {
-        return !isUndefined((instance as OnModuleInit).onModuleInit);
     }
 }

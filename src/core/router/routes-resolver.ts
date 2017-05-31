@@ -14,14 +14,15 @@ import { ApplicationConfig } from './../application-config';
 export class RoutesResolver implements Resolver {
     private readonly logger = new Logger(RoutesResolver.name);
     private readonly routerProxy = new RouterProxy();
-    private readonly routerExceptionsFilter = new RouterExceptionFilters();
+    private readonly routerExceptionsFilter: RouterExceptionFilters;
     private readonly routerBuilder: RouterExplorer;
 
     constructor(
         private readonly container: NestContainer,
-        expressAdapter,
+        private readonly expressAdapter,
         private readonly config: ApplicationConfig) {
 
+        this.routerExceptionsFilter = new RouterExceptionFilters(config);
         this.routerBuilder = new ExpressRouterExplorer(
             new MetadataScanner(),
             this.routerProxy,

@@ -3,7 +3,8 @@ import { CustomException } from './exception.filter';
 
 @Pipe()
 export class ValidatorPipe implements PipeTransform {
-    public transform(value, metatype, token): any {
-        return value;
+    public async transform(value, metadata?) {
+        console.log(value, metadata);
+        return Promise.resolve(value);
     }
 }

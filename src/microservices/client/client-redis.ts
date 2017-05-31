@@ -19,10 +19,12 @@ export class ClientRedis extends ClientProxy {
 
         const { url } = metadata;
         this.url = url || DEFAULT_URL;
-        this.init();
     }
 
     public sendSingleMessage(msg, callback: (...args) => any) {
+        if (!this.pub || !this.sub) {
+            this.init();
+        }
         const pattern = JSON.stringify(msg.pattern);
         const responseCallback = (channel, message) => {
             const { err, response, disposed } = JSON.parse(message);
@@ -49,7 +51,12 @@ export class ClientRedis extends ClientProxy {
         return `${pattern}_res`;
     }
 
-    private init() {
+    public close() {
+        this.pub && this.pub.quit();
+        this.sub && this.sub.quit();
+    }
+
+    public init() {
         this.pub = this.createClient();
         this.sub = this.createClient();
 
@@ -57,11 +64,11 @@ export class ClientRedis extends ClientProxy {
         this.handleErrors(this.sub);
     }
 
-    private createClient(): redis.RedisClient {
+    public createClient(): redis.RedisClient {
         return redis.createClient({ url: this.url });
     }
 
-    private handleErrors(stream) {
+    public handleErrors(stream) {
         stream.on(ERROR_EVENT, (err) => this.logger.error(err));
     }
 }

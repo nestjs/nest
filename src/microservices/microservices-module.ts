@@ -3,9 +3,13 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { ListenersController } from './listeners-controller';
 import { CustomTransportStrategy } from './interfaces';
 import { Server } from './server/server';
+import { ClientsContainer } from './container';
 
 export class MicroservicesModule {
-    private static readonly listenersController = new ListenersController();
+    private static readonly clientsContainer = new ClientsContainer();
+    private static readonly listenersController = new ListenersController(
+        MicroservicesModule.clientsContainer,
+    );
 
     public static setupListeners(container, server: Server & CustomTransportStrategy) {
         const modules = container.getModules();
@@ -33,5 +37,11 @@ export class MicroservicesModule {
         controllers.forEach(({ instance, isNotMetatype }) => {
             !isNotMetatype && this.listenersController.bindClientsToProperties(instance);
         });
+    }
+
+    public static close() {
+        const clients = this.clientsContainer.getAllClients();
+        clients.forEach((client) => client.close());
+        this.clientsContainer.clear();
     }
 }

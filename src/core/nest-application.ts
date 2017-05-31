@@ -8,7 +8,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { messages } from './constants';
 import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
 import { Resolver } from './router/interfaces/resolver.interface';
-import { INestApplication, INestMicroservice } from '@nestjs/common';
+import { INestApplication, INestMicroservice, OnModuleInit } from '@nestjs/common';
 import { ApplicationConfig } from './application-config';
 import { validatePath, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices';
@@ -50,6 +50,7 @@ export class NestApplication implements INestApplication {
             validatePath(this.config.getGlobalPrefix()),
             router,
         );
+        this.callInitHook();
         this.logger.log(messages.APPLICATION_READY);
         this.isInitialized = true;
     }
@@ -109,6 +110,25 @@ export class NestApplication implements INestApplication {
         return new Promise((resolve, reject) => {
             microservice.listen(resolve);
         });
+    }
+
+    private callInitHook() {
+        const modules = this.container.getModules();
+        modules.forEach((module) => {
+            this.callModuleInitHook(module);
+        });
+    }
+
+    private callModuleInitHook(module: Module) {
+        const components = [...module.routes, ...module.components];
+        iterate(components).map(([key, {instance}]) => instance)
+            .filter((instance) => !isNil(instance))
+            .filter(this.hasOnModuleInitHook)
+            .forEach((instance) => (instance as OnModuleInit).onModuleInit());
+        }
+
+    private hasOnModuleInitHook(instance): instance is OnModuleInit {
+        return !isUndefined((instance as OnModuleInit).onModuleInit);
     }
 
     private callDestroyHook() {

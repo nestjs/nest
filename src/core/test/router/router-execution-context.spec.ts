@@ -4,6 +4,9 @@ import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { RouterExecutionContext } from '../../router/router-execution-context';
 import { RouteParamsMetadata, Request, Body } from '../../../index';
 import { RouteParamsFactory } from '../../router/route-params-factory';
+import { PipesContextCreator } from '../../pipes/pipes-context-creator';
+import { PipesConsumer } from '../../pipes/pipes-consumer';
+import { ApplicationConfig } from '../../application-config';
 
 describe('RouterExecutionContext', () => {
     let contextCreator: RouterExecutionContext;
@@ -11,6 +14,7 @@ describe('RouterExecutionContext', () => {
     let applySpy: sinon.SinonSpy;
     let bindSpy: sinon.SinonSpy;
     let factory: RouteParamsFactory;
+    let consumer: PipesConsumer;
 
     beforeEach(() => {
         callback = {
@@ -19,8 +23,13 @@ describe('RouterExecutionContext', () => {
         };
         bindSpy = sinon.spy(callback, 'bind');
         applySpy = sinon.spy(callback, 'apply');
+
         factory = new RouteParamsFactory();
-        contextCreator = new RouterExecutionContext(factory);
+        consumer = new PipesConsumer();
+
+        contextCreator = new RouterExecutionContext(
+            factory, new PipesContextCreator(new ApplicationConfig()), consumer,
+        );
     });
     describe('create', () => {
         describe('when callback metadata is undefined', () => {
@@ -41,6 +50,7 @@ describe('RouterExecutionContext', () => {
                     },
                 };
                 sinon.stub(contextCreator, 'reflectCallbackMetadata').returns(metadata);
+                sinon.stub(contextCreator, 'reflectCallbackParamtypes').returns([]);
             });
             describe('returns proxy function', () => {
                 let proxyContext;
@@ -66,20 +76,25 @@ describe('RouterExecutionContext', () => {
                             },
                         };
                         exchangeKeysForValuesSpy = sinon.spy(contextCreator, 'exchangeKeysForValues');
-                        proxyContext(request, response, next);
                     });
-                    it('should call "exchangeKeysForValues" with expected arguments', () => {
-                        const keys = Object.keys(metadata);
+                    it('should call "exchangeKeysForValues" with expected arguments', (done) => {
+                        proxyContext(request, response, next).then(() => {
+                            const keys = Object.keys(metadata);
 
-                        expect(exchangeKeysForValuesSpy.called).to.be.true;
-                        expect(
-                            exchangeKeysForValuesSpy.calledWith(keys, metadata, { req: request, res: response, next }),
-                        ).to.be.true;
+                            expect(exchangeKeysForValuesSpy.called).to.be.true;
+                            expect(
+                                exchangeKeysForValuesSpy.calledWith(keys, metadata, { req: request, res: response, next }),
+                            ).to.be.true;
+                            done();
+                        });
                     });
-                    it('should apply expected context and arguments to callback', () => {
-                        const args = [ next, null, request.body.test ];
-                        expect(applySpy.called).to.be.true;
-                        expect(applySpy.calledWith(instance, args)).to.be.true;
+                    it('should apply expected context and arguments to callback', (done) => {
+                        proxyContext(request, response, next).then(() => {
+                            const args = [ next, null, request.body.test ];
+                            expect(applySpy.called).to.be.true;
+                            expect(applySpy.calledWith(instance, args)).to.be.true;
+                            done();
+                        });
                     });
                 });
             });
@@ -140,10 +155,36 @@ describe('RouterExecutionContext', () => {
             const keys = Object.keys(metadata);
             const values = contextCreator.exchangeKeysForValues(keys, metadata, { res, req, next });
             const expectedValues = [
-                { index: 0, value: req },
-                { index: 2, value: req.body },
+                { index: 0, value: req, type: RouteParamtypes.REQUEST },
+                { index: 2, value: req.body, type: RouteParamtypes.BODY },
             ];
             expect(values).to.deep.equal(expectedValues);
+        });
+    });
+    describe('getParamValue', () => {
+        let consumerApplySpy: sinon.SinonSpy;
+        const value = 3, metatype = null, transforms = [];
+
+        beforeEach(() => {
+            consumerApplySpy = sinon.spy(consumer, 'apply');
+        });
+        describe('when paramtype is query, body or param', () => {
+            it('should call "consumer.apply" with expected arguments', () => {
+                contextCreator.getParamValue(value, metatype, RouteParamtypes.QUERY, transforms);
+                expect(consumerApplySpy.calledWith(value, metatype, RouteParamtypes.QUERY, transforms)).to.be.true;
+
+                contextCreator.getParamValue(value, metatype, RouteParamtypes.BODY, transforms);
+                expect(consumerApplySpy.calledWith(value, metatype, RouteParamtypes.BODY, transforms)).to.be.true;
+
+                contextCreator.getParamValue(value, metatype, RouteParamtypes.PARAM, transforms);
+                expect(consumerApplySpy.calledWith(value, metatype, RouteParamtypes.PARAM, transforms)).to.be.true;
+            });
+        });
+        describe('when paramtype is not query, body and param', () => {
+            it('should not call "consumer.apply"', () => {
+                contextCreator.getParamValue(value, metatype, RouteParamtypes.NEXT, transforms);
+                expect(consumerApplySpy.called).to.be.false;
+            });
         });
     });
 });

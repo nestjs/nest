@@ -26,6 +26,7 @@ describe('ClientRedis', () => {
             onSpy: sinon.SinonSpy,
             removeListenerSpy: sinon.SinonSpy,
             unsubscribeSpy: sinon.SinonSpy,
+            initSpy: sinon.SinonSpy,
             sub,
             pub;
 
@@ -45,6 +46,20 @@ describe('ClientRedis', () => {
             pub = { publish: publishSpy };
             (client as any).sub = sub;
             (client as any).pub = pub;
+            initSpy = sinon.spy(client, 'init');
+        });
+        afterEach(() => {
+            initSpy.restore();
+        });
+        it('should not call "init()" when pub and sub are null', () => {
+            client.sendSingleMessage(msg, () => {});
+            expect(initSpy.called).to.be.false;
+        });
+        it('should call "init()" when pub and sub are null', () => {
+            (client as any).sub = null;
+            (client as any).pub = null;
+            client.sendSingleMessage(msg, () => {});
+            expect(initSpy.called).to.be.true;
         });
         it('should subscribe to response pattern name', () => {
             client.sendSingleMessage(msg, () => {});
@@ -98,6 +113,57 @@ describe('ClientRedis', () => {
                     expect(removeListenerSpy.called).to.be.true;
                 });
             });
+        });
+    });
+    describe('close', () => {
+        let pubClose: sinon.SinonSpy;
+        let subClose: sinon.SinonSpy;
+        let pub, sub;
+        beforeEach(() => {
+            pubClose = sinon.spy();
+            subClose = sinon.spy();
+            pub = { quit: pubClose };
+            sub = { quit: subClose };
+            (client as any).pub = pub;
+            (client as any).sub = sub;
+        });
+        it('should close "pub" when it is not null', () => {
+            client.close();
+            expect(pubClose.called).to.be.true;
+        });
+        it('should not close "pub" when it is null', () => {
+            (client as any).pub = null;
+            client.close();
+            expect(pubClose.called).to.be.false;
+        });
+        it('should close "sub" when it is not null', () => {
+            client.close();
+            expect(subClose.called).to.be.true;
+        });
+        it('should not close "sub" when it is null', () => {
+            (client as any).sub = null;
+            client.close();
+            expect(subClose.called).to.be.false;
+        });
+    });
+    describe('init', () => {
+        let createClientSpy: sinon.SinonSpy;
+        let handleErrorsSpy: sinon.SinonSpy;
+
+        beforeEach(() => {
+            createClientSpy = sinon.spy(client, 'createClient');
+            handleErrorsSpy = sinon.spy(client, 'handleErrors');
+            client.init();
+        });
+        afterEach(() => {
+            createClientSpy.restore();
+            handleErrorsSpy.restore();
+        });
+        it('should call "createClient" twice', () => {
+            expect(createClientSpy.calledTwice).to.be.true;
+        });
+        it('should call "handleErrors" twice', () => {
+            expect(handleErrorsSpy.calledTwice).to.be.true;
         });
     });
 });
