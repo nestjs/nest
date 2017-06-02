@@ -4,7 +4,7 @@ import { isNil } from '@nestjs/common/utils/shared.utils';
 import { InvalidMessageException } from '../exceptions/invalid-message.exception';
 
 export abstract class ClientProxy {
-    public abstract sendSingleMessage(pattern, callback);
+    public abstract sendSingleMessage(pattern, callback: (err, result, disposed?: boolean) => void);
 
     public send<T>(pattern, data): Observable<T> {
         if (isNil(pattern) || isNil(data)) {
@@ -18,7 +18,7 @@ export abstract class ClientProxy {
         });
     }
 
-    public createObserver<T>(observer: Observer<T>) {
+    public createObserver<T>(observer: Observer<T>): (err, result, disposed?: boolean) => void {
         return (err, result, disposed) => {
             if (err) {
                 observer.error(err);

@@ -13,7 +13,7 @@ import { ApplicationConfig } from './application-config';
 import { validatePath, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices';
 import { NestMicroservice } from './index';
-import { WebSocketAdapter, OnModuleDestroy } from '@nestjs/common/interfaces';
+import { WebSocketAdapter, OnModuleDestroy, ExceptionFilter, PipeTransform } from '@nestjs/common';
 import { Module } from './injector/module';
 
 export class NestApplication implements INestApplication {
@@ -84,7 +84,7 @@ export class NestApplication implements INestApplication {
 
         this.server && this.server.close();
         this.microservices.forEach((microservice) => {
-            microservice.isTerminated(true);
+            microservice.setIsTerminated(true);
             microservice.close();
         });
         this.callDestroyHook();
@@ -96,6 +96,14 @@ export class NestApplication implements INestApplication {
 
     public useWebSocketAdapter(adapter: WebSocketAdapter) {
         this.config.setIoAdapter(adapter);
+    }
+
+    public useGlobalFilters(...filters: ExceptionFilter[]) {
+        this.config.useGlobalFilters(...filters);
+    }
+
+    public useGlobalPipes(...pipes: PipeTransform[]) {
+        this.config.useGlobalPipes(...pipes);
     }
 
     private setupMiddlewares(instance) {

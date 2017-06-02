@@ -9,10 +9,6 @@ export class UsersService {
         { id: 3, name: 'Who Knows' },
     ];
 
-    public getUsers() {
-        return this.users;
-    }
-
     public getAllUsers() {
         return Promise.resolve(this.users);
     }

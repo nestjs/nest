@@ -142,21 +142,22 @@ describe('RouterExecutionContext', () => {
     });
     describe('exchangeKeysForValues', () => {
         const res = { body: 'res' };
-        const req = { body: 'req' };
+        const req = { body: { test: 'req' } };
         const next = () => {};
 
         it('should exchange arguments keys for appropriate values', () => {
             const metadata = {
-                [RouteParamtypes.REQUEST]: { index: 0 },
+                [RouteParamtypes.REQUEST]: { index: 0, data: 'test' },
                 [RouteParamtypes.BODY]: {
                     index: 2,
+                    data: 'test',
                 },
             };
             const keys = Object.keys(metadata);
             const values = contextCreator.exchangeKeysForValues(keys, metadata, { res, req, next });
             const expectedValues = [
-                { index: 0, value: req, type: RouteParamtypes.REQUEST },
-                { index: 2, value: req.body, type: RouteParamtypes.BODY },
+                { index: 0, value: req, type: RouteParamtypes.REQUEST, data: 'test' },
+                { index: 2, value: req.body.test, type: RouteParamtypes.BODY, data: 'test' },
             ];
             expect(values).to.deep.equal(expectedValues);
         });
@@ -170,19 +171,19 @@ describe('RouterExecutionContext', () => {
         });
         describe('when paramtype is query, body or param', () => {
             it('should call "consumer.apply" with expected arguments', () => {
-                contextCreator.getParamValue(value, metatype, RouteParamtypes.QUERY, transforms);
-                expect(consumerApplySpy.calledWith(value, metatype, RouteParamtypes.QUERY, transforms)).to.be.true;
+                contextCreator.getParamValue(value, { metatype, type: RouteParamtypes.QUERY, data: null } , transforms);
+                expect(consumerApplySpy.calledWith(value, { metatype, type: RouteParamtypes.QUERY, data: null }, transforms)).to.be.true;
 
-                contextCreator.getParamValue(value, metatype, RouteParamtypes.BODY, transforms);
-                expect(consumerApplySpy.calledWith(value, metatype, RouteParamtypes.BODY, transforms)).to.be.true;
+                contextCreator.getParamValue(value, { metatype, type: RouteParamtypes.BODY, data: null }, transforms);
+                expect(consumerApplySpy.calledWith(value, { metatype, type: RouteParamtypes.BODY, data: null }, transforms)).to.be.true;
 
-                contextCreator.getParamValue(value, metatype, RouteParamtypes.PARAM, transforms);
-                expect(consumerApplySpy.calledWith(value, metatype, RouteParamtypes.PARAM, transforms)).to.be.true;
+                contextCreator.getParamValue(value, { metatype, type: RouteParamtypes.PARAM, data: null }, transforms);
+                expect(consumerApplySpy.calledWith(value, { metatype, type: RouteParamtypes.PARAM, data: null }, transforms)).to.be.true;
             });
         });
         describe('when paramtype is not query, body and param', () => {
             it('should not call "consumer.apply"', () => {
-                contextCreator.getParamValue(value, metatype, RouteParamtypes.NEXT, transforms);
+                contextCreator.getParamValue(value, { metatype, type: RouteParamtypes.NEXT, data: null }, transforms);
                 expect(consumerApplySpy.called).to.be.false;
             });
         });

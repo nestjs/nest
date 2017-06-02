@@ -5,7 +5,7 @@ import { MicroserviceResponse } from '../index';
 
 export abstract class Server {
     protected readonly messageHandlers: MessageHandlers = {};
-    private readonly logger = new Logger(Server.name);
+    protected readonly logger = new Logger(Server.name);
 
     public getHandlers(): MessageHandlers {
         return this.messageHandlers;

@@ -7,7 +7,7 @@ import { Transport } from '../../../src/microservices/enums/transport.enum';
 import { MessagePattern } from '../../../src/microservices/index';
 import 'rxjs/add/operator/catch';
 
-const MicroserviceClient = { transport: Transport.REDIS };
+const MicroserviceClient = { transport: Transport.TCP };
 
 @Controller()
 export class ClientController {

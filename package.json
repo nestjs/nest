@@ -1,13 +1,11 @@
 {
   "name": "nestjs",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
-    "start": "concurrently \"npm run build:live\" \"npm run microservice:live\"",
-    "build:live": "nodemon -e ts --watch src index.js",
+    "start": "nodemon -e ts --watch src index.js",
     "build": "node index.js",
-    "compile": "tsc -p tsconfig.prod.json",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "postinstall": "opencollective postinstall"

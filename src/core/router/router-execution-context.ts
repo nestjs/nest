@@ -7,11 +7,13 @@ import { RouteParamsMetadata } from '@nestjs/common/utils';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 import { PipesContextCreator } from './../pipes/pipes-context-creator';
 import { PipesConsumer } from './../pipes/pipes-consumer';
+import { ParamData } from '@nestjs/common';
 
 export interface ParamProperties {
     index: number;
     value: any;
     type: RouteParamtypes;
+    data: ParamData;
 }
 
 export class RouterExecutionContext {
@@ -34,8 +36,8 @@ export class RouterExecutionContext {
         return async (req, res, next) => {
             const paramProperties = this.exchangeKeysForValues(keys, metadata, { req, res, next });
             for (const param of paramProperties) {
-                const { index, value, type } = param;
-                args[index] = await this.getParamValue(value, paramtypes[index], type, pipes);
+                const { index, value, type, data } = param;
+                args[index] = await this.getParamValue(value, { metatype: paramtypes[index], type, data }, pipes);
             }
             return callback.apply(instance, args);
         };
@@ -73,21 +75,21 @@ export class RouterExecutionContext {
                     { req, res, next },
                 ),
                 type,
+                data: metadata[key].data,
             };
         });
     }
 
     public async getParamValue<T>(
         value: T,
-        metatype,
-        paramtype: RouteParamtypes,
+        { metatype, type, data },
         transforms: Transform<any>[]): Promise<any> {
 
-        if (paramtype === RouteParamtypes.BODY
-            || paramtype === RouteParamtypes.QUERY
-            || paramtype === RouteParamtypes.PARAM) {
+        if (type === RouteParamtypes.BODY
+            || type === RouteParamtypes.QUERY
+            || type === RouteParamtypes.PARAM) {
 
-            return await this.pipesConsumer.apply(value, metatype, paramtype, transforms);
+            return await this.pipesConsumer.apply(value, { metatype, type, data }, transforms);
         }
         return Promise.resolve(value);
     }

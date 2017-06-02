@@ -9,9 +9,10 @@ describe('PipesConsumer', () => {
         consumer = new PipesConsumer();
     });
     describe('apply', () => {
-        let value, metatype, type, stringifiedType, transforms;
+        let value, metatype, type, stringifiedType, transforms, data;
         beforeEach(() => {
             value = 0;
+            data = null;
             metatype = {},
             type = RouteParamtypes.QUERY;
             stringifiedType = 'query';
@@ -22,14 +23,14 @@ describe('PipesConsumer', () => {
             ];
         });
         it('should call all transform functions', (done) => {
-            consumer.apply(value, metatype, type, transforms).then(() => {
+            consumer.apply(value, { metatype, type, data }, transforms).then(() => {
                 expect(transforms.reduce((prev, next) => prev && next.called, true)).to.be.true;
                 done();
             });
         });
         it('should returns expected result', (done) => {
             const expectedResult = 3;
-            consumer.apply(value, metatype, type, transforms).then((result) => {
+            consumer.apply(value, { metatype, type, data }, transforms).then((result) => {
                 expect(result).to.be.eql(expectedResult);
                 done();
             });

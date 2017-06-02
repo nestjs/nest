@@ -11,6 +11,7 @@ import 'rxjs/add/operator/finally';
 const DEFAULT_URL = 'redis://localhost:6379';
 const CONNECT_EVENT = 'connect';
 const MESSAGE_EVENT = 'message';
+const ERROR_EVENT = 'error';
 
 export class ServerRedis extends Server implements CustomTransportStrategy {
     private readonly url: string;
@@ -25,6 +26,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     public listen(callback: () => void) {
         this.sub = this.createRedisClient();
         this.pub = this.createRedisClient();
+
+        this.handleErrors(this.pub);
+        this.handleErrors(this.sub);
         this.start(callback);
     }
 
@@ -35,8 +39,6 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     public close() {
         this.pub && this.pub.quit();
         this.sub && this.sub.quit();
-        this.pub = null;
-        this.sub = null;
     }
 
     public createRedisClient() {
@@ -93,5 +95,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
     public getResQueueName(pattern) {
         return `${pattern}_res`;
+    }
+
+    public handleErrors(stream) {
+        stream.on(ERROR_EVENT, (err) => this.logger.error(err));
     }
 }

@@ -1,5 +1,5 @@
 import { MicroserviceConfiguration } from '@nestjs/microservices';
-import { INestMicroservice } from './index';
+import { INestMicroservice, ExceptionFilter, PipeTransform } from './index';
 import { WebSocketAdapter } from './web-socket-adapter.interface';
 
 export interface INestApplication {
@@ -10,5 +10,7 @@ export interface INestApplication {
     connectMicroservice(config: MicroserviceConfiguration): INestMicroservice;
     getMicroservices(): INestMicroservice[];
     startAllMicroservices(callback: () => void): void;
+    useGlobalFilters(...filters: ExceptionFilter[]);
+    useGlobalPipes(...pipes: PipeTransform[]);
     close(): void;
 }

@@ -21,9 +21,13 @@ describe('ServerRedis', () => {
             };
             createRedisClient = sinon.stub(server, 'createRedisClient').callsFake(() => client);
         });
+        it('should bind "error" event to handler', () => {
+            server.listen(null);
+            expect(onSpy.getCall(0).args[0]).to.be.equal('error');
+        });
         it('should bind "connect" event to handler', () => {
             server.listen(null);
-            expect(onSpy.getCall(0).args[0]).to.be.equal('connect');
+            expect(onSpy.getCall(2).args[0]).to.be.equal('connect');
         });
     });
     describe('close', () => {
