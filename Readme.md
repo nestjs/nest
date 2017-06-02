@@ -50,7 +50,7 @@ We want to create scalable, loosely coupled and easy to maintain applications. L
 - **WebSockets** module (based on [socket.io](https://github.com/socketio/socket.io), although you can use any other library using adapter)
 - Own modularity system (split your system into reusable modules)
 - Reactive **microservices** support with messages patterns (built-in transport via TCP / [Redis](https://redis.io/), but you can use any other type of communication using `CustomTransportStrategy`)
-- Exceptions handler layer, exception filters, **sync & async pipes** layer,
+- Exceptions handler layer, exception filters, **sync & async pipes** layer
 - Testing utilities
 
 ## Documentation & Quick Start
