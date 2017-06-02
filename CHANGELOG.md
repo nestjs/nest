@@ -1,4 +1,4 @@
-## 3.0.0 (02.06.2017)
+## 3.0.0 (03.06.2017)
 **@nestjs/common - BREAKING CHANGE**
 - You should now pass objects into `@UseFilters()` decorator instead of metatypes,
 - Exception Filters can't inject dependencies (they're not coupled with modules),
