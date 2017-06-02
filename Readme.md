@@ -15,7 +15,7 @@
 
 Nest is a powerful web framework for [Node.js](http://nodejs.org), which helps you effortlessly build efficient, scalable applications. It uses modern JavaScript, is built with [TypeScript](http://www.typescriptlang.org) and combines best concepts of both OOP (Object Oriented Progamming) and FP (Functional Programming).
 
-It is not just another framework. You do not have to wait for a large community, because Nest is built with awesome, popular well-known libraries - [Express](https://github.com/expressjs/express) and [socket.io](https://github.com/socketio/socket.io)! It means, that you could quickly start using framework without worrying about a third party plugins.
+It is not another framework. You don't have to wait for a large community, because Nest is built with awesome, popular well-known libraries - [Express](https://github.com/expressjs/express) and [socket.io](https://github.com/socketio/socket.io) (you can use any other library if you want to)! It means, that you could quickly start using framework without worrying about a third party plugins.
 
 ## Installation
 
@@ -34,23 +34,23 @@ $ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websock
 
 ## Philosophy
 
-JavaScript is awesome. This language is no longer just a trash to create simple animations in the browser. Right now, the front end world is rich in variety of tools. We have a lot of amazing frameworks / libraries such as [Angular](https://angular.io/), [React](https://github.com/facebook/react) or [Vue](https://github.com/vuejs/vue), which improves our development process and makes our applications fast and flexible. 
+JavaScript is awesome. This language is no longer just a trash to create simple animations in the browser. Now, the front end world is rich in variety of tools. We have a lot of amazing frameworks / libraries such as [Angular](https://angular.io/), [React](https://github.com/facebook/react) or [Vue](https://github.com/vuejs/vue), which improves our development process and makes our applications fast and flexible. 
 
 [Node.js](http://nodejs.org) gave us a possibility to use this language also on the server side. There are a lot of superb libraries, helpers and tools for node, but non of them do not solve the main problem - the architecture. 
 
-We want to create scalable, modern and easy to maintain applications. Nest helps us with it.
+We want to create scalable, loosely coupled and easy to maintain applications. Let's show the entire world node.js potential together!
 
 ## Features
 
 - Easy to learn - syntax is similar to [Angular](https://angular.io/)
-- Compatible with both TypeScript and ES6 (I strongly recommend to use [TypeScript](http://www.typescriptlang.org))
+- Built on top of TypeScript, but also compatible with plain ES6 (I strongly recommend to use [TypeScript](http://www.typescriptlang.org))
 - Based on well-known libraries ([Express](https://github.com/expressjs/express) / [socket.io](https://github.com/socketio/socket.io)) so you could share your experience 
 - Supremely useful Dependency Injection, built-in **Inversion of Control** container
 - **Hierarchical injector** - increase abstraction in your application by creating reusable, loosely coupled modules with type injection
+- **WebSockets** module (based on [socket.io](https://github.com/socketio/socket.io), although you can use any other library using adapter)
 - Own modularity system (split your system into reusable modules)
-- **WebSockets** module (based on [socket.io](https://github.com/socketio/socket.io))
-- Reactive **microservices** support with messages patterns (transport via TCP / [Redis](https://redis.io/))
-- Exceptions handler layer
+- Reactive **microservices** support with messages patterns (built-in transport via TCP / [Redis](https://redis.io/), but you can use any other type of communication using `CustomTransportStrategy`)
+- Exceptions handler layer, exception filters, **sync & async pipes** layer,
 - Testing utilities
 
 ## Documentation & Quick Start
