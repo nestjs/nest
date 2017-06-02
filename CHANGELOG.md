@@ -1,3 +1,24 @@
+## 3.0.0 (02.06.2017)
+**@nestjs/common - BREAKING CHANGE**
+- You should now pass objects into `@UseFilters()` decorator instead of metatypes,
+- Exception Filters can't inject dependencies (they're not coupled with modules),
+- `@ExceptionFilters()` is deprecated, use `@UseFilters()` instead.
+- `INestApplication` has new methods - `useGlobalFilters()` and `useGlobalPipes()`,
+- New lifecycle hook - `OnModuleDestroy` interface.
+
+**@nestjs/core**
+- `@Pipe()` feature (async & sync),
+- Exception Filters can have global, controller and method scope.
+
+**@nestjs/websockets - BREAKING CHANGE**
+- Use `useWebSocketAdapter()` instead of `setIoAdapter()`,
+- You can port any WS library - just implement `WebSocketAdapter` (@nestjs/common).
+
+**@nestjs/microservices - BREAKING CHANGE**
+- Now methods have to return `Observable`, and they receive only one argument `data`,
+- Microservices can return multiple values, but after emitting `Observable` has to be COMPLETED!
+- You can port any transport strategy instead of built-in Redis/TCP, just implement `CustomTransportStrategy`.
+
 ## 2.1.3 (27.05.2017)
 **@nestjs/common**, **@nestjs/websockets**
 - `INestApplication` and `INestMicroservice` has new method now - `setIoAdapter()`,
