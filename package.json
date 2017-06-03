@@ -68,6 +68,7 @@
     "@types/sinon": "^1.16.36",
     "@types/socket.io": "^1.4.29",
     "awesome-typescript-loader": "^3.0.0-beta.18",
+    "body-parser": "^1.17.2",
     "chai": "^3.5.0",
     "concurrently": "^3.4.0",
     "core-js": "^2.4.1",
