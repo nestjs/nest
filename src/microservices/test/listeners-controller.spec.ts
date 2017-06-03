@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { ListenersController } from '../listeners-controller';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 import { MetadataScanner } from '../../core/metadata-scanner';
+import { ClientsContainer } from '../container';
 
 describe('ListenersController', () => {
     let instance: ListenersController,
@@ -16,7 +17,7 @@ describe('ListenersController', () => {
         explorer = sinon.mock(metadataExplorer);
     });
     beforeEach(() => {
-        instance = new ListenersController();
+        instance = new ListenersController(new ClientsContainer());
         (instance as any).metadataExplorer = metadataExplorer;
         addSpy = sinon.spy();
         server = {

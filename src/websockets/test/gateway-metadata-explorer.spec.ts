@@ -60,7 +60,7 @@ describe('GatewayMetadataExplorer', () => {
         });
         it(`should return message mapping properties when "isMessageMapping" metadata is not undefined`, () => {
             const metadata = instance.exploreMethodMetadata(test, Object.getPrototypeOf(test), 'test');
-            expect(metadata).to.have.keys([ 'targetCallback', 'message' ]);
+            expect(metadata).to.have.keys([ 'callback', 'message' ]);
             expect(metadata.message).to.eql(message);
         });
     });

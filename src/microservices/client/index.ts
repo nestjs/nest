@@ -1,3 +1,2 @@
 export * from './client-proxy';
-export * from './client-redis';
-export * from './client-tcp';
+export * from './client-proxy-factory';

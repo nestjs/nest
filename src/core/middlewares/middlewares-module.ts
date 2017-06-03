@@ -60,13 +60,17 @@ export class MiddlewaresModule {
 
     public static setupMiddlewares(app: Application) {
         const configs = this.container.getConfigs();
-
         configs.forEach((moduleConfigs, module: string) => {
             [ ...moduleConfigs ].forEach((config: MiddlewareConfiguration) => {
-                config.forRoutes.forEach((route: ControllerMetadata & { method: RequestMethod }) => {
-                    this.setupRouteMiddleware(route, config, module, app);
-                });
+                this.setupMiddlewareConfig(config, module, app);
             });
+        });
+    }
+
+    public static setupMiddlewareConfig(config: MiddlewareConfiguration, module: string, app: Application) {
+        const { forRoutes } = config;
+        forRoutes.forEach((route: ControllerMetadata & { method: RequestMethod }) => {
+            this.setupRouteMiddleware(route, config, module, app);
         });
     }
 

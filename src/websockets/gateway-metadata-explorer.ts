@@ -24,7 +24,7 @@ export class GatewayMetadataExplorer {
         }
         const message = Reflect.getMetadata(MESSAGE_METADATA, callbackMethod);
         return {
-            targetCallback: (callbackMethod as MessageMappingProperties['targetCallback']).bind(instance),
+            callback: (callbackMethod as MessageMappingProperties['callback']).bind(instance),
             message,
         };
     }
@@ -45,5 +45,5 @@ export class GatewayMetadataExplorer {
 
 export interface MessageMappingProperties {
     message: string;
-    targetCallback: (...args) => any;
+    callback: (...args) => any;
 }

@@ -54,20 +54,12 @@ export class DependenciesScanner {
 
     private reflectControllers(module: NestModuleMetatype, token: string) {
         const routes = this.reflectMetadata(module, metadata.CONTROLLERS);
-        routes.map((route) => {
-            this.storeRoute(route, token);
-            this.reflectExceptionFilters(route, token);
-        });
+        routes.map((route) => this.storeRoute(route, token));
     }
 
     private reflectExports(module: NestModuleMetatype, token: string) {
         const exports = this.reflectMetadata(module, metadata.EXPORTS);
         exports.map((exportedComponent) => this.storeExportedComponent(exportedComponent, token));
-    }
-
-    private reflectExceptionFilters(component: Metatype<Injectable>, token: string) {
-        const filters = this.reflectMetadata(component, EXCEPTION_FILTERS_METADATA);
-        filters.map((filter) => this.storeComponent(filter, token));
     }
 
     private reflectGatewaysMiddlewares(component: Metatype<Injectable>, token: string) {

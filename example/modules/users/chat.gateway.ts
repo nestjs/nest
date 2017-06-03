@@ -6,7 +6,7 @@ import { ChatMiddleware } from './chat.middleware';
 
 @WebSocketGateway({
     port: 2000,
-    middlewares: [ ChatMiddleware ],
+    middlewares: [ChatMiddleware],
 })
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection {
     @WebSocketServer() private server;

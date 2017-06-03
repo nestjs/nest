@@ -4,6 +4,7 @@ import { MiddlewaresInjector } from '../middlewares-injector';
 import { UnknownModuleException } from '../../core/errors/exceptions/unknown-module.exception';
 import { WebSocketGateway } from '../index';
 import { RuntimeException } from '../../core/errors/exceptions/runtime.exception';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 
 describe('MiddlewaresInjector', () => {
     let injector: MiddlewaresInjector;
@@ -15,7 +16,7 @@ describe('MiddlewaresInjector', () => {
         container = {
             getModules: () => modules,
         };
-        injector = new MiddlewaresInjector(container as any);
+        injector = new MiddlewaresInjector(container as any, new ApplicationConfig());
     });
     describe('inject', () => {
         const tokens = [1, 2, 3];

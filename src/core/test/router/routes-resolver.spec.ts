@@ -4,6 +4,7 @@ import { RoutesResolver } from '../../router/routes-resolver';
 import { Controller } from '../../../common/utils/decorators/controller.decorator';
 import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
+import { ApplicationConfig } from '../../application-config';
 
 describe('RoutesResolver', () => {
     @Controller({ path: 'global' })
@@ -28,11 +29,10 @@ describe('RoutesResolver', () => {
     beforeEach(() => {
         routesResolver = new RoutesResolver(null, {
             createRouter: () => router,
-        });
+        }, new ApplicationConfig());
     });
 
     describe('setupRouters', () => {
-
         it('should method setup controllers to express application instance', () => {
             const routes = new Map();
             routes.set('TestRoute', {

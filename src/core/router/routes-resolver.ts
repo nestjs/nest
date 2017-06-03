@@ -9,6 +9,7 @@ import { RouterExceptionFilters } from './router-exception-filters';
 import { MetadataScanner } from '../metadata-scanner';
 import { RouterExplorer } from './interfaces/explorer.inteface';
 import { ExpressRouterExplorer } from './router-explorer';
+import { ApplicationConfig } from './../application-config';
 
 export class RoutesResolver implements Resolver {
     private readonly logger = new Logger(RoutesResolver.name);
@@ -16,13 +17,18 @@ export class RoutesResolver implements Resolver {
     private readonly routerExceptionsFilter: RouterExceptionFilters;
     private readonly routerBuilder: RouterExplorer;
 
-    constructor(private container: NestContainer, expressAdapter) {
-        this.routerExceptionsFilter = new RouterExceptionFilters(container);
+    constructor(
+        private readonly container: NestContainer,
+        private readonly expressAdapter,
+        private readonly config: ApplicationConfig) {
+
+        this.routerExceptionsFilter = new RouterExceptionFilters(config);
         this.routerBuilder = new ExpressRouterExplorer(
             new MetadataScanner(),
             this.routerProxy,
             expressAdapter,
             this.routerExceptionsFilter,
+            config,
         );
     }
 
@@ -39,7 +45,7 @@ export class RoutesResolver implements Resolver {
         routes.forEach(({ instance, metatype }) => {
             this.logger.log(ControllerMappingMessage(metatype.name));
 
-            const { path, router } = this.routerBuilder.explore(instance, metatype, moduleName);
+            const { path, router } = this.routerBuilder.explore(instance, metatype);
             express.use(path, router);
         });
     }

@@ -17,5 +17,10 @@ export {
     MiddlewaresConsumer,
     OnModuleInit,
     ExceptionFilter,
+    WebSocketAdapter,
+    PipeTransform,
+    Paramtype,
+    ArgumentMetadata,
+    OnModuleDestroy,
 } from './interfaces';
 export * from './services/logger.service';
