@@ -111,10 +111,12 @@ describe('RouterExecutionContext', () => {
                 [`${RouteParamtypes.REQUEST}:0`]: {
                     index: 0,
                     data: undefined,
+                    pipes: [],
                 },
                 [`${RouteParamtypes.BODY}:1`]: {
                     index: 1,
                     data: undefined,
+                    pipes: [],
                 },
             };
             expect(metadata).to.deep.equal(expectedMetadata);
@@ -147,17 +149,18 @@ describe('RouterExecutionContext', () => {
 
         it('should exchange arguments keys for appropriate values', () => {
             const metadata = {
-                [RouteParamtypes.REQUEST]: { index: 0, data: 'test' },
+                [RouteParamtypes.REQUEST]: { index: 0, data: 'test', pipes: [] },
                 [RouteParamtypes.BODY]: {
                     index: 2,
                     data: 'test',
+                    pipes: [],
                 },
             };
             const keys = Object.keys(metadata);
             const values = contextCreator.exchangeKeysForValues(keys, metadata, { res, req, next });
             const expectedValues = [
-                { index: 0, value: req, type: RouteParamtypes.REQUEST, data: 'test' },
-                { index: 2, value: req.body.test, type: RouteParamtypes.BODY, data: 'test' },
+                { index: 0, value: req, type: RouteParamtypes.REQUEST, data: 'test', pipes: [] },
+                { index: 2, value: req.body.test, type: RouteParamtypes.BODY, data: 'test', pipes: [] },
             ];
             expect(values).to.deep.equal(expectedValues);
         });
