@@ -7,7 +7,7 @@ import { ValidatorPipe } from './common/validator.pipe';
 
 const port = 3001;
 const server = express();
-server.use(bodyParser());
+server.use(bodyParser.json());
 
 const app = NestFactory.create(ApplicationModule, server);
 const microservice = app.connectMicroservice({

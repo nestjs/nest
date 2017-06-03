@@ -1,3 +1,5 @@
+import { Response } from 'express';
+import { Res } from '../../../src/index';
 import { Controller } from '../../../src/common/utils/decorators/controller.decorator';
 import { Client } from '../../../src/microservices/utils/client.decorator';
 import { Get } from '../../../src/common/utils/decorators/request-mapping.decorator';
@@ -15,7 +17,7 @@ export class ClientController {
     private client: ClientProxy;
 
     @Get('client')
-    public sendMessage(req, res) {
+    public sendMessage(@Res() res: Response) {
         const pattern = { command: 'add' };
         const data = [ 1, 2, 3, 4, 5 ];
 

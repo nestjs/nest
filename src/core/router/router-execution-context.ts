@@ -7,13 +7,14 @@ import { RouteParamsMetadata } from '@nestjs/common/utils';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 import { PipesContextCreator } from './../pipes/pipes-context-creator';
 import { PipesConsumer } from './../pipes/pipes-consumer';
-import { ParamData } from '@nestjs/common';
+import { ParamData, PipeTransform } from '@nestjs/common';
 
 export interface ParamProperties {
     index: number;
     value: any;
     type: RouteParamtypes;
     data: ParamData;
+    pipes: PipeTransform[];
 }
 
 export class RouterExecutionContext {
@@ -35,9 +36,14 @@ export class RouterExecutionContext {
 
         return async (req, res, next) => {
             const paramProperties = this.exchangeKeysForValues(keys, metadata, { req, res, next });
+
             for (const param of paramProperties) {
-                const { index, value, type, data } = param;
-                args[index] = await this.getParamValue(value, { metatype: paramtypes[index], type, data }, pipes);
+                const { index, value, type, data, pipes: paramPipes } = param;
+                args[index] = await this.getParamValue(
+                    value,
+                    { metatype: paramtypes[index], type, data },
+                    pipes.concat(this.pipesContextCreator.createConcreteContext(paramPipes)),
+                );
             }
             return callback.apply(instance, args);
         };
@@ -67,15 +73,17 @@ export class RouterExecutionContext {
     public exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata, { req, res, next }): ParamProperties[] {
         return keys.map(key => {
             const type = this.mapParamType(key);
+            const paramMetadata = metadata[key];
+            const { index, data, pipes } = paramMetadata;
+
             return {
-                index: metadata[key].index,
+                index,
                 value: this.paramsFactory.exchangeKeyForValue(
                     type,
-                    metadata[key].data,
+                    data,
                     { req, res, next },
                 ),
-                type,
-                data: metadata[key].data,
+                type, data, pipes,
             };
         });
     }

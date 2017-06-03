@@ -21,7 +21,7 @@ export class ClientRedis extends ClientProxy {
         this.url = url || DEFAULT_URL;
     }
 
-    public sendSingleMessage(msg, callback: (...args) => any) {
+    protected sendSingleMessage(msg, callback: (...args) => any) {
         if (!this.pub || !this.sub) {
             this.init();
         }

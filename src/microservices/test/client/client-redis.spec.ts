@@ -52,25 +52,25 @@ describe('ClientRedis', () => {
             initSpy.restore();
         });
         it('should not call "init()" when pub and sub are null', () => {
-            client.sendSingleMessage(msg, () => {});
+            client['sendSingleMessage'](msg, () => {});
             expect(initSpy.called).to.be.false;
         });
         it('should call "init()" when pub and sub are null', () => {
             (client as any).sub = null;
             (client as any).pub = null;
-            client.sendSingleMessage(msg, () => {});
+            client['sendSingleMessage'](msg, () => {});
             expect(initSpy.called).to.be.true;
         });
         it('should subscribe to response pattern name', () => {
-            client.sendSingleMessage(msg, () => {});
+            client['sendSingleMessage'](msg, () => {});
             expect(subscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;
         });
         it('should publish stringified message to acknowledge pattern name', () => {
-            client.sendSingleMessage(msg, () => {});
+            client['sendSingleMessage'](msg, () => {});
             expect(publishSpy.calledWith(`"${pattern}"_ack`, JSON.stringify(msg))).to.be.true;
         });
         it('should listen on messages', () => {
-            client.sendSingleMessage(msg, () => {});
+            client['sendSingleMessage'](msg, () => {});
             expect(onSpy.called).to.be.true;
         });
         describe('responseCallback', () => {
@@ -83,7 +83,7 @@ describe('ClientRedis', () => {
             describe('not disposed', () => {
                 beforeEach(() => {
                     callback = sinon.spy();
-                    subscription = client.sendSingleMessage(msg, callback);
+                    subscription = client['sendSingleMessage'](msg, callback);
                     subscription(null, JSON.stringify(resMsg));
                 });
                 it('should call callback with expected arguments', () => {
@@ -99,7 +99,7 @@ describe('ClientRedis', () => {
             describe('disposed', () => {
                 beforeEach(() => {
                     callback = sinon.spy();
-                    subscription = client.sendSingleMessage(msg, callback);
+                    subscription = client['sendSingleMessage'](msg, callback);
                     subscription(null, JSON.stringify({ disposed: true }));
                 });
                 it('should call callback with dispose param', () => {

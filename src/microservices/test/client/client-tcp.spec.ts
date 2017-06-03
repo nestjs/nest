@@ -30,20 +30,20 @@ describe('ClientTCP', () => {
             msg = { test: 3 };
         });
         it('should connect to server when is not connected', (done) => {
-            client.sendSingleMessage(msg, () => ({})).then(() => {
+            client['sendSingleMessage'](msg, () => ({})).then(() => {
                 expect(socket.connect.calledOnce).to.be.true;
                 done();
             });
         });
         it('should not connect to server when is already connected', () => {
             (client as any).isConnected = true;
-            client.sendSingleMessage(msg, () => ({}));
+            client['sendSingleMessage'](msg, () => ({}));
             expect(socket.connect.called).to.be.false;
         });
         describe('after connection', () => {
             it('should send message', (done) => {
                 (client as any).isConnected = false;
-                client.sendSingleMessage(msg, () => ({})).then(() => {
+                client['sendSingleMessage'](msg, () => ({})).then(() => {
                     expect(socket.sendMessage.called).to.be.true;
                     expect(socket.sendMessage.calledWith(msg)).to.be.true;
                     done();
@@ -51,7 +51,7 @@ describe('ClientTCP', () => {
             });
             it('should listen on messages', (done) => {
                 (client as any).isConnected = false;
-                client.sendSingleMessage(msg, () => ({})).then(() => {
+                client['sendSingleMessage'](msg, () => ({})).then(() => {
                     expect(socket.on.called).to.be.true;
                     done();
                 });

@@ -1,12 +1,9 @@
-import { PipeTransform, Pipe } from '@nestjs/common';
-import { CustomException } from './exception.filter';
-import { ArgumentMetadata } from '@nestjs/common';
+import { PipeTransform, Pipe, ArgumentMetadata } from '@nestjs/common';
+import { HttpException, HttpStatus } from '../../src/index';
 
 @Pipe()
 export class ValidatorPipe implements PipeTransform {
-    public transform(value, metadata: ArgumentMetadata) {
-        // validation logic
-        console.log(metadata);
+    public async transform(value, metadata: ArgumentMetadata) {
         return value;
     }
 }

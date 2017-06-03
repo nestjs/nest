@@ -36,7 +36,7 @@ export class ClientTCP extends ClientProxy {
         });
     }
 
-    public async sendSingleMessage(msg, callback: (...args) => any) {
+    protected async sendSingleMessage(msg, callback: (...args) => any) {
         const sendMessage = (socket) => {
             socket.sendMessage(msg);
             socket.on(MESSAGE_EVENT, (buffer) => this.handleResponse(socket, callback, buffer));

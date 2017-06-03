@@ -27,7 +27,7 @@ export class UsersController {
 
     @Post()
     @UsePipes(new ValidatorPipe())
-    public async addUser(@Res() res: Response, @Body('user') user) {
+    public async addUser(@Res() res: Response, @Body('user') user: string) {
         const msg = await this.usersService.addUser(user);
         res.status(HttpStatus.CREATED).json(msg);
     }
