@@ -36,9 +36,7 @@ export class NestFactory {
     }
 
     private static createNestInstance<T>(instance: T) {
-        const proxy = this.createProxy(instance);
-        proxy.setupModules();
-        return proxy;
+        return this.createProxy(instance);
     }
 
     private static initialize(module: NestModuleMetatype) {

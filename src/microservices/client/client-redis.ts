@@ -3,36 +3,44 @@ import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientMetadata } from '../interfaces/client-metadata.interface';
 
+const DEFAULT_URL = 'redis://localhost:6379';
+const MESSAGE_EVENT = 'message';
+const ERROR_EVENT = 'error';
+
 export class ClientRedis extends ClientProxy {
     private readonly logger = new Logger(ClientProxy.name);
-    private readonly DEFAULT_URL = 'redis://localhost:6379';
     private readonly url: string;
 
     private pub: redis.RedisClient;
     private sub: redis.RedisClient;
 
-    constructor({ url }: ClientMetadata) {
+    constructor(metadata: ClientMetadata) {
         super();
 
-        this.url = url || this.DEFAULT_URL;
-        this.init();
+        const { url } = metadata;
+        this.url = url || DEFAULT_URL;
     }
 
-    public sendSingleMessage(msg, callback: (...args) => any) {
+    protected sendSingleMessage(msg, callback: (...args) => any) {
+        if (!this.pub || !this.sub) {
+            this.init();
+        }
         const pattern = JSON.stringify(msg.pattern);
-        const subscription = (channel, message) => {
-            const { err, response } = JSON.parse(message);
+        const responseCallback = (channel, message) => {
+            const { err, response, disposed } = JSON.parse(message);
+            if (disposed) {
+                callback(null, null, true);
+                this.sub.unsubscribe(this.getResPatternName(pattern));
+                this.sub.removeListener(MESSAGE_EVENT, responseCallback);
+                return;
+            }
             callback(err, response);
-
-            this.sub.unsubscribe(this.getResPatternName(pattern));
-            this.sub.removeListener('message', subscription);
         };
 
-        this.sub.on('message', subscription);
+        this.sub.on(MESSAGE_EVENT, responseCallback);
         this.sub.subscribe(this.getResPatternName(pattern));
         this.pub.publish(this.getAckPatternName(pattern), JSON.stringify(msg));
-
-        return subscription;
+        return responseCallback;
     }
 
     public getAckPatternName(pattern: string): string {
@@ -43,7 +51,12 @@ export class ClientRedis extends ClientProxy {
         return `${pattern}_res`;
     }
 
-    private init() {
+    public close() {
+        this.pub && this.pub.quit();
+        this.sub && this.sub.quit();
+    }
+
+    public init() {
         this.pub = this.createClient();
         this.sub = this.createClient();
 
@@ -51,11 +64,11 @@ export class ClientRedis extends ClientProxy {
         this.handleErrors(this.sub);
     }
 
-    private createClient(): redis.RedisClient {
+    public createClient(): redis.RedisClient {
         return redis.createClient({ url: this.url });
     }
 
-    private handleErrors(stream) {
-        stream.on('error', (err) => this.logger.error(err));
+    public handleErrors(stream) {
+        stream.on(ERROR_EVENT, (err) => this.logger.error(err));
     }
 }

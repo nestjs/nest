@@ -49,8 +49,8 @@ describe('ServerTCP', () => {
         };
         beforeEach(() => {
             socket = {
-                sendMessage: sinon.spy()
-            }
+                sendMessage: sinon.spy(),
+            };
         });
         it('should send NO_PATTERN_MESSAGE error if key is not exists in handlers object', () => {
            server.handleMessage(socket, msg);
@@ -58,36 +58,11 @@ describe('ServerTCP', () => {
         });
         it('should call handler if exists in handlers object', () => {
             const handler = sinon.spy();
-            (server as any).msgHandlers = {
-                [JSON.stringify(msg.pattern)]: handler
+            (server as any).messageHandlers = {
+                [JSON.stringify(msg.pattern)]: handler as any,
             };
             server.handleMessage(socket, msg);
             expect(handler.calledOnce).to.be.true;
-        });
-    });
-    describe('getMessageHandler', () => {
-        let handler;
-        const sendMessage = sinon.spy();
-        const socket = { sendMessage };
-
-        beforeEach(() => {
-           handler = server.getMessageHandler(socket);
-        });
-        it(`should return function`, () => {
-            expect(typeof server.getMessageHandler(null)).to.be.eql('function');
-        });
-        it(`should change order when second parameter is undefined or null`, () => {
-            const response = 'test';
-            handler(response);
-
-            expect(sendMessage.calledWith({ err: null, response })).to.be.true;
-        });
-        it(`should call "sendMessage" with expected message object`, () => {
-            const err = 'err';
-            const response = 'test';
-            handler(err, response);
-
-            expect(sendMessage.calledWith({ err, response })).to.be.true;
         });
     });
 

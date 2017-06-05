@@ -29,7 +29,7 @@ describe('ClientProxy', () => {
 
     describe('createObserver', () => {
         it(`should return function`, () => {
-            expect(typeof client.createObserver(null)).to.be.eql('function');
+            expect(typeof client['createObserver'](null)).to.be.eql('function');
         });
 
         describe('returned function calls', () => {
@@ -44,7 +44,7 @@ describe('ClientProxy', () => {
                 };
 
             before(() => {
-                fn = client.createObserver(observer);
+                fn = client['createObserver'](observer);
             });
 
             it(`"error" when first parameter is not null or undefined`, () => {
@@ -59,9 +59,9 @@ describe('ClientProxy', () => {
                 expect(next.calledWith(data)).to.be.true;
             });
 
-            it(`"complete" when first parameter is null or undefined`, () => {
+            it(`"complete" when third parameter is true`, () => {
                 const data = 'test';
-                fn(null, data);
+                fn(null, data, true);
                 expect(complete.called).to.be.true;
             });
         });

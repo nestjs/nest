@@ -1,13 +1,15 @@
+import { Response } from 'express';
+import { Res } from '../../../src/index';
 import { Controller } from '../../../src/common/utils/decorators/controller.decorator';
 import { Client } from '../../../src/microservices/utils/client.decorator';
 import { Get } from '../../../src/common/utils/decorators/request-mapping.decorator';
 import { ClientProxy } from '../../../src/microservices/client/client-proxy';
 import { Observable } from 'rxjs';
 import { Transport } from '../../../src/microservices/enums/transport.enum';
-import 'rxjs/add/operator/catch';
 import { MessagePattern } from '../../../src/microservices/index';
+import 'rxjs/add/operator/catch';
 
-const MicroserviceClient = { transport: Transport.TCP, port: 5667 };
+const MicroserviceClient = { transport: Transport.TCP };
 
 @Controller()
 export class ClientController {
@@ -15,7 +17,7 @@ export class ClientController {
     private client: ClientProxy;
 
     @Get('client')
-    public sendMessage(req, res) {
+    public sendMessage(@Res() res: Response) {
         const pattern = { command: 'add' };
         const data = [ 1, 2, 3, 4, 5 ];
 
@@ -25,8 +27,8 @@ export class ClientController {
     }
 
     @MessagePattern({ command: 'add' })
-    public add(data, respond) {
+    public add(data): Observable<number> {
         const numbers = data || [];
-        respond(null, numbers.reduce((a, b) => a + b));
+        return Observable.of(numbers.reduce((a, b) => a + b));
     }
 }

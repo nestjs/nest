@@ -1,31 +1,34 @@
-import * as express from 'express';
+import { Response } from 'express';
 import { UsersService } from './users.service';
-import { Controller, Response, Body, Param } from './../../../src/';
+import { Controller, Res, Body, Param, Query } from './../../../src/';
 import { Get, Post } from '../../../src/common/utils/decorators/request-mapping.decorator';
+import { UsePipes } from '../../../src/common/utils/decorators/use-pipes.decorator';
 import { HttpStatus } from '../../../src/common/index';
-import { ExceptionFilters } from '../../../src/common/utils/decorators/exception-filters.decorator';
-import { CustomExceptionFilter } from './exception.filter';
+import { UseFilters } from '../../../src/common/utils/decorators/exception-filters.decorator';
+import { CustomExceptionFilter } from '../../common/exception.filter';
+import { ValidatorPipe } from '../../common/validator.pipe';
 
 @Controller('users')
-@ExceptionFilters(CustomExceptionFilter)
+@UseFilters(new CustomExceptionFilter())
 export class UsersController {
     constructor(private usersService: UsersService) {}
 
     @Get()
-    public async getAllUsers(@Response() res: express.Response) {
+    public async getAllUsers(@Res() res: Response) {
         const users = await this.usersService.getAllUsers();
         res.status(HttpStatus.OK).json(users);
     }
 
     @Get('/:id')
-    public async getUser(@Response() res: express.Response, @Param('id') id) {
+    public async getUser(@Res() res: Response, @Param('id') id: string) {
         const user = await this.usersService.getUser(id);
         res.status(HttpStatus.OK).json(user);
     }
 
     @Post()
-    public async addUser(@Response() res: express.Response, @Body('user') user) {
-        const msg = await this.usersService.getUser(user);
+    @UsePipes(new ValidatorPipe())
+    public async addUser(@Res() res: Response, @Body('user') user: string) {
+        const msg = await this.usersService.addUser(user);
         res.status(HttpStatus.CREATED).json(msg);
     }
 }

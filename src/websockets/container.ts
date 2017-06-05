@@ -20,4 +20,8 @@ export class SocketsContainer {
             port,
         }, server);
     }
+
+    public clear() {
+        this.observableServers.clear();
+    }
 }

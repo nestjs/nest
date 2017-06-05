@@ -1,1 +1,0 @@
-<!-- Love nest? Please consider supporting our collective: 👉  https://opencollective.com/nest/donate -->
