@@ -53,7 +53,7 @@ export class ClientTCP extends ClientProxy {
         const { err, response, disposed } = buffer;
         if (disposed) {
             callback(null, null, true);
-            socket.close();
+            socket.end();
             return;
         }
         callback(err, response);
@@ -64,12 +64,11 @@ export class ClientTCP extends ClientProxy {
     }
 
     public close() {
-        if (!this.socket) {
-            return;
+        if (this.socket) {
+            this.socket.end();
+            this.isConnected = false;
+            this.socket = null;
         }
-        this.socket.close();
-        this.isConnected = false;
-        this.socket = null;
     }
 
     public bindEvents(socket) {
