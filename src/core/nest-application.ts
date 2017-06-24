@@ -35,7 +35,7 @@ export class NestApplication implements INestApplication {
 
     public setupModules() {
         SocketModule.setup(this.container, this.config);
-        MiddlewaresModule.setup(this.container);
+        MiddlewaresModule.setup(this.container, this.config);
         MicroservicesModule.setupClients(this.container);
     }
 

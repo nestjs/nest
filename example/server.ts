@@ -18,5 +18,5 @@ app.useGlobalPipes(new ValidatorPipe());
 app.startAllMicroservices(() => console.log('All microservices are listening...'));
 app.listen(port, () => {
     console.log('Application listen on port:', port);
-    app.close();
+    //app.close();
 });

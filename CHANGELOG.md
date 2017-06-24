@@ -1,3 +1,11 @@
+## 3.0.1 (24.06.2017)
+**@nestjs/core**
+- Hierarchical injector bugfix,
+- Middlewares `@UseFilters()` bugfix (#95).
+
+**@nestjs/microservices**
+- TCP server / client bugfix (#91)
+
 ## 3.0.0 (03.06.2017)
 **@nestjs/common - BREAKING CHANGE**
 - You should now pass objects into `@UseFilters()` decorator instead of metatypes,

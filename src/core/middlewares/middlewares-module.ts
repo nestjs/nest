@@ -17,24 +17,27 @@ import { NestMiddleware } from '@nestjs/common/interfaces/middlewares/nest-middl
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { ApplicationConfig } from './../application-config';
+import { RouterExceptionFilters } from './../router/router-exception-filters';
 
 export class MiddlewaresModule {
-    private static routesMapper = new RoutesMapper();
-    private static container = new MiddlewaresContainer();
+    private static readonly routesMapper = new RoutesMapper();
+    private static readonly container = new MiddlewaresContainer();
+    private static readonly routerProxy = new RouterProxy();
+    private static readonly routerMethodFactory = new RouterMethodFactory();
+    private static routerExceptionFilter: RouterExceptionFilters;
     private static resolver: MiddlewaresResolver;
-    private static exceptionHandler = new ExceptionsHandler();
-    private static routerProxy = new RouterProxy();
-    private static routerMethodFactory = new RouterMethodFactory();
 
-    public static getContainer(): MiddlewaresContainer {
-        return this.container;
-    }
-
-    public static setup(container: NestContainer) {
+    public static setup(container: NestContainer, config: ApplicationConfig) {
+        this.routerExceptionFilter = new RouterExceptionFilters(config);
         this.resolver = new MiddlewaresResolver(this.container);
 
         const modules = container.getModules();
         this.resolveMiddlewares(modules);
+    }
+
+    public static getContainer(): MiddlewaresContainer {
+        return this.container;
     }
 
     public static resolveMiddlewares(modules: Map<string, Module>) {
@@ -105,8 +108,9 @@ export class MiddlewaresModule {
         if (isUndefined(instance.resolve)) {
             throw new InvalidMiddlewareException(metatype.name);
         }
+        const exceptionsHandler = this.routerExceptionFilter.create(instance, instance.resolve);
         const router = this.routerMethodFactory.get(app, method).bind(app);
-        const proxy = this.routerProxy.createProxy(instance.resolve(), this.exceptionHandler);
+        const proxy = this.routerProxy.createProxy(instance.resolve(), exceptionsHandler);
 
         router(path, proxy);
     }
