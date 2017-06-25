@@ -13,9 +13,9 @@
 
 ## Description
 
-Nest is a powerful web framework for [Node.js](http://nodejs.org), which helps you effortlessly build efficient, scalable applications. It uses modern JavaScript, is built with [TypeScript](http://www.typescriptlang.org) and combines best concepts of both OOP (Object Oriented Progamming) and FP (Functional Programming).
+Nest is a powerful web framework for [Node.js](http://nodejs.org) which helps you effortlessly build efficient, scalable applications. Nest uses modern JavaScript, is built with [TypeScript](http://www.typescriptlang.org), and combines best concepts of both OOP (Object Oriented Progamming) and FP (Functional Programming).
 
-Nest is not just framework. You don’t have to wait for a large community, because Nest is built with awesome, popular, well-known libraries—[Express](https://github.com/expressjs/express) and [socket.io](https://github.com/socketio/socket.io) (you can use any other library if you want to)! This means that you can quickly start using Nest without worrying about third party plugins.
+Nest is not just a framework. You don’t have to wait for a large community because Nest is built with awesome, popular, well-known libraries—[Express](https://github.com/expressjs/express) and [socket.io](https://github.com/socketio/socket.io) (you can use any other library if you want to)! This means that you can quickly start using Nest without worrying about third party plugins.
 
 ## Installation
 
