@@ -15,11 +15,11 @@
 
 Nest is a powerful web framework for [Node.js](http://nodejs.org), which helps you effortlessly build efficient, scalable applications. It uses modern JavaScript, is built with [TypeScript](http://www.typescriptlang.org) and combines best concepts of both OOP (Object Oriented Progamming) and FP (Functional Programming).
 
-It is not another framework. You don't have to wait for a large community, because Nest is built with awesome, popular well-known libraries - [Express](https://github.com/expressjs/express) and [socket.io](https://github.com/socketio/socket.io) (you can use any other library if you want to)! It means, that you could quickly start using framework without worrying about a third party plugins.
+Nest is not just framework. You don’t have to wait for a large community, because Nest is built with awesome, popular, well-known libraries—[Express](https://github.com/expressjs/express) and [socket.io](https://github.com/socketio/socket.io) (you can use any other library if you want to)! This means that you can quickly start using Nest without worrying about third party plugins.
 
 ## Installation
 
-**Git:**
+**Install the TypeScript Starter Project with Git:**
 ```bash
 $ git clone https://github.com/kamilmysliwiec/nest-typescript-starter.git project
 $ cd project
@@ -27,29 +27,29 @@ $ npm install
 $ npm run start
 ```
 
-**NPM:**
+**Start a New Project from Scratch with NPM:**
 ```bash
 $ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websockets @nestjs/testing reflect-metadata rxjs
 ```
 
 ## Philosophy
 
-JavaScript is awesome. This language is no longer just a trash to create simple animations in the browser. Now, the front end world is rich in variety of tools. We have a lot of amazing frameworks / libraries such as [Angular](https://angular.io/), [React](https://github.com/facebook/react) or [Vue](https://github.com/vuejs/vue), which improves our development process and makes our applications fast and flexible. 
+JavaScript is awesome. This language is no longer just trash to create simple animations in the browser. Now, the front end world sports a rich variety of tools. We have a lot of amazing frameworks / libraries such as [Angular](https://angular.io/), [React](https://github.com/facebook/react) or [Vue](https://github.com/vuejs/vue) which improve our development process and make our applications fast and flexible. 
 
-[Node.js](http://nodejs.org) gave us a possibility to use this language also on the server side. There are a lot of superb libraries, helpers and tools for node, but non of them do not solve the main problem - the architecture. 
+[Node.js](http://nodejs.org) enabled us to use JavaScript also on the server side. There are a lot of superb libraries, helpers and tools for node, but none of them solves the main problem—the architecture. 
 
-We want to create scalable, loosely coupled and easy to maintain applications. Let's show the entire world node.js potential together!
+We want to create scalable, loosely-coupled, easy-to-maintain applications. Let’s show the entire world the potential of node.js together!
 
 ## Features
 
 - Easy to learn - syntax is similar to [Angular](https://angular.io/)
-- Built on top of TypeScript, but also compatible with plain ES6 (I strongly recommend to use [TypeScript](http://www.typescriptlang.org))
-- Based on well-known libraries ([Express](https://github.com/expressjs/express) / [socket.io](https://github.com/socketio/socket.io)) so you could share your experience 
+- Built on top of TypeScript, but also compatible with plain ES6 (I strongly recommend using [TypeScript](http://www.typescriptlang.org))
+- Based on well-known libraries ([Express](https://github.com/expressjs/express) / [socket.io](https://github.com/socketio/socket.io)) so it’s a familiar experience 
 - Supremely useful Dependency Injection, built-in **Inversion of Control** container
-- **Hierarchical injector** - increase abstraction in your application by creating reusable, loosely coupled modules with type injection
-- **WebSockets** module (based on [socket.io](https://github.com/socketio/socket.io), although you can use any other library using adapter)
-- Own modularity system (split your system into reusable modules)
-- Reactive **microservices** support with messages patterns (built-in transport via TCP / [Redis](https://redis.io/), but you can use any other type of communication using `CustomTransportStrategy`)
+- **Hierarchical injector** - increase abstraction in your application by creating reusable, loosely-coupled modules with type injection
+- **WebSockets** module (based on [socket.io](https://github.com/socketio/socket.io), although you can use any other library using adapters)
+- Has its own modularity system (split your system into reusable modules)
+- Reactive **microservice** support with message patterns (built-in transport via TCP / [Redis](https://redis.io/), but you can use any other type of communication using `CustomTransportStrategy`)
 - Exceptions handler layer, exception filters, **sync & async pipes** layer
 - Testing utilities
 
@@ -75,7 +75,7 @@ We want to create scalable, loosely coupled and easy to maintain applications. L
 
 ## Backers
 
-I am on a mission to provide an architecture to create truly flexible, scalable and loosely coupled systems using Node.js platform. It takes a lot of time, so if you want to support me, let's [become a backer / sponsor]((https://opencollective.com/nest#backer)). I'll appreciate each help. Thanks!
+I am on a mission to provide an architecture to create truly flexible, scalable and loosely coupled systems using the Node.js platform. It takes a lot of time, so if you want to support me, please [become a backer / sponsor]((https://opencollective.com/nest#backer)). I appreciate your help. Thanks!
 
 <a href="https://opencollective.com/nest/backer/0/website" target="_blank"><img src="https://opencollective.com/nest/backer/0/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/1/website" target="_blank"><img src="https://opencollective.com/nest/backer/1/avatar.svg"></a>
