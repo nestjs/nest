@@ -139,7 +139,7 @@ export class Injector {
         return components.has(name) ? components.get(name) : scanInExports();
     }
 
-    public scanForComponentInExports(components: Map<string, any>, name: any, module: Module, { metatype }, context: Module[] = []) {
+    public scanForComponentInExports(components: Map<string, any>, name: any, module: Module, metatype, context: Module[] = []) {
         const instanceWrapper = this.scanForComponentInRelatedModules(module, name, context);
         if (!isNil(instanceWrapper)) {
             return instanceWrapper;
@@ -185,11 +185,14 @@ export class Injector {
 
         (relatedModules as any[]).forEach((relatedModule) => {
             const { components, exports } = relatedModule;
-            if (!exports.has(name) || !components.has(name)) return;
-
+            const isInScope = context === null;
+            if ((!exports.has(name) && !isInScope) || !components.has(name)) {
+                return;
+            }
             component = components.get(name);
             if (!component.isResolved) {
-                this.loadInstanceOfComponent(component, relatedModule, [].concat(context, module));
+                const ctx = isInScope ? [module] : [].concat(context, module);
+                this.loadInstanceOfComponent(component, relatedModule, ctx);
             }
         });
         return component;

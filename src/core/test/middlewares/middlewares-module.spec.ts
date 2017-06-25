@@ -9,7 +9,9 @@ import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { Controller } from '../../../common/utils/decorators/controller.decorator';
 import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
-import { RoutesMapper } from "../../middlewares/routes-mapper";
+import { RoutesMapper } from '../../middlewares/routes-mapper';
+import { RouterExceptionFilters } from '../../router/router-exception-filters';
+import { ApplicationConfig } from '../../application-config';
 
 describe('MiddlewaresModule', () => {
     @Controller({ path: 'test' })
@@ -31,6 +33,12 @@ describe('MiddlewaresModule', () => {
             return (req, res, next) => {};
         }
     }
+
+    beforeEach(() => {
+        (MiddlewaresModule as any).routerExceptionFilter = new RouterExceptionFilters(
+            new ApplicationConfig(),
+        );
+    });
 
     describe('loadConfiguration', () => {
 

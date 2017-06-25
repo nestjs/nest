@@ -114,7 +114,7 @@ I am on a mission to provide an architecture to create truly flexible, scalable 
 
 [npm-image]: https://badge.fury.io/js/%40nestjs%2Fcore.svg
 [npm-url]: https://www.npmjs.com/~nestjscore
-[downloads-image]: https://img.shields.io/npm/dm/nest.js.svg
+[downloads-image]: https://img.shields.io/npm/dm/@nestjs/core.svg
 [downloads-url]: https://www.npmjs.com/~nestjscore
 [travis-image]: https://api.travis-ci.org/kamilmysliwiec/nest.svg?branch=master
 [travis-url]: https://travis-ci.org/kamilmysliwiec/nest

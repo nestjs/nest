@@ -8,7 +8,7 @@ describe('ClientTCP', () => {
         connect: sinon.SinonSpy,
         sendMessage: sinon.SinonSpy,
         on: sinon.SinonStub,
-        close: sinon.SinonSpy,
+        end: sinon.SinonSpy,
     };
     let createSocketStub: sinon.SinonStub;
 
@@ -17,7 +17,7 @@ describe('ClientTCP', () => {
             connect: sinon.spy(),
             sendMessage: sinon.spy(),
             on: sinon.stub().callsFake((event, callback) => event !== 'error' && event !== 'close' && callback({})),
-            close: sinon.spy(),
+            end: sinon.spy(),
         };
         createSocketStub = sinon.stub(client, 'createSocket').callsFake(() => socket);
     });
@@ -65,8 +65,8 @@ describe('ClientTCP', () => {
                 callback = sinon.spy();
                 client.handleResponse(socket, callback, { disposed: true });
             });
-            it('should close server', () => {
-                expect(socket.close.called).to.be.true;
+            it('should end server', () => {
+                expect(socket.end.called).to.be.true;
             });
             it('should emit disposed callback', () => {
                 expect(callback.called).to.be.true;
@@ -80,8 +80,8 @@ describe('ClientTCP', () => {
                 callback = sinon.spy();
                 client.handleResponse(socket, callback, buffer);
             });
-            it('should not close server', () => {
-                expect(socket.close.called).to.be.false;
+            it('should not end server', () => {
+                expect(socket.end.called).to.be.false;
             });
             it('should call callback with error and response data', () => {
                 expect(callback.called).to.be.true;
@@ -95,8 +95,8 @@ describe('ClientTCP', () => {
             (client as any).isConnected = true;
             client.close();
         });
-        it('should close() socket', () => {
-            expect(socket.close.called).to.be.true;
+        it('should end() socket', () => {
+            expect(socket.end.called).to.be.true;
         });
         it('should set "isConnected" to false', () => {
             expect((client as any).isConnected).to.be.false;
