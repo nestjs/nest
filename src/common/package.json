@@ -7,8 +7,12 @@
   "scripts": {
     "compile": "tsc -p tsconfig.json"
   },
+  "devDependencies": {
+    "@types/debug": "0.0.29"
+  },
   "dependencies": {
-    "cli-color": "1.1.0"
+    "cli-color": "1.1.0",
+    "debug": "2.6.8"
   },
   "peerDependencies": {
     "reflect-metadata": "0.1.10"
