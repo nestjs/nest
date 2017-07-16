@@ -6,49 +6,19 @@ import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { NestEnvironment } from '@nestjs/common/enums/nest-environment.enum';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { TestingModuleBuilder } from './testing-module.builder';
 
 export class Test {
-    private static container = new NestContainer();
-    private static scanner = new DependenciesScanner(Test.container);
-    private static instanceLoader = new InstanceLoader(Test.container);
+    private static metadataScanner = new MetadataScanner();
 
     public static createTestingModule(metadata: ModuleMetadata) {
         this.init();
-        const module = this.createModule(metadata);
-        this.scanner.scan(module);
-        this.instanceLoader.createInstancesOfDependencies();
-    }
-
-    public static get<T>(metatype: Metatype<T>): T {
-        const modules = this.container.getModules();
-        return this.findInstanceByPrototype<T>(metatype, modules);
-    }
-
-    public static restart() {
-        this.container.clear();
+        return new TestingModuleBuilder(this.metadataScanner, metadata);
     }
 
     private static init() {
         Logger.setMode(NestEnvironment.TEST);
-        this.restart();
-    }
-
-    private static findInstanceByPrototype<T>(metatype: Metatype<T>, modules) {
-        for (const [ _, module ] of modules) {
-            const dependencies = new Map([ ...module.components, ...module.routes ]);
-            const instanceWrapper = dependencies.get(metatype.name);
-
-            if (instanceWrapper) {
-                return (instanceWrapper as InstanceWrapper<any>).instance;
-            }
-        }
-        return null;
-    }
-
-    private static createModule(metadata) {
-        class TestModule {}
-        Module(metadata)(TestModule);
-        return TestModule;
     }
 }
 

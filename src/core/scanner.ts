@@ -2,13 +2,16 @@ import 'reflect-metadata';
 import { NestContainer } from './injector/container';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { metadata, EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
+import { metadata, EXCEPTION_FILTERS_METADATA, GUARDS_METADATA } from '@nestjs/common/constants';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { GATEWAY_MIDDLEWARES } from '@nestjs/websockets/constants';
+import { MetadataScanner } from '../core/metadata-scanner';
 
 export class DependenciesScanner {
-    constructor(private container: NestContainer) {}
+    constructor(
+        private readonly container: NestContainer,
+        private readonly metadataScanner: MetadataScanner) {}
 
     public scan(module: NestModuleMetatype) {
         this.scanForModules(module);
@@ -48,13 +51,24 @@ export class DependenciesScanner {
         const components = this.reflectMetadata(module, metadata.COMPONENTS);
         components.map((component) => {
             this.storeComponent(component, token);
-            this.reflectGatewaysMiddlewares(component, token);
+            this.reflectComponentMetadata(component, token);
         });
+    }
+
+    private reflectComponentMetadata(component: Metatype<Injectable>, token: string) {
+        this.reflectGatewaysMiddlewares(component, token);
     }
 
     private reflectControllers(module: NestModuleMetatype, token: string) {
         const routes = this.reflectMetadata(module, metadata.CONTROLLERS);
-        routes.map((route) => this.storeRoute(route, token));
+        routes.map((route) => {
+            this.storeRoute(route, token);
+            this.reflectControllersMetadata(route, token);
+        });
+    }
+
+    private reflectControllersMetadata(route: Metatype<Injectable>, token: string) {
+        this.reflectGuards(route, token);
     }
 
     private reflectExports(module: NestModuleMetatype, token: string) {
@@ -67,12 +81,28 @@ export class DependenciesScanner {
         middlewares.map((middleware) => this.storeComponent(middleware, token));
     }
 
+    private reflectGuards(component: Metatype<Injectable>, token: string) {
+        const controllerGuards = this.reflectMetadata(component, GUARDS_METADATA);
+        const methodsGuards = this.metadataScanner.scanFromPrototype(null, component.prototype,
+            (method: string) => {
+                const descriptor = Reflect.getOwnPropertyDescriptor(component.prototype, method);
+                return descriptor ? Reflect.getMetadata(GUARDS_METADATA, descriptor.value) : undefined;
+            },
+        );
+        const flattenMethodsGuards = methodsGuards.reduce((a, b) => a.concat(b), []);
+        [...controllerGuards, ...flattenMethodsGuards].map((guard) => this.storeInjectable(guard, token));
+    }
+
     private storeRelatedModule(related: NestModuleMetatype, token: string) {
         this.container.addRelatedModule(related, token);
     }
 
     private storeComponent(component: Metatype<Injectable>, token: string) {
         this.container.addComponent(component, token);
+    }
+
+    private storeInjectable(component: Metatype<Injectable>, token: string) {
+        this.container.addInjectable(component, token);
     }
 
     private storeExportedComponent(exportedComponent: Metatype<Injectable>, token: string) {
@@ -83,8 +113,8 @@ export class DependenciesScanner {
         this.container.addController(route, token);
     }
 
-    private reflectMetadata(module: NestModuleMetatype, metadata: string) {
-        return Reflect.getMetadata(metadata, module) || [];
+    private reflectMetadata(metatype, metadata: string) {
+        return Reflect.getMetadata(metadata, metatype) || [];
     }
 
 }

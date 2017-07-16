@@ -11,7 +11,7 @@ import { isUndefined, isNil, isFunction } from '@nestjs/common/utils/shared.util
 import { PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
 
 export class Injector {
-    public loadInstanceOfMiddleware(
+    public async loadInstanceOfMiddleware(
         wrapper: MiddlewareWrapper,
         collection: Map<string, MiddlewareWrapper>,
         module: Module) {
@@ -20,7 +20,7 @@ export class Injector {
         const currentMetatype = collection.get(metatype.name);
         if (currentMetatype.instance !== null) return;
 
-        this.resolveConstructorParams(wrapper as any, module, null, null, (instances) => {
+        await this.resolveConstructorParams(wrapper as any, module, null, null, (instances) => {
             collection.set(metatype.name, {
                 instance: new metatype(...instances),
                 metatype,
@@ -28,9 +28,14 @@ export class Injector {
         });
     }
 
-    public loadInstanceOfRoute(wrapper: InstanceWrapper<Controller>, module: Module) {
+    public async loadInstanceOfRoute(wrapper: InstanceWrapper<Controller>, module: Module) {
         const routes = module.routes;
-        this.loadInstance<Controller>(wrapper, routes, module);
+        await this.loadInstance<Controller>(wrapper, routes, module);
+    }
+
+    public async loadInstanceOfInjectable(wrapper: InstanceWrapper<Controller>, module: Module) {
+        const injectables = module.injectables;
+        await this.loadInstance<Controller>(wrapper, injectables, module);
     }
 
     public loadPrototypeOfInstance<T>({ metatype, name }: InstanceWrapper<T>, collection: Map<string, InstanceWrapper<T>>) {
@@ -45,33 +50,46 @@ export class Injector {
         });
     }
 
-    public loadInstanceOfComponent(wrapper: InstanceWrapper<Injectable>, module: Module, context: Module[] = []) {
+    public async loadInstanceOfComponent(wrapper: InstanceWrapper<Injectable>, module: Module, context: Module[] = []) {
         const components = module.components;
-        this.loadInstance<Injectable>(wrapper, components, module, context);
+        await this.loadInstance<Injectable>(wrapper, components, module, context);
     }
 
-    public loadInstance<T>(wrapper: InstanceWrapper<T>, collection, module: Module, context: Module[] = []) {
+    public applyDoneSubject<T>(wrapper: InstanceWrapper<T>): () => void {
+        let done: () => void;
+        wrapper.done$ = new Promise<void>((resolve, reject) => { done = resolve; });
+        wrapper.isPending = true;
+        return done;
+    }
+
+    public async loadInstance<T>(wrapper: InstanceWrapper<T>, collection, module: Module, context: Module[] = []) {
+        if (wrapper.isPending) {
+            return await wrapper.done$;
+        }
+        const done = this.applyDoneSubject(wrapper);
         const { metatype, name, inject } = wrapper;
         const currentMetatype = collection.get(name);
         if (isUndefined(currentMetatype)) {
-            throw new RuntimeException('');
+            throw new RuntimeException();
         }
 
         if (currentMetatype.isResolved) return;
-        this.resolveConstructorParams<T>(wrapper, module, inject, context, (instances) => {
+        await this.resolveConstructorParams<T>(wrapper, module, inject, context, async (instances) => {
             if (isNil(inject)) {
                 currentMetatype.instance = Object.assign(
                     currentMetatype.instance,
                     new metatype(...instances),
                 );
             } else {
-                currentMetatype.instance = currentMetatype.metatype(...instances);
+                const factoryResult = currentMetatype.metatype(...instances);
+                currentMetatype.instance = await this.resolveFactoryInstance(currentMetatype, factoryResult);
             }
             currentMetatype.isResolved = true;
+            done();
         });
     }
 
-    public resolveConstructorParams<T>(
+    public async resolveConstructorParams<T>(
         wrapper: InstanceWrapper<T>,
         module: Module,
         inject: any[],
@@ -81,14 +99,14 @@ export class Injector {
         let isResolved = true;
         const args = isNil(inject) ? this.reflectConstructorParams(wrapper.metatype) : inject;
 
-        const instances = args.map((param) => {
-            const paramWrapper = this.resolveSingleParam<T>(wrapper, param, module, context);
+        const instances = await Promise.all(args.map(async (param) => {
+            const paramWrapper = await this.resolveSingleParam<T>(wrapper, param, module, context);
             if (paramWrapper.isExported && !paramWrapper.isResolved) {
                 isResolved = false;
             }
             return paramWrapper.instance;
-        });
-        isResolved && callback(instances);
+        }));
+        isResolved && await callback(instances);
     }
 
     public reflectConstructorParams<T>(type: Metatype<T>): any[] {
@@ -103,7 +121,7 @@ export class Injector {
         return Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, type) || [];
     }
 
-    public resolveSingleParam<T>(
+    public async resolveSingleParam<T>(
         wrapper: InstanceWrapper<T>,
         param: Metatype<any> | string | symbol,
         module: Module,
@@ -112,7 +130,7 @@ export class Injector {
         if (isUndefined(param)) {
             throw new RuntimeException();
         }
-        return this.resolveComponentInstance<T>(
+        return await this.resolveComponentInstance<T>(
             module,
             isFunction(param) ? (param as Metatype<any>).name : param,
             wrapper,
@@ -120,27 +138,30 @@ export class Injector {
         );
     }
 
-    public resolveComponentInstance<T>(module: Module, name: any, wrapper: InstanceWrapper<T>, context: Module[]) {
+    public async resolveComponentInstance<T>(module: Module, name: any, wrapper: InstanceWrapper<T>, context: Module[]) {
         const components = module.components;
-        const instanceWrapper = this.scanForComponent(components, name, module, wrapper, context);
+        const instanceWrapper = await this.scanForComponent(components, name, module, wrapper, context);
 
         if (!instanceWrapper.isResolved && !instanceWrapper.isExported) {
-            this.loadInstanceOfComponent(components.get(name), module);
+            await this.loadInstanceOfComponent(instanceWrapper, module);
+        }
+        if (instanceWrapper.async) {
+            instanceWrapper.instance = await instanceWrapper.instance;
         }
         return instanceWrapper;
     }
 
-    public scanForComponent(components: Map<string, any>, name: any, module: Module, { metatype }, context: Module[] = []) {
-        const component = this.scanForComponentInScopes(context, name, metatype);
+    public async scanForComponent(components: Map<string, any>, name: any, module: Module, { metatype }, context: Module[] = []) {
+        const component = await this.scanForComponentInScopes(context, name, metatype);
         if (component) {
             return component;
         }
         const scanInExports = () => this.scanForComponentInExports(components, name, module, metatype, context);
-        return components.has(name) ? components.get(name) : scanInExports();
+        return components.has(name) ? components.get(name) : await scanInExports();
     }
 
-    public scanForComponentInExports(components: Map<string, any>, name: any, module: Module, metatype, context: Module[] = []) {
-        const instanceWrapper = this.scanForComponentInRelatedModules(module, name, context);
+    public async scanForComponentInExports(components: Map<string, any>, name: any, module: Module, metatype, context: Module[] = []) {
+        const instanceWrapper = await this.scanForComponentInRelatedModules(module, name, context);
         if (!isNil(instanceWrapper)) {
             return instanceWrapper;
         }
@@ -155,22 +176,22 @@ export class Injector {
         };
     }
 
-    public scanForComponentInScopes(context: Module[], name: any, metatype) {
+    public async scanForComponentInScopes(context: Module[], name: any, metatype) {
         context = context || [];
         for (const ctx of context) {
-            const component = this.scanForComponentInScope(ctx, name, metatype);
+            const component = await this.scanForComponentInScope(ctx, name, metatype);
             if (component) return component;
         }
         return null;
     }
 
-    public scanForComponentInScope(context: Module, name: any, metatype) {
+    public async scanForComponentInScope(context: Module, name: any, metatype) {
         try {
-            const component = this.scanForComponent(
+            const component = await this.scanForComponent(
                 context.components, name, context, { metatype }, null,
             );
             if (!component.isResolved) {
-                this.loadInstanceOfComponent(component, context);
+                await this.loadInstanceOfComponent(component, context);
             }
             return component;
         }
@@ -179,23 +200,32 @@ export class Injector {
         }
     }
 
-    public scanForComponentInRelatedModules(module: Module, name: any, context: Module[]) {
+    public async scanForComponentInRelatedModules(module: Module, name: any, context: Module[]) {
         const relatedModules = module.relatedModules || [];
         let component = null;
 
-        (relatedModules as any[]).forEach((relatedModule) => {
+        Promise.all([...relatedModules.values()].map(async (relatedModule) => {
             const { components, exports } = relatedModule;
             const isInScope = context === null;
             if ((!exports.has(name) && !isInScope) || !components.has(name)) {
                 return;
             }
             component = components.get(name);
+
             if (!component.isResolved) {
                 const ctx = isInScope ? [module] : [].concat(context, module);
-                this.loadInstanceOfComponent(component, relatedModule, ctx);
+                await this.loadInstanceOfComponent(component, relatedModule, ctx);
             }
-        });
+        }));
         return component;
+    }
+
+    public async resolveFactoryInstance(currentMetatype, factoryResult): Promise<any> {
+        if (!(factoryResult instanceof Promise)) {
+            return factoryResult;
+        }
+        const result = await factoryResult;
+        return result;
     }
 
 }

@@ -1,0 +1,215 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+require("reflect-metadata");
+const unknown_dependencies_exception_1 = require("../errors/exceptions/unknown-dependencies.exception");
+const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
+const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const constants_1 = require("@nestjs/common/constants");
+class Injector {
+    loadInstanceOfMiddleware(wrapper, collection, module) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { metatype } = wrapper;
+            const currentMetatype = collection.get(metatype.name);
+            if (currentMetatype.instance !== null)
+                return;
+            yield this.resolveConstructorParams(wrapper, module, null, null, (instances) => {
+                collection.set(metatype.name, {
+                    instance: new metatype(...instances),
+                    metatype,
+                });
+            });
+        });
+    }
+    loadInstanceOfRoute(wrapper, module) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const routes = module.routes;
+            yield this.loadInstance(wrapper, routes, module);
+        });
+    }
+    loadInstanceOfInjectable(wrapper, module) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const injectables = module.injectables;
+            yield this.loadInstance(wrapper, injectables, module);
+        });
+    }
+    loadPrototypeOfInstance({ metatype, name }, collection) {
+        if (!collection)
+            return;
+        const target = collection.get(name);
+        if (target.isResolved || !shared_utils_1.isNil(target.inject))
+            return;
+        collection.set(name, Object.assign({}, collection.get(name), { instance: Object.create(metatype.prototype) }));
+    }
+    loadInstanceOfComponent(wrapper, module, context = []) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const components = module.components;
+            yield this.loadInstance(wrapper, components, module, context);
+        });
+    }
+    applyDoneSubject(wrapper) {
+        let done;
+        wrapper.done$ = new Promise((resolve, reject) => { done = resolve; });
+        wrapper.isPending = true;
+        return done;
+    }
+    loadInstance(wrapper, collection, module, context = []) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (wrapper.isPending) {
+                return yield wrapper.done$;
+            }
+            const done = this.applyDoneSubject(wrapper);
+            const { metatype, name, inject } = wrapper;
+            const currentMetatype = collection.get(name);
+            if (shared_utils_1.isUndefined(currentMetatype)) {
+                throw new runtime_exception_1.RuntimeException();
+            }
+            if (currentMetatype.isResolved)
+                return;
+            yield this.resolveConstructorParams(wrapper, module, inject, context, (instances) => __awaiter(this, void 0, void 0, function* () {
+                if (shared_utils_1.isNil(inject)) {
+                    currentMetatype.instance = Object.assign(currentMetatype.instance, new metatype(...instances));
+                }
+                else {
+                    const factoryResult = currentMetatype.metatype(...instances);
+                    currentMetatype.instance = yield this.resolveFactoryInstance(currentMetatype, factoryResult);
+                }
+                currentMetatype.isResolved = true;
+                done();
+            }));
+        });
+    }
+    resolveConstructorParams(wrapper, module, inject, context, callback) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let isResolved = true;
+            const args = shared_utils_1.isNil(inject) ? this.reflectConstructorParams(wrapper.metatype) : inject;
+            const instances = yield Promise.all(args.map((param) => __awaiter(this, void 0, void 0, function* () {
+                const paramWrapper = yield this.resolveSingleParam(wrapper, param, module, context);
+                if (paramWrapper.isExported && !paramWrapper.isResolved) {
+                    isResolved = false;
+                }
+                return paramWrapper.instance;
+            })));
+            isResolved && (yield callback(instances));
+        });
+    }
+    reflectConstructorParams(type) {
+        const paramtypes = Reflect.getMetadata(constants_1.PARAMTYPES_METADATA, type) || [];
+        const selfParams = this.reflectSelfParams(type);
+        selfParams.forEach(({ index, param }) => paramtypes[index] = param);
+        return paramtypes;
+    }
+    reflectSelfParams(type) {
+        return Reflect.getMetadata(constants_1.SELF_DECLARED_DEPS_METADATA, type) || [];
+    }
+    resolveSingleParam(wrapper, param, module, context) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (shared_utils_1.isUndefined(param)) {
+                throw new runtime_exception_1.RuntimeException();
+            }
+            return yield this.resolveComponentInstance(module, shared_utils_1.isFunction(param) ? param.name : param, wrapper, context);
+        });
+    }
+    resolveComponentInstance(module, name, wrapper, context) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const components = module.components;
+            const instanceWrapper = yield this.scanForComponent(components, name, module, wrapper, context);
+            if (!instanceWrapper.isResolved && !instanceWrapper.isExported) {
+                yield this.loadInstanceOfComponent(instanceWrapper, module);
+            }
+            if (instanceWrapper.async) {
+                instanceWrapper.instance = yield instanceWrapper.instance;
+            }
+            return instanceWrapper;
+        });
+    }
+    scanForComponent(components, name, module, { metatype }, context = []) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const component = yield this.scanForComponentInScopes(context, name, metatype);
+            if (component) {
+                return component;
+            }
+            const scanInExports = () => this.scanForComponentInExports(components, name, module, metatype, context);
+            return components.has(name) ? components.get(name) : yield scanInExports();
+        });
+    }
+    scanForComponentInExports(components, name, module, metatype, context = []) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const instanceWrapper = yield this.scanForComponentInRelatedModules(module, name, context);
+            if (!shared_utils_1.isNil(instanceWrapper)) {
+                return instanceWrapper;
+            }
+            const { exports } = module;
+            if (!exports.has(metatype.name)) {
+                throw new unknown_dependencies_exception_1.UnknownDependenciesException(metatype.name);
+            }
+            return {
+                instance: null,
+                isResolved: false,
+                isExported: true,
+            };
+        });
+    }
+    scanForComponentInScopes(context, name, metatype) {
+        return __awaiter(this, void 0, void 0, function* () {
+            context = context || [];
+            for (const ctx of context) {
+                const component = yield this.scanForComponentInScope(ctx, name, metatype);
+                if (component)
+                    return component;
+            }
+            return null;
+        });
+    }
+    scanForComponentInScope(context, name, metatype) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const component = yield this.scanForComponent(context.components, name, context, { metatype }, null);
+                if (!component.isResolved) {
+                    yield this.loadInstanceOfComponent(component, context);
+                }
+                return component;
+            }
+            catch (e) {
+                return null;
+            }
+        });
+    }
+    scanForComponentInRelatedModules(module, name, context) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const relatedModules = module.relatedModules || [];
+            let component = null;
+            Promise.all([...relatedModules.values()].map((relatedModule) => __awaiter(this, void 0, void 0, function* () {
+                const { components, exports } = relatedModule;
+                const isInScope = context === null;
+                if ((!exports.has(name) && !isInScope) || !components.has(name)) {
+                    return;
+                }
+                component = components.get(name);
+                if (!component.isResolved) {
+                    const ctx = isInScope ? [module] : [].concat(context, module);
+                    yield this.loadInstanceOfComponent(component, relatedModule, ctx);
+                }
+            })));
+            return component;
+        });
+    }
+    resolveFactoryInstance(currentMetatype, factoryResult) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!(factoryResult instanceof Promise)) {
+                return factoryResult;
+            }
+            const result = yield factoryResult;
+            return result;
+        });
+    }
+}
+exports.Injector = Injector;
+//# sourceMappingURL=injector.js.map

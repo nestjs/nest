@@ -12,6 +12,7 @@ import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { MiddlewaresInjector } from './middlewares-injector';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { WsContextCreator } from './context/ws-context-creator';
 
 export class WebSocketsController {
     private readonly metadataExplorer = new GatewayMetadataExplorer(new MetadataScanner());
@@ -20,7 +21,8 @@ export class WebSocketsController {
     constructor(
         private readonly socketServerProvider: SocketServerProvider,
         private readonly container: NestContainer,
-        private readonly config: ApplicationConfig) {
+        private readonly config: ApplicationConfig,
+        private readonly contextCreator: WsContextCreator) {
             this.middlewaresInjector = new MiddlewaresInjector(container, config);
         }
 
@@ -35,7 +37,11 @@ export class WebSocketsController {
     }
 
     public subscribeObservableServer(instance: NestGateway, namespace: string, port: number, module: string) {
-        const messageHandlers = this.metadataExplorer.explore(instance);
+        const plainMessageHandlers = this.metadataExplorer.explore(instance);
+        const messageHandlers = plainMessageHandlers.map(({ callback, message }) => ({
+            message,
+            callback: this.contextCreator.create(instance, callback, module),
+        }));
         const observableServer = this.socketServerProvider.scanForSocketServer(namespace, port);
 
         this.injectMiddlewares(observableServer, instance, module);

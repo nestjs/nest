@@ -33,24 +33,23 @@ export class NestApplication implements INestApplication {
         );
     }
 
-    public setupModules() {
+    public async setupModules() {
         SocketModule.setup(this.container, this.config);
-        MiddlewaresModule.setup(this.container, this.config);
+        MicroservicesModule.setup(this.container);
         MicroservicesModule.setupClients(this.container);
+        await MiddlewaresModule.setup(this.container, this.config);
     }
 
-    public init() {
-        this.setupModules();
+    public async init() {
+        await this.setupModules();
 
         const router = ExpressAdapter.createRouter();
-        this.setupMiddlewares(router);
+        await this.setupMiddlewares(router);
         this.setupRoutes(router);
 
-        this.express.use(
-            validatePath(this.config.getGlobalPrefix()),
-            router,
-        );
+        this.express.use(validatePath(this.config.getGlobalPrefix()), router);
         this.callInitHook();
+
         this.logger.log(messages.APPLICATION_READY);
         this.isInitialized = true;
     }
@@ -72,8 +71,8 @@ export class NestApplication implements INestApplication {
         Promise.all(this.microservices.map(this.listenToPromise)).then(callback);
     }
 
-    public listen(port: number, callback?: () => void) {
-        (!this.isInitialized) && this.init();
+    public async listen(port: number, callback?: () => void) {
+        (!this.isInitialized) && await this.init();
 
         this.server = this.express.listen(port, callback);
         return this.server;
@@ -106,8 +105,8 @@ export class NestApplication implements INestApplication {
         this.config.useGlobalPipes(...pipes);
     }
 
-    private setupMiddlewares(instance) {
-        MiddlewaresModule.setupMiddlewares(instance);
+    private async setupMiddlewares(instance) {
+        await MiddlewaresModule.setupMiddlewares(instance);
     }
 
     private setupRoutes(instance) {

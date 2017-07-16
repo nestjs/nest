@@ -7,6 +7,8 @@ import { HttpStatus } from '../../../src/common/index';
 import { UseFilters } from '../../../src/common/utils/decorators/exception-filters.decorator';
 import { CustomExceptionFilter } from '../../common/exception.filter';
 import { ValidatorPipe } from '../../common/validator.pipe';
+import { UseGuards } from '@nestjs/common';
+import { RolesGuard } from './roles.guard';
 
 @Controller('users')
 @UseFilters(new CustomExceptionFilter())
@@ -14,6 +16,7 @@ export class UsersController {
     constructor(private usersService: UsersService) {}
 
     @Get()
+    @UseGuards(RolesGuard)
     public async getAllUsers(@Res() res: Response) {
         const users = await this.usersService.getAllUsers();
         res.status(HttpStatus.OK).json(users);

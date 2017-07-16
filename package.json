@@ -54,9 +54,9 @@
     "opencollective": "^1.0.3",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
-    "rxjs": "^5.4.0",
+    "rxjs": "^5.4.2",
     "socket.io": "^1.7.2",
-    "typescript": "^2.2.1"
+    "typescript": "^2.4.1"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
@@ -84,7 +84,7 @@
     "nyc": "^10.1.2",
     "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
-    "ts-node": "^2.0.0"
+    "ts-node": "^3.2.0"
   },
   "collective": {
     "type": "opencollective",

@@ -1,0 +1,33 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+require("reflect-metadata");
+const constants_1 = require("../../constants");
+const route_paramtypes_enum_1 = require("../../enums/route-paramtypes.enum");
+const assignMetadata = (args, paramtype, index, data, ...pipes) => (Object.assign({}, args, { [`${paramtype}:${index}`]: {
+        index,
+        data,
+        pipes,
+    } }));
+const createRouteParamDecorator = (paramtype) => {
+    return (data) => (target, key, index) => {
+        const args = Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, target, key) || {};
+        Reflect.defineMetadata(constants_1.ROUTE_ARGS_METADATA, assignMetadata(args, paramtype, index, data), target, key);
+    };
+};
+const createRouteParamDecoratorWithPipes = (paramtype) => {
+    return (data, ...pipes) => (target, key, index) => {
+        const args = Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, target, key) || {};
+        Reflect.defineMetadata(constants_1.ROUTE_ARGS_METADATA, assignMetadata(args, paramtype, index, data, ...pipes), target, key);
+    };
+};
+exports.Request = createRouteParamDecorator(route_paramtypes_enum_1.RouteParamtypes.REQUEST);
+exports.Response = createRouteParamDecorator(route_paramtypes_enum_1.RouteParamtypes.RESPONSE);
+exports.Next = createRouteParamDecorator(route_paramtypes_enum_1.RouteParamtypes.NEXT);
+exports.Session = createRouteParamDecorator(route_paramtypes_enum_1.RouteParamtypes.SESSION);
+exports.Headers = createRouteParamDecorator(route_paramtypes_enum_1.RouteParamtypes.HEADERS);
+exports.Query = createRouteParamDecoratorWithPipes(route_paramtypes_enum_1.RouteParamtypes.QUERY);
+exports.Body = createRouteParamDecoratorWithPipes(route_paramtypes_enum_1.RouteParamtypes.BODY);
+exports.Param = createRouteParamDecoratorWithPipes(route_paramtypes_enum_1.RouteParamtypes.PARAM);
+exports.Req = exports.Request;
+exports.Res = exports.Response;
+//# sourceMappingURL=route-params.decorator.js.map

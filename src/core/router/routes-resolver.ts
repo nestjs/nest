@@ -24,11 +24,8 @@ export class RoutesResolver implements Resolver {
 
         this.routerExceptionsFilter = new RouterExceptionFilters(config);
         this.routerBuilder = new ExpressRouterExplorer(
-            new MetadataScanner(),
-            this.routerProxy,
-            expressAdapter,
-            this.routerExceptionsFilter,
-            config,
+            new MetadataScanner(), this.routerProxy, expressAdapter,
+            this.routerExceptionsFilter, config, this.container,
         );
     }
 
@@ -45,8 +42,18 @@ export class RoutesResolver implements Resolver {
         routes.forEach(({ instance, metatype }) => {
             this.logger.log(ControllerMappingMessage(metatype.name));
 
-            const { path, router } = this.routerBuilder.explore(instance, metatype);
+            const { path, router } = this.routerBuilder.explore(instance, metatype, moduleName);
             express.use(path, router);
         });
+        this.setupExceptionHandler(express);
+    }
+
+    public setupExceptionHandler(express: Application) {
+        const callback = (err, req, res, next) => {
+            throw err;
+        };
+        const exceptionHandler = this.routerExceptionsFilter.create({}, callback as any);
+        const proxy = this.routerProxy.createExceptionLayerProxy(callback, exceptionHandler);
+        express.use(proxy);
     }
 }

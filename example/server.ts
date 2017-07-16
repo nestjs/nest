@@ -9,14 +9,15 @@ const port = 3001;
 const server = express();
 server.use(bodyParser.json());
 
-const app = NestFactory.create(ApplicationModule, server);
-const microservice = app.connectMicroservice({
-    transport: Transport.TCP,
+NestFactory.create(ApplicationModule, server).then(async (app) => {
+    const microservice = app.connectMicroservice({
+        transport: Transport.TCP,
+    });
+    app.useGlobalPipes(new ValidatorPipe());
+    app.startAllMicroservices(() => console.log('All microservices are listening...'));
+    await app.listen(port, () => {
+        console.log('Application listen on port:', port);
+        //app.close();
+    });
 });
 
-app.useGlobalPipes(new ValidatorPipe());
-app.startAllMicroservices(() => console.log('All microservices are listening...'));
-app.listen(port, () => {
-    console.log('Application listen on port:', port);
-    app.close();
-});

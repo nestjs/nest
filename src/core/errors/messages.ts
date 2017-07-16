@@ -7,6 +7,9 @@ export const UnknownDependenciesMessage = (type: string) =>
 export const UnknownExportMessage = (name: string) =>
     `You are trying to export unknown component (${name}). Remember - your component should be listed both in exports and components arrays!`;
 
+export const InvalidModuleScope = (name: string) =>
+    `You are trying to override component in unrecognized scope (module - ${name})`;
+
 export const INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuration passed in module 'configure()' method.`;
 export const UNKNOWN_REQUEST_MAPPING = `Request mapping properties not defined in @RequestMapping() annotation!`;
 export const UNHANDLED_RUNTIME_EXCEPTION = `Unhandled Nest application Runtime Exception.`;

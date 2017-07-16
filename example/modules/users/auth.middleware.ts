@@ -7,7 +7,7 @@ import { NestMiddleware } from '../../../src/common/interfaces/middlewares/nest-
 export class AuthMiddleware implements NestMiddleware {
     constructor(private usersService: UsersService) {}
 
-    public resolve(): (req, res, next) => void {
+    public resolve(): (req?, res?, next?) => Promise<void> {
         return async (req, res, next) => {
             const username = req.headers['x-access-token'];
             const users = await this.usersService.getAllUsers();

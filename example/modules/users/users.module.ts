@@ -1,4 +1,4 @@
-import { Module, Shared } from './../../../src/';
+import { Module, Shared, Inject } from './../../../src/';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { AuthMiddleware } from './auth.middleware';
@@ -14,6 +14,12 @@ import { ChatGateway } from './chat.gateway';
 })
 export class UsersModule implements NestModule {
     public configure(consumer: MiddlewaresConsumer) {
-        consumer.apply(AuthMiddleware).forRoutes(UsersController);
+        consumer
+            .apply(AuthMiddleware).forRoutes(UsersController)
+            .apply((req, res, next) => {
+                console.log('Functional middleware');
+                return next();
+            })
+            .forRoutes(UsersController);
     }
 }

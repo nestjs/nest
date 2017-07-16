@@ -1,0 +1,1 @@
+{"version":3,"file":"express-adapter.js","sourceRoot":"","sources":["../../../../src/core/adapters/express-adapter.ts"],"names":[],"mappings":";;AAAA,mCAAmC;AAEnC;IACW,MAAM,CAAC,MAAM;QAChB,MAAM,CAAC,OAAO,EAAE,CAAC;IACrB,CAAC;IAEM,MAAM,CAAC,YAAY;QACtB,MAAM,CAAC,OAAO,CAAC,MAAM,EAAE,CAAC;IAC5B,CAAC;CACJ;AARD,wCAQC"}

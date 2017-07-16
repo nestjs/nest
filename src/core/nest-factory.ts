@@ -11,25 +11,28 @@ import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices/interfaces/microservice-configuration.interface';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
+import { MetadataScanner } from './metadata-scanner';
 
 export class NestFactory {
     private static container = new NestContainer();
-    private static dependenciesScanner = new DependenciesScanner(NestFactory.container);
     private static instanceLoader = new InstanceLoader(NestFactory.container);
     private static logger = new Logger(NestFactory.name);
+    private static dependenciesScanner = new DependenciesScanner(
+        NestFactory.container, new MetadataScanner(),
+    );
 
-    public static create(
-        module: NestModuleMetatype,
-        express = ExpressAdapter.create()): INestApplication {
-
-        this.initialize(module);
+    public static async create(module, express = ExpressAdapter.create()): Promise<INestApplication> {
+        await this.initialize(module);
         return this.createNestInstance<NestApplication>(
             new NestApplication(this.container, express),
         );
     }
 
-    public static createMicroservice(module: NestModuleMetatype, config?: MicroserviceConfiguration): INestMicroservice {
-        this.initialize(module);
+    public static async createMicroservice(
+        module,
+        config?: MicroserviceConfiguration): Promise<INestMicroservice> {
+
+        await this.initialize(module);
         return this.createNestInstance<NestMicroservice>(
             new NestMicroservice(this.container, config),
         );
@@ -39,11 +42,11 @@ export class NestFactory {
         return this.createProxy(instance);
     }
 
-    private static initialize(module: NestModuleMetatype) {
+    private static async initialize(module) {
         this.logger.log(messages.APPLICATION_START);
-        ExceptionsZone.run(() => {
+        await ExceptionsZone.asyncRun(async () => {
             this.dependenciesScanner.scan(module);
-            this.instanceLoader.createInstancesOfDependencies();
+            await this.instanceLoader.createInstancesOfDependencies();
         });
     }
 

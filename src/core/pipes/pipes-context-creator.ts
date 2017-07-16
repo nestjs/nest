@@ -7,7 +7,7 @@ import { ApplicationConfig } from './../application-config';
 import { ContextCreator } from './../helpers/context-creator';
 
 export class PipesContextCreator extends ContextCreator {
-    constructor(private readonly config: ApplicationConfig) {
+    constructor(private readonly config?: ApplicationConfig) {
         super();
     }
 
@@ -15,16 +15,19 @@ export class PipesContextCreator extends ContextCreator {
         return this.createContext(instance, callback, PIPES_METADATA);
     }
 
-    public createConcreteContext(metadata: PipeTransform[]): Transform<any>[] {
+    public createConcreteContext<T extends any[], R extends any[]>(metadata: T): R {
         if (isUndefined(metadata) || isEmpty(metadata)) {
-            return [];
+            return [] as R;
         }
         return iterate(metadata).filter((pipe) => pipe && pipe.transform && isFunction(pipe.transform))
                 .map((pipe) => pipe.transform.bind(pipe))
-                .toArray();
+                .toArray() as R;
     }
 
-    public getGlobalMetadata(): PipeTransform[] {
-        return this.config.getGlobalPipes();
+    public getGlobalMetadata<T extends any[]>(): T {
+        if (!this.config) {
+            return [] as T;
+        }
+        return this.config.getGlobalPipes() as T;
     }
 }

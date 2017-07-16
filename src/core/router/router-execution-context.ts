@@ -7,7 +7,11 @@ import { RouteParamsMetadata } from '@nestjs/common/utils';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 import { PipesContextCreator } from './../pipes/pipes-context-creator';
 import { PipesConsumer } from './../pipes/pipes-consumer';
-import { ParamData, PipeTransform } from '@nestjs/common';
+import { ParamData, PipeTransform, HttpStatus } from '@nestjs/common';
+import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { GuardsConsumer } from '../guards/guards-consumer';
+import { FORBIDDEN_MESSAGE } from '../guards/constants';
+import { HttpException } from '../index';
 
 export interface ParamProperties {
     index: number;
@@ -21,9 +25,11 @@ export class RouterExecutionContext {
     constructor(
         private readonly paramsFactory: IRouteParamsFactory,
         private readonly pipesContextCreator: PipesContextCreator,
-        private readonly pipesConsumer: PipesConsumer) {}
+        private readonly pipesConsumer: PipesConsumer,
+        private readonly guardsContextCreator: GuardsContextCreator,
+        private readonly guardsConsumer: GuardsConsumer) {}
 
-    public create(instance: Controller, callback: (...args) => any) {
+    public create(instance: Controller, callback: (...args) => any, module: string) {
         const metadata = this.reflectCallbackMetadata(instance, callback);
         if (isUndefined(metadata)) {
             return callback.bind(instance);
@@ -33,10 +39,14 @@ export class RouterExecutionContext {
         const args = this.createNullArray(argsLength);
         const pipes = this.pipesContextCreator.create(instance, callback);
         const paramtypes = this.reflectCallbackParamtypes(instance, callback);
+        const guards = this.guardsContextCreator.create(instance, callback, module);
 
         return async (req, res, next) => {
             const paramProperties = this.exchangeKeysForValues(keys, metadata, { req, res, next });
-
+            const canActivate = await this.guardsConsumer.tryActivate(guards, req, instance, callback);
+            if (!canActivate) {
+                throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
+            }
             for (const param of paramProperties) {
                 const { index, value, type, data, pipes: paramPipes } = param;
                 args[index] = await this.getParamValue(
@@ -76,9 +86,7 @@ export class RouterExecutionContext {
             const paramMetadata = metadata[key];
             const { index, data, pipes } = paramMetadata;
 
-            return {
-                index,
-                value: this.paramsFactory.exchangeKeyForValue(
+            return { index, value: this.paramsFactory.exchangeKeyForValue(
                     type,
                     data,
                     { req, res, next },

@@ -27,6 +27,7 @@ export class NestMicroservice implements INestMicroservice {
         private container: NestContainer,
         config: MicroserviceConfiguration) {
 
+        MicroservicesModule.setup(container);
         this.microserviceConfig = {
             transport: Transport.TCP,
             ...config,

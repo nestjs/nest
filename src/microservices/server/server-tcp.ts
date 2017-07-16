@@ -33,18 +33,19 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
 
     public bindHandler(socket) {
         const sock = this.getSocketInstance(socket);
-        sock.on(MESSAGE_EVENT, msg => this.handleMessage(sock, msg));
+        sock.on(MESSAGE_EVENT, async msg => await this.handleMessage(sock, msg));
     }
 
-    public handleMessage(socket, msg: { pattern: any, data: {} }) {
+    public async handleMessage(socket, msg: { pattern: any, data: {} }) {
         const pattern = JSON.stringify(msg.pattern);
+        const status = 'error';
         if (!this.messageHandlers[pattern]) {
-            socket.sendMessage({ err: NO_PATTERN_MESSAGE });
+            socket.sendMessage({ status, error: NO_PATTERN_MESSAGE });
             return;
         }
 
         const handler = this.messageHandlers[pattern];
-        const response$ = handler(msg.data) as Observable<any>;
+        const response$ = await handler(msg.data) as Observable<any>;
         response$ && this.send(response$, socket.sendMessage.bind(socket));
     }
 

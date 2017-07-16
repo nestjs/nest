@@ -4,10 +4,7 @@ import { WebSocketServer } from '../../../src/websockets/utils/gateway-server.de
 import { OnGatewayInit, OnGatewayConnection } from '../../../src/websockets/index';
 import { ChatMiddleware } from './chat.middleware';
 
-@WebSocketGateway({
-    port: 2000,
-    middlewares: [ChatMiddleware],
-})
+@WebSocketGateway(2000)
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection {
     @WebSocketServer() private server;
 

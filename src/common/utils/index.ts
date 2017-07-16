@@ -9,5 +9,7 @@ export * from './decorators/catch.decorator';
 export * from './decorators/exception-filters.decorator';
 export * from './decorators/shared.decorator';
 export * from './decorators/use-pipes.decorator';
+export * from './decorators/use-guards.decorator';
 export { Component as Middleware } from './decorators/component.decorator';
 export { Component as Pipe } from './decorators/component.decorator';
+export { Component as Guard } from './decorators/component.decorator';

@@ -15,3 +15,6 @@ export * from './middlewares';
 export * from './web-socket-adapter.interface';
 export * from './pipe-transform.interface';
 export * from './paramtype.interface';
+export * from './can-activate.interface';
+export * from './exceptions/rpc-exception-filter.interface';
+export * from './exceptions/ws-exception-filter.interface';

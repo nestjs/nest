@@ -1,11 +1,12 @@
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middlewares/middleware-configuration.interface';
 import { InvalidMiddlewareConfigurationException } from '../errors/exceptions/invalid-middleware-configuration.exception';
-import { isUndefined, isNil } from '@nestjs/common/utils/shared.utils';
+import { isUndefined, isNil, isFunction } from '@nestjs/common/utils/shared.utils';
 import { BindResolveMiddlewareValues } from '@nestjs/common/utils/bind-resolve-values.util';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { Metatype, MiddlewaresConsumer } from '@nestjs/common/interfaces';
 import { MiddlewareConfigProxy } from '@nestjs/common/interfaces/middlewares';
 import { RoutesMapper } from './routes-mapper';
+import { NestMiddleware } from '@nestjs/common';
 
 export class MiddlewareBuilder implements MiddlewaresConsumer {
     private readonly middlewaresCollection = new Set<MiddlewareConfiguration>();
@@ -13,8 +14,8 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
 
     constructor(private readonly routesMapper: RoutesMapper) {}
 
-    public apply(metatypes: Metatype<any> | Metatype<any>[]): MiddlewareConfigProxy {
-        return new MiddlewareBuilder.ConfigProxy(this, metatypes);
+    public apply(middlewares: any | any[]): MiddlewareConfigProxy {
+        return new MiddlewareBuilder.ConfigProxy(this, middlewares);
     }
 
     /**
@@ -34,7 +35,7 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
     }
 
     public build() {
-        return [ ...this.middlewaresCollection ];
+        return [...this.middlewaresCollection];
     }
 
     private bindValuesToResolve(middlewares: Metatype<any> | Metatype<any>[], resolveParams: any[]) {
@@ -47,10 +48,14 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
 
     private static ConfigProxy = class implements MiddlewareConfigProxy {
         private contextArgs = null;
+        private includedRoutes: any[];
 
         constructor(
             private readonly builder: MiddlewareBuilder,
-            private readonly includedRoutes: Metatype<any> | Metatype<any>[]) {}
+            middlewares,
+        ) {
+            this.includedRoutes = this.filterMiddlewares(middlewares);
+        }
 
         public with(...args): this {
             this.contextArgs = args;
@@ -76,5 +81,28 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
         private mapRoutesToFlatList(forRoutes) {
             return forRoutes.reduce((a, b) => a.concat(b));
         }
+
+        private filterMiddlewares(middlewares) {
+            return [].concat(middlewares)
+                .filter(isFunction)
+                .map((middleware) => {
+                    if (this.isClass(middleware)) {
+                        return middleware;
+                    }
+                    return AssignToken(class {
+                        public resolve = (...args) => (req, res, next) => middleware(req, res, next);
+                    });
+                });
+        }
+
+        private isClass(middleware) {
+            return middleware.toString().substring(0, 5) === 'class';
+        }
     };
 }
+
+const AssignToken = (metatype): Metatype<any> => {
+  this.id = this.id || 1;
+  Object.defineProperty(metatype, 'name', { value: ++this.id });
+  return metatype;
+};

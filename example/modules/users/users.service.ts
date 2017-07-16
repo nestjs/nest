@@ -1,5 +1,6 @@
 import { Component } from './../../../src/';
 import { HttpException } from '../../../src/core/exceptions/http-exception';
+import { Inject } from '../../../src/common/index';
 
 @Component()
 export class UsersService {

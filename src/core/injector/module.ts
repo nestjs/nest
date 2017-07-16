@@ -20,6 +20,7 @@ export type ComponentMetatype = Metatype<Injectable> | CustomFactory | CustomVal
 export class Module {
     private _relatedModules = new Set<Module>();
     private _components = new Map<any, InstanceWrapper<Injectable>>();
+    private _injectables = new Map<any, InstanceWrapper<Injectable>>();
     private _routes = new Map<string, InstanceWrapper<Controller>>();
     private _exports = new Set<string>();
 
@@ -41,6 +42,10 @@ export class Module {
 
     get components(): Map<string, InstanceWrapper<Injectable>> {
         return this._components;
+    }
+
+    get injectables(): Map<string, InstanceWrapper<Injectable>> {
+        return this._injectables;
     }
 
     get routes(): Map<string, InstanceWrapper<Controller>> {
@@ -79,6 +84,15 @@ export class Module {
             metatype: this._metatype,
             isResolved: false,
             instance: null,
+        });
+    }
+
+    public addInjectable(injectable: Metatype<Injectable>) {
+        this._injectables.set(injectable.name, {
+            name: injectable.name,
+            metatype: injectable,
+            instance: null,
+            isResolved: false,
         });
     }
 
@@ -142,6 +156,7 @@ export class Module {
             instance: value,
             isResolved: true,
             isNotMetatype: true,
+            async: value instanceof Promise,
         });
     }
 
@@ -183,6 +198,13 @@ export class Module {
 
     public addRelatedModule(relatedModule) {
         this._relatedModules.add(relatedModule);
+    }
+
+    public replace(toReplace, options) {
+        this.addComponent({
+            provide: toReplace,
+            ...options,
+        });
     }
 
     private getModuleRefMetatype(components) {

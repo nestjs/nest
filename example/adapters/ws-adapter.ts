@@ -2,7 +2,7 @@ import * as WebSocket from 'ws';
 import { WebSocketAdapter } from '@nestjs/common';
 import { MessageMappingProperties } from '@nestjs/websockets';
 
-class WsAdapter implements WebSocketAdapter {
+export class WsAdapter implements WebSocketAdapter {
     public create(port: number) {
         return new WebSocket.Server({ port });
     }
@@ -10,11 +10,11 @@ class WsAdapter implements WebSocketAdapter {
         server.on('connection', callback);
     }
     public bindMessageHandlers(client, handlers: MessageMappingProperties[]) {
-        client.on('message', (buffer) => {
+        client.on('message', async (buffer) => {
             const data = JSON.parse(buffer);
             const { type } = data;
             const messageHandler = handlers.find((handler) => handler.message === type);
-            messageHandler && messageHandler.callback(data);
+            messageHandler && await messageHandler.callback(data);
         });
     }
 }
