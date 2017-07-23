@@ -1,8 +1,10 @@
-[![Nest Logo](http://kamilmysliwiec.com/public/nest-logo.png)](http://kamilmysliwiec.com/)
-
-  Modern, powerful web application framework for [Node.js](http://nodejs.org).
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="http://kamilmysliwiec.com/public/nest-logo.png" alt="Nest Logo" /></a>
+</p>
+  <p align="center">Modern, powerful web application framework for <a href="http://nodejs.org" target="blank">Node.js</a>.</p>
 
   [![NPM Version][npm-image]][npm-url]
+  [![Package License][license-image]][npm-url]
   [![NPM Downloads][downloads-image]][downloads-url]
   [![Travis][travis-image]][travis-url]
   [![Linux][linux-image]][linux-url]
@@ -112,7 +114,8 @@ I am on a mission to provide an architecture to create truly flexible, scalable 
 
   [MIT](LICENSE)
 
-[npm-image]: https://badge.fury.io/js/%40nestjs%2Fcore.svg
+[license-image]: https://img.shields.io/npm/l/@nestjs/core.svg
+[npm-image]: https://img.shields.io/npm/v/@nestjs/core.svg
 [npm-url]: https://www.npmjs.com/~nestjscore
 [downloads-image]: https://img.shields.io/npm/dm/@nestjs/core.svg
 [downloads-url]: https://www.npmjs.com/~nestjscore
