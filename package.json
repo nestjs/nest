@@ -7,8 +7,7 @@
     "start": "nodemon -e ts --watch src index.js",
     "build": "node index.js",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "postinstall": "opencollective postinstall"
+    "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "nyc": {
     "include": [
