@@ -33,7 +33,7 @@ describe('RoutesResolver', () => {
     });
 
     describe('setupRouters', () => {
-        it('should method setup controllers to express application instance', () => {
+        it('should method setup controllers to router instance', () => {
             const routes = new Map();
             routes.set('TestRoute', {
                 instance: new TestRoute(),
@@ -41,10 +41,7 @@ describe('RoutesResolver', () => {
             });
 
             const use = sinon.spy();
-            const applicationMock = { use };
-
-            routesResolver.setupRouters(routes, '', applicationMock as any);
-            expect(use.calledOnce).to.be.true;
+            routesResolver.setupRouters(routes, '', { use } as any);
             expect(use.calledWith('/global', router)).to.be.true;
         });
 

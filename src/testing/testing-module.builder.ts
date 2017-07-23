@@ -26,14 +26,12 @@ export class TestingModuleBuilder {
         this.scanner.scan(this.module);
     }
 
+    public overrideGuard(typeOrToken): OverrideBy {
+        return this.override(typeOrToken, false);
+    }
+
     public overrideComponent(typeOrToken): OverrideBy {
-        const addOverload = (options) => {
-            this.overloadsMap.set(typeOrToken, {
-                ...options,
-            });
-            return this;
-        };
-        return this.createOverrideByBuilder(addOverload);
+        return this.override(typeOrToken, true);
     }
 
     public async compile(): Promise<TestingModule> {
@@ -45,6 +43,17 @@ export class TestingModuleBuilder {
         const modules = this.container.getModules().values();
         const root = modules.next().value;
         return new TestingModule(this.container, [], root);
+    }
+
+    private override(typeOrToken, isComponent: boolean): OverrideBy {
+        const addOverload = (options) => {
+            this.overloadsMap.set(typeOrToken, {
+                ...options,
+                isComponent,
+            });
+            return this;
+        };
+        return this.createOverrideByBuilder(addOverload);
     }
 
     private createOverrideByBuilder(add: (provider) => TestingModuleBuilder): OverrideBy {

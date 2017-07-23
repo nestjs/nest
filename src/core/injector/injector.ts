@@ -101,7 +101,7 @@ export class Injector {
 
         const instances = await Promise.all(args.map(async (param) => {
             const paramWrapper = await this.resolveSingleParam<T>(wrapper, param, module, context);
-            if (paramWrapper.isExported && !paramWrapper.isResolved) {
+            if (!paramWrapper.isResolved) {
                 isResolved = false;
             }
             return paramWrapper.instance;
@@ -142,7 +142,7 @@ export class Injector {
         const components = module.components;
         const instanceWrapper = await this.scanForComponent(components, name, module, wrapper, context);
 
-        if (!instanceWrapper.isResolved && !instanceWrapper.isExported) {
+        if (!instanceWrapper.isResolved) {
             await this.loadInstanceOfComponent(instanceWrapper, module);
         }
         if (instanceWrapper.async) {
@@ -162,18 +162,10 @@ export class Injector {
 
     public async scanForComponentInExports(components: Map<string, any>, name: any, module: Module, metatype, context: Module[] = []) {
         const instanceWrapper = await this.scanForComponentInRelatedModules(module, name, context);
-        if (!isNil(instanceWrapper)) {
-            return instanceWrapper;
-        }
-        const { exports } = module;
-        if (!exports.has(metatype.name)) {
+        if (isNil(instanceWrapper)) {
             throw new UnknownDependenciesException(metatype.name);
         }
-        return {
-            instance: null,
-            isResolved: false,
-            isExported: true,
-        };
+        return instanceWrapper;
     }
 
     public async scanForComponentInScopes(context: Module[], name: any, metatype) {

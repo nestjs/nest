@@ -37,4 +37,16 @@ describe('NestContainer', () => {
         expect(() => container.addExportedComponent(null, 'TestModule')).throw(UnknownModuleException);
     });
 
+    it('should "addInjectable" throw "UnknownModuleException" when module is not stored in collection', () => {
+        expect(() => container.addInjectable(null, 'TestModule')).throw(UnknownModuleException);
+    });
+
+    describe('clear', () => {
+        it('should call `clear` on modules collection', () => {
+            const clearSpy = sinon.spy((container as any).modules, 'clear');
+            container.clear();
+            expect(clearSpy.called).to.be.true;
+        });
+    });
+
 });

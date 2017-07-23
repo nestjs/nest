@@ -6,6 +6,9 @@ import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { ModuleTokenFactory } from '@nestjs/core/injector/module-token-factory';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { UnknownModuleException } from './errors/unknown-module.exception';
+import { NestApplication, NestMicroservice } from '@nestjs/core';
+import { INestApplication, INestMicroservice } from '@nestjs/common';
+import { MicroserviceConfiguration } from '@nestjs/microservices';
 
 export class TestingModule {
     private readonly moduleTokenFactory = new ModuleTokenFactory();
@@ -14,6 +17,14 @@ export class TestingModule {
         private readonly container: NestContainer,
         private readonly scope: NestModuleMetatype[],
         private readonly contextModule) {}
+
+    public createNestApplication(express?): INestApplication {
+        return new NestApplication(this.container, express);
+    }
+
+    public createNestMicroservice(config: MicroserviceConfiguration): INestMicroservice {
+        return new NestMicroservice(this.container, config);
+    }
 
     public select<T>(module: Metatype<T>): TestingModule {
         const modules = this.container.getModules();

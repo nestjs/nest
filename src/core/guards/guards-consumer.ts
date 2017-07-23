@@ -4,17 +4,12 @@ import { isUndefined, isFunction, isNil, isEmpty } from '@nestjs/common/utils/sh
 import { Controller } from '@nestjs/common/interfaces';
 import { CanActivate, HttpStatus } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/toPromise';
 import { HttpException } from '../index';
 import { FORBIDDEN_MESSAGE } from './constants';
+import 'rxjs/add/operator/toPromise';
 
 export class GuardsConsumer {
-    public async tryActivate(
-        guards: CanActivate[],
-        data: any,
-        instance: Controller,
-        callback: (...args) => any): Promise<boolean> {
-
+    public async tryActivate(guards: CanActivate[], data, instance: Controller, callback: (...args) => any): Promise<boolean> {
         if (!guards || isEmpty(guards)) {
             return true;
         }

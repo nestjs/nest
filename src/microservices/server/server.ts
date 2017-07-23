@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs/Subscription';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/finally';
 import 'rxjs/add/observable/empty';
+import 'rxjs/add/observable/of';
 
 export abstract class Server {
     protected readonly messageHandlers: MessageHandlers = {};

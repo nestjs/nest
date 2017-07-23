@@ -17,6 +17,7 @@ npm-debug.log
 # example
 /quick-start
 /example_dist
+/example
 
 # tests
 /test

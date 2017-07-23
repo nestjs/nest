@@ -88,6 +88,10 @@ export class Module {
     }
 
     public addInjectable(injectable: Metatype<Injectable>) {
+        if (this.isCustomProvider(injectable)) {
+            this.addCustomProvider(injectable, this._injectables);
+            return;
+        }
         this._injectables.set(injectable.name, {
             name: injectable.name,
             metatype: injectable,
@@ -97,8 +101,8 @@ export class Module {
     }
 
     public addComponent(component: ComponentMetatype) {
-        if (this.isCustomComponent(component)) {
-            this.addCustomComponent(component);
+        if (this.isCustomProvider(component)) {
+            this.addCustomProvider(component, this._components);
             return;
         }
         this._components.set((component as Metatype<Injectable>).name, {
@@ -109,11 +113,11 @@ export class Module {
         });
     }
 
-    public isCustomComponent(component: ComponentMetatype): component is CustomClass | CustomFactory | CustomValue  {
+    public isCustomProvider(component: ComponentMetatype): component is CustomClass | CustomFactory | CustomValue  {
         return !isNil((component as CustomComponent).provide);
     }
 
-    public addCustomComponent(component: CustomFactory | CustomValue | CustomClass) {
+    public addCustomProvider(component: CustomFactory | CustomValue | CustomClass, collection: Map<string, any>) {
         const { provide } = component;
         const name = isFunction(provide) ? provide.name : provide;
         const comp = {
@@ -121,9 +125,9 @@ export class Module {
             name,
         };
 
-        if (this.isCustomClass(comp)) this.addCustomClass(comp);
-        else if (this.isCustomValue(comp)) this.addCustomValue(comp);
-        else if (this.isCustomFactory(comp)) this.addCustomFactory(comp);
+        if (this.isCustomClass(comp)) this.addCustomClass(comp, collection);
+        else if (this.isCustomValue(comp)) this.addCustomValue(comp, collection);
+        else if (this.isCustomFactory(comp)) this.addCustomFactory(comp, collection);
     }
 
     public isCustomClass(component): component is CustomClass {
@@ -138,9 +142,9 @@ export class Module {
         return !isUndefined((component as CustomFactory).useFactory);
     }
 
-    public addCustomClass(component: CustomClass) {
+    public addCustomClass(component: CustomClass, collection: Map<string, any>) {
         const { provide, name, useClass } = component;
-        this._components.set(name, {
+        collection.set(name, {
             name,
             metatype: useClass,
             instance: null,
@@ -148,9 +152,9 @@ export class Module {
         });
     }
 
-    public addCustomValue(component: CustomValue) {
+    public addCustomValue(component: CustomValue, collection: Map<string, any>) {
         const { provide, name, useValue: value } = component;
-        this._components.set(name, {
+        collection.set(name, {
             name,
             metatype: null,
             instance: value,
@@ -160,9 +164,9 @@ export class Module {
         });
     }
 
-    public addCustomFactory(component: CustomFactory) {
+    public addCustomFactory(component: CustomFactory, collection: Map<string, any>) {
         const { provide, name, useFactory: factory, inject } = component;
-        this._components.set(name, {
+        collection.set(name, {
             name,
             metatype: factory as any,
             instance: null,
@@ -173,7 +177,7 @@ export class Module {
     }
 
     public addExportedComponent(exportedComponent: ComponentMetatype) {
-        if (this.isCustomComponent(exportedComponent)) {
+        if (this.isCustomProvider(exportedComponent)) {
             this.addCustomExportedComponent(exportedComponent);
             return;
         }
@@ -201,7 +205,10 @@ export class Module {
     }
 
     public replace(toReplace, options) {
-        this.addComponent({
+        if (options.isComponent) {
+            return this.addComponent({ provide: toReplace, ...options });
+        }
+        this.addInjectable({
             provide: toReplace,
             ...options,
         });

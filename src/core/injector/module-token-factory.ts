@@ -19,8 +19,10 @@ export class ModuleTokenFactory {
     public getScopeStack(scope: NestModuleMetatype[]): string[] {
         const reversedScope = scope.reverse();
         const firstGlobalIndex = reversedScope.findIndex((s) => this.reflectScope(s) === 'global');
-        const scopeStack = scope.reverse().slice(scope.length - firstGlobalIndex - 1);
-        return scopeStack.map((module) => module.name);
+        scope.reverse();
+        const stack = firstGlobalIndex >= 0 ?
+            scope.slice(scope.length - firstGlobalIndex - 1) : scope;
+        return stack.map((module) => module.name);
     }
 
     private reflectScope(metatype: NestModuleMetatype) {

@@ -27,13 +27,14 @@ describe('InstanceLoader', () => {
         mockContainer = sinon.mock(container);
     });
 
-    it('should call "loadPrototypeOfInstance" for each component and route in each module', () => {
+    it('should call "loadPrototypeOfInstance" for each component and route in each module', async () => {
         const injector = new Injector();
         (loader as any).injector = injector;
 
         const module = {
             components: new Map(),
             routes: new Map(),
+            injectables: new Map(),
             metatype: { name: 'test' },
         };
         const componentWrapper = { instance: null, metatype: TestComponent };
@@ -51,18 +52,19 @@ describe('InstanceLoader', () => {
         sinon.stub(injector, 'loadInstanceOfRoute');
         sinon.stub(injector, 'loadInstanceOfComponent');
 
-        loader.createInstancesOfDependencies();
+        await loader.createInstancesOfDependencies();
         expect(loadComponentPrototypeStub.calledWith(componentWrapper, module.components)).to.be.true;
         expect(loadComponentPrototypeStub.calledWith(routeWrapper, module.components)).to.be.true;
     });
 
-    it('should call "loadInstanceOfComponent" for each component in each module', () => {
+    it('should call "loadInstanceOfComponent" for each component in each module', async () => {
         const injector = new Injector();
         (loader as any).injector = injector;
 
         const module = {
             components: new Map(),
             routes: new Map(),
+            injectables: new Map(),
             metatype: { name: 'test' },
         };
         const testComp = { instance: null, metatype: TestComponent, name: 'TestComponent' };
@@ -76,17 +78,18 @@ describe('InstanceLoader', () => {
         const loadComponentStub = sinon.stub(injector, 'loadInstanceOfComponent');
         sinon.stub(injector, 'loadInstanceOfRoute');
 
-        loader.createInstancesOfDependencies();
+        await loader.createInstancesOfDependencies();
         expect(loadComponentStub.calledWith(module.components.get('TestComponent'), module)).to.be.true;
     });
 
-    it('should call "loadInstanceOfRoute" for each route in each module', () => {
+    it('should call "loadInstanceOfRoute" for each route in each module', async () => {
         const injector = new Injector();
         (loader as any).injector = injector;
 
         const module = {
             components: new Map(),
             routes: new Map(),
+            injectables: new Map(),
             metatype: { name: 'test' },
         };
         const wrapper = { name: 'TestRoute', instance: null, metatype: TestRoute };
@@ -99,7 +102,7 @@ describe('InstanceLoader', () => {
         sinon.stub(injector, 'loadInstanceOfComponent');
         const loadRoutesStub = sinon.stub(injector, 'loadInstanceOfRoute');
 
-        loader.createInstancesOfDependencies();
+        await loader.createInstancesOfDependencies();
         expect(loadRoutesStub.calledWith(module.routes.get('TestRoute'), module)).to.be.true;
     });
 

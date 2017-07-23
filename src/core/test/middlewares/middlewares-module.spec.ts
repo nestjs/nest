@@ -61,15 +61,15 @@ describe('MiddlewaresModule', () => {
             const route = { path: 'Test' };
             const configuration = {
                 middlewares: [ TestMiddleware ],
-                forRoutes: [ TestRoute ]
+                forRoutes: [ TestRoute ],
             };
 
             const useSpy = sinon.spy();
             const app = { use: useSpy };
 
-            expect(MiddlewaresModule.setupRouteMiddleware.bind(
-                MiddlewaresModule, route, configuration, 'Test' as any, app as any,
-            )).throws(RuntimeException);
+            expect(
+                MiddlewaresModule.setupRouteMiddleware(route as any, configuration, 'Test' as any, app as any),
+            ).to.eventually.be.rejectedWith(RuntimeException);
         });
 
         it('should throw "InvalidMiddlewareException" exception when middlewares does not have "resolve" method', () => {
@@ -95,9 +95,9 @@ describe('MiddlewaresModule', () => {
                 instance,
             } as any);
 
-            expect(MiddlewaresModule.setupRouteMiddleware.bind(
-                MiddlewaresModule, route, configuration, moduleKey, app as any,
-            )).throws(InvalidMiddlewareException);
+            expect(
+                MiddlewaresModule.setupRouteMiddleware(route as any, configuration, moduleKey, app as any),
+            ).to.be.rejectedWith(InvalidMiddlewareException);
         });
 
         it('should store middlewares when middleware is stored in container', () => {

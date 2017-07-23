@@ -28,8 +28,8 @@ export class RpcContextCreator {
         const exceptionHandler = this.exceptionFiltersContext.create(instance, callback);
         const pipes = this.pipesCreator.create(instance, callback);
         const guards = this.guardsContextCreator.create(instance, callback, module);
-
         const metatype = this.getDataMetatype(instance, callback);
+
         return this.rpcProxy.create(async (data) => {
             const canActivate = await this.guardsConsumer.tryActivate(guards, data, instance, callback);
             if (!canActivate) {

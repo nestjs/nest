@@ -1,67 +1,52 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
-import { HttpException } from '../../exceptions/http-exception';
-import { Logger } from '../../../common/services/logger.service';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
-import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
+import { WsExceptionsHandler } from './../../exceptions/ws-exceptions-handler';
+import { WsException } from './../../exceptions/ws-exception';
 
-describe('ExceptionsHandler', () => {
-    let handler: ExceptionsHandler;
-    let statusStub: sinon.SinonStub;
-    let jsonStub: sinon.SinonStub;
-    let response;
-
-    before(() => Logger.setMode(NestEnvironment.TEST));
+describe('WsExceptionsHandler', () => {
+    let handler: WsExceptionsHandler;
+    let emitStub: sinon.SinonStub;
+    let client;
 
     beforeEach(() => {
-        handler = new ExceptionsHandler();
-        statusStub = sinon.stub();
-        jsonStub = sinon.stub();
-
-        response = {
-            status: statusStub,
-            json: jsonStub,
+        handler = new WsExceptionsHandler();
+        emitStub = sinon.stub();
+        client = {
+            emit: emitStub,
         };
-        response.status.returns(response);
-        response.json.returns(response);
+        client.emit.returns(client);
     });
 
-    describe('next', () => {
-        it('should method send expected response status code and message when exception is unknown', () => {
-            handler.next(new Error(), response);
-
-            expect(statusStub.calledWith(500)).to.be.true;
-            expect(jsonStub.calledWith({ statusCode: 500, message: 'Unknown exception' })).to.be.true;
+    describe('handle', () => {
+        it('should method emit expected status code message when exception is unknown', () => {
+            handler.handle(new Error(), client);
+            expect(emitStub.calledWith(
+                'exception',
+                { status: 'error', message: 'Unknown exception' },
+            )).to.be.true;
         });
-        describe('when exception is instance of HttpException', () => {
-            it('should method send expected response status code and json object', () => {
-                const status = 401;
+        describe('when exception is instance of WsException', () => {
+            it('should method emit expected status and json object', () => {
                 const message = {
                     custom: 'Unauthorized',
                 };
-                handler.next(new HttpException(message, status), response);
-
-                expect(statusStub.calledWith(status)).to.be.true;
-                expect(jsonStub.calledWith(message)).to.be.true;
+                handler.handle(new WsException(message), client);
+                expect(emitStub.calledWith('exception', message)).to.be.true;
             });
-            it('should method send expected response status code and transform message to json', () => {
-                const status = 401;
+            it('should method emit expected status and transform message to json', () => {
                 const message = 'Unauthorized';
 
-                handler.next(new HttpException(message, status), response);
-
-                expect(statusStub.calledWith(status)).to.be.true;
-                expect(jsonStub.calledWith({ message, statusCode: status })).to.be.true;
+                handler.handle(new WsException(message), client);
+                expect(emitStub.calledWith('exception', { message, status: 'error' })).to.be.true;
             });
         });
         describe('when "invokeCustomFilters" returns true', () => {
             beforeEach(() => {
                 sinon.stub(handler, 'invokeCustomFilters').returns(true);
             });
-            it('should not call status and json stubs', () => {
-                expect(statusStub.notCalled).to.be.true;
-                expect(jsonStub.notCalled).to.be.true;
+            it('should not call `emit`', () => {
+                handler.handle(new WsException(''), client);
+                expect(emitStub.notCalled).to.be.true;
             });
         });
     });
@@ -74,7 +59,7 @@ describe('ExceptionsHandler', () => {
         it('should throws exception when passed argument is not an array', () => {
             expect(
                 () => handler.setCustomFilters(null),
-            ).to.throws(InvalidExceptionFilterException);
+            ).to.throw;
         });
     });
     describe('invokeCustomFilters', () => {

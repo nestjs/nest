@@ -45,4 +45,35 @@ describe('RouterProxy', () => {
         });
 
     });
+
+    describe('createExceptionLayerProxy', () => {
+
+        it('should method return thunk', () => {
+            const proxy = routerProxy.createExceptionLayerProxy(() => {}, handler);
+            expect(typeof proxy === 'function').to.be.true;
+        });
+
+        it('should method encapsulate callback passed as argument', () => {
+            const expectation = handlerMock.expects('next').once();
+            const proxy = routerProxy.createExceptionLayerProxy((err, req, res, next) => {
+                throw new HttpException('test', 500);
+            }, handler);
+            proxy(null, null, null, null);
+            expectation.verify();
+        });
+
+        it('should method encapsulate async callback passed as argument', (done) => {
+            const expectation = handlerMock.expects('next').once();
+            const proxy = routerProxy.createExceptionLayerProxy(async (err, req, res, next) => {
+                throw new HttpException('test', 500);
+            }, handler);
+            proxy(null, null, null, null);
+
+            setTimeout(() => {
+                expectation.verify();
+                done();
+            }, 0);
+        });
+
+    });
 });

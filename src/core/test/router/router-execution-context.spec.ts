@@ -7,6 +7,9 @@ import { RouteParamsFactory } from '../../router/route-params-factory';
 import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { PipesConsumer } from '../../pipes/pipes-consumer';
 import { ApplicationConfig } from '../../application-config';
+import { GuardsConsumer } from '../../guards/guards-consumer';
+import { GuardsContextCreator } from '../../guards/guards-context-creator';
+import { NestContainer } from '../../injector/container';
 
 describe('RouterExecutionContext', () => {
     let contextCreator: RouterExecutionContext;
@@ -29,13 +32,14 @@ describe('RouterExecutionContext', () => {
 
         contextCreator = new RouterExecutionContext(
             factory, new PipesContextCreator(new ApplicationConfig()), consumer,
+            new GuardsContextCreator(new NestContainer()), new GuardsConsumer(),
         );
     });
     describe('create', () => {
         describe('when callback metadata is undefined', () => {
             it('should only bind instance as an context', () => {
                 const instance = {};
-                contextCreator.create(instance, callback as any);
+                contextCreator.create(instance, callback as any, '');
                 expect(bindSpy.calledWith(instance)).to.be.true;
             });
         });
@@ -58,7 +62,7 @@ describe('RouterExecutionContext', () => {
 
                 beforeEach(() => {
                     instance = { foo: 'bar' };
-                    proxyContext = contextCreator.create(instance, callback as any);
+                    proxyContext = contextCreator.create(instance, callback as any, '');
                 });
                 it('should be a function', () => {
                     expect(proxyContext).to.be.a('function');

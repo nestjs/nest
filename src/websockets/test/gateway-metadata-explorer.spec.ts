@@ -55,11 +55,11 @@ describe('GatewayMetadataExplorer', () => {
             test = new Test();
         });
         it(`should return null when "isMessageMapping" metadata is undefined`, () => {
-            const metadata = instance.exploreMethodMetadata(test, Object.getPrototypeOf(test), 'noMessage');
+            const metadata = instance.exploreMethodMetadata(test, 'noMessage');
             expect(metadata).to.eq(null);
         });
         it(`should return message mapping properties when "isMessageMapping" metadata is not undefined`, () => {
-            const metadata = instance.exploreMethodMetadata(test, Object.getPrototypeOf(test), 'test');
+            const metadata = instance.exploreMethodMetadata(test, 'test');
             expect(metadata).to.have.keys([ 'callback', 'message' ]);
             expect(metadata.message).to.eql(message);
         });

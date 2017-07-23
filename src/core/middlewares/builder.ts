@@ -7,6 +7,7 @@ import { Metatype, MiddlewaresConsumer } from '@nestjs/common/interfaces';
 import { MiddlewareConfigProxy } from '@nestjs/common/interfaces/middlewares';
 import { RoutesMapper } from './routes-mapper';
 import { NestMiddleware } from '@nestjs/common';
+import { filterMiddlewares } from './utils';
 
 export class MiddlewareBuilder implements MiddlewaresConsumer {
     private readonly middlewaresCollection = new Set<MiddlewareConfiguration>();
@@ -54,10 +55,10 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
             private readonly builder: MiddlewareBuilder,
             middlewares,
         ) {
-            this.includedRoutes = this.filterMiddlewares(middlewares);
+            this.includedRoutes = filterMiddlewares(middlewares);
         }
 
-        public with(...args): this {
+        public with(...args): MiddlewareConfigProxy {
             this.contextArgs = args;
             return this;
         }
@@ -81,28 +82,5 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
         private mapRoutesToFlatList(forRoutes) {
             return forRoutes.reduce((a, b) => a.concat(b));
         }
-
-        private filterMiddlewares(middlewares) {
-            return [].concat(middlewares)
-                .filter(isFunction)
-                .map((middleware) => {
-                    if (this.isClass(middleware)) {
-                        return middleware;
-                    }
-                    return AssignToken(class {
-                        public resolve = (...args) => (req, res, next) => middleware(req, res, next);
-                    });
-                });
-        }
-
-        private isClass(middleware) {
-            return middleware.toString().substring(0, 5) === 'class';
-        }
     };
 }
-
-const AssignToken = (metatype): Metatype<any> => {
-  this.id = this.id || 1;
-  Object.defineProperty(metatype, 'name', { value: ++this.id });
-  return metatype;
-};

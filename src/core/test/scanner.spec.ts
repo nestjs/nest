@@ -5,6 +5,7 @@ import { Module } from '../../common/utils/decorators/module.decorator';
 import { NestModule } from '../../common/interfaces/modules/nest-module.interface';
 import { Component } from '../../common/utils/decorators/component.decorator';
 import { Controller } from '../../common/utils/decorators/controller.decorator';
+import { MetadataScanner } from '../metadata-scanner';
 
 describe('DependenciesScanner', () => {
 
@@ -35,7 +36,7 @@ describe('DependenciesScanner', () => {
     });
 
     beforeEach(() => {
-        scanner = new DependenciesScanner(container);
+        scanner = new DependenciesScanner(container, new MetadataScanner());
     });
 
     afterEach(() => {

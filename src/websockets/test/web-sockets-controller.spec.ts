@@ -7,6 +7,7 @@ import { InvalidSocketPortException } from '../exceptions/invalid-socket-port.ex
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { WsContextCreator } from '../context/ws-context-creator';
 
 describe('WebSocketsController', () => {
     let instance: WebSocketsController;
@@ -24,7 +25,7 @@ describe('WebSocketsController', () => {
         config = new ApplicationConfig();
         provider = new SocketServerProvider(null, config);
         mockProvider = sinon.mock(provider);
-        instance = new WebSocketsController(provider, null, config);
+        instance = new WebSocketsController(provider, null, config, sinon.createStubInstance(WsContextCreator));
     });
     describe('hookGatewayIntoServer', () => {
         let subscribeObservableServer: sinon.SinonSpy;

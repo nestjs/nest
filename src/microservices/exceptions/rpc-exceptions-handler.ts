@@ -16,10 +16,8 @@ export class RpcExceptionsHandler {
         }
         const status = 'error';
         if (!(exception instanceof RpcException)) {
-            return Observable.throw({
-                status,
-                message: messages.UNKNOWN_EXCEPTION_MESSAGE,
-            });
+            const message = messages.UNKNOWN_EXCEPTION_MESSAGE;
+            return Observable.throw({ status, message });
         }
         const res = exception.getError();
         const message = isObject(res) ? res : ({ status, message: res });

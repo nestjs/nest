@@ -43,11 +43,16 @@ export class NestFactory {
     }
 
     private static async initialize(module) {
-        this.logger.log(messages.APPLICATION_START);
-        await ExceptionsZone.asyncRun(async () => {
-            this.dependenciesScanner.scan(module);
-            await this.instanceLoader.createInstancesOfDependencies();
-        });
+        try {
+            this.logger.log(messages.APPLICATION_START);
+            await ExceptionsZone.asyncRun(async () => {
+                this.dependenciesScanner.scan(module);
+                await this.instanceLoader.createInstancesOfDependencies();
+            });
+        }
+        catch (e) {
+            process.abort();
+        }
     }
 
     private static createProxy(target) {

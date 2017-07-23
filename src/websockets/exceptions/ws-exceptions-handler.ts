@@ -13,18 +13,15 @@ export class WsExceptionsHandler {
 
         const status = 'error';
         if (!(exception instanceof WsException)) {
-            client.emit('exception', {
-                status,
-                message: messages.UNKNOWN_EXCEPTION_MESSAGE,
-            });
-            return;
+            const message = messages.UNKNOWN_EXCEPTION_MESSAGE;
+            return client.emit('exception', { status, message });
         }
-        const res = exception.getError();
-        const message = isObject(res) ? res : ({
+        const result = exception.getError();
+        const message = isObject(result) ? result : ({
             status,
-            message: res,
+            message: result,
         });
-        client.emit('exception', { status, message });
+        client.emit('exception', message);
     }
 
     public setCustomFilters(filters: ExceptionFilterMetadata[]) {
