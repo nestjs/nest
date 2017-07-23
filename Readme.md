@@ -1,15 +1,22 @@
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="http://kamilmysliwiec.com/public/nest-logo.png" alt="Nest Logo" /></a>
 </p>
-  <p align="center">Modern, powerful web application framework for <a href="http://nodejs.org" target="blank">Node.js</a>.</p>
 
-  [![NPM Version][npm-image]][npm-url]
-  [![Package License][license-image]][npm-url]
-  [![NPM Downloads][downloads-image]][downloads-url]
-  [![Travis][travis-image]][travis-url]
-  [![Linux][linux-image]][linux-url]
-  [![Coverage Status](https://coveralls.io/repos/github/kamilmysliwiec/nest/badge.svg?branch=master)](https://coveralls.io/github/kamilmysliwiec/nest?branch=master)
-  [![Gitter](https://badges.gitter.im/nestjs/nestjs.svg)](https://gitter.im/nestjs/nestjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge)
+[travis-image]: https://api.travis-ci.org/kamilmysliwiec/nest.svg?branch=master
+[travis-url]: https://travis-ci.org/kamilmysliwiec/nest
+[linux-image]: https://img.shields.io/travis/kamilmysliwiec/nest/master.svg?label=linux
+[linux-url]: https://travis-ci.org/kamilmysliwiec/nest
+
+  <p align="center">Modern, powerful web application framework for <a href="http://nodejs.org" target="blank">Node.js</a>.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/dm/@nestjs/core.svg" alt="NPM Downloads" /></a>
+<a href="https://travis-ci.org/kamilmysliwiec/nest"><img src="https://api.travis-ci.org/kamilmysliwiec/nest.svg?branch=master" alt="Travis" /></a>
+<a href="https://travis-ci.org/kamilmysliwiec/nest"><img src="https://img.shields.io/travis/kamilmysliwiec/nest/master.svg?label=linux" alt="Linux" /></a>
+<a href="https://coveralls.io/github/kamilmysliwiec/nest?branch=master"><img src="https://coveralls.io/repos/github/kamilmysliwiec/nest/badge.svg?branch=master" alt="Coverage Status" /></a>
+<a href="https://gitter.im/nestjs/nestjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge"><img src="https://badges.gitter.im/nestjs/nestjs.svg" alt="Gitter" /></a>
+</p>
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
@@ -113,13 +120,3 @@ I am on a mission to provide an architecture to create truly flexible, scalable 
 ## License
 
   [MIT](LICENSE)
-
-[license-image]: https://img.shields.io/npm/l/@nestjs/core.svg
-[npm-image]: https://img.shields.io/npm/v/@nestjs/core.svg
-[npm-url]: https://www.npmjs.com/~nestjscore
-[downloads-image]: https://img.shields.io/npm/dm/@nestjs/core.svg
-[downloads-url]: https://www.npmjs.com/~nestjscore
-[travis-image]: https://api.travis-ci.org/kamilmysliwiec/nest.svg?branch=master
-[travis-url]: https://travis-ci.org/kamilmysliwiec/nest
-[linux-image]: https://img.shields.io/travis/kamilmysliwiec/nest/master.svg?label=linux
-[linux-url]: https://travis-ci.org/kamilmysliwiec/nest
