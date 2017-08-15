@@ -55,13 +55,13 @@
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.4.2",
-    "socket.io": "^1.7.4",
+    "socket.io": "^2.0.3",
     "typescript": "^2.4.1"
   },
   "devDependencies": {
     "@types/chai": "^3.5.2",
     "@types/chai-as-promised": "0.0.31",
-    "@types/express": "^4.0.35",
+    "@types/express": "^4.0.36",
     "@types/mocha": "^2.2.38",
     "@types/node": "^7.0.5",
     "@types/redis": "^0.12.36",

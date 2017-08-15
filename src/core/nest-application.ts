@@ -67,8 +67,18 @@ export class NestApplication implements INestApplication {
         return this.microservices;
     }
 
-    public startAllMicroservices(callback: () => void) {
-        Promise.all(this.microservices.map(this.listenToPromise)).then(callback);
+    public startAllMicroservices(callback?: () => void) {
+        Promise.all(
+            this.microservices.map(this.listenToPromise),
+        ).then(() => callback && callback());
+    }
+
+    public startAllMicroservicesAsync(): Promise<void> {
+        return new Promise((resolve) => this.startAllMicroservices(resolve));
+    }
+
+    public use(requestHandler) {
+        this.express.use(requestHandler);
     }
 
     public async listen(port: number, callback?: () => void) {
@@ -78,9 +88,14 @@ export class NestApplication implements INestApplication {
         return this.server;
     }
 
+    public listenAsync(port: number): Promise<any> {
+        return new Promise((resolve) => {
+            const server = this.listen(port, () => resolve(server));
+        });
+    }
+
     public close() {
         SocketModule.close();
-
         this.server && this.server.close();
         this.microservices.forEach((microservice) => {
             microservice.setIsTerminated(true);
@@ -101,7 +116,7 @@ export class NestApplication implements INestApplication {
         this.config.useGlobalFilters(...filters);
     }
 
-    public useGlobalPipes(...pipes: PipeTransform[]) {
+    public useGlobalPipes(...pipes: PipeTransform<any>[]) {
         this.config.useGlobalPipes(...pipes);
     }
 

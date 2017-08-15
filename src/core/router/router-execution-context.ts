@@ -18,7 +18,7 @@ export interface ParamProperties {
     value: any;
     type: RouteParamtypes;
     data: ParamData;
-    pipes: PipeTransform[];
+    pipes: PipeTransform<any>[];
 }
 
 export class RouterExecutionContext {

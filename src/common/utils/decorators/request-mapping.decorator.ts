@@ -26,10 +26,33 @@ const createMappingDecorator = (method: RequestMethod) => (path?: string): Metho
     });
 };
 
+/**
+ * Routes HTTP POST requests to the specified path.
+ */
 export const Post = createMappingDecorator(RequestMethod.POST);
+
+/**
+ * Routes HTTP GET requests to the specified path.
+ */
 export const Get = createMappingDecorator(RequestMethod.GET);
+
+/**
+ * Routes HTTP DELETE requests to the specified path.
+ */
 export const Delete = createMappingDecorator(RequestMethod.DELETE);
+
+/**
+ * Routes HTTP PUT requests to the specified path.
+ */
 export const Put = createMappingDecorator(RequestMethod.PUT);
+
+/**
+ * Routes HTTP PATCH requests to the specified path.
+ */
 export const Patch = createMappingDecorator(RequestMethod.PATCH);
+
+/**
+ * Routes all HTTP requests to the specified path.
+ */
 export const All = createMappingDecorator(RequestMethod.ALL);
 

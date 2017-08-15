@@ -8,6 +8,6 @@ export interface ArgumentMetadata {
     data?: any;
 }
 
-export interface PipeTransform {
-    transform: Transform<any>;
+export interface PipeTransform<T> {
+    transform: Transform<T>;
 }
