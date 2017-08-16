@@ -14,10 +14,10 @@ import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { ApplicationConfig } from '../../application-config';
 
 describe('MiddlewaresModule', () => {
-    @Controller({ path: 'test' })
+    @Controller('test')
     class AnotherRoute { }
 
-    @Controller({ path: 'test' })
+    @Controller('test')
     class TestRoute {
 
         @RequestMapping({ path: 'test' })

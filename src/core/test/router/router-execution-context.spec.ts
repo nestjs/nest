@@ -36,13 +36,6 @@ describe('RouterExecutionContext', () => {
         );
     });
     describe('create', () => {
-        describe('when callback metadata is undefined', () => {
-            it('should only bind instance as an context', () => {
-                const instance = {};
-                contextCreator.create(instance, callback as any, '');
-                expect(bindSpy.calledWith(instance)).to.be.true;
-            });
-        });
         describe('when callback metadata is not undefined', () => {
             let metadata: RouteParamsMetadata;
             beforeEach(() => {
@@ -62,7 +55,7 @@ describe('RouterExecutionContext', () => {
 
                 beforeEach(() => {
                     instance = { foo: 'bar' };
-                    proxyContext = contextCreator.create(instance, callback as any, '');
+                    proxyContext = contextCreator.create(instance, callback as any, '', 0);
                 });
                 it('should be a function', () => {
                     expect(proxyContext).to.be.a('function');
@@ -70,7 +63,11 @@ describe('RouterExecutionContext', () => {
                 describe('when proxy function called', () => {
                     let exchangeKeysForValuesSpy: sinon.SinonSpy;
                     let request;
-                    const response = {};
+                    const response = {
+                        status: () => response,
+                        send: () => response,
+                        json: () => response,
+                    };
                     const next = {};
 
                     beforeEach(() => {

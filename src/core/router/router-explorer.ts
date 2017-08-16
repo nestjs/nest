@@ -99,12 +99,12 @@ export class ExpressRouterExplorer implements RouterExplorer {
         const { path, requestMethod, targetCallback } = pathProperties;
 
         const routerMethod = this.routerMethodFactory.get(router, requestMethod).bind(router);
-        const proxy = this.createCallbackProxy(instance, targetCallback, module);
+        const proxy = this.createCallbackProxy(instance, targetCallback, module, requestMethod);
         routerMethod(path, proxy);
     }
 
-    private createCallbackProxy(instance: Controller, callback: RouterProxyCallback, module: string) {
-        const executionContext = this.executionContextCreator.create(instance, callback, module);
+    private createCallbackProxy(instance: Controller, callback: RouterProxyCallback, module: string, requestMethod) {
+        const executionContext = this.executionContextCreator.create(instance, callback, module, requestMethod);
         const exceptionFilter = this.exceptionsFilter.create(instance, callback);
 
         return this.routerProxy.createProxy(executionContext, exceptionFilter);

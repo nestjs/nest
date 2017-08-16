@@ -13,7 +13,7 @@ describe('InstanceLoader', () => {
     let container: NestContainer;
     let mockContainer: sinon.SinonMock;
 
-    @Controller({ path: '' })
+    @Controller('')
     class TestRoute {}
 
     @Component()

@@ -7,7 +7,7 @@ import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { MetadataScanner } from '../../metadata-scanner';
 
 describe('RouterExplorer', () => {
-    @Controller({ path: 'global' })
+    @Controller('global')
     class TestRoute {
         @RequestMapping({ path: 'test' })
         public getTest() {}

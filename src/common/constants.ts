@@ -15,3 +15,4 @@ export const EXCEPTION_FILTERS_METADATA = '__exceptionFilters__';
 export const FILTER_CATCH_EXCEPTIONS = '__filterCatchExceptions__';
 export const PIPES_METADATA = '__pipes__';
 export const GUARDS_METADATA = '__guards__';
+export const HTTP_CODE_METADATA = '__httpCode__';

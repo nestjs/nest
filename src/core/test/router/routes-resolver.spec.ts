@@ -7,7 +7,7 @@ import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { ApplicationConfig } from '../../application-config';
 
 describe('RoutesResolver', () => {
-    @Controller({ path: 'global' })
+    @Controller('global')
     class TestRoute {
         @RequestMapping({ path: 'test' })
         public getTest() {}

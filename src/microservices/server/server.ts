@@ -7,6 +7,7 @@ import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/finally';
 import 'rxjs/add/observable/empty';
 import 'rxjs/add/observable/of';
+import 'rxjs/add/observable/fromPromise';
 
 export abstract class Server {
     protected readonly messageHandlers: MessageHandlers = {};
@@ -31,5 +32,15 @@ export abstract class Server {
 
     protected handleError(error: string) {
         this.logger.error(error);
+    }
+
+    protected transformToObservable(resultOrDeffered) {
+        if (resultOrDeffered instanceof Promise) {
+            return Observable.fromPromise(resultOrDeffered);
+        }
+        else if (!(resultOrDeffered instanceof Observable)) {
+            return Observable.of(resultOrDeffered);
+        }
+        return resultOrDeffered;
     }
 }

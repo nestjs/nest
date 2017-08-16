@@ -10,7 +10,7 @@ import { MetadataScanner } from '../metadata-scanner';
 describe('DependenciesScanner', () => {
 
     @Component() class TestComponent {}
-    @Controller({ path: '' }) class TestRoute {}
+    @Controller('') class TestRoute {}
 
     @Module({
         components: [ TestComponent ],
