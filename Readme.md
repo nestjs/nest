@@ -60,6 +60,8 @@ We want to create scalable, loosely-coupled, easy-to-maintain applications. Letâ
 ## Starter repos
 
 - [TypeScript](https://github.com/kamilmysliwiec/nest-typescript-starter)
+- [Nest + Sequelize ORM + Jwt](https://github.com/adrien2p/nest-js-sequelize-jwt)
+- [Same as above + graphql](https://github.com/adrien2p/nest-js-graphql)
 - [Babel](https://github.com/kamilmysliwiec/nest-babel-starter/)
 
 ## Useful references
