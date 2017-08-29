@@ -6,7 +6,6 @@ import { Reflector } from '@nestjs/core';
 export class BreedGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
   canActivate(request, context: ExecutionContext): boolean {
-    console.log(Reflect.getMetadata('key', context.instance));
     return true;
   }
 }

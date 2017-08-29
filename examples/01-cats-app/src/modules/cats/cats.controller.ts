@@ -1,11 +1,10 @@
-import { Controller, Get, Post, Body, UseGuards, ReflectMetadata } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { CreateCatDto } from './dto/create-cat.dto';
 import { CatsService } from './cats.service';
 import { Cat } from './interfaces/cat.interface';
 import { BreedGuard } from '../common/guards/breed.guard';
 
 @Controller('cats')
-@ReflectMetadata('key', 'xD')
 export class CatsController {
   constructor(private readonly catsService: CatsService) {}
 
