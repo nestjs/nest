@@ -13,6 +13,8 @@ import { GuardsConsumer } from '../guards/guards-consumer';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { HttpException } from '../index';
 import { RouterResponseController } from './router-response-controller';
+import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
+import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 
 export interface ParamProperties {
     index: number;
@@ -29,7 +31,9 @@ export class RouterExecutionContext {
         private readonly pipesContextCreator: PipesContextCreator,
         private readonly pipesConsumer: PipesConsumer,
         private readonly guardsContextCreator: GuardsContextCreator,
-        private readonly guardsConsumer: GuardsConsumer) {}
+        private readonly guardsConsumer: GuardsConsumer,
+        private readonly interceptorsContextCreator: InterceptorsContextCreator,
+        private readonly interceptorsConsumer: InterceptorsConsumer) {}
 
     public create(instance: Controller, callback: (...args) => any, module: string, requestMethod: RequestMethod) {
         const metadata = this.reflectCallbackMetadata(instance, callback) || {};
@@ -39,6 +43,7 @@ export class RouterExecutionContext {
         const pipes = this.pipesContextCreator.create(instance, callback);
         const paramtypes = this.reflectCallbackParamtypes(instance, callback);
         const guards = this.guardsContextCreator.create(instance, callback, module);
+        const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
         const httpCode = this.reflectHttpStatusCode(callback);
 
         return async (req, res, next) => {
@@ -59,9 +64,14 @@ export class RouterExecutionContext {
                     hasResponseObject = true;
                 }
             }
-            const result = callback.apply(instance, args);
-            const applyResponse = () => this.responseController.apply(result, res, requestMethod, httpCode);
-            return hasResponseObject ? result : await applyResponse();
+            if (hasResponseObject) {
+                return callback.apply(instance, args);
+            }
+            const handler = () => callback.apply(instance, args);
+            const result = await this.interceptorsConsumer.intercept(
+                interceptors, req, instance, callback, handler,
+            );
+            return this.responseController.apply(result, res, requestMethod, httpCode);
         };
     }
 

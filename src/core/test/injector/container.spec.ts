@@ -19,8 +19,8 @@ describe('NestContainer', () => {
         const setSpy = sinon.spy(modules, 'set');
         (container as any).modules = modules;
 
-        container.addModule(TestModule, []);
-        container.addModule(TestModule, []);
+        container.addModule(TestModule as any, []);
+        container.addModule(TestModule as any, []);
 
         expect(setSpy.calledOnce).to.be.true;
     });

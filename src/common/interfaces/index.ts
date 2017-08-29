@@ -18,3 +18,5 @@ export * from './paramtype.interface';
 export * from './can-activate.interface';
 export * from './exceptions/rpc-exception-filter.interface';
 export * from './exceptions/ws-exception-filter.interface';
+export * from './execution-context.interface';
+export * from './nest-interceptor.interface';

@@ -22,7 +22,7 @@ describe('WsExceptionsHandler', () => {
             handler.handle(new Error(), client);
             expect(emitStub.calledWith(
                 'exception',
-                { status: 'error', message: 'Unknown exception' },
+                { status: 'error', message: 'Internal server error' },
             )).to.be.true;
         });
         describe('when exception is instance of WsException', () => {

@@ -13,7 +13,7 @@ describe('Module', () => {
     @Component() class TestComponent {}
 
     beforeEach(() => {
-        module = new Module(TestModule, []);
+        module = new Module(TestModule as any, []);
     });
 
     it('should throw "UnknownExportException" when given exported component is not a part of components array', () => {

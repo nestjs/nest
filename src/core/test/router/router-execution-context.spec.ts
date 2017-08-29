@@ -10,6 +10,8 @@ import { ApplicationConfig } from '../../application-config';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { NestContainer } from '../../injector/container';
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
+import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 
 describe('RouterExecutionContext', () => {
     let contextCreator: RouterExecutionContext;
@@ -33,6 +35,7 @@ describe('RouterExecutionContext', () => {
         contextCreator = new RouterExecutionContext(
             factory, new PipesContextCreator(new ApplicationConfig()), consumer,
             new GuardsContextCreator(new NestContainer()), new GuardsConsumer(),
+            new InterceptorsContextCreator(new NestContainer()), new InterceptorsConsumer(),
         );
     });
     describe('create', () => {

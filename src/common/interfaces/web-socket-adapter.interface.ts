@@ -5,6 +5,6 @@ export interface WebSocketAdapter {
     createWithNamespace?(port: number, namespace: string);
     bindClientConnect(server, callback: (...args) => void);
     bindClientDisconnect?(client, callback: (...args) => void);
-    bindMessageHandlers(client, handlers: MessageMappingProperties[]);
+    bindMessageHandler(client, handler: MessageMappingProperties, process: (data: any) => Promise<any>);
     bindMiddleware?(server, middleware: (socket, next) => void);
 }

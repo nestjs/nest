@@ -21,6 +21,8 @@ import { PipesConsumer } from './../pipes/pipes-consumer';
 import { NestContainer } from '../injector/container';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { GuardsConsumer } from '../guards/guards-consumer';
+import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
+import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 
 export class ExpressRouterExplorer implements RouterExplorer {
     private readonly executionContextCreator: RouterExecutionContext;
@@ -41,6 +43,8 @@ export class ExpressRouterExplorer implements RouterExplorer {
             new PipesConsumer(),
             new GuardsContextCreator(container),
             new GuardsConsumer(),
+            new InterceptorsContextCreator(container),
+            new InterceptorsConsumer(),
         );
     }
 

@@ -30,6 +30,10 @@ export class TestingModuleBuilder {
         return this.override(typeOrToken, false);
     }
 
+    public overrideInterceptor(typeOrToken): OverrideBy {
+        return this.override(typeOrToken, false);
+    }
+
     public overrideComponent(typeOrToken): OverrideBy {
         return this.override(typeOrToken, true);
     }

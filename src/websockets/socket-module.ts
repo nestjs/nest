@@ -14,6 +14,8 @@ import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 
 export class SocketModule {
     private static socketsContainer = new SocketsContainer();
@@ -29,6 +31,8 @@ export class SocketModule {
                 new PipesConsumer(),
                 new GuardsContextCreator(container),
                 new GuardsConsumer(),
+                new InterceptorsContextCreator(container),
+                new InterceptorsConsumer(),
             ),
         );
 

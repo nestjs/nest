@@ -36,7 +36,7 @@ describe('Injector', () => {
         let mainTest, depOne, depTwo;
 
         beforeEach(() => {
-            moduleDeps = new Module(DependencyTwo, []);
+            moduleDeps = new Module(DependencyTwo as any, []);
             mainTest = {
                 name: 'MainTest',
                 metatype: MainTest,
@@ -92,7 +92,7 @@ describe('Injector', () => {
         let test;
 
         beforeEach(() => {
-            moduleDeps = new Module(Test, []);
+            moduleDeps = new Module(Test as any, []);
             test = {
                 name: 'Test',
                 metatype: Test,

@@ -4,10 +4,10 @@ export type Transform<T> = (value: T, metadata: ArgumentMetadata) => any;
 
 export interface ArgumentMetadata {
     type: Paramtype;
-    metatype?: any;
-    data?: any;
+    metatype?: new (...args) => any;
+    data?: string;
 }
 
 export interface PipeTransform<T> {
-    transform: Transform<T>;
+    transform(value: T, metadata: ArgumentMetadata): any;
 }

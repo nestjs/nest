@@ -14,6 +14,8 @@ import { NestContainer } from '../../../core/injector/container';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 import { RpcException } from '../../index';
+import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
+import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
 
 @Guard()
 class TestGuard { canActivate: () => true; }
@@ -55,6 +57,7 @@ describe('RpcContextCreator', () => {
         contextCreator = new RpcContextCreator(
             rpcProxy, exceptionFiltersContext, pipesCreator as any,
             pipesConsumer as any, guardsContextCreator as any, guardsConsumer as any,
+            new InterceptorsContextCreator(new NestContainer()) as any, new InterceptorsConsumer(),
         );
 
         instance = new Test();

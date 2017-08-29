@@ -6,6 +6,7 @@ import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { ModuleRef } from './module-ref';
 import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
+import { Reflector } from '../services/reflector.service';
 
 export interface CustomComponent {
     provide: any;
@@ -28,8 +29,7 @@ export class Module {
         private _metatype: NestModuleMetatype,
         private _scope: NestModuleMetatype[]) {
 
-        this.addModuleRef();
-        this.addModuleAsComponent();
+        this.addCoreInjectables();
     }
 
     get scope(): NestModuleMetatype[] {
@@ -61,11 +61,17 @@ export class Module {
             throw new RuntimeException();
         }
         const module = this._components.get(this._metatype.name);
-        return module.instance;
+        return module.instance as NestModule;
     }
 
     get metatype(): NestModuleMetatype {
         return this._metatype;
+    }
+
+    public addCoreInjectables() {
+        this.addModuleRef();
+        this.addModuleAsComponent();
+        this.addReflector();
     }
 
     public addModuleRef() {
@@ -82,6 +88,15 @@ export class Module {
         this._components.set(this._metatype.name, {
             name: this._metatype.name,
             metatype: this._metatype,
+            isResolved: false,
+            instance: null,
+        });
+    }
+
+    public addReflector() {
+        this._components.set(Reflector.name, {
+            name: Reflector.name,
+            metatype: Reflector,
             isResolved: false,
             instance: null,
         });

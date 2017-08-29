@@ -23,8 +23,10 @@ export {
     Paramtype,
     ArgumentMetadata,
     OnModuleDestroy,
+    ExecutionContext,
     CanActivate,
     RpcExceptionFilter,
     WsExceptionFilter,
+    NestInterceptor,
 } from './interfaces';
 export * from './services/logger.service';

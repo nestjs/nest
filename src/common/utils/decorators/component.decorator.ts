@@ -14,14 +14,14 @@ export const Pipe = (): ClassDecorator => {
 };
 
 /**
- * Defines the Guard. The Guard should implements the `CanActivate` interface.
+ * Defines the Guard. The Guard should implement the `CanActivate` interface.
  */
 export const Guard = (): ClassDecorator => {
     return (target: object) => {};
 };
 
 /**
- * Defines the Middleware. The Middleware should implements the `NestMiddleware` interface.
+ * Defines the Middleware. The Middleware should implement the `NestMiddleware` interface.
  */
 export const Middleware = (): ClassDecorator => {
     return (target: object) => {};

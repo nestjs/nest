@@ -17,14 +17,14 @@ describe('DependenciesScanner', () => {
         controllers: [ TestRoute ],
         exports: [ TestComponent ],
     })
-    class AnotherTestModule implements NestModule {}
+    class AnotherTestModule {}
 
     @Module({
         modules: [ AnotherTestModule ],
         components: [ TestComponent ],
         controllers: [ TestRoute ],
     })
-    class TestModule implements NestModule {}
+    class TestModule {}
 
     let scanner: DependenciesScanner;
     let mockContainer: sinon.SinonMock;
@@ -45,7 +45,7 @@ describe('DependenciesScanner', () => {
 
     it('should "storeModule" call twice (2 modules) container method "addModule"', () => {
         const expectation = mockContainer.expects('addModule').twice();
-        scanner.scan(TestModule);
+        scanner.scan(TestModule as any);
         expectation.verify();
     });
 
@@ -53,20 +53,20 @@ describe('DependenciesScanner', () => {
         const expectation = mockContainer.expects('addComponent').twice();
         const stub = sinon.stub(scanner, 'storeExportedComponent');
 
-        scanner.scan(TestModule);
+        scanner.scan(TestModule as any);
         expectation.verify();
         stub.restore();
     });
 
     it('should "storeRoute" call twice (2 components) container method "addController"', () => {
         const expectation = mockContainer.expects('addController').twice();
-        scanner.scan(TestModule);
+        scanner.scan(TestModule as any);
         expectation.verify();
     });
 
     it('should "storeExportedComponent" call once (1 component) container method "addExportedComponent"', () => {
         const expectation = mockContainer.expects('addExportedComponent').once();
-        scanner.scan(TestModule);
+        scanner.scan(TestModule as any);
         expectation.verify();
     });
 

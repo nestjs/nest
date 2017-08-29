@@ -17,7 +17,7 @@ describe('RpcExceptionsHandler', () => {
         it('should method returns expected stream with message when exception is unknown', (done) => {
             const stream$ = handler.handle(new Error());
             stream$.catch((err) => {
-                expect(err).to.be.eql({ status: 'error', message: 'Unknown exception' });
+                expect(err).to.be.eql({ status: 'error', message: 'Internal server error' });
                 done();
                 return Observable.empty();
             }).subscribe(() => ({}));

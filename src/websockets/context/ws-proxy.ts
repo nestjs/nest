@@ -7,7 +7,7 @@ export class WsProxy {
 
         return async (client, data) => {
             try {
-                await targetCallback(client, data);
+                return await targetCallback(client, data);
             }
             catch (e) {
                 exceptionsHandler.handle(e, client);

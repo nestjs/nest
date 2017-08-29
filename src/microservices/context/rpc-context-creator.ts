@@ -10,6 +10,8 @@ import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards/constants';
 import { RpcException } from '../index';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 
 export class RpcContextCreator {
     constructor(
@@ -18,7 +20,9 @@ export class RpcContextCreator {
         private readonly pipesCreator: PipesContextCreator,
         private readonly pipesConsumer: PipesConsumer,
         private readonly guardsContextCreator: GuardsContextCreator,
-        private readonly guardsConsumer: GuardsConsumer) {}
+        private readonly guardsConsumer: GuardsConsumer,
+        private readonly interceptorsContextCreator: InterceptorsContextCreator,
+        private readonly interceptorsConsumer: InterceptorsConsumer) {}
 
     public create(
         instance: Controller,
@@ -29,6 +33,7 @@ export class RpcContextCreator {
         const pipes = this.pipesCreator.create(instance, callback);
         const guards = this.guardsContextCreator.create(instance, callback, module);
         const metatype = this.getDataMetatype(instance, callback);
+        const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
 
         return this.rpcProxy.create(async (data) => {
             const canActivate = await this.guardsConsumer.tryActivate(guards, data, instance, callback);
@@ -36,7 +41,11 @@ export class RpcContextCreator {
                 throw new RpcException(FORBIDDEN_MESSAGE);
             }
             const result = await this.pipesConsumer.applyPipes(data, { metatype }, pipes);
-            return callback.call(instance, result);
+            const handler = () => callback.call(instance, result);
+
+            return await this.interceptorsConsumer.intercept(
+                interceptors, result, instance, callback, handler,
+            );
         }, exceptionHandler);
     }
 

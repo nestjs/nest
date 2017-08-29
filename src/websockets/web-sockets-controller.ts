@@ -13,6 +13,9 @@ import { NestContainer } from '@nestjs/core/injector/container';
 import { MiddlewaresInjector } from './middlewares-injector';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from './context/ws-context-creator';
+import { Observable } from 'rxjs/Observable';
+import 'rxjs/add/observable/fromPromise';
+import 'rxjs/add/observable/of';
 
 export class WebSocketsController {
     private readonly metadataExplorer = new GatewayMetadataExplorer(new MetadataScanner());
@@ -112,7 +115,18 @@ export class WebSocketsController {
             message,
             callback: callback.bind(instance, client),
         }));
-        adapter.bindMessageHandlers(client, handlers);
+        handlers.forEach((handler) => adapter.bindMessageHandler(client, handler, this.pickResult));
+    }
+
+    public async pickResult(defferedResult: Promise<any>): Promise<Observable<any>> {
+        const result = await defferedResult;
+        if (result instanceof Observable) {
+            return result;
+        }
+        if (result instanceof Promise) {
+            return Observable.fromPromise(result);
+        }
+        return Observable.of(result);
     }
 
     private hookServerToProperties(instance: NestGateway, server) {

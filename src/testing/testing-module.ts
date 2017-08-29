@@ -31,7 +31,7 @@ export class TestingModule {
         const moduleMetatype = this.contextModule.metatype;
         const scope = this.scope.concat(moduleMetatype);
 
-        const token = this.moduleTokenFactory.create(module, scope);
+        const token = this.moduleTokenFactory.create(module as any, scope);
         const selectedModule = modules.get(token);
         if (!selectedModule) {
             throw new UnknownModuleException();

@@ -14,7 +14,7 @@ describe('GuardsConsumer', () => {
     describe('tryActivate', () => {
         describe('when guards array is empty', () => {
             it('should return true', async () => {
-                const canActivate = await consumer.tryActivate([], {}, null, null);
+                const canActivate = await consumer.tryActivate([], {}, { constructor: null }, null);
                 expect(canActivate).to.be.true;
             });
         });
@@ -24,13 +24,13 @@ describe('GuardsConsumer', () => {
                     const canActivate = await consumer.tryActivate([
                         ...guards,
                         { canActivate: () => false },
-                    ], {}, null, null);
+                    ], {}, { constructor: null }, null);
                     expect(canActivate).to.be.false;
                 });
             });
             describe('when each guard returns true', () => {
                 it('should return true', async () => {
-                    const canActivate = await consumer.tryActivate(guards, {}, null, null);
+                    const canActivate = await consumer.tryActivate(guards, {}, { constructor: null }, null);
                     expect(canActivate).to.be.true;
                 });
             });

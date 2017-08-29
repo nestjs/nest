@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { NestContainer } from './injector/container';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { metadata, EXCEPTION_FILTERS_METADATA, GUARDS_METADATA } from '@nestjs/common/constants';
+import { metadata, EXCEPTION_FILTERS_METADATA, GUARDS_METADATA, INTERCEPTORS_METADATA } from '@nestjs/common/constants';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { GATEWAY_MIDDLEWARES } from '@nestjs/websockets/constants';
@@ -69,6 +69,7 @@ export class DependenciesScanner {
 
     private reflectControllersMetadata(route: Metatype<Injectable>, token: string) {
         this.reflectGuards(route, token);
+        this.reflectInterceptors(route, token);
     }
 
     private reflectExports(module: NestModuleMetatype, token: string) {
@@ -91,6 +92,18 @@ export class DependenciesScanner {
         );
         const flattenMethodsGuards = methodsGuards.reduce((a, b) => a.concat(b), []);
         [...controllerGuards, ...flattenMethodsGuards].map((guard) => this.storeInjectable(guard, token));
+    }
+
+    private reflectInterceptors(component: Metatype<Injectable>, token: string) {
+        const controllerInterceptors = this.reflectMetadata(component, INTERCEPTORS_METADATA);
+        const methodsInterceptors = this.metadataScanner.scanFromPrototype(null, component.prototype,
+            (method: string) => {
+                const descriptor = Reflect.getOwnPropertyDescriptor(component.prototype, method);
+                return descriptor ? Reflect.getMetadata(INTERCEPTORS_METADATA, descriptor.value) : undefined;
+            },
+        );
+        const flattenMethodsInterceptors = methodsInterceptors.reduce((a, b) => a.concat(b), []);
+        [...controllerInterceptors, ...flattenMethodsInterceptors].map((guard) => this.storeInjectable(guard, token));
     }
 
     private storeRelatedModule(related: NestModuleMetatype, token: string) {
