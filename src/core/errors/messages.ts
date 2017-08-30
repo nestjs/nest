@@ -2,7 +2,7 @@ export const InvalidMiddlewareMessage = (name: string) =>
     `Your middleware doesn't have "resolve" method (${name})`;
 
 export const UnknownDependenciesMessage = (type: string) =>
-    `Nest could not resolves dependencies of ${type}.`;
+    `Nest could not resolve dependencies of ${type}.`;
 
 export const UnknownExportMessage = (name: string) =>
     `You are trying to export unknown component (${name}). Remember - your component should be listed both in exports and components arrays!`;
