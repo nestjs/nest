@@ -39,18 +39,17 @@ export class NestApplication implements INestApplication {
         MicroservicesModule.setupClients(this.container);
     }
 
-    public init() {
-        this.setupModules();
+    public async init() {
+        await this.callInitHook();
 
+        this.setupModules();
         const router = ExpressAdapter.createRouter();
         this.setupMiddlewares(router);
         this.setupRoutes(router);
-
         this.express.use(
             validatePath(this.config.getGlobalPrefix()),
             router,
         );
-        this.callInitHook();
         this.logger.log(messages.APPLICATION_READY);
         this.isInitialized = true;
     }
@@ -72,8 +71,10 @@ export class NestApplication implements INestApplication {
         Promise.all(this.microservices.map(this.listenToPromise)).then(callback);
     }
 
-    public listen(port: number, callback?: () => void) {
-        (!this.isInitialized) && this.init();
+    public async listen(port: number, callback?: () => void) {
+        if (!this.isInitialized) {
+            await this.init();
+        }
 
         this.server = this.express.listen(port, callback);
         return this.server;
@@ -120,20 +121,23 @@ export class NestApplication implements INestApplication {
         });
     }
 
-    private callInitHook() {
+    private async callInitHook() {
         const modules = this.container.getModules();
-        modules.forEach((module) => {
-            this.callModuleInitHook(module);
-        });
+        for (const [key, module] of modules) {
+            await this.callModuleInitHook(module);
+        }
     }
 
-    private callModuleInitHook(module: Module) {
+    private async callModuleInitHook(module: Module): Promise<any> {
         const components = [...module.routes, ...module.components];
-        iterate(components).map(([key, {instance}]) => instance)
-            .filter((instance) => !isNil(instance))
+        const promises = iterate(components).map(([key, {instance}]) => instance)
+            .filter(instance => !isNil(instance))
             .filter(this.hasOnModuleInitHook)
-            .forEach((instance) => (instance as OnModuleInit).onModuleInit());
-        }
+            .map((instance) => (instance as OnModuleInit).onModuleInit())
+            .toArray();
+
+        return Promise.all(promises);
+    }
 
     private hasOnModuleInitHook(instance): instance is OnModuleInit {
         return !isUndefined((instance as OnModuleInit).onModuleInit);
