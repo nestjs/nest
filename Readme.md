@@ -38,35 +38,26 @@ JavaScript is awesome. This language is no longer just trash to create simple an
 
 [Node.js](http://nodejs.org) enabled us to use JavaScript also on the server side. There are a lot of superb libraries, helpers and tools for node, but none of them solves the main problem—the architecture. 
 
-We want to create scalable, loosely-coupled, easy-to-maintain applications. Let’s show the entire world the potential of node.js together!
+We want to create scalable, loosely-coupled, easy-to-maintain applications. That's why the **Nest** has been introduced. Let's show the entire world node.js potential together!
 
 ## Features
 
+- Built on top of [TypeScript](http://www.typescriptlang.org)
 - Easy to learn - syntax is similar to [Angular](https://angular.io/)
-- Built on top of TypeScript, but also compatible with plain ES6 (I strongly recommend using [TypeScript](http://www.typescriptlang.org))
 - Based on well-known libraries ([Express](https://github.com/expressjs/express) / [socket.io](https://github.com/socketio/socket.io)) so it’s a familiar experience 
 - Supremely useful Dependency Injection, built-in **Inversion of Control** container
 - **Hierarchical injector** - increase abstraction in your application by creating reusable, loosely-coupled modules with type injection
 - **WebSockets** module (based on [socket.io](https://github.com/socketio/socket.io), although you can use any other library using adapters)
 - Has its own modularity system (split your system into reusable modules)
 - Reactive **microservice** support with message patterns (built-in transport via TCP / [Redis](https://redis.io/), but you can use any other type of communication using `CustomTransportStrategy`)
-- Exceptions handler layer, exception filters, **sync & async pipes** layer
-- Testing utilities
+- Exceptions handler layer, exception filters, **synchronous & asynchronous pipes** layer
+- **Guards** & Reflector - attach additional logic in more declaritive way (e.g. role-based access control)
+- **Interceptors** built on top of [RxJS](https://github.com/Reactive-Extensions/RxJS) library,
+- Testing utilities (both **e2e & unit** tests)
 
 ## Documentation & Quick Start
 
 [Documentation & Tutorial](http://docs.nestjs.com)
-
-## Starter repos
-
-- [TypeScript](https://github.com/kamilmysliwiec/nest-typescript-starter)
-- [Babel](https://github.com/kamilmysliwiec/nest-babel-starter/)
-
-## Useful references
-
-- [Modules](http://docs.nestjs.com/modules.html) 
-- [Examples](http://docs.nestjs.com/examples.html)
-- [API Reference](http://docs.nestjs.com/api-reference.html)
 
 ## People
 
