@@ -17,7 +17,7 @@ export class ExceptionsHandler {
                 statusCode: 500,
                 message: messages.UNKNOWN_EXCEPTION_MESSAGE,
             });
-            if (isObject(exception)) {
+            if (isObject(exception) && (exception as Error).message) {
                 return this.logger.error((exception as Error).message, (exception as Error).stack);
             }
             return this.logger.error(exception);

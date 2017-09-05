@@ -5,6 +5,7 @@ import { messages } from '@nestjs/core/constants';
 import { Observable } from 'rxjs/Observable';
 import { RpcException } from './rpc-exception';
 import { RpcExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
+import 'rxjs/add/observable/throw';
 
 export class RpcExceptionsHandler {
     private filters: RpcExceptionFilterMetadata[] = [];

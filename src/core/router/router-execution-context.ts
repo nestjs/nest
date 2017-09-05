@@ -56,13 +56,13 @@ export class RouterExecutionContext {
             let hasResponseObject = false;
             for (const param of paramProperties) {
                 const { index, value, type, data, pipes: paramPipes } = param;
+                if (type === RouteParamtypes.RESPONSE) {
+                    hasResponseObject = true;
+                }
                 args[index] = await this.getParamValue(
                     value, { metatype: paramtypes[index], type, data },
                     pipes.concat(this.pipesContextCreator.createConcreteContext(paramPipes)),
                 );
-                if (type === RouteParamtypes.RESPONSE) {
-                    hasResponseObject = true;
-                }
             }
             if (hasResponseObject) {
                 return callback.apply(instance, args);

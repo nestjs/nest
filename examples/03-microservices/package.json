@@ -6,12 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "prestart:prod": "tsc",
-    "start:prod": "node dist/server.js",
-    "test": "jest --config=jest.json",
-    "test:watch": "jest --watch --config=jest.json",
-    "test:coverage": "jest --config=jest.json --coverage --coverageDirectory=coverage",
-    "e2e": "jest --config=e2e/jest-e2e.json",
-    "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
+    "start:prod": "node dist/server.js"
   },
   "dependencies": {
     "@nestjs/common": "^3.0.3",
@@ -28,11 +23,7 @@
     "typescript": "^2.4.2"
   },
   "devDependencies": {
-    "@types/jest": "^20.0.8",
     "@types/node": "^7.0.41",
-    "jest": "^20.0.4",
-    "supertest": "^3.0.0",
-    "ts-jest": "^20.0.14",
     "ts-node": "^3.3.0"
   }
 }

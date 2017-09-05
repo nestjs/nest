@@ -52,6 +52,7 @@ export class DependenciesScanner {
         components.map((component) => {
             this.storeComponent(component, token);
             this.reflectComponentMetadata(component, token);
+            this.reflectDynamicMetadata(component, token);
         });
     }
 
@@ -63,11 +64,11 @@ export class DependenciesScanner {
         const routes = this.reflectMetadata(module, metadata.CONTROLLERS);
         routes.map((route) => {
             this.storeRoute(route, token);
-            this.reflectControllersMetadata(route, token);
+            this.reflectDynamicMetadata(route, token);
         });
     }
 
-    private reflectControllersMetadata(route: Metatype<Injectable>, token: string) {
+    private reflectDynamicMetadata(route: Metatype<Injectable>, token: string) {
         this.reflectGuards(route, token);
         this.reflectInterceptors(route, token);
     }

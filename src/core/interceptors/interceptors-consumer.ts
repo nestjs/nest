@@ -21,10 +21,14 @@ export class InterceptorsConsumer {
             return await next();
         }
         const context = this.createContext(instance, callback);
-        const start$ = Observable.defer(next);
-        const result$ = interceptors.reduce(
-          (stream$, interceptor) => interceptor.intercept(dataOrRequest, context, stream$),
-          start$,
+        const start$ = Observable.defer(() => {
+            const res = next();
+            const isDeffered = res instanceof Promise || res instanceof Observable;
+            return isDeffered ? res : Promise.resolve(res);
+        });
+        const result$ = await interceptors.reduce(
+          async (stream$, interceptor) => await interceptor.intercept(dataOrRequest, context, await stream$),
+          Promise.resolve(start$),
         );
         return await result$.toPromise();
     }

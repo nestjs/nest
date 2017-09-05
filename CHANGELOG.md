@@ -1,3 +1,24 @@
+## 4.0.0
+**@nestjs/core**
+- Interceptors feature (docs)
+- Guards feature (docs)
+- `@Shared()` deprecated (modules are singletons by default)
+- `@SingleScope()` decorator (read more in the docs)
+- New response handling approach (return plain value / Promise / Observable)
+- Async components
+- New `INestApplication` methods (for example `use()` wrapper)
+
+**@nestjs/microservices**
+- Possibility to return Promise / Observable / plain value
+- Guards & Interceptors & Pipes & Exception Filters integration
+
+**@nestjs/websockets**
+- Possibility to return Promise / Observable / plain value
+- Guards & Interceptors & Pipes & Exception Filters integration
+
+**@nestjs/testing**
+- Completely rewritten testing package (docs)
+
 ## 3.0.1 (24.06.2017)
 **@nestjs/core**
 - Hierarchical injector bugfix,

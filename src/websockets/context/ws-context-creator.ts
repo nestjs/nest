@@ -44,7 +44,7 @@ export class WsContextCreator {
             const handler = () => callback.call(instance, client, data);
 
             return await this.interceptorsConsumer.intercept(
-                interceptors, data, instance, callback, handler,
+                interceptors, result, instance, callback, handler,
             );
         }, exceptionHandler);
     }
