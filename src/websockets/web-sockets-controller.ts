@@ -56,6 +56,9 @@ export class WebSocketsController {
         const adapter = this.config.getIoAdapter();
 
         this.subscribeInitEvent(instance, init);
+        this.subscribeConnectionEvent(instance, connection);
+        this.subscribeDisconnectEvent(instance, disconnect);
+
         init.next(server);
 
         const handler = this.getConnectionHandler(this, instance, messageHandlers, disconnect, connection);
@@ -71,14 +74,12 @@ export class WebSocketsController {
 
         const adapter = this.config.getIoAdapter();
         return (client) => {
-            context.subscribeConnectionEvent(instance, connection);
             connection.next(client);
 
             context.subscribeMessages(messageHandlers, client, instance);
-            context.subscribeDisconnectEvent(instance, disconnect);
 
             const disconnectHook = adapter.bindClientDisconnect;
-            disconnectHook && disconnectHook(client, socket => disconnect.next(socket));
+            disconnectHook && disconnectHook(client, client => disconnect.next(client));
         };
     }
 
