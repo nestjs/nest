@@ -33,24 +33,23 @@ export class NestApplication implements INestApplication {
         );
     }
 
-    public setupModules() {
+    public async setupModules() {
         SocketModule.setup(this.container, this.config);
-        MiddlewaresModule.setup(this.container, this.config);
+        MicroservicesModule.setup(this.container);
         MicroservicesModule.setupClients(this.container);
+        await MiddlewaresModule.setup(this.container, this.config);
     }
 
-    public init() {
-        this.setupModules();
+    public async init() {
+        await this.setupModules();
 
         const router = ExpressAdapter.createRouter();
-        this.setupMiddlewares(router);
+        await this.setupMiddlewares(router);
         this.setupRoutes(router);
 
-        this.express.use(
-            validatePath(this.config.getGlobalPrefix()),
-            router,
-        );
+        this.express.use(validatePath(this.config.getGlobalPrefix()), router);
         this.callInitHook();
+
         this.logger.log(messages.APPLICATION_READY);
         this.isInitialized = true;
     }
@@ -68,20 +67,35 @@ export class NestApplication implements INestApplication {
         return this.microservices;
     }
 
-    public startAllMicroservices(callback: () => void) {
-        Promise.all(this.microservices.map(this.listenToPromise)).then(callback);
+    public startAllMicroservices(callback?: () => void) {
+        Promise.all(
+            this.microservices.map(this.listenToPromise),
+        ).then(() => callback && callback());
     }
 
-    public listen(port: number, callback?: () => void) {
-        (!this.isInitialized) && this.init();
+    public startAllMicroservicesAsync(): Promise<void> {
+        return new Promise((resolve) => this.startAllMicroservices(resolve));
+    }
+
+    public use(requestHandler) {
+        this.express.use(requestHandler);
+    }
+
+    public async listen(port: number, callback?: () => void) {
+        (!this.isInitialized) && await this.init();
 
         this.server = this.express.listen(port, callback);
         return this.server;
     }
 
+    public listenAsync(port: number): Promise<any> {
+        return new Promise((resolve) => {
+            const server = this.listen(port, () => resolve(server));
+        });
+    }
+
     public close() {
         SocketModule.close();
-
         this.server && this.server.close();
         this.microservices.forEach((microservice) => {
             microservice.setIsTerminated(true);
@@ -102,12 +116,12 @@ export class NestApplication implements INestApplication {
         this.config.useGlobalFilters(...filters);
     }
 
-    public useGlobalPipes(...pipes: PipeTransform[]) {
+    public useGlobalPipes(...pipes: PipeTransform<any>[]) {
         this.config.useGlobalPipes(...pipes);
     }
 
-    private setupMiddlewares(instance) {
-        MiddlewaresModule.setupMiddlewares(instance);
+    private async setupMiddlewares(instance) {
+        await MiddlewaresModule.setupMiddlewares(instance);
     }
 
     private setupRoutes(instance) {
@@ -115,8 +129,8 @@ export class NestApplication implements INestApplication {
     }
 
     private listenToPromise(microservice: INestMicroservice) {
-        return new Promise((resolve, reject) => {
-            microservice.listen(resolve);
+        return new Promise(async (resolve, reject) => {
+            await microservice.listen(resolve);
         });
     }
 

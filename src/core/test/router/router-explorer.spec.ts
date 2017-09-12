@@ -7,7 +7,7 @@ import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { MetadataScanner } from '../../metadata-scanner';
 
 describe('RouterExplorer', () => {
-    @Controller({ path: 'global' })
+    @Controller('global')
     class TestRoute {
         @RequestMapping({ path: 'test' })
         public getTest() {}
@@ -57,7 +57,7 @@ describe('RouterExplorer', () => {
                 { path: 'test', requestMethod: RequestMethod.GET },
             ];
 
-            routerBuilder.applyPathsToRouterProxy(null, paths as any, null);
+            routerBuilder.applyPathsToRouterProxy(null, paths as any, null, '');
 
             expect(bindStub.calledWith(null, paths[0], null)).to.be.true;
             expect(bindStub.callCount).to.be.eql(paths.length);

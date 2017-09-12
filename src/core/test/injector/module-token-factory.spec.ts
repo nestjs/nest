@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ModuleTokenFactory } from '../../injector/module-token-factory';
-import { Shared } from '../../../index';
+import { Shared, SingleScope } from '../../../index';
 
 describe('ModuleTokenFactory', () => {
     let factory: ModuleTokenFactory;
@@ -10,11 +10,11 @@ describe('ModuleTokenFactory', () => {
     });
     describe('create', () => {
         class Module {}
-        it('should force reflected scope if isset', () => {
-            const scope = '_';
+        it('should force global scope if it is not set', () => {
+            const scope = 'global';
             const token = factory.create(
-                Shared(scope)(Module) as any,
-                [Module],
+                Module as any,
+                [Module as any],
             );
             expect(token).to.be.deep.eq(JSON.stringify({
                 module: Module.name,
@@ -23,8 +23,8 @@ describe('ModuleTokenFactory', () => {
         });
         it('should returns expected token', () => {
             const token = factory.create(
-                Module,
-                [Module],
+                SingleScope()(Module),
+                [Module as any],
             );
             expect(token).to.be.deep.eq(JSON.stringify({
                 module: Module.name,
@@ -39,10 +39,10 @@ describe('ModuleTokenFactory', () => {
         });
     });
     describe('getScopeStack', () => {
-        it('should map metatypes to names array', () => {
+        it('should map metatypes to the array with last metatype', () => {
             const metatype1 = () => {};
             const metatype2 = () => {};
-            expect(factory.getScopeStack([metatype1 as any, metatype2 as any])).to.be.eql([metatype1.name, metatype2.name]);
+            expect(factory.getScopeStack([metatype1 as any, metatype2 as any])).to.be.eql([metatype2.name]);
         });
     });
 });

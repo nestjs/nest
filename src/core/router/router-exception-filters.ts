@@ -9,10 +9,10 @@ import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/ex
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';
 import { RouterProxyCallback } from './../router/router-proxy';
-import { ContextCreator } from './../helpers/context-creator';
 import { ApplicationConfig } from './../application-config';
+import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context';
 
-export class RouterExceptionFilters extends ContextCreator {
+export class RouterExceptionFilters extends BaseExceptionFilterContext {
     constructor(private readonly config: ApplicationConfig) {
         super();
     }
@@ -27,25 +27,7 @@ export class RouterExceptionFilters extends ContextCreator {
         return exceptionHandler;
     }
 
-    public getGlobalMetadata(): ExceptionFilter[] {
-        return this.config.getGlobalFilters();
-    }
-
-     public createConcreteContext(metadata: ExceptionFilter[]): ExceptionFilterMetadata[] {
-         if (isUndefined(metadata) || isEmpty(metadata)) {
-            return [];
-         }
-         return iterate(metadata)
-                .filter((instance) => instance.catch && isFunction(instance.catch))
-                .map((instance) => ({
-                    func: instance.catch.bind(instance),
-                    exceptionMetatypes: this.reflectCatchExceptions(instance),
-                }))
-                .toArray();
-    }
-
-    public reflectCatchExceptions(instance: ExceptionFilter): Metatype<any>[] {
-        const prototype = Object.getPrototypeOf(instance);
-        return Reflect.getMetadata(FILTER_CATCH_EXCEPTIONS, prototype.constructor) || [];
+    public getGlobalMetadata<T extends any[]>(): T {
+        return this.config.getGlobalFilters() as T;
     }
 }

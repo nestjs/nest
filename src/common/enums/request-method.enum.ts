@@ -5,4 +5,6 @@ export enum RequestMethod {
     DELETE,
     PATCH,
     ALL,
+    OPTIONS,
+    HEAD,
 }

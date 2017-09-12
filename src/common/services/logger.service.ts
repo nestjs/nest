@@ -37,7 +37,7 @@ export class Logger {
     }
 
     private printStackTrace(trace: string) {
-        if (Logger.mode === NestEnvironment.TEST) return;
+        if (Logger.mode === NestEnvironment.TEST || !trace) return;
 
         process.stdout.write(trace);
         process.stdout.write(`\n`);

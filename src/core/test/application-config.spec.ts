@@ -18,4 +18,28 @@ describe('ApplicationConfig', () => {
             expect(appConfig.getGlobalPrefix()).to.be.eql('');
         });
     });
+    describe('IOAdapter', () => {
+        it('should set io adapter', () => {
+            const ioAdapter = { test: 0 };
+            appConfig.setIoAdapter(ioAdapter as any);
+
+            expect(appConfig.getIoAdapter()).to.be.eql(ioAdapter);
+        });
+    });
+    describe('Pipes', () => {
+        it('should set global pipes', () => {
+            const pipes = ['test', 'test2'];
+            appConfig.useGlobalPipes(...pipes as any);
+
+            expect(appConfig.getGlobalPipes()).to.be.eql(pipes);
+        });
+    });
+    describe('Filters', () => {
+        it('should set global filters', () => {
+            const filters = ['test', 'test2'];
+            appConfig.useGlobalFilters(...filters as any);
+
+            expect(appConfig.getGlobalFilters()).to.be.eql(filters);
+        });
+    });
 });

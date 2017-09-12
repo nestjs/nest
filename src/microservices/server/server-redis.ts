@@ -54,20 +54,21 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     }
 
     public getMessageHandler(pub) {
-        return (channel, buffer) => this.handleMessage(channel, buffer, pub);
+        return async (channel, buffer) => await this.handleMessage(channel, buffer, pub);
     }
 
-    public handleMessage(channel, buffer, pub) {
+    public async handleMessage(channel, buffer, pub) {
         const msg = this.tryParse(buffer);
         const pattern = channel.replace(/_ack$/, '');
         const publish = this.getPublisher(pub, pattern);
+        const status = 'error';
 
         if (!this.messageHandlers[pattern]) {
-            publish({ err: NO_PATTERN_MESSAGE });
+            publish({ status, error: NO_PATTERN_MESSAGE });
             return;
         }
         const handler = this.messageHandlers[pattern];
-        const response$ = handler(msg.data) as Observable<any>;
+        const response$ = this.transformToObservable(await handler(msg.data)) as Observable<any>;
         response$ && this.send(response$, publish);
     }
 

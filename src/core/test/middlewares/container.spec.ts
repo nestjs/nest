@@ -8,7 +8,7 @@ import { RequestMapping } from '../../../common/utils/decorators/request-mapping
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 
 describe('MiddlewaresContainer', () => {
-    @Controller({ path: 'test' })
+    @Controller('test')
     class TestRoute {
 
         @RequestMapping({ path: 'test' })

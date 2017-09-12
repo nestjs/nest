@@ -11,43 +11,65 @@ import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices/interfaces/microservice-configuration.interface';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
+import { MetadataScanner } from './metadata-scanner';
 
-export class NestFactory {
-    private static container = new NestContainer();
-    private static dependenciesScanner = new DependenciesScanner(NestFactory.container);
-    private static instanceLoader = new InstanceLoader(NestFactory.container);
-    private static logger = new Logger(NestFactory.name);
+export class NestFactoryStatic {
+    private container = new NestContainer();
+    private instanceLoader = new InstanceLoader(this.container);
+    private logger = new Logger('NestFactory');
+    private dependenciesScanner = new DependenciesScanner(
+        this.container, new MetadataScanner(),
+    );
 
-    public static create(
-        module: NestModuleMetatype,
-        express = ExpressAdapter.create()): INestApplication {
-
-        this.initialize(module);
+    /**
+     * Creates an instance of the NestApplication (returns Promise)
+     *
+     * @param  {} module Entry ApplicationModule class
+     * @param  {} express Optional express() server instance
+     * @returns an `Promise` of the INestApplication instance
+     */
+    public async create(module, express = ExpressAdapter.create()): Promise<INestApplication> {
+        await this.initialize(module);
         return this.createNestInstance<NestApplication>(
             new NestApplication(this.container, express),
         );
     }
 
-    public static createMicroservice(module: NestModuleMetatype, config?: MicroserviceConfiguration): INestMicroservice {
-        this.initialize(module);
+    /**
+     * Creates an instance of the NestMicroservice (returns Promise)
+     *
+     * @param  {} module Entry ApplicationModule class
+     * @param  {MicroserviceConfiguration} config Optional microservice configuration
+     * @returns an `Promise` of the INestMicroservice instance
+     */
+    public async createMicroservice(
+        module,
+        config?: MicroserviceConfiguration): Promise<INestMicroservice> {
+
+        await this.initialize(module);
         return this.createNestInstance<NestMicroservice>(
             new NestMicroservice(this.container, config),
         );
     }
 
-    private static createNestInstance<T>(instance: T) {
+    private createNestInstance<T>(instance: T) {
         return this.createProxy(instance);
     }
 
-    private static initialize(module: NestModuleMetatype) {
-        this.logger.log(messages.APPLICATION_START);
-        ExceptionsZone.run(() => {
-            this.dependenciesScanner.scan(module);
-            this.instanceLoader.createInstancesOfDependencies();
-        });
+    private async initialize(module) {
+        try {
+            this.logger.log(messages.APPLICATION_START);
+            await ExceptionsZone.asyncRun(async () => {
+                this.dependenciesScanner.scan(module);
+                await this.instanceLoader.createInstancesOfDependencies();
+            });
+        }
+        catch (e) {
+            process.abort();
+        }
     }
 
-    private static createProxy(target) {
+    private createProxy(target) {
         const proxy = this.createExceptionProxy();
         return new Proxy(target, {
             get: proxy,
@@ -55,7 +77,7 @@ export class NestFactory {
         });
     }
 
-    private static createExceptionProxy() {
+    private createExceptionProxy() {
         return (receiver, prop) => {
             if (!(prop in receiver))
                 return;
@@ -72,5 +94,7 @@ export class NestFactory {
             return receiver[prop];
         };
     }
-
 }
+
+export const NestFactory = new NestFactoryStatic();
+

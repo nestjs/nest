@@ -32,7 +32,7 @@ describe('ExceptionsHandler', () => {
             handler.next(new Error(), response);
 
             expect(statusStub.calledWith(500)).to.be.true;
-            expect(jsonStub.calledWith({ message: 'Unknown exception' })).to.be.true;
+            expect(jsonStub.calledWith({ statusCode: 500, message: 'Internal server error' })).to.be.true;
         });
         describe('when exception is instance of HttpException', () => {
             it('should method send expected response status code and json object', () => {
@@ -52,7 +52,7 @@ describe('ExceptionsHandler', () => {
                 handler.next(new HttpException(message, status), response);
 
                 expect(statusStub.calledWith(status)).to.be.true;
-                expect(jsonStub.calledWith({ message })).to.be.true;
+                expect(jsonStub.calledWith({ message, statusCode: status })).to.be.true;
             });
         });
         describe('when "invokeCustomFilters" returns true', () => {

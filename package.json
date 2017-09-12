@@ -1,14 +1,13 @@
 {
   "name": "nestjs",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
     "start": "nodemon -e ts --watch src index.js",
     "build": "node index.js",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "postinstall": "opencollective postinstall"
+    "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "nyc": {
     "include": [
@@ -42,25 +41,28 @@
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "dependencies": {
-    "@nestjs/common": "*",
-    "@nestjs/core": "*",
-    "@nestjs/microservices": "*",
-    "@nestjs/testing": "*",
-    "@nestjs/websockets": "*",
+    "@nestjs/common": "^4.0.0",
+    "@nestjs/core": "^4.0.0",
+    "@nestjs/microservices": "^4.0.0",
+    "@nestjs/testing": "^4.0.0",
+    "@nestjs/websockets": "^4.0.0",
     "cli-color": "^1.1.0",
+    "engine.io-client": "^3.1.1",
     "express": "^4.14.0",
+    "fast-safe-stringify": "^1.2.0",
     "iterare": "0.0.8",
     "json-socket": "^0.2.1",
     "opencollective": "^1.0.3",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
-    "rxjs": "^5.4.0",
-    "socket.io": "^1.7.2",
-    "typescript": "2.2.1"
+    "rxjs": "^5.4.2",
+    "socket.io": "^2.0.3",
+    "typescript": "^2.4.1"
   },
   "devDependencies": {
-    "@types/chai": "^3.4.34",
-    "@types/express": "^4.0.35",
+    "@types/chai": "^3.5.2",
+    "@types/chai-as-promised": "0.0.31",
+    "@types/express": "^4.0.36",
     "@types/mocha": "^2.2.38",
     "@types/node": "^7.0.5",
     "@types/redis": "^0.12.36",
@@ -70,6 +72,7 @@
     "awesome-typescript-loader": "^3.0.0-beta.18",
     "body-parser": "^1.17.2",
     "chai": "^3.5.0",
+    "chai-as-promised": "^7.1.1",
     "concurrently": "^3.4.0",
     "core-js": "^2.4.1",
     "coveralls": "^2.11.16",
@@ -84,7 +87,7 @@
     "nyc": "^10.1.2",
     "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
-    "ts-node": "2.0.0"
+    "ts-node": "^3.2.0"
   },
   "collective": {
     "type": "opencollective",
