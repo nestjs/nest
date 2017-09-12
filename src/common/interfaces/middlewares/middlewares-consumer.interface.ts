@@ -1,6 +1,12 @@
-import { Metatype } from '../metatype.interface';
 import { MiddlewareConfigProxy } from './middleware-config-proxy.interface';
 
 export interface MiddlewaresConsumer {
-     apply(metatypes: Metatype<any> | Array<Metatype<any>>): MiddlewareConfigProxy;
+     /**
+      * Takes single middleware class or array of classes,
+      * which subsequently can be attached to the passed routes / controllers.
+      *
+      * @param  {any|any[]} middlewares
+      * @returns MiddlewareConfigProxy
+      */
+     apply(middlewares: any | any[]): MiddlewareConfigProxy;
 }

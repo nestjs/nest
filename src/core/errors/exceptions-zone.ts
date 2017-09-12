@@ -13,4 +13,14 @@ export class ExceptionsZone {
             throw UNHANDLED_RUNTIME_EXCEPTION;
         }
     }
+
+    public static async asyncRun(fn: () => Promise<void>) {
+        try {
+            await fn();
+        }
+        catch (e) {
+            this.exceptionHandler.handle(e);
+            throw UNHANDLED_RUNTIME_EXCEPTION;
+        }
+    }
 }

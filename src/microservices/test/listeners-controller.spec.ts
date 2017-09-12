@@ -4,6 +4,7 @@ import { ListenersController } from '../listeners-controller';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { ClientsContainer } from '../container';
+import { RpcContextCreator } from '../context/rpc-context-creator';
 
 describe('ListenersController', () => {
     let instance: ListenersController,
@@ -17,7 +18,7 @@ describe('ListenersController', () => {
         explorer = sinon.mock(metadataExplorer);
     });
     beforeEach(() => {
-        instance = new ListenersController(new ClientsContainer());
+        instance = new ListenersController(new ClientsContainer(), sinon.createStubInstance(RpcContextCreator) as any);
         (instance as any).metadataExplorer = metadataExplorer;
         addSpy = sinon.spy();
         server = {
@@ -31,11 +32,8 @@ describe('ListenersController', () => {
                 { pattern: 'test2', targetCallback: '2' },
             ];
             explorer.expects('explore').returns(handlers);
-            instance.bindPatternHandlers(null, server);
-
+            instance.bindPatternHandlers(null, server, '');
             expect(addSpy.calledTwice).to.be.true;
-            expect(addSpy.calledWith(handlers[0].pattern, handlers[0].targetCallback)).to.be.true;
-            expect(addSpy.calledWith(handlers[1].pattern, handlers[1].targetCallback)).to.be.true;
         });
     });
 });

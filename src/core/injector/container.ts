@@ -7,12 +7,16 @@ import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Module } from './module';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ModuleTokenFactory } from './module-token-factory';
+import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
 
 export class NestContainer {
     private readonly modules = new Map<string, Module>();
     private readonly moduleTokenFactory = new ModuleTokenFactory();
 
     public addModule(metatype: NestModuleMetatype, scope: NestModuleMetatype[]) {
+        if (!metatype) {
+            throw new InvalidModuleException(scope);
+        }
         const token = this.moduleTokenFactory.create(metatype, scope);
         if (this.modules.has(token)) {
             return;
@@ -46,6 +50,15 @@ export class NestContainer {
         module.addComponent(component);
     }
 
+    public addInjectable(Injectable: Metatype<Injectable>, token: string) {
+        if (!this.modules.has(token)) {
+            throw new UnknownModuleException();
+        }
+        const module = this.modules.get(token);
+        module.addInjectable(Injectable);
+    }
+
+
     public addExportedComponent(exportedComponent: Metatype<Injectable>, token: string) {
         if (!this.modules.has(token)) {
             throw new UnknownModuleException();
@@ -66,6 +79,11 @@ export class NestContainer {
         this.modules.clear();
     }
 
+    public replace(toReplace, options: any & { scope: any[] | null }) {
+        [...this.modules.values()].forEach((module) => {
+            module.replace(toReplace, options);
+        });
+    }
 }
 
 export interface InstanceWrapper<T> {
@@ -73,6 +91,9 @@ export interface InstanceWrapper<T> {
     metatype: Metatype<T>;
     instance: T;
     isResolved: boolean;
+    isPending?: boolean;
+    done$?: Promise<void>;
     inject?: Metatype<any>[];
     isNotMetatype?: boolean;
+    async?: boolean;
 }

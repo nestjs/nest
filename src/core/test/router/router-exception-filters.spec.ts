@@ -41,16 +41,6 @@ describe('RouterExceptionFilters', () => {
             });
         });
     });
-    /*describe('reflectExceptionFilters', () => {
-        const filters = [ ExceptionFilter ];
-        @ExceptionFilters(...filters as any)
-        class WithMetadata {}
-        it('should returns EXCEPTION_FILTERS_METADATA metadata', () => {
-            expect(
-                exceptionFilter.reflectExceptionFilters(new WithMetadata()),
-            ).to.be.eql(filters);
-        });
-    });*/
     describe('reflectCatchExceptions', () => {
         it('should returns FILTER_CATCH_EXCEPTIONS metadata', () => {
             expect(

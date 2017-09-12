@@ -12,6 +12,11 @@ import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { MiddlewaresInjector } from './middlewares-injector';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { WsContextCreator } from './context/ws-context-creator';
+import { Observable } from 'rxjs/Observable';
+import 'rxjs/add/observable/fromPromise';
+import 'rxjs/add/observable/of';
+import 'rxjs/add/operator/switchMap';
 
 export class WebSocketsController {
     private readonly metadataExplorer = new GatewayMetadataExplorer(new MetadataScanner());
@@ -20,7 +25,8 @@ export class WebSocketsController {
     constructor(
         private readonly socketServerProvider: SocketServerProvider,
         private readonly container: NestContainer,
-        private readonly config: ApplicationConfig) {
+        private readonly config: ApplicationConfig,
+        private readonly contextCreator: WsContextCreator) {
             this.middlewaresInjector = new MiddlewaresInjector(container, config);
         }
 
@@ -35,7 +41,11 @@ export class WebSocketsController {
     }
 
     public subscribeObservableServer(instance: NestGateway, namespace: string, port: number, module: string) {
-        const messageHandlers = this.metadataExplorer.explore(instance);
+        const plainMessageHandlers = this.metadataExplorer.explore(instance);
+        const messageHandlers = plainMessageHandlers.map(({ callback, message }) => ({
+            message,
+            callback: this.contextCreator.create(instance, callback, module),
+        }));
         const observableServer = this.socketServerProvider.scanForSocketServer(namespace, port);
 
         this.injectMiddlewares(observableServer, instance, module);
@@ -56,6 +66,8 @@ export class WebSocketsController {
         const adapter = this.config.getIoAdapter();
 
         this.subscribeInitEvent(instance, init);
+        this.subscribeConnectionEvent(instance, connection);
+        this.subscribeDisconnectEvent(instance, disconnect);
         init.next(server);
 
         const handler = this.getConnectionHandler(this, instance, messageHandlers, disconnect, connection);
@@ -71,14 +83,11 @@ export class WebSocketsController {
 
         const adapter = this.config.getIoAdapter();
         return (client) => {
-            context.subscribeConnectionEvent(instance, connection);
             connection.next(client);
-
             context.subscribeMessages(messageHandlers, client, instance);
-            context.subscribeDisconnectEvent(instance, disconnect);
 
             const disconnectHook = adapter.bindClientDisconnect;
-            disconnectHook && disconnectHook(client, socket => disconnect.next(socket));
+            disconnectHook && disconnectHook.call(adapter, client, socket => disconnect.next(socket));
         };
     }
 
@@ -106,7 +115,21 @@ export class WebSocketsController {
             message,
             callback: callback.bind(instance, client),
         }));
-        adapter.bindMessageHandlers(client, handlers);
+        adapter.bindMessageHandlers(
+            client, handlers,
+            (data) => Observable.fromPromise(this.pickResult(data)).switchMap((stream) => stream),
+        );
+    }
+
+    public async pickResult(defferedResult: Promise<any>): Promise<Observable<any>> {
+        const result = await defferedResult;
+        if (result instanceof Observable) {
+            return result;
+        }
+        if (result instanceof Promise) {
+            return Observable.fromPromise(result);
+        }
+        return Observable.of(result);
     }
 
     private hookServerToProperties(instance: NestGateway, server) {

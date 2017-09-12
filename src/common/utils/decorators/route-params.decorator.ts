@@ -16,7 +16,7 @@ const assignMetadata = (
     paramtype: RouteParamtypes,
     index: number,
     data?: ParamData,
-    ...pipes: PipeTransform[]) => ({
+    ...pipes: PipeTransform<any>[]) => ({
     ...args,
     [`${paramtype}:${index}`]: {
         index,
@@ -38,7 +38,7 @@ const createRouteParamDecorator = (paramtype: RouteParamtypes) => {
 };
 
 const createRouteParamDecoratorWithPipes = (paramtype: RouteParamtypes) => {
-    return (data?: ParamData, ...pipes: PipeTransform[]): ParameterDecorator => (target, key, index) => {
+    return (data?: ParamData, ...pipes: PipeTransform<any>[]): ParameterDecorator => (target, key, index) => {
         const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, target, key) || {};
         Reflect.defineMetadata(
             ROUTE_ARGS_METADATA,
@@ -49,15 +49,16 @@ const createRouteParamDecoratorWithPipes = (paramtype: RouteParamtypes) => {
     };
 };
 
+
 export const Request: () => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.REQUEST);
 export const Response: () => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.RESPONSE);
 export const Next: () => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.NEXT);
 export const Session: () => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.SESSION);
 export const Headers: (property?: string) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.HEADERS);
 
-export const Query: (property?: string, ...pipes: PipeTransform[]) => ParameterDecorator = createRouteParamDecoratorWithPipes(RouteParamtypes.QUERY);
-export const Body: (property?: string, ...pipes: PipeTransform[]) => ParameterDecorator = createRouteParamDecoratorWithPipes(RouteParamtypes.BODY);
-export const Param: (property?: string, ...pipes: PipeTransform[]) => ParameterDecorator = createRouteParamDecoratorWithPipes(RouteParamtypes.PARAM);
+export const Query: (property?: string, ...pipes: PipeTransform<any>[]) => ParameterDecorator = createRouteParamDecoratorWithPipes(RouteParamtypes.QUERY);
+export const Body: (property?: string, ...pipes: PipeTransform<any>[]) => ParameterDecorator = createRouteParamDecoratorWithPipes(RouteParamtypes.BODY);
+export const Param: (property?: string, ...pipes: PipeTransform<any>[]) => ParameterDecorator = createRouteParamDecoratorWithPipes(RouteParamtypes.PARAM);
 
 export const Req = Request;
 export const Res = Response;

@@ -2,6 +2,7 @@ import { NestGateway } from './interfaces/nest-gateway.interface';
 import { isUndefined, isFunction } from '@nestjs/common/utils/shared.utils';
 import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA, GATEWAY_SERVER_METADATA } from './constants';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { Observable } from 'rxjs/Observable';
 
 export class GatewayMetadataExplorer {
     constructor(private readonly metadataScanner: MetadataScanner) {}
@@ -11,20 +12,20 @@ export class GatewayMetadataExplorer {
         return this.metadataScanner.scanFromPrototype<NestGateway, MessageMappingProperties>(
             instance,
             instancePrototype,
-            (method) => this.exploreMethodMetadata(instance, instancePrototype, method),
+            (method) => this.exploreMethodMetadata(instancePrototype, method),
         );
     }
 
-    public exploreMethodMetadata(instance, instancePrototype, methodName: string): MessageMappingProperties {
-        const callbackMethod = instancePrototype[methodName];
-        const isMessageMapping = Reflect.getMetadata(MESSAGE_MAPPING_METADATA, callbackMethod);
+    public exploreMethodMetadata(instancePrototype, methodName: string): MessageMappingProperties {
+        const callback = instancePrototype[methodName];
+        const isMessageMapping = Reflect.getMetadata(MESSAGE_MAPPING_METADATA, callback);
 
         if (isUndefined(isMessageMapping)) {
             return null;
         }
-        const message = Reflect.getMetadata(MESSAGE_METADATA, callbackMethod);
+        const message = Reflect.getMetadata(MESSAGE_METADATA, callback);
         return {
-            callback: (callbackMethod as MessageMappingProperties['callback']).bind(instance),
+            callback,
             message,
         };
     }
@@ -45,5 +46,5 @@ export class GatewayMetadataExplorer {
 
 export interface MessageMappingProperties {
     message: string;
-    callback: (...args) => any;
+    callback: (...args) => Observable<any> | Promise<any> | void;
 }

@@ -7,6 +7,11 @@ import { RouteParamsFactory } from '../../router/route-params-factory';
 import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { PipesConsumer } from '../../pipes/pipes-consumer';
 import { ApplicationConfig } from '../../application-config';
+import { GuardsConsumer } from '../../guards/guards-consumer';
+import { GuardsContextCreator } from '../../guards/guards-context-creator';
+import { NestContainer } from '../../injector/container';
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
+import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 
 describe('RouterExecutionContext', () => {
     let contextCreator: RouterExecutionContext;
@@ -29,16 +34,11 @@ describe('RouterExecutionContext', () => {
 
         contextCreator = new RouterExecutionContext(
             factory, new PipesContextCreator(new ApplicationConfig()), consumer,
+            new GuardsContextCreator(new NestContainer()), new GuardsConsumer(),
+            new InterceptorsContextCreator(new NestContainer()), new InterceptorsConsumer(),
         );
     });
     describe('create', () => {
-        describe('when callback metadata is undefined', () => {
-            it('should only bind instance as an context', () => {
-                const instance = {};
-                contextCreator.create(instance, callback as any);
-                expect(bindSpy.calledWith(instance)).to.be.true;
-            });
-        });
         describe('when callback metadata is not undefined', () => {
             let metadata: RouteParamsMetadata;
             beforeEach(() => {
@@ -58,7 +58,7 @@ describe('RouterExecutionContext', () => {
 
                 beforeEach(() => {
                     instance = { foo: 'bar' };
-                    proxyContext = contextCreator.create(instance, callback as any);
+                    proxyContext = contextCreator.create(instance, callback as any, '', 0);
                 });
                 it('should be a function', () => {
                     expect(proxyContext).to.be.a('function');
@@ -66,7 +66,11 @@ describe('RouterExecutionContext', () => {
                 describe('when proxy function called', () => {
                     let exchangeKeysForValuesSpy: sinon.SinonSpy;
                     let request;
-                    const response = {};
+                    const response = {
+                        status: () => response,
+                        send: () => response,
+                        json: () => response,
+                    };
                     const next = {};
 
                     beforeEach(() => {

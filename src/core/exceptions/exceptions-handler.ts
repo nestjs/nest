@@ -13,14 +13,20 @@ export class ExceptionsHandler {
         if (this.invokeCustomFilters(exception, response)) return;
 
         if (!(exception instanceof HttpException)) {
-            response.status(500).json({ message: messages.UNKNOWN_EXCEPTION_MESSAGE });
-
-            this.logger.error(exception.message, exception.stack);
-            return;
+            response.status(500).json({
+                statusCode: 500,
+                message: messages.UNKNOWN_EXCEPTION_MESSAGE,
+            });
+            if (isObject(exception) && (exception as Error).message) {
+                return this.logger.error((exception as Error).message, (exception as Error).stack);
+            }
+            return this.logger.error(exception);
         }
-
         const res = exception.getResponse();
-        const message = isObject(res) ? res : ({ message: res });
+        const message = isObject(res) ? res : ({
+            statusCode: exception.getStatus(),
+            message: res,
+        });
         response.status(exception.getStatus()).json(message);
     }
 

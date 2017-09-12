@@ -27,16 +27,13 @@ export class NestMicroservice implements INestMicroservice {
         private container: NestContainer,
         config: MicroserviceConfiguration) {
 
+        MicroservicesModule.setup(container);
         this.microserviceConfig = {
             transport: Transport.TCP,
             ...config,
         };
         const { strategy } = config;
-        if (strategy) {
-            this.server = strategy;
-            return;
-        }
-        this.server = ServerFactory.create(this.microserviceConfig);
+        this.server = strategy ? strategy : ServerFactory.create(this.microserviceConfig);
     }
 
     public setupModules() {
