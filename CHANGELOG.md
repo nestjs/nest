@@ -1,16 +1,30 @@
 ## 4.0.0
-- More details on http://docs.nestjs.com
+**@nestjs/core**
+- Asynchronous `NestFactory` [read more](http://www.docs.nestjs.com/first-steps)
+- New response handling approach [read more](http://www.docs.nestjs.com/controllers)
+- Interceptors feature [read more](http://www.docs.nestjs.com/interceptors)
+- `@Shared()` deprecated (modules are singletons by default) [read more](http://www.docs.nestjs.com/modules)
+- `@SingleScope()` decorator [read more](http://www.docs.nestjs.com/modules)
+- Modules re-exporting [read more](http://www.docs.nestjs.com/modules)
+- Deffered & functional middlewares [read more](http://www.docs.nestjs.com/middlewares)
+- Guards feature [read more](http://www.docs.nestjs.com/guards)
+- Async components [read more](http://www.docs.nestjs.com/advanced/async-components)
+- Hierarchical injector improvements [read more](http://www.docs.nestjs.com/advanced/hierarchical-injector)
+- Mixin classes [read more](http://www.docs.nestjs.com/advanced/mixins)
+- New `INestApplication` API
 
 **@nestjs/microservices**
-- Possibility to return Promise / Observable / plain value
+- Possibility to return Promise / Observable / plain value [read more](http://www.docs.nestjs.com/microservices/basics)
 - Guards & Interceptors & Pipes & Exception Filters integration
+
 
 **@nestjs/websockets**
-- Possibility to return Promise / Observable / plain value
+- Possibility to return Promise / Observable / plain value [read more](http://www.docs.nestjs.com/websockets/gateways)
 - Guards & Interceptors & Pipes & Exception Filters integration
+- New `WebSocketAdapter` API
 
 **@nestjs/testing**
-- Completely rewritten testing package (docs)
+- Completely rewritten testing package
 
 ## 3.0.1 (24.06.2017)
 **@nestjs/core**
