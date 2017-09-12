@@ -129,8 +129,8 @@ export class NestApplication implements INestApplication {
     }
 
     private listenToPromise(microservice: INestMicroservice) {
-        return new Promise((resolve, reject) => {
-            microservice.listen(resolve);
+        return new Promise(async (resolve, reject) => {
+            await microservice.listen(resolve);
         });
     }
 

@@ -16,6 +16,7 @@ import { WsContextCreator } from './context/ws-context-creator';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/fromPromise';
 import 'rxjs/add/observable/of';
+import 'rxjs/add/operator/switchMap';
 
 export class WebSocketsController {
     private readonly metadataExplorer = new GatewayMetadataExplorer(new MetadataScanner());
@@ -65,6 +66,8 @@ export class WebSocketsController {
         const adapter = this.config.getIoAdapter();
 
         this.subscribeInitEvent(instance, init);
+        this.subscribeConnectionEvent(instance, connection);
+        this.subscribeDisconnectEvent(instance, disconnect);
         init.next(server);
 
         const handler = this.getConnectionHandler(this, instance, messageHandlers, disconnect, connection);
@@ -80,14 +83,11 @@ export class WebSocketsController {
 
         const adapter = this.config.getIoAdapter();
         return (client) => {
-            context.subscribeConnectionEvent(instance, connection);
             connection.next(client);
-
             context.subscribeMessages(messageHandlers, client, instance);
-            context.subscribeDisconnectEvent(instance, disconnect);
 
             const disconnectHook = adapter.bindClientDisconnect;
-            disconnectHook && disconnectHook(client, socket => disconnect.next(socket));
+            disconnectHook && disconnectHook.call(adapter, client, socket => disconnect.next(socket));
         };
     }
 
@@ -115,7 +115,10 @@ export class WebSocketsController {
             message,
             callback: callback.bind(instance, client),
         }));
-        handlers.forEach((handler) => adapter.bindMessageHandler(client, handler, this.pickResult));
+        adapter.bindMessageHandlers(
+            client, handlers,
+            (data) => Observable.fromPromise(this.pickResult(data)).switchMap((stream) => stream),
+        );
     }
 
     public async pickResult(defferedResult: Promise<any>): Promise<Observable<any>> {

@@ -7,13 +7,16 @@ import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Module } from './module';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ModuleTokenFactory } from './module-token-factory';
-import { InvalidModuleScopeException } from '../errors/exceptions/invalid-scope.exception';
+import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
 
 export class NestContainer {
     private readonly modules = new Map<string, Module>();
     private readonly moduleTokenFactory = new ModuleTokenFactory();
 
     public addModule(metatype: NestModuleMetatype, scope: NestModuleMetatype[]) {
+        if (!metatype) {
+            throw new InvalidModuleException(scope);
+        }
         const token = this.moduleTokenFactory.create(metatype, scope);
         if (this.modules.has(token)) {
             return;

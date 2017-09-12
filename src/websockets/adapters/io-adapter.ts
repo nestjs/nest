@@ -24,17 +24,16 @@ export class IoAdapter implements WebSocketAdapter {
         client.on(DISCONNECT_EVENT, callback);
     }
 
-    public bindMessageHandler(
+    public bindMessageHandlers(
         client,
-        handler: MessageMappingProperties,
-        process: (data: any) => Promise<Observable<any>>,
+        handlers: MessageMappingProperties[],
+        process: (data: any) => Observable<any>,
     ) {
-        const { message, callback } = handler;
-        Observable.fromEvent(client, message)
+        handlers.forEach(({ message, callback }) => Observable.fromEvent(client, message)
             .switchMap((data) => process(callback(data)))
-            .switchMap((stream) => stream)
             .filter((result) => !!result && result.event)
-            .subscribe(({ event, data }) => client.emit(event, data));
+            .subscribe(({ event, data }) => client.emit(event, data)),
+        );
     }
 
     public bindMiddleware(server, middleware: (socket, next) => void) {

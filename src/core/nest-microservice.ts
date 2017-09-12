@@ -33,11 +33,7 @@ export class NestMicroservice implements INestMicroservice {
             ...config,
         };
         const { strategy } = config;
-        if (strategy) {
-            this.server = strategy;
-            return;
-        }
-        this.server = ServerFactory.create(this.microserviceConfig);
+        this.server = strategy ? strategy : ServerFactory.create(this.microserviceConfig);
     }
 
     public setupModules() {

@@ -16,12 +16,6 @@ describe('Module', () => {
         module = new Module(TestModule as any, []);
     });
 
-    it('should throw "UnknownExportException" when given exported component is not a part of components array', () => {
-        expect(
-            () => module.addExportedComponent(TestComponent),
-        ).throws(UnknownExportException);
-    });
-
     it('should add route', () => {
         const collection = new Map();
         const setSpy = sinon.spy(collection, 'set');

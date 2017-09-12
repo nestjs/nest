@@ -52,6 +52,16 @@ export const Put = createMappingDecorator(RequestMethod.PUT);
 export const Patch = createMappingDecorator(RequestMethod.PATCH);
 
 /**
+ * Routes HTTP OPTIONS requests to the specified path.
+ */
+export const Options = createMappingDecorator(RequestMethod.OPTIONS);
+
+/**
+ * Routes HTTP HEAD requests to the specified path.
+ */
+export const Head = createMappingDecorator(RequestMethod.HEAD);
+
+/**
  * Routes all HTTP requests to the specified path.
  */
 export const All = createMappingDecorator(RequestMethod.ALL);

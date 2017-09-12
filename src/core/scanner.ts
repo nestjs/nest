@@ -68,9 +68,11 @@ export class DependenciesScanner {
         });
     }
 
-    private reflectDynamicMetadata(route: Metatype<Injectable>, token: string) {
-        this.reflectGuards(route, token);
-        this.reflectInterceptors(route, token);
+    private reflectDynamicMetadata(obj: Metatype<Injectable>, token: string) {
+        if (!obj.prototype) { return; }
+
+        this.reflectGuards(obj, token);
+        this.reflectInterceptors(obj, token);
     }
 
     private reflectExports(module: NestModuleMetatype, token: string) {

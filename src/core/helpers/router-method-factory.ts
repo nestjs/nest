@@ -8,6 +8,8 @@ export class RouterMethodFactory {
             case RequestMethod.DELETE: return target.delete;
             case RequestMethod.PUT: return target.put;
             case RequestMethod.PATCH: return target.patch;
+            case RequestMethod.OPTIONS: return target.options;
+            case RequestMethod.HEAD: return target.head;
             default: {
                 return target.get;
             }

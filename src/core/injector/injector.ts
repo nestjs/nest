@@ -9,6 +9,7 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { MiddlewareWrapper } from '../middlewares/container';
 import { isUndefined, isNil, isFunction } from '@nestjs/common/utils/shared.utils';
 import { PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
+import { UndefinedDependencyException } from './../errors/exceptions/undefined-dependency.exception';
 
 export class Injector {
     public async loadInstanceOfMiddleware(
@@ -128,7 +129,7 @@ export class Injector {
         context: Module[]) {
 
         if (isUndefined(param)) {
-            throw new RuntimeException();
+            throw new UndefinedDependencyException(wrapper.name);
         }
         return await this.resolveComponentInstance<T>(
             module,
@@ -188,27 +189,30 @@ export class Injector {
             return component;
         }
         catch (e) {
+            if (e instanceof UndefinedDependencyException) {
+                throw e;
+            }
             return null;
         }
     }
 
     public async scanForComponentInRelatedModules(module: Module, name: any, context: Module[]) {
-        const relatedModules = module.relatedModules || [];
         let component = null;
+        const relatedModules = module.relatedModules || [];
 
-        Promise.all([...relatedModules.values()].map(async (relatedModule) => {
+        for (const relatedModule of this.flatMap([...relatedModules.values()])) {
             const { components, exports } = relatedModule;
             const isInScope = context === null;
             if ((!exports.has(name) && !isInScope) || !components.has(name)) {
-                return;
+                continue;
             }
             component = components.get(name);
-
             if (!component.isResolved) {
                 const ctx = isInScope ? [module] : [].concat(context, module);
                 await this.loadInstanceOfComponent(component, relatedModule, ctx);
+                break;
             }
-        }));
+        }
         return component;
     }
 
@@ -220,4 +224,13 @@ export class Injector {
         return result;
     }
 
+    public flatMap(modules: Module[]): Module[] {
+        return modules.concat.apply(modules, modules.map((module: Module) => {
+            const { relatedModules, exports } = module;
+            return this.flatMap([...relatedModules.values()].filter((related) => {
+                const { metatype } = related;
+                return exports.has(metatype.name);
+            }));
+        }));
+    }
 }

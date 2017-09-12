@@ -104,8 +104,7 @@ export class Module {
 
     public addInjectable(injectable: Metatype<Injectable>) {
         if (this.isCustomProvider(injectable)) {
-            this.addCustomProvider(injectable, this._injectables);
-            return;
+            return this.addCustomProvider(injectable, this._injectables);
         }
         this._injectables.set(injectable.name, {
             name: injectable.name,
@@ -193,11 +192,7 @@ export class Module {
 
     public addExportedComponent(exportedComponent: ComponentMetatype) {
         if (this.isCustomProvider(exportedComponent)) {
-            this.addCustomExportedComponent(exportedComponent);
-            return;
-        }
-        if (!this._components.get(exportedComponent.name)) {
-            throw new UnknownExportException(exportedComponent.name);
+            return this.addCustomExportedComponent(exportedComponent);
         }
         this._exports.add(exportedComponent.name);
     }

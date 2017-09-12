@@ -30,14 +30,14 @@ export class InstanceLoader {
     }
 
     private async createInstances(modules: Map<string, Module>) {
-        await Promise.all([ ...modules.values() ].map(async (module) => {
+        for (const module of [...modules.values()]) {
             await this.createInstancesOfComponents(module);
             await this.createInstancesOfInjectables(module);
             await this.createInstancesOfRoutes(module);
 
             const { name } = module.metatype;
             this.logger.log(ModuleInitMessage(name));
-        }));
+        }
     }
 
     private createPrototypesOfComponents(module: Module) {

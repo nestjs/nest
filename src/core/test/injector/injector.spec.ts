@@ -266,6 +266,7 @@ describe('Injector', () => {
                     exports: {
                         has: () => true,
                     },
+                    relatedModules: new Map(),
                 }]] as any),
             };
             await injector.scanForComponentInRelatedModules(module as any, metatype as any, []);
@@ -284,6 +285,7 @@ describe('Injector', () => {
                     exports: {
                         has: () => true,
                     },
+                    relatedModules: new Map(),
                 }]] as any),
             };
             await injector.scanForComponentInRelatedModules(module as any, metatype as any, []);

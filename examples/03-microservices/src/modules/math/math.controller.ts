@@ -10,14 +10,14 @@ export class MathController {
   client: ClientProxy;
 
   @Get()
-  call() {
-    const pattern = { cmd: 'add' };
+  call(): Observable<number> {
+    const pattern = { cmd: 'sum' };
     const data = [1, 2, 3, 4, 5];
     return this.client.send<number>(pattern, data);
   }
 
-  @MessagePattern({ cmd: 'add' })
-  add(data): number {
+  @MessagePattern({ cmd: 'sum' })
+  sum(data: number[]): number {
     return (data || []).reduce((a, b) => a + b);
   }
 }

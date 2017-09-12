@@ -20,8 +20,8 @@ export class ModuleTokenFactory {
         const reversedScope = scope.reverse();
         const firstGlobalIndex = reversedScope.findIndex((s) => this.reflectScope(s) === 'global');
         scope.reverse();
-        const stack = firstGlobalIndex >= 0 ?
-            scope.slice(scope.length - firstGlobalIndex - 1) : scope;
+
+        const stack = firstGlobalIndex >= 0 ? scope.slice(scope.length - firstGlobalIndex - 1) : scope;
         return stack.map((module) => module.name);
     }
 

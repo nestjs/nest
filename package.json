@@ -49,6 +49,7 @@
     "cli-color": "^1.1.0",
     "engine.io-client": "^3.1.1",
     "express": "^4.14.0",
+    "fast-safe-stringify": "^1.2.0",
     "iterare": "0.0.8",
     "json-socket": "^0.2.1",
     "opencollective": "^1.0.3",

@@ -20,10 +20,12 @@
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.4.3",
-    "typescript": "^2.4.2"
+    "typescript": "^2.4.2",
+    "ws": "^3.1.0"
   },
   "devDependencies": {
     "@types/node": "^7.0.41",
+    "@types/ws": "^3.0.2",
     "ts-node": "^3.3.0"
   }
 }
