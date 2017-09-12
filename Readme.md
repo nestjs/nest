@@ -27,7 +27,6 @@
 <p>Nest is a framework for building efficient, scalable <a href="http://nodejs.org" target="_blank">Node.js</a> web applications. It uses modern JavaScript, is built with  <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a> and combines elements of OOP (Object Oriented Progamming), FP (Functional Programming), and FRP (Functional Reactive Programming).</p>
 <p>Under the hood, Nest makes use of <a href="https://expressjs.com/" target="_blank">Express</a>, allowing for easy use of the myriad third-party plugins which are available.</p>
 
-
 ## Philosophy
 
 <p>In recent years, thanks to Node.js, JavaScript has become the “lingua franca” of the web for both front and backend applications, giving rise to awesome projects like <a href="https://angular.io/" target="_blank">Angular</a>, <a href="https://github.com/facebook/react" target="_blank">React</a> and <a href="https://github.com/vuejs/vue" target="_blank">Vue</a> which improve developer productivity and enable the construction of fast, testable, extensible frontend applications. However, on the server-side, while there are a lot of superb libraries, helpers and tools for Node, none of them effectively solve the main problem - the architecture.</p>
@@ -76,7 +75,7 @@ $ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websock
 
 ## Backers
 
-I am on a mission to provide an architecture to create truly flexible, scalable and loosely coupled systems using Node.js platform. It takes a lot of time, so if you want to support me, let's [become a backer / sponsor]((https://opencollective.com/nest#backer)). I'll appreciate each help. Thanks!
+I am on a mission to provide an architecture to create truly flexible, scalable and loosely coupled systems using the Node.js platform. It takes a lot of time, so if you want to support me, please [become a backer / sponsor]((https://opencollective.com/nest#backer)). I appreciate your help. Thanks!
 
 <a href="https://opencollective.com/nest/backer/0/website" target="_blank"><img src="https://opencollective.com/nest/backer/0/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/1/website" target="_blank"><img src="https://opencollective.com/nest/backer/1/avatar.svg"></a>
