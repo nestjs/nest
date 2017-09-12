@@ -1,12 +1,5 @@
 ## 4.0.0
-**@nestjs/core**
-- Interceptors feature (docs)
-- Guards feature (docs)
-- `@Shared()` deprecated (modules are singletons by default)
-- `@SingleScope()` decorator (read more in the docs)
-- New response handling approach (return plain value / Promise / Observable)
-- Async components
-- New `INestApplication` methods (for example `use()` wrapper)
+- More details on http://docs.nestjs.com
 
 **@nestjs/microservices**
 - Possibility to return Promise / Observable / plain value
