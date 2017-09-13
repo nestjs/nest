@@ -2,10 +2,10 @@
   <a href="http://nestjs.com/" target="blank"><img src="http://kamilmysliwiec.com/public/nest-logo.png" alt="Nest Logo" /></a>
 </p>
 
-[travis-image]: https://api.travis-ci.org/kamilmysliwiec/nest.svg?branch=master
-[travis-url]: https://travis-ci.org/kamilmysliwiec/nest
-[linux-image]: https://img.shields.io/travis/kamilmysliwiec/nest/master.svg?label=linux
-[linux-url]: https://travis-ci.org/kamilmysliwiec/nest
+[travis-image]: https://api.travis-ci.org/nestjs/nest.svg?branch=master
+[travis-url]: https://travis-ci.org/nestjs/nest
+[linux-image]: https://img.shields.io/travis/nestjs/nest/master.svg?label=linux
+[linux-url]: https://travis-ci.org/nestjs/nest
   
   <p align="center">Modern, powerful web application framework for <a href="http://nodejs.org" target="blank">Node.js</a>.</p>
     <p align="center">
