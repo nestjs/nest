@@ -6,7 +6,6 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { LoggingInterceptor } from '../common/interceptors/logging.interceptor';
 import { TransformInterceptor } from '../common/interceptors/transform.interceptor';
-import { mixinCacheInterceptor } from '../common/interceptors/mixin-cache.interceptor';
 
 @Controller('cats')
 @UseGuards(RolesGuard)
@@ -21,7 +20,6 @@ export class CatsController {
   }
 
   @Get()
-  @UseInterceptors(mixinCacheInterceptor(() => true))
   async findAll(): Promise<Cat[]> {
     return this.catsService.findAll();
   }
