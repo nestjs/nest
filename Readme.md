@@ -2,18 +2,18 @@
   <a href="http://nestjs.com/" target="blank"><img src="http://kamilmysliwiec.com/public/nest-logo.png" alt="Nest Logo" /></a>
 </p>
 
-[travis-image]: https://api.travis-ci.org/kamilmysliwiec/nest.svg?branch=master
-[travis-url]: https://travis-ci.org/kamilmysliwiec/nest
-[linux-image]: https://img.shields.io/travis/kamilmysliwiec/nest/master.svg?label=linux
-[linux-url]: https://travis-ci.org/kamilmysliwiec/nest
+[travis-image]: https://api.travis-ci.org/nestjs/nest.svg?branch=master
+[travis-url]: https://travis-ci.org/nestjs/nest
+[linux-image]: https://img.shields.io/travis/nestjs/nest/master.svg?label=linux
+[linux-url]: https://travis-ci.org/nestjs/nest
   
   <p align="center">Modern, powerful web application framework for <a href="http://nodejs.org" target="blank">Node.js</a>.</p>
     <p align="center">
 <a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
 <a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
 <a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/dm/@nestjs/core.svg" alt="NPM Downloads" /></a>
-<a href="https://travis-ci.org/kamilmysliwiec/nest"><img src="https://api.travis-ci.org/kamilmysliwiec/nest.svg?branch=master" alt="Travis" /></a>
-<a href="https://travis-ci.org/kamilmysliwiec/nest"><img src="https://img.shields.io/travis/kamilmysliwiec/nest/master.svg?label=linux" alt="Linux" /></a>
+<a href="https://travis-ci.org/nestjs/nest"><img src="https://api.travis-ci.org/nestjs/nest.svg?branch=master" alt="Travis" /></a>
+<a href="https://travis-ci.org/nestjs/nest"><img src="https://img.shields.io/travis/nestjs/nest/master.svg?label=linux" alt="Linux" /></a>
 <a href="https://coveralls.io/github/kamilmysliwiec/nest?branch=master"><img src="https://coveralls.io/repos/github/kamilmysliwiec/nest/badge.svg?branch=master" alt="Coverage Status" /></a>
 <a href="https://gitter.im/nestjs/nestjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge"><img src="https://badges.gitter.im/nestjs/nestjs.svg" alt="Gitter" /></a>
 <a href="https://opencollective.com/nest#backer"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
