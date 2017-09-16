@@ -14,6 +14,7 @@ export {
     MiddlewareConfigProxy,
     MiddlewareConfiguration,
     NestMiddleware,
+    ExpressMiddleware,
     MiddlewaresConsumer,
     OnModuleInit,
     ExceptionFilter,
@@ -22,5 +23,10 @@ export {
     Paramtype,
     ArgumentMetadata,
     OnModuleDestroy,
+    ExecutionContext,
+    CanActivate,
+    RpcExceptionFilter,
+    WsExceptionFilter,
+    NestInterceptor,
 } from './interfaces';
 export * from './services/logger.service';

@@ -3,10 +3,12 @@ import { ControllerMetadata } from '../../interfaces/controllers/controller-meta
 import { isUndefined, isObject } from '../shared.utils';
 import { PATH_METADATA } from '../../constants';
 
-export const Controller = (metadata?: ControllerMetadata | string): ClassDecorator => {
-    let path = isObject(metadata) ? metadata[PATH_METADATA] : metadata;
-    path = isUndefined(path) ? '/' : path;
-
+/**
+ * Defines the Controller. The controller can inject dependencies through constructor.
+ * Those dependencies should belongs to the same module.
+ */
+export const Controller = (prefix?: string): ClassDecorator => {
+    const path = isUndefined(prefix) ? '/' : prefix;
     return (target: object) => {
         Reflect.defineMetadata(PATH_METADATA, path, target);
     };

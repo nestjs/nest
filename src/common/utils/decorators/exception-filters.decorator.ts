@@ -24,4 +24,14 @@ export const ExceptionFilters = (...filters: ExceptionFilter[]) => {
     return defineFiltersMetadata(...filters);
 };
 
+/**
+ * Setups exception filters to the chosen context.
+ * When the `@UseFilters()` is used on the controller level:
+ * - Exception Filter will be setuped to the every handler (every method)
+ *
+ * When the `@UseFilters()` is used on the handle level:
+ * - Exception Filter will be setuped only to specified method
+ *
+ * @param  {ExceptionFilter[]} ...filters (instances)
+ */
 export const UseFilters = (...filters: ExceptionFilter[]) => defineFiltersMetadata(...filters);

@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { ROUTE_ARGS_METADATA, PARAMTYPES_METADATA } from '@nestjs/common/constants';
+import { ROUTE_ARGS_METADATA, PARAMTYPES_METADATA, HTTP_CODE_METADATA } from '@nestjs/common/constants';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { Controller, Transform } from '@nestjs/common/interfaces';
@@ -7,45 +7,71 @@ import { RouteParamsMetadata } from '@nestjs/common/utils';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 import { PipesContextCreator } from './../pipes/pipes-context-creator';
 import { PipesConsumer } from './../pipes/pipes-consumer';
-import { ParamData, PipeTransform } from '@nestjs/common';
+import { ParamData, PipeTransform, HttpStatus, RequestMethod } from '@nestjs/common';
+import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { GuardsConsumer } from '../guards/guards-consumer';
+import { FORBIDDEN_MESSAGE } from '../guards/constants';
+import { HttpException } from '../index';
+import { RouterResponseController } from './router-response-controller';
+import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
+import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 
 export interface ParamProperties {
     index: number;
     value: any;
     type: RouteParamtypes;
     data: ParamData;
-    pipes: PipeTransform[];
+    pipes: PipeTransform<any>[];
 }
 
 export class RouterExecutionContext {
+    private readonly responseController = new RouterResponseController();
     constructor(
         private readonly paramsFactory: IRouteParamsFactory,
         private readonly pipesContextCreator: PipesContextCreator,
-        private readonly pipesConsumer: PipesConsumer) {}
+        private readonly pipesConsumer: PipesConsumer,
+        private readonly guardsContextCreator: GuardsContextCreator,
+        private readonly guardsConsumer: GuardsConsumer,
+        private readonly interceptorsContextCreator: InterceptorsContextCreator,
+        private readonly interceptorsConsumer: InterceptorsConsumer) {}
 
-    public create(instance: Controller, callback: (...args) => any) {
-        const metadata = this.reflectCallbackMetadata(instance, callback);
-        if (isUndefined(metadata)) {
-            return callback.bind(instance);
-        }
+    public create(instance: Controller, callback: (...args) => any, module: string, requestMethod: RequestMethod) {
+        const metadata = this.reflectCallbackMetadata(instance, callback) || {};
         const keys = Object.keys(metadata);
         const argsLength = this.getArgumentsLength(keys, metadata);
         const args = this.createNullArray(argsLength);
         const pipes = this.pipesContextCreator.create(instance, callback);
         const paramtypes = this.reflectCallbackParamtypes(instance, callback);
+        const guards = this.guardsContextCreator.create(instance, callback, module);
+        const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
+        const httpCode = this.reflectHttpStatusCode(callback);
 
         return async (req, res, next) => {
             const paramProperties = this.exchangeKeysForValues(keys, metadata, { req, res, next });
+            const canActivate = await this.guardsConsumer.tryActivate(guards, req, instance, callback);
+            if (!canActivate) {
+                throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
+            }
 
+            let hasResponseObject = false;
             for (const param of paramProperties) {
                 const { index, value, type, data, pipes: paramPipes } = param;
+                if (type === RouteParamtypes.RESPONSE) {
+                    hasResponseObject = true;
+                }
                 args[index] = await this.getParamValue(
-                    value,
-                    { metatype: paramtypes[index], type, data },
+                    value, { metatype: paramtypes[index], type, data },
                     pipes.concat(this.pipesContextCreator.createConcreteContext(paramPipes)),
                 );
             }
-            return callback.apply(instance, args);
+            if (hasResponseObject) {
+                return callback.apply(instance, args);
+            }
+            const handler = () => callback.apply(instance, args);
+            const result = await this.interceptorsConsumer.intercept(
+                interceptors, req, instance, callback, handler,
+            );
+            return this.responseController.apply(result, res, requestMethod, httpCode);
         };
     }
 
@@ -60,6 +86,10 @@ export class RouterExecutionContext {
 
     public reflectCallbackParamtypes(instance: Controller, callback: (...args) => any): any[] {
         return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
+    }
+
+    public reflectHttpStatusCode(callback: (...args) => any): number {
+        return Reflect.getMetadata(HTTP_CODE_METADATA, callback);
     }
 
     public getArgumentsLength(keys: string[], metadata: RouteParamsMetadata): number {
@@ -78,11 +108,7 @@ export class RouterExecutionContext {
 
             return {
                 index,
-                value: this.paramsFactory.exchangeKeyForValue(
-                    type,
-                    data,
-                    { req, res, next },
-                ),
+                value: this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next }),
                 type, data, pipes,
             };
         });

@@ -6,7 +6,7 @@ import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception';
 
 describe('RoutesMapper', () => {
-    @Controller({ path: 'test' })
+    @Controller('test')
     class TestRoute {
 
         @RequestMapping({ path: 'test' })

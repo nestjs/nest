@@ -6,6 +6,7 @@ import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { ModuleRef } from './module-ref';
 import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
+import { Reflector } from '../services/reflector.service';
 
 export interface CustomComponent {
     provide: any;
@@ -20,6 +21,7 @@ export type ComponentMetatype = Metatype<Injectable> | CustomFactory | CustomVal
 export class Module {
     private _relatedModules = new Set<Module>();
     private _components = new Map<any, InstanceWrapper<Injectable>>();
+    private _injectables = new Map<any, InstanceWrapper<Injectable>>();
     private _routes = new Map<string, InstanceWrapper<Controller>>();
     private _exports = new Set<string>();
 
@@ -27,8 +29,7 @@ export class Module {
         private _metatype: NestModuleMetatype,
         private _scope: NestModuleMetatype[]) {
 
-        this.addModuleRef();
-        this.addModuleAsComponent();
+        this.addCoreInjectables();
     }
 
     get scope(): NestModuleMetatype[] {
@@ -41,6 +42,10 @@ export class Module {
 
     get components(): Map<string, InstanceWrapper<Injectable>> {
         return this._components;
+    }
+
+    get injectables(): Map<string, InstanceWrapper<Injectable>> {
+        return this._injectables;
     }
 
     get routes(): Map<string, InstanceWrapper<Controller>> {
@@ -56,11 +61,17 @@ export class Module {
             throw new RuntimeException();
         }
         const module = this._components.get(this._metatype.name);
-        return module.instance;
+        return module.instance as NestModule;
     }
 
     get metatype(): NestModuleMetatype {
         return this._metatype;
+    }
+
+    public addCoreInjectables() {
+        this.addModuleRef();
+        this.addModuleAsComponent();
+        this.addReflector();
     }
 
     public addModuleRef() {
@@ -82,9 +93,30 @@ export class Module {
         });
     }
 
+    public addReflector() {
+        this._components.set(Reflector.name, {
+            name: Reflector.name,
+            metatype: Reflector,
+            isResolved: false,
+            instance: null,
+        });
+    }
+
+    public addInjectable(injectable: Metatype<Injectable>) {
+        if (this.isCustomProvider(injectable)) {
+            return this.addCustomProvider(injectable, this._injectables);
+        }
+        this._injectables.set(injectable.name, {
+            name: injectable.name,
+            metatype: injectable,
+            instance: null,
+            isResolved: false,
+        });
+    }
+
     public addComponent(component: ComponentMetatype) {
-        if (this.isCustomComponent(component)) {
-            this.addCustomComponent(component);
+        if (this.isCustomProvider(component)) {
+            this.addCustomProvider(component, this._components);
             return;
         }
         this._components.set((component as Metatype<Injectable>).name, {
@@ -95,11 +127,11 @@ export class Module {
         });
     }
 
-    public isCustomComponent(component: ComponentMetatype): component is CustomClass | CustomFactory | CustomValue  {
+    public isCustomProvider(component: ComponentMetatype): component is CustomClass | CustomFactory | CustomValue  {
         return !isNil((component as CustomComponent).provide);
     }
 
-    public addCustomComponent(component: CustomFactory | CustomValue | CustomClass) {
+    public addCustomProvider(component: CustomFactory | CustomValue | CustomClass, collection: Map<string, any>) {
         const { provide } = component;
         const name = isFunction(provide) ? provide.name : provide;
         const comp = {
@@ -107,9 +139,9 @@ export class Module {
             name,
         };
 
-        if (this.isCustomClass(comp)) this.addCustomClass(comp);
-        else if (this.isCustomValue(comp)) this.addCustomValue(comp);
-        else if (this.isCustomFactory(comp)) this.addCustomFactory(comp);
+        if (this.isCustomClass(comp)) this.addCustomClass(comp, collection);
+        else if (this.isCustomValue(comp)) this.addCustomValue(comp, collection);
+        else if (this.isCustomFactory(comp)) this.addCustomFactory(comp, collection);
     }
 
     public isCustomClass(component): component is CustomClass {
@@ -124,9 +156,9 @@ export class Module {
         return !isUndefined((component as CustomFactory).useFactory);
     }
 
-    public addCustomClass(component: CustomClass) {
+    public addCustomClass(component: CustomClass, collection: Map<string, any>) {
         const { provide, name, useClass } = component;
-        this._components.set(name, {
+        collection.set(name, {
             name,
             metatype: useClass,
             instance: null,
@@ -134,20 +166,21 @@ export class Module {
         });
     }
 
-    public addCustomValue(component: CustomValue) {
+    public addCustomValue(component: CustomValue, collection: Map<string, any>) {
         const { provide, name, useValue: value } = component;
-        this._components.set(name, {
+        collection.set(name, {
             name,
             metatype: null,
             instance: value,
             isResolved: true,
             isNotMetatype: true,
+            async: value instanceof Promise,
         });
     }
 
-    public addCustomFactory(component: CustomFactory) {
+    public addCustomFactory(component: CustomFactory, collection: Map<string, any>) {
         const { provide, name, useFactory: factory, inject } = component;
-        this._components.set(name, {
+        collection.set(name, {
             name,
             metatype: factory as any,
             instance: null,
@@ -158,12 +191,8 @@ export class Module {
     }
 
     public addExportedComponent(exportedComponent: ComponentMetatype) {
-        if (this.isCustomComponent(exportedComponent)) {
-            this.addCustomExportedComponent(exportedComponent);
-            return;
-        }
-        if (!this._components.get(exportedComponent.name)) {
-            throw new UnknownExportException(exportedComponent.name);
+        if (this.isCustomProvider(exportedComponent)) {
+            return this.addCustomExportedComponent(exportedComponent);
         }
         this._exports.add(exportedComponent.name);
     }
@@ -183,6 +212,16 @@ export class Module {
 
     public addRelatedModule(relatedModule) {
         this._relatedModules.add(relatedModule);
+    }
+
+    public replace(toReplace, options) {
+        if (options.isComponent) {
+            return this.addComponent({ provide: toReplace, ...options });
+        }
+        this.addInjectable({
+            provide: toReplace,
+            ...options,
+        });
     }
 
     private getModuleRefMetatype(components) {

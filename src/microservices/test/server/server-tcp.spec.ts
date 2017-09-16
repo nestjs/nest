@@ -54,7 +54,7 @@ describe('ServerTCP', () => {
         });
         it('should send NO_PATTERN_MESSAGE error if key is not exists in handlers object', () => {
            server.handleMessage(socket, msg);
-           expect(socket.sendMessage.calledWith({ err: NO_PATTERN_MESSAGE })).to.be.true;
+           expect(socket.sendMessage.calledWith({ status: 'error', error: NO_PATTERN_MESSAGE })).to.be.true;
         });
         it('should call handler if exists in handlers object', () => {
             const handler = sinon.spy();

@@ -13,13 +13,7 @@ describe('Module', () => {
     @Component() class TestComponent {}
 
     beforeEach(() => {
-        module = new Module(TestModule, []);
-    });
-
-    it('should throw "UnknownExportException" when given exported component is not a part of components array', () => {
-        expect(
-            () => module.addExportedComponent(TestComponent),
-        ).throws(UnknownExportException);
+        module = new Module(TestModule as any, []);
     });
 
     it('should add route', () => {
@@ -37,6 +31,29 @@ describe('Module', () => {
         }]);
     });
 
+    it('should add injectable', () => {
+        const collection = new Map();
+        const setSpy = sinon.spy(collection, 'set');
+        (module as any)._injectables = collection;
+
+        module.addInjectable(TestComponent);
+        expect(setSpy.getCall(0).args).to.deep.equal([ 'TestComponent', {
+            name: 'TestComponent',
+            metatype: TestComponent,
+            instance: null,
+            isResolved: false,
+        }]);
+    });
+
+    describe('when injectable is custom provided', () => {
+        it('should call `addCustomProvider`', () => {
+            const addCustomProviderSpy = sinon.spy(module, 'addCustomProvider');
+
+            module.addInjectable({ provide: 'test' } as any);
+            expect(addCustomProviderSpy.called).to.be.true;
+        });
+    });
+
     it('should add component', () => {
         const collection = new Map();
         const setSpy = sinon.spy(collection, 'set');
@@ -51,14 +68,14 @@ describe('Module', () => {
         }]);
     });
 
-    it('should call "addCustomComponent" when "provide" property exists', () => {
-        const addCustomComponent = sinon.spy();
-        module.addCustomComponent = addCustomComponent;
+    it('should call "addCustomProvider" when "provide" property exists', () => {
+        const addCustomProvider = sinon.spy();
+        module.addCustomProvider = addCustomProvider;
 
         const provider = { provide: 'test', useValue: 'test' };
 
         module.addComponent(provider as any);
-        expect((addCustomComponent as sinon.SinonSpy).called).to.be.true;
+        expect((addCustomProvider as sinon.SinonSpy).called).to.be.true;
     });
 
     it('should call "addCustomClass" when "useClass" property exists', () => {
@@ -67,7 +84,7 @@ describe('Module', () => {
 
         const provider = { provide: 'test', useClass: () => null };
 
-        module.addCustomComponent(provider as any);
+        module.addCustomProvider(provider as any, new Map());
         expect((addCustomClass as sinon.SinonSpy).called).to.be.true;
     });
 
@@ -77,7 +94,7 @@ describe('Module', () => {
 
         const provider = { provide: 'test', useValue: () => null };
 
-        module.addCustomComponent(provider as any);
+        module.addCustomProvider(provider as any, new Map());
         expect((addCustomValue as sinon.SinonSpy).called).to.be.true;
     });
 
@@ -87,7 +104,7 @@ describe('Module', () => {
 
         const provider = { provide: 'test', useFactory: () => null };
 
-        module.addCustomComponent(provider as any);
+        module.addCustomProvider(provider as any, new Map());
         expect((addCustomFactory as sinon.SinonSpy).called).to.be.true;
     });
 
@@ -101,7 +118,7 @@ describe('Module', () => {
             (module as any)._components = collection;
         });
         it('should store component', () => {
-            module.addCustomClass(component as any);
+            module.addCustomClass(component as any, (module as any)._components);
             expect(setSpy.calledWith(component.name, {
                 name: component.name,
                 metatype: type,
@@ -124,13 +141,14 @@ describe('Module', () => {
         });
 
         it('should store component', () => {
-            module.addCustomValue(component as any);
+            module.addCustomValue(component as any, (module as any)._components);
             expect(setSpy.calledWith(name, {
                 name,
                 metatype: null,
                 instance: value,
                 isResolved: true,
                 isNotMetatype: true,
+                async: false,
             })).to.be.true;
         });
     });
@@ -147,7 +165,7 @@ describe('Module', () => {
             (module as any)._components = collection;
         });
         it('should store component', () => {
-            module.addCustomFactory(component as any);
+            module.addCustomFactory(component as any, (module as any)._components);
             expect(setSpy.getCall(0).args).to.deep.equal([component.name, {
                 name: component.name,
                 metatype: type,
@@ -171,6 +189,32 @@ describe('Module', () => {
         describe('when metatype exists in components collection', () => {
             it('should returns null', () => {
                 expect(module.instance).to.be.eql(null);
+            });
+        });
+    });
+
+    describe('when exported component is custom provided', () => {
+        it('should call `addCustomExportedComponent`', () => {
+            const addCustomExportedComponentSpy = sinon.spy(module, 'addCustomExportedComponent');
+
+            module.addExportedComponent({ provide: 'test' } as any);
+            expect(addCustomExportedComponentSpy.called).to.be.true;
+        });
+    });
+
+    describe('replace', () => {
+        describe('when component', () => {
+            it('should call `addComponent`', () => {
+                const addComponentSpy = sinon.spy(module, 'addComponent');
+                module.replace(null, { isComponent: true });
+                expect(addComponentSpy.called).to.be.true;
+            });
+        });
+        describe('when guard', () => {
+            it('should call `addInjectable`', () => {
+                const addInjectableSpy = sinon.spy(module, 'addInjectable');
+                module.replace(null, {});
+                expect(addInjectableSpy.called).to.be.true;
             });
         });
     });

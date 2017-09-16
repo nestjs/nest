@@ -95,7 +95,7 @@ describe('ServerRedis', () => {
         });
         it(`should publish NO_PATTERN_MESSAGE if pattern not exists in messageHandlers object`, () => {
             server.handleMessage(channel, {}, null);
-            expect(getPublisherSpy.calledWith({ err: NO_PATTERN_MESSAGE })).to.be.true;
+            expect(getPublisherSpy.calledWith({ status: 'error', error: NO_PATTERN_MESSAGE })).to.be.true;
         });
         it(`should call handler with expected arguments`, () => {
             const handler = sinon.spy();

@@ -7,7 +7,7 @@ import { Client } from './../../utils/client.decorator';
 describe('@Client', () => {
     const pattern = { role: 'test' };
     class TestComponent {
-        @Client(pattern)
+        @Client(pattern as any)
         public static instance;
     }
     it(`should enhance property with metadata`, () => {

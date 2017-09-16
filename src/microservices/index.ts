@@ -10,3 +10,4 @@ export * from './interfaces';
 export * from './client';
 export * from './enums';
 export * from './server';
+export * from './exceptions';

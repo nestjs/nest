@@ -21,15 +21,15 @@ export class ListenerMetadataExplorer {
     }
 
     public exploreMethodMetadata(instance, instancePrototype, methodName: string): PatternProperties {
-        const callbackMethod = instancePrototype[methodName];
-        const isPattern = Reflect.getMetadata(PATTERN_HANDLER_METADATA, callbackMethod);
+        const targetCallback = instancePrototype[methodName];
+        const isPattern = Reflect.getMetadata(PATTERN_HANDLER_METADATA, targetCallback);
 
         if (isUndefined(isPattern)) {
             return null;
         }
-        const pattern = Reflect.getMetadata(PATTERN_METADATA, callbackMethod);
+        const pattern = Reflect.getMetadata(PATTERN_METADATA, targetCallback);
         return {
-            targetCallback: (callbackMethod as PatternProperties['targetCallback']).bind(instance),
+            targetCallback,
             pattern,
         };
     }
