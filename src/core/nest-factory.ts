@@ -16,7 +16,7 @@ import { MetadataScanner } from './metadata-scanner';
 export class NestFactoryStatic {
     private container = new NestContainer();
     private instanceLoader = new InstanceLoader(this.container);
-    private logger = new Logger('NestFactory');
+    private logger = new Logger('NestFactory', true);
     private dependenciesScanner = new DependenciesScanner(
         this.container, new MetadataScanner(),
     );

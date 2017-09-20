@@ -7,7 +7,7 @@ import { Server } from '@nestjs/microservices/server/server';
 import { MicroserviceConfiguration } from '@nestjs/microservices/interfaces/microservice-configuration.interface';
 import { ServerFactory } from '@nestjs/microservices/server/server-factory';
 import { Transport } from '@nestjs/microservices/enums/transport.enum';
-import { INestMicroservice, WebSocketAdapter } from '@nestjs/common';
+import { INestMicroservice, WebSocketAdapter, CanActivate, PipeTransform, NestInterceptor, ExceptionFilter } from '@nestjs/common';
 import { ApplicationConfig } from './application-config';
 import { SocketModule } from '@nestjs/websockets/socket-module';
 import { CustomTransportStrategy } from '@nestjs/microservices';
@@ -17,7 +17,7 @@ import { OnModuleDestroy } from '@nestjs/common/interfaces';
 
 export class NestMicroservice implements INestMicroservice {
     private readonly config = new ApplicationConfig();
-    private readonly logger = new Logger(NestMicroservice.name);
+    private readonly logger = new Logger(NestMicroservice.name, true);
     private readonly microserviceConfig: MicroserviceConfiguration;
     private readonly server: Server & CustomTransportStrategy;
     private isTerminated = false;
@@ -27,7 +27,7 @@ export class NestMicroservice implements INestMicroservice {
         private container: NestContainer,
         config: MicroserviceConfiguration) {
 
-        MicroservicesModule.setup(container);
+        MicroservicesModule.setup(container, this.config);
         this.microserviceConfig = {
             transport: Transport.TCP,
             ...config,
@@ -50,6 +50,22 @@ export class NestMicroservice implements INestMicroservice {
 
     public useWebSocketAdapter(adapter: WebSocketAdapter) {
         this.config.setIoAdapter(adapter);
+    }
+
+    public useGlobalFilters(...filters: ExceptionFilter[]) {
+        this.config.useGlobalFilters(...filters);
+    }
+
+    public useGlobalPipes(...pipes: PipeTransform<any>[]) {
+        this.config.useGlobalPipes(...pipes);
+    }
+
+    public useGlobalInterceptors(...interceptors: NestInterceptor[]) {
+        this.config.useGlobalInterceptors(...interceptors);
+    }
+
+    public useGlobalGuards(...guards: CanActivate[]) {
+        this.config.useGlobalGuards(...guards);
     }
 
     public listen(callback: () => void) {

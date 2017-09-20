@@ -1,9 +1,12 @@
 import { IoAdapter } from '@nestjs/websockets/adapters/io-adapter';
-import { PipeTransform, WebSocketAdapter, ExceptionFilter } from '@nestjs/common';
+import { PipeTransform, WebSocketAdapter, ExceptionFilter, NestInterceptor, CanActivate } from '@nestjs/common';
+import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
 
-export class ApplicationConfig {
+export class ApplicationConfig implements ConfigurationProvider {
     private globalPipes: PipeTransform<any>[] = [];
     private globalFilters: ExceptionFilter[] = [];
+    private globalInterceptors: NestInterceptor[] = [];
+    private globalGuards: CanActivate[] = [];
     private ioAdapter: WebSocketAdapter = new IoAdapter();
     private globalPrefix = '';
 
@@ -37,5 +40,21 @@ export class ApplicationConfig {
 
     public getGlobalPipes(): PipeTransform<any>[] {
         return this.globalPipes;
+    }
+
+    public getGlobalInterceptors(): NestInterceptor[] {
+        return this.globalInterceptors;
+    }
+
+    public useGlobalInterceptors(...interceptors: NestInterceptor[]) {
+        this.globalInterceptors = interceptors;
+    }
+
+    public getGlobalGuards(): CanActivate[] {
+        return this.globalGuards;
+    }
+
+    public useGlobalGuards(...guards: CanActivate[]) {
+        this.globalGuards = guards;
     }
 }

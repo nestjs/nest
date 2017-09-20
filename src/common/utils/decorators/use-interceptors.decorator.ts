@@ -10,7 +10,7 @@ import { INTERCEPTORS_METADATA } from '../../constants';
  *
  * @param  {} ...interceptors (types)
  */
-export const UseInterceptors = (...interceptors) => {
+export function UseInterceptors(...interceptors) {
     return (target: object, key?, descriptor?) => {
         if (descriptor) {
             Reflect.defineMetadata(INTERCEPTORS_METADATA, interceptors, descriptor.value);
@@ -19,4 +19,4 @@ export const UseInterceptors = (...interceptors) => {
         Reflect.defineMetadata(INTERCEPTORS_METADATA, interceptors, target);
         return target;
     };
-};
+}

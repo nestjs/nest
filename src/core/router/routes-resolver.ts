@@ -12,7 +12,7 @@ import { ExpressRouterExplorer } from './router-explorer';
 import { ApplicationConfig } from './../application-config';
 
 export class RoutesResolver implements Resolver {
-    private readonly logger = new Logger(RoutesResolver.name);
+    private readonly logger = new Logger(RoutesResolver.name, true);
     private readonly routerProxy = new RouterProxy();
     private readonly routerExceptionsFilter: RouterExceptionFilters;
     private readonly routerBuilder: RouterExplorer;

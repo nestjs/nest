@@ -6,7 +6,7 @@ import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
 import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
 
 export class ExceptionsHandler {
-    private readonly logger = new Logger(ExceptionsHandler.name);
+    private static readonly logger = new Logger(ExceptionsHandler.name);
     private filters: ExceptionFilterMetadata[] = [];
 
     public next(exception: Error | HttpException | any, response) {
@@ -18,9 +18,9 @@ export class ExceptionsHandler {
                 message: messages.UNKNOWN_EXCEPTION_MESSAGE,
             });
             if (isObject(exception) && (exception as Error).message) {
-                return this.logger.error((exception as Error).message, (exception as Error).stack);
+                return ExceptionsHandler.logger.error((exception as Error).message, (exception as Error).stack);
             }
-            return this.logger.error(exception);
+            return ExceptionsHandler.logger.error(exception);
         }
         const res = exception.getResponse();
         const message = isObject(res) ? res : ({
