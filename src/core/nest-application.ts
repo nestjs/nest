@@ -13,12 +13,12 @@ import { ApplicationConfig } from './application-config';
 import { validatePath, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices';
 import { NestMicroservice } from './index';
-import { WebSocketAdapter, OnModuleDestroy, ExceptionFilter, PipeTransform } from '@nestjs/common';
+import { WebSocketAdapter, OnModuleDestroy, ExceptionFilter, PipeTransform, NestInterceptor, CanActivate } from '@nestjs/common';
 import { Module } from './injector/module';
 
 export class NestApplication implements INestApplication {
     private readonly config = new ApplicationConfig();
-    private readonly logger = new Logger(NestApplication.name);
+    private readonly logger = new Logger(NestApplication.name, true);
     private readonly routesResolver: Resolver = null;
     private readonly microservices = [];
     private isInitialized = false;
@@ -35,7 +35,7 @@ export class NestApplication implements INestApplication {
 
     public async setupModules() {
         SocketModule.setup(this.container, this.config);
-        MicroservicesModule.setup(this.container);
+        MicroservicesModule.setup(this.container, this.config);
         MicroservicesModule.setupClients(this.container);
         await MiddlewaresModule.setup(this.container, this.config);
     }
@@ -118,6 +118,14 @@ export class NestApplication implements INestApplication {
 
     public useGlobalPipes(...pipes: PipeTransform<any>[]) {
         this.config.useGlobalPipes(...pipes);
+    }
+
+    public useGlobalInterceptors(...interceptors: NestInterceptor[]) {
+        this.config.useGlobalInterceptors(...interceptors);
+    }
+
+    public useGlobalGuards(...guards: CanActivate[]) {
+        this.config.useGlobalGuards(...guards);
     }
 
     private async setupMiddlewares(instance) {

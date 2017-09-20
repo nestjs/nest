@@ -53,25 +53,24 @@ export class RouterExecutionContext {
                 throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
             }
 
-            let hasResponseObject = false;
-            for (const param of paramProperties) {
+            let isResponseObj = false;
+            await Promise.all(paramProperties.map(async (param) => {
                 const { index, value, type, data, pipes: paramPipes } = param;
                 if (type === RouteParamtypes.RESPONSE) {
-                    hasResponseObject = true;
+                    isResponseObj = true;
                 }
                 args[index] = await this.getParamValue(
                     value, { metatype: paramtypes[index], type, data },
                     pipes.concat(this.pipesContextCreator.createConcreteContext(paramPipes)),
                 );
-            }
-            if (hasResponseObject) {
-                return callback.apply(instance, args);
-            }
+            }));
             const handler = () => callback.apply(instance, args);
             const result = await this.interceptorsConsumer.intercept(
                 interceptors, req, instance, callback, handler,
             );
-            return this.responseController.apply(result, res, requestMethod, httpCode);
+            return !isResponseObj ? 
+                this.responseController.apply(result, res, requestMethod, httpCode) :
+                undefined;
         };
     }
 

@@ -8,8 +8,13 @@ import { isEmpty, isUndefined, isFunction } from '@nestjs/common/utils/shared.ut
 import { RpcExceptionFilter } from '@nestjs/common/interfaces/exceptions';
 import { Metatype } from '@nestjs/common/interfaces';
 import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 
 export class ExceptionFiltersContext extends BaseExceptionFilterContext {
+    constructor(private readonly config: ApplicationConfig) {
+        super();
+    }
+
     public create(instance: Controller, callback: (data) => Observable<any>): RpcExceptionsHandler {
         const exceptionHandler = new RpcExceptionsHandler();
         const filters = this.createContext(instance, callback, EXCEPTION_FILTERS_METADATA);
@@ -21,6 +26,6 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
     }
 
     public getGlobalMetadata<T extends any[]>(): T {
-        return [] as T;
+        return this.config.getGlobalFilters() as T;
     }
 }

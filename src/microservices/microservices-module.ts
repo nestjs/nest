@@ -19,17 +19,17 @@ export class MicroservicesModule {
     private static readonly clientsContainer = new ClientsContainer();
     private static listenersController: ListenersController;
 
-    public static setup(container) {
+    public static setup(container, config) {
         this.listenersController = new ListenersController(
             MicroservicesModule.clientsContainer,
             new RpcContextCreator(
                 new RpcProxy(),
-                new ExceptionFiltersContext(),
-                new PipesContextCreator(),
+                new ExceptionFiltersContext(config),
+                new PipesContextCreator(config),
                 new PipesConsumer(),
-                new GuardsContextCreator(container),
+                new GuardsContextCreator(container, config),
                 new GuardsConsumer(),
-                new InterceptorsContextCreator(container),
+                new InterceptorsContextCreator(container, config),
                 new InterceptorsConsumer(),
             ),
         );

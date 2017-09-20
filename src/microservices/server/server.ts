@@ -30,11 +30,7 @@ export abstract class Server {
             .subscribe((response) => respond({ err: null, response }));
     }
 
-    protected handleError(error: string) {
-        this.logger.error(error);
-    }
-
-    protected transformToObservable(resultOrDeffered) {
+    public transformToObservable(resultOrDeffered) {
         if (resultOrDeffered instanceof Promise) {
             return Observable.fromPromise(resultOrDeffered);
         }
@@ -42,5 +38,9 @@ export abstract class Server {
             return Observable.of(resultOrDeffered);
         }
         return resultOrDeffered;
+    }
+    
+    protected handleError(error: string) {
+        this.logger.error(error);
     }
 }

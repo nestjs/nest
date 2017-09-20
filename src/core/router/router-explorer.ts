@@ -27,7 +27,7 @@ import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 export class ExpressRouterExplorer implements RouterExplorer {
     private readonly executionContextCreator: RouterExecutionContext;
     private readonly routerMethodFactory = new RouterMethodFactory();
-    private readonly logger = new Logger('RouterExplorer');
+    private readonly logger = new Logger('RouterExplorer', true);
 
     constructor(
         private readonly metadataScanner?: MetadataScanner,
@@ -41,9 +41,9 @@ export class ExpressRouterExplorer implements RouterExplorer {
             new RouteParamsFactory(),
             new PipesContextCreator(config),
             new PipesConsumer(),
-            new GuardsContextCreator(container),
+            new GuardsContextCreator(container, config),
             new GuardsConsumer(),
-            new InterceptorsContextCreator(container),
+            new InterceptorsContextCreator(container, config),
             new InterceptorsConsumer(),
         );
     }
