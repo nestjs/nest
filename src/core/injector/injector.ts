@@ -203,7 +203,7 @@ export class Injector {
         for (const relatedModule of this.flatMap([...relatedModules.values()])) {
             const { components, exports } = relatedModule;
             const isInScope = context === null;
-            if ((!exports.has(name) && !isInScope) || !components.has(name)) {
+            if (!exports.has(name) && !isInScope && !components.has(name)) {
                 continue;
             }
             component = components.get(name);
