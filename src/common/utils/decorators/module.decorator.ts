@@ -28,12 +28,12 @@ const validateKeys = (keys: string[]) => {
  * - `exports` - the set of components, which should be available for modules, which imports this module
  * @param obj {ModuleMetadata} Module metadata
  */
-export const Module = (obj: {
+export function Module(obj: {
     modules?: any[],
     controllers?: any[],
     components?: any[],
     exports?: any[],
-}): ClassDecorator => {
+}): ClassDecorator {
     const propsKeys = Object.keys(obj);
     validateKeys(propsKeys);
 
@@ -44,4 +44,4 @@ export const Module = (obj: {
             }
         }
     };
-};
+}

@@ -16,7 +16,7 @@ describe('ExceptionHandler', () => {
             logger = {
                 error: () => {},
             };
-            (instance as any).logger = logger;
+            (ExceptionHandler as any).logger = logger;
             errorSpy = sinon.spy(logger, 'error');
         });
         it('when exception is instanceof RuntimeException', () => {

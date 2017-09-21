@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { ExceptionFilters } from '../../../common/utils/decorators/exception-filters.decorator';
 import { Catch } from '../../../common/utils/decorators/catch.decorator';
 import { ExceptionFiltersContext } from './../../context/exception-filters-context';
+import { ApplicationConfig } from './../../../core/application-config';
 
 describe('ExceptionFiltersContext', () => {
     let moduleName: string;
@@ -16,7 +17,7 @@ describe('ExceptionFiltersContext', () => {
 
     beforeEach(() => {
         moduleName = 'Test';
-        exceptionFilter = new ExceptionFiltersContext();
+        exceptionFilter = new ExceptionFiltersContext(new ApplicationConfig() as any);
     });
     describe('create', () => {
         describe('when filters metadata is empty', () => {

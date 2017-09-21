@@ -2,6 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { Server } from '../../server/server';
 import { Observable } from 'rxjs/Observable';
+import 'rxjs/add/operator/toPromise';
 
 class TestServer extends Server {
     public listen(callback: () => void) {}
@@ -51,6 +52,28 @@ describe('Server', () => {
                 });
                 it('should send "complete" event', () => {
                     expect(sendSpy.calledWith({ disposed: true })).to.be.true;
+                });
+            });
+        });
+    });
+    describe('transformToObservable', () => {
+        describe('when resultOrDeffered', () => {
+            describe('is Promise', () => {
+                it('should returns Observable', async () => {
+                    const value = 100;
+                    expect(await server.transformToObservable(Promise.resolve(value)).toPromise()).to.be.eq(100);
+                });
+            });
+            describe('is Observable', () => {
+                it('should returns Observable', async () => {
+                    const value = 100;
+                    expect(await server.transformToObservable(Observable.of(value)).toPromise()).to.be.eq(100);
+                });
+            });
+            describe('is value', () => {
+                it('should returns Observable', async () => {
+                    const value = 100;
+                    expect(await server.transformToObservable(value).toPromise()).to.be.eq(100);
                 });
             });
         });

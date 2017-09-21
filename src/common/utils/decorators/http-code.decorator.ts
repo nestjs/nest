@@ -6,9 +6,9 @@ import { HTTP_CODE_METADATA } from '../../constants';
  *
  * @param  {number} statusCode
  */
-export const HttpCode = (statusCode: number): MethodDecorator => {
+export function HttpCode(statusCode: number): MethodDecorator {
     return (target: object, key, descriptor) => {
         Reflect.defineMetadata(HTTP_CODE_METADATA, statusCode, descriptor.value);
         return descriptor;
     };
-};
+}

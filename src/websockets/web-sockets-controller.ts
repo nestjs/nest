@@ -87,7 +87,7 @@ export class WebSocketsController {
             context.subscribeMessages(messageHandlers, client, instance);
 
             const disconnectHook = adapter.bindClientDisconnect;
-            disconnectHook && disconnectHook.call(adapter, client, socket => disconnect.next(socket));
+            disconnectHook && disconnectHook.call(adapter, client, socket => disconnect.next(client));
         };
     }
 

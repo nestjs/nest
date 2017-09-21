@@ -8,6 +8,7 @@ import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from '../context/ws-context-creator';
+import { Observable } from "rxjs/Observable";
 
 describe('WebSocketsController', () => {
     let instance: WebSocketsController;
@@ -279,6 +280,36 @@ describe('WebSocketsController', () => {
         it('should bind each handler to client', () => {
             instance.subscribeMessages(handlers, client, gateway);
             expect(onSpy.calledTwice).to.be.true;
+        });
+    });
+    describe('pickResult', () => {
+        describe('when defferedResult contains value which', () => {
+            describe('is a Promise', () => {
+                it('should returns Promise<Observable>', async () => {
+                    const value = 100;
+                    expect(
+                        await (await instance.pickResult(Promise.resolve(Promise.resolve(value)))).toPromise()
+                    ).to.be.eq(100);
+                });
+            });
+
+            describe('is an Observable', () => {
+                it('should returns Promise<Observable>', async () => {
+                    const value = 100;
+                    expect(
+                        await (await instance.pickResult(Promise.resolve(Observable.of(value)))).toPromise()
+                    ).to.be.eq(100);
+                });
+            });
+
+            describe('is a value', () => {
+                it('should returns Promise<Observable>', async () => {
+                    const value = 100;
+                    expect(
+                        await (await instance.pickResult(Promise.resolve(value))).toPromise()
+                    ).to.be.eq(100);
+                });
+            });
         });
     });
 });

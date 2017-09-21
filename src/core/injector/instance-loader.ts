@@ -10,7 +10,7 @@ import { isUndefined, isNil } from '@nestjs/common/utils/shared.utils';
 
 export class InstanceLoader {
     private readonly injector = new Injector();
-    private readonly logger = new Logger(InstanceLoader.name);
+    private readonly logger = new Logger(InstanceLoader.name, true);
 
     constructor(private readonly container: NestContainer) {}
 

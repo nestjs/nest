@@ -14,17 +14,6 @@ describe('NestContainer', () => {
         container = new NestContainer();
     });
 
-    it('should not add module if already exists in collection', () => {
-        const modules = new Map();
-        const setSpy = sinon.spy(modules, 'set');
-        (container as any).modules = modules;
-
-        container.addModule(TestModule as any, []);
-        container.addModule(TestModule as any, []);
-
-        expect(setSpy.calledOnce).to.be.true;
-    });
-
     it('should "addComponent" throw "UnknownModuleException" when module is not stored in collection', () => {
         expect(() => container.addComponent(null, 'TestModule')).throw(UnknownModuleException);
     });
@@ -46,6 +35,23 @@ describe('NestContainer', () => {
             const clearSpy = sinon.spy((container as any).modules, 'clear');
             container.clear();
             expect(clearSpy.called).to.be.true;
+        });
+    });
+
+    describe('addModule', () => {
+        it('should not add module if already exists in collection', () => {
+            const modules = new Map();
+            const setSpy = sinon.spy(modules, 'set');
+            (container as any).modules = modules;
+
+            container.addModule(TestModule as any, []);
+            container.addModule(TestModule as any, []);
+
+            expect(setSpy.calledOnce).to.be.true;
+        });
+
+        it('should throws an exception when metatype is not defined', () => {
+            expect(() => container.addModule(undefined, [])).to.throws();
         });
     });
 

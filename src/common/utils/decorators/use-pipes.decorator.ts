@@ -11,7 +11,7 @@ import { PIPES_METADATA } from '../../constants';
  *
  * @param  {PipeTransform[]} ...pipes (instances)
  */
-export const UsePipes = (...pipes: PipeTransform<any>[]) => {
+export function UsePipes(...pipes: PipeTransform<any>[]) {
     return (target: object, key?, descriptor?) => {
         if (descriptor) {
             Reflect.defineMetadata(PIPES_METADATA, pipes, descriptor.value);
@@ -20,4 +20,4 @@ export const UsePipes = (...pipes: PipeTransform<any>[]) => {
         Reflect.defineMetadata(PIPES_METADATA, pipes, target);
         return target;
     };
-};
+}

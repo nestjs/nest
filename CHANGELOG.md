@@ -1,3 +1,12 @@
+## 4.0.1
+- **core**: add possibility to setup global guards and global interceptors
+- **common**: `INestApplication` has `useGlobalInterceptors()` and `useGlobalGuards()` now
+- **microservices**: add possibility to setup global guards, interceptors, filters and pipes
+- **core**: add timestamp to log output
+- **core**: improve pipes performance
+- **core**: add ability to omit param name when passing param-scoped pipe/s
+- **websockets**: fix disconnect event issue (pass client instead of socket.io instance)
+
 ## 4.0.0
 **@nestjs/core**
 - Asynchronous `NestFactory` [read more](http://www.docs.nestjs.com/first-steps)

@@ -106,4 +106,27 @@ describe('InstanceLoader', () => {
         expect(loadRoutesStub.calledWith(module.routes.get('TestRoute'), module)).to.be.true;
     });
 
+    it('should call "loadInstanceOfInjectable" for each injectable in each module', async () => {
+        const injector = new Injector();
+        (loader as any).injector = injector;
+
+        const module = {
+            components: new Map(),
+            routes: new Map(),
+            injectables: new Map(),
+            metatype: { name: 'test' },
+        };
+        const testComp = { instance: null, metatype: TestComponent, name: 'TestComponent' };
+        module.injectables.set('TestComponent', testComp);
+
+        const modules = new Map();
+        modules.set('Test', module);
+        mockContainer.expects('getModules').returns(modules);
+
+        const loadInjectableStub = sinon.stub(injector, 'loadInstanceOfInjectable');
+        sinon.stub(injector, 'loadInstanceOfRoute');
+
+        await loader.createInstancesOfDependencies();
+        expect(loadInjectableStub.calledWith(module.injectables.get('TestComponent'), module)).to.be.true;
+    });
 });

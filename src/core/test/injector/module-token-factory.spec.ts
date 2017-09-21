@@ -23,7 +23,7 @@ describe('ModuleTokenFactory', () => {
         });
         it('should returns expected token', () => {
             const token = factory.create(
-                SingleScope()(Module),
+                SingleScope()(Module) as any,
                 [Module as any],
             );
             expect(token).to.be.deep.eq(JSON.stringify({
