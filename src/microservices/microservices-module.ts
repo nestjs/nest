@@ -20,18 +20,19 @@ export class MicroservicesModule {
     private static listenersController: ListenersController;
 
     public static setup(container, config) {
+        const contextCreator = new RpcContextCreator(
+            new RpcProxy(),
+            new ExceptionFiltersContext(config),
+            new PipesContextCreator(config),
+            new PipesConsumer(),
+            new GuardsContextCreator(container, config),
+            new GuardsConsumer(),
+            new InterceptorsContextCreator(container, config),
+            new InterceptorsConsumer(),
+        );
         this.listenersController = new ListenersController(
             MicroservicesModule.clientsContainer,
-            new RpcContextCreator(
-                new RpcProxy(),
-                new ExceptionFiltersContext(config),
-                new PipesContextCreator(config),
-                new PipesConsumer(),
-                new GuardsContextCreator(container, config),
-                new GuardsConsumer(),
-                new InterceptorsContextCreator(container, config),
-                new InterceptorsConsumer(),
-            ),
+            contextCreator,
         );
     }
 

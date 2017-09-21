@@ -81,6 +81,18 @@ describe('Injector', () => {
             ).to.eventually.be.rejected;
         });
 
+        it('should await done$ when "isPending"', async () => {
+            const value = 'test';
+            const result = await injector.loadInstance({
+                name: 'MainTest',
+                metatype: MainTest,
+                instance: Object.create(MainTest.prototype),
+                isResolved: false,
+                isPending: true,
+                done$: Promise.resolve(value) as any,
+            }, moduleDeps.components, moduleDeps);
+            expect(result).to.be.eql(value);
+        });
     });
 
     describe('loadPrototypeOfInstance', () => {
@@ -112,6 +124,7 @@ describe('Injector', () => {
             injector.loadPrototypeOfInstance(test, moduleDeps.components);
             expect(moduleDeps.components.get('Test')).to.deep.equal(expectedResult);
         });
+
     });
 
     describe('resolveSingleParam', () => {
@@ -152,6 +165,53 @@ describe('Injector', () => {
 
             injector.loadInstanceOfMiddleware({ metatype: { name: '' }} as any, collection as any, null);
             expect(resolveConstructorParams.called).to.be.false;
+        });
+    });
+
+    describe('loadInstanceOfRoute', () => {
+        let loadInstance: sinon.SinonSpy;
+
+        beforeEach(() => {
+            loadInstance = sinon.spy();
+            injector.loadInstance = loadInstance;
+        });
+
+        it('should call "loadInstance" with expected arguments', async () => {
+            const module = { routes: [] };
+            const wrapper = { test: 'test' };
+
+            await injector.loadInstanceOfRoute(wrapper as any, module as any);
+            expect(loadInstance.calledWith(wrapper, module.routes, module)).to.be.true;
+        });
+    });
+
+    describe('loadInstanceOfInjectable', () => {
+        let loadInstance: sinon.SinonSpy;
+
+        beforeEach(() => {
+            loadInstance = sinon.spy();
+            injector.loadInstance = loadInstance;
+        });
+
+        it('should call "loadInstance" with expected arguments', async () => {
+            const module = { injectables: [] };
+            const wrapper = { test: 'test' };
+
+            await injector.loadInstanceOfInjectable(wrapper as any, module as any);
+            expect(loadInstance.calledWith(wrapper, module.injectables, module)).to.be.true;
+        });
+    });
+
+    describe('resolveFactoryInstance', () => {
+        it('should resolve deffered value', async () => {
+            const wrapper = { test: 'test' };
+            const result = await injector.resolveFactoryInstance(Promise.resolve(wrapper));
+            expect(result).to.be.eql(wrapper);
+        });
+        it('should return exact same value', async () => {
+            const wrapper = { test: 'test' };
+            const result = await injector.resolveFactoryInstance(wrapper);
+            expect(result).to.be.eql(wrapper);
         });
     });
 
