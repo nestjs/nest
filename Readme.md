@@ -66,12 +66,12 @@ $ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websock
 
 ## Documentation & Quick Start
 
-[Documentation & Tutorial](http://docs.nestjs.com)
+[Documentation & Tutorial](https://docs.nestjs.com)
 
 ## People
 
-- Author - [Kamil Myśliwiec](http://kamilmysliwiec.com)
-- Website - [http://nestjs.com](http://nestjs.com/)
+- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
+- Website - [http://nestjs.com](https://nestjs.com/)
 
 ## Backers
 

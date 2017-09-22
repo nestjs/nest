@@ -83,7 +83,7 @@ export class Injector {
                 );
             } else {
                 const factoryResult = currentMetatype.metatype(...instances);
-                currentMetatype.instance = await this.resolveFactoryInstance(currentMetatype, factoryResult);
+                currentMetatype.instance = await this.resolveFactoryInstance(factoryResult);
             }
             currentMetatype.isResolved = true;
             done();
@@ -216,7 +216,7 @@ export class Injector {
         return component;
     }
 
-    public async resolveFactoryInstance(currentMetatype, factoryResult): Promise<any> {
+    public async resolveFactoryInstance(factoryResult): Promise<any> {
         if (!(factoryResult instanceof Promise)) {
             return factoryResult;
         }

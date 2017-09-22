@@ -15,16 +15,17 @@
     ],
     "exclude": [
       "node_modules/",
+      "src/**/*.spec.ts",
+      "src/core/adapters/*.ts",
+      "src/websockets/adapters/*.ts",
       "src/core/nest-application.ts",
       "src/core/nest-factory.ts",
       "src/core/nest-microservice.ts",
-      "src/**/*.spec.ts",
       "src/common/services/logger.service.ts",
       "src/core/errors/exceptions",
       "src/microservices/exceptions/",
       "src/microservices/microservices-module.ts",
-      "src/core/adapters/*.ts",
-      "src/websockets/adapters/*.ts"
+      "src/core/middlewares/middlewares-module.ts"
     ],
     "extension": [
       ".ts"
