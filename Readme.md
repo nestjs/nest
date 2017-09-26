@@ -71,7 +71,7 @@ $ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websock
 ## People
 
 - Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [http://nestjs.com](https://nestjs.com/)
+- Website - [https://nestjs.com](https://nestjs.com/)
 
 ## Backers
 
