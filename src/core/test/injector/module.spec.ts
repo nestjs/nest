@@ -219,4 +219,61 @@ describe('Module', () => {
         });
     });
 
+    describe('relatedModules', () => {
+      it('should return relatedModules', () => {
+        const test = ['test'];
+        (module as any)._relatedModules = test;
+        expect(module.relatedModules).to.be.eql(test);
+      });
+    });
+
+    describe('injectables', () => {
+      it('should return injectables', () => {
+        const test = ['test'];
+        (module as any)._injectables = test;
+        expect(module.injectables).to.be.eql(test);
+      });
+    });
+
+    describe('routes', () => {
+      it('should return routes', () => {
+        const test = ['test'];
+        (module as any)._routes = test;
+        expect(module.routes).to.be.eql(test);
+      });
+    });
+
+    describe('exports', () => {
+      it('should return exports', () => {
+        const test = ['test'];
+        (module as any)._exports = test;
+        expect(module.exports).to.be.eql(test);
+      });
+    });
+
+    describe('createModuleRefMetatype', () => {
+      let components: Map<string, any>;
+      let moduleRef;
+
+      beforeEach(() => {
+        components = new Map();
+
+        const Class = module.createModuleRefMetatype(components);
+        moduleRef = new Class();
+      });
+
+      it('should return metatype with "get" method', () => {
+        expect(!!moduleRef.get).to.be.true;
+      });
+      describe('get', () => {
+        it('should return component if exists', () => {
+          const comp = { instance: [] };
+          components.set('comp', comp);
+          expect(moduleRef.get('comp')).to.be.eql(comp.instance);
+        });
+        it('should return null if not exists', () => {
+          expect(moduleRef.get('fail')).to.be.null;
+        });
+      });
+    });
 });

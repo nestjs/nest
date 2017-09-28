@@ -75,7 +75,7 @@ export class Module {
     }
 
     public addModuleRef() {
-        const moduleRef = this.getModuleRefMetatype(this._components);
+        const moduleRef = this.createModuleRefMetatype(this._components);
         this._components.set(ModuleRef.name, {
             name: ModuleRef.name,
             metatype: ModuleRef as any,
@@ -224,9 +224,9 @@ export class Module {
         });
     }
 
-    private getModuleRefMetatype(components) {
+    public createModuleRefMetatype(components) {
         return class {
-            private readonly components = components;
+            public readonly components = components;
 
             public get<T>(type: OpaqueToken): T {
                 const name = isFunction(type) ? (type as Metatype<any>).name : type;

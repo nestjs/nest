@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { Observable } from 'rxjs/Observable';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 import 'rxjs/add/observable/of';
+import 'rxjs/add/operator/toPromise';
 
 describe('InterceptorsConsumer', () => {
     let consumer: InterceptorsConsumer;
@@ -54,5 +55,28 @@ describe('InterceptorsConsumer', () => {
             handler: callback,
           });
         });
+    });
+    describe('transformDeffered', () => {
+      describe('when next() result is plain value', () => {
+        it('should return Promise', async () => {
+          const val = 3;
+          const next = () => val;
+          expect(await consumer.transformDeffered(next)).to.be.eql(val);
+        });
+      });
+      describe('when next() result is Promise', () => {
+        it('should return Promise', async () => {
+          const val = 3;
+          const next = () => Promise.resolve(val);
+          expect(await consumer.transformDeffered(next)).to.be.eql(val);
+        });
+      });
+      describe('when next() result is Observable', () => {
+        it('should return Observable', async () => {
+          const val = 3;
+          const next = () => Observable.of(val);
+          expect(await (consumer.transformDeffered(next) as any).toPromise()).to.be.eql(val);
+        });
+      });
     });
 });

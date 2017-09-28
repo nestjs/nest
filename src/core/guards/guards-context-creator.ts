@@ -27,7 +27,7 @@ export class GuardsContextCreator extends ContextCreator {
             return [] as R;
         }
         const isGlobalMetadata = metadata === this.getGlobalMetadata();
-        return isGlobalMetadata ? 
+        return isGlobalMetadata ?
             this.createGlobalMetadataContext<T, R>(metadata) :
             iterate(metadata).filter((metatype: any) => metatype && metatype.name)
                 .map((metatype) => this.getInstanceByMetatype(metatype))
@@ -53,6 +53,9 @@ export class GuardsContextCreator extends ContextCreator {
     }
 
     public getGlobalMetadata<T extends any[]>(): T {
-        return [] as T;
+      if (!this.config) {
+          return [] as T;
+      }
+      return this.config.getGlobalGuards() as T;
     }
 }
