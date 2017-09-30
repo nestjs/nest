@@ -53,7 +53,7 @@
 
 **Install the TypeScript Starter Project with Git:**
 ```bash
-$ git clone https://github.com/kamilmysliwiec/nest-typescript-starter.git project
+$ git clone https://github.com/nestjs/nest-typescript-starter.git project
 $ cd project
 $ npm install
 $ npm run start
