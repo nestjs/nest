@@ -14,15 +14,17 @@
     "@nestjs/microservices": "^4.0.1",
     "@nestjs/testing": "^4.0.1",
     "@nestjs/websockets": "^4.0.1",
+    "@types/passport-jwt": "^2.0.24",
     "body-parser": "^1.17.2",
-    "mongoose": "^4.11.13",
+    "jsonwebtoken": "^8.0.1",
+    "passport": "^0.4.0",
+    "passport-jwt": "^3.0.0",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.4.3",
     "typescript": "^2.4.2"
   },
   "devDependencies": {
-    "@types/mongoose": "^4.7.23",
     "@types/node": "^7.0.41",
     "ts-node": "^3.3.0"
   }
