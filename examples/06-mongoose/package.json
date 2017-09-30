@@ -14,12 +14,12 @@
     "@nestjs/microservices": "^4.0.1",
     "@nestjs/testing": "^4.0.1",
     "@nestjs/websockets": "^4.0.1",
+    "@types/mongoose": "^4.7.23",
     "body-parser": "^1.17.2",
-    "mysql": "^2.14.1",
+    "mongoose": "^4.11.13",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.4.3",
-    "typeorm": "0.1.0-alpha.40",
     "typescript": "^2.4.2"
   },
   "devDependencies": {

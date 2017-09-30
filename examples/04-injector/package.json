@@ -14,17 +14,13 @@
     "@nestjs/microservices": "^4.0.1",
     "@nestjs/testing": "^4.0.1",
     "@nestjs/websockets": "^4.0.1",
-    "amqplib": "^0.5.1",
     "body-parser": "^1.17.2",
-    "class-transformer": "^0.1.7",
-    "class-validator": "^0.7.2",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.4.3",
     "typescript": "^2.4.2"
   },
   "devDependencies": {
-    "@types/amqplib": "^0.5.4",
     "@types/node": "^7.0.41",
     "ts-node": "^3.3.0"
   }
