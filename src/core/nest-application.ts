@@ -81,16 +81,18 @@ export class NestApplication implements INestApplication {
         this.express.use(requestHandler);
     }
 
-    public async listen(port: number, callback?: () => void) {
+    public async listen(port: number, callback?: () => void);
+    public async listen(port: number, hostname: string, callback?: () => void);
+    public async listen(port: number, ...args) {
         (!this.isInitialized) && await this.init();
 
-        this.server = this.express.listen(port, callback);
+        this.server = this.express.listen(port, ...args);
         return this.server;
     }
 
-    public listenAsync(port: number): Promise<any> {
+    public listenAsync(port: number, hostname?: string): Promise<any> {
         return new Promise((resolve) => {
-            const server = this.listen(port, () => resolve(server));
+            const server = this.listen(port, hostname, () => resolve(server));
         });
     }
 
