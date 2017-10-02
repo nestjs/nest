@@ -39,7 +39,6 @@ export class RouterExecutionContext {
         const metadata = this.reflectCallbackMetadata(instance, callback) || {};
         const keys = Object.keys(metadata);
         const argsLength = this.getArgumentsLength(keys, metadata);
-        const args = this.createNullArray(argsLength);
         const pipes = this.pipesContextCreator.create(instance, callback);
         const paramtypes = this.reflectCallbackParamtypes(instance, callback);
         const guards = this.guardsContextCreator.create(instance, callback, module);
@@ -47,6 +46,7 @@ export class RouterExecutionContext {
         const httpCode = this.reflectHttpStatusCode(callback);
 
         return async (req, res, next) => {
+            const args = this.createNullArray(argsLength);
             const paramProperties = this.exchangeKeysForValues(keys, metadata, { req, res, next });
             const canActivate = await this.guardsConsumer.tryActivate(guards, req, instance, callback);
             if (!canActivate) {
@@ -68,7 +68,7 @@ export class RouterExecutionContext {
             const result = await this.interceptorsConsumer.intercept(
                 interceptors, req, instance, callback, handler,
             );
-            return !isResponseObj ? 
+            return !isResponseObj ?
                 this.responseController.apply(result, res, requestMethod, httpCode) :
                 undefined;
         };

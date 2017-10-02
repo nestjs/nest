@@ -11,7 +11,7 @@ export const databaseProviders = [
       password: 'root',
       database: 'test',
       entities: [
-          __dirname + '/../**/**.entity.ts',
+          __dirname + '/../**/**.entity{.ts,.js}',
       ],
       autoSchemaSync: true,
     }),
