@@ -1,3 +1,7 @@
+## 4.1.0
+- **common**: add `@Bind()` and `@Dependencies()` decorators to fix route parameters decorators (pure JavaScript compatibility issue)
+- **core**: improve performance
+
 ## 4.0.1
 - **core**: add possibility to setup global guards and global interceptors
 - **common**: `INestApplication` has `useGlobalInterceptors()` and `useGlobalGuards()` now

@@ -59,6 +59,14 @@ $ npm install
 $ npm run start
 ```
 
+**Install the JavaScript (Babel) Starter Project with Git:**
+```bash
+$ git clone https://github.com/nestjs/javascript-starter.git project
+$ cd project
+$ npm install
+$ npm run start
+```
+
 **Start a New Project from Scratch with NPM:**
 ```bash
 $ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websockets @nestjs/testing reflect-metadata rxjs

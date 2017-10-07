@@ -41,6 +41,7 @@ describe('RouterExecutionContext', () => {
     describe('create', () => {
         describe('when callback metadata is not undefined', () => {
             let metadata: RouteParamsMetadata;
+            let exchangeKeysForValuesSpy: sinon.SinonSpy;
             beforeEach(() => {
                 metadata = {
                     [RouteParamtypes.NEXT]: { index: 0 },
@@ -51,6 +52,17 @@ describe('RouterExecutionContext', () => {
                 };
                 sinon.stub(contextCreator, 'reflectCallbackMetadata').returns(metadata);
                 sinon.stub(contextCreator, 'reflectCallbackParamtypes').returns([]);
+                exchangeKeysForValuesSpy = sinon.spy(contextCreator, 'exchangeKeysForValues');
+            });
+            it('should call "exchangeKeysForValues" with expected arguments', (done) => {
+                const keys = Object.keys(metadata);
+
+                contextCreator.create({ foo: 'bar' }, callback as any, '', 0);
+                expect(exchangeKeysForValuesSpy.called).to.be.true;
+                expect(
+                    exchangeKeysForValuesSpy.calledWith(keys, metadata),
+                ).to.be.true;
+                done();
             });
             describe('returns proxy function', () => {
                 let proxyContext;
@@ -64,7 +76,6 @@ describe('RouterExecutionContext', () => {
                     expect(proxyContext).to.be.a('function');
                 });
                 describe('when proxy function called', () => {
-                    let exchangeKeysForValuesSpy: sinon.SinonSpy;
                     let request;
                     const response = {
                         status: () => response,
@@ -79,18 +90,6 @@ describe('RouterExecutionContext', () => {
                                 test: 3,
                             },
                         };
-                        exchangeKeysForValuesSpy = sinon.spy(contextCreator, 'exchangeKeysForValues');
-                    });
-                    it('should call "exchangeKeysForValues" with expected arguments', (done) => {
-                        proxyContext(request, response, next).then(() => {
-                            const keys = Object.keys(metadata);
-
-                            expect(exchangeKeysForValuesSpy.called).to.be.true;
-                            expect(
-                                exchangeKeysForValuesSpy.calledWith(keys, metadata, { req: request, res: response, next }),
-                            ).to.be.true;
-                            done();
-                        });
                     });
                     it('should apply expected context and arguments to callback', (done) => {
                         proxyContext(request, response, next).then(() => {
@@ -161,12 +160,13 @@ describe('RouterExecutionContext', () => {
                 },
             };
             const keys = Object.keys(metadata);
-            const values = contextCreator.exchangeKeysForValues(keys, metadata, { res, req, next });
+            const values = contextCreator.exchangeKeysForValues(keys, metadata);
             const expectedValues = [
-                { index: 0, value: req, type: RouteParamtypes.REQUEST, data: 'test', pipes: [] },
-                { index: 2, value: req.body.test, type: RouteParamtypes.BODY, data: 'test', pipes: [] },
+                { index: 0, type: RouteParamtypes.REQUEST, data: 'test' },
+                { index: 2, type: RouteParamtypes.BODY, data: 'test' },
             ];
-            expect(values).to.deep.equal(expectedValues);
+            expect(values[0]).to.deep.include(expectedValues[0]);
+            expect(values[1]).to.deep.include(expectedValues[1]);
         });
     });
     describe('getParamValue', () => {

@@ -44,8 +44,9 @@ export class RouterExecutionContext {
         const guards = this.guardsContextCreator.create(instance, callback, module);
         const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
         const httpCode = this.reflectHttpStatusCode(callback);
-        const paramProperties = this.exchangeKeysForValues(keys, metadata);
-        const isResponseObj = paramProperties.some(({ type }) => type === RouteParamtypes.RESPONSE);
+        const paramsMetadata = this.exchangeKeysForValues(keys, metadata);
+        const isResponseObj = paramsMetadata.some(({ type }) => type === RouteParamtypes.RESPONSE);
+        const paramsOptions = this.mergeParamsMetatypes(paramsMetadata, paramtypes);
 
         return async (req, res, next) => {
             const args = this.createNullArray(argsLength);
@@ -54,9 +55,8 @@ export class RouterExecutionContext {
                 throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
             }
 
-            await Promise.all(paramProperties.map(async (param) => {
-                const { index, extractValue, type, data, pipes: paramPipes } = param;
-                const metatype = paramtypes ? paramtypes[index] : null;
+            await Promise.all(paramsOptions.map(async (param) => {
+                const { index, extractValue, type, data, metatype, pipes: paramPipes } = param;
                 const value = extractValue(req, res, next);
 
                 args[index] = await this.getParamValue(
@@ -107,6 +107,16 @@ export class RouterExecutionContext {
             const extractValue = (req, res, next) => this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next });
             return { index, extractValue, type, data, pipes };
         });
+    }
+
+    public mergeParamsMetatypes(
+      paramsProperties: ParamProperties[],
+      paramtypes: any[],
+    ): (ParamProperties & { metatype?: any })[] {
+      if (!paramtypes) {
+        return paramsProperties;
+      }
+      return paramsProperties.map((param) => ({ ...param, metatype: paramtypes[param.index] }));
     }
 
     public async getParamValue<T>(
