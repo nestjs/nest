@@ -7,7 +7,7 @@
 [linux-image]: https://img.shields.io/travis/nestjs/nest/master.svg?label=linux
 [linux-url]: https://travis-ci.org/nestjs/nest
   
-  <p align="center">Modern, powerful web application framework for <a href="http://nodejs.org" target="blank">Node.js</a>.</p>
+  <p align="center">A progressive <a href="http://nodejs.org" target="blank">Node.js</a> framework for building efficient and scalable web applications.</p>
     <p align="center">
 <a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
 <a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
@@ -24,7 +24,7 @@
 
 ## Description
 
-<p>Nest is a framework for building efficient, scalable <a href="http://nodejs.org" target="_blank">Node.js</a> web applications. It uses modern JavaScript, is built with  <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a> and combines elements of OOP (Object Oriented Progamming), FP (Functional Programming), and FRP (Functional Reactive Programming).</p>
+<p>Nest is a framework for building efficient, scalable <a href="http://nodejs.org" target="_blank">Node.js</a> web applications. It uses modern JavaScript, is built with  <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Progamming), FP (Functional Programming), and FRP (Functional Reactive Programming).</p>
 <p>Under the hood, Nest makes use of <a href="https://expressjs.com/" target="_blank">Express</a>, allowing for easy use of the myriad third-party plugins which are available.</p>
 
 ## Philosophy
@@ -35,7 +35,7 @@
 ## Features
 
 <ul>
-    <li>Built with <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a></li>
+    <li>Built with <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a> (compatible with pure JavaScript + <a href="http://babeljs.io/" target="_blank">Babel</a>)</li>
     <li><strong>Easy</strong> to learn - syntax similar to <a href="https://angular.io/" target="_blank">Angular</a></li>
     <li><strong>Familiar</strong> - based on well-known libraries (<a href="https://github.com/expressjs/express" target="_blank">Express</a> / <a href="https://github.com/socketio/socket.io" target="_blank">socket.io</a>)</li>
     <li><strong>Dependency Injection</strong> - built-in asynchronous <strong>IoC</strong> container with a <strong>hierarchical injector</strong></li>
@@ -53,7 +53,7 @@
 
 **Install the TypeScript Starter Project with Git:**
 ```bash
-$ git clone https://github.com/nestjs/nest-typescript-starter.git project
+$ git clone https://github.com/nestjs/typescript-starter.git project
 $ cd project
 $ npm install
 $ npm run start
