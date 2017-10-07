@@ -18,10 +18,10 @@ import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 
 export interface ParamProperties {
     index: number;
-    value: any;
     type: RouteParamtypes;
     data: ParamData;
     pipes: PipeTransform<any>[];
+    extractValue: (req, res, next) => any;
 }
 
 export class RouterExecutionContext {
@@ -44,23 +44,23 @@ export class RouterExecutionContext {
         const guards = this.guardsContextCreator.create(instance, callback, module);
         const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
         const httpCode = this.reflectHttpStatusCode(callback);
+        const paramProperties = this.exchangeKeysForValues(keys, metadata);
+        const isResponseObj = paramProperties.some(({ type }) => type === RouteParamtypes.RESPONSE);
 
         return async (req, res, next) => {
             const args = this.createNullArray(argsLength);
-            const paramProperties = this.exchangeKeysForValues(keys, metadata, { req, res, next });
             const canActivate = await this.guardsConsumer.tryActivate(guards, req, instance, callback);
             if (!canActivate) {
                 throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
             }
 
-            let isResponseObj = false;
             await Promise.all(paramProperties.map(async (param) => {
-                const { index, value, type, data, pipes: paramPipes } = param;
-                if (type === RouteParamtypes.RESPONSE) {
-                    isResponseObj = true;
-                }
+                const { index, extractValue, type, data, pipes: paramPipes } = param;
+                const metatype = paramtypes ? paramtypes[index] : null;
+                const value = extractValue(req, res, next);
+
                 args[index] = await this.getParamValue(
-                    value, { metatype: paramtypes[index], type, data },
+                    value, { metatype, type, data },
                     pipes.concat(this.pipesContextCreator.createConcreteContext(paramPipes)),
                 );
             }));
@@ -99,17 +99,13 @@ export class RouterExecutionContext {
         return Array.apply(null, { length }).fill(null);
     }
 
-    public exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata, { req, res, next }): ParamProperties[] {
+    public exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata): ParamProperties[] {
         return keys.map(key => {
             const type = this.mapParamType(key);
-            const paramMetadata = metadata[key];
-            const { index, data, pipes } = paramMetadata;
+            const { index, data, pipes } = metadata[key];
 
-            return {
-                index,
-                value: this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next }),
-                type, data, pipes,
-            };
+            const extractValue = (req, res, next) => this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next });
+            return { index, extractValue, type, data, pipes };
         });
     }
 

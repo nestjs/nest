@@ -14,3 +14,4 @@ export * from './decorators/use-guards.decorator';
 export * from './decorators/reflect-metadata.decorator';
 export * from './decorators/use-interceptors.decorator';
 export * from './decorators/http-code.decorator';
+export * from './decorators/bind.decorator';

@@ -1,4 +1,3 @@
-import { Application } from 'express';
 import { NestContainer } from '../injector/container';
 import { MiddlewareBuilder } from './builder';
 import { MiddlewaresContainer, MiddlewareWrapper } from './container';
@@ -60,7 +59,7 @@ export class MiddlewaresModule {
         this.container.addConfig(config, module);
     }
 
-    public static async setupMiddlewares(app: Application) {
+    public static async setupMiddlewares(app) {
         const configs = this.container.getConfigs();
         await Promise.all([...configs.entries()].map(async ([module, moduleConfigs]) => {
             await Promise.all([...moduleConfigs].map(async (config: MiddlewareConfiguration) => {
@@ -69,7 +68,7 @@ export class MiddlewaresModule {
         }));
     }
 
-    public static async setupMiddlewareConfig(config: MiddlewareConfiguration, module: string, app: Application) {
+    public static async setupMiddlewareConfig(config: MiddlewareConfiguration, module: string, app) {
         const { forRoutes } = config;
         await Promise.all(forRoutes.map(async (route: ControllerMetadata & { method: RequestMethod }) => {
             await this.setupRouteMiddleware(route, config, module, app);
@@ -80,7 +79,7 @@ export class MiddlewaresModule {
         route: ControllerMetadata & { method: RequestMethod },
         config: MiddlewareConfiguration,
         module: string,
-        app: Application) {
+        app) {
 
         const { path, method } = route;
 
@@ -100,7 +99,7 @@ export class MiddlewaresModule {
     private static async setupHandler(
         instance: NestMiddleware,
         metatype: Metatype<NestMiddleware>,
-        app: Application,
+        app: any,
         method: RequestMethod,
         path: string) {
 

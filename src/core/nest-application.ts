@@ -42,16 +42,19 @@ export class NestApplication implements INestApplication {
 
     public async init() {
         await this.setupModules();
+        await this.setupRouter();
 
-        const router = ExpressAdapter.createRouter();
-        await this.setupMiddlewares(router);
-        this.setupRoutes(router);
-
-        this.express.use(validatePath(this.config.getGlobalPrefix()), router);
         this.callInitHook();
-
         this.logger.log(messages.APPLICATION_READY);
         this.isInitialized = true;
+    }
+
+    public async setupRouter() {
+      const router = ExpressAdapter.createRouter();
+      await this.setupMiddlewares(router);
+
+      this.routesResolver.resolve(router);
+      this.express.use(validatePath(this.config.getGlobalPrefix()), router);
     }
 
     public connectMicroservice(config: MicroserviceConfiguration): INestMicroservice {
@@ -132,10 +135,6 @@ export class NestApplication implements INestApplication {
 
     private async setupMiddlewares(instance) {
         await MiddlewaresModule.setupMiddlewares(instance);
-    }
-
-    private setupRoutes(instance) {
-        this.routesResolver.resolve(instance);
     }
 
     private listenToPromise(microservice: INestMicroservice) {

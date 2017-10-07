@@ -1,0 +1,31 @@
+{
+  "name": "nest-babel-starter",
+  "version": "1.0.0",
+  "description": "Nest Babel starter repository",
+  "license": "MIT",
+  "scripts": {
+    "build": "babel src -d dist",
+    "prestart": "npm run build",
+    "start": "node index.js",
+    "start:prod": "node dist/server.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^4.0.1",
+    "@nestjs/core": "^4.0.1",
+    "@nestjs/microservices": "^4.0.1",
+    "@nestjs/testing": "^4.0.1",
+    "@nestjs/websockets": "^4.0.1",
+    "body-parser": "^1.17.2",
+    "redis": "^2.7.1",
+    "reflect-metadata": "^0.1.10",
+    "rxjs": "^5.4.3"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1"
+  }
+}
