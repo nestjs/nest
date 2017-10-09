@@ -27,7 +27,10 @@ export class DependenciesScanner {
         });
     }
 
-    public storeModule(module: NestModuleMetatype, scope: NestModuleMetatype[]) {
+    public storeModule(module: any, scope: NestModuleMetatype[]) {
+        if (module.forwardRef) {
+            return this.container.addModule(module.forwardRef(), scope);
+        }
         this.container.addModule(module, scope);
     }
 
@@ -108,7 +111,10 @@ export class DependenciesScanner {
         return descriptor ? Reflect.getMetadata(key, descriptor.value) : undefined;
     }
 
-    public storeRelatedModule(related: NestModuleMetatype, token: string) {
+    public storeRelatedModule(related: any, token: string) {
+        if (related.forwardRef) {
+            return this.container.addRelatedModule(related.forwardRef(), token);
+        }
         this.container.addRelatedModule(related, token);
     }
 
@@ -131,5 +137,4 @@ export class DependenciesScanner {
     public reflectMetadata(metatype, metadata: string) {
         return Reflect.getMetadata(metadata, metatype) || [];
     }
-
 }

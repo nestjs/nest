@@ -1,3 +1,7 @@
+## 4.1.1
+- **common**: add `forwardRef()` util
+- **core**: improve injector & dependencies scanner
+
 ## 4.1.0
 - **common**: add `@Bind()` and `@Dependencies()` decorators to fix route parameters decorators (pure JavaScript compatibility issue)
 - **core**: improve performance
