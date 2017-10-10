@@ -50,12 +50,12 @@ export class NestContainer {
         module.addComponent(component);
     }
 
-    public addInjectable(Injectable: Metatype<Injectable>, token: string) {
+    public addInjectable(injectable: Metatype<Injectable>, token: string) {
         if (!this.modules.has(token)) {
             throw new UnknownModuleException();
         }
         const module = this.modules.get(token);
-        module.addInjectable(Injectable);
+        module.addInjectable(injectable);
     }
 
 
@@ -95,5 +95,6 @@ export interface InstanceWrapper<T> {
     done$?: Promise<void>;
     inject?: Metatype<any>[];
     isNotMetatype?: boolean;
+    forwardRef?: boolean;
     async?: boolean;
 }

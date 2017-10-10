@@ -2,7 +2,7 @@ export const InvalidMiddlewareMessage = (name: string) =>
     `The middleware doesn't provide the 'resolve' method (${name})`;
 
 export const InvalidModuleMessage = (scope: string) =>
-    `Nest can't create the module instance. The frequent reason of this exception is the circular dependency between modules. Scope [${scope}]`;
+    `Nest can't create the module instance. The frequent reason of this exception is the circular dependency between modules. Use forwardRef() to avoid it (read more https://docs.nestjs.com/advanced/circular-dependency). Scope [${scope}]`;
 
 export const UnknownDependenciesMessage = (type: string) =>
     `Nest can't resolve dependencies of the ${type}. Please verify whether all of them are available in the current context.`;

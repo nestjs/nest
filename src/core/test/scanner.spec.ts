@@ -121,4 +121,24 @@ describe('DependenciesScanner', () => {
         expect(result).to.be.eql(['test']);
       });
     });
+
+    describe('storeModule', () => {
+      it('should call forwardRef() when forwardRef property exists', () => {
+        const module = { forwardRef: sinon.spy() };
+
+        sinon.stub(container, 'addModule').returns({});
+        scanner.storeModule(module as any, [] as any);
+        expect(module.forwardRef.called).to.be.true;
+      });
+    });
+
+    describe('storeRelatedModule', () => {
+      it('should call forwardRef() when forwardRef property exists', () => {
+        const module = { forwardRef: sinon.stub().returns({}) };
+
+        sinon.stub(container, 'addRelatedModule').returns({});
+        scanner.storeRelatedModule(module as any, [] as any);
+        expect(module.forwardRef.called).to.be.true;
+      });
+    });
 });

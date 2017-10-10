@@ -102,7 +102,7 @@ export class Injector {
 
         const instances = await Promise.all(args.map(async (param) => {
             const paramWrapper = await this.resolveSingleParam<T>(wrapper, param, module, context);
-            if (!paramWrapper.isResolved) {
+            if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
                 isResolved = false;
             }
             return paramWrapper.instance;
@@ -124,16 +124,18 @@ export class Injector {
 
     public async resolveSingleParam<T>(
         wrapper: InstanceWrapper<T>,
-        param: Metatype<any> | string | symbol,
+        param: Metatype<any> | string | symbol | any,
         module: Module,
         context: Module[]) {
 
         if (isUndefined(param)) {
             throw new UndefinedDependencyException(wrapper.name);
         }
+        const token = param.forwardRef ? param.forwardRef() : param;
+        wrapper.forwardRef = true;
         return await this.resolveComponentInstance<T>(
             module,
-            isFunction(param) ? (param as Metatype<any>).name : param,
+            isFunction(token) ? (token as Metatype<any>).name : token,
             wrapper,
             context,
         );
@@ -143,7 +145,7 @@ export class Injector {
         const components = module.components;
         const instanceWrapper = await this.scanForComponent(components, name, module, wrapper, context);
 
-        if (!instanceWrapper.isResolved) {
+        if (!instanceWrapper.isResolved && !instanceWrapper.forwardRef) {
             await this.loadInstanceOfComponent(instanceWrapper, module);
         }
         if (instanceWrapper.async) {
@@ -183,7 +185,7 @@ export class Injector {
             const component = await this.scanForComponent(
                 context.components, name, context, { metatype }, null,
             );
-            if (!component.isResolved) {
+            if (!component.isResolved && !component.forwardRef) {
                 await this.loadInstanceOfComponent(component, context);
             }
             return component;
@@ -207,7 +209,7 @@ export class Injector {
                 continue;
             }
             component = components.get(name);
-            if (!component.isResolved) {
+            if (!component.isResolved && !component.forwardRef) {
                 const ctx = isInScope ? [module] : [].concat(context, module);
                 await this.loadInstanceOfComponent(component, relatedModule, ctx);
                 break;
