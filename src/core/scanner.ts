@@ -28,7 +28,7 @@ export class DependenciesScanner {
     }
 
     public storeModule(module: any, scope: NestModuleMetatype[]) {
-        if (module.forwardRef) {
+        if (module && module.forwardRef) {
             return this.container.addModule(module.forwardRef(), scope);
         }
         this.container.addModule(module, scope);

@@ -1,3 +1,6 @@
+## 4.1.3
+- **core**: forward reference bugfixes & security updates
+
 ## 4.1.1
 - **common**: add `forwardRef()` util
 - **core**: improve injector & dependencies scanner
