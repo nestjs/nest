@@ -7,7 +7,7 @@
 [linux-image]: https://img.shields.io/travis/nestjs/nest/master.svg?label=linux
 [linux-url]: https://travis-ci.org/nestjs/nest
   
-  <p align="center">A progressive <a href="http://nodejs.org" target="blank">Node.js</a> framework for building efficient and scalable web applications.</p>
+  <p align="center">A progressive <a href="http://nodejs.org" target="blank">Node.js</a> framework for building efficient and scalable web applications. :cat: </p>
     <p align="center">
 <a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
 <a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
@@ -74,7 +74,7 @@ $ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websock
 
 ## Documentation & Quick Start
 
-[Documentation & Tutorial](https://docs.nestjs.com)
+:books: [Documentation & Tutorial](https://docs.nestjs.com)
 
 ## People
 
@@ -83,7 +83,7 @@ $ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websock
 
 ## Backers
 
-I am on a mission to provide an architecture to create truly flexible, scalable and loosely coupled systems using the Node.js platform. It takes a lot of time, so if you want to support me, please [become a backer / sponsor]((https://opencollective.com/nest#backer)). I appreciate your help. Thanks!
+I am on a mission to provide an architecture to create truly flexible, scalable and loosely coupled systems using the Node.js platform. It takes a lot of time, so if you want to support me, please [become a backer / sponsor]((https://opencollective.com/nest#backer)). I appreciate your help. Thanks! :heart_eyes:
 
 <a href="https://opencollective.com/nest/backer/0/website" target="_blank"><img src="https://opencollective.com/nest/backer/0/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/1/website" target="_blank"><img src="https://opencollective.com/nest/backer/1/avatar.svg"></a>
