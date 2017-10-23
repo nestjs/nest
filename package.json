@@ -84,6 +84,7 @@
     "imports-loader": "^0.7.0",
     "istanbul": "^0.4.5",
     "json-loader": "^0.5.4",
+    "lerna": "^2.4.0",
     "mocha": "^3.2.0",
     "nodemon": "^1.11.0",
     "nyc": "^10.1.2",
