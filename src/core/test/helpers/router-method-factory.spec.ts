@@ -1,6 +1,6 @@
 import { expect } from 'chai';
+import { RequestMethod } from '../../enums/request-method.enum';
 import { RouterMethodFactory } from '../../helpers/router-method-factory';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
 
 describe('RouterMethodFactory', () => {
     let factory: RouterMethodFactory;

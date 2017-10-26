@@ -1,22 +1,22 @@
-import 'reflect-metadata';
-import { NestGateway } from './interfaces/nest-gateway.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
-import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exception';
-import { GatewayMetadataExplorer, MessageMappingProperties } from './gateway-metadata-explorer';
-import { Subject } from 'rxjs/Subject';
-import { SocketServerProvider } from './socket-server-provider';
-import { NAMESPACE_METADATA, PORT_METADATA } from './constants';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { MiddlewaresInjector } from './middlewares-injector';
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { WsContextCreator } from './context/ws-context-creator';
-import { Observable } from 'rxjs/Observable';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { Injectable } from '/interfaces/injectable.interface';
+import { Metatype } from '/interfaces/metatype.interface';
+import 'reflect-metadata';
 import 'rxjs/add/observable/fromPromise';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/switchMap';
+import { Observable } from 'rxjs/Observable';
+import { Subject } from 'rxjs/Subject';
+import { NAMESPACE_METADATA, PORT_METADATA } from './constants';
+import { WsContextCreator } from './context/ws-context-creator';
+import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exception';
+import { GatewayMetadataExplorer, MessageMappingProperties } from './gateway-metadata-explorer';
+import { NestGateway } from './interfaces/nest-gateway.interface';
+import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
+import { MiddlewaresInjector } from './middlewares-injector';
+import { SocketServerProvider } from './socket-server-provider';
 
 export class WebSocketsController {
     private readonly metadataExplorer = new GatewayMetadataExplorer(new MetadataScanner());

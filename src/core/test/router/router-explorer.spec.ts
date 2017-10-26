@@ -1,10 +1,10 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ExpressRouterExplorer } from '../../router/router-explorer';
-import { Controller } from '../../../common/utils/decorators/controller.decorator';
-import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
+import * as sinon from 'sinon';
+import { RequestMethod } from '../../enums/request-method.enum';
 import { MetadataScanner } from '../../metadata-scanner';
+import { ExpressRouterExplorer } from '../../router/router-explorer';
+import { Controller } from '../../utils/decorators/controller.decorator';
+import { RequestMapping } from '../../utils/decorators/request-mapping.decorator';
 
 describe('RouterExplorer', () => {
     @Controller('global')

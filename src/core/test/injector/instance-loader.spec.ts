@@ -1,12 +1,12 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { InstanceLoader } from '../../injector/instance-loader';
+import * as sinon from 'sinon';
+import { NestEnvironment } from '../../enums/nest-environment.enum';
 import { NestContainer } from '../../injector/container';
 import { Injector } from '../../injector/injector';
-import { Controller } from '../../../common/utils/decorators/controller.decorator';
-import { Component } from '../../../common/utils/decorators/component.decorator';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
-import { Logger } from '../../../common/services/logger.service';
+import { InstanceLoader } from '../../injector/instance-loader';
+import { Logger } from '../../services/logger.service';
+import { Component } from '../../utils/decorators/component.decorator';
+import { Controller } from '../../utils/decorators/controller.decorator';
 
 describe('InstanceLoader', () => {
     let loader: InstanceLoader;

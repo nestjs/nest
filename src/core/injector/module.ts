@@ -1,12 +1,14 @@
-import { InstanceWrapper } from './container';
-import { Injectable, Controller, NestModule } from '@nestjs/common/interfaces';
-import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
-import { ModuleRef } from './module-ref';
-import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
+import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import { Controller } from '../interfaces/controllers/controller.interface';
+import { Injectable } from '../interfaces/injectable.interface';
+import { Metatype } from '../interfaces/metatype.interface';
+import { NestModuleMetatype } from '../interfaces/modules/module-metatype.interface';
+import { NestModule } from '../interfaces/modules/nest-module.interface';
 import { Reflector } from '../services/reflector.service';
+import { isFunction, isNil, isUndefined } from '../utils/shared.utils';
+import { InstanceWrapper } from './container';
+import { ModuleRef } from './module-ref';
 
 export interface CustomComponent {
     provide: any;
@@ -127,7 +129,7 @@ export class Module {
         });
     }
 
-    public isCustomProvider(component: ComponentMetatype): component is CustomClass | CustomFactory | CustomValue  {
+    public isCustomProvider(component: ComponentMetatype): component is CustomClass | CustomFactory | CustomValue {
         return !isNil((component as CustomComponent).provide);
     }
 

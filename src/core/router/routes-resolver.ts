@@ -1,15 +1,15 @@
 import { Application } from 'express';
-import { NestContainer, InstanceWrapper } from '../injector/container';
-import { RouterProxy } from './router-proxy';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Logger } from '@nestjs/common/services/logger.service';
 import { ControllerMappingMessage } from '../helpers/messages';
+import { InstanceWrapper, NestContainer } from '../injector/container';
+import { Controller } from '../interfaces/controllers/controller.interface';
+import { MetadataScanner } from '../metadata-scanner';
+import { Logger } from '../services/logger.service';
+import { ApplicationConfig } from './../application-config';
+import { RouterExplorer } from './interfaces/explorer.inteface';
 import { Resolver } from './interfaces/resolver.interface';
 import { RouterExceptionFilters } from './router-exception-filters';
-import { MetadataScanner } from '../metadata-scanner';
-import { RouterExplorer } from './interfaces/explorer.inteface';
 import { ExpressRouterExplorer } from './router-explorer';
-import { ApplicationConfig } from './../application-config';
+import { RouterProxy } from './router-proxy';
 
 export class RoutesResolver implements Resolver {
     private readonly logger = new Logger(RoutesResolver.name, true);

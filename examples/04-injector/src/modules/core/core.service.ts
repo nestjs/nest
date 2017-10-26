@@ -1,4 +1,4 @@
-import { Component } from '@nestjs/common';
+import { Component } from '';
 
 @Component()
 export class CoreService {

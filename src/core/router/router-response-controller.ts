@@ -1,7 +1,8 @@
-import { Observable } from 'rxjs/Observable';
-import { RequestMethod, HttpStatus } from '@nestjs/common';
-import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import 'rxjs/add/operator/toPromise';
+import { Observable } from 'rxjs/Observable';
+import { HttpStatus } from '../enums/http-status.enum';
+import { RequestMethod } from '../enums/request-method.enum';
+import { isNil, isObject } from '../utils/shared.utils';
 
 export class RouterResponseController {
   public async apply(resultOrDeffered, response, requestMethod: RequestMethod, httpCode: number) {

@@ -1,10 +1,10 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { ExceptionFilters } from '../../../common/utils/decorators/exception-filters.decorator';
-import { Catch } from '../../../common/utils/decorators/catch.decorator';
-import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
+import * as sinon from 'sinon';
 import { ApplicationConfig } from '../../application-config';
+import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
+import { RouterExceptionFilters } from '../../router/router-exception-filters';
+import { Catch } from '../../utils/decorators/catch.decorator';
+import { ExceptionFilters } from '../../utils/decorators/exception-filters.decorator';
 
 describe('RouterExceptionFilters', () => {
     let moduleName: string;

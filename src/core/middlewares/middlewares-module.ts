@@ -1,23 +1,23 @@
+import { RequestMethod } from '../enums/request-method.enum';
+import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
+import { RuntimeException } from '../errors/exceptions/runtime.exception';
+import { ExceptionsHandler } from '../exceptions/exceptions-handler';
+import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { NestContainer } from '../injector/container';
+import { Module } from '../injector/module';
+import { ControllerMetadata } from '../interfaces/controllers/controller-metadata.interface';
+import { Metatype } from '../interfaces/metatype.interface';
+import { MiddlewareConfiguration } from '../interfaces/middlewares/middleware-configuration.interface';
+import { NestMiddleware } from '../interfaces/middlewares/nest-middleware.interface';
+import { NestModule } from '../interfaces/modules/nest-module.interface';
+import { RouterProxy } from '../router/router-proxy';
+import { isUndefined } from '../utils/shared.utils';
+import { ApplicationConfig } from './../application-config';
+import { RouterExceptionFilters } from './../router/router-exception-filters';
 import { MiddlewareBuilder } from './builder';
 import { MiddlewaresContainer, MiddlewareWrapper } from './container';
 import { MiddlewaresResolver } from './resolver';
-import { ControllerMetadata } from '@nestjs/common/interfaces/controllers/controller-metadata.interface';
-import { NestModule } from '@nestjs/common/interfaces/modules/nest-module.interface';
-import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middlewares/middleware-configuration.interface';
-import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { RoutesMapper } from './routes-mapper';
-import { RouterProxy } from '../router/router-proxy';
-import { ExceptionsHandler } from '../exceptions/exceptions-handler';
-import { Module } from '../injector/module';
-import { RouterMethodFactory } from '../helpers/router-method-factory';
-import { NestMiddleware } from '@nestjs/common/interfaces/middlewares/nest-middleware.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { ApplicationConfig } from './../application-config';
-import { RouterExceptionFilters } from './../router/router-exception-filters';
 
 export class MiddlewaresModule {
     private static readonly routesMapper = new RoutesMapper();

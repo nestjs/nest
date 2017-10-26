@@ -1,6 +1,10 @@
 import { IoAdapter } from '@nestjs/websockets/adapters/io-adapter';
-import { PipeTransform, WebSocketAdapter, ExceptionFilter, NestInterceptor, CanActivate } from '@nestjs/common';
-import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
+import { CanActivate } from './interfaces/can-activate.interface';
+import { ConfigurationProvider } from './interfaces/configuration-provider.interface';
+import { ExceptionFilter } from './interfaces/exceptions/exception-filter.interface';
+import { NestInterceptor } from './interfaces/nest-interceptor.interface';
+import { PipeTransform } from './interfaces/pipe-transform.interface';
+import { WebSocketAdapter } from './interfaces/web-socket-adapter.interface';
 
 export class ApplicationConfig implements ConfigurationProvider {
     private globalPipes: PipeTransform<any>[] = [];

@@ -1,12 +1,14 @@
 import iterate from 'iterare';
-import { GUARDS_METADATA } from '@nestjs/common/constants';
-import { isUndefined, isFunction, isNil, isEmpty } from '@nestjs/common/utils/shared.utils';
-import { Controller } from '@nestjs/common/interfaces';
-import { CanActivate, HttpStatus, ExecutionContext } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
-import { HttpException } from '../index';
-import { FORBIDDEN_MESSAGE } from './constants';
 import 'rxjs/add/operator/toPromise';
+import { Observable } from 'rxjs/Observable';
+import { GUARDS_METADATA } from '../constants';
+import { HttpStatus } from '../enums/http-status.enum';
+import { HttpException } from '../index';
+import { CanActivate } from '../interfaces/can-activate.interface';
+import { Controller } from '../interfaces/controllers/controller.interface';
+import { ExecutionContext } from '../interfaces/execution-context.interface';
+import { isEmpty, isFunction, isNil, isUndefined } from '../utils/shared.utils';
+import { FORBIDDEN_MESSAGE } from './constants';
 
 export class GuardsConsumer {
     public async tryActivate(guards: CanActivate[], data, instance: Controller, callback: (...args) => any): Promise<boolean> {

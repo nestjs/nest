@@ -1,17 +1,17 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NestMiddleware } from '../../../common/interfaces/middlewares/nest-middleware.interface';
-import { Component } from '../../../common/utils/decorators/component.decorator';
+import { ApplicationConfig } from '../../application-config';
+import { RequestMethod } from '../../enums/request-method.enum';
+import { InvalidMiddlewareException } from '../../errors/exceptions/invalid-middleware.exception';
+import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { NestMiddleware } from '../../interfaces/middlewares/nest-middleware.interface';
 import { MiddlewareBuilder } from '../../middlewares/builder';
 import { MiddlewaresModule } from '../../middlewares/middlewares-module';
-import { InvalidMiddlewareException } from '../../errors/exceptions/invalid-middleware.exception';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { Controller } from '../../../common/utils/decorators/controller.decorator';
-import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { RoutesMapper } from '../../middlewares/routes-mapper';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { ApplicationConfig } from '../../application-config';
+import { Component } from '../../utils/decorators/component.decorator';
+import { Controller } from '../../utils/decorators/controller.decorator';
+import { RequestMapping } from '../../utils/decorators/request-mapping.decorator';
 
 describe('MiddlewaresModule', () => {
     @Controller('test')

@@ -1,5 +1,5 @@
-import { Module, SingleScope } from '@nestjs/common';
 import { CommonService } from './common.service';
+import { Module, SingleScope } from '';
 
 @Module({
   components: [CommonService],

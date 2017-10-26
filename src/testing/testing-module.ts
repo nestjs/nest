@@ -1,14 +1,14 @@
-import { NestContainer, InstanceWrapper } from '@nestjs/core/injector/container';
-import { DependenciesScanner } from '@nestjs/core/scanner';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { Metatype } from '@nestjs/common/interfaces';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { ModuleTokenFactory } from '@nestjs/core/injector/module-token-factory';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { UnknownModuleException } from './errors/unknown-module.exception';
 import { NestApplication, NestMicroservice } from '@nestjs/core';
-import { INestApplication, INestMicroservice } from '@nestjs/common';
+import { InstanceWrapper, NestContainer } from '@nestjs/core/injector/container';
+import { ModuleTokenFactory } from '@nestjs/core/injector/module-token-factory';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { DependenciesScanner } from '@nestjs/core/scanner';
 import { MicroserviceConfiguration } from '@nestjs/microservices';
+import { Metatype } from '/interfaces';
+import { NestModuleMetatype } from '/interfaces/modules/module-metatype.interface';
+import { isFunction } from '/utils/shared.utils';
+import { UnknownModuleException } from './errors/unknown-module.exception';
+import { INestApplication, INestMicroservice } from '';
 
 export class TestingModule {
     private readonly moduleTokenFactory = new ModuleTokenFactory();

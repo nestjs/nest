@@ -1,17 +1,17 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
-import { RouterExecutionContext } from '../../router/router-execution-context';
-import { RouteParamsMetadata, Request, Body } from '../../../index';
-import { RouteParamsFactory } from '../../router/route-params-factory';
-import { PipesContextCreator } from '../../pipes/pipes-context-creator';
-import { PipesConsumer } from '../../pipes/pipes-consumer';
+import * as sinon from 'sinon';
+import { Body, Request, RouteParamsMetadata } from '../../../index';
 import { ApplicationConfig } from '../../application-config';
+import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { NestContainer } from '../../injector/container';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
+import { PipesConsumer } from '../../pipes/pipes-consumer';
+import { PipesContextCreator } from '../../pipes/pipes-context-creator';
+import { RouteParamsFactory } from '../../router/route-params-factory';
+import { RouterExecutionContext } from '../../router/router-execution-context';
 
 describe('RouterExecutionContext', () => {
     let contextCreator: RouterExecutionContext;

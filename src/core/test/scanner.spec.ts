@@ -1,14 +1,14 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { DependenciesScanner } from './../scanner';
-import { NestContainer } from './../injector/container';
-import { Module } from '../../common/utils/decorators/module.decorator';
-import { NestModule } from '../../common/interfaces/modules/nest-module.interface';
-import { Component } from '../../common/utils/decorators/component.decorator';
-import { UseGuards } from '../../common/utils/decorators/use-guards.decorator';
-import { Controller } from '../../common/utils/decorators/controller.decorator';
+import * as sinon from 'sinon';
+import { GUARDS_METADATA } from '../constants';
+import { NestModule } from '../interfaces/modules/nest-module.interface';
 import { MetadataScanner } from '../metadata-scanner';
-import { GUARDS_METADATA } from '../../common/constants';
+import { Component } from '../utils/decorators/component.decorator';
+import { Controller } from '../utils/decorators/controller.decorator';
+import { Module } from '../utils/decorators/module.decorator';
+import { UseGuards } from '../utils/decorators/use-guards.decorator';
+import { NestContainer } from './../injector/container';
+import { DependenciesScanner } from './../scanner';
 
 describe('DependenciesScanner', () => {
 
@@ -106,7 +106,7 @@ describe('DependenciesScanner', () => {
         expect(addInjectable.calledWith(comp, token)).to.be.true;
       });
     });
- 
+
     class CompMethod {
       @UseGuards('test')
       public method() {}

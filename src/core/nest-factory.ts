@@ -1,17 +1,18 @@
-import { DependenciesScanner } from './scanner';
-import { InstanceLoader } from './injector/instance-loader';
-import { NestContainer } from './injector/container';
-import { ExceptionsZone } from './errors/exceptions-zone';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { messages } from './constants';
-import { NestApplication } from './nest-application';
-import { NestMicroservice } from './nest-microservice';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices/interfaces/microservice-configuration.interface';
 import { ExpressAdapter } from './adapters/express-adapter';
-import { INestApplication, INestMicroservice } from '@nestjs/common';
+import { messages } from './constants';
+import { ExceptionsZone } from './errors/exceptions-zone';
+import { NestContainer } from './injector/container';
+import { InstanceLoader } from './injector/instance-loader';
+import { NestModuleMetatype } from './interfaces/modules/module-metatype.interface';
+import { INestApplication } from './interfaces/nest-application.interface';
+import { INestMicroservice } from './interfaces/nest-microservice.interface';
 import { MetadataScanner } from './metadata-scanner';
+import { NestApplication } from './nest-application';
+import { NestMicroservice } from './nest-microservice';
+import { DependenciesScanner } from './scanner';
+import { Logger } from './services/logger.service';
+import { isFunction } from './utils/shared.utils';
 
 export class NestFactoryStatic {
     private container = new NestContainer();

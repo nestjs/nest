@@ -1,13 +1,14 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { InstanceWrapper } from '../../injector/container';
-import { Injector } from '../../injector/injector';
-import { Component } from '../../../common/utils/decorators/component.decorator';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
-import { Module } from '../../injector/module';
-import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
+import * as sinon from 'sinon';
+import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
+import { InstanceWrapper } from '../../injector/container';
+import { Injector } from '../../injector/injector';
+import { Module } from '../../injector/module';
+import { Component } from '../../utils/decorators/component.decorator';
+
 chai.use(chaiAsPromised);
 
 describe('Injector', () => {

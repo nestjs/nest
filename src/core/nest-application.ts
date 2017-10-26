@@ -1,20 +1,27 @@
-import iterate from 'iterare';
-import { MiddlewaresModule } from './middlewares/middlewares-module';
-import { SocketModule } from '@nestjs/websockets/socket-module';
-import { NestContainer } from './injector/container';
-import { ExpressAdapter } from './adapters/express-adapter';
-import { RoutesResolver } from './router/routes-resolver';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { messages } from './constants';
-import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
-import { Resolver } from './router/interfaces/resolver.interface';
-import { INestApplication, INestMicroservice, OnModuleInit } from '@nestjs/common';
-import { ApplicationConfig } from './application-config';
-import { validatePath, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices';
+import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
+import { SocketModule } from '@nestjs/websockets/socket-module';
+import iterate from 'iterare';
+import { ExpressAdapter } from './adapters/express-adapter';
+import { ApplicationConfig } from './application-config';
+import { messages } from './constants';
 import { NestMicroservice } from './index';
-import { WebSocketAdapter, OnModuleDestroy, ExceptionFilter, PipeTransform, NestInterceptor, CanActivate } from '@nestjs/common';
+import { NestContainer } from './injector/container';
 import { Module } from './injector/module';
+import { CanActivate } from './interfaces/can-activate.interface';
+import { ExceptionFilter } from './interfaces/exceptions/exception-filter.interface';
+import { OnModuleDestroy } from './interfaces/modules/on-destroy.interface';
+import { OnModuleInit } from './interfaces/modules/on-init.interface';
+import { INestApplication } from './interfaces/nest-application.interface';
+import { NestInterceptor } from './interfaces/nest-interceptor.interface';
+import { INestMicroservice } from './interfaces/nest-microservice.interface';
+import { PipeTransform } from './interfaces/pipe-transform.interface';
+import { WebSocketAdapter } from './interfaces/web-socket-adapter.interface';
+import { MiddlewaresModule } from './middlewares/middlewares-module';
+import { Resolver } from './router/interfaces/resolver.interface';
+import { RoutesResolver } from './router/routes-resolver';
+import { Logger } from './services/logger.service';
+import { isNil, isUndefined, validatePath } from './utils/shared.utils';
 
 export class NestApplication implements INestApplication {
     private readonly config = new ApplicationConfig();
@@ -50,11 +57,11 @@ export class NestApplication implements INestApplication {
     }
 
     public async setupRouter() {
-      const router = ExpressAdapter.createRouter();
-      await this.setupMiddlewares(router);
+        const router = ExpressAdapter.createRouter();
+        await this.setupMiddlewares(router);
 
-      this.routesResolver.resolve(router);
-      this.express.use(validatePath(this.config.getGlobalPrefix()), router);
+        this.routesResolver.resolve(router);
+        this.express.use(validatePath(this.config.getGlobalPrefix()), router);
     }
 
     public connectMicroservice(config: MicroserviceConfiguration): INestMicroservice {
@@ -152,11 +159,11 @@ export class NestApplication implements INestApplication {
 
     private callModuleInitHook(module: Module) {
         const components = [...module.routes, ...module.components];
-        iterate(components).map(([key, {instance}]) => instance)
+        iterate(components).map(([key, { instance }]) => instance)
             .filter((instance) => !isNil(instance))
             .filter(this.hasOnModuleInitHook)
             .forEach((instance) => (instance as OnModuleInit).onModuleInit());
-        }
+    }
 
     private hasOnModuleInitHook(instance): instance is OnModuleInit {
         return !isUndefined((instance as OnModuleInit).onModuleInit);
@@ -171,10 +178,10 @@ export class NestApplication implements INestApplication {
 
     private callModuleDestroyHook(module: Module) {
         const components = [...module.routes, ...module.components];
-        iterate(components).map(([key, {instance}]) => instance)
-                .filter((instance) => !isNil(instance))
-                .filter(this.hasOnModuleDestroyHook)
-                .forEach((instance) => (instance as OnModuleDestroy).onModuleDestroy());
+        iterate(components).map(([key, { instance }]) => instance)
+            .filter((instance) => !isNil(instance))
+            .filter(this.hasOnModuleDestroyHook)
+            .forEach((instance) => (instance as OnModuleDestroy).onModuleDestroy());
     }
 
     private hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {

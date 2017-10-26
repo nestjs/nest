@@ -1,10 +1,10 @@
 import 'reflect-metadata';
-import { ExpressRouterExplorer } from '../router/router-explorer';
+import { PATH_METADATA } from '../constants';
+import { RequestMethod } from '../enums/request-method.enum';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
-import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
-import { PATH_METADATA } from '@nestjs/common/constants';
 import { MetadataScanner } from '../metadata-scanner';
+import { ExpressRouterExplorer } from '../router/router-explorer';
+import { isUndefined, validatePath } from '../utils/shared.utils';
 
 export class RoutesMapper {
     private readonly routerExplorer = new ExpressRouterExplorer(new MetadataScanner());

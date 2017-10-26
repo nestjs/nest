@@ -1,8 +1,8 @@
-import 'reflect-metadata';
 import iterate from 'iterare';
-import { Controller } from '@nestjs/common/interfaces';
-import { isUndefined, isFunction } from '@nestjs/common/utils/shared.utils';
-import { ApplicationConfig } from './../application-config';
+import 'reflect-metadata';
+import { ApplicationConfig } from '../application-config';
+import { Controller } from '../interfaces/controllers/controller.interface';
+import { isFunction, isUndefined } from '../utils/shared.utils';
 
 export abstract class ContextCreator {
     public abstract createConcreteContext<T extends any[], R extends any[]>(metadata: T): R;

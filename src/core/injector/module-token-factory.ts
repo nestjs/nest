@@ -1,5 +1,5 @@
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { SHARED_MODULE_METADATA } from '@nestjs/common/constants';
+import { SHARED_MODULE_METADATA } from '../constants';
+import { NestModuleMetatype } from '../interfaces/modules/module-metatype.interface';
 
 export class ModuleTokenFactory {
     public create(metatype: NestModuleMetatype, scope: NestModuleMetatype[]) {

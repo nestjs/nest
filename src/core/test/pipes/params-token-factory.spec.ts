@@ -1,6 +1,6 @@
 import { expect } from 'chai';
+import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
 import { ParamsTokenFactory } from './../../pipes/params-token-factory';
-import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 
 describe('ParamsTokenFactory', () => {
     let factory: ParamsTokenFactory;

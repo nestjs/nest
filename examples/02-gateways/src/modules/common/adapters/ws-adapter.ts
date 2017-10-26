@@ -1,11 +1,11 @@
-import * as WebSocket from 'ws';
-import { WebSocketAdapter } from '@nestjs/common';
 import { MessageMappingProperties } from '@nestjs/websockets';
-import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/fromEvent';
 import 'rxjs/add/observable/empty';
-import 'rxjs/add/operator/switchMap';
+import 'rxjs/add/observable/fromEvent';
 import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/switchMap';
+import { Observable } from 'rxjs/Observable';
+import * as WebSocket from 'ws';
+import { WebSocketAdapter } from '';
 
 export class WsAdapter implements WebSocketAdapter {
   public create(port: number) {

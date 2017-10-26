@@ -1,11 +1,11 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { MiddlewaresResolver } from '../../middlewares/resolver';
+import * as sinon from 'sinon';
+import { NestEnvironment } from '../../enums/nest-environment.enum';
+import { NestMiddleware } from '../../interfaces/middlewares/nest-middleware.interface';
 import { MiddlewaresContainer } from '../../middlewares/container';
-import { Component } from '../../../common/utils/decorators/component.decorator';
-import { NestMiddleware } from '../../../common/interfaces/middlewares/nest-middleware.interface';
-import { Logger } from '../../../common/services/logger.service';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
+import { MiddlewaresResolver } from '../../middlewares/resolver';
+import { Logger } from '../../services/logger.service';
+import { Component } from '../../utils/decorators/component.decorator';
 
 describe('MiddlewaresResolver', () => {
     @Component()

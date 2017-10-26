@@ -1,8 +1,8 @@
-
-import { Component, Inject } from '@nestjs/common';
-import { CreateCatDto } from './dto/create-cat.dto';
 import { Model } from 'sequelize-typescript';
 import { Cat } from './cat.entity';
+import { CreateCatDto } from './dto/create-cat.dto';
+
+import { Component, Inject } from '';
 
 @Component()
 export class CatsService {

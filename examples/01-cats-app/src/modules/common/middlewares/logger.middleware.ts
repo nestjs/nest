@@ -1,4 +1,4 @@
-import { Middleware, NestMiddleware, ExpressMiddleware } from '@nestjs/common';
+import { Middleware, NestMiddleware, ExpressMiddleware } from '';
 
 @Middleware()
 export class LoggerMiddleware implements NestMiddleware {

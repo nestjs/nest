@@ -1,15 +1,15 @@
 import 'reflect-metadata';
-import { InstanceWrapper } from './container';
-import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
+import { PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '../constants';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { Module } from './module';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
+import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
+import { Controller } from '../interfaces/controllers/controller.interface';
+import { Injectable } from '../interfaces/injectable.interface';
+import { Metatype } from '../interfaces/metatype.interface';
 import { MiddlewareWrapper } from '../middlewares/container';
-import { isUndefined, isNil, isFunction } from '@nestjs/common/utils/shared.utils';
-import { PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
-import { UndefinedDependencyException } from './../errors/exceptions/undefined-dependency.exception';
+import { isFunction, isNil, isUndefined } from '../utils/shared.utils';
+import { InstanceWrapper } from './container';
+import { Module } from './module';
 
 export class Injector {
   public async loadInstanceOfMiddleware(

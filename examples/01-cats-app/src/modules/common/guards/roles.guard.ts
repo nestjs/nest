@@ -1,6 +1,6 @@
-import { Guard, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
 import { Reflector } from '@nestjs/core';
+import { Observable } from 'rxjs/Observable';
+import { Guard, CanActivate, ExecutionContext } from '';
 
 @Guard()
 export class RolesGuard implements CanActivate {
