@@ -1,4 +1,4 @@
-import { Metatype } from '/interfaces/metatype.interface';
+import { Metatype } from '@nestjs/core/interfaces/metatype.interface';
 import { GatewayMiddleware } from './gateway-middleware.interface';
 
 export interface GatewayMetadata {

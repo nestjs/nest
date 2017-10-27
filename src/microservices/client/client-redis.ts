@@ -1,4 +1,4 @@
-import { Logger } from '/services/logger.service';
+import { Logger } from '@nestjs/core/services/logger.service';
 import * as redis from 'redis';
 import { ClientMetadata } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';

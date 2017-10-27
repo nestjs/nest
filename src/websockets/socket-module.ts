@@ -4,9 +4,9 @@ import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator
 import { InstanceWrapper, NestContainer } from '@nestjs/core/injector/container';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { Injectable } from '@nestjs/core/interfaces/injectable.interface';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
-import { Injectable } from '/interfaces/injectable.interface';
 import 'reflect-metadata';
 import { GATEWAY_METADATA } from './constants';
 import { SocketsContainer } from './container';

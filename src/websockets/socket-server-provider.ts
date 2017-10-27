@@ -1,5 +1,5 @@
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { validatePath } from '/utils/shared.utils';
+import { validatePath } from '@nestjs/core/utils/shared.utils';
 import { SocketsContainer } from './container';
 import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
 import { ObservableSocket } from './observable-socket';

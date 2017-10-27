@@ -1,4 +1,4 @@
-import { Logger } from '/services/logger.service';
+import { Logger } from '@nestjs/core/services/logger.service';
 import 'rxjs/add/observable/empty';
 import 'rxjs/add/observable/fromPromise';
 import 'rxjs/add/observable/of';

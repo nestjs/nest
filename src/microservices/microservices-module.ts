@@ -4,9 +4,9 @@ import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator
 import { InstanceWrapper } from '@nestjs/core/injector/container';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { Controller } from '@nestjs/core/interfaces/controllers/controller.interface';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
-import { Controller } from '/interfaces/controllers/controller.interface';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { RpcContextCreator } from './context/rpc-context-creator';

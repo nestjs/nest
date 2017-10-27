@@ -1,11 +1,11 @@
+import { Module } from '@nestjs/core';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
+import { ModuleMetadata } from '@nestjs/core/interfaces';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
-import { ModuleMetadata } from '/interfaces';
 import { OverrideBy, OverrideByFactoryOptions } from './interfaces';
 import { TestingModule } from './testing-module';
-import { Module } from '';
 
 export class TestingModuleBuilder {
     private readonly container = new NestContainer();

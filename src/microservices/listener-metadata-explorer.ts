@@ -1,6 +1,6 @@
+import { Controller } from '@nestjs/core/interfaces/controllers/controller.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { Controller } from '/interfaces/controllers/controller.interface';
-import { isFunction, isUndefined } from '/utils/shared.utils';
+import { isFunction, isUndefined } from '@nestjs/core/utils/shared.utils';
 import { ClientMetadata } from './interfaces/client-metadata.interface';
 import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 import {

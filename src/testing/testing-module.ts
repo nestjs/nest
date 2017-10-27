@@ -1,12 +1,12 @@
 import { NestApplication, NestMicroservice } from '@nestjs/core';
 import { InstanceWrapper, NestContainer } from '@nestjs/core/injector/container';
 import { ModuleTokenFactory } from '@nestjs/core/injector/module-token-factory';
+import { Metatype } from '@nestjs/core/interfaces';
+import { NestModuleMetatype } from '@nestjs/core/interfaces/modules/module-metatype.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
+import { isFunction } from '@nestjs/core/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices';
-import { Metatype } from '/interfaces';
-import { NestModuleMetatype } from '/interfaces/modules/module-metatype.interface';
-import { isFunction } from '/utils/shared.utils';
 import { UnknownModuleException } from './errors/unknown-module.exception';
 import { INestApplication, INestMicroservice } from '';
 

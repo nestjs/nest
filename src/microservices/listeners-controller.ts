@@ -1,5 +1,5 @@
+import { Controller } from '@nestjs/core/interfaces/controllers/controller.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { Controller } from '/interfaces/controllers/controller.interface';
 import 'reflect-metadata';
 import { ClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';

@@ -1,4 +1,4 @@
-import { isNil } from '/utils/shared.utils';
+import { isNil } from '@nestjs/core/utils/shared.utils';
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
 import { InvalidMessageException } from '../exceptions/invalid-message.exception';

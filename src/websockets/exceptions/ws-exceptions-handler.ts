@@ -1,7 +1,7 @@
 import { messages } from '@nestjs/core/constants';
 import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/invalid-exception-filter.exception';
-import { ExceptionFilterMetadata } from '/interfaces/exceptions/exception-filter-metadata.interface';
-import { isEmpty, isObject } from '/utils/shared.utils';
+import { ExceptionFilterMetadata } from '@nestjs/core/interfaces/exceptions/exception-filter-metadata.interface';
+import { isEmpty, isObject } from '@nestjs/core/utils/shared.utils';
 import { WsException } from '../exceptions/ws-exception';
 import { Logger } from '';
 

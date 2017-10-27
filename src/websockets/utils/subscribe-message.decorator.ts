@@ -1,4 +1,4 @@
-import { isObject, isUndefined } from '/utils/shared.utils';
+import { isObject, isUndefined } from '@nestjs/core/utils/shared.utils';
 import 'reflect-metadata';
 import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA } from '../constants';
 

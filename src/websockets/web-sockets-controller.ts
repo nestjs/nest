@@ -1,8 +1,8 @@
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
+import { Injectable } from '@nestjs/core/interfaces/injectable.interface';
+import { Metatype } from '@nestjs/core/interfaces/metatype.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { Injectable } from '/interfaces/injectable.interface';
-import { Metatype } from '/interfaces/metatype.interface';
 import 'reflect-metadata';
 import 'rxjs/add/observable/fromPromise';
 import 'rxjs/add/observable/of';
