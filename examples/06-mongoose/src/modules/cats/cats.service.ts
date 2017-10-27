@@ -1,7 +1,7 @@
+import { Component, Inject } from '@nestjs/core';
 import { Model } from 'mongoose';
 import { CreateCatDto } from './dto/create-cat.dto';
 import { Cat } from './interfaces/cat.interface';
-import { Component, Inject } from '';
 
 @Component()
 export class CatsService {

@@ -7,7 +7,7 @@ import {
   NestModule,
   MiddlewaresConsumer,
   RequestMethod,
-} from '';
+} from '@nestjs/core';
 
 @Module({
   components: [

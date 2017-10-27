@@ -1,5 +1,5 @@
+import { Module } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
-import { Module } from '';
 
 @Module({
   modules: [AuthModule],

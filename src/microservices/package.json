@@ -8,8 +8,9 @@
     "compile": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "json-socket": "^0.2.1",
+    "@nestjs/core": "file:../core",
     "iterare": "0.0.8",
+    "json-socket": "^0.2.1",
     "redis": "^2.7.1"
   },
   "peerDependencies": {

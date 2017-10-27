@@ -1,3 +1,4 @@
+import { WebSocketAdapter } from '@nestjs/core';
 import 'rxjs/add/observable/fromEvent';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/switchMap';
@@ -5,7 +6,6 @@ import { Observable } from 'rxjs/Observable';
 import * as io from 'socket.io';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
 import { CONNECTION_EVENT, DISCONNECT_EVENT } from './../constants';
-import { WebSocketAdapter } from '';
 
 export class IoAdapter implements WebSocketAdapter {
     public create(port: number) {

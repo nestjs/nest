@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/core';
 import { messages } from '@nestjs/core/constants';
 import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/invalid-exception-filter.exception';
 import { RpcExceptionFilterMetadata } from '@nestjs/core/interfaces/exceptions';
@@ -5,7 +6,6 @@ import { isEmpty, isObject } from '@nestjs/core/utils/shared.utils';
 import 'rxjs/add/observable/throw';
 import { Observable } from 'rxjs/Observable';
 import { RpcException } from './rpc-exception';
-import { Logger } from '';
 
 export class RpcExceptionsHandler {
     private filters: RpcExceptionFilterMetadata[] = [];

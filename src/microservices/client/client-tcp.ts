@@ -1,8 +1,8 @@
+import { Logger } from '@nestjs/core';
 import * as JsonSocket from 'json-socket';
 import * as net from 'net';
 import { ClientMetadata } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
-import { Logger } from '';
 
 const DEFAULT_PORT = 3000;
 const DEFAULT_HOST = 'localhost';

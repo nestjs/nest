@@ -1,10 +1,10 @@
-import { CommonService } from '../common/common.service';
-import { Component } from '';
+import { Component } from '@nestjs/core';
+import { CommonService } from '../core/core.service';
 
 @Component()
 export class FeatureService {
   constructor(
-    private readonly commonService: CommonService) {
-    console.log('FeatureService', commonService);
+    private readonly coreService: CommonService) {
+    console.log('FeatureService', coreService);
   }
 }

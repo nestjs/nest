@@ -1,6 +1,6 @@
+import { ExecutionContext, Interceptor, NestInterceptor } from '@nestjs/core';
 import 'rxjs/add/operator/map';
 import { Observable } from 'rxjs/Observable';
-import { Interceptor, NestInterceptor, ExecutionContext } from '';
 
 @Interceptor()
 export class TransformInterceptor implements NestInterceptor {

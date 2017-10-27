@@ -8,6 +8,7 @@
     "compile": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@nestjs/core": "file:../core",
     "iterare": "0.0.8",
     "socket.io": "^2.0.3"
   },

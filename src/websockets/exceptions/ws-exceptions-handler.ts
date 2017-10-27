@@ -1,9 +1,9 @@
+import { Logger } from '@nestjs/core';
 import { messages } from '@nestjs/core/constants';
 import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/invalid-exception-filter.exception';
 import { ExceptionFilterMetadata } from '@nestjs/core/interfaces/exceptions/exception-filter-metadata.interface';
 import { isEmpty, isObject } from '@nestjs/core/utils/shared.utils';
 import { WsException } from '../exceptions/ws-exception';
-import { Logger } from '';
 
 export class WsExceptionsHandler {
     private filters: ExceptionFilterMetadata[] = [];

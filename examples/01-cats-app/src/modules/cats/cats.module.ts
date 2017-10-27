@@ -1,6 +1,6 @@
+import { Module } from '@nestjs/core';
 import { CatsController } from './cats.controller';
 import { CatsService } from './cats.service';
-import { Module } from '';
 
 @Module({
     controllers: [CatsController],
