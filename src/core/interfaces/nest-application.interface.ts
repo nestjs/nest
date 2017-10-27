@@ -1,8 +1,8 @@
-import { MicroserviceConfiguration } from '@nestjs/microservices';
-import { INestMicroservice, ExceptionFilter, PipeTransform } from './index';
-import { WebSocketAdapter } from './web-socket-adapter.interface';
 import { CanActivate } from './can-activate.interface';
+import { ExceptionFilter, INestMicroservice, PipeTransform } from './index';
+import { MicroserviceConfiguration } from './microservice-configuration.interface';
 import { NestInterceptor } from './nest-interceptor.interface';
+import { WebSocketAdapter } from './web-socket-adapter.interface';
 
 export interface INestApplication {
     /**

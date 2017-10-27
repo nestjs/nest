@@ -1,4 +1,3 @@
-import { MicroserviceConfiguration } from '@nestjs/microservices';
 import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
 import { SocketModule } from '@nestjs/websockets/socket-module';
 import iterate from 'iterare';
@@ -10,6 +9,7 @@ import { NestContainer } from './injector/container';
 import { Module } from './injector/module';
 import { CanActivate } from './interfaces/can-activate.interface';
 import { ExceptionFilter } from './interfaces/exceptions/exception-filter.interface';
+import { MicroserviceConfiguration } from './interfaces/microservice-configuration.interface';
 import { OnModuleDestroy } from './interfaces/modules/on-destroy.interface';
 import { OnModuleInit } from './interfaces/modules/on-init.interface';
 import { INestApplication } from './interfaces/nest-application.interface';
