@@ -57,7 +57,7 @@ describe('RouterExecutionContext', () => {
             it('should call "exchangeKeysForValues" with expected arguments', (done) => {
                 const keys = Object.keys(metadata);
 
-                contextCreator.create({ foo: 'bar' }, callback as any, '', 0);
+                contextCreator.create({ foo: 'bar' }, callback as any, '', '', 0);
                 expect(exchangeKeysForValuesSpy.called).to.be.true;
                 expect(
                     exchangeKeysForValuesSpy.calledWith(keys, metadata),
@@ -70,7 +70,7 @@ describe('RouterExecutionContext', () => {
 
                 beforeEach(() => {
                     instance = { foo: 'bar' };
-                    proxyContext = contextCreator.create(instance, callback as any, '', 0);
+                    proxyContext = contextCreator.create(instance, callback as any, '', '', 0);
                 });
                 it('should be a function', () => {
                     expect(proxyContext).to.be.a('function');
@@ -109,7 +109,7 @@ describe('RouterExecutionContext', () => {
         }
         it('should returns ROUTE_ARGS_METADATA callback metadata', () => {
             const instance = new TestController();
-            const metadata = contextCreator.reflectCallbackMetadata(instance, instance.callback);
+            const metadata = contextCreator.reflectCallbackMetadata(instance, 'callback');
             const expectedMetadata = {
                 [`${RouteParamtypes.REQUEST}:0`]: {
                     index: 0,
