@@ -8,12 +8,12 @@ import { Injectable } from '@nestjs/core/interfaces/injectable.interface';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
 import 'reflect-metadata';
-import { GATEWAY_METADATA } from './constants';
+import { GATEWAY_METADATA } from '@nestjs/core/websocket-utils/constants';
 import { SocketsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { WsContextCreator } from './context/ws-context-creator';
 import { WsProxy } from './context/ws-proxy';
-import { NestGateway } from './interfaces/nest-gateway.interface';
+import { NestGateway } from '@nestjs/core/websocket-utils/interfaces/nest-gateway.interface';
 import { SocketServerProvider } from './socket-server-provider';
 import { WebSocketsController } from './web-sockets-controller';
 

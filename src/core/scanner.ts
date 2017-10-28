@@ -1,4 +1,4 @@
-import { GATEWAY_MIDDLEWARES } from '@nestjs/websockets/constants';
+import { GATEWAY_MIDDLEWARES } from './websocket-utils/constants';
 import 'reflect-metadata';
 import { MetadataScanner } from '../core/metadata-scanner';
 import { EXCEPTION_FILTERS_METADATA, GUARDS_METADATA, INTERCEPTORS_METADATA, metadata } from './constants';
@@ -85,7 +85,7 @@ export class DependenciesScanner {
 
     public reflectGatewaysMiddlewares(component: Metatype<Injectable>, token: string) {
         const middlewares = this.reflectMetadata(component, GATEWAY_MIDDLEWARES);
-        middlewares.map((middleware) => this.storeComponent(middleware, token));
+        middlewares.map(middleware => this.storeComponent(middleware, token));
     }
 
     public reflectGuards(component: Metatype<Injectable>, token: string) {

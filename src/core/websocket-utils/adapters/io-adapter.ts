@@ -1,4 +1,4 @@
-import { WebSocketAdapter } from '@nestjs/core';
+import { WebSocketAdapter } from '../../interfaces/web-socket-adapter.interface';
 import 'rxjs/add/observable/fromEvent';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/switchMap';

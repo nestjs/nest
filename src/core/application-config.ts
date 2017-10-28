@@ -1,4 +1,4 @@
-import { IoAdapter } from '@nestjs/websockets/adapters/io-adapter';
+import { IoAdapter } from './websocket-utils/adapters/io-adapter';
 import { CanActivate } from './interfaces/can-activate.interface';
 import { ConfigurationProvider } from './interfaces/configuration-provider.interface';
 import { ExceptionFilter } from './interfaces/exceptions/exception-filter.interface';

@@ -14,7 +14,6 @@
     "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "^4.0.1",
     "@nestjs/core": "^4.0.1",
     "@nestjs/microservices": "^4.0.1",
     "@nestjs/testing": "^4.0.1",

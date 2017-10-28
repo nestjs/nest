@@ -1,6 +1,6 @@
 import { isObject, isUndefined } from '@nestjs/core/utils/shared.utils';
 import 'reflect-metadata';
-import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA } from '../constants';
+import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA } from '@nestjs/core/websocket-utils/constants';
 
 /**
  * Subscribes to the messages, which fulfils chosen pattern.

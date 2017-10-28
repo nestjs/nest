@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { GatewayMetadata } from '../interfaces';
-import { PORT_METADATA, NAMESPACE_METADATA, GATEWAY_METADATA, GATEWAY_MIDDLEWARES } from '../constants';
+import { PORT_METADATA, NAMESPACE_METADATA, GATEWAY_METADATA, GATEWAY_MIDDLEWARES } from '@nestjs/core/websocket-utils/constants';
 
 /**
  * Defines the Gateway. The gateway can inject dependencies through constructor.

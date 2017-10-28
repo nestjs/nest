@@ -7,7 +7,6 @@
 export * from './enums';
 export * from './nest-application';
 export * from './nest-factory';
-export * from './nest-microservice';
 export * from './services/logger.service';
 export * from './services/reflector.service';
 export * from './utils';

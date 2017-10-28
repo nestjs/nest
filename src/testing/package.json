@@ -8,9 +8,7 @@
     "compile": "tsc -p tsconfig.json"
   },
   "peerDependencies": {
-    "@nestjs/common": "~4.*",
     "@nestjs/core": "~4.*",
-    "@nestjs/microservices": "~4.*"
   },
   "dependencies": {
     "@nestjs/core": "file:../core"

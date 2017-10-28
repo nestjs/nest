@@ -9,7 +9,6 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@nestjs/common": "^4.0.1",
     "@nestjs/core": "^4.0.1",
     "@nestjs/microservices": "^4.0.1",
     "@nestjs/testing": "^4.0.1",

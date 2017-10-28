@@ -6,8 +6,8 @@ import { Injectable } from '@nestjs/core/interfaces/injectable.interface';
 import { isFunction, isNil, isUndefined } from '@nestjs/core/utils/shared.utils';
 import iterate from 'iterare';
 import 'reflect-metadata';
-import { GATEWAY_MIDDLEWARES } from './constants';
-import { NestGateway } from './index';
+import { GATEWAY_MIDDLEWARES } from '@nestjs/core/websocket-utils/constants';
+import { NestGateway } from '@nestjs/core/websocket-utils/interfaces/nest-gateway.interface';
 import { GatewayMiddleware } from './interfaces/gateway-middleware.interface';
 
 export class MiddlewaresInjector {

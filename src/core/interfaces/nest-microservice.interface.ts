@@ -1,8 +1,9 @@
-import { WebSocketAdapter } from './web-socket-adapter.interface';
-import { ExceptionFilter } from './exceptions/exception-filter.interface';
-import { PipeTransform } from './pipe-transform.interface';
-import { NestInterceptor } from './nest-interceptor.interface';
 import { CanActivate } from './can-activate.interface';
+import { ExceptionFilter } from './exceptions/exception-filter.interface';
+import { NestInterceptor } from './nest-interceptor.interface';
+import { INewable } from './newable.interface';
+import { PipeTransform } from './pipe-transform.interface';
+import { WebSocketAdapter } from './web-socket-adapter.interface';
 
 export interface INestMicroservice {
     /**
@@ -28,7 +29,7 @@ export interface INestMicroservice {
      * @param  {ExceptionFilter[]} ...filters
      */
     useGlobalFilters(...filters: ExceptionFilter[]);
-    
+
     /**
      * Setups pipes as a global pipes (will be used within every message pattern handler)
      *

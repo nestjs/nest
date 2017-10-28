@@ -1,24 +1,18 @@
-import { CustomTransportStrategy } from '@nestjs/microservices';
-import { Transport } from '@nestjs/microservices/enums/transport.enum';
-import { MicroserviceConfiguration } from '@nestjs/microservices/interfaces/microservice-configuration.interface';
-import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
-import { Server } from '@nestjs/microservices/server/server';
-import { ServerFactory } from '@nestjs/microservices/server/server-factory';
+import { Module } from '@nestjs/core/injector/module';
+import { CanActivate, ExceptionFilter, INestMicroservice, Logger, NestInterceptor, OnModuleDestroy, PipeTransform, WebSocketAdapter } from '@nestjs/core';
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import { messages } from '@nestjs/core/constants';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { isNil, isUndefined } from '@nestjs/core/utils/shared.utils';
 import { SocketModule } from '@nestjs/websockets/socket-module';
 import iterate from 'iterare';
-import { ApplicationConfig } from './application-config';
-import { messages } from './constants';
-import { NestContainer } from './injector/container';
-import { Module } from './injector/module';
-import { CanActivate } from './interfaces/can-activate.interface';
-import { ExceptionFilter } from './interfaces/exceptions/exception-filter.interface';
-import { OnModuleDestroy } from './interfaces/modules/on-destroy.interface';
-import { NestInterceptor } from './interfaces/nest-interceptor.interface';
-import { INestMicroservice } from './interfaces/nest-microservice.interface';
-import { PipeTransform } from './interfaces/pipe-transform.interface';
-import { WebSocketAdapter } from './interfaces/web-socket-adapter.interface';
-import { Logger } from './services/logger.service';
-import { isNil, isUndefined } from './utils/shared.utils';
+import { Transport } from './enums/transport.enum';
+import { CustomTransportStrategy } from './interfaces/custom-transport-strategy.interface';
+import { MicroserviceConfiguration } from './interfaces/microservice-configuration.interface';
+import { MicroservicesModule } from './microservices-module';
+import { Server } from './server/server';
+import { ServerFactory } from './server/server-factory';
+
 
 export class NestMicroservice implements INestMicroservice {
     private readonly config = new ApplicationConfig();

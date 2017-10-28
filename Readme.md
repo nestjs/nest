@@ -6,7 +6,7 @@
 [travis-url]: https://travis-ci.org/nestjs/nest
 [linux-image]: https://img.shields.io/travis/nestjs/nest/master.svg?label=linux
 [linux-url]: https://travis-ci.org/nestjs/nest
-  
+
   <p align="center">A progressive <a href="http://nodejs.org" target="blank">Node.js</a> framework for building efficient and scalable web applications. :cat: </p>
     <p align="center">
 <a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
@@ -69,7 +69,7 @@ $ npm run start
 
 **Start a New Project from Scratch with NPM:**
 ```bash
-$ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websockets @nestjs/testing reflect-metadata rxjs
+$ npm i --save @nestjs/core @nestjs/microservices @nestjs/websockets @nestjs/testing reflect-metadata rxjs
 ```
 
 ## Documentation & Quick Start

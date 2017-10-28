@@ -1,3 +1,9 @@
+/** Allowed modules to pass into the `add` function on NestFactory */
+export const allowedModules = [
+    'MicroservicesModule',
+    'SocketModule',
+];
+
 export const messages = {
     APPLICATION_START: `Starting Nest application...`,
     APPLICATION_READY: `Nest application successfully started`,

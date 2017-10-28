@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { GATEWAY_SERVER_METADATA } from '../constants';
+import { GATEWAY_SERVER_METADATA } from '@nestjs/core/websocket-utils/constants';
 
 /**
  * Attaches the native Web Socket Server to the given property.

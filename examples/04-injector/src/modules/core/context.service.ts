@@ -1,6 +1,6 @@
 import { Component } from '@nestjs/core';
-import { CommonService } from '../core/core.service';
-import { CoreService } from './core.service';
+import { CommonService } from '../common/core.service';
+import { CoreService } from './common.service';
 
 @Component()
 export class ContextService {
