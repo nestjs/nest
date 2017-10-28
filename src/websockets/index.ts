@@ -4,7 +4,6 @@
  * www.nestjs.com || www.kamilmysliwiec.com
  * MIT Licensed
  */
-
 export * from '@nestjs/core/websocket-utils/adapters/io-adapter';
 export * from './interfaces';
 export * from './exceptions/ws-exception';

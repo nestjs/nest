@@ -14,7 +14,7 @@ export class SocketServerProvider {
         return observableServer ? observableServer : this.createSocketServer(namespace, port);
     }
 
-    private createSocketServer(namespace: string, port: number) {
+    public createSocketServer(namespace: string, port: number) {
         const server = this.getServerOfNamespace(namespace, port);
         const observableSocket = ObservableSocket.create(server);
 

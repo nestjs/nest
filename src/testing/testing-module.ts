@@ -1,3 +1,4 @@
+
 import { NestApplication } from '@nestjs/core';
 import { INestApplication, INestMicroservice } from '@nestjs/core';
 import { InstanceWrapper, NestContainer } from '@nestjs/core/injector/container';
@@ -7,7 +8,7 @@ import { NestModuleMetatype } from '@nestjs/core/interfaces/modules/module-metat
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
 import { isFunction } from '@nestjs/core/utils/shared.utils';
-import { INewable } from './../core/interfaces/newable.interface';
+import { INewable } from '@nestjs/core/interfaces/newable.interface';
 import { UnknownModuleException } from './errors/unknown-module.exception';
 
 
@@ -18,7 +19,7 @@ export class TestingModule {
         private readonly container: NestContainer,
         private readonly scope: NestModuleMetatype[],
         private readonly contextModule,
-        private readonly NestMicroservice: INestMicroservice = null) { }
+        private readonly NestMicroservice: INewable = null) { }
 
     public createNestApplication(express?): INestApplication {
         return new NestApplication(this.container, express);

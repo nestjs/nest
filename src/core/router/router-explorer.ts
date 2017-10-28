@@ -89,12 +89,12 @@ export class ExpressRouterExplorer implements RouterExplorer {
 
         (routePaths || []).map((pathProperties) => {
             const { path, requestMethod } = pathProperties;
-            this.applyCallbackToRouter(router, pathProperties, instance, module);
+            this._applyCallbackToRouter(router, pathProperties, instance, module);
             this.logger.log(RouteMappedMessage(path, requestMethod));
         });
     }
 
-    private applyCallbackToRouter(
+    public _applyCallbackToRouter(
         router,
         pathProperties: RoutePathProperties,
         instance: Controller,
