@@ -7,6 +7,9 @@ before_script:
      - export DISPLAY=:99.0
      - sh -e /etc/init.d/xvfb start
 script:
-      - gulp
+      - gulp core
+      - gulp microservices
+      - gulp websockets
+      - gulp testing
       - npm test
 after_success: npm run coverage
