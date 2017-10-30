@@ -1,3 +1,6 @@
+## 4.1.4
+- **common**: remove deprecated `@ExceptionFilters()` decorator
+
 ## 4.1.3
 - **core**: forward reference bugfixes & security updates
 

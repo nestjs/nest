@@ -1,15 +1,15 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
 import { EXCEPTION_FILTERS_METADATA } from '../../constants';
-import { ExceptionFilters } from '../../utils/decorators/exception-filters.decorator';
+import { UseFilters } from '../../utils/decorators/exception-filters.decorator';
 
-describe('@ExceptionFilters', () => {
+describe('@UseFilters', () => {
     const filters = [ 'exception', 'exception2' ];
 
-    @ExceptionFilters(...filters as any) class Test {}
+    @UseFilters(...filters as any) class Test {}
 
     class TestWithMethod {
-        @ExceptionFilters(...filters as any)
+        @UseFilters(...filters as any)
         public static test() {}
     }
 
