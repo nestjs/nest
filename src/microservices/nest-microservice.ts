@@ -1,19 +1,18 @@
-import iterate from 'iterare';
-import { NestContainer } from './injector/container';
-import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
-import { messages } from './constants';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { Server } from '@nestjs/microservices/server/server';
-import { MicroserviceConfiguration } from '@nestjs/microservices/interfaces/microservice-configuration.interface';
-import { ServerFactory } from '@nestjs/microservices/server/server-factory';
-import { Transport } from '@nestjs/microservices/enums/transport.enum';
-import { INestMicroservice, WebSocketAdapter, CanActivate, PipeTransform, NestInterceptor, ExceptionFilter } from '@nestjs/common';
-import { ApplicationConfig } from './application-config';
+import { Module } from '@nestjs/core/injector/module';
+import { CanActivate, ExceptionFilter, INestMicroservice, Logger, NestInterceptor, OnModuleDestroy, PipeTransform, WebSocketAdapter } from '@nestjs/core';
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import { messages } from '@nestjs/core/constants';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { isNil, isUndefined } from '@nestjs/core/utils/shared.utils';
 import { SocketModule } from '@nestjs/websockets/socket-module';
-import { CustomTransportStrategy } from '@nestjs/microservices';
-import { Module } from './injector/module';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { OnModuleDestroy } from '@nestjs/common/interfaces';
+import iterate from 'iterare';
+import { Transport } from './enums/transport.enum';
+import { CustomTransportStrategy } from './interfaces/custom-transport-strategy.interface';
+import { MicroserviceConfiguration } from './interfaces/microservice-configuration.interface';
+import { MicroservicesModule } from './microservices-module';
+import { Server } from './server/server';
+import { ServerFactory } from './server/server-factory';
+
 
 export class NestMicroservice implements INestMicroservice {
     private readonly config = new ApplicationConfig();
@@ -103,10 +102,10 @@ export class NestMicroservice implements INestMicroservice {
 
     private callModuleDestroyHook(module: Module) {
         const components = [...module.routes, ...module.components];
-        iterate(components).map(([key, {instance}]) => instance)
-                .filter((instance) => !isNil(instance))
-                .filter(this.hasOnModuleDestroyHook)
-                .forEach((instance) => (instance as OnModuleDestroy).onModuleDestroy());
+        iterate(components).map(([key, { instance }]) => instance)
+            .filter((instance) => !isNil(instance))
+            .filter(this.hasOnModuleDestroyHook)
+            .forEach((instance) => (instance as OnModuleDestroy).onModuleDestroy());
     }
 
     private hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {

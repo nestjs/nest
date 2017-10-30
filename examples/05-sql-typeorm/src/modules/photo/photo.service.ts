@@ -1,4 +1,4 @@
-import { Component, Inject } from '@nestjs/common';
+import { Component, Inject } from '@nestjs/core';
 import { Repository } from 'typeorm';
 import { Photo } from './photo.entity';
 

@@ -1,14 +1,16 @@
-import { NestContainer, InstanceWrapper } from '@nestjs/core/injector/container';
-import { DependenciesScanner } from '@nestjs/core/scanner';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { Metatype } from '@nestjs/common/interfaces';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
+
+import { NestApplication } from '@nestjs/core';
+import { INestApplication, INestMicroservice } from '@nestjs/core';
+import { InstanceWrapper, NestContainer } from '@nestjs/core/injector/container';
 import { ModuleTokenFactory } from '@nestjs/core/injector/module-token-factory';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { Metatype } from '@nestjs/core/interfaces';
+import { NestModuleMetatype } from '@nestjs/core/interfaces/modules/module-metatype.interface';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { DependenciesScanner } from '@nestjs/core/scanner';
+import { isFunction } from '@nestjs/core/utils/shared.utils';
+import { INewable } from '@nestjs/core/interfaces/newable.interface';
 import { UnknownModuleException } from './errors/unknown-module.exception';
-import { NestApplication, NestMicroservice } from '@nestjs/core';
-import { INestApplication, INestMicroservice } from '@nestjs/common';
-import { MicroserviceConfiguration } from '@nestjs/microservices';
+
 
 export class TestingModule {
     private readonly moduleTokenFactory = new ModuleTokenFactory();
@@ -16,14 +18,19 @@ export class TestingModule {
     constructor(
         private readonly container: NestContainer,
         private readonly scope: NestModuleMetatype[],
-        private readonly contextModule) {}
+        private readonly contextModule,
+        private readonly NestMicroservice: INewable = null) { }
 
     public createNestApplication(express?): INestApplication {
         return new NestApplication(this.container, express);
     }
 
-    public createNestMicroservice(config: MicroserviceConfiguration): INestMicroservice {
-        return new NestMicroservice(this.container, config);
+    public createNestMicroservice<U>(config: U): INestMicroservice {
+        if (this.NestMicroservice) {
+            return new this.NestMicroservice(this.container, config);
+        } else {
+            throw new Error(`ERROR! You are attempting to create a microservice in a TestingModule without passing in the NestMicroservice class. Please add NestMicroservice as an argument to "new TestingModule()".`);
+        }
     }
 
     public select<T>(module: Metatype<T>): TestingModule {
@@ -57,4 +64,3 @@ export class TestingModule {
         return (instanceWrapper as InstanceWrapper<any>).instance;
     }
 }
-

@@ -8,11 +8,11 @@
     "compile": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@nestjs/core": "file:../core",
     "iterare": "0.0.8",
     "socket.io": "^2.0.3"
   },
   "peerDependencies": {
-    "@nestjs/common": "~4.*",
     "@nestjs/core": "~4.*",
     "reflect-metadata": "0.1.10",
     "rxjs": "^5.4.2"

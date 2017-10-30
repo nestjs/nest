@@ -1,4 +1,4 @@
-import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer';
+import { MessageMappingProperties } from '../websocket-utils/gateway-metadata-explorer';
 import { Observable } from 'rxjs/Observable';
 
 export interface WebSocketAdapter {

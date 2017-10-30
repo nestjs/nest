@@ -1,9 +1,9 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ExceptionFilters } from '../../../common/utils/decorators/exception-filters.decorator';
-import { Catch } from '../../../common/utils/decorators/catch.decorator';
-import { ExceptionFiltersContext } from './../../context/exception-filters-context';
+import * as sinon from 'sinon';
+import { Catch } from '../../../core/utils/decorators/catch.decorator';
+import { ExceptionFilters } from '../../../core/utils/decorators/exception-filters.decorator';
 import { ApplicationConfig } from './../../../core/application-config';
+import { ExceptionFiltersContext } from './../../context/exception-filters-context';
 
 describe('ExceptionFiltersContext', () => {
     let moduleName: string;

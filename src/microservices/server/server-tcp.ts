@@ -32,7 +32,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     }
 
     public bindHandler(socket) {
-        const sock = this.getSocketInstance(socket);
+        const sock = this._getSocketInstance(socket);
         sock.on(MESSAGE_EVENT, async msg => await this.handleMessage(sock, msg));
     }
 
@@ -54,7 +54,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
         this.server.on(ERROR_EVENT, this.handleError.bind(this));
     }
 
-    private getSocketInstance(socket) {
+    public _getSocketInstance(socket) {
         return new JsonSocket(socket);
     }
 

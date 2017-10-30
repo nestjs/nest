@@ -1,8 +1,8 @@
-import { SocketsContainer } from './container';
-import { ObservableSocket } from './observable-socket';
-import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
-import { validatePath } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { validatePath } from '@nestjs/core/utils/shared.utils';
+import { SocketsContainer } from './container';
+import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
+import { ObservableSocket } from './observable-socket';
 
 export class SocketServerProvider {
     constructor(
@@ -14,7 +14,7 @@ export class SocketServerProvider {
         return observableServer ? observableServer : this.createSocketServer(namespace, port);
     }
 
-    private createSocketServer(namespace: string, port: number) {
+    public createSocketServer(namespace: string, port: number) {
         const server = this.getServerOfNamespace(namespace, port);
         const observableSocket = ObservableSocket.create(server);
 

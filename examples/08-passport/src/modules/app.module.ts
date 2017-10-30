@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 
 @Module({

@@ -1,22 +1,22 @@
-import 'reflect-metadata';
-import { NestGateway } from './interfaces/nest-gateway.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
-import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exception';
-import { GatewayMetadataExplorer, MessageMappingProperties } from './gateway-metadata-explorer';
-import { Subject } from 'rxjs/Subject';
-import { SocketServerProvider } from './socket-server-provider';
-import { NAMESPACE_METADATA, PORT_METADATA } from './constants';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { MiddlewaresInjector } from './middlewares-injector';
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { WsContextCreator } from './context/ws-context-creator';
-import { Observable } from 'rxjs/Observable';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { Injectable } from '@nestjs/core/interfaces/injectable.interface';
+import { Metatype } from '@nestjs/core/interfaces/metatype.interface';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import 'reflect-metadata';
 import 'rxjs/add/observable/fromPromise';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/switchMap';
+import { Observable } from 'rxjs/Observable';
+import { Subject } from 'rxjs/Subject';
+import { NAMESPACE_METADATA, PORT_METADATA } from '@nestjs/core/websocket-utils/constants';
+import { WsContextCreator } from './context/ws-context-creator';
+import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exception';
+import { GatewayMetadataExplorer, MessageMappingProperties } from '@nestjs/core/websocket-utils/gateway-metadata-explorer';
+import { NestGateway } from '@nestjs/core/websocket-utils/interfaces/nest-gateway.interface';
+import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
+import { MiddlewaresInjector } from './middlewares-injector';
+import { SocketServerProvider } from './socket-server-provider';
 
 export class WebSocketsController {
     private readonly metadataExplorer = new GatewayMetadataExplorer(new MetadataScanner());
@@ -27,8 +27,8 @@ export class WebSocketsController {
         private readonly container: NestContainer,
         private readonly config: ApplicationConfig,
         private readonly contextCreator: WsContextCreator) {
-            this.middlewaresInjector = new MiddlewaresInjector(container, config);
-        }
+        this.middlewaresInjector = new MiddlewaresInjector(container, config);
+    }
 
     public hookGatewayIntoServer(instance: NestGateway, metatype: Metatype<Injectable>, module: string) {
         const namespace = Reflect.getMetadata(NAMESPACE_METADATA, metatype) || '';

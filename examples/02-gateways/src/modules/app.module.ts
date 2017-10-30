@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module } from '@nestjs/core';
 import { EventsModule } from './events/events.module';
 
 @Module({

@@ -1,10 +1,10 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
+import { NestEnvironment } from '../../enums/nest-environment.enum';
+import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
 import { HttpException } from '../../exceptions/http-exception';
-import { Logger } from '../../../common/services/logger.service';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
-import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
+import { Logger } from '../../services/logger.service';
 
 describe('ExceptionsHandler', () => {
     let handler: ExceptionsHandler;

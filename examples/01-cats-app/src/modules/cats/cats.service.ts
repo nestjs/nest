@@ -1,6 +1,6 @@
-import { Component } from '@nestjs/common';
-import { Cat } from './interfaces/cat.interface';
+import { Component } from '@nestjs/core';
 import { CatsModule } from './cats.module';
+import { Cat } from './interfaces/cat.interface';
 
 @Component()
 export class CatsService {

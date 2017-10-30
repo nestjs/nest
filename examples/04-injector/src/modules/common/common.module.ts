@@ -1,4 +1,4 @@
-import { Module, SingleScope } from '@nestjs/common';
+import { Module, SingleScope } from '@nestjs/core';
 import { CommonService } from './common.service';
 
 @Module({

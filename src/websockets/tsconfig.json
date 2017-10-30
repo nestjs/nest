@@ -9,13 +9,13 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "target": "es6",
-    "sourceMap": false,
+    "sourceMap": true,
     "allowJs": false,
     "baseUrl": "./../../",
     "outDir": "../../node_modules/@nestjs/websockets"
   },
   "include": [
-    "*.ts",
+    "index.ts",
     "**/*.ts"
   ],
   "exclude": [

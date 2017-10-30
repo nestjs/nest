@@ -1,12 +1,12 @@
-import 'reflect-metadata';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { ListenerMetadataExplorer } from './listener-metadata-explorer';
-import { Server } from './server/server';
-import { ClientProxyFactory } from './client/client-proxy-factory';
+import { Controller } from '@nestjs/core/interfaces/controllers/controller.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { CustomTransportStrategy } from './interfaces';
+import 'reflect-metadata';
+import { ClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';
 import { RpcContextCreator } from './context/rpc-context-creator';
+import { CustomTransportStrategy } from './interfaces';
+import { ListenerMetadataExplorer } from './listener-metadata-explorer';
+import { Server } from './server/server';
 
 export class ListenersController {
     private readonly metadataExplorer = new ListenerMetadataExplorer(new MetadataScanner());

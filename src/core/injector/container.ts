@@ -1,13 +1,14 @@
 import 'reflect-metadata';
-import { Controller, Injectable } from '@nestjs/common/interfaces';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
-import { SHARED_MODULE_METADATA } from '@nestjs/common/constants';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { Module } from './module';
+import { SHARED_MODULE_METADATA } from '../constants';
+import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
+import { Controller } from '../interfaces/controllers/controller.interface';
+import { Injectable } from '../interfaces/injectable.interface';
+import { Metatype } from '../interfaces/metatype.interface';
+import { NestModuleMetatype } from '../interfaces/modules/module-metatype.interface';
+import { isUndefined } from '../utils/shared.utils';
+import { Module } from './module';
 import { ModuleTokenFactory } from './module-token-factory';
-import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
 
 export class NestContainer {
     private readonly modules = new Map<string, Module>();

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
+import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
 import { RouteParamsFactory } from '../../router/route-params-factory';
 
 describe('RouteParamsFactory', () => {

@@ -1,5 +1,5 @@
+import { Component, Inject } from '@nestjs/core';
 import * as jwt from 'jsonwebtoken';
-import { Component, Inject } from '@nestjs/common';
 
 @Component()
 export class AuthService {

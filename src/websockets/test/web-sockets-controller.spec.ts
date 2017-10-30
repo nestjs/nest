@@ -4,7 +4,7 @@ import { SocketServerProvider } from '../socket-server-provider';
 import { WebSocketsController } from '../web-sockets-controller';
 import { WebSocketGateway } from '../utils/socket-gateway.decorator';
 import { InvalidSocketPortException } from '../exceptions/invalid-socket-port.exception';
-import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
+import { GatewayMetadataExplorer } from '@nestjs/core/websocket-utils/gateway-metadata-explorer';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from '../context/ws-context-creator';

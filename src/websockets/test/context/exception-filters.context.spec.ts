@@ -1,7 +1,7 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ExceptionFilters } from '../../../common/utils/decorators/exception-filters.decorator';
-import { Catch } from '../../../common/utils/decorators/catch.decorator';
+import * as sinon from 'sinon';
+import { Catch } from '../../../core/utils/decorators/catch.decorator';
+import { ExceptionFilters } from '../../../core/utils/decorators/exception-filters.decorator';
 import { ExceptionFiltersContext } from './../../context/exception-filters-context';
 
 describe('ExceptionFiltersContext', () => {

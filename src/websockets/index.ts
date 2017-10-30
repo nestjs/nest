@@ -4,9 +4,8 @@
  * www.nestjs.com || www.kamilmysliwiec.com
  * MIT Licensed
  */
-
-export * from './adapters/io-adapter';
+export * from '@nestjs/core/websocket-utils/adapters/io-adapter';
 export * from './interfaces';
 export * from './exceptions/ws-exception';
 export * from './utils';
-export { MessageMappingProperties } from './gateway-metadata-explorer';
+export { MessageMappingProperties } from '@nestjs/core/websocket-utils/gateway-metadata-explorer';

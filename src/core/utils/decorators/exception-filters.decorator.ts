@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { EXCEPTION_FILTERS_METADATA } from '../../constants';
-import { Logger } from '@nestjs/common';
-import { ExceptionFilter } from '../../index';
+import { ExceptionFilter } from '../../interfaces/exceptions/exception-filter.interface';
+import { Logger } from '../../services/logger.service';
 
 const defineFiltersMetadata = (...filters: ExceptionFilter[]) => {
     return (target: object, key?, descriptor?) => {

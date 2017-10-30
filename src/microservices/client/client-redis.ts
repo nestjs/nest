@@ -1,7 +1,7 @@
+import { Logger } from '@nestjs/core/services/logger.service';
 import * as redis from 'redis';
-import { ClientProxy } from './client-proxy';
-import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientMetadata } from '../interfaces/client-metadata.interface';
+import { ClientProxy } from './client-proxy';
 
 const DEFAULT_URL = 'redis://localhost:6379';
 const MESSAGE_EVENT = 'message';

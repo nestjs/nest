@@ -1,14 +1,14 @@
-import 'reflect-metadata';
-import iterate from 'iterare';
-import { NestContainer, InstanceWrapper } from '@nestjs/core/injector/container';
-import { NestGateway } from './index';
-import { GATEWAY_MIDDLEWARES } from './constants';
-import { UnknownModuleException } from '@nestjs/core/errors/exceptions/unknown-module.exception';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
-import { GatewayMiddleware } from './interfaces/gateway-middleware.interface';
-import { isUndefined, isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
+import { UnknownModuleException } from '@nestjs/core/errors/exceptions/unknown-module.exception';
+import { InstanceWrapper, NestContainer } from '@nestjs/core/injector/container';
+import { Injectable } from '@nestjs/core/interfaces/injectable.interface';
+import { isFunction, isNil, isUndefined } from '@nestjs/core/utils/shared.utils';
+import iterate from 'iterare';
+import 'reflect-metadata';
+import { GATEWAY_MIDDLEWARES } from '@nestjs/core/websocket-utils/constants';
+import { NestGateway } from '@nestjs/core/websocket-utils/interfaces/nest-gateway.interface';
+import { GatewayMiddleware } from './interfaces/gateway-middleware.interface';
 
 export class MiddlewaresInjector {
     constructor(

@@ -1,12 +1,12 @@
-import { NestContainer, InstanceWrapper } from '@nestjs/core/injector/container';
-import { ModuleMetadata } from '@nestjs/common/interfaces/modules/module-metadata.interface';
-import { Module } from '@nestjs/common/utils/decorators/module.decorator';
-import { DependenciesScanner } from '@nestjs/core/scanner';
+import { NestEnvironment } from '@nestjs/core/enums/nest-environment.enum';
+import { InstanceWrapper, NestContainer } from '@nestjs/core/injector/container';
 import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { NestEnvironment } from '@nestjs/common/enums/nest-environment.enum';
+import { Metatype } from '@nestjs/core/interfaces/metatype.interface';
+import { ModuleMetadata } from '@nestjs/core/interfaces/modules/module-metadata.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { DependenciesScanner } from '@nestjs/core/scanner';
+import { Logger } from '@nestjs/core/services/logger.service';
+import { Module } from '@nestjs/core/utils/decorators/module.decorator';
 import { TestingModuleBuilder } from './testing-module.builder';
 
 export class Test {

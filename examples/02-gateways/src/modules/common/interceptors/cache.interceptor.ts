@@ -1,6 +1,6 @@
-import { Interceptor, NestInterceptor, ExecutionContext } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
+import { ExecutionContext, Interceptor, NestInterceptor } from '@nestjs/core';
 import 'rxjs/add/observable/of';
+import { Observable } from 'rxjs/Observable';
 
 @Interceptor()
 export class CacheInterceptor implements NestInterceptor {

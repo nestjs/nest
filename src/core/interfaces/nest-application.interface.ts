@@ -1,8 +1,9 @@
-import { MicroserviceConfiguration } from '@nestjs/microservices';
-import { INestMicroservice, ExceptionFilter, PipeTransform } from './index';
-import { WebSocketAdapter } from './web-socket-adapter.interface';
 import { CanActivate } from './can-activate.interface';
+import { ExceptionFilter, INestMicroservice, PipeTransform } from './index';
 import { NestInterceptor } from './nest-interceptor.interface';
+import { INewable } from './newable.interface';
+import { WebSocketAdapter } from './web-socket-adapter.interface';
+
 
 export interface INestApplication {
     /**
@@ -61,10 +62,13 @@ export interface INestApplication {
     /**
      * Connects microservice to the NestApplication instance. It transforms application to the hybrid instance.
      *
-     * @param  {MicroserviceConfiguration} config Microservice configuration objet
+     * @param  {any} config Microservice configuration object
+     * @param  {any} microserviceInstantiator Internal property to add the Microservice to the library
      * @returns INestMicroservice
      */
-    connectMicroservice(config: MicroserviceConfiguration): INestMicroservice;
+    connectMicroservice<T, U extends INewable>(
+        config: T,
+        microserviceInstantiator: U): INestMicroservice;
 
     /**
      * Returns array of the connected microservices to the NestApplication.

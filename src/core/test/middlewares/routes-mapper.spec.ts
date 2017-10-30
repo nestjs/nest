@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { RoutesMapper } from '../../middlewares/routes-mapper';
-import { Controller } from '../../../common/utils/decorators/controller.decorator';
-import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
+import { RequestMethod } from '../../enums/request-method.enum';
 import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception';
+import { RoutesMapper } from '../../middlewares/routes-mapper';
+import { Controller } from '../../utils/decorators/controller.decorator';
+import { RequestMapping } from '../../utils/decorators/request-mapping.decorator';
 
 describe('RoutesMapper', () => {
     @Controller('test')

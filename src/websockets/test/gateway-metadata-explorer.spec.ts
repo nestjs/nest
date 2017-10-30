@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { WebSocketGateway } from '../utils/socket-gateway.decorator';
 import { WebSocketServer } from '../utils/gateway-server.decorator';
 import { SubscribeMessage } from '../utils/subscribe-message.decorator';
-import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
+import { GatewayMetadataExplorer } from '@nestjs/core/websocket-utils/gateway-metadata-explorer';
 import { MetadataScanner } from '../../core/metadata-scanner';
 
 describe('GatewayMetadataExplorer', () => {

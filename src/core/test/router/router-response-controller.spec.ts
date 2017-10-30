@@ -1,9 +1,9 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterResponseController } from '../../router/router-response-controller';
-import { RequestMethod } from './../../../common';
-import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
+import { Observable } from 'rxjs/Observable';
+import * as sinon from 'sinon';
+import { RequestMethod } from '../../enums/request-method.enum';
+import { RouterResponseController } from '../../router/router-response-controller';
 
 describe('RouterResponseController', () => {
     let routerResponseController: RouterResponseController;

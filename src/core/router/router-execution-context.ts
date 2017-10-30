@@ -1,20 +1,24 @@
 import 'reflect-metadata';
-import { ROUTE_ARGS_METADATA, PARAMTYPES_METADATA, HTTP_CODE_METADATA } from '@nestjs/common/constants';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { Controller, Transform } from '@nestjs/common/interfaces';
-import { RouteParamsMetadata } from '@nestjs/common/utils';
-import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
-import { PipesContextCreator } from './../pipes/pipes-context-creator';
-import { PipesConsumer } from './../pipes/pipes-consumer';
-import { ParamData, PipeTransform, HttpStatus, RequestMethod } from '@nestjs/common';
-import { GuardsContextCreator } from '../guards/guards-context-creator';
-import { GuardsConsumer } from '../guards/guards-consumer';
+import { HTTP_CODE_METADATA, PARAMTYPES_METADATA, ROUTE_ARGS_METADATA } from '../constants';
+import { HttpStatus } from '../enums/http-status.enum';
+import { RequestMethod } from '../enums/request-method.enum';
+import { RouteParamtypes } from '../enums/route-paramtypes.enum';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
+import { GuardsConsumer } from '../guards/guards-consumer';
+import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { HttpException } from '../index';
-import { RouterResponseController } from './router-response-controller';
-import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
+import { Transform } from '../interfaces/pipe-transform.interface';
+import { ParamData } from '../utils/decorators/route-params.decorator';
+import { RouteParamsMetadata } from '../utils/decorators/route-params.decorator';
+import { isUndefined } from '../utils/shared.utils';
+import { Controller } from './../interfaces/controllers/controller.interface';
+import { PipeTransform } from './../interfaces/pipe-transform.interface';
+import { PipesConsumer } from './../pipes/pipes-consumer';
+import { PipesContextCreator } from './../pipes/pipes-context-creator';
+import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
+import { RouterResponseController } from './router-response-controller';
 
 export interface ParamProperties {
     index: number;
@@ -33,7 +37,7 @@ export class RouterExecutionContext {
         private readonly guardsContextCreator: GuardsContextCreator,
         private readonly guardsConsumer: GuardsConsumer,
         private readonly interceptorsContextCreator: InterceptorsContextCreator,
-        private readonly interceptorsConsumer: InterceptorsConsumer) {}
+        private readonly interceptorsConsumer: InterceptorsConsumer) { }
 
     public create(instance: Controller, callback: (...args) => any, module: string, requestMethod: RequestMethod) {
         const metadata = this.reflectCallbackMetadata(instance, callback) || {};
@@ -110,13 +114,13 @@ export class RouterExecutionContext {
     }
 
     public mergeParamsMetatypes(
-      paramsProperties: ParamProperties[],
-      paramtypes: any[],
+        paramsProperties: ParamProperties[],
+        paramtypes: any[],
     ): (ParamProperties & { metatype?: any })[] {
-      if (!paramtypes) {
-        return paramsProperties;
-      }
-      return paramsProperties.map((param) => ({ ...param, metatype: paramtypes[param.index] }));
+        if (!paramtypes) {
+            return paramsProperties;
+        }
+        return paramsProperties.map((param) => ({ ...param, metatype: paramtypes[param.index] }));
     }
 
     public async getParamValue<T>(

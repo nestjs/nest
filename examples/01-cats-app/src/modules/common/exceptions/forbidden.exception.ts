@@ -1,5 +1,4 @@
-import { HttpException } from '@nestjs/core';
-import { HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/core';
 
 export class ForbiddenException extends HttpException {
   constructor() {

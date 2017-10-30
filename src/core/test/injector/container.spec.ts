@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NestContainer } from '../../injector/container';
-import { Module } from '../../../common/utils/decorators/module.decorator';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
+import { NestContainer } from '../../injector/container';
+import { Module } from '../../utils/decorators/module.decorator';
 
 describe('NestContainer', () => {
     let container: NestContainer;
 
     @Module({})
-    class TestModule {}
+    class TestModule { }
 
     beforeEach(() => {
         container = new NestContainer();

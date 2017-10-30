@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module } from '@nestjs/core';
+import { CoreModule } from '../common/core.module';
 import { FeatureService } from './feature.service';
-import { CoreModule } from '../core/core.module';
 
 @Module({
   modules: [CoreModule],

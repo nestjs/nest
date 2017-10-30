@@ -1,21 +1,21 @@
-import 'reflect-metadata';
-import { NestContainer, InstanceWrapper } from '@nestjs/core/injector/container';
-import { NestGateway } from './interfaces/nest-gateway.interface';
-import { SocketsContainer } from './container';
-import { WebSocketsController } from './web-sockets-controller';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { SocketServerProvider } from './socket-server-provider';
-import { GATEWAY_METADATA } from './constants';
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { WsContextCreator } from './context/ws-context-creator';
-import { WsProxy } from './context/ws-proxy';
-import { ExceptionFiltersContext } from './context/exception-filters-context';
+import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+import { InstanceWrapper, NestContainer } from '@nestjs/core/injector/container';
+import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { Injectable } from '@nestjs/core/interfaces/injectable.interface';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
-import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import 'reflect-metadata';
+import { GATEWAY_METADATA } from '@nestjs/core/websocket-utils/constants';
+import { SocketsContainer } from './container';
+import { ExceptionFiltersContext } from './context/exception-filters-context';
+import { WsContextCreator } from './context/ws-context-creator';
+import { WsProxy } from './context/ws-proxy';
+import { NestGateway } from '@nestjs/core/websocket-utils/interfaces/nest-gateway.interface';
+import { SocketServerProvider } from './socket-server-provider';
+import { WebSocketsController } from './web-sockets-controller';
 
 export class SocketModule {
     private static socketsContainer = new SocketsContainer();

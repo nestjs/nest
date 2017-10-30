@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { expect } from 'chai'
 import { WebSocketServer } from '../../utils/gateway-server.decorator';
-import { GATEWAY_SERVER_METADATA } from '../../constants';
+import { GATEWAY_SERVER_METADATA } from '@nestjs/core/websocket-utils/constants';
 
 describe('@WebSocketServer', () => {
     class TestGateway {

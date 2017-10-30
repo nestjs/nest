@@ -1,21 +1,23 @@
 import iterate from 'iterare';
-import { GUARDS_METADATA } from '@nestjs/common/constants';
-import { isUndefined, isFunction, isNil, isEmpty } from '@nestjs/common/utils/shared.utils';
-import { Controller } from '@nestjs/common/interfaces';
-import { HttpStatus, ExecutionContext, NestInterceptor } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
-import { HttpException } from '../index';
-import 'rxjs/add/operator/toPromise';
 import 'rxjs/add/observable/defer';
 import 'rxjs/add/operator/take';
+import 'rxjs/add/operator/toPromise';
+import { Observable } from 'rxjs/Observable';
+import { GUARDS_METADATA } from '../constants';
+import { HttpStatus } from '../enums/http-status.enum';
+import { HttpException } from '../index';
+import { Controller } from '../interfaces';
+import { ExecutionContext } from '../interfaces/execution-context.interface';
+import { NestInterceptor } from '../interfaces/nest-interceptor.interface';
+import { isEmpty, isFunction, isNil, isUndefined } from '../utils/shared.utils';
 
 export class InterceptorsConsumer {
     public async intercept(
-      interceptors: NestInterceptor[],
-      dataOrRequest: any,
-      instance: Controller,
-      callback: (...args) => any,
-      next: () => Promise<any>,
+        interceptors: NestInterceptor[],
+        dataOrRequest: any,
+        instance: Controller,
+        callback: (...args) => any,
+        next: () => Promise<any>,
     ): Promise<any> {
         if (!interceptors || isEmpty(interceptors)) {
             return await next();
@@ -23,8 +25,8 @@ export class InterceptorsConsumer {
         const context = this.createContext(instance, callback);
         const start$ = Observable.defer(() => this.transformDeffered(next));
         const result$ = await interceptors.reduce(
-          async (stream$, interceptor) => await interceptor.intercept(dataOrRequest, context, await stream$),
-          Promise.resolve(start$),
+            async (stream$, interceptor) => await interceptor.intercept(dataOrRequest, context, await stream$),
+            Promise.resolve(start$),
         );
         return await result$.toPromise();
     }
@@ -37,8 +39,8 @@ export class InterceptorsConsumer {
     }
 
     public transformDeffered(next: () => any): Promise<any> | Observable<any> {
-      const res = next();
-      const isDeffered = res instanceof Promise || res instanceof Observable;
-      return isDeffered ? res : Promise.resolve(res);
+        const res = next();
+        const isDeffered = res instanceof Promise || res instanceof Observable;
+        return isDeffered ? res : Promise.resolve(res);
     }
 }

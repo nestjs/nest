@@ -1,13 +1,13 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { MessageHandlers } from '../interfaces/message-handlers.interface';
-import { Observable } from 'rxjs/Observable';
-import { MicroserviceResponse } from '../index';
-import { Subscription } from 'rxjs/Subscription';
+import { Logger } from '@nestjs/core/services/logger.service';
+import 'rxjs/add/observable/empty';
+import 'rxjs/add/observable/fromPromise';
+import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/finally';
-import 'rxjs/add/observable/empty';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/observable/fromPromise';
+import { Observable } from 'rxjs/Observable';
+import { Subscription } from 'rxjs/Subscription';
+import { MicroserviceResponse } from '../index';
+import { MessageHandlers } from '../interfaces/message-handlers.interface';
 
 export abstract class Server {
     protected readonly messageHandlers: MessageHandlers = {};
@@ -39,7 +39,7 @@ export abstract class Server {
         }
         return resultOrDeffered;
     }
-    
+
     protected handleError(error: string) {
         this.logger.error(error);
     }
