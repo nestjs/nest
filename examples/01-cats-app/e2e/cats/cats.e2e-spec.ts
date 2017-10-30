@@ -30,4 +30,13 @@ describe('Cats', () => {
               data: catsService.findAll(),
             });
     });
+
+    it(`/GET/1 cats`, () => {
+        return request(server)
+            .get('/cats/1')
+            .expect(200)
+            .expect({
+              data: '1',
+            });
+    });
 });
