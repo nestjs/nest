@@ -27,6 +27,6 @@ export class CatsController {
 
   @Get(':id')
   findOne(@Param('id', new ParseIntPipe()) id) {
-    // logic
+    return `${id}`;
   }
 }
