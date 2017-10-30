@@ -22,7 +22,7 @@ describe('Cats', () => {
         await app.init();
     });
 
-    it(`/GET cats`, () => {
+    it(`/GET /cats`, () => {
         return request(server)
             .get('/cats')
             .expect(200)
@@ -31,7 +31,7 @@ describe('Cats', () => {
             });
     });
 
-    it(`/GET/1 cats`, () => {
+    it(`/GET /cats/1`, () => {
         return request(server)
             .get('/cats/1')
             .expect(200)
