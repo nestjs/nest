@@ -76,10 +76,9 @@ $ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websock
 
 :books: [Documentation & Tutorial](https://docs.nestjs.com)
 
-## People
+## Sponsors
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
+<a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="210" /></a>
 
 ## Backers
 
@@ -115,6 +114,11 @@ I am on a mission to provide an architecture to create truly flexible, scalable 
 <a href="https://opencollective.com/nest/backer/27/website" target="_blank"><img src="https://opencollective.com/nest/backer/27/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/28/website" target="_blank"><img src="https://opencollective.com/nest/backer/28/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/29/website" target="_blank"><img src="https://opencollective.com/nest/backer/29/avatar.svg"></a>
+
+## People
+
+- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
+- Website - [https://nestjs.com](https://nestjs.com/)
 
 ## License
 
