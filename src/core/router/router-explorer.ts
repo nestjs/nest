@@ -75,9 +75,10 @@ export class ExpressRouterExplorer implements RouterExplorer {
 
         const requestMethod: RequestMethod = Reflect.getMetadata(METHOD_METADATA, targetCallback);
         return {
-            targetCallback,
-            requestMethod,
             path: this.validateRoutePath(routePath),
+            requestMethod,
+            targetCallback,
+            methodName,
         };
     }
 
@@ -100,15 +101,15 @@ export class ExpressRouterExplorer implements RouterExplorer {
         instance: Controller,
         module: string) {
 
-        const { path, requestMethod, targetCallback } = pathProperties;
+        const { path, requestMethod, targetCallback, methodName } = pathProperties;
 
         const routerMethod = this.routerMethodFactory.get(router, requestMethod).bind(router);
-        const proxy = this.createCallbackProxy(instance, targetCallback, module, requestMethod);
+        const proxy = this.createCallbackProxy(instance, targetCallback, methodName, module, requestMethod);
         routerMethod(path, proxy);
     }
 
-    private createCallbackProxy(instance: Controller, callback: RouterProxyCallback, module: string, requestMethod) {
-        const executionContext = this.executionContextCreator.create(instance, callback, module, requestMethod);
+    private createCallbackProxy(instance: Controller, callback: RouterProxyCallback, methodName: string, module: string, requestMethod) {
+        const executionContext = this.executionContextCreator.create(instance, callback, methodName, module, requestMethod);
         const exceptionFilter = this.exceptionsFilter.create(instance, callback);
 
         return this.routerProxy.createProxy(executionContext, exceptionFilter);
@@ -131,4 +132,5 @@ export interface RoutePathProperties {
     path: string;
     requestMethod: RequestMethod;
     targetCallback: RouterProxyCallback;
+    methodName: string;
 }
