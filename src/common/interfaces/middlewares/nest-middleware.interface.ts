@@ -1,4 +1,4 @@
-import { ExpressMiddleware } from './express-midleware.interface';
+import { ExpressMiddleware } from './express-middleware.interface';
 
 export type AsyncExpressMiddleware = Promise<ExpressMiddleware>;
 export interface NestMiddleware {

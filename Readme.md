@@ -24,7 +24,7 @@
 
 ## Description
 
-<p>Nest is a framework for building efficient, scalable <a href="http://nodejs.org" target="_blank">Node.js</a> web applications. It uses modern JavaScript, is built with  <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Progamming), FP (Functional Programming), and FRP (Functional Reactive Programming).</p>
+<p>Nest is a framework for building efficient, scalable <a href="http://nodejs.org" target="_blank">Node.js</a> web applications. It uses modern JavaScript, is built with  <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).</p>
 <p>Under the hood, Nest makes use of <a href="https://expressjs.com/" target="_blank">Express</a>, allowing for easy use of the myriad third-party plugins which are available.</p>
 
 ## Philosophy
@@ -76,10 +76,9 @@ $ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websock
 
 :books: [Documentation & Tutorial](https://docs.nestjs.com)
 
-## People
+## Sponsors
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
+<a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="210" /></a>
 
 ## Backers
 
@@ -115,6 +114,11 @@ I am on a mission to provide an architecture to create truly flexible, scalable 
 <a href="https://opencollective.com/nest/backer/27/website" target="_blank"><img src="https://opencollective.com/nest/backer/27/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/28/website" target="_blank"><img src="https://opencollective.com/nest/backer/28/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/29/website" target="_blank"><img src="https://opencollective.com/nest/backer/29/avatar.svg"></a>
+
+## People
+
+- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
+- Website - [https://nestjs.com](https://nestjs.com/)
 
 ## License
 
