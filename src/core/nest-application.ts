@@ -1,20 +1,27 @@
-import iterate from 'iterare';
-import { MiddlewaresModule } from './middlewares/middlewares-module';
-import { SocketModule } from '@nestjs/websockets/socket-module';
-import { NestContainer } from './injector/container';
-import { ExpressAdapter } from './adapters/express-adapter';
-import { RoutesResolver } from './router/routes-resolver';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { messages } from './constants';
-import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
-import { Resolver } from './router/interfaces/resolver.interface';
+import {
+    CanActivate,
+    ExceptionFilter,
+    NestInterceptor,
+    OnModuleDestroy,
+    PipeTransform,
+    WebSocketAdapter
+    } from '@nestjs/common';
 import { INestApplication, INestMicroservice, OnModuleInit } from '@nestjs/common';
-import { ApplicationConfig } from './application-config';
-import { validatePath, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { Logger } from '@nestjs/common/services/logger.service';
+import { isNil, isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/microservices';
+import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
+import { SocketModule } from '@nestjs/websockets/socket-module';
+import iterate from 'iterare';
+import { ExpressAdapter } from './adapters/express-adapter';
+import { ApplicationConfig } from './application-config';
+import { messages } from './constants';
 import { NestMicroservice } from './index';
-import { WebSocketAdapter, OnModuleDestroy, ExceptionFilter, PipeTransform, NestInterceptor, CanActivate } from '@nestjs/common';
+import { NestContainer } from './injector/container';
 import { Module } from './injector/module';
+import { MiddlewaresModule } from './middlewares/middlewares-module';
+import { Resolver } from './router/interfaces/resolver.interface';
+import { RoutesResolver } from './router/routes-resolver';
 
 export class NestApplication implements INestApplication {
     private readonly config = new ApplicationConfig();
@@ -61,6 +68,7 @@ export class NestApplication implements INestApplication {
         const instance = new NestMicroservice(this.container, config);
         instance.setupListeners();
         instance.setIsInitialized(true);
+        instance.setIsInitHookCalled(true);
 
         this.microservices.push(instance);
         return instance;
