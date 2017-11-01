@@ -2,10 +2,9 @@ import 'reflect-metadata';
 import { NestContainer } from './injector/container';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { metadata, EXCEPTION_FILTERS_METADATA, GUARDS_METADATA, INTERCEPTORS_METADATA } from '@nestjs/common/constants';
+import { metadata, GATEWAY_MIDDLEWARES, EXCEPTION_FILTERS_METADATA, GUARDS_METADATA, INTERCEPTORS_METADATA } from '@nestjs/common/constants';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
-import { GATEWAY_MIDDLEWARES } from '@nestjs/websockets/constants';
 import { MetadataScanner } from '../core/metadata-scanner';
 
 export class DependenciesScanner {

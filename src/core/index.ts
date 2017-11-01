@@ -11,4 +11,3 @@ export { ModuleRef } from './injector/module-ref';
 export * from './services/reflector.service';
 export * from './nest-factory';
 export * from './nest-application';
-export * from './nest-microservice';

@@ -13,8 +13,6 @@
   },
   "peerDependencies": {
     "@nestjs/common": "^4.*",
-    "@nestjs/websockets": "^4.*",
-    "@nestjs/microservices": "^4.*",
     "reflect-metadata": "0.1.10",
     "rxjs": "^5.4.2"
   }

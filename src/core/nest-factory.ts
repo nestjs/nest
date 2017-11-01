@@ -1,3 +1,4 @@
+import * as optional from 'optional';
 import { DependenciesScanner } from './scanner';
 import { InstanceLoader } from './injector/instance-loader';
 import { NestContainer } from './injector/container';
@@ -6,12 +7,14 @@ import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-met
 import { Logger } from '@nestjs/common/services/logger.service';
 import { messages } from './constants';
 import { NestApplication } from './nest-application';
-import { NestMicroservice } from './nest-microservice';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { MicroserviceConfiguration } from '@nestjs/microservices/interfaces/microservice-configuration.interface';
+import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
 import { MetadataScanner } from './metadata-scanner';
+import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
+
+const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {} as any;
 
 export class NestFactoryStatic {
     private container = new NestContainer();
@@ -46,9 +49,13 @@ export class NestFactoryStatic {
         module,
         config?: MicroserviceConfiguration): Promise<INestMicroservice> {
 
+        if (!NestMicroservice) {
+          throw new MicroservicesPackageNotFoundException();
+        }
+
         await this.initialize(module);
-        return this.createNestInstance<NestMicroservice>(
-            new NestMicroservice(this.container, config),
+        return this.createNestInstance<INestMicroservice>(
+            new NestMicroservice(this.container, config as any),
         );
     }
 

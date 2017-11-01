@@ -1,6 +1,6 @@
 import * as io from 'socket.io';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
-import { CONNECTION_EVENT, DISCONNECT_EVENT } from './../constants';
+import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
 import { WebSocketAdapter } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/fromEvent';
