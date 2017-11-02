@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ExceptionFilters } from '../../../common/utils/decorators/exception-filters.decorator';
+import { UseFilters } from '../../../common/utils/decorators/exception-filters.decorator';
 import { Catch } from '../../../common/utils/decorators/catch.decorator';
 import { ExceptionFiltersContext } from './../../context/exception-filters-context';
 import { ApplicationConfig } from './../../../core/application-config';
@@ -31,7 +31,7 @@ describe('ExceptionFiltersContext', () => {
             });
         });
         describe('when filters metadata is not empty', () => {
-            @ExceptionFilters(new ExceptionFilter())
+            @UseFilters(new ExceptionFilter())
             class WithMetadata {}
 
             it('should returns ExceptionHandler object with exception filters', () => {

@@ -1,44 +1,19 @@
 {
   "name": "nestjs",
-  "version": "4.1.3",
+  "version": "4.1.7",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon -e ts --watch src index.js",
-    "build": "node index.js",
+    "start": "node index.js",
+    "start:live": "nodemon -e ts --watch src index.js",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
-    "coverage": "nyc report --reporter=text-lcov | coveralls"
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "build": "gulp build --dist lib",
+    "prepublish": "npm run build",
+    "publish": "./node_modules/.bin/lerna publish --skip-git"
   },
-  "nyc": {
-    "include": [
-      "src/**/*.ts"
-    ],
-    "exclude": [
-      "node_modules/",
-      "src/**/*.spec.ts",
-      "src/core/adapters/*.ts",
-      "src/websockets/adapters/*.ts",
-      "src/core/nest-application.ts",
-      "src/core/nest-factory.ts",
-      "src/core/nest-microservice.ts",
-      "src/common/services/logger.service.ts",
-      "src/core/errors/exceptions",
-      "src/microservices/exceptions/",
-      "src/microservices/microservices-module.ts",
-      "src/core/middlewares/middlewares-module.ts"
-    ],
-    "extension": [
-      ".ts"
-    ],
-    "require": [
-      "ts-node/register"
-    ],
-    "reporter": [
-      "text-summary",
-      "html"
-    ],
-    "sourceMap": true,
-    "instrument": true
+  "engines": {
+    "node": ">=6.9.11"
   },
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -80,11 +55,13 @@
     "core-js": "^2.4.1",
     "coveralls": "^2.11.16",
     "gulp": "^3.9.1",
+    "gulp-sequence": "^0.4.6",
     "gulp-typescript": "^3.1.6",
     "gulp-watch": "^4.3.11",
     "imports-loader": "^0.7.0",
     "istanbul": "^0.4.5",
     "json-loader": "^0.5.4",
+    "lerna": "^2.5.1",
     "mocha": "^3.2.0",
     "nodemon": "^1.11.0",
     "nyc": "^10.1.2",
@@ -96,5 +73,36 @@
     "type": "opencollective",
     "url": "https://opencollective.com/nest",
     "logo": "https://opencollective.com/opencollective/logo.txt"
+  },
+  "nyc": {
+    "include": [
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "node_modules/",
+      "src/**/*.spec.ts",
+      "src/core/adapters/*.ts",
+      "src/websockets/adapters/*.ts",
+      "src/core/nest-application.ts",
+      "src/core/nest-factory.ts",
+      "src/common/services/logger.service.ts",
+      "src/core/errors/exceptions",
+      "src/microservices/exceptions/",
+      "src/microservices/microservices-module.ts",
+      "src/microservices/nest-microservice.ts",
+      "src/core/middlewares/middlewares-module.ts"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
   }
 }

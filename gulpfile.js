@@ -1,5 +1,6 @@
 const gulp = require('gulp');
 const ts = require('gulp-typescript');
+const gulpSequence = require('gulp-sequence')
 
 const packages = {
     common: ts.createProject('src/common/tsconfig.json'),
@@ -10,7 +11,8 @@ const packages = {
 };
 const modules = Object.keys(packages);
 const source = 'src';
-const dist = 'node_modules/@nestjs'
+const distId = process.argv.indexOf('--dist');
+const dist = distId < 0 ? 'node_modules/@nestjs' : process.argv[distId + 1];
 
 gulp.task('default', function () {
     modules.forEach((module) => {
@@ -25,4 +27,9 @@ modules.forEach((module) => {
             .pipe(gulp.dest(`${dist}/${module}`));
     });
 });
+
+gulp.task('build', function (cb) {
+  gulpSequence(modules, cb);
+});
+
 

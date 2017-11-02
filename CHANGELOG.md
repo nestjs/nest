@@ -2,6 +2,10 @@
 ## 4.1.4
 - **common**: remove deprecated `@ExceptionFilters()` decorator
 - **core**: update to latest **express* version (4.16.2)
+- **core**: bugfix #187
+- **core**: bugfix #185
+- **all**: packages codependency refactor
+- **all**: add *lerna* package
 
 ## 4.1.3
 - **core**: forward reference bugfixes & security updates

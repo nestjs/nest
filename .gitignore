@@ -7,6 +7,7 @@ node_modules/
 /.vscode
 
 # misc
+lerna-debug.log
 npm-debug.log
 /src/common/npm-debug.log
 /src/core/npm-debug.log
@@ -23,3 +24,6 @@ npm-debug.log
 /test
 /coverage
 /.nyc_output
+
+# build
+/lib
