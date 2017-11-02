@@ -3,10 +3,10 @@ import { INTERCEPTORS_METADATA } from '../../constants';
 /**
  * Setups interceptors to the chosen context.
  * When the `@UseInterceptors()` is used on the controller level:
- * - Interceptor will be setuped to the every handler (every method)
+ * - Interceptor will be set up to every handler (every method)
  *
  * When the `@UseInterceptors()` is used on the handle level:
- * - Interceptor will be setuped only to specified method
+ * - Interceptor will be set up only to specified method
  *
  * @param  {} ...interceptors (types)
  */

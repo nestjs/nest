@@ -35,12 +35,12 @@ export class RouterExecutionContext {
         private readonly interceptorsContextCreator: InterceptorsContextCreator,
         private readonly interceptorsConsumer: InterceptorsConsumer) {}
 
-    public create(instance: Controller, callback: (...args) => any, module: string, requestMethod: RequestMethod) {
-        const metadata = this.reflectCallbackMetadata(instance, callback) || {};
+    public create(instance: Controller, callback: (...args) => any, methodName: string, module: string, requestMethod: RequestMethod) {
+        const metadata = this.reflectCallbackMetadata(instance, methodName) || {};
         const keys = Object.keys(metadata);
         const argsLength = this.getArgumentsLength(keys, metadata);
         const pipes = this.pipesContextCreator.create(instance, callback);
-        const paramtypes = this.reflectCallbackParamtypes(instance, callback);
+        const paramtypes = this.reflectCallbackParamtypes(instance, methodName);
         const guards = this.guardsContextCreator.create(instance, callback, module);
         const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
         const httpCode = this.reflectHttpStatusCode(callback);
@@ -79,12 +79,12 @@ export class RouterExecutionContext {
         return Number(keyPair[0]);
     }
 
-    public reflectCallbackMetadata(instance: Controller, callback: (...args) => any): RouteParamsMetadata {
-        return Reflect.getMetadata(ROUTE_ARGS_METADATA, instance, callback.name);
+    public reflectCallbackMetadata(instance: Controller, methodName: string): RouteParamsMetadata {
+        return Reflect.getMetadata(ROUTE_ARGS_METADATA, instance, methodName);
     }
 
-    public reflectCallbackParamtypes(instance: Controller, callback: (...args) => any): any[] {
-        return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
+    public reflectCallbackParamtypes(instance: Controller, methodName: string): any[] {
+        return Reflect.getMetadata(PARAMTYPES_METADATA, instance, methodName);
     }
 
     public reflectHttpStatusCode(callback: (...args) => any): number {
