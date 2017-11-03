@@ -15,16 +15,6 @@ const defineFiltersMetadata = (...filters: ExceptionFilter[]) => {
 };
 
 /**
- * @deprecated
- * Since version 2.1.2 this decorator is deprecated. Use @UseFilters() instead.
- */
-export const ExceptionFilters = (...filters: ExceptionFilter[]) => {
-    const logger = new Logger('ExceptionFilters');
-    logger.warn('DEPRECATED! Since version 2.1.2 `@ExceptionFilters()` decorator is deprecated. Use `@UseFilters()` instead.');
-    return defineFiltersMetadata(...filters);
-};
-
-/**
  * Setups exception filters to the chosen context.
  * When the `@UseFilters()` is used on the controller level:
  * - Exception Filter will be set up to every handler (every method)

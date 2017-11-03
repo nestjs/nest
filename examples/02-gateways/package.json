@@ -14,7 +14,6 @@
     "@nestjs/microservices": "^4.0.1",
     "@nestjs/testing": "^4.0.1",
     "@nestjs/websockets": "^4.0.1",
-    "body-parser": "^1.17.2",
     "class-transformer": "^0.1.7",
     "class-validator": "^0.7.2",
     "redis": "^2.7.1",

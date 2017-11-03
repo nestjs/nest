@@ -1,27 +1,30 @@
+import * as optional from 'optional';
+import iterate from 'iterare';
 import {
     CanActivate,
     ExceptionFilter,
     NestInterceptor,
     OnModuleDestroy,
     PipeTransform,
-    WebSocketAdapter
+    WebSocketAdapter,
     } from '@nestjs/common';
 import { INestApplication, INestMicroservice, OnModuleInit } from '@nestjs/common';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil, isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
-import { MicroserviceConfiguration } from '@nestjs/microservices';
-import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
-import { SocketModule } from '@nestjs/websockets/socket-module';
-import iterate from 'iterare';
+import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { ApplicationConfig } from './application-config';
 import { messages } from './constants';
-import { NestMicroservice } from './index';
 import { NestContainer } from './injector/container';
 import { Module } from './injector/module';
 import { MiddlewaresModule } from './middlewares/middlewares-module';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
+import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
+
+const { SocketModule } = optional('@nestjs/websockets/socket-module') || {} as any;
+const { MicroservicesModule } = optional('@nestjs/microservices/microservices-module') || {} as any;
+const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {} as any;
 
 export class NestApplication implements INestApplication {
     private readonly config = new ApplicationConfig();
@@ -41,9 +44,12 @@ export class NestApplication implements INestApplication {
     }
 
     public async setupModules() {
-        SocketModule.setup(this.container, this.config);
-        MicroservicesModule.setup(this.container, this.config);
-        MicroservicesModule.setupClients(this.container);
+        SocketModule && SocketModule.setup(this.container, this.config);
+
+        if (MicroservicesModule) {
+          MicroservicesModule.setup(this.container, this.config);
+          MicroservicesModule.setupClients(this.container);
+        }
         await MiddlewaresModule.setup(this.container, this.config);
     }
 
@@ -65,9 +71,14 @@ export class NestApplication implements INestApplication {
     }
 
     public connectMicroservice(config: MicroserviceConfiguration): INestMicroservice {
-        const instance = new NestMicroservice(this.container, config);
+        if (!NestMicroservice) {
+          throw new MicroservicesPackageNotFoundException();
+        }
+
+        const instance = new NestMicroservice(this.container as any, config as any);
         instance.setupListeners();
         instance.setIsInitialized(true);
+        instance.setIsInitHookCalled(true);
 
         this.microservices.push(instance);
         return instance;
@@ -107,7 +118,7 @@ export class NestApplication implements INestApplication {
     }
 
     public close() {
-        SocketModule.close();
+        SocketModule && SocketModule.close();
         this.server && this.server.close();
         this.microservices.forEach((microservice) => {
             microservice.setIsTerminated(true);

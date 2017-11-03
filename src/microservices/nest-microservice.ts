@@ -1,19 +1,21 @@
+import * as optional from 'optional';
 import iterate from 'iterare';
-import { NestContainer } from './injector/container';
-import { MicroservicesModule } from '@nestjs/microservices/microservices-module';
-import { messages } from './constants';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { MicroservicesModule } from './microservices-module';
+import { messages } from '@nestjs/core/constants';
 import { Logger } from '@nestjs/common/services/logger.service';
-import { Server } from '@nestjs/microservices/server/server';
-import { MicroserviceConfiguration } from '@nestjs/microservices/interfaces/microservice-configuration.interface';
-import { ServerFactory } from '@nestjs/microservices/server/server-factory';
-import { Transport } from '@nestjs/microservices/enums/transport.enum';
-import { INestMicroservice, WebSocketAdapter, CanActivate, PipeTransform, NestInterceptor, ExceptionFilter } from '@nestjs/common';
-import { ApplicationConfig } from './application-config';
-import { SocketModule } from '@nestjs/websockets/socket-module';
+import { Server } from './server/server';
+import { MicroserviceConfiguration } from './interfaces/microservice-configuration.interface';
+import { ServerFactory } from './server/server-factory';
+import { Transport } from './enums/transport.enum';
+import { INestMicroservice, WebSocketAdapter, CanActivate, PipeTransform, NestInterceptor, ExceptionFilter, OnModuleInit } from '@nestjs/common';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 import { CustomTransportStrategy } from '@nestjs/microservices';
-import { Module } from './injector/module';
+import { Module } from '@nestjs/core/injector/module';
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { OnModuleDestroy } from '@nestjs/common/interfaces';
+
+const { SocketModule } = optional('@nestjs/websockets/socket-module') || {} as any;
 
 export class NestMicroservice implements INestMicroservice {
     private readonly config = new ApplicationConfig();
@@ -22,10 +24,11 @@ export class NestMicroservice implements INestMicroservice {
     private readonly server: Server & CustomTransportStrategy;
     private isTerminated = false;
     private isInitialized = false;
+    private isInitHookCalled = false;
 
     constructor(
         private container: NestContainer,
-        config: MicroserviceConfiguration) {
+        config: MicroserviceConfiguration = {}) {
 
         MicroservicesModule.setup(container, this.config);
         this.microserviceConfig = {
@@ -37,11 +40,13 @@ export class NestMicroservice implements INestMicroservice {
     }
 
     public setupModules() {
-        SocketModule.setup(this.container, this.config);
+        SocketModule && SocketModule.setup(this.container, this.config);
         MicroservicesModule.setupClients(this.container);
-        this.setupListeners();
 
-        this.isInitialized = true;
+        this.setupListeners();
+        this.setIsInitialized(true);
+
+        !this.isInitHookCalled && this.callInitHook();
     }
 
     public setupListeners() {
@@ -88,12 +93,37 @@ export class NestMicroservice implements INestMicroservice {
         this.isTerminated = isTerminaed;
     }
 
+    public setIsInitHookCalled(isInitHookCalled: boolean) {
+        this.isInitHookCalled = isInitHookCalled;
+    }
+
     private closeApplication() {
-        SocketModule.close();
+        SocketModule && SocketModule.close();
+
         this.callDestroyHook();
         this.setIsTerminated(true);
     }
 
+    private callInitHook() {
+        const modules = this.container.getModules();
+        modules.forEach((module) => {
+            this.callModuleInitHook(module);
+        });
+        this.setIsInitHookCalled(true);
+    }
+
+    private callModuleInitHook(module: Module) {
+        const components = [...module.routes, ...module.components];
+        iterate(components).map(([key, {instance}]) => instance)
+            .filter((instance) => !isNil(instance))
+            .filter(this.hasOnModuleInitHook)
+            .forEach((instance) => (instance as OnModuleInit).onModuleInit());
+        }
+
+    private hasOnModuleInitHook(instance): instance is OnModuleInit {
+        return !isUndefined((instance as OnModuleInit).onModuleInit);
+    }
+  
     private callDestroyHook() {
         const modules = this.container.getModules();
         modules.forEach((module) => {
