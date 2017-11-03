@@ -4,10 +4,10 @@ import { PIPES_METADATA } from '../../constants';
 /**
  * Setups pipes to the chosen context.
  * When the `@UsePipes()` is used on the controller level:
- * - Pipe will be setuped to the every handler (every method)
+ * - Pipe will be set up to every handler (every method)
  *
  * When the `@UsePipes()` is used on the handle level:
- * - Pipe will be setuped only to specified method
+ * - Pipe will be set up only to specified method
  *
  * @param  {PipeTransform[]} ...pipes (instances)
  */
