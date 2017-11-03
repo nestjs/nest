@@ -1,3 +1,6 @@
+## 4.2.0
+- **core**: log controller prefix #153
+- **websockets**: gateway listen the same port as the app #126
 
 ## 4.1.4
 - **common**: remove deprecated `@ExceptionFilters()` decorator
