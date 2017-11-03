@@ -50,11 +50,22 @@ export class ExpressRouterExplorer implements RouterExplorer {
 
     public explore(instance: Controller, metatype: Metatype<Controller>, module: string) {
         const router = (this.expressAdapter as any).createRouter();
-        const path = this.fetchRouterPath(metatype);
         const routerPaths = this.scanForPaths(instance);
 
         this.applyPathsToRouterProxy(router, routerPaths, instance, module);
-        return { path, router };
+        return router;
+    }
+
+    public fetchRouterPath(metatype: Metatype<Controller>): string {
+        const path = Reflect.getMetadata(PATH_METADATA, metatype);
+        return this.validateRoutePath(path);
+    }
+
+    public validateRoutePath(path: string): string {
+        if (isUndefined(path)) {
+            throw new UnknownRequestMappingException();
+        }
+        return validatePath(path);
     }
 
     public scanForPaths(instance: Controller, prototype?): RoutePathProperties[] {
@@ -113,18 +124,6 @@ export class ExpressRouterExplorer implements RouterExplorer {
         const exceptionFilter = this.exceptionsFilter.create(instance, callback);
 
         return this.routerProxy.createProxy(executionContext, exceptionFilter);
-    }
-
-    private fetchRouterPath(metatype: Metatype<Controller>) {
-        const path = Reflect.getMetadata(PATH_METADATA, metatype);
-        return this.validateRoutePath(path);
-    }
-
-    private validateRoutePath(path: string): string {
-        if (isUndefined(path)) {
-            throw new UnknownRequestMappingException();
-        }
-        return validatePath(path);
     }
 }
 
