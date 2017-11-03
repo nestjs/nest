@@ -13,7 +13,7 @@
     "publish": "./node_modules/.bin/lerna publish --skip-git"
   },
   "engines": {
-    "node": ">=6.9.11"
+    "node": ">=6.11.0"
   },
   "author": "Kamil Mysliwiec",
   "license": "MIT",
