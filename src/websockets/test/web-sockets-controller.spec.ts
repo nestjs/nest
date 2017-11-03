@@ -9,6 +9,7 @@ import { MetadataScanner } from '../../core/metadata-scanner';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from '../context/ws-context-creator';
 import { Observable } from "rxjs/Observable";
+import { IoAdapter } from "../index";
 
 describe('WebSocketsController', () => {
     let instance: WebSocketsController;
@@ -23,7 +24,7 @@ describe('WebSocketsController', () => {
     }
 
     beforeEach(() => {
-        config = new ApplicationConfig();
+        config = new ApplicationConfig(new IoAdapter());
         provider = new SocketServerProvider(null, config);
         mockProvider = sinon.mock(provider);
         instance = new WebSocketsController(provider, null, config, sinon.createStubInstance(WsContextCreator));
@@ -49,7 +50,7 @@ describe('WebSocketsController', () => {
         it('should call "subscribeObservableServer" with default values when metadata is empty', () => {
             const gateway = new DefaultGateway();
             instance.hookGatewayIntoServer(gateway, DefaultGateway, '');
-            expect(subscribeObservableServer.calledWith(gateway, '', 80)).to.be.true;
+            expect(subscribeObservableServer.calledWith(gateway, '', 0)).to.be.true;
         });
         it('should call "subscribeObservableServer" when metadata is valid', () => {
             const gateway = new Test();

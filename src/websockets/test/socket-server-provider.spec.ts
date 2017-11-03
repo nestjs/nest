@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { SocketServerProvider } from '../socket-server-provider';
 import { SocketsContainer } from '../container';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { IoAdapter } from '@nestjs/websockets/adapters/io-adapter';
 
 describe('SocketServerProvider', () => {
     let instance: SocketServerProvider;
@@ -12,7 +13,7 @@ describe('SocketServerProvider', () => {
     beforeEach(() => {
         socketsContainer = new SocketsContainer();
         mockContainer = sinon.mock(socketsContainer);
-        instance = new SocketServerProvider(socketsContainer, new ApplicationConfig());
+        instance = new SocketServerProvider(socketsContainer, new ApplicationConfig(new IoAdapter()));
     });
     describe('scanForSocketServer', () => {
         let createSocketServerSpy: sinon.SinonSpy;

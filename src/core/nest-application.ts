@@ -1,3 +1,4 @@
+import * as http from 'http';
 import * as optional from 'optional';
 import iterate from 'iterare';
 import {
@@ -25,19 +26,24 @@ import { MicroservicesPackageNotFoundException } from './errors/exceptions/micro
 const { SocketModule } = optional('@nestjs/websockets/socket-module') || {} as any;
 const { MicroservicesModule } = optional('@nestjs/microservices/microservices-module') || {} as any;
 const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {} as any;
+const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter');
 
 export class NestApplication implements INestApplication {
-    private readonly config = new ApplicationConfig();
     private readonly logger = new Logger(NestApplication.name, true);
+    private readonly httpServer: http.Server = null;
     private readonly routesResolver: Resolver = null;
+    private readonly config: ApplicationConfig;
     private readonly microservices = [];
     private isInitialized = false;
-    private server = null;
 
     constructor(
         private readonly container: NestContainer,
-        private readonly express) {
+        private readonly express,
+    ) {
+        this.httpServer = http.createServer(express);
 
+        const ioAdapter = IoAdapter ? new IoAdapter(this.httpServer) : null;
+        this.config = new ApplicationConfig(ioAdapter);
         this.routesResolver = new RoutesResolver(
             container, ExpressAdapter, this.config,
         );
@@ -107,8 +113,8 @@ export class NestApplication implements INestApplication {
     public async listen(port: number, ...args) {
         (!this.isInitialized) && await this.init();
 
-        this.server = this.express.listen(port, ...args);
-        return this.server;
+        this.httpServer.listen(port, ...args);
+        return this.httpServer;
     }
 
     public listenAsync(port: number, hostname?: string): Promise<any> {
@@ -119,7 +125,7 @@ export class NestApplication implements INestApplication {
 
     public close() {
         SocketModule && SocketModule.close();
-        this.server && this.server.close();
+        this.httpServer && this.httpServer.close();
         this.microservices.forEach((microservice) => {
             microservice.setIsTerminated(true);
             microservice.close();

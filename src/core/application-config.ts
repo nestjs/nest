@@ -2,15 +2,14 @@ import * as optional from 'optional';
 import { PipeTransform, WebSocketAdapter, ExceptionFilter, NestInterceptor, CanActivate } from '@nestjs/common';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
 
-const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter') || {} as any;
-
 export class ApplicationConfig implements ConfigurationProvider {
     private globalPipes: PipeTransform<any>[] = [];
     private globalFilters: ExceptionFilter[] = [];
     private globalInterceptors: NestInterceptor[] = [];
     private globalGuards: CanActivate[] = [];
-    private ioAdapter: WebSocketAdapter = IoAdapter ? new IoAdapter() : null;
     private globalPrefix = '';
+
+    constructor(private ioAdapter: WebSocketAdapter | null = null) {}
 
     public setGlobalPrefix(prefix: string) {
         this.globalPrefix = prefix;

@@ -16,20 +16,24 @@ import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { OnModuleDestroy } from '@nestjs/common/interfaces';
 
 const { SocketModule } = optional('@nestjs/websockets/socket-module') || {} as any;
+const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter');
 
 export class NestMicroservice implements INestMicroservice {
-    private readonly config = new ApplicationConfig();
     private readonly logger = new Logger(NestMicroservice.name, true);
     private readonly microserviceConfig: MicroserviceConfiguration;
     private readonly server: Server & CustomTransportStrategy;
+    private readonly config: ApplicationConfig;
     private isTerminated = false;
     private isInitialized = false;
     private isInitHookCalled = false;
 
     constructor(
-        private container: NestContainer,
-        config: MicroserviceConfiguration = {}) {
-
+        private readonly container: NestContainer,
+        config: MicroserviceConfiguration = {},
+    ) {
+        const ioAdapter = IoAdapter ? new IoAdapter() : null;
+        this.config = new ApplicationConfig(ioAdapter);
+        
         MicroservicesModule.setup(container, this.config);
         this.microserviceConfig = {
             transport: Transport.TCP,

@@ -24,16 +24,7 @@ export class SocketModule {
     public static setup(container, config) {
         this.webSocketsController = new WebSocketsController(
             new SocketServerProvider(this.socketsContainer, config), container, config,
-            new WsContextCreator(
-                new WsProxy(),
-                new ExceptionFiltersContext(),
-                new PipesContextCreator(),
-                new PipesConsumer(),
-                new GuardsContextCreator(container),
-                new GuardsConsumer(),
-                new InterceptorsContextCreator(container),
-                new InterceptorsConsumer(),
-            ),
+            this.getContextCreator(container),
         );
 
         const modules = container.getModules();
@@ -41,23 +32,41 @@ export class SocketModule {
     }
 
     public static hookGatewaysIntoServers(components: Map<string, InstanceWrapper<Injectable>>, moduleName: string) {
-        components.forEach(({ instance, metatype, isNotMetatype }) => {
-            if (isNotMetatype) return;
+        components.forEach((wrapper) => this.hookGatewayIntoServer(wrapper, moduleName));
+    }
 
-            const metadataKeys = Reflect.getMetadataKeys(metatype);
-            if (metadataKeys.indexOf(GATEWAY_METADATA) < 0) return;
-
-            this.webSocketsController.hookGatewayIntoServer(
-                instance as NestGateway,
-                metatype,
-                moduleName,
-            );
-        });
+    public static hookGatewayIntoServer(wrapper: InstanceWrapper<Injectable>, moduleName: string) {
+        const { instance, metatype, isNotMetatype } = wrapper;
+        if (isNotMetatype) {
+          return;
+        }
+        const metadataKeys = Reflect.getMetadataKeys(metatype);
+        if (metadataKeys.indexOf(GATEWAY_METADATA) < 0) {
+          return;
+        }
+        this.webSocketsController.hookGatewayIntoServer(
+            instance as NestGateway,
+            metatype,
+            moduleName,
+        );
     }
 
     public static close() {
         const servers = this.socketsContainer.getAllServers();
         servers.forEach(({ server }) => server.close());
         this.socketsContainer.clear();
+    }
+
+    private static getContextCreator(container): WsContextCreator {
+        return new WsContextCreator(
+            new WsProxy(),
+            new ExceptionFiltersContext(),
+            new PipesContextCreator(),
+            new PipesConsumer(),
+            new GuardsContextCreator(container),
+            new GuardsConsumer(),
+            new InterceptorsContextCreator(container),
+            new InterceptorsConsumer(),
+        );
     }
 }
