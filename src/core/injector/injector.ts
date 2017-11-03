@@ -40,10 +40,10 @@ export class Injector {
   }
 
   public loadPrototypeOfInstance<T>({ metatype, name }: InstanceWrapper<T>, collection: Map<string, InstanceWrapper<T>>) {
-    if (!collection) return;
+    if (!collection) return null;
 
     const target = collection.get(name);
-    if (target.isResolved || !isNil(target.inject)) return;
+    if (target.isResolved || !isNil(target.inject)) return null;
 
     collection.set(name, {
       ...collection.get(name),
@@ -73,8 +73,8 @@ export class Injector {
     if (isUndefined(currentMetatype)) {
       throw new RuntimeException();
     }
+    if (currentMetatype.isResolved) return null;
 
-    if (currentMetatype.isResolved) return;
     await this.resolveConstructorParams<T>(wrapper, module, inject, context, async (instances) => {
       if (isNil(inject)) {
         currentMetatype.instance = Object.assign(
