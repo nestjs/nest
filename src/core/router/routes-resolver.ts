@@ -40,9 +40,12 @@ export class RoutesResolver implements Resolver {
         express: Application) {
 
         routes.forEach(({ instance, metatype }) => {
-            this.logger.log(ControllerMappingMessage(metatype.name));
+            const path = this.routerBuilder.fetchRouterPath(metatype);
+            const controllerName = metatype.name;
 
-            const { path, router } = this.routerBuilder.explore(instance, metatype, moduleName);
+            this.logger.log(ControllerMappingMessage(controllerName, path));
+
+            const router = this.routerBuilder.explore(instance, metatype, moduleName);
             express.use(path, router);
         });
         this.setupExceptionHandler(express);

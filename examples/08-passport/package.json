@@ -15,7 +15,6 @@
     "@nestjs/testing": "^4.0.1",
     "@nestjs/websockets": "^4.0.1",
     "@types/passport-jwt": "^2.0.24",
-    "body-parser": "^1.17.2",
     "jsonwebtoken": "^8.0.1",
     "passport": "^0.4.0",
     "passport-jwt": "^3.0.0",

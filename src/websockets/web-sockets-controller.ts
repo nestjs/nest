@@ -26,13 +26,14 @@ export class WebSocketsController {
         private readonly socketServerProvider: SocketServerProvider,
         private readonly container: NestContainer,
         private readonly config: ApplicationConfig,
-        private readonly contextCreator: WsContextCreator) {
-            this.middlewaresInjector = new MiddlewaresInjector(container, config);
-        }
+        private readonly contextCreator: WsContextCreator,
+    ) {
+        this.middlewaresInjector = new MiddlewaresInjector(container, config);
+    }
 
     public hookGatewayIntoServer(instance: NestGateway, metatype: Metatype<Injectable>, module: string) {
         const namespace = Reflect.getMetadata(NAMESPACE_METADATA, metatype) || '';
-        const port = Reflect.getMetadata(PORT_METADATA, metatype) || 80;
+        const port = Reflect.getMetadata(PORT_METADATA, metatype) || 0;
 
         if (!Number.isInteger(port)) {
             throw new InvalidSocketPortException(port, metatype);
@@ -60,8 +61,8 @@ export class WebSocketsController {
     public subscribeEvents(
         instance: NestGateway,
         messageHandlers: MessageMappingProperties[],
-        observableServer: ObservableSocketServer) {
-
+        observableServer: ObservableSocketServer,
+    ) {
         const { init, disconnect, connection, server } = observableServer;
         const adapter = this.config.getIoAdapter();
 
@@ -79,8 +80,8 @@ export class WebSocketsController {
         instance: NestGateway,
         messageHandlers: MessageMappingProperties[],
         disconnect: Subject<any>,
-        connection: Subject<any>) {
-
+        connection: Subject<any>,
+    ) {
         const adapter = this.config.getIoAdapter();
         return (client) => {
             connection.next(client);
@@ -117,7 +118,8 @@ export class WebSocketsController {
         }));
         adapter.bindMessageHandlers(
             client, handlers,
-            (data) => Observable.fromPromise(this.pickResult(data)).switchMap((stream) => stream),
+            (data) => Observable.fromPromise(this.pickResult(data))
+                .switchMap((stream) => stream),
         );
     }
 

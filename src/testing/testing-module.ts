@@ -6,9 +6,9 @@ import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { ModuleTokenFactory } from '@nestjs/core/injector/module-token-factory';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { UnknownModuleException } from './errors/unknown-module.exception';
-import { NestApplication, NestMicroservice } from '@nestjs/core';
+import { NestApplication } from '@nestjs/core';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
-import { MicroserviceConfiguration } from '@nestjs/microservices';
+import { MicroserviceConfiguration, NestMicroservice } from '@nestjs/microservices';
 
 export class TestingModule {
     private readonly moduleTokenFactory = new ModuleTokenFactory();

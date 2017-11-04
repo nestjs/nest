@@ -1,7 +1,6 @@
 require('babel-core/register');
 require('babel-polyfill');
 
-import * as bodyParser from 'body-parser';
 import { NestFactory } from '@nestjs/core';
 import { ApplicationModule } from './modules/app.module';
 

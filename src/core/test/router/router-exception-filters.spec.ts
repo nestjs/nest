@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { ExceptionFilters } from '../../../common/utils/decorators/exception-filters.decorator';
+import { UseFilters } from '../../../common/utils/decorators/exception-filters.decorator';
 import { Catch } from '../../../common/utils/decorators/catch.decorator';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { ApplicationConfig } from '../../application-config';
@@ -32,7 +32,7 @@ describe('RouterExceptionFilters', () => {
             });
         });
         describe('when filters metadata is not empty', () => {
-            @ExceptionFilters(new ExceptionFilter())
+            @UseFilters(new ExceptionFilter())
             class WithMetadata {}
 
             it('should returns ExceptionHandler object with exception filters', () => {
