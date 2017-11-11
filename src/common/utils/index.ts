@@ -16,3 +16,4 @@ export * from './decorators/use-interceptors.decorator';
 export * from './decorators/http-code.decorator';
 export * from './decorators/bind.decorator';
 export * from './forward-ref.util';
+export * from './decorators/reflect-route-param-metadata.decorator';

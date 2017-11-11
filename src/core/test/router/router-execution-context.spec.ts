@@ -4,6 +4,7 @@ import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { RouterExecutionContext } from '../../router/router-execution-context';
 import { RouteParamsMetadata, Request, Body } from '../../../index';
 import { RouteParamsFactory } from '../../router/route-params-factory';
+import { RouteCustomParamsFactory } from '../../router/route-custom-params-factory';
 import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { PipesConsumer } from '../../pipes/pipes-consumer';
 import { ApplicationConfig } from '../../application-config';
@@ -33,7 +34,7 @@ describe('RouterExecutionContext', () => {
         consumer = new PipesConsumer();
 
         contextCreator = new RouterExecutionContext(
-            factory, new PipesContextCreator(new ApplicationConfig()), consumer,
+            factory, new RouteCustomParamsFactory(new ApplicationConfig()), new PipesContextCreator(new ApplicationConfig()), consumer,
             new GuardsContextCreator(new NestContainer()), new GuardsConsumer(),
             new InterceptorsContextCreator(new NestContainer()), new InterceptorsConsumer(),
         );
