@@ -1,9 +1,12 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
+import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
+import { ReflectRouteParamDecorator } from '../../../common/utils/decorators/reflect-route-param-metadata.decorator';
 import { RouterExecutionContext } from '../../router/router-execution-context';
 import { RouteParamsMetadata, Request, Body } from '../../../index';
 import { RouteParamsFactory } from '../../router/route-params-factory';
+import { RouteCustomParamsFactory } from '../../router/route-custom-params-factory';
 import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { PipesConsumer } from '../../pipes/pipes-consumer';
 import { ApplicationConfig } from '../../application-config';
@@ -33,7 +36,7 @@ describe('RouterExecutionContext', () => {
         consumer = new PipesConsumer();
 
         contextCreator = new RouterExecutionContext(
-            factory, new PipesContextCreator(new ApplicationConfig()), consumer,
+            factory, new RouteCustomParamsFactory(new ApplicationConfig()), new PipesContextCreator(new ApplicationConfig()), consumer,
             new GuardsContextCreator(new NestContainer()), new GuardsConsumer(),
             new InterceptorsContextCreator(new NestContainer()), new InterceptorsConsumer(),
         );
@@ -104,8 +107,9 @@ describe('RouterExecutionContext', () => {
         });
     });
     describe('reflectCallbackMetadata', () => {
+        const [ CustomDecorator ] = ReflectRouteParamDecorator('custom', () => {});
         class TestController {
-            public callback(@Request() req, @Body() body) {}
+            public callback(@Request() req, @Body() body, @CustomDecorator() custom) {}
         }
         it('should returns ROUTE_ARGS_METADATA callback metadata', () => {
             const instance = new TestController();
@@ -120,6 +124,10 @@ describe('RouterExecutionContext', () => {
                     index: 1,
                     data: undefined,
                     pipes: [],
+                },
+                [`custom${CUSTOM_ROUTE_AGRS_METADATA}:2`]: {
+                    index: 2,
+                    data: undefined,
                 },
             };
             expect(metadata).to.deep.equal(expectedMetadata);
@@ -153,17 +161,15 @@ describe('RouterExecutionContext', () => {
         it('should exchange arguments keys for appropriate values', () => {
             const metadata = {
                 [RouteParamtypes.REQUEST]: { index: 0, data: 'test', pipes: [] },
-                [RouteParamtypes.BODY]: {
-                    index: 2,
-                    data: 'test',
-                    pipes: [],
-                },
+                [RouteParamtypes.BODY]: { index: 2, data: 'test', pipes: [] },
+                [`key${CUSTOM_ROUTE_AGRS_METADATA}`]: { index: 3, data: 'custom', pipes: [] },
             };
             const keys = Object.keys(metadata);
             const values = contextCreator.exchangeKeysForValues(keys, metadata);
             const expectedValues = [
                 { index: 0, type: RouteParamtypes.REQUEST, data: 'test' },
                 { index: 2, type: RouteParamtypes.BODY, data: 'test' },
+                { index: 3, type: `key${CUSTOM_ROUTE_AGRS_METADATA}`, data: 'custom' },
             ];
             expect(values[0]).to.deep.include(expectedValues[0]);
             expect(values[1]).to.deep.include(expectedValues[1]);

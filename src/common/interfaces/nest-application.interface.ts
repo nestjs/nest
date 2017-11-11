@@ -3,6 +3,7 @@ import { INestMicroservice, ExceptionFilter, PipeTransform } from './index';
 import { WebSocketAdapter } from './web-socket-adapter.interface';
 import { CanActivate } from './can-activate.interface';
 import { NestInterceptor } from './nest-interceptor.interface';
+import { ICustomParamReflector } from './custom-route-param-reflector.interface';
 
 export interface INestApplication {
     /**
@@ -115,6 +116,15 @@ export interface INestApplication {
      * @param  {CanActivate[]} ...guards
      */
     useGlobalGuards(...guards: CanActivate[]);
+
+    /**
+     * Setups creating custom param decorators for controllers
+     * 
+     * @param {...ICustomParamReflector[]} decorators 
+     * @returns {*} 
+     * @memberof INestApplication
+     */
+    useCustomParamDecorators(...decorators: ICustomParamReflector[]): any;
 
     /**
      * Terminates the application (both NestApplication, Web Socket Gateways and every connected microservice)
