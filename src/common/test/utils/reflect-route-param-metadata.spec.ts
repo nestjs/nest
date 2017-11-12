@@ -2,10 +2,6 @@ import { expect } from 'chai';
 import { ReflectRouteParamDecorator } from '../../utils/decorators/reflect-route-param-metadata.decorator';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../constants';
 
-const ley = 'key'
-const reflector = (data, req, res, next) => true;
-const [roles, rolesReflector] = ReflectRouteParamDecorator('roles', reflector);
-
 describe('ReflectRouteParamDecorator', () => {
   let key;
   let reflector;
@@ -14,7 +10,7 @@ describe('ReflectRouteParamDecorator', () => {
   beforeEach(() => {
     key = 'key';
     reflector = (data, req, res, next) => true;
-    result = ReflectRouteParamDecorator(key, reflector);
+    result = ReflectRouteParamDecorator(reflector, key);
   });
   it('should return an array', () => {
     expect(result).to.be.an('array');
@@ -26,8 +22,14 @@ describe('ReflectRouteParamDecorator', () => {
     expect(result[1]).to.be.an('object');
     expect(result[1]).to.have.property('paramtype');
     expect(result[1]).to.have.property('reflector');
-    expect(result[1].paramtype).to.be.eql(`${key}${CUSTOM_ROUTE_AGRS_METADATA}`);
     expect(result[1].reflector).to.be.eql(reflector);
+  });
+  it('should return paramtype with a key string', () => {
+    expect(result[1].paramtype).to.be.eql(`${key}${CUSTOM_ROUTE_AGRS_METADATA}`);
+  });
+  it('should return paramtype as a rundom string', () => {
+    result = ReflectRouteParamDecorator(reflector);
+    expect(result[1].paramtype).to.not.be.eql(`${key}${CUSTOM_ROUTE_AGRS_METADATA}`);
   });
 });
 

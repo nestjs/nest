@@ -107,7 +107,7 @@ describe('RouterExecutionContext', () => {
         });
     });
     describe('reflectCallbackMetadata', () => {
-        const [ CustomDecorator ] = ReflectRouteParamDecorator('custom', () => {});
+        const [ CustomDecorator ] = ReflectRouteParamDecorator(() => {}, 'custom');
         class TestController {
             public callback(@Request() req, @Body() body, @CustomDecorator() custom) {}
         }

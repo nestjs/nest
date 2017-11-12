@@ -15,18 +15,21 @@ const assignCustomMetadata = (
   },
 });
 
+const randomString = () => Math.random().toString(36).substring(2, 15);
+
 /**
  * Create route params custom decorator
- * @param paramtype 
- * @param handler 
+ * @param reflector 
+ * @param key 
  */
 export const ReflectRouteParamDecorator = (
-  paramtype: number|string,
   reflector: CustomParamReflector,
+  key: number|string = null,
 ): [
   (data?: ParamData) => ParameterDecorator,
   ICustomParamReflector
 ] => {
+  const paramtype = key === null ? randomString() + randomString() : key;
   const decorator = (data?: ParamData): ParameterDecorator => (target, key, index) => {
     const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, target, key) || {};
     Reflect.defineMetadata(
