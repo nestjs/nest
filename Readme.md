@@ -82,7 +82,7 @@ $ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websock
 
 ## Backers
 
-Nest is an MIT-licensed open source project. It can grow thanks to the support by these awesome people. If you'd like to join them, please [read more here]((https://opencollective.com/nest#backer)). Thanks! :heart_eyes:
+Nest is an MIT-licensed open source project. It can grow thanks to the support by these awesome people. If you'd like to join them, please [read more here](https://opencollective.com/nest#backer). Thanks! :heart_eyes:
 
 <a href="https://opencollective.com/nest/backer/0/website" target="_blank"><img src="https://opencollective.com/nest/backer/0/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/1/website" target="_blank"><img src="https://opencollective.com/nest/backer/1/avatar.svg"></a>
