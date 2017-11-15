@@ -1,3 +1,9 @@
+## 4.2.2
+- **websockets**: bugfix #242
+
+## 4.2.1
+- **core**: IoAdapter bugfix
+
 ## 4.2.0
 - **core**: log controller prefix #153
 - **websockets**: gateway listen the same port as the app #126

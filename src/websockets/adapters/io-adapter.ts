@@ -42,7 +42,6 @@ export class IoAdapter implements WebSocketAdapter {
     ) {
         handlers.forEach(({ message, callback }) => Observable.fromEvent(client, message)
             .switchMap((data) => process(callback(data)))
-            .do((result) => console.log(result))
             .filter((result) => !!result && result.event)
             .subscribe(({ event, data }) => client.emit(event, data)),
         );

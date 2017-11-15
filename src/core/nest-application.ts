@@ -26,7 +26,7 @@ import { MicroservicesPackageNotFoundException } from './errors/exceptions/micro
 const { SocketModule } = optional('@nestjs/websockets/socket-module') || {} as any;
 const { MicroservicesModule } = optional('@nestjs/microservices/microservices-module') || {} as any;
 const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {} as any;
-const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter');
+const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter') || {} as any;
 
 export class NestApplication implements INestApplication {
     private readonly logger = new Logger(NestApplication.name, true);
