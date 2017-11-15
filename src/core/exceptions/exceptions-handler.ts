@@ -1,3 +1,4 @@
+import { HttpError } from "http-errors";
 import { HttpException } from './http-exception';
 import { messages } from '../constants';
 import { Logger } from '@nestjs/common';
@@ -9,25 +10,34 @@ export class ExceptionsHandler {
     private static readonly logger = new Logger(ExceptionsHandler.name);
     private filters: ExceptionFilterMetadata[] = [];
 
-    public next(exception: Error | HttpException | any, response) {
+    public next(exception: Error | HttpException | HttpError | any, response) {
         if (this.invokeCustomFilters(exception, response)) return;
 
-        if (!(exception instanceof HttpException)) {
-            response.status(500).json({
-                statusCode: 500,
-                message: messages.UNKNOWN_EXCEPTION_MESSAGE,
+        if (exception instanceof HttpException) {
+            const res = exception.getResponse();
+            const message = isObject(res) ? res : ({
+                statusCode: exception.getStatus(),
+                message: res,
             });
-            if (isObject(exception) && (exception as Error).message) {
-                return ExceptionsHandler.logger.error((exception as Error).message, (exception as Error).stack);
-            }
-            return ExceptionsHandler.logger.error(exception);
+            return response.status(exception.getStatus()).json(message);
         }
-        const res = exception.getResponse();
-        const message = isObject(res) ? res : ({
-            statusCode: exception.getStatus(),
-            message: res,
+
+        if (exception instanceof HttpError) {
+            const message = {
+                statusCode: exception.statusCode,
+                message: exception.message,
+            };
+            return response.status(exception.statusCode).json(message);
+        }
+
+        response.status(500).json({
+            statusCode: 500,
+            message: messages.UNKNOWN_EXCEPTION_MESSAGE,
         });
-        response.status(exception.getStatus()).json(message);
+        if (isObject(exception) && (exception as Error).message) {
+            return ExceptionsHandler.logger.error((exception as Error).message, (exception as Error).stack);
+        }
+        return ExceptionsHandler.logger.error(exception);
     }
 
     public setCustomFilters(filters: ExceptionFilterMetadata[]) {
