@@ -7,7 +7,7 @@ ISSUES MISSING IMPORTANT INFORMATION MAY BE CLOSED WITHOUT INVESTIGATION.
 ## I'm submitting a...
 <!-- Check one of the following options with "x" -->
 <pre><code>
-[ ] Regression (a behavior that used to work and stopped working in a new release)
+[ ] Regression <!--(a behavior that used to work and stopped working in a new release)-->
 [ ] Bug report  <!-- Please search GitHub for a similar issue or PR before submitting -->
 [ ] Feature request
 [ ] Documentation issue or request
