@@ -1,10 +1,5 @@
-import {
-  ArgumentMetadata,
-  HttpStatus,
-  Pipe,
-  PipeTransform
-} from '@nestjs/common';
-import {HttpException} from '@nestjs/core';
+import { HttpException } from '@nestjs/core';
+import { PipeTransform, Pipe, ArgumentMetadata, HttpStatus } from '@nestjs/common';
 
 @Pipe()
 export class ParseIntPipe implements PipeTransform<string> {

@@ -1,6 +1,5 @@
-import {InvalidModuleMessage} from '../messages';
-
-import {RuntimeException} from './runtime.exception';
+import { RuntimeException } from './runtime.exception';
+import { InvalidModuleMessage } from '../messages';
 
 export class InvalidModuleException extends RuntimeException {
   constructor(trace: any[]) {

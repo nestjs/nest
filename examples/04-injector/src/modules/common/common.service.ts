@@ -1,5 +1,5 @@
-import {Component} from '@nestjs/common';
-import {CoreService} from '../core/core.service';
+import { Component } from '@nestjs/common';
+import { CoreService } from '../core/core.service';
 
 @Component()
 export class CommonService {

@@ -1,1 +1,3 @@
-export interface Resolver { resolve(express); }
+export interface Resolver {
+  resolve(express);
+}

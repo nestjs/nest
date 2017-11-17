@@ -1,5 +1,5 @@
-import {Catch, ExceptionFilter} from '@nestjs/common';
-import {HttpException} from '@nestjs/core';
+import { ExceptionFilter, Catch } from '@nestjs/common';
+import { HttpException } from '@nestjs/core';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -7,8 +7,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
 
     response.status(status).json({
-      statusCode : status,
-      message : `It's a message from the exception filter`,
+      statusCode: status,
+      message: `It's a message from the exception filter`,
     });
   }
 }

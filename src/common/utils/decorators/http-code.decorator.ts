@@ -1,4 +1,4 @@
-import {HTTP_CODE_METADATA} from '../../constants';
+import { HTTP_CODE_METADATA } from '../../constants';
 
 /**
  * Defines the HTTP status code, which should be sent with response.
@@ -7,8 +7,8 @@ import {HTTP_CODE_METADATA} from '../../constants';
  * @param  {number} statusCode
  */
 export function HttpCode(statusCode: number): MethodDecorator {
-  return (target: object, key, descriptor) => {
-    Reflect.defineMetadata(HTTP_CODE_METADATA, statusCode, descriptor.value);
-    return descriptor;
-  };
+    return (target: object, key, descriptor) => {
+        Reflect.defineMetadata(HTTP_CODE_METADATA, statusCode, descriptor.value);
+        return descriptor;
+    };
 }

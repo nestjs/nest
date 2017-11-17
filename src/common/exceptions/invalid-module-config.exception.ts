@@ -1,5 +1,7 @@
-import {InvalidModuleConfigMessage} from './constants';
+import { InvalidModuleConfigMessage } from './constants';
 
 export class InvalidModuleConfigException extends Error {
-  constructor(property: string) { super(InvalidModuleConfigMessage(property)); }
+    constructor(property: string) {
+        super(InvalidModuleConfigMessage(property));
+    }
 }

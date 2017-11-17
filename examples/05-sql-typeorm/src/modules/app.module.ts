@@ -1,7 +1,7 @@
-import {Module} from '@nestjs/common';
-import {PhotoModule} from './photo/photo.module';
+import { Module } from '@nestjs/common';
+import { PhotoModule } from './photo/photo.module';
 
 @Module({
-  modules : [ PhotoModule ],
+  modules: [PhotoModule],
 })
 export class ApplicationModule {}

@@ -1,12 +1,16 @@
 export declare class Error {
-  public name: string;
-  public message: string;
-  public stack: string;
-  constructor(message?: string);
+    public name: string;
+    public message: string;
+    public stack: string;
+    constructor(message?: string);
 }
 
 export class RuntimeException extends Error {
-  constructor(private msg = ``) { super(msg); }
+    constructor(private msg = ``) {
+        super(msg);
+    }
 
-  public what() { return this.msg; }
+    public what() {
+        return this.msg;
+    }
 }

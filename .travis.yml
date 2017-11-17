@@ -1,19 +1,12 @@
 language: node_js
 node_js:
-      - '6'
-      - '8'
-      - 'node'
+      - "7"
 addons:
-      firefox: latest
-cache:
-      directories:
-            - node_modules
+     firefox: "latest"
 before_script:
-      - 'export DISPLAY=:99.0'
-      - sh -e /etc/init.d/xvfb start
-      - npm install -g gulp-cli
+     - export DISPLAY=:99.0
+     - sh -e /etc/init.d/xvfb start
 script:
-      - npm run build
-      - 'gulp format:enforce'
+      - npm build
       - npm test
 after_success: npm run coverage

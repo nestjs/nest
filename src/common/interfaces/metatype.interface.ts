@@ -1,1 +1,3 @@
-export interface Metatype<T> { new(...args: any[]): T; }
+export interface Metatype<T> {
+    new (...args: any[]): T;
+}

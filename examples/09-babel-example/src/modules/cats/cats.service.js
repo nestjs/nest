@@ -1,11 +1,17 @@
-import {Component} from '@nestjs/common';
-import {CatsModule} from './cats.module';
+import { Component } from '@nestjs/common';
+import { CatsModule } from './cats.module';
 
 @Component()
 export class CatsService {
-  constructor() { this.cats = []; }
+  constructor() {
+    this.cats = [];
+  }
 
-  create(cat) { this.cats.push(cat); }
+  create(cat) {
+    this.cats.push(cat);
+  }
 
-  findAll() { return this.cats; }
+  findAll() {
+    return this.cats;
+  }
 }

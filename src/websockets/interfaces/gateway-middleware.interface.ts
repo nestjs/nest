@@ -1,1 +1,3 @@
-export interface GatewayMiddleware { resolve(): (socket, next) => void; }
+export interface GatewayMiddleware {
+    resolve(): (socket, next) => void;
+}

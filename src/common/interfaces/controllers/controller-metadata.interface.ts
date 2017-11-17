@@ -1,1 +1,3 @@
-export interface ControllerMetadata { path?: string; }
+export interface ControllerMetadata {
+    path?: string;
+}

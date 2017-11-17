@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import {PARAMTYPES_METADATA} from '../../constants';
+import { PARAMTYPES_METADATA } from '../../constants';
 
 const flatten = arr => {
   const flat = [].concat(...arr);

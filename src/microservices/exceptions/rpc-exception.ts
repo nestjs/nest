@@ -1,5 +1,7 @@
 export class RpcException {
-  constructor(private readonly error: string|object) {}
+    constructor(private readonly error: string | object) {}
 
-  public getError(): string|object { return this.error; }
+    public getError(): string | object {
+        return this.error;
+    }
 }

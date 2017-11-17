@@ -1,8 +1,8 @@
 export const metadata = {
-  MODULES : 'modules',
-  COMPONENTS : 'components',
-  CONTROLLERS : 'controllers',
-  EXPORTS : 'exports',
+    MODULES: 'modules',
+    COMPONENTS: 'components',
+    CONTROLLERS: 'controllers',
+    EXPORTS: 'exports',
 };
 
 export const SHARED_MODULE_METADATA = '__sharedModule__';

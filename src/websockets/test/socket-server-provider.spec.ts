@@ -1,45 +1,45 @@
-import {ApplicationConfig} from '@nestjs/core/application-config';
-import {IoAdapter} from '@nestjs/websockets/adapters/io-adapter';
-import {expect} from 'chai';
 import * as sinon from 'sinon';
-
-import {SocketsContainer} from '../container';
-import {SocketServerProvider} from '../socket-server-provider';
+import { expect } from 'chai';
+import { SocketServerProvider } from '../socket-server-provider';
+import { SocketsContainer } from '../container';
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import { IoAdapter } from '@nestjs/websockets/adapters/io-adapter';
 
 describe('SocketServerProvider', () => {
-  let instance: SocketServerProvider;
-  let socketsContainer: SocketsContainer, mockContainer: sinon.SinonMock;
-
-  beforeEach(() => {
-    socketsContainer = new SocketsContainer();
-    mockContainer = sinon.mock(socketsContainer);
-    instance = new SocketServerProvider(socketsContainer,
-                                        new ApplicationConfig(new IoAdapter()));
-  });
-  describe('scanForSocketServer', () => {
-    let createSocketServerSpy: sinon.SinonSpy;
-    const namespace = 'test';
-    const port = 30;
+    let instance: SocketServerProvider;
+    let socketsContainer: SocketsContainer,
+        mockContainer: sinon.SinonMock;
 
     beforeEach(() => {
-      createSocketServerSpy = sinon.spy(instance, 'createSocketServer');
+        socketsContainer = new SocketsContainer();
+        mockContainer = sinon.mock(socketsContainer);
+        instance = new SocketServerProvider(socketsContainer, new ApplicationConfig(new IoAdapter()));
     });
-    afterEach(() => { mockContainer.restore(); });
-    it(`should returns stored server`, () => {
-      const server = {test : 'test'};
-      mockContainer.expects('getServer').returns(server);
+    describe('scanForSocketServer', () => {
+        let createSocketServerSpy: sinon.SinonSpy;
+        const namespace = 'test';
+        const port = 30;
 
-      const result = instance.scanForSocketServer(namespace, port);
+        beforeEach(() => {
+            createSocketServerSpy = sinon.spy(instance, 'createSocketServer');
+        });
+        afterEach(() => {
+            mockContainer.restore();
+        });
+        it(`should returns stored server`, () => {
+            const server = { test: 'test' };
+            mockContainer.expects('getServer').returns(server);
 
-      expect(createSocketServerSpy.called).to.be.false;
-      expect(result).to.eq(server);
+            const result = instance.scanForSocketServer(namespace, port);
+
+            expect(createSocketServerSpy.called).to.be.false;
+            expect(result).to.eq(server);
+        });
+        it(`should call "createSocketServer" when server is not stored already`, () => {
+            mockContainer.expects('getServer').returns(null);
+
+            instance.scanForSocketServer(namespace, port);
+            expect(createSocketServerSpy.called).to.be.true;
+        });
     });
-    it(`should call "createSocketServer" when server is not stored already`,
-       () => {
-         mockContainer.expects('getServer').returns(null);
-
-         instance.scanForSocketServer(namespace, port);
-         expect(createSocketServerSpy.called).to.be.true;
-       });
-  });
 });

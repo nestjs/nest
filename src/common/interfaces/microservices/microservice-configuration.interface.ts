@@ -1,5 +1,5 @@
-import {Transport} from './../../enums/transport.enum';
-import {CustomTransportStrategy} from './custom-transport-strategy.interface';
+import { CustomTransportStrategy } from './custom-transport-strategy.interface';
+import { Transport } from './../../enums/transport.enum';
 
 export interface MicroserviceConfiguration {
   transport?: Transport;

@@ -1,1 +1,3 @@
-export interface OnModuleDestroy { onModuleDestroy(); }
+export interface OnModuleDestroy {
+    onModuleDestroy();
+}
