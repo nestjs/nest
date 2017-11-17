@@ -1,21 +1,19 @@
+import {CustomTransportStrategy, Server} from '@nestjs/microservices';
 import * as amqp from 'amqplib';
-import { Server, CustomTransportStrategy } from '@nestjs/microservices';
-import { Observable } from 'rxjs/Observable';
+import {Observable} from 'rxjs/Observable';
 
 export class RabbitMQServer extends Server implements CustomTransportStrategy {
-    private server: amqp.Connection = null;
-    private channel: amqp.Channel = null;
+  private server: amqp.Connection = null;
+  private channel: amqp.Channel = null;
 
-    constructor(
-      private readonly host: string,
-      private readonly queue: string) {
-        super();
-      }
+  constructor(private readonly host: string, private readonly queue: string) {
+    super();
+  }
 
   public async listen(callback: () => void) {
     await this.init();
     this.channel.consume(`${this.queue}_sub`, this.handleMessage.bind(this), {
-      noAck: true,
+      noAck : true,
     });
   }
 
@@ -25,17 +23,18 @@ export class RabbitMQServer extends Server implements CustomTransportStrategy {
   }
 
   private async handleMessage(message) {
-    const { content } = message;
+    const {content} = message;
     const messageObj = JSON.parse(content.toString());
 
     const handlers = this.getHandlers();
     const pattern = JSON.stringify(messageObj.pattern);
     if (!this.messageHandlers[pattern]) {
-        return;
+      return;
     }
 
     const handler = this.messageHandlers[pattern];
-    const response$ = this.transformToObservable(await handler(messageObj.data)) as Observable<any>;
+    const response$ = this.transformToObservable(
+                          await handler(messageObj.data)) as Observable<any>;
     response$ && this.send(response$, (data) => this.sendMessage(data));
   }
 
@@ -47,7 +46,7 @@ export class RabbitMQServer extends Server implements CustomTransportStrategy {
   private async init() {
     this.server = await amqp.connect(this.host);
     this.channel = await this.server.createChannel();
-    this.channel.assertQueue(`${this.queue}_sub`, { durable: false });
-    this.channel.assertQueue(`${this.queue}_pub`, { durable: false });
+    this.channel.assertQueue(`${this.queue}_sub`, {durable : false});
+    this.channel.assertQueue(`${this.queue}_pub`, {durable : false});
   }
 }

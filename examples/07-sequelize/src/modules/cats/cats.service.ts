@@ -1,13 +1,14 @@
 
-import { Component, Inject } from '@nestjs/common';
-import { CreateCatDto } from './dto/create-cat.dto';
-import { Model } from 'sequelize-typescript';
-import { Cat } from './cat.entity';
+import {Component, Inject} from '@nestjs/common';
+import {Model} from 'sequelize-typescript';
+
+import {Cat} from './cat.entity';
+import {CreateCatDto} from './dto/create-cat.dto';
 
 @Component()
 export class CatsService {
-  constructor(
-    @Inject('CatsRepository') private readonly catsRepository: typeof Model) {}
+  constructor(@Inject('CatsRepository') private readonly catsRepository:
+                  typeof Model) {}
 
   async create(createCatDto: CreateCatDto): Promise<Cat> {
     const cat = new Cat();

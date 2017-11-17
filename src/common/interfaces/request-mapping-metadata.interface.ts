@@ -1,6 +1,6 @@
-import { RequestMethod } from '../enums/request-method.enum';
+import {RequestMethod} from '../enums/request-method.enum';
 
 export interface RequestMappingMetadata {
-    path?: string;
-    method?: RequestMethod;
+  path?: string;
+  method?: RequestMethod;
 }

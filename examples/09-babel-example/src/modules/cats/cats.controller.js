@@ -1,35 +1,27 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
   Bind,
+  Body,
+  Controller,
   Dependencies,
-  ReflectMetadata,
+  Get,
   Param,
+  Post,
+  ReflectMetadata,
 } from '@nestjs/common';
-import { CatsService } from './cats.service';
 
-@Controller('cats')
-@Dependencies(CatsService)
+import {CatsService} from './cats.service';
+
+@Controller('cats') @Dependencies(CatsService)
 export class CatsController {
-  constructor(catsService) {
-    this.catsService = catsService;
-  }
+  constructor(catsService) { this.catsService = catsService; }
 
-  @Post()
-  @Bind(Body())
-  async create(createCatDto) {
-    this.catsService.create(createCatDto);
-  }
+  @Post() @Bind(Body())
+  async create(createCatDto) { this.catsService.create(createCatDto); }
 
   @Get()
-  async findAll() {
-    return this.catsService.findAll();
-  }
+  async findAll() { return this.catsService.findAll(); }
 
-  @Get(':id')
-  @Bind(Param('id'))
+  @Get(':id') @Bind(Param('id'))
   findOne(id) {
     // logic
   }

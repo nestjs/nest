@@ -1,3 +1,1 @@
-export interface PatternMetadata {
-    [prop: string]: any;
-}
+export interface PatternMetadata { [prop: string]: any; }

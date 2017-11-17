@@ -1,8 +1,7 @@
-import { RuntimeException } from './runtime.exception';
-import { UnknownExportMessage } from '../messages';
+import {UnknownExportMessage} from '../messages';
+
+import {RuntimeException} from './runtime.exception';
 
 export class UnknownExportException extends RuntimeException {
-    constructor(name: string) {
-        super(UnknownExportMessage(name));
-    }
+  constructor(name: string) { super(UnknownExportMessage(name)); }
 }

@@ -5,9 +5,10 @@
  * MIT Licensed
  */
 
-export { HttpException } from './exceptions/http-exception';
-export { MiddlewareBuilder } from './middlewares/builder';
-export { ModuleRef } from './injector/module-ref';
+export {HttpException} from './exceptions/http-exception';
+export {ModuleRef} from './injector/module-ref';
+export {MiddlewareBuilder} from './middlewares/builder';
+
 export * from './services/reflector.service';
 export * from './nest-factory';
 export * from './nest-application';

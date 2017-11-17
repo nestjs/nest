@@ -1,32 +1,31 @@
+import {expect} from 'chai';
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { ClientsContainer } from '../container';
+
+import {ClientsContainer} from '../container';
 
 describe('ClientsContainer', () => {
-    let instance: ClientsContainer;
-    beforeEach(() => {
-        instance = new ClientsContainer();
+  let instance: ClientsContainer;
+  beforeEach(() => { instance = new ClientsContainer(); });
+  describe('getAllClients', () => {
+    it('should returns array of clients', () => {
+      const clients = [ 1, 2, 3 ];
+      (instance as any).clients = clients;
+      expect(instance.getAllClients()).to.be.eql(clients);
     });
-    describe('getAllClients', () => {
-        it('should returns array of clients', () => {
-            const clients = [ 1, 2, 3 ];
-            (instance as any).clients = clients;
-            expect(instance.getAllClients()).to.be.eql(clients);
-        });
+  });
+  describe('addClient', () => {
+    it('should push client into clients array', () => {
+      const client = 'test';
+      instance.addClient(client as any);
+      expect(instance.getAllClients()).to.be.deep.equal([ client ]);
     });
-    describe('addClient', () => {
-        it('should push client into clients array', () => {
-            const client = 'test';
-            instance.addClient(client as any);
-            expect(instance.getAllClients()).to.be.deep.equal([client]);
-        });
+  });
+  describe('clear', () => {
+    it('should remove all clients', () => {
+      const clients = [ 1, 2, 3 ];
+      (instance as any).clients = clients;
+      instance.clear();
+      expect(instance.getAllClients()).to.be.deep.equal([]);
     });
-    describe('clear', () => {
-        it('should remove all clients', () => {
-            const clients = [ 1, 2, 3 ];
-            (instance as any).clients = clients;
-            instance.clear();
-            expect(instance.getAllClients()).to.be.deep.equal([]);
-        });
-    });
+  });
 });

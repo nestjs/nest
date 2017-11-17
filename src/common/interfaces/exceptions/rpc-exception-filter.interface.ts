@@ -1,5 +1,3 @@
-import { Observable } from 'rxjs/Observable';
+import {Observable} from 'rxjs/Observable';
 
-export interface RpcExceptionFilter {
-    catch(exception): Observable<any>;
-}
+export interface RpcExceptionFilter { catch(exception): Observable<any>; }

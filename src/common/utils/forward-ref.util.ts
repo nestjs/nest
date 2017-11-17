@@ -1,5 +1,3 @@
-import { isFunction } from './shared.utils';
+import {isFunction} from './shared.utils';
 
-export function forwardRef(fn: () => any) {
-  return { forwardRef: fn };
-}
+export function forwardRef(fn: () => any) { return {forwardRef : fn}; }
