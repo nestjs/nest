@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "4.3.0",
+  "version": "4.3.3",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
@@ -88,6 +88,7 @@
       "src/websockets/adapters/*.ts",
       "src/core/nest-application.ts",
       "src/core/nest-factory.ts",
+      "src/common/exceptions/*.ts",
       "src/common/services/logger.service.ts",
       "src/core/errors/exceptions",
       "src/microservices/exceptions/",

@@ -29,5 +29,6 @@ export {
     WsExceptionFilter,
     NestInterceptor,
 } from './interfaces';
-export * from './pipes';
 export * from './services/logger.service';
+export * from './pipes';
+export * from './exceptions';
