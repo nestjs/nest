@@ -128,7 +128,7 @@ describe('RouterExecutionContext', () => {
                 },
                 [`custom${CUSTOM_ROUTE_AGRS_METADATA}:2`]: {
                     index: 2,
-                    reflector: (() => {}).toString(),
+                    reflector: () => {},
                     data: undefined,
                 },
             };
