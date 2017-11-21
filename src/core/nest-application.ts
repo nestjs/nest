@@ -13,7 +13,6 @@ import { INestApplication, INestMicroservice, OnModuleInit } from '@nestjs/commo
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil, isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
-import { ICustomParamReflector } from '@nestjs/common/interfaces/custom-route-param-reflector.interface';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { ApplicationConfig } from './application-config';
 import { messages } from './constants';
@@ -156,10 +155,6 @@ export class NestApplication implements INestApplication {
 
     public useGlobalGuards(...guards: CanActivate[]) {
         this.config.useGlobalGuards(...guards);
-    }
-
-    public useCustomParamDecorators(...decorators: ICustomParamReflector[]) {
-        this.config.useCustomParamDecorators(...decorators);
     }
 
     private async setupMiddlewares(instance) {

@@ -13,7 +13,6 @@ import { RouteMappedMessage } from '../helpers/messages';
 import { RouterExecutionContext } from './router-execution-context';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
 import { RouteParamsFactory } from './route-params-factory';
-import { RouteCustomParamsFactory } from './route-custom-params-factory';
 import { RouterExplorer } from './interfaces/explorer.inteface';
 import { MetadataScanner } from '../metadata-scanner';
 import { ApplicationConfig } from './../application-config';
@@ -40,7 +39,6 @@ export class ExpressRouterExplorer implements RouterExplorer {
 
         this.executionContextCreator = new RouterExecutionContext(
             new RouteParamsFactory(),
-            new RouteCustomParamsFactory(config),
             new PipesContextCreator(config),
             new PipesConsumer(),
             new GuardsContextCreator(container, config),
