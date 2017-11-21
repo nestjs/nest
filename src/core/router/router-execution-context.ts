@@ -1,11 +1,10 @@
 import 'reflect-metadata';
 import { ROUTE_ARGS_METADATA, PARAMTYPES_METADATA, HTTP_CODE_METADATA, CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isUndefined, isFunction } from '@nestjs/common/utils/shared.utils';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { Controller, Transform } from '@nestjs/common/interfaces';
 import { RouteParamsMetadata } from '@nestjs/common/utils';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
-import { IRouteCustomParamsFactory } from './interfaces/route-custom-params-factory.interface';
 import { PipesContextCreator } from './../pipes/pipes-context-creator';
 import { PipesConsumer } from './../pipes/pipes-consumer';
 import { ParamData, PipeTransform, HttpStatus, RequestMethod } from '@nestjs/common';
@@ -29,7 +28,6 @@ export class RouterExecutionContext {
     private readonly responseController = new RouterResponseController();
     constructor(
         private readonly paramsFactory: IRouteParamsFactory,
-        private readonly customParamsFactory: IRouteCustomParamsFactory,
         private readonly pipesContextCreator: PipesContextCreator,
         private readonly pipesConsumer: PipesConsumer,
         private readonly guardsContextCreator: GuardsContextCreator,
@@ -112,12 +110,17 @@ export class RouterExecutionContext {
             let type, extractValue;
 
             if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {
+                const { reflector } = metadata[key];
                 type = this.mapCustomParamType(key);
-                extractValue = (req, res, next) => this.customParamsFactory.exchangeKeyForValue(type, data, { req, res, next });
-            } else {
-                type = this.mapParamType(key);
-                extractValue = (req, res, next) => this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next });
+                extractValue = (req, res, next) => !isUndefined(reflector) && isFunction(reflector)
+                    ? reflector(data, req, res, next)
+                    : () => {};
+
+                return { index, extractValue, type, data, pipes };
             }
+
+            type = this.mapParamType(key);
+            extractValue = (req, res, next) => this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next });
 
             return { index, extractValue, type, data, pipes };
         });

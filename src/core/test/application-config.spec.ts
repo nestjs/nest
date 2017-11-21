@@ -58,12 +58,4 @@ describe('ApplicationConfig', () => {
       expect(appConfig.getGlobalInterceptors()).to.be.eql(interceptors);
     });
   });
-  describe('Custom Param Decorators', () => {
-    it('should set and get custom param decorators', () => {
-      const decorators = ['test', 'test2'];
-      appConfig.useCustomParamDecorators(...decorators as any);
-
-      expect(appConfig.getCustomParamDecorators()).to.be.eql(decorators);
-    });
-  });
 });

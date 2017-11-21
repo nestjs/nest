@@ -1,14 +1,12 @@
 import * as optional from 'optional';
 import { PipeTransform, WebSocketAdapter, ExceptionFilter, NestInterceptor, CanActivate } from '@nestjs/common';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
-import { ICustomParamReflector } from '@nestjs/common/interfaces/custom-route-param-reflector.interface';
 
 export class ApplicationConfig implements ConfigurationProvider {
     private globalPipes: PipeTransform<any>[] = [];
     private globalFilters: ExceptionFilter[] = [];
     private globalInterceptors: NestInterceptor[] = [];
     private globalGuards: CanActivate[] = [];
-    private customParamDecorators: ICustomParamReflector[] = [];
     private globalPrefix = '';
 
     constructor(private ioAdapter: WebSocketAdapter | null = null) {}
@@ -59,13 +57,5 @@ export class ApplicationConfig implements ConfigurationProvider {
 
     public useGlobalGuards(...guards: CanActivate[]) {
         this.globalGuards = guards;
-    }
-
-    public getCustomParamDecorators() {
-        return this.customParamDecorators;
-    }
-
-    public useCustomParamDecorators(...decorators: ICustomParamReflector[]) {
-        this.customParamDecorators = decorators;
     }
 }
