@@ -1,4 +1,5 @@
 ## 4.3.0
+- **common**: `ValidationPipe` is now available out-of-the-box
 - **core**: `json` and `urlencoded` (`body-parser`) middlewares are applied by default now, bugfix #252
 - **core** more informative error message (injector) #223
 example: `[ExceptionHandler] Nest can't resolve dependencies of the UsersService (+, +, ?, +, +, +). Please verify whether [2] argument is available in the current context.`
