@@ -113,7 +113,7 @@ export class RouterExecutionContext {
                 const { reflector } = metadata[key];
                 type = this.mapCustomParamType(key);
                 extractValue = (req, res, next) => !isUndefined(reflector) && isFunction(reflector)
-                    ? reflector(data, req, res, next)
+                    ? reflector(data, req)
                     : () => {};
 
                 return { index, extractValue, type, data, pipes };
