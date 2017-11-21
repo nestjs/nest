@@ -21,71 +21,84 @@ import { RouterExceptionFilters } from './../router/router-exception-filters';
 
 export class MiddlewaresModule {
     private static readonly routesMapper = new RoutesMapper();
-    private static readonly container = new MiddlewaresContainer();
     private static readonly routerProxy = new RouterProxy();
     private static readonly routerMethodFactory = new RouterMethodFactory();
     private static routerExceptionFilter: RouterExceptionFilters;
     private static resolver: MiddlewaresResolver;
 
-    public static async setup(container: NestContainer, config: ApplicationConfig) {
+    public static async setup(
+        middlewaresContainer: MiddlewaresContainer,
+        container: NestContainer,
+        config: ApplicationConfig,
+    ) {
         this.routerExceptionFilter = new RouterExceptionFilters(config);
-        this.resolver = new MiddlewaresResolver(this.container);
+        this.resolver = new MiddlewaresResolver(middlewaresContainer);
 
         const modules = container.getModules();
-        await this.resolveMiddlewares(modules);
+        await this.resolveMiddlewares(middlewaresContainer, modules);
     }
 
-    public static getContainer(): MiddlewaresContainer {
-        return this.container;
-    }
-
-    public static async resolveMiddlewares(modules: Map<string, Module>) {
+    public static async resolveMiddlewares(
+        middlewaresContainer: MiddlewaresContainer,
+        modules: Map<string, Module>,
+    ) {
         await Promise.all([...modules.entries()].map(async ([name, module]) => {
             const instance = module.instance;
 
-            this.loadConfiguration(instance, name);
+            this.loadConfiguration(middlewaresContainer, instance, name);
             await this.resolver.resolveInstances(module, name);
         }));
     }
 
-    public static loadConfiguration(instance: NestModule, module: string) {
+    public static loadConfiguration(
+        middlewaresContainer: MiddlewaresContainer,
+        instance: NestModule,
+        module: string,
+    ) {
         if (!instance.configure) return;
 
         const middlewaresBuilder = new MiddlewareBuilder(this.routesMapper);
         instance.configure(middlewaresBuilder);
+
         if (!(middlewaresBuilder instanceof MiddlewareBuilder)) return;
 
         const config = middlewaresBuilder.build();
-        this.container.addConfig(config, module);
+        middlewaresContainer.addConfig(config, module);
     }
 
-    public static async setupMiddlewares(app) {
-        const configs = this.container.getConfigs();
+    public static async setupMiddlewares(middlewaresContainer: MiddlewaresContainer, app) {
+        const configs = middlewaresContainer.getConfigs();
         await Promise.all([...configs.entries()].map(async ([module, moduleConfigs]) => {
             await Promise.all([...moduleConfigs].map(async (config: MiddlewareConfiguration) => {
-                await this.setupMiddlewareConfig(config, module, app);
+                await this.setupMiddlewareConfig(middlewaresContainer, config, module, app);
             }));
         }));
     }
 
-    public static async setupMiddlewareConfig(config: MiddlewareConfiguration, module: string, app) {
+    public static async setupMiddlewareConfig(
+        middlewaresContainer: MiddlewaresContainer, 
+        config: MiddlewareConfiguration, 
+        module: string,
+        app,
+    ) {
         const { forRoutes } = config;
         await Promise.all(forRoutes.map(async (route: ControllerMetadata & { method: RequestMethod }) => {
-            await this.setupRouteMiddleware(route, config, module, app);
+            await this.setupRouteMiddleware(middlewaresContainer, route, config, module, app);
         }));
     }
 
     public static async setupRouteMiddleware(
+        middlewaresContainer: MiddlewaresContainer,
         route: ControllerMetadata & { method: RequestMethod },
         config: MiddlewareConfiguration,
         module: string,
-        app) {
-
+        app,
+    ) {
         const { path, method } = route;
 
         const middlewares = [].concat(config.middlewares);
         await Promise.all(middlewares.map(async (metatype: Metatype<NestMiddleware>) => {
-            const collection = this.container.getMiddlewares(module);
+            const collection = middlewaresContainer.getMiddlewares(module);
             const middleware = collection.get(metatype.name);
             if (isUndefined(middleware)) {
                 throw new RuntimeException();

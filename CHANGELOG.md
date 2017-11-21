@@ -1,3 +1,11 @@
+## 4.3.0
+- **core**: `json` and `urlencoded` (`body-parser`) middlewares are applied by default now, bugfix #252
+- **core** more informative error message (injector) #223
+example: `[ExceptionHandler] Nest can't resolve dependencies of the UsersService (+, +, ?, +, +, +). Please verify whether [2] argument is available in the current context.`
+- **core**: bugfix #240 - middlewares container state
+- **core**: bugifx #257 - `@Next()` issue
+- **testing**: testing module is now independent from `@nestjs/microservices`
+
 ## 4.2.2
 - **websockets**: bugfix #242
 

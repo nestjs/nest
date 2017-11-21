@@ -1,5 +1,6 @@
 import * as http from 'http';
 import * as optional from 'optional';
+import * as bodyParser from 'body-parser';
 import iterate from 'iterare';
 import {
     CanActivate,
@@ -22,6 +23,7 @@ import { MiddlewaresModule } from './middlewares/middlewares-module';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
 import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
+import { MiddlewaresContainer } from './middlewares/container';
 
 const { SocketModule } = optional('@nestjs/websockets/socket-module') || {} as any;
 const { MicroservicesModule } = optional('@nestjs/microservices/microservices-module') || {} as any;
@@ -29,6 +31,7 @@ const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice')
 const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter') || {} as any;
 
 export class NestApplication implements INestApplication {
+    private readonly middlewaresContainer = new MiddlewaresContainer();
     private readonly logger = new Logger(NestApplication.name, true);
     private readonly httpServer: http.Server = null;
     private readonly routesResolver: Resolver = null;
@@ -40,6 +43,7 @@ export class NestApplication implements INestApplication {
         private readonly container: NestContainer,
         private readonly express,
     ) {
+        this.setupParserMiddlewares();
         this.httpServer = http.createServer(express);
 
         const ioAdapter = IoAdapter ? new IoAdapter(this.httpServer) : null;
@@ -49,6 +53,11 @@ export class NestApplication implements INestApplication {
         );
     }
 
+    public setupParserMiddlewares() {
+      this.express.use(bodyParser.json());
+      this.express.use(bodyParser.urlencoded({ extended: true }));
+    }
+
     public async setupModules() {
         SocketModule && SocketModule.setup(this.container, this.config);
 
@@ -56,7 +65,11 @@ export class NestApplication implements INestApplication {
           MicroservicesModule.setup(this.container, this.config);
           MicroservicesModule.setupClients(this.container);
         }
-        await MiddlewaresModule.setup(this.container, this.config);
+        await MiddlewaresModule.setup(
+          this.middlewaresContainer,
+          this.container,
+          this.config,
+        );
     }
 
     public async init() {
@@ -158,7 +171,7 @@ export class NestApplication implements INestApplication {
     }
 
     private async setupMiddlewares(instance) {
-        await MiddlewaresModule.setupMiddlewares(instance);
+        await MiddlewaresModule.setupMiddlewares(this.middlewaresContainer, instance);
     }
 
     private listenToPromise(microservice: INestMicroservice) {

@@ -45,7 +45,7 @@ export class RouterExecutionContext {
         const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
         const httpCode = this.reflectHttpStatusCode(callback);
         const paramsMetadata = this.exchangeKeysForValues(keys, metadata);
-        const isResponseObj = paramsMetadata.some(({ type }) => type === RouteParamtypes.RESPONSE);
+        const isResponseHandled = paramsMetadata.some(({ type }) => type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT);
         const paramsOptions = this.mergeParamsMetatypes(paramsMetadata, paramtypes);
 
         return async (req, res, next) => {
@@ -68,7 +68,7 @@ export class RouterExecutionContext {
             const result = await this.interceptorsConsumer.intercept(
                 interceptors, req, instance, callback, handler,
             );
-            return !isResponseObj ?
+            return !isResponseHandled ?
                 this.responseController.apply(result, res, requestMethod, httpCode) :
                 undefined;
         };
