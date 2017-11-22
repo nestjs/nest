@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { createRouteParamDecorator } from '../../utils/decorators/create-route-param-metadata.decorator';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../constants';
 
-describe('ReflectRouteParamDecorator', () => {
+describe('createRouteParamDecorator', () => {
   let key;
   let reflector;
   let result;
