@@ -21,8 +21,7 @@ const randomString = () => Math.random().toString(36).substring(2, 15);
 
 /**
  * Create route params custom decorator
- * @param reflector 
- * @param key 
+ * @param factory 
  */
 export const createRouteParamDecorator = (factory: CustomParamFactory) => {
   const paramtype = randomString() + randomString();

@@ -1,9 +1,10 @@
-import { HttpException } from './http-exception';
+import { HttpException as DeprecatedHttpException } from './http-exception';
 import { messages } from '../constants';
 import { Logger } from '@nestjs/common';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
 import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
 import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
+import { HttpException } from '@nestjs/common';
 
 export class ExceptionsHandler {
     private static readonly logger = new Logger(ExceptionsHandler.name);
@@ -12,7 +13,7 @@ export class ExceptionsHandler {
     public next(exception: Error | HttpException | any, response) {
         if (this.invokeCustomFilters(exception, response)) return;
 
-        if (!(exception instanceof HttpException)) {
+        if (!(exception instanceof HttpException || exception instanceof DeprecatedHttpException)) {
             response.status(500).json({
                 statusCode: 500,
                 message: messages.UNKNOWN_EXCEPTION_MESSAGE,

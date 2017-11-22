@@ -1,3 +1,23 @@
+## 4.3.3
+- **common**: `ParseIntPipe` is now available out-of-the-box (`@nestjs/common`)
+- **common**: package contains a set of useful HTTP exceptions now, such as `ForbiddenException`, `UnauthorizedException`, `BadRequestException` etc
+- **core**: `HttpException` was moved to `@nestjs/common`. This one from `core` packages is now DEPRECATED and will be removed in the next MAJOR release
+
+## 4.3.0
+- **common**: `ValidationPipe` is now available out-of-the-box (`@nestjs/common`)
+- **core**: `json` and `urlencoded` (`body-parser`) middlewares are applied by default now, bugfix #252
+- **core** more informative error message (injector) #223
+example: `[ExceptionHandler] Nest can't resolve dependencies of the UsersService (+, +, ?, +, +, +). Please verify whether [2] argument is available in the current context.`
+- **core**: bugfix #240 - middlewares container state
+- **core**: bugifx #257 - `@Next()` issue
+- **testing**: testing module is now independent from `@nestjs/microservices`
+
+## 4.2.2
+- **websockets**: bugfix #242
+
+## 4.2.1
+- **core**: IoAdapter bugfix
+
 ## 4.2.0
 - **core**: log controller prefix #153
 - **websockets**: gateway listen the same port as the app #126

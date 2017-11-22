@@ -9,11 +9,11 @@
     "start:prod": "node dist/server.js"
   },
   "dependencies": {
-    "@nestjs/common": "^4.0.1",
-    "@nestjs/core": "^4.0.1",
-    "@nestjs/microservices": "^4.0.1",
-    "@nestjs/testing": "^4.0.1",
-    "@nestjs/websockets": "^4.0.1",
+    "@nestjs/common": "^4.3.0",
+    "@nestjs/core": "^4.3.0",
+    "@nestjs/microservices": "^4.3.0",
+    "@nestjs/testing": "^4.3.0",
+    "@nestjs/websockets": "^4.3.0",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.4.3",

@@ -4,7 +4,6 @@ import { isUndefined, isFunction, isNil, isEmpty } from '@nestjs/common/utils/sh
 import { Controller } from '@nestjs/common/interfaces';
 import { HttpStatus, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
-import { HttpException } from '../index';
 import 'rxjs/add/operator/toPromise';
 import 'rxjs/add/observable/defer';
 import 'rxjs/add/operator/take';

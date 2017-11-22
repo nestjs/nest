@@ -7,11 +7,10 @@ import { RouteParamsMetadata } from '@nestjs/common/utils';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 import { PipesContextCreator } from './../pipes/pipes-context-creator';
 import { PipesConsumer } from './../pipes/pipes-consumer';
-import { ParamData, PipeTransform, HttpStatus, RequestMethod } from '@nestjs/common';
+import { ParamData, PipeTransform, HttpStatus, RequestMethod, HttpException } from '@nestjs/common';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
-import { HttpException } from '../index';
 import { RouterResponseController } from './router-response-controller';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
@@ -45,7 +44,7 @@ export class RouterExecutionContext {
         const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
         const httpCode = this.reflectHttpStatusCode(callback);
         const paramsMetadata = this.exchangeKeysForValues(keys, metadata);
-        const isResponseObj = paramsMetadata.some(({ type }) => type === RouteParamtypes.RESPONSE);
+        const isResponseHandled = paramsMetadata.some(({ type }) => type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT);
         const paramsOptions = this.mergeParamsMetatypes(paramsMetadata, paramtypes);
 
         return async (req, res, next) => {
@@ -68,7 +67,7 @@ export class RouterExecutionContext {
             const result = await this.interceptorsConsumer.intercept(
                 interceptors, req, instance, callback, handler,
             );
-            return !isResponseObj ?
+            return !isResponseHandled ?
                 this.responseController.apply(result, res, requestMethod, httpCode) :
                 undefined;
         };
@@ -103,19 +102,16 @@ export class RouterExecutionContext {
         return keys.map(key => {
             const { index, data, pipes } = metadata[key];
             const type = this.mapParamType(key);
-            let extractValue;
 
             if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {
                 const { factory } = metadata[key];
+                const customExtractValue = !isUndefined(factory) && isFunction(factory)
+                  ? (req, res, next) => factory(data, req)
+                  : () => ({});
 
-                extractValue = !isUndefined(factory) && isFunction(factory)
-                    ? (req, res, next) => factory(data, req) : () => ({});
-
-                return { index, extractValue, type, data, pipes };
+                return { index, extractValue: customExtractValue, type, data, pipes };
             }
-
-            extractValue = (req, res, next) => this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next });
-
+            const extractValue = (req, res, next) => this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next });
             return { index, extractValue, type, data, pipes };
         });
     }

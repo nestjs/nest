@@ -30,3 +30,5 @@ export {
     NestInterceptor,
 } from './interfaces';
 export * from './services/logger.service';
+export * from './pipes';
+export * from './exceptions';
