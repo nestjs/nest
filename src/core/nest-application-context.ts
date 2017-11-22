@@ -6,11 +6,11 @@ import { Metatype } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { INestApplicationContext } from '@nestjs/common';
 
-export class NestApplicationContext {
+export class NestApplicationContext implements INestApplicationContext {
     private readonly moduleTokenFactory = new ModuleTokenFactory();
 
     constructor(
-        private readonly container: NestContainer,
+        protected readonly container: NestContainer,
         private readonly scope: NestModuleMetatype[],
         private readonly contextModule) {}
 
@@ -34,6 +34,7 @@ export class NestApplicationContext {
         const dependencies = new Map([
             ...this.contextModule.components,
             ...this.contextModule.routes,
+            ...this.contextModule.injectables,
         ]);
         const name = isFunction(metatypeOrToken) ? (metatypeOrToken as any).name : metatypeOrToken;
         const instanceWrapper = dependencies.get(name);
