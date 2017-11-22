@@ -8,8 +8,7 @@ before_script:
      - sh -e /etc/init.d/xvfb start
 install:
      - npm install
-     - npm build
+     - gulp build
 script:
-      - npm build
       - npm test
 after_success: npm run coverage
