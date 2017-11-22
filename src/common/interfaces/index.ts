@@ -20,4 +20,4 @@ export * from './exceptions/rpc-exception-filter.interface';
 export * from './exceptions/ws-exception-filter.interface';
 export * from './execution-context.interface';
 export * from './nest-interceptor.interface';
-export * from './custom-route-param-reflector.interface';
+export * from './custom-route-param-factory.interface';

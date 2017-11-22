@@ -74,14 +74,9 @@ export class RouterExecutionContext {
         };
     }
 
-    public mapParamType(key: string): RouteParamtypes {
+    public mapParamType(key: string): RouteParamtypes | number {
         const keyPair = key.split(':');
         return Number(keyPair[0]);
-    }
-
-    public mapCustomParamType(key: string) {
-        const keyPair = key.split(':');
-        return keyPair[0];
     }
 
     public reflectCallbackMetadata(instance: Controller, methodName: string): RouteParamsMetadata {
@@ -107,19 +102,18 @@ export class RouterExecutionContext {
     public exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata): ParamProperties[] {
         return keys.map(key => {
             const { index, data, pipes } = metadata[key];
-            let type, extractValue;
+            const type = this.mapParamType(key);
+            let extractValue;
 
             if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {
-                const { reflector } = metadata[key];
-                type = this.mapCustomParamType(key);
-                extractValue = (req, res, next) => !isUndefined(reflector) && isFunction(reflector)
-                    ? reflector(data, req)
-                    : () => {};
+                const { factory } = metadata[key];
+
+                extractValue = !isUndefined(factory) && isFunction(factory)
+                    ? (req, res, next) => factory(data, req) : () => ({});
 
                 return { index, extractValue, type, data, pipes };
             }
 
-            type = this.mapParamType(key);
             extractValue = (req, res, next) => this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next });
 
             return { index, extractValue, type, data, pipes };

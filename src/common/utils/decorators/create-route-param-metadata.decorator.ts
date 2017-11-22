@@ -1,18 +1,18 @@
 import { ROUTE_ARGS_METADATA, CUSTOM_ROUTE_AGRS_METADATA } from '../../constants';
-import { CustomParamReflector } from '../../interfaces/custom-route-param-reflector.interface';
+import { CustomParamFactory } from '../../interfaces/custom-route-param-factory.interface';
 import { RouteParamsMetadata, ParamData } from './route-params.decorator';
 
 const assignCustomMetadata = (
   args: RouteParamsMetadata,
   paramtype: number|string,
   index: number,
-  reflector: CustomParamReflector,
+  factory: CustomParamFactory,
   data?: ParamData,
 ) => ({
   ...args,
-  [`${paramtype}${CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
+  [`${index}:${paramtype}${CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
     index,
-    reflector,
+    factory,
     data,
   },
 });
@@ -24,16 +24,13 @@ const randomString = () => Math.random().toString(36).substring(2, 15);
  * @param reflector 
  * @param key 
  */
-export const ReflectRouteParamDecorator = (
-  reflector: CustomParamReflector,
-  key: number|string = null,
-) => {
-  const paramtype = key === null ? randomString() + randomString() : key;
+export const createRouteParamDecorator = (factory: CustomParamFactory) => {
+  const paramtype = randomString() + randomString();
   return (data?: ParamData): ParameterDecorator => (target, key, index) => {
     const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, target, key) || {};
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
-      assignCustomMetadata(args, paramtype, index, reflector, data),
+      assignCustomMetadata(args, paramtype, index, factory, data),
       target,
       key,
     );

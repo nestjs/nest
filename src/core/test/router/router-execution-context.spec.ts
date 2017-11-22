@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
-import { ReflectRouteParamDecorator } from '../../../common/utils/decorators/reflect-route-param-metadata.decorator';
+import { createRouteParamDecorator } from '../../../common/utils/decorators/create-route-param-metadata.decorator';
 import { RouterExecutionContext } from '../../router/router-execution-context';
 import { RouteParamsMetadata, Request, Body } from '../../../index';
 import { RouteParamsFactory } from '../../router/route-params-factory';
@@ -106,7 +106,7 @@ describe('RouterExecutionContext', () => {
         });
     });
     describe('reflectCallbackMetadata', () => {
-        const CustomDecorator = ReflectRouteParamDecorator(() => {}, 'custom');
+        const CustomDecorator = createRouteParamDecorator(() => {});
         class TestController {
             public callback(@Request() req, @Body() body, @CustomDecorator() custom) {}
         }
@@ -128,15 +128,20 @@ describe('RouterExecutionContext', () => {
                 },
                 [`custom${CUSTOM_ROUTE_AGRS_METADATA}:2`]: {
                     index: 2,
-                    reflector: () => {},
+                    factory: () => {},
                     data: undefined,
                 },
             };
             expect(metadata[`${RouteParamtypes.REQUEST}:0`]).to.deep.equal(expectedMetadata[`${RouteParamtypes.REQUEST}:0`]);
             expect(metadata[`${RouteParamtypes.REQUEST}:1`]).to.deep.equal(expectedMetadata[`${RouteParamtypes.REQUEST}:1`]);
-            expect(metadata[`custom${CUSTOM_ROUTE_AGRS_METADATA}:2`].index).to.be.eq(2);
-            expect(metadata[`custom${CUSTOM_ROUTE_AGRS_METADATA}:2`].data).to.be.eq(undefined);
-            expect(metadata[`custom${CUSTOM_ROUTE_AGRS_METADATA}:2`].reflector).to.be.a('function');
+
+            const keys = Object.keys(metadata);
+            const custom = keys.find((key) => key.includes(CUSTOM_ROUTE_AGRS_METADATA));
+
+            expect(metadata[custom]).to.be.an('object');
+            expect(metadata[custom].index).to.be.eq(2);
+            expect(metadata[custom].data).to.be.eq(undefined);
+            expect(metadata[custom].factory).to.be.a('function');
         });
     });
     describe('getArgumentsLength', () => {
