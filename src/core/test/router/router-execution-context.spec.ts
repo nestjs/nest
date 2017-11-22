@@ -1,6 +1,8 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
+import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
+import { createRouteParamDecorator } from '../../../common/utils/decorators/create-route-param-metadata.decorator';
 import { RouterExecutionContext } from '../../router/router-execution-context';
 import { RouteParamsMetadata, Request, Body } from '../../../index';
 import { RouteParamsFactory } from '../../router/route-params-factory';
@@ -104,12 +106,15 @@ describe('RouterExecutionContext', () => {
         });
     });
     describe('reflectCallbackMetadata', () => {
+        const CustomDecorator = createRouteParamDecorator(() => {});
         class TestController {
-            public callback(@Request() req, @Body() body) {}
+            public callback(@Request() req, @Body() body, @CustomDecorator() custom) {}
         }
         it('should returns ROUTE_ARGS_METADATA callback metadata', () => {
             const instance = new TestController();
             const metadata = contextCreator.reflectCallbackMetadata(instance, 'callback');
+            console.log(metadata);
+            
             const expectedMetadata = {
                 [`${RouteParamtypes.REQUEST}:0`]: {
                     index: 0,
@@ -121,8 +126,22 @@ describe('RouterExecutionContext', () => {
                     data: undefined,
                     pipes: [],
                 },
+                [`custom${CUSTOM_ROUTE_AGRS_METADATA}:2`]: {
+                    index: 2,
+                    factory: () => {},
+                    data: undefined,
+                },
             };
-            expect(metadata).to.deep.equal(expectedMetadata);
+            expect(metadata[`${RouteParamtypes.REQUEST}:0`]).to.deep.equal(expectedMetadata[`${RouteParamtypes.REQUEST}:0`]);
+            expect(metadata[`${RouteParamtypes.REQUEST}:1`]).to.deep.equal(expectedMetadata[`${RouteParamtypes.REQUEST}:1`]);
+
+            const keys = Object.keys(metadata);
+            const custom = keys.find((key) => key.includes(CUSTOM_ROUTE_AGRS_METADATA));
+
+            expect(metadata[custom]).to.be.an('object');
+            expect(metadata[custom].index).to.be.eq(2);
+            expect(metadata[custom].data).to.be.eq(undefined);
+            expect(metadata[custom].factory).to.be.a('function');
         });
     });
     describe('getArgumentsLength', () => {
@@ -153,17 +172,15 @@ describe('RouterExecutionContext', () => {
         it('should exchange arguments keys for appropriate values', () => {
             const metadata = {
                 [RouteParamtypes.REQUEST]: { index: 0, data: 'test', pipes: [] },
-                [RouteParamtypes.BODY]: {
-                    index: 2,
-                    data: 'test',
-                    pipes: [],
-                },
+                [RouteParamtypes.BODY]: { index: 2, data: 'test', pipes: [] },
+                [`key${CUSTOM_ROUTE_AGRS_METADATA}`]: { index: 3, data: 'custom', pipes: [] },
             };
             const keys = Object.keys(metadata);
             const values = contextCreator.exchangeKeysForValues(keys, metadata);
             const expectedValues = [
                 { index: 0, type: RouteParamtypes.REQUEST, data: 'test' },
                 { index: 2, type: RouteParamtypes.BODY, data: 'test' },
+                { index: 3, type: `key${CUSTOM_ROUTE_AGRS_METADATA}`, data: 'custom' },
             ];
             expect(values[0]).to.deep.include(expectedValues[0]);
             expect(values[1]).to.deep.include(expectedValues[1]);
