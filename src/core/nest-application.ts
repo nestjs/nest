@@ -54,8 +54,8 @@ export class NestApplication implements INestApplication {
     }
 
     public setupParserMiddlewares() {
-      this.express.use(bodyParser.json());
-      this.express.use(bodyParser.urlencoded({ extended: true }));
+        this.express.use(bodyParser.json());
+        this.express.use(bodyParser.urlencoded({ extended: true }));
     }
 
     public async setupModules() {
@@ -82,11 +82,11 @@ export class NestApplication implements INestApplication {
     }
 
     public async setupRouter() {
-      const router = ExpressAdapter.createRouter();
-      await this.setupMiddlewares(router);
+        const router = ExpressAdapter.createRouter();
+        await this.setupMiddlewares(router);
 
-      this.routesResolver.resolve(router);
-      this.express.use(validatePath(this.config.getGlobalPrefix()), router);
+        this.routesResolver.resolve(router);
+        this.express.use(validatePath(this.config.getGlobalPrefix()), router);
     }
 
     public connectMicroservice(config: MicroserviceConfiguration): INestMicroservice {
