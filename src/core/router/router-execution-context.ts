@@ -105,15 +105,18 @@ export class RouterExecutionContext {
 
             if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {
                 const { factory } = metadata[key];
-                const customExtractValue = !isUndefined(factory) && isFunction(factory)
-                  ? (req, res, next) => factory(data, req)
-                  : () => ({});
-
+                const customExtractValue = this.getCustomFactory(factory, data);
                 return { index, extractValue: customExtractValue, type, data, pipes };
             }
             const extractValue = (req, res, next) => this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next });
             return { index, extractValue, type, data, pipes };
         });
+    }
+
+    public getCustomFactory(factory: (...args) => void, data): (...args) => any {
+      return !isUndefined(factory) && isFunction(factory)
+        ? (req, res, next) => factory(data, req)
+        : () => null;
     }
 
     public mergeParamsMetatypes(

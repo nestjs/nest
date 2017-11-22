@@ -22,6 +22,7 @@ describe('RouterExecutionContext', () => {
     let bindSpy: sinon.SinonSpy;
     let factory: RouteParamsFactory;
     let consumer: PipesConsumer;
+    let guardsConsumer: GuardsConsumer;
 
     beforeEach(() => {
         callback = {
@@ -33,10 +34,11 @@ describe('RouterExecutionContext', () => {
 
         factory = new RouteParamsFactory();
         consumer = new PipesConsumer();
+        guardsConsumer = new GuardsConsumer();
 
         contextCreator = new RouterExecutionContext(
             factory, new PipesContextCreator(new ApplicationConfig()), consumer,
-            new GuardsContextCreator(new NestContainer()), new GuardsConsumer(),
+            new GuardsContextCreator(new NestContainer()), guardsConsumer,
             new InterceptorsContextCreator(new NestContainer()), new InterceptorsConsumer(),
         );
     });
@@ -100,6 +102,12 @@ describe('RouterExecutionContext', () => {
                             expect(applySpy.calledWith(instance, args)).to.be.true;
                             done();
                         });
+                    });
+                    it('should throw exception when "tryActivate" returns false', () => {
+                        sinon.stub(guardsConsumer, 'tryActivate', () => false);
+                        expect(
+                          proxyContext(request, response, next),
+                        ).to.eventually.throw();
                     });
                 });
             });
@@ -185,6 +193,30 @@ describe('RouterExecutionContext', () => {
             expect(values[0]).to.deep.include(expectedValues[0]);
             expect(values[1]).to.deep.include(expectedValues[1]);
         });
+    });
+    describe('getCustomFactory', () => {
+      describe('when factory is function', () => {
+        it('should return curried factory', () => {
+          const data = 3;
+          const result = 10;
+          const customFactory = (_, req) => result;
+
+          expect(contextCreator.getCustomFactory(customFactory, data)()).to.be.eql(result);
+        });
+      });
+      describe('when factory is undefined / is not a function', () => {
+        it('should return curried null identity', () => {
+          const result = 10;
+          const customFactory = undefined;
+          expect(contextCreator.getCustomFactory(customFactory, undefined)()).to.be.eql(null);
+        });
+      });
+    });
+    describe('mergeParamsMetatypes', () => {
+      it('should return "paramsProperties" when paramtypes array doesnt exists', () => {
+        const paramsProperties = ['1'];
+        expect(contextCreator.mergeParamsMetatypes(paramsProperties as any, null)).to.be.eql(paramsProperties);
+      });
     });
     describe('getParamValue', () => {
         let consumerApplySpy: sinon.SinonSpy;
