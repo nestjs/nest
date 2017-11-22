@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import { ROUTE_ARGS_METADATA, PARAMTYPES_METADATA, HTTP_CODE_METADATA } from '@nestjs/common/constants';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { ROUTE_ARGS_METADATA, PARAMTYPES_METADATA, HTTP_CODE_METADATA, CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
+import { isUndefined, isFunction } from '@nestjs/common/utils/shared.utils';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { Controller, Transform } from '@nestjs/common/interfaces';
 import { RouteParamsMetadata } from '@nestjs/common/utils';
@@ -73,7 +73,7 @@ export class RouterExecutionContext {
         };
     }
 
-    public mapParamType(key: string): RouteParamtypes {
+    public mapParamType(key: string): RouteParamtypes | number {
         const keyPair = key.split(':');
         return Number(keyPair[0]);
     }
@@ -100,9 +100,17 @@ export class RouterExecutionContext {
 
     public exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata): ParamProperties[] {
         return keys.map(key => {
-            const type = this.mapParamType(key);
             const { index, data, pipes } = metadata[key];
+            const type = this.mapParamType(key);
 
+            if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {
+                const { factory } = metadata[key];
+                const customExtractValue = !isUndefined(factory) && isFunction(factory)
+                  ? (req, res, next) => factory(data, req)
+                  : () => ({});
+
+                return { index, extractValue: customExtractValue, type, data, pipes };
+            }
             const extractValue = (req, res, next) => this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next });
             return { index, extractValue, type, data, pipes };
         });
