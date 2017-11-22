@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { ReflectRouteParamDecorator } from '../../utils/decorators/reflect-route-param-metadata.decorator';
+import { createRouteParamDecorator } from '../../utils/decorators/create-route-param-metadata.decorator';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../constants';
 
 describe('ReflectRouteParamDecorator', () => {
@@ -10,7 +10,7 @@ describe('ReflectRouteParamDecorator', () => {
   beforeEach(() => {
     key = 'key';
     reflector = (data, req, res, next) => true;
-    result = ReflectRouteParamDecorator(reflector, key);
+    result = createRouteParamDecorator(reflector);
   });
   it('should return a function as a first element', () => {
     expect(result).to.be.a('function');
