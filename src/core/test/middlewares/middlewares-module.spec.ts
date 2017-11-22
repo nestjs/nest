@@ -12,6 +12,7 @@ import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { RoutesMapper } from '../../middlewares/routes-mapper';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { ApplicationConfig } from '../../application-config';
+import { MiddlewaresContainer } from "../../middlewares/container";
 
 describe('MiddlewaresModule', () => {
     @Controller('test')
@@ -48,7 +49,7 @@ describe('MiddlewaresModule', () => {
                 configure: configureSpy,
             };
 
-            MiddlewaresModule.loadConfiguration(mockModule as any, 'Test' as any);
+            MiddlewaresModule.loadConfiguration(new MiddlewaresContainer(), mockModule as any, 'Test' as any);
 
             expect(configureSpy.calledOnce).to.be.true;
             expect(configureSpy.calledWith(new MiddlewareBuilder(new RoutesMapper()))).to.be.true;
@@ -68,7 +69,7 @@ describe('MiddlewaresModule', () => {
             const app = { use: useSpy };
 
             expect(
-                MiddlewaresModule.setupRouteMiddleware(route as any, configuration, 'Test' as any, app as any),
+                MiddlewaresModule.setupRouteMiddleware(new MiddlewaresContainer(), route as any, configuration, 'Test' as any, app as any),
             ).to.eventually.be.rejectedWith(RuntimeException);
         });
 
@@ -85,7 +86,7 @@ describe('MiddlewaresModule', () => {
             const useSpy = sinon.spy();
             const app = { use: useSpy };
 
-            const container = MiddlewaresModule.getContainer();
+            const container = new MiddlewaresContainer();
             const moduleKey = 'Test' as any;
             container.addConfig([ configuration as any ], moduleKey);
 
@@ -96,7 +97,7 @@ describe('MiddlewaresModule', () => {
             } as any);
 
             expect(
-                MiddlewaresModule.setupRouteMiddleware(route as any, configuration, moduleKey, app as any),
+                MiddlewaresModule.setupRouteMiddleware(container, route as any, configuration, moduleKey, app as any),
             ).to.be.rejectedWith(InvalidMiddlewareException);
         });
 
@@ -112,7 +113,7 @@ describe('MiddlewaresModule', () => {
                 get: useSpy,
             };
 
-            const container = MiddlewaresModule.getContainer();
+            const container = new MiddlewaresContainer();
             const moduleKey = 'Test' as any;
             container.addConfig([ configuration ], moduleKey);
 
@@ -122,7 +123,7 @@ describe('MiddlewaresModule', () => {
                 instance,
             });
 
-            MiddlewaresModule.setupRouteMiddleware(route, configuration, moduleKey, app as any);
+            MiddlewaresModule.setupRouteMiddleware(container, route, configuration, moduleKey, app as any);
             expect(useSpy.calledOnce).to.be.true;
         });
 

@@ -4,7 +4,6 @@ import { isUndefined, isFunction, isNil, isEmpty } from '@nestjs/common/utils/sh
 import { Controller } from '@nestjs/common/interfaces';
 import { CanActivate, HttpStatus, ExecutionContext } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
-import { HttpException } from '../index';
 import { FORBIDDEN_MESSAGE } from './constants';
 import 'rxjs/add/operator/toPromise';
 

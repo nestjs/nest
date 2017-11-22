@@ -1,3 +1,4 @@
+import * as optional from 'optional';
 import { NestContainer, InstanceWrapper } from '@nestjs/core/injector/container';
 import { DependenciesScanner } from '@nestjs/core/scanner';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
@@ -8,7 +9,10 @@ import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-met
 import { UnknownModuleException } from './errors/unknown-module.exception';
 import { NestApplication } from '@nestjs/core';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
-import { MicroserviceConfiguration, NestMicroservice } from '@nestjs/microservices';
+import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
+import { MicroservicesPackageNotFoundException } from '@nestjs/core/errors/exceptions/microservices-package-not-found.exception';
+
+const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {} as any;
 
 export class TestingModule {
     private readonly moduleTokenFactory = new ModuleTokenFactory();
@@ -23,6 +27,9 @@ export class TestingModule {
     }
 
     public createNestMicroservice(config: MicroserviceConfiguration): INestMicroservice {
+        if (!NestMicroservice) {
+            throw new MicroservicesPackageNotFoundException();
+        }
         return new NestMicroservice(this.container, config);
     }
 
