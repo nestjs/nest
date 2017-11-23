@@ -20,6 +20,11 @@ const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter') || {} a
 
 export class NestMicroservice implements INestMicroservice {
     private readonly logger = new Logger(NestMicroservice.name, true);
+    private readonly microservicesModule = new MicroservicesModule();
+    private readonly socketModule = SocketModule
+      ? new SocketModule()
+      : null;
+
     private readonly microserviceConfig: MicroserviceConfiguration;
     private readonly server: Server & CustomTransportStrategy;
     private readonly config: ApplicationConfig;
@@ -34,7 +39,7 @@ export class NestMicroservice implements INestMicroservice {
         const ioAdapter = IoAdapter ? new IoAdapter() : null;
         this.config = new ApplicationConfig(ioAdapter);
 
-        MicroservicesModule.setup(container, this.config);
+        this.microservicesModule.setup(container, this.config);
         this.microserviceConfig = {
             transport: Transport.TCP,
             ...config,
@@ -44,8 +49,8 @@ export class NestMicroservice implements INestMicroservice {
     }
 
     public setupModules() {
-        SocketModule && SocketModule.setup(this.container, this.config);
-        MicroservicesModule.setupClients(this.container);
+        this.socketModule && this.socketModule.setup(this.container, this.config);
+        this.microservicesModule.setupClients(this.container);
 
         this.setupListeners();
         this.setIsInitialized(true);
@@ -54,7 +59,7 @@ export class NestMicroservice implements INestMicroservice {
     }
 
     public setupListeners() {
-        MicroservicesModule.setupListeners(this.container, this.server);
+        this.microservicesModule.setupListeners(this.container, this.server);
     }
 
     public useWebSocketAdapter(adapter: WebSocketAdapter) {
@@ -102,7 +107,7 @@ export class NestMicroservice implements INestMicroservice {
     }
 
     private closeApplication() {
-        SocketModule && SocketModule.close();
+        this.socketModule && this.socketModule.close();
 
         this.callDestroyHook();
         this.setIsTerminated(true);

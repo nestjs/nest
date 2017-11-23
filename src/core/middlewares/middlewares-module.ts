@@ -20,13 +20,13 @@ import { ApplicationConfig } from './../application-config';
 import { RouterExceptionFilters } from './../router/router-exception-filters';
 
 export class MiddlewaresModule {
-    private static readonly routesMapper = new RoutesMapper();
-    private static readonly routerProxy = new RouterProxy();
-    private static readonly routerMethodFactory = new RouterMethodFactory();
-    private static routerExceptionFilter: RouterExceptionFilters;
-    private static resolver: MiddlewaresResolver;
+    private readonly routesMapper = new RoutesMapper();
+    private readonly routerProxy = new RouterProxy();
+    private readonly routerMethodFactory = new RouterMethodFactory();
+    private routerExceptionFilter: RouterExceptionFilters;
+    private resolver: MiddlewaresResolver;
 
-    public static async setup(
+    public async setup(
         middlewaresContainer: MiddlewaresContainer,
         container: NestContainer,
         config: ApplicationConfig,
@@ -38,7 +38,7 @@ export class MiddlewaresModule {
         await this.resolveMiddlewares(middlewaresContainer, modules);
     }
 
-    public static async resolveMiddlewares(
+    public async resolveMiddlewares(
         middlewaresContainer: MiddlewaresContainer,
         modules: Map<string, Module>,
     ) {
@@ -50,7 +50,7 @@ export class MiddlewaresModule {
         }));
     }
 
-    public static loadConfiguration(
+    public loadConfiguration(
         middlewaresContainer: MiddlewaresContainer,
         instance: NestModule,
         module: string,
@@ -66,7 +66,7 @@ export class MiddlewaresModule {
         middlewaresContainer.addConfig(config, module);
     }
 
-    public static async setupMiddlewares(middlewaresContainer: MiddlewaresContainer, app) {
+    public async setupMiddlewares(middlewaresContainer: MiddlewaresContainer, app) {
         const configs = middlewaresContainer.getConfigs();
         await Promise.all([...configs.entries()].map(async ([module, moduleConfigs]) => {
             await Promise.all([...moduleConfigs].map(async (config: MiddlewareConfiguration) => {
@@ -75,7 +75,7 @@ export class MiddlewaresModule {
         }));
     }
 
-    public static async setupMiddlewareConfig(
+    public async setupMiddlewareConfig(
         middlewaresContainer: MiddlewaresContainer, 
         config: MiddlewareConfiguration, 
         module: string,
@@ -87,7 +87,7 @@ export class MiddlewaresModule {
         }));
     }
 
-    public static async setupRouteMiddleware(
+    public async setupRouteMiddleware(
         middlewaresContainer: MiddlewaresContainer,
         route: ControllerMetadata & { method: RequestMethod },
         config: MiddlewareConfiguration,
@@ -109,7 +109,7 @@ export class MiddlewaresModule {
         }));
     }
 
-    private static async setupHandler(
+    private async setupHandler(
         instance: NestMiddleware,
         metatype: Metatype<NestMiddleware>,
         app: any,
@@ -134,7 +134,7 @@ export class MiddlewaresModule {
         setupWithProxy(middleware);
     }
 
-    private static setupHandlerWithProxy(
+    private setupHandlerWithProxy(
         exceptionsHandler: ExceptionsHandler,
         router: (...args) => void,
         middleware: (req, res, next) => void,

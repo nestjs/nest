@@ -8,7 +8,7 @@
     "start:live": "nodemon -e ts --watch src index.js",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "build": "gulp build",
+    "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist lib",
     "prepublish": "npm run build:lib",
     "publish": "./node_modules/.bin/lerna publish --skip-git"
