@@ -47,6 +47,7 @@
     <li><strong>Guards</strong> - attach additional logic in a declarative manner (e.g. role-based access control)</li>
     <li><strong>Interceptors</strong> - built on top of <a href="https://github.com/reactivex/rxjs" target="blank">RxJS</a></li>
     <li>Testing utilities (both <strong>e2e & unit</strong> tests)</li>
+  <li><strong>More</strong>!</li>
   </ul>
 
 ## Installation
