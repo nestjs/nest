@@ -1,0 +1,21 @@
+{
+  "name": "@nestjs/core",
+  "version": "4.3.6",
+  "description": "Nest - modern, fast, powerful node.js web framework (@core)",
+  "author": "Kamil Mysliwiec",
+  "license": "MIT",
+  "scripts": {
+    "compile": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "body-parser": "1.17.2",
+    "express": "4.16.2",
+    "iterare": "0.0.8",
+    "optional": "0.1.4"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^4.*",
+    "reflect-metadata": "0.1.10",
+    "rxjs": "^5.4.2"
+  }
+}
