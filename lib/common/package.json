@@ -1,12 +1,9 @@
 {
   "name": "@nestjs/common",
-  "version": "4.3.10",
+  "version": "4.4.0",
   "description": "Nest - modern, fast, powerful node.js web framework (@common)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
-  "scripts": {
-    "compile": "tsc -p tsconfig.json"
-  },
   "dependencies": {
     "class-transformer": "0.1.8",
     "class-validator": "0.7.3",

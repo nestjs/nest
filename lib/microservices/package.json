@@ -1,12 +1,9 @@
 {
   "name": "@nestjs/microservices",
-  "version": "4.3.10",
+  "version": "4.4.0",
   "description": "Nest - modern, fast, powerful node.js web framework (@microservices)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
-  "scripts": {
-    "compile": "tsc -p tsconfig.json"
-  },
   "dependencies": {
     "iterare": "0.0.8",
     "json-socket": "^0.2.1",
