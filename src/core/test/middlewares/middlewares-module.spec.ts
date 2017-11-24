@@ -15,6 +15,8 @@ import { ApplicationConfig } from '../../application-config';
 import { MiddlewaresContainer } from "../../middlewares/container";
 
 describe('MiddlewaresModule', () => {
+    let middlewaresModule: MiddlewaresModule;
+
     @Controller('test')
     class AnotherRoute { }
 
@@ -36,7 +38,8 @@ describe('MiddlewaresModule', () => {
     }
 
     beforeEach(() => {
-        (MiddlewaresModule as any).routerExceptionFilter = new RouterExceptionFilters(
+        middlewaresModule = new MiddlewaresModule();
+        (middlewaresModule as any).routerExceptionFilter = new RouterExceptionFilters(
             new ApplicationConfig(),
         );
     });
@@ -49,7 +52,7 @@ describe('MiddlewaresModule', () => {
                 configure: configureSpy,
             };
 
-            MiddlewaresModule.loadConfiguration(new MiddlewaresContainer(), mockModule as any, 'Test' as any);
+            middlewaresModule.loadConfiguration(new MiddlewaresContainer(), mockModule as any, 'Test' as any);
 
             expect(configureSpy.calledOnce).to.be.true;
             expect(configureSpy.calledWith(new MiddlewareBuilder(new RoutesMapper()))).to.be.true;
@@ -69,7 +72,7 @@ describe('MiddlewaresModule', () => {
             const app = { use: useSpy };
 
             expect(
-                MiddlewaresModule.setupRouteMiddleware(new MiddlewaresContainer(), route as any, configuration, 'Test' as any, app as any),
+              middlewaresModule.setupRouteMiddleware(new MiddlewaresContainer(), route as any, configuration, 'Test' as any, app as any),
             ).to.eventually.be.rejectedWith(RuntimeException);
         });
 
@@ -97,7 +100,7 @@ describe('MiddlewaresModule', () => {
             } as any);
 
             expect(
-                MiddlewaresModule.setupRouteMiddleware(container, route as any, configuration, moduleKey, app as any),
+              middlewaresModule.setupRouteMiddleware(container, route as any, configuration, moduleKey, app as any),
             ).to.be.rejectedWith(InvalidMiddlewareException);
         });
 
@@ -123,7 +126,7 @@ describe('MiddlewaresModule', () => {
                 instance,
             });
 
-            MiddlewaresModule.setupRouteMiddleware(container, route, configuration, moduleKey, app as any);
+            middlewaresModule.setupRouteMiddleware(container, route, configuration, moduleKey, app as any);
             expect(useSpy.calledOnce).to.be.true;
         });
 

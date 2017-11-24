@@ -1,3 +1,7 @@
+# 4.4.0 @soon
+- **core**: possibility to create the `NestApplicationContext` using `NestFactory.createApplicationContext()` (Nest application without HTTP server / microservice in the background)
+- **core**: create custom params decorators feature (`createRouteParamDecorator()`)
+
 ## 4.3.3
 - **common**: `ParseIntPipe` is now available out-of-the-box (`@nestjs/common`)
 - **common**: package contains a set of useful HTTP exceptions now, such as `ForbiddenException`, `UnauthorizedException`, `BadRequestException` etc

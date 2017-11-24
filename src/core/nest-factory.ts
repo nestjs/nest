@@ -10,9 +10,10 @@ import { NestApplication } from './nest-application';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { ExpressAdapter } from './adapters/express-adapter';
-import { INestApplication, INestMicroservice } from '@nestjs/common';
+import { INestApplication, INestMicroservice, INestApplicationContext } from '@nestjs/common';
 import { MetadataScanner } from './metadata-scanner';
 import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
+import { NestApplicationContext } from './nest-application-context';
 
 const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {} as any;
 
@@ -27,7 +28,7 @@ export class NestFactoryStatic {
     /**
      * Creates an instance of the NestApplication (returns Promise)
      *
-     * @param  {} module Entry ApplicationModule class
+     * @param  {} module Entry (root) application module class
      * @param  {} express Optional express() server instance
      * @returns an `Promise` of the INestApplication instance
      */
@@ -41,7 +42,7 @@ export class NestFactoryStatic {
     /**
      * Creates an instance of the NestMicroservice (returns Promise)
      *
-     * @param  {} module Entry ApplicationModule class
+     * @param  {} module Entry (root) application module class
      * @param  {MicroserviceConfiguration} config Optional microservice configuration
      * @returns an `Promise` of the INestMicroservice instance
      */
@@ -56,6 +57,22 @@ export class NestFactoryStatic {
         await this.initialize(module);
         return this.createNestInstance<INestMicroservice>(
             new NestMicroservice(this.container, config as any),
+        );
+    }
+
+    /**
+     * Creates an instance of the NestApplicationContext (returns Promise)
+     *
+     * @param  {} module Entry (root) application module class
+     * @returns an `Promise` of the INestApplicationContext instance
+     */
+    public async createApplicationContext(module): Promise<INestApplicationContext> {
+        await this.initialize(module);
+
+        const modules = this.container.getModules().values();
+        const root = modules.next().value;
+        return this.createNestInstance<INestApplicationContext>(
+            new NestApplicationContext(this.container, [], root),
         );
     }
 

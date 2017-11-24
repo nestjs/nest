@@ -31,8 +31,16 @@ const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice')
 const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter') || {} as any;
 
 export class NestApplication implements INestApplication {
-    private readonly middlewaresContainer = new MiddlewaresContainer();
     private readonly logger = new Logger(NestApplication.name, true);
+    private readonly middlewaresModule = new MiddlewaresModule();
+    private readonly middlewaresContainer = new MiddlewaresContainer();
+    private readonly microservicesModule = MicroservicesModule
+      ? new MicroservicesModule()
+      : null;
+    private readonly socketModule = SocketModule
+      ? new SocketModule()
+      : null;
+
     private readonly httpServer: http.Server = null;
     private readonly routesResolver: Resolver = null;
     private readonly config: ApplicationConfig;
@@ -54,18 +62,18 @@ export class NestApplication implements INestApplication {
     }
 
     public setupParserMiddlewares() {
-      this.express.use(bodyParser.json());
-      this.express.use(bodyParser.urlencoded({ extended: true }));
+        this.express.use(bodyParser.json());
+        this.express.use(bodyParser.urlencoded({ extended: true }));
     }
 
     public async setupModules() {
-        SocketModule && SocketModule.setup(this.container, this.config);
+        this.socketModule && this.socketModule.setup(this.container, this.config);
 
-        if (MicroservicesModule) {
-          MicroservicesModule.setup(this.container, this.config);
-          MicroservicesModule.setupClients(this.container);
+        if (this.microservicesModule) {
+          this.microservicesModule.setup(this.container, this.config);
+          this.microservicesModule.setupClients(this.container);
         }
-        await MiddlewaresModule.setup(
+        await this.middlewaresModule.setup(
           this.middlewaresContainer,
           this.container,
           this.config,
@@ -82,18 +90,17 @@ export class NestApplication implements INestApplication {
     }
 
     public async setupRouter() {
-      const router = ExpressAdapter.createRouter();
-      await this.setupMiddlewares(router);
+        const router = ExpressAdapter.createRouter();
+        await this.setupMiddlewares(router);
 
-      this.routesResolver.resolve(router);
-      this.express.use(validatePath(this.config.getGlobalPrefix()), router);
+        this.routesResolver.resolve(router);
+        this.express.use(validatePath(this.config.getGlobalPrefix()), router);
     }
 
     public connectMicroservice(config: MicroserviceConfiguration): INestMicroservice {
         if (!NestMicroservice) {
           throw new MicroservicesPackageNotFoundException();
         }
-
         const instance = new NestMicroservice(this.container as any, config as any);
         instance.setupListeners();
         instance.setIsInitialized(true);
@@ -137,7 +144,7 @@ export class NestApplication implements INestApplication {
     }
 
     public close() {
-        SocketModule && SocketModule.close();
+        this.socketModule && this.socketModule.close();
         this.httpServer && this.httpServer.close();
         this.microservices.forEach((microservice) => {
             microservice.setIsTerminated(true);
@@ -171,7 +178,7 @@ export class NestApplication implements INestApplication {
     }
 
     private async setupMiddlewares(instance) {
-        await MiddlewaresModule.setupMiddlewares(this.middlewaresContainer, instance);
+        await this.middlewaresModule.setupMiddlewares(this.middlewaresContainer, instance);
     }
 
     private listenToPromise(microservice: INestMicroservice) {

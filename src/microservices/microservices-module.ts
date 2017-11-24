@@ -16,10 +16,10 @@ import { InterceptorsContextCreator } from '@nestjs/core/interceptors/intercepto
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 
 export class MicroservicesModule {
-    private static readonly clientsContainer = new ClientsContainer();
-    private static listenersController: ListenersController;
+    private readonly clientsContainer = new ClientsContainer();
+    private listenersController: ListenersController;
 
-    public static setup(container, config) {
+    public setup(container, config) {
         const contextCreator = new RpcContextCreator(
             new RpcProxy(),
             new ExceptionFiltersContext(config),
@@ -31,12 +31,12 @@ export class MicroservicesModule {
             new InterceptorsConsumer(),
         );
         this.listenersController = new ListenersController(
-            MicroservicesModule.clientsContainer,
+            this.clientsContainer,
             contextCreator,
         );
     }
 
-    public static setupListeners(container, server: Server & CustomTransportStrategy) {
+    public setupListeners(container, server: Server & CustomTransportStrategy) {
         if (!this.listenersController) {
             throw new RuntimeException();
         }
@@ -44,7 +44,7 @@ export class MicroservicesModule {
         modules.forEach(({ routes }, module) => this.bindListeners(routes, server, module));
     }
 
-    public static setupClients(container) {
+    public setupClients(container) {
         if (!this.listenersController) {
             throw new RuntimeException();
         }
@@ -55,7 +55,7 @@ export class MicroservicesModule {
         });
     }
 
-    public static bindListeners(
+    public bindListeners(
         controllers: Map<string, InstanceWrapper<Controller>>,
         server: Server & CustomTransportStrategy,
         module: string) {
@@ -65,13 +65,13 @@ export class MicroservicesModule {
         });
     }
 
-    public static bindClients(controllers: Map<string, InstanceWrapper<Controller>>) {
+    public bindClients(controllers: Map<string, InstanceWrapper<Controller>>) {
         controllers.forEach(({ instance, isNotMetatype }) => {
             !isNotMetatype && this.listenersController.bindClientsToProperties(instance);
         });
     }
 
-    public static close() {
+    public close() {
         const clients = this.clientsContainer.getAllClients();
         clients.forEach((client) => client.close());
         this.clientsContainer.clear();
