@@ -25,8 +25,8 @@ describe('ParamsTokenFactory', () => {
                 });
             });
             describe('not available', () => {
-                it('should returns null', () => {
-                    expect(factory.exchangeEnumForString(-1)).to.be.eql(null);
+                it('should returns "custom"', () => {
+                    expect(factory.exchangeEnumForString(-1)).to.be.eql('custom');
                 });
             });
         });

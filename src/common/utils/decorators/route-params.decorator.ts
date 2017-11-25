@@ -17,7 +17,7 @@ const assignMetadata = (
   paramtype: RouteParamtypes,
   index: number,
   data?: ParamData,
-  ...pipes: PipeTransform<any>[]
+  ...pipes: PipeTransform<any>[],
 ) => ({
   ...args,
   [`${paramtype}:${index}`]: {
@@ -41,7 +41,7 @@ const createRouteParamDecorator = (paramtype: RouteParamtypes) => {
 
 const createPipesRouteParamDecorator = (paramtype: RouteParamtypes) => (
   data?,
-  ...pipes: PipeTransform<any>[]
+  ...pipes: PipeTransform<any>[],
 ): ParameterDecorator => (target, key, index) => {
   const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, target, key) || {};
   const hasParamData = isNil(data) || isString(data);
