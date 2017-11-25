@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { EventsModule } from './events/events.module';
+import {Module} from '@nestjs/common';
+import {EventsModule} from './events/events.module';
 
 @Module({
-    modules: [EventsModule],
+  modules : [ EventsModule ],
 })
 export class ApplicationModule {}

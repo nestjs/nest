@@ -12,7 +12,6 @@
             true,
             "single"
         ],
-        "indent": false,
         "ordered-imports": [
             false
         ],

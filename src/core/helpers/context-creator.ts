@@ -1,34 +1,38 @@
 import 'reflect-metadata';
+
+import {Controller} from '@nestjs/common/interfaces';
+import {isFunction, isUndefined} from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
-import { Controller } from '@nestjs/common/interfaces';
-import { isUndefined, isFunction } from '@nestjs/common/utils/shared.utils';
-import { ApplicationConfig } from './../application-config';
+
+import {ApplicationConfig} from './../application-config';
 
 export abstract class ContextCreator {
-    public abstract createConcreteContext<T extends any[], R extends any[]>(metadata: T): R;
-    public getGlobalMetadata?<T extends any[]>(): T;
+  public abstract createConcreteContext<T extends any[], R extends any[]>(
+      metadata: T): R;
+  public getGlobalMetadata?<T extends any[]>(): T;
 
-    public createContext<T extends any[], R extends any[]>(
-        instance: Controller,
-        callback: (...args) => any,
-        metadataKey: string): R {
+  public createContext<T extends any[], R extends any[]>(
+      instance: Controller, callback: (...args) => any,
+      metadataKey: string): R {
 
-        const globalMetadata = this.getGlobalMetadata && this.getGlobalMetadata<T>();
-        const classMetadata = this.reflectClassMetadata<T>(instance, metadataKey);
-        const methodMetadata = this.reflectMethodMetadata<T>(callback, metadataKey);
-        return [
-            ...this.createConcreteContext<T, R>(globalMetadata || [] as T),
-            ...this.createConcreteContext<T, R>(classMetadata),
-            ...this.createConcreteContext<T, R>(methodMetadata),
-        ] as R;
-    }
+    const globalMetadata =
+        this.getGlobalMetadata && this.getGlobalMetadata<T>();
+    const classMetadata = this.reflectClassMetadata<T>(instance, metadataKey);
+    const methodMetadata = this.reflectMethodMetadata<T>(callback, metadataKey);
+    return [
+      ...this.createConcreteContext<T, R>(globalMetadata || [] as T),
+      ...this.createConcreteContext<T, R>(classMetadata),
+      ...this.createConcreteContext<T, R>(methodMetadata),
+    ] as R;
+  }
 
-    public reflectClassMetadata<T>(instance: Controller, metadataKey: string): T {
-        const prototype = Object.getPrototypeOf(instance);
-        return Reflect.getMetadata(metadataKey, prototype.constructor);
-    }
+  public reflectClassMetadata<T>(instance: Controller, metadataKey: string): T {
+    const prototype = Object.getPrototypeOf(instance);
+    return Reflect.getMetadata(metadataKey, prototype.constructor);
+  }
 
-    public reflectMethodMetadata<T>(callback: (...args) => any, metadataKey: string): T {
-        return Reflect.getMetadata(metadataKey, callback);
-    }
+  public reflectMethodMetadata<T>(callback: (...args) => any,
+                                  metadataKey: string): T {
+    return Reflect.getMetadata(metadataKey, callback);
+  }
 }

@@ -1,5 +1,7 @@
-import { MiddlewaresConsumer } from '../middlewares/middlewares-consumer.interface';
+import {
+  MiddlewaresConsumer
+} from '../middlewares/middlewares-consumer.interface';
 
 export interface NestModule {
-    configure(consumer: MiddlewaresConsumer): MiddlewaresConsumer | void;
+  configure(consumer: MiddlewaresConsumer): MiddlewaresConsumer|void;
 }

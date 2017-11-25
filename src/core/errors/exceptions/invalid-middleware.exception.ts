@@ -1,8 +1,7 @@
-import { RuntimeException } from './runtime.exception';
-import { InvalidMiddlewareMessage } from '../messages';
+import {InvalidMiddlewareMessage} from '../messages';
+
+import {RuntimeException} from './runtime.exception';
 
 export class InvalidMiddlewareException extends RuntimeException {
-    constructor(name: string) {
-        super(InvalidMiddlewareMessage(name));
-    }
+  constructor(name: string) { super(InvalidMiddlewareMessage(name)); }
 }

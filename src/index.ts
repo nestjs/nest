@@ -6,5 +6,6 @@
  */
 
 export * from './common';
+export * from './core';
 export * from './core/nest-factory';
 export * from './core/nest-application';

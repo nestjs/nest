@@ -1,3 +1,1 @@
-export interface Closeable {
-    close(): void;
-}
+export interface Closeable { close(): void; }

@@ -1,5 +1,6 @@
 # dependencies
 node_modules/
+package-lock.json
 
 # IDE
 /.idea
@@ -24,3 +25,6 @@ npm-debug.log
 /test
 /coverage
 /.nyc_output
+
+# build
+/lib

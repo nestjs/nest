@@ -1,22 +1,26 @@
 import 'reflect-metadata';
-import { expect } from 'chai';
-import { Dependencies } from '../../utils/decorators/dependencies.decorator';
-import { PARAMTYPES_METADATA } from '../../constants';
+
+import {expect} from 'chai';
+
+import {PARAMTYPES_METADATA} from '../../constants';
+import {Dependencies} from '../../utils/decorators/dependencies.decorator';
 
 describe('@Dependencies', () => {
-    const dep = 'test', dep2 = 'test2';
-    const deps = [ dep, dep2 ];
+  const dep = 'test', dep2 = 'test2';
+  const deps = [ dep, dep2 ];
 
-    @Dependencies(deps) class Test {}
-    @Dependencies(dep, dep2) class Test2 {}
+  @Dependencies(deps)
+  class Test {}
+  @Dependencies(dep, dep2)
+  class Test2 {}
 
-    it('should enhance class with expected dependencies array', () => {
-        const metadata = Reflect.getMetadata(PARAMTYPES_METADATA, Test);
-        expect(metadata).to.be.eql(deps);
-    });
+  it('should enhance class with expected dependencies array', () => {
+    const metadata = Reflect.getMetadata(PARAMTYPES_METADATA, Test);
+    expect(metadata).to.be.eql(deps);
+  });
 
-    it('should makes passed array flatten', () => {
-        const metadata = Reflect.getMetadata(PARAMTYPES_METADATA, Test2);
-        expect(metadata).to.be.eql([dep, dep2]);
-    });
+  it('should makes passed array flatten', () => {
+    const metadata = Reflect.getMetadata(PARAMTYPES_METADATA, Test2);
+    expect(metadata).to.be.eql([ dep, dep2 ]);
+  });
 });

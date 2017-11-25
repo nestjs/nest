@@ -1,8 +1,7 @@
-import { RuntimeException } from './runtime.exception';
-import { UnknownDependenciesMessage } from '../messages';
+import {UnknownDependenciesMessage} from '../messages';
+
+import {RuntimeException} from './runtime.exception';
 
 export class UndefinedDependencyException extends RuntimeException {
-    constructor(type: string, index: number, length: number) {
-        super(UnknownDependenciesMessage(type, index, length));
-    }
+  constructor(type: string) { super(UnknownDependenciesMessage(type)); }
 }
