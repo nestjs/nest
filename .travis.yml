@@ -6,7 +6,9 @@ addons:
 before_script:
      - export DISPLAY=:99.0
      - sh -e /etc/init.d/xvfb start
+install:
+     - npm install
+     - gulp build
 script:
-      - npm build
       - npm test
 after_success: npm run coverage

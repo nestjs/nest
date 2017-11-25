@@ -1,0 +1,15 @@
+{
+  "name": "@nestjs/common",
+  "version": "4.4.1",
+  "description": "Nest - modern, fast, powerful node.js web framework (@common)",
+  "author": "Kamil Mysliwiec",
+  "license": "MIT",
+  "dependencies": {
+    "class-transformer": "0.1.8",
+    "class-validator": "0.7.3",
+    "cli-color": "1.1.0"
+  },
+  "peerDependencies": {
+    "reflect-metadata": "0.1.10"
+  }
+}

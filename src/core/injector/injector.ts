@@ -100,8 +100,14 @@ export class Injector {
     let isResolved = true;
     const args = isNil(inject) ? this.reflectConstructorParams(wrapper.metatype) : inject;
 
-    const instances = await Promise.all(args.map(async (param) => {
-      const paramWrapper = await this.resolveSingleParam<T>(wrapper, param, module, context);
+    const instances = await Promise.all(args.map(async (param, index) => {
+      const paramWrapper = await this.resolveSingleParam<T>(
+        wrapper,
+        param,
+        { index, length: args.length },
+        module,
+        context,
+      );
       if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
         isResolved = false;
       }
@@ -125,16 +131,18 @@ export class Injector {
   public async resolveSingleParam<T>(
     wrapper: InstanceWrapper<T>,
     param: Metatype<any> | string | symbol | any,
+    { index, length }: { index: number, length: number },
     module: Module,
-    context: Module[]) {
-
+    context: Module[],
+  ) {
     if (isUndefined(param)) {
-      throw new UndefinedDependencyException(wrapper.name);
+      throw new UndefinedDependencyException(wrapper.name, index, length);
     }
     const token = this.resolveParamToken(wrapper, param);
     return await this.resolveComponentInstance<T>(
       module,
       isFunction(token) ? (token as Metatype<any>).name : token,
+      { index, length },
       wrapper,
       context,
     );
@@ -151,10 +159,21 @@ export class Injector {
     return param.forwardRef();
   }
 
-  public async resolveComponentInstance<T>(module: Module, name: any, wrapper: InstanceWrapper<T>, context: Module[]) {
+  public async resolveComponentInstance<T>(
+    module: Module,
+    name: any,
+    { index, length }: { index: number, length: number },
+    wrapper: InstanceWrapper<T>,
+    context: Module[],
+  ) {
     const components = module.components;
-    const instanceWrapper = await this.scanForComponent(components, name, module, wrapper, context);
-
+    const instanceWrapper = await this.scanForComponent(
+      components,
+      module,
+      { name, index, length },
+      wrapper,
+      context,
+    );
     if (!instanceWrapper.isResolved && !instanceWrapper.forwardRef) {
       await this.loadInstanceOfComponent(instanceWrapper, module);
     }
@@ -164,36 +183,62 @@ export class Injector {
     return instanceWrapper;
   }
 
-  public async scanForComponent(components: Map<string, any>, name: any, module: Module, { metatype }, context: Module[] = []) {
-    const component = await this.scanForComponentInScopes(context, name, metatype);
+  public async scanForComponent(
+    components: Map<string, any>,
+    module: Module,
+    { name, index, length }: { name: any, index: number, length: number },
+    { metatype },
+    context: Module[] = [],
+  ) {
+    const component = await this.scanForComponentInScopes(context, { name, index, length }, metatype);
     if (component) {
       return component;
     }
-    const scanInExports = () => this.scanForComponentInExports(components, name, module, metatype, context);
+    const scanInExports = () => this.scanForComponentInExports(
+      components,
+      { name, index, length },
+      module,
+      metatype,
+      context,
+    );
     return components.has(name) ? components.get(name) : await scanInExports();
   }
 
-  public async scanForComponentInExports(components: Map<string, any>, name: any, module: Module, metatype, context: Module[] = []) {
+  public async scanForComponentInExports(
+    components: Map<string, any>,
+    { name, index, length }: { name: any, index: number, length: number },
+    module: Module,
+    metatype,
+    context: Module[] = [],
+  ) {
     const instanceWrapper = await this.scanForComponentInRelatedModules(module, name, context);
     if (isNil(instanceWrapper)) {
-      throw new UnknownDependenciesException(metatype.name);
+      throw new UnknownDependenciesException(metatype.name, index, length);
     }
     return instanceWrapper;
   }
 
-  public async scanForComponentInScopes(context: Module[], name: any, metatype) {
+  public async scanForComponentInScopes(
+    context: Module[],
+    { name, index, length }: { name: any, index: number, length: number },
+    metatype,
+  ) {
     context = context || [];
     for (const ctx of context) {
-      const component = await this.scanForComponentInScope(ctx, name, metatype);
+      const component = await this.scanForComponentInScope(ctx, { name, index, length }, metatype);
       if (component) return component;
     }
     return null;
   }
 
-  public async scanForComponentInScope(context: Module, name: any, metatype) {
+  public async scanForComponentInScope(
+    context: Module,
+    { name, index, length }: { name: any, index: number, length: number },
+    metatype,
+  ) {
     try {
       const component = await this.scanForComponent(
-        context.components, name, context, { metatype }, null,
+        context.components, context, { name, index, length }, { metatype }, null,
       );
       if (!component.isResolved && !component.forwardRef) {
         await this.loadInstanceOfComponent(component, context);

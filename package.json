@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "4.2.0",
+  "version": "4.4.0",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
@@ -8,10 +8,10 @@
     "start:live": "nodemon -e ts --watch src index.js",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "build": "gulp build",
+    "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist lib",
     "prepublish": "npm run build:lib",
-    "publish": "./node_modules/.bin/lerna publish --skip-git"
+    "publish": "./node_modules/.bin/lerna publish -m \"chore(release) publish %s\""
   },
   "engines": {
     "node": ">=6.11.0"
@@ -24,6 +24,8 @@
     "@nestjs/microservices": "^4.0.0",
     "@nestjs/testing": "^4.0.0",
     "@nestjs/websockets": "^4.0.0",
+    "class-transformer": "^0.1.8",
+    "class-validator": "^0.7.3",
     "cli-color": "^1.1.0",
     "engine.io-client": "^3.1.1",
     "express": "^4.16.2",
@@ -41,7 +43,7 @@
   "devDependencies": {
     "@types/chai": "^3.5.2",
     "@types/chai-as-promised": "0.0.31",
-    "@types/express": "^4.0.36",
+    "@types/express": "^4.0.39",
     "@types/mocha": "^2.2.38",
     "@types/node": "^7.0.5",
     "@types/redis": "^0.12.36",
@@ -86,8 +88,8 @@
       "src/**/*.spec.ts",
       "src/core/adapters/*.ts",
       "src/websockets/adapters/*.ts",
-      "src/core/nest-application.ts",
-      "src/core/nest-factory.ts",
+      "src/core/nest-*.ts",
+      "src/common/exceptions/*.ts",
       "src/common/services/logger.service.ts",
       "src/core/errors/exceptions",
       "src/microservices/exceptions/",

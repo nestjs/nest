@@ -28,5 +28,8 @@ export {
     RpcExceptionFilter,
     WsExceptionFilter,
     NestInterceptor,
+    INestApplicationContext,
 } from './interfaces';
 export * from './services/logger.service';
+export * from './pipes';
+export * from './exceptions';

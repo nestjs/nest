@@ -18,24 +18,23 @@ import { InterceptorsContextCreator } from '@nestjs/core/interceptors/intercepto
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 
 export class SocketModule {
-    private static socketsContainer = new SocketsContainer();
-    private static webSocketsController: WebSocketsController;
+    private socketsContainer = new SocketsContainer();
+    private webSocketsController: WebSocketsController;
 
-    public static setup(container, config) {
+    public setup(container, config) {
         this.webSocketsController = new WebSocketsController(
             new SocketServerProvider(this.socketsContainer, config), container, config,
             this.getContextCreator(container),
         );
-
         const modules = container.getModules();
         modules.forEach(({ components }, moduleName) => this.hookGatewaysIntoServers(components, moduleName));
     }
 
-    public static hookGatewaysIntoServers(components: Map<string, InstanceWrapper<Injectable>>, moduleName: string) {
+    public hookGatewaysIntoServers(components: Map<string, InstanceWrapper<Injectable>>, moduleName: string) {
         components.forEach((wrapper) => this.hookGatewayIntoServer(wrapper, moduleName));
     }
 
-    public static hookGatewayIntoServer(wrapper: InstanceWrapper<Injectable>, moduleName: string) {
+    public hookGatewayIntoServer(wrapper: InstanceWrapper<Injectable>, moduleName: string) {
         const { instance, metatype, isNotMetatype } = wrapper;
         if (isNotMetatype) {
           return;
@@ -51,13 +50,13 @@ export class SocketModule {
         );
     }
 
-    public static close() {
+    public close() {
         const servers = this.socketsContainer.getAllServers();
         servers.forEach(({ server }) => server.close());
         this.socketsContainer.clear();
     }
 
-    private static getContextCreator(container): WsContextCreator {
+    private getContextCreator(container): WsContextCreator {
         return new WsContextCreator(
             new WsProxy(),
             new ExceptionFiltersContext(),

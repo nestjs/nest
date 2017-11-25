@@ -6,6 +6,6 @@ export class ExpressAdapter {
     }
 
     public static createRouter(): any {
-        return express.Router();
+        return express.Router({ mergeParams: true });
     }
 }
