@@ -1,4 +1,9 @@
-# 4.4.0 @soon
+## 4.4.1
+- **common**: `ValidationPipe` improvement
+- **common**: custom route params decorators accepts pipes now
+- **core**: bugfix #268
+
+## 4.4.0 
 - **core**: possibility to create the `NestApplicationContext` using `NestFactory.createApplicationContext()` (Nest application without HTTP server / microservice in the background)
 - **core**: create custom params decorators feature (`createRouteParamDecorator()`)
 

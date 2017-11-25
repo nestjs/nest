@@ -7,7 +7,7 @@ export class ParamsTokenFactory {
             case RouteParamtypes.BODY: return 'body';
             case RouteParamtypes.PARAM: return 'param';
             case RouteParamtypes.QUERY: return 'query';
-            default: return null;
+            default: return 'custom';
         }
     }
 }

@@ -2,6 +2,7 @@ import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { PipeTransform } from '../interfaces/pipe-transform.interface';
 import { Pipe, ArgumentMetadata, BadRequestException } from '../index';
+import { isNil } from '../utils/shared.utils';
 
 @Pipe()
 export class ValidationPipe implements PipeTransform<any> {
@@ -20,6 +21,6 @@ export class ValidationPipe implements PipeTransform<any> {
 
 	private toValidate(metatype): boolean {
 		const types = [String, Boolean, Number, Array, Object];
-		return !types.find(type => metatype === type);
+		return !types.find(type => metatype === type) && !isNil(metatype);
 	}
 }
