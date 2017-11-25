@@ -12,12 +12,11 @@ export interface INestApplication {
     init(): Promise<void>;
     /**
      * The wrapper function around native `express.use()` method.
-     * Example `app.use(bodyParser.json())`
+     * Example `app.use(cors())`
      *
-     * @param  {} requestHandler Express Request Handler
      * @returns void
      */
-    use(requestHandler: any): void;
+    use(...args: any[]): void;
     /**
      * Starts the application.
      *

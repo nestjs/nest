@@ -124,8 +124,8 @@ export class NestApplication implements INestApplication {
         return new Promise((resolve) => this.startAllMicroservices(resolve));
     }
 
-    public use(requestHandler) {
-        this.express.use(requestHandler);
+    public use(...args) {
+        this.express.use(...args);
     }
 
     public async listen(port: number, callback?: () => void);

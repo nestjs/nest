@@ -24,7 +24,7 @@ export declare class NestApplication implements INestApplication {
     getMicroservices(): INestMicroservice[];
     startAllMicroservices(callback?: () => void): void;
     startAllMicroservicesAsync(): Promise<void>;
-    use(requestHandler: any): void;
+    use(...args: any[]): void;
     listen(port: number, callback?: () => void): any;
     listen(port: number, hostname: string, callback?: () => void): any;
     listenAsync(port: number, hostname?: string): Promise<any>;
