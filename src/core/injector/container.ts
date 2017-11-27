@@ -22,7 +22,7 @@ export class NestContainer {
             throw new InvalidModuleException(scope);
         }
         const { type, dynamicMetadata } = this.extractMetadata(metatype);
-        const token = this.moduleTokenFactory.create(type, scope);
+        const token = this.moduleTokenFactory.create(type, scope, dynamicMetadata);
         if (this.modules.has(token)) {
             return;
         }
@@ -35,7 +35,7 @@ export class NestContainer {
 
     public extractMetadata(
       metatype: NestModuleMetatype | DynamicModule,
-    ): { type: NestModuleMetatype, dynamicMetadata?: Partial<DynamicModule> } {
+    ): { type: NestModuleMetatype, dynamicMetadata?: Partial<DynamicModule> | undefined } {
         if (!this.isDynamicModule(metatype)) {
            return { type: metatype };
         }
@@ -66,15 +66,20 @@ export class NestContainer {
         return this.modules;
     }
 
-    public addRelatedModule(relatedModule: NestModuleMetatype, token: string) {
+    public addRelatedModule(
+        relatedModule: NestModuleMetatype | DynamicModule,
+        token: string,
+    ) {
         if (!this.modules.has(token)) return;
 
         const module = this.modules.get(token);
         const parent = module.metatype;
 
+        const { type, dynamicMetadata } = this.extractMetadata(relatedModule);
         const relatedModuleToken = this.moduleTokenFactory.create(
-            relatedModule,
+            type,
             [].concat(module.scope, parent),
+            dynamicMetadata,
         );
         const related = this.modules.get(relatedModuleToken);
         module.addRelatedModule(related);
