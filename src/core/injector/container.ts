@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { Controller, Injectable } from '@nestjs/common/interfaces';
+import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { SHARED_MODULE_METADATA } from '@nestjs/common/constants';
@@ -8,20 +9,57 @@ import { Module } from './module';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ModuleTokenFactory } from './module-token-factory';
 import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
+import { DynamicModule } from '@nestjs/common';
 
 export class NestContainer {
+    private readonly globalModules = new Set<Module>();
     private readonly modules = new Map<string, Module>();
+    private readonly dynamicModulesMetadata = new Map<string, Partial<DynamicModule>>();
     private readonly moduleTokenFactory = new ModuleTokenFactory();
 
-    public addModule(metatype: NestModuleMetatype, scope: NestModuleMetatype[]) {
+    public addModule(metatype: NestModuleMetatype | DynamicModule, scope: NestModuleMetatype[]) {
         if (!metatype) {
             throw new InvalidModuleException(scope);
         }
-        const token = this.moduleTokenFactory.create(metatype, scope);
+        const { type, dynamicMetadata } = this.extractMetadata(metatype);
+        const token = this.moduleTokenFactory.create(type, scope);
         if (this.modules.has(token)) {
             return;
         }
-        this.modules.set(token, new Module(metatype, scope));
+        const module = new Module(type, scope);
+        this.modules.set(token, module);
+
+        this.addDynamicMetadata(token, dynamicMetadata);
+        this.isGlobalModule(type) && this.addGlobalModule(module);
+    }
+
+    public extractMetadata(
+      metatype: NestModuleMetatype | DynamicModule,
+    ): { type: NestModuleMetatype, dynamicMetadata?: Partial<DynamicModule> } {
+        if (!this.isDynamicModule(metatype)) {
+           return { type: metatype };
+        }
+        const { module: type, ...dynamicMetadata } = metatype;
+        return { type, dynamicMetadata };
+    }
+
+    public isDynamicModule(module: NestModuleMetatype | DynamicModule): module is DynamicModule {
+        return (module as DynamicModule).module;
+    }
+
+    public addDynamicMetadata(token: string, dynamicModuleMetadata: Partial<DynamicModule>) {
+        if (!dynamicModuleMetadata) {
+            return undefined;
+        }
+        this.dynamicModulesMetadata.set(token, dynamicModuleMetadata);
+    }
+
+    public isGlobalModule(metatype: NestModuleMetatype): boolean {
+        return !!Reflect.getMetadata(GLOBAL_MODULE_METADATA, metatype);
+    }
+
+    public addGlobalModule(module: Module) {
+        this.globalModules.add(module);
     }
 
     public getModules(): Map<string, Module> {
@@ -58,7 +96,6 @@ export class NestContainer {
         module.addInjectable(injectable);
     }
 
-
     public addExportedComponent(exportedComponent: Metatype<Injectable>, token: string) {
         if (!this.modules.has(token)) {
             throw new UnknownModuleException();
@@ -83,6 +120,32 @@ export class NestContainer {
         [...this.modules.values()].forEach((module) => {
             module.replace(toReplace, options);
         });
+    }
+
+    public bindGlobalScope() {
+        this.modules.forEach((module) => this.bindGlobalsToRelatedModules(module));
+    }
+
+    public bindGlobalsToRelatedModules(module: Module) {
+        this.globalModules.forEach((globalModule) => this.bindGlobalModuleToModule(module, globalModule));
+    }
+
+    public bindGlobalModuleToModule(module: Module, globalModule: Module) {
+        if (module === globalModule) {
+            return undefined;
+        }
+        module.addRelatedModule(globalModule);
+    }
+
+    public getDynamicMetadataByToken(
+      token: string,
+      metadataKey: keyof DynamicModule,
+    ): any[] {
+      const metadata = this.dynamicModulesMetadata.get(token);
+      if (metadata && metadata[metadataKey]) {
+        return metadata[metadataKey];
+      }
+      return [];
     }
 }
 

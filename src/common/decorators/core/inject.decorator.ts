@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { SELF_DECLARED_DEPS_METADATA } from '../../constants';
-import { isFunction } from '../shared.utils';
+import { isFunction } from '../../utils/shared.utils';
 
 /**
  * Injects component, which has to be available in the current injector (module) scope.

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { ControllerMetadata } from '../../interfaces/controllers/controller-metadata.interface';
-import { isUndefined, isObject } from '../shared.utils';
+import { isUndefined, isObject } from '../../utils/shared.utils';
 import { PATH_METADATA } from '../../constants';
 
 /**

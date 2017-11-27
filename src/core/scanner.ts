@@ -6,6 +6,7 @@ import { metadata, GATEWAY_MIDDLEWARES, EXCEPTION_FILTERS_METADATA, GUARDS_METAD
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { MetadataScanner } from '../core/metadata-scanner';
+import { DynamicModule } from '@nestjs/common';
 
 export class DependenciesScanner {
     constructor(
@@ -15,9 +16,10 @@ export class DependenciesScanner {
     public scan(module: NestModuleMetatype) {
         this.scanForModules(module);
         this.scanModulesForDependencies();
+        this.container.bindGlobalScope();
     }
 
-    public scanForModules(module: NestModuleMetatype, scope: NestModuleMetatype[] = []) {
+    public scanForModules(module: NestModuleMetatype | DynamicModule, scope: NestModuleMetatype[] = []) {
         this.storeModule(module, scope);
 
         const importedModules = this.reflectMetadata(module, metadata.MODULES);
@@ -45,12 +47,18 @@ export class DependenciesScanner {
     }
 
     public reflectRelatedModules(module: NestModuleMetatype, token: string) {
-        const modules = this.reflectMetadata(module, metadata.MODULES);
+        const modules = [
+            ...this.reflectMetadata(module, metadata.MODULES),
+            ...this.container.getDynamicMetadataByToken(token, metadata.MODULES as 'modules'),
+        ];
         modules.map((related) => this.storeRelatedModule(related, token));
     }
 
     public reflectComponents(module: NestModuleMetatype, token: string) {
-        const components = this.reflectMetadata(module, metadata.COMPONENTS);
+        const components = [
+            ...this.reflectMetadata(module, metadata.COMPONENTS),
+            ...this.container.getDynamicMetadataByToken(token, metadata.COMPONENTS as 'components'),
+        ];
         components.map((component) => {
             this.storeComponent(component, token);
             this.reflectComponentMetadata(component, token);
@@ -63,7 +71,10 @@ export class DependenciesScanner {
     }
 
     public reflectControllers(module: NestModuleMetatype, token: string) {
-        const routes = this.reflectMetadata(module, metadata.CONTROLLERS);
+        const routes = [
+            ...this.reflectMetadata(module, metadata.CONTROLLERS),
+            ...this.container.getDynamicMetadataByToken(token, metadata.CONTROLLERS as 'controllers'),
+        ];
         routes.map((route) => {
             this.storeRoute(route, token);
             this.reflectDynamicMetadata(route, token);
@@ -78,7 +89,10 @@ export class DependenciesScanner {
     }
 
     public reflectExports(module: NestModuleMetatype, token: string) {
-        const exports = this.reflectMetadata(module, metadata.EXPORTS);
+        const exports = [
+            ...this.reflectMetadata(module, metadata.EXPORTS),
+            ...this.container.getDynamicMetadataByToken(token, metadata.EXPORTS as 'exports'),
+        ];
         exports.map((exportedComponent) => this.storeExportedComponent(exportedComponent, token));
     }
 
@@ -90,7 +104,7 @@ export class DependenciesScanner {
     public reflectGuards(component: Metatype<Injectable>, token: string) {
         const controllerGuards = this.reflectMetadata(component, GUARDS_METADATA);
         const methodsGuards = this.metadataScanner.scanFromPrototype(
-          null, component.prototype, this.reflectKeyMetadata.bind(this, component, GUARDS_METADATA),
+           null, component.prototype, this.reflectKeyMetadata.bind(this, component, GUARDS_METADATA),
         );
         const flattenMethodsGuards = methodsGuards.reduce<any[]>((a: any[], b) => a.concat(b), []);
         [...controllerGuards, ...flattenMethodsGuards].map((guard) => this.storeInjectable(guard, token));
@@ -99,7 +113,7 @@ export class DependenciesScanner {
     public reflectInterceptors(component: Metatype<Injectable>, token: string) {
         const controllerInterceptors = this.reflectMetadata(component, INTERCEPTORS_METADATA);
         const methodsInterceptors = this.metadataScanner.scanFromPrototype(
-          null, component.prototype, this.reflectKeyMetadata.bind(this, component, INTERCEPTORS_METADATA),
+            null, component.prototype, this.reflectKeyMetadata.bind(this, component, INTERCEPTORS_METADATA),
         );
         const flattenMethodsInterceptors = methodsInterceptors.reduce<any[]>((a: any[], b) => a.concat(b), []);
         [...controllerInterceptors, ...flattenMethodsInterceptors].map((guard) => this.storeInjectable(guard, token));

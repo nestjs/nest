@@ -5,7 +5,7 @@
  * MIT Licensed
  */
 
-export * from './utils';
+export * from './decorators';
 export * from './enums';
 export {
     NestModule,
@@ -28,8 +28,10 @@ export {
     RpcExceptionFilter,
     WsExceptionFilter,
     NestInterceptor,
+    DynamicModule,
     INestApplicationContext,
 } from './interfaces';
 export * from './services/logger.service';
 export * from './pipes';
+export * from './utils';
 export * from './exceptions';

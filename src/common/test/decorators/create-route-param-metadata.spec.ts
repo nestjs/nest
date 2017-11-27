@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { createRouteParamDecorator } from '../../utils/decorators/create-route-param-metadata.decorator';
+import { createRouteParamDecorator } from '../../decorators/http/create-route-param-metadata.decorator';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../constants';
 
 describe('createRouteParamDecorator', () => {

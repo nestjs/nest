@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { Catch } from '../../utils/decorators/catch.decorator';
+import { Catch } from '../../decorators/core/catch.decorator';
 import { FILTER_CATCH_EXCEPTIONS } from '../../constants';
 
 describe('@Catch', () => {

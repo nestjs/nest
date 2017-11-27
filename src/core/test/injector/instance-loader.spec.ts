@@ -3,8 +3,8 @@ import { expect } from 'chai';
 import { InstanceLoader } from '../../injector/instance-loader';
 import { NestContainer } from '../../injector/container';
 import { Injector } from '../../injector/injector';
-import { Controller } from '../../../common/utils/decorators/controller.decorator';
-import { Component } from '../../../common/utils/decorators/component.decorator';
+import { Controller } from '../../../common/decorators/core/controller.decorator';
+import { Component } from '../../../common/decorators/core/component.decorator';
 import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
 import { Logger } from '../../../common/services/logger.service';
 

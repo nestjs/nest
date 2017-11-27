@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
-import { createRouteParamDecorator } from '../../../common/utils/decorators/create-route-param-metadata.decorator';
+import { createRouteParamDecorator } from '../../../common/decorators/http/create-route-param-metadata.decorator';
 import { RouterExecutionContext } from '../../router/router-execution-context';
 import { RouteParamsMetadata, Request, Body } from '../../../index';
 import { RouteParamsFactory } from '../../router/route-params-factory';

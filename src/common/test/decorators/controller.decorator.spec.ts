@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { Controller } from '../../utils/decorators/controller.decorator';
+import { Controller } from '../../decorators/core/controller.decorator';
 
 describe('@Controller', () => {
     const reflectedPath = 'test';

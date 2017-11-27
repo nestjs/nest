@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { Shared } from '../../utils/decorators/shared.decorator';
+import { Shared } from '../../decorators/modules/shared.decorator';
 import { SHARED_MODULE_METADATA } from '../../constants';
 
 describe('Shared', () => {
