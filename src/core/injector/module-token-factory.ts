@@ -6,7 +6,7 @@ export class ModuleTokenFactory {
     public create(
       metatype: NestModuleMetatype,
       scope: NestModuleMetatype[],
-      dynamicModuleMetadata: Partial<DynamicModule> | undefined = undefined,
+      dynamicModuleMetadata?: Partial<DynamicModule> | undefined,
     ) {
         const reflectedScope = this.reflectScope(metatype);
         const isSingleScoped = reflectedScope === true;
