@@ -10,7 +10,7 @@ describe('ModuleTokenFactory', () => {
     });
     describe('create', () => {
         class Module {}
-        it('should force global scope if it is not set', () => {
+        it('should force global scope when it is not set', () => {
             const scope = 'global';
             const token = factory.create(
                 Module as any,
