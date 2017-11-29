@@ -34,7 +34,7 @@
 
 ## Getting started
 
-To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com).
+To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
 
 ## Sponsors
 
