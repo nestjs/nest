@@ -32,58 +32,16 @@
 <p>In recent years, thanks to Node.js, JavaScript has become the “lingua franca” of the web for both front and backend applications, giving rise to awesome projects like <a href="https://angular.io/" target="_blank">Angular</a>, <a href="https://github.com/facebook/react" target="_blank">React</a> and <a href="https://github.com/vuejs/vue" target="_blank">Vue</a> which improve developer productivity and enable the construction of fast, testable, extensible frontend applications. However, on the server-side, while there are a lot of superb libraries, helpers and tools for Node, none of them effectively solve the main problem - the architecture.</p>
 <p>Nest aims to provide an application architecture out of the box which allows for effortless creation of highly testable, scalable, loosely coupled and easily maintainable applications.</p>
 
-## Features
-
-<ul>
-    <li>Built with <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a> (compatible with pure JavaScript + <a href="http://babeljs.io/" target="_blank">Babel</a>)</li>
-    <li><strong>Easy</strong> to learn - syntax similar to <a href="https://angular.io/" target="_blank">Angular</a></li>
-    <li><strong>Familiar</strong> - based on well-known libraries (<a href="https://github.com/expressjs/express" target="_blank">Express</a> / <a href="https://github.com/socketio/socket.io" target="_blank">socket.io</a>)</li>
-    <li><strong>Dependency Injection</strong> - built-in asynchronous <strong>IoC</strong> container with a <strong>hierarchical injector</strong></li>
-    <li><strong>WebSockets</strong> module (based on <a href="https://github.com/socketio/socket.io" target="_blank">socket.io</a>, but you can bring your own library, by making use of <code>WsAdapter</code>)</li>
-    <li><strong>Modular</strong> - defines an easy to follow module definition pattern so you can split your system into reusable modules</li>
-    <li><strong>Reactive microservice</strong> support with message patterns (built-in transport via TCP / <a href="https://redis.io/" target="_blank">Redis</a>, but other communication schemes can be implemented with <code>CustomTransportStrategy</code>)</li>
-    <li><strong>Exception layer</strong> - throwable web exceptions with status codes, exception filters</li>
-    <li><strong>Pipes</strong> - synchronous & asynchronous (e.g. validation purposes)</li>
-    <li><strong>Guards</strong> - attach additional logic in a declarative manner (e.g. role-based access control)</li>
-    <li><strong>Interceptors</strong> - built on top of <a href="https://github.com/reactivex/rxjs" target="blank">RxJS</a></li>
-    <li>Testing utilities (both <strong>e2e & unit</strong> tests)</li>
-  <li><strong>More</strong>!</li>
-  </ul>
-
-## Installation
-
-**Install the TypeScript Starter Project with Git:**
-```bash
-$ git clone https://github.com/nestjs/typescript-starter.git project
-$ cd project
-$ npm install
-$ npm run start
-```
-
-**Install the JavaScript (Babel) Starter Project with Git:**
-```bash
-$ git clone https://github.com/nestjs/javascript-starter.git project
-$ cd project
-$ npm install
-$ npm run start
-```
-
-**Start a New Project from Scratch with NPM:**
-```bash
-$ npm i --save @nestjs/core @nestjs/common @nestjs/microservices @nestjs/websockets @nestjs/testing reflect-metadata rxjs
-```
-
 ## Documentation & Quick Start
 
 :books: [Documentation & Tutorial](https://docs.nestjs.com)
 
 ## Sponsors
 
+Nest is an MIT-licensed open source project. It can grow thanks to the support by these awesome people. If you'd like to join them, please [read more here](https://opencollective.com/nest#backer). Thanks! :heart_eyes:
+
 <a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="210" /></a>
 
-## Backers
-
-Nest is an MIT-licensed open source project. It can grow thanks to the support by these awesome people. If you'd like to join them, please [read more here](https://opencollective.com/nest#backer). Thanks! :heart_eyes:
 
 <a href="https://opencollective.com/nest/backer/0/website" target="_blank"><img src="https://opencollective.com/nest/backer/0/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/1/website" target="_blank"><img src="https://opencollective.com/nest/backer/1/avatar.svg"></a>
@@ -123,4 +81,4 @@ Nest is an MIT-licensed open source project. It can grow thanks to the support b
 
 ## License
 
-  [MIT](LICENSE)
+  Nest is [MIT licensed](LICENSE).
