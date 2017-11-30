@@ -16,4 +16,4 @@ export function SingleScope(): ClassDecorator {
         Object.defineProperty(Type, 'name', { value: target.name });
         return Type as any;
     };
-};
+}

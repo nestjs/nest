@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { Dependencies } from '../../utils/decorators/dependencies.decorator';
+import { Dependencies } from '../../decorators/core/dependencies.decorator';
 import { PARAMTYPES_METADATA } from '../../constants';
 
 describe('@Dependencies', () => {

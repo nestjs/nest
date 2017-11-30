@@ -76,8 +76,8 @@ export class MiddlewaresModule {
     }
 
     public async setupMiddlewareConfig(
-        middlewaresContainer: MiddlewaresContainer, 
-        config: MiddlewareConfiguration, 
+        middlewaresContainer: MiddlewaresContainer,
+        config: MiddlewareConfiguration,
         module: string,
         app,
     ) {

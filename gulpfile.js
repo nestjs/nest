@@ -33,7 +33,7 @@ modules.forEach(module => {
 });
 
 gulp.task('build', function(cb) {
-	gulpSequence(modules, cb);
+	gulpSequence('common', modules.filter((module) => module !== 'common'), cb);
 });
 
 gulp.task('move', function() {

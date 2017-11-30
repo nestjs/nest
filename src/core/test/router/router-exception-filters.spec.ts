@@ -1,8 +1,8 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { UseFilters } from '../../../common/utils/decorators/exception-filters.decorator';
-import { Catch } from '../../../common/utils/decorators/catch.decorator';
+import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
+import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { ApplicationConfig } from '../../application-config';
 

@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { HttpCode } from '../../utils/decorators/http-code.decorator';
-import { HTTP_CODE_METADATA } from './../../constants';
+import { HttpCode } from '../../decorators/http/http-code.decorator';
+import { HTTP_CODE_METADATA } from '../../constants';
 
 describe('@HttpCode', () => {
     const httpCode = 200;

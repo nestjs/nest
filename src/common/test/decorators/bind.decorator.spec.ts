@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { Bind } from '../../utils/decorators/bind.decorator';
+import { Bind } from '../../decorators/core/bind.decorator';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { Req } from '../../utils/decorators/route-params.decorator';
+import { Req } from '../../decorators/http/route-params.decorator';
 
 describe('@Bind', () => {
     class TestWithMethod {

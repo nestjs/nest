@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { Module } from '../../utils/decorators/module.decorator';
-import { InvalidModuleConfigException } from '../../utils/decorators/exceptions/invalid-module-config.exception';
+import { Module } from '../../decorators/modules/module.decorator';
+import { InvalidModuleConfigException } from '../../decorators/modules/exceptions/invalid-module-config.exception';
 
 describe('@Module', () => {
     const moduleProps = {

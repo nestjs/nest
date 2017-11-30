@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { UsePipes } from '../../utils/decorators/use-pipes.decorator';
-import { PIPES_METADATA } from './../../constants';
+import { UsePipes } from '../../decorators/core/use-pipes.decorator';
+import { PIPES_METADATA } from '../../constants';
 
 describe('@UsePipes', () => {
     const pipes = [ 'pipe1', 'pipe2' ];

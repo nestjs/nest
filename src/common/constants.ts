@@ -6,6 +6,7 @@ export const metadata = {
 };
 
 export const SHARED_MODULE_METADATA = '__sharedModule__';
+export const GLOBAL_MODULE_METADATA = '__globalModule__';
 export const PATH_METADATA = 'path';
 export const PARAMTYPES_METADATA = 'design:paramtypes';
 export const SELF_DECLARED_DEPS_METADATA = 'self:paramtypes';

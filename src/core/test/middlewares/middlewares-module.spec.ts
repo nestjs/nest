@@ -1,13 +1,13 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NestMiddleware } from '../../../common/interfaces/middlewares/nest-middleware.interface';
-import { Component } from '../../../common/utils/decorators/component.decorator';
+import { Component } from '../../../common/decorators/core/component.decorator';
 import { MiddlewareBuilder } from '../../middlewares/builder';
 import { MiddlewaresModule } from '../../middlewares/middlewares-module';
 import { InvalidMiddlewareException } from '../../errors/exceptions/invalid-middleware.exception';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { Controller } from '../../../common/utils/decorators/controller.decorator';
-import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
+import { Controller } from '../../../common/decorators/core/controller.decorator';
+import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { RoutesMapper } from '../../middlewares/routes-mapper';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';

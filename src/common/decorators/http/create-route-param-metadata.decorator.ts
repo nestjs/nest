@@ -5,7 +5,7 @@ import {
 import { CustomParamFactory } from '../../interfaces/custom-route-param-factory.interface';
 import { RouteParamsMetadata, ParamData } from './route-params.decorator';
 import { PipeTransform } from '../../index';
-import { isNil, isString } from '../shared.utils';
+import { isNil, isString } from '../../utils/shared.utils';
 
 const assignCustomMetadata = (
 	args: RouteParamsMetadata,
@@ -13,7 +13,7 @@ const assignCustomMetadata = (
 	index: number,
 	factory: CustomParamFactory,
 	data?: ParamData,
-	...pipes: PipeTransform<any>[]
+	...pipes: PipeTransform<any>[],
 ) => ({
 	...args,
 	[`${paramtype}${CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
@@ -35,10 +35,7 @@ const randomString = () =>
  */
 export function createRouteParamDecorator(
 	factory: CustomParamFactory,
-): (
-	data?: any,
-	...pipes: PipeTransform<any>[],
-) => ParameterDecorator {
+): (data?: any, ...pipes: PipeTransform<any>[]) => ParameterDecorator {
 	const paramtype = randomString() + randomString();
 	return (data?, ...pipes: PipeTransform<any>[]): ParameterDecorator => (
 		target,
@@ -48,14 +45,7 @@ export function createRouteParamDecorator(
 		const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, target, key) || {};
 		Reflect.defineMetadata(
 			ROUTE_ARGS_METADATA,
-			assignCustomMetadata(
-				args,
-				paramtype,
-				index,
-				factory,
-				data,
-				...pipes,
-			),
+			assignCustomMetadata(args, paramtype, index, factory, data, ...pipes),
 			target,
 			key,
 		);

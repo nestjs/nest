@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { UseInterceptors } from '../../utils/decorators/use-interceptors.decorator';
-import { INTERCEPTORS_METADATA } from './../../constants';
+import { UseInterceptors } from '../../decorators/core/use-interceptors.decorator';
+import { INTERCEPTORS_METADATA } from '../../constants';
 
 describe('@UseInterceptors', () => {
     const interceptors = [ 'interceptor1', 'interceptor2' ];

@@ -1,3 +1,7 @@
+## 4.5.0@soon
+- **core**: dynamic modules feature
+- **core**: global scope feature
+
 ## 4.4.1
 - **common**: `ValidationPipe` improvement
 - **common**: custom route params decorators accepts pipes now

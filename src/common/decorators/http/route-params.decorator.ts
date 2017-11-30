@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { ROUTE_ARGS_METADATA } from '../../constants';
 import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
 import { PipeTransform } from '../../index';
-import { isNil, isString } from '../shared.utils';
+import { isNil, isString } from '../../utils/shared.utils';
 
 export type ParamData = object | string | number;
 export interface RouteParamsMetadata {

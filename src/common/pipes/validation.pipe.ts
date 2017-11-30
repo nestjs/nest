@@ -1,8 +1,9 @@
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { PipeTransform } from '../interfaces/pipe-transform.interface';
-import { Pipe, ArgumentMetadata, BadRequestException } from '../index';
+import { ArgumentMetadata, BadRequestException } from '../index';
 import { isNil } from '../utils/shared.utils';
+import { Pipe } from './../decorators/core/component.decorator';
 
 @Pipe()
 export class ValidationPipe implements PipeTransform<any> {
