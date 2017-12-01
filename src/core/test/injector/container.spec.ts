@@ -1,20 +1,24 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NestContainer } from '../../injector/container';
+import { NestFactory } from '../../nest-factory';
 import { Module } from '../../../common/decorators/modules/module.decorator';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { Global } from '../../../common/index';
 
 describe('NestContainer', () => {
 	let container: NestContainer;
-
 	@Module({})
 	class TestModule {}
 
 	@Global()
 	@Module({})
 	class GlobalTestModule {}
-
+	@Module({
+		modules: [TestModule, GlobalTestModule]
+	})
+	class ApplicationTestModule {}
+	const app = NestFactory.create(ApplicationTestModule);
 	beforeEach(() => {
 		container = new NestContainer();
 	});
@@ -50,7 +54,12 @@ describe('NestContainer', () => {
 			expect(clearSpy.called).to.be.true;
 		});
 	});
-
+	describe('Get Container', () => {
+		it('should get The Whole container', () => {
+			const myContainer = NestFactory.getContainer();
+			expect(myContainer).to.be.an.instanceOf(NestContainer);
+		});
+	});
 	describe('addModule', () => {
 		it('should not add module if already exists in collection', () => {
 			const modules = new Map();

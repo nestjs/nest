@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { Controller, Transform } from '@nestjs/common/interfaces';
-import { RouteParamsMetadata } from '@nestjs/common/utils';
+import { RouteParamsMetadata } from '@nestjs/common/decorators';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 import { PipesContextCreator } from './../pipes/pipes-context-creator';
 import { PipesConsumer } from './../pipes/pipes-consumer';
