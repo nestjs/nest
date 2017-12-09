@@ -13,7 +13,6 @@ import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-met
 import { join } from 'path';
 
 export class DependenciesScanner {
-    private logger = new Logger('Dependency Scanner', true)
     constructor(
         private readonly container: NestContainer,
         private readonly metadataScanner: MetadataScanner) { }
@@ -29,7 +28,7 @@ export class DependenciesScanner {
         const prefix = this.reflectMetadata(module, metadata.PATH);
         const importedModules = this.reflectMetadata(module, metadata.MODULES);
         importedModules.map((innerModule) => {
-            this.applyNewPathToModule(innerModule, prefix);
+            this.applyNewPath(innerModule, prefix);
             this.scanForModules(innerModule, [].concat(scope, module));
         });
     }
@@ -83,7 +82,7 @@ export class DependenciesScanner {
         ];
         routes.map((route) => {
             const path = this.reflectMetadata(module, metadata.PATH);
-            this.applyNewPathToController(route, path);
+            this.applyNewPath(route, path);
             this.storeRoute(route, token);
             this.reflectDynamicMetadata(route, token);
         });
@@ -159,20 +158,13 @@ export class DependenciesScanner {
         return Reflect.getMetadata(metadata, metatype) || [];
     }
 
-    public applyNewPathToModule(metatype, prefix: string = '/') {
-        let path = this.reflectMetadata(metatype, metadata.PATH) || '/';
-        path = join(prefix, path);
-
-        Reflect.defineMetadata(metadata.PATH, path, metatype);
-    }
-
-    public applyNewPathToController(metatype, prefix: string = '/') {
+    public applyNewPath(metatype, prefix: string = '/') {
         let path = this.reflectMetadata(metatype, metadata.PATH);
         if (typeof path === 'object' || !path) {
             path = '/';
         }
-
         path = join(prefix, path);
+
         Reflect.defineMetadata(metadata.PATH, path, metatype);
     }
 }
