@@ -159,11 +159,10 @@ export class DependenciesScanner {
         return Reflect.getMetadata(metadata, metatype) || [];
     }
 
-    public applyNewPathToModule(metatype, prefix: string) {
+    public applyNewPathToModule(metatype, prefix: string = '/') {
         let path = this.reflectMetadata(metatype, metadata.PATH) || '/';
-        if (path) {
-            path = join(prefix, path);
-        }
+        path = join(prefix, path);
+
         Reflect.defineMetadata(metadata.PATH, path, metatype);
     }
 
@@ -173,9 +172,7 @@ export class DependenciesScanner {
             path = '/';
         }
 
-        if (path) {
-            path = join(prefix, path);
-        }
+        path = join(prefix, path);
         Reflect.defineMetadata(metadata.PATH, path, metatype);
     }
 }
