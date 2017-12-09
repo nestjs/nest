@@ -1,17 +1,22 @@
 import 'reflect-metadata';
-import { NestContainer } from './injector/container';
+
+import { EXCEPTION_FILTERS_METADATA, GATEWAY_MIDDLEWARES, GUARDS_METADATA, INTERCEPTORS_METADATA, metadata } from '@nestjs/common/constants';
+
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { metadata, GATEWAY_MIDDLEWARES, EXCEPTION_FILTERS_METADATA, GUARDS_METADATA, INTERCEPTORS_METADATA } from '@nestjs/common/constants';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
-import { MetadataScanner } from '../core/metadata-scanner';
 import { DynamicModule } from '@nestjs/common';
+import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { Logger } from '@nestjs/common/services/logger.service';
+import { MetadataScanner } from '../core/metadata-scanner';
+import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { NestContainer } from './injector/container';
+import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { join } from 'path';
 
 export class DependenciesScanner {
+    private logger = new Logger('Dependency Scanner', true)
     constructor(
         private readonly container: NestContainer,
-        private readonly metadataScanner: MetadataScanner) {}
+        private readonly metadataScanner: MetadataScanner) { }
 
     public scan(module: NestModuleMetatype) {
         this.scanForModules(module);
@@ -21,9 +26,10 @@ export class DependenciesScanner {
 
     public scanForModules(module: NestModuleMetatype | DynamicModule, scope: NestModuleMetatype[] = []) {
         this.storeModule(module, scope);
-
+        const prefix = this.reflectMetadata(module, metadata.PATH);
         const importedModules = this.reflectMetadata(module, metadata.MODULES);
         importedModules.map((innerModule) => {
+            this.applyNewPathToModule(innerModule, prefix);
             this.scanForModules(innerModule, [].concat(scope, module));
         });
     }
@@ -76,6 +82,8 @@ export class DependenciesScanner {
             ...this.container.getDynamicMetadataByToken(token, metadata.CONTROLLERS as 'controllers'),
         ];
         routes.map((route) => {
+            const path = this.reflectMetadata(module, metadata.PATH);
+            this.applyNewPathToController(route, path);
             this.storeRoute(route, token);
             this.reflectDynamicMetadata(route, token);
         });
@@ -104,7 +112,7 @@ export class DependenciesScanner {
     public reflectGuards(component: Metatype<Injectable>, token: string) {
         const controllerGuards = this.reflectMetadata(component, GUARDS_METADATA);
         const methodsGuards = this.metadataScanner.scanFromPrototype(
-           null, component.prototype, this.reflectKeyMetadata.bind(this, component, GUARDS_METADATA),
+            null, component.prototype, this.reflectKeyMetadata.bind(this, component, GUARDS_METADATA),
         );
         const flattenMethodsGuards = methodsGuards.reduce<any[]>((a: any[], b) => a.concat(b), []);
         [...controllerGuards, ...flattenMethodsGuards].map((guard) => this.storeInjectable(guard, token));
@@ -149,5 +157,25 @@ export class DependenciesScanner {
 
     public reflectMetadata(metatype, metadata: string) {
         return Reflect.getMetadata(metadata, metatype) || [];
+    }
+
+    public applyNewPathToModule(metatype, prefix: string) {
+        let path = this.reflectMetadata(metatype, metadata.PATH) || '/';
+        if (path) {
+            path = join(prefix, path);
+        }
+        Reflect.defineMetadata(metadata.PATH, path, metatype);
+    }
+
+    public applyNewPathToController(metatype, prefix: string = '/') {
+        let path = this.reflectMetadata(metatype, metadata.PATH);
+        if (typeof path === 'object' || !path) {
+            path = '/';
+        }
+
+        if (path) {
+            path = join(prefix, path);
+        }
+        Reflect.defineMetadata(metadata.PATH, path, metatype);
     }
 }

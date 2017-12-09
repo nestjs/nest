@@ -1,19 +1,21 @@
 import * as optional from 'optional';
+
+import { INestApplication, INestApplicationContext, INestMicroservice } from '@nestjs/common';
+
 import { DependenciesScanner } from './scanner';
-import { InstanceLoader } from './injector/instance-loader';
-import { NestContainer } from './injector/container';
 import { ExceptionsZone } from './errors/exceptions-zone';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { messages } from './constants';
-import { NestApplication } from './nest-application';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { ExpressAdapter } from './adapters/express-adapter';
-import { INestApplication, INestMicroservice, INestApplicationContext } from '@nestjs/common';
+import { InstanceLoader } from './injector/instance-loader';
+import { Logger } from '@nestjs/common/services/logger.service';
 import { MetadataScanner } from './metadata-scanner';
+import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
+import { NestApplication } from './nest-application';
 import { NestApplicationContext } from './nest-application-context';
+import { NestContainer } from './injector/container';
+import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { messages } from './constants';
 
 const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {} as any;
 
@@ -51,7 +53,7 @@ export class NestFactoryStatic {
         config?: MicroserviceConfiguration): Promise<INestMicroservice> {
 
         if (!NestMicroservice) {
-          throw new MicroservicesPackageNotFoundException();
+            throw new MicroservicesPackageNotFoundException();
         }
 
         await this.initialize(module);
