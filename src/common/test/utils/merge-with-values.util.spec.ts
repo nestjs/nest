@@ -1,11 +1,12 @@
 import 'reflect-metadata';
-import { expect } from 'chai';
+
 import { MergeWithValues } from '../../utils/merge-with-values.util';
+import { expect } from 'chai';
 
 describe('MergeWithValues', () => {
-    let type;
-    const data = { test: [ 1, 2, 3 ] };
-    class Test {}
+    let type: any;
+    const data = { test: [1, 2, 3] };
+    class Test { }
 
     beforeEach(() => {
         type = MergeWithValues(data)(Test);

@@ -1,11 +1,12 @@
-import { NestGateway } from './interfaces/nest-gateway.interface';
-import { isUndefined, isFunction } from '@nestjs/common/utils/shared.utils';
-import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA, GATEWAY_SERVER_METADATA } from './constants';
+import { GATEWAY_SERVER_METADATA, MESSAGE_MAPPING_METADATA, MESSAGE_METADATA } from './constants';
+import { isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { NestGateway } from './interfaces/nest-gateway.interface';
 import { Observable } from 'rxjs/Observable';
 
 export class GatewayMetadataExplorer {
-    constructor(private readonly metadataScanner: MetadataScanner) {}
+    constructor(private readonly metadataScanner: MetadataScanner) { }
 
     public explore(instance: NestGateway): MessageMappingProperties[] {
         const instancePrototype = Object.getPrototypeOf(instance);
@@ -16,7 +17,7 @@ export class GatewayMetadataExplorer {
         );
     }
 
-    public exploreMethodMetadata(instancePrototype, methodName: string): MessageMappingProperties {
+    public exploreMethodMetadata(instancePrototype: any, methodName: string): MessageMappingProperties {
         const callback = instancePrototype[methodName];
         const isMessageMapping = Reflect.getMetadata(MESSAGE_MAPPING_METADATA, callback);
 
@@ -46,5 +47,5 @@ export class GatewayMetadataExplorer {
 
 export interface MessageMappingProperties {
     message: string;
-    callback: (...args) => Observable<any> | Promise<any> | void;
+    callback: (...args: any[]) => Observable<any> | Promise<any> | void;
 }

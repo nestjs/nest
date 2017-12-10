@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+
 import { SELF_DECLARED_DEPS_METADATA } from '../../constants';
 import { isFunction } from '../../utils/shared.utils';
 
@@ -6,7 +7,7 @@ import { isFunction } from '../../utils/shared.utils';
  * Injects component, which has to be available in the current injector (module) scope.
  * Components are recognized by types / or tokens.
  */
-export function Inject(token): ParameterDecorator {
+export function Inject(token: any): ParameterDecorator {
     return (target, key, index) => {
         const args = Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, target) || [];
         const type = isFunction(token) ? token.name : token;

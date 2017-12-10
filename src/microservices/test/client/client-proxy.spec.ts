@@ -1,10 +1,11 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
+
 import { ClientProxy } from '../../client/client-proxy';
 import { Observable } from 'rxjs';
+import { expect } from 'chai';
 
 class TestClientProxy extends ClientProxy {
-    public sendSingleMessage(pattern, callback) {}
+    public sendSingleMessage(pattern: any, callback: any) { }
 }
 
 describe('ClientProxy', () => {
@@ -33,7 +34,7 @@ describe('ClientProxy', () => {
         });
 
         describe('returned function calls', () => {
-            let fn;
+            let fn: any;
             const error = sinon.spy(),
                 next = sinon.spy(),
                 complete = sinon.spy(),

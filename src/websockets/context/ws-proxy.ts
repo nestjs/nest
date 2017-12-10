@@ -2,8 +2,8 @@ import { WsExceptionsHandler } from './../exceptions/ws-exceptions-handler';
 
 export class WsProxy {
     public create(
-        targetCallback: (client, data) => Promise<void>,
-        exceptionsHandler: WsExceptionsHandler): (client, data) => Promise<void> {
+        targetCallback: (client: any, data: any) => Promise<void>,
+        exceptionsHandler: WsExceptionsHandler): (client: any, data: any) => Promise<void> {
 
         return async (client, data) => {
             try {

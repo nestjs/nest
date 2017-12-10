@@ -1,28 +1,30 @@
 import 'reflect-metadata';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+
+import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
-import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
-import { ExpressAdapter } from '../adapters/express-adapter';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
-import { RouterMethodFactory } from '../helpers/router-method-factory';
-import { PATH_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { RouteMappedMessage } from '../helpers/messages';
-import { RouterExecutionContext } from './router-execution-context';
-import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
-import { RouteParamsFactory } from './route-params-factory';
-import { RouterExplorer } from './interfaces/explorer.inteface';
-import { MetadataScanner } from '../metadata-scanner';
+
 import { ApplicationConfig } from './../application-config';
-import { PipesContextCreator } from './../pipes/pipes-context-creator';
-import { PipesConsumer } from './../pipes/pipes-consumer';
-import { NestContainer } from '../injector/container';
-import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
+import { ExpressAdapter } from '../adapters/express-adapter';
 import { GuardsConsumer } from '../guards/guards-consumer';
-import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
+import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
+import { Logger } from '@nestjs/common/services/logger.service';
+import { MetadataScanner } from '../metadata-scanner';
+import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { NestContainer } from '../injector/container';
+import { PipesConsumer } from './../pipes/pipes-consumer';
+import { PipesContextCreator } from './../pipes/pipes-context-creator';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { RouteMappedMessage } from '../helpers/messages';
+import { RouteParamsFactory } from './route-params-factory';
+import { RouterExecutionContext } from './router-execution-context';
+import { RouterExplorer } from './interfaces/explorer.inteface';
+import { RouterMethodFactory } from '../helpers/router-method-factory';
+import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 
 export class ExpressRouterExplorer implements RouterExplorer {
     private readonly executionContextCreator: RouterExecutionContext;
@@ -68,7 +70,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
         return validatePath(path);
     }
 
-    public scanForPaths(instance: Controller, prototype?): RoutePathProperties[] {
+    public scanForPaths(instance: Controller, prototype?: any): RoutePathProperties[] {
         const instancePrototype = isUndefined(prototype) ? Object.getPrototypeOf(instance) : prototype;
         return this.metadataScanner.scanFromPrototype<Controller, RoutePathProperties>(
             instance,
@@ -77,7 +79,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
         );
     }
 
-    public exploreMethodMetadata(instance: Controller, instancePrototype, methodName: string): RoutePathProperties {
+    public exploreMethodMetadata(instance: Controller, instancePrototype: any, methodName: string): RoutePathProperties {
         const targetCallback = instancePrototype[methodName];
         const routePath = Reflect.getMetadata(PATH_METADATA, targetCallback);
         if (isUndefined(routePath)) {
@@ -94,7 +96,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
     }
 
     public applyPathsToRouterProxy(
-        router,
+        router: any,
         routePaths: RoutePathProperties[],
         instance: Controller,
         module: string) {
@@ -107,7 +109,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
     }
 
     private applyCallbackToRouter(
-        router,
+        router: any,
         pathProperties: RoutePathProperties,
         instance: Controller,
         module: string) {
@@ -119,7 +121,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
         routerMethod(path, proxy);
     }
 
-    private createCallbackProxy(instance: Controller, callback: RouterProxyCallback, methodName: string, module: string, requestMethod) {
+    private createCallbackProxy(instance: Controller, callback: RouterProxyCallback, methodName: string, module: string, requestMethod: RequestMethod) {
         const executionContext = this.executionContextCreator.create(instance, callback, methodName, module, requestMethod);
         const exceptionFilter = this.exceptionsFilter.create(instance, callback);
 

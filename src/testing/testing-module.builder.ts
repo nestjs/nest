@@ -1,10 +1,11 @@
-import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { OverrideByFactoryOptions, OverrideBy } from './interfaces';
-import { Module } from '@nestjs/common';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { OverrideBy, OverrideByFactoryOptions } from './interfaces';
+
 import { DependenciesScanner } from '@nestjs/core/scanner';
+import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { Module } from '@nestjs/common';
 import { ModuleMetadata } from '@nestjs/common/interfaces';
+import { NestContainer } from '@nestjs/core/injector/container';
 import { TestingModule } from './testing-module';
 
 export class TestingModuleBuilder {
@@ -26,15 +27,15 @@ export class TestingModuleBuilder {
         this.scanner.scan(this.module);
     }
 
-    public overrideGuard(typeOrToken): OverrideBy {
+    public overrideGuard(typeOrToken: any): OverrideBy {
         return this.override(typeOrToken, false);
     }
 
-    public overrideInterceptor(typeOrToken): OverrideBy {
+    public overrideInterceptor(typeOrToken: any): OverrideBy {
         return this.override(typeOrToken, false);
     }
 
-    public overrideComponent(typeOrToken): OverrideBy {
+    public overrideComponent(typeOrToken: any): OverrideBy {
         return this.override(typeOrToken, true);
     }
 
@@ -49,8 +50,8 @@ export class TestingModuleBuilder {
         return new TestingModule(this.container, [], root);
     }
 
-    private override(typeOrToken, isComponent: boolean): OverrideBy {
-        const addOverload = (options) => {
+    private override(typeOrToken: any, isComponent: boolean): OverrideBy {
+        const addOverload = (options: any) => {
             this.overloadsMap.set(typeOrToken, {
                 ...options,
                 isComponent,
@@ -60,7 +61,7 @@ export class TestingModuleBuilder {
         return this.createOverrideByBuilder(addOverload);
     }
 
-    private createOverrideByBuilder(add: (provider) => TestingModuleBuilder): OverrideBy {
+    private createOverrideByBuilder(add: (provider: any) => TestingModuleBuilder): OverrideBy {
         return {
             useValue: (value) => add({ useValue: value }),
             useFactory: (options: OverrideByFactoryOptions) => add({ ...options, useFactory: options.factory }),
@@ -68,8 +69,13 @@ export class TestingModuleBuilder {
         };
     }
 
-    private createModule(metadata) {
-        class TestModule {}
+    private createModule(metadata: {
+        modules?: any[];
+        controllers?: any[];
+        components?: any[];
+        exports?: any[];
+    }) {
+        class TestModule { }
         Module(metadata)(TestModule);
         return TestModule;
     }

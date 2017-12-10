@@ -1,3 +1,4 @@
+import { Express } from 'express';
 export interface Resolver {
-  resolve(express);
+  resolve(express: Express): void;
 }

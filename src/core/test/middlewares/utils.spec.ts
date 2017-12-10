@@ -1,10 +1,12 @@
 import * as sinon from 'sinon';
+
+import { assignToken, filterMiddlewares, isClass, mapToClass } from '../../middlewares/utils';
+
 import { expect } from 'chai';
-import { filterMiddlewares, mapToClass, isClass, assignToken } from '../../middlewares/utils';
 
 describe('middleware utils', () => {
-    class Test {}
-    function fnMiddleware(req, res, next) {}
+    class Test { }
+    function fnMiddleware(req: any, res: any, next: any) { }
 
     describe('filterMiddlewares', () => {
         let middlewares: any[];
@@ -55,7 +57,7 @@ describe('middleware utils', () => {
     });
     describe('assignToken', () => {
         describe('should define `name` property on metatype', () => {
-            const anonymousType = class {};
+            const anonymousType = class { };
             assignToken(anonymousType);
             expect(anonymousType.name).to.exist;
         });

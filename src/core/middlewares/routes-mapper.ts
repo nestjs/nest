@@ -1,15 +1,17 @@
 import 'reflect-metadata';
-import { ExpressRouterExplorer } from '../router/router-explorer';
-import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+
 import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
-import { PATH_METADATA } from '@nestjs/common/constants';
+
+import { ExpressRouterExplorer } from '../router/router-explorer';
 import { MetadataScanner } from '../metadata-scanner';
+import { PATH_METADATA } from '@nestjs/common/constants';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 
 export class RoutesMapper {
     private readonly routerExplorer = new ExpressRouterExplorer(new MetadataScanner());
 
-    public mapRouteToRouteProps(routeMetatype) {
+    public mapRouteToRouteProps(routeMetatype: any) {
         const routePath: string = Reflect.getMetadata(PATH_METADATA, routeMetatype);
         if (isUndefined(routePath)) {
             return [this.mapObjectToRouteProps(routeMetatype)];
@@ -21,7 +23,7 @@ export class RoutesMapper {
         }));
     }
 
-    private mapObjectToRouteProps(route) {
+    private mapObjectToRouteProps(route: any) {
         const { path, method } = route;
         if (isUndefined(path)) {
             throw new UnknownRequestMappingException();

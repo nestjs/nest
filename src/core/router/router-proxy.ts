@@ -1,13 +1,15 @@
+import { NextFunction, Request, Response } from 'express';
+
 import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 
-export type RouterProxyCallback = (req?, res?, next?) => void;
+export type RouterProxyCallback = (req?: Request, res?: Response, next?: NextFunction) => void;
 
 export class RouterProxy {
     public createProxy(
         targetCallback: RouterProxyCallback,
         exceptionsHandler: ExceptionsHandler) {
 
-        return (req, res, next) => {
+        return (req: Request, res: Response, next: NextFunction) => {
             try {
                 Promise.resolve(targetCallback(req, res, next))
                     .catch((e) => {
@@ -21,10 +23,10 @@ export class RouterProxy {
     }
 
     public createExceptionLayerProxy(
-        targetCallback: (err, req, res, next) => void,
+        targetCallback: (err: any, req: Request, res: Response, next: NextFunction) => void,
         exceptionsHandler: ExceptionsHandler) {
 
-        return (err, req, res, next) => {
+        return (err: any, req: Request, res: Response, next: NextFunction) => {
             try {
                 Promise.resolve(targetCallback(err, req, res, next))
                     .catch((e) => {

@@ -1,15 +1,17 @@
 import 'reflect-metadata';
-import { InstanceWrapper } from './container';
-import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { Module } from './module';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+
+import { PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
+import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { InstanceWrapper } from './container';
+import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { MiddlewareWrapper } from '../middlewares/container';
-import { isUndefined, isNil, isFunction } from '@nestjs/common/utils/shared.utils';
-import { PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
+import { Module } from './module';
+import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from './../errors/exceptions/undefined-dependency.exception';
+import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
 
 export class Injector {
   public async loadInstanceOfMiddleware(
@@ -39,7 +41,7 @@ export class Injector {
     await this.loadInstance<Controller>(wrapper, injectables, module);
   }
 
-  public loadPrototypeOfInstance<T>({ metatype, name }: InstanceWrapper<T>, collection: Map<string, InstanceWrapper<T>>) {
+  public loadPrototypeOfInstance<T>({ metatype, name }: InstanceWrapper<T>, collection: Map<string, InstanceWrapper<T>>): void {
     if (!collection) return null;
 
     const target = collection.get(name);
@@ -63,7 +65,7 @@ export class Injector {
     return done;
   }
 
-  public async loadInstance<T>(wrapper: InstanceWrapper<T>, collection, module: Module, context: Module[] = []) {
+  public async loadInstance<T>(wrapper: InstanceWrapper<T>, collection: any, module: Module, context: Module[] = []) {
     if (wrapper.isPending) {
       return await wrapper.done$;
     }
@@ -95,7 +97,7 @@ export class Injector {
     module: Module,
     inject: any[],
     context: Module[],
-    callback: (args) => void) {
+    callback: (args: any[]) => void) {
 
     let isResolved = true;
     const args = isNil(inject) ? this.reflectConstructorParams(wrapper.metatype) : inject;
@@ -187,10 +189,10 @@ export class Injector {
     components: Map<string, any>,
     module: Module,
     { name, index, length }: { name: any, index: number, length: number },
-    { metatype },
+    { metatype }: { metatype: any },
     context: Module[] = [],
-  ) {
-    const component = await this.scanForComponentInScopes(context, { name, index, length }, metatype);
+  ): Promise<any> {
+    const component: any = await this.scanForComponentInScopes(context, { name, index, length }, metatype);
     if (component) {
       return component;
     }
@@ -208,7 +210,7 @@ export class Injector {
     components: Map<string, any>,
     { name, index, length }: { name: any, index: number, length: number },
     module: Module,
-    metatype,
+    metatype: any,
     context: Module[] = [],
   ) {
     const instanceWrapper = await this.scanForComponentInRelatedModules(module, name, context);
@@ -221,7 +223,7 @@ export class Injector {
   public async scanForComponentInScopes(
     context: Module[],
     { name, index, length }: { name: any, index: number, length: number },
-    metatype,
+    metatype: any,
   ) {
     context = context || [];
     for (const ctx of context) {
@@ -234,7 +236,7 @@ export class Injector {
   public async scanForComponentInScope(
     context: Module,
     { name, index, length }: { name: any, index: number, length: number },
-    metatype,
+    metatype: any,
   ) {
     try {
       const component = await this.scanForComponent(
@@ -255,7 +257,7 @@ export class Injector {
 
   public async scanForComponentInRelatedModules(module: Module, name: any, context: Module[]) {
     let component = null;
-    const relatedModules = module.relatedModules || [];
+    const relatedModules: Set<Module> | any[] = module.relatedModules || [];
 
     for (const relatedModule of this.flatMap([...relatedModules.values()])) {
       const { components, exports } = relatedModule;
@@ -273,7 +275,7 @@ export class Injector {
     return component;
   }
 
-  public async resolveFactoryInstance(factoryResult): Promise<any> {
+  public async resolveFactoryInstance(factoryResult: any): Promise<any> {
     if (!(factoryResult instanceof Promise)) {
       return factoryResult;
     }

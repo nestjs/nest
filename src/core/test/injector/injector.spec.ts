@@ -1,14 +1,16 @@
-import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { InstanceWrapper } from '../../injector/container';
-import { Injector } from '../../injector/injector';
-import { Component } from '../../../common/decorators/core/component.decorator';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
-import { Module } from '../../injector/module';
-import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
+import * as sinon from 'sinon';
+
+import { Component } from '../../../common/decorators/core/component.decorator';
+import { Injector } from '../../injector/injector';
+import { InstanceWrapper } from '../../injector/container';
+import { Module } from '../../injector/module';
+import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from "../../errors/exceptions/undefined-dependency.exception";
+import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
+import { expect } from 'chai';
+
 chai.use(chaiAsPromised);
 
 describe('Injector', () => {
@@ -21,20 +23,20 @@ describe('Injector', () => {
     describe('loadInstance', () => {
 
         @Component()
-        class DependencyOne {}
+        class DependencyOne { }
 
         @Component()
-        class DependencyTwo {}
+        class DependencyTwo { }
 
         @Component()
         class MainTest {
             constructor(
                 public depOne: DependencyOne,
-                public depTwo: DependencyTwo) {}
+                public depTwo: DependencyTwo) { }
         }
 
         let moduleDeps: Module;
-        let mainTest, depOne, depTwo;
+        let mainTest: any, depOne: any, depTwo: any;
 
         beforeEach(() => {
             moduleDeps = new Module(DependencyTwo as any, []);
@@ -111,10 +113,10 @@ describe('Injector', () => {
     describe('loadPrototypeOfInstance', () => {
 
         @Component()
-        class Test {}
+        class Test { }
 
         let moduleDeps: Module;
-        let test;
+        let test: any;
 
         beforeEach(() => {
             moduleDeps = new Module(Test as any, []);
@@ -153,7 +155,7 @@ describe('Injector', () => {
 
         it('should return null when "inject" is not nil', () => {
             const collection = {
-                get: () => ({ inject: [] }),
+                get: () => ({ inject: [] as any[] }),
             };
             const result = injector.loadPrototypeOfInstance(test, collection as any);
             expect(result).to.be.null;
@@ -178,25 +180,25 @@ describe('Injector', () => {
 
         it('should call "resolveConstructorParams" when instance is not resolved', () => {
             const collection = {
-                get: (...args) => ({
-                    instance: null,
+                get: (...args: any[]) => ({
+                    instance: null as any,
                 }),
-                set: (...args) => {},
+                set: (...args: any[]) => { },
             };
 
-            injector.loadInstanceOfMiddleware({ metatype: { name: '' }} as any, collection as any, null);
+            injector.loadInstanceOfMiddleware({ metatype: { name: '' } } as any, collection as any, null);
             expect(resolveConstructorParams.called).to.be.true;
         });
 
         it('should not call "resolveConstructorParams" when instance is not resolved', () => {
             const collection = {
-                get: (...args) => ({
+                get: (...args: any[]) => ({
                     instance: {},
                 }),
-                set: (...args) => {},
+                set: (...args: any[]) => { },
             };
 
-            injector.loadInstanceOfMiddleware({ metatype: { name: '' }} as any, collection as any, null);
+            injector.loadInstanceOfMiddleware({ metatype: { name: '' } } as any, collection as any, null);
             expect(resolveConstructorParams.called).to.be.false;
         });
     });
@@ -210,7 +212,7 @@ describe('Injector', () => {
         });
 
         it('should call "loadInstance" with expected arguments', async () => {
-            const module = { routes: [] };
+            const module = { routes: [] as any[] };
             const wrapper = { test: 'test' };
 
             await injector.loadInstanceOfRoute(wrapper as any, module as any);
@@ -227,7 +229,7 @@ describe('Injector', () => {
         });
 
         it('should call "loadInstance" with expected arguments', async () => {
-            const module = { injectables: [] };
+            const module = { injectables: [] as any[] };
             const wrapper = { test: 'test' };
 
             await injector.loadInstanceOfInjectable(wrapper as any, module as any);
@@ -250,7 +252,7 @@ describe('Injector', () => {
 
     describe('scanForComponent', () => {
         let scanForComponentInRelatedModules: sinon.SinonStub;
-        const metatype = { name: 'test', metatype: { name: 'test' }};
+        const metatype = { name: 'test', metatype: { name: 'test' } };
 
         beforeEach(() => {
             scanForComponentInRelatedModules = sinon.stub();
@@ -353,7 +355,7 @@ describe('Injector', () => {
                     components: {
                         has: () => true,
                         get: () => ({
-                          isResolved: false,
+                            isResolved: false,
                         }),
                     },
                     exports: {
@@ -405,118 +407,118 @@ describe('Injector', () => {
         });
 
         it('should rethrow UndefinedDependencyException', () => {
-          sinon.stub(injector, 'scanForComponent').throws(new UndefinedDependencyException('type', 0, 10));
-          expect(injector.scanForComponentInScope({} as any, { name: 'type', index: 0, length: 10 }, {})).to.eventually.throw();
+            sinon.stub(injector, 'scanForComponent').throws(new UndefinedDependencyException('type', 0, 10));
+            expect(injector.scanForComponentInScope({} as any, { name: 'type', index: 0, length: 10 }, {})).to.eventually.throw();
         });
 
         describe('when instanceWrapper is not resolved and does not have forward ref', () => {
-          it('should call loadInstanceOfComponent', async () => {
-            const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
-            sinon.stub(injector, 'scanForComponent').returns({ isResolved: false });
-  
-            await injector.scanForComponentInScope([] as any, { name: 'name', index: 0, length: 10 }, {} as any);
-            expect(loadStub.called).to.be.true;
-          });
-          it('should not call loadInstanceOfComponent (isResolved)', async () => {
-            const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
-            sinon.stub(injector, 'scanForComponent').returns({ isResolved: true });
-    
-            await injector.scanForComponentInScope([] as any, { name: 'name', index: 0, length: 10 }, {} as any);
-            expect(loadStub.called).to.be.false;
-          });
-          it('should not call loadInstanceOfComponent (forwardRef)', async () => {
-            const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
-            sinon.stub(injector, 'scanForComponent').returns({ isResolved: false, forwardRef: true });
-  
-            await injector.scanForComponentInScope([] as any, { name: 'name', index: 0, length: 10 }, {} as any);
-            expect(loadStub.called).to.be.false;
-          });
+            it('should call loadInstanceOfComponent', async () => {
+                const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
+                sinon.stub(injector, 'scanForComponent').returns({ isResolved: false });
+
+                await injector.scanForComponentInScope([] as any, { name: 'name', index: 0, length: 10 }, {} as any);
+                expect(loadStub.called).to.be.true;
+            });
+            it('should not call loadInstanceOfComponent (isResolved)', async () => {
+                const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
+                sinon.stub(injector, 'scanForComponent').returns({ isResolved: true });
+
+                await injector.scanForComponentInScope([] as any, { name: 'name', index: 0, length: 10 }, {} as any);
+                expect(loadStub.called).to.be.false;
+            });
+            it('should not call loadInstanceOfComponent (forwardRef)', async () => {
+                const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
+                sinon.stub(injector, 'scanForComponent').returns({ isResolved: false, forwardRef: true });
+
+                await injector.scanForComponentInScope([] as any, { name: 'name', index: 0, length: 10 }, {} as any);
+                expect(loadStub.called).to.be.false;
+            });
         });
     });
 
     describe('resolveParamToken', () => {
-      let forwardRef;
-      let wrapper;
-      let param;
+        let forwardRef: any;
+        let wrapper: any;
+        let param: any;
 
-      describe('when "forwardRef" property is not nil', () => {
-        beforeEach(() => {
-          forwardRef = 'test';
-          wrapper = {};
-          param = {
-            forwardRef: () => forwardRef,
-          };
+        describe('when "forwardRef" property is not nil', () => {
+            beforeEach(() => {
+                forwardRef = 'test';
+                wrapper = {};
+                param = {
+                    forwardRef: () => forwardRef,
+                };
+            });
+            it('return forwardRef() result', () => {
+                expect(injector.resolveParamToken(wrapper, param)).to.be.eql(forwardRef);
+            });
+            it('set wrapper "forwardRef" property to true', () => {
+                injector.resolveParamToken(wrapper, param);
+                expect(wrapper.forwardRef).to.be.true;
+            });
         });
-        it('return forwardRef() result', () => {
-          expect(injector.resolveParamToken(wrapper, param)).to.be.eql(forwardRef);
+        describe('when "forwardRef" property is nil', () => {
+            beforeEach(() => {
+                forwardRef = 'test';
+                wrapper = {};
+                param = {};
+            });
+            it('set wrapper "forwardRef" property to false', () => {
+                injector.resolveParamToken(wrapper, param);
+                expect(wrapper.forwardRef).to.be.undefined;
+            });
+            it('return param', () => {
+                expect(injector.resolveParamToken(wrapper, param)).to.be.eql(param);
+            });
         });
-        it('set wrapper "forwardRef" property to true', () => {
-          injector.resolveParamToken(wrapper, param);
-          expect(wrapper.forwardRef).to.be.true;
-        });
-      });
-      describe('when "forwardRef" property is nil', () => {
-        beforeEach(() => {
-          forwardRef = 'test';
-          wrapper = {};
-          param = {};
-        });
-        it('set wrapper "forwardRef" property to false', () => {
-          injector.resolveParamToken(wrapper, param);
-          expect(wrapper.forwardRef).to.be.undefined;
-        });
-        it('return param', () => {
-          expect(injector.resolveParamToken(wrapper, param)).to.be.eql(param);
-        });
-      });
     });
 
     describe('resolveComponentInstance', () => {
-      let module;
-      beforeEach(() => {
-        module = {
-          components: [],
-        };
-      });
-
-      describe('when instanceWrapper is not resolved and does not have forward ref', () => {
-        it('should call loadInstanceOfComponent', async () => {
-          const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
-          sinon.stub(injector, 'scanForComponent').returns({ isResolved: false });
-
-          await injector.resolveComponentInstance(module, '', { index: 0, length: 10 }, {} as any, []);
-          expect(loadStub.called).to.be.true;
+        let module: any;
+        beforeEach(() => {
+            module = {
+                components: [] as any[],
+            };
         });
-        it('should not call loadInstanceOfComponent (isResolved)', async () => {
-          const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
-          sinon.stub(injector, 'scanForComponent').returns({ isResolved: true });
-  
-          await injector.resolveComponentInstance(module, '', { index: 0, length: 10 }, {} as any, []);
-          expect(loadStub.called).to.be.false;
-        });
-        it('should not call loadInstanceOfComponent (forwardRef)', async () => {
-          const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
-          sinon.stub(injector, 'scanForComponent').returns({ isResolved: false, forwardRef: true });
 
-          await injector.resolveComponentInstance(module, '', { index: 0, length: 10 }, {} as any, []);
-          expect(loadStub.called).to.be.false;
-        });
-      });
+        describe('when instanceWrapper is not resolved and does not have forward ref', () => {
+            it('should call loadInstanceOfComponent', async () => {
+                const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
+                sinon.stub(injector, 'scanForComponent').returns({ isResolved: false });
 
-      describe('when instanceWraper has async property', () => {
-        it('should await instance', async () => {
-          const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
+                await injector.resolveComponentInstance(module, '', { index: 0, length: 10 }, {} as any, []);
+                expect(loadStub.called).to.be.true;
+            });
+            it('should not call loadInstanceOfComponent (isResolved)', async () => {
+                const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
+                sinon.stub(injector, 'scanForComponent').returns({ isResolved: true });
 
-          const instance = Promise.resolve(true);
-          sinon.stub(injector, 'scanForComponent').returns({
-            isResolved: false,
-            forwardRef: true,
-            async: true,
-            instance,
-          });
-          const result = await injector.resolveComponentInstance(module, '', { index: 0, length: 10 }, {} as any, []);
-          expect(result.instance).to.be.true;
+                await injector.resolveComponentInstance(module, '', { index: 0, length: 10 }, {} as any, []);
+                expect(loadStub.called).to.be.false;
+            });
+            it('should not call loadInstanceOfComponent (forwardRef)', async () => {
+                const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
+                sinon.stub(injector, 'scanForComponent').returns({ isResolved: false, forwardRef: true });
+
+                await injector.resolveComponentInstance(module, '', { index: 0, length: 10 }, {} as any, []);
+                expect(loadStub.called).to.be.false;
+            });
         });
-      });
+
+        describe('when instanceWraper has async property', () => {
+            it('should await instance', async () => {
+                const loadStub = sinon.stub(injector, 'loadInstanceOfComponent').callsFake(() => null);
+
+                const instance = Promise.resolve(true);
+                sinon.stub(injector, 'scanForComponent').returns({
+                    isResolved: false,
+                    forwardRef: true,
+                    async: true,
+                    instance,
+                });
+                const result = await injector.resolveComponentInstance(module, '', { index: 0, length: 10 }, {} as any, []);
+                expect(result.instance).to.be.true;
+            });
+        });
     });
-  });
+});

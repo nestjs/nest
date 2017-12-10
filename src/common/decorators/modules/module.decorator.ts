@@ -1,6 +1,7 @@
 import 'reflect-metadata';
-import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface';
+
 import { InvalidModuleConfigException } from './exceptions/invalid-module-config.exception';
+import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface';
 import { metadata } from '../../constants';
 
 const metadataKeys = [
@@ -11,8 +12,8 @@ const metadataKeys = [
 ];
 
 const validateKeys = (keys: string[]) => {
-    const isKeyValid = (key) => metadataKeys.findIndex(k => k === key) < 0;
-    const validateKey = (key) => {
+    const isKeyValid = (key: string) => metadataKeys.findIndex(k => k === key) < 0;
+    const validateKey = (key: string) => {
         if (isKeyValid(key)) {
             throw new InvalidModuleConfigException(key);
         }
@@ -40,7 +41,7 @@ export function Module(obj: {
     return (target: object) => {
         for (const property in obj) {
             if (obj.hasOwnProperty(property)) {
-                Reflect.defineMetadata(property, obj[property], target);
+                Reflect.defineMetadata(property, (obj as any)[property], target);
             }
         }
     };

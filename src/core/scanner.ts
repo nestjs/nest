@@ -1,17 +1,19 @@
 import 'reflect-metadata';
-import { NestContainer } from './injector/container';
+
+import { EXCEPTION_FILTERS_METADATA, GATEWAY_MIDDLEWARES, GUARDS_METADATA, INTERCEPTORS_METADATA, metadata } from '@nestjs/common/constants';
+
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { metadata, GATEWAY_MIDDLEWARES, EXCEPTION_FILTERS_METADATA, GUARDS_METADATA, INTERCEPTORS_METADATA } from '@nestjs/common/constants';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
-import { MetadataScanner } from '../core/metadata-scanner';
 import { DynamicModule } from '@nestjs/common';
+import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { MetadataScanner } from '../core/metadata-scanner';
+import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { NestContainer } from './injector/container';
+import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 
 export class DependenciesScanner {
     constructor(
         private readonly container: NestContainer,
-        private readonly metadataScanner: MetadataScanner) {}
+        private readonly metadataScanner: MetadataScanner) { }
 
     public scan(module: NestModuleMetatype) {
         this.scanForModules(module);
@@ -23,7 +25,7 @@ export class DependenciesScanner {
         this.storeModule(module, scope);
 
         const importedModules = this.reflectMetadata(module, metadata.MODULES);
-        importedModules.map((innerModule) => {
+        importedModules.map((innerModule: NestModuleMetatype | DynamicModule) => {
             this.scanForModules(innerModule, [].concat(scope, module));
         });
     }
@@ -98,13 +100,13 @@ export class DependenciesScanner {
 
     public reflectGatewaysMiddlewares(component: Metatype<Injectable>, token: string) {
         const middlewares = this.reflectMetadata(component, GATEWAY_MIDDLEWARES);
-        middlewares.map((middleware) => this.storeComponent(middleware, token));
+        middlewares.map((middleware: Metatype<Injectable>) => this.storeComponent(middleware, token));
     }
 
     public reflectGuards(component: Metatype<Injectable>, token: string) {
         const controllerGuards = this.reflectMetadata(component, GUARDS_METADATA);
         const methodsGuards = this.metadataScanner.scanFromPrototype(
-           null, component.prototype, this.reflectKeyMetadata.bind(this, component, GUARDS_METADATA),
+            null, component.prototype, this.reflectKeyMetadata.bind(this, component, GUARDS_METADATA),
         );
         const flattenMethodsGuards = methodsGuards.reduce<any[]>((a: any[], b) => a.concat(b), []);
         [...controllerGuards, ...flattenMethodsGuards].map((guard) => this.storeInjectable(guard, token));
@@ -147,7 +149,7 @@ export class DependenciesScanner {
         this.container.addController(route, token);
     }
 
-    public reflectMetadata(metatype, metadata: string) {
-        return Reflect.getMetadata(metadata, metatype) || [];
+    public reflectMetadata(metatype: any, data: string) {
+        return Reflect.getMetadata(data, metatype) || [];
     }
 }

@@ -1,10 +1,11 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
+
+import { Client } from '../utils/client.decorator';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 import { MessagePattern } from '../utils/pattern.decorator';
-import { Client } from '../utils/client.decorator';
-import { Transport } from '../enums/transport.enum';
 import { MetadataScanner } from '../../core/metadata-scanner';
+import { Transport } from '../enums/transport.enum';
+import { expect } from 'chai';
 
 describe('ListenerMetadataExplorer', () => {
     const pattern = { pattern: 'test' };
@@ -13,21 +14,21 @@ describe('ListenerMetadataExplorer', () => {
     const clientSecMetadata = { transport: Transport.REDIS };
 
     class Test {
-        @Client(clientMetadata) public client;
-        @Client(clientSecMetadata) public redisClient;
+        @Client(clientMetadata) public client: any;
+        @Client(clientSecMetadata) public redisClient: any;
 
         get testGet() { return 0; }
-        set testSet(val) {}
+        set testSet(val: any) { }
 
-        constructor() {}
+        constructor() { }
 
         @MessagePattern(pattern)
-        public test() {}
+        public test() { }
 
         @MessagePattern(secPattern)
-        public testSec() {}
+        public testSec() { }
 
-        public noPattern() {}
+        public noPattern() { }
     }
     let scanner: MetadataScanner;
     let instance: ListenerMetadataExplorer;
@@ -61,14 +62,14 @@ describe('ListenerMetadataExplorer', () => {
         });
         it(`should return pattern properties when "isPattern" metadata is not undefined`, () => {
             const metadata = instance.exploreMethodMetadata(test, Object.getPrototypeOf(test), 'test');
-            expect(metadata).to.have.keys([ 'targetCallback', 'pattern' ]);
+            expect(metadata).to.have.keys(['targetCallback', 'pattern']);
             expect(metadata.pattern).to.eql(pattern);
         });
     });
     describe('scanForClientHooks', () => {
         it(`should returns properties with @Client decorator`, () => {
             const obj = new Test();
-            const hooks = [ ...instance.scanForClientHooks(obj) ];
+            const hooks = [...instance.scanForClientHooks(obj)];
 
             expect(hooks).to.have.length(2);
             expect(hooks[0]).to.deep.eq({ property: 'client', metadata: clientMetadata });

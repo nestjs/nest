@@ -1,23 +1,25 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
-import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
-import { createRouteParamDecorator } from '../../../common/decorators/http/create-route-param-metadata.decorator';
-import { RouterExecutionContext } from '../../router/router-execution-context';
-import { RouteParamsMetadata, Request, Body } from '../../../index';
-import { RouteParamsFactory } from '../../router/route-params-factory';
-import { PipesContextCreator } from '../../pipes/pipes-context-creator';
-import { PipesConsumer } from '../../pipes/pipes-consumer';
+
+import { Body, Request, RouteParamsMetadata } from '../../../index';
+
 import { ApplicationConfig } from '../../application-config';
+import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
-import { NestContainer } from '../../injector/container';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
+import { NestContainer } from '../../injector/container';
+import { PipesConsumer } from '../../pipes/pipes-consumer';
+import { PipesContextCreator } from '../../pipes/pipes-context-creator';
+import { RouteParamsFactory } from '../../router/route-params-factory';
+import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
+import { RouterExecutionContext } from '../../router/router-execution-context';
+import { createRouteParamDecorator } from '../../../common/decorators/http/create-route-param-metadata.decorator';
+import { expect } from 'chai';
 
 describe('RouterExecutionContext', () => {
     let contextCreator: RouterExecutionContext;
-    let callback;
+    let callback: any;
     let applySpy: sinon.SinonSpy;
     let bindSpy: sinon.SinonSpy;
     let factory: RouteParamsFactory;
@@ -69,8 +71,8 @@ describe('RouterExecutionContext', () => {
                 done();
             });
             describe('returns proxy function', () => {
-                let proxyContext;
-                let instance;
+                let proxyContext: any;
+                let instance: any;
 
                 beforeEach(() => {
                     instance = { foo: 'bar' };
@@ -80,7 +82,7 @@ describe('RouterExecutionContext', () => {
                     expect(proxyContext).to.be.a('function');
                 });
                 describe('when proxy function called', () => {
-                    let request;
+                    let request: any;
                     const response = {
                         status: () => response,
                         send: () => response,
@@ -97,7 +99,7 @@ describe('RouterExecutionContext', () => {
                     });
                     it('should apply expected context and arguments to callback', (done) => {
                         proxyContext(request, response, next).then(() => {
-                            const args = [ next, null, request.body.test ];
+                            const args = [next, null, request.body.test];
                             expect(applySpy.called).to.be.true;
                             expect(applySpy.calledWith(instance, args)).to.be.true;
                             done();
@@ -106,7 +108,7 @@ describe('RouterExecutionContext', () => {
                     it('should throw exception when "tryActivate" returns false', () => {
                         sinon.stub(guardsConsumer, 'tryActivate', () => false);
                         expect(
-                          proxyContext(request, response, next),
+                            proxyContext(request, response, next),
                         ).to.eventually.throw();
                     });
                 });
@@ -114,34 +116,34 @@ describe('RouterExecutionContext', () => {
         });
     });
     describe('reflectCallbackMetadata', () => {
-        const CustomDecorator = createRouteParamDecorator(() => {});
+        const CustomDecorator = createRouteParamDecorator(() => { });
         class TestController {
-            public callback(@Request() req, @Body() body, @CustomDecorator() custom) {}
+            public callback( @Request() req: any, @Body() body: any, @CustomDecorator() custom: any) { }
         }
         it('should returns ROUTE_ARGS_METADATA callback metadata', () => {
             const instance = new TestController();
-            const metadata = contextCreator.reflectCallbackMetadata(instance, 'callback');
+            const metadata: any = contextCreator.reflectCallbackMetadata(instance, 'callback');
             console.log(metadata);
-            
-            const expectedMetadata = {
+
+            const expectedMetadata: any = {
                 [`${RouteParamtypes.REQUEST}:0`]: {
                     index: 0,
-                    data: undefined,
+                    data: undefined as any,
                     pipes: [],
                 },
                 [`${RouteParamtypes.BODY}:1`]: {
                     index: 1,
-                    data: undefined,
+                    data: undefined as any,
                     pipes: [],
                 },
                 [`custom${CUSTOM_ROUTE_AGRS_METADATA}:2`]: {
                     index: 2,
-                    factory: () => {},
-                    data: undefined,
+                    factory: () => { },
+                    data: undefined as any,
                 },
             };
-            expect(metadata[`${RouteParamtypes.REQUEST}:0`]).to.deep.equal(expectedMetadata[`${RouteParamtypes.REQUEST}:0`]);
-            expect(metadata[`${RouteParamtypes.REQUEST}:1`]).to.deep.equal(expectedMetadata[`${RouteParamtypes.REQUEST}:1`]);
+            expect(metadata[`${RouteParamtypes.REQUEST}:0`] as any).to.deep.equal(expectedMetadata[`${RouteParamtypes.REQUEST}:0`]);
+            expect(metadata[`${RouteParamtypes.REQUEST}:1`] as any).to.deep.equal(expectedMetadata[`${RouteParamtypes.REQUEST}:1`]);
 
             const keys = Object.keys(metadata);
             const custom = keys.find((key) => key.includes(CUSTOM_ROUTE_AGRS_METADATA));
@@ -169,19 +171,19 @@ describe('RouterExecutionContext', () => {
     describe('createNullArray', () => {
         it('should create N size array filled with null', () => {
             const size = 3;
-            expect(contextCreator.createNullArray(size)).to.be.deep.eq([ null, null, null ]);
+            expect(contextCreator.createNullArray(size)).to.be.deep.eq([null, null, null]);
         });
     });
     describe('exchangeKeysForValues', () => {
         const res = { body: 'res' };
         const req = { body: { test: 'req' } };
-        const next = () => {};
+        const next = () => { };
 
         it('should exchange arguments keys for appropriate values', () => {
             const metadata = {
-                [RouteParamtypes.REQUEST]: { index: 0, data: 'test', pipes: [] },
-                [RouteParamtypes.BODY]: { index: 2, data: 'test', pipes: [] },
-                [`key${CUSTOM_ROUTE_AGRS_METADATA}`]: { index: 3, data: 'custom', pipes: [] },
+                [RouteParamtypes.REQUEST]: { index: 0, data: 'test', pipes: [] as any },
+                [RouteParamtypes.BODY]: { index: 2, data: 'test', pipes: [] as any },
+                [`key${CUSTOM_ROUTE_AGRS_METADATA}`]: { index: 3, data: 'custom', pipes: [] as any },
             };
             const keys = Object.keys(metadata);
             const values = contextCreator.exchangeKeysForValues(keys, metadata);
@@ -195,39 +197,39 @@ describe('RouterExecutionContext', () => {
         });
     });
     describe('getCustomFactory', () => {
-      describe('when factory is function', () => {
-        it('should return curried factory', () => {
-          const data = 3;
-          const result = 10;
-          const customFactory = (_, req) => result;
+        describe('when factory is function', () => {
+            it('should return curried factory', () => {
+                const data = 3;
+                const result = 10;
+                const customFactory = (_: any, req: any) => result;
 
-          expect(contextCreator.getCustomFactory(customFactory, data)()).to.be.eql(result);
+                expect(contextCreator.getCustomFactory(customFactory, data)()).to.be.eql(result);
+            });
         });
-      });
-      describe('when factory is undefined / is not a function', () => {
-        it('should return curried null identity', () => {
-          const result = 10;
-          const customFactory = undefined;
-          expect(contextCreator.getCustomFactory(customFactory, undefined)()).to.be.eql(null);
+        describe('when factory is undefined / is not a function', () => {
+            it('should return curried null identity', () => {
+                const result = 10;
+                const customFactory = undefined as any;
+                expect(contextCreator.getCustomFactory(customFactory, undefined)()).to.be.eql(null);
+            });
         });
-      });
     });
     describe('mergeParamsMetatypes', () => {
-      it('should return "paramsProperties" when paramtypes array doesnt exists', () => {
-        const paramsProperties = ['1'];
-        expect(contextCreator.mergeParamsMetatypes(paramsProperties as any, null)).to.be.eql(paramsProperties);
-      });
+        it('should return "paramsProperties" when paramtypes array doesnt exists', () => {
+            const paramsProperties = ['1'];
+            expect(contextCreator.mergeParamsMetatypes(paramsProperties as any, null)).to.be.eql(paramsProperties);
+        });
     });
     describe('getParamValue', () => {
         let consumerApplySpy: sinon.SinonSpy;
-        const value = 3, metatype = null, transforms = [];
+        const value = 3, metatype: any = null, transforms = [] as any[];
 
         beforeEach(() => {
             consumerApplySpy = sinon.spy(consumer, 'apply');
         });
         describe('when paramtype is query, body or param', () => {
             it('should call "consumer.apply" with expected arguments', () => {
-                contextCreator.getParamValue(value, { metatype, type: RouteParamtypes.QUERY, data: null } , transforms);
+                contextCreator.getParamValue(value, { metatype, type: RouteParamtypes.QUERY, data: null }, transforms);
                 expect(consumerApplySpy.calledWith(value, { metatype, type: RouteParamtypes.QUERY, data: null }, transforms)).to.be.true;
 
                 contextCreator.getParamValue(value, { metatype, type: RouteParamtypes.BODY, data: null }, transforms);

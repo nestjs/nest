@@ -1,15 +1,15 @@
-import { expect } from 'chai';
-import { createRouteParamDecorator } from '../../decorators/http/create-route-param-metadata.decorator';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../constants';
+import { createRouteParamDecorator } from '../../decorators/http/create-route-param-metadata.decorator';
+import { expect } from 'chai';
 
 describe('createRouteParamDecorator', () => {
-  let key;
-  let reflector;
-  let result;
+  let key: any;
+  let reflector: any;
+  let result: any;
 
   beforeEach(() => {
     key = 'key';
-    reflector = (data, req, res, next) => true;
+    reflector = (data: any, req: any, res: any, next: any) => true;
     result = createRouteParamDecorator(reflector);
   });
   it('should return a function as a first element', () => {

@@ -1,22 +1,24 @@
-import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { Server } from '../../server/server';
-import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/operator/toPromise';
 
+import * as sinon from 'sinon';
+
+import { Observable } from 'rxjs/Observable';
+import { Server } from '../../server/server';
+import { expect } from 'chai';
+
 class TestServer extends Server {
-    public listen(callback: () => void) {}
-    public close() {}
+    public listen(callback: () => void) { }
+    public close() { }
 }
 
 describe('Server', () => {
     const server = new TestServer();
-    const callback = () => {},
+    const callback = () => { },
         pattern = { test: 'test' };
 
     describe('add', () => {
         it(`should add handler as a stringified pattern key`, () => {
-            server.add(pattern, callback as any);
+            server.add(pattern as any, callback as any);
 
             const handlers = server.getHandlers();
             expect(handlers[JSON.stringify(pattern)]).to.equal(callback);
@@ -73,7 +75,7 @@ describe('Server', () => {
             describe('is value', () => {
                 it('should returns Observable', async () => {
                     const value = 100;
-                    expect(await server.transformToObservable(value).toPromise()).to.be.eq(100);
+                    expect(await server.transformToObservable(value as any).toPromise()).to.be.eq(100);
                 });
             });
         });

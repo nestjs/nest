@@ -1,5 +1,5 @@
-import { expect } from 'chai';
 import { MetadataScanner } from '../metadata-scanner';
+import { expect } from 'chai';
 
 describe('MetadataScanner', () => {
     let scanner: MetadataScanner;
@@ -8,11 +8,11 @@ describe('MetadataScanner', () => {
     });
     describe('scanFromPrototype', () => {
         class Test {
-            constructor() {}
+            constructor() { }
             get prop() { return ''; }
-            set val(value) {}
-            public test() {}
-            public test2() {}
+            set val(value: any) { }
+            public test() { }
+            public test2() { }
         }
         it('should returns only methods', () => {
             const methods = scanner.scanFromPrototype(new Test(), Test.prototype, a => a);

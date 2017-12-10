@@ -1,12 +1,14 @@
-import * as redis from 'redis';
-import { Server } from './server';
-import { NO_PATTERN_MESSAGE } from '../constants';
-import { MicroserviceConfiguration } from '../interfaces/microservice-configuration.interface';
-import { CustomTransportStrategy } from './../interfaces';
-import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/observable/empty';
 import 'rxjs/add/operator/finally';
+
+import * as redis from 'redis';
+
+import { CustomTransportStrategy } from './../interfaces';
+import { MicroserviceConfiguration } from '../interfaces/microservice-configuration.interface';
+import { NO_PATTERN_MESSAGE } from '../constants';
+import { Observable } from 'rxjs/Observable';
+import { Server } from './server';
 
 const DEFAULT_URL = 'redis://localhost:6379';
 const CONNECT_EVENT = 'connect';
@@ -15,8 +17,8 @@ const ERROR_EVENT = 'error';
 
 export class ServerRedis extends Server implements CustomTransportStrategy {
     private readonly url: string;
-    private sub = null;
-    private pub = null;
+    private sub: redis.RedisClient = null;
+    private pub: redis.RedisClient = null;
 
     constructor(config: MicroserviceConfiguration) {
         super();
@@ -45,7 +47,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
         return redis.createClient({ url: this.url });
     }
 
-    public handleConnection(callback, sub, pub) {
+    public handleConnection(callback: Function, sub: redis.RedisClient, pub: redis.RedisClient) {
         sub.on(MESSAGE_EVENT, this.getMessageHandler(pub).bind(this));
 
         const patterns = Object.keys(this.messageHandlers);
@@ -53,11 +55,11 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
         callback && callback();
     }
 
-    public getMessageHandler(pub) {
-        return async (channel, buffer) => await this.handleMessage(channel, buffer, pub);
+    public getMessageHandler(pub: redis.RedisClient) {
+        return async (channel: any, buffer: any) => await this.handleMessage(channel, buffer, pub);
     }
 
-    public async handleMessage(channel, buffer, pub) {
+    public async handleMessage(channel: any, buffer: any, pub: redis.RedisClient) {
         const msg = this.tryParse(buffer);
         const pattern = channel.replace(/_ack$/, '');
         const publish = this.getPublisher(pub, pattern);
@@ -72,8 +74,8 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
         response$ && this.send(response$, publish);
     }
 
-    public getPublisher(pub, pattern) {
-        return (respond) => {
+    public getPublisher(pub: redis.RedisClient, pattern: string) {
+        return (respond: object) => {
             pub.publish(
                 this.getResQueueName(pattern),
                 JSON.stringify(respond),
@@ -81,7 +83,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
         };
     }
 
-    public tryParse(content) {
+    public tryParse(content: string) {
         try {
             return JSON.parse(content);
         }
@@ -90,15 +92,15 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
         }
     }
 
-    public getAckQueueName(pattern) {
+    public getAckQueueName(pattern: string) {
         return `${pattern}_ack`;
     }
 
-    public getResQueueName(pattern) {
+    public getResQueueName(pattern: string): string {
         return `${pattern}_res`;
     }
 
-    public handleErrors(stream) {
-        stream.on(ERROR_EVENT, (err) => this.logger.error(err));
+    public handleErrors(stream: redis.RedisClient) {
+        stream.on(ERROR_EVENT, (err: string) => this.logger.error(err));
     }
 }

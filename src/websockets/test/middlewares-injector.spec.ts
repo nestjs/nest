@@ -1,15 +1,17 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { MiddlewaresInjector } from '../middlewares-injector';
-import { UnknownModuleException } from '../../core/errors/exceptions/unknown-module.exception';
-import { WebSocketGateway, IoAdapter } from '../index';
-import { RuntimeException } from '../../core/errors/exceptions/runtime.exception';
+
+import { IoAdapter, WebSocketGateway } from '../index';
+
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { MiddlewaresInjector } from '../middlewares-injector';
+import { RuntimeException } from '../../core/errors/exceptions/runtime.exception';
+import { UnknownModuleException } from '../../core/errors/exceptions/unknown-module.exception';
+import { expect } from 'chai';
 
 describe('MiddlewaresInjector', () => {
     let injector: MiddlewaresInjector;
-    let container;
-    let modules;
+    let container: any;
+    let modules: any;
 
     beforeEach(() => {
         modules = new Map();
@@ -34,7 +36,7 @@ describe('MiddlewaresInjector', () => {
             const components = {};
 
             sinon.stub(modules, 'has').returns(true);
-            sinon.stub(modules, 'get').returns({components});
+            sinon.stub(modules, 'get').returns({ components });
 
             const stub: sinon.SinonStub = sinon.stub(injector, 'applyMiddlewares');
             const server = {};
@@ -48,7 +50,7 @@ describe('MiddlewaresInjector', () => {
         @WebSocketGateway({
             middlewares,
         })
-        class Test {}
+        class Test { }
         it('should returns expected list of middlewares', () => {
             expect(
                 injector.reflectMiddlewaresTokens(new Test()),
@@ -57,7 +59,7 @@ describe('MiddlewaresInjector', () => {
     });
     describe('applyMiddlewares', () => {
         let server: { use: sinon.SinonSpy };
-        const setAsName = name => ({ name });
+        const setAsName = (name: any) => ({ name });
         const tokens = [1, null, 'test', undefined];
 
         beforeEach(() => {
@@ -91,18 +93,18 @@ describe('MiddlewaresInjector', () => {
             });
             it('should returns null when object is not a gateway middleware', () => {
                 const instance = {};
-                getStub.returns({instance});
+                getStub.returns({ instance });
                 expect(injector.bindMiddleware('', components)).to.be.null;
             });
             it('should returns null when result of "object.resolve()" operation is not a function', () => {
-                const instance = { resolve() { return ({}); }};
-                getStub.returns({instance});
+                const instance = { resolve() { return ({}); } };
+                getStub.returns({ instance });
 
                 expect(injector.bindMiddleware('', components)).to.be.null;
             });
             it('should returns function', () => {
-                const instance = { resolve() { return () => ({}); }};
-                getStub.returns({instance});
+                const instance = { resolve() { return () => ({}); } };
+                getStub.returns({ instance });
 
                 expect(injector.bindMiddleware('', components)).to.be.a('function');
             });
@@ -111,7 +113,7 @@ describe('MiddlewaresInjector', () => {
     describe('isGatewayMiddleware', () => {
         class ValidGateway {
             public resolve() {
-                return (...args) => ({});
+                return (...args: any[]) => ({});
             }
         }
         it('should returns false when object is not a gateway middleware', () => {

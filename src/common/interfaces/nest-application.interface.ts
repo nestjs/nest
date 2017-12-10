@@ -1,8 +1,9 @@
-import { MicroserviceConfiguration } from '@nestjs/microservices';
-import { INestMicroservice, ExceptionFilter, PipeTransform } from './index';
-import { WebSocketAdapter } from './web-socket-adapter.interface';
+import { ExceptionFilter, INestMicroservice, PipeTransform } from './index';
+
 import { CanActivate } from './can-activate.interface';
+import { MicroserviceConfiguration } from '@nestjs/microservices';
 import { NestInterceptor } from './nest-interceptor.interface';
+import { WebSocketAdapter } from './web-socket-adapter.interface';
 
 export interface INestApplication {
     /**
@@ -18,7 +19,7 @@ export interface INestApplication {
      *
      * @returns void
      */
-    use(...args): void;
+    use(...args: any[]): void;
 
     /**
      * Starts the application.
@@ -92,28 +93,28 @@ export interface INestApplication {
      *
      * @param  {ExceptionFilter[]} ...filters
      */
-    useGlobalFilters(...filters: ExceptionFilter[]);
+    useGlobalFilters(...filters: ExceptionFilter[]): void;
 
     /**
      * Setups pipes as a global pipes (will be used within every HTTP route handler)
      *
      * @param  {PipeTransform[]} ...pipes
      */
-    useGlobalPipes(...pipes: PipeTransform<any>[]);
+    useGlobalPipes(...pipes: PipeTransform<any>[]): void;
 
     /**
      * Setups interceptors as a global interceptors (will be used within every HTTP route handler)
      *
      * @param  {NestInterceptor[]} ...interceptors
      */
-    useGlobalInterceptors(...interceptors: NestInterceptor[]);
+    useGlobalInterceptors(...interceptors: NestInterceptor[]): void;
 
     /**
      * Setups guards as a global guards (will be used within every HTTP route handler)
      *
      * @param  {CanActivate[]} ...guards
      */
-    useGlobalGuards(...guards: CanActivate[]);
+    useGlobalGuards(...guards: CanActivate[]): void;
 
     /**
      * Terminates the application (both NestApplication, Web Socket Gateways and every connected microservice)

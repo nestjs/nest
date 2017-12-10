@@ -1,15 +1,17 @@
 import 'reflect-metadata';
+
 import { Controller, Injectable } from '@nestjs/common/interfaces';
-import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
-import { SHARED_MODULE_METADATA } from '@nestjs/common/constants';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { Module } from './module';
-import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
-import { ModuleTokenFactory } from './module-token-factory';
-import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
+
 import { DynamicModule } from '@nestjs/common';
+import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
+import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
+import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Module } from './module';
+import { ModuleTokenFactory } from './module-token-factory';
+import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { SHARED_MODULE_METADATA } from '@nestjs/common/constants';
+import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 
 export class NestContainer {
     private readonly globalModules = new Set<Module>();
@@ -34,10 +36,10 @@ export class NestContainer {
     }
 
     public extractMetadata(
-      metatype: NestModuleMetatype | DynamicModule,
+        metatype: NestModuleMetatype | DynamicModule,
     ): { type: NestModuleMetatype, dynamicMetadata?: Partial<DynamicModule> | undefined } {
         if (!this.isDynamicModule(metatype)) {
-           return { type: metatype };
+            return { type: metatype };
         }
         const { module: type, ...dynamicMetadata } = metatype;
         return { type, dynamicMetadata };
@@ -47,9 +49,9 @@ export class NestContainer {
         return (module as DynamicModule).module;
     }
 
-    public addDynamicMetadata(token: string, dynamicModuleMetadata: Partial<DynamicModule>) {
+    public addDynamicMetadata(token: string, dynamicModuleMetadata: Partial<DynamicModule>): void {
         if (!dynamicModuleMetadata) {
-            return undefined;
+            return;
         }
         this.dynamicModulesMetadata.set(token, dynamicModuleMetadata);
     }
@@ -121,7 +123,7 @@ export class NestContainer {
         this.modules.clear();
     }
 
-    public replace(toReplace, options: any & { scope: any[] | null }) {
+    public replace(toReplace: any, options: any & { scope: any[] | null }) {
         [...this.modules.values()].forEach((module) => {
             module.replace(toReplace, options);
         });
@@ -135,22 +137,22 @@ export class NestContainer {
         this.globalModules.forEach((globalModule) => this.bindGlobalModuleToModule(module, globalModule));
     }
 
-    public bindGlobalModuleToModule(module: Module, globalModule: Module) {
+    public bindGlobalModuleToModule(module: Module, globalModule: Module): void {
         if (module === globalModule) {
-            return undefined;
+            return;
         }
         module.addRelatedModule(globalModule);
     }
 
     public getDynamicMetadataByToken(
-      token: string,
-      metadataKey: keyof DynamicModule,
+        token: string,
+        metadataKey: keyof DynamicModule,
     ): any[] {
-      const metadata = this.dynamicModulesMetadata.get(token);
-      if (metadata && metadata[metadataKey]) {
-        return metadata[metadataKey];
-      }
-      return [];
+        const metadata = this.dynamicModulesMetadata.get(token);
+        if (metadata && metadata[metadataKey]) {
+            return metadata[metadataKey];
+        }
+        return [];
     }
 }
 

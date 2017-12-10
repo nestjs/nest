@@ -1,12 +1,13 @@
-import { NestContainer, InstanceWrapper } from '@nestjs/core/injector/container';
-import { ModuleMetadata } from '@nestjs/common/interfaces/modules/module-metadata.interface';
-import { Module } from '@nestjs/common/utils/decorators/module.decorator';
+import { InstanceWrapper, NestContainer } from '@nestjs/core/injector/container';
+
 import { DependenciesScanner } from '@nestjs/core/scanner';
 import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
-import { NestEnvironment } from '@nestjs/common/enums/nest-environment.enum';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Module } from '@nestjs/common/utils/decorators/module.decorator';
+import { ModuleMetadata } from '@nestjs/common/interfaces/modules/module-metadata.interface';
+import { NestEnvironment } from '@nestjs/common/enums/nest-environment.enum';
 import { TestingModuleBuilder } from './testing-module.builder';
 
 export class Test {
@@ -21,4 +22,3 @@ export class Test {
         Logger.setMode(NestEnvironment.TEST);
     }
 }
-

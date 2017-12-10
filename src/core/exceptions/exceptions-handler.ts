@@ -1,16 +1,18 @@
-import { HttpException as DeprecatedHttpException } from './http-exception';
-import { messages } from '../constants';
-import { Logger } from '@nestjs/common';
-import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
 import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
-import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
+
+import { HttpException as DeprecatedHttpException } from './http-exception';
+import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
 import { HttpException } from '@nestjs/common';
+import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
+import { Logger } from '@nestjs/common';
+import { Response } from 'express';
+import { messages } from '../constants';
 
 export class ExceptionsHandler {
     private static readonly logger = new Logger(ExceptionsHandler.name);
     private filters: ExceptionFilterMetadata[] = [];
 
-    public next(exception: Error | HttpException | any, response) {
+    public next(exception: Error | HttpException | any, response: any) {
         if (this.invokeCustomFilters(exception, response)) return;
 
         if (!(exception instanceof HttpException || exception instanceof DeprecatedHttpException)) {
@@ -38,7 +40,7 @@ export class ExceptionsHandler {
         this.filters = filters;
     }
 
-    public invokeCustomFilters(exception, response): boolean {
+    public invokeCustomFilters(exception: any, response: Response & any): boolean {
         if (isEmpty(this.filters)) return false;
 
         const filter = this.filters.find(({ exceptionMetatypes, func }) => {

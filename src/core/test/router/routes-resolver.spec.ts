@@ -1,10 +1,11 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { RoutesResolver } from '../../router/routes-resolver';
+
+import { ApplicationConfig } from '../../application-config';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { ApplicationConfig } from '../../application-config';
+import { RoutesResolver } from '../../router/routes-resolver';
+import { expect } from 'chai';
 
 describe('RoutesResolver', () => {
   @Controller('global')
@@ -16,9 +17,9 @@ describe('RoutesResolver', () => {
     public anotherTest() { }
   }
 
-  let router;
+  let router: any;
   let routesResolver: RoutesResolver;
-  let container;
+  let container: any;
   let modules: Map<string, any>;
 
   before(() => {

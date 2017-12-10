@@ -1,12 +1,12 @@
+import { InvalidMessageException } from '../exceptions/invalid-message.exception';
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
 import { isNil } from '@nestjs/common/utils/shared.utils';
-import { InvalidMessageException } from '../exceptions/invalid-message.exception';
 
 export abstract class ClientProxy {
-    protected abstract sendSingleMessage(msg, callback: (err, result, disposed?: boolean) => void);
+    protected abstract sendSingleMessage(msg: any, callback: (err: any, result: any, disposed?: boolean) => void): any;
 
-    public send<T>(pattern, data): Observable<T> {
+    public send<T>(pattern: any, data: any): Observable<T> {
         if (isNil(pattern) || isNil(data)) {
             return Observable.throw(new InvalidMessageException());
         }
@@ -18,7 +18,7 @@ export abstract class ClientProxy {
         });
     }
 
-    protected createObserver<T>(observer: Observer<T>): (err, result, disposed?: boolean) => void {
+    protected createObserver<T>(observer: Observer<T>): (err: any, result: any, disposed?: boolean) => void {
         return (err, result, disposed) => {
             if (err) {
                 observer.error(err);

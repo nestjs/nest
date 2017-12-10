@@ -1,7 +1,8 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { ServerTCP } from '../../server/server-tcp';
+
 import { NO_PATTERN_MESSAGE } from '../../constants';
+import { ServerTCP } from '../../server/server-tcp';
+import { expect } from 'chai';
 
 describe('ServerTCP', () => {
     let server: ServerTCP;
@@ -36,13 +37,13 @@ describe('ServerTCP', () => {
             (server as any).server = serverMock;
         });
         it('should call native listen method with expected arguments', () => {
-            const callback = () => {};
+            const callback = () => { };
             server.listen(callback);
             expect(serverMock.listen.calledWith((server as any).port, callback)).to.be.true;
         });
     });
     describe('handleMessage', () => {
-        let socket;
+        let socket: any;
         const msg = {
             pattern: 'test',
             data: 'tests',
@@ -53,8 +54,8 @@ describe('ServerTCP', () => {
             };
         });
         it('should send NO_PATTERN_MESSAGE error if key is not exists in handlers object', () => {
-           server.handleMessage(socket, msg);
-           expect(socket.sendMessage.calledWith({ status: 'error', error: NO_PATTERN_MESSAGE })).to.be.true;
+            server.handleMessage(socket, msg);
+            expect(socket.sendMessage.calledWith({ status: 'error', error: NO_PATTERN_MESSAGE })).to.be.true;
         });
         it('should call handler if exists in handlers object', () => {
             const handler = sinon.spy();

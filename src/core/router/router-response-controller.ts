@@ -1,10 +1,13 @@
-import { Observable } from 'rxjs/Observable';
-import { RequestMethod, HttpStatus } from '@nestjs/common';
-import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import 'rxjs/add/operator/toPromise';
 
+import { HttpStatus, RequestMethod } from '@nestjs/common';
+import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
+
+import { Observable } from 'rxjs/Observable';
+import { Response } from 'express-serve-static-core';
+
 export class RouterResponseController {
-  public async apply(resultOrDeffered, response, requestMethod: RequestMethod, httpCode: number) {
+  public async apply(resultOrDeffered: Promise<any> | Observable<any>, response: Response, requestMethod: RequestMethod, httpCode: number) {
     const result = await this.transformToResult(resultOrDeffered);
     const statusCode = httpCode ? httpCode : this.getStatusByMethod(requestMethod);
     const res = response.status(statusCode);
@@ -14,7 +17,7 @@ export class RouterResponseController {
     return isObject(result) ? res.json(result) : res.send(String(result));
   }
 
-  public async transformToResult(resultOrDeffered) {
+  public async transformToResult<T>(resultOrDeffered: Promise<T> | Observable<T>): Promise<T> {
     if (resultOrDeffered instanceof Promise) {
       return await resultOrDeffered;
     }

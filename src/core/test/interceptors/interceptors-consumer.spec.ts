@@ -1,9 +1,11 @@
-import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { Observable } from 'rxjs/Observable';
-import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/toPromise';
+
+import * as sinon from 'sinon';
+
+import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
+import { Observable } from 'rxjs/Observable';
+import { expect } from 'chai';
 
 describe('InterceptorsConsumer', () => {
     let consumer: InterceptorsConsumer;
@@ -47,7 +49,7 @@ describe('InterceptorsConsumer', () => {
     describe('createContext', () => {
         it('should returns execution context object', () => {
           const instance = { constructor: {}};
-          const callback = () => null;
+          const callback = () => null as any;
           const context = consumer.createContext(instance, callback);
 
           expect(context).to.be.eql({

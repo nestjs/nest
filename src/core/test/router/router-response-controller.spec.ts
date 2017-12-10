@@ -1,9 +1,11 @@
-import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { RouterResponseController } from '../../router/router-response-controller';
-import { RequestMethod } from './../../../common';
-import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
+
+import * as sinon from 'sinon';
+
+import { Observable } from 'rxjs/Observable';
+import { RequestMethod } from './../../../common';
+import { RouterResponseController } from '../../router/router-response-controller';
+import { expect } from 'chai';
 
 describe('RouterResponseController', () => {
     let routerResponseController: RouterResponseController;
@@ -22,15 +24,15 @@ describe('RouterResponseController', () => {
         describe('when result is', () => {
             describe('nil', () => {
                 it('should call send()', async () => {
-                    const value = null;
-                    await routerResponseController.apply(value, response, 1, 200);
+                    const value: any = null;
+                    await routerResponseController.apply(value, response as any, 1, 200);
                     expect(response.send.called).to.be.true;
                 });
             });
             describe('string', () => {
                 it('should call send(value)', async () => {
                     const value = 'string';
-                    await routerResponseController.apply(value, response, 1, 200);
+                    await routerResponseController.apply(value as any, response as any, 1, 200);
                     expect(response.send.called).to.be.true;
                     expect(response.send.calledWith(String(value))).to.be.true;
                 });
@@ -38,7 +40,7 @@ describe('RouterResponseController', () => {
             describe('object', () => {
                 it('should call json(value)', async () => {
                     const value = { test: 'test' };
-                    await routerResponseController.apply(value, response, 1, 200);
+                    await routerResponseController.apply(value as any, response as any, 1, 200);
                     expect(response.json.called).to.be.true;
                     expect(response.json.calledWith(value)).to.be.true;
                 });
@@ -65,7 +67,7 @@ describe('RouterResponseController', () => {
             describe('is value', () => {
                 it('should returns Promise', async () => {
                     const value = 100;
-                    expect(await routerResponseController.transformToResult(value)).to.be.eq(100);
+                    expect(await routerResponseController.transformToResult(value as any)).to.be.eq(100);
                 });
             });
         });

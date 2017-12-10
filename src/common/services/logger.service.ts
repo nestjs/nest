@@ -1,16 +1,15 @@
 import * as clc from 'cli-color';
+
 import { NestEnvironment } from '../enums/nest-environment.enum';
 
-declare const process;
-
 export class Logger {
-    private static lastTimestamp = null;
+    private static lastTimestamp: number = null;
     private static contextEnv = NestEnvironment.RUN;
     private readonly yellow = clc.xterm(3);
 
     constructor(
         private readonly context: string,
-        private readonly printTimestamps = false) {}
+        private readonly printTimestamps = false) { }
 
     public static setMode(mode: NestEnvironment) {
         this.contextEnv = mode;

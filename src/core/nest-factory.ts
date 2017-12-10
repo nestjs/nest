@@ -1,19 +1,20 @@
-import * as optional from 'optional';
+import { INestApplication, INestApplicationContext, INestMicroservice } from '@nestjs/common';
+
 import { DependenciesScanner } from './scanner';
-import { InstanceLoader } from './injector/instance-loader';
-import { NestContainer } from './injector/container';
 import { ExceptionsZone } from './errors/exceptions-zone';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { messages } from './constants';
-import { NestApplication } from './nest-application';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { ExpressAdapter } from './adapters/express-adapter';
-import { INestApplication, INestMicroservice, INestApplicationContext } from '@nestjs/common';
+import { InstanceLoader } from './injector/instance-loader';
+import { Logger } from '@nestjs/common/services/logger.service';
 import { MetadataScanner } from './metadata-scanner';
+import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
+import { NestApplication } from './nest-application';
 import { NestApplicationContext } from './nest-application-context';
+import { NestContainer } from './injector/container';
+import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { messages } from './constants';
+import optional from './optional';
 
 const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {} as any;
 
@@ -32,7 +33,7 @@ export class NestFactoryStatic {
      * @param  {} express Optional express() server instance
      * @returns an `Promise` of the INestApplication instance
      */
-    public async create(module, express = ExpressAdapter.create()): Promise<INestApplication> {
+    public async create(module: any, express = ExpressAdapter.create()): Promise<INestApplication> {
         await this.initialize(module);
         return this.createNestInstance<NestApplication>(
             new NestApplication(this.container, express),
@@ -47,11 +48,11 @@ export class NestFactoryStatic {
      * @returns an `Promise` of the INestMicroservice instance
      */
     public async createMicroservice(
-        module,
+        module: any,
         config?: MicroserviceConfiguration): Promise<INestMicroservice> {
 
         if (!NestMicroservice) {
-          throw new MicroservicesPackageNotFoundException();
+            throw new MicroservicesPackageNotFoundException();
         }
 
         await this.initialize(module);
@@ -66,7 +67,7 @@ export class NestFactoryStatic {
      * @param  {} module Entry (root) application module class
      * @returns an `Promise` of the INestApplicationContext instance
      */
-    public async createApplicationContext(module): Promise<INestApplicationContext> {
+    public async createApplicationContext(module: any): Promise<INestApplicationContext> {
         await this.initialize(module);
 
         const modules = this.container.getModules().values();
@@ -80,7 +81,7 @@ export class NestFactoryStatic {
         return this.createProxy(instance);
     }
 
-    private async initialize(module) {
+    private async initialize(module: any) {
         try {
             this.logger.log(messages.APPLICATION_START);
             await ExceptionsZone.asyncRun(async () => {
@@ -93,7 +94,7 @@ export class NestFactoryStatic {
         }
     }
 
-    private createProxy(target) {
+    private createProxy(target: any) {
         const proxy = this.createExceptionProxy();
         return new Proxy(target, {
             get: proxy,
@@ -102,12 +103,12 @@ export class NestFactoryStatic {
     }
 
     private createExceptionProxy() {
-        return (receiver, prop) => {
+        return (receiver: any, prop: string) => {
             if (!(prop in receiver))
                 return;
 
             if (isFunction(receiver[prop])) {
-                return (...args) => {
+                return (...args: any[]) => {
                     let result;
                     ExceptionsZone.run(() => {
                         result = receiver[prop](...args);
@@ -121,4 +122,3 @@ export class NestFactoryStatic {
 }
 
 export const NestFactory = new NestFactoryStatic();
-

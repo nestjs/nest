@@ -1,15 +1,16 @@
 import 'reflect-metadata';
-import { expect } from 'chai';
-import { SELF_DECLARED_DEPS_METADATA } from '../../constants';
+
 import { Inject } from '../../index';
+import { SELF_DECLARED_DEPS_METADATA } from '../../constants';
+import { expect } from 'chai';
 
 describe('@Inject', () => {
     const opaqueToken = () => ({});
     class Test {
         constructor(
-            @Inject('test') param,
-            @Inject('test2') param2,
-            @Inject(opaqueToken) param3) {}
+            @Inject('test') param: any,
+            @Inject('test2') param2: any,
+            @Inject(opaqueToken) param3: any) { }
     }
 
     it('should enhance class with expected constructor params metadata', () => {

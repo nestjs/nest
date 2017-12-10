@@ -1,10 +1,11 @@
 import 'reflect-metadata';
+
 import { EXCEPTION_FILTERS_METADATA } from '../../constants';
-import { Logger } from '@nestjs/common';
 import { ExceptionFilter } from '../../index';
+import { Logger } from '@nestjs/common';
 
 const defineFiltersMetadata = (...filters: ExceptionFilter[]) => {
-    return (target: object, key?, descriptor?) => {
+    return (target: object, key?: string, descriptor?: any) => {
         if (descriptor) {
             Reflect.defineMetadata(EXCEPTION_FILTERS_METADATA, filters, descriptor.value);
             return descriptor;

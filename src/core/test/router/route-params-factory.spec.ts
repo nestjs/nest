@@ -1,6 +1,6 @@
-import { expect } from 'chai';
-import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { RouteParamsFactory } from '../../router/route-params-factory';
+import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
+import { expect } from 'chai';
 
 describe('RouteParamsFactory', () => {
     let factory: RouteParamsFactory;
@@ -11,7 +11,7 @@ describe('RouteParamsFactory', () => {
         const res = {};
         const next = () => ({});
         const req = {
-            session: null,
+            session: null as any,
             body: {
                 foo: 'bar',
             },

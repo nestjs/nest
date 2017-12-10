@@ -1,12 +1,13 @@
 import 'reflect-metadata';
-import { expect } from 'chai'
-import { WebSocketServer } from '../../utils/gateway-server.decorator';
+
 import { GATEWAY_SERVER_METADATA } from '../../constants';
+import { WebSocketServer } from '../../utils/gateway-server.decorator';
+import { expect } from 'chai'
 
 describe('@WebSocketServer', () => {
     class TestGateway {
         @WebSocketServer()
-        static server;
+        static server: any;
     }
 
     it('should decorate server property with expected metadata', () => {

@@ -1,8 +1,13 @@
-import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+import { NextFunction, Request, Response } from 'express';
+
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 
 export class RouteParamsFactory implements IRouteParamsFactory {
-    public exchangeKeyForValue(key: RouteParamtypes | string, data, { req, res, next }) {
+    public exchangeKeyForValue(
+        key: RouteParamtypes | string, data: any,
+        { req, res, next }: { req: Request & any; res: Response & any; next: NextFunction }
+    ) {
         switch (key) {
             case RouteParamtypes.NEXT: return next;
             case RouteParamtypes.REQUEST: return req;

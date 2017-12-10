@@ -1,7 +1,8 @@
 import * as redis from 'redis';
+
+import { ClientMetadata } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
-import { ClientMetadata } from '../interfaces/client-metadata.interface';
 
 const DEFAULT_URL = 'redis://localhost:6379';
 const MESSAGE_EVENT = 'message';
@@ -21,12 +22,12 @@ export class ClientRedis extends ClientProxy {
         this.url = url || DEFAULT_URL;
     }
 
-    protected sendSingleMessage(msg, callback: (...args) => any) {
+    protected sendSingleMessage(msg: any, callback: (...args: any[]) => any) {
         if (!this.pub || !this.sub) {
             this.init();
         }
         const pattern = JSON.stringify(msg.pattern);
-        const responseCallback = (channel, message) => {
+        const responseCallback = (channel: any, message: string) => {
             const { err, response, disposed } = JSON.parse(message);
             if (disposed) {
                 callback(null, null, true);
@@ -68,7 +69,7 @@ export class ClientRedis extends ClientProxy {
         return redis.createClient({ url: this.url });
     }
 
-    public handleErrors(stream) {
-        stream.on(ERROR_EVENT, (err) => this.logger.error(err));
+    public handleErrors(stream: redis.RedisClient) {
+        stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
     }
 }

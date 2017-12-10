@@ -1,14 +1,16 @@
-import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { Observable } from 'rxjs/Observable';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
 import 'rxjs/add/observable/of';
+
+import * as sinon from 'sinon';
+
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
+import { Observable } from 'rxjs/Observable';
+import { expect } from 'chai';
 
 describe('InterceptorsContextCreator', () => {
     let interceptorsContextCreator: InterceptorsContextCreator;
     let interceptors: any[];
-    let container;
-    let getSpy;
+    let container: any;
+    let getSpy: any;
 
     beforeEach(() => {
         interceptors = [

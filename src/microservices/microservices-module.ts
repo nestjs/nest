@@ -1,25 +1,27 @@
-import { InstanceWrapper } from '@nestjs/core/injector/container';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { ListenersController } from './listeners-controller';
-import { CustomTransportStrategy } from './interfaces';
-import { Server } from './server/server';
+import { InstanceWrapper, NestContainer } from '@nestjs/core/injector/container';
+
+import { ApplicationConfig } from '@nestjs/core/application-config';
 import { ClientsContainer } from './container';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { CustomTransportStrategy } from './interfaces';
+import { ExceptionFiltersContext } from './context/exception-filters-context';
+import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { ListenersController } from './listeners-controller';
+import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
+import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
 import { RpcContextCreator } from './context/rpc-context-creator';
 import { RpcProxy } from './context/rpc-proxy';
-import { ExceptionFiltersContext } from './context/exception-filters-context';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
 import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
-import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import { Server } from './server/server';
 
 export class MicroservicesModule {
     private readonly clientsContainer = new ClientsContainer();
     private listenersController: ListenersController;
 
-    public setup(container, config) {
+    public setup(container: NestContainer, config: ApplicationConfig) {
         const contextCreator = new RpcContextCreator(
             new RpcProxy(),
             new ExceptionFiltersContext(config),
@@ -36,7 +38,7 @@ export class MicroservicesModule {
         );
     }
 
-    public setupListeners(container, server: Server & CustomTransportStrategy) {
+    public setupListeners(container: NestContainer, server: Server & CustomTransportStrategy) {
         if (!this.listenersController) {
             throw new RuntimeException();
         }
@@ -44,7 +46,7 @@ export class MicroservicesModule {
         modules.forEach(({ routes }, module) => this.bindListeners(routes, server, module));
     }
 
-    public setupClients(container) {
+    public setupClients(container: NestContainer) {
         if (!this.listenersController) {
             throw new RuntimeException();
         }

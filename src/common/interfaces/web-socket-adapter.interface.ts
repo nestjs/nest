@@ -2,10 +2,10 @@ import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-ex
 import { Observable } from 'rxjs/Observable';
 
 export interface WebSocketAdapter {
-    create(port: number);
-    createWithNamespace?(port: number, namespace: string);
-    bindClientConnect(server, callback: (...args) => void);
-    bindClientDisconnect?(client, callback: (...args) => void);
-    bindMessageHandlers(client, handler: MessageMappingProperties[], process: (data) => Observable<any>);
-    bindMiddleware?(server, middleware: (socket, next) => void);
+    create(port: number): any;
+    createWithNamespace?(port: number, namespace: string): any;
+    bindClientConnect(server: any, callback: (...args: any[]) => void): any;
+    bindClientDisconnect?(client: any, callback: (...args: any[]) => void): any;
+    bindMessageHandlers(client: any, handler: MessageMappingProperties[], process: (data: any) => Observable<any>): any;
+    bindMiddleware?(server: any, middleware: (socket: any, next: Function) => void): any;
 }

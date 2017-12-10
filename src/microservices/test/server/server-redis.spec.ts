@@ -1,8 +1,9 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
+
 import { NO_PATTERN_MESSAGE } from '../../constants';
-import { ServerRedis } from '../../server/server-redis';
 import { Observable } from 'rxjs/Observable';
+import { ServerRedis } from '../../server/server-redis';
+import { expect } from 'chai';
 
 describe('ServerRedis', () => {
     let server: ServerRedis;
@@ -12,7 +13,7 @@ describe('ServerRedis', () => {
     describe('listen', () => {
         let createRedisClient;
         let onSpy: sinon.SinonSpy;
-        let client;
+        let client: any;
 
         beforeEach(() => {
             onSpy = sinon.spy();
@@ -47,7 +48,7 @@ describe('ServerRedis', () => {
     describe('handleConnection', () => {
         let onSpy: sinon.SinonSpy,
             subscribeSpy: sinon.SinonSpy,
-            sub;
+            sub: any;
 
         beforeEach(() => {
             onSpy = sinon.spy();
@@ -109,7 +110,7 @@ describe('ServerRedis', () => {
     });
     describe('getPublisher', () => {
         let publisherSpy: sinon.SinonSpy;
-        let pub, publisher;
+        let pub: any, publisher: any;
         const pattern = 'test';
 
         beforeEach(() => {
@@ -131,7 +132,7 @@ describe('ServerRedis', () => {
     describe('tryParse', () => {
         it(`should return parsed json`, () => {
             const obj = { test: 'test' };
-            expect(server.tryParse(obj)).to.deep.equal(JSON.parse(JSON.stringify(obj)));
+            expect(server.tryParse(obj as any)).to.deep.equal(JSON.parse(JSON.stringify(obj)));
         });
         it(`should not parse argument if it is not an object`, () => {
             const content = 'test';

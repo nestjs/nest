@@ -1,18 +1,19 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
+
+import { ApplicationConfig } from './../../../core/application-config';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { ExceptionFiltersContext } from './../../context/exception-filters-context';
-import { ApplicationConfig } from './../../../core/application-config';
+import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
+import { expect } from 'chai';
 
 describe('ExceptionFiltersContext', () => {
     let moduleName: string;
     let exceptionFilter: ExceptionFiltersContext;
 
-    class CustomException {}
+    class CustomException { }
     @Catch(CustomException)
     class ExceptionFilter {
-        public catch(exc, res) {}
+        public catch(exc: any, res: any) { }
     }
 
     beforeEach(() => {
@@ -21,7 +22,7 @@ describe('ExceptionFiltersContext', () => {
     });
     describe('create', () => {
         describe('when filters metadata is empty', () => {
-            class EmptyMetadata {}
+            class EmptyMetadata { }
             beforeEach(() => {
                 sinon.stub(exceptionFilter, 'createContext').returns([]);
             });
@@ -32,7 +33,7 @@ describe('ExceptionFiltersContext', () => {
         });
         describe('when filters metadata is not empty', () => {
             @UseFilters(new ExceptionFilter())
-            class WithMetadata {}
+            class WithMetadata { }
 
             it('should returns ExceptionHandler object with exception filters', () => {
                 const filter = exceptionFilter.create(new WithMetadata(), () => ({}) as any);

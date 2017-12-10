@@ -1,6 +1,7 @@
-import * as optional from 'optional';
-import { PipeTransform, WebSocketAdapter, ExceptionFilter, NestInterceptor, CanActivate } from '@nestjs/common';
+import { CanActivate, ExceptionFilter, NestInterceptor, PipeTransform, WebSocketAdapter } from '@nestjs/common';
+
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
+import optional from './optional';
 
 export class ApplicationConfig implements ConfigurationProvider {
     private globalPipes: PipeTransform<any>[] = [];
@@ -9,7 +10,7 @@ export class ApplicationConfig implements ConfigurationProvider {
     private globalGuards: CanActivate[] = [];
     private globalPrefix = '';
 
-    constructor(private ioAdapter: WebSocketAdapter | null = null) {}
+    constructor(private ioAdapter: WebSocketAdapter | null = null) { }
 
     public setGlobalPrefix(prefix: string) {
         this.globalPrefix = prefix;

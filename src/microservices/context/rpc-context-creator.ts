@@ -1,17 +1,17 @@
-import { Observable } from 'rxjs/Observable';
-import { RpcProxy } from './rpc-proxy';
-import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
-import { ExceptionFiltersContext } from './exception-filters-context';
 import { Controller } from '@nestjs/common/interfaces';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
-import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { ExceptionFiltersContext } from './exception-filters-context';
 import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards/constants';
-import { RpcException } from '../index';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { Observable } from 'rxjs/Observable';
+import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
+import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
+import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import { RpcException } from '../index';
+import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
+import { RpcProxy } from './rpc-proxy';
 
 export class RpcContextCreator {
     constructor(
@@ -22,12 +22,12 @@ export class RpcContextCreator {
         private readonly guardsContextCreator: GuardsContextCreator,
         private readonly guardsConsumer: GuardsConsumer,
         private readonly interceptorsContextCreator: InterceptorsContextCreator,
-        private readonly interceptorsConsumer: InterceptorsConsumer) {}
+        private readonly interceptorsConsumer: InterceptorsConsumer) { }
 
     public create(
         instance: Controller,
-        callback: (data) => Observable<any>,
-        module): (data) => Promise<Observable<any>> {
+        callback: (data: any) => Observable<any>,
+        module: any): (data: any) => Promise<Observable<any>> {
 
         const exceptionHandler = this.exceptionFiltersContext.create(instance, callback);
         const pipes = this.pipesCreator.create(instance, callback);
@@ -40,7 +40,7 @@ export class RpcContextCreator {
             if (!canActivate) {
                 throw new RpcException(FORBIDDEN_MESSAGE);
             }
-            const result = await this.pipesConsumer.applyPipes(data, { metatype }, pipes);
+            const result = await this.pipesConsumer.applyPipes(data, { metatype } as any, pipes);
             const handler = () => callback.call(instance, result);
 
             return await this.interceptorsConsumer.intercept(
@@ -49,11 +49,11 @@ export class RpcContextCreator {
         }, exceptionHandler);
     }
 
-    public reflectCallbackParamtypes(instance: Controller, callback: (...args) => any): any[] {
+    public reflectCallbackParamtypes(instance: Controller, callback: (...args: any[]) => any): any[] {
         return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
     }
 
-    public getDataMetatype(instance, callback) {
+    public getDataMetatype(instance: Controller, callback: (...args: any[]) => any) {
         const paramtypes = this.reflectCallbackParamtypes(instance, callback);
         return paramtypes && paramtypes.length ? paramtypes[0] : null;
     }
