@@ -26,6 +26,7 @@ export class ClientTCP extends ClientProxy {
 
     public init(): Promise<{}> {
         this.socket = this.createSocket();
+        this.socket.on(ERROR_EVENT, (err) => this.logger.error(err));
         return new Promise((resolve) => {
              this.socket.on(CONNECT_EVENT, () => {
                  this.isConnected = true;
@@ -72,7 +73,6 @@ export class ClientTCP extends ClientProxy {
     }
 
     public bindEvents(socket) {
-        socket.on(ERROR_EVENT, (err) => this.logger.error(err));
         socket.on(CLOSE_EVENT, () => {
             this.isConnected = false;
             this.socket = null;
