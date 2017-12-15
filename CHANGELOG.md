@@ -1,4 +1,4 @@
-## 4.5.0@soon
+## 4.5.0
 - **common**: bugfix #286
 - **core**: dynamic modules feature
 - **core**: global scope feature
