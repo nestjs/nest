@@ -9,8 +9,8 @@
     "start:prod": "node dist/server.js"
   },
   "dependencies": {
-    "@nestjs/common": "^4.3.0",
-    "@nestjs/core": "^4.3.0",
+    "@nestjs/common": "^4.5.0",
+    "@nestjs/core": "^4.5.0",
     "@nestjs/graphql": "^1.0.0",
     "apollo-server-express": "^1.2.0",
     "graphql": "^0.11.7",

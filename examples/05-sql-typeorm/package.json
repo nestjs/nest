@@ -9,8 +9,8 @@
     "start:prod": "node dist/server.js"
   },
   "dependencies": {
-    "@nestjs/common": "^4.3.0",
-    "@nestjs/core": "^4.3.0",
+    "@nestjs/common": "^4.5.0",
+    "@nestjs/core": "^4.5.0",
     "@nestjs/microservices": "^4.3.0",
     "@nestjs/testing": "^4.3.0",
     "@nestjs/typeorm": "^1.0.0",
