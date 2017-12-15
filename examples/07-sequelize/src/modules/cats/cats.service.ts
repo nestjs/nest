@@ -7,7 +7,7 @@ import { Cat } from './cat.entity';
 @Component()
 export class CatsService {
   constructor(
-    @Inject('CatsRepository') private readonly catsRepository: typeof Model) {}
+    @Inject('CatsRepository') private readonly catsRepository: typeof Cat) {}
 
   async create(createCatDto: CreateCatDto): Promise<Cat> {
     const cat = new Cat();

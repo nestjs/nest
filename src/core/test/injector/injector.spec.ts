@@ -1,16 +1,29 @@
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as sinon from 'sinon';
+<<<<<<< HEAD
 
+=======
+import { expect } from 'chai';
+import { InstanceWrapper, NestContainer } from '../../injector/container';
+import { Injector } from '../../injector/injector';
+>>>>>>> 3e0ee2108f4956142461af7513dd920ed2e6b5e5
 import { Component } from '../../../common/decorators/core/component.decorator';
 import { Injector } from '../../injector/injector';
 import { InstanceWrapper } from '../../injector/container';
 import { Module } from '../../injector/module';
+<<<<<<< HEAD
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from "../../errors/exceptions/undefined-dependency.exception";
 import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
 import { expect } from 'chai';
 
+=======
+import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+import { UndefinedDependencyException } from '../../errors/exceptions/undefined-dependency.exception';
+>>>>>>> 3e0ee2108f4956142461af7513dd920ed2e6b5e5
 chai.use(chaiAsPromised);
 
 describe('Injector', () => {
@@ -39,7 +52,7 @@ describe('Injector', () => {
         let mainTest: any, depOne: any, depTwo: any;
 
         beforeEach(() => {
-            moduleDeps = new Module(DependencyTwo as any, []);
+            moduleDeps = new Module(DependencyTwo as any, [], new NestContainer());
             mainTest = {
                 name: 'MainTest',
                 metatype: MainTest,
@@ -119,7 +132,7 @@ describe('Injector', () => {
         let test: any;
 
         beforeEach(() => {
-            moduleDeps = new Module(Test as any, []);
+            moduleDeps = new Module(Test as any, [], new NestContainer());
             test = {
                 name: 'Test',
                 metatype: Test,

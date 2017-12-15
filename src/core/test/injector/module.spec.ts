@@ -4,8 +4,12 @@ import { Component } from '../../../common/decorators/core/component.decorator';
 import { Module } from '../../injector/module';
 import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+<<<<<<< HEAD
 import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception';
 import { expect } from 'chai';
+=======
+import { NestContainer } from '../../injector/container';
+>>>>>>> 3e0ee2108f4956142461af7513dd920ed2e6b5e5
 
 describe('Module', () => {
     let module: Module;
@@ -14,7 +18,7 @@ describe('Module', () => {
     @Component() class TestComponent { }
 
     beforeEach(() => {
-        module = new Module(TestModule as any, []);
+        module = new Module(TestModule as any, [], new NestContainer());
     });
 
     it('should add route', () => {

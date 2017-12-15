@@ -26,12 +26,14 @@ export class ClientTCP extends ClientProxy {
         this.host = host || DEFAULT_HOST;
     }
 
-    public init(): Promise<{}> {
+    public init(callback: (...args: any[]) => any): Promise<{}> {
         this.socket = this.createSocket();
+
         return new Promise((resolve) => {
+
+            this.bindEvents(this.socket, callback);
             this.socket.on(CONNECT_EVENT, () => {
                 this.isConnected = true;
-                this.bindEvents(this.socket);
                 resolve(this.socket);
             });
             this.socket.connect(this.port, this.host);
@@ -47,7 +49,7 @@ export class ClientTCP extends ClientProxy {
             sendMessage(this.socket);
             return Promise.resolve();
         }
-        const socket = await this.init();
+        const socket = await this.init(callback);
         sendMessage(socket);
     }
 
@@ -66,15 +68,18 @@ export class ClientTCP extends ClientProxy {
     }
 
     public close() {
-        if (this.socket) {
-            this.socket.end();
-            this.isConnected = false;
-            this.socket = null;
-        }
+        this.socket && this.socket.end();
+        this.isConnected = false;
+        this.socket = null;
     }
 
-    public bindEvents(socket: net.Socket) {
-        socket.on(ERROR_EVENT, (err: string) => this.logger.error(err));
+    public bindEvents(socket: any, callback: (...args: any[]) => any) {
+        socket.on(ERROR_EVENT, (err: any) => {
+            if (err.code === 'ECONNREFUSED') {
+                callback(err, null);
+            }
+            this.logger.error(err);
+        });
         socket.on(CLOSE_EVENT, () => {
             this.isConnected = false;
             this.socket = null;

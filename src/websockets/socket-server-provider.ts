@@ -10,24 +10,36 @@ export class SocketServerProvider {
         private readonly applicationConfig: ApplicationConfig) {}
 
     public scanForSocketServer(namespace: string, port: number): ObservableSocketServer {
-        const observableServer = this.socketsContainer.getServer(namespace, port);
-        return observableServer ? observableServer : this.createSocketServer(namespace, port);
+        const observableServer = this.socketsContainer.getServerByPort(port);
+        return observableServer
+            ? this.createWithNamespace(namespace, port, observableServer)
+            : this.createSocketServer(namespace, port);
     }
 
-    private createSocketServer(namespace: string, port: number) {
-        const server = this.getServerOfNamespace(namespace, port);
+    private createSocketServer(namespace: string, port: number): ObservableSocketServer {
+        const adapter = this.applicationConfig.getIoAdapter();
+        const server = adapter.create(port);
         const observableSocket = ObservableSocket.create(server);
 
-        this.socketsContainer.addServer(namespace, port, observableSocket);
-        return observableSocket;
+        this.socketsContainer.addServer(null, port, observableSocket);
+        return this.createWithNamespace(namespace, port, observableSocket);
     }
 
-    private getServerOfNamespace(namespace: string, port: number) {
+    private createWithNamespace(namespace: string, port: number, observableSocket: ObservableSocketServer): ObservableSocketServer {
         const adapter = this.applicationConfig.getIoAdapter();
-        if (namespace && adapter.createWithNamespace) {
-            return adapter.createWithNamespace(port, this.validateNamespace(namespace));
+        if (!namespace || !adapter.createWithNamespace) {
+            return observableSocket;
         }
-        return adapter.create(port);
+        const namespaceServer = this.getServerOfNamespace(namespace, port, observableSocket.server);
+        const observableNamespaceSocket = ObservableSocket.create(namespaceServer);
+        this.socketsContainer.addServer(namespace, port, observableNamespaceSocket);
+
+        return observableNamespaceSocket;
+    }
+
+    private getServerOfNamespace(namespace: string, port: number, server) {
+        const adapter = this.applicationConfig.getIoAdapter();
+        return adapter.createWithNamespace(port, this.validateNamespace(namespace), server);
     }
 
     private validateNamespace(namespace: string): string {

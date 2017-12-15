@@ -154,7 +154,7 @@ describe('ClientRedis', () => {
         beforeEach(() => {
             createClientSpy = sinon.spy(client, 'createClient');
             handleErrorsSpy = sinon.spy(client, 'handleErrors');
-            client.init();
+            client.init(sinon.spy());
         });
         afterEach(() => {
             createClientSpy.restore();

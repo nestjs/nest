@@ -1,12 +1,18 @@
 import { Controller, Injectable, NestModule } from '@nestjs/common/interfaces';
+import { InstanceWrapper, NestContainer } from './container';
 import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 
-import { InstanceWrapper } from './container';
+import { ExternalContextCreator } from './../helpers/external-context-creator';
+import { GuardsConsumer } from './../guards/guards-consumer';
+import { GuardsContextCreator } from './../guards/guards-context-creator';
+import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { ModuleRef } from './module-ref';
+import { ModulesContainer } from './modules-container';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { Reflector } from '../services/reflector.service';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
+import { RuntimeException } from 'src/core/errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 
 export interface CustomComponent {
@@ -28,9 +34,10 @@ export class Module {
 
     constructor(
         private _metatype: NestModuleMetatype,
-        private _scope: NestModuleMetatype[]) {
-
-        this.addCoreInjectables();
+        private _scope: NestModuleMetatype[],
+        container: NestContainer,
+    ) {
+        this.addCoreInjectables(container);
     }
 
     get scope(): NestModuleMetatype[] {
@@ -69,10 +76,12 @@ export class Module {
         return this._metatype;
     }
 
-    public addCoreInjectables() {
+    public addCoreInjectables(container: NestContainer) {
         this.addModuleRef();
         this.addModuleAsComponent();
         this.addReflector();
+        this.addExternalContextCreator(container);
+        this.addModulesContainer(container);
     }
 
     public addModuleRef() {
@@ -100,6 +109,30 @@ export class Module {
             metatype: Reflector,
             isResolved: false,
             instance: null,
+        });
+    }
+
+    public addExternalContextCreator(container: NestContainer) {
+        this._components.set(ExternalContextCreator.name, {
+            name: ExternalContextCreator.name,
+            metatype: ExternalContextCreator,
+            isResolved: true,
+            instance: new ExternalContextCreator(
+                new GuardsContextCreator(container),
+                new GuardsConsumer(),
+                new InterceptorsContextCreator(container),
+                new InterceptorsConsumer(),
+                container.getModules(),
+            ),
+        });
+    }
+
+    public addModulesContainer(container: NestContainer) {
+        this._components.set(ModulesContainer.name, {
+            name: ModulesContainer.name,
+            metatype: ModulesContainer,
+            isResolved: true,
+            instance: container.getModules(),
         });
     }
 

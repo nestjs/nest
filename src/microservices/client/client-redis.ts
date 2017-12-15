@@ -24,7 +24,7 @@ export class ClientRedis extends ClientProxy {
 
     protected sendSingleMessage(msg: any, callback: (...args: any[]) => any) {
         if (!this.pub || !this.sub) {
-            this.init();
+            this.init(callback);
         }
         const pattern = JSON.stringify(msg.pattern);
         const responseCallback = (channel: any, message: string) => {
@@ -57,19 +57,25 @@ export class ClientRedis extends ClientProxy {
         this.sub && this.sub.quit();
     }
 
-    public init() {
+    public init(callback: (...args) => any) {
         this.pub = this.createClient();
         this.sub = this.createClient();
 
-        this.handleErrors(this.pub);
-        this.handleErrors(this.sub);
+        this.handleErrors(this.pub, callback);
+        this.handleErrors(this.sub, callback);
     }
 
     public createClient(): redis.RedisClient {
         return redis.createClient({ url: this.url });
     }
 
-    public handleErrors(stream: redis.RedisClient) {
-        stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
+
+    public handleErrors(stream: any, callback: (...args: any[]) => any) {
+        stream.on(ERROR_EVENT, (err: any) => {
+            if (err.code === 'ECONNREFUSED') {
+                callback(err, null);
+            }
+            this.logger.error(err);
+        });
     }
 }

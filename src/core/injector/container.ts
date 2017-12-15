@@ -8,14 +8,13 @@ import { InvalidModuleException } from './../errors/exceptions/invalid-module.ex
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { Module } from './module';
 import { ModuleTokenFactory } from './module-token-factory';
+import { ModulesContainer } from './modules-container';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { SHARED_MODULE_METADATA } from '@nestjs/common/constants';
-import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { UnknownModuleException } from 'src/core/errors/exceptions/unknown-module.exception';
 
 export class NestContainer {
     private readonly globalModules = new Set<Module>();
-    private readonly modules = new Map<string, Module>();
+    private readonly modules = new ModulesContainer();
     private readonly dynamicModulesMetadata = new Map<string, Partial<DynamicModule>>();
     private readonly moduleTokenFactory = new ModuleTokenFactory();
 
@@ -28,7 +27,7 @@ export class NestContainer {
         if (this.modules.has(token)) {
             return;
         }
-        const module = new Module(type, scope);
+        const module = new Module(type, scope, this);
         this.modules.set(token, module);
 
         this.addDynamicMetadata(token, dynamicMetadata);
@@ -64,7 +63,7 @@ export class NestContainer {
         this.globalModules.add(module);
     }
 
-    public getModules(): Map<string, Module> {
+    public getModules(): ModulesContainer {
         return this.modules;
     }
 

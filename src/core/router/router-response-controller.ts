@@ -1,7 +1,7 @@
 import 'rxjs/add/operator/toPromise';
 
 import { HttpStatus, RequestMethod } from '@nestjs/common';
-import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
+import { isFunction, isNil, isObject } from '@nestjs/common/utils/shared.utils';
 
 import { Observable } from 'rxjs/Observable';
 import { Response } from 'express-serve-static-core';
@@ -21,10 +21,10 @@ export class RouterResponseController {
     if (resultOrDeffered instanceof Promise) {
       return await resultOrDeffered;
     }
-    else if (resultOrDeffered instanceof Observable) {
+    else if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
       return await resultOrDeffered.toPromise();
     }
-    return resultOrDeffered;
+    return resultOrDeffered as any;
   }
 
   public getStatusByMethod(requestMethod: RequestMethod): number {

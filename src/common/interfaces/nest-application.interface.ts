@@ -1,11 +1,12 @@
 import { ExceptionFilter, INestMicroservice, PipeTransform } from './index';
 
 import { CanActivate } from './can-activate.interface';
+import { INestApplicationContext } from './nest-application-context.interface';
 import { MicroserviceConfiguration } from '@nestjs/microservices';
 import { NestInterceptor } from './nest-interceptor.interface';
 import { WebSocketAdapter } from './web-socket-adapter.interface';
 
-export interface INestApplication {
+export interface INestApplication extends INestApplicationContext {
     /**
      * Initializes application. It is not necessary to call this method directly.
      *
@@ -20,6 +21,14 @@ export interface INestApplication {
      * @returns void
      */
     use(...args: any[]): void;
+
+    /**
+     * The wrapper function around native `express.set()` method.
+     * Example `app.set('trust proxy', 'loopback')`
+     *
+     * @returns void
+     */
+    set(...args: any[]): void;
 
     /**
      * Starts the application.
@@ -64,7 +73,7 @@ export interface INestApplication {
      * @param  {MicroserviceConfiguration} config Microservice configuration objet
      * @returns INestMicroservice
      */
-    connectMicroservice(config: MicroserviceConfiguration): INestMicroservice;
+    connectMicroservice(config: any): INestMicroservice;
 
     /**
      * Returns array of the connected microservices to the NestApplication.

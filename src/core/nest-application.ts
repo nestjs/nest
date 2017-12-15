@@ -9,11 +9,11 @@ import {
     PipeTransform,
     WebSocketAdapter,
 } from '@nestjs/common';
+import { Express, RequestHandler } from 'express';
 import { INestApplication, INestMicroservice, OnModuleInit } from '@nestjs/common';
 import { isNil, isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
 
 import { ApplicationConfig } from './application-config';
-import { Express } from 'express';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
@@ -21,6 +21,7 @@ import { MicroservicesPackageNotFoundException } from './errors/exceptions/micro
 import { MiddlewaresContainer } from './middlewares/container';
 import { MiddlewaresModule } from './middlewares/middlewares-module';
 import { Module } from './injector/module';
+import { NestApplicationContext } from './nest-application-context';
 import { NestContainer } from './injector/container';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
@@ -33,7 +34,7 @@ const { MicroservicesModule } = optional('@nestjs/microservices/microservices-mo
 const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {} as any;
 const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter') || {} as any;
 
-export class NestApplication implements INestApplication {
+export class NestApplication extends NestApplicationContext implements INestApplication {
     private readonly logger = new Logger(NestApplication.name, true);
     private readonly middlewaresModule = new MiddlewaresModule();
     private readonly middlewaresContainer = new MiddlewaresContainer();
@@ -50,11 +51,11 @@ export class NestApplication implements INestApplication {
     private readonly microservices: any[] = [];
     private isInitialized = false;
 
-    constructor(
-        private readonly container: NestContainer,
-        private readonly express: Express,
-    ) {
-        this.setupParserMiddlewares();
+    constructor(container: NestContainer, private readonly express: Express) {
+        super(container, [], null);
+
+        const modules = this.container.getModules().values();
+        this.contextModule = modules.next().value;
         this.httpServer = http.createServer(express);
 
         const ioAdapter = IoAdapter ? new IoAdapter(this.httpServer) : null;
@@ -62,11 +63,6 @@ export class NestApplication implements INestApplication {
         this.routesResolver = new RoutesResolver(
             container, ExpressAdapter, this.config,
         );
-    }
-
-    public setupParserMiddlewares() {
-        this.express.use(bodyParser.json());
-        this.express.use(bodyParser.urlencoded({ extended: true }));
     }
 
     public async setupModules() {
@@ -84,12 +80,30 @@ export class NestApplication implements INestApplication {
     }
 
     public async init() {
+        this.setupParserMiddlewares();
+
         await this.setupModules();
         await this.setupRouter();
 
         this.callInitHook();
         this.logger.log(messages.APPLICATION_READY);
         this.isInitialized = true;
+    }
+
+    public setupParserMiddlewares() {
+        const parserMiddlewares: any = {
+            jsonParser: bodyParser.json(),
+            urlencodedParser: bodyParser.urlencoded({ extended: true }),
+        };
+        Object.keys(parserMiddlewares)
+            .filter((parser) => !this.isMiddlewareApplied(this.express, parser))
+            .forEach((parserKey) => this.express.use(parserMiddlewares[parserKey]));
+    }
+
+    public isMiddlewareApplied(app: any, name: string): boolean {
+        return !!app._router && !!app._router.stack.filter(
+            (layer: any) => layer && layer.handle && layer.handle.name === name,
+        ).length;
     }
 
     public async setupRouter() {
@@ -127,8 +141,12 @@ export class NestApplication implements INestApplication {
         return new Promise((resolve) => this.startAllMicroservices(resolve));
     }
 
-    public use(...args: any[]) {
+    public use(...args: RequestHandler[]) {
         this.express.use(...args);
+    }
+
+    public set(setting: string, val: any) {
+        this.express.set(setting, val);
     }
 
     public async listen(port: number, callback?: () => void): Promise<http.Server>;
