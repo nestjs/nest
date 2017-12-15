@@ -1,3 +1,7 @@
+## 4.5.1
+- **common**: `INestAplication` provides a `getHttpServer()` methodn ow
+- **websockets**: `IoAdapter` bugfix
+
 ## 4.5.0
 - **common**: bugfix #286
 - **core**: dynamic modules feature

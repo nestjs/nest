@@ -71,6 +71,12 @@ export interface INestApplication extends INestApplicationContext {
      */
     getMicroservices(): INestMicroservice[];
     /**
+     * Returns underlying native HTTP server.
+     *
+     * @returns http.Server
+     */
+    getHttpServer(): any;
+    /**
      * Starts all the connected microservices asynchronously
      *
      * @param  {Function} callback Optional callback function

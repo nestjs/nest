@@ -3,7 +3,12 @@ import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/from';
 import 'rxjs/add/operator/map';
 
-@WebSocketGateway(81)
+
+@WebSocketGateway({ namespace: 'events' })
+export class EventsGatewayxD {
+
+}
+@WebSocketGateway({ namespace: 'xd' })
 export class EventsGateway {
   @WebSocketServer() server;
 

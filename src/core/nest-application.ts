@@ -128,6 +128,10 @@ export class NestApplication extends NestApplicationContext implements INestAppl
         return this.microservices;
     }
 
+    public getHttpServer() {
+      return this.httpServer;
+    }
+
     public startAllMicroservices(callback?: () => void) {
         Promise.all(
             this.microservices.map(this.listenToPromise),

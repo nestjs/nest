@@ -1,3 +1,5 @@
+/// <reference types="node" />
+import * as http from 'http';
 import { CanActivate, ExceptionFilter, NestInterceptor, PipeTransform, WebSocketAdapter } from '@nestjs/common';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
@@ -23,6 +25,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     setupRouter(): Promise<void>;
     connectMicroservice(config: MicroserviceConfiguration): INestMicroservice;
     getMicroservices(): INestMicroservice[];
+    getHttpServer(): http.Server;
     startAllMicroservices(callback?: () => void): void;
     startAllMicroservicesAsync(): Promise<void>;
     use(...args: any[]): void;
