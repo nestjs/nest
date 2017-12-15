@@ -22,3 +22,4 @@ export * from './exceptions/ws-exception-filter.interface';
 export * from './execution-context.interface';
 export * from './nest-interceptor.interface';
 export * from './custom-route-param-factory.interface';
+export * from './modules/dynamic-module.interface';

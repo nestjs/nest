@@ -33,7 +33,7 @@ modules.forEach(module => {
 });
 
 gulp.task('build', function(cb) {
-	gulpSequence(modules, cb);
+	gulpSequence('common', modules.filter((module) => module !== 'common'), cb);
 });
 
 gulp.task('move', function() {
@@ -55,5 +55,9 @@ gulp.task('move', function() {
     gulp.dest('examples/08-passport/node_modules/@nestjs')
   ).pipe(
     gulp.dest('examples/09-babel-example/node_modules/@nestjs')
+  ).pipe(
+    gulp.dest('examples/11-swagger/node_modules/@nestjs')
+  ).pipe(
+    gulp.dest('examples/12-graphql-apollo/node_modules/@nestjs')
   );
 });

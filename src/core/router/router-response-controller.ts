@@ -1,6 +1,5 @@
-import { Observable } from 'rxjs/Observable';
 import { RequestMethod, HttpStatus } from '@nestjs/common';
-import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
+import { isNil, isObject, isFunction } from '@nestjs/common/utils/shared.utils';
 import 'rxjs/add/operator/toPromise';
 
 export class RouterResponseController {
@@ -18,7 +17,7 @@ export class RouterResponseController {
     if (resultOrDeffered instanceof Promise) {
       return await resultOrDeffered;
     }
-    else if (resultOrDeffered instanceof Observable) {
+    else if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
       return await resultOrDeffered.toPromise();
     }
     return resultOrDeffered;

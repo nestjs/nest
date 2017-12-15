@@ -1,11 +1,9 @@
 {
   "name": "nestjs",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "start:live": "nodemon -e ts --watch src index.js",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "build": "gulp build && gulp move",

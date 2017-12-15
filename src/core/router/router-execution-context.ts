@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import { ROUTE_ARGS_METADATA, PARAMTYPES_METADATA, HTTP_CODE_METADATA, CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
-import { isUndefined, isFunction } from '@nestjs/common/utils/shared.utils';
+import { isUndefined, isFunction, isString } from '@nestjs/common/utils/shared.utils';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { Controller, Transform } from '@nestjs/common/interfaces';
-import { RouteParamsMetadata } from '@nestjs/common/utils';
+import { RouteParamsMetadata } from '@nestjs/common/decorators';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 import { PipesContextCreator } from './../pipes/pipes-context-creator';
 import { PipesConsumer } from './../pipes/pipes-consumer';
@@ -17,7 +17,7 @@ import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 
 export interface ParamProperties {
     index: number;
-    type: RouteParamtypes;
+    type: RouteParamtypes | string;
     data: ParamData;
     pipes: PipeTransform<any>[];
     extractValue: (req, res, next) => any;
@@ -73,9 +73,9 @@ export class RouterExecutionContext {
         };
     }
 
-    public mapParamType(key: string): RouteParamtypes | number {
+    public mapParamType(key: string): string  {
         const keyPair = key.split(':');
-        return Number(keyPair[0]);
+        return keyPair[0];
     }
 
     public reflectCallbackMetadata(instance: Controller, methodName: string): RouteParamsMetadata {
@@ -108,8 +108,9 @@ export class RouterExecutionContext {
                 const customExtractValue = this.getCustomFactory(factory, data);
                 return { index, extractValue: customExtractValue, type, data, pipes };
             }
-            const extractValue = (req, res, next) => this.paramsFactory.exchangeKeyForValue(type, data, { req, res, next });
-            return { index, extractValue, type, data, pipes };
+            const nType = Number(type);
+            const extractValue = (req, res, next) => this.paramsFactory.exchangeKeyForValue(nType, data, { req, res, next });
+            return { index, extractValue, type: nType, data, pipes };
         });
     }
 
@@ -136,7 +137,8 @@ export class RouterExecutionContext {
 
         if (type === RouteParamtypes.BODY
             || type === RouteParamtypes.QUERY
-            || type === RouteParamtypes.PARAM) {
+            || type === RouteParamtypes.PARAM
+            || isString(type)) {
 
             return await this.pipesConsumer.apply(value, { metatype, type, data }, transforms);
         }

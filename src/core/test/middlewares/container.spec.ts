@@ -2,9 +2,9 @@ import { expect } from 'chai';
 import { MiddlewaresContainer } from '../../middlewares/container';
 import { MiddlewareConfiguration } from '../../../common/interfaces/middlewares/middleware-configuration.interface';
 import { NestMiddleware } from '../../../common/interfaces/middlewares/nest-middleware.interface';
-import { Component } from '../../../common/utils/decorators/component.decorator';
-import { Controller } from '../../../common/utils/decorators/controller.decorator';
-import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
+import { Component } from '../../../common/decorators/core/component.decorator';
+import { Controller } from '../../../common/decorators/core/controller.decorator';
+import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 
 describe('MiddlewaresContainer', () => {

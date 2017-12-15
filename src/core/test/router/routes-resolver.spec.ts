@@ -1,8 +1,8 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RoutesResolver } from '../../router/routes-resolver';
-import { Controller } from '../../../common/utils/decorators/controller.decorator';
-import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
+import { Controller } from '../../../common/decorators/core/controller.decorator';
+import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { ApplicationConfig } from '../../application-config';
 
@@ -63,7 +63,7 @@ describe('RoutesResolver', () => {
       modules.set('TestModule2', { routes });
 
       const spy = sinon.stub(routesResolver, 'setupRouters').callsFake(() => undefined);
-      routesResolver.resolve({} as any);
+      routesResolver.resolve({ use: sinon.spy() } as any);
       expect(spy.calledTwice).to.be.true;
     });
 

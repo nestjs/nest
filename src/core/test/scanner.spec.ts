@@ -2,11 +2,11 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { DependenciesScanner } from './../scanner';
 import { NestContainer } from './../injector/container';
-import { Module } from '../../common/utils/decorators/module.decorator';
+import { Module } from '../../common/decorators/modules/module.decorator';
 import { NestModule } from '../../common/interfaces/modules/nest-module.interface';
-import { Component } from '../../common/utils/decorators/component.decorator';
-import { UseGuards } from '../../common/utils/decorators/use-guards.decorator';
-import { Controller } from '../../common/utils/decorators/controller.decorator';
+import { Component } from '../../common/decorators/core/component.decorator';
+import { UseGuards } from '../../common/decorators/core/use-guards.decorator';
+import { Controller } from '../../common/decorators/core/controller.decorator';
 import { MetadataScanner } from '../metadata-scanner';
 import { GUARDS_METADATA } from '../../common/constants';
 

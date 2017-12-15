@@ -10,14 +10,16 @@ describe('ModuleTokenFactory', () => {
     });
     describe('create', () => {
         class Module {}
-        it('should force global scope if it is not set', () => {
+        it('should force global scope when it is not set', () => {
             const scope = 'global';
             const token = factory.create(
                 Module as any,
                 [Module as any],
+                undefined,
             );
             expect(token).to.be.deep.eq(JSON.stringify({
                 module: Module.name,
+                dynamic: '',
                 scope,
             }));
         });
@@ -25,9 +27,27 @@ describe('ModuleTokenFactory', () => {
             const token = factory.create(
                 SingleScope()(Module) as any,
                 [Module as any],
+                undefined,
             );
             expect(token).to.be.deep.eq(JSON.stringify({
                 module: Module.name,
+                dynamic: '',
+                scope: [Module.name],
+            }));
+        });
+        it('should include dynamic metadata', () => {
+            const token = factory.create(
+                SingleScope()(Module) as any,
+                [Module as any],
+                {
+                  components: [{}],
+                } as any,
+            );
+            expect(token).to.be.deep.eq(JSON.stringify({
+                module: Module.name,
+                dynamic: JSON.stringify({
+                  components: [{}],
+                }),
                 scope: [Module.name],
             }));
         });
@@ -38,6 +58,19 @@ describe('ModuleTokenFactory', () => {
             expect(factory.getModuleName(metatype as any)).to.be.eql(metatype.name);
         });
     });
+    describe('getDynamicMetadataToken', () => {
+      describe('when metadata exists', () => {
+        it('should return stringified metadata', () => {
+          const metadata = { components: ['', {}]};
+          expect(factory.getDynamicMetadataToken(metadata)).to.be.eql(JSON.stringify(metadata));
+        });
+      });
+      describe('when metadata does not exist', () => {
+        it('should return empty string', () => {
+          expect(factory.getDynamicMetadataToken(undefined)).to.be.eql('');
+        });
+      });
+  });
     describe('getScopeStack', () => {
         it('should map metatypes to the array with last metatype', () => {
             const metatype1 = () => {};

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { RoutesMapper } from '../../middlewares/routes-mapper';
-import { Controller } from '../../../common/utils/decorators/controller.decorator';
-import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
+import { Controller } from '../../../common/decorators/core/controller.decorator';
+import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception';
 

@@ -1,14 +1,14 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { InstanceWrapper } from '../../injector/container';
+import { InstanceWrapper, NestContainer } from '../../injector/container';
 import { Injector } from '../../injector/injector';
-import { Component } from '../../../common/utils/decorators/component.decorator';
+import { Component } from '../../../common/decorators/core/component.decorator';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { Module } from '../../injector/module';
 import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-import { UndefinedDependencyException } from "../../errors/exceptions/undefined-dependency.exception";
+import { UndefinedDependencyException } from '../../errors/exceptions/undefined-dependency.exception';
 chai.use(chaiAsPromised);
 
 describe('Injector', () => {
@@ -37,7 +37,7 @@ describe('Injector', () => {
         let mainTest, depOne, depTwo;
 
         beforeEach(() => {
-            moduleDeps = new Module(DependencyTwo as any, []);
+            moduleDeps = new Module(DependencyTwo as any, [], new NestContainer());
             mainTest = {
                 name: 'MainTest',
                 metatype: MainTest,
@@ -117,7 +117,7 @@ describe('Injector', () => {
         let test;
 
         beforeEach(() => {
-            moduleDeps = new Module(Test as any, []);
+            moduleDeps = new Module(Test as any, [], new NestContainer());
             test = {
                 name: 'Test',
                 metatype: Test,

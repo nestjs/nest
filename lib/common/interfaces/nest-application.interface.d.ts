@@ -1,9 +1,9 @@
-import { MicroserviceConfiguration } from '@nestjs/microservices';
 import { INestMicroservice, ExceptionFilter, PipeTransform } from './index';
 import { WebSocketAdapter } from './web-socket-adapter.interface';
 import { CanActivate } from './can-activate.interface';
 import { NestInterceptor } from './nest-interceptor.interface';
-export interface INestApplication {
+import { INestApplicationContext } from './nest-application-context.interface';
+export interface INestApplication extends INestApplicationContext {
     /**
      * Initializes application. It is not necessary to call this method directly.
      *
@@ -12,12 +12,18 @@ export interface INestApplication {
     init(): Promise<void>;
     /**
      * The wrapper function around native `express.use()` method.
-     * Example `app.use(bodyParser.json())`
+     * Example `app.use(cors())`
      *
-     * @param  {} requestHandler Express Request Handler
      * @returns void
      */
-    use(requestHandler: any): void;
+    use(...args: any[]): void;
+    /**
+     * The wrapper function around native `express.set()` method.
+     * Example `app.set('trust proxy', 'loopback')`
+     *
+     * @returns void
+     */
+    set(...args: any[]): void;
     /**
      * Starts the application.
      *
@@ -57,7 +63,7 @@ export interface INestApplication {
      * @param  {MicroserviceConfiguration} config Microservice configuration objet
      * @returns INestMicroservice
      */
-    connectMicroservice(config: MicroserviceConfiguration): INestMicroservice;
+    connectMicroservice(config: any): INestMicroservice;
     /**
      * Returns array of the connected microservices to the NestApplication.
      *

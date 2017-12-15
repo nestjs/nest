@@ -7,6 +7,7 @@ export declare class SocketServerProvider {
     constructor(socketsContainer: SocketsContainer, applicationConfig: ApplicationConfig);
     scanForSocketServer(namespace: string, port: number): ObservableSocketServer;
     private createSocketServer(namespace, port);
-    private getServerOfNamespace(namespace, port);
+    private createWithNamespace(namespace, port, observableSocket);
+    private getServerOfNamespace(namespace, port, server);
     private validateNamespace(namespace);
 }

@@ -1,7 +1,6 @@
-import { PipeTransform, Pipe, ArgumentMetadata, HttpStatus } from '@nestjs/common';
+import { PipeTransform, Pipe, ArgumentMetadata } from '@nestjs/common';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
-import { WsException } from '@nestjs/websockets';
 import { RpcException } from '@nestjs/microservices';
 
 @Pipe()
