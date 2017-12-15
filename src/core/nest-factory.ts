@@ -38,6 +38,14 @@ export class NestFactoryStatic {
             new NestApplication(this.container, express),
         );
     }
+    /**
+     * Get Access To NestContainer
+     *
+     * @returns The Container of the NestApplication instance
+     */
+    public getContainer(): NestContainer {
+        return this.container;
+    }
 
     /**
      * Creates an instance of the NestMicroservice (returns Promise)
