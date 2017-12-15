@@ -57,7 +57,7 @@ export class ClientRedis extends ClientProxy {
         this.sub && this.sub.quit();
     }
 
-    public init(callback: (...args) => any) {
+    public init(callback: (...args: any[]) => any) {
         this.pub = this.createClient();
         this.sub = this.createClient();
 
@@ -68,7 +68,6 @@ export class ClientRedis extends ClientProxy {
     public createClient(): redis.RedisClient {
         return redis.createClient({ url: this.url });
     }
-
 
     public handleErrors(stream: any, callback: (...args: any[]) => any) {
         stream.on(ERROR_EVENT, (err: any) => {

@@ -21,7 +21,7 @@ export class IoAdapter implements WebSocketAdapter {
         return this.createIOServer(port);
     }
 
-    public createWithNamespace(port: number, namespace: string, server?) {
+    public createWithNamespace(port: number, namespace: string, server?: any) {
         return this.createIOServer(port).of(namespace);
     }
 

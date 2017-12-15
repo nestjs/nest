@@ -15,7 +15,7 @@ export class TestingModule extends NestApplicationContext {
         super(container, scope, contextModule);
     }
 
-    public createNestApplication(express?: Express): INestApplication {
+    public createNestApplication(express?: Express): NestApplication {
         return new NestApplication(this.container, express);
     }
 
