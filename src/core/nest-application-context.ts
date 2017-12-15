@@ -27,11 +27,11 @@ export class NestApplicationContext implements INestApplicationContext {
           : null;
     }
 
-    public get<T>(metatypeOrToken: Metatype<T> | string): T {
+    public get<T>(metatypeOrToken: Metatype<T> | string | symbol): T {
         return this.findInstanceByPrototypeOrToken<T>(metatypeOrToken);
     }
 
-    private findInstanceByPrototypeOrToken<T>(metatypeOrToken: Metatype<T> | string) {
+    private findInstanceByPrototypeOrToken<T>(metatypeOrToken: Metatype<T> | string | symbol) {
         const dependencies = new Map([
             ...this.contextModule.components,
             ...this.contextModule.routes,
