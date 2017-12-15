@@ -12,7 +12,8 @@ export class NestApplicationContext implements INestApplicationContext {
     constructor(
         protected readonly container: NestContainer,
         private readonly scope: NestModuleMetatype[],
-        private readonly contextModule) {}
+        protected contextModule,
+    ) {}
 
     public select<T>(module: Metatype<T>): INestApplicationContext {
         const modules = this.container.getModules();

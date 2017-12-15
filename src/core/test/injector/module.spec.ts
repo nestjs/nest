@@ -5,6 +5,7 @@ import { UnknownExportException } from '../../errors/exceptions/unknown-export.e
 import { Module } from '../../injector/module';
 import { Component } from '../../../common/decorators/core/component.decorator';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { NestContainer } from '../../injector/container';
 
 describe('Module', () => {
     let module: Module;
@@ -13,7 +14,7 @@ describe('Module', () => {
     @Component() class TestComponent {}
 
     beforeEach(() => {
-        module = new Module(TestModule as any, []);
+        module = new Module(TestModule as any, [], new NestContainer());
     });
 
     it('should add route', () => {

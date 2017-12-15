@@ -1,6 +1,16 @@
 ## 4.5.0@soon
+- **common**: bugfix #286
 - **core**: dynamic modules feature
 - **core**: global scope feature
+- **core**: `ExternalContextCreator` & `ModulesContainer` 
+- **core**: merge `NestApplicationContext` with `NestApplication`
+- **core**: `NotFoundException` is thrown when route is not available #298
+- **core**: add `set()` wrapper around native express methods
+- **core**: bugfix #281
+- **websockets**: bugfix #271
+- **microservices**: log RPC exceptions #303
+- **microservices**: merge `NestApplicationContext` with `NestMicroservice`
+- **microservices**: handle ECONNREFUSED #288
 
 ## 4.4.1
 - **common**: `ValidationPipe` improvement
