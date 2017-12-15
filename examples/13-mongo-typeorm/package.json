@@ -1,0 +1,25 @@
+{
+  "name": "nest-typescript-starter",
+  "version": "1.0.0",
+  "description": "Nest TypeScript starter repository",
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js",
+    "prestart:prod": "tsc",
+    "start:prod": "node dist/server.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^4.3.0",
+    "@nestjs/core": "^4.3.0",
+    "@nestjs/typeorm": "^1.0.0",
+    "mongodb": "^2.2.31",
+    "reflect-metadata": "^0.1.10",
+    "rxjs": "^5.4.3",
+    "typeorm": "0.1.0-alpha.40",
+    "typescript": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^7.0.41",
+    "ts-node": "^3.3.0"
+  }
+}

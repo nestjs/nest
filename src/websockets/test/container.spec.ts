@@ -21,7 +21,7 @@ describe('SocketsContainer', () => {
     });
     describe('getSocketServer', () => {
         it(`should call "observableServers" get method with expected arguments`, () => {
-            instance.getServer(namespace, port);
+            instance.getServerByPort(port);
             expect(getSpy.calledWith({ namespace, port }));
         });
     });

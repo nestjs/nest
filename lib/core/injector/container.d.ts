@@ -4,6 +4,7 @@ import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-met
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { Module } from './module';
 import { DynamicModule } from '@nestjs/common';
+import { ModulesContainer } from './modules-container';
 export declare class NestContainer {
     private readonly globalModules;
     private readonly modules;
@@ -18,7 +19,7 @@ export declare class NestContainer {
     addDynamicMetadata(token: string, dynamicModuleMetadata: Partial<DynamicModule>): any;
     isGlobalModule(metatype: NestModuleMetatype): boolean;
     addGlobalModule(module: Module): void;
-    getModules(): Map<string, Module>;
+    getModules(): ModulesContainer;
     addRelatedModule(relatedModule: NestModuleMetatype | DynamicModule, token: string): void;
     addComponent(component: Metatype<Injectable>, token: string): void;
     addInjectable(injectable: Metatype<Injectable>, token: string): void;

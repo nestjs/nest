@@ -10,6 +10,7 @@ import { MetadataScanner } from '../metadata-scanner';
 import { RouterExplorer } from './interfaces/explorer.inteface';
 import { ExpressRouterExplorer } from './router-explorer';
 import { ApplicationConfig } from './../application-config';
+import { NotFoundException } from '@nestjs/common';
 
 export class RoutesResolver implements Resolver {
     private readonly logger = new Logger(RoutesResolver.name, true);
@@ -32,6 +33,9 @@ export class RoutesResolver implements Resolver {
     public resolve(express: Application) {
         const modules = this.container.getModules();
         modules.forEach(({ routes }, moduleName) => this.setupRouters(routes, moduleName, express));
+
+        this.setupNotFoundHandler(express);
+        this.setupExceptionHandler(express);
     }
 
     public setupRouters(
@@ -48,7 +52,15 @@ export class RoutesResolver implements Resolver {
             const router = this.routerBuilder.explore(instance, metatype, moduleName);
             express.use(path, router);
         });
-        this.setupExceptionHandler(express);
+    }
+
+    public setupNotFoundHandler(express: Application) {
+        const callback = (req, res) => {
+            throw new NotFoundException(`Cannot ${req.method} ${req.url}`);
+        };
+        const exceptionHandler = this.routerExceptionsFilter.create({}, callback as any);
+        const proxy = this.routerProxy.createProxy(callback, exceptionHandler);
+        express.use(proxy);
     }
 
     public setupExceptionHandler(express: Application) {
