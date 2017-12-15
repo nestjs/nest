@@ -10,7 +10,7 @@ import { Module } from './module';
 import { ModuleTokenFactory } from './module-token-factory';
 import { ModulesContainer } from './modules-container';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { UnknownModuleException } from 'src/core/errors/exceptions/unknown-module.exception';
+import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 
 export class NestContainer {
     private readonly globalModules = new Set<Module>();

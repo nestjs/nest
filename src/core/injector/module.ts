@@ -12,7 +12,7 @@ import { ModuleRef } from './module-ref';
 import { ModulesContainer } from './modules-container';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { Reflector } from '../services/reflector.service';
-import { RuntimeException } from 'src/core/errors/exceptions/runtime.exception';
+import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 
 export interface CustomComponent {

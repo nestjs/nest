@@ -12,7 +12,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Resolver } from './interfaces/resolver.interface';
 import { RouterExceptionFilters } from './router-exception-filters';
 import { RouterExplorer } from './interfaces/explorer.inteface';
-import { RouterProxy } from 'src/core/router/router-proxy';
+import { RouterProxy } from './router-proxy';
 
 export class RoutesResolver implements Resolver {
     private readonly logger = new Logger(RoutesResolver.name, true);
@@ -73,4 +73,5 @@ export class RoutesResolver implements Resolver {
         const proxy = this.routerProxy.createExceptionLayerProxy(callback, exceptionHandler);
         express.use(proxy);
     }
+
 }
