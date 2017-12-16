@@ -57,5 +57,7 @@ gulp.task('move', function() {
     gulp.dest('examples/09-babel-example/node_modules/@nestjs')
   ).pipe(
     gulp.dest('examples/11-swagger/node_modules/@nestjs')
+  ).pipe(
+    gulp.dest('examples/12-graphql-apollo/node_modules/@nestjs')
   );
 });

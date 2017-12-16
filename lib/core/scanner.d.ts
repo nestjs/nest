@@ -5,12 +5,13 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { MetadataScanner } from '../core/metadata-scanner';
+import { DynamicModule } from '@nestjs/common';
 export declare class DependenciesScanner {
     private readonly container;
     private readonly metadataScanner;
     constructor(container: NestContainer, metadataScanner: MetadataScanner);
     scan(module: NestModuleMetatype): void;
-    scanForModules(module: NestModuleMetatype, scope?: NestModuleMetatype[]): void;
+    scanForModules(module: NestModuleMetatype | DynamicModule, scope?: NestModuleMetatype[]): void;
     storeModule(module: any, scope: NestModuleMetatype[]): void;
     scanModulesForDependencies(): void;
     reflectRelatedModules(module: NestModuleMetatype, token: string): void;

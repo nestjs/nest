@@ -10,10 +10,11 @@ import { UnknownModuleException } from '../errors/exceptions/unknown-module.exce
 import { ModuleTokenFactory } from './module-token-factory';
 import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
 import { DynamicModule } from '@nestjs/common';
+import { ModulesContainer } from './modules-container';
 
 export class NestContainer {
     private readonly globalModules = new Set<Module>();
-    private readonly modules = new Map<string, Module>();
+    private readonly modules = new ModulesContainer();
     private readonly dynamicModulesMetadata = new Map<string, Partial<DynamicModule>>();
     private readonly moduleTokenFactory = new ModuleTokenFactory();
 
@@ -26,7 +27,7 @@ export class NestContainer {
         if (this.modules.has(token)) {
             return;
         }
-        const module = new Module(type, scope);
+        const module = new Module(type, scope, this);
         this.modules.set(token, module);
 
         this.addDynamicMetadata(token, dynamicMetadata);
@@ -62,7 +63,7 @@ export class NestContainer {
         this.globalModules.add(module);
     }
 
-    public getModules(): Map<string, Module> {
+    public getModules(): ModulesContainer {
         return this.modules;
     }
 

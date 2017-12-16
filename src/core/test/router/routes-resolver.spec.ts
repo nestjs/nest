@@ -63,7 +63,7 @@ describe('RoutesResolver', () => {
       modules.set('TestModule2', { routes });
 
       const spy = sinon.stub(routesResolver, 'setupRouters').callsFake(() => undefined);
-      routesResolver.resolve({} as any);
+      routesResolver.resolve({ use: sinon.spy() } as any);
       expect(spy.calledTwice).to.be.true;
     });
 

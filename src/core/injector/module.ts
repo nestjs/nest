@@ -1,4 +1,4 @@
-import { InstanceWrapper } from './container';
+import { InstanceWrapper, NestContainer } from './container';
 import { Injectable, Controller, NestModule } from '@nestjs/common/interfaces';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
@@ -7,6 +7,12 @@ import { ModuleRef } from './module-ref';
 import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { Reflector } from '../services/reflector.service';
+import { ExternalContextCreator } from './../helpers/external-context-creator';
+import { GuardsContextCreator } from './../guards/guards-context-creator';
+import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
+import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
+import { GuardsConsumer } from './../guards/guards-consumer';
+import { ModulesContainer } from './modules-container';
 
 export interface CustomComponent {
     provide: any;
@@ -27,9 +33,10 @@ export class Module {
 
     constructor(
         private _metatype: NestModuleMetatype,
-        private _scope: NestModuleMetatype[]) {
-
-        this.addCoreInjectables();
+        private _scope: NestModuleMetatype[],
+        container: NestContainer,
+    ) {
+        this.addCoreInjectables(container);
     }
 
     get scope(): NestModuleMetatype[] {
@@ -68,10 +75,12 @@ export class Module {
         return this._metatype;
     }
 
-    public addCoreInjectables() {
+    public addCoreInjectables(container: NestContainer) {
         this.addModuleRef();
         this.addModuleAsComponent();
         this.addReflector();
+        this.addExternalContextCreator(container);
+        this.addModulesContainer(container);
     }
 
     public addModuleRef() {
@@ -101,6 +110,30 @@ export class Module {
             instance: null,
         });
     }
+
+    public addExternalContextCreator(container: NestContainer) {
+        this._components.set(ExternalContextCreator.name, {
+            name: ExternalContextCreator.name,
+            metatype: ExternalContextCreator,
+            isResolved: true,
+            instance: new ExternalContextCreator(
+              new GuardsContextCreator(container),
+              new GuardsConsumer(),
+              new InterceptorsContextCreator(container),
+              new InterceptorsConsumer(),
+              container.getModules(),
+            ),
+        });
+    }
+
+    public addModulesContainer(container: NestContainer) {
+      this._components.set(ModulesContainer.name, {
+          name: ModulesContainer.name,
+          metatype: ModulesContainer,
+          isResolved: true,
+          instance: container.getModules(),
+      });
+  }
 
     public addInjectable(injectable: Metatype<Injectable>) {
         if (this.isCustomProvider(injectable)) {

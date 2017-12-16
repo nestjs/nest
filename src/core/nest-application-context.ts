@@ -12,7 +12,8 @@ export class NestApplicationContext implements INestApplicationContext {
     constructor(
         protected readonly container: NestContainer,
         private readonly scope: NestModuleMetatype[],
-        private readonly contextModule) {}
+        protected contextModule,
+    ) {}
 
     public select<T>(module: Metatype<T>): INestApplicationContext {
         const modules = this.container.getModules();
@@ -26,11 +27,11 @@ export class NestApplicationContext implements INestApplicationContext {
           : null;
     }
 
-    public get<T>(metatypeOrToken: Metatype<T> | string): T {
+    public get<T>(metatypeOrToken: Metatype<T> | string | symbol): T {
         return this.findInstanceByPrototypeOrToken<T>(metatypeOrToken);
     }
 
-    private findInstanceByPrototypeOrToken<T>(metatypeOrToken: Metatype<T> | string) {
+    private findInstanceByPrototypeOrToken<T>(metatypeOrToken: Metatype<T> | string | symbol) {
         const dependencies = new Map([
             ...this.contextModule.components,
             ...this.contextModule.routes,

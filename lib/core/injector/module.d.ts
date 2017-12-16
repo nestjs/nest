@@ -1,4 +1,4 @@
-import { InstanceWrapper } from './container';
+import { InstanceWrapper, NestContainer } from './container';
 import { Injectable, Controller, NestModule } from '@nestjs/common/interfaces';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
@@ -26,7 +26,7 @@ export declare class Module {
     private _injectables;
     private _routes;
     private _exports;
-    constructor(_metatype: NestModuleMetatype, _scope: NestModuleMetatype[]);
+    constructor(_metatype: NestModuleMetatype, _scope: NestModuleMetatype[], container: NestContainer);
     readonly scope: NestModuleMetatype[];
     readonly relatedModules: Set<Module>;
     readonly components: Map<string, InstanceWrapper<Injectable>>;
@@ -35,10 +35,12 @@ export declare class Module {
     readonly exports: Set<string>;
     readonly instance: NestModule;
     readonly metatype: NestModuleMetatype;
-    addCoreInjectables(): void;
+    addCoreInjectables(container: NestContainer): void;
     addModuleRef(): void;
     addModuleAsComponent(): void;
     addReflector(): void;
+    addExternalContextCreator(container: NestContainer): void;
+    addModulesContainer(container: NestContainer): void;
     addInjectable(injectable: Metatype<Injectable>): void;
     addComponent(component: ComponentMetatype): void;
     isCustomProvider(component: ComponentMetatype): component is CustomClass | CustomFactory | CustomValue;
@@ -57,7 +59,7 @@ export declare class Module {
     createModuleRefMetatype(components: any): {
         new (): {
             readonly components: any;
-            get<T>(type: string | symbol | object | Metatype<any>): T;
+            get<T>(type: OpaqueToken): T;
         };
     };
 }

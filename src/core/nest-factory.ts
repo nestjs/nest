@@ -51,7 +51,7 @@ export class NestFactoryStatic {
         config?: MicroserviceConfiguration): Promise<INestMicroservice> {
 
         if (!NestMicroservice) {
-          throw new MicroservicesPackageNotFoundException();
+            throw new MicroservicesPackageNotFoundException();
         }
 
         await this.initialize(module);
