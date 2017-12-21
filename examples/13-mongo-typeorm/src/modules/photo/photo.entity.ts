@@ -1,7 +1,6 @@
 import {
   Entity,
   Column,
-  PrimaryGeneratedColumn,
   ObjectIdColumn,
   ObjectID,
 } from 'typeorm';
