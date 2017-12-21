@@ -8,12 +8,15 @@ import 'rxjs/add/operator/finally';
 import 'rxjs/add/observable/empty';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/fromPromise';
-export declare abstract class Server {
-    protected readonly messageHandlers: MessageHandlers;
-    protected readonly logger: Logger;
-    getHandlers(): MessageHandlers;
-    add(pattern: any, callback: (data) => Promise<Observable<any>>): void;
-    send(stream$: Observable<any>, respond: (data: MicroserviceResponse) => void): Subscription;
-    transformToObservable(resultOrDeffered: any): Observable<any>;
-    protected handleError(error: string): void;
+export abstract class Server {
+  protected readonly messageHandlers: MessageHandlers;
+  protected readonly logger: Logger;
+  getHandlers(): MessageHandlers;
+  add(pattern: any, callback: (data) => Promise<Observable<any>>): void;
+  send(
+    stream$: Observable<any>,
+    respond: (data: MicroserviceResponse) => void
+  ): Subscription;
+  transformToObservable(resultOrDeffered: any): Observable<any>;
+  protected handleError(error: string): void;
 }

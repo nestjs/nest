@@ -3,6 +3,6 @@ import { CatsService } from './cats.service';
 import { CatsResolvers } from './cats.resolvers';
 
 @Module({
-	components: [CatsService, CatsResolvers],
+  components: [CatsService, CatsResolvers]
 })
 export class CatsModule {}

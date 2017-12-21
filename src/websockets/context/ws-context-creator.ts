@@ -14,47 +14,71 @@ import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-con
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 
 export class WsContextCreator {
-    constructor(
-        private readonly wsProxy: WsProxy,
-        private readonly exceptionFiltersContext: ExceptionFiltersContext,
-        private readonly pipesCreator: PipesContextCreator,
-        private readonly pipesConsumer: PipesConsumer,
-        private readonly guardsContextCreator: GuardsContextCreator,
-        private readonly guardsConsumer: GuardsConsumer,
-        private readonly interceptorsContextCreator: InterceptorsContextCreator,
-        private readonly interceptorsConsumer: InterceptorsConsumer) {}
+  constructor(
+    private readonly wsProxy: WsProxy,
+    private readonly exceptionFiltersContext: ExceptionFiltersContext,
+    private readonly pipesCreator: PipesContextCreator,
+    private readonly pipesConsumer: PipesConsumer,
+    private readonly guardsContextCreator: GuardsContextCreator,
+    private readonly guardsConsumer: GuardsConsumer,
+    private readonly interceptorsContextCreator: InterceptorsContextCreator,
+    private readonly interceptorsConsumer: InterceptorsConsumer
+  ) {}
 
-    public create(
-        instance: Controller,
-        callback: (client, data) => void,
-        module): (client, data) => Promise<void> {
+  public create(
+    instance: Controller,
+    callback: (client, data) => void,
+    module
+  ): (client, data) => Promise<void> {
+    const exceptionHandler = this.exceptionFiltersContext.create(
+      instance,
+      callback
+    );
+    const pipes = this.pipesCreator.create(instance, callback);
+    const guards = this.guardsContextCreator.create(instance, callback, module);
+    const metatype = this.getDataMetatype(instance, callback);
+    const interceptors = this.interceptorsContextCreator.create(
+      instance,
+      callback,
+      module
+    );
 
-        const exceptionHandler = this.exceptionFiltersContext.create(instance, callback);
-        const pipes = this.pipesCreator.create(instance, callback);
-        const guards = this.guardsContextCreator.create(instance, callback, module);
-        const metatype = this.getDataMetatype(instance, callback);
-        const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
+    return this.wsProxy.create(async (client, data) => {
+      const canActivate = await this.guardsConsumer.tryActivate(
+        guards,
+        data,
+        instance,
+        callback
+      );
+      if (!canActivate) {
+        throw new WsException(FORBIDDEN_MESSAGE);
+      }
+      const result = await this.pipesConsumer.applyPipes(
+        data,
+        { metatype },
+        pipes
+      );
+      const handler = () => callback.call(instance, client, data);
 
-        return this.wsProxy.create(async (client, data) => {
-            const canActivate = await this.guardsConsumer.tryActivate(guards, data, instance, callback);
-            if (!canActivate) {
-                throw new WsException(FORBIDDEN_MESSAGE);
-            }
-            const result = await this.pipesConsumer.applyPipes(data, { metatype }, pipes);
-            const handler = () => callback.call(instance, client, data);
+      return await this.interceptorsConsumer.intercept(
+        interceptors,
+        result,
+        instance,
+        callback,
+        handler
+      );
+    }, exceptionHandler);
+  }
 
-            return await this.interceptorsConsumer.intercept(
-                interceptors, result, instance, callback, handler,
-            );
-        }, exceptionHandler);
-    }
+  public reflectCallbackParamtypes(
+    instance: Controller,
+    callback: (...args) => any
+  ): any[] {
+    return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
+  }
 
-    public reflectCallbackParamtypes(instance: Controller, callback: (...args) => any): any[] {
-        return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
-    }
-
-    public getDataMetatype(instance, callback) {
-        const paramtypes = this.reflectCallbackParamtypes(instance, callback);
-        return paramtypes && paramtypes.length ? paramtypes[1] : null;
-    }
+  public getDataMetatype(instance, callback) {
+    const paramtypes = this.reflectCallbackParamtypes(instance, callback);
+    return paramtypes && paramtypes.length ? paramtypes[1] : null;
+  }
 }

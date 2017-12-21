@@ -29,7 +29,7 @@ describe('ApplicationConfig', () => {
   describe('Pipes', () => {
     it('should set global pipes', () => {
       const pipes = ['test', 'test2'];
-      appConfig.useGlobalPipes(...pipes as any);
+      appConfig.useGlobalPipes(...(pipes as any));
 
       expect(appConfig.getGlobalPipes()).to.be.eql(pipes);
     });
@@ -37,7 +37,7 @@ describe('ApplicationConfig', () => {
   describe('Filters', () => {
     it('should set global filters', () => {
       const filters = ['test', 'test2'];
-      appConfig.useGlobalFilters(...filters as any);
+      appConfig.useGlobalFilters(...(filters as any));
 
       expect(appConfig.getGlobalFilters()).to.be.eql(filters);
     });
@@ -45,7 +45,7 @@ describe('ApplicationConfig', () => {
   describe('Guards', () => {
     it('should set global guards', () => {
       const guards = ['test', 'test2'];
-      appConfig.useGlobalGuards(...guards as any);
+      appConfig.useGlobalGuards(...(guards as any));
 
       expect(appConfig.getGlobalGuards()).to.be.eql(guards);
     });
@@ -53,7 +53,7 @@ describe('ApplicationConfig', () => {
   describe('Interceptors', () => {
     it('should set global interceptors', () => {
       const interceptors = ['test', 'test2'];
-      appConfig.useGlobalInterceptors(...interceptors as any);
+      appConfig.useGlobalInterceptors(...(interceptors as any));
 
       expect(appConfig.getGlobalInterceptors()).to.be.eql(interceptors);
     });

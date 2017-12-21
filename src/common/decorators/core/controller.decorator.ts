@@ -8,8 +8,8 @@ import { PATH_METADATA } from '../../constants';
  * Those dependencies should belongs to the same module.
  */
 export function Controller(prefix?: string): ClassDecorator {
-    const path = isUndefined(prefix) ? '/' : prefix;
-    return (target: object) => {
-        Reflect.defineMetadata(PATH_METADATA, path, target);
-    };
+  const path = isUndefined(prefix) ? '/' : prefix;
+  return (target: object) => {
+    Reflect.defineMetadata(PATH_METADATA, path, target);
+  };
 }

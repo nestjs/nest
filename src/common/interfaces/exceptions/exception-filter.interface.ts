@@ -1,3 +1,3 @@
 export interface ExceptionFilter {
-    catch(exception, response);
+  catch(exception, response);
 }

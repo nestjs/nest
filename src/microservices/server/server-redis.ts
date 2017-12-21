@@ -14,91 +14,92 @@ const MESSAGE_EVENT = 'message';
 const ERROR_EVENT = 'error';
 
 export class ServerRedis extends Server implements CustomTransportStrategy {
-    private readonly url: string;
-    private sub = null;
-    private pub = null;
+  private readonly url: string;
+  private sub = null;
+  private pub = null;
 
-    constructor(config: MicroserviceConfiguration) {
-        super();
-        this.url = config.url || DEFAULT_URL;
+  constructor(config: MicroserviceConfiguration) {
+    super();
+    this.url = config.url || DEFAULT_URL;
+  }
+
+  public listen(callback: () => void) {
+    this.sub = this.createRedisClient();
+    this.pub = this.createRedisClient();
+
+    this.handleErrors(this.pub);
+    this.handleErrors(this.sub);
+    this.start(callback);
+  }
+
+  public start(callback?: () => void) {
+    this.sub.on(CONNECT_EVENT, () =>
+      this.handleConnection(callback, this.sub, this.pub)
+    );
+  }
+
+  public close() {
+    this.pub && this.pub.quit();
+    this.sub && this.sub.quit();
+  }
+
+  public createRedisClient() {
+    return redis.createClient({ url: this.url });
+  }
+
+  public handleConnection(callback, sub, pub) {
+    sub.on(MESSAGE_EVENT, this.getMessageHandler(pub).bind(this));
+
+    const patterns = Object.keys(this.messageHandlers);
+    patterns.forEach(pattern => sub.subscribe(this.getAckQueueName(pattern)));
+    callback && callback();
+  }
+
+  public getMessageHandler(pub) {
+    return async (channel, buffer) =>
+      await this.handleMessage(channel, buffer, pub);
+  }
+
+  public async handleMessage(channel, buffer, pub) {
+    const msg = this.tryParse(buffer);
+    const pattern = channel.replace(/_ack$/, '');
+    const publish = this.getPublisher(pub, pattern);
+    const status = 'error';
+
+    if (!this.messageHandlers[pattern]) {
+      publish({ status, error: NO_PATTERN_MESSAGE });
+      return;
     }
+    const handler = this.messageHandlers[pattern];
+    const response$ = this.transformToObservable(
+      await handler(msg.data)
+    ) as Observable<any>;
+    response$ && this.send(response$, publish);
+  }
 
-    public listen(callback: () => void) {
-        this.sub = this.createRedisClient();
-        this.pub = this.createRedisClient();
+  public getPublisher(pub, pattern) {
+    return respond => {
+      pub.publish(this.getResQueueName(pattern), JSON.stringify(respond));
+    };
+  }
 
-        this.handleErrors(this.pub);
-        this.handleErrors(this.sub);
-        this.start(callback);
+  public tryParse(content) {
+    try {
+      return JSON.parse(content);
+    } catch (e) {
+      return content;
     }
+  }
 
-    public start(callback?: () => void) {
-        this.sub.on(CONNECT_EVENT, () => this.handleConnection(callback, this.sub, this.pub));
-    }
+  public getAckQueueName(pattern) {
+    return `${pattern}_ack`;
+  }
 
-    public close() {
-        this.pub && this.pub.quit();
-        this.sub && this.sub.quit();
-    }
+  public getResQueueName(pattern) {
+    return `${pattern}_res`;
+  }
 
-    public createRedisClient() {
-        return redis.createClient({ url: this.url });
-    }
-
-    public handleConnection(callback, sub, pub) {
-        sub.on(MESSAGE_EVENT, this.getMessageHandler(pub).bind(this));
-
-        const patterns = Object.keys(this.messageHandlers);
-        patterns.forEach((pattern) => sub.subscribe(this.getAckQueueName(pattern)));
-        callback && callback();
-    }
-
-    public getMessageHandler(pub) {
-        return async (channel, buffer) => await this.handleMessage(channel, buffer, pub);
-    }
-
-    public async handleMessage(channel, buffer, pub) {
-        const msg = this.tryParse(buffer);
-        const pattern = channel.replace(/_ack$/, '');
-        const publish = this.getPublisher(pub, pattern);
-        const status = 'error';
-
-        if (!this.messageHandlers[pattern]) {
-            publish({ status, error: NO_PATTERN_MESSAGE });
-            return;
-        }
-        const handler = this.messageHandlers[pattern];
-        const response$ = this.transformToObservable(await handler(msg.data)) as Observable<any>;
-        response$ && this.send(response$, publish);
-    }
-
-    public getPublisher(pub, pattern) {
-        return (respond) => {
-            pub.publish(
-                this.getResQueueName(pattern),
-                JSON.stringify(respond),
-            );
-        };
-    }
-
-    public tryParse(content) {
-        try {
-            return JSON.parse(content);
-        }
-        catch (e) {
-            return content;
-        }
-    }
-
-    public getAckQueueName(pattern) {
-        return `${pattern}_ack`;
-    }
-
-    public getResQueueName(pattern) {
-        return `${pattern}_res`;
-    }
-
-    public handleErrors(stream) {
-        stream.on(ERROR_EVENT, (err) => this.logger.error(err));
-    }
+  public handleErrors(stream) {
+    stream.on(ERROR_EVENT, err => this.logger.error(err));
+  }
 }

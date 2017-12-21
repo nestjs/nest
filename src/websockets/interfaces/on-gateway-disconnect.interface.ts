@@ -1,3 +1,3 @@
 export interface OnGatewayDisconnect {
-    handleDisconnect(client: any);
+  handleDisconnect(client: any);
 }

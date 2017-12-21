@@ -4,14 +4,18 @@ import { Logger } from '@nestjs/common';
 import { ExceptionFilter } from '../../index';
 
 const defineFiltersMetadata = (...filters: ExceptionFilter[]) => {
-    return (target: object, key?, descriptor?) => {
-        if (descriptor) {
-            Reflect.defineMetadata(EXCEPTION_FILTERS_METADATA, filters, descriptor.value);
-            return descriptor;
-        }
-        Reflect.defineMetadata(EXCEPTION_FILTERS_METADATA, filters, target);
-        return target;
-    };
+  return (target: object, key?, descriptor?) => {
+    if (descriptor) {
+      Reflect.defineMetadata(
+        EXCEPTION_FILTERS_METADATA,
+        filters,
+        descriptor.value
+      );
+      return descriptor;
+    }
+    Reflect.defineMetadata(EXCEPTION_FILTERS_METADATA, filters, target);
+    return target;
+  };
 };
 
 /**
@@ -24,4 +28,5 @@ const defineFiltersMetadata = (...filters: ExceptionFilter[]) => {
  *
  * @param  {ExceptionFilter[]} ...filters (instances)
  */
-export const UseFilters = (...filters: ExceptionFilter[]) => defineFiltersMetadata(...filters);
+export const UseFilters = (...filters: ExceptionFilter[]) =>
+  defineFiltersMetadata(...filters);

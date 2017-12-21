@@ -11,17 +11,19 @@ import { Logger } from '../../index';
  * @deprecated
  */
 export const Shared = (scope: string = 'global') => {
-    const logger = new Logger('Shared');
-    logger.warn('DEPRECATED! Since version 4.0.0 `@Shared()` decorator is deprecated. All modules are singletons now.');
-    return (target: any) => {
-        const Metatype = target as FunctionConstructor;
-        const Type = class extends Metatype {
-            constructor(...args) {
-                super(...args);
-            }
-        };
-        Reflect.defineMetadata(SHARED_MODULE_METADATA, scope, Type);
-        Object.defineProperty(Type, 'name', { value: target.name });
-        return Type as any;
+  const logger = new Logger('Shared');
+  logger.warn(
+    'DEPRECATED! Since version 4.0.0 `@Shared()` decorator is deprecated. All modules are singletons now.'
+  );
+  return (target: any) => {
+    const Metatype = target as FunctionConstructor;
+    const Type = class extends Metatype {
+      constructor(...args) {
+        super(...args);
+      }
     };
+    Reflect.defineMetadata(SHARED_MODULE_METADATA, scope, Type);
+    Object.defineProperty(Type, 'name', { value: target.name });
+    return Type as any;
+  };
 };

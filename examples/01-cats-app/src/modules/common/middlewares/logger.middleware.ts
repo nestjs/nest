@@ -7,5 +7,5 @@ export class LoggerMiddleware implements NestMiddleware {
       console.log(`[${name}] Request...`); // [ApplicationModule] Request...
       next();
     };
- }
+  }
 }

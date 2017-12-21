@@ -16,64 +16,67 @@ import { InterceptorsContextCreator } from '@nestjs/core/interceptors/intercepto
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 
 export class MicroservicesModule {
-    private readonly clientsContainer = new ClientsContainer();
-    private listenersController: ListenersController;
+  private readonly clientsContainer = new ClientsContainer();
+  private listenersController: ListenersController;
 
-    public setup(container, config) {
-        const contextCreator = new RpcContextCreator(
-            new RpcProxy(),
-            new ExceptionFiltersContext(config),
-            new PipesContextCreator(config),
-            new PipesConsumer(),
-            new GuardsContextCreator(container, config),
-            new GuardsConsumer(),
-            new InterceptorsContextCreator(container, config),
-            new InterceptorsConsumer(),
-        );
-        this.listenersController = new ListenersController(
-            this.clientsContainer,
-            contextCreator,
-        );
+  public setup(container, config) {
+    const contextCreator = new RpcContextCreator(
+      new RpcProxy(),
+      new ExceptionFiltersContext(config),
+      new PipesContextCreator(config),
+      new PipesConsumer(),
+      new GuardsContextCreator(container, config),
+      new GuardsConsumer(),
+      new InterceptorsContextCreator(container, config),
+      new InterceptorsConsumer()
+    );
+    this.listenersController = new ListenersController(
+      this.clientsContainer,
+      contextCreator
+    );
+  }
+
+  public setupListeners(container, server: Server & CustomTransportStrategy) {
+    if (!this.listenersController) {
+      throw new RuntimeException();
     }
+    const modules = container.getModules();
+    modules.forEach(({ routes }, module) =>
+      this.bindListeners(routes, server, module)
+    );
+  }
 
-    public setupListeners(container, server: Server & CustomTransportStrategy) {
-        if (!this.listenersController) {
-            throw new RuntimeException();
-        }
-        const modules = container.getModules();
-        modules.forEach(({ routes }, module) => this.bindListeners(routes, server, module));
+  public setupClients(container) {
+    if (!this.listenersController) {
+      throw new RuntimeException();
     }
+    const modules = container.getModules();
+    modules.forEach(({ routes, components }) => {
+      this.bindClients(routes);
+      this.bindClients(components);
+    });
+  }
 
-    public setupClients(container) {
-        if (!this.listenersController) {
-            throw new RuntimeException();
-        }
-        const modules = container.getModules();
-        modules.forEach(({ routes, components }) => {
-            this.bindClients(routes);
-            this.bindClients(components);
-        });
-    }
+  public bindListeners(
+    controllers: Map<string, InstanceWrapper<Controller>>,
+    server: Server & CustomTransportStrategy,
+    module: string
+  ) {
+    controllers.forEach(({ instance }) => {
+      this.listenersController.bindPatternHandlers(instance, server, module);
+    });
+  }
 
-    public bindListeners(
-        controllers: Map<string, InstanceWrapper<Controller>>,
-        server: Server & CustomTransportStrategy,
-        module: string) {
+  public bindClients(controllers: Map<string, InstanceWrapper<Controller>>) {
+    controllers.forEach(({ instance, isNotMetatype }) => {
+      !isNotMetatype &&
+        this.listenersController.bindClientsToProperties(instance);
+    });
+  }
 
-        controllers.forEach(({ instance }) => {
-            this.listenersController.bindPatternHandlers(instance, server, module);
-        });
-    }
-
-    public bindClients(controllers: Map<string, InstanceWrapper<Controller>>) {
-        controllers.forEach(({ instance, isNotMetatype }) => {
-            !isNotMetatype && this.listenersController.bindClientsToProperties(instance);
-        });
-    }
-
-    public close() {
-        const clients = this.clientsContainer.getAllClients();
-        clients.forEach((client) => client.close());
-        this.clientsContainer.clear();
-    }
+  public close() {
+    const clients = this.clientsContainer.getAllClients();
+    clients.forEach(client => client.close());
+    this.clientsContainer.clear();
+  }
 }

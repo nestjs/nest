@@ -46,7 +46,7 @@ export class RpcExceptionsHandler {
 
     const filter = this.filters.find(({ exceptionMetatypes, func }) => {
       const hasMetatype = !!exceptionMetatypes.find(
-        ExceptionMetatype => exception instanceof ExceptionMetatype,
+        ExceptionMetatype => exception instanceof ExceptionMetatype
       );
       return hasMetatype;
     });

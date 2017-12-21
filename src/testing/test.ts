@@ -1,4 +1,7 @@
-import { NestContainer, InstanceWrapper } from '@nestjs/core/injector/container';
+import {
+  NestContainer,
+  InstanceWrapper
+} from '@nestjs/core/injector/container';
 import { ModuleMetadata } from '@nestjs/common/interfaces/modules/module-metadata.interface';
 import { Module } from '@nestjs/common/utils/decorators/module.decorator';
 import { DependenciesScanner } from '@nestjs/core/scanner';
@@ -10,15 +13,14 @@ import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { TestingModuleBuilder } from './testing-module.builder';
 
 export class Test {
-    private static metadataScanner = new MetadataScanner();
+  private static metadataScanner = new MetadataScanner();
 
-    public static createTestingModule(metadata: ModuleMetadata) {
-        this.init();
-        return new TestingModuleBuilder(this.metadataScanner, metadata);
-    }
+  public static createTestingModule(metadata: ModuleMetadata) {
+    this.init();
+    return new TestingModuleBuilder(this.metadataScanner, metadata);
+  }
 
-    private static init() {
-        Logger.setMode(NestEnvironment.TEST);
-    }
+  private static init() {
+    Logger.setMode(NestEnvironment.TEST);
+  }
 }
-

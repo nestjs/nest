@@ -3,9 +3,9 @@ import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Server } from './../server/server';
 
 export interface MicroserviceConfiguration {
-    transport?: Transport;
-    url?: string;
-    port?: number;
-    host?: string;
-    strategy?: Server & CustomTransportStrategy;
+  transport?: Transport;
+  url?: string;
+  port?: number;
+  host?: string;
+  strategy?: Server & CustomTransportStrategy;
 }

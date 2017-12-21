@@ -11,11 +11,11 @@ export const databaseProviders = [
         port: 3306,
         username: 'root',
         password: '',
-        database: 'test',
+        database: 'test'
       });
       sequelize.addModels([Cat]);
       await sequelize.sync();
       return sequelize;
-    },
-  },
+    }
+  }
 ];

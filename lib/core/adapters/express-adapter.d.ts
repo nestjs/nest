@@ -1,4 +1,4 @@
 export declare class ExpressAdapter {
-    static create(): any;
-    static createRouter(): any;
+  static create(): any;
+  static createRouter(): any;
 }

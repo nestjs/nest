@@ -12,124 +12,142 @@ import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { RoutesMapper } from '../../middlewares/routes-mapper';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { ApplicationConfig } from '../../application-config';
-import { MiddlewaresContainer } from "../../middlewares/container";
+import { MiddlewaresContainer } from '../../middlewares/container';
 
 describe('MiddlewaresModule', () => {
-    let middlewaresModule: MiddlewaresModule;
+  let middlewaresModule: MiddlewaresModule;
 
-    @Controller('test')
-    class AnotherRoute { }
+  @Controller('test')
+  class AnotherRoute {}
 
-    @Controller('test')
-    class TestRoute {
+  @Controller('test')
+  class TestRoute {
+    @RequestMapping({ path: 'test' })
+    public getTest() {}
 
-        @RequestMapping({ path: 'test' })
-        public getTest() {}
+    @RequestMapping({ path: 'another', method: RequestMethod.DELETE })
+    public getAnother() {}
+  }
 
-        @RequestMapping({ path: 'another', method: RequestMethod.DELETE })
-        public getAnother() {}
+  @Component()
+  class TestMiddleware implements NestMiddleware {
+    public resolve() {
+      return (req, res, next) => {};
     }
+  }
 
-    @Component()
-    class TestMiddleware implements NestMiddleware {
-        public resolve() {
-            return (req, res, next) => {};
-        }
-    }
+  beforeEach(() => {
+    middlewaresModule = new MiddlewaresModule();
+    (middlewaresModule as any).routerExceptionFilter = new RouterExceptionFilters(
+      new ApplicationConfig()
+    );
+  });
 
-    beforeEach(() => {
-        middlewaresModule = new MiddlewaresModule();
-        (middlewaresModule as any).routerExceptionFilter = new RouterExceptionFilters(
-            new ApplicationConfig(),
-        );
+  describe('loadConfiguration', () => {
+    it('should call "configure" method if method is implemented', () => {
+      const configureSpy = sinon.spy();
+      const mockModule = {
+        configure: configureSpy
+      };
+
+      middlewaresModule.loadConfiguration(
+        new MiddlewaresContainer(),
+        mockModule as any,
+        'Test' as any
+      );
+
+      expect(configureSpy.calledOnce).to.be.true;
+      expect(configureSpy.calledWith(new MiddlewareBuilder(new RoutesMapper())))
+        .to.be.true;
+    });
+  });
+
+  describe('setupRouteMiddleware', () => {
+    it('should throw "RuntimeException" exception when middlewares is not stored in container', () => {
+      const route = { path: 'Test' };
+      const configuration = {
+        middlewares: [TestMiddleware],
+        forRoutes: [TestRoute]
+      };
+
+      const useSpy = sinon.spy();
+      const app = { use: useSpy };
+
+      expect(
+        middlewaresModule.setupRouteMiddleware(
+          new MiddlewaresContainer(),
+          route as any,
+          configuration,
+          'Test' as any,
+          app as any
+        )
+      ).to.eventually.be.rejectedWith(RuntimeException);
     });
 
-    describe('loadConfiguration', () => {
+    it('should throw "InvalidMiddlewareException" exception when middlewares does not have "resolve" method', () => {
+      @Component()
+      class InvalidMiddleware {}
 
-        it('should call "configure" method if method is implemented', () => {
-            const configureSpy = sinon.spy();
-            const mockModule = {
-                configure: configureSpy,
-            };
+      const route = { path: 'Test' };
+      const configuration = {
+        middlewares: [InvalidMiddleware],
+        forRoutes: [TestRoute]
+      };
 
-            middlewaresModule.loadConfiguration(new MiddlewaresContainer(), mockModule as any, 'Test' as any);
+      const useSpy = sinon.spy();
+      const app = { use: useSpy };
 
-            expect(configureSpy.calledOnce).to.be.true;
-            expect(configureSpy.calledWith(new MiddlewareBuilder(new RoutesMapper()))).to.be.true;
-        });
+      const container = new MiddlewaresContainer();
+      const moduleKey = 'Test' as any;
+      container.addConfig([configuration as any], moduleKey);
+
+      const instance = new InvalidMiddleware();
+      container.getMiddlewares(moduleKey).set('InvalidMiddleware', {
+        metatype: InvalidMiddleware,
+        instance
+      } as any);
+
+      expect(
+        middlewaresModule.setupRouteMiddleware(
+          container,
+          route as any,
+          configuration,
+          moduleKey,
+          app as any
+        )
+      ).to.be.rejectedWith(InvalidMiddlewareException);
     });
 
-    describe('setupRouteMiddleware', () => {
+    it('should store middlewares when middleware is stored in container', () => {
+      const route = { path: 'Test', method: RequestMethod.GET };
+      const configuration = {
+        middlewares: [TestMiddleware],
+        forRoutes: [{ path: 'test' }, AnotherRoute, TestRoute]
+      };
 
-        it('should throw "RuntimeException" exception when middlewares is not stored in container', () => {
-            const route = { path: 'Test' };
-            const configuration = {
-                middlewares: [ TestMiddleware ],
-                forRoutes: [ TestRoute ],
-            };
+      const useSpy = sinon.spy();
+      const app = {
+        get: useSpy
+      };
 
-            const useSpy = sinon.spy();
-            const app = { use: useSpy };
+      const container = new MiddlewaresContainer();
+      const moduleKey = 'Test' as any;
+      container.addConfig([configuration], moduleKey);
 
-            expect(
-              middlewaresModule.setupRouteMiddleware(new MiddlewaresContainer(), route as any, configuration, 'Test' as any, app as any),
-            ).to.eventually.be.rejectedWith(RuntimeException);
-        });
+      const instance = new TestMiddleware();
+      container.getMiddlewares(moduleKey).set('TestMiddleware', {
+        metatype: TestMiddleware,
+        instance
+      });
 
-        it('should throw "InvalidMiddlewareException" exception when middlewares does not have "resolve" method', () => {
-            @Component()
-            class InvalidMiddleware {}
-
-            const route = { path: 'Test' };
-            const configuration = {
-                middlewares: [ InvalidMiddleware ],
-                forRoutes: [ TestRoute ],
-            };
-
-            const useSpy = sinon.spy();
-            const app = { use: useSpy };
-
-            const container = new MiddlewaresContainer();
-            const moduleKey = 'Test' as any;
-            container.addConfig([ configuration as any ], moduleKey);
-
-            const instance = new InvalidMiddleware();
-            container.getMiddlewares(moduleKey).set('InvalidMiddleware', {
-                metatype: InvalidMiddleware,
-                instance,
-            } as any);
-
-            expect(
-              middlewaresModule.setupRouteMiddleware(container, route as any, configuration, moduleKey, app as any),
-            ).to.be.rejectedWith(InvalidMiddlewareException);
-        });
-
-        it('should store middlewares when middleware is stored in container', () => {
-            const route = { path: 'Test', method: RequestMethod.GET };
-            const configuration = {
-                middlewares: [ TestMiddleware ],
-                forRoutes: [ { path: 'test' }, AnotherRoute, TestRoute ],
-            };
-
-            const useSpy = sinon.spy();
-            const app = {
-                get: useSpy,
-            };
-
-            const container = new MiddlewaresContainer();
-            const moduleKey = 'Test' as any;
-            container.addConfig([ configuration ], moduleKey);
-
-            const instance = new TestMiddleware();
-            container.getMiddlewares(moduleKey).set('TestMiddleware', {
-                metatype: TestMiddleware,
-                instance,
-            });
-
-            middlewaresModule.setupRouteMiddleware(container, route, configuration, moduleKey, app as any);
-            expect(useSpy.calledOnce).to.be.true;
-        });
-
+      middlewaresModule.setupRouteMiddleware(
+        container,
+        route,
+        configuration,
+        moduleKey,
+        app as any
+      );
+      expect(useSpy.calledOnce).to.be.true;
     });
-
+  });
 });

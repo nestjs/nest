@@ -4,20 +4,20 @@ import { InvalidModuleConfigException } from './exceptions/invalid-module-config
 import { metadata } from '../../constants';
 
 const metadataKeys = [
-    metadata.MODULES,
-    metadata.EXPORTS,
-    metadata.COMPONENTS,
-    metadata.CONTROLLERS,
+  metadata.MODULES,
+  metadata.EXPORTS,
+  metadata.COMPONENTS,
+  metadata.CONTROLLERS
 ];
 
 const validateKeys = (keys: string[]) => {
-    const isKeyValid = (key) => metadataKeys.findIndex(k => k === key) < 0;
-    const validateKey = (key) => {
-        if (isKeyValid(key)) {
-            throw new InvalidModuleConfigException(key);
-        }
-    };
-    keys.forEach(validateKey);
+  const isKeyValid = key => metadataKeys.findIndex(k => k === key) < 0;
+  const validateKey = key => {
+    if (isKeyValid(key)) {
+      throw new InvalidModuleConfigException(key);
+    }
+  };
+  keys.forEach(validateKey);
 };
 
 /**
@@ -29,19 +29,19 @@ const validateKeys = (keys: string[]) => {
  * @param obj {ModuleMetadata} Module metadata
  */
 export function Module(obj: {
-    modules?: any[],
-    controllers?: any[],
-    components?: any[],
-    exports?: any[],
+  modules?: any[];
+  controllers?: any[];
+  components?: any[];
+  exports?: any[];
 }): ClassDecorator {
-    const propsKeys = Object.keys(obj);
-    validateKeys(propsKeys);
+  const propsKeys = Object.keys(obj);
+  validateKeys(propsKeys);
 
-    return (target: object) => {
-        for (const property in obj) {
-            if (obj.hasOwnProperty(property)) {
-                Reflect.defineMetadata(property, obj[property], target);
-            }
-        }
-    };
+  return (target: object) => {
+    for (const property in obj) {
+      if (obj.hasOwnProperty(property)) {
+        Reflect.defineMetadata(property, obj[property], target);
+      }
+    }
+  };
 }

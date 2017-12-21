@@ -10,10 +10,10 @@ describe('RoutesResolver', () => {
   @Controller('global')
   class TestRoute {
     @RequestMapping({ path: 'test' })
-    public getTest() { }
+    public getTest() {}
 
     @RequestMapping({ path: 'another-test', method: RequestMethod.POST })
-    public anotherTest() { }
+    public anotherTest() {}
   }
 
   let router;
@@ -24,18 +24,22 @@ describe('RoutesResolver', () => {
   before(() => {
     modules = new Map();
     container = {
-      getModules: () => modules,
+      getModules: () => modules
     };
     router = {
-      get() { },
-      post() { },
+      get() {},
+      post() {}
     };
   });
 
   beforeEach(() => {
-    routesResolver = new RoutesResolver(container, {
-      createRouter: () => router,
-    }, new ApplicationConfig());
+    routesResolver = new RoutesResolver(
+      container,
+      {
+        createRouter: () => router
+      },
+      new ApplicationConfig()
+    );
   });
 
   describe('setupRouters', () => {
@@ -43,7 +47,7 @@ describe('RoutesResolver', () => {
       const routes = new Map();
       routes.set('TestRoute', {
         instance: new TestRoute(),
-        metatype: TestRoute,
+        metatype: TestRoute
       });
 
       const use = sinon.spy();
@@ -57,15 +61,16 @@ describe('RoutesResolver', () => {
       const routes = new Map();
       routes.set('TestRoute', {
         instance: new TestRoute(),
-        metatype: TestRoute,
+        metatype: TestRoute
       });
       modules.set('TestModule', { routes });
       modules.set('TestModule2', { routes });
 
-      const spy = sinon.stub(routesResolver, 'setupRouters').callsFake(() => undefined);
+      const spy = sinon
+        .stub(routesResolver, 'setupRouters')
+        .callsFake(() => undefined);
       routesResolver.resolve({ use: sinon.spy() } as any);
       expect(spy.calledTwice).to.be.true;
     });
-
   });
 });

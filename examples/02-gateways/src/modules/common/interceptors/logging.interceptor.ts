@@ -4,12 +4,14 @@ import 'rxjs/add/operator/do';
 
 @Interceptor()
 export class LoggingInterceptor implements NestInterceptor {
-  intercept(dataOrRequest, context: ExecutionContext, stream$: Observable<any>): Observable<any> {
+  intercept(
+    dataOrRequest,
+    context: ExecutionContext,
+    stream$: Observable<any>
+  ): Observable<any> {
     console.log('Before...');
     const now = Date.now();
 
-    return stream$.do(
-      () => console.log(`After... ${Date.now() - now}ms`),
-    );
+    return stream$.do(() => console.log(`After... ${Date.now() - now}ms`));
   }
 }

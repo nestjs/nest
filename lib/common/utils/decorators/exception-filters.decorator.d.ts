@@ -10,4 +10,6 @@ import { ExceptionFilter } from '../../index';
  *
  * @param  {ExceptionFilter[]} ...filters (instances)
  */
-export declare const UseFilters: (...filters: ExceptionFilter[]) => (target: object, key?: any, descriptor?: any) => any;
+export declare const UseFilters: (
+  ...filters: ExceptionFilter[]
+) => (target: object, key?: any, descriptor?: any) => any;

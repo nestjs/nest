@@ -13,7 +13,7 @@ describe('Cats', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
-      modules: [CatsModule],
+      modules: [CatsModule]
     })
       .overrideComponent(CatsService)
       .useValue(catsService)
@@ -29,7 +29,7 @@ describe('Cats', () => {
       .get('/cats')
       .expect(200)
       .expect({
-        data: catsService.findAll(),
+        data: catsService.findAll()
       });
   });
 

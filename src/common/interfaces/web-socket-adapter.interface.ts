@@ -11,7 +11,7 @@ export interface WebSocketAdapter {
       message: string;
       callback: (...args) => Observable<any> | Promise<any> | void;
     }[],
-    process: (data) => Observable<any>,
+    process: (data) => Observable<any>
   );
   bindMiddleware?(server, middleware: (socket, next) => void);
 }

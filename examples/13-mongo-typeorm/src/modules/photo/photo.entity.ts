@@ -1,19 +1,20 @@
-import { Entity, Column, PrimaryGeneratedColumn, ObjectIdColumn, ObjectID } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ObjectIdColumn,
+  ObjectID
+} from 'typeorm';
 
 @Entity()
 export class Photo {
-  @ObjectIdColumn()
-  id: ObjectID;
+  @ObjectIdColumn() id: ObjectID;
 
-  @Column()
-  name: string;
+  @Column() name: string;
 
-  @Column()
-  description: string;
+  @Column() description: string;
 
-  @Column()
-  filename: string;
+  @Column() filename: string;
 
-  @Column()
-  isPublished: boolean;
+  @Column() isPublished: boolean;
 }

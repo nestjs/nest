@@ -6,6 +6,7 @@
   "scripts": {
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "prettier": "prettier */**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist lib",
     "prepublish": "npm run build:lib",
@@ -14,6 +15,7 @@
   "engines": {
     "node": ">=6.11.0"
   },
+  "precommit": "prettier",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "dependencies": {
@@ -68,6 +70,8 @@
     "mocha": "^3.2.0",
     "nodemon": "^1.11.0",
     "nyc": "^10.1.2",
+    "pre-commit": "^1.2.2",
+    "prettier": "^1.9.2",
     "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
     "ts-node": "^3.2.0"

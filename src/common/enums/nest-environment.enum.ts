@@ -1,4 +1,4 @@
 export enum NestEnvironment {
-    RUN,
-    TEST,
+  RUN,
+  TEST
 }

@@ -1,10 +1,5 @@
 import { Component, UseGuards } from '@nestjs/common';
-import {
-  Query,
-  Mutation,
-  Resolver,
-  DelegateProperty,
-} from '@nestjs/graphql';
+import { Query, Mutation, Resolver, DelegateProperty } from '@nestjs/graphql';
 
 import { Cat } from './interfaces/cat.interface';
 import { CatsService } from './cats.service';
@@ -41,12 +36,12 @@ export class CatsResolvers {
           'query',
           'humanById',
           {
-            id: humanId,
+            id: humanId
           },
           context,
-          info,
+          info
         );
-      },
+      }
     });
   }
 }

@@ -8,25 +8,21 @@ export const databaseProviders = [
       (mongoose as any).Promise = global.Promise;
 
       if (process.env.NODE_ENV === 'test') {
+        const mockgoose = new Mockgoose(mongoose);
+        mockgoose.helper.setDbVersion('3.4.3');
 
-          const mockgoose = new Mockgoose(mongoose);
-          mockgoose.helper.setDbVersion('3.4.3');
-
-          mockgoose.prepareStorage()
-              .then(async () => {
-                  await mongoose.connect('mongodb://example.com/TestingDB', {
-                      useMongoClient: true,
-                  });
-              });
-
-      } else {
-
-          await mongoose.connect('mongodb://localhost/nest', {
-              useMongoClient: true,
+        mockgoose.prepareStorage().then(async () => {
+          await mongoose.connect('mongodb://example.com/TestingDB', {
+            useMongoClient: true
           });
+        });
+      } else {
+        await mongoose.connect('mongodb://localhost/nest', {
+          useMongoClient: true
+        });
       }
 
       return mongoose;
-    },
-  },
+    }
+  }
 ];

@@ -10,37 +10,40 @@ import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/fromPromise';
 
 export abstract class Server {
-    protected readonly messageHandlers: MessageHandlers = {};
-    protected readonly logger = new Logger(Server.name);
+  protected readonly messageHandlers: MessageHandlers = {};
+  protected readonly logger = new Logger(Server.name);
 
-    public getHandlers(): MessageHandlers {
-        return this.messageHandlers;
-    }
+  public getHandlers(): MessageHandlers {
+    return this.messageHandlers;
+  }
 
-    public add(pattern, callback: (data) => Promise<Observable<any>>) {
-        this.messageHandlers[JSON.stringify(pattern)] = callback;
-    }
+  public add(pattern, callback: (data) => Promise<Observable<any>>) {
+    this.messageHandlers[JSON.stringify(pattern)] = callback;
+  }
 
-    public send(stream$: Observable<any>, respond: (data: MicroserviceResponse) => void): Subscription {
-        return stream$.catch((err) => {
-                respond({ err, response: null });
-                return Observable.empty();
-            })
-            .finally(() => respond({ disposed: true }))
-            .subscribe((response) => respond({ err: null, response }));
-    }
+  public send(
+    stream$: Observable<any>,
+    respond: (data: MicroserviceResponse) => void
+  ): Subscription {
+    return stream$
+      .catch(err => {
+        respond({ err, response: null });
+        return Observable.empty();
+      })
+      .finally(() => respond({ disposed: true }))
+      .subscribe(response => respond({ err: null, response }));
+  }
 
-    public transformToObservable(resultOrDeffered) {
-        if (resultOrDeffered instanceof Promise) {
-            return Observable.fromPromise(resultOrDeffered);
-        }
-        else if (!(resultOrDeffered instanceof Observable)) {
-            return Observable.of(resultOrDeffered);
-        }
-        return resultOrDeffered;
+  public transformToObservable(resultOrDeffered) {
+    if (resultOrDeffered instanceof Promise) {
+      return Observable.fromPromise(resultOrDeffered);
+    } else if (!(resultOrDeffered instanceof Observable)) {
+      return Observable.of(resultOrDeffered);
     }
-    
-    protected handleError(error: string) {
-        this.logger.error(error);
-    }
+    return resultOrDeffered;
+  }
+
+  protected handleError(error: string) {
+    this.logger.error(error);
+  }
 }

@@ -16,17 +16,17 @@ export class HttpException {
    * ```
    */
   constructor(
-      private readonly response: string | object,
-      private readonly status: number,
+    private readonly response: string | object,
+    private readonly status: number
   ) {
     this.message = response;
   }
 
   public getResponse(): string | object {
-      return this.response;
+    return this.response;
   }
 
   public getStatus(): number {
-      return this.status;
+    return this.status;
   }
 }

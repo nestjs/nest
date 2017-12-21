@@ -5,16 +5,24 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { Resolver } from './interfaces/resolver.interface';
 import { ApplicationConfig } from './../application-config';
 export declare class RoutesResolver implements Resolver {
-    private readonly container;
-    private readonly expressAdapter;
-    private readonly config;
-    private readonly logger;
-    private readonly routerProxy;
-    private readonly routerExceptionsFilter;
-    private readonly routerBuilder;
-    constructor(container: NestContainer, expressAdapter: any, config: ApplicationConfig);
-    resolve(express: Application): void;
-    setupRouters(routes: Map<string, InstanceWrapper<Controller>>, moduleName: string, express: Application): void;
-    setupNotFoundHandler(express: Application): void;
-    setupExceptionHandler(express: Application): void;
+  private readonly container;
+  private readonly expressAdapter;
+  private readonly config;
+  private readonly logger;
+  private readonly routerProxy;
+  private readonly routerExceptionsFilter;
+  private readonly routerBuilder;
+  constructor(
+    container: NestContainer,
+    expressAdapter: any,
+    config: ApplicationConfig
+  );
+  resolve(express: Application): void;
+  setupRouters(
+    routes: Map<string, InstanceWrapper<Controller>>,
+    moduleName: string,
+    express: Application
+  ): void;
+  setupNotFoundHandler(express: Application): void;
+  setupExceptionHandler(express: Application): void;
 }

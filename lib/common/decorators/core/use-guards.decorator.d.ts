@@ -8,4 +8,6 @@
  *
  * @param  {} ...guards (types)
  */
-export declare function UseGuards(...guards: any[]): (target: object, key?: any, descriptor?: any) => any;
+export declare function UseGuards(
+  ...guards: any[]
+): (target: object, key?: any, descriptor?: any) => any;

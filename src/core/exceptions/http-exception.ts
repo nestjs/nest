@@ -19,17 +19,19 @@ export class HttpException {
    * @deprecated
    */
   constructor(
-      private readonly response: string | object,
-      private readonly status: number,
+    private readonly response: string | object,
+    private readonly status: number
   ) {
-      this.logger.warn('DEPRECATED! Since version [4.3.2] HttpException class was moved to the @nestjs/common package!');
+    this.logger.warn(
+      'DEPRECATED! Since version [4.3.2] HttpException class was moved to the @nestjs/common package!'
+    );
   }
 
   public getResponse(): string | object {
-      return this.response;
+    return this.response;
   }
 
   public getStatus(): number {
-      return this.status;
+    return this.status;
   }
 }

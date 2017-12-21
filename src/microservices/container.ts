@@ -4,17 +4,17 @@ import { Closeable } from './interfaces/closeable.interface';
 export type CloseableClient = Closeable & ClientProxy;
 
 export class ClientsContainer {
-    private clients: CloseableClient[] = [];
+  private clients: CloseableClient[] = [];
 
-    public getAllClients(): CloseableClient[] {
-        return this.clients;
-    }
+  public getAllClients(): CloseableClient[] {
+    return this.clients;
+  }
 
-    public addClient(client: CloseableClient) {
-        this.clients.push(client);
-    }
+  public addClient(client: CloseableClient) {
+    this.clients.push(client);
+  }
 
-    public clear() {
-        this.clients = [];
-    }
+  public clear() {
+    this.clients = [];
+  }
 }
