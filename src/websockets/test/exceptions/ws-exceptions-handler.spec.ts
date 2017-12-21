@@ -1,12 +1,13 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { WsExceptionsHandler } from './../../exceptions/ws-exceptions-handler';
+
 import { WsException } from './../../exceptions/ws-exception';
+import { WsExceptionsHandler } from './../../exceptions/ws-exceptions-handler';
+import { expect } from 'chai';
 
 describe('WsExceptionsHandler', () => {
     let handler: WsExceptionsHandler;
     let emitStub: sinon.SinonStub;
-    let client;
+    let client: any;
 
     beforeEach(() => {
         handler = new WsExceptionsHandler();
@@ -51,7 +52,7 @@ describe('WsExceptionsHandler', () => {
         });
     });
     describe('setCustomFilters', () => {
-        const filters = [ 'test', 'test2' ];
+        const filters = ['test', 'test2'];
         it('should set custom filters', () => {
             handler.setCustomFilters(filters as any);
             expect((handler as any).filters).to.be.eql(filters);
@@ -69,8 +70,8 @@ describe('WsExceptionsHandler', () => {
             });
         });
         describe('when filters array is not empty', () => {
-            let filters, funcSpy;
-            class TestException {}
+            let filters: any, funcSpy: any;
+            class TestException { }
 
             beforeEach(() => {
                 funcSpy = sinon.spy();
@@ -78,7 +79,7 @@ describe('WsExceptionsHandler', () => {
             describe('when filter exists in filters array', () => {
                 beforeEach(() => {
                     filters = [
-                        { exceptionMetatypes: [ TestException ], func: funcSpy },
+                        { exceptionMetatypes: [TestException], func: funcSpy },
                     ];
                     (handler as any).filters = filters;
                 });

@@ -1,22 +1,23 @@
 import 'mocha';
 import 'reflect-metadata';
-import { expect } from 'chai';
+
 import { BindResolveMiddlewareValues } from '../../utils/bind-resolve-values.util';
 import { NestMiddleware } from '../../interfaces/middlewares/nest-middleware.interface';
+import { expect } from 'chai';
 
 describe('BindResolveMiddlewareValues', () => {
-    let type;
+    let type: any;
     const arg1 = 3,
         arg2 = 4;
 
     class Test implements NestMiddleware {
-        public resolve(a, b) {
+        public resolve(a: any, b: any) {
             return () => [a, b];
         }
     }
 
     beforeEach(() => {
-        type = BindResolveMiddlewareValues([ arg1, arg2 ])(Test);
+        type = BindResolveMiddlewareValues([arg1, arg2])(Test);
     });
     it('should pass values to resolve() method', () => {
         const obj = new type();
@@ -24,6 +25,6 @@ describe('BindResolveMiddlewareValues', () => {
         expect(hof()).to.deep.equal([arg1, arg2]);
     });
     it('should set name of metatype', () => {
-        expect(type.name).to.eq((Test as any).name + JSON.stringify([ arg1, arg2 ]));
+        expect(type.name).to.eq((Test as any).name + JSON.stringify([arg1, arg2]));
     });
 });

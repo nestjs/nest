@@ -1,17 +1,18 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { MiddlewaresResolver } from '../../middlewares/resolver';
-import { MiddlewaresContainer } from '../../middlewares/container';
+
 import { Component } from '../../../common/decorators/core/component.decorator';
-import { NestMiddleware } from '../../../common/interfaces/middlewares/nest-middleware.interface';
 import { Logger } from '../../../common/services/logger.service';
+import { MiddlewaresContainer } from '../../middlewares/container';
+import { MiddlewaresResolver } from '../../middlewares/resolver';
 import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
+import { NestMiddleware } from '../../../common/interfaces/middlewares/nest-middleware.interface';
+import { expect } from 'chai';
 
 describe('MiddlewaresResolver', () => {
     @Component()
     class TestMiddleware implements NestMiddleware {
         public resolve() {
-            return (req, res, next) => {};
+            return (req: any, res: any, next: any) => { };
         }
     }
 
@@ -36,7 +37,7 @@ describe('MiddlewaresResolver', () => {
         };
         middlewares.set('TestMiddleware', wrapper);
 
-        const module = <any>{ metatype: { name: '' }};
+        const module = <any>{ metatype: { name: '' } };
         mockContainer.expects('getMiddlewares').returns(middlewares);
         resolver.resolveInstances(module, null);
 

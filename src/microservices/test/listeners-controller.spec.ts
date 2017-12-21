@@ -1,16 +1,17 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { ListenersController } from '../listeners-controller';
-import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
-import { MetadataScanner } from '../../core/metadata-scanner';
+
 import { ClientsContainer } from '../container';
+import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
+import { ListenersController } from '../listeners-controller';
+import { MetadataScanner } from '../../core/metadata-scanner';
 import { RpcContextCreator } from '../context/rpc-context-creator';
+import { expect } from 'chai';
 
 describe('ListenersController', () => {
     let instance: ListenersController,
         explorer: sinon.SinonMock,
         metadataExplorer: ListenerMetadataExplorer,
-        server,
+        server: any,
         addSpy: sinon.SinonSpy;
 
     before(() => {

@@ -4,7 +4,7 @@ export type Transform<T> = (value: T, metadata: ArgumentMetadata) => any;
 
 export interface ArgumentMetadata {
     type: Paramtype;
-    metatype?: new (...args) => any;
+    metatype?: new (...args: any[]) => any;
     data?: string;
 }
 

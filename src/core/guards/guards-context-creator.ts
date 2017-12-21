@@ -1,12 +1,14 @@
 import 'reflect-metadata';
-import iterate from 'iterare';
-import { Controller } from '@nestjs/common/interfaces';
-import { GUARDS_METADATA } from '@nestjs/common/constants';
-import { isUndefined, isFunction, isNil, isEmpty } from '@nestjs/common/utils/shared.utils';
-import { ContextCreator } from './../helpers/context-creator';
-import { NestContainer } from '../injector/container';
+
+import { isEmpty, isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+
 import { CanActivate } from '@nestjs/common';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
+import { ContextCreator } from './../helpers/context-creator';
+import { Controller } from '@nestjs/common/interfaces';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { NestContainer } from '../injector/container';
+import iterate from 'iterare';
 
 export class GuardsContextCreator extends ContextCreator {
     private moduleContext: string;
@@ -17,7 +19,7 @@ export class GuardsContextCreator extends ContextCreator {
         super();
     }
 
-    public create(instance: Controller, callback: (...args) => any, module: string): CanActivate[] {
+    public create(instance: Controller, callback: (...args: any[]) => any, module: string): CanActivate[] {
         this.moduleContext = module;
         return this.createContext(instance, callback, GUARDS_METADATA);
     }
@@ -43,7 +45,7 @@ export class GuardsContextCreator extends ContextCreator {
             .toArray() as R;
     }
 
-    public getInstanceByMetatype(metatype): { instance: any } | undefined {
+    public getInstanceByMetatype(metatype: any): { instance: any } | undefined {
         const collection = this.container.getModules();
         const module = collection.get(this.moduleContext);
         if (!module) {
@@ -53,9 +55,9 @@ export class GuardsContextCreator extends ContextCreator {
     }
 
     public getGlobalMetadata<T extends any[]>(): T {
-      if (!this.config) {
-          return [] as T;
-      }
-      return this.config.getGlobalGuards() as T;
+        if (!this.config) {
+            return [] as T;
+        }
+        return this.config.getGlobalGuards() as T;
     }
 }

@@ -1,18 +1,19 @@
 import 'reflect-metadata';
-import { expect } from 'chai';
-import { Module } from '../../decorators/modules/module.decorator';
+
 import { InvalidModuleConfigException } from '../../decorators/modules/exceptions/invalid-module-config.exception';
+import { Module } from '../../decorators/modules/module.decorator';
+import { expect } from 'chai';
 
 describe('@Module', () => {
     const moduleProps = {
-        components: [ 'Test' ],
-        modules: [ 'Test' ],
-        exports: [ 'Test' ],
-        controllers: [ 'Test' ]
+        components: ['Test'],
+        modules: ['Test'],
+        exports: ['Test'],
+        controllers: ['Test']
     };
 
     @Module(moduleProps)
-    class TestModule {}
+    class TestModule { }
 
     it('should enhance class with expected module metadata', () => {
         const modules = Reflect.getMetadata('modules', TestModule);
@@ -29,7 +30,7 @@ describe('@Module', () => {
     it('should throw exception when module properties are invalid', () => {
         const invalidProps = {
             ...moduleProps,
-            test: [],
+            test: [] as any[],
         };
 
         expect(Module.bind(null, invalidProps)).to.throw(InvalidModuleConfigException);

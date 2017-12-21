@@ -1,17 +1,19 @@
 import 'reflect-metadata';
-import iterate from 'iterare';
+
 import { Controller, PipeTransform, Transform } from '@nestjs/common/interfaces';
-import { PIPES_METADATA } from '@nestjs/common/constants';
-import { isUndefined, isFunction, isEmpty } from '@nestjs/common/utils/shared.utils';
+import { isEmpty, isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+
 import { ApplicationConfig } from './../application-config';
 import { ContextCreator } from './../helpers/context-creator';
+import { PIPES_METADATA } from '@nestjs/common/constants';
+import iterate from 'iterare';
 
 export class PipesContextCreator extends ContextCreator {
     constructor(private readonly config?: ApplicationConfig) {
         super();
     }
 
-    public create(instance: Controller, callback: (...args) => any): Transform<any>[] {
+    public create(instance: Controller, callback: (...args: any[]) => any): Transform<any>[] {
         return this.createContext(instance, callback, PIPES_METADATA);
     }
 
@@ -20,8 +22,8 @@ export class PipesContextCreator extends ContextCreator {
             return [] as R;
         }
         return iterate(metadata).filter((pipe) => pipe && pipe.transform && isFunction(pipe.transform))
-                .map((pipe) => pipe.transform.bind(pipe))
-                .toArray() as R;
+            .map((pipe) => pipe.transform.bind(pipe))
+            .toArray() as R;
     }
 
     public getGlobalMetadata<T extends any[]>(): T {

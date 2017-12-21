@@ -1,7 +1,9 @@
 import 'reflect-metadata';
+
+import { METHOD_METADATA, PATH_METADATA } from '../../constants';
+
 import { RequestMappingMetadata } from '../../interfaces/request-mapping-metadata.interface';
 import { RequestMethod } from '../../enums/request-method.enum';
-import { PATH_METADATA, METHOD_METADATA } from '../../constants';
 
 const defaultMetadata = {
     [PATH_METADATA]: '/',
@@ -65,4 +67,3 @@ export const Head = createMappingDecorator(RequestMethod.HEAD);
  * Routes all HTTP requests to the specified path.
  */
 export const All = createMappingDecorator(RequestMethod.ALL);
-

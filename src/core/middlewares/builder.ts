@@ -1,19 +1,20 @@
-import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middlewares/middleware-configuration.interface';
-import { InvalidMiddlewareConfigurationException } from '../errors/exceptions/invalid-middleware-configuration.exception';
-import { isUndefined, isNil, isFunction } from '@nestjs/common/utils/shared.utils';
-import { BindResolveMiddlewareValues } from '@nestjs/common/utils/bind-resolve-values.util';
-import { Logger } from '@nestjs/common/services/logger.service';
 import { Metatype, MiddlewaresConsumer } from '@nestjs/common/interfaces';
+import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+
+import { BindResolveMiddlewareValues } from '@nestjs/common/utils/bind-resolve-values.util';
+import { InvalidMiddlewareConfigurationException } from '../errors/exceptions/invalid-middleware-configuration.exception';
+import { Logger } from '@nestjs/common/services/logger.service';
 import { MiddlewareConfigProxy } from '@nestjs/common/interfaces/middlewares';
-import { RoutesMapper } from './routes-mapper';
+import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middlewares/middleware-configuration.interface';
 import { NestMiddleware } from '@nestjs/common';
+import { RoutesMapper } from './routes-mapper';
 import { filterMiddlewares } from './utils';
 
 export class MiddlewareBuilder implements MiddlewaresConsumer {
     private readonly middlewaresCollection = new Set<MiddlewareConfiguration>();
     private readonly logger = new Logger(MiddlewareBuilder.name);
 
-    constructor(private readonly routesMapper: RoutesMapper) {}
+    constructor(private readonly routesMapper: RoutesMapper) { }
 
     public apply(middlewares: any | any[]): MiddlewareConfigProxy {
         return new MiddlewareBuilder.ConfigProxy(this, middlewares);
@@ -48,27 +49,27 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
     }
 
     private static ConfigProxy = class implements MiddlewareConfigProxy {
-        private contextArgs = null;
+        private contextArgs: any[] = null;
         private includedRoutes: any[];
 
         constructor(
             private readonly builder: MiddlewareBuilder,
-            middlewares,
+            middlewares: any,
         ) {
             this.includedRoutes = filterMiddlewares(middlewares);
         }
 
-        public with(...args): MiddlewareConfigProxy {
+        public with(...args: any[]): MiddlewareConfigProxy {
             this.contextArgs = args;
             return this;
         }
 
-        public forRoutes(...routes): MiddlewaresConsumer {
+        public forRoutes(...routes: any[]): MiddlewaresConsumer {
             const { middlewaresCollection, bindValuesToResolve, routesMapper } = this.builder;
 
             const forRoutes = this.mapRoutesToFlatList(
                 routes.map((route) => routesMapper.mapRouteToRouteProps(route),
-            ));
+                ));
             const configuration = {
                 middlewares: bindValuesToResolve(
                     this.includedRoutes, this.contextArgs,
@@ -79,7 +80,7 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
             return this.builder;
         }
 
-        private mapRoutesToFlatList(forRoutes) {
+        private mapRoutesToFlatList(forRoutes: any[]) {
             return forRoutes.reduce((a, b) => a.concat(b));
         }
     };

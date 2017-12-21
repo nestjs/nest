@@ -1,16 +1,18 @@
-import { Application } from 'express';
-import { NestContainer, InstanceWrapper } from '../injector/container';
-import { RouterProxy } from './router-proxy';
+import { Application, NextFunction, Request, Response } from 'express';
+import { InstanceWrapper, NestContainer } from '../injector/container';
+
+import { ApplicationConfig } from './../application-config';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Logger } from '@nestjs/common/services/logger.service';
 import { ControllerMappingMessage } from '../helpers/messages';
+import { ExpressAdapter } from '../adapters/express-adapter';
+import { ExpressRouterExplorer } from './router-explorer';
+import { Logger } from '@nestjs/common/services/logger.service';
+import { MetadataScanner } from '../metadata-scanner';
+import { NotFoundException } from '@nestjs/common';
 import { Resolver } from './interfaces/resolver.interface';
 import { RouterExceptionFilters } from './router-exception-filters';
-import { MetadataScanner } from '../metadata-scanner';
 import { RouterExplorer } from './interfaces/explorer.inteface';
-import { ExpressRouterExplorer } from './router-explorer';
-import { ApplicationConfig } from './../application-config';
-import { NotFoundException } from '@nestjs/common';
+import { RouterProxy } from './router-proxy';
 
 export class RoutesResolver implements Resolver {
     private readonly logger = new Logger(RoutesResolver.name, true);
@@ -20,7 +22,7 @@ export class RoutesResolver implements Resolver {
 
     constructor(
         private readonly container: NestContainer,
-        private readonly expressAdapter,
+        private readonly expressAdapter: ExpressAdapter,
         private readonly config: ApplicationConfig) {
 
         this.routerExceptionsFilter = new RouterExceptionFilters(config);
@@ -55,7 +57,7 @@ export class RoutesResolver implements Resolver {
     }
 
     public setupNotFoundHandler(express: Application) {
-        const callback = (req, res) => {
+        const callback = (req: Request, res: Response) => {
             throw new NotFoundException(`Cannot ${req.method} ${req.url}`);
         };
         const exceptionHandler = this.routerExceptionsFilter.create({}, callback as any);
@@ -64,11 +66,12 @@ export class RoutesResolver implements Resolver {
     }
 
     public setupExceptionHandler(express: Application) {
-        const callback = (err, req, res, next) => {
+        const callback = (err: any, req: Request, res: Response, next: NextFunction) => {
             throw err;
         };
         const exceptionHandler = this.routerExceptionsFilter.create({}, callback as any);
         const proxy = this.routerProxy.createExceptionLayerProxy(callback, exceptionHandler);
         express.use(proxy);
     }
+
 }

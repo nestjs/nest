@@ -1,7 +1,8 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
+
 import { PipesConsumer } from './../../pipes/pipes-consumer';
 import { RouteParamtypes } from './../../../common/enums/route-paramtypes.enum';
+import { expect } from 'chai';
 
 describe('PipesConsumer', () => {
     let consumer: PipesConsumer;
@@ -9,12 +10,12 @@ describe('PipesConsumer', () => {
         consumer = new PipesConsumer();
     });
     describe('apply', () => {
-        let value, metatype, type, stringifiedType, transforms, data;
+        let value: any, metatype: any, type: any, stringifiedType: any, transforms: any, data: any;
         beforeEach(() => {
             value = 0;
             data = null;
             metatype = {},
-            type = RouteParamtypes.QUERY;
+                type = RouteParamtypes.QUERY;
             stringifiedType = 'query';
             transforms = [
                 sinon.stub().callsFake((val) => val + 1),
@@ -24,7 +25,7 @@ describe('PipesConsumer', () => {
         });
         it('should call all transform functions', (done) => {
             consumer.apply(value, { metatype, type, data }, transforms).then(() => {
-                expect(transforms.reduce((prev, next) => prev && next.called, true)).to.be.true;
+                expect(transforms.reduce((prev: any, next: any) => prev && next.called, true)).to.be.true;
                 done();
             });
         });

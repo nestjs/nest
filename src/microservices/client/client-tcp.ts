@@ -1,7 +1,9 @@
+import JsonSocket = require('json-socket');
+
 import * as net from 'net';
-import * as JsonSocket from 'json-socket';
-import { ClientProxy } from './client-proxy';
+
 import { ClientMetadata } from '../interfaces/client-metadata.interface';
+import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common';
 
 const DEFAULT_PORT = 3000;
@@ -16,7 +18,7 @@ export class ClientTCP extends ClientProxy {
     private readonly port: number;
     private readonly host: string;
     private isConnected = false;
-    private socket;
+    private socket: net.Socket;
 
     constructor({ port, host }: ClientMetadata) {
         super();
@@ -24,23 +26,24 @@ export class ClientTCP extends ClientProxy {
         this.host = host || DEFAULT_HOST;
     }
 
-    public init(callback: (...args) => any): Promise<{}> {
+    public init(callback: (...args: any[]) => any): Promise<{}> {
         this.socket = this.createSocket();
 
         return new Promise((resolve) => {
-             this.bindEvents(this.socket, callback);
-             this.socket.on(CONNECT_EVENT, () => {
-                 this.isConnected = true;
-                 resolve(this.socket);
-             });
-             this.socket.connect(this.port, this.host);
+
+            this.bindEvents(this.socket, callback);
+            this.socket.on(CONNECT_EVENT, () => {
+                this.isConnected = true;
+                resolve(this.socket);
+            });
+            this.socket.connect(this.port, this.host);
         });
     }
 
-    protected async sendSingleMessage(msg, callback: (...args) => any) {
-        const sendMessage = (socket) => {
-            socket.sendMessage(msg);
-            socket.on(MESSAGE_EVENT, (buffer) => this.handleResponse(socket, callback, buffer));
+    protected async sendSingleMessage(msg: any, callback: (...args: any[]) => any) {
+        const sendMessage = (sock: any) => {
+            sock.sendMessage(msg);
+            sock.on(MESSAGE_EVENT, (buffer: any) => this.handleResponse(sock, callback, buffer));
         };
         if (this.isConnected) {
             sendMessage(this.socket);
@@ -50,7 +53,7 @@ export class ClientTCP extends ClientProxy {
         sendMessage(socket);
     }
 
-    public handleResponse(socket, callback: (...args) => any, buffer) {
+    public handleResponse(socket: net.Socket, callback: (...args: any[]) => any, buffer: any) {
         const { err, response, disposed } = buffer;
         if (disposed) {
             callback(null, null, true);
@@ -70,12 +73,12 @@ export class ClientTCP extends ClientProxy {
         this.socket = null;
     }
 
-    public bindEvents(socket, callback: (...args) => any) {
-        socket.on(ERROR_EVENT, (err) => {
-          if (err.code === 'ECONNREFUSED') {
-            callback(err, null);
-          }
-          this.logger.error(err);
+    public bindEvents(socket: any, callback: (...args: any[]) => any) {
+        socket.on(ERROR_EVENT, (err: any) => {
+            if (err.code === 'ECONNREFUSED') {
+                callback(err, null);
+            }
+            this.logger.error(err);
         });
         socket.on(CLOSE_EVENT, () => {
             this.isConnected = false;

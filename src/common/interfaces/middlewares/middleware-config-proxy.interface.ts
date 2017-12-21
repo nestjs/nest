@@ -8,7 +8,7 @@ export interface MiddlewareConfigProxy {
      * @param  {} ...data
      * @returns MiddlewareConfigProxy
      */
-    with(...data): MiddlewareConfigProxy;
+    with(...data: any[]): MiddlewareConfigProxy;
 
     /**
      * Attaches passed routes / controllers to the processed middleware(s).
@@ -23,5 +23,5 @@ export interface MiddlewareConfigProxy {
      * @param  {} ...routes
      * @returns MiddlewaresConsumer
      */
-    forRoutes(...routes): MiddlewaresConsumer;
+    forRoutes(...routes: any[]): MiddlewaresConsumer;
 }

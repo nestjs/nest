@@ -1,16 +1,17 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
+
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
 import { HttpException } from '../../exceptions/http-exception';
+import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
 import { Logger } from '../../../common/services/logger.service';
 import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
-import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
+import { expect } from 'chai';
 
 describe('ExceptionsHandler', () => {
     let handler: ExceptionsHandler;
     let statusStub: sinon.SinonStub;
     let jsonStub: sinon.SinonStub;
-    let response;
+    let response: any;
 
     before(() => Logger.setMode(NestEnvironment.TEST));
 
@@ -66,7 +67,7 @@ describe('ExceptionsHandler', () => {
         });
     });
     describe('setCustomFilters', () => {
-        const filters = [ 'test', 'test2' ];
+        const filters = ['test', 'test2'];
         it('should set custom filters', () => {
             handler.setCustomFilters(filters as any);
             expect((handler as any).filters).to.be.eql(filters);
@@ -84,8 +85,8 @@ describe('ExceptionsHandler', () => {
             });
         });
         describe('when filters array is not empty', () => {
-            let filters, funcSpy;
-            class TestException {}
+            let filters, funcSpy: any;
+            class TestException { }
 
             beforeEach(() => {
                 funcSpy = sinon.spy();
@@ -93,7 +94,7 @@ describe('ExceptionsHandler', () => {
             describe('when filter exists in filters array', () => {
                 beforeEach(() => {
                     filters = [
-                        { exceptionMetatypes: [ TestException ], func: funcSpy },
+                        { exceptionMetatypes: [TestException], func: funcSpy },
                     ];
                     (handler as any).filters = filters;
                 });

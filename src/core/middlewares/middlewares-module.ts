@@ -1,23 +1,26 @@
-import { NestContainer } from '../injector/container';
-import { MiddlewareBuilder } from './builder';
-import { MiddlewaresContainer, MiddlewareWrapper } from './container';
-import { MiddlewaresResolver } from './resolver';
+import { MiddlewareWrapper, MiddlewaresContainer } from './container';
+import { Request, Response } from 'express';
+
+import { ApplicationConfig } from './../application-config';
 import { ControllerMetadata } from '@nestjs/common/interfaces/controllers/controller-metadata.interface';
-import { NestModule } from '@nestjs/common/interfaces/modules/nest-module.interface';
-import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middlewares/middleware-configuration.interface';
-import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
-import { RoutesMapper } from './routes-mapper';
-import { RouterProxy } from '../router/router-proxy';
 import { ExceptionsHandler } from '../exceptions/exceptions-handler';
-import { Module } from '../injector/module';
-import { RouterMethodFactory } from '../helpers/router-method-factory';
-import { NestMiddleware } from '@nestjs/common/interfaces/middlewares/nest-middleware.interface';
+import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { MiddlewareBuilder } from './builder';
+import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middlewares/middleware-configuration.interface';
+import { MiddlewaresResolver } from './resolver';
+import { Module } from '../injector/module';
+import { NestContainer } from '../injector/container';
+import { NestMiddleware } from '@nestjs/common/interfaces/middlewares/nest-middleware.interface';
+import { NestModule } from '@nestjs/common/interfaces/modules/nest-module.interface';
+import { NextFunction } from 'express-serve-static-core';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { RouterExceptionFilters } from './../router/router-exception-filters';
+import { RouterMethodFactory } from '../helpers/router-method-factory';
+import { RouterProxy } from '../router/router-proxy';
+import { RoutesMapper } from './routes-mapper';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { ApplicationConfig } from './../application-config';
-import { RouterExceptionFilters } from './../router/router-exception-filters';
 
 export class MiddlewaresModule {
     private readonly routesMapper = new RoutesMapper();
@@ -66,7 +69,7 @@ export class MiddlewaresModule {
         middlewaresContainer.addConfig(config, module);
     }
 
-    public async setupMiddlewares(middlewaresContainer: MiddlewaresContainer, app) {
+    public async setupMiddlewares(middlewaresContainer: MiddlewaresContainer, app: any) {
         const configs = middlewaresContainer.getConfigs();
         await Promise.all([...configs.entries()].map(async ([module, moduleConfigs]) => {
             await Promise.all([...moduleConfigs].map(async (config: MiddlewareConfiguration) => {
@@ -79,7 +82,7 @@ export class MiddlewaresModule {
         middlewaresContainer: MiddlewaresContainer,
         config: MiddlewareConfiguration,
         module: string,
-        app,
+        app: any,
     ) {
         const { forRoutes } = config;
         await Promise.all(forRoutes.map(async (route: ControllerMetadata & { method: RequestMethod }) => {
@@ -92,7 +95,7 @@ export class MiddlewaresModule {
         route: ControllerMetadata & { method: RequestMethod },
         config: MiddlewareConfiguration,
         module: string,
-        app,
+        app: any,
     ) {
         const { path, method } = route;
 
@@ -122,7 +125,7 @@ export class MiddlewaresModule {
         const exceptionsHandler = this.routerExceptionFilter.create(instance, instance.resolve);
         const router = this.routerMethodFactory.get(app, method).bind(app);
 
-        const setupWithProxy = (middleware) => this.setupHandlerWithProxy(
+        const setupWithProxy = (middleware: any) => this.setupHandlerWithProxy(
             exceptionsHandler, router, middleware, path,
         );
         const resolve = instance.resolve();
@@ -130,14 +133,14 @@ export class MiddlewaresModule {
             setupWithProxy(resolve);
             return;
         }
-        const middleware = await resolve;
-        setupWithProxy(middleware);
+        const resolvedInstance = await resolve;
+        setupWithProxy(resolvedInstance);
     }
 
     private setupHandlerWithProxy(
         exceptionsHandler: ExceptionsHandler,
-        router: (...args) => void,
-        middleware: (req, res, next) => void,
+        router: (...args: any[]) => void,
+        middleware: (req: Request & any, res: Response & any, next: NextFunction) => void,
         path: string) {
 
         const proxy = this.routerProxy.createProxy(middleware, exceptionsHandler);

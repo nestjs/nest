@@ -1,15 +1,18 @@
-import { Logger } from '@nestjs/common';
+import 'rxjs/add/observable/throw';
+
 import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
+
 import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/invalid-exception-filter.exception';
-import { messages } from '@nestjs/core/constants';
+import { Logger } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
 import { RpcException } from './rpc-exception';
 import { RpcExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
-import 'rxjs/add/observable/throw';
+import { messages } from '@nestjs/core/constants';
 
 export class RpcExceptionsHandler {
   private static readonly logger = new Logger(RpcExceptionsHandler.name);
   private filters: RpcExceptionFilterMetadata[] = [];
+
 
   public handle(exception: Error | RpcException | any): Observable<any> {
     const filterResult$ = this.invokeCustomFilters(exception);
@@ -18,7 +21,7 @@ export class RpcExceptionsHandler {
     }
     const status = 'error';
     if (!(exception instanceof RpcException)) {
-      const message = messages.UNKNOWN_EXCEPTION_MESSAGE;
+      const msg = messages.UNKNOWN_EXCEPTION_MESSAGE;
 
       const isError = isObject(exception) && (exception as Error).message;
       const loggerArgs = isError
@@ -27,7 +30,7 @@ export class RpcExceptionsHandler {
       const logger = RpcExceptionsHandler.logger;
       logger.error.apply(logger, loggerArgs);
 
-      return Observable.throw({ status, message });
+      return Observable.throw({ status, message: msg });
     }
     const res = exception.getError();
     const message = isObject(res) ? res : { status, message: res };
@@ -41,7 +44,7 @@ export class RpcExceptionsHandler {
     this.filters = filters;
   }
 
-  public invokeCustomFilters(exception): Observable<any> | null {
+  public invokeCustomFilters(exception: any): Observable<any> | null {
     if (isEmpty(this.filters)) return null;
 
     const filter = this.filters.find(({ exceptionMetatypes, func }) => {

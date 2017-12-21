@@ -1,17 +1,17 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator';
-import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception';
-import { Module } from '../../injector/module';
+
 import { Component } from '../../../common/decorators/core/component.decorator';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { Module } from '../../injector/module';
+import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator';
 import { NestContainer } from '../../injector/container';
+import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { expect } from 'chai';
 
 describe('Module', () => {
     let module: Module;
 
-    @ModuleDecorator({}) class TestModule {}
-    @Component() class TestComponent {}
+    @ModuleDecorator({}) class TestModule { }
+    @Component() class TestComponent { }
 
     beforeEach(() => {
         module = new Module(TestModule as any, [], new NestContainer());
@@ -22,9 +22,9 @@ describe('Module', () => {
         const setSpy = sinon.spy(collection, 'set');
         (module as any)._routes = collection;
 
-        class Test {}
+        class Test { }
         module.addRoute(Test);
-        expect(setSpy.getCall(0).args).to.deep.equal([ 'Test', {
+        expect(setSpy.getCall(0).args).to.deep.equal(['Test', {
             name: 'Test',
             metatype: Test,
             instance: null,
@@ -38,7 +38,7 @@ describe('Module', () => {
         (module as any)._injectables = collection;
 
         module.addInjectable(TestComponent);
-        expect(setSpy.getCall(0).args).to.deep.equal([ 'TestComponent', {
+        expect(setSpy.getCall(0).args).to.deep.equal(['TestComponent', {
             name: 'TestComponent',
             metatype: TestComponent,
             instance: null,
@@ -61,7 +61,7 @@ describe('Module', () => {
         (module as any)._components = collection;
 
         module.addComponent(TestComponent);
-        expect(setSpy.getCall(0).args).to.deep.equal([ 'TestComponent', {
+        expect(setSpy.getCall(0).args).to.deep.equal(['TestComponent', {
             name: 'TestComponent',
             metatype: TestComponent,
             instance: null,
@@ -83,7 +83,7 @@ describe('Module', () => {
         const addCustomClass = sinon.spy();
         module.addCustomClass = addCustomClass;
 
-        const provider = { provide: 'test', useClass: () => null };
+        const provider = { provide: 'test', useClass: () => null as any };
 
         module.addCustomProvider(provider as any, new Map());
         expect((addCustomClass as sinon.SinonSpy).called).to.be.true;
@@ -93,7 +93,7 @@ describe('Module', () => {
         const addCustomValue = sinon.spy();
         module.addCustomValue = addCustomValue;
 
-        const provider = { provide: 'test', useValue: () => null };
+        const provider = { provide: 'test', useValue: () => null as any };
 
         module.addCustomProvider(provider as any, new Map());
         expect((addCustomValue as sinon.SinonSpy).called).to.be.true;
@@ -103,7 +103,7 @@ describe('Module', () => {
         const addCustomFactory = sinon.spy();
         module.addCustomFactory = addCustomFactory;
 
-        const provider = { provide: 'test', useFactory: () => null };
+        const provider = { provide: 'test', useFactory: () => null as any };
 
         module.addCustomProvider(provider as any, new Map());
         expect((addCustomFactory as sinon.SinonSpy).called).to.be.true;
@@ -112,7 +112,7 @@ describe('Module', () => {
     describe('addCustomClass', () => {
         const type = { name: 'TypeTest' };
         const component = { provide: type, useClass: type, name: 'test' };
-        let setSpy;
+        let setSpy: any;
         beforeEach(() => {
             const collection = new Map();
             setSpy = sinon.spy(collection, 'set');
@@ -130,7 +130,7 @@ describe('Module', () => {
     });
 
     describe('addCustomValue', () => {
-        let setSpy;
+        let setSpy: any;
         const value = () => ({});
         const name = 'test';
         const component = { provide: value, name, useValue: value };
@@ -159,7 +159,7 @@ describe('Module', () => {
         const inject = [1, 2, 3];
         const component = { provide: type, useFactory: type, name: 'test', inject };
 
-        let setSpy;
+        let setSpy: any;
         beforeEach(() => {
             const collection = new Map();
             setSpy = sinon.spy(collection, 'set');
@@ -221,60 +221,60 @@ describe('Module', () => {
     });
 
     describe('relatedModules', () => {
-      it('should return relatedModules', () => {
-        const test = ['test'];
-        (module as any)._relatedModules = test;
-        expect(module.relatedModules).to.be.eql(test);
-      });
+        it('should return relatedModules', () => {
+            const test = ['test'];
+            (module as any)._relatedModules = test;
+            expect(module.relatedModules).to.be.eql(test);
+        });
     });
 
     describe('injectables', () => {
-      it('should return injectables', () => {
-        const test = ['test'];
-        (module as any)._injectables = test;
-        expect(module.injectables).to.be.eql(test);
-      });
+        it('should return injectables', () => {
+            const test = ['test'];
+            (module as any)._injectables = test;
+            expect(module.injectables).to.be.eql(test);
+        });
     });
 
     describe('routes', () => {
-      it('should return routes', () => {
-        const test = ['test'];
-        (module as any)._routes = test;
-        expect(module.routes).to.be.eql(test);
-      });
+        it('should return routes', () => {
+            const test = ['test'];
+            (module as any)._routes = test;
+            expect(module.routes).to.be.eql(test);
+        });
     });
 
     describe('exports', () => {
-      it('should return exports', () => {
-        const test = ['test'];
-        (module as any)._exports = test;
-        expect(module.exports).to.be.eql(test);
-      });
+        it('should return exports', () => {
+            const test = ['test'];
+            (module as any)._exports = test;
+            expect(module.exports).to.be.eql(test);
+        });
     });
 
     describe('createModuleRefMetatype', () => {
-      let components: Map<string, any>;
-      let moduleRef;
+        let components: Map<string, any>;
+        let moduleRef: any;
 
-      beforeEach(() => {
-        components = new Map();
+        beforeEach(() => {
+            components = new Map();
 
-        const Class = module.createModuleRefMetatype(components);
-        moduleRef = new Class();
-      });
-
-      it('should return metatype with "get" method', () => {
-        expect(!!moduleRef.get).to.be.true;
-      });
-      describe('get', () => {
-        it('should return component if exists', () => {
-          const comp = { instance: [] };
-          components.set('comp', comp);
-          expect(moduleRef.get('comp')).to.be.eql(comp.instance);
+            const Class = module.createModuleRefMetatype(components);
+            moduleRef = new Class();
         });
-        it('should return null if not exists', () => {
-          expect(moduleRef.get('fail')).to.be.null;
+
+        it('should return metatype with "get" method', () => {
+            expect(!!moduleRef.get).to.be.true;
         });
-      });
+        describe('get', () => {
+            it('should return component if exists', () => {
+                const comp = { instance: [] as any[] };
+                components.set('comp', comp);
+                expect(moduleRef.get('comp')).to.be.eql(comp.instance);
+            });
+            it('should return null if not exists', () => {
+                expect(moduleRef.get('fail')).to.be.null;
+            });
+        });
     });
 });

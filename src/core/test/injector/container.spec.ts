@@ -1,19 +1,20 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NestContainer } from '../../injector/container';
-import { Module } from '../../../common/decorators/modules/module.decorator';
-import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
+
 import { Global } from '../../../common/index';
+import { Module } from '../../../common/decorators/modules/module.decorator';
+import { NestContainer } from '../../injector/container';
+import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
+import { expect } from 'chai';
 
 describe('NestContainer', () => {
 	let container: NestContainer;
 
 	@Module({})
-	class TestModule {}
+	class TestModule { }
 
 	@Global()
 	@Module({})
-	class GlobalTestModule {}
+	class GlobalTestModule { }
 
 	beforeEach(() => {
 		container = new NestContainer();
@@ -125,7 +126,7 @@ describe('NestContainer', () => {
 	describe('extractMetadata', () => {
 		describe('when module is a dynamic module', () => {
 			it('should return object with "type" and "dynamicMetadata" property', () => {
-				const obj = { module: 'test', components: [] };
+				const obj = { module: 'test', components: [] as any[] };
 				const { module, ...dynamicMetadata } = obj;
 				expect(container.extractMetadata(obj as any)).to.be.deep.equal({
 					type: module,
@@ -168,7 +169,7 @@ describe('NestContainer', () => {
 		describe('when dynamic metadata exists', () => {
 			it('should add to the dynamic metadata collection', () => {
 				const addSpy = sinon.spy(collection, 'set');
-				const dynamicMetadata = { module: null };
+				const dynamicMetadata = { module: null as any };
 
 				container.addDynamicMetadata(token, dynamicMetadata);
 				expect(addSpy.calledWith(token, dynamicMetadata)).to.be.true;

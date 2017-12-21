@@ -10,8 +10,8 @@ import { GUARDS_METADATA } from '../../constants';
  *
  * @param  {} ...guards (types)
  */
-export function UseGuards(...guards) {
-    return (target: object, key?, descriptor?) => {
+export function UseGuards(...guards: any[]) {
+    return (target: object, key?: string, descriptor?: any) => {
         if (descriptor) {
             Reflect.defineMetadata(GUARDS_METADATA, guards, descriptor.value);
             return descriptor;

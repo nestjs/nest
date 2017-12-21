@@ -1,19 +1,20 @@
 import 'reflect-metadata';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { ListenerMetadataExplorer } from './listener-metadata-explorer';
-import { Server } from './server/server';
+
 import { ClientProxyFactory } from './client/client-proxy-factory';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { CustomTransportStrategy } from './interfaces';
 import { ClientsContainer } from './container';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { CustomTransportStrategy } from './interfaces';
+import { ListenerMetadataExplorer } from './listener-metadata-explorer';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { RpcContextCreator } from './context/rpc-context-creator';
+import { Server } from './server/server';
 
 export class ListenersController {
     private readonly metadataExplorer = new ListenerMetadataExplorer(new MetadataScanner());
 
     constructor(
         private readonly clientsContainer: ClientsContainer,
-        private readonly contextCreator: RpcContextCreator) {}
+        private readonly contextCreator: RpcContextCreator) { }
 
     public bindPatternHandlers(instance: Controller, server: Server & CustomTransportStrategy, module: string) {
         const patternHandlers = this.metadataExplorer.explore(instance);

@@ -1,12 +1,13 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { InstanceLoader } from '../../injector/instance-loader';
-import { NestContainer } from '../../injector/container';
-import { Injector } from '../../injector/injector';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
+
 import { Component } from '../../../common/decorators/core/component.decorator';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
+import { Controller } from '../../../common/decorators/core/controller.decorator';
+import { Injector } from '../../injector/injector';
+import { InstanceLoader } from '../../injector/instance-loader';
 import { Logger } from '../../../common/services/logger.service';
+import { NestContainer } from '../../injector/container';
+import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
+import { expect } from 'chai';
 
 describe('InstanceLoader', () => {
     let loader: InstanceLoader;
@@ -14,10 +15,10 @@ describe('InstanceLoader', () => {
     let mockContainer: sinon.SinonMock;
 
     @Controller('')
-    class TestRoute {}
+    class TestRoute { }
 
     @Component()
-    class TestComponent {}
+    class TestComponent { }
 
     before(() => Logger.setMode(NestEnvironment.TEST));
 
@@ -37,8 +38,8 @@ describe('InstanceLoader', () => {
             injectables: new Map(),
             metatype: { name: 'test' },
         };
-        const componentWrapper = { instance: null, metatype: TestComponent };
-        const routeWrapper = { instance: null, metatype: TestRoute };
+        const componentWrapper = { instance: null as any, metatype: TestComponent };
+        const routeWrapper = { instance: null as any, metatype: TestRoute };
 
         module.components.set('TestComponent', componentWrapper);
         module.routes.set('TestRoute', routeWrapper);
@@ -67,7 +68,7 @@ describe('InstanceLoader', () => {
             injectables: new Map(),
             metatype: { name: 'test' },
         };
-        const testComp = { instance: null, metatype: TestComponent, name: 'TestComponent' };
+        const testComp = { instance: null as any, metatype: TestComponent, name: 'TestComponent' };
 
         module.components.set('TestComponent', testComp);
 
@@ -92,7 +93,7 @@ describe('InstanceLoader', () => {
             injectables: new Map(),
             metatype: { name: 'test' },
         };
-        const wrapper = { name: 'TestRoute', instance: null, metatype: TestRoute };
+        const wrapper = { name: 'TestRoute', instance: null as any, metatype: TestRoute };
         module.routes.set('TestRoute', wrapper);
 
         const modules = new Map();
@@ -116,7 +117,7 @@ describe('InstanceLoader', () => {
             injectables: new Map(),
             metatype: { name: 'test' },
         };
-        const testComp = { instance: null, metatype: TestComponent, name: 'TestComponent' };
+        const testComp = { instance: null as any, metatype: TestComponent, name: 'TestComponent' };
         module.injectables.set('TestComponent', testComp);
 
         const modules = new Map();

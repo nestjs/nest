@@ -1,7 +1,6 @@
-import * as http from 'http';
-import * as optional from 'optional';
 import * as bodyParser from 'body-parser';
-import iterate from 'iterare';
+import * as http from 'http';
+
 import {
     CanActivate,
     ExceptionFilter,
@@ -9,22 +8,26 @@ import {
     OnModuleDestroy,
     PipeTransform,
     WebSocketAdapter,
-    } from '@nestjs/common';
+} from '@nestjs/common';
+import { Express, RequestHandler } from 'express';
 import { INestApplication, INestMicroservice, OnModuleInit } from '@nestjs/common';
-import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil, isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
-import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
-import { ExpressAdapter } from './adapters/express-adapter';
+
 import { ApplicationConfig } from './application-config';
-import { messages } from './constants';
-import { NestContainer } from './injector/container';
-import { Module } from './injector/module';
-import { MiddlewaresModule } from './middlewares/middlewares-module';
-import { Resolver } from './router/interfaces/resolver.interface';
-import { RoutesResolver } from './router/routes-resolver';
+import { ExpressAdapter } from './adapters/express-adapter';
+import { Logger } from '@nestjs/common/services/logger.service';
+import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
 import { MiddlewaresContainer } from './middlewares/container';
+import { MiddlewaresModule } from './middlewares/middlewares-module';
+import { Module } from './injector/module';
 import { NestApplicationContext } from './nest-application-context';
+import { NestContainer } from './injector/container';
+import { Resolver } from './router/interfaces/resolver.interface';
+import { RoutesResolver } from './router/routes-resolver';
+import iterate from 'iterare';
+import { messages } from './constants';
+import optional from './optional';
 
 const { SocketModule } = optional('@nestjs/websockets/socket-module') || {} as any;
 const { MicroservicesModule } = optional('@nestjs/microservices/microservices-module') || {} as any;
@@ -45,10 +48,10 @@ export class NestApplication extends NestApplicationContext implements INestAppl
     private readonly httpServer: http.Server = null;
     private readonly routesResolver: Resolver = null;
     private readonly config: ApplicationConfig;
-    private readonly microservices = [];
+    private readonly microservices: any[] = [];
     private isInitialized = false;
 
-    constructor(container: NestContainer, private readonly express) {
+    constructor(container: NestContainer, private readonly express: Express) {
         super(container, [], null);
 
         const modules = this.container.getModules().values();
@@ -88,7 +91,7 @@ export class NestApplication extends NestApplicationContext implements INestAppl
     }
 
     public setupParserMiddlewares() {
-        const parserMiddlewares = {
+        const parserMiddlewares: any = {
             jsonParser: bodyParser.json(),
             urlencodedParser: bodyParser.urlencoded({ extended: true }),
         };
@@ -97,9 +100,9 @@ export class NestApplication extends NestApplicationContext implements INestAppl
             .forEach((parserKey) => this.express.use(parserMiddlewares[parserKey]));
     }
 
-    public isMiddlewareApplied(app, name: string): boolean {
+    public isMiddlewareApplied(app: any, name: string): boolean {
         return !!app._router && !!app._router.stack.filter(
-            (layer) => layer && layer.handle && layer.handle.name === name,
+            (layer: any) => layer && layer.handle && layer.handle.name === name,
         ).length;
     }
 
@@ -138,17 +141,17 @@ export class NestApplication extends NestApplicationContext implements INestAppl
         return new Promise((resolve) => this.startAllMicroservices(resolve));
     }
 
-    public use(...args) {
+    public use(...args: RequestHandler[]) {
         this.express.use(...args);
     }
 
-    public set(...args) {
-        this.express.set(...args);
+    public set(setting: string, val: any) {
+        this.express.set(setting, val);
     }
 
-    public async listen(port: number, callback?: () => void);
-    public async listen(port: number, hostname: string, callback?: () => void);
-    public async listen(port: number, ...args) {
+    public async listen(port: number, callback?: () => void): Promise<http.Server>;
+    public async listen(port: number, hostname: string, callback?: () => void): Promise<http.Server>;
+    public async listen(port: number, ...args: any[]) {
         (!this.isInitialized) && await this.init();
 
         this.httpServer.listen(port, ...args);
@@ -156,8 +159,8 @@ export class NestApplication extends NestApplicationContext implements INestAppl
     }
 
     public listenAsync(port: number, hostname?: string): Promise<any> {
-        return new Promise((resolve) => {
-            const server = this.listen(port, hostname, () => resolve(server));
+        return new Promise(async (resolve) => {
+            const server: http.Server = await this.listen(port, hostname, () => resolve(server));
         });
     }
 
@@ -195,7 +198,7 @@ export class NestApplication extends NestApplicationContext implements INestAppl
         this.config.useGlobalGuards(...guards);
     }
 
-    private async setupMiddlewares(instance) {
+    private async setupMiddlewares(instance: any) {
         await this.middlewaresModule.setupMiddlewares(this.middlewaresContainer, instance);
     }
 
@@ -214,13 +217,13 @@ export class NestApplication extends NestApplicationContext implements INestAppl
 
     private callModuleInitHook(module: Module) {
         const components = [...module.routes, ...module.components];
-        iterate(components).map(([key, {instance}]) => instance)
+        iterate(components).map(([key, { instance }]) => instance)
             .filter((instance) => !isNil(instance))
             .filter(this.hasOnModuleInitHook)
             .forEach((instance) => (instance as OnModuleInit).onModuleInit());
-        }
+    }
 
-    private hasOnModuleInitHook(instance): instance is OnModuleInit {
+    private hasOnModuleInitHook(instance: any): instance is OnModuleInit {
         return !isUndefined((instance as OnModuleInit).onModuleInit);
     }
 
@@ -233,13 +236,13 @@ export class NestApplication extends NestApplicationContext implements INestAppl
 
     private callModuleDestroyHook(module: Module) {
         const components = [...module.routes, ...module.components];
-        iterate(components).map(([key, {instance}]) => instance)
+        iterate(components).map(([key, { instance }]) => instance)
             .filter((instance) => !isNil(instance))
             .filter(this.hasOnModuleDestroyHook)
             .forEach((instance) => (instance as OnModuleDestroy).onModuleDestroy());
     }
 
-    private hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
+    private hasOnModuleDestroyHook(instance: any): instance is OnModuleDestroy {
         return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
     }
 }

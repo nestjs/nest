@@ -1,6 +1,7 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
+
 import { ClientRedis } from '../../client/client-redis';
+import { expect } from 'chai';
 
 describe('ClientRedis', () => {
     const test = 'test';
@@ -52,29 +53,29 @@ describe('ClientRedis', () => {
             initSpy.restore();
         });
         it('should not call "init()" when pub and sub are null', () => {
-            client['sendSingleMessage'](msg, () => {});
+            client['sendSingleMessage'](msg, () => { });
             expect(initSpy.called).to.be.false;
         });
         it('should call "init()" when pub and sub are null', () => {
             (client as any).sub = null;
             (client as any).pub = null;
-            client['sendSingleMessage'](msg, () => {});
+            client['sendSingleMessage'](msg, () => { });
             expect(initSpy.called).to.be.true;
         });
         it('should subscribe to response pattern name', () => {
-            client['sendSingleMessage'](msg, () => {});
+            client['sendSingleMessage'](msg, () => { });
             expect(subscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;
         });
         it('should publish stringified message to acknowledge pattern name', () => {
-            client['sendSingleMessage'](msg, () => {});
+            client['sendSingleMessage'](msg, () => { });
             expect(publishSpy.calledWith(`"${pattern}"_ack`, JSON.stringify(msg))).to.be.true;
         });
         it('should listen on messages', () => {
-            client['sendSingleMessage'](msg, () => {});
+            client['sendSingleMessage'](msg, () => { });
             expect(onSpy.called).to.be.true;
         });
         describe('responseCallback', () => {
-            let callback, subscription;
+            let callback: any, subscription: any;
             const resMsg = {
                 err: 'err',
                 response: 'test',

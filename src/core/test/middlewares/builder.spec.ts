@@ -1,8 +1,9 @@
-import { expect } from 'chai';
-import { MiddlewareBuilder } from '../../middlewares/builder';
-import { InvalidMiddlewareConfigurationException } from '../../errors/exceptions/invalid-middleware-configuration.exception';
-import { RoutesMapper } from '../../middlewares/routes-mapper';
 import { Controller, Get } from '../../../index';
+
+import { InvalidMiddlewareConfigurationException } from '../../errors/exceptions/invalid-middleware-configuration.exception';
+import { MiddlewareBuilder } from '../../middlewares/builder';
+import { RoutesMapper } from '../../middlewares/routes-mapper';
+import { expect } from 'chai';
 
 describe('MiddlewareBuilder', () => {
     let builder: MiddlewareBuilder;
@@ -11,7 +12,7 @@ describe('MiddlewareBuilder', () => {
         builder = new MiddlewareBuilder(new RoutesMapper());
     });
     describe('apply', () => {
-        let configProxy;
+        let configProxy: any;
         beforeEach(() => {
             configProxy = builder.apply([]);
         });
@@ -27,7 +28,7 @@ describe('MiddlewareBuilder', () => {
                 @Controller('path')
                 class Test {
                     @Get('route')
-                    public getAll() {}
+                    public getAll() { }
                 }
                 const route = { path: '/test', method: 0 };
                 it('should store configuration passed as argument', () => {

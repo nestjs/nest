@@ -1,13 +1,14 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
+
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { Observable } from 'rxjs/Observable';
+import { expect } from 'chai';
 
 describe('GuardsContextCreator', () => {
     let guardsContextCreator: GuardsContextCreator;
     let guards: any[];
-    let container;
-    let getSpy;
+    let container: any;
+    let getSpy: any;
 
     beforeEach(() => {
         guards = [

@@ -1,12 +1,13 @@
 import 'reflect-metadata';
-import { expect } from 'chai';
-import { Shared } from '../../decorators/modules/shared.decorator';
+
 import { SHARED_MODULE_METADATA } from '../../constants';
+import { Shared } from '../../decorators/modules/shared.decorator';
+import { expect } from 'chai';
 
 describe('Shared', () => {
-    let type;
+    let type: any;
     const token = '_';
-    class Test {}
+    class Test { }
 
     beforeEach(() => {
         type = Shared(token)(Test);

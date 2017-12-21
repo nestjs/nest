@@ -1,16 +1,18 @@
 import 'reflect-metadata';
-import iterate from 'iterare';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Observable } from 'rxjs/Observable';
+
 import { EXCEPTION_FILTERS_METADATA, FILTER_CATCH_EXCEPTIONS } from '@nestjs/common/constants';
-import { isEmpty, isUndefined, isFunction } from '@nestjs/common/utils/shared.utils';
-import { RpcExceptionFilter } from '@nestjs/common/interfaces/exceptions';
-import { Metatype } from '@nestjs/common/interfaces';
+import { isEmpty, isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+
 import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { Metatype } from '@nestjs/common/interfaces';
+import { Observable } from 'rxjs/Observable';
+import { RpcExceptionFilter } from '@nestjs/common/interfaces/exceptions';
 import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
+import iterate from 'iterare';
 
 export class ExceptionFiltersContext extends BaseExceptionFilterContext {
-    public create(instance: Controller, callback: (client, data) => any): WsExceptionsHandler {
+    public create(instance: Controller, callback: (client: any, data: any) => any): WsExceptionsHandler {
         const exceptionHandler = new WsExceptionsHandler();
         const filters = this.createContext(instance, callback, EXCEPTION_FILTERS_METADATA);
         if (isEmpty(filters)) {

@@ -2,8 +2,9 @@
   "compilerOptions": {
     "module": "commonjs",
     "declaration": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "noUnusedLocals": false,
+    "skipLibCheck": true,
     "removeComments": false,
     "noLib": false,
     "emitDecoratorMetadata": true,

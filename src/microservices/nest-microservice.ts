@@ -1,19 +1,20 @@
-import * as optional from 'optional';
-import iterate from 'iterare';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { MicroservicesModule } from './microservices-module';
-import { messages } from '@nestjs/core/constants';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { Server } from './server/server';
-import { MicroserviceConfiguration } from './interfaces/microservice-configuration.interface';
-import { ServerFactory } from './server/server-factory';
-import { Transport } from './enums/transport.enum';
-import { INestMicroservice, WebSocketAdapter, CanActivate, PipeTransform, NestInterceptor, ExceptionFilter, OnModuleInit } from '@nestjs/common';
+import { CanActivate, ExceptionFilter, INestMicroservice, NestInterceptor, OnModuleInit, PipeTransform, WebSocketAdapter } from '@nestjs/common';
+import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { CustomTransportStrategy } from '@nestjs/microservices';
+import { Logger } from '@nestjs/common/services/logger.service';
+import { MicroserviceConfiguration } from './interfaces/microservice-configuration.interface';
+import { MicroservicesModule } from './microservices-module';
 import { Module } from '@nestjs/core/injector/module';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { NestContainer } from '@nestjs/core/injector/container';
 import { OnModuleDestroy } from '@nestjs/common/interfaces';
+import { Server } from './server/server';
+import { ServerFactory } from './server/server-factory';
+import { Transport } from './enums/transport.enum';
+import iterate from 'iterare';
+import { messages } from '@nestjs/core/constants';
+import optional from '@nestjs/core/optional';
 
 const { SocketModule } = optional('@nestjs/websockets/socket-module') || {} as any;
 const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter') || {} as any;
@@ -22,8 +23,8 @@ export class NestMicroservice implements INestMicroservice {
     private readonly logger = new Logger(NestMicroservice.name, true);
     private readonly microservicesModule = new MicroservicesModule();
     private readonly socketModule = SocketModule
-      ? new SocketModule()
-      : null;
+        ? new SocketModule()
+        : null;
 
     private readonly microserviceConfig: MicroserviceConfiguration;
     private readonly server: Server & CustomTransportStrategy;
@@ -123,16 +124,16 @@ export class NestMicroservice implements INestMicroservice {
 
     private callModuleInitHook(module: Module) {
         const components = [...module.routes, ...module.components];
-        iterate(components).map(([key, {instance}]) => instance)
+        iterate(components).map(([key, { instance }]) => instance)
             .filter((instance) => !isNil(instance))
             .filter(this.hasOnModuleInitHook)
             .forEach((instance) => (instance as OnModuleInit).onModuleInit());
-        }
+    }
 
-    private hasOnModuleInitHook(instance): instance is OnModuleInit {
+    private hasOnModuleInitHook(instance: any): instance is OnModuleInit {
         return !isUndefined((instance as OnModuleInit).onModuleInit);
     }
-  
+
     private callDestroyHook() {
         const modules = this.container.getModules();
         modules.forEach((module) => {
@@ -142,13 +143,13 @@ export class NestMicroservice implements INestMicroservice {
 
     private callModuleDestroyHook(module: Module) {
         const components = [...module.routes, ...module.components];
-        iterate(components).map(([key, {instance}]) => instance)
-                .filter((instance) => !isNil(instance))
-                .filter(this.hasOnModuleDestroyHook)
-                .forEach((instance) => (instance as OnModuleDestroy).onModuleDestroy());
+        iterate(components).map(([key, { instance }]) => instance)
+            .filter((instance) => !isNil(instance))
+            .filter(this.hasOnModuleDestroyHook)
+            .forEach((instance) => (instance as OnModuleDestroy).onModuleDestroy());
     }
 
-    private hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
+    private hasOnModuleDestroyHook(instance: any): instance is OnModuleDestroy {
         return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
     }
 }

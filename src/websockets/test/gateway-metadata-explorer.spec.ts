@@ -1,10 +1,11 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { WebSocketGateway } from '../utils/socket-gateway.decorator';
-import { WebSocketServer } from '../utils/gateway-server.decorator';
-import { SubscribeMessage } from '../utils/subscribe-message.decorator';
+
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
 import { MetadataScanner } from '../../core/metadata-scanner';
+import { SubscribeMessage } from '../utils/subscribe-message.decorator';
+import { WebSocketGateway } from '../utils/socket-gateway.decorator';
+import { WebSocketServer } from '../utils/gateway-server.decorator';
+import { expect } from 'chai';
 
 describe('GatewayMetadataExplorer', () => {
     const message = 'test';
@@ -12,21 +13,21 @@ describe('GatewayMetadataExplorer', () => {
 
     @WebSocketGateway()
     class Test {
-        @WebSocketServer() public server;
-        @WebSocketServer() public anotherServer;
+        @WebSocketServer() public server: any;
+        @WebSocketServer() public anotherServer: any;
 
         get testGet() { return 0; }
-        set testSet(val) {}
+        set testSet(val: any) { }
 
-        constructor() {}
+        constructor() { }
 
         @SubscribeMessage({ value: message })
-        public test() {}
+        public test() { }
 
         @SubscribeMessage({ value: secMessage })
-        public testSec() {}
+        public testSec() { }
 
-        public noMessage() {}
+        public noMessage() { }
     }
     let instance: GatewayMetadataExplorer;
     let scanner: MetadataScanner;
@@ -44,7 +45,7 @@ describe('GatewayMetadataExplorer', () => {
             const obj = new Test();
             instance.explore(obj as any);
 
-            const [ argObj, argProto ] = scanFromPrototype.getCall(0).args;
+            const [argObj, argProto] = scanFromPrototype.getCall(0).args;
             expect(argObj).to.be.eql(obj);
             expect(argProto).to.be.eql(Object.getPrototypeOf(obj));
         });
@@ -60,17 +61,17 @@ describe('GatewayMetadataExplorer', () => {
         });
         it(`should return message mapping properties when "isMessageMapping" metadata is not undefined`, () => {
             const metadata = instance.exploreMethodMetadata(test, 'test');
-            expect(metadata).to.have.keys([ 'callback', 'message' ]);
+            expect(metadata).to.have.keys(['callback', 'message']);
             expect(metadata.message).to.eql(message);
         });
     });
     describe('scanForServerHooks', () => {
         it(`should returns properties with @Client decorator`, () => {
             const obj = new Test();
-            const servers = [ ...instance.scanForServerHooks(obj as any) ];
+            const servers = [...instance.scanForServerHooks(obj as any)];
 
             expect(servers).to.have.length(2);
-            expect(servers).to.deep.eq([ 'server', 'anotherServer' ]);
+            expect(servers).to.deep.eq(['server', 'anotherServer']);
         });
     });
 });

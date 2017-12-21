@@ -1,10 +1,12 @@
-import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { RpcExceptionsHandler } from './../../exceptions/rpc-exceptions-handler';
-import { RpcException } from './../../exceptions/rpc-exception';
-import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/empty';
+
+import * as sinon from 'sinon';
+
+import { Observable } from 'rxjs/Observable';
+import { RpcException } from './../../exceptions/rpc-exception';
+import { RpcExceptionsHandler } from './../../exceptions/rpc-exceptions-handler';
+import { expect } from 'chai';
 
 describe('RpcExceptionsHandler', () => {
     let handler: RpcExceptionsHandler;
@@ -57,7 +59,7 @@ describe('RpcExceptionsHandler', () => {
         });
     });
     describe('setCustomFilters', () => {
-        const filters = [ 'test', 'test2' ];
+        const filters = ['test', 'test2'];
         it('should set custom filters', () => {
             handler.setCustomFilters(filters as any);
             expect((handler as any).filters).to.be.eql(filters);
@@ -75,8 +77,8 @@ describe('RpcExceptionsHandler', () => {
             });
         });
         describe('when filters array is not empty', () => {
-            let filters, funcSpy;
-            class TestException {}
+            let filters: any, funcSpy: any;
+            class TestException { }
 
             beforeEach(() => {
                 funcSpy = sinon.spy();
@@ -84,7 +86,7 @@ describe('RpcExceptionsHandler', () => {
             describe('when filter exists in filters array', () => {
                 beforeEach(() => {
                     filters = [
-                        { exceptionMetatypes: [ TestException ], func: funcSpy },
+                        { exceptionMetatypes: [TestException], func: funcSpy },
                     ];
                     (handler as any).filters = filters;
                 });

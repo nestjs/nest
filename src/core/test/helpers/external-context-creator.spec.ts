@@ -1,16 +1,17 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
+
+import { ExternalContextCreator } from '../../helpers/external-context-creator';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
+import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
 import { ModulesContainer } from '../../injector/modules-container';
 import { NestContainer } from '../../injector/container';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
-import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import { ExternalContextCreator } from '../../helpers/external-context-creator';
+import { expect } from 'chai';
 
 describe('ExternalContextCreator', () => {
 	let contextCreator: ExternalContextCreator;
-	let callback;
+	let callback: any;
 	let applySpy: sinon.SinonSpy;
 	let bindSpy: sinon.SinonSpy;
 	let guardsConsumer: GuardsConsumer;
@@ -43,8 +44,8 @@ describe('ExternalContextCreator', () => {
 			done();
 		});
 		describe('returns proxy function', () => {
-			let proxyContext;
-			let instance;
+			let proxyContext: any;
+			let instance: any;
 
 			beforeEach(() => {
 				instance = { foo: 'bar' };

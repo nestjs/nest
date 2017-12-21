@@ -1,18 +1,19 @@
+import { Controller, Injectable, NestModule } from '@nestjs/common/interfaces';
 import { InstanceWrapper, NestContainer } from './container';
-import { Injectable, Controller, NestModule } from '@nestjs/common/interfaces';
-import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+
+import { ExternalContextCreator } from './../helpers/external-context-creator';
+import { GuardsConsumer } from './../guards/guards-consumer';
+import { GuardsContextCreator } from './../guards/guards-context-creator';
+import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { ModuleRef } from './module-ref';
-import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { Reflector } from '../services/reflector.service';
-import { ExternalContextCreator } from './../helpers/external-context-creator';
-import { GuardsContextCreator } from './../guards/guards-context-creator';
-import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
-import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
-import { GuardsConsumer } from './../guards/guards-consumer';
 import { ModulesContainer } from './modules-container';
+import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { Reflector } from '../services/reflector.service';
+import { RuntimeException } from '../errors/exceptions/runtime.exception';
+import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 
 export interface CustomComponent {
     provide: any;
@@ -20,7 +21,7 @@ export interface CustomComponent {
 }
 export type OpaqueToken = string | symbol | object | Metatype<any>;
 export type CustomClass = CustomComponent & { useClass: Metatype<any> };
-export type CustomFactory = CustomComponent & { useFactory: (...args) => any, inject?: Metatype<any>[] };
+export type CustomFactory = CustomComponent & { useFactory: (...args: any[]) => any, inject?: Metatype<any>[] };
 export type CustomValue = CustomComponent & { useValue: any };
 export type ComponentMetatype = Metatype<Injectable> | CustomFactory | CustomValue | CustomClass;
 
@@ -117,23 +118,23 @@ export class Module {
             metatype: ExternalContextCreator,
             isResolved: true,
             instance: new ExternalContextCreator(
-              new GuardsContextCreator(container),
-              new GuardsConsumer(),
-              new InterceptorsContextCreator(container),
-              new InterceptorsConsumer(),
-              container.getModules(),
+                new GuardsContextCreator(container),
+                new GuardsConsumer(),
+                new InterceptorsContextCreator(container),
+                new InterceptorsConsumer(),
+                container.getModules(),
             ),
         });
     }
 
     public addModulesContainer(container: NestContainer) {
-      this._components.set(ModulesContainer.name, {
-          name: ModulesContainer.name,
-          metatype: ModulesContainer,
-          isResolved: true,
-          instance: container.getModules(),
-      });
-  }
+        this._components.set(ModulesContainer.name, {
+            name: ModulesContainer.name,
+            metatype: ModulesContainer,
+            isResolved: true,
+            instance: container.getModules(),
+        });
+    }
 
     public addInjectable(injectable: Metatype<Injectable>) {
         if (this.isCustomProvider(injectable)) {
@@ -160,7 +161,7 @@ export class Module {
         });
     }
 
-    public isCustomProvider(component: ComponentMetatype): component is CustomClass | CustomFactory | CustomValue  {
+    public isCustomProvider(component: ComponentMetatype): component is CustomClass | CustomFactory | CustomValue {
         return !isNil((component as CustomComponent).provide);
     }
 
@@ -177,15 +178,15 @@ export class Module {
         else if (this.isCustomFactory(comp)) this.addCustomFactory(comp, collection);
     }
 
-    public isCustomClass(component): component is CustomClass {
+    public isCustomClass(component: any): component is CustomClass {
         return !isUndefined((component as CustomClass).useClass);
     }
 
-    public isCustomValue(component): component is CustomValue {
+    public isCustomValue(component: any): component is CustomValue {
         return !isUndefined((component as CustomValue).useValue);
     }
 
-    public isCustomFactory(component): component is CustomFactory {
+    public isCustomFactory(component: any): component is CustomFactory {
         return !isUndefined((component as CustomFactory).useFactory);
     }
 
@@ -243,11 +244,11 @@ export class Module {
         });
     }
 
-    public addRelatedModule(relatedModule) {
+    public addRelatedModule(relatedModule: any) {
         this._relatedModules.add(relatedModule);
     }
 
-    public replace(toReplace, options) {
+    public replace(toReplace: any, options: any) {
         if (options.isComponent) {
             return this.addComponent({ provide: toReplace, ...options });
         }
@@ -257,7 +258,7 @@ export class Module {
         });
     }
 
-    public createModuleRefMetatype(components) {
+    public createModuleRefMetatype(components: any) {
         return class {
             public readonly components = components;
 

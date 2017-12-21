@@ -1,15 +1,18 @@
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
 import {
-    PATTERN_METADATA, PATTERN_HANDLER_METADATA, CLIENT_CONFIGURATION_METADATA,
+    CLIENT_CONFIGURATION_METADATA,
     CLIENT_METADATA,
+    PATTERN_HANDLER_METADATA,
+    PATTERN_METADATA,
 } from './constants';
-import { PatternMetadata } from './interfaces/pattern-metadata.interface';
+import { isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+
 import { ClientMetadata } from './interfaces/client-metadata.interface';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 
 export class ListenerMetadataExplorer {
-    constructor(private readonly metadataScanner: MetadataScanner) {}
+    constructor(private readonly metadataScanner: MetadataScanner) { }
 
     public explore(instance: Controller): PatternProperties[] {
         const instancePrototype = Object.getPrototypeOf(instance);
@@ -20,7 +23,7 @@ export class ListenerMetadataExplorer {
         );
     }
 
-    public exploreMethodMetadata(instance, instancePrototype, methodName: string): PatternProperties {
+    public exploreMethodMetadata(instance: any, instancePrototype: any, methodName: string): PatternProperties {
         const targetCallback = instancePrototype[methodName];
         const isPattern = Reflect.getMetadata(PATTERN_HANDLER_METADATA, targetCallback);
 
@@ -55,6 +58,7 @@ export interface ClientProperties {
 }
 
 export interface PatternProperties {
-    pattern: PatternMetadata;
-    targetCallback: (...args) => any;
+    // pattern: PatternMetadata;
+    pattern: string;
+    targetCallback: (...args: any[]) => any;
 }

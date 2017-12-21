@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "commonjs",
     "declaration": false,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "noUnusedLocals": false,
     "removeComments": true,
     "noLib": false,
@@ -11,7 +11,11 @@
     "target": "es6",
     "sourceMap": true,
     "allowJs": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "typeRoots": [
+      "node_modules/@types",
+      "types"
+    ]
   },
   "include": [
     "src/**/*",

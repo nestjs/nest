@@ -10,8 +10,8 @@ import { INTERCEPTORS_METADATA } from '../../constants';
  *
  * @param  {} ...interceptors (types)
  */
-export function UseInterceptors(...interceptors) {
-    return (target: object, key?, descriptor?) => {
+export function UseInterceptors(...interceptors: any[]) {
+    return (target: object, key?: string, descriptor?: any) => {
         if (descriptor) {
             Reflect.defineMetadata(INTERCEPTORS_METADATA, interceptors, descriptor.value);
             return descriptor;

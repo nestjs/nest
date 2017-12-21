@@ -1,6 +1,7 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
+
 import { ClientTCP } from '../../client/client-tcp';
+import { expect } from 'chai';
 
 describe('ClientTCP', () => {
     const client = new ClientTCP({});
@@ -25,7 +26,7 @@ describe('ClientTCP', () => {
         createSocketStub.restore();
     });
     describe('sendSingleMessage', () => {
-        let msg;
+        let msg: any;
         beforeEach(() => {
             msg = { test: 3 };
         });
@@ -59,11 +60,11 @@ describe('ClientTCP', () => {
         });
     });
     describe('handleResponse', () => {
-        let callback;
+        let callback: any;
         describe('when disposed', () => {
             beforeEach(() => {
                 callback = sinon.spy();
-                client.handleResponse(socket, callback, { disposed: true });
+                client.handleResponse(socket as any, callback, { disposed: true });
             });
             it('should end server', () => {
                 expect(socket.end.called).to.be.true;
@@ -74,11 +75,11 @@ describe('ClientTCP', () => {
             });
         });
         describe('when not disposed', () => {
-            let buffer;
+            let buffer: any;
             beforeEach(() => {
                 buffer = { err: 'test', response: 'res' };
                 callback = sinon.spy();
-                client.handleResponse(socket, callback, buffer);
+                client.handleResponse(socket as any, callback, buffer);
             });
             it('should not end server', () => {
                 expect(socket.end.called).to.be.false;

@@ -1,28 +1,31 @@
+import 'rxjs/add/observable/of';
+
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { Guard, Pipe, UseGuards, Component, UsePipes } from './../../../common';
-import { WsProxy } from './../../context/ws-proxy';
-import { WsContextCreator } from './../../context/ws-context-creator';
-import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
+
+import { Component, Guard, Pipe, UseGuards, UsePipes } from './../../../common';
+
 import { ExceptionFiltersContext } from './../../context/exception-filters-context';
-import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
-import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
-import { PARAMTYPES_METADATA } from '../../../common/constants';
-import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
+import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
+import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
 import { NestContainer } from '../../../core/injector/container';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/of';
+import { PARAMTYPES_METADATA } from '../../../common/constants';
+import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
+import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
+import { WsContextCreator } from './../../context/ws-context-creator';
 import { WsException } from '../../index';
-import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
-import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
+import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
+import { WsProxy } from './../../context/ws-proxy';
+import { expect } from 'chai';
 
 @Guard()
 class TestGuard { canActivate: () => true; }
 
 @Pipe()
 class TestPipe {
-    transform(val) {
+    transform(val: any) {
         return val;
     }
 }

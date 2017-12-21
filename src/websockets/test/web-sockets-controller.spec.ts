@@ -1,15 +1,16 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { SocketServerProvider } from '../socket-server-provider';
-import { WebSocketsController } from '../web-sockets-controller';
-import { WebSocketGateway } from '../utils/socket-gateway.decorator';
-import { InvalidSocketPortException } from '../exceptions/invalid-socket-port.exception';
-import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
-import { MetadataScanner } from '../../core/metadata-scanner';
+
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
+import { InvalidSocketPortException } from '../exceptions/invalid-socket-port.exception';
+import { IoAdapter } from '../index';
+import { MetadataScanner } from '../../core/metadata-scanner';
+import { Observable } from 'rxjs/Observable';
+import { SocketServerProvider } from '../socket-server-provider';
+import { WebSocketGateway } from '../utils/socket-gateway.decorator';
+import { WebSocketsController } from '../web-sockets-controller';
 import { WsContextCreator } from '../context/ws-context-creator';
-import { Observable } from "rxjs/Observable";
-import { IoAdapter } from "../index";
+import { expect } from 'chai';
 
 describe('WebSocketsController', () => {
     let instance: WebSocketsController;
@@ -33,10 +34,10 @@ describe('WebSocketsController', () => {
         let subscribeObservableServer: sinon.SinonSpy;
 
         @WebSocketGateway({ port: 'test' } as any)
-        class InvalidGateway {}
+        class InvalidGateway { }
 
         @WebSocketGateway()
-        class DefaultGateway {}
+        class DefaultGateway { }
 
         beforeEach(() => {
             subscribeObservableServer = sinon.spy();
@@ -61,7 +62,7 @@ describe('WebSocketsController', () => {
     describe('subscribeObservableServer', () => {
         let explorer: GatewayMetadataExplorer,
             mockExplorer: sinon.SinonMock,
-            gateway, handlers, server,
+            gateway: any, handlers: any, server: any,
             hookServerToProperties: sinon.SinonSpy,
             subscribeEvents: sinon.SinonSpy;
 
@@ -71,7 +72,7 @@ describe('WebSocketsController', () => {
             mockExplorer = sinon.mock(explorer);
             (instance as any).metadataExplorer = explorer;
 
-            handlers = [ 'test' ];
+            handlers = ['test'];
             server = { server: 'test' };
 
             mockExplorer.expects('explore').returns(handlers);
@@ -97,8 +98,8 @@ describe('WebSocketsController', () => {
     describe('subscribeEvents', () => {
         const gateway = new Test();
 
-        let handlers;
-        let server,
+        let handlers: any;
+        let server: any,
             subscribeConnectionEvent: sinon.SinonSpy,
             subscribeDisconnectEvent: sinon.SinonSpy,
             nextSpy: sinon.SinonSpy,
@@ -114,10 +115,10 @@ describe('WebSocketsController', () => {
             subscribeConnectionEvent = sinon.spy();
             subscribeDisconnectEvent = sinon.spy();
 
-            handlers = [ 'test' ];
+            handlers = ['test'];
             server = {
                 server: {
-                   on: onSpy
+                    on: onSpy,
                 },
                 init: {
                     next: nextSpy,
@@ -137,8 +138,8 @@ describe('WebSocketsController', () => {
             expect(nextSpy.calledWith(server.server)).to.be.true;
         });
         it('should call "subscribeConnectionEvent" with expected arguments', () => {
-             instance.subscribeEvents(gateway, handlers, server as any);
-             expect(subscribeConnectionEvent.calledWith(gateway, server.connection)).to.be.true;
+            instance.subscribeEvents(gateway, handlers, server as any);
+            expect(subscribeConnectionEvent.calledWith(gateway, server.connection)).to.be.true;
         });
         it('should call "subscribeDisconnectEvent" with expected arguments', () => {
             instance.subscribeEvents(gateway, handlers, server as any);
@@ -166,8 +167,8 @@ describe('WebSocketsController', () => {
     describe('getConnectionHandler', () => {
         const gateway = new Test();
 
-        let handlers, fn;
-        let connection, client,
+        let handlers: any, fn: any;
+        let connection: any, client: any,
             nextSpy: sinon.SinonSpy,
             onSpy: sinon.SinonSpy,
             subscribeMessages: sinon.SinonSpy,
@@ -181,7 +182,7 @@ describe('WebSocketsController', () => {
             subscribeDisconnectEvent = sinon.spy();
             subscribeConnectionEvent = sinon.spy();
 
-            handlers = [ 'test' ];
+            handlers = ['test'];
             connection = {
                 next: nextSpy,
             };
@@ -211,7 +212,7 @@ describe('WebSocketsController', () => {
     });
     describe('subscribeInitEvent', () => {
         const gateway = new Test();
-        let event, subscribe: sinon.SinonSpy;
+        let event: any, subscribe: sinon.SinonSpy;
 
         beforeEach(() => {
             subscribe = sinon.spy();
@@ -222,14 +223,14 @@ describe('WebSocketsController', () => {
             expect(subscribe.called).to.be.false;
         });
         it('should call subscribe method of event object with expected arguments when "afterInit" exists', () => {
-            (gateway as any).afterInit = () => {};
+            (gateway as any).afterInit = () => { };
             instance.subscribeInitEvent(gateway, event);
             expect(subscribe.called).to.be.true;
         });
     });
     describe('subscribeConnectionEvent', () => {
         const gateway = new Test();
-        let event, subscribe: sinon.SinonSpy;
+        let event: any, subscribe: sinon.SinonSpy;
 
         beforeEach(() => {
             subscribe = sinon.spy();
@@ -240,14 +241,14 @@ describe('WebSocketsController', () => {
             expect(subscribe.called).to.be.false;
         });
         it('should call subscribe method of event object with expected arguments when "handleConnection" exists', () => {
-            (gateway as any).handleConnection = () => {};
+            (gateway as any).handleConnection = () => { };
             instance.subscribeConnectionEvent(gateway, event);
             expect(subscribe.called).to.be.true;
         });
     });
     describe('subscribeDisconnectEvent', () => {
         const gateway = new Test();
-        let event, subscribe: sinon.SinonSpy;
+        let event: any, subscribe: sinon.SinonSpy;
 
         beforeEach(() => {
             subscribe = sinon.spy();
@@ -258,7 +259,7 @@ describe('WebSocketsController', () => {
             expect(subscribe.called).to.be.false;
         });
         it('should call subscribe method of event object with expected arguments when "handleDisconnect" exists', () => {
-            (gateway as any).handleDisconnect = () => {};
+            (gateway as any).handleDisconnect = () => { };
             instance.subscribeDisconnectEvent(gateway, event);
             expect(subscribe.called).to.be.true;
         });
@@ -266,7 +267,7 @@ describe('WebSocketsController', () => {
     describe('subscribeMessages', () => {
         const gateway = new Test();
 
-        let client, handlers,
+        let client: any, handlers: any,
             onSpy: sinon.SinonSpy;
 
         beforeEach(() => {
@@ -274,8 +275,8 @@ describe('WebSocketsController', () => {
             client = { on: onSpy, off: onSpy };
 
             handlers = [
-                { message: 'test', callback: { bind: () => 'testCallback' }},
-                { message: 'test2', callback: { bind: () => 'testCallback2' }},
+                { message: 'test', callback: { bind: () => 'testCallback' } },
+                { message: 'test2', callback: { bind: () => 'testCallback2' } },
             ];
         });
         it('should bind each handler to client', () => {
@@ -289,7 +290,7 @@ describe('WebSocketsController', () => {
                 it('should returns Promise<Observable>', async () => {
                     const value = 100;
                     expect(
-                        await (await instance.pickResult(Promise.resolve(Promise.resolve(value)))).toPromise()
+                        await (await instance.pickResult(Promise.resolve(Promise.resolve(value)))).toPromise(),
                     ).to.be.eq(100);
                 });
             });
@@ -298,7 +299,7 @@ describe('WebSocketsController', () => {
                 it('should returns Promise<Observable>', async () => {
                     const value = 100;
                     expect(
-                        await (await instance.pickResult(Promise.resolve(Observable.of(value)))).toPromise()
+                        await (await instance.pickResult(Promise.resolve(Observable.of(value)))).toPromise(),
                     ).to.be.eq(100);
                 });
             });
@@ -307,7 +308,7 @@ describe('WebSocketsController', () => {
                 it('should returns Promise<Observable>', async () => {
                     const value = 100;
                     expect(
-                        await (await instance.pickResult(Promise.resolve(value))).toPromise()
+                        await (await instance.pickResult(Promise.resolve(value))).toPromise(),
                     ).to.be.eq(100);
                 });
             });

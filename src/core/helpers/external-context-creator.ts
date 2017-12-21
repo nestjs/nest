@@ -1,11 +1,13 @@
 import 'reflect-metadata';
-import { GuardsContextCreator } from './../guards/guards-context-creator';
-import { GuardsConsumer } from './../guards/guards-consumer';
-import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
-import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
+
+import { HttpException, HttpStatus } from '@nestjs/common';
+
 import { Controller } from '@nestjs/common/interfaces';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
-import { HttpStatus, HttpException } from '@nestjs/common';
+import { GuardsConsumer } from './../guards/guards-consumer';
+import { GuardsContextCreator } from './../guards/guards-context-creator';
+import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
 import { Module } from './../injector/module';
 import { ModulesContainer } from './../injector/modules-container';
 
@@ -16,11 +18,11 @@ export class ExternalContextCreator {
 		private readonly interceptorsContextCreator: InterceptorsContextCreator,
 		private readonly interceptorsConsumer: InterceptorsConsumer,
 		private readonly modulesContainer: ModulesContainer,
-	) {}
+	) { }
 
 	public create(
 		instance: Controller,
-		callback: (...args) => any,
+		callback: (...args: any[]) => any,
 		methodName: string,
 	) {
 		const module = this.findContextModuleName(instance.constructor);
@@ -30,7 +32,7 @@ export class ExternalContextCreator {
 			callback,
 			module,
 		);
-		return async (...args) => {
+		return async (...args: any[]) => {
 			const [req] = args;
 			const canActivate = await this.guardsConsumer.tryActivate(
 				guards,

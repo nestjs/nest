@@ -1,11 +1,13 @@
 import 'reflect-metadata';
-import iterate from 'iterare';
+
 import { Controller, NestInterceptor } from '@nestjs/common/interfaces';
-import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
-import { isUndefined, isFunction, isNil, isEmpty } from '@nestjs/common/utils/shared.utils';
-import { ContextCreator } from './../helpers/context-creator';
-import { NestContainer } from '../injector/container';
+import { isEmpty, isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
+import { ContextCreator } from './../helpers/context-creator';
+import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
+import { NestContainer } from '../injector/container';
+import iterate from 'iterare';
 
 export class InterceptorsContextCreator extends ContextCreator {
     private moduleContext: string;
@@ -16,7 +18,7 @@ export class InterceptorsContextCreator extends ContextCreator {
         super();
     }
 
-    public create(instance: Controller, callback: (...args) => any, module: string): NestInterceptor[] {
+    public create(instance: Controller, callback: (...args: any[]) => any, module: string): NestInterceptor[] {
         this.moduleContext = module;
         return this.createContext(instance, callback, INTERCEPTORS_METADATA);
     }
@@ -26,8 +28,8 @@ export class InterceptorsContextCreator extends ContextCreator {
             return [] as R;
         }
         const isGlobalMetadata = metadata === this.getGlobalMetadata();
-        return isGlobalMetadata ?  
-            this.createGlobalMetadataContext<T, R>(metadata) : 
+        return isGlobalMetadata ?
+            this.createGlobalMetadataContext<T, R>(metadata) :
             iterate(metadata).filter((metatype: any) => metatype && metatype.name)
                 .map((metatype) => this.getInstanceByMetatype(metatype))
                 .filter((wrapper: any) => wrapper && wrapper.instance)
@@ -42,7 +44,7 @@ export class InterceptorsContextCreator extends ContextCreator {
             .toArray() as R;
     }
 
-    public getInstanceByMetatype(metatype): { instance: any } | undefined {
+    public getInstanceByMetatype(metatype: any): { instance: any } | undefined {
         const collection = this.container.getModules();
         const module = collection.get(this.moduleContext);
         if (!module) {

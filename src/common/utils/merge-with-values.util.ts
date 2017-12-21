@@ -7,7 +7,7 @@ export interface Constructor<T> {
 export const MergeWithValues = <T extends Constructor<{}>>(data: { [param: string]: any }) => {
     return (Metatype: T): any => {
         const Type = class extends Metatype {
-            constructor(...args) {
+            constructor(...args: any[]) {
                 super(...args);
             }
         };

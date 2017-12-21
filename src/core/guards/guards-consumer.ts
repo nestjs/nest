@@ -1,14 +1,16 @@
-import iterate from 'iterare';
-import { GUARDS_METADATA } from '@nestjs/common/constants';
-import { isUndefined, isFunction, isNil, isEmpty } from '@nestjs/common/utils/shared.utils';
-import { Controller } from '@nestjs/common/interfaces';
-import { CanActivate, HttpStatus, ExecutionContext } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
-import { FORBIDDEN_MESSAGE } from './constants';
 import 'rxjs/add/operator/toPromise';
 
+import { CanActivate, ExecutionContext, HttpStatus } from '@nestjs/common';
+import { isEmpty, isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+
+import { Controller } from '@nestjs/common/interfaces';
+import { FORBIDDEN_MESSAGE } from './constants';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { Observable } from 'rxjs/Observable';
+import iterate from 'iterare';
+
 export class GuardsConsumer {
-    public async tryActivate(guards: CanActivate[], data, instance: Controller, callback: (...args) => any): Promise<boolean> {
+    public async tryActivate(guards: CanActivate[], data: any, instance: Controller, callback: (...args: any[]) => any): Promise<boolean> {
         if (!guards || isEmpty(guards)) {
             return true;
         }
@@ -23,7 +25,7 @@ export class GuardsConsumer {
         return true;
     }
 
-    public createContext(instance: Controller, callback: (...args) => any): ExecutionContext {
+    public createContext(instance: Controller, callback: (...args: any[]) => any): ExecutionContext {
         return {
             parent: instance.constructor,
             handler: callback,

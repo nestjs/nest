@@ -1,9 +1,11 @@
 import 'reflect-metadata';
-import { ControllerMetadata } from '../../interfaces/controllers/controller-metadata.interface';
-import { isString } from '../../utils/shared.utils';
+
 import { PATH_METADATA, SHARED_MODULE_METADATA } from '../../constants';
-import { NestModuleMetatype } from '../../interfaces/modules/module-metatype.interface';
+
+import { ControllerMetadata } from '../../interfaces/controllers/controller-metadata.interface';
 import { Logger } from '../../index';
+import { NestModuleMetatype } from '../../interfaces/modules/module-metatype.interface';
+import { isString } from '../../utils/shared.utils';
 
 /**
  * Specifies scope of this module. When module is `@Shared()`, Nest will create only one instance of this
@@ -16,7 +18,7 @@ export const Shared = (scope: string = 'global') => {
     return (target: any) => {
         const Metatype = target as FunctionConstructor;
         const Type = class extends Metatype {
-            constructor(...args) {
+            constructor(...args: any[]) {
                 super(...args);
             }
         };
