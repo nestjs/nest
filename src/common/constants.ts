@@ -1,5 +1,6 @@
 export const metadata = {
   MODULES: 'modules',
+  IMPORTS: 'imports',
   COMPONENTS: 'components',
   CONTROLLERS: 'controllers',
   EXPORTS: 'exports',
