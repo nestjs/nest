@@ -156,7 +156,6 @@ export class ExpressRouterExplorer implements RouterExplorer {
       requestMethod,
     );
     const exceptionFilter = this.exceptionsFilter.create(instance, callback);
-
     return this.routerProxy.createProxy(executionContext, exceptionFilter);
   }
 }

@@ -36,4 +36,26 @@ describe('@Module', () => {
       InvalidModuleConfigException,
     );
   });
+
+  describe(`when "imports" is used`, () => {
+    const imports = ['Imports'];
+    @Module({
+      imports,
+    })
+    class TestModule2 {}
+    it(`should override "modules" metadata when there is no modules`, () => {
+      const modules = Reflect.getMetadata('modules', TestModule2);
+      expect(modules).to.be.eql(imports);
+    });
+
+    @Module({
+      ...moduleProps,
+      imports,
+    })
+    class TestModule3 {}
+    it(`should not override "modules" metadata when there is no modules`, () => {
+      const modules = Reflect.getMetadata('modules', TestModule3);
+      expect(modules).to.be.eql(moduleProps.modules);
+    });
+  });
 });

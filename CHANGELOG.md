@@ -1,4 +1,5 @@
 ## 4.5.2
+- **common**: [feature] rename `modules` to `imports` (`@Module()` decorator)
 - **core**: [feature] exception filters with empty `@Catch()` metadata handle each occurred exception 
 
 ## 4.5.1
