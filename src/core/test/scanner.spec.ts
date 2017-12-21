@@ -1,144 +1,152 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { DependenciesScanner } from './../scanner';
-import { NestContainer } from './../injector/container';
-import { Module } from '../../common/decorators/modules/module.decorator';
-import { NestModule } from '../../common/interfaces/modules/nest-module.interface';
+
 import { Component } from '../../common/decorators/core/component.decorator';
-import { UseGuards } from '../../common/decorators/core/use-guards.decorator';
 import { Controller } from '../../common/decorators/core/controller.decorator';
-import { MetadataScanner } from '../metadata-scanner';
+import { DependenciesScanner } from './../scanner';
 import { GUARDS_METADATA } from '../../common/constants';
+import { MetadataScanner } from '../metadata-scanner';
+import { Module } from '../../common/decorators/modules/module.decorator';
+import { NestContainer } from './../injector/container';
+import { NestModule } from '../../common/interfaces/modules/nest-module.interface';
+import { UseGuards } from '../../common/decorators/core/use-guards.decorator';
+import { expect } from 'chai';
 
 describe('DependenciesScanner', () => {
 
-    @Component() class TestComponent {}
-    @Controller('') class TestRoute {}
+  @Component() class TestComponent { }
+  @Controller('') class TestRoute { }
+  @Controller('') class EmptyRoute { }
 
-    @Module({
-        components: [ TestComponent ],
-        controllers: [ TestRoute ],
-        exports: [ TestComponent ],
-    })
-    class AnotherTestModule {}
+  @Module({
+    components: [TestComponent],
+    controllers: [TestRoute],
+    exports: [TestComponent],
+  })
+  class AnotherTestModule { }
 
-    @Module({
-        modules: [ AnotherTestModule ],
-        components: [ TestComponent ],
-        controllers: [ TestRoute ],
-    })
-    class TestModule {}
+  @Module({
+    modules: [AnotherTestModule],
+    components: [TestComponent],
+    controllers: [TestRoute],
+  })
+  class TestModule { }
 
-    let scanner: DependenciesScanner;
-    let mockContainer: sinon.SinonMock;
-    let container: NestContainer;
+  @Module({
+    controllers: [EmptyRoute],
+    path: '/foo',
+  })
+  class ModuleWithPath { }
 
-    before(() => {
-        container = new NestContainer();
-        mockContainer = sinon.mock(container);
-    });
+  let scanner: DependenciesScanner;
+  let mockContainer: sinon.SinonMock;
+  let container: NestContainer;
 
-    beforeEach(() => {
-        scanner = new DependenciesScanner(container, new MetadataScanner());
-    });
+  before(() => {
+    container = new NestContainer();
+    mockContainer = sinon.mock(container);
+  });
 
-    afterEach(() => {
-        mockContainer.restore();
-    });
+  beforeEach(() => {
+    scanner = new DependenciesScanner(container, new MetadataScanner());
+  });
 
-    it('should "storeModule" call twice (2 modules) container method "addModule"', () => {
-        const expectation = mockContainer.expects('addModule').twice();
-        scanner.scan(TestModule as any);
-        expectation.verify();
-    });
+  afterEach(() => {
+    mockContainer.restore();
+  });
 
-    it('should "storeComponent" call twice (2 components) container method "addComponent"', () => {
-        const expectation = mockContainer.expects('addComponent').twice();
-        const stub = sinon.stub(scanner, 'storeExportedComponent');
+  it('should "storeModule" call twice (2 modules) container method "addModule"', () => {
+    const expectation = mockContainer.expects('addModule').twice();
+    scanner.scan(TestModule as any);
+    expectation.verify();
+  });
 
-        scanner.scan(TestModule as any);
-        expectation.verify();
-        stub.restore();
-    });
+  it('should "storeComponent" call twice (2 components) container method "addComponent"', () => {
+    const expectation = mockContainer.expects('addComponent').twice();
+    const stub = sinon.stub(scanner, 'storeExportedComponent');
 
-    it('should "storeRoute" call twice (2 components) container method "addController"', () => {
-        const expectation = mockContainer.expects('addController').twice();
-        scanner.scan(TestModule as any);
-        expectation.verify();
-    });
+    scanner.scan(TestModule as any);
+    expectation.verify();
+    stub.restore();
+  });
 
-    it('should "storeExportedComponent" call once (1 component) container method "addExportedComponent"', () => {
-        const expectation = mockContainer.expects('addExportedComponent').once();
-        scanner.scan(TestModule as any);
-        expectation.verify();
-    });
+  it('should "storeRoute" call twice (2 components) container method "addController"', () => {
+    const expectation = mockContainer.expects('addController').twice();
+    scanner.scan(TestModule as any);
+    expectation.verify();
+  });
 
-    describe('reflectDynamicMetadata', () => {
-      describe('when param has prototype', () => {
-        it('should call "reflectGuards" and "reflectInterceptors"', () => {
-          const reflectGuards = sinon.stub(scanner, 'reflectGuards').callsFake(() => undefined);
-          const reflectInterceptors = sinon.stub(scanner, 'reflectInterceptors').callsFake(() => undefined);
-          scanner.reflectDynamicMetadata({ prototype: true } as any, '');
+  it('should "storeExportedComponent" call once (1 component) container method "addExportedComponent"', () => {
+    const expectation = mockContainer.expects('addExportedComponent').once();
+    scanner.scan(TestModule as any);
+    expectation.verify();
+  });
 
-          expect(reflectGuards.called).to.be.true;
-          expect(reflectInterceptors.called).to.be.true;
-        });
-      });
-      describe('when param has not prototype', () => {
-        it('should not call "reflectGuards" and "reflectInterceptors"', () => {
-          const reflectGuards = sinon.stub(scanner, 'reflectGuards').callsFake(() => undefined);
-          const reflectInterceptors = sinon.stub(scanner, 'reflectInterceptors').callsFake(() => undefined);
-          scanner.reflectDynamicMetadata({} as any, '');
+  describe('reflectDynamicMetadata', () => {
+    describe('when param has prototype', () => {
+      it('should call "reflectGuards" and "reflectInterceptors"', () => {
+        const reflectGuards = sinon.stub(scanner, 'reflectGuards').callsFake(() => undefined);
+        const reflectInterceptors = sinon.stub(scanner, 'reflectInterceptors').callsFake(() => undefined);
+        scanner.reflectDynamicMetadata({ prototype: true } as any, '');
 
-          expect(reflectGuards.called).to.be.false;
-          expect(reflectInterceptors.called).to.be.false;
-        });
+        expect(reflectGuards.called).to.be.true;
+        expect(reflectInterceptors.called).to.be.true;
       });
     });
+    describe('when param has not prototype', () => {
+      it('should not call "reflectGuards" and "reflectInterceptors"', () => {
+        const reflectGuards = sinon.stub(scanner, 'reflectGuards').callsFake(() => undefined);
+        const reflectInterceptors = sinon.stub(scanner, 'reflectInterceptors').callsFake(() => undefined);
+        scanner.reflectDynamicMetadata({} as any, '');
 
-    describe('storeInjectable', () => {
-      it('should call "addInjectable"', () => {
-        const addInjectable = sinon.stub((scanner as any).container, 'addInjectable').callsFake(() => undefined);
-        const comp = {};
-        const token = 'token';
-
-        scanner.storeInjectable(comp as any, token);
-        expect(addInjectable.calledWith(comp, token)).to.be.true;
+        expect(reflectGuards.called).to.be.false;
+        expect(reflectInterceptors.called).to.be.false;
       });
     });
- 
-    class CompMethod {
-      @UseGuards('test')
-      public method() {}
-    }
-    describe('reflectKeyMetadata', () => {
-      it('should return undefined', () => {
-        const result = scanner.reflectKeyMetadata(TestComponent, 'key', 'method');
-        expect(result).to.be.undefined;
-      });
-      it('should return array', () => {
-        const result = scanner.reflectKeyMetadata(CompMethod, GUARDS_METADATA, 'method');
-        expect(result).to.be.eql(['test']);
-      });
+  });
+
+  describe('storeInjectable', () => {
+    it('should call "addInjectable"', () => {
+      const addInjectable = sinon.stub((scanner as any).container, 'addInjectable').callsFake(() => undefined);
+      const comp = {};
+      const token = 'token';
+
+      scanner.storeInjectable(comp as any, token);
+      expect(addInjectable.calledWith(comp, token)).to.be.true;
     });
+  });
 
-    describe('storeModule', () => {
-      it('should call forwardRef() when forwardRef property exists', () => {
-        const module = { forwardRef: sinon.spy() };
-
-        sinon.stub(container, 'addModule').returns({});
-        scanner.storeModule(module as any, [] as any);
-        expect(module.forwardRef.called).to.be.true;
-      });
+  class CompMethod {
+    @UseGuards('test')
+    public method() { }
+  }
+  describe('reflectKeyMetadata', () => {
+    it('should return undefined', () => {
+      const result = scanner.reflectKeyMetadata(TestComponent, 'key', 'method');
+      expect(result).to.be.undefined;
     });
-
-    describe('storeRelatedModule', () => {
-      it('should call forwardRef() when forwardRef property exists', () => {
-        const module = { forwardRef: sinon.stub().returns({}) };
-
-        sinon.stub(container, 'addRelatedModule').returns({});
-        scanner.storeRelatedModule(module as any, [] as any);
-        expect(module.forwardRef.called).to.be.true;
-      });
+    it('should return array', () => {
+      const result = scanner.reflectKeyMetadata(CompMethod, GUARDS_METADATA, 'method');
+      expect(result).to.be.eql(['test']);
     });
+  });
+
+  describe('storeModule', () => {
+    it('should call forwardRef() when forwardRef property exists', () => {
+      const module = { forwardRef: sinon.spy() };
+
+      sinon.stub(container, 'addModule').returns({});
+      scanner.storeModule(module as any, [] as any);
+      expect(module.forwardRef.called).to.be.true;
+    });
+  });
+
+  describe('storeRelatedModule', () => {
+    it('should call forwardRef() when forwardRef property exists', () => {
+      const module = { forwardRef: sinon.stub().returns({}) };
+
+      sinon.stub(container, 'addRelatedModule').returns({});
+      scanner.storeRelatedModule(module as any, [] as any);
+      expect(module.forwardRef.called).to.be.true;
+    });
+  });
 });

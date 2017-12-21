@@ -1,6 +1,7 @@
 import 'reflect-metadata';
-import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface';
+
 import { InvalidModuleConfigException } from './exceptions/invalid-module-config.exception';
+import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface';
 import { metadata } from '../../constants';
 
 const metadataKeys = [
@@ -8,6 +9,7 @@ const metadataKeys = [
     metadata.EXPORTS,
     metadata.COMPONENTS,
     metadata.CONTROLLERS,
+    metadata.PATH,
 ];
 
 const validateKeys = (keys: string[]) => {
@@ -26,6 +28,7 @@ const validateKeys = (keys: string[]) => {
  * - `controllers` - the list of controllers (e.g. HTTP controllers)
  * - `components` - the list of components that belong to this module. They can be injected between themselves.
  * - `exports` - the set of components, which should be available for modules, which imports this module
+ * - `path` - an optional path prefix to all controllers contained within the module
  * @param obj {ModuleMetadata} Module metadata
  */
 export function Module(obj: {
@@ -33,7 +36,11 @@ export function Module(obj: {
     controllers?: any[],
     components?: any[],
     exports?: any[],
+    path?: string,
 }): ClassDecorator {
+    if (!obj.hasOwnProperty('path')) {
+        obj.path = '/';
+    }
     const propsKeys = Object.keys(obj);
     validateKeys(propsKeys);
 

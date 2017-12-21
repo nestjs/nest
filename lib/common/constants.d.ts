@@ -3,6 +3,7 @@ export declare const metadata: {
     COMPONENTS: string;
     CONTROLLERS: string;
     EXPORTS: string;
+    PATH: string;
 };
 export declare const SHARED_MODULE_METADATA = "__sharedModule__";
 export declare const GLOBAL_MODULE_METADATA = "__globalModule__";
