@@ -1,7 +1,7 @@
 import { Paramtype } from './paramtype.interface';
 export declare type Transform<T> = (
   value: T,
-  metadata: ArgumentMetadata
+  metadata: ArgumentMetadata,
 ) => any;
 export interface ArgumentMetadata {
   type: Paramtype;

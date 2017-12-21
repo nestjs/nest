@@ -22,7 +22,7 @@ describe('@UseInterceptors', () => {
   it('should enhance method with expected interceptors array', () => {
     const metadata = Reflect.getMetadata(
       INTERCEPTORS_METADATA,
-      TestWithMethod.test
+      TestWithMethod.test,
     );
     expect(metadata).to.be.eql(interceptors);
   });

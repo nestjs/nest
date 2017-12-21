@@ -17,11 +17,11 @@ export class SocketsContainer {
   public addServer(
     namespace: string,
     port: number,
-    server: ObservableSocketServer
+    server: ObservableSocketServer,
   ) {
     this.observableServers.set(
       namespace ? `${namespace}:${port}` : `${port}`,
-      server
+      server,
     );
   }
 

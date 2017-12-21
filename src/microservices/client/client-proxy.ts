@@ -6,7 +6,7 @@ import { InvalidMessageException } from '../exceptions/invalid-message.exception
 export abstract class ClientProxy {
   protected abstract sendSingleMessage(
     msg,
-    callback: (err, result, disposed?: boolean) => void
+    callback: (err, result, disposed?: boolean) => void,
   );
 
   public send<T>(pattern, data): Observable<T> {
@@ -19,7 +19,7 @@ export abstract class ClientProxy {
   }
 
   protected createObserver<T>(
-    observer: Observer<T>
+    observer: Observer<T>,
   ): (err, result, disposed?: boolean) => void {
     return (err, result, disposed) => {
       if (err) {

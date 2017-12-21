@@ -53,7 +53,7 @@ describe('RpcContextCreator', () => {
   beforeEach(() => {
     rpcProxy = new RpcProxy();
     exceptionFiltersContext = new ExceptionFiltersContext(
-      new ApplicationConfig() as any
+      new ApplicationConfig() as any,
     );
     pipesCreator = new PipesContextCreator();
     pipesConsumer = new PipesConsumer();
@@ -67,7 +67,7 @@ describe('RpcContextCreator', () => {
       guardsContextCreator as any,
       guardsConsumer as any,
       new InterceptorsContextCreator(new NestContainer()) as any,
-      new InterceptorsConsumer()
+      new InterceptorsConsumer(),
     );
 
     instance = new Test();
@@ -96,7 +96,7 @@ describe('RpcContextCreator', () => {
         const proxy = await contextCreator.create(
           instance,
           instance.test,
-          module
+          module,
         );
         const data = 'test';
         await proxy(data);
@@ -109,7 +109,7 @@ describe('RpcContextCreator', () => {
           const proxy = await contextCreator.create(
             instance,
             instance.test,
-            module
+            module,
           );
           const data = 'test';
           await proxy(data);
@@ -125,7 +125,7 @@ describe('RpcContextCreator', () => {
           const proxy = await contextCreator.create(
             instance,
             instance.test,
-            module
+            module,
           );
           const data = 'test';
 
@@ -139,7 +139,7 @@ describe('RpcContextCreator', () => {
     it('should returns paramtypes array', () => {
       const paramtypes = contextCreator.reflectCallbackParamtypes(
         instance,
-        instance.test
+        instance.test,
       );
       expect(paramtypes).to.be.eql([String]);
     });

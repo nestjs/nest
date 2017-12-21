@@ -13,16 +13,16 @@ export const databaseProviders = [
 
         mockgoose.prepareStorage().then(async () => {
           await mongoose.connect('mongodb://example.com/TestingDB', {
-            useMongoClient: true
+            useMongoClient: true,
           });
         });
       } else {
         await mongoose.connect('mongodb://localhost/nest', {
-          useMongoClient: true
+          useMongoClient: true,
         });
       }
 
       return mongoose;
-    }
-  }
+    },
+  },
 ];

@@ -9,7 +9,7 @@ describe('CatsController', () => {
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       controllers: [CatsController],
-      components: [CatsService]
+      components: [CatsService],
     }).compile();
 
     catsService = module.get<CatsService>(CatsService);

@@ -8,7 +8,7 @@ import { MetadataScanner } from '../metadata-scanner';
 
 export class RoutesMapper {
   private readonly routerExplorer = new ExpressRouterExplorer(
-    new MetadataScanner()
+    new MetadataScanner(),
   );
 
   public mapRouteToRouteProps(routeMetatype) {
@@ -18,12 +18,12 @@ export class RoutesMapper {
     }
     const paths = this.routerExplorer.scanForPaths(
       Object.create(routeMetatype),
-      routeMetatype.prototype
+      routeMetatype.prototype,
     );
     return paths.map(route => ({
       path:
         this.validateGlobalPath(routePath) + this.validateRoutePath(route.path),
-      method: route.requestMethod
+      method: route.requestMethod,
     }));
   }
 
@@ -34,7 +34,7 @@ export class RoutesMapper {
     }
     return {
       path: this.validateRoutePath(path),
-      method: isUndefined(method) ? RequestMethod.ALL : method
+      method: isUndefined(method) ? RequestMethod.ALL : method,
     };
   }
 

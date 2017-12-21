@@ -4,12 +4,12 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 import {
   EXCEPTION_FILTERS_METADATA,
-  FILTER_CATCH_EXCEPTIONS
+  FILTER_CATCH_EXCEPTIONS,
 } from '@nestjs/common/constants';
 import {
   isEmpty,
   isFunction,
-  isUndefined
+  isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { Metatype } from '@nestjs/common/interfaces/index';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
@@ -21,7 +21,7 @@ import { ApplicationConfig } from './../application-config';
 
 export class BaseExceptionFilterContext extends ContextCreator {
   public createConcreteContext<T extends any[], R extends any[]>(
-    metadata: T
+    metadata: T,
   ): R {
     if (isUndefined(metadata) || isEmpty(metadata)) {
       return [] as R;
@@ -30,7 +30,7 @@ export class BaseExceptionFilterContext extends ContextCreator {
       .filter(instance => instance.catch && isFunction(instance.catch))
       .map(instance => ({
         func: instance.catch.bind(instance),
-        exceptionMetatypes: this.reflectCatchExceptions(instance)
+        exceptionMetatypes: this.reflectCatchExceptions(instance),
       }))
       .toArray() as R;
   }

@@ -25,16 +25,16 @@ export declare class RpcContextCreator {
     guardsContextCreator: GuardsContextCreator,
     guardsConsumer: GuardsConsumer,
     interceptorsContextCreator: InterceptorsContextCreator,
-    interceptorsConsumer: InterceptorsConsumer
+    interceptorsConsumer: InterceptorsConsumer,
   );
   create(
     instance: Controller,
     callback: (data) => Observable<any>,
-    module: any
+    module: any,
   ): (data) => Promise<Observable<any>>;
   reflectCallbackParamtypes(
     instance: Controller,
-    callback: (...args) => any
+    callback: (...args) => any,
   ): any[];
   getDataMetatype(instance: any, callback: any): any;
 }

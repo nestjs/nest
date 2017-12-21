@@ -15,26 +15,26 @@ export declare class MiddlewaresModule {
   setup(
     middlewaresContainer: MiddlewaresContainer,
     container: NestContainer,
-    config: ApplicationConfig
+    config: ApplicationConfig,
   ): Promise<void>;
   resolveMiddlewares(
     middlewaresContainer: MiddlewaresContainer,
-    modules: Map<string, Module>
+    modules: Map<string, Module>,
   ): Promise<void>;
   loadConfiguration(
     middlewaresContainer: MiddlewaresContainer,
     instance: NestModule,
-    module: string
+    module: string,
   ): void;
   setupMiddlewares(
     middlewaresContainer: MiddlewaresContainer,
-    app: any
+    app: any,
   ): Promise<void>;
   setupMiddlewareConfig(
     middlewaresContainer: MiddlewaresContainer,
     config: MiddlewareConfiguration,
     module: string,
-    app: any
+    app: any,
   ): Promise<void>;
   setupRouteMiddleware(
     middlewaresContainer: MiddlewaresContainer,
@@ -43,7 +43,7 @@ export declare class MiddlewaresModule {
     },
     config: MiddlewareConfiguration,
     module: string,
-    app: any
+    app: any,
   ): Promise<void>;
   private setupHandler(instance, metatype, app, method, path);
   private setupHandlerWithProxy(exceptionsHandler, router, middleware, path);

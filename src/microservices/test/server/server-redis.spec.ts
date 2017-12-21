@@ -17,7 +17,7 @@ describe('ServerRedis', () => {
     beforeEach(() => {
       onSpy = sinon.spy();
       client = {
-        on: onSpy
+        on: onSpy,
       };
       createRedisClient = sinon
         .stub(server, 'createRedisClient')
@@ -54,7 +54,7 @@ describe('ServerRedis', () => {
       subscribeSpy = sinon.spy();
       sub = {
         on: onSpy,
-        subscribe: subscribeSpy
+        subscribe: subscribeSpy,
       };
     });
     it('should bind "message" event to handler', () => {
@@ -65,7 +65,7 @@ describe('ServerRedis', () => {
       const pattern = 'test';
       const handler = sinon.spy();
       (server as any).messageHandlers = {
-        [pattern]: handler
+        [pattern]: handler,
       };
       server.handleConnection(null, sub, null);
 
@@ -98,14 +98,14 @@ describe('ServerRedis', () => {
       expect(
         getPublisherSpy.calledWith({
           status: 'error',
-          error: NO_PATTERN_MESSAGE
-        })
+          error: NO_PATTERN_MESSAGE,
+        }),
       ).to.be.true;
     });
     it(`should call handler with expected arguments`, () => {
       const handler = sinon.spy();
       (server as any).messageHandlers = {
-        [channel]: handler
+        [channel]: handler,
       };
 
       server.handleMessage(channel, {}, null);
@@ -120,7 +120,7 @@ describe('ServerRedis', () => {
     beforeEach(() => {
       publisherSpy = sinon.spy();
       pub = {
-        publish: publisherSpy
+        publish: publisherSpy,
       };
       publisher = server.getPublisher(pub, pattern);
     });
@@ -138,7 +138,7 @@ describe('ServerRedis', () => {
     it(`should return parsed json`, () => {
       const obj = { test: 'test' };
       expect(server.tryParse(obj)).to.deep.equal(
-        JSON.parse(JSON.stringify(obj))
+        JSON.parse(JSON.stringify(obj)),
       );
     });
     it(`should not parse argument if it is not an object`, () => {

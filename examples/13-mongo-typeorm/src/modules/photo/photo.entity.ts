@@ -3,7 +3,7 @@ import {
   Column,
   PrimaryGeneratedColumn,
   ObjectIdColumn,
-  ObjectID
+  ObjectID,
 } from 'typeorm';
 
 @Entity()

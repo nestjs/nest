@@ -48,11 +48,11 @@ describe('ServerTCP', () => {
     let socket;
     const msg = {
       pattern: 'test',
-      data: 'tests'
+      data: 'tests',
     };
     beforeEach(() => {
       socket = {
-        sendMessage: sinon.spy()
+        sendMessage: sinon.spy(),
       };
     });
     it('should send NO_PATTERN_MESSAGE error if key is not exists in handlers object', () => {
@@ -60,14 +60,14 @@ describe('ServerTCP', () => {
       expect(
         socket.sendMessage.calledWith({
           status: 'error',
-          error: NO_PATTERN_MESSAGE
-        })
+          error: NO_PATTERN_MESSAGE,
+        }),
       ).to.be.true;
     });
     it('should call handler if exists in handlers object', () => {
       const handler = sinon.spy();
       (server as any).messageHandlers = {
-        [JSON.stringify(msg.pattern)]: handler as any
+        [JSON.stringify(msg.pattern)]: handler as any,
       };
       server.handleMessage(socket, msg);
       expect(handler.calledOnce).to.be.true;

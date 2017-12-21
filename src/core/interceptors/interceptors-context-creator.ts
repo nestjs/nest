@@ -6,7 +6,7 @@ import {
   isUndefined,
   isFunction,
   isNil,
-  isEmpty
+  isEmpty,
 } from '@nestjs/common/utils/shared.utils';
 import { ContextCreator } from './../helpers/context-creator';
 import { NestContainer } from '../injector/container';
@@ -17,7 +17,7 @@ export class InterceptorsContextCreator extends ContextCreator {
 
   constructor(
     private readonly container: NestContainer,
-    private readonly config?: ConfigurationProvider
+    private readonly config?: ConfigurationProvider,
   ) {
     super();
   }
@@ -25,14 +25,14 @@ export class InterceptorsContextCreator extends ContextCreator {
   public create(
     instance: Controller,
     callback: (...args) => any,
-    module: string
+    module: string,
   ): NestInterceptor[] {
     this.moduleContext = module;
     return this.createContext(instance, callback, INTERCEPTORS_METADATA);
   }
 
   public createConcreteContext<T extends any[], R extends any[]>(
-    metadata: T
+    metadata: T,
   ): R {
     if (isUndefined(metadata) || isEmpty(metadata) || !this.moduleContext) {
       return [] as R;
@@ -47,20 +47,20 @@ export class InterceptorsContextCreator extends ContextCreator {
           .map(wrapper => wrapper.instance)
           .filter(
             (interceptor: NestInterceptor) =>
-              interceptor && isFunction(interceptor.intercept)
+              interceptor && isFunction(interceptor.intercept),
           )
           .toArray() as R);
   }
 
   public createGlobalMetadataContext<T extends any[], R extends any[]>(
-    metadata: T
+    metadata: T,
   ): R {
     return iterate(metadata)
       .filter(
         interceptor =>
           interceptor &&
           interceptor.intercept &&
-          isFunction(interceptor.intercept)
+          isFunction(interceptor.intercept),
       )
       .toArray() as R;
   }

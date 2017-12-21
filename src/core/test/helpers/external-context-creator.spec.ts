@@ -18,7 +18,7 @@ describe('ExternalContextCreator', () => {
   beforeEach(() => {
     callback = {
       bind: () => ({}),
-      apply: () => ({})
+      apply: () => ({}),
     };
     bindSpy = sinon.spy(callback, 'bind');
     applySpy = sinon.spy(callback, 'apply');
@@ -29,14 +29,14 @@ describe('ExternalContextCreator', () => {
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
       new InterceptorsConsumer(),
-      new ModulesContainer()
+      new ModulesContainer(),
     );
   });
   describe('create', () => {
     it('should call "findContextModuleName" with expected argument', done => {
       const findContextModuleNameSpy = sinon.spy(
         contextCreator,
-        'findContextModuleName'
+        'findContextModuleName',
       );
       contextCreator.create({ foo: 'bar' }, callback as any, '');
       expect(findContextModuleNameSpy.called).to.be.true;
@@ -89,7 +89,7 @@ describe('ExternalContextCreator', () => {
         sinon.stub(contextCreator, 'findComponentByClassName', () => true);
 
         expect(
-          contextCreator.findContextModuleName({ name: componentKey } as any)
+          contextCreator.findContextModuleName({ name: componentKey } as any),
         ).to.be.eql(moduleKey);
       });
     });
@@ -110,10 +110,10 @@ describe('ExternalContextCreator', () => {
         expect(
           contextCreator.findComponentByClassName(
             {
-              components
+              components,
             } as any,
-            key
-          )
+            key,
+          ),
         ).to.be.true;
       });
     });
@@ -124,10 +124,10 @@ describe('ExternalContextCreator', () => {
         expect(
           contextCreator.findComponentByClassName(
             {
-              components
+              components,
             } as any,
-            key
-          )
+            key,
+          ),
         ).to.be.false;
       });
     });

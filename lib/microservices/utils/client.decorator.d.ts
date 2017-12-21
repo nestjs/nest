@@ -11,5 +11,5 @@ import { ClientMetadata } from '../interfaces/client-metadata.interface';
  * host?: string;
  */
 export declare const Client: (
-  metadata?: ClientMetadata
+  metadata?: ClientMetadata,
 ) => (target: object, propertyKey: string | symbol) => void;

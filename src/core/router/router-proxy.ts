@@ -5,7 +5,7 @@ export type RouterProxyCallback = (req?, res?, next?) => void;
 export class RouterProxy {
   public createProxy(
     targetCallback: RouterProxyCallback,
-    exceptionsHandler: ExceptionsHandler
+    exceptionsHandler: ExceptionsHandler,
   ) {
     return (req, res, next) => {
       try {
@@ -20,7 +20,7 @@ export class RouterProxy {
 
   public createExceptionLayerProxy(
     targetCallback: (err, req, res, next) => void,
-    exceptionsHandler: ExceptionsHandler
+    exceptionsHandler: ExceptionsHandler,
   ) {
     return (err, req, res, next) => {
       try {

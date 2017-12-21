@@ -6,5 +6,5 @@ export declare enum RequestMethod {
   PATCH = 4,
   ALL = 5,
   OPTIONS = 6,
-  HEAD = 7
+  HEAD = 7,
 }

@@ -13,7 +13,7 @@ export declare class DependenciesScanner {
   scan(module: NestModuleMetatype): void;
   scanForModules(
     module: NestModuleMetatype | DynamicModule,
-    scope?: NestModuleMetatype[]
+    scope?: NestModuleMetatype[],
   ): void;
   storeModule(module: any, scope: NestModuleMetatype[]): void;
   scanModulesForDependencies(): void;
@@ -21,28 +21,28 @@ export declare class DependenciesScanner {
   reflectComponents(module: NestModuleMetatype, token: string): void;
   reflectComponentMetadata(
     component: Metatype<Injectable>,
-    token: string
+    token: string,
   ): void;
   reflectControllers(module: NestModuleMetatype, token: string): void;
   reflectDynamicMetadata(obj: Metatype<Injectable>, token: string): void;
   reflectExports(module: NestModuleMetatype, token: string): void;
   reflectGatewaysMiddlewares(
     component: Metatype<Injectable>,
-    token: string
+    token: string,
   ): void;
   reflectGuards(component: Metatype<Injectable>, token: string): void;
   reflectInterceptors(component: Metatype<Injectable>, token: string): void;
   reflectKeyMetadata(
     component: Metatype<Injectable>,
     key: string,
-    method: string
+    method: string,
   ): any;
   storeRelatedModule(related: any, token: string): void;
   storeComponent(component: Metatype<Injectable>, token: string): void;
   storeInjectable(component: Metatype<Injectable>, token: string): void;
   storeExportedComponent(
     exportedComponent: Metatype<Injectable>,
-    token: string
+    token: string,
   ): void;
   storeRoute(route: Metatype<Controller>, token: string): void;
   reflectMetadata(metatype: any, metadata: string): any;

@@ -1,5 +1,5 @@
 export declare function forwardRef(
-  fn: () => any
+  fn: () => any,
 ): {
   forwardRef: () => any;
 };

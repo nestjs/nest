@@ -12,7 +12,7 @@ describe('WsExceptionsHandler', () => {
     handler = new WsExceptionsHandler();
     emitStub = sinon.stub();
     client = {
-      emit: emitStub
+      emit: emitStub,
     };
     client.emit.returns(client);
   });
@@ -23,14 +23,14 @@ describe('WsExceptionsHandler', () => {
       expect(
         emitStub.calledWith('exception', {
           status: 'error',
-          message: 'Internal server error'
-        })
+          message: 'Internal server error',
+        }),
       ).to.be.true;
     });
     describe('when exception is instance of WsException', () => {
       it('should method emit expected status and json object', () => {
         const message = {
-          custom: 'Unauthorized'
+          custom: 'Unauthorized',
         };
         handler.handle(new WsException(message), client);
         expect(emitStub.calledWith('exception', message)).to.be.true;

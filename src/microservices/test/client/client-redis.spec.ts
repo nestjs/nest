@@ -41,7 +41,7 @@ describe('ClientRedis', () => {
         subscribe: subscribeSpy,
         on: onSpy,
         removeListener: removeListenerSpy,
-        unsubscribe: unsubscribeSpy
+        unsubscribe: unsubscribeSpy,
       };
       pub = { publish: publishSpy };
       (client as any).sub = sub;
@@ -78,7 +78,7 @@ describe('ClientRedis', () => {
       let callback, subscription;
       const resMsg = {
         err: 'err',
-        response: 'test'
+        response: 'test',
       };
 
       describe('not disposed', () => {

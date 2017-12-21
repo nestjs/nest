@@ -4,7 +4,7 @@ import {
   PORT_METADATA,
   NAMESPACE_METADATA,
   GATEWAY_METADATA,
-  GATEWAY_MIDDLEWARES
+  GATEWAY_MIDDLEWARES,
 } from '../constants';
 
 /**
@@ -12,7 +12,7 @@ import {
  * Those dependencies should belongs to the same module. Gateway is listening on the specified port.
  */
 export const WebSocketGateway = (
-  metadataOrPort?: GatewayMetadata | number
+  metadataOrPort?: GatewayMetadata | number,
 ): ClassDecorator => {
   if (Number.isInteger(metadataOrPort as number)) {
     metadataOrPort = { port: metadataOrPort } as any;

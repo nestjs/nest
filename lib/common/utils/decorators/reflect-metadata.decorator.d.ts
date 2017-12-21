@@ -4,5 +4,5 @@
  */
 export declare const ReflectMetadata: (
   metadataKey: any,
-  metadataValue: any
+  metadataValue: any,
 ) => (target: object, key?: any, descriptor?: any) => any;

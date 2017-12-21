@@ -3,7 +3,7 @@ import {
   WebSocketAdapter,
   ExceptionFilter,
   NestInterceptor,
-  CanActivate
+  CanActivate,
 } from '@nestjs/common';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
 export declare class ApplicationConfig implements ConfigurationProvider {

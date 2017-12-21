@@ -57,8 +57,8 @@ describe('RouterResponseController', () => {
           const value = 100;
           expect(
             await routerResponseController.transformToResult(
-              Promise.resolve(value)
-            )
+              Promise.resolve(value),
+            ),
           ).to.be.eq(100);
         });
       });
@@ -68,8 +68,8 @@ describe('RouterResponseController', () => {
           const value = 100;
           expect(
             await routerResponseController.transformToResult(
-              Observable.of(value)
-            )
+              Observable.of(value),
+            ),
           ).to.be.eq(100);
         });
       });
@@ -78,7 +78,7 @@ describe('RouterResponseController', () => {
         it('should returns Promise', async () => {
           const value = 100;
           expect(
-            await routerResponseController.transformToResult(value)
+            await routerResponseController.transformToResult(value),
           ).to.be.eq(100);
         });
       });
@@ -89,14 +89,14 @@ describe('RouterResponseController', () => {
     describe('when RequestMethod is POST', () => {
       it('should returns 201', () => {
         expect(
-          routerResponseController.getStatusByMethod(RequestMethod.POST)
+          routerResponseController.getStatusByMethod(RequestMethod.POST),
         ).to.be.eql(201);
       });
     });
     describe('when RequestMethod is not POST', () => {
       it('should returns 200', () => {
         expect(
-          routerResponseController.getStatusByMethod(RequestMethod.GET)
+          routerResponseController.getStatusByMethod(RequestMethod.GET),
         ).to.be.eql(200);
       });
     });

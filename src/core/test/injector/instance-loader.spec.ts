@@ -35,7 +35,7 @@ describe('InstanceLoader', () => {
       components: new Map(),
       routes: new Map(),
       injectables: new Map(),
-      metatype: { name: 'test' }
+      metatype: { name: 'test' },
     };
     const componentWrapper = { instance: null, metatype: TestComponent };
     const routeWrapper = { instance: null, metatype: TestRoute };
@@ -49,7 +49,7 @@ describe('InstanceLoader', () => {
 
     const loadComponentPrototypeStub = sinon.stub(
       injector,
-      'loadPrototypeOfInstance'
+      'loadPrototypeOfInstance',
     );
 
     sinon.stub(injector, 'loadInstanceOfRoute');
@@ -57,10 +57,13 @@ describe('InstanceLoader', () => {
 
     await loader.createInstancesOfDependencies();
     expect(
-      loadComponentPrototypeStub.calledWith(componentWrapper, module.components)
+      loadComponentPrototypeStub.calledWith(
+        componentWrapper,
+        module.components,
+      ),
     ).to.be.true;
     expect(
-      loadComponentPrototypeStub.calledWith(routeWrapper, module.components)
+      loadComponentPrototypeStub.calledWith(routeWrapper, module.components),
     ).to.be.true;
   });
 
@@ -72,12 +75,12 @@ describe('InstanceLoader', () => {
       components: new Map(),
       routes: new Map(),
       injectables: new Map(),
-      metatype: { name: 'test' }
+      metatype: { name: 'test' },
     };
     const testComp = {
       instance: null,
       metatype: TestComponent,
-      name: 'TestComponent'
+      name: 'TestComponent',
     };
 
     module.components.set('TestComponent', testComp);
@@ -93,8 +96,8 @@ describe('InstanceLoader', () => {
     expect(
       loadComponentStub.calledWith(
         module.components.get('TestComponent'),
-        module
-      )
+        module,
+      ),
     ).to.be.true;
   });
 
@@ -106,7 +109,7 @@ describe('InstanceLoader', () => {
       components: new Map(),
       routes: new Map(),
       injectables: new Map(),
-      metatype: { name: 'test' }
+      metatype: { name: 'test' },
     };
     const wrapper = { name: 'TestRoute', instance: null, metatype: TestRoute };
     module.routes.set('TestRoute', wrapper);
@@ -131,12 +134,12 @@ describe('InstanceLoader', () => {
       components: new Map(),
       routes: new Map(),
       injectables: new Map(),
-      metatype: { name: 'test' }
+      metatype: { name: 'test' },
     };
     const testComp = {
       instance: null,
       metatype: TestComponent,
-      name: 'TestComponent'
+      name: 'TestComponent',
     };
     module.injectables.set('TestComponent', testComp);
 
@@ -151,8 +154,8 @@ describe('InstanceLoader', () => {
     expect(
       loadInjectableStub.calledWith(
         module.injectables.get('TestComponent'),
-        module
-      )
+        module,
+      ),
     ).to.be.true;
   });
 });

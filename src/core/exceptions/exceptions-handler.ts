@@ -21,12 +21,12 @@ export class ExceptionsHandler {
     ) {
       response.status(500).json({
         statusCode: 500,
-        message: messages.UNKNOWN_EXCEPTION_MESSAGE
+        message: messages.UNKNOWN_EXCEPTION_MESSAGE,
       });
       if (isObject(exception) && (exception as Error).message) {
         return ExceptionsHandler.logger.error(
           (exception as Error).message,
-          (exception as Error).stack
+          (exception as Error).stack,
         );
       }
       return ExceptionsHandler.logger.error(exception);
@@ -36,7 +36,7 @@ export class ExceptionsHandler {
       ? res
       : {
           statusCode: exception.getStatus(),
-          message: res
+          message: res,
         };
     response.status(exception.getStatus()).json(message);
   }
@@ -55,7 +55,7 @@ export class ExceptionsHandler {
       const hasMetatype =
         !exceptionMetatypes.length ||
         !!exceptionMetatypes.find(
-          ExceptionMetatype => exception instanceof ExceptionMetatype
+          ExceptionMetatype => exception instanceof ExceptionMetatype,
         );
       return hasMetatype;
     });

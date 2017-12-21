@@ -3,12 +3,12 @@ import {
   ROUTE_ARGS_METADATA,
   PARAMTYPES_METADATA,
   HTTP_CODE_METADATA,
-  CUSTOM_ROUTE_AGRS_METADATA
+  CUSTOM_ROUTE_AGRS_METADATA,
 } from '@nestjs/common/constants';
 import {
   isUndefined,
   isFunction,
-  isString
+  isString,
 } from '@nestjs/common/utils/shared.utils';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { Controller, Transform } from '@nestjs/common/interfaces';
@@ -21,7 +21,7 @@ import {
   PipeTransform,
   HttpStatus,
   RequestMethod,
-  HttpException
+  HttpException,
 } from '@nestjs/common';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { GuardsConsumer } from '../guards/guards-consumer';
@@ -47,7 +47,7 @@ export class RouterExecutionContext {
     private readonly guardsContextCreator: GuardsContextCreator,
     private readonly guardsConsumer: GuardsConsumer,
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
-    private readonly interceptorsConsumer: InterceptorsConsumer
+    private readonly interceptorsConsumer: InterceptorsConsumer,
   ) {}
 
   public create(
@@ -55,7 +55,7 @@ export class RouterExecutionContext {
     callback: (...args) => any,
     methodName: string,
     module: string,
-    requestMethod: RequestMethod
+    requestMethod: RequestMethod,
   ) {
     const metadata = this.reflectCallbackMetadata(instance, methodName) || {};
     const keys = Object.keys(metadata);
@@ -66,13 +66,13 @@ export class RouterExecutionContext {
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
-      module
+      module,
     );
     const httpCode = this.reflectHttpStatusCode(callback);
     const paramsMetadata = this.exchangeKeysForValues(keys, metadata);
     const isResponseHandled = paramsMetadata.some(
       ({ type }) =>
-        type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT
+        type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
     );
     const paramsOptions = this.mergeParamsMetatypes(paramsMetadata, paramtypes);
 
@@ -82,7 +82,7 @@ export class RouterExecutionContext {
         guards,
         req,
         instance,
-        callback
+        callback,
       );
       if (!canActivate) {
         throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
@@ -96,7 +96,7 @@ export class RouterExecutionContext {
             type,
             data,
             metatype,
-            pipes: paramPipes
+            pipes: paramPipes,
           } = param;
           const value = extractValue(req, res, next);
 
@@ -104,10 +104,10 @@ export class RouterExecutionContext {
             value,
             { metatype, type, data },
             pipes.concat(
-              this.pipesContextCreator.createConcreteContext(paramPipes)
-            )
+              this.pipesContextCreator.createConcreteContext(paramPipes),
+            ),
           );
-        })
+        }),
       );
       const handler = () => callback.apply(instance, args);
       const result = await this.interceptorsConsumer.intercept(
@@ -115,7 +115,7 @@ export class RouterExecutionContext {
         req,
         instance,
         callback,
-        handler
+        handler,
       );
       return !isResponseHandled
         ? this.responseController.apply(result, res, requestMethod, httpCode)
@@ -130,14 +130,14 @@ export class RouterExecutionContext {
 
   public reflectCallbackMetadata(
     instance: Controller,
-    methodName: string
+    methodName: string,
   ): RouteParamsMetadata {
     return Reflect.getMetadata(ROUTE_ARGS_METADATA, instance, methodName);
   }
 
   public reflectCallbackParamtypes(
     instance: Controller,
-    methodName: string
+    methodName: string,
   ): any[] {
     return Reflect.getMetadata(PARAMTYPES_METADATA, instance, methodName);
   }
@@ -148,7 +148,7 @@ export class RouterExecutionContext {
 
   public getArgumentsLength(
     keys: string[],
-    metadata: RouteParamsMetadata
+    metadata: RouteParamsMetadata,
   ): number {
     return Math.max(...keys.map(key => metadata[key].index)) + 1;
   }
@@ -159,7 +159,7 @@ export class RouterExecutionContext {
 
   public exchangeKeysForValues(
     keys: string[],
-    metadata: RouteParamsMetadata
+    metadata: RouteParamsMetadata,
   ): ParamProperties[] {
     return keys.map(key => {
       const { index, data, pipes } = metadata[key];
@@ -185,21 +185,21 @@ export class RouterExecutionContext {
 
   public mergeParamsMetatypes(
     paramsProperties: ParamProperties[],
-    paramtypes: any[]
+    paramtypes: any[],
   ): (ParamProperties & { metatype?: any })[] {
     if (!paramtypes) {
       return paramsProperties;
     }
     return paramsProperties.map(param => ({
       ...param,
-      metatype: paramtypes[param.index]
+      metatype: paramtypes[param.index],
     }));
   }
 
   public async getParamValue<T>(
     value: T,
     { metatype, type, data },
-    transforms: Transform<any>[]
+    transforms: Transform<any>[],
   ): Promise<any> {
     if (
       type === RouteParamtypes.BODY ||
@@ -210,7 +210,7 @@ export class RouterExecutionContext {
       return await this.pipesConsumer.apply(
         value,
         { metatype, type, data },
-        transforms
+        transforms,
       );
     }
     return Promise.resolve(value);

@@ -6,8 +6,8 @@ export const databaseProviders = [
     useFactory: async (): Promise<mongoose.Connection> => {
       (mongoose as any).Promise = global.Promise;
       return await mongoose.connect('mongodb://localhost/nest', {
-        useMongoClient: true
+        useMongoClient: true,
       });
-    }
-  }
+    },
+  },
 ];

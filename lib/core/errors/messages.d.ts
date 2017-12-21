@@ -1,7 +1,7 @@
 export declare const UnknownDependenciesMessage: (
   type: string,
   index: number,
-  length: number
+  length: number,
 ) => string;
 export declare const InvalidMiddlewareMessage: (name: string) => string;
 export declare const InvalidModuleMessage: (scope: string) => string;

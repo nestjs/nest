@@ -4,10 +4,10 @@ export declare class ModuleTokenFactory {
   create(
     metatype: NestModuleMetatype,
     scope: NestModuleMetatype[],
-    dynamicModuleMetadata?: Partial<DynamicModule> | undefined
+    dynamicModuleMetadata?: Partial<DynamicModule> | undefined,
   ): string;
   getDynamicMetadataToken(
-    dynamicModuleMetadata: Partial<DynamicModule> | undefined
+    dynamicModuleMetadata: Partial<DynamicModule> | undefined,
   ): string;
   getModuleName(metatype: NestModuleMetatype): string;
   getScopeStack(scope: NestModuleMetatype[]): string[];

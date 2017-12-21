@@ -11,7 +11,7 @@ describe('@Component', () => {
   it('should enhance component with "design:paramtypes" metadata', () => {
     const constructorParams = Reflect.getMetadata(
       'design:paramtypes',
-      TestComponent
+      TestComponent,
     );
 
     expect(constructorParams[0]).to.be.eql(Number);
@@ -28,7 +28,7 @@ describe('@Middleware', () => {
   it('should enhance component with "design:paramtypes" metadata', () => {
     const constructorParams = Reflect.getMetadata(
       'design:paramtypes',
-      TestMiddleware
+      TestMiddleware,
     );
 
     expect(constructorParams[0]).to.be.eql(Number);
@@ -45,7 +45,7 @@ describe('@Interceptor', () => {
   it('should enhance component with "design:paramtypes" metadata', () => {
     const constructorParams = Reflect.getMetadata(
       'design:paramtypes',
-      TestInterceptor
+      TestInterceptor,
     );
 
     expect(constructorParams[0]).to.be.eql(Number);

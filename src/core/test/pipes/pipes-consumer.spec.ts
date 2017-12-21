@@ -18,7 +18,7 @@ describe('PipesConsumer', () => {
       transforms = [
         sinon.stub().callsFake(val => val + 1),
         sinon.stub().callsFake(val => Promise.resolve(val + 1)),
-        sinon.stub().callsFake(val => val + 1)
+        sinon.stub().callsFake(val => val + 1),
       ];
     });
     it('should call all transform functions', done => {

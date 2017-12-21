@@ -5,7 +5,7 @@ import { ObservableSocketServer } from './interfaces/observable-socket-server.in
 import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exception';
 import {
   GatewayMetadataExplorer,
-  MessageMappingProperties
+  MessageMappingProperties,
 } from './gateway-metadata-explorer';
 import { Subject } from 'rxjs/Subject';
 import { SocketServerProvider } from './socket-server-provider';
@@ -23,7 +23,7 @@ import 'rxjs/add/operator/switchMap';
 
 export class WebSocketsController {
   private readonly metadataExplorer = new GatewayMetadataExplorer(
-    new MetadataScanner()
+    new MetadataScanner(),
   );
   private readonly middlewaresInjector: MiddlewaresInjector;
 
@@ -31,7 +31,7 @@ export class WebSocketsController {
     private readonly socketServerProvider: SocketServerProvider,
     private readonly container: NestContainer,
     private readonly config: ApplicationConfig,
-    private readonly contextCreator: WsContextCreator
+    private readonly contextCreator: WsContextCreator,
   ) {
     this.middlewaresInjector = new MiddlewaresInjector(container, config);
   }
@@ -39,7 +39,7 @@ export class WebSocketsController {
   public hookGatewayIntoServer(
     instance: NestGateway,
     metatype: Metatype<Injectable>,
-    module: string
+    module: string,
   ) {
     const namespace = Reflect.getMetadata(NAMESPACE_METADATA, metatype) || '';
     const port = Reflect.getMetadata(PORT_METADATA, metatype) || 0;
@@ -54,18 +54,18 @@ export class WebSocketsController {
     instance: NestGateway,
     namespace: string,
     port: number,
-    module: string
+    module: string,
   ) {
     const plainMessageHandlers = this.metadataExplorer.explore(instance);
     const messageHandlers = plainMessageHandlers.map(
       ({ callback, message }) => ({
         message,
-        callback: this.contextCreator.create(instance, callback, module)
-      })
+        callback: this.contextCreator.create(instance, callback, module),
+      }),
     );
     const observableServer = this.socketServerProvider.scanForSocketServer(
       namespace,
-      port
+      port,
     );
 
     this.injectMiddlewares(observableServer, instance, module);
@@ -80,7 +80,7 @@ export class WebSocketsController {
   public subscribeEvents(
     instance: NestGateway,
     messageHandlers: MessageMappingProperties[],
-    observableServer: ObservableSocketServer
+    observableServer: ObservableSocketServer,
   ) {
     const { init, disconnect, connection, server } = observableServer;
     const adapter = this.config.getIoAdapter();
@@ -95,7 +95,7 @@ export class WebSocketsController {
       instance,
       messageHandlers,
       disconnect,
-      connection
+      connection,
     );
     adapter.bindClientConnect(server, handler);
   }
@@ -105,7 +105,7 @@ export class WebSocketsController {
     instance: NestGateway,
     messageHandlers: MessageMappingProperties[],
     disconnect: Subject<any>,
-    connection: Subject<any>
+    connection: Subject<any>,
   ) {
     const adapter = this.config.getIoAdapter();
     return client => {
@@ -139,20 +139,20 @@ export class WebSocketsController {
   public subscribeMessages(
     messageHandlers: MessageMappingProperties[],
     client,
-    instance: NestGateway
+    instance: NestGateway,
   ) {
     const adapter = this.config.getIoAdapter();
     const handlers = messageHandlers.map(({ callback, message }) => ({
       message,
-      callback: callback.bind(instance, client)
+      callback: callback.bind(instance, client),
     }));
     adapter.bindMessageHandlers(client, handlers, data =>
-      Observable.fromPromise(this.pickResult(data)).switchMap(stream => stream)
+      Observable.fromPromise(this.pickResult(data)).switchMap(stream => stream),
     );
   }
 
   public async pickResult(
-    defferedResult: Promise<any>
+    defferedResult: Promise<any>,
   ): Promise<Observable<any>> {
     const result = await defferedResult;
     if (result instanceof Observable) {
@@ -166,7 +166,7 @@ export class WebSocketsController {
 
   private hookServerToProperties(instance: NestGateway, server) {
     for (const propertyKey of this.metadataExplorer.scanForServerHooks(
-      instance
+      instance,
     )) {
       Reflect.set(instance, propertyKey, server);
     }

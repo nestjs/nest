@@ -1,6 +1,9 @@
+## 4.5.2
+- **core**: [feature] exception filters with empty `@Catch()` metadata handle each occurred exception 
+
 ## 4.5.1
-- **common**: `INestAplication` provides a `getHttpServer()` methodn ow
-- **websockets**: `IoAdapter` bugfix
+- **common**: [feature] `INestAplication` provides a `getHttpServer()` method now
+- **websockets**: [bugfix] `IoAdapter` bugfix
 
 ## 4.5.0
 - **common**: bugfix #286

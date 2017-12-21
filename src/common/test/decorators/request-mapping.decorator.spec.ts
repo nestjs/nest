@@ -6,7 +6,7 @@ import { RequestMethod } from '../../enums/request-method.enum';
 describe('@RequestMapping', () => {
   const requestProps = {
     path: 'test',
-    method: RequestMethod.ALL
+    method: RequestMethod.ALL,
   };
 
   it('should enhance class with expected request metadata', () => {

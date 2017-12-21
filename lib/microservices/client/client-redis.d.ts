@@ -9,7 +9,7 @@ export declare class ClientRedis extends ClientProxy {
   constructor(metadata: ClientMetadata);
   protected sendSingleMessage(
     msg: any,
-    callback: (...args) => any
+    callback: (...args) => any,
   ): (channel: any, message: any) => void;
   getAckPatternName(pattern: string): string;
   getResPatternName(pattern: string): string;

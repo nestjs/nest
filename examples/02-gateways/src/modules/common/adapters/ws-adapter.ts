@@ -19,7 +19,7 @@ export class WsAdapter implements WebSocketAdapter {
   public bindMessageHandlers(
     client: WebSocket,
     handlers: MessageMappingProperties[],
-    process: (data: any) => Observable<any>
+    process: (data: any) => Observable<any>,
   ) {
     Observable.fromEvent(client, 'message')
       .switchMap(buffer => this.bindMessageHandler(buffer, handlers, process))
@@ -30,11 +30,11 @@ export class WsAdapter implements WebSocketAdapter {
   public bindMessageHandler(
     buffer,
     handlers: MessageMappingProperties[],
-    process: (data: any) => Observable<any>
+    process: (data: any) => Observable<any>,
   ): Observable<any> {
     const data = JSON.parse(buffer.data);
     const messageHandler = handlers.find(
-      handler => handler.message === data.type
+      handler => handler.message === data.type,
     );
     if (!messageHandler) {
       return Observable.empty();

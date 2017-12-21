@@ -30,12 +30,12 @@ describe('MiddlewaresResolver', () => {
   it('should resolve middleware instances from container', () => {
     const loadInstanceOfMiddleware = sinon.stub(
       resolver['instanceLoader'],
-      'loadInstanceOfMiddleware'
+      'loadInstanceOfMiddleware',
     );
     const middlewares = new Map();
     const wrapper = {
       instance: { metatype: {} },
-      metatype: TestMiddleware
+      metatype: TestMiddleware,
     };
     middlewares.set('TestMiddleware', wrapper);
 

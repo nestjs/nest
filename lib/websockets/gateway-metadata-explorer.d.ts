@@ -7,7 +7,7 @@ export declare class GatewayMetadataExplorer {
   explore(instance: NestGateway): MessageMappingProperties[];
   exploreMethodMetadata(
     instancePrototype: any,
-    methodName: string
+    methodName: string,
   ): MessageMappingProperties;
   scanForServerHooks(instance: NestGateway): IterableIterator<string>;
 }

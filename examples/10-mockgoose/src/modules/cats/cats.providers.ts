@@ -5,6 +5,6 @@ export const catsProviders = [
   {
     provide: 'CatModelToken',
     useFactory: mongoose => mongoose.connection.model('Cat', CatSchema),
-    inject: ['DbToken']
-  }
+    inject: ['DbToken'],
+  },
 ];

@@ -7,12 +7,12 @@ import { ApplicationConfig } from '@nestjs/core/application-config';
 export class SocketServerProvider {
   constructor(
     private readonly socketsContainer: SocketsContainer,
-    private readonly applicationConfig: ApplicationConfig
+    private readonly applicationConfig: ApplicationConfig,
   ) {}
 
   public scanForSocketServer(
     namespace: string,
-    port: number
+    port: number,
   ): ObservableSocketServer {
     const observableServer = this.socketsContainer.getServerByPort(port);
     return observableServer
@@ -22,7 +22,7 @@ export class SocketServerProvider {
 
   private createSocketServer(
     namespace: string,
-    port: number
+    port: number,
   ): ObservableSocketServer {
     const adapter = this.applicationConfig.getIoAdapter();
     const server = adapter.create(port);
@@ -35,7 +35,7 @@ export class SocketServerProvider {
   private createWithNamespace(
     namespace: string,
     port: number,
-    observableSocket: ObservableSocketServer
+    observableSocket: ObservableSocketServer,
   ): ObservableSocketServer {
     const adapter = this.applicationConfig.getIoAdapter();
     if (!namespace || !adapter.createWithNamespace) {
@@ -44,7 +44,7 @@ export class SocketServerProvider {
     const namespaceServer = this.getServerOfNamespace(
       namespace,
       port,
-      observableSocket.server
+      observableSocket.server,
     );
     const observableNamespaceSocket = ObservableSocket.create(namespaceServer);
     this.socketsContainer.addServer(namespace, port, observableNamespaceSocket);
@@ -57,7 +57,7 @@ export class SocketServerProvider {
     return adapter.createWithNamespace(
       port,
       this.validateNamespace(namespace),
-      server
+      server,
     );
   }
 

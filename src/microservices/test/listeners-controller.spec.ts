@@ -20,19 +20,19 @@ describe('ListenersController', () => {
   beforeEach(() => {
     instance = new ListenersController(
       new ClientsContainer(),
-      sinon.createStubInstance(RpcContextCreator) as any
+      sinon.createStubInstance(RpcContextCreator) as any,
     );
     (instance as any).metadataExplorer = metadataExplorer;
     addSpy = sinon.spy();
     server = {
-      add: addSpy
+      add: addSpy,
     };
   });
   describe('bindPatternHandlers', () => {
     it(`should call add method of server for each pattern handler`, () => {
       const handlers = [
         { pattern: 'test', targetCallback: 'tt' },
-        { pattern: 'test2', targetCallback: '2' }
+        { pattern: 'test2', targetCallback: '2' },
       ];
       explorer.expects('explore').returns(handlers);
       instance.bindPatternHandlers(null, server, '');

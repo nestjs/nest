@@ -17,7 +17,7 @@ export class HttpException {
    */
   constructor(
     private readonly response: string | object,
-    private readonly status: number
+    private readonly status: number,
   ) {
     this.message = response;
   }

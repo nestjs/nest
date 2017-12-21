@@ -6,5 +6,5 @@ export enum RequestMethod {
   PATCH,
   ALL,
   OPTIONS,
-  HEAD
+  HEAD,
 }

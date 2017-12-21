@@ -22,17 +22,17 @@ export class RpcContextCreator {
     private readonly guardsContextCreator: GuardsContextCreator,
     private readonly guardsConsumer: GuardsConsumer,
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
-    private readonly interceptorsConsumer: InterceptorsConsumer
+    private readonly interceptorsConsumer: InterceptorsConsumer,
   ) {}
 
   public create(
     instance: Controller,
     callback: (data) => Observable<any>,
-    module
+    module,
   ): (data) => Promise<Observable<any>> {
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
-      callback
+      callback,
     );
     const pipes = this.pipesCreator.create(instance, callback);
     const guards = this.guardsContextCreator.create(instance, callback, module);
@@ -40,7 +40,7 @@ export class RpcContextCreator {
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
-      module
+      module,
     );
 
     return this.rpcProxy.create(async data => {
@@ -48,7 +48,7 @@ export class RpcContextCreator {
         guards,
         data,
         instance,
-        callback
+        callback,
       );
       if (!canActivate) {
         throw new RpcException(FORBIDDEN_MESSAGE);
@@ -56,7 +56,7 @@ export class RpcContextCreator {
       const result = await this.pipesConsumer.applyPipes(
         data,
         { metatype },
-        pipes
+        pipes,
       );
       const handler = () => callback.call(instance, result);
 
@@ -65,14 +65,14 @@ export class RpcContextCreator {
         result,
         instance,
         callback,
-        handler
+        handler,
       );
     }, exceptionHandler);
   }
 
   public reflectCallbackParamtypes(
     instance: Controller,
-    callback: (...args) => any
+    callback: (...args) => any,
   ): any[] {
     return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
   }

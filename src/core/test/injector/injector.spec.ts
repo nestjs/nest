@@ -39,33 +39,33 @@ describe('Injector', () => {
         name: 'MainTest',
         metatype: MainTest,
         instance: Object.create(MainTest.prototype),
-        isResolved: false
+        isResolved: false,
       };
       depOne = {
         name: 'DependencyOne',
         metatype: DependencyOne,
         instance: Object.create(DependencyOne.prototype),
-        isResolved: false
+        isResolved: false,
       };
       depTwo = {
         name: 'DependencyTwo',
         metatype: DependencyTwo,
         instance: Object.create(DependencyOne.prototype),
-        isResolved: false
+        isResolved: false,
       };
       moduleDeps.components.set('MainTest', mainTest);
       moduleDeps.components.set('DependencyOne', depOne);
       moduleDeps.components.set('DependencyTwo', depTwo);
       moduleDeps.components.set('MainTestResolved', {
         ...mainTest,
-        isResolved: true
+        isResolved: true,
       });
     });
 
     it('should create an instance of component with proper dependencies', async () => {
       await injector.loadInstance(mainTest, moduleDeps.components, moduleDeps);
       const { instance } = moduleDeps.components.get(
-        'MainTest'
+        'MainTest',
       ) as InstanceWrapper<MainTest>;
 
       expect(instance.depOne).instanceof(DependencyOne);
@@ -76,14 +76,14 @@ describe('Injector', () => {
     it('should set "isResolved" property to true after instance initialization', async () => {
       await injector.loadInstance(mainTest, moduleDeps.components, moduleDeps);
       const { isResolved } = moduleDeps.components.get(
-        'MainTest'
+        'MainTest',
       ) as InstanceWrapper<MainTest>;
       expect(isResolved).to.be.true;
     });
 
     it('should throw RuntimeException when type is not stored in collection', () => {
       return expect(
-        injector.loadInstance({} as any, moduleDeps.components, moduleDeps)
+        injector.loadInstance({} as any, moduleDeps.components, moduleDeps),
       ).to.eventually.be.rejected;
     });
 
@@ -96,10 +96,10 @@ describe('Injector', () => {
           instance: Object.create(MainTest.prototype),
           isResolved: false,
           isPending: true,
-          done$: Promise.resolve(value) as any
+          done$: Promise.resolve(value) as any,
         },
         moduleDeps.components,
-        moduleDeps
+        moduleDeps,
       );
       expect(result).to.be.eql(value);
     });
@@ -111,10 +111,10 @@ describe('Injector', () => {
           name: 'MainTestResolved',
           metatype: MainTest,
           instance: Object.create(MainTest.prototype),
-          isResolved: true
+          isResolved: true,
         },
         moduleDeps.components,
-        moduleDeps
+        moduleDeps,
       );
       expect(result).to.be.null;
     });
@@ -133,7 +133,7 @@ describe('Injector', () => {
         name: 'Test',
         metatype: Test,
         instance: Object.create(Test.prototype),
-        isResolved: false
+        isResolved: false,
       };
       moduleDeps.components.set('Test', test);
     });
@@ -143,7 +143,7 @@ describe('Injector', () => {
         instance: Object.create(Test.prototype),
         isResolved: false,
         metatype: Test,
-        name: 'Test'
+        name: 'Test',
       };
       injector.loadPrototypeOfInstance(test, moduleDeps.components);
       expect(moduleDeps.components.get('Test')).to.deep.equal(expectedResult);
@@ -156,7 +156,7 @@ describe('Injector', () => {
 
     it('should return null when target isResolved', () => {
       const collection = {
-        get: () => ({ isResolved: true })
+        get: () => ({ isResolved: true }),
       };
       const result = injector.loadPrototypeOfInstance(test, collection as any);
       expect(result).to.be.null;
@@ -164,7 +164,7 @@ describe('Injector', () => {
 
     it('should return null when "inject" is not nil', () => {
       const collection = {
-        get: () => ({ inject: [] })
+        get: () => ({ inject: [] }),
       };
       const result = injector.loadPrototypeOfInstance(test, collection as any);
       expect(result).to.be.null;
@@ -179,8 +179,8 @@ describe('Injector', () => {
           undefined,
           { index: 0, length: 5 },
           null,
-          []
-        )
+          [],
+        ),
       ).to.eventually.be.rejected;
     });
   });
@@ -196,15 +196,15 @@ describe('Injector', () => {
     it('should call "resolveConstructorParams" when instance is not resolved', () => {
       const collection = {
         get: (...args) => ({
-          instance: null
+          instance: null,
         }),
-        set: (...args) => {}
+        set: (...args) => {},
       };
 
       injector.loadInstanceOfMiddleware(
         { metatype: { name: '' } } as any,
         collection as any,
-        null
+        null,
       );
       expect(resolveConstructorParams.called).to.be.true;
     });
@@ -212,15 +212,15 @@ describe('Injector', () => {
     it('should not call "resolveConstructorParams" when instance is not resolved', () => {
       const collection = {
         get: (...args) => ({
-          instance: {}
+          instance: {},
         }),
-        set: (...args) => {}
+        set: (...args) => {},
       };
 
       injector.loadInstanceOfMiddleware(
         { metatype: { name: '' } } as any,
         collection as any,
-        null
+        null,
       );
       expect(resolveConstructorParams.called).to.be.false;
     });
@@ -266,7 +266,7 @@ describe('Injector', () => {
     it('should resolve deffered value', async () => {
       const wrapper = { test: 'test' };
       const result = await injector.resolveFactoryInstance(
-        Promise.resolve(wrapper)
+        Promise.resolve(wrapper),
       );
       expect(result).to.be.eql(wrapper);
     });
@@ -290,13 +290,13 @@ describe('Injector', () => {
       const instance = { test: 3 };
       const collection = {
         has: () => true,
-        get: () => instance
+        get: () => instance,
       };
       const result = await injector.scanForComponent(
         collection as any,
         null,
         { name: metatype.name, index: 0, length: 10 },
-        metatype
+        metatype,
       );
       expect(result).to.be.equal(instance);
     });
@@ -304,13 +304,13 @@ describe('Injector', () => {
     it('should call "scanForComponentInRelatedModules" when object is not in collection', async () => {
       scanForComponentInRelatedModules.returns({});
       const collection = {
-        has: () => false
+        has: () => false,
       };
       await injector.scanForComponent(
         collection as any,
         null,
         { name: metatype.name, index: 0, length: 10 },
-        metatype
+        metatype,
       );
       expect(scanForComponentInRelatedModules.called).to.be.true;
     });
@@ -318,7 +318,7 @@ describe('Injector', () => {
     it('should throw "UnknownDependenciesException" when instanceWrapper is null and "exports" collection does not contain token', () => {
       scanForComponentInRelatedModules.returns(null);
       const collection = {
-        has: () => false
+        has: () => false,
       };
       const module = { exports: collection };
       expect(
@@ -326,15 +326,15 @@ describe('Injector', () => {
           collection as any,
           module as any,
           { name: metatype.name, index: 0, length: 10 },
-          { metatype }
-        )
+          { metatype },
+        ),
       ).to.eventually.be.rejected;
     });
 
     it('should not throw "UnknownDependenciesException" instanceWrapper is not null', () => {
       scanForComponentInRelatedModules.returns({});
       const collection = {
-        has: () => false
+        has: () => false,
       };
       const module = { exports: collection };
       expect(
@@ -342,8 +342,8 @@ describe('Injector', () => {
           collection as any,
           module as any,
           { name: metatype.name, index: 0, length: 10 },
-          metatype
-        )
+          metatype,
+        ),
       ).to.eventually.be.not.rejected;
     });
   });
@@ -352,7 +352,7 @@ describe('Injector', () => {
     let loadInstanceOfComponent: sinon.SinonSpy;
     const metatype = { name: 'test' };
     const module = {
-      relatedModules: new Map()
+      relatedModules: new Map(),
     };
 
     beforeEach(() => {
@@ -364,7 +364,7 @@ describe('Injector', () => {
       const result = await injector.scanForComponentInRelatedModules(
         module as any,
         null,
-        []
+        [],
       );
       expect(result).to.be.eq(null);
     });
@@ -376,21 +376,21 @@ describe('Injector', () => {
             'key',
             {
               components: {
-                has: () => false
+                has: () => false,
               },
               exports: {
-                has: () => true
-              }
-            }
-          ]
-        ] as any)
+                has: () => true,
+              },
+            },
+          ],
+        ] as any),
       };
       expect(
         injector.scanForComponentInRelatedModules(
           module as any,
           metatype as any,
-          []
-        )
+          [],
+        ),
       ).to.be.eventually.eq(null);
 
       module = {
@@ -399,21 +399,21 @@ describe('Injector', () => {
             'key',
             {
               components: {
-                has: () => true
+                has: () => true,
               },
               exports: {
-                has: () => false
-              }
-            }
-          ]
-        ] as any)
+                has: () => false,
+              },
+            },
+          ],
+        ] as any),
       };
       expect(
         injector.scanForComponentInRelatedModules(
           module as any,
           metatype as any,
-          []
-        )
+          [],
+        ),
       ).to.eventually.be.eq(null);
     });
 
@@ -426,21 +426,21 @@ describe('Injector', () => {
               components: {
                 has: () => true,
                 get: () => ({
-                  isResolved: false
-                })
+                  isResolved: false,
+                }),
               },
               exports: {
-                has: () => true
+                has: () => true,
               },
-              relatedModules: new Map()
-            }
-          ]
-        ] as any)
+              relatedModules: new Map(),
+            },
+          ],
+        ] as any),
       };
       await injector.scanForComponentInRelatedModules(
         module as any,
         metatype as any,
-        []
+        [],
       );
       expect(loadInstanceOfComponent.called).to.be.true;
     });
@@ -454,21 +454,21 @@ describe('Injector', () => {
               components: {
                 has: () => true,
                 get: () => ({
-                  isResolved: true
-                })
+                  isResolved: true,
+                }),
               },
               exports: {
-                has: () => true
+                has: () => true,
               },
-              relatedModules: new Map()
-            }
-          ]
-        ] as any)
+              relatedModules: new Map(),
+            },
+          ],
+        ] as any),
       };
       await injector.scanForComponentInRelatedModules(
         module as any,
         metatype as any,
-        []
+        [],
       );
       expect(loadInstanceOfComponent.called).to.be.false;
     });
@@ -480,8 +480,8 @@ describe('Injector', () => {
         injector.scanForComponentInScopes(
           [],
           { name: '', index: 0, length: 10 },
-          {}
-        )
+          {},
+        ),
       ).to.eventually.be.null;
     });
     it('should returns wrapper when component is available in any scope', () => {
@@ -491,8 +491,8 @@ describe('Injector', () => {
         injector.scanForComponentInScopes(
           [{}] as any,
           { name: '', index: 0, length: 10 },
-          {}
-        )
+          {},
+        ),
       ).to.eventually.be.eql(component);
     });
   });
@@ -504,8 +504,8 @@ describe('Injector', () => {
         injector.scanForComponentInScope(
           {} as any,
           { name: '', index: 0, length: 10 },
-          {}
-        )
+          {},
+        ),
       ).to.eventually.be.null;
     });
 
@@ -517,8 +517,8 @@ describe('Injector', () => {
         injector.scanForComponentInScope(
           {} as any,
           { name: 'type', index: 0, length: 10 },
-          {}
-        )
+          {},
+        ),
       ).to.eventually.throw();
     });
 
@@ -532,7 +532,7 @@ describe('Injector', () => {
         await injector.scanForComponentInScope(
           [] as any,
           { name: 'name', index: 0, length: 10 },
-          {} as any
+          {} as any,
         );
         expect(loadStub.called).to.be.true;
       });
@@ -545,7 +545,7 @@ describe('Injector', () => {
         await injector.scanForComponentInScope(
           [] as any,
           { name: 'name', index: 0, length: 10 },
-          {} as any
+          {} as any,
         );
         expect(loadStub.called).to.be.false;
       });
@@ -560,7 +560,7 @@ describe('Injector', () => {
         await injector.scanForComponentInScope(
           [] as any,
           { name: 'name', index: 0, length: 10 },
-          {} as any
+          {} as any,
         );
         expect(loadStub.called).to.be.false;
       });
@@ -577,12 +577,12 @@ describe('Injector', () => {
         forwardRef = 'test';
         wrapper = {};
         param = {
-          forwardRef: () => forwardRef
+          forwardRef: () => forwardRef,
         };
       });
       it('return forwardRef() result', () => {
         expect(injector.resolveParamToken(wrapper, param)).to.be.eql(
-          forwardRef
+          forwardRef,
         );
       });
       it('set wrapper "forwardRef" property to true', () => {
@@ -610,7 +610,7 @@ describe('Injector', () => {
     let module;
     beforeEach(() => {
       module = {
-        components: []
+        components: [],
       };
     });
 
@@ -626,7 +626,7 @@ describe('Injector', () => {
           '',
           { index: 0, length: 10 },
           {} as any,
-          []
+          [],
         );
         expect(loadStub.called).to.be.true;
       });
@@ -641,7 +641,7 @@ describe('Injector', () => {
           '',
           { index: 0, length: 10 },
           {} as any,
-          []
+          [],
         );
         expect(loadStub.called).to.be.false;
       });
@@ -658,7 +658,7 @@ describe('Injector', () => {
           '',
           { index: 0, length: 10 },
           {} as any,
-          []
+          [],
         );
         expect(loadStub.called).to.be.false;
       });
@@ -675,14 +675,14 @@ describe('Injector', () => {
           isResolved: false,
           forwardRef: true,
           async: true,
-          instance
+          instance,
         });
         const result = await injector.resolveComponentInstance(
           module,
           '',
           { index: 0, length: 10 },
           {} as any,
-          []
+          [],
         );
         expect(result.instance).to.be.true;
       });

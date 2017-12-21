@@ -19,7 +19,7 @@ export declare class IoAdapter implements WebSocketAdapter {
   bindMessageHandlers(
     client: any,
     handlers: MessageMappingProperties[],
-    process: (data: any) => Observable<any>
+    process: (data: any) => Observable<any>,
   ): void;
   bindMiddleware(server: any, middleware: (socket, next) => void): void;
 }

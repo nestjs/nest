@@ -2,20 +2,20 @@ import {
   Module,
   MiddlewaresConsumer,
   NestModule,
-  RequestMethod
+  RequestMethod,
 } from '@nestjs/common';
 import { graphqlExpress, graphiqlExpress } from 'apollo-server-express';
 import {
   makeExecutableSchema,
   addMockFunctionsToSchema,
-  mergeSchemas
+  mergeSchemas,
 } from 'graphql-tools';
 import { GraphQLModule, GraphQLFactory } from '@nestjs/graphql';
 
 import { CatsModule } from './cats/cats.module';
 
 @Module({
-  modules: [CatsModule, GraphQLModule]
+  modules: [CatsModule, GraphQLModule],
 })
 export class ApplicationModule {
   constructor(private readonly graphQLFactory: GraphQLFactory) {}
@@ -37,7 +37,7 @@ export class ApplicationModule {
     const { humanSchema, linkTypeDefs } = this.createDelegatedSchema();
     return mergeSchemas({
       schemas: [schema, humanSchema, linkTypeDefs],
-      resolvers: delegates
+      resolvers: delegates,
     });
   }
 
@@ -55,7 +55,7 @@ export class ApplicationModule {
         type Query {
           humanById(id: ID!): Human
         }
-      `
+      `,
     });
     addMockFunctionsToSchema({ schema: humanSchema });
     return { humanSchema, linkTypeDefs };

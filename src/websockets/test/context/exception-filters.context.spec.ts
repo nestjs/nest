@@ -27,7 +27,7 @@ describe('ExceptionFiltersContext', () => {
       it('should returns plain ExceptionHandler object', () => {
         const filter = exceptionFilter.create(
           new EmptyMetadata(),
-          () => ({} as any)
+          () => ({} as any),
         );
         expect((filter as any).filters).to.be.empty;
       });
@@ -39,7 +39,7 @@ describe('ExceptionFiltersContext', () => {
       it('should returns ExceptionHandler object with exception filters', () => {
         const filter = exceptionFilter.create(
           new WithMetadata(),
-          () => ({} as any)
+          () => ({} as any),
         );
         expect((filter as any).filters).to.not.be.empty;
       });

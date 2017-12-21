@@ -8,18 +8,18 @@ import {
   NestInterceptor,
   OnModuleDestroy,
   PipeTransform,
-  WebSocketAdapter
+  WebSocketAdapter,
 } from '@nestjs/common';
 import {
   INestApplication,
   INestMicroservice,
-  OnModuleInit
+  OnModuleInit,
 } from '@nestjs/common';
 import { Logger } from '@nestjs/common/services/logger.service';
 import {
   isNil,
   isUndefined,
-  validatePath
+  validatePath,
 } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { ExpressAdapter } from './adapters/express-adapter';
@@ -71,7 +71,7 @@ export class NestApplication extends NestApplicationContext
     this.routesResolver = new RoutesResolver(
       container,
       ExpressAdapter,
-      this.config
+      this.config,
     );
   }
 
@@ -85,7 +85,7 @@ export class NestApplication extends NestApplicationContext
     await this.middlewaresModule.setup(
       this.middlewaresContainer,
       this.container,
-      this.config
+      this.config,
     );
   }
 
@@ -103,7 +103,7 @@ export class NestApplication extends NestApplicationContext
   public setupParserMiddlewares() {
     const parserMiddlewares = {
       jsonParser: bodyParser.json(),
-      urlencodedParser: bodyParser.urlencoded({ extended: true })
+      urlencodedParser: bodyParser.urlencoded({ extended: true }),
     };
     Object.keys(parserMiddlewares)
       .filter(parser => !this.isMiddlewareApplied(this.express, parser))
@@ -114,7 +114,7 @@ export class NestApplication extends NestApplicationContext
     return (
       !!app._router &&
       !!app._router.stack.filter(
-        layer => layer && layer.handle && layer.handle.name === name
+        layer => layer && layer.handle && layer.handle.name === name,
       ).length
     );
   }
@@ -128,7 +128,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public connectMicroservice(
-    config: MicroserviceConfiguration
+    config: MicroserviceConfiguration,
   ): INestMicroservice {
     if (!NestMicroservice) {
       throw new MicroservicesPackageNotFoundException();
@@ -152,7 +152,7 @@ export class NestApplication extends NestApplicationContext
 
   public startAllMicroservices(callback?: () => void) {
     Promise.all(this.microservices.map(this.listenToPromise)).then(
-      () => callback && callback()
+      () => callback && callback(),
     );
   }
 
@@ -220,7 +220,7 @@ export class NestApplication extends NestApplicationContext
   private async setupMiddlewares(instance) {
     await this.middlewaresModule.setupMiddlewares(
       this.middlewaresContainer,
-      instance
+      instance,
     );
   }
 

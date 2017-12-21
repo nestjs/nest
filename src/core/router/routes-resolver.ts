@@ -21,7 +21,7 @@ export class RoutesResolver implements Resolver {
   constructor(
     private readonly container: NestContainer,
     private readonly expressAdapter,
-    private readonly config: ApplicationConfig
+    private readonly config: ApplicationConfig,
   ) {
     this.routerExceptionsFilter = new RouterExceptionFilters(config);
     this.routerBuilder = new ExpressRouterExplorer(
@@ -30,14 +30,14 @@ export class RoutesResolver implements Resolver {
       expressAdapter,
       this.routerExceptionsFilter,
       config,
-      this.container
+      this.container,
     );
   }
 
   public resolve(express: Application) {
     const modules = this.container.getModules();
     modules.forEach(({ routes }, moduleName) =>
-      this.setupRouters(routes, moduleName, express)
+      this.setupRouters(routes, moduleName, express),
     );
 
     this.setupNotFoundHandler(express);
@@ -47,7 +47,7 @@ export class RoutesResolver implements Resolver {
   public setupRouters(
     routes: Map<string, InstanceWrapper<Controller>>,
     moduleName: string,
-    express: Application
+    express: Application,
   ) {
     routes.forEach(({ instance, metatype }) => {
       const path = this.routerBuilder.fetchRouterPath(metatype);
@@ -66,7 +66,7 @@ export class RoutesResolver implements Resolver {
     };
     const exceptionHandler = this.routerExceptionsFilter.create(
       {},
-      callback as any
+      callback as any,
     );
     const proxy = this.routerProxy.createProxy(callback, exceptionHandler);
     express.use(proxy);
@@ -78,11 +78,11 @@ export class RoutesResolver implements Resolver {
     };
     const exceptionHandler = this.routerExceptionsFilter.create(
       {},
-      callback as any
+      callback as any,
     );
     const proxy = this.routerProxy.createExceptionLayerProxy(
       callback,
-      exceptionHandler
+      exceptionHandler,
     );
     express.use(proxy);
   }

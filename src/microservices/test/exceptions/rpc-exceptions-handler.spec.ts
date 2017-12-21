@@ -20,7 +20,7 @@ describe('RpcExceptionsHandler', () => {
         .catch(err => {
           expect(err).to.be.eql({
             status: 'error',
-            message: 'Internal server error'
+            message: 'Internal server error',
           });
           done();
           return Observable.empty();
@@ -30,7 +30,7 @@ describe('RpcExceptionsHandler', () => {
     describe('when exception is instance of WsException', () => {
       it('should method emit expected status and json object', done => {
         const message = {
-          custom: 'Unauthorized'
+          custom: 'Unauthorized',
         };
         const stream$ = handler.handle(new RpcException(message));
         stream$

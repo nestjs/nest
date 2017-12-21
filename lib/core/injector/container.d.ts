@@ -12,33 +12,33 @@ export declare class NestContainer {
   private readonly moduleTokenFactory;
   addModule(
     metatype: NestModuleMetatype | DynamicModule,
-    scope: NestModuleMetatype[]
+    scope: NestModuleMetatype[],
   ): void;
   extractMetadata(
-    metatype: NestModuleMetatype | DynamicModule
+    metatype: NestModuleMetatype | DynamicModule,
   ): {
     type: NestModuleMetatype;
     dynamicMetadata?: Partial<DynamicModule> | undefined;
   };
   isDynamicModule(
-    module: NestModuleMetatype | DynamicModule
+    module: NestModuleMetatype | DynamicModule,
   ): module is DynamicModule;
   addDynamicMetadata(
     token: string,
-    dynamicModuleMetadata: Partial<DynamicModule>
+    dynamicModuleMetadata: Partial<DynamicModule>,
   ): any;
   isGlobalModule(metatype: NestModuleMetatype): boolean;
   addGlobalModule(module: Module): void;
   getModules(): ModulesContainer;
   addRelatedModule(
     relatedModule: NestModuleMetatype | DynamicModule,
-    token: string
+    token: string,
   ): void;
   addComponent(component: Metatype<Injectable>, token: string): void;
   addInjectable(injectable: Metatype<Injectable>, token: string): void;
   addExportedComponent(
     exportedComponent: Metatype<Injectable>,
-    token: string
+    token: string,
   ): void;
   addController(controller: Metatype<Controller>, token: string): void;
   clear(): void;
@@ -46,14 +46,14 @@ export declare class NestContainer {
     toReplace: any,
     options: any & {
       scope: any[] | null;
-    }
+    },
   ): void;
   bindGlobalScope(): void;
   bindGlobalsToRelatedModules(module: Module): void;
   bindGlobalModuleToModule(module: Module, globalModule: Module): any;
   getDynamicMetadataByToken(
     token: string,
-    metadataKey: keyof DynamicModule
+    metadataKey: keyof DynamicModule,
   ): any[];
 }
 export interface InstanceWrapper<T> {

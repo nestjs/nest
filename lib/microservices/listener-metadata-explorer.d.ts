@@ -9,7 +9,7 @@ export declare class ListenerMetadataExplorer {
   exploreMethodMetadata(
     instance: any,
     instancePrototype: any,
-    methodName: string
+    methodName: string,
   ): PatternProperties;
   scanForClientHooks(instance: Controller): IterableIterator<ClientProperties>;
 }

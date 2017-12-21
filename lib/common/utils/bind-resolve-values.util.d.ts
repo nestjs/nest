@@ -3,5 +3,5 @@ import { NestMiddleware } from '../interfaces/middlewares/nest-middleware.interf
 export declare const BindResolveMiddlewareValues: <
   T extends Constructor<NestMiddleware>
 >(
-  data: any[]
+  data: any[],
 ) => (Metatype: T) => any;

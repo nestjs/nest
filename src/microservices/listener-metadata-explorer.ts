@@ -4,7 +4,7 @@ import {
   PATTERN_METADATA,
   PATTERN_HANDLER_METADATA,
   CLIENT_CONFIGURATION_METADATA,
-  CLIENT_METADATA
+  CLIENT_METADATA,
 } from './constants';
 import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 import { ClientMetadata } from './interfaces/client-metadata.interface';
@@ -19,19 +19,19 @@ export class ListenerMetadataExplorer {
       Controller,
       PatternProperties
     >(instance, instancePrototype, method =>
-      this.exploreMethodMetadata(instance, instancePrototype, method)
+      this.exploreMethodMetadata(instance, instancePrototype, method),
     );
   }
 
   public exploreMethodMetadata(
     instance,
     instancePrototype,
-    methodName: string
+    methodName: string,
   ): PatternProperties {
     const targetCallback = instancePrototype[methodName];
     const isPattern = Reflect.getMetadata(
       PATTERN_HANDLER_METADATA,
-      targetCallback
+      targetCallback,
     );
 
     if (isUndefined(isPattern)) {
@@ -40,12 +40,12 @@ export class ListenerMetadataExplorer {
     const pattern = Reflect.getMetadata(PATTERN_METADATA, targetCallback);
     return {
       targetCallback,
-      pattern
+      pattern,
     };
   }
 
   public *scanForClientHooks(
-    instance: Controller
+    instance: Controller,
   ): IterableIterator<ClientProperties> {
     for (const propertyKey in instance) {
       if (isFunction(propertyKey)) continue;
@@ -57,7 +57,7 @@ export class ListenerMetadataExplorer {
       const metadata = Reflect.getMetadata(
         CLIENT_CONFIGURATION_METADATA,
         instance,
-        property
+        property,
       );
       yield { property, metadata };
     }

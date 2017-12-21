@@ -27,7 +27,7 @@ export class MiddlewaresContainer {
         const token = metatype.name;
         middlewares.set(token, {
           instance: null,
-          metatype
+          metatype,
         });
       });
       currentConfig.add(config);

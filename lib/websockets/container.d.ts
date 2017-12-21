@@ -6,7 +6,7 @@ export declare class SocketsContainer {
   addServer(
     namespace: string,
     port: number,
-    server: ObservableSocketServer
+    server: ObservableSocketServer,
   ): void;
   clear(): void;
 }

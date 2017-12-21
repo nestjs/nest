@@ -12,7 +12,7 @@ describe('@WebSocketServer', () => {
     const isServer = Reflect.getOwnMetadata(
       GATEWAY_SERVER_METADATA,
       TestGateway,
-      'server'
+      'server',
     );
     expect(isServer).to.be.eql(true);
   });

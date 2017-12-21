@@ -28,11 +28,11 @@ export class MicroservicesModule {
       new GuardsContextCreator(container, config),
       new GuardsConsumer(),
       new InterceptorsContextCreator(container, config),
-      new InterceptorsConsumer()
+      new InterceptorsConsumer(),
     );
     this.listenersController = new ListenersController(
       this.clientsContainer,
-      contextCreator
+      contextCreator,
     );
   }
 
@@ -42,7 +42,7 @@ export class MicroservicesModule {
     }
     const modules = container.getModules();
     modules.forEach(({ routes }, module) =>
-      this.bindListeners(routes, server, module)
+      this.bindListeners(routes, server, module),
     );
   }
 
@@ -60,7 +60,7 @@ export class MicroservicesModule {
   public bindListeners(
     controllers: Map<string, InstanceWrapper<Controller>>,
     server: Server & CustomTransportStrategy,
-    module: string
+    module: string,
   ) {
     controllers.forEach(({ instance }) => {
       this.listenersController.bindPatternHandlers(instance, server, module);

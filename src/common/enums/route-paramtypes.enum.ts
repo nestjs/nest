@@ -6,5 +6,5 @@ export enum RouteParamtypes {
   QUERY,
   PARAM,
   HEADERS,
-  SESSION
+  SESSION,
 }

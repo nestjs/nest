@@ -8,7 +8,7 @@ export class ObservableSocket {
       init: new ReplaySubject(),
       connection: new Subject(),
       disconnect: new Subject(),
-      server
+      server,
     };
   }
 }

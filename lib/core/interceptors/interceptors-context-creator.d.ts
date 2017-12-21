@@ -11,12 +11,12 @@ export declare class InterceptorsContextCreator extends ContextCreator {
   create(
     instance: Controller,
     callback: (...args) => any,
-    module: string
+    module: string,
   ): NestInterceptor[];
   createConcreteContext<T extends any[], R extends any[]>(metadata: T): R;
   createGlobalMetadataContext<T extends any[], R extends any[]>(metadata: T): R;
   getInstanceByMetatype(
-    metatype: any
+    metatype: any,
   ):
     | {
         instance: any;

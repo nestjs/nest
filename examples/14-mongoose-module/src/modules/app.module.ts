@@ -7,9 +7,9 @@ import { CatSchema } from './cats/schemas/cat.schema';
 @Module({
   modules: [
     MongooseModule.forRoot('mongodb://localhost/nest', [
-      { name: 'Cat', schema: CatSchema }
+      { name: 'Cat', schema: CatSchema },
     ]),
-    CatsModule
-  ]
+    CatsModule,
+  ],
 })
 export class ApplicationModule {}

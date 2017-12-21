@@ -14,25 +14,25 @@ describe('GuardsContextCreator', () => {
       {
         name: 'test',
         instance: {
-          canActivate: () => true
-        }
+          canActivate: () => true,
+        },
       },
       {
         name: 'test2',
         instance: {
-          canActivate: () => true
-        }
+          canActivate: () => true,
+        },
       },
       {},
-      undefined
+      undefined,
     ];
     getSpy = sinon.stub().returns({
-      injectables: new Map([['test', guards[0]], ['test2', guards[1]]])
+      injectables: new Map([['test', guards[0]], ['test2', guards[1]]]),
     });
     container = {
       getModules: () => ({
-        get: getSpy
-      })
+        get: getSpy,
+      }),
     };
     guardsContextCreator = new GuardsContextCreator(container as any);
   });
@@ -50,7 +50,7 @@ describe('GuardsContextCreator', () => {
       });
       it('should filter metatypes', () => {
         expect(
-          guardsContextCreator.createConcreteContext(guards)
+          guardsContextCreator.createConcreteContext(guards),
         ).to.have.length(2);
       });
     });

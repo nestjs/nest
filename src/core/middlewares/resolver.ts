@@ -12,20 +12,20 @@ export class MiddlewaresResolver {
     await Promise.all(
       [...middlewares.values()].map(
         async wrapper =>
-          await this.resolveMiddlewareInstance(wrapper, middlewares, module)
-      )
+          await this.resolveMiddlewareInstance(wrapper, middlewares, module),
+      ),
     );
   }
 
   private async resolveMiddlewareInstance(
     wrapper: MiddlewareWrapper,
     middlewares: Map<string, MiddlewareWrapper>,
-    module: Module
+    module: Module,
   ) {
     await this.instanceLoader.loadInstanceOfMiddleware(
       wrapper,
       middlewares,
-      module
+      module,
     );
   }
 }

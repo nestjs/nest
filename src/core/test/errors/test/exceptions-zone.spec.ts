@@ -15,7 +15,7 @@ describe('ExceptionsZone', () => {
     });
     describe('when callback throws exception', () => {
       const exceptionHandler = {
-        handle: () => {}
+        handle: () => {},
       };
       let handleSpy: sinon.SinonSpy;
       beforeEach(() => {
@@ -27,7 +27,7 @@ describe('ExceptionsZone', () => {
           throw 3;
         };
         expect(() => ExceptionsZone.run(throwsCallback)).to.throws(
-          UNHANDLED_RUNTIME_EXCEPTION
+          UNHANDLED_RUNTIME_EXCEPTION,
         );
         expect(handleSpy.called).to.be.true;
       });
@@ -44,7 +44,7 @@ describe('ExceptionsZone', () => {
     });
     describe('when callback throws exception', () => {
       const exceptionHandler = {
-        handle: () => {}
+        handle: () => {},
       };
       let handleSpy: sinon.SinonSpy;
       beforeEach(() => {

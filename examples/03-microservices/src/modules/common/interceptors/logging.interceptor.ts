@@ -7,7 +7,7 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(
     dataOrRequest,
     context: ExecutionContext,
-    stream$: Observable<any>
+    stream$: Observable<any>,
   ): Observable<any> {
     console.log('Before...');
     const now = Date.now();

@@ -44,7 +44,7 @@ export class InstanceLoader {
     module.components.forEach(wrapper => {
       this.injector.loadPrototypeOfInstance<Injectable>(
         wrapper,
-        module.components
+        module.components,
       );
     });
   }
@@ -65,8 +65,8 @@ export class InstanceLoader {
     await Promise.all(
       [...module.routes.values()].map(
         async wrapper =>
-          await this.injector.loadInstanceOfRoute(wrapper, module)
-      )
+          await this.injector.loadInstanceOfRoute(wrapper, module),
+      ),
     );
   }
 
@@ -74,7 +74,7 @@ export class InstanceLoader {
     module.injectables.forEach(wrapper => {
       this.injector.loadPrototypeOfInstance<Controller>(
         wrapper,
-        module.injectables
+        module.injectables,
       );
     });
   }
@@ -83,8 +83,8 @@ export class InstanceLoader {
     await Promise.all(
       [...module.injectables.values()].map(
         async wrapper =>
-          await this.injector.loadInstanceOfInjectable(wrapper, module)
-      )
+          await this.injector.loadInstanceOfInjectable(wrapper, module),
+      ),
     );
   }
 }

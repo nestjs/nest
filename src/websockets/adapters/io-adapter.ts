@@ -40,13 +40,13 @@ export class IoAdapter implements WebSocketAdapter {
   public bindMessageHandlers(
     client,
     handlers: MessageMappingProperties[],
-    process: (data: any) => Observable<any>
+    process: (data: any) => Observable<any>,
   ) {
     handlers.forEach(({ message, callback }) =>
       Observable.fromEvent(client, message)
         .switchMap(data => process(callback(data)))
         .filter(result => !!result && result.event)
-        .subscribe(({ event, data }) => client.emit(event, data))
+        .subscribe(({ event, data }) => client.emit(event, data)),
     );
   }
 

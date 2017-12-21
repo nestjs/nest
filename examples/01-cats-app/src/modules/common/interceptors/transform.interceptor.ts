@@ -7,7 +7,7 @@ export class TransformInterceptor implements NestInterceptor {
   intercept(
     dataOrRequest,
     context: ExecutionContext,
-    stream$: Observable<any>
+    stream$: Observable<any>,
   ): Observable<any> {
     return stream$.map(data => ({ data }));
   }

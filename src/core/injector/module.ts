@@ -7,7 +7,7 @@ import { ModuleRef } from './module-ref';
 import {
   isFunction,
   isNil,
-  isUndefined
+  isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { Reflector } from '../services/reflector.service';
@@ -45,7 +45,7 @@ export class Module {
   constructor(
     private _metatype: NestModuleMetatype,
     private _scope: NestModuleMetatype[],
-    container: NestContainer
+    container: NestContainer,
   ) {
     this.addCoreInjectables(container);
   }
@@ -100,7 +100,7 @@ export class Module {
       name: ModuleRef.name,
       metatype: ModuleRef as any,
       isResolved: true,
-      instance: new moduleRef()
+      instance: new moduleRef(),
     });
   }
 
@@ -109,7 +109,7 @@ export class Module {
       name: this._metatype.name,
       metatype: this._metatype,
       isResolved: false,
-      instance: null
+      instance: null,
     });
   }
 
@@ -118,7 +118,7 @@ export class Module {
       name: Reflector.name,
       metatype: Reflector,
       isResolved: false,
-      instance: null
+      instance: null,
     });
   }
 
@@ -132,8 +132,8 @@ export class Module {
         new GuardsConsumer(),
         new InterceptorsContextCreator(container),
         new InterceptorsConsumer(),
-        container.getModules()
-      )
+        container.getModules(),
+      ),
     });
   }
 
@@ -142,7 +142,7 @@ export class Module {
       name: ModulesContainer.name,
       metatype: ModulesContainer,
       isResolved: true,
-      instance: container.getModules()
+      instance: container.getModules(),
     });
   }
 
@@ -154,7 +154,7 @@ export class Module {
       name: injectable.name,
       metatype: injectable,
       instance: null,
-      isResolved: false
+      isResolved: false,
     });
   }
 
@@ -167,25 +167,25 @@ export class Module {
       name: (component as Metatype<Injectable>).name,
       metatype: component as Metatype<Injectable>,
       instance: null,
-      isResolved: false
+      isResolved: false,
     });
   }
 
   public isCustomProvider(
-    component: ComponentMetatype
+    component: ComponentMetatype,
   ): component is CustomClass | CustomFactory | CustomValue {
     return !isNil((component as CustomComponent).provide);
   }
 
   public addCustomProvider(
     component: CustomFactory | CustomValue | CustomClass,
-    collection: Map<string, any>
+    collection: Map<string, any>,
   ) {
     const { provide } = component;
     const name = isFunction(provide) ? provide.name : provide;
     const comp = {
       ...component,
-      name
+      name,
     };
 
     if (this.isCustomClass(comp)) this.addCustomClass(comp, collection);
@@ -212,7 +212,7 @@ export class Module {
       name,
       metatype: useClass,
       instance: null,
-      isResolved: false
+      isResolved: false,
     });
   }
 
@@ -224,13 +224,13 @@ export class Module {
       instance: value,
       isResolved: true,
       isNotMetatype: true,
-      async: value instanceof Promise
+      async: value instanceof Promise,
     });
   }
 
   public addCustomFactory(
     component: CustomFactory,
-    collection: Map<string, any>
+    collection: Map<string, any>,
   ) {
     const { provide, name, useFactory: factory, inject } = component;
     collection.set(name, {
@@ -239,7 +239,7 @@ export class Module {
       instance: null,
       isResolved: false,
       inject: inject || [],
-      isNotMetatype: true
+      isNotMetatype: true,
     });
   }
 
@@ -251,7 +251,7 @@ export class Module {
   }
 
   public addCustomExportedComponent(
-    exportedComponent: CustomFactory | CustomValue | CustomClass
+    exportedComponent: CustomFactory | CustomValue | CustomClass,
   ) {
     this._exports.add(exportedComponent.provide);
   }
@@ -261,7 +261,7 @@ export class Module {
       name: route.name,
       metatype: route,
       instance: null,
-      isResolved: false
+      isResolved: false,
     });
   }
 
@@ -275,7 +275,7 @@ export class Module {
     }
     this.addInjectable({
       provide: toReplace,
-      ...options
+      ...options,
     });
   }
 

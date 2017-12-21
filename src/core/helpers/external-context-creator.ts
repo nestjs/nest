@@ -15,20 +15,20 @@ export class ExternalContextCreator {
     private readonly guardsConsumer: GuardsConsumer,
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
     private readonly interceptorsConsumer: InterceptorsConsumer,
-    private readonly modulesContainer: ModulesContainer
+    private readonly modulesContainer: ModulesContainer,
   ) {}
 
   public create(
     instance: Controller,
     callback: (...args) => any,
-    methodName: string
+    methodName: string,
   ) {
     const module = this.findContextModuleName(instance.constructor);
     const guards = this.guardsContextCreator.create(instance, callback, module);
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
-      module
+      module,
     );
     return async (...args) => {
       const [req] = args;
@@ -36,7 +36,7 @@ export class ExternalContextCreator {
         guards,
         req,
         instance,
-        callback
+        callback,
       );
       if (!canActivate) {
         throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
@@ -48,7 +48,7 @@ export class ExternalContextCreator {
         req,
         instance,
         callback,
-        handler
+        handler,
       );
     };
   }
@@ -69,7 +69,7 @@ export class ExternalContextCreator {
   public findComponentByClassName(module: Module, className: string): boolean {
     const { components } = module;
     const hasComponent = [...components.keys()].find(
-      component => component === className
+      component => component === className,
     );
     return !!hasComponent;
   }

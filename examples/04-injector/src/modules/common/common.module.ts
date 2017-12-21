@@ -3,6 +3,6 @@ import { CommonService } from './common.service';
 
 @Module({
   components: [CommonService],
-  exports: [CommonService]
+  exports: [CommonService],
 })
 export class CommonModule {}

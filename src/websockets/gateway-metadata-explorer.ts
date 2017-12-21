@@ -3,7 +3,7 @@ import { isUndefined, isFunction } from '@nestjs/common/utils/shared.utils';
 import {
   MESSAGE_MAPPING_METADATA,
   MESSAGE_METADATA,
-  GATEWAY_SERVER_METADATA
+  GATEWAY_SERVER_METADATA,
 } from './constants';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { Observable } from 'rxjs/Observable';
@@ -17,18 +17,18 @@ export class GatewayMetadataExplorer {
       NestGateway,
       MessageMappingProperties
     >(instance, instancePrototype, method =>
-      this.exploreMethodMetadata(instancePrototype, method)
+      this.exploreMethodMetadata(instancePrototype, method),
     );
   }
 
   public exploreMethodMetadata(
     instancePrototype,
-    methodName: string
+    methodName: string,
   ): MessageMappingProperties {
     const callback = instancePrototype[methodName];
     const isMessageMapping = Reflect.getMetadata(
       MESSAGE_MAPPING_METADATA,
-      callback
+      callback,
     );
 
     if (isUndefined(isMessageMapping)) {
@@ -37,7 +37,7 @@ export class GatewayMetadataExplorer {
     const message = Reflect.getMetadata(MESSAGE_METADATA, callback);
     return {
       callback,
-      message
+      message,
     };
   }
 
@@ -49,7 +49,7 @@ export class GatewayMetadataExplorer {
       const isServer = Reflect.getMetadata(
         GATEWAY_SERVER_METADATA,
         instance,
-        property
+        property,
       );
       if (isUndefined(isServer)) continue;
 

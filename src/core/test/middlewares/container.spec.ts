@@ -34,8 +34,8 @@ describe('MiddlewaresContainer', () => {
     const config: MiddlewareConfiguration[] = [
       {
         middlewares: [TestMiddleware],
-        forRoutes: [TestRoute, { path: 'test' }]
-      }
+        forRoutes: [TestRoute, { path: 'test' }],
+      },
     ];
     container.addConfig(config, 'Module' as any);
     expect([...container.getConfigs().get('Module')]).to.deep.equal(config);
@@ -45,8 +45,8 @@ describe('MiddlewaresContainer', () => {
     const config: MiddlewareConfiguration[] = [
       {
         middlewares: TestMiddleware,
-        forRoutes: [TestRoute]
-      }
+        forRoutes: [TestRoute],
+      },
     ];
 
     const key = 'Test' as any;
@@ -54,7 +54,7 @@ describe('MiddlewaresContainer', () => {
     expect(container.getMiddlewares(key).size).to.eql(config.length);
     expect(container.getMiddlewares(key).get('TestMiddleware')).to.eql({
       instance: null,
-      metatype: TestMiddleware
+      metatype: TestMiddleware,
     });
   });
 });

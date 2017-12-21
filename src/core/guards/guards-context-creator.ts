@@ -6,7 +6,7 @@ import {
   isUndefined,
   isFunction,
   isNil,
-  isEmpty
+  isEmpty,
 } from '@nestjs/common/utils/shared.utils';
 import { ContextCreator } from './../helpers/context-creator';
 import { NestContainer } from '../injector/container';
@@ -18,7 +18,7 @@ export class GuardsContextCreator extends ContextCreator {
 
   constructor(
     private readonly container: NestContainer,
-    private readonly config?: ConfigurationProvider
+    private readonly config?: ConfigurationProvider,
   ) {
     super();
   }
@@ -26,14 +26,14 @@ export class GuardsContextCreator extends ContextCreator {
   public create(
     instance: Controller,
     callback: (...args) => any,
-    module: string
+    module: string,
   ): CanActivate[] {
     this.moduleContext = module;
     return this.createContext(instance, callback, GUARDS_METADATA);
   }
 
   public createConcreteContext<T extends any[], R extends any[]>(
-    metadata: T
+    metadata: T,
   ): R {
     if (isUndefined(metadata) || isEmpty(metadata) || !this.moduleContext) {
       return [] as R;
@@ -47,17 +47,17 @@ export class GuardsContextCreator extends ContextCreator {
           .filter((wrapper: any) => wrapper && wrapper.instance)
           .map(wrapper => wrapper.instance)
           .filter(
-            (guard: CanActivate) => guard && isFunction(guard.canActivate)
+            (guard: CanActivate) => guard && isFunction(guard.canActivate),
           )
           .toArray() as R);
   }
 
   public createGlobalMetadataContext<T extends any[], R extends any[]>(
-    metadata: T
+    metadata: T,
   ): R {
     return iterate(metadata)
       .filter(
-        guard => guard && guard.canActivate && isFunction(guard.canActivate)
+        guard => guard && guard.canActivate && isFunction(guard.canActivate),
       )
       .toArray() as R;
   }

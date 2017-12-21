@@ -7,13 +7,13 @@ export declare class GuardsConsumer {
     guards: CanActivate[],
     data: any,
     instance: Controller,
-    callback: (...args) => any
+    callback: (...args) => any,
   ): Promise<boolean>;
   createContext(
     instance: Controller,
-    callback: (...args) => any
+    callback: (...args) => any,
   ): ExecutionContext;
   pickResult(
-    result: boolean | Promise<boolean> | Observable<boolean>
+    result: boolean | Promise<boolean> | Observable<boolean>,
   ): Promise<boolean>;
 }

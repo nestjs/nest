@@ -56,7 +56,7 @@ describe('RouterProxy', () => {
         (err, req, res, next) => {
           throw new HttpException('test', 500);
         },
-        handler
+        handler,
       );
       proxy(null, null, null, null);
       expectation.verify();
@@ -68,7 +68,7 @@ describe('RouterProxy', () => {
         async (err, req, res, next) => {
           throw new HttpException('test', 500);
         },
-        handler
+        handler,
       );
       proxy(null, null, null, null);
 

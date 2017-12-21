@@ -6,7 +6,7 @@ import {
   ApiUseTags,
   ApiBearerAuth,
   ApiResponse,
-  ApiOperation
+  ApiOperation,
 } from '@nestjs/swagger';
 
 @ApiBearerAuth()
@@ -19,7 +19,7 @@ export class CatsController {
   @ApiOperation({ title: 'Create cat' })
   @ApiResponse({
     status: 201,
-    description: 'The record has been successfully created.'
+    description: 'The record has been successfully created.',
   })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   async create(@Body() createCatDto: CreateCatDto) {

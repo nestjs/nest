@@ -18,8 +18,8 @@ describe('@Bind', () => {
       '0:0': {
         data: undefined,
         index: 0,
-        pipes: []
-      }
+        pipes: [],
+      },
     });
   });
 });

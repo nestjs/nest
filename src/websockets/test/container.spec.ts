@@ -15,7 +15,7 @@ describe('SocketsContainer', () => {
     instance = new SocketsContainer();
     (<any>instance)['observableServers'] = {
       get: getSpy,
-      set: setSpy
+      set: setSpy,
     };
   });
   describe('getSocketServer', () => {

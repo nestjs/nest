@@ -13,7 +13,7 @@ export class RabbitMQServer extends Server implements CustomTransportStrategy {
   public async listen(callback: () => void) {
     await this.init();
     this.channel.consume(`${this.queue}_sub`, this.handleMessage.bind(this), {
-      noAck: true
+      noAck: true,
     });
   }
 
@@ -34,7 +34,7 @@ export class RabbitMQServer extends Server implements CustomTransportStrategy {
 
     const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(
-      await handler(messageObj.data)
+      await handler(messageObj.data),
     ) as Observable<any>;
     response$ && this.send(response$, data => this.sendMessage(data));
   }

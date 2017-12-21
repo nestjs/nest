@@ -36,12 +36,12 @@ export class CatsResolvers {
           'query',
           'humanById',
           {
-            id: humanId
+            id: humanId,
           },
           context,
-          info
+          info,
         );
-      }
+      },
     });
   }
 }

@@ -12,11 +12,11 @@ describe('InterceptorsConsumer', () => {
     consumer = new InterceptorsConsumer();
     interceptors = [
       {
-        intercept: sinon.stub().returns(Observable.of(true))
+        intercept: sinon.stub().returns(Observable.of(true)),
       },
       {
-        intercept: sinon.stub().returns(Observable.of(true))
-      }
+        intercept: sinon.stub().returns(Observable.of(true)),
+      },
     ];
   });
   describe('intercept', () => {
@@ -41,7 +41,7 @@ describe('InterceptorsConsumer', () => {
           null,
           { constructor: null },
           null,
-          next
+          next,
         );
 
         expect(interceptors[0].intercept.calledOnce).to.be.true;
@@ -53,7 +53,7 @@ describe('InterceptorsConsumer', () => {
           null,
           { constructor: null },
           null,
-          next
+          next,
         );
         expect(next.called).to.be.false;
       });
@@ -67,7 +67,7 @@ describe('InterceptorsConsumer', () => {
 
       expect(context).to.be.eql({
         parent: instance.constructor,
-        handler: callback
+        handler: callback,
       });
     });
   });
@@ -91,7 +91,7 @@ describe('InterceptorsConsumer', () => {
         const val = 3;
         const next = () => Observable.of(val);
         expect(
-          await (consumer.transformDeffered(next) as any).toPromise()
+          await (consumer.transformDeffered(next) as any).toPromise(),
         ).to.be.eql(val);
       });
     });

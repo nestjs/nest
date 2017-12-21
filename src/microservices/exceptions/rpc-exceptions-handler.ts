@@ -45,9 +45,11 @@ export class RpcExceptionsHandler {
     if (isEmpty(this.filters)) return null;
 
     const filter = this.filters.find(({ exceptionMetatypes, func }) => {
-      const hasMetatype = !!exceptionMetatypes.find(
-        ExceptionMetatype => exception instanceof ExceptionMetatype
-      );
+      const hasMetatype =
+        !exceptionMetatypes.length ||
+        !!exceptionMetatypes.find(
+          ExceptionMetatype => exception instanceof ExceptionMetatype,
+        );
       return hasMetatype;
     });
     return filter ? filter.func(exception) : null;

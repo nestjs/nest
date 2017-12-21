@@ -21,7 +21,7 @@ describe('ExceptionsHandler', () => {
 
     response = {
       status: statusStub,
-      json: jsonStub
+      json: jsonStub,
     };
     response.status.returns(response);
     response.json.returns(response);
@@ -35,15 +35,15 @@ describe('ExceptionsHandler', () => {
       expect(
         jsonStub.calledWith({
           statusCode: 500,
-          message: 'Internal server error'
-        })
+          message: 'Internal server error',
+        }),
       ).to.be.true;
     });
     describe('when exception is instance of HttpException', () => {
       it('should method send expected response status code and json object', () => {
         const status = 401;
         const message = {
-          custom: 'Unauthorized'
+          custom: 'Unauthorized',
         };
         handler.next(new HttpException(message, status), response);
 
@@ -78,7 +78,7 @@ describe('ExceptionsHandler', () => {
     });
     it('should throws exception when passed argument is not an array', () => {
       expect(() => handler.setCustomFilters(null)).to.throws(
-        InvalidExceptionFilterException
+        InvalidExceptionFilterException,
       );
     });
   });

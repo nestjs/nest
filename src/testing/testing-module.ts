@@ -13,7 +13,7 @@ export class TestingModule extends NestApplicationContext {
   constructor(
     container: NestContainer,
     scope: NestModuleMetatype[],
-    contextModule
+    contextModule,
   ) {
     super(container, scope, contextModule);
   }
@@ -23,7 +23,7 @@ export class TestingModule extends NestApplicationContext {
   }
 
   public createNestMicroservice(
-    config: MicroserviceConfiguration
+    config: MicroserviceConfiguration,
   ): INestMicroservice {
     if (!NestMicroservice) {
       throw new MicroservicesPackageNotFoundException();

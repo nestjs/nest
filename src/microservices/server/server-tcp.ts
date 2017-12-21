@@ -46,7 +46,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
 
     const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(
-      await handler(msg.data)
+      await handler(msg.data),
     ) as Observable<any>;
     response$ && this.send(response$, socket.sendMessage.bind(socket));
   }

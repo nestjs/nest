@@ -9,7 +9,7 @@ describe('@Inject', () => {
     constructor(
       @Inject('test') param,
       @Inject('test2') param2,
-      @Inject(opaqueToken) param3
+      @Inject(opaqueToken) param3,
     ) {}
   }
 
@@ -19,7 +19,7 @@ describe('@Inject', () => {
     const expectedMetadata = [
       { index: 2, param: opaqueToken.name },
       { index: 1, param: 'test2' },
-      { index: 0, param: 'test' }
+      { index: 0, param: 'test' },
     ];
     expect(metadata).to.be.eql(expectedMetadata);
   });

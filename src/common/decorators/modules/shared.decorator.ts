@@ -13,7 +13,7 @@ import { Logger } from '../../index';
 export const Shared = (scope: string = 'global') => {
   const logger = new Logger('Shared');
   logger.warn(
-    'DEPRECATED! Since version 4.0.0 `@Shared()` decorator is deprecated. All modules are singletons now.'
+    'DEPRECATED! Since version 4.0.0 `@Shared()` decorator is deprecated. All modules are singletons now.',
   );
   return (target: any) => {
     const Metatype = target as FunctionConstructor;

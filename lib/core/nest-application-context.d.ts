@@ -10,7 +10,7 @@ export declare class NestApplicationContext implements INestApplicationContext {
   constructor(
     container: NestContainer,
     scope: NestModuleMetatype[],
-    contextModule: any
+    contextModule: any,
   );
   select<T>(module: Metatype<T>): INestApplicationContext;
   get<T>(metatypeOrToken: Metatype<T> | string | symbol): T;

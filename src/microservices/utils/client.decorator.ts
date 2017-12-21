@@ -20,7 +20,7 @@ export const Client = (metadata?: ClientMetadata) => {
       CLIENT_CONFIGURATION_METADATA,
       metadata,
       target,
-      propertyKey
+      propertyKey,
     );
   };
 };

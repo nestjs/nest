@@ -3,7 +3,7 @@ import 'mocha';
 import { expect } from 'chai';
 import {
   CLIENT_METADATA,
-  CLIENT_CONFIGURATION_METADATA
+  CLIENT_CONFIGURATION_METADATA,
 } from '../../constants';
 import { Client } from './../../utils/client.decorator';
 
@@ -17,12 +17,12 @@ describe('@Client', () => {
     const isClient = Reflect.getOwnMetadata(
       CLIENT_METADATA,
       TestComponent,
-      'instance'
+      'instance',
     );
     const config = Reflect.getOwnMetadata(
       CLIENT_CONFIGURATION_METADATA,
       TestComponent,
-      'instance'
+      'instance',
     );
 
     expect(isClient).to.be.true;

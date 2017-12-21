@@ -2,7 +2,7 @@ import 'reflect-metadata';
 export declare class RoutesMapper {
   private readonly routerExplorer;
   mapRouteToRouteProps(
-    routeMetatype: any
+    routeMetatype: any,
   ): {
     path: string;
     method: any;

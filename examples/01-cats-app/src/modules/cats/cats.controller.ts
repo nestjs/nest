@@ -6,7 +6,7 @@ import {
   UseGuards,
   ReflectMetadata,
   UseInterceptors,
-  Param
+  Param,
 } from '@nestjs/common';
 import { CreateCatDto } from './dto/create-cat.dto';
 import { CatsService } from './cats.service';
@@ -37,7 +37,7 @@ export class CatsController {
   @Get(':id')
   findOne(
     @Param('id', new ParseIntPipe())
-    id
+    id,
   ) {
     // logic
   }

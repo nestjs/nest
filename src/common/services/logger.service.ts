@@ -10,7 +10,7 @@ export class Logger {
 
   constructor(
     private readonly context: string,
-    private readonly printTimestamps = false
+    private readonly printTimestamps = false,
   ) {}
 
   public static setMode(mode: NestEnvironment) {
@@ -46,7 +46,7 @@ export class Logger {
     const includeTimestamp = Logger.lastTimestamp && this.printTimestamps;
     if (includeTimestamp) {
       process.stdout.write(
-        this.yellow(` +${Date.now() - Logger.lastTimestamp}ms`)
+        this.yellow(` +${Date.now() - Logger.lastTimestamp}ms`),
       );
     }
     Logger.lastTimestamp = Date.now();

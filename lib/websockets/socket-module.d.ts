@@ -7,11 +7,11 @@ export declare class SocketModule {
   setup(container: any, config: any): void;
   hookGatewaysIntoServers(
     components: Map<string, InstanceWrapper<Injectable>>,
-    moduleName: string
+    moduleName: string,
   ): void;
   hookGatewayIntoServer(
     wrapper: InstanceWrapper<Injectable>,
-    moduleName: string
+    moduleName: string,
   ): void;
   close(): void;
   private getContextCreator(container);

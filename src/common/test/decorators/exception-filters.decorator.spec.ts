@@ -22,7 +22,7 @@ describe('@UseFilters', () => {
   it('should enhance method with expected exception filters array', () => {
     const metadata = Reflect.getMetadata(
       EXCEPTION_FILTERS_METADATA,
-      TestWithMethod.test
+      TestWithMethod.test,
     );
     expect(metadata).to.be.eql(filters);
   });

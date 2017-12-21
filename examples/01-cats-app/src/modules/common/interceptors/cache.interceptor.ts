@@ -9,7 +9,7 @@ export abstract class CacheInterceptor implements NestInterceptor {
   intercept(
     dataOrRequest,
     context: ExecutionContext,
-    stream$: Observable<any>
+    stream$: Observable<any>,
   ): Observable<any> {
     if (this.isCached()) {
       return Observable.of([]);

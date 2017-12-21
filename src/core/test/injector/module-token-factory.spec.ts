@@ -17,22 +17,22 @@ describe('ModuleTokenFactory', () => {
         JSON.stringify({
           module: Module.name,
           dynamic: '',
-          scope
-        })
+          scope,
+        }),
       );
     });
     it('should returns expected token', () => {
       const token = factory.create(
         SingleScope()(Module) as any,
         [Module as any],
-        undefined
+        undefined,
       );
       expect(token).to.be.deep.eq(
         JSON.stringify({
           module: Module.name,
           dynamic: '',
-          scope: [Module.name]
-        })
+          scope: [Module.name],
+        }),
       );
     });
     it('should include dynamic metadata', () => {
@@ -40,17 +40,17 @@ describe('ModuleTokenFactory', () => {
         SingleScope()(Module) as any,
         [Module as any],
         {
-          components: [{}]
-        } as any
+          components: [{}],
+        } as any,
       );
       expect(token).to.be.deep.eq(
         JSON.stringify({
           module: Module.name,
           dynamic: JSON.stringify({
-            components: [{}]
+            components: [{}],
           }),
-          scope: [Module.name]
-        })
+          scope: [Module.name],
+        }),
       );
     });
   });
@@ -65,7 +65,7 @@ describe('ModuleTokenFactory', () => {
       it('should return stringified metadata', () => {
         const metadata = { components: ['', {}] };
         expect(factory.getDynamicMetadataToken(metadata)).to.be.eql(
-          JSON.stringify(metadata)
+          JSON.stringify(metadata),
         );
       });
     });
@@ -80,7 +80,7 @@ describe('ModuleTokenFactory', () => {
       const metatype1 = () => {};
       const metatype2 = () => {};
       expect(
-        factory.getScopeStack([metatype1 as any, metatype2 as any])
+        factory.getScopeStack([metatype1 as any, metatype2 as any]),
       ).to.be.eql([metatype2.name]);
     });
   });

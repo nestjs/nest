@@ -20,10 +20,10 @@ export class HttpException {
    */
   constructor(
     private readonly response: string | object,
-    private readonly status: number
+    private readonly status: number,
   ) {
     this.logger.warn(
-      'DEPRECATED! Since version [4.3.2] HttpException class was moved to the @nestjs/common package!'
+      'DEPRECATED! Since version [4.3.2] HttpException class was moved to the @nestjs/common package!',
     );
   }
 

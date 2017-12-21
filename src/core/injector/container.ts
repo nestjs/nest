@@ -23,7 +23,7 @@ export class NestContainer {
 
   public addModule(
     metatype: NestModuleMetatype | DynamicModule,
-    scope: NestModuleMetatype[]
+    scope: NestModuleMetatype[],
   ) {
     if (!metatype) {
       throw new InvalidModuleException(scope);
@@ -41,7 +41,7 @@ export class NestContainer {
   }
 
   public extractMetadata(
-    metatype: NestModuleMetatype | DynamicModule
+    metatype: NestModuleMetatype | DynamicModule,
   ): {
     type: NestModuleMetatype;
     dynamicMetadata?: Partial<DynamicModule> | undefined;
@@ -54,14 +54,14 @@ export class NestContainer {
   }
 
   public isDynamicModule(
-    module: NestModuleMetatype | DynamicModule
+    module: NestModuleMetatype | DynamicModule,
   ): module is DynamicModule {
     return (module as DynamicModule).module;
   }
 
   public addDynamicMetadata(
     token: string,
-    dynamicModuleMetadata: Partial<DynamicModule>
+    dynamicModuleMetadata: Partial<DynamicModule>,
   ) {
     if (!dynamicModuleMetadata) {
       return undefined;
@@ -83,7 +83,7 @@ export class NestContainer {
 
   public addRelatedModule(
     relatedModule: NestModuleMetatype | DynamicModule,
-    token: string
+    token: string,
   ) {
     if (!this.modules.has(token)) return;
 
@@ -94,7 +94,7 @@ export class NestContainer {
     const relatedModuleToken = this.moduleTokenFactory.create(
       type,
       [].concat(module.scope, parent),
-      dynamicMetadata
+      dynamicMetadata,
     );
     const related = this.modules.get(relatedModuleToken);
     module.addRelatedModule(related);
@@ -118,7 +118,7 @@ export class NestContainer {
 
   public addExportedComponent(
     exportedComponent: Metatype<Injectable>,
-    token: string
+    token: string,
   ) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
@@ -151,7 +151,7 @@ export class NestContainer {
 
   public bindGlobalsToRelatedModules(module: Module) {
     this.globalModules.forEach(globalModule =>
-      this.bindGlobalModuleToModule(module, globalModule)
+      this.bindGlobalModuleToModule(module, globalModule),
     );
   }
 
@@ -164,7 +164,7 @@ export class NestContainer {
 
   public getDynamicMetadataByToken(
     token: string,
-    metadataKey: keyof DynamicModule
+    metadataKey: keyof DynamicModule,
   ): any[] {
     const metadata = this.dynamicModulesMetadata.get(token);
     if (metadata && metadata[metadataKey]) {

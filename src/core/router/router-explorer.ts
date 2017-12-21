@@ -35,7 +35,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
     private readonly expressAdapter?: ExpressAdapter,
     private readonly exceptionsFilter?: ExceptionsFilter,
     private readonly config?: ApplicationConfig,
-    container?: NestContainer
+    container?: NestContainer,
   ) {
     this.executionContextCreator = new RouterExecutionContext(
       new RouteParamsFactory(),
@@ -44,14 +44,14 @@ export class ExpressRouterExplorer implements RouterExplorer {
       new GuardsContextCreator(container, config),
       new GuardsConsumer(),
       new InterceptorsContextCreator(container, config),
-      new InterceptorsConsumer()
+      new InterceptorsConsumer(),
     );
   }
 
   public explore(
     instance: Controller,
     metatype: Metatype<Controller>,
-    module: string
+    module: string,
   ) {
     const router = (this.expressAdapter as any).createRouter();
     const routerPaths = this.scanForPaths(instance);
@@ -80,14 +80,14 @@ export class ExpressRouterExplorer implements RouterExplorer {
       Controller,
       RoutePathProperties
     >(instance, instancePrototype, method =>
-      this.exploreMethodMetadata(instance, instancePrototype, method)
+      this.exploreMethodMetadata(instance, instancePrototype, method),
     );
   }
 
   public exploreMethodMetadata(
     instance: Controller,
     instancePrototype,
-    methodName: string
+    methodName: string,
   ): RoutePathProperties {
     const targetCallback = instancePrototype[methodName];
     const routePath = Reflect.getMetadata(PATH_METADATA, targetCallback);
@@ -97,13 +97,13 @@ export class ExpressRouterExplorer implements RouterExplorer {
 
     const requestMethod: RequestMethod = Reflect.getMetadata(
       METHOD_METADATA,
-      targetCallback
+      targetCallback,
     );
     return {
       path: this.validateRoutePath(routePath),
       requestMethod,
       targetCallback,
-      methodName
+      methodName,
     };
   }
 
@@ -111,7 +111,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
     router,
     routePaths: RoutePathProperties[],
     instance: Controller,
-    module: string
+    module: string,
   ) {
     (routePaths || []).map(pathProperties => {
       const { path, requestMethod } = pathProperties;
@@ -124,7 +124,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
     router,
     pathProperties: RoutePathProperties,
     instance: Controller,
-    module: string
+    module: string,
   ) {
     const { path, requestMethod, targetCallback, methodName } = pathProperties;
 
@@ -136,7 +136,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
       targetCallback,
       methodName,
       module,
-      requestMethod
+      requestMethod,
     );
     routerMethod(path, proxy);
   }
@@ -146,14 +146,14 @@ export class ExpressRouterExplorer implements RouterExplorer {
     callback: RouterProxyCallback,
     methodName: string,
     module: string,
-    requestMethod
+    requestMethod,
   ) {
     const executionContext = this.executionContextCreator.create(
       instance,
       callback,
       methodName,
       module,
-      requestMethod
+      requestMethod,
     );
     const exceptionFilter = this.exceptionsFilter.create(instance, callback);
 

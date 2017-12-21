@@ -7,7 +7,8 @@ import { Photo } from './photo.entity';
 @Component()
 export class PhotoService {
   constructor(
-    @InjectRepository(Photo) private readonly photoRepository: Repository<Photo>
+    @InjectRepository(Photo)
+    private readonly photoRepository: Repository<Photo>,
   ) {}
 
   async findAll(): Promise<Photo[]> {

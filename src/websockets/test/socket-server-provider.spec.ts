@@ -14,7 +14,7 @@ describe('SocketServerProvider', () => {
     mockContainer = sinon.mock(socketsContainer);
     instance = new SocketServerProvider(
       socketsContainer,
-      new ApplicationConfig(new IoAdapter())
+      new ApplicationConfig(new IoAdapter()),
     );
   });
   describe('scanForSocketServer', () => {

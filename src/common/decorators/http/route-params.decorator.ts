@@ -23,8 +23,8 @@ const assignMetadata = (
   [`${paramtype}:${index}`]: {
     index,
     data,
-    pipes
-  }
+    pipes,
+  },
 });
 
 const createRouteParamDecorator = (paramtype: RouteParamtypes) => {
@@ -34,7 +34,7 @@ const createRouteParamDecorator = (paramtype: RouteParamtypes) => {
       ROUTE_ARGS_METADATA,
       assignMetadata(args, paramtype, index, data),
       target,
-      key
+      key,
     );
   };
 };
@@ -52,24 +52,24 @@ const createPipesRouteParamDecorator = (paramtype: RouteParamtypes) => (
     ROUTE_ARGS_METADATA,
     assignMetadata(args, paramtype, index, paramData, ...paramPipes),
     target,
-    key
+    key,
   );
 };
 
 export const Request: () => ParameterDecorator = createRouteParamDecorator(
-  RouteParamtypes.REQUEST
+  RouteParamtypes.REQUEST,
 );
 export const Response: () => ParameterDecorator = createRouteParamDecorator(
-  RouteParamtypes.RESPONSE
+  RouteParamtypes.RESPONSE,
 );
 export const Next: () => ParameterDecorator = createRouteParamDecorator(
-  RouteParamtypes.NEXT
+  RouteParamtypes.NEXT,
 );
 export const Session: () => ParameterDecorator = createRouteParamDecorator(
-  RouteParamtypes.SESSION
+  RouteParamtypes.SESSION,
 );
 export const Headers: (
-  property?: string
+  property?: string,
 ) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.HEADERS);
 
 export function Query();
@@ -81,7 +81,7 @@ export function Query(
 ) {
   return createPipesRouteParamDecorator(RouteParamtypes.QUERY)(
     property,
-    ...pipes
+    ...pipes,
   );
 }
 
@@ -94,7 +94,7 @@ export function Body(
 ) {
   return createPipesRouteParamDecorator(RouteParamtypes.BODY)(
     property,
-    ...pipes
+    ...pipes,
   );
 }
 
@@ -107,7 +107,7 @@ export function Param(
 ) {
   return createPipesRouteParamDecorator(RouteParamtypes.PARAM)(
     property,
-    ...pipes
+    ...pipes,
   );
 }
 

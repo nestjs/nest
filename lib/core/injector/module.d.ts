@@ -33,7 +33,7 @@ export declare class Module {
   constructor(
     _metatype: NestModuleMetatype,
     _scope: NestModuleMetatype[],
-    container: NestContainer
+    container: NestContainer,
   );
   readonly scope: NestModuleMetatype[];
   readonly relatedModules: Set<Module>;
@@ -52,11 +52,11 @@ export declare class Module {
   addInjectable(injectable: Metatype<Injectable>): void;
   addComponent(component: ComponentMetatype): void;
   isCustomProvider(
-    component: ComponentMetatype
+    component: ComponentMetatype,
   ): component is CustomClass | CustomFactory | CustomValue;
   addCustomProvider(
     component: CustomFactory | CustomValue | CustomClass,
-    collection: Map<string, any>
+    collection: Map<string, any>,
   ): void;
   isCustomClass(component: any): component is CustomClass;
   isCustomValue(component: any): component is CustomValue;
@@ -65,17 +65,17 @@ export declare class Module {
   addCustomValue(component: CustomValue, collection: Map<string, any>): void;
   addCustomFactory(
     component: CustomFactory,
-    collection: Map<string, any>
+    collection: Map<string, any>,
   ): void;
   addExportedComponent(exportedComponent: ComponentMetatype): void;
   addCustomExportedComponent(
-    exportedComponent: CustomFactory | CustomValue | CustomClass
+    exportedComponent: CustomFactory | CustomValue | CustomClass,
   ): void;
   addRoute(route: Metatype<Controller>): void;
   addRelatedModule(relatedModule: any): void;
   replace(toReplace: any, options: any): void;
   createModuleRefMetatype(
-    components: any
+    components: any,
   ): {
     new (): {
       readonly components: any;

@@ -21,25 +21,25 @@ describe('NestContainer', () => {
 
   it('should "addComponent" throw "UnknownModuleException" when module is not stored in collection', () => {
     expect(() => container.addComponent(null, 'TestModule')).throw(
-      UnknownModuleException
+      UnknownModuleException,
     );
   });
 
   it('should "addController" throw "UnknownModuleException" when module is not stored in collection', () => {
     expect(() => container.addController(null, 'TestModule')).throw(
-      UnknownModuleException
+      UnknownModuleException,
     );
   });
 
   it('should "addExportedComponent" throw "UnknownModuleException" when module is not stored in collection', () => {
     expect(() => container.addExportedComponent(null, 'TestModule')).throw(
-      UnknownModuleException
+      UnknownModuleException,
     );
   });
 
   it('should "addInjectable" throw "UnknownModuleException" when module is not stored in collection', () => {
     expect(() => container.addInjectable(null, 'TestModule')).throw(
-      UnknownModuleException
+      UnknownModuleException,
     );
   });
 
@@ -96,10 +96,10 @@ describe('NestContainer', () => {
 
       const bindGlobalModuleToModuleSpy = sinon.spy(
         container,
-        'bindGlobalModuleToModule'
+        'bindGlobalModuleToModule',
       );
       container.bindGlobalsToRelatedModules({
-        addRelatedModule: sinon.spy()
+        addRelatedModule: sinon.spy(),
       } as any);
       expect(bindGlobalModuleToModuleSpy.calledTwice).to.be.true;
     });
@@ -129,7 +129,7 @@ describe('NestContainer', () => {
         const { module, ...dynamicMetadata } = obj;
         expect(container.extractMetadata(obj as any)).to.be.deep.equal({
           type: module,
-          dynamicMetadata
+          dynamicMetadata,
         });
       });
     });
@@ -137,7 +137,7 @@ describe('NestContainer', () => {
       it('should return object with "type" property', () => {
         const type = 'test';
         expect(container.extractMetadata(type as any)).to.be.deep.equal({
-          type
+          type,
         });
       });
     });

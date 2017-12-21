@@ -16,7 +16,7 @@ export const mapToClass = middleware => {
     class {
       public resolve = (...args) => (req, res, next) =>
         middleware(req, res, next);
-    }
+    },
   );
 };
 

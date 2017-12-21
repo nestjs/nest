@@ -13,24 +13,24 @@ describe('RouteParamsFactory', () => {
     const req = {
       session: null,
       body: {
-        foo: 'bar'
+        foo: 'bar',
       },
       headers: {
-        foo: 'bar'
+        foo: 'bar',
       },
       params: {
-        foo: 'bar'
+        foo: 'bar',
       },
       query: {
-        foo: 'bar'
-      }
+        foo: 'bar',
+      },
     };
     describe('when key is', () => {
       const args = [null, { res, req, next }];
       describe(`RouteParamtypes.NEXT`, () => {
         it('should returns next object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(RouteParamtypes.NEXT, ...args)
+            (factory as any).exchangeKeyForValue(RouteParamtypes.NEXT, ...args),
           ).to.be.eql(next);
         });
       });
@@ -39,8 +39,8 @@ describe('RouteParamsFactory', () => {
           expect(
             (factory as any).exchangeKeyForValue(
               RouteParamtypes.RESPONSE,
-              ...args
-            )
+              ...args,
+            ),
           ).to.be.eql(res);
         });
       });
@@ -49,15 +49,15 @@ describe('RouteParamsFactory', () => {
           expect(
             (factory as any).exchangeKeyForValue(
               RouteParamtypes.REQUEST,
-              ...args
-            )
+              ...args,
+            ),
           ).to.be.eql(req);
         });
       });
       describe(`RouteParamtypes.BODY`, () => {
         it('should returns body object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(RouteParamtypes.BODY, ...args)
+            (factory as any).exchangeKeyForValue(RouteParamtypes.BODY, ...args),
           ).to.be.eql(req.body);
         });
       });
@@ -66,8 +66,8 @@ describe('RouteParamsFactory', () => {
           expect(
             (factory as any).exchangeKeyForValue(
               RouteParamtypes.HEADERS,
-              ...args
-            )
+              ...args,
+            ),
           ).to.be.eql(req.headers);
         });
       });
@@ -76,29 +76,35 @@ describe('RouteParamsFactory', () => {
           expect(
             (factory as any).exchangeKeyForValue(
               RouteParamtypes.SESSION,
-              ...args
-            )
+              ...args,
+            ),
           ).to.be.eql(req.session);
         });
       });
       describe(`RouteParamtypes.QUERY`, () => {
         it('should returns query object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(RouteParamtypes.QUERY, ...args)
+            (factory as any).exchangeKeyForValue(
+              RouteParamtypes.QUERY,
+              ...args,
+            ),
           ).to.be.eql(req.query);
         });
       });
       describe(`RouteParamtypes.PARAM`, () => {
         it('should returns params object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(RouteParamtypes.PARAM, ...args)
+            (factory as any).exchangeKeyForValue(
+              RouteParamtypes.PARAM,
+              ...args,
+            ),
           ).to.be.eql(req.params);
         });
       });
       describe('not available', () => {
         it('should returns null', () => {
           expect((factory as any).exchangeKeyForValue(-1, ...args)).to.be.eql(
-            null
+            null,
           );
         });
       });

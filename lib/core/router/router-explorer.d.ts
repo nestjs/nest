@@ -24,12 +24,12 @@ export declare class ExpressRouterExplorer implements RouterExplorer {
     expressAdapter?: ExpressAdapter,
     exceptionsFilter?: ExceptionsFilter,
     config?: ApplicationConfig,
-    container?: NestContainer
+    container?: NestContainer,
   );
   explore(
     instance: Controller,
     metatype: Metatype<Controller>,
-    module: string
+    module: string,
   ): any;
   fetchRouterPath(metatype: Metatype<Controller>): string;
   validateRoutePath(path: string): string;
@@ -37,13 +37,13 @@ export declare class ExpressRouterExplorer implements RouterExplorer {
   exploreMethodMetadata(
     instance: Controller,
     instancePrototype: any,
-    methodName: string
+    methodName: string,
   ): RoutePathProperties;
   applyPathsToRouterProxy(
     router: any,
     routePaths: RoutePathProperties[],
     instance: Controller,
-    module: string
+    module: string,
   ): void;
   private applyCallbackToRouter(router, pathProperties, instance, module);
   private createCallbackProxy(
@@ -51,7 +51,7 @@ export declare class ExpressRouterExplorer implements RouterExplorer {
     callback,
     methodName,
     module,
-    requestMethod
+    requestMethod,
   );
 }
 export interface RoutePathProperties {

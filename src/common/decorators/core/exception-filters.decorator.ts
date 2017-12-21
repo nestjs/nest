@@ -9,7 +9,7 @@ const defineFiltersMetadata = (...filters: ExceptionFilter[]) => {
       Reflect.defineMetadata(
         EXCEPTION_FILTERS_METADATA,
         filters,
-        descriptor.value
+        descriptor.value,
       );
       return descriptor;
     }

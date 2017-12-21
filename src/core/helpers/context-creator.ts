@@ -6,14 +6,14 @@ import { ApplicationConfig } from './../application-config';
 
 export abstract class ContextCreator {
   public abstract createConcreteContext<T extends any[], R extends any[]>(
-    metadata: T
+    metadata: T,
   ): R;
   public getGlobalMetadata?<T extends any[]>(): T;
 
   public createContext<T extends any[], R extends any[]>(
     instance: Controller,
     callback: (...args) => any,
-    metadataKey: string
+    metadataKey: string,
   ): R {
     const globalMetadata =
       this.getGlobalMetadata && this.getGlobalMetadata<T>();
@@ -22,7 +22,7 @@ export abstract class ContextCreator {
     return [
       ...this.createConcreteContext<T, R>(globalMetadata || ([] as T)),
       ...this.createConcreteContext<T, R>(classMetadata),
-      ...this.createConcreteContext<T, R>(methodMetadata)
+      ...this.createConcreteContext<T, R>(methodMetadata),
     ] as R;
   }
 
@@ -33,7 +33,7 @@ export abstract class ContextCreator {
 
   public reflectMethodMetadata<T>(
     callback: (...args) => any,
-    metadataKey: string
+    metadataKey: string,
   ): T {
     return Reflect.getMetadata(metadataKey, callback);
   }

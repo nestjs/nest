@@ -39,7 +39,7 @@ describe('MiddlewaresModule', () => {
   beforeEach(() => {
     middlewaresModule = new MiddlewaresModule();
     (middlewaresModule as any).routerExceptionFilter = new RouterExceptionFilters(
-      new ApplicationConfig()
+      new ApplicationConfig(),
     );
   });
 
@@ -47,13 +47,13 @@ describe('MiddlewaresModule', () => {
     it('should call "configure" method if method is implemented', () => {
       const configureSpy = sinon.spy();
       const mockModule = {
-        configure: configureSpy
+        configure: configureSpy,
       };
 
       middlewaresModule.loadConfiguration(
         new MiddlewaresContainer(),
         mockModule as any,
-        'Test' as any
+        'Test' as any,
       );
 
       expect(configureSpy.calledOnce).to.be.true;
@@ -67,7 +67,7 @@ describe('MiddlewaresModule', () => {
       const route = { path: 'Test' };
       const configuration = {
         middlewares: [TestMiddleware],
-        forRoutes: [TestRoute]
+        forRoutes: [TestRoute],
       };
 
       const useSpy = sinon.spy();
@@ -79,8 +79,8 @@ describe('MiddlewaresModule', () => {
           route as any,
           configuration,
           'Test' as any,
-          app as any
-        )
+          app as any,
+        ),
       ).to.eventually.be.rejectedWith(RuntimeException);
     });
 
@@ -91,7 +91,7 @@ describe('MiddlewaresModule', () => {
       const route = { path: 'Test' };
       const configuration = {
         middlewares: [InvalidMiddleware],
-        forRoutes: [TestRoute]
+        forRoutes: [TestRoute],
       };
 
       const useSpy = sinon.spy();
@@ -104,7 +104,7 @@ describe('MiddlewaresModule', () => {
       const instance = new InvalidMiddleware();
       container.getMiddlewares(moduleKey).set('InvalidMiddleware', {
         metatype: InvalidMiddleware,
-        instance
+        instance,
       } as any);
 
       expect(
@@ -113,8 +113,8 @@ describe('MiddlewaresModule', () => {
           route as any,
           configuration,
           moduleKey,
-          app as any
-        )
+          app as any,
+        ),
       ).to.be.rejectedWith(InvalidMiddlewareException);
     });
 
@@ -122,12 +122,12 @@ describe('MiddlewaresModule', () => {
       const route = { path: 'Test', method: RequestMethod.GET };
       const configuration = {
         middlewares: [TestMiddleware],
-        forRoutes: [{ path: 'test' }, AnotherRoute, TestRoute]
+        forRoutes: [{ path: 'test' }, AnotherRoute, TestRoute],
       };
 
       const useSpy = sinon.spy();
       const app = {
-        get: useSpy
+        get: useSpy,
       };
 
       const container = new MiddlewaresContainer();
@@ -137,7 +137,7 @@ describe('MiddlewaresModule', () => {
       const instance = new TestMiddleware();
       container.getMiddlewares(moduleKey).set('TestMiddleware', {
         metatype: TestMiddleware,
-        instance
+        instance,
       });
 
       middlewaresModule.setupRouteMiddleware(
@@ -145,7 +145,7 @@ describe('MiddlewaresModule', () => {
         route,
         configuration,
         moduleKey,
-        app as any
+        app as any,
       );
       expect(useSpy.calledOnce).to.be.true;
     });

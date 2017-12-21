@@ -5,7 +5,7 @@ export class RouteParamsFactory implements IRouteParamsFactory {
   public exchangeKeyForValue(
     key: RouteParamtypes | string,
     data,
-    { req, res, next }
+    { req, res, next },
   ) {
     switch (key) {
       case RouteParamtypes.NEXT:

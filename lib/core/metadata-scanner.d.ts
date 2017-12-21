@@ -3,6 +3,6 @@ export declare class MetadataScanner {
   scanFromPrototype<T extends Injectable, R>(
     instance: T,
     prototype: any,
-    callback: (name: string) => R
+    callback: (name: string) => R,
   ): R[];
 }

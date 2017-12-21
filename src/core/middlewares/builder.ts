@@ -3,7 +3,7 @@ import { InvalidMiddlewareConfigurationException } from '../errors/exceptions/in
 import {
   isUndefined,
   isNil,
-  isFunction
+  isFunction,
 } from '@nestjs/common/utils/shared.utils';
 import { BindResolveMiddlewareValues } from '@nestjs/common/utils/bind-resolve-values.util';
 import { Logger } from '@nestjs/common/services/logger.service';
@@ -29,7 +29,7 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
    */
   public use(configuration: MiddlewareConfiguration) {
     this.logger.warn(
-      'DEPRECATED! Since version RC.6 `use()` method is deprecated. Use `apply()` instead.'
+      'DEPRECATED! Since version RC.6 `use()` method is deprecated. Use `apply()` instead.',
     );
 
     const { middlewares, forRoutes } = configuration;
@@ -47,7 +47,7 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
 
   private bindValuesToResolve(
     middlewares: Metatype<any> | Metatype<any>[],
-    resolveParams: any[]
+    resolveParams: any[],
   ) {
     if (isNil(resolveParams)) {
       return middlewares;
@@ -73,15 +73,15 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
       const {
         middlewaresCollection,
         bindValuesToResolve,
-        routesMapper
+        routesMapper,
       } = this.builder;
 
       const forRoutes = this.mapRoutesToFlatList(
-        routes.map(route => routesMapper.mapRouteToRouteProps(route))
+        routes.map(route => routesMapper.mapRouteToRouteProps(route)),
       );
       const configuration = {
         middlewares: bindValuesToResolve(this.includedRoutes, this.contextArgs),
-        forRoutes
+        forRoutes,
       };
       middlewaresCollection.add(configuration);
       return this.builder;

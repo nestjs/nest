@@ -4,12 +4,12 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { Observable } from 'rxjs/Observable';
 import {
   EXCEPTION_FILTERS_METADATA,
-  FILTER_CATCH_EXCEPTIONS
+  FILTER_CATCH_EXCEPTIONS,
 } from '@nestjs/common/constants';
 import {
   isEmpty,
   isUndefined,
-  isFunction
+  isFunction,
 } from '@nestjs/common/utils/shared.utils';
 import { RpcExceptionFilter } from '@nestjs/common/interfaces/exceptions';
 import { Metatype } from '@nestjs/common/interfaces';
@@ -19,13 +19,13 @@ import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
 export class ExceptionFiltersContext extends BaseExceptionFilterContext {
   public create(
     instance: Controller,
-    callback: (client, data) => any
+    callback: (client, data) => any,
   ): WsExceptionsHandler {
     const exceptionHandler = new WsExceptionsHandler();
     const filters = this.createContext(
       instance,
       callback,
-      EXCEPTION_FILTERS_METADATA
+      EXCEPTION_FILTERS_METADATA,
     );
     if (isEmpty(filters)) {
       return exceptionHandler;

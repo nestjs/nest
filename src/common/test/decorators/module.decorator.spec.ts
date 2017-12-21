@@ -8,7 +8,7 @@ describe('@Module', () => {
     components: ['Test'],
     modules: ['Test'],
     exports: ['Test'],
-    controllers: ['Test']
+    controllers: ['Test'],
   };
 
   @Module(moduleProps)
@@ -29,11 +29,11 @@ describe('@Module', () => {
   it('should throw exception when module properties are invalid', () => {
     const invalidProps = {
       ...moduleProps,
-      test: []
+      test: [],
     };
 
     expect(Module.bind(null, invalidProps)).to.throw(
-      InvalidModuleConfigException
+      InvalidModuleConfigException,
     );
   });
 });

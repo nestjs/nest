@@ -4,7 +4,7 @@ import {
   isUndefined,
   isFunction,
   isNil,
-  isEmpty
+  isEmpty,
 } from '@nestjs/common/utils/shared.utils';
 import { Controller } from '@nestjs/common/interfaces';
 import { CanActivate, HttpStatus, ExecutionContext } from '@nestjs/common';
@@ -17,7 +17,7 @@ export class GuardsConsumer {
     guards: CanActivate[],
     data,
     instance: Controller,
-    callback: (...args) => any
+    callback: (...args) => any,
   ): Promise<boolean> {
     if (!guards || isEmpty(guards)) {
       return true;
@@ -35,16 +35,16 @@ export class GuardsConsumer {
 
   public createContext(
     instance: Controller,
-    callback: (...args) => any
+    callback: (...args) => any,
   ): ExecutionContext {
     return {
       parent: instance.constructor,
-      handler: callback
+      handler: callback,
     };
   }
 
   public async pickResult(
-    result: boolean | Promise<boolean> | Observable<boolean>
+    result: boolean | Promise<boolean> | Observable<boolean>,
   ): Promise<boolean> {
     if (result instanceof Observable) {
       return await result.toPromise();

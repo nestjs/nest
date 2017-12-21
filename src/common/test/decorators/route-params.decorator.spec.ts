@@ -7,7 +7,7 @@ describe('@Get', () => {
   const requestPath = 'test';
   const requestProps = {
     path: requestPath,
-    method: RequestMethod.GET
+    method: RequestMethod.GET,
   };
 
   it('should enhance class with expected request metadata', () => {
@@ -37,7 +37,7 @@ describe('@Post', () => {
   const requestPath = 'test';
   const requestProps = {
     path: requestPath,
-    method: RequestMethod.POST
+    method: RequestMethod.POST,
   };
 
   it('should enhance class with expected request metadata', () => {
@@ -67,7 +67,7 @@ describe('@Delete', () => {
   const requestPath = 'test';
   const requestProps = {
     path: requestPath,
-    method: RequestMethod.DELETE
+    method: RequestMethod.DELETE,
   };
 
   it('should enhance class with expected request metadata', () => {
@@ -97,7 +97,7 @@ describe('@All', () => {
   const requestPath = 'test';
   const requestProps = {
     path: requestPath,
-    method: RequestMethod.ALL
+    method: RequestMethod.ALL,
   };
 
   it('should enhance class with expected request metadata', () => {
@@ -127,7 +127,7 @@ describe('@Put', () => {
   const requestPath = 'test';
   const requestProps = {
     path: requestPath,
-    method: RequestMethod.PUT
+    method: RequestMethod.PUT,
   };
 
   it('should enhance class with expected request metadata', () => {
@@ -157,7 +157,7 @@ describe('@Patch', () => {
   const requestPath = 'test';
   const requestProps = {
     path: requestPath,
-    method: RequestMethod.PATCH
+    method: RequestMethod.PATCH,
   };
 
   it('should enhance class with expected request metadata', () => {

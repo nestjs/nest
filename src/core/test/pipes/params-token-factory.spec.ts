@@ -12,21 +12,21 @@ describe('ParamsTokenFactory', () => {
       describe(`RouteParamtypes.BODY`, () => {
         it('should returns body object', () => {
           expect(factory.exchangeEnumForString(RouteParamtypes.BODY)).to.be.eql(
-            'body'
+            'body',
           );
         });
       });
       describe(`RouteParamtypes.QUERY`, () => {
         it('should returns query object', () => {
           expect(
-            factory.exchangeEnumForString(RouteParamtypes.QUERY)
+            factory.exchangeEnumForString(RouteParamtypes.QUERY),
           ).to.be.eql('query');
         });
       });
       describe(`RouteParamtypes.PARAM`, () => {
         it('should returns params object', () => {
           expect(
-            factory.exchangeEnumForString(RouteParamtypes.PARAM)
+            factory.exchangeEnumForString(RouteParamtypes.PARAM),
           ).to.be.eql('param');
         });
       });

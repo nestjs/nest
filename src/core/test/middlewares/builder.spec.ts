@@ -40,10 +40,10 @@ describe('MiddlewareBuilder', () => {
                 route,
                 {
                   path: '/path/route',
-                  method: 0
-                }
-              ]
-            }
+                  method: 0,
+                },
+              ],
+            },
           ]);
         });
       });
@@ -54,14 +54,14 @@ describe('MiddlewareBuilder', () => {
     it('should store configuration passed as argument', () => {
       builder.use({
         middlewares: 'Test',
-        forRoutes: 'Test'
+        forRoutes: 'Test',
       } as any);
 
       expect(builder.build()).to.deep.equal([
         {
           middlewares: 'Test',
-          forRoutes: 'Test'
-        }
+          forRoutes: 'Test',
+        },
       ]);
     });
 
@@ -69,27 +69,27 @@ describe('MiddlewareBuilder', () => {
       builder
         .use({
           middlewares: 'Test',
-          forRoutes: 'Test'
+          forRoutes: 'Test',
         } as any)
         .use({
           middlewares: 'Test',
-          forRoutes: 'Test'
+          forRoutes: 'Test',
         } as any);
       expect(builder.build()).to.deep.equal([
         {
           middlewares: 'Test',
-          forRoutes: 'Test'
+          forRoutes: 'Test',
         },
         {
           middlewares: 'Test',
-          forRoutes: 'Test'
-        }
+          forRoutes: 'Test',
+        },
       ]);
     });
 
     it('should throw exception when middleware configuration object is invalid', () => {
       expect(builder.use.bind(builder, 'test')).throws(
-        InvalidMiddlewareConfigurationException
+        InvalidMiddlewareConfigurationException,
       );
     });
   });

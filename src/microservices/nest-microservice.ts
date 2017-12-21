@@ -15,7 +15,7 @@ import {
   PipeTransform,
   NestInterceptor,
   ExceptionFilter,
-  OnModuleInit
+  OnModuleInit,
 } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { CustomTransportStrategy } from '@nestjs/microservices';
@@ -42,7 +42,7 @@ export class NestMicroservice implements INestMicroservice {
 
   constructor(
     private readonly container: NestContainer,
-    config: MicroserviceConfiguration = {}
+    config: MicroserviceConfiguration = {},
   ) {
     const ioAdapter = IoAdapter ? new IoAdapter() : null;
     this.config = new ApplicationConfig(ioAdapter);
@@ -50,7 +50,7 @@ export class NestMicroservice implements INestMicroservice {
     this.microservicesModule.setup(container, this.config);
     this.microserviceConfig = {
       transport: Transport.TCP,
-      ...config
+      ...config,
     };
     const { strategy } = config;
     this.server = strategy

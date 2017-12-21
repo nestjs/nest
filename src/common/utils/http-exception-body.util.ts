@@ -1,7 +1,7 @@
 export const createHttpExceptionBody = (
   message: any,
   error: string,
-  status: number
+  status: number,
 ) =>
   message
     ? { statusCode: status, error, message }

@@ -9,7 +9,7 @@ export declare class ExceptionFiltersContext extends BaseExceptionFilterContext 
   constructor(config: ApplicationConfig);
   create(
     instance: Controller,
-    callback: (data) => Observable<any>
+    callback: (data) => Observable<any>,
   ): RpcExceptionsHandler;
   getGlobalMetadata<T extends any[]>(): T;
 }

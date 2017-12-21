@@ -24,11 +24,11 @@ describe('RoutesResolver', () => {
   before(() => {
     modules = new Map();
     container = {
-      getModules: () => modules
+      getModules: () => modules,
     };
     router = {
       get() {},
-      post() {}
+      post() {},
     };
   });
 
@@ -36,9 +36,9 @@ describe('RoutesResolver', () => {
     routesResolver = new RoutesResolver(
       container,
       {
-        createRouter: () => router
+        createRouter: () => router,
       },
-      new ApplicationConfig()
+      new ApplicationConfig(),
     );
   });
 
@@ -47,7 +47,7 @@ describe('RoutesResolver', () => {
       const routes = new Map();
       routes.set('TestRoute', {
         instance: new TestRoute(),
-        metatype: TestRoute
+        metatype: TestRoute,
       });
 
       const use = sinon.spy();
@@ -61,7 +61,7 @@ describe('RoutesResolver', () => {
       const routes = new Map();
       routes.set('TestRoute', {
         instance: new TestRoute(),
-        metatype: TestRoute
+        metatype: TestRoute,
       });
       modules.set('TestModule', { routes });
       modules.set('TestModule2', { routes });

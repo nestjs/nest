@@ -24,39 +24,39 @@ export declare class WebSocketsController {
     socketServerProvider: SocketServerProvider,
     container: NestContainer,
     config: ApplicationConfig,
-    contextCreator: WsContextCreator
+    contextCreator: WsContextCreator,
   );
   hookGatewayIntoServer(
     instance: NestGateway,
     metatype: Metatype<Injectable>,
-    module: string
+    module: string,
   ): void;
   subscribeObservableServer(
     instance: NestGateway,
     namespace: string,
     port: number,
-    module: string
+    module: string,
   ): void;
   injectMiddlewares(
     {
-      server
+      server,
     }: {
       server: any;
     },
     instance: NestGateway,
-    module: string
+    module: string,
   ): void;
   subscribeEvents(
     instance: NestGateway,
     messageHandlers: MessageMappingProperties[],
-    observableServer: ObservableSocketServer
+    observableServer: ObservableSocketServer,
   ): void;
   getConnectionHandler(
     context: WebSocketsController,
     instance: NestGateway,
     messageHandlers: MessageMappingProperties[],
     disconnect: Subject<any>,
-    connection: Subject<any>
+    connection: Subject<any>,
   ): (client: any) => void;
   subscribeInitEvent(instance: NestGateway, event: Subject<any>): void;
   subscribeConnectionEvent(instance: NestGateway, event: Subject<any>): void;
@@ -64,7 +64,7 @@ export declare class WebSocketsController {
   subscribeMessages(
     messageHandlers: MessageMappingProperties[],
     client: any,
-    instance: NestGateway
+    instance: NestGateway,
   ): void;
   pickResult(defferedResult: Promise<any>): Promise<Observable<any>>;
   private hookServerToProperties(instance, server);

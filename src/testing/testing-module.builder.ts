@@ -47,7 +47,7 @@ export class TestingModuleBuilder {
     const addOverload = options => {
       this.overloadsMap.set(typeOrToken, {
         ...options,
-        isComponent
+        isComponent,
       });
       return this;
     };
@@ -55,13 +55,13 @@ export class TestingModuleBuilder {
   }
 
   private createOverrideByBuilder(
-    add: (provider) => TestingModuleBuilder
+    add: (provider) => TestingModuleBuilder,
   ): OverrideBy {
     return {
       useValue: value => add({ useValue: value }),
       useFactory: (options: OverrideByFactoryOptions) =>
         add({ ...options, useFactory: options.factory }),
-      useClass: metatype => add({ useClass: metatype })
+      useClass: metatype => add({ useClass: metatype }),
     };
   }
 

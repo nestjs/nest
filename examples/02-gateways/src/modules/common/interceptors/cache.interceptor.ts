@@ -7,7 +7,7 @@ export class CacheInterceptor implements NestInterceptor {
   intercept(
     dataOrRequest,
     context: ExecutionContext,
-    stream$: Observable<any>
+    stream$: Observable<any>,
   ): Observable<any> {
     const isCached = true;
     if (isCached) {

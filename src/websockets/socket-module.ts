@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import {
   NestContainer,
-  InstanceWrapper
+  InstanceWrapper,
 } from '@nestjs/core/injector/container';
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { SocketsContainer } from './container';
@@ -29,26 +29,26 @@ export class SocketModule {
       new SocketServerProvider(this.socketsContainer, config),
       container,
       config,
-      this.getContextCreator(container)
+      this.getContextCreator(container),
     );
     const modules = container.getModules();
     modules.forEach(({ components }, moduleName) =>
-      this.hookGatewaysIntoServers(components, moduleName)
+      this.hookGatewaysIntoServers(components, moduleName),
     );
   }
 
   public hookGatewaysIntoServers(
     components: Map<string, InstanceWrapper<Injectable>>,
-    moduleName: string
+    moduleName: string,
   ) {
     components.forEach(wrapper =>
-      this.hookGatewayIntoServer(wrapper, moduleName)
+      this.hookGatewayIntoServer(wrapper, moduleName),
     );
   }
 
   public hookGatewayIntoServer(
     wrapper: InstanceWrapper<Injectable>,
-    moduleName: string
+    moduleName: string,
   ) {
     const { instance, metatype, isNotMetatype } = wrapper;
     if (isNotMetatype) {
@@ -61,7 +61,7 @@ export class SocketModule {
     this.webSocketsController.hookGatewayIntoServer(
       instance as NestGateway,
       metatype,
-      moduleName
+      moduleName,
     );
   }
 
@@ -80,7 +80,7 @@ export class SocketModule {
       new GuardsContextCreator(container),
       new GuardsConsumer(),
       new InterceptorsContextCreator(container),
-      new InterceptorsConsumer()
+      new InterceptorsConsumer(),
     );
   }
 }

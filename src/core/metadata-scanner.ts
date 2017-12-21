@@ -3,14 +3,14 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import {
   isConstructor,
   isFunction,
-  isNil
+  isNil,
 } from '@nestjs/common/utils/shared.utils';
 
 export class MetadataScanner {
   public scanFromPrototype<T extends Injectable, R>(
     instance: T,
     prototype,
-    callback: (name: string) => R
+    callback: (name: string) => R,
   ): R[] {
     return iterate(Object.getOwnPropertyNames(prototype))
       .filter(method => {

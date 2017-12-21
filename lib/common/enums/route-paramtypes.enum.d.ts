@@ -6,5 +6,5 @@ export declare enum RouteParamtypes {
   QUERY = 4,
   PARAM = 5,
   HEADERS = 6,
-  SESSION = 7
+  SESSION = 7,
 }

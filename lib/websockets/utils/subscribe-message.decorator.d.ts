@@ -7,5 +7,5 @@ export declare const SubscribeMessage: (
     | string
     | {
         value: string;
-      }
+      },
 ) => MethodDecorator;

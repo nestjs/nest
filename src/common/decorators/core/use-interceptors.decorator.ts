@@ -16,7 +16,7 @@ export function UseInterceptors(...interceptors) {
       Reflect.defineMetadata(
         INTERCEPTORS_METADATA,
         interceptors,
-        descriptor.value
+        descriptor.value,
       );
       return descriptor;
     }

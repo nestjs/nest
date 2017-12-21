@@ -21,7 +21,7 @@ export class WsExceptionsHandler {
       ? result
       : {
           status,
-          message: result
+          message: result,
         };
     client.emit('exception', message);
   }
@@ -37,9 +37,11 @@ export class WsExceptionsHandler {
     if (isEmpty(this.filters)) return false;
 
     const filter = this.filters.find(({ exceptionMetatypes, func }) => {
-      const hasMetatype = !!exceptionMetatypes.find(
-        ExceptionMetatype => exception instanceof ExceptionMetatype
-      );
+      const hasMetatype =
+        !exceptionMetatypes.length ||
+        !!exceptionMetatypes.find(
+          ExceptionMetatype => exception instanceof ExceptionMetatype,
+        );
       return hasMetatype;
     });
     filter && filter.func(exception, client);

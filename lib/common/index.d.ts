@@ -22,7 +22,7 @@ export {
   WsExceptionFilter,
   NestInterceptor,
   DynamicModule,
-  INestApplicationContext
+  INestApplicationContext,
 } from './interfaces';
 export * from './services/logger.service';
 export * from './pipes';

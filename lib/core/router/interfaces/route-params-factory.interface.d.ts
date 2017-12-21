@@ -6,11 +6,11 @@ export interface IRouteParamsFactory {
     {
       req,
       res,
-      next
+      next,
     }: {
       req: any;
       res: any;
       next: any;
-    }
+    },
   ): any;
 }

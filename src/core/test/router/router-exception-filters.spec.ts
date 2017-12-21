@@ -29,7 +29,7 @@ describe('RouterExceptionFilters', () => {
       it('should returns plain ExceptionHandler object', () => {
         const filter = exceptionFilter.create(
           new EmptyMetadata(),
-          () => ({} as any)
+          () => ({} as any),
         );
         expect((filter as any).filters).to.be.empty;
       });
@@ -41,7 +41,7 @@ describe('RouterExceptionFilters', () => {
       it('should returns ExceptionHandler object with exception filters', () => {
         const filter = exceptionFilter.create(
           new WithMetadata(),
-          () => ({} as any)
+          () => ({} as any),
         );
         expect((filter as any).filters).to.not.be.empty;
       });
@@ -50,7 +50,7 @@ describe('RouterExceptionFilters', () => {
   describe('reflectCatchExceptions', () => {
     it('should returns FILTER_CATCH_EXCEPTIONS metadata', () => {
       expect(
-        exceptionFilter.reflectCatchExceptions(new ExceptionFilter())
+        exceptionFilter.reflectCatchExceptions(new ExceptionFilter()),
       ).to.be.eql([CustomException]);
     });
   });
@@ -63,7 +63,7 @@ describe('RouterExceptionFilters', () => {
         .stub(exceptionFilter, 'findExceptionsFilterInstance')
         .onFirstCall()
         .returns({
-          catch: () => ({})
+          catch: () => ({}),
         })
         .onSecondCall()
         .returns({});
@@ -72,7 +72,7 @@ describe('RouterExceptionFilters', () => {
       const resolved = exceptionFilter.createConcreteContext(filters as any);
       expect(resolved).to.have.length(1);
       expect(resolved[0].exceptionMetatypes).to.be.deep.equal([
-        CustomException
+        CustomException,
       ]);
       expect(resolved[0].func).to.be.a('function');
     });

@@ -7,6 +7,6 @@ import { DatabaseModule } from '../database/database.module';
 @Module({
   modules: [DatabaseModule],
   controllers: [CatsController],
-  components: [CatsService, ...catsProviders]
+  components: [CatsService, ...catsProviders],
 })
 export class CatsModule {}

@@ -8,13 +8,13 @@ export declare class MicroservicesModule {
   setup(container: any, config: any): void;
   setupListeners(
     container: any,
-    server: Server & CustomTransportStrategy
+    server: Server & CustomTransportStrategy,
   ): void;
   setupClients(container: any): void;
   bindListeners(
     controllers: Map<string, InstanceWrapper<Controller>>,
     server: Server & CustomTransportStrategy,
-    module: string
+    module: string,
   ): void;
   bindClients(controllers: Map<string, InstanceWrapper<Controller>>): void;
   close(): void;

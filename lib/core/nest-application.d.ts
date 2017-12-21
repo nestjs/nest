@@ -5,7 +5,7 @@ import {
   ExceptionFilter,
   NestInterceptor,
   PipeTransform,
-  WebSocketAdapter
+  WebSocketAdapter,
 } from '@nestjs/common';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';

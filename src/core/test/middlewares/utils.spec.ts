@@ -4,7 +4,7 @@ import {
   filterMiddlewares,
   mapToClass,
   isClass,
-  assignToken
+  assignToken,
 } from '../../middlewares/utils';
 
 describe('middleware utils', () => {

@@ -12,7 +12,7 @@ describe('ServerFactory', () => {
     it(`should return redis server if transport is set to redis`, () => {
       expect(
         ServerFactory.create({ transport: Transport.REDIS }) instanceof
-          ServerRedis
+          ServerRedis,
       ).to.be.true;
     });
   });

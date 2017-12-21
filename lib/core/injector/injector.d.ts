@@ -9,38 +9,38 @@ export declare class Injector {
   loadInstanceOfMiddleware(
     wrapper: MiddlewareWrapper,
     collection: Map<string, MiddlewareWrapper>,
-    module: Module
+    module: Module,
   ): Promise<void>;
   loadInstanceOfRoute(
     wrapper: InstanceWrapper<Controller>,
-    module: Module
+    module: Module,
   ): Promise<void>;
   loadInstanceOfInjectable(
     wrapper: InstanceWrapper<Controller>,
-    module: Module
+    module: Module,
   ): Promise<void>;
   loadPrototypeOfInstance<T>(
     { metatype, name }: InstanceWrapper<T>,
-    collection: Map<string, InstanceWrapper<T>>
+    collection: Map<string, InstanceWrapper<T>>,
   ): any;
   loadInstanceOfComponent(
     wrapper: InstanceWrapper<Injectable>,
     module: Module,
-    context?: Module[]
+    context?: Module[],
   ): Promise<void>;
   applyDoneSubject<T>(wrapper: InstanceWrapper<T>): () => void;
   loadInstance<T>(
     wrapper: InstanceWrapper<T>,
     collection: any,
     module: Module,
-    context?: Module[]
+    context?: Module[],
   ): Promise<void>;
   resolveConstructorParams<T>(
     wrapper: InstanceWrapper<T>,
     module: Module,
     inject: any[],
     context: Module[],
-    callback: (args) => void
+    callback: (args) => void,
   ): Promise<void>;
   reflectConstructorParams<T>(type: Metatype<T>): any[];
   reflectSelfParams<T>(type: Metatype<T>): any[];
@@ -49,30 +49,30 @@ export declare class Injector {
     param: Metatype<any> | string | symbol | any,
     {
       index,
-      length
+      length,
     }: {
       index: number;
       length: number;
     },
     module: Module,
-    context: Module[]
+    context: Module[],
   ): Promise<any>;
   resolveParamToken<T>(
     wrapper: InstanceWrapper<T>,
-    param: Metatype<any> | string | symbol | any
+    param: Metatype<any> | string | symbol | any,
   ): any;
   resolveComponentInstance<T>(
     module: Module,
     name: any,
     {
       index,
-      length
+      length,
     }: {
       index: number;
       length: number;
     },
     wrapper: InstanceWrapper<T>,
-    context: Module[]
+    context: Module[],
   ): Promise<any>;
   scanForComponent(
     components: Map<string, any>,
@@ -80,25 +80,25 @@ export declare class Injector {
     {
       name,
       index,
-      length
+      length,
     }: {
       name: any;
       index: number;
       length: number;
     },
     {
-      metatype
+      metatype,
     }: {
       metatype: any;
     },
-    context?: Module[]
+    context?: Module[],
   ): any;
   scanForComponentInExports(
     components: Map<string, any>,
     {
       name,
       index,
-      length
+      length,
     }: {
       name: any;
       index: number;
@@ -106,38 +106,38 @@ export declare class Injector {
     },
     module: Module,
     metatype: any,
-    context?: Module[]
+    context?: Module[],
   ): Promise<any>;
   scanForComponentInScopes(
     context: Module[],
     {
       name,
       index,
-      length
+      length,
     }: {
       name: any;
       index: number;
       length: number;
     },
-    metatype: any
+    metatype: any,
   ): any;
   scanForComponentInScope(
     context: Module,
     {
       name,
       index,
-      length
+      length,
     }: {
       name: any;
       index: number;
       length: number;
     },
-    metatype: any
+    metatype: any,
   ): any;
   scanForComponentInRelatedModules(
     module: Module,
     name: any,
-    context: Module[]
+    context: Module[],
   ): Promise<any>;
   resolveFactoryInstance(factoryResult: any): Promise<any>;
   flatMap(modules: Module[]): Module[];

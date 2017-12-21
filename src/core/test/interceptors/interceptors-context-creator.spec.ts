@@ -15,38 +15,38 @@ describe('InterceptorsContextCreator', () => {
       {
         name: 'test',
         instance: {
-          intercept: () => Observable.of(true)
-        }
+          intercept: () => Observable.of(true),
+        },
       },
       {
         name: 'test2',
         instance: {
-          intercept: () => Observable.of(true)
-        }
+          intercept: () => Observable.of(true),
+        },
       },
       {},
-      undefined
+      undefined,
     ];
     getSpy = sinon.stub().returns({
       injectables: new Map([
         ['test', interceptors[0]],
-        ['test2', interceptors[1]]
-      ])
+        ['test2', interceptors[1]],
+      ]),
     });
     container = {
       getModules: () => ({
-        get: getSpy
-      })
+        get: getSpy,
+      }),
     };
     interceptorsContextCreator = new InterceptorsContextCreator(
-      container as any
+      container as any,
     );
   });
   describe('createConcreteContext', () => {
     describe('when `moduleContext` is nil', () => {
       it('should returns empty array', () => {
         const result = interceptorsContextCreator.createConcreteContext(
-          interceptors
+          interceptors,
         );
         expect(result).to.be.empty;
       });
@@ -58,7 +58,7 @@ describe('InterceptorsContextCreator', () => {
       });
       it('should filter metatypes', () => {
         expect(
-          interceptorsContextCreator.createConcreteContext(interceptors)
+          interceptorsContextCreator.createConcreteContext(interceptors),
         ).to.have.length(2);
       });
     });

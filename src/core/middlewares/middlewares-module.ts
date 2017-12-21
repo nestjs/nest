@@ -29,7 +29,7 @@ export class MiddlewaresModule {
   public async setup(
     middlewaresContainer: MiddlewaresContainer,
     container: NestContainer,
-    config: ApplicationConfig
+    config: ApplicationConfig,
   ) {
     this.routerExceptionFilter = new RouterExceptionFilters(config);
     this.resolver = new MiddlewaresResolver(middlewaresContainer);
@@ -40,7 +40,7 @@ export class MiddlewaresModule {
 
   public async resolveMiddlewares(
     middlewaresContainer: MiddlewaresContainer,
-    modules: Map<string, Module>
+    modules: Map<string, Module>,
   ) {
     await Promise.all(
       [...modules.entries()].map(async ([name, module]) => {
@@ -48,14 +48,14 @@ export class MiddlewaresModule {
 
         this.loadConfiguration(middlewaresContainer, instance, name);
         await this.resolver.resolveInstances(module, name);
-      })
+      }),
     );
   }
 
   public loadConfiguration(
     middlewaresContainer: MiddlewaresContainer,
     instance: NestModule,
-    module: string
+    module: string,
   ) {
     if (!instance.configure) return;
 
@@ -70,7 +70,7 @@ export class MiddlewaresModule {
 
   public async setupMiddlewares(
     middlewaresContainer: MiddlewaresContainer,
-    app
+    app,
   ) {
     const configs = middlewaresContainer.getConfigs();
     await Promise.all(
@@ -81,11 +81,11 @@ export class MiddlewaresModule {
               middlewaresContainer,
               config,
               module,
-              app
+              app,
             );
-          })
+          }),
         );
-      })
+      }),
     );
   }
 
@@ -93,7 +93,7 @@ export class MiddlewaresModule {
     middlewaresContainer: MiddlewaresContainer,
     config: MiddlewareConfiguration,
     module: string,
-    app
+    app,
   ) {
     const { forRoutes } = config;
     await Promise.all(
@@ -104,10 +104,10 @@ export class MiddlewaresModule {
             route,
             config,
             module,
-            app
+            app,
           );
-        }
-      )
+        },
+      ),
     );
   }
 
@@ -116,7 +116,7 @@ export class MiddlewaresModule {
     route: ControllerMetadata & { method: RequestMethod },
     config: MiddlewareConfiguration,
     module: string,
-    app
+    app,
   ) {
     const { path, method } = route;
 
@@ -131,7 +131,7 @@ export class MiddlewaresModule {
 
         const { instance } = middleware as MiddlewareWrapper;
         await this.setupHandler(instance, metatype, app, method, path);
-      })
+      }),
     );
   }
 
@@ -140,14 +140,14 @@ export class MiddlewaresModule {
     metatype: Metatype<NestMiddleware>,
     app: any,
     method: RequestMethod,
-    path: string
+    path: string,
   ) {
     if (isUndefined(instance.resolve)) {
       throw new InvalidMiddlewareException(metatype.name);
     }
     const exceptionsHandler = this.routerExceptionFilter.create(
       instance,
-      instance.resolve
+      instance.resolve,
     );
     const router = this.routerMethodFactory.get(app, method).bind(app);
 
@@ -166,7 +166,7 @@ export class MiddlewaresModule {
     exceptionsHandler: ExceptionsHandler,
     router: (...args) => void,
     middleware: (req, res, next) => void,
-    path: string
+    path: string,
   ) {
     const proxy = this.routerProxy.createProxy(middleware, exceptionsHandler);
     router(path, proxy);

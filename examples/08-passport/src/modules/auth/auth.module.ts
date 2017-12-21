@@ -3,7 +3,7 @@ import {
   Module,
   NestModule,
   MiddlewaresConsumer,
-  RequestMethod
+  RequestMethod,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './passport/jwt.strategy';
@@ -11,7 +11,7 @@ import { AuthController } from './auth.controller';
 
 @Module({
   components: [AuthService, JwtStrategy],
-  controllers: [AuthController]
+  controllers: [AuthController],
 })
 export class AuthModule implements NestModule {
   public configure(consumer: MiddlewaresConsumer) {

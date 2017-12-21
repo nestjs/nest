@@ -13,7 +13,7 @@ describe('ParseIntPipe', () => {
       it('should return number', async () => {
         const num = '3';
         expect(await target.transform(num, {} as any)).to.equal(
-          parseInt(num, 10)
+          parseInt(num, 10),
         );
       });
     });

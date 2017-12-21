@@ -14,7 +14,7 @@ describe('ExceptionHandler', () => {
     let errorSpy: sinon.SinonSpy;
     beforeEach(() => {
       logger = {
-        error: () => {}
+        error: () => {},
       };
       (ExceptionHandler as any).logger = logger;
       errorSpy = sinon.spy(logger, 'error');

@@ -7,7 +7,7 @@ import {
   isConstructor,
   validatePath,
   isNil,
-  isEmpty
+  isEmpty,
 } from '../../utils/shared.utils';
 
 describe('Shared utils', () => {

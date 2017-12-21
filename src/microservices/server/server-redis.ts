@@ -34,7 +34,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
   public start(callback?: () => void) {
     this.sub.on(CONNECT_EVENT, () =>
-      this.handleConnection(callback, this.sub, this.pub)
+      this.handleConnection(callback, this.sub, this.pub),
     );
   }
 
@@ -72,7 +72,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     }
     const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(
-      await handler(msg.data)
+      await handler(msg.data),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
   }

@@ -23,7 +23,7 @@ export abstract class Server {
 
   public send(
     stream$: Observable<any>,
-    respond: (data: MicroserviceResponse) => void
+    respond: (data: MicroserviceResponse) => void,
   ): Subscription {
     return stream$
       .catch(err => {

@@ -5,6 +5,6 @@ export interface NestInterceptor {
   intercept(
     dataOrRequest,
     context: ExecutionContext,
-    stream$: Observable<any>
+    stream$: Observable<any>,
   ): Observable<any> | Promise<Observable<any>>;
 }

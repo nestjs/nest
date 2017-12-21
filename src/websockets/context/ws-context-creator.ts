@@ -22,17 +22,17 @@ export class WsContextCreator {
     private readonly guardsContextCreator: GuardsContextCreator,
     private readonly guardsConsumer: GuardsConsumer,
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
-    private readonly interceptorsConsumer: InterceptorsConsumer
+    private readonly interceptorsConsumer: InterceptorsConsumer,
   ) {}
 
   public create(
     instance: Controller,
     callback: (client, data) => void,
-    module
+    module,
   ): (client, data) => Promise<void> {
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
-      callback
+      callback,
     );
     const pipes = this.pipesCreator.create(instance, callback);
     const guards = this.guardsContextCreator.create(instance, callback, module);
@@ -40,7 +40,7 @@ export class WsContextCreator {
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
-      module
+      module,
     );
 
     return this.wsProxy.create(async (client, data) => {
@@ -48,7 +48,7 @@ export class WsContextCreator {
         guards,
         data,
         instance,
-        callback
+        callback,
       );
       if (!canActivate) {
         throw new WsException(FORBIDDEN_MESSAGE);
@@ -56,7 +56,7 @@ export class WsContextCreator {
       const result = await this.pipesConsumer.applyPipes(
         data,
         { metatype },
-        pipes
+        pipes,
       );
       const handler = () => callback.call(instance, client, data);
 
@@ -65,14 +65,14 @@ export class WsContextCreator {
         result,
         instance,
         callback,
-        handler
+        handler,
       );
     }, exceptionHandler);
   }
 
   public reflectCallbackParamtypes(
     instance: Controller,
-    callback: (...args) => any
+    callback: (...args) => any,
   ): any[] {
     return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
   }

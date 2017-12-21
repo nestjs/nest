@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import {
   NestContainer,
-  InstanceWrapper
+  InstanceWrapper,
 } from '@nestjs/core/injector/container';
 import { NestGateway } from './index';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
@@ -16,11 +16,11 @@ export declare class MiddlewaresInjector {
   applyMiddlewares(
     server: any,
     components: Map<string, InstanceWrapper<Injectable>>,
-    tokens: any[]
+    tokens: any[],
   ): void;
   bindMiddleware(
     token: string,
-    components: Map<string, InstanceWrapper<Injectable>>
+    components: Map<string, InstanceWrapper<Injectable>>,
   ): any;
   isGatewayMiddleware(middleware: object): middleware is GatewayMiddleware;
 }

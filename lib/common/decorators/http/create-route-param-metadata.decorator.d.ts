@@ -5,5 +5,5 @@ import { PipeTransform } from '../../index';
  * @param factory
  */
 export declare function createRouteParamDecorator(
-  factory: CustomParamFactory
+  factory: CustomParamFactory,
 ): (data?: any, ...pipes: PipeTransform<any>[]) => ParameterDecorator;

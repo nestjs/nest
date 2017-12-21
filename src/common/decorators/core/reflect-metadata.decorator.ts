@@ -5,7 +5,7 @@
 export const ReflectMetadata = (metadataKey, metadataValue) => (
   target: object,
   key?,
-  descriptor?
+  descriptor?,
 ) => {
   if (descriptor) {
     Reflect.defineMetadata(metadataKey, metadataValue, descriptor.value);

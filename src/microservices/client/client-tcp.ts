@@ -41,7 +41,7 @@ export class ClientTCP extends ClientProxy {
     const sendMessage = socket => {
       socket.sendMessage(msg);
       socket.on(MESSAGE_EVENT, buffer =>
-        this.handleResponse(socket, callback, buffer)
+        this.handleResponse(socket, callback, buffer),
       );
     };
     if (this.isConnected) {

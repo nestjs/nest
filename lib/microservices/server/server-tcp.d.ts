@@ -16,7 +16,7 @@ export declare class ServerTCP extends Server
     msg: {
       pattern: any;
       data: {};
-    }
+    },
   ): Promise<void>;
   private init();
   private getSocketInstance(socket);

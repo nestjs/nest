@@ -10,11 +10,11 @@ export declare class InterceptorsConsumer {
     dataOrRequest: any,
     instance: Controller,
     callback: (...args) => any,
-    next: () => Promise<any>
+    next: () => Promise<any>,
   ): Promise<any>;
   createContext(
     instance: Controller,
-    callback: (...args) => any
+    callback: (...args) => any,
   ): ExecutionContext;
   transformDeffered(next: () => any): Promise<any> | Observable<any>;
 }

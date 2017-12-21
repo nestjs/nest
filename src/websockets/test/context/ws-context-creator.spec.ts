@@ -64,7 +64,7 @@ describe('WsContextCreator', () => {
       guardsContextCreator as any,
       guardsConsumer as any,
       new InterceptorsContextCreator(new NestContainer()) as any,
-      new InterceptorsConsumer()
+      new InterceptorsConsumer(),
     );
 
     instance = new Test();
@@ -93,7 +93,7 @@ describe('WsContextCreator', () => {
         const proxy = await contextCreator.create(
           instance,
           instance.test,
-          module
+          module,
         );
         const data = 'test';
         await proxy(null, data);
@@ -106,7 +106,7 @@ describe('WsContextCreator', () => {
           const proxy = await contextCreator.create(
             instance,
             instance.test,
-            module
+            module,
           );
           const data = 'test';
           await proxy(null, data);
@@ -122,7 +122,7 @@ describe('WsContextCreator', () => {
           const proxy = await contextCreator.create(
             instance,
             instance.test,
-            module
+            module,
           );
           const data = 'test';
 
@@ -136,7 +136,7 @@ describe('WsContextCreator', () => {
     it('should returns paramtypes array', () => {
       const paramtypes = contextCreator.reflectCallbackParamtypes(
         instance,
-        instance.test
+        instance.test,
       );
       expect(paramtypes).to.be.eql([String, Number]);
     });

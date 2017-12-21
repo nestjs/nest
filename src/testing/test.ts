@@ -1,6 +1,6 @@
 import {
   NestContainer,
-  InstanceWrapper
+  InstanceWrapper,
 } from '@nestjs/core/injector/container';
 import { ModuleMetadata } from '@nestjs/common/interfaces/modules/module-metadata.interface';
 import { Module } from '@nestjs/common/utils/decorators/module.decorator';

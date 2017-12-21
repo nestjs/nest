@@ -20,7 +20,7 @@ describe('MetadataScanner', () => {
       const methods = scanner.scanFromPrototype(
         new Test(),
         Test.prototype,
-        a => a
+        a => a,
       );
       expect(methods).to.eql(['test', 'test2']);
     });

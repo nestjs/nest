@@ -18,7 +18,7 @@ describe('GuardsConsumer', () => {
           [],
           {},
           { constructor: null },
-          null
+          null,
         );
         expect(canActivate).to.be.true;
       });
@@ -30,7 +30,7 @@ describe('GuardsConsumer', () => {
             [...guards, { canActivate: () => false }],
             {},
             { constructor: null },
-            null
+            null,
           );
           expect(canActivate).to.be.false;
         });
@@ -41,7 +41,7 @@ describe('GuardsConsumer', () => {
             guards,
             {},
             { constructor: null },
-            null
+            null,
           );
           expect(canActivate).to.be.true;
         });
@@ -52,7 +52,7 @@ describe('GuardsConsumer', () => {
     describe('when result is Observable', () => {
       it('should returns promise', () => {
         expect(
-          consumer.pickResult(Observable.of(true))
+          consumer.pickResult(Observable.of(true)),
         ).to.eventually.instanceOf(Promise);
       });
     });

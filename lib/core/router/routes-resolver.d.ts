@@ -15,13 +15,13 @@ export declare class RoutesResolver implements Resolver {
   constructor(
     container: NestContainer,
     expressAdapter: any,
-    config: ApplicationConfig
+    config: ApplicationConfig,
   );
   resolve(express: Application): void;
   setupRouters(
     routes: Map<string, InstanceWrapper<Controller>>,
     moduleName: string,
-    express: Application
+    express: Application,
   ): void;
   setupNotFoundHandler(express: Application): void;
   setupExceptionHandler(express: Application): void;

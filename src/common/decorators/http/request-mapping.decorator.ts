@@ -5,11 +5,11 @@ import { PATH_METADATA, METHOD_METADATA } from '../../constants';
 
 const defaultMetadata = {
   [PATH_METADATA]: '/',
-  [METHOD_METADATA]: RequestMethod.GET
+  [METHOD_METADATA]: RequestMethod.GET,
 };
 
 export const RequestMapping = (
-  metadata: RequestMappingMetadata = defaultMetadata
+  metadata: RequestMappingMetadata = defaultMetadata,
 ): MethodDecorator => {
   const path = metadata[PATH_METADATA] || '/';
   const requestMethod = metadata[METHOD_METADATA] || RequestMethod.GET;
@@ -22,11 +22,11 @@ export const RequestMapping = (
 };
 
 const createMappingDecorator = (method: RequestMethod) => (
-  path?: string
+  path?: string,
 ): MethodDecorator => {
   return RequestMapping({
     [PATH_METADATA]: path,
-    [METHOD_METADATA]: method
+    [METHOD_METADATA]: method,
   });
 };
 

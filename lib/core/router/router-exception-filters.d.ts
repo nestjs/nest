@@ -9,7 +9,7 @@ export declare class RouterExceptionFilters extends BaseExceptionFilterContext {
   constructor(config: ApplicationConfig);
   create(
     instance: Controller,
-    callback: RouterProxyCallback
+    callback: RouterProxyCallback,
   ): ExceptionsHandler;
   getGlobalMetadata<T extends any[]>(): T;
 }

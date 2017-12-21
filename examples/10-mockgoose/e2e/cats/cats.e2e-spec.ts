@@ -10,7 +10,7 @@ describe('Cats', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
-      modules: [CatsModule]
+      modules: [CatsModule],
     }).compile();
 
     const app = module.createNestApplication(server);
@@ -23,7 +23,7 @@ describe('Cats', () => {
       .send({
         name: 'Tiger',
         age: 2,
-        breed: 'Russian Blue'
+        breed: 'Russian Blue',
       })
       .expect(201);
   });

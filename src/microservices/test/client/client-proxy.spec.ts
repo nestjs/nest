@@ -40,7 +40,7 @@ describe('ClientProxy', () => {
         observer = {
           error,
           next,
-          complete
+          complete,
         };
 
       before(() => {

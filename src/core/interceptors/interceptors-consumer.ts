@@ -4,7 +4,7 @@ import {
   isUndefined,
   isFunction,
   isNil,
-  isEmpty
+  isEmpty,
 } from '@nestjs/common/utils/shared.utils';
 import { Controller } from '@nestjs/common/interfaces';
 import { HttpStatus, ExecutionContext, NestInterceptor } from '@nestjs/common';
@@ -19,7 +19,7 @@ export class InterceptorsConsumer {
     dataOrRequest: any,
     instance: Controller,
     callback: (...args) => any,
-    next: () => Promise<any>
+    next: () => Promise<any>,
   ): Promise<any> {
     if (!interceptors || isEmpty(interceptors)) {
       return await next();
@@ -29,18 +29,18 @@ export class InterceptorsConsumer {
     const result$ = await interceptors.reduce(
       async (stream$, interceptor) =>
         await interceptor.intercept(dataOrRequest, context, await stream$),
-      Promise.resolve(start$)
+      Promise.resolve(start$),
     );
     return await result$.toPromise();
   }
 
   public createContext(
     instance: Controller,
-    callback: (...args) => any
+    callback: (...args) => any,
   ): ExecutionContext {
     return {
       parent: instance.constructor,
-      handler: callback
+      handler: callback,
     };
   }
 

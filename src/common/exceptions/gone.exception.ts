@@ -6,7 +6,7 @@ export class GoneException extends HttpException {
   constructor(message?: string | object | any, error = 'Gone') {
     super(
       createHttpExceptionBody(message, error, HttpStatus.GONE),
-      HttpStatus.GONE
+      HttpStatus.GONE,
     );
   }
 }

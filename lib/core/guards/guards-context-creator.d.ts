@@ -12,12 +12,12 @@ export declare class GuardsContextCreator extends ContextCreator {
   create(
     instance: Controller,
     callback: (...args) => any,
-    module: string
+    module: string,
   ): CanActivate[];
   createConcreteContext<T extends any[], R extends any[]>(metadata: T): R;
   createGlobalMetadataContext<T extends any[], R extends any[]>(metadata: T): R;
   getInstanceByMetatype(
-    metatype: any
+    metatype: any,
   ):
     | {
         instance: any;

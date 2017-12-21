@@ -7,7 +7,7 @@ export declare class TestingModule extends NestApplicationContext {
   constructor(
     container: NestContainer,
     scope: NestModuleMetatype[],
-    contextModule: any
+    contextModule: any,
   );
   createNestApplication(express?: any): INestApplication;
   createNestMicroservice(config: MicroserviceConfiguration): INestMicroservice;

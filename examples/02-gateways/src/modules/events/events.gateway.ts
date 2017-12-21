@@ -3,7 +3,7 @@ import {
   SubscribeMessage,
   WsResponse,
   WebSocketServer,
-  WsException
+  WsException,
 } from '@nestjs/websockets';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/from';

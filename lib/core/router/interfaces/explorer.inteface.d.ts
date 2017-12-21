@@ -4,7 +4,7 @@ export interface RouterExplorer {
   explore(
     instance: Controller,
     metatype: Metatype<Controller>,
-    module: string
+    module: string,
   ): any;
   fetchRouterPath(metatype: Metatype<Controller>): string;
 }

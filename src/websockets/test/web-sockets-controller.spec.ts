@@ -30,7 +30,7 @@ describe('WebSocketsController', () => {
       provider,
       null,
       config,
-      sinon.createStubInstance(WsContextCreator)
+      sinon.createStubInstance(WsContextCreator),
     );
   });
   describe('hookGatewayIntoServer', () => {
@@ -48,7 +48,11 @@ describe('WebSocketsController', () => {
     });
     it('should throws "InvalidSocketPortException" when port is not a number', () => {
       expect(() =>
-        instance.hookGatewayIntoServer(new InvalidGateway(), InvalidGateway, '')
+        instance.hookGatewayIntoServer(
+          new InvalidGateway(),
+          InvalidGateway,
+          '',
+        ),
       ).throws(InvalidSocketPortException);
     });
     it('should call "subscribeObservableServer" with default values when metadata is empty', () => {
@@ -124,13 +128,13 @@ describe('WebSocketsController', () => {
       handlers = ['test'];
       server = {
         server: {
-          on: onSpy
+          on: onSpy,
         },
         init: {
-          next: nextSpy
+          next: nextSpy,
         },
         disconnect: {},
-        connection: {}
+        connection: {},
       };
 
       (instance as any).subscribeInitEvent = subscribeInitEvent;
@@ -169,8 +173,8 @@ describe('WebSocketsController', () => {
           gateway,
           handlers,
           server.disconnect,
-          server.connection
-        )
+          server.connection,
+        ),
       ).to.be.true;
     });
   });
@@ -195,10 +199,10 @@ describe('WebSocketsController', () => {
 
       handlers = ['test'];
       connection = {
-        next: nextSpy
+        next: nextSpy,
       };
       client = {
-        on: onSpy
+        on: onSpy,
       };
       (instance as any).subscribeDisconnectEvent = subscribeDisconnectEvent;
       (instance as any).subscribeConnectionEvent = subscribeConnectionEvent;
@@ -209,14 +213,14 @@ describe('WebSocketsController', () => {
         gateway,
         handlers,
         null,
-        connection
+        connection,
       );
       fn(client);
     });
 
     it('should returns function', () => {
       expect(
-        instance.getConnectionHandler(null, null, null, null, null)
+        instance.getConnectionHandler(null, null, null, null, null),
       ).to.be.a('function');
     });
     it('should call "next" method of connection object with expected argument', () => {
@@ -295,7 +299,7 @@ describe('WebSocketsController', () => {
 
       handlers = [
         { message: 'test', callback: { bind: () => 'testCallback' } },
-        { message: 'test2', callback: { bind: () => 'testCallback2' } }
+        { message: 'test2', callback: { bind: () => 'testCallback2' } },
       ];
     });
     it('should bind each handler to client', () => {
@@ -310,8 +314,8 @@ describe('WebSocketsController', () => {
           const value = 100;
           expect(
             await (await instance.pickResult(
-              Promise.resolve(Promise.resolve(value))
-            )).toPromise()
+              Promise.resolve(Promise.resolve(value)),
+            )).toPromise(),
           ).to.be.eq(100);
         });
       });
@@ -321,8 +325,8 @@ describe('WebSocketsController', () => {
           const value = 100;
           expect(
             await (await instance.pickResult(
-              Promise.resolve(Observable.of(value))
-            )).toPromise()
+              Promise.resolve(Observable.of(value)),
+            )).toPromise(),
           ).to.be.eq(100);
         });
       });
@@ -332,8 +336,8 @@ describe('WebSocketsController', () => {
           const value = 100;
           expect(
             await (await instance.pickResult(
-              Promise.resolve(value)
-            )).toPromise()
+              Promise.resolve(value),
+            )).toPromise(),
           ).to.be.eq(100);
         });
       });

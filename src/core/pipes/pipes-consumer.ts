@@ -8,20 +8,20 @@ export class PipesConsumer {
   public async apply(
     value,
     { metatype, type, data },
-    transforms: Transform<any>[]
+    transforms: Transform<any>[],
   ) {
     const token = this.paramsTokenFactory.exchangeEnumForString(type);
     return await this.applyPipes(
       value,
       { metatype, type: token, data },
-      transforms
+      transforms,
     );
   }
 
   public async applyPipes(
     value,
     { metatype, type, data }: { metatype; type?; data? },
-    transforms: Transform<any>[]
+    transforms: Transform<any>[],
   ) {
     return await transforms.reduce(async (defferedValue, fn) => {
       const val = await defferedValue;

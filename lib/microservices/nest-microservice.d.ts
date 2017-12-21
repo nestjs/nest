@@ -6,7 +6,7 @@ import {
   CanActivate,
   PipeTransform,
   NestInterceptor,
-  ExceptionFilter
+  ExceptionFilter,
 } from '@nestjs/common';
 export declare class NestMicroservice implements INestMicroservice {
   private readonly container;

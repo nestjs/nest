@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import iterate from 'iterare';
 import {
   NestContainer,
-  InstanceWrapper
+  InstanceWrapper,
 } from '@nestjs/core/injector/container';
 import { NestGateway } from './index';
 import { GATEWAY_MIDDLEWARES } from './constants';
@@ -13,14 +13,14 @@ import { GatewayMiddleware } from './interfaces/gateway-middleware.interface';
 import {
   isUndefined,
   isFunction,
-  isNil
+  isNil,
 } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 
 export class MiddlewaresInjector {
   constructor(
     private readonly container: NestContainer,
-    private readonly config: ApplicationConfig
+    private readonly config: ApplicationConfig,
   ) {}
 
   public inject(server, instance: NestGateway, module: string) {
@@ -47,7 +47,7 @@ export class MiddlewaresInjector {
   public applyMiddlewares(
     server,
     components: Map<string, InstanceWrapper<Injectable>>,
-    tokens: any[]
+    tokens: any[],
   ) {
     const adapter = this.config.getIoAdapter();
     iterate(tokens)
@@ -58,7 +58,7 @@ export class MiddlewaresInjector {
 
   public bindMiddleware(
     token: string,
-    components: Map<string, InstanceWrapper<Injectable>>
+    components: Map<string, InstanceWrapper<Injectable>>,
   ) {
     if (!components.has(token)) {
       throw new RuntimeException();
@@ -71,7 +71,7 @@ export class MiddlewaresInjector {
   }
 
   public isGatewayMiddleware(
-    middleware: object
+    middleware: object,
   ): middleware is GatewayMiddleware {
     return !isUndefined((middleware as GatewayMiddleware).resolve);
   }

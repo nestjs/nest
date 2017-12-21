@@ -19,14 +19,14 @@ describe('DependenciesScanner', () => {
   @Module({
     components: [TestComponent],
     controllers: [TestRoute],
-    exports: [TestComponent]
+    exports: [TestComponent],
   })
   class AnotherTestModule {}
 
   @Module({
     modules: [AnotherTestModule],
     components: [TestComponent],
-    controllers: [TestRoute]
+    controllers: [TestRoute],
   })
   class TestModule {}
 
@@ -131,7 +131,7 @@ describe('DependenciesScanner', () => {
       const result = scanner.reflectKeyMetadata(
         CompMethod,
         GUARDS_METADATA,
-        'method'
+        'method',
       );
       expect(result).to.be.eql(['test']);
     });

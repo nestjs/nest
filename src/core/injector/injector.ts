@@ -10,11 +10,11 @@ import { MiddlewareWrapper } from '../middlewares/container';
 import {
   isUndefined,
   isNil,
-  isFunction
+  isFunction,
 } from '@nestjs/common/utils/shared.utils';
 import {
   PARAMTYPES_METADATA,
-  SELF_DECLARED_DEPS_METADATA
+  SELF_DECLARED_DEPS_METADATA,
 } from '@nestjs/common/constants';
 import { UndefinedDependencyException } from './../errors/exceptions/undefined-dependency.exception';
 
@@ -22,7 +22,7 @@ export class Injector {
   public async loadInstanceOfMiddleware(
     wrapper: MiddlewareWrapper,
     collection: Map<string, MiddlewareWrapper>,
-    module: Module
+    module: Module,
   ) {
     const { metatype } = wrapper;
     const currentMetatype = collection.get(metatype.name);
@@ -36,15 +36,15 @@ export class Injector {
       instances => {
         collection.set(metatype.name, {
           instance: new metatype(...instances),
-          metatype
+          metatype,
         });
-      }
+      },
     );
   }
 
   public async loadInstanceOfRoute(
     wrapper: InstanceWrapper<Controller>,
-    module: Module
+    module: Module,
   ) {
     const routes = module.routes;
     await this.loadInstance<Controller>(wrapper, routes, module);
@@ -52,7 +52,7 @@ export class Injector {
 
   public async loadInstanceOfInjectable(
     wrapper: InstanceWrapper<Controller>,
-    module: Module
+    module: Module,
   ) {
     const injectables = module.injectables;
     await this.loadInstance<Controller>(wrapper, injectables, module);
@@ -60,7 +60,7 @@ export class Injector {
 
   public loadPrototypeOfInstance<T>(
     { metatype, name }: InstanceWrapper<T>,
-    collection: Map<string, InstanceWrapper<T>>
+    collection: Map<string, InstanceWrapper<T>>,
   ) {
     if (!collection) return null;
 
@@ -69,14 +69,14 @@ export class Injector {
 
     collection.set(name, {
       ...collection.get(name),
-      instance: Object.create(metatype.prototype)
+      instance: Object.create(metatype.prototype),
     });
   }
 
   public async loadInstanceOfComponent(
     wrapper: InstanceWrapper<Injectable>,
     module: Module,
-    context: Module[] = []
+    context: Module[] = [],
   ) {
     const components = module.components;
     await this.loadInstance<Injectable>(wrapper, components, module, context);
@@ -95,7 +95,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     collection,
     module: Module,
-    context: Module[] = []
+    context: Module[] = [],
   ) {
     if (wrapper.isPending) {
       return await wrapper.done$;
@@ -117,17 +117,17 @@ export class Injector {
         if (isNil(inject)) {
           currentMetatype.instance = Object.assign(
             currentMetatype.instance,
-            new metatype(...instances)
+            new metatype(...instances),
           );
         } else {
           const factoryResult = currentMetatype.metatype(...instances);
           currentMetatype.instance = await this.resolveFactoryInstance(
-            factoryResult
+            factoryResult,
           );
         }
         currentMetatype.isResolved = true;
         done();
-      }
+      },
     );
   }
 
@@ -136,7 +136,7 @@ export class Injector {
     module: Module,
     inject: any[],
     context: Module[],
-    callback: (args) => void
+    callback: (args) => void,
   ) {
     let isResolved = true;
     const args = isNil(inject)
@@ -150,13 +150,13 @@ export class Injector {
           param,
           { index, length: args.length },
           module,
-          context
+          context,
         );
         if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
           isResolved = false;
         }
         return paramWrapper.instance;
-      })
+      }),
     );
     isResolved && (await callback(instances));
   }
@@ -178,7 +178,7 @@ export class Injector {
     param: Metatype<any> | string | symbol | any,
     { index, length }: { index: number; length: number },
     module: Module,
-    context: Module[]
+    context: Module[],
   ) {
     if (isUndefined(param)) {
       throw new UndefinedDependencyException(wrapper.name, index, length);
@@ -189,13 +189,13 @@ export class Injector {
       isFunction(token) ? (token as Metatype<any>).name : token,
       { index, length },
       wrapper,
-      context
+      context,
     );
   }
 
   public resolveParamToken<T>(
     wrapper: InstanceWrapper<T>,
-    param: Metatype<any> | string | symbol | any
+    param: Metatype<any> | string | symbol | any,
   ) {
     if (!param.forwardRef) {
       return param;
@@ -209,7 +209,7 @@ export class Injector {
     name: any,
     { index, length }: { index: number; length: number },
     wrapper: InstanceWrapper<T>,
-    context: Module[]
+    context: Module[],
   ) {
     const components = module.components;
     const instanceWrapper = await this.scanForComponent(
@@ -217,7 +217,7 @@ export class Injector {
       module,
       { name, index, length },
       wrapper,
-      context
+      context,
     );
     if (!instanceWrapper.isResolved && !instanceWrapper.forwardRef) {
       await this.loadInstanceOfComponent(instanceWrapper, module);
@@ -233,12 +233,12 @@ export class Injector {
     module: Module,
     { name, index, length }: { name: any; index: number; length: number },
     { metatype },
-    context: Module[] = []
+    context: Module[] = [],
   ) {
     const component = await this.scanForComponentInScopes(
       context,
       { name, index, length },
-      metatype
+      metatype,
     );
     if (component) {
       return component;
@@ -249,7 +249,7 @@ export class Injector {
         { name, index, length },
         module,
         metatype,
-        context
+        context,
       );
     return components.has(name) ? components.get(name) : await scanInExports();
   }
@@ -259,12 +259,12 @@ export class Injector {
     { name, index, length }: { name: any; index: number; length: number },
     module: Module,
     metatype,
-    context: Module[] = []
+    context: Module[] = [],
   ) {
     const instanceWrapper = await this.scanForComponentInRelatedModules(
       module,
       name,
-      context
+      context,
     );
     if (isNil(instanceWrapper)) {
       throw new UnknownDependenciesException(metatype.name, index, length);
@@ -275,14 +275,14 @@ export class Injector {
   public async scanForComponentInScopes(
     context: Module[],
     { name, index, length }: { name: any; index: number; length: number },
-    metatype
+    metatype,
   ) {
     context = context || [];
     for (const ctx of context) {
       const component = await this.scanForComponentInScope(
         ctx,
         { name, index, length },
-        metatype
+        metatype,
       );
       if (component) return component;
     }
@@ -292,7 +292,7 @@ export class Injector {
   public async scanForComponentInScope(
     context: Module,
     { name, index, length }: { name: any; index: number; length: number },
-    metatype
+    metatype,
   ) {
     try {
       const component = await this.scanForComponent(
@@ -300,7 +300,7 @@ export class Injector {
         context,
         { name, index, length },
         { metatype },
-        null
+        null,
       );
       if (!component.isResolved && !component.forwardRef) {
         await this.loadInstanceOfComponent(component, context);
@@ -317,7 +317,7 @@ export class Injector {
   public async scanForComponentInRelatedModules(
     module: Module,
     name: any,
-    context: Module[]
+    context: Module[],
   ) {
     let component = null;
     const relatedModules = module.relatedModules || [];
@@ -355,9 +355,9 @@ export class Injector {
           [...relatedModules.values()].filter(related => {
             const { metatype } = related;
             return exports.has(metatype.name);
-          })
+          }),
         );
-      })
+      }),
     );
   }
 }

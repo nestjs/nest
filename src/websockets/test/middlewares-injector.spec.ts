@@ -14,11 +14,11 @@ describe('MiddlewaresInjector', () => {
   beforeEach(() => {
     modules = new Map();
     container = {
-      getModules: () => modules
+      getModules: () => modules,
     };
     injector = new MiddlewaresInjector(
       container as any,
-      new ApplicationConfig(new IoAdapter())
+      new ApplicationConfig(new IoAdapter()),
     );
   });
   describe('inject', () => {
@@ -47,12 +47,12 @@ describe('MiddlewaresInjector', () => {
   describe('reflectMiddlewaresTokens', () => {
     const middlewares: any = [1, 2, 3];
     @WebSocketGateway({
-      middlewares
+      middlewares,
     })
     class Test {}
     it('should returns expected list of middlewares', () => {
       expect(injector.reflectMiddlewaresTokens(new Test())).to.be.equal(
-        middlewares
+        middlewares,
       );
     });
   });
@@ -63,7 +63,7 @@ describe('MiddlewaresInjector', () => {
 
     beforeEach(() => {
       server = {
-        use: sinon.spy()
+        use: sinon.spy(),
       };
       sinon.stub(injector, 'bindMiddleware').callsFake(a => a);
     });
@@ -97,7 +97,7 @@ describe('MiddlewaresInjector', () => {
         const instance = {
           resolve() {
             return {};
-          }
+          },
         };
         getStub.returns({ instance });
 
@@ -107,7 +107,7 @@ describe('MiddlewaresInjector', () => {
         const instance = {
           resolve() {
             return () => ({});
-          }
+          },
         };
         getStub.returns({ instance });
 

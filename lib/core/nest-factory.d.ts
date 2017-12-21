@@ -2,7 +2,7 @@ import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservic
 import {
   INestApplication,
   INestMicroservice,
-  INestApplicationContext
+  INestApplicationContext,
 } from '@nestjs/common';
 export declare class NestFactoryStatic {
   private container;
@@ -26,7 +26,7 @@ export declare class NestFactoryStatic {
    */
   createMicroservice(
     module: any,
-    config?: MicroserviceConfiguration
+    config?: MicroserviceConfiguration,
   ): Promise<INestMicroservice>;
   /**
    * Creates an instance of the NestApplicationContext (returns Promise)

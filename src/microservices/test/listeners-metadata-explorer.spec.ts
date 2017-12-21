@@ -61,7 +61,7 @@ describe('ListenerMetadataExplorer', () => {
       const metadata = instance.exploreMethodMetadata(
         test,
         Object.getPrototypeOf(test),
-        'noPattern'
+        'noPattern',
       );
       expect(metadata).to.eq(null);
     });
@@ -69,7 +69,7 @@ describe('ListenerMetadataExplorer', () => {
       const metadata = instance.exploreMethodMetadata(
         test,
         Object.getPrototypeOf(test),
-        'test'
+        'test',
       );
       expect(metadata).to.have.keys(['targetCallback', 'pattern']);
       expect(metadata.pattern).to.eql(pattern);
@@ -83,11 +83,11 @@ describe('ListenerMetadataExplorer', () => {
       expect(hooks).to.have.length(2);
       expect(hooks[0]).to.deep.eq({
         property: 'client',
-        metadata: clientMetadata
+        metadata: clientMetadata,
       });
       expect(hooks[1]).to.deep.eq({
         property: 'redisClient',
-        metadata: clientSecMetadata
+        metadata: clientSecMetadata,
       });
     });
   });

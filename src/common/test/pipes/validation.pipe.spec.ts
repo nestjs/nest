@@ -16,7 +16,7 @@ describe('ValidationPipe', () => {
   const metadata: ArgumentMetadata = {
     type: 'body',
     metatype: TestModel,
-    data: ''
+    data: '',
   };
   beforeEach(() => {
     target = new ValidationPipe();
@@ -27,7 +27,7 @@ describe('ValidationPipe', () => {
         const testObj = { prop1: 'value1', prop2: 'value2' };
         expect(await target.transform(testObj, {} as any)).to.equal(testObj);
         expect(await target.transform(testObj, {} as any)).to.not.be.instanceOf(
-          TestModel
+          TestModel,
         );
       });
     });

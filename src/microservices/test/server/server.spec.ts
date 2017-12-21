@@ -66,7 +66,7 @@ describe('Server', () => {
           expect(
             await server
               .transformToObservable(Promise.resolve(value))
-              .toPromise()
+              .toPromise(),
           ).to.be.eq(100);
         });
       });
@@ -74,7 +74,9 @@ describe('Server', () => {
         it('should returns Observable', async () => {
           const value = 100;
           expect(
-            await server.transformToObservable(Observable.of(value)).toPromise()
+            await server
+              .transformToObservable(Observable.of(value))
+              .toPromise(),
           ).to.be.eq(100);
         });
       });
@@ -82,7 +84,7 @@ describe('Server', () => {
         it('should returns Observable', async () => {
           const value = 100;
           expect(
-            await server.transformToObservable(value).toPromise()
+            await server.transformToObservable(value).toPromise(),
           ).to.be.eq(100);
         });
       });

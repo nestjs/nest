@@ -32,8 +32,8 @@ describe('Module', () => {
         name: 'Test',
         metatype: Test,
         instance: null,
-        isResolved: false
-      }
+        isResolved: false,
+      },
     ]);
   });
 
@@ -49,8 +49,8 @@ describe('Module', () => {
         name: 'TestComponent',
         metatype: TestComponent,
         instance: null,
-        isResolved: false
-      }
+        isResolved: false,
+      },
     ]);
   });
 
@@ -75,8 +75,8 @@ describe('Module', () => {
         name: 'TestComponent',
         metatype: TestComponent,
         instance: null,
-        isResolved: false
-      }
+        isResolved: false,
+      },
     ]);
   });
 
@@ -136,8 +136,8 @@ describe('Module', () => {
           name: component.name,
           metatype: type,
           instance: null,
-          isResolved: false
-        })
+          isResolved: false,
+        }),
       ).to.be.true;
     });
   });
@@ -163,8 +163,8 @@ describe('Module', () => {
           instance: value,
           isResolved: true,
           isNotMetatype: true,
-          async: false
-        })
+          async: false,
+        }),
       ).to.be.true;
     });
   });
@@ -190,8 +190,8 @@ describe('Module', () => {
           instance: null,
           isResolved: false,
           inject,
-          isNotMetatype: true
-        }
+          isNotMetatype: true,
+        },
       ]);
     });
   });
@@ -216,7 +216,7 @@ describe('Module', () => {
     it('should call `addCustomExportedComponent`', () => {
       const addCustomExportedComponentSpy = sinon.spy(
         module,
-        'addCustomExportedComponent'
+        'addCustomExportedComponent',
       );
 
       module.addExportedComponent({ provide: 'test' } as any);

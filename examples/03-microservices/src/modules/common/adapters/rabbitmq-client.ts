@@ -8,7 +8,7 @@ export class RabbitMQClient extends ClientProxy {
 
   protected async sendSingleMessage(
     messageObj,
-    callback: (err, result, disposed?: boolean) => void
+    callback: (err, result, disposed?: boolean) => void,
   ) {
     const server = await amqp.connect(this.host);
     const channel = await server.createChannel();
@@ -20,7 +20,7 @@ export class RabbitMQClient extends ClientProxy {
     channel.consume(
       pub,
       message => this.handleMessage(message, server, callback),
-      { noAck: true }
+      { noAck: true },
     );
     channel.sendToQueue(sub, Buffer.from(JSON.stringify(messageObj)));
   }
@@ -28,7 +28,7 @@ export class RabbitMQClient extends ClientProxy {
   private handleMessage(
     message,
     server,
-    callback: (err, result, disposed?: boolean) => void
+    callback: (err, result, disposed?: boolean) => void,
   ) {
     const { content } = message;
     const { err, response, disposed } = JSON.parse(content.toString());

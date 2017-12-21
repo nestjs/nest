@@ -5,6 +5,6 @@ import { PhotoModule } from './photo/photo.module';
 import { Photo } from './photo/photo.entity';
 
 @Module({
-  modules: [TypeOrmModule.forRoot([Photo]), PhotoModule]
+  modules: [TypeOrmModule.forRoot([Photo]), PhotoModule],
 })
 export class ApplicationModule {}

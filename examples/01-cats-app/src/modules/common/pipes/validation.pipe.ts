@@ -3,7 +3,7 @@ import {
   PipeTransform,
   Pipe,
   ArgumentMetadata,
-  HttpStatus
+  HttpStatus,
 } from '@nestjs/common';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';

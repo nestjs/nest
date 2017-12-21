@@ -11,7 +11,7 @@ describe('@SubscribeMessage', () => {
   it('should decorate transport with expected metadata', () => {
     const isMessageMapping = Reflect.getMetadata(
       '__isMessageMapping',
-      TestGateway.fn
+      TestGateway.fn,
     );
     const message = Reflect.getMetadata('message', TestGateway.fn);
 

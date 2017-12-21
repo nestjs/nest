@@ -27,7 +27,7 @@ describe('RouterExecutionContext', () => {
   beforeEach(() => {
     callback = {
       bind: () => ({}),
-      apply: () => ({})
+      apply: () => ({}),
     };
     bindSpy = sinon.spy(callback, 'bind');
     applySpy = sinon.spy(callback, 'apply');
@@ -43,7 +43,7 @@ describe('RouterExecutionContext', () => {
       new GuardsContextCreator(new NestContainer()),
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
-      new InterceptorsConsumer()
+      new InterceptorsConsumer(),
     );
   });
   describe('create', () => {
@@ -55,14 +55,14 @@ describe('RouterExecutionContext', () => {
           [RouteParamtypes.NEXT]: { index: 0 },
           [RouteParamtypes.BODY]: {
             index: 2,
-            data: 'test'
-          }
+            data: 'test',
+          },
         };
         sinon.stub(contextCreator, 'reflectCallbackMetadata').returns(metadata);
         sinon.stub(contextCreator, 'reflectCallbackParamtypes').returns([]);
         exchangeKeysForValuesSpy = sinon.spy(
           contextCreator,
-          'exchangeKeysForValues'
+          'exchangeKeysForValues',
         );
       });
       it('should call "exchangeKeysForValues" with expected arguments', done => {
@@ -84,7 +84,7 @@ describe('RouterExecutionContext', () => {
             callback as any,
             '',
             '',
-            0
+            0,
           );
         });
         it('should be a function', () => {
@@ -95,15 +95,15 @@ describe('RouterExecutionContext', () => {
           const response = {
             status: () => response,
             send: () => response,
-            json: () => response
+            json: () => response,
           };
           const next = {};
 
           beforeEach(() => {
             request = {
               body: {
-                test: 3
-              }
+                test: 3,
+              },
             };
           });
           it('should apply expected context and arguments to callback', done => {
@@ -128,14 +128,14 @@ describe('RouterExecutionContext', () => {
       public callback(
         @Request() req,
         @Body() body,
-        @CustomDecorator() custom
+        @CustomDecorator() custom,
       ) {}
     }
     it('should returns ROUTE_ARGS_METADATA callback metadata', () => {
       const instance = new TestController();
       const metadata = contextCreator.reflectCallbackMetadata(
         instance,
-        'callback'
+        'callback',
       );
       console.log(metadata);
 
@@ -143,24 +143,24 @@ describe('RouterExecutionContext', () => {
         [`${RouteParamtypes.REQUEST}:0`]: {
           index: 0,
           data: undefined,
-          pipes: []
+          pipes: [],
         },
         [`${RouteParamtypes.BODY}:1`]: {
           index: 1,
           data: undefined,
-          pipes: []
+          pipes: [],
         },
         [`custom${CUSTOM_ROUTE_AGRS_METADATA}:2`]: {
           index: 2,
           factory: () => {},
-          data: undefined
-        }
+          data: undefined,
+        },
       };
       expect(metadata[`${RouteParamtypes.REQUEST}:0`]).to.deep.equal(
-        expectedMetadata[`${RouteParamtypes.REQUEST}:0`]
+        expectedMetadata[`${RouteParamtypes.REQUEST}:0`],
       );
       expect(metadata[`${RouteParamtypes.REQUEST}:1`]).to.deep.equal(
-        expectedMetadata[`${RouteParamtypes.REQUEST}:1`]
+        expectedMetadata[`${RouteParamtypes.REQUEST}:1`],
       );
 
       const keys = Object.keys(metadata);
@@ -178,11 +178,11 @@ describe('RouterExecutionContext', () => {
       const metadata = {
         [RouteParamtypes.REQUEST]: { index: 0 },
         [RouteParamtypes.BODY]: {
-          index: max
-        }
+          index: max,
+        },
       };
       expect(
-        contextCreator.getArgumentsLength(Object.keys(metadata), metadata)
+        contextCreator.getArgumentsLength(Object.keys(metadata), metadata),
       ).to.be.eq(max + 1);
     });
   });
@@ -192,7 +192,7 @@ describe('RouterExecutionContext', () => {
       expect(contextCreator.createNullArray(size)).to.be.deep.eq([
         null,
         null,
-        null
+        null,
       ]);
     });
   });
@@ -208,15 +208,15 @@ describe('RouterExecutionContext', () => {
         [`key${CUSTOM_ROUTE_AGRS_METADATA}`]: {
           index: 3,
           data: 'custom',
-          pipes: []
-        }
+          pipes: [],
+        },
       };
       const keys = Object.keys(metadata);
       const values = contextCreator.exchangeKeysForValues(keys, metadata);
       const expectedValues = [
         { index: 0, type: RouteParamtypes.REQUEST, data: 'test' },
         { index: 2, type: RouteParamtypes.BODY, data: 'test' },
-        { index: 3, type: `key${CUSTOM_ROUTE_AGRS_METADATA}`, data: 'custom' }
+        { index: 3, type: `key${CUSTOM_ROUTE_AGRS_METADATA}`, data: 'custom' },
       ];
       expect(values[0]).to.deep.include(expectedValues[0]);
       expect(values[1]).to.deep.include(expectedValues[1]);
@@ -230,7 +230,7 @@ describe('RouterExecutionContext', () => {
         const customFactory = (_, req) => result;
 
         expect(
-          contextCreator.getCustomFactory(customFactory, data)()
+          contextCreator.getCustomFactory(customFactory, data)(),
         ).to.be.eql(result);
       });
     });
@@ -239,7 +239,7 @@ describe('RouterExecutionContext', () => {
         const result = 10;
         const customFactory = undefined;
         expect(
-          contextCreator.getCustomFactory(customFactory, undefined)()
+          contextCreator.getCustomFactory(customFactory, undefined)(),
         ).to.be.eql(null);
       });
     });
@@ -248,7 +248,7 @@ describe('RouterExecutionContext', () => {
     it('should return "paramsProperties" when paramtypes array doesnt exists', () => {
       const paramsProperties = ['1'];
       expect(
-        contextCreator.mergeParamsMetatypes(paramsProperties as any, null)
+        contextCreator.mergeParamsMetatypes(paramsProperties as any, null),
       ).to.be.eql(paramsProperties);
     });
   });
@@ -266,40 +266,40 @@ describe('RouterExecutionContext', () => {
         contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.QUERY, data: null },
-          transforms
+          transforms,
         );
         expect(
           consumerApplySpy.calledWith(
             value,
             { metatype, type: RouteParamtypes.QUERY, data: null },
-            transforms
-          )
+            transforms,
+          ),
         ).to.be.true;
 
         contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.BODY, data: null },
-          transforms
+          transforms,
         );
         expect(
           consumerApplySpy.calledWith(
             value,
             { metatype, type: RouteParamtypes.BODY, data: null },
-            transforms
-          )
+            transforms,
+          ),
         ).to.be.true;
 
         contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.PARAM, data: null },
-          transforms
+          transforms,
         );
         expect(
           consumerApplySpy.calledWith(
             value,
             { metatype, type: RouteParamtypes.PARAM, data: null },
-            transforms
-          )
+            transforms,
+          ),
         ).to.be.true;
       });
     });
@@ -308,7 +308,7 @@ describe('RouterExecutionContext', () => {
         contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.NEXT, data: null },
-          transforms
+          transforms,
         );
         expect(consumerApplySpy.called).to.be.false;
       });

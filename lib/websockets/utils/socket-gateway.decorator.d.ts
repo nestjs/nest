@@ -5,5 +5,5 @@ import { GatewayMetadata } from '../interfaces';
  * Those dependencies should belongs to the same module. Gateway is listening on the specified port.
  */
 export declare const WebSocketGateway: (
-  metadataOrPort?: number | GatewayMetadata
+  metadataOrPort?: number | GatewayMetadata,
 ) => ClassDecorator;

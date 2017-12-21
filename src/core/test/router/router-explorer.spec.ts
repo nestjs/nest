@@ -46,7 +46,7 @@ describe('RouterExplorer', () => {
       const route = routerBuilder.exploreMethodMetadata(
         new TestRoute(),
         instanceProto,
-        'getTest'
+        'getTest',
       );
 
       expect(route.path).to.eql('/test');
@@ -58,7 +58,7 @@ describe('RouterExplorer', () => {
       const bindStub = sinon.stub(routerBuilder, 'applyCallbackToRouter');
       const paths = [
         { path: '', requestMethod: RequestMethod.GET },
-        { path: 'test', requestMethod: RequestMethod.GET }
+        { path: 'test', requestMethod: RequestMethod.GET },
       ];
 
       routerBuilder.applyPathsToRouterProxy(null, paths as any, null, '');

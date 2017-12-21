@@ -11,7 +11,7 @@ export class NestApplicationContext implements INestApplicationContext {
   constructor(
     protected readonly container: NestContainer,
     private readonly scope: NestModuleMetatype[],
-    protected contextModule
+    protected contextModule,
   ) {}
 
   public select<T>(module: Metatype<T>): INestApplicationContext {
@@ -31,12 +31,12 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   private findInstanceByPrototypeOrToken<T>(
-    metatypeOrToken: Metatype<T> | string | symbol
+    metatypeOrToken: Metatype<T> | string | symbol,
   ) {
     const dependencies = new Map([
       ...this.contextModule.components,
       ...this.contextModule.routes,
-      ...this.contextModule.injectables
+      ...this.contextModule.injectables,
     ]);
     const name = isFunction(metatypeOrToken)
       ? (metatypeOrToken as any).name

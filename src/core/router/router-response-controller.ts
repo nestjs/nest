@@ -7,7 +7,7 @@ export class RouterResponseController {
     resultOrDeffered,
     response,
     requestMethod: RequestMethod,
-    httpCode: number
+    httpCode: number,
   ) {
     const result = await this.transformToResult(resultOrDeffered);
     const statusCode = httpCode

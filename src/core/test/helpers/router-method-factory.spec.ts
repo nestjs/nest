@@ -12,7 +12,7 @@ describe('RouterMethodFactory', () => {
     put: () => {},
     patch: () => {},
     options: () => {},
-    head: () => {}
+    head: () => {},
   };
   beforeEach(() => {
     factory = new RouterMethodFactory();

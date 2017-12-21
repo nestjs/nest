@@ -17,12 +17,12 @@ export declare class ExternalContextCreator {
     guardsConsumer: GuardsConsumer,
     interceptorsContextCreator: InterceptorsContextCreator,
     interceptorsConsumer: InterceptorsConsumer,
-    modulesContainer: ModulesContainer
+    modulesContainer: ModulesContainer,
   );
   create(
     instance: Controller,
     callback: (...args) => any,
-    methodName: string
+    methodName: string,
   ): (...args: any[]) => Promise<any>;
   findContextModuleName(constructor: Function): string;
   findComponentByClassName(module: Module, className: string): boolean;

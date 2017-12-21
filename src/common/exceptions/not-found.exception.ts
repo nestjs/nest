@@ -6,7 +6,7 @@ export class NotFoundException extends HttpException {
   constructor(message?: string | object | any, error = 'Not Found') {
     super(
       createHttpExceptionBody(message, error, HttpStatus.NOT_FOUND),
-      HttpStatus.NOT_FOUND
+      HttpStatus.NOT_FOUND,
     );
   }
 }

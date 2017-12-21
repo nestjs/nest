@@ -10,12 +10,12 @@ export declare class ListenersController {
   private readonly metadataExplorer;
   constructor(
     clientsContainer: ClientsContainer,
-    contextCreator: RpcContextCreator
+    contextCreator: RpcContextCreator,
   );
   bindPatternHandlers(
     instance: Controller,
     server: Server & CustomTransportStrategy,
-    module: string
+    module: string,
   ): void;
   bindClientsToProperties(instance: Controller): void;
 }

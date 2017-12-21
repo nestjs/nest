@@ -6,25 +6,25 @@ export declare class PipesConsumer {
     {
       metatype,
       type,
-      data
+      data,
     }: {
       metatype: any;
       type: any;
       data: any;
     },
-    transforms: Transform<any>[]
+    transforms: Transform<any>[],
   ): Promise<any>;
   applyPipes(
     value: any,
     {
       metatype,
       type,
-      data
+      data,
     }: {
       metatype;
       type?;
       data?;
     },
-    transforms: Transform<any>[]
+    transforms: Transform<any>[],
   ): Promise<any>;
 }

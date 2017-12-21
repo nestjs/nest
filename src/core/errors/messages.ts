@@ -1,7 +1,7 @@
 export const UnknownDependenciesMessage = (
   type: string,
   index: number,
-  length: number
+  length: number,
 ) => {
   let message = `Nest can't resolve dependencies of the ${type}`;
   message += ` (`;

@@ -13,7 +13,7 @@ import { ExpressAdapter } from './adapters/express-adapter';
 import {
   INestApplication,
   INestMicroservice,
-  INestApplicationContext
+  INestApplicationContext,
 } from '@nestjs/common';
 import { MetadataScanner } from './metadata-scanner';
 import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
@@ -28,7 +28,7 @@ export class NestFactoryStatic {
   private logger = new Logger('NestFactory', true);
   private dependenciesScanner = new DependenciesScanner(
     this.container,
-    new MetadataScanner()
+    new MetadataScanner(),
   );
 
   /**
@@ -40,11 +40,11 @@ export class NestFactoryStatic {
    */
   public async create(
     module,
-    express = ExpressAdapter.create()
+    express = ExpressAdapter.create(),
   ): Promise<INestApplication> {
     await this.initialize(module);
     return this.createNestInstance<NestApplication>(
-      new NestApplication(this.container, express)
+      new NestApplication(this.container, express),
     );
   }
 
@@ -57,7 +57,7 @@ export class NestFactoryStatic {
    */
   public async createMicroservice(
     module,
-    config?: MicroserviceConfiguration
+    config?: MicroserviceConfiguration,
   ): Promise<INestMicroservice> {
     if (!NestMicroservice) {
       throw new MicroservicesPackageNotFoundException();
@@ -65,7 +65,7 @@ export class NestFactoryStatic {
 
     await this.initialize(module);
     return this.createNestInstance<INestMicroservice>(
-      new NestMicroservice(this.container, config as any)
+      new NestMicroservice(this.container, config as any),
     );
   }
 
@@ -76,14 +76,14 @@ export class NestFactoryStatic {
    * @returns an `Promise` of the INestApplicationContext instance
    */
   public async createApplicationContext(
-    module
+    module,
   ): Promise<INestApplicationContext> {
     await this.initialize(module);
 
     const modules = this.container.getModules().values();
     const root = modules.next().value;
     return this.createNestInstance<INestApplicationContext>(
-      new NestApplicationContext(this.container, [], root)
+      new NestApplicationContext(this.container, [], root),
     );
   }
 
@@ -107,7 +107,7 @@ export class NestFactoryStatic {
     const proxy = this.createExceptionProxy();
     return new Proxy(target, {
       get: proxy,
-      set: proxy
+      set: proxy,
     });
   }
 

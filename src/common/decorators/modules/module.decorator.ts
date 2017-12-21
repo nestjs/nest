@@ -7,7 +7,7 @@ const metadataKeys = [
   metadata.MODULES,
   metadata.EXPORTS,
   metadata.COMPONENTS,
-  metadata.CONTROLLERS
+  metadata.CONTROLLERS,
 ];
 
 const validateKeys = (keys: string[]) => {

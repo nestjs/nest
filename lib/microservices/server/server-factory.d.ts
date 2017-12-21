@@ -1,10 +1,10 @@
 import {
   MicroserviceConfiguration,
-  CustomTransportStrategy
+  CustomTransportStrategy,
 } from '../interfaces';
 import { Server } from './server';
 export declare class ServerFactory {
   static create(
-    config: MicroserviceConfiguration
+    config: MicroserviceConfiguration,
   ): Server & CustomTransportStrategy;
 }

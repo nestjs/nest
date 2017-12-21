@@ -20,9 +20,9 @@ describe('ClientTCP', () => {
         .stub()
         .callsFake(
           (event, callback) =>
-            event !== 'error' && event !== 'close' && callback({})
+            event !== 'error' && event !== 'close' && callback({}),
         ),
-      end: sinon.spy()
+      end: sinon.spy(),
     };
     createSocketStub = sinon
       .stub(client, 'createSocket')

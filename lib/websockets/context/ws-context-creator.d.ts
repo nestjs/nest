@@ -24,16 +24,16 @@ export declare class WsContextCreator {
     guardsContextCreator: GuardsContextCreator,
     guardsConsumer: GuardsConsumer,
     interceptorsContextCreator: InterceptorsContextCreator,
-    interceptorsConsumer: InterceptorsConsumer
+    interceptorsConsumer: InterceptorsConsumer,
   );
   create(
     instance: Controller,
     callback: (client, data) => void,
-    module: any
+    module: any,
   ): (client, data) => Promise<void>;
   reflectCallbackParamtypes(
     instance: Controller,
-    callback: (...args) => any
+    callback: (...args) => any,
   ): any[];
   getDataMetatype(instance: any, callback: any): any;
 }

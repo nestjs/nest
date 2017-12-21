@@ -3,7 +3,7 @@ import {
   ClientProxy,
   Client,
   Transport,
-  MessagePattern
+  MessagePattern,
 } from '@nestjs/microservices';
 import { Observable } from 'rxjs/Observable';
 import { LoggingInterceptor } from '../common/interceptors/logging.interceptor';

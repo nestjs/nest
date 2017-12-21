@@ -5,7 +5,7 @@ import { Component } from '../decorators/core/component.decorator';
 export const BindResolveMiddlewareValues = <
   T extends Constructor<NestMiddleware>
 >(
-  data: Array<any>
+  data: Array<any>,
 ) => {
   return (Metatype: T): any => {
     const type = class extends Metatype {

@@ -15,7 +15,7 @@ export abstract class Server {
   add(pattern: any, callback: (data) => Promise<Observable<any>>): void;
   send(
     stream$: Observable<any>,
-    respond: (data: MicroserviceResponse) => void
+    respond: (data: MicroserviceResponse) => void,
   ): Subscription;
   transformToObservable(resultOrDeffered: any): Observable<any>;
   protected handleError(error: string): void;
