@@ -27,14 +27,14 @@ describe('RouterResponseController', () => {
       describe('nil', () => {
         it('should call send()', async () => {
           const value = null;
-          await routerResponseController.apply(value, response, 1, 200);
+          await routerResponseController.apply(value, response, 200);
           expect(response.send.called).to.be.true;
         });
       });
       describe('string', () => {
         it('should call send(value)', async () => {
           const value = 'string';
-          await routerResponseController.apply(value, response, 1, 200);
+          await routerResponseController.apply(value, response, 200);
           expect(response.send.called).to.be.true;
           expect(response.send.calledWith(String(value))).to.be.true;
         });
@@ -42,7 +42,7 @@ describe('RouterResponseController', () => {
       describe('object', () => {
         it('should call json(value)', async () => {
           const value = { test: 'test' };
-          await routerResponseController.apply(value, response, 1, 200);
+          await routerResponseController.apply(value, response, 200);
           expect(response.json.called).to.be.true;
           expect(response.json.calledWith(value)).to.be.true;
         });

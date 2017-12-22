@@ -17,6 +17,7 @@ import { MiddlewaresInjector } from './middlewares-injector';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from './context/ws-context-creator';
 import { Observable } from 'rxjs/Observable';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 import 'rxjs/add/observable/fromPromise';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/switchMap';
@@ -155,7 +156,7 @@ export class WebSocketsController {
     defferedResult: Promise<any>,
   ): Promise<Observable<any>> {
     const result = await defferedResult;
-    if (result instanceof Observable) {
+    if (result && isFunction(result.subscribe)) {
       return result;
     }
     if (result instanceof Promise) {

@@ -6,18 +6,14 @@ export class RouterResponseController {
   public async apply(
     resultOrDeffered,
     response,
-    requestMethod: RequestMethod,
-    httpCode: number,
+    httpStatusCode: number,
   ) {
     const result = await this.transformToResult(resultOrDeffered);
-    const statusCode = httpCode
-      ? httpCode
-      : this.getStatusByMethod(requestMethod);
-    const res = response.status(statusCode);
+    const res = response.status(httpStatusCode);
     if (isNil(result)) {
       return res.send();
     }
-    return isObject(result) ? res.json(result) : res.send(String(result));
+    return isObject(result) ? res.json(result) : res.send(result);
   }
 
   public async transformToResult(resultOrDeffered) {

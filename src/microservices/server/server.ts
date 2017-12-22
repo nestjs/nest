@@ -3,6 +3,7 @@ import { MessageHandlers } from '../interfaces/message-handlers.interface';
 import { Observable } from 'rxjs/Observable';
 import { MicroserviceResponse } from '../index';
 import { Subscription } from 'rxjs/Subscription';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/finally';
 import 'rxjs/add/observable/empty';
@@ -37,7 +38,7 @@ export abstract class Server {
   public transformToObservable(resultOrDeffered) {
     if (resultOrDeffered instanceof Promise) {
       return Observable.fromPromise(resultOrDeffered);
-    } else if (!(resultOrDeffered instanceof Observable)) {
+    } else if (!(resultOrDeffered && isFunction(resultOrDeffered.subscribe))) {
       return Observable.of(resultOrDeffered);
     }
     return resultOrDeffered;
