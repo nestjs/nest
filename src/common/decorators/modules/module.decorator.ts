@@ -32,7 +32,7 @@ const validateKeys = (keys: string[]) => {
  */
 export function Module(obj: {
   modules?: any[];
-  imports?: any[],
+  imports?: any[];
   controllers?: any[];
   components?: any[];
   exports?: any[];
@@ -40,9 +40,7 @@ export function Module(obj: {
   const propsKeys = Object.keys(obj);
   validateKeys(propsKeys);
 
-  obj.modules = obj.imports && !obj.modules
-    ? obj.imports
-    : obj.modules;
+  obj.modules = obj.imports && !obj.modules ? obj.imports : obj.modules;
 
   return (target: object) => {
     for (const property in obj) {

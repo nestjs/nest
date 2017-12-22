@@ -1,1 +1,2 @@
-export interface Injectable {}
+export interface Injectable {
+}

@@ -9,6 +9,4 @@ import { PipeTransform } from '../../interfaces/index';
  *
  * @param  {PipeTransform[]} ...pipes (instances)
  */
-export declare function UsePipes(
-  ...pipes: PipeTransform<any>[]
-): (target: object, key?: any, descriptor?: any) => any;
+export declare function UsePipes(...pipes: PipeTransform<any>[]): (target: object, key?: any, descriptor?: any) => any;
