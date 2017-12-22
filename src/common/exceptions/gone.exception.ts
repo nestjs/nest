@@ -5,8 +5,8 @@ import { createHttpExceptionBody } from './../utils/http-exception-body.util';
 export class GoneException extends HttpException {
   constructor(message?: string | object | any, error = 'Gone') {
     super(
-			createHttpExceptionBody(message, error, HttpStatus.GONE),
-			HttpStatus.GONE,
-		);
-	}
+      createHttpExceptionBody(message, error, HttpStatus.GONE),
+      HttpStatus.GONE,
+    );
+  }
 }

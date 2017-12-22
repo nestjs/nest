@@ -6,14 +6,14 @@ import { PATH_METADATA, SHARED_MODULE_METADATA } from '../../constants';
  */
 export function SingleScope(): ClassDecorator {
   return (target: any) => {
-        const Metatype = target as FunctionConstructor;
-        const Type = class extends Metatype {
-            constructor(...args) {
-                super(...args);
-            }
-        };
-        Reflect.defineMetadata(SHARED_MODULE_METADATA, true, Type);
-        Object.defineProperty(Type, 'name', { value: target.name });
-        return Type as any;
+    const Metatype = target as FunctionConstructor;
+    const Type = class extends Metatype {
+      constructor(...args) {
+        super(...args);
+      }
     };
+    Reflect.defineMetadata(SHARED_MODULE_METADATA, true, Type);
+    Object.defineProperty(Type, 'name', { value: target.name });
+    return Type as any;
+  };
 }

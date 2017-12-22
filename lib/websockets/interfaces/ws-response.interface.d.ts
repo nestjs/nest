@@ -1,4 +1,4 @@
 export interface WsResponse<T> {
-    event: string;
-    data: T;
+  event: string;
+  data: T;
 }

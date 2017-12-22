@@ -8,8 +8,8 @@ import 'reflect-metadata';
  * @param obj {ModuleMetadata} Module metadata
  */
 export declare function Module(obj: {
-    modules?: any[];
-    controllers?: any[];
-    components?: any[];
-    exports?: any[];
+  modules?: any[];
+  controllers?: any[];
+  components?: any[];
+  exports?: any[];
 }): ClassDecorator;

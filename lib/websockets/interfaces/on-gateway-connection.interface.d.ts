@@ -1,3 +1,3 @@
 export interface OnGatewayConnection {
-    handleConnection(client: any): any;
+  handleConnection(client: any): any;
 }
