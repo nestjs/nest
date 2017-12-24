@@ -137,7 +137,6 @@ describe('RouterExecutionContext', () => {
         instance,
         'callback',
       );
-      console.log(metadata);
 
       const expectedMetadata = {
         [`${RouteParamtypes.REQUEST}:0`]: {
@@ -312,6 +311,29 @@ describe('RouterExecutionContext', () => {
         );
         expect(consumerApplySpy.called).to.be.false;
       });
+    });
+  });
+  describe('createPipesFn', () => {
+    describe('when "paramsOptions" is empty', () => {
+      it('returns identity(undefined)', async () => {
+        const pipesFn = contextCreator.createPipesFn([], []);
+        expect(await pipesFn()).to.be.undefined;
+      });
+    });
+  });
+  describe('createGuardsFn', () => {
+    it('should throw exception when "tryActivate" returns false', () => {
+      const guardsFn = contextCreator.createGuardsFn([null], null, null);
+      sinon.stub(guardsConsumer, 'tryActivate', () => false);
+      expect(guardsFn({})).to.eventually.throw();
+    });
+  });
+  describe('createHandleResponseFn', () => {
+    it('should throw exception when "tryActivate" returns false', () => {
+      const responseFn = contextCreator.createHandleResponseFn(false, 200);
+      const controllerApplySpy = sinon.spy((contextCreator['responseController'] as any), 'apply');
+      responseFn();
+      expect(controllerApplySpy.calledOnce).to.be.true;
     });
   });
 });

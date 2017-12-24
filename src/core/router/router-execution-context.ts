@@ -75,40 +75,22 @@ export class RouterExecutionContext {
         type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
     );
     const paramsOptions = this.mergeParamsMetatypes(paramsMetadata, paramtypes);
+    const httpStatusCode = httpCode
+      ? httpCode
+      : this.responseController.getStatusByMethod(requestMethod);
+
+    const fnCanActivate = this.createGuardsFn(guards, instance, callback);
+    const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
+    const fnHandleResponse = this.createHandleResponseFn(
+      isResponseHandled,
+      httpStatusCode,
+    );
 
     return async (req, res, next) => {
       const args = this.createNullArray(argsLength);
-      const canActivate = await this.guardsConsumer.tryActivate(
-        guards,
-        req,
-        instance,
-        callback,
-      );
-      if (!canActivate) {
-        throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
-      }
+      await fnCanActivate(req);
+      await fnApplyPipes(args, req, res, next);
 
-      await Promise.all(
-        paramsOptions.map(async param => {
-          const {
-            index,
-            extractValue,
-            type,
-            data,
-            metatype,
-            pipes: paramPipes,
-          } = param;
-          const value = extractValue(req, res, next);
-
-          args[index] = await this.getParamValue(
-            value,
-            { metatype, type, data },
-            pipes.concat(
-              this.pipesContextCreator.createConcreteContext(paramPipes),
-            ),
-          );
-        }),
-      );
       const handler = () => callback.apply(instance, args);
       const result = await this.interceptorsConsumer.intercept(
         interceptors,
@@ -117,9 +99,7 @@ export class RouterExecutionContext {
         callback,
         handler,
       );
-      return !isResponseHandled
-        ? this.responseController.apply(result, res, requestMethod, httpCode)
-        : undefined;
+      fnHandleResponse(result, res);
     };
   }
 
@@ -214,5 +194,64 @@ export class RouterExecutionContext {
       );
     }
     return Promise.resolve(value);
+  }
+
+  public createGuardsFn(
+    guards: any[],
+    instance: Controller,
+    callback: (...args) => any,
+  ) {
+    const canActivateFn = async req => {
+      const canActivate = await this.guardsConsumer.tryActivate(
+        guards,
+        req,
+        instance,
+        callback,
+      );
+      if (!canActivate) {
+        throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
+      }
+    };
+    return guards.length ? canActivateFn : async req => undefined;
+  }
+
+  public createPipesFn(
+    pipes: any[],
+    paramsOptions: (ParamProperties & { metatype?: any })[],
+  ) {
+    const pipesFn = async (args, req, res, next) => {
+      await Promise.all(
+        paramsOptions.map(async param => {
+          const {
+            index,
+            extractValue,
+            type,
+            data,
+            metatype,
+            pipes: paramPipes,
+          } = param;
+          const value = extractValue(req, res, next);
+
+          args[index] = await this.getParamValue(
+            value,
+            { metatype, type, data },
+            pipes.concat(
+              this.pipesContextCreator.createConcreteContext(paramPipes),
+            ),
+          );
+        }),
+      );
+    };
+    return paramsOptions.length ? pipesFn : async (...args) => undefined;
+  }
+
+  public createHandleResponseFn(
+    isResponseHandled: boolean,
+    httpStatusCode: number,
+  ) {
+    return !isResponseHandled
+      ? (result, res) =>
+          this.responseController.apply(result, res, httpStatusCode)
+      : (...args) => undefined;
   }
 }
