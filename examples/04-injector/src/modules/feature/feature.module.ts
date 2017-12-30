@@ -3,7 +3,7 @@ import { FeatureService } from './feature.service';
 import { CoreModule } from '../core/core.module';
 
 @Module({
-  modules: [CoreModule],
+  imports: [CoreModule],
   components: [FeatureService],
 })
 export class FeatureModule {}

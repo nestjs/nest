@@ -5,7 +5,7 @@ import { ContextService } from './context.service';
 import { FeatureModule } from '../feature/feature.module';
 
 @Module({
-  modules: [CommonModule],
+  imports: [CommonModule],
   components: [CoreService, ContextService],
   exports: [CommonModule],
 })

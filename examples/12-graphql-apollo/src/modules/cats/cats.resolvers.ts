@@ -27,7 +27,7 @@ export class CatsResolvers {
   }
 
   @DelegateProperty('human')
-  findHumansById(cat: Cat) {
+  findHumansById() {
     return (mergeInfo: MergeInfo) => ({
       fragment: `fragment CatFragment on Cat { humanId }`,
       resolve(parent, args, context, info) {

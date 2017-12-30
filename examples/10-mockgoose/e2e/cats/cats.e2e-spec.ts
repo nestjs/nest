@@ -10,7 +10,7 @@ describe('Cats', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
-      modules: [CatsModule],
+      imports: [CatsModule],
     }).compile();
 
     const app = module.createNestApplication(server);

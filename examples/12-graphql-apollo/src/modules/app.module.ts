@@ -15,9 +15,9 @@ import { GraphQLModule, GraphQLFactory } from '@nestjs/graphql';
 import { CatsModule } from './cats/cats.module';
 
 @Module({
-  modules: [CatsModule, GraphQLModule],
+  imports: [CatsModule, GraphQLModule],
 })
-export class ApplicationModule {
+export class ApplicationModule implements NestModule {
   constructor(private readonly graphQLFactory: GraphQLFactory) {}
 
   configure(consumer: MiddlewaresConsumer) {
