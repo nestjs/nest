@@ -1,3 +1,4 @@
+import * as express from 'express';
 import * as optional from 'optional';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
@@ -18,7 +19,7 @@ export class TestingModule extends NestApplicationContext {
     super(container, scope, contextModule);
   }
 
-  public createNestApplication(express?): INestApplication {
+  public createNestApplication(express = express()): INestApplication {
     return new NestApplication(this.container, express);
   }
 
