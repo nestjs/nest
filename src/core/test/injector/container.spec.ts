@@ -170,15 +170,33 @@ describe('NestContainer', () => {
         const addSpy = sinon.spy(collection, 'set');
         const dynamicMetadata = { module: null };
 
-        container.addDynamicMetadata(token, dynamicMetadata);
+        container.addDynamicMetadata(token, dynamicMetadata, []);
         expect(addSpy.calledWith(token, dynamicMetadata)).to.be.true;
       });
     });
     describe('when dynamic metadata does not exists', () => {
       it('should not add to the dynamic metadata collection', () => {
         const addSpy = sinon.spy(collection, 'set');
-        container.addDynamicMetadata(token, null);
+        container.addDynamicMetadata(token, null, []);
         expect(addSpy.called).to.be.false;
+      });
+    });
+  });
+
+  class Test {}
+  describe('addDynamicModules', () => {
+    describe('when array is empty/undefined', () => {
+      it('should not call "addModule"', () => {
+        const addModuleSpy = sinon.spy(container, 'addModule');
+        container.addDynamicModules(undefined, []);
+        expect(addModuleSpy.called).to.be.false;
+      });
+    });
+    describe('when array is not empty/undefined', () => {
+      it('should call "addModule"', () => {
+        const addModuleSpy = sinon.spy(container, 'addModule');
+        container.addDynamicModules([Test] as any, []);
+        expect(addModuleSpy.called).to.be.true;
       });
     });
   });

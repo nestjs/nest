@@ -1,3 +1,9 @@
+## 4.5.4
+- **core**: [bugfix] dynamic modules recurrent imports fix
+
+## 4.5.3
+- **testing**: [bugfix] issue #326
+
 ## 4.5.2
 - **common**: [feature] rename `modules` to `imports` (`@Module()` decorator)
 - **core**: [feature] exception filters with empty `@Catch()` metadata handle each occurred exception 

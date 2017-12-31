@@ -16,7 +16,8 @@ export declare class NestContainer {
         dynamicMetadata?: Partial<DynamicModule> | undefined;
     };
     isDynamicModule(module: NestModuleMetatype | DynamicModule): module is DynamicModule;
-    addDynamicMetadata(token: string, dynamicModuleMetadata: Partial<DynamicModule>): any;
+    addDynamicMetadata(token: string, dynamicModuleMetadata: Partial<DynamicModule>, scope: NestModuleMetatype[]): any;
+    addDynamicModules(modules: any[], scope: NestModuleMetatype[]): void;
     isGlobalModule(metatype: NestModuleMetatype): boolean;
     addGlobalModule(module: Module): void;
     getModules(): ModulesContainer;
