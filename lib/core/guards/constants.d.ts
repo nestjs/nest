@@ -1,1 +1,1 @@
-export declare const FORBIDDEN_MESSAGE = 'Forbidden resource';
+export declare const FORBIDDEN_MESSAGE = "Forbidden resource";

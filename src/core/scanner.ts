@@ -63,6 +63,10 @@ export class DependenciesScanner {
         token,
         metadata.MODULES as 'modules',
       ),
+      ...this.container.getDynamicMetadataByToken(
+        token,
+        metadata.IMPORTS as 'imports',
+      ),
     ];
     modules.map(related => this.storeRelatedModule(related, token));
   }

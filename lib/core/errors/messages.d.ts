@@ -1,8 +1,4 @@
-export declare const UnknownDependenciesMessage: (
-  type: string,
-  index: number,
-  length: number,
-) => string;
+export declare const UnknownDependenciesMessage: (type: string, index: number, length: number) => string;
 export declare const InvalidMiddlewareMessage: (name: string) => string;
 export declare const InvalidModuleMessage: (scope: string) => string;
 export declare const UnknownExportMessage: (name: string) => string;

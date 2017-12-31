@@ -1,3 +1,3 @@
 export interface OnGatewayInit {
-  afterInit(server: any): any;
+    afterInit(server: any): any;
 }

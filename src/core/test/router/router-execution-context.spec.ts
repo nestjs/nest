@@ -331,7 +331,10 @@ describe('RouterExecutionContext', () => {
   describe('createHandleResponseFn', () => {
     it('should throw exception when "tryActivate" returns false', () => {
       const responseFn = contextCreator.createHandleResponseFn(false, 200);
-      const controllerApplySpy = sinon.spy((contextCreator['responseController'] as any), 'apply');
+      const controllerApplySpy = sinon.spy(
+        contextCreator['responseController'] as any,
+        'apply',
+      );
       responseFn();
       expect(controllerApplySpy.calledOnce).to.be.true;
     });

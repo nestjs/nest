@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "4.5.1",
+  "version": "4.5.2",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist lib",
     "prepublish": "npm run build:lib",
-    "publish": "prettier && ./node_modules/.bin/lerna publish -m \"chore(release) publish %s\""
+    "publish": "./node_modules/.bin/lerna publish -m \"chore(release) publish %s\""
   },
   "engines": {
     "node": ">=6.11.0"
