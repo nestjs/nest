@@ -1,3 +1,6 @@
+## 4.5.6
+- **core**: [bugfix] dynamic modules `exports`
+
 ## 4.5.5
 - **core**: [bugfix] add missing `app.engine()` wrapper
 

@@ -1,7 +1,6 @@
 import { Component, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-
 import { Photo } from './photo.entity';
 
 @Component()
