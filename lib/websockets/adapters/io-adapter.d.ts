@@ -12,7 +12,7 @@ export declare class IoAdapter implements WebSocketAdapter {
     private readonly httpServer;
     constructor(httpServer?: Server | null);
     create(port: number): SocketIO.Server;
-    createWithNamespace(port: number, namespace: string): SocketIO.Namespace;
+    createWithNamespace(port: number, namespace: string, server?: any): any;
     createIOServer(port: number): SocketIO.Server;
     bindClientConnect(server: any, callback: (...args) => void): void;
     bindClientDisconnect(client: any, callback: (...args) => void): void;

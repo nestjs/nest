@@ -8,39 +8,50 @@ import { RpcExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions
 import 'rxjs/add/observable/throw';
 
 export class RpcExceptionsHandler {
-    private filters: RpcExceptionFilterMetadata[] = [];
+  private static readonly logger = new Logger(RpcExceptionsHandler.name);
+  private filters: RpcExceptionFilterMetadata[] = [];
 
-    public handle(exception: Error | RpcException | any): Observable<any> {
-        const filterResult$ = this.invokeCustomFilters(exception);
-        if (filterResult$) {
-            return filterResult$;
-        }
-        const status = 'error';
-        if (!(exception instanceof RpcException)) {
-            const message = messages.UNKNOWN_EXCEPTION_MESSAGE;
-            return Observable.throw({ status, message });
-        }
-        const res = exception.getError();
-        const message = isObject(res) ? res : ({ status, message: res });
-        return Observable.throw(message);
+  public handle(exception: Error | RpcException | any): Observable<any> {
+    const filterResult$ = this.invokeCustomFilters(exception);
+    if (filterResult$) {
+      return filterResult$;
     }
+    const status = 'error';
+    if (!(exception instanceof RpcException)) {
+      const message = messages.UNKNOWN_EXCEPTION_MESSAGE;
 
-    public setCustomFilters(filters: RpcExceptionFilterMetadata[]) {
-        if (!Array.isArray(filters)) {
-            throw new InvalidExceptionFilterException();
-        }
-        this.filters = filters;
+      const isError = isObject(exception) && (exception as Error).message;
+      const loggerArgs = isError
+        ? [(exception as Error).message, (exception as Error).stack]
+        : [exception];
+      const logger = RpcExceptionsHandler.logger;
+      logger.error.apply(logger, loggerArgs);
+
+      return Observable.throw({ status, message });
     }
+    const res = exception.getError();
+    const message = isObject(res) ? res : { status, message: res };
+    return Observable.throw(message);
+  }
 
-    public invokeCustomFilters(exception): Observable<any> | null {
-        if (isEmpty(this.filters)) return null;
-
-        const filter = this.filters.find(({ exceptionMetatypes, func }) => {
-            const hasMetatype = !!exceptionMetatypes.find(
-                ExceptionMetatype => exception instanceof ExceptionMetatype,
-            );
-            return hasMetatype;
-        });
-        return filter ? filter.func(exception) : null;
+  public setCustomFilters(filters: RpcExceptionFilterMetadata[]) {
+    if (!Array.isArray(filters)) {
+      throw new InvalidExceptionFilterException();
     }
+    this.filters = filters;
+  }
+
+  public invokeCustomFilters(exception): Observable<any> | null {
+    if (isEmpty(this.filters)) return null;
+
+    const filter = this.filters.find(({ exceptionMetatypes, func }) => {
+      const hasMetatype =
+        !exceptionMetatypes.length ||
+        !!exceptionMetatypes.find(
+          ExceptionMetatype => exception instanceof ExceptionMetatype,
+        );
+      return hasMetatype;
+    });
+    return filter ? filter.func(exception) : null;
+  }
 }

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "prestart:prod": "tsc",
-    "start:prod": "node dist/server.js"
+    "start:prod": "node dist/main.js"
   },
   "dependencies": {
     "@nestjs/common": "^4.3.0",
@@ -18,9 +18,9 @@
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.4.3",
-    "sequelize": "^4.12.0",
-    "sequelize-typescript": "^0.5.0",
-    "typescript": "^2.4.2"
+    "sequelize": "^4.28.0",
+    "sequelize-typescript": "^0.6.1",
+    "typescript": "^2.6.2"
   },
   "devDependencies": {
     "@types/node": "^7.0.41",

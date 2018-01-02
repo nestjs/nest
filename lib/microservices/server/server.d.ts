@@ -14,6 +14,6 @@ export declare abstract class Server {
     getHandlers(): MessageHandlers;
     add(pattern: any, callback: (data) => Promise<Observable<any>>): void;
     send(stream$: Observable<any>, respond: (data: MicroserviceResponse) => void): Subscription;
-    transformToObservable(resultOrDeffered: any): Observable<any>;
+    transformToObservable(resultOrDeffered: any): any;
     protected handleError(error: string): void;
 }

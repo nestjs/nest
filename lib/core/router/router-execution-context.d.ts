@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { Controller, Transform } from '@nestjs/common/interfaces';
-import { RouteParamsMetadata } from '@nestjs/common/utils';
+import { RouteParamsMetadata } from '@nestjs/common/decorators';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 import { PipesContextCreator } from './../pipes/pipes-context-creator';
 import { PipesConsumer } from './../pipes/pipes-consumer';
@@ -12,7 +12,7 @@ import { InterceptorsContextCreator } from '../interceptors/interceptors-context
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 export interface ParamProperties {
     index: number;
-    type: RouteParamtypes;
+    type: RouteParamtypes | string;
     data: ParamData;
     pipes: PipeTransform<any>[];
     extractValue: (req, res, next) => any;
@@ -27,8 +27,8 @@ export declare class RouterExecutionContext {
     private readonly interceptorsConsumer;
     private readonly responseController;
     constructor(paramsFactory: IRouteParamsFactory, pipesContextCreator: PipesContextCreator, pipesConsumer: PipesConsumer, guardsContextCreator: GuardsContextCreator, guardsConsumer: GuardsConsumer, interceptorsContextCreator: InterceptorsContextCreator, interceptorsConsumer: InterceptorsConsumer);
-    create(instance: Controller, callback: (...args) => any, methodName: string, module: string, requestMethod: RequestMethod): (req: any, res: any, next: any) => Promise<any>;
-    mapParamType(key: string): RouteParamtypes | number;
+    create(instance: Controller, callback: (...args) => any, methodName: string, module: string, requestMethod: RequestMethod): (req: any, res: any, next: any) => Promise<void>;
+    mapParamType(key: string): string;
     reflectCallbackMetadata(instance: Controller, methodName: string): RouteParamsMetadata;
     reflectCallbackParamtypes(instance: Controller, methodName: string): any[];
     reflectHttpStatusCode(callback: (...args) => any): number;
@@ -44,4 +44,9 @@ export declare class RouterExecutionContext {
         type: any;
         data: any;
     }, transforms: Transform<any>[]): Promise<any>;
+    createGuardsFn(guards: any[], instance: Controller, callback: (...args) => any): (req: any) => Promise<any>;
+    createPipesFn(pipes: any[], paramsOptions: (ParamProperties & {
+        metatype?: any;
+    })[]): (...args: any[]) => Promise<any>;
+    createHandleResponseFn(isResponseHandled: boolean, httpStatusCode: number): (...args: any[]) => any;
 }

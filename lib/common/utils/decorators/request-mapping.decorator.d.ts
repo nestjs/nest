@@ -1,6 +1,8 @@
 import 'reflect-metadata';
 import { RequestMappingMetadata } from '../../interfaces/request-mapping-metadata.interface';
-export declare const RequestMapping: (metadata?: RequestMappingMetadata) => MethodDecorator;
+export declare const RequestMapping: (
+  metadata?: RequestMappingMetadata,
+) => MethodDecorator;
 /**
  * Routes HTTP POST requests to the specified path.
  */

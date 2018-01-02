@@ -1,4 +1,44 @@
-# 4.4.0 @soon
+## 4.5.6
+- **core**: [bugfix] dynamic modules `exports`
+
+## 4.5.5
+- **core**: [bugfix] add missing `app.engine()` wrapper
+
+## 4.5.4
+- **core**: [bugfix] dynamic modules recurrent imports fix
+
+## 4.5.3
+- **testing**: [bugfix] issue #326
+
+## 4.5.2
+- **common**: [feature] rename `modules` to `imports` (`@Module()` decorator)
+- **core**: [feature] exception filters with empty `@Catch()` metadata handle each occurred exception 
+- **core**: [improvement] increase performance
+
+## 4.5.1
+- **common**: [feature] `INestAplication` provides a `getHttpServer()` method now
+- **websockets**: [bugfix] `IoAdapter` bugfix
+
+## 4.5.0
+- **common**: bugfix #286
+- **core**: dynamic modules feature
+- **core**: global scope feature
+- **core**: `ExternalContextCreator` & `ModulesContainer` 
+- **core**: merge `NestApplicationContext` with `NestApplication`
+- **core**: `NotFoundException` is thrown when route is not available #298
+- **core**: add `set()` wrapper around native express methods
+- **core**: bugfix #281
+- **websockets**: bugfix #271
+- **microservices**: log RPC exceptions #303
+- **microservices**: merge `NestApplicationContext` with `NestMicroservice`
+- **microservices**: handle ECONNREFUSED #288
+
+## 4.4.1
+- **common**: `ValidationPipe` improvement
+- **common**: custom route params decorators accepts pipes now
+- **core**: bugfix #268
+
+## 4.4.0 
 - **core**: possibility to create the `NestApplicationContext` using `NestFactory.createApplicationContext()` (Nest application without HTTP server / microservice in the background)
 - **core**: create custom params decorators feature (`createRouteParamDecorator()`)
 

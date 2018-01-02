@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "prestart:prod": "tsc",
-    "start:prod": "node dist/server.js",
+    "start:prod": "node dist/main.js",
     "e2e": "jest --config=e2e/jest-e2e.json --forceExit",
     "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
   },

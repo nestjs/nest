@@ -1,33 +1,39 @@
 import * as express from 'express';
-import * as bodyParser from 'body-parser';
 import * as request from 'supertest';
 import { Test } from '@nestjs/testing';
-import { CatsModule } from '../../src/modules/cats/cats.module';
-import { CatsService } from '../../src/modules/cats/cats.service';
+import { CatsModule } from '../../src/cats/cats.module';
+import { CatsService } from '../../src/cats/cats.service';
+import { INestApplication } from '@nestjs/common';
 
 describe('Cats', () => {
-    const server = express();
-    server.use(bodyParser.json());
+  let server;
+  let app: INestApplication;
 
-    const catsService = { findAll: () => ['test'] };
+  const catsService = { findAll: () => ['test'] };
 
-    beforeAll(async () => {
-        const module = await Test.createTestingModule({
-            modules: [CatsModule],
-          })
-          .overrideComponent(CatsService).useValue(catsService)
-          .compile();
+  beforeAll(async () => {
+    const module = await Test.createTestingModule({
+      imports: [CatsModule],
+    })
+      .overrideComponent(CatsService)
+      .useValue(catsService)
+      .compile();
 
-        const app = module.createNestApplication(server);
-        await app.init();
-    });
+    server = express();
+    app = module.createNestApplication(server);
+    await app.init();
+  });
 
-    it(`/GET cats`, () => {
-        return request(server)
-            .get('/cats')
-            .expect(200)
-            .expect({
-              data: catsService.findAll(),
-            });
-    });
+  it(`/GET cats`, () => {
+    return request(server)
+      .get('/cats')
+      .expect(200)
+      .expect({
+        data: catsService.findAll(),
+      });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
 });

@@ -1,10 +1,12 @@
 export declare const metadata: {
     MODULES: string;
+    IMPORTS: string;
     COMPONENTS: string;
     CONTROLLERS: string;
     EXPORTS: string;
 };
 export declare const SHARED_MODULE_METADATA = "__sharedModule__";
+export declare const GLOBAL_MODULE_METADATA = "__globalModule__";
 export declare const PATH_METADATA = "path";
 export declare const PARAMTYPES_METADATA = "design:paramtypes";
 export declare const SELF_DECLARED_DEPS_METADATA = "self:paramtypes";

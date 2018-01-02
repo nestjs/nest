@@ -1,17 +1,16 @@
 {
   "name": "nestjs",
-  "version": "4.4.0",
+  "version": "4.5.5",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "start:live": "nodemon -e ts --watch src index.js",
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "prettier": "prettier */**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist lib",
     "prepublish": "npm run build:lib",
-    "publish": "./node_modules/.bin/lerna publish -m \"chore(release) publish %s\""
+    "publish": "./node_modules/.bin/lerna publish --exact -m \"chore(release) publish %s\""
   },
   "engines": {
     "node": ">=6.11.0"
@@ -54,10 +53,12 @@
     "body-parser": "^1.17.2",
     "chai": "^3.5.0",
     "chai-as-promised": "^7.1.1",
+    "clang-format": "^1.1.0",
     "concurrently": "^3.4.0",
     "core-js": "^2.4.1",
     "coveralls": "^2.11.16",
     "gulp": "^3.9.1",
+    "gulp-clang-format": "^1.0.23",
     "gulp-sequence": "^0.4.6",
     "gulp-typescript": "^3.1.6",
     "gulp-watch": "^4.3.11",
@@ -68,6 +69,7 @@
     "mocha": "^3.2.0",
     "nodemon": "^1.11.0",
     "nyc": "^10.1.2",
+    "prettier": "^1.9.2",
     "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
     "ts-node": "^3.2.0"

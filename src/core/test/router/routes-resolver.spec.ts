@@ -1,8 +1,8 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RoutesResolver } from '../../router/routes-resolver';
-import { Controller } from '../../../common/utils/decorators/controller.decorator';
-import { RequestMapping } from '../../../common/utils/decorators/request-mapping.decorator';
+import { Controller } from '../../../common/decorators/core/controller.decorator';
+import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { ApplicationConfig } from '../../application-config';
 
@@ -10,10 +10,10 @@ describe('RoutesResolver', () => {
   @Controller('global')
   class TestRoute {
     @RequestMapping({ path: 'test' })
-    public getTest() { }
+    public getTest() {}
 
     @RequestMapping({ path: 'another-test', method: RequestMethod.POST })
-    public anotherTest() { }
+    public anotherTest() {}
   }
 
   let router;
@@ -27,15 +27,19 @@ describe('RoutesResolver', () => {
       getModules: () => modules,
     };
     router = {
-      get() { },
-      post() { },
+      get() {},
+      post() {},
     };
   });
 
   beforeEach(() => {
-    routesResolver = new RoutesResolver(container, {
-      createRouter: () => router,
-    }, new ApplicationConfig());
+    routesResolver = new RoutesResolver(
+      container,
+      {
+        createRouter: () => router,
+      },
+      new ApplicationConfig(),
+    );
   });
 
   describe('setupRouters', () => {
@@ -62,10 +66,11 @@ describe('RoutesResolver', () => {
       modules.set('TestModule', { routes });
       modules.set('TestModule2', { routes });
 
-      const spy = sinon.stub(routesResolver, 'setupRouters').callsFake(() => undefined);
-      routesResolver.resolve({} as any);
+      const spy = sinon
+        .stub(routesResolver, 'setupRouters')
+        .callsFake(() => undefined);
+      routesResolver.resolve({ use: sinon.spy() } as any);
       expect(spy.calledTwice).to.be.true;
     });
-
   });
 });

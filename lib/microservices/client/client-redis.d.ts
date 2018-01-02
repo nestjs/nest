@@ -11,7 +11,7 @@ export declare class ClientRedis extends ClientProxy {
     getAckPatternName(pattern: string): string;
     getResPatternName(pattern: string): string;
     close(): void;
-    init(): void;
+    init(callback: (...args) => any): void;
     createClient(): redis.RedisClient;
-    handleErrors(stream: any): void;
+    handleErrors(stream: any, callback: (...args) => any): void;
 }

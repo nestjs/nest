@@ -1,9 +1,11 @@
+/// <reference types="node" />
+import * as http from 'http';
 import { CanActivate, ExceptionFilter, NestInterceptor, PipeTransform, WebSocketAdapter } from '@nestjs/common';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { NestContainer } from './injector/container';
-export declare class NestApplication implements INestApplication {
-    private readonly container;
+import { NestApplicationContext } from './nest-application-context';
+export declare class NestApplication extends NestApplicationContext implements INestApplication {
     private readonly express;
     private readonly logger;
     private readonly middlewaresModule;
@@ -16,15 +18,19 @@ export declare class NestApplication implements INestApplication {
     private readonly microservices;
     private isInitialized;
     constructor(container: NestContainer, express: any);
-    setupParserMiddlewares(): void;
     setupModules(): Promise<void>;
     init(): Promise<void>;
+    setupParserMiddlewares(): void;
+    isMiddlewareApplied(app: any, name: string): boolean;
     setupRouter(): Promise<void>;
     connectMicroservice(config: MicroserviceConfiguration): INestMicroservice;
     getMicroservices(): INestMicroservice[];
+    getHttpServer(): http.Server;
     startAllMicroservices(callback?: () => void): void;
     startAllMicroservicesAsync(): Promise<void>;
-    use(requestHandler: any): void;
+    use(...args: any[]): void;
+    engine(...args: any[]): void;
+    set(...args: any[]): void;
     listen(port: number, callback?: () => void): any;
     listen(port: number, hostname: string, callback?: () => void): any;
     listenAsync(port: number, hostname?: string): Promise<any>;

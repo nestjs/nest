@@ -1,5 +1,5 @@
 require('ts-node/register');
-require('./src/server');
+require('./src/main');
 
 
 

@@ -3,6 +3,6 @@ import { Controller } from '../controllers/controller.interface';
 import { RequestMethod } from '../../enums/request-method.enum';
 
 export interface MiddlewareConfiguration {
-    middlewares: any;
-    forRoutes: (Controller | ControllerMetadata & { method?: RequestMethod })[];
+  middlewares: any;
+  forRoutes: (Controller | ControllerMetadata & { method?: RequestMethod })[];
 }

@@ -1,4 +1,4 @@
 // tslint:disable-next-line:callable-types
 export interface ExpressMiddleware {
-    (req?, res?, next?): void;
+  (req?, res?, next?): void;
 }
