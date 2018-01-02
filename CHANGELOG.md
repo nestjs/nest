@@ -1,3 +1,6 @@
+## 4.5.5
+- **core**: [bugfix] add missing `app.engine()` wrapper
+
 ## 4.5.4
 - **core**: [bugfix] dynamic modules recurrent imports fix
 
