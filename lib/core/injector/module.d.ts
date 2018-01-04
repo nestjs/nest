@@ -51,8 +51,8 @@ export declare class Module {
     addCustomClass(component: CustomClass, collection: Map<string, any>): void;
     addCustomValue(component: CustomValue, collection: Map<string, any>): void;
     addCustomFactory(component: CustomFactory, collection: Map<string, any>): void;
-    addExportedComponent(exportedComponent: ComponentMetatype): void;
-    addCustomExportedComponent(exportedComponent: CustomFactory | CustomValue | CustomClass): void;
+    addExportedComponent(exportedComponent: ComponentMetatype): Set<string>;
+    addCustomExportedComponent(exportedComponent: CustomFactory | CustomValue | CustomClass): Set<string>;
     addRoute(route: Metatype<Controller>): void;
     addRelatedModule(relatedModule: any): void;
     replace(toReplace: any, options: any): void;

@@ -29,6 +29,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     startAllMicroservices(callback?: () => void): void;
     startAllMicroservicesAsync(): Promise<void>;
     use(...args: any[]): void;
+    engine(...args: any[]): void;
     set(...args: any[]): void;
     listen(port: number, callback?: () => void): any;
     listen(port: number, hostname: string, callback?: () => void): any;

@@ -2,7 +2,7 @@ import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as request from 'supertest';
 import { Test } from '@nestjs/testing';
-import { CatsModule } from '../../src/modules/cats/cats.module';
+import { CatsModule } from '../../src/cats/cats.module';
 
 describe('Cats', () => {
   const server = express();

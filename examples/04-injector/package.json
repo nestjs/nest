@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "prestart:prod": "tsc",
-    "start:prod": "node dist/server.js"
+    "start:prod": "node dist/main.js"
   },
   "dependencies": {
     "@nestjs/common": "^4.3.0",

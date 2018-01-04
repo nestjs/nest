@@ -8,6 +8,7 @@ import {
   isFunction,
   isNil,
   isUndefined,
+  isString,
 } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { Reflector } from '../services/reflector.service';
@@ -253,7 +254,11 @@ export class Module {
   public addCustomExportedComponent(
     exportedComponent: CustomFactory | CustomValue | CustomClass,
   ) {
-    this._exports.add(exportedComponent.provide);
+    const provide = exportedComponent.provide;
+    if (isString(provide)) {
+      return this._exports.add(provide);
+    }
+    this._exports.add(provide.name);
   }
 
   public addRoute(route: Metatype<Controller>) {
