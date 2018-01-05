@@ -89,9 +89,9 @@ describe('InterceptorsConsumer', () => {
     describe('when next() result is Observable', () => {
       it('should return Observable', async () => {
         const val = 3;
-        const next = () => Observable.of(val);
+        const next = async () => Observable.of(val);
         expect(
-          await (consumer.transformDeffered(next) as any).toPromise(),
+          await (await (consumer.transformDeffered(next) as any)).toPromise(),
         ).to.be.eql(val);
       });
     });

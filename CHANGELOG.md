@@ -1,3 +1,6 @@
+## 4.5.7
+- **core**: [bugfix] #337 
+
 ## 4.5.6
 - **core**: [bugfix] dynamic modules `exports`
 

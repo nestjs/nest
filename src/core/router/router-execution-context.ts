@@ -89,9 +89,11 @@ export class RouterExecutionContext {
     return async (req, res, next) => {
       const args = this.createNullArray(argsLength);
       await fnCanActivate(req);
-      await fnApplyPipes(args, req, res, next);
 
-      const handler = () => callback.apply(instance, args);
+      const handler = async () => {
+        await fnApplyPipes(args, req, res, next);
+        return callback.apply(instance, args);
+      };
       const result = await this.interceptorsConsumer.intercept(
         interceptors,
         req,
