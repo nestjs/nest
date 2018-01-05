@@ -22,10 +22,10 @@ export class InterceptorsConsumer {
     next: () => Promise<any>,
   ): Promise<any> {
     if (!interceptors || isEmpty(interceptors)) {
-      return await next();
+      return await (await next());
     }
     const context = this.createContext(instance, callback);
-    const start$ = Observable.defer(() => this.transformDeffered(next));
+    const start$ = Observable.defer(async () => await this.transformDeffered(next));
     const result$ = await interceptors.reduce(
       async (stream$, interceptor) =>
         await interceptor.intercept(dataOrRequest, context, await stream$),
@@ -44,8 +44,8 @@ export class InterceptorsConsumer {
     };
   }
 
-  public transformDeffered(next: () => any): Promise<any> | Observable<any> {
-    const res = next();
+  public async transformDeffered(next: () => any): Promise<any> {
+    const res = await next();
     const isDeffered = res instanceof Promise || res instanceof Observable;
     return isDeffered ? res : Promise.resolve(res);
   }

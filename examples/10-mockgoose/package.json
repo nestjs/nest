@@ -26,7 +26,7 @@
     "@types/mongoose": "^4.7.23",
     "@types/jest": "^20.0.8",
     "@types/node": "^7.0.41",
-    "mockgoose": "^7.3.3",
+    "mockgoose-fix": "^7.3.6",
     "jest": "^20.0.4",
     "supertest": "^3.0.0",
     "ts-jest": "^20.0.14",
