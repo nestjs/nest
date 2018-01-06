@@ -9,6 +9,7 @@ import {
   isNil,
   isUndefined,
   isString,
+  isSymbol,
 } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { Reflector } from '../services/reflector.service';
@@ -255,7 +256,7 @@ export class Module {
     exportedComponent: CustomFactory | CustomValue | CustomClass,
   ) {
     const provide = exportedComponent.provide;
-    if (isString(provide)) {
+    if (isString(provide) || isSymbol(provide)) {
       return this._exports.add(provide);
     }
     this._exports.add(provide.name);

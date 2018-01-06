@@ -222,6 +222,16 @@ describe('Module', () => {
       module.addExportedComponent({ provide: 'test' } as any);
       expect(addCustomExportedComponentSpy.called).to.be.true;
     });
+    it('should support symbols', () => {
+      const addCustomExportedComponentSpy = sinon.spy(
+        module,
+        'addCustomExportedComponent',
+      );
+      const symb = Symbol('test');
+      module.addExportedComponent({ provide: symb } as any);
+      expect(addCustomExportedComponentSpy.called).to.be.true;
+      expect((module as any)._exports.has(symb)).to.be.true;
+    });
   });
 
   describe('replace', () => {
