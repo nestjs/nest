@@ -17,13 +17,15 @@ export class CatsResolvers {
   }
 
   @Query('cat')
-  async findOneById(id: number) {
-    return await this.catsService.findOneById(id);
+  async findOneById(obj, args, context, info) {
+    const { id } = args;
+    return await this.catsService.findOneById(Number(id));
   }
 
   @Mutation('createCat')
-  async create(cat: Cat) {
-    await this.catsService.create(cat);
+  async create(obj, args, context, info) {
+    const cat:Cat = args
+    return await this.catsService.create(args);
   }
 
   @DelegateProperty('human')
