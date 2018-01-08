@@ -40,7 +40,15 @@ To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://opencollective.com/nest). Thanks! :heart_eyes:
 
+<h4 align="center">Sponsors via <a href="https://opencollective.com/nest">OpenCollective</a></h4>
+<p align="center">
 <a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="210" /></a>
+</p>
+
+<h4 align="center"><a href="http://ng-atl.org/workshops/level-up-your-node-js-application-with-nest-angular-sugar-on-the-server">ngAtl</a> Conference Partners </h4>
+<p align="center">
+<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.png" width="160" /></a>
+</p>
 
 ## Backers 
 
