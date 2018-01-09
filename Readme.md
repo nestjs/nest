@@ -43,7 +43,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <h4>Sponsors via <a href="https://opencollective.com/nest">OpenCollective</a></h4>
 <a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="210" /></a>
 
-<h4><a href="http://ng-atl.org/workshops/level-up-your-node-js-application-with-nest-angular-sugar-on-the-server">ngAtl</a> Conference Partners </h4>
+<h4>Sponsors & <a href="http://ng-atl.org/workshops/level-up-your-node-js-application-with-nest-angular-sugar-on-the-server">ngAtl</a> Conference Partners </h4>
 <a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.png" width="160" /></a>
 
 ## Backers 
