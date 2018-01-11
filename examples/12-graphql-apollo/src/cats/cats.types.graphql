@@ -5,7 +5,7 @@ type Query {
 }
 
 type Mutation {
-  createCat(name: String, age: Int): Cat
+  createCat(name: String): Cat
 }
 
 type Cat {
