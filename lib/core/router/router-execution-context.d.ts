@@ -44,9 +44,8 @@ export declare class RouterExecutionContext {
         type: any;
         data: any;
     }, transforms: Transform<any>[]): Promise<any>;
-    createGuardsFn(guards: any[], instance: Controller, callback: (...args) => any): (req: any) => Promise<any>;
+    createGuardsFn(guards: any[], instance: Controller, callback: (...args) => any): (req: any) => Promise<void>;
     createPipesFn(pipes: any[], paramsOptions: (ParamProperties & {
         metatype?: any;
-    })[]): (...args: any[]) => Promise<any>;
-    createHandleResponseFn(isResponseHandled: boolean, httpStatusCode: number): (...args: any[]) => any;
+    })[]): (args: any, req: any, res: any, next: any) => Promise<void>;
 }
