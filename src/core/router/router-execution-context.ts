@@ -81,17 +81,13 @@ export class RouterExecutionContext {
 
     const fnCanActivate = this.createGuardsFn(guards, instance, callback);
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
-    const fnHandleResponse = this.createHandleResponseFn(
-      isResponseHandled,
-      httpStatusCode,
-    );
 
     return async (req, res, next) => {
       const args = this.createNullArray(argsLength);
-      await fnCanActivate(req);
+      fnCanActivate && await fnCanActivate(req);
 
       const handler = async () => {
-        await fnApplyPipes(args, req, res, next);
+        fnApplyPipes && await fnApplyPipes(args, req, res, next);
         return callback.apply(instance, args);
       };
       const result = await this.interceptorsConsumer.intercept(
@@ -101,7 +97,7 @@ export class RouterExecutionContext {
         callback,
         handler,
       );
-      fnHandleResponse(result, res);
+      isResponseHandled && this.responseController.apply(result, res, httpStatusCode)
     };
   }
 
@@ -214,7 +210,7 @@ export class RouterExecutionContext {
         throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
       }
     };
-    return guards.length ? canActivateFn : async req => undefined;
+    return guards.length ? canActivateFn : null;
   }
 
   public createPipesFn(
@@ -244,16 +240,6 @@ export class RouterExecutionContext {
         }),
       );
     };
-    return paramsOptions.length ? pipesFn : async (...args) => undefined;
-  }
-
-  public createHandleResponseFn(
-    isResponseHandled: boolean,
-    httpStatusCode: number,
-  ) {
-    return !isResponseHandled
-      ? (result, res) =>
-          this.responseController.apply(result, res, httpStatusCode)
-      : (...args) => undefined;
+    return paramsOptions.length ? pipesFn : null;
   }
 }

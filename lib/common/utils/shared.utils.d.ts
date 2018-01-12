@@ -6,3 +6,4 @@ export declare const isConstructor: (fn: any) => boolean;
 export declare const validatePath: (path: any) => string;
 export declare const isNil: (obj: any) => boolean;
 export declare const isEmpty: (array: any) => boolean;
+export declare const isSymbol: (fn: any) => boolean;
