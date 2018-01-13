@@ -52,7 +52,6 @@ describe('RouterExecutionContext', () => {
       let exchangeKeysForValuesSpy: sinon.SinonSpy;
       beforeEach(() => {
         metadata = {
-          [RouteParamtypes.NEXT]: { index: 0 },
           [RouteParamtypes.BODY]: {
             index: 2,
             data: 'test',
@@ -91,12 +90,7 @@ describe('RouterExecutionContext', () => {
           expect(proxyContext).to.be.a('function');
         });
         describe('when proxy function called', () => {
-          let request;
-          const response = {
-            status: () => response,
-            send: () => response,
-            json: () => response,
-          };
+          let request, response, jsonSpy, sendSpy, statusStub;
           const next = {};
 
           beforeEach(() => {
@@ -105,12 +99,24 @@ describe('RouterExecutionContext', () => {
                 test: 3,
               },
             };
+            jsonSpy = sinon.stub().returns({});
+            sendSpy = sinon.stub().returns({});
+            statusStub = sinon.stub().returns({
+              json: jsonSpy,
+              send: sendSpy
+            });
+            response = {
+              status: statusStub
+            };
           });
           it('should apply expected context and arguments to callback', done => {
             proxyContext(request, response, next).then(() => {
-              const args = [next, null, request.body.test];
+              const args = [null, null, request.body.test];
               expect(applySpy.called).to.be.true;
               expect(applySpy.calledWith(instance, args)).to.be.true;
+              expect(statusStub.called).to.be.true;
+              expect(jsonSpy.called).to.be.true;
+              expect(sendSpy.called).to.be.false;
               done();
             });
           });
