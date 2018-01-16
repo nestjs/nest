@@ -97,7 +97,7 @@ export class RouterExecutionContext {
         callback,
         handler,
       );
-      isResponseHandled && this.responseController.apply(result, res, httpStatusCode)
+      !isResponseHandled && this.responseController.apply(result, res, httpStatusCode)
     };
   }
 
