@@ -5,10 +5,14 @@ import { Pipe, ArgumentMetadata } from '../index';
 @Pipe()
 export class ParseIntPipe implements PipeTransform<string> {
   public async transform(value: string, metadata: ArgumentMetadata) {
-    const val = +value;
-    if (isNaN(val) || !Number.isInteger(val)) {
-      throw new BadRequestException('Validation failed');
+    if (value.trim().length === value.length) {
+      const num = +value;
+
+      if (Number.isInteger(num)) {
+        return num;
+      }
     }
-    return val;
+
+    throw new BadRequestException('Validation failed');
   }
 }
