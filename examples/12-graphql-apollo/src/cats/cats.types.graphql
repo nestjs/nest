@@ -8,6 +8,10 @@ type Mutation {
   createCat(name: String): Cat
 }
 
+type Subscription {
+  catCreated: Cat
+}
+
 type Cat {
   id: Int
   name: String

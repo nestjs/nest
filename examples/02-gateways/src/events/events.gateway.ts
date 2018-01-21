@@ -9,9 +9,7 @@ import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/from';
 import 'rxjs/add/operator/map';
 
-@WebSocketGateway({ namespace: 'events' })
-export class EventsGatewayxD {}
-@WebSocketGateway({ namespace: 'xd' })
+@WebSocketGateway()
 export class EventsGateway {
   @WebSocketServer() server;
 

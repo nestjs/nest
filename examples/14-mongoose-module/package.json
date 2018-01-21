@@ -11,8 +11,8 @@
   "dependencies": {
     "@nestjs/common": "^4.5.0",
     "@nestjs/core": "^4.5.0",
-    "@nestjs/mongoose": "^2.0.0",
-    "mongoose": "^4.11.13",
+    "@nestjs/mongoose": "^3.0.1",
+    "mongoose": "^5.0.1",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.4.3",
     "typescript": "^2.4.2"
