@@ -9,7 +9,7 @@ export class RouterResponseController {
     if (isNil(result)) {
       return res.send();
     }
-    return isObject(result) ? res.json(result) : res.send(result);
+    return isObject(result) ? res.json(result) : res.send(String(result));
   }
 
   public async transformToResult(resultOrDeffered) {

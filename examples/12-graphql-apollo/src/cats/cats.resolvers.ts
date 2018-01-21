@@ -1,10 +1,12 @@
 import { Component, UseGuards } from '@nestjs/common';
-import { Query, Mutation, Resolver, DelegateProperty } from '@nestjs/graphql';
+import { Query, Mutation, Resolver, DelegateProperty, Subscription } from '@nestjs/graphql';
+import { PubSub } from 'graphql-subscriptions';
 
 import { Cat } from './interfaces/cat.interface';
 import { CatsService } from './cats.service';
 import { CatsGuard } from './cats.guard';
-import { MergeInfo } from 'graphql-tools/dist/Interfaces';
+
+const pubsub = new PubSub();
 
 @Resolver('Cat')
 export class CatsResolvers {
@@ -24,6 +26,15 @@ export class CatsResolvers {
 
   @Mutation('createCat')
   async create(obj, args: Cat, context, info): Promise<Cat> {
-    return await this.catsService.create(args);
+    const createdCat = await this.catsService.create(args);
+    pubsub.publish('catCreated', { catCreated: createdCat });
+    return createdCat;
+  }
+
+  @Subscription('catCreated')
+  catCreated() {
+    return {
+      subscribe: () => pubsub.asyncIterator('catCreated'),
+    };
   }
 }
