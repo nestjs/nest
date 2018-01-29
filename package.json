@@ -24,7 +24,7 @@
     "@nestjs/testing": "^4.0.0",
     "@nestjs/websockets": "^4.0.0",
     "class-transformer": "^0.1.8",
-    "class-validator": "^0.7.3",
+    "class-validator": "^0.8.1",
     "cli-color": "^1.1.0",
     "engine.io-client": "^3.1.1",
     "express": "^4.16.2",

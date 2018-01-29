@@ -5,19 +5,36 @@ import { ArgumentMetadata, BadRequestException } from '../index';
 import { isNil } from '../utils/shared.utils';
 import { Pipe } from './../decorators/core/component.decorator';
 
+export interface ValidationPipeOptions {
+  transform?: boolean;
+  strip?: boolean;
+  reject?: boolean;
+}
+
 @Pipe()
 export class ValidationPipe implements PipeTransform<any> {
+
+  private shouldTransform: boolean;
+  private shouldStrip: boolean;
+  private shouldReject: boolean;
+
+  constructor(options?: ValidationPipeOptions) {
+    this.shouldTransform = options && (options.transform || options.strip || options.reject);
+    this.shouldStrip = options && (options.strip || options.reject);
+    this.shouldReject = options && options.reject;
+  }
+
   public async transform(value, metadata: ArgumentMetadata) {
     const { metatype } = metadata;
     if (!metatype || !this.toValidate(metatype)) {
       return value;
     }
     const entity = plainToClass(metatype, value);
-    const errors = await validate(entity);
+    const errors = await validate(entity, { whitelist: this.shouldStrip, forbidNonWhitelisted: this.shouldReject });
     if (errors.length > 0) {
       throw new BadRequestException(errors);
     }
-    return value;
+    return this.shouldTransform ? entity : value;
   }
 
   private toValidate(metatype): boolean {
