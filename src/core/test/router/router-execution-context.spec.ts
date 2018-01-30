@@ -315,9 +315,9 @@ describe('RouterExecutionContext', () => {
   });
   describe('createPipesFn', () => {
     describe('when "paramsOptions" is empty', () => {
-      it('returns identity(undefined)', async () => {
+      it('returns null', async () => {
         const pipesFn = contextCreator.createPipesFn([], []);
-        expect(await pipesFn()).to.be.undefined;
+        expect(pipesFn).to.be.null;
       });
     });
   });
@@ -326,14 +326,6 @@ describe('RouterExecutionContext', () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
       sinon.stub(guardsConsumer, 'tryActivate', () => false);
       expect(guardsFn({})).to.eventually.throw();
-    });
-  });
-  describe('createHandleResponseFn', () => {
-    it('should throw exception when "tryActivate" returns false', () => {
-      const responseFn = contextCreator.createHandleResponseFn(false, 200);
-      const controllerApplySpy = sinon.spy((contextCreator['responseController'] as any), 'apply');
-      responseFn();
-      expect(controllerApplySpy.calledOnce).to.be.true;
     });
   });
 });

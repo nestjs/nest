@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "prestart:prod": "tsc",
-    "start:prod": "node dist/server.js",
+    "start:prod": "node dist/main.js",
     "test": "jest --config=jest.json",
     "test:watch": "jest --watch --config=jest.json",
     "test:coverage": "jest --config=jest.json --coverage --coverageDirectory=coverage",

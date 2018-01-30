@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "4.5.1",
+  "version": "4.5.10",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist lib",
     "prepublish": "npm run build:lib",
-    "publish": "prettier && ./node_modules/.bin/lerna publish -m \"chore(release) publish %s\""
+    "publish": "./node_modules/.bin/lerna publish --exact -m \"chore(release) publish %s\""
   },
   "engines": {
     "node": ">=6.11.0"
@@ -88,14 +88,13 @@
       "src/**/*.spec.ts",
       "src/core/adapters/*.ts",
       "src/websockets/adapters/*.ts",
-      "src/core/nest-*.ts",
+      "src/**/nest-*.ts",
+      "src/core/errors/**/*",
       "src/common/exceptions/*.ts",
-      "src/common/services/logger.service.ts",
-      "src/core/errors/exceptions",
       "src/microservices/exceptions/",
       "src/microservices/microservices-module.ts",
-      "src/microservices/nest-microservice.ts",
-      "src/core/middlewares/middlewares-module.ts"
+      "src/core/middlewares/middlewares-module.ts",
+      "src/common/services/logger.service.ts"
     ],
     "extension": [
       ".ts"

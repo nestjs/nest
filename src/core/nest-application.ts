@@ -164,6 +164,10 @@ export class NestApplication extends NestApplicationContext
     this.express.use(...args);
   }
 
+  public engine(...args) {
+    this.express.engine(...args);
+  }
+
   public set(...args) {
     this.express.set(...args);
   }

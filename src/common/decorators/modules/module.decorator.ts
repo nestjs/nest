@@ -35,7 +35,7 @@ const validateKeys = (keys: string[]) => {
  */
 export function Module(obj: {
   modules?: any[];
-  imports?: any[],
+  imports?: any[];
   controllers?: any[];
   components?: any[];
   exports?: any[];
@@ -46,10 +46,7 @@ export function Module(obj: {
   if (obj.modules) {
     deprecate('The `modules` key in the Module decorator is deprecated. Use the `imports` key to load modules.');
   }
-
-  obj.modules = obj.imports && !obj.modules
-    ? obj.imports
-    : obj.modules;
+  obj.modules = obj.imports && !obj.modules ? obj.imports : obj.modules;
 
   return (target: object) => {
     for (const property in obj) {

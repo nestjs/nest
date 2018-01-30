@@ -53,16 +53,17 @@ export class WsContextCreator {
       if (!canActivate) {
         throw new WsException(FORBIDDEN_MESSAGE);
       }
-      const result = await this.pipesConsumer.applyPipes(
-        data,
-        { metatype },
-        pipes,
-      );
-      const handler = () => callback.call(instance, client, data);
-
+      const handler = async () => {
+        const result = await this.pipesConsumer.applyPipes(
+          data,
+          { metatype },
+          pipes,
+        );
+        return callback.call(instance, client, result);
+      };
       return await this.interceptorsConsumer.intercept(
         interceptors,
-        result,
+        data,
         instance,
         callback,
         handler,

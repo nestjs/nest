@@ -6,12 +6,12 @@
   "scripts": {
     "start": "node index.js",
     "prestart:prod": "tsc",
-    "start:prod": "node dist/server.js"
+    "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "^4.3.0",
-    "@nestjs/core": "^4.3.0",
-    "@nestjs/typeorm": "^1.0.0",
+    "@nestjs/common": "^4.5.0",
+    "@nestjs/core": "^4.5.0",
+    "@nestjs/typeorm": "^2.0.0",
     "mongodb": "^2.2.31",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.4.3",

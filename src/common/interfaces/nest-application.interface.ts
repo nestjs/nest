@@ -13,7 +13,7 @@ export interface INestApplication extends INestApplicationContext {
   init(): Promise<void>;
 
   /**
-   * The wrapper function around native `express.use()` method.
+   * A wrapper function around native `express.use()` method.
    * Example `app.use(cors())`
    *
    * @returns void
@@ -21,12 +21,20 @@ export interface INestApplication extends INestApplicationContext {
   use(...args): void;
 
   /**
-   * The wrapper function around native `express.set()` method.
+   * A wrapper function around native `express.set()` method.
    * Example `app.set('trust proxy', 'loopback')`
    *
    * @returns void
    */
   set(...args): void;
+
+  /**
+   * A wrapper function around native `express.engine()` method.
+   * Example `app.engine('mustache', mustacheExpress())`
+   *
+   * @returns void
+   */
+  engine(...args): void;
 
   /**
    * Starts the application.

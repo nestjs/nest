@@ -2,7 +2,7 @@
     <head>
         <script src="socket.io.js"></script>
         <script>
-            const socket = io('http://localhost:81');
+            const socket = io('http://localhost:3000');
             socket.on('connect', function() {
                 console.log('Connected');
                 socket.emit('events', { test: 'test' });

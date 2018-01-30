@@ -9,17 +9,13 @@ import 'rxjs/add/operator/switchMap';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/do';
 export declare class IoAdapter implements WebSocketAdapter {
-  private readonly httpServer;
-  constructor(httpServer?: Server | null);
-  create(port: number): SocketIO.Server;
-  createWithNamespace(port: number, namespace: string, server?: any): any;
-  createIOServer(port: number): SocketIO.Server;
-  bindClientConnect(server: any, callback: (...args) => void): void;
-  bindClientDisconnect(client: any, callback: (...args) => void): void;
-  bindMessageHandlers(
-    client: any,
-    handlers: MessageMappingProperties[],
-    process: (data: any) => Observable<any>,
-  ): void;
-  bindMiddleware(server: any, middleware: (socket, next) => void): void;
+    private readonly httpServer;
+    constructor(httpServer?: Server | null);
+    create(port: number): SocketIO.Server;
+    createWithNamespace(port: number, namespace: string, server?: any): any;
+    createIOServer(port: number): SocketIO.Server;
+    bindClientConnect(server: any, callback: (...args) => void): void;
+    bindClientDisconnect(client: any, callback: (...args) => void): void;
+    bindMessageHandlers(client: any, handlers: MessageMappingProperties[], process: (data: any) => Observable<any>): void;
+    bindMiddleware(server: any, middleware: (socket, next) => void): void;
 }

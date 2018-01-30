@@ -1,9 +1,25 @@
+## 4.5.10
+- **core**: [bugfix] #343
+
+## 4.5.7
+- **core**: [bugfix] #337 
+
+## 4.5.6
+- **core**: [bugfix] dynamic modules `exports`
+
+## 4.5.5
+- **core**: [bugfix] add missing `app.engine()` wrapper
+
+## 4.5.4
+- **core**: [bugfix] dynamic modules recurrent imports fix
+
 ## 4.5.3
-- **core**: [improvement] increase performance
+- **testing**: [bugfix] issue #326
 
 ## 4.5.2
 - **common**: [feature] rename `modules` to `imports` (`@Module()` decorator)
 - **core**: [feature] exception filters with empty `@Catch()` metadata handle each occurred exception 
+- **core**: [improvement] increase performance
 
 ## 4.5.1
 - **common**: [feature] `INestAplication` provides a `getHttpServer()` method now

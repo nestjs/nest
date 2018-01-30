@@ -1,8 +1,8 @@
 import * as express from 'express';
 import * as request from 'supertest';
 import { Test } from '@nestjs/testing';
-import { CatsModule } from '../../src/modules/cats/cats.module';
-import { CatsService } from '../../src/modules/cats/cats.service';
+import { CatsModule } from '../../src/cats/cats.module';
+import { CatsService } from '../../src/cats/cats.service';
 import { INestApplication } from '@nestjs/common';
 
 describe('Cats', () => {
@@ -13,7 +13,7 @@ describe('Cats', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
-      modules: [CatsModule],
+      imports: [CatsModule],
     })
       .overrideComponent(CatsService)
       .useValue(catsService)
