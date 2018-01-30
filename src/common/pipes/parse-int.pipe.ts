@@ -1,14 +1,16 @@
 import { BadRequestException } from '../exceptions/bad-request.exception';
 import { PipeTransform } from '../interfaces/pipe-transform.interface';
 import { Pipe, ArgumentMetadata } from '../index';
+import {isNumeric} from "rxjs/util/isNumeric";
 
 @Pipe()
 export class ParseIntPipe implements PipeTransform<string> {
-  public async transform(value: string, metadata: ArgumentMetadata) {
-    const val = parseInt(value, 10);
-    if (isNaN(val)) {
-      throw new BadRequestException('Validation failed');
+  async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
+    if ('string' === typeof value && isNumeric(value)) {
+     return parseInt(value, 10);
     }
-    return val;
+    else {
+      throw new BadRequestException('Numeric string is expected');
+    }
   }
 }
