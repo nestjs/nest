@@ -60,8 +60,12 @@ export class ExpressRouterExplorer implements RouterExplorer {
     return router;
   }
 
-  public fetchRouterPath(metatype: Metatype<Controller>): string {
-    const path = Reflect.getMetadata(PATH_METADATA, metatype);
+  public fetchRouterPath(
+    metatype: Metatype<Controller>,
+    prefix?: string,
+  ): string {
+    let path = Reflect.getMetadata(PATH_METADATA, metatype);
+    if (prefix) path = prefix + this.validateRoutePath(path);
     return this.validateRoutePath(path);
   }
 

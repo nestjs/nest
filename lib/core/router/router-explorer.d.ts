@@ -20,7 +20,7 @@ export declare class ExpressRouterExplorer implements RouterExplorer {
     private readonly logger;
     constructor(metadataScanner?: MetadataScanner, routerProxy?: RouterProxy, expressAdapter?: ExpressAdapter, exceptionsFilter?: ExceptionsFilter, config?: ApplicationConfig, container?: NestContainer);
     explore(instance: Controller, metatype: Metatype<Controller>, module: string): any;
-    fetchRouterPath(metatype: Metatype<Controller>): string;
+    fetchRouterPath(metatype: Metatype<Controller>, prefix?: string): string;
     validateRoutePath(path: string): string;
     scanForPaths(instance: Controller, prototype?: any): RoutePathProperties[];
     exploreMethodMetadata(instance: Controller, instancePrototype: any, methodName: string): RoutePathProperties;
