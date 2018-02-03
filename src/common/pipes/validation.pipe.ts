@@ -5,10 +5,8 @@ import { ArgumentMetadata, BadRequestException } from '../index';
 import { isNil } from '../utils/shared.utils';
 import { Pipe } from './../decorators/core/component.decorator';
 
-export interface ValidationPipeOptions {
+export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
-  whitelist?: boolean;
-  forbidNonWhitelisted?: boolean;
 }
 
 @Pipe()
@@ -20,8 +18,8 @@ export class ValidationPipe implements PipeTransform<any> {
 
   constructor(options?: ValidationPipeOptions) {
     this.returnTransformed = (options && 'transform' in options) ? options.transform : true;
-    this.validatorOptions.whitelist = options && (options.whitelist || options.forbidNonWhitelisted);
-    this.validatorOptions.forbidNonWhitelisted = options && options.forbidNonWhitelisted;
+    if (options) delete options.transform;
+    this.validatorOptions = { ...options } as ValidatorOptions;
   }
 
   public async transform(value, metadata: ArgumentMetadata) {
@@ -35,7 +33,7 @@ export class ValidationPipe implements PipeTransform<any> {
       throw new BadRequestException(errors);
     }
     return this.returnTransformed ? entity
-      : this.validatorOptions.whitelist ? classToPlain(entity)
+      : Object.keys(this.validatorOptions) ? classToPlain(entity)
       : value;
   }
 
