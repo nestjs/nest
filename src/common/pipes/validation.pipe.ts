@@ -1,5 +1,5 @@
 import { validate } from 'class-validator';
-import { plainToClass } from 'class-transformer';
+import { classToPlain, plainToClass } from 'class-transformer';
 import { PipeTransform } from '../interfaces/pipe-transform.interface';
 import { ArgumentMetadata, BadRequestException } from '../index';
 import { isNil } from '../utils/shared.utils';
@@ -19,7 +19,7 @@ export class ValidationPipe implements PipeTransform<any> {
   private shouldReject: boolean;
 
   constructor(options?: ValidationPipeOptions) {
-    this.shouldTransform = options && (options.transform || options.strip || options.reject);
+    this.shouldTransform = (options && 'transform' in options) ? options.transform : true;
     this.shouldStrip = options && (options.strip || options.reject);
     this.shouldReject = options && options.reject;
   }
@@ -34,7 +34,9 @@ export class ValidationPipe implements PipeTransform<any> {
     if (errors.length > 0) {
       throw new BadRequestException(errors);
     }
-    return this.shouldTransform ? entity : value;
+    return this.shouldTransform ? entity
+      : this.shouldStrip ? classToPlain(entity)
+      : value;
   }
 
   private toValidate(metatype): boolean {
