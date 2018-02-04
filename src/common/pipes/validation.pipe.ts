@@ -14,12 +14,12 @@ export class ValidationPipe implements PipeTransform<any> {
 
   private returnTransformed: boolean;
 
-  private validatorOptions: ValidatorOptions = {};
+  private validatorOptions: ValidatorOptions;
 
-  constructor(options?: ValidationPipeOptions) {
-    this.returnTransformed = (options && 'transform' in options) ? options.transform : true;
-    if (options) delete options.transform;
-    this.validatorOptions = { ...options } as ValidatorOptions;
+  constructor(options: ValidationPipeOptions = {}) {
+    const { transform, ...validatorOptions } = options;
+    this.returnTransformed = transform != null ? transform : true;
+    this.validatorOptions = validatorOptions;
   }
 
   public async transform(value, metadata: ArgumentMetadata) {
