@@ -44,8 +44,8 @@ export interface INestApplication extends INestApplicationContext {
    * @param  {Function} callback Optional callback
    * @returns Promise
    */
-  listen(port: number, callback?: () => void): Promise<any>;
-  listen(port: number, hostname: string, callback?: () => void): Promise<any>;
+  listen(port: number | string, callback?: () => void): Promise<any>;
+  listen(port: number | string, hostname: string, callback?: () => void): Promise<any>;
 
   /**
    * Starts the application and can be awaited.
@@ -54,7 +54,7 @@ export interface INestApplication extends INestApplicationContext {
    * @param  {string} hostname (optional)
    * @returns Promise
    */
-  listenAsync(port: number, hostname?: string): Promise<any>;
+  listenAsync(port: number | string, hostname?: string): Promise<any>;
 
   /**
    * Setups the prefix for the every HTTP route path

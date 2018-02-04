@@ -38,6 +38,6 @@ export class ApplicationModule implements NestModule {
   createSchema() {
     const typeDefs = this.graphQLFactory.mergeTypesByPaths('./**/*.graphql');
     const schema = this.graphQLFactory.createSchema({ typeDefs });
-    return this.graphQLFactory.createSchema({ typeDefs });
+    return schema;
   }
 }
