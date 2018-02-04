@@ -18,6 +18,8 @@ describe('middleware utils', () => {
     });
     it('should returns filtered middlewares', () => {
       expect(filterMiddlewares(middlewares)).to.have.length(2);
+      expect(middlewares[0].name).to.eq('Test');
+      expect(middlewares[1].name).to.eq('fnMiddleware');
     });
   });
   describe('mapToClass', () => {
@@ -25,21 +27,25 @@ describe('middleware utils', () => {
       it('should returns identity', () => {
         const type = mapToClass(Test);
         expect(type).to.eql(Test);
+        expect(type.name).to.eq('Test');
       });
     });
     describe('when middleware is a function', () => {
       it('should returns metatype', () => {
         const metatype = mapToClass(fnMiddleware);
         expect(metatype).to.not.eql(fnMiddleware);
+        expect(metatype.name).to.eq(4);
       });
       it('should define `resolve` method', () => {
         const metatype = mapToClass(fnMiddleware);
         expect(new metatype().resolve).to.exist;
+        expect(metatype.name).to.eq(5);
       });
       it('should encapsulate function', () => {
         const spy = sinon.spy();
         const metatype = mapToClass(spy);
         new metatype().resolve()();
+        expect(metatype.name).to.eq(6);
         expect(spy.called).to.be.true;
       });
     });
@@ -61,6 +67,7 @@ describe('middleware utils', () => {
       const anonymousType = class {};
       assignToken(anonymousType);
       expect(anonymousType.name).to.exist;
+      expect(anonymousType.name).to.eq(2);
     });
   });
 });
