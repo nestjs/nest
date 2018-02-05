@@ -12,16 +12,26 @@ export class MetadataScanner {
     prototype,
     callback: (name: string) => R,
   ): R[] {
-    return iterate(Object.getOwnPropertyNames(prototype))
-      .filter(method => {
-        const descriptor = Object.getOwnPropertyDescriptor(prototype, method);
-        if (descriptor.set || descriptor.get) {
-          return false;
-        }
-        return !isConstructor(method) && isFunction(prototype[method]);
-      })
+    return iterate([...this.getAllFilteredMethodNames(prototype)])
       .map(callback)
       .filter(metadata => !isNil(metadata))
       .toArray();
+  }
+
+  *getAllFilteredMethodNames(prototype): IterableIterator<string> {
+    do {
+      yield* iterate(Object.getOwnPropertyNames(prototype))
+        .filter(prop => {
+          const descriptor = Object.getOwnPropertyDescriptor(prototype, prop);
+          if (descriptor.set || descriptor.get) {
+            return false;
+          }
+          return !isConstructor(prop) && isFunction(prototype[prop]);
+        })
+        .toArray()
+    } while (
+      (prototype = Reflect.getPrototypeOf(prototype)) &&
+      prototype != Object.prototype
+    );
   }
 }

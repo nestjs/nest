@@ -7,8 +7,20 @@ describe('MetadataScanner', () => {
     scanner = new MetadataScanner();
   });
   describe('scanFromPrototype', () => {
-    class Test {
+    class Parent {
       constructor() {}
+      public testParent() {}
+      public testParent2() {}
+      get propParent() {
+        return '';
+      }
+      set valParent(value) {}
+    }
+    
+    class Test extends Parent {
+      constructor() {
+        super();
+      }
       get prop() {
         return '';
       }
@@ -16,13 +28,14 @@ describe('MetadataScanner', () => {
       public test() {}
       public test2() {}
     }
+
     it('should returns only methods', () => {
       const methods = scanner.scanFromPrototype(
         new Test(),
         Test.prototype,
         a => a,
       );
-      expect(methods).to.eql(['test', 'test2']);
+      expect(methods).to.eql(['test', 'test2', 'testParent', 'testParent2']);
     });
   });
 });
