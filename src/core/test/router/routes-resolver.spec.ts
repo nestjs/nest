@@ -51,7 +51,7 @@ describe('RoutesResolver', () => {
       });
 
       const use = sinon.spy();
-      routesResolver.setupRouters(routes, '', { use } as any);
+      routesResolver.setupRouters(routes, '', undefined, { use } as any);
       expect(use.calledWith('/global', router)).to.be.true;
     });
   });

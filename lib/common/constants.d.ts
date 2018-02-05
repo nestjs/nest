@@ -20,3 +20,4 @@ export declare const GUARDS_METADATA = "__guards__";
 export declare const INTERCEPTORS_METADATA = "__interceptors__";
 export declare const HTTP_CODE_METADATA = "__httpCode__";
 export declare const GATEWAY_MIDDLEWARES = "__gatewayMiddlewares";
+export declare const MODULE_PATH = "__module_path__";
