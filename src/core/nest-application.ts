@@ -172,16 +172,16 @@ export class NestApplication extends NestApplicationContext
     this.express.set(...args);
   }
 
-  public async listen(port: number, callback?: () => void);
-  public async listen(port: number, hostname: string, callback?: () => void);
-  public async listen(port: number, ...args) {
+  public async listen(port: number | string, callback?: () => void);
+  public async listen(port: number | string, hostname: string, callback?: () => void);
+  public async listen(port: number | string, ...args) {
     !this.isInitialized && (await this.init());
 
     this.httpServer.listen(port, ...args);
     return this.httpServer;
   }
 
-  public listenAsync(port: number, hostname?: string): Promise<any> {
+  public listenAsync(port: number | string, hostname?: string): Promise<any> {
     return new Promise(resolve => {
       const server = this.listen(port, hostname, () => resolve(server));
     });
