@@ -11,14 +11,12 @@ export interface ValidationPipeOptions extends ValidatorOptions {
 
 @Pipe()
 export class ValidationPipe implements PipeTransform<any> {
-
-  private returnTransformed: boolean;
-
+  private isTransformEnabled: boolean;
   private validatorOptions: ValidatorOptions;
 
   constructor(options: ValidationPipeOptions = {}) {
     const { transform, ...validatorOptions } = options;
-    this.returnTransformed = transform != null ? transform : true;
+    this.isTransformEnabled = !!transform ? transform : true;
     this.validatorOptions = validatorOptions;
   }
 
@@ -32,9 +30,9 @@ export class ValidationPipe implements PipeTransform<any> {
     if (errors.length > 0) {
       throw new BadRequestException(errors);
     }
-    return this.returnTransformed ? entity
-      : Object.keys(this.validatorOptions) ? classToPlain(entity)
-      : value;
+    return this.isTransformEnabled
+      ? entity
+      : Object.keys(this.validatorOptions) ? classToPlain(entity) : value;
   }
 
   private toValidate(metatype): boolean {
