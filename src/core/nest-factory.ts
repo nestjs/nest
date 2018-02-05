@@ -42,7 +42,7 @@ export class NestFactoryStatic {
     module,
     express = ExpressAdapter.create(),
   ): Promise<INestApplication> {
-    await this.initialize(module);
+    await this.initialize(module, express);
     return this.createNestInstance<NestApplication>(
       new NestApplication(this.container, express),
     );
@@ -91,7 +91,8 @@ export class NestFactoryStatic {
     return this.createProxy(instance);
   }
 
-  private async initialize(module) {
+  private async initialize(module, express = null) {
+    this.container.setApplicationRef(express);
     try {
       this.logger.log(messages.APPLICATION_START);
       await ExceptionsZone.asyncRun(async () => {

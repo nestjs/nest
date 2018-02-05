@@ -12,9 +12,7 @@ export class NestApplicationContext implements INestApplicationContext {
     protected readonly container: NestContainer,
     private readonly scope: NestModuleMetatype[],
     protected contextModule,
-  ) {
-    this.container.addHostModule(this);
-  }
+  ) {}
 
   public select<T>(module: Metatype<T>): INestApplicationContext {
     const modules = this.container.getModules();

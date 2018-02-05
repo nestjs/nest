@@ -11,7 +11,6 @@ import { ModuleTokenFactory } from './module-token-factory';
 import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
 import { DynamicModule } from '@nestjs/common';
 import { ModulesContainer } from './modules-container';
-import { HostProvidersModule } from './host-module';
 import { NestApplicationContext } from './../nest-application-context';
 
 export class NestContainer {
@@ -22,9 +21,14 @@ export class NestContainer {
     Partial<DynamicModule>
   >();
   private readonly moduleTokenFactory = new ModuleTokenFactory();
+  private applicationRef: any;
 
-  public addHostModule<T extends NestApplicationContext>(applicationRef: T) {
-    this.addModule(HostProvidersModule.extend(applicationRef), []);
+  public setApplicationRef(applicationRef: any) {
+    this.applicationRef = applicationRef;
+  }
+
+  public getApplicationRef() {
+    return this.applicationRef;
   }
 
   public addModule(
