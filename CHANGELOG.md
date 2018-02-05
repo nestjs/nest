@@ -1,5 +1,6 @@
 ## 4.6.0
 - **core**: [feature] add ability to inject `express` reference (`EXPRESS_REF` token)
+- **core**: [feature] enable possibility to extend metadata (inheritance support) #228
 - **core**: [feature] `NestFactory.create()` now accepts third argument `HttpsOptions`
 - **core**: [bugfix] Nest seems to fails silently #287
 - **core**: [bugfix] WebSocket Gateway - Secure websockets (`wss://`) #384
