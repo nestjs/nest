@@ -12,7 +12,6 @@ import {
   isSymbol,
 } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { Reflector } from '../services/reflector.service';
 import { ExternalContextCreator } from './../helpers/external-context-creator';
 import { GuardsContextCreator } from './../guards/guards-context-creator';
 import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
@@ -91,7 +90,6 @@ export class Module {
   public addCoreInjectables(container: NestContainer) {
     this.addModuleRef();
     this.addModuleAsComponent();
-    this.addReflector();
     this.addExternalContextCreator(container);
     this.addModulesContainer(container);
   }
@@ -110,15 +108,6 @@ export class Module {
     this._components.set(this._metatype.name, {
       name: this._metatype.name,
       metatype: this._metatype,
-      isResolved: false,
-      instance: null,
-    });
-  }
-
-  public addReflector() {
-    this._components.set(Reflector.name, {
-      name: Reflector.name,
-      metatype: Reflector,
       isResolved: false,
       instance: null,
     });

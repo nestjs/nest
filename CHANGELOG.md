@@ -1,7 +1,10 @@
+## 4.6.0
+- **core** add ability to inject application reference (`APP_REF` token)
+- **core**: [bugfix] interceptor `$stream` observable returns another observable instead of the response object #376 
+- **core**: [bugfix] `Observable.throw` from controller results in unhandled rejection promise #373
+
 ## 4.5.10
 - **core**: [bugfix] #343
-
-## 4.5.7
 - **core**: [bugfix] #337 
 
 ## 4.5.6

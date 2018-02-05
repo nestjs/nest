@@ -11,6 +11,8 @@ import { ModuleTokenFactory } from './module-token-factory';
 import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
 import { DynamicModule } from '@nestjs/common';
 import { ModulesContainer } from './modules-container';
+import { HostProvidersModule } from './host-module';
+import { NestApplicationContext } from './../nest-application-context';
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
@@ -20,6 +22,10 @@ export class NestContainer {
     Partial<DynamicModule>
   >();
   private readonly moduleTokenFactory = new ModuleTokenFactory();
+
+  public addHostModule<T extends NestApplicationContext>(applicationRef: T) {
+    this.addModule(HostProvidersModule.extend(applicationRef), []);
+  }
 
   public addModule(
     metatype: NestModuleMetatype | DynamicModule,
@@ -78,7 +84,7 @@ export class NestContainer {
     if (!modules) {
       return;
     }
-    modules.map((module) => this.addModule(module, scope));
+    modules.map(module => this.addModule(module, scope));
   }
 
   public isGlobalModule(metatype: NestModuleMetatype): boolean {

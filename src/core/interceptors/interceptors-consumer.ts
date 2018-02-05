@@ -11,7 +11,9 @@ import { HttpStatus, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/operator/toPromise';
 import 'rxjs/add/observable/defer';
+import 'rxjs/add/observable/fromPromise';
 import 'rxjs/add/operator/take';
+import 'rxjs/add/operator/switchMap';
 
 export class InterceptorsConsumer {
   public async intercept(
@@ -25,7 +27,7 @@ export class InterceptorsConsumer {
       return await (await next());
     }
     const context = this.createContext(instance, callback);
-    const start$ = Observable.defer(async () => await this.transformDeffered(next));
+    const start$ = Observable.defer(() => this.transformDeffered(next));
     const result$ = await interceptors.reduce(
       async (stream$, interceptor) =>
         await interceptor.intercept(dataOrRequest, context, await stream$),
@@ -44,9 +46,11 @@ export class InterceptorsConsumer {
     };
   }
 
-  public async transformDeffered(next: () => any): Promise<any> {
-    const res = await next();
-    const isDeffered = res instanceof Promise || res instanceof Observable;
-    return isDeffered ? res : Promise.resolve(res);
+  public transformDeffered(next: () => Promise<any>): Observable<any> {
+    return Observable.fromPromise(next())
+      .switchMap((res) => {
+        const isDeffered = res instanceof Promise || res instanceof Observable;
+        return isDeffered ? res : Promise.resolve(res);
+      });
   }
 }
