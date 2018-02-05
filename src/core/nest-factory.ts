@@ -18,6 +18,7 @@ import {
 import { MetadataScanner } from './metadata-scanner';
 import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
 import { NestApplicationContext } from './nest-application-context';
+import { HttpsOptions } from '@nestjs/common/interfaces/https-options.interface';
 
 const { NestMicroservice } =
   optional('@nestjs/microservices/nest-microservice') || ({} as any);
@@ -41,10 +42,11 @@ export class NestFactoryStatic {
   public async create(
     module,
     express = ExpressAdapter.create(),
+    httpsOptions: HttpsOptions = null, 
   ): Promise<INestApplication> {
     await this.initialize(module, express);
     return this.createNestInstance<NestApplication>(
-      new NestApplication(this.container, express),
+      new NestApplication(this.container, express, httpsOptions),
     );
   }
 

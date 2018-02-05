@@ -1,4 +1,5 @@
 import * as http from 'http';
+import * as https from 'https';
 import * as optional from 'optional';
 import * as bodyParser from 'body-parser';
 import iterate from 'iterare';
@@ -33,6 +34,7 @@ import { RoutesResolver } from './router/routes-resolver';
 import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
 import { MiddlewaresContainer } from './middlewares/container';
 import { NestApplicationContext } from './nest-application-context';
+import { HttpsOptions } from '@nestjs/common/interfaces/https-options.interface';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
@@ -59,12 +61,15 @@ export class NestApplication extends NestApplicationContext
   private readonly microservices = [];
   private isInitialized = false;
 
-  constructor(container: NestContainer, private readonly express) {
+  constructor(
+    container: NestContainer,
+    private readonly express,
+    private readonly httpsOptions: HttpsOptions = null,
+  ) {
     super(container, [], null);
 
-    const modules = this.container.getModules().values();
-    this.contextModule = modules.next().value;
-    this.httpServer = http.createServer(express);
+    this.selectContextModule();
+    this.httpServer = this.createServer();
 
     const ioAdapter = IoAdapter ? new IoAdapter(this.httpServer) : null;
     this.config = new ApplicationConfig(ioAdapter);
@@ -73,6 +78,18 @@ export class NestApplication extends NestApplicationContext
       ExpressAdapter,
       this.config,
     );
+  }
+
+  public selectContextModule() {
+    const modules = this.container.getModules().values();
+    this.contextModule = modules.next().value;
+  }
+
+  public createServer(): any {
+    if (!this.httpsOptions) {
+      return http.createServer(this.express);
+    }
+    return https.createServer(this.httpsOptions, this.express);
   }
 
   public async setupModules() {
@@ -173,7 +190,11 @@ export class NestApplication extends NestApplicationContext
   }
 
   public async listen(port: number | string, callback?: () => void);
-  public async listen(port: number | string, hostname: string, callback?: () => void);
+  public async listen(
+    port: number | string,
+    hostname: string,
+    callback?: () => void,
+  );
   public async listen(port: number | string, ...args) {
     !this.isInitialized && (await this.init());
 

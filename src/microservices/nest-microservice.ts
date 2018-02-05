@@ -22,13 +22,15 @@ import { CustomTransportStrategy } from '@nestjs/microservices';
 import { Module } from '@nestjs/core/injector/module';
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { OnModuleDestroy } from '@nestjs/common/interfaces';
+import { NestApplicationContext } from '@nestjs/core/nest-application-context';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
 const { IoAdapter } =
   optional('@nestjs/websockets/adapters/io-adapter') || ({} as any);
 
-export class NestMicroservice implements INestMicroservice {
+export class NestMicroservice extends NestApplicationContext
+  implements INestMicroservice {
   private readonly logger = new Logger(NestMicroservice.name, true);
   private readonly microservicesModule = new MicroservicesModule();
   private readonly socketModule = SocketModule ? new SocketModule() : null;
@@ -41,9 +43,11 @@ export class NestMicroservice implements INestMicroservice {
   private isInitHookCalled = false;
 
   constructor(
-    private readonly container: NestContainer,
+    container: NestContainer,
     config: MicroserviceConfiguration = {},
   ) {
+    super(container, [], null);
+  
     const ioAdapter = IoAdapter ? new IoAdapter() : null;
     this.config = new ApplicationConfig(ioAdapter);
 

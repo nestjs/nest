@@ -3,8 +3,9 @@ import { ExceptionFilter } from './exceptions/exception-filter.interface';
 import { PipeTransform } from './pipe-transform.interface';
 import { NestInterceptor } from './nest-interceptor.interface';
 import { CanActivate } from './can-activate.interface';
+import { INestApplicationContext } from './nest-application-context.interface';
 
-export interface INestMicroservice {
+export interface INestMicroservice extends INestApplicationContext {
   /**
    * Starts the microservice.
    *
