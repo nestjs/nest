@@ -12,6 +12,7 @@ import { ExpressRouterExplorer } from './router-explorer';
 import { ApplicationConfig } from './../application-config';
 import { NotFoundException } from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants';
+
 export class RoutesResolver implements Resolver {
   private readonly logger = new Logger(RoutesResolver.name, true);
   private readonly routerProxy = new RouterProxy();
