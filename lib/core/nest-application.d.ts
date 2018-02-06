@@ -31,6 +31,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     use(...args: any[]): void;
     engine(...args: any[]): void;
     set(...args: any[]): void;
+    disable(...args: any[]): void;
     listen(port: number, callback?: () => void): any;
     listen(port: number, hostname: string, callback?: () => void): any;
     listenAsync(port: number, hostname?: string): Promise<any>;
