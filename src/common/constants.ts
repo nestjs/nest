@@ -21,3 +21,4 @@ export const GUARDS_METADATA = '__guards__';
 export const INTERCEPTORS_METADATA = '__interceptors__';
 export const HTTP_CODE_METADATA = '__httpCode__';
 export const GATEWAY_MIDDLEWARES = '__gatewayMiddlewares';
+export const MODULE_PATH = '__module_path__';

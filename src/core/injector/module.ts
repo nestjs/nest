@@ -12,13 +12,14 @@ import {
   isSymbol,
 } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { Reflector } from '../services/reflector.service';
 import { ExternalContextCreator } from './../helpers/external-context-creator';
 import { GuardsContextCreator } from './../guards/guards-context-creator';
 import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
 import { GuardsConsumer } from './../guards/guards-consumer';
 import { ModulesContainer } from './modules-container';
+import { Reflector } from '../services/reflector.service'; 
+import { EXPRESS_REF } from './tokens';
 
 export interface CustomComponent {
   provide: any;
@@ -92,6 +93,7 @@ export class Module {
     this.addModuleRef();
     this.addModuleAsComponent();
     this.addReflector();
+    this.addApplicationRef(container.getApplicationRef());
     this.addExternalContextCreator(container);
     this.addModulesContainer(container);
   }
@@ -115,14 +117,23 @@ export class Module {
     });
   }
 
-  public addReflector() {
-    this._components.set(Reflector.name, {
-      name: Reflector.name,
-      metatype: Reflector,
-      isResolved: false,
-      instance: null,
-    });
-  }
+  public addReflector() { 
+    this._components.set(Reflector.name, { 
+      name: Reflector.name, 
+      metatype: Reflector, 
+      isResolved: false, 
+      instance: null, 
+    }); 
+  } 
+
+  public addApplicationRef(applicationRef: any) { 
+    this._components.set(EXPRESS_REF, { 
+      name: EXPRESS_REF, 
+      metatype: applicationRef, 
+      isResolved: true, 
+      instance: applicationRef, 
+    }); 
+  } 
 
   public addExternalContextCreator(container: NestContainer) {
     this._components.set(ExternalContextCreator.name, {
