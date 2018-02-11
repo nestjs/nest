@@ -198,7 +198,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public enable(...args) {
-    this.express.disable(...args);
+    this.express.enable(...args);
   }
 
   public async listen(port: number | string, callback?: () => void);
