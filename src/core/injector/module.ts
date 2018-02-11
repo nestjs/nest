@@ -129,7 +129,7 @@ export class Module {
   public addApplicationRef(applicationRef: any) { 
     this._components.set(EXPRESS_REF, { 
       name: EXPRESS_REF, 
-      metatype: applicationRef, 
+      metatype: {} as any, 
       isResolved: true, 
       instance: applicationRef, 
     }); 
