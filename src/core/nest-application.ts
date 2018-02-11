@@ -106,8 +106,12 @@ export class NestApplication extends NestApplicationContext
     );
   }
 
-  public async init() {
-    this.setupParserMiddlewares();
+  public async init(
+    options: {
+      bodyParser?: boolean;
+    } = { bodyParser: true },
+  ) {
+    !!options.bodyParser && this.setupParserMiddlewares();
 
     await this.setupModules();
     await this.setupRouter();

@@ -17,7 +17,7 @@ export class ValidationPipe implements PipeTransform<any> {
   constructor(options?: ValidationPipeOptions) {
     options = options || {};
     const { transform, ...validatorOptions } = options;
-    this.isTransformEnabled = !!transform ? transform : true;
+    this.isTransformEnabled = !!transform;
     this.validatorOptions = validatorOptions;
   }
 

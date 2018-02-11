@@ -27,8 +27,8 @@ describe('ValidationPipe', () => {
       it('should return the value unchanged', async () => {
         const testObj = { prop1: 'value1', prop2: 'value2' };
         expect(await target.transform(testObj, {} as any)).to.equal(testObj);
-        expect(await target.transform(testObj, {} as any)).to.not.be.instanceOf(
-            TestModel,
+        expect(await target.transform(testObj, metadata as any)).to.not.be.instanceOf(
+          TestModel,
         );
       });
     });
@@ -51,7 +51,7 @@ describe('ValidationPipe', () => {
         it('should return a TestModel without extra properties', async () => {
           target = new ValidationPipe({whitelist: true});
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3'};
-          expect(await target.transform(testObj, metadata)).to.be.instanceOf(TestModel);
+          expect(await target.transform(testObj, metadata)).to.not.be.instanceOf(TestModel);
           expect(await target.transform(testObj, metadata)).to.not.have.property('prop3');
         });
       });
