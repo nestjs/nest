@@ -36,6 +36,13 @@ export interface INestApplication extends INestApplicationContext {
    */
   engine(...args): void;
 
+  /**
+   * A wrapper function around native `express.enable()` method.
+   * Example `app.enable('x-powered-by')`
+   *
+   * @returns void
+   */
+  enable(...args): void;
 
   /**
    * A wrapper function around native `express.disable()` method.
