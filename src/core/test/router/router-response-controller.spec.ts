@@ -101,4 +101,16 @@ describe('RouterResponseController', () => {
       });
     });
   });
+
+  describe('render', () => {
+    it('should call "res.render()" with expected args', async () => {
+      const template = 'template';
+      const value = 'test';
+      const result = Promise.resolve(value);
+      const response = { render: sinon.spy() };
+
+      await routerResponseController.render(result, response, template);
+      expect(response.render.calledWith(template, value)).to.be.true;
+    });
+  });
 });

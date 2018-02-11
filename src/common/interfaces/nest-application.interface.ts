@@ -45,6 +45,13 @@ export interface INestApplication extends INestApplicationContext {
   enable(...args): void;
 
   /**
+   * Enables CORS (Cross-Origin Resource Sharing)
+   *
+   * @returns void
+   */
+  enableCors(): void;
+
+  /**
    * A wrapper function around native `express.disable()` method.
    * Example `app.disable('x-powered-by')`
    *

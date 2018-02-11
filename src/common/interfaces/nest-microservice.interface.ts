@@ -15,6 +15,13 @@ export interface INestMicroservice extends INestApplicationContext {
   listen(callback: () => void);
 
   /**
+   * Starts the microservice and can be awaited.
+   *
+   * @returns Promise
+   */
+  listenAsync(): Promise<any>;
+
+  /**
    * Setup Web Sockets Adapter, which will be used inside Gateways.
    * Use, when you want to override default `socket.io` library.
    *

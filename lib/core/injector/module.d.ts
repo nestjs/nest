@@ -39,6 +39,7 @@ export declare class Module {
     addModuleRef(): void;
     addModuleAsComponent(): void;
     addReflector(): void;
+    addApplicationRef(applicationRef: any): void;
     addExternalContextCreator(container: NestContainer): void;
     addModulesContainer(container: NestContainer): void;
     addInjectable(injectable: Metatype<Injectable>): void;

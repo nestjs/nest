@@ -4,6 +4,7 @@ import {
   PARAMTYPES_METADATA,
   HTTP_CODE_METADATA,
   CUSTOM_ROUTE_AGRS_METADATA,
+  RENDER_METADATA,
 } from '@nestjs/common/constants';
 import {
   isUndefined,
@@ -81,13 +82,18 @@ export class RouterExecutionContext {
 
     const fnCanActivate = this.createGuardsFn(guards, instance, callback);
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
+    const fnHandleResponse = this.createHandleResponseFn(
+      callback,
+      isResponseHandled,
+      httpStatusCode,
+    );
 
     return async (req, res, next) => {
       const args = this.createNullArray(argsLength);
-      fnCanActivate && await fnCanActivate(req);
+      fnCanActivate && (await fnCanActivate(req));
 
       const handler = async () => {
-        fnApplyPipes && await fnApplyPipes(args, req, res, next);
+        fnApplyPipes && (await fnApplyPipes(args, req, res, next));
         return callback.apply(instance, args);
       };
       const result = await this.interceptorsConsumer.intercept(
@@ -97,7 +103,7 @@ export class RouterExecutionContext {
         callback,
         handler,
       );
-      !isResponseHandled && await this.responseController.apply(result, res, httpStatusCode)
+      await fnHandleResponse(result, res);
     };
   }
 
@@ -122,6 +128,10 @@ export class RouterExecutionContext {
 
   public reflectHttpStatusCode(callback: (...args) => any): number {
     return Reflect.getMetadata(HTTP_CODE_METADATA, callback);
+  }
+
+  public reflectRenderTemplate(callback): boolean {
+    return Reflect.getMetadata(RENDER_METADATA, callback);
   }
 
   public getArgumentsLength(
@@ -241,5 +251,19 @@ export class RouterExecutionContext {
       );
     };
     return paramsOptions.length ? pipesFn : null;
+  }
+
+  public createHandleResponseFn(
+    callback,
+    isResponseHandled: boolean,
+    httpStatusCode: number,
+  ) {
+    const renderTemplate = this.reflectRenderTemplate(callback);
+    if (!!renderTemplate) {
+      return (result, res) => res.render(renderTemplate, result);
+    }
+    return async (result, res) =>
+      !isResponseHandled &&
+      (await this.responseController.apply(result, res, httpStatusCode));
   }
 }

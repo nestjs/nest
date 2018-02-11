@@ -23,7 +23,7 @@ export class ValidationPipe implements PipeTransform<any> {
 
   public async transform(value, metadata: ArgumentMetadata) {
     const { metatype } = metadata;
-    if (!metatype || !this.toValidate(metatype)) {
+    if (!metatype || !this.toValidate(metadata)) {
       return value;
     }
     const entity = plainToClass(metatype, value);
@@ -33,10 +33,14 @@ export class ValidationPipe implements PipeTransform<any> {
     }
     return this.isTransformEnabled
       ? entity
-      : Object.keys(this.validatorOptions) ? classToPlain(entity) : value;
+      : Object.keys(this.validatorOptions).length > 0 ? classToPlain(entity) : value;
   }
 
-  private toValidate(metatype): boolean {
+  private toValidate(metadata: ArgumentMetadata): boolean {
+    const { metatype, type } = metadata;
+    if (type === 'custom') {
+      return false;
+    }
     const types = [String, Boolean, Number, Array, Object];
     return !types.find(type => metatype === type) && !isNil(metatype);
   }

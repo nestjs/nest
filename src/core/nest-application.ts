@@ -1,3 +1,4 @@
+import * as cors from 'cors';
 import * as http from 'http';
 import * as https from 'https';
 import * as optional from 'optional';
@@ -198,7 +199,11 @@ export class NestApplication extends NestApplicationContext
   }
 
   public enable(...args) {
-    this.express.disable(...args);
+    this.express.enable(...args);
+  }
+
+  public enableCors() {
+    this.express.use(cors());
   }
 
   public async listen(port: number | string, callback?: () => void);

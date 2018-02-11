@@ -1,16 +1,23 @@
 ## 4.6.0
 - **common**: [feature] `ValidationPipe` improvements #388
 - **common**: [feature] `ParseIntPipe` improvements #85
-- **core***: [feature] add `app.disable()` and `app.enable()` wrappers around `express` app
+- **common**: [feature] add `FileInterceptor`, `FilesInterceptor`, `@UploadedFile()` and `@UploadedFiles()` (`multer` integration)
+- **common**: [feature] add `HttpModule` that exposes `HttpService` (`axios` integration)
+- **core**: [feature] add `app.disable()` and `app.enable()` wrappers around `express` app
 - **core**: [feature] add ability to inject `express` reference (`EXPRESS_REF` token)
 - **core**: [feature] enable possibility to extend metadata (inheritance support) #228
 - **core**: [feature] `NestFactory.create()` now accepts third argument `HttpsOptions`
+- **core**: [feature] add `app.enableCors()` to `INestApplication` (`cors` integration)
+- **core**: [feature] add `@Render()` decorator (MVC applications)
+- **core**: [feature] provide `Logger.overrideLogger()` #247
+- **core**: [improvement] simplify HTTPS usage
 - **core**: [bugfix] custom transport strategy - thrown exceptions issue #290
 - **core**: [bugfix] injector fails silently #287
 - **core**: [bugfix] secure websockets (`wss://`) #384
 - **core**: [bugfix] can't select/get from context when using `NestFactory.createMicroservice()`  #398
 - **core**: [bugfix] interceptor `$stream` observable returns another observable instead of the response object #376 
 - **core**: [bugfix] `Observable.throw` from controller results in unhandled rejection promise #373
+- **microservices**: [feature]: add `listenAsync()` to `INestMicroservice` instance
 
 ## 4.5.10
 - **core**: [bugfix] #343

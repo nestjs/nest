@@ -10,6 +10,9 @@ export declare class NestContainer {
     private readonly modules;
     private readonly dynamicModulesMetadata;
     private readonly moduleTokenFactory;
+    private applicationRef;
+    setApplicationRef(applicationRef: any): void;
+    getApplicationRef(): any;
     addModule(metatype: NestModuleMetatype | DynamicModule, scope: NestModuleMetatype[]): void;
     extractMetadata(metatype: NestModuleMetatype | DynamicModule): {
         type: NestModuleMetatype;

@@ -1,5 +1,6 @@
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { INestApplication, INestMicroservice, INestApplicationContext } from '@nestjs/common';
+import { HttpsOptions } from '@nestjs/common/interfaces/https-options.interface';
 export declare class NestFactoryStatic {
     private container;
     private instanceLoader;
@@ -12,7 +13,7 @@ export declare class NestFactoryStatic {
      * @param  {} express Optional express() server instance
      * @returns an `Promise` of the INestApplication instance
      */
-    create(module: any, express?: any): Promise<INestApplication>;
+    create(module: any, express?: any, httpsOptions?: HttpsOptions): Promise<INestApplication>;
     /**
      * Creates an instance of the NestMicroservice (returns Promise)
      *
@@ -29,7 +30,7 @@ export declare class NestFactoryStatic {
      */
     createApplicationContext(module: any): Promise<INestApplicationContext>;
     private createNestInstance<T>(instance);
-    private initialize(module);
+    private initialize(module, express?);
     private createProxy(target);
     private createExceptionProxy();
 }

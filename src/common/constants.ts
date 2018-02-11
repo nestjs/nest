@@ -18,6 +18,7 @@ export const EXCEPTION_FILTERS_METADATA = '__exceptionFilters__';
 export const FILTER_CATCH_EXCEPTIONS = '__filterCatchExceptions__';
 export const PIPES_METADATA = '__pipes__';
 export const GUARDS_METADATA = '__guards__';
+export const RENDER_METADATA = '__renderTemplate__';
 export const INTERCEPTORS_METADATA = '__interceptors__';
 export const HTTP_CODE_METADATA = '__httpCode__';
 export const GATEWAY_MIDDLEWARES = '__gatewayMiddlewares';

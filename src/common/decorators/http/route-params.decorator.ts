@@ -68,6 +68,12 @@ export const Next: () => ParameterDecorator = createRouteParamDecorator(
 export const Session: () => ParameterDecorator = createRouteParamDecorator(
   RouteParamtypes.SESSION,
 );
+export const UploadedFile: () => ParameterDecorator = createRouteParamDecorator(
+  RouteParamtypes.FILE,
+);
+export const UploadedFiles: () => ParameterDecorator = createRouteParamDecorator(
+  RouteParamtypes.FILES,
+);
 export const Headers: (
   property?: string,
 ) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.HEADERS);

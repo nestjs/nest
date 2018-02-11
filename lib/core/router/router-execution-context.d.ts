@@ -32,6 +32,7 @@ export declare class RouterExecutionContext {
     reflectCallbackMetadata(instance: Controller, methodName: string): RouteParamsMetadata;
     reflectCallbackParamtypes(instance: Controller, methodName: string): any[];
     reflectHttpStatusCode(callback: (...args) => any): number;
+    reflectRenderTemplate(callback: any): boolean;
     getArgumentsLength(keys: string[], metadata: RouteParamsMetadata): number;
     createNullArray(length: number): any[];
     exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata): ParamProperties[];
@@ -48,4 +49,5 @@ export declare class RouterExecutionContext {
     createPipesFn(pipes: any[], paramsOptions: (ParamProperties & {
         metatype?: any;
     })[]): (args: any, req: any, res: any, next: any) => Promise<void>;
+    createHandleResponseFn(callback: any, isResponseHandled: boolean, httpStatusCode: number): (result: any, res: any) => any;
 }

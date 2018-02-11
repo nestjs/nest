@@ -5,8 +5,10 @@ import { INestApplication, INestMicroservice } from '@nestjs/common';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { NestContainer } from './injector/container';
 import { NestApplicationContext } from './nest-application-context';
+import { HttpsOptions } from '@nestjs/common/interfaces/https-options.interface';
 export declare class NestApplication extends NestApplicationContext implements INestApplication {
     private readonly express;
+    private readonly httpsOptions;
     private readonly logger;
     private readonly middlewaresModule;
     private readonly middlewaresContainer;
@@ -17,9 +19,13 @@ export declare class NestApplication extends NestApplicationContext implements I
     private readonly config;
     private readonly microservices;
     private isInitialized;
-    constructor(container: NestContainer, express: any);
+    constructor(container: NestContainer, express: any, httpsOptions?: HttpsOptions);
+    selectContextModule(): void;
+    createServer(): any;
     setupModules(): Promise<void>;
-    init(): Promise<void>;
+    init(options?: {
+        bodyParser?: boolean;
+    }): Promise<void>;
     setupParserMiddlewares(): void;
     isMiddlewareApplied(app: any, name: string): boolean;
     setupRouter(): Promise<void>;
@@ -32,9 +38,11 @@ export declare class NestApplication extends NestApplicationContext implements I
     engine(...args: any[]): void;
     set(...args: any[]): void;
     disable(...args: any[]): void;
-    listen(port: number, callback?: () => void): any;
-    listen(port: number, hostname: string, callback?: () => void): any;
-    listenAsync(port: number, hostname?: string): Promise<any>;
+    enable(...args: any[]): void;
+    enableCors(): void;
+    listen(port: number | string, callback?: () => void): any;
+    listen(port: number | string, hostname: string, callback?: () => void): any;
+    listenAsync(port: number | string, hostname?: string): Promise<any>;
     close(): void;
     setGlobalPrefix(prefix: string): void;
     useWebSocketAdapter(adapter: WebSocketAdapter): void;
