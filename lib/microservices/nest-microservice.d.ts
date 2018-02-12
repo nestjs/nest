@@ -1,8 +1,8 @@
 import { NestContainer } from '@nestjs/core/injector/container';
 import { MicroserviceConfiguration } from './interfaces/microservice-configuration.interface';
 import { INestMicroservice, WebSocketAdapter, CanActivate, PipeTransform, NestInterceptor, ExceptionFilter } from '@nestjs/common';
-export declare class NestMicroservice implements INestMicroservice {
-    private readonly container;
+import { NestApplicationContext } from '@nestjs/core/nest-application-context';
+export declare class NestMicroservice extends NestApplicationContext implements INestMicroservice {
     private readonly logger;
     private readonly microservicesModule;
     private readonly socketModule;
@@ -21,6 +21,7 @@ export declare class NestMicroservice implements INestMicroservice {
     useGlobalInterceptors(...interceptors: NestInterceptor[]): void;
     useGlobalGuards(...guards: CanActivate[]): void;
     listen(callback: () => void): void;
+    listenAsync(): Promise<any>;
     close(): void;
     setIsInitialized(isInitialized: boolean): void;
     setIsTerminated(isTerminaed: boolean): void;

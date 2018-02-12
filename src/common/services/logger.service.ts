@@ -1,59 +1,110 @@
 import * as clc from 'cli-color';
 import { NestEnvironment } from '../enums/nest-environment.enum';
+import { Constructor } from '../utils/merge-with-values.util';
 
 declare const process;
 
-export class Logger {
-  private static lastTimestamp = null;
+export interface LoggerService {
+  log(message: string): void;
+  error(message: string, trace: string): void;
+  warn(message: string): void;
+}
+
+export class Logger implements LoggerService {
+  private static prevTimestamp = null;
   private static contextEnv = NestEnvironment.RUN;
-  private readonly yellow = clc.xterm(3);
+  private static logger: typeof Logger | LoggerService = Logger;
+
+  private static readonly yellow = clc.xterm(3);
 
   constructor(
     private readonly context: string,
-    private readonly printTimestamps = false,
+    private readonly isTimeDiffEnabled = false,
   ) {}
 
-  public static setMode(mode: NestEnvironment) {
+  log(message: string) {
+    const { logger } = Logger;
+    (logger as typeof Logger).log(
+      message,
+      this.context,
+      this.isTimeDiffEnabled,
+    );
+  }
+
+  error(message: string, trace = '') {
+    const { logger } = Logger;
+    (logger as typeof Logger).error(
+      message,
+      trace,
+      this.context,
+      this.isTimeDiffEnabled,
+    );
+  }
+
+  warn(message: string) {
+    const { logger } = Logger;
+    (logger as typeof Logger).warn(
+      message,
+      this.context,
+      this.isTimeDiffEnabled,
+    );
+  }
+
+  static overrideLogger(logger: LoggerService) {
+    this.logger = logger;
+  }
+
+  static setMode(mode: NestEnvironment) {
     this.contextEnv = mode;
   }
 
-  public log(message: string) {
-    this.printMessage(message, clc.green);
+  static log(message: string, context = '', isTimeDiffEnabled = true) {
+    this.printMessage(message, clc.green, context, isTimeDiffEnabled);
   }
 
-  public error(message: string, trace = '') {
-    this.printMessage(message, clc.red);
+  static error(
+    message: string,
+    trace = '',
+    context = '',
+    isTimeDiffEnabled = true,
+  ) {
+    this.printMessage(message, clc.red, context, isTimeDiffEnabled);
     this.printStackTrace(trace);
   }
 
-  public warn(message: string) {
-    this.printMessage(message, clc.yellow);
+  static warn(message: string, context = '', isTimeDiffEnabled = true) {
+    this.printMessage(message, clc.yellow, context, isTimeDiffEnabled);
   }
 
-  private printMessage(message: string, color: (msg: string) => string) {
+  private static printMessage(
+    message: string,
+    color: (msg: string) => string,
+    context: string = '',
+    isTimeDiffEnabled?: boolean,
+  ) {
     if (Logger.contextEnv === NestEnvironment.TEST) return;
 
     process.stdout.write(color(`[Nest] ${process.pid}   - `));
     process.stdout.write(`${new Date(Date.now()).toLocaleString()}   `);
-    process.stdout.write(this.yellow(`[${this.context}] `));
+    process.stdout.write(this.yellow(`[${context}] `));
     process.stdout.write(color(message));
 
-    this.printTimestamp();
+    this.printTimestamp(isTimeDiffEnabled);
     process.stdout.write(`\n`);
   }
 
-  private printTimestamp() {
-    const includeTimestamp = Logger.lastTimestamp && this.printTimestamps;
+  private static printTimestamp(isTimeDiffEnabled?: boolean) {
+    const includeTimestamp = Logger.prevTimestamp && isTimeDiffEnabled;
     if (includeTimestamp) {
       process.stdout.write(
-        this.yellow(` +${Date.now() - Logger.lastTimestamp}ms`),
+        this.yellow(` +${Date.now() - Logger.prevTimestamp}ms`),
       );
     }
-    Logger.lastTimestamp = Date.now();
+    Logger.prevTimestamp = Date.now();
   }
 
-  private printStackTrace(trace: string) {
-    if (Logger.contextEnv === NestEnvironment.TEST || !trace) return;
+  private static printStackTrace(trace: string) {
+    if (this.contextEnv === NestEnvironment.TEST || !trace) return;
 
     process.stdout.write(trace);
     process.stdout.write(`\n`);

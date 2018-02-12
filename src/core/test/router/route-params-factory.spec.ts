@@ -24,6 +24,8 @@ describe('RouteParamsFactory', () => {
       query: {
         foo: 'bar',
       },
+      file: 'file',
+      files: 'files',
     };
     describe('when key is', () => {
       const args = [null, { res, req, next }];
@@ -99,6 +101,26 @@ describe('RouteParamsFactory', () => {
               ...args,
             ),
           ).to.be.eql(req.params);
+        });
+      });
+      describe(`RouteParamtypes.FILE`, () => {
+        it('should returns file object', () => {
+          expect(
+            (factory as any).exchangeKeyForValue(
+              RouteParamtypes.FILE,
+              ...args,
+            ),
+          ).to.be.eql(req.file);
+        });
+      });
+      describe(`RouteParamtypes.FILES`, () => {
+        it('should returns files object', () => {
+          expect(
+            (factory as any).exchangeKeyForValue(
+              RouteParamtypes.FILES,
+              ...args,
+            ),
+          ).to.be.eql(req.files);
         });
       });
       describe('not available', () => {

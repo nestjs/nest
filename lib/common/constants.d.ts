@@ -17,6 +17,7 @@ export declare const EXCEPTION_FILTERS_METADATA = "__exceptionFilters__";
 export declare const FILTER_CATCH_EXCEPTIONS = "__filterCatchExceptions__";
 export declare const PIPES_METADATA = "__pipes__";
 export declare const GUARDS_METADATA = "__guards__";
+export declare const RENDER_METADATA = "__renderTemplate__";
 export declare const INTERCEPTORS_METADATA = "__interceptors__";
 export declare const HTTP_CODE_METADATA = "__httpCode__";
 export declare const GATEWAY_MIDDLEWARES = "__gatewayMiddlewares";

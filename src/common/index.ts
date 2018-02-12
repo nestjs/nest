@@ -31,6 +31,7 @@ export {
   DynamicModule,
   INestApplicationContext,
 } from './interfaces';
+export * from './interceptors';
 export * from './services/logger.service';
 export * from './pipes';
 export * from './utils';

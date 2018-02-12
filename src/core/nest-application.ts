@@ -1,3 +1,4 @@
+import * as cors from 'cors';
 import * as http from 'http';
 import * as https from 'https';
 import * as optional from 'optional';
@@ -106,8 +107,12 @@ export class NestApplication extends NestApplicationContext
     );
   }
 
-  public async init() {
-    this.setupParserMiddlewares();
+  public async init(
+    options: {
+      bodyParser?: boolean;
+    } = { bodyParser: true },
+  ) {
+    !!options.bodyParser && this.setupParserMiddlewares();
 
     await this.setupModules();
     await this.setupRouter();
@@ -187,6 +192,18 @@ export class NestApplication extends NestApplicationContext
 
   public set(...args) {
     this.express.set(...args);
+  }
+
+  public disable(...args) {
+    this.express.disable(...args);
+  }
+
+  public enable(...args) {
+    this.express.enable(...args);
+  }
+
+  public enableCors() {
+    this.express.use(cors());
   }
 
   public async listen(port: number | string, callback?: () => void);
