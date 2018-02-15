@@ -5,4 +5,5 @@ export declare const createHttpExceptionBody: (message: any, error: string, stat
 } | {
     statusCode: number;
     error: string;
+    message?: undefined;
 };
