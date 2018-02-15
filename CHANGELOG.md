@@ -1,3 +1,11 @@
+## 4.6.1
+- **common**: [improvement] create `ModuleMetadata` interface
+- **common**: [bugfix] update `class-validator` #417
+- **core**: [feature] add `appOptions` property to `create[..]` methods of `NestFactory`
+- **core**: [improvement] majority of methods (`INestApplication`, `INestMicroservice`, and `INestApplicationContext`) return `this` instead of `void`
+- **core**: [refactor] remove static dependencies & relationships
+- **core**: [bugfix] catch error thrown by `body-parser` in exception filter #422
+
 ## 4.6.0
 - **common**: [feature] `ValidationPipe` improvements #388
 - **common**: [feature] `ParseIntPipe` improvements #85

@@ -9,6 +9,8 @@ import { UseGuards } from '../../common/decorators/core/use-guards.decorator';
 import { Controller } from '../../common/decorators/core/controller.decorator';
 import { MetadataScanner } from '../metadata-scanner';
 import { GUARDS_METADATA } from '../../common/constants';
+import { ApplicationConfig } from '../application-config';
+import { APP_INTERCEPTOR, APP_GUARD, APP_PIPE, APP_FILTER } from '../constants';
 
 describe('DependenciesScanner', () => {
   @Component()
@@ -34,13 +36,15 @@ describe('DependenciesScanner', () => {
   let mockContainer: sinon.SinonMock;
   let container: NestContainer;
 
-  before(() => {
+  beforeEach(() => {
     container = new NestContainer();
     mockContainer = sinon.mock(container);
-  });
 
-  beforeEach(() => {
-    scanner = new DependenciesScanner(container, new MetadataScanner());
+    scanner = new DependenciesScanner(
+      container,
+      new MetadataScanner(),
+      new ApplicationConfig(),
+    );
   });
 
   afterEach(() => {
@@ -154,6 +158,134 @@ describe('DependenciesScanner', () => {
       sinon.stub(container, 'addRelatedModule').returns({});
       scanner.storeRelatedModule(module as any, [] as any);
       expect(module.forwardRef.called).to.be.true;
+    });
+  });
+
+  describe('storeComponent', () => {
+    const token = 'token';
+
+    describe('when component is not custom', () => {
+      it('should call container "addComponent" with expected args', () => {
+        const component = {};
+        const expectation = mockContainer
+          .expects('addComponent')
+          .withArgs(component, token);
+
+        mockContainer.expects('addComponent').callsFake(() => false);
+        scanner.storeComponent(component, token);
+
+        expectation.verify();
+      });
+    });
+    describe('when component is custom', () => {
+      describe('and is global', () => {
+        const component = {
+          provide: APP_INTERCEPTOR,
+          useValue: true,
+        };
+
+        it('should call container "addComponent" with expected args', () => {
+          const expectation = mockContainer
+            .expects('addComponent')
+            .withArgs(component, token);
+
+          mockContainer.expects('addComponent').callsFake(() => false);
+          scanner.storeComponent(component, token);
+
+          expectation.verify();
+        });
+        it('should push new object to "applicationProvidersApplyMap" array', () => {
+          mockContainer.expects('addComponent').callsFake(() => false);
+          scanner.storeComponent(component, token);
+          const applyMap = (scanner as any).applicationProvidersApplyMap;
+          
+          expect(applyMap).to.have.length(1);
+          expect(applyMap[0].moduleToken).to.be.eql(token);
+        });
+      });
+      describe('and is not global', () => {
+        const component = {
+          provide: 'CUSTOM',
+          useValue: true,
+        };
+        it('should call container "addComponent" with expected args', () => {
+          const expectation = mockContainer
+            .expects('addComponent')
+            .withArgs(component, token);
+
+          mockContainer.expects('addComponent').callsFake(() => false);
+          scanner.storeComponent(component, token);
+
+          expectation.verify();
+        });
+        it('should not push new object to "applicationProvidersApplyMap" array', () => {
+          expect(
+            (scanner as any).applicationProvidersApplyMap
+          ).to.have.length(0);
+
+          mockContainer.expects('addComponent').callsFake(() => false);
+          scanner.storeComponent(component, token);
+          expect(
+            (scanner as any).applicationProvidersApplyMap
+          ).to.have.length(0);
+        });
+      });
+    });
+  });
+  describe('applyApplicationProviders', () => {
+    it('should apply each provider', () => {
+      const provider = { moduleToken: 'moduleToken', providerToken: 'providerToken' };
+      (scanner as any).applicationProvidersApplyMap = [provider];
+
+      const expectedInstance = {};
+      mockContainer.expects('getModules').callsFake(() => ({ get: () => ({
+        components: { get: () => ({ instance: expectedInstance }) }
+      })}));
+      const applySpy = sinon.spy();
+      sinon.stub(scanner, 'getApplyProvidersMap').callsFake(() => ({
+        [provider.providerToken]: applySpy,
+      }));
+      scanner.applyApplicationProviders();
+      expect(applySpy.called).to.be.true;
+      expect(applySpy.calledWith(expectedInstance)).to.be.true;
+    });
+  });
+  describe('getApplyProvidersMap', () => {
+    describe(`when token is ${APP_INTERCEPTOR}`, () => {
+      it('call "addGlobalInterceptor"', () => {
+        const addSpy = sinon.spy(
+          (scanner as any).applicationConfig, 'addGlobalInterceptor'
+        );
+        scanner.getApplyProvidersMap()[APP_INTERCEPTOR](null);
+        expect(addSpy.called).to.be.true;
+      });
+    });
+    describe(`when token is ${APP_GUARD}`, () => {
+      it('call "addGlobalGuard"', () => {
+        const addSpy = sinon.spy(
+          (scanner as any).applicationConfig, 'addGlobalGuard'
+        );
+        scanner.getApplyProvidersMap()[APP_GUARD](null);
+        expect(addSpy.called).to.be.true;
+      });
+    });
+    describe(`when token is ${APP_PIPE}`, () => {
+      it('call "addGlobalPipe"', () => {
+        const addSpy = sinon.spy(
+          (scanner as any).applicationConfig, 'addGlobalPipe'
+        );
+        scanner.getApplyProvidersMap()[APP_PIPE](null);
+        expect(addSpy.called).to.be.true;
+      });
+    });
+    describe(`when token is ${APP_FILTER}`, () => {
+      it('call "addGlobalFilter"', () => {
+        const addSpy = sinon.spy(
+          (scanner as any).applicationConfig, 'addGlobalFilter'
+        );
+        scanner.getApplyProvidersMap()[APP_FILTER](null);
+        expect(addSpy.called).to.be.true;
+      });
     });
   });
 });

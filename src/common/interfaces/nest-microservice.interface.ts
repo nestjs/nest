@@ -28,35 +28,35 @@ export interface INestMicroservice extends INestApplicationContext {
    * @param  {WebSocketAdapter} adapter
    * @returns void
    */
-  useWebSocketAdapter(adapter: WebSocketAdapter): void;
+  useWebSocketAdapter(adapter: WebSocketAdapter): this;
 
   /**
    * Setups exception filters as a global filters (will be used within every message pattern handler)
    *
    * @param  {ExceptionFilter[]} ...filters
    */
-  useGlobalFilters(...filters: ExceptionFilter[]);
+  useGlobalFilters(...filters: ExceptionFilter[]): this;
 
   /**
    * Setups pipes as a global pipes (will be used within every message pattern handler)
    *
    * @param  {PipeTransform[]} ...pipes
    */
-  useGlobalPipes(...pipes: PipeTransform<any>[]);
+  useGlobalPipes(...pipes: PipeTransform<any>[]): this;
 
   /**
    * Setups interceptors as a global interceptors (will be used within every message pattern handler)
    *
    * @param  {NestInterceptor[]} ...interceptors
    */
-  useGlobalInterceptors(...interceptors: NestInterceptor[]);
+  useGlobalInterceptors(...interceptors: NestInterceptor[]): this;
 
   /**
    * Setups guards as a global guards (will be used within every message pattern handler)
    *
    * @param  {CanActivate[]} ...guards
    */
-  useGlobalGuards(...guards: CanActivate[]);
+  useGlobalGuards(...guards: CanActivate[]): this;
 
   /**
    * Terminates the application (both NestMicroservice and every Web Socket Gateway)

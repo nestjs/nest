@@ -36,6 +36,7 @@ import { MicroservicesPackageNotFoundException } from './errors/exceptions/micro
 import { MiddlewaresContainer } from './middlewares/container';
 import { NestApplicationContext } from './nest-application-context';
 import { HttpsOptions } from '@nestjs/common/interfaces/https-options.interface';
+import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
@@ -55,25 +56,25 @@ export class NestApplication extends NestApplicationContext
     ? new MicroservicesModule()
     : null;
   private readonly socketModule = SocketModule ? new SocketModule() : null;
-
   private readonly httpServer: http.Server = null;
   private readonly routesResolver: Resolver = null;
-  private readonly config: ApplicationConfig;
   private readonly microservices = [];
   private isInitialized = false;
 
   constructor(
     container: NestContainer,
-    private readonly express,
-    private readonly httpsOptions: HttpsOptions = null,
+    private readonly express: any,
+    private readonly config: ApplicationConfig,
+    private readonly appOptions: NestApplicationOptions = {},
   ) {
     super(container, [], null);
 
+    this.applyOptions();
     this.selectContextModule();
     this.httpServer = this.createServer();
 
     const ioAdapter = IoAdapter ? new IoAdapter(this.httpServer) : null;
-    this.config = new ApplicationConfig(ioAdapter);
+    this.config.setIoAdapter(ioAdapter);
     this.routesResolver = new RoutesResolver(
       container,
       ExpressAdapter,
@@ -86,11 +87,18 @@ export class NestApplication extends NestApplicationContext
     this.contextModule = modules.next().value;
   }
 
-  public createServer(): any {
-    if (!this.httpsOptions) {
-      return http.createServer(this.express);
+  public applyOptions() {
+    if (!this.appOptions) {
+      return undefined;
     }
-    return https.createServer(this.httpsOptions, this.express);
+    this.appOptions.cors && this.enableCors();
+  }
+
+  public createServer(): any {
+    if (this.appOptions && this.appOptions.key) {
+      return https.createServer(this.appOptions, this.express);
+    }
+    return http.createServer(this.express);
   }
 
   public async setupModules() {
@@ -107,12 +115,9 @@ export class NestApplication extends NestApplicationContext
     );
   }
 
-  public async init(
-    options: {
-      bodyParser?: boolean;
-    } = { bodyParser: true },
-  ) {
-    !!options.bodyParser && this.setupParserMiddlewares();
+  public async init(): Promise<this> {
+    const useBodyParser = this.appOptions && this.appOptions.bodyParser !== false;
+    useBodyParser && this.setupParserMiddlewares();
 
     await this.setupModules();
     await this.setupRouter();
@@ -120,6 +125,7 @@ export class NestApplication extends NestApplicationContext
     this.callInitHook();
     this.logger.log(messages.APPLICATION_READY);
     this.isInitialized = true;
+    return this;
   }
 
   public setupParserMiddlewares() {
@@ -145,7 +151,7 @@ export class NestApplication extends NestApplicationContext
     const router = ExpressAdapter.createRouter();
     await this.setupMiddlewares(router);
 
-    this.routesResolver.resolve(router);
+    this.routesResolver.resolve(router, this.express);
     this.express.use(validatePath(this.config.getGlobalPrefix()), router);
   }
 
@@ -172,38 +178,45 @@ export class NestApplication extends NestApplicationContext
     return this.httpServer;
   }
 
-  public startAllMicroservices(callback?: () => void) {
+  public startAllMicroservices(callback?: () => void): this {
     Promise.all(this.microservices.map(this.listenToPromise)).then(
       () => callback && callback(),
     );
+    return this;
   }
 
   public startAllMicroservicesAsync(): Promise<void> {
     return new Promise(resolve => this.startAllMicroservices(resolve));
   }
 
-  public use(...args) {
+  public use(...args): this {
     this.express.use(...args);
+    return this;
   }
 
-  public engine(...args) {
+  public engine(...args): this {
     this.express.engine(...args);
+    return this;
   }
 
-  public set(...args) {
+  public set(...args): this {
     this.express.set(...args);
+    return this;
   }
 
-  public disable(...args) {
+  public disable(...args): this {
     this.express.disable(...args);
+    return this;
   }
 
-  public enable(...args) {
+  public enable(...args): this {
     this.express.enable(...args);
+    return this;
   }
 
-  public enableCors() {
+  public enableCors(): this {
     this.express.use(cors());
+    return this;
   }
 
   public async listen(port: number | string, callback?: () => void);
@@ -235,28 +248,34 @@ export class NestApplication extends NestApplicationContext
     this.callDestroyHook();
   }
 
-  public setGlobalPrefix(prefix: string) {
+  public setGlobalPrefix(prefix: string): this {
     this.config.setGlobalPrefix(prefix);
+    return this;
   }
 
-  public useWebSocketAdapter(adapter: WebSocketAdapter) {
+  public useWebSocketAdapter(adapter: WebSocketAdapter): this {
     this.config.setIoAdapter(adapter);
+    return this;
   }
 
-  public useGlobalFilters(...filters: ExceptionFilter[]) {
+  public useGlobalFilters(...filters: ExceptionFilter[]): this {
     this.config.useGlobalFilters(...filters);
+    return this;
   }
 
-  public useGlobalPipes(...pipes: PipeTransform<any>[]) {
+  public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
     this.config.useGlobalPipes(...pipes);
+    return this;
   }
 
-  public useGlobalInterceptors(...interceptors: NestInterceptor[]) {
+  public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
     this.config.useGlobalInterceptors(...interceptors);
+    return this;
   }
 
-  public useGlobalGuards(...guards: CanActivate[]) {
+  public useGlobalGuards(...guards: CanActivate[]): this {
     this.config.useGlobalGuards(...guards);
+    return this;
   }
 
   private async setupMiddlewares(instance) {

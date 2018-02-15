@@ -34,10 +34,8 @@ export class NestMicroservice extends NestApplicationContext
   private readonly logger = new Logger(NestMicroservice.name, true);
   private readonly microservicesModule = new MicroservicesModule();
   private readonly socketModule = SocketModule ? new SocketModule() : null;
-
   private readonly microserviceConfig: MicroserviceConfiguration;
   private readonly server: Server & CustomTransportStrategy;
-  private readonly config: ApplicationConfig;
   private isTerminated = false;
   private isInitialized = false;
   private isInitHookCalled = false;
@@ -45,13 +43,13 @@ export class NestMicroservice extends NestApplicationContext
   constructor(
     container: NestContainer,
     config: MicroserviceConfiguration = {},
+    private readonly applicationConfig: ApplicationConfig,
   ) {
     super(container, [], null);
   
     const ioAdapter = IoAdapter ? new IoAdapter() : null;
-    this.config = new ApplicationConfig(ioAdapter);
-
-    this.microservicesModule.setup(container, this.config);
+    this.applicationConfig.setIoAdapter(ioAdapter);
+    this.microservicesModule.setup(container, this.applicationConfig);
     this.microserviceConfig = {
       transport: Transport.TCP,
       ...config,
@@ -63,7 +61,7 @@ export class NestMicroservice extends NestApplicationContext
   }
 
   public setupModules() {
-    this.socketModule && this.socketModule.setup(this.container, this.config);
+    this.socketModule && this.socketModule.setup(this.container, this.applicationConfig);
     this.microservicesModule.setupClients(this.container);
 
     this.setupListeners();
@@ -76,24 +74,29 @@ export class NestMicroservice extends NestApplicationContext
     this.microservicesModule.setupListeners(this.container, this.server);
   }
 
-  public useWebSocketAdapter(adapter: WebSocketAdapter) {
-    this.config.setIoAdapter(adapter);
+  public useWebSocketAdapter(adapter: WebSocketAdapter): this {
+    this.applicationConfig.setIoAdapter(adapter);
+    return this;
   }
 
-  public useGlobalFilters(...filters: ExceptionFilter[]) {
-    this.config.useGlobalFilters(...filters);
+  public useGlobalFilters(...filters: ExceptionFilter[]): this {
+    this.applicationConfig.useGlobalFilters(...filters);
+    return this;
   }
 
-  public useGlobalPipes(...pipes: PipeTransform<any>[]) {
-    this.config.useGlobalPipes(...pipes);
+  public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
+    this.applicationConfig.useGlobalPipes(...pipes);
+    return this;
   }
 
-  public useGlobalInterceptors(...interceptors: NestInterceptor[]) {
-    this.config.useGlobalInterceptors(...interceptors);
+  public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
+    this.applicationConfig.useGlobalInterceptors(...interceptors);
+    return this;
   }
 
-  public useGlobalGuards(...guards: CanActivate[]) {
-    this.config.useGlobalGuards(...guards);
+  public useGlobalGuards(...guards: CanActivate[]): this {
+    this.applicationConfig.useGlobalGuards(...guards);
+    return this;
   }
 
   public listen(callback: () => void) {

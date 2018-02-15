@@ -1,9 +1,7 @@
-import { NestModule } from './nest-module.interface';
-import { Controller } from '../controllers/controller.interface';
 export interface ModuleMetadata {
-    modules?: NestModule[] | any[];
-    imports?: NestModule[] | any[];
+    imports?: any[];
     components?: any[];
-    controllers?: Controller[] | any[];
+    controllers?: any[];
     exports?: any[];
+    modules?: any[];
 }

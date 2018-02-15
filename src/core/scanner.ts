@@ -13,11 +13,21 @@ import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-met
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { MetadataScanner } from '../core/metadata-scanner';
 import { DynamicModule } from '@nestjs/common';
+import { ApplicationConfig } from './application-config';
+import { isNil } from '@nestjs/common/utils/shared.utils';
+import { APP_INTERCEPTOR, APP_PIPE, APP_GUARD, APP_FILTER } from './constants';
+
+interface ApplicationProviderWrapper {
+  moduleToken: string;
+  providerToken: string;
+}
 
 export class DependenciesScanner {
+  private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] = [];
   constructor(
     private readonly container: NestContainer,
     private readonly metadataScanner: MetadataScanner,
+    private readonly applicationConfig = new ApplicationConfig(),
   ) {}
 
   public scan(module: NestModuleMetatype) {
@@ -108,10 +118,9 @@ export class DependenciesScanner {
   }
 
   public reflectDynamicMetadata(obj: Metatype<Injectable>, token: string) {
-    if (!obj.prototype) {
+    if (!obj || !obj.prototype) {
       return;
     }
-
     this.reflectGuards(obj, token);
     this.reflectInterceptors(obj, token);
   }
@@ -191,7 +200,21 @@ export class DependenciesScanner {
     this.container.addRelatedModule(related, token);
   }
 
-  public storeComponent(component: Metatype<Injectable>, token: string) {
+  public storeComponent(component, token: string) {
+    const isCustomProvider = component && !isNil(component.provide);
+    if (!isCustomProvider) {
+      return this.container.addComponent(component, token);
+    }
+    const applyProvidersMap = this.getApplyProvidersMap();
+    const providersKeys = Object.keys(applyProvidersMap);
+    const providerToken = component.provide;
+    if (providersKeys.indexOf(providerToken) < 0) {
+      return this.container.addComponent(component, token);
+    }
+    this.applicationProvidersApplyMap.push({
+      moduleToken: token,
+      providerToken,
+    });
     this.container.addComponent(component, token);
   }
 
@@ -212,5 +235,28 @@ export class DependenciesScanner {
 
   public reflectMetadata(metatype, metadata: string) {
     return Reflect.getMetadata(metadata, metatype) || [];
+  }
+
+  public applyApplicationProviders() {
+    const applyProvidersMap = this.getApplyProvidersMap();
+    this.applicationProvidersApplyMap.forEach(
+      ({ moduleToken, providerToken }) => {
+        const modules = this.container.getModules();
+        const { components } = modules.get(moduleToken);
+        const { instance } = components.get(providerToken);
+
+        applyProvidersMap[providerToken](instance);
+      },
+    );
+  }
+
+  public getApplyProvidersMap(): { [type: string]: Function } {
+    return {
+      [APP_INTERCEPTOR]: interceptor =>
+        this.applicationConfig.addGlobalInterceptor(interceptor),
+      [APP_PIPE]: pipe => this.applicationConfig.addGlobalPipe(pipe),
+      [APP_GUARD]: guard => this.applicationConfig.addGlobalGuard(guard),
+      [APP_FILTER]: filter => this.applicationConfig.addGlobalFilter(filter),
+    };
   }
 }
