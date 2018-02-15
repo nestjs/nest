@@ -1,3 +1,6 @@
+## 4.6.2
+- **core**: [improvement] simplify `NestFactory.create(...args)` signature
+
 ## 4.6.1
 - **common**: [improvement] create `ModuleMetadata` interface
 - **common**: [bugfix] update `class-validator` #417

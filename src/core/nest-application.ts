@@ -95,8 +95,8 @@ export class NestApplication extends NestApplicationContext
   }
 
   public createServer(): any {
-    if (this.appOptions && this.appOptions.key) {
-      return https.createServer(this.appOptions, this.express);
+    if (this.appOptions && this.appOptions.httpsOptions) {
+      return https.createServer(this.appOptions.httpsOptions, this.express);
     }
     return http.createServer(this.express);
   }

@@ -33,9 +33,12 @@ export class NestFactoryStatic {
    * Creates an instance of the NestApplication (returns Promise)
    * @returns an `Promise` of the INestApplication instance
    */
+  public async create(module: any);
+  public async create(module: any, options: NestApplicationOptions);
+  public async create(module: any, express: any, options: NestApplicationOptions);
   public async create(
     module: any,
-    expressOrOptions?: any | NestApplicationOptions,
+    expressOrOptions?: any,
     options?: NestApplicationOptions,
   ): Promise<INestApplication> {
     const isExpressInstance = expressOrOptions && expressOrOptions.response;
@@ -47,7 +50,12 @@ export class NestFactoryStatic {
     const applicationConfig = new ApplicationConfig();
 
     this.applyLogger(appOptions);
-    await this.initialize(module, container, applicationConfig, expressInstance);
+    await this.initialize(
+      module,
+      container,
+      applicationConfig,
+      expressInstance,
+    );
     return this.createNestInstance<NestApplication>(
       new NestApplication(
         container,
