@@ -30,6 +30,7 @@
     "class-validator": "^0.8.1",
     "cli-color": "^1.1.0",
     "cors": "^2.8.4",
+    "deprecate": "^1.0.0",
     "engine.io-client": "^3.1.1",
     "express": "^4.16.2",
     "fast-safe-stringify": "^1.2.0",
