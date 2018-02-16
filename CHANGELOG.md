@@ -1,14 +1,14 @@
 ## 4.6.2
-#### Improvements
+### Improvements
 - **core**: simplify `NestFactory.create(...args)` signature
 
 ## 4.6.1
-#### Improvements
+### Improvements
 - **common**: create `ModuleMetadata` interface
 - **core**: majority of methods (`INestApplication`, `INestMicroservice`, and `INestApplicationContext`) return `this` instead of `void`
 - **core**: remove static dependencies & relationships inside `NestFactory`
 
-#### Features
+### Features
 - **core**: [feature] add `appOptions` property to `create[..]` methods of `NestFactory`
 
 ### Bugfixes
@@ -16,7 +16,7 @@
 - **core**: [bugfix] catch error thrown by `bodyParser` in exception filter [#422](https://github.com/nestjs/nest/issues/422)
 
 ## 4.6.0
-#### Features
+### Features
 - **common**: `ValidationPipe` improvements [#383](https://github.com/nestjs/nest/pull/383)
 - **common**: `ParseIntPipe` improvements [#385](https://github.com/nestjs/nest/pull/385)
 - **common**: add `FileInterceptor`, `FilesInterceptor`, `@UploadedFile()` and `@UploadedFiles()` (`multer` integration)
@@ -30,7 +30,7 @@
 - **core**: provide `Logger.overrideLogger()` [#247](https://github.com/nestjs/nest/issues/247)
 - **microservices**: add `listenAsync()` to `INestMicroservice` instance
 
-#### Bugfixes
+### Bugfixes
 - **core**: simplify HTTPS protocol usage
 - **core**: custom transport strategy - thrown exceptions issue [#290](https://github.com/nestjs/nest/issues/290)
 - **core**: injector fails silently [#287](https://github.com/nestjs/nest/issues/287)
