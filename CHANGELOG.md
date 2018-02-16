@@ -1,3 +1,7 @@
+## 4.6.4
+### Bug Fixes
+- **microservices**: can't select/get from context when using `NestFactory.createMicroservice` [#398](https://github.com/nestjs/nest/issues/398)
+
 ## 4.6.3
 ### Bug Fixes
 - **core**: error thrown when connecting to microservice (hybrid applicaton) [#425](https://github.com/nestjs/nest/issues/425)

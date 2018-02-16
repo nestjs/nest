@@ -82,11 +82,6 @@ export class NestApplication extends NestApplicationContext
     );
   }
 
-  public selectContextModule() {
-    const modules = this.container.getModules().values();
-    this.contextModule = modules.next().value;
-  }
-
   public applyOptions() {
     if (!this.appOptions) {
       return undefined;
