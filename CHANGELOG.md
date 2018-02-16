@@ -11,7 +11,7 @@
 ### Features
 - **core**: [feature] add `appOptions` property to `create[..]` methods of `NestFactory`
 
-### Bugfixes
+### Bug Fixes
 - **common**: [bugfix] update `class-validator` [#417](https://github.com/nestjs/nest/issues/417)
 - **core**: [bugfix] catch error thrown by `bodyParser` in exception filter [#422](https://github.com/nestjs/nest/issues/422)
 
@@ -30,7 +30,7 @@
 - **core**: provide `Logger.overrideLogger()` [#247](https://github.com/nestjs/nest/issues/247)
 - **microservices**: add `listenAsync()` to `INestMicroservice` instance
 
-### Bugfixes
+### Bug Fixes
 - **core**: simplify HTTPS protocol usage
 - **core**: custom transport strategy - thrown exceptions issue [#290](https://github.com/nestjs/nest/issues/290)
 - **core**: injector fails silently [#287](https://github.com/nestjs/nest/issues/287)
