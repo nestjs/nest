@@ -67,4 +67,17 @@ describe('RouterExplorer', () => {
       expect(bindStub.callCount).to.be.eql(paths.length);
     });
   });
+
+  describe('fetchRouterPath', () => {
+    it('should return expected path', () => {
+      expect(routerBuilder.fetchRouterPath(TestRoute)).to.be.eql('/global');
+      expect(routerBuilder.fetchRouterPath(TestRoute, '/module')).to.be.eql(
+        '/module/global',
+      );
+    });
+
+    it('should throw it a there is a bad path expected path', () => {
+      expect(() => routerBuilder.validateRoutePath(undefined)).to.throw();
+    });
+  });
 });

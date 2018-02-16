@@ -1,6 +1,6 @@
 import { Constructor } from './merge-with-values.util';
 import { NestMiddleware } from '../interfaces/middlewares/nest-middleware.interface';
-import { Component } from '../decorators/core/component.decorator';
+import { Injectable } from '../decorators/core/component.decorator';
 
 export const BindResolveMiddlewareValues = <
   T extends Constructor<NestMiddleware>
@@ -15,7 +15,7 @@ export const BindResolveMiddlewareValues = <
     };
     const token = Metatype.name + JSON.stringify(data);
     Object.defineProperty(type, 'name', { value: token });
-    Component()(type);
+    Injectable()(type);
     return type;
   };
 };

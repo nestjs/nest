@@ -23,24 +23,6 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
     return new MiddlewareBuilder.ConfigProxy(this, middlewares);
   }
 
-  /**
-   * @deprecated
-   * Since version RC.6 this method is deprecated. Use apply() instead.
-   */
-  public use(configuration: MiddlewareConfiguration) {
-    this.logger.warn(
-      'DEPRECATED! Since version RC.6 `use()` method is deprecated. Use `apply()` instead.',
-    );
-
-    const { middlewares, forRoutes } = configuration;
-    if (isUndefined(middlewares) || isUndefined(forRoutes)) {
-      throw new InvalidMiddlewareConfigurationException();
-    }
-
-    this.middlewaresCollection.add(configuration);
-    return this;
-  }
-
   public build() {
     return [...this.middlewaresCollection];
   }

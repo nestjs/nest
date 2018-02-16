@@ -1,10 +1,12 @@
 import { NestModule } from './nest-module.interface';
 import { Controller } from '../controllers/controller.interface';
+import { DynamicModule } from './dynamic-module.interface';
 
 export interface ModuleMetadata {
-  modules?: NestModule[] | any[];
-  imports?: NestModule[] | any[];
-  components?: any[];
-  controllers?: Controller[] | any[];
+  imports?: any[];
+  controllers?: any[];
+  providers?: any[];
   exports?: any[];
+  modules?: any[];
+  components?: any[];
 }

@@ -12,6 +12,11 @@ export class RouterResponseController {
     return isObject(result) ? res.json(result) : res.send(String(result));
   }
 
+  public async render(resultOrDeffered, response, template: string) {
+    const result = await this.transformToResult(resultOrDeffered);
+    response.render(template, result);
+  }
+
   public async transformToResult(resultOrDeffered) {
     if (resultOrDeffered instanceof Promise) {
       return await resultOrDeffered;

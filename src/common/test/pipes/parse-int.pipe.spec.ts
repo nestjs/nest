@@ -17,9 +17,9 @@ describe('ParseIntPipe', () => {
         );
       });
     });
-    describe('when validation vails', () => {
+    describe('when validation fails', () => {
       it('should throw an error', async () => {
-        return expect(target.transform('notanumber!', {} as any)).to.be
+        return expect(target.transform('123abc', {} as any)).to.be
           .rejected;
       });
     });

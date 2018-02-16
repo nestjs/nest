@@ -13,8 +13,8 @@ export declare class RoutesResolver implements Resolver {
     private readonly routerExceptionsFilter;
     private readonly routerBuilder;
     constructor(container: NestContainer, expressAdapter: any, config: ApplicationConfig);
-    resolve(express: Application): void;
-    setupRouters(routes: Map<string, InstanceWrapper<Controller>>, moduleName: string, express: Application): void;
+    resolve(router: any, express: Application): void;
+    setupRouters(routes: Map<string, InstanceWrapper<Controller>>, moduleName: string, modulePath: string, express: Application): void;
     setupNotFoundHandler(express: Application): void;
     setupExceptionHandler(express: Application): void;
 }

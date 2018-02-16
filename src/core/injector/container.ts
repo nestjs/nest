@@ -11,6 +11,7 @@ import { ModuleTokenFactory } from './module-token-factory';
 import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
 import { DynamicModule } from '@nestjs/common';
 import { ModulesContainer } from './modules-container';
+import { NestApplicationContext } from './../nest-application-context';
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
@@ -20,6 +21,15 @@ export class NestContainer {
     Partial<DynamicModule>
   >();
   private readonly moduleTokenFactory = new ModuleTokenFactory();
+  private applicationRef: any;
+
+  public setApplicationRef(applicationRef: any) {
+    this.applicationRef = applicationRef;
+  }
+
+  public getApplicationRef() {
+    return this.applicationRef;
+  }
 
   public addModule(
     metatype: NestModuleMetatype | DynamicModule,
@@ -78,7 +88,7 @@ export class NestContainer {
     if (!modules) {
       return;
     }
-    modules.map((module) => this.addModule(module, scope));
+    modules.map(module => this.addModule(module, scope));
   }
 
   public isGlobalModule(metatype: NestModuleMetatype): boolean {
@@ -112,12 +122,12 @@ export class NestContainer {
     module.addRelatedModule(related);
   }
 
-  public addComponent(component: Metatype<Injectable>, token: string) {
+  public addComponent(component: Metatype<Injectable>, token: string): string {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
     const module = this.modules.get(token);
-    module.addComponent(component);
+    return module.addComponent(component);
   }
 
   public addInjectable(injectable: Metatype<Injectable>, token: string) {

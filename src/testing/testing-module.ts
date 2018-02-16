@@ -6,6 +6,7 @@ import { NestApplication, NestApplicationContext } from '@nestjs/core';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { MicroservicesPackageNotFoundException } from '@nestjs/core/errors/exceptions/microservices-package-not-found.exception';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 
 const { NestMicroservice } =
   optional('@nestjs/microservices/nest-microservice') || ({} as any);
@@ -19,8 +20,14 @@ export class TestingModule extends NestApplicationContext {
     super(container, scope, contextModule);
   }
 
-  public createNestApplication(expressInstance: any = express()): INestApplication {
-    return new NestApplication(this.container, expressInstance);
+  public createNestApplication(
+    expressInstance: any = express(),
+  ): INestApplication {
+    return new NestApplication(
+      this.container,
+      expressInstance,
+      new ApplicationConfig(),
+    );
   }
 
   public createNestMicroservice(
@@ -29,6 +36,10 @@ export class TestingModule extends NestApplicationContext {
     if (!NestMicroservice) {
       throw new MicroservicesPackageNotFoundException();
     }
-    return new NestMicroservice(this.container, config);
+    return new NestMicroservice(
+      this.container,
+      config,
+      new ApplicationConfig(),
+    );
   }
 }

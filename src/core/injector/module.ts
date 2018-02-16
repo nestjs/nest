@@ -1,5 +1,10 @@
 import { InstanceWrapper, NestContainer } from './container';
-import { Injectable, Controller, NestModule } from '@nestjs/common/interfaces';
+import {
+  Injectable,
+  Controller,
+  NestModule,
+  DynamicModule,
+} from '@nestjs/common/interfaces';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
@@ -12,13 +17,14 @@ import {
   isSymbol,
 } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { Reflector } from '../services/reflector.service';
 import { ExternalContextCreator } from './../helpers/external-context-creator';
 import { GuardsContextCreator } from './../guards/guards-context-creator';
 import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
 import { GuardsConsumer } from './../guards/guards-consumer';
 import { ModulesContainer } from './modules-container';
+import { Reflector } from '../services/reflector.service';
+import { EXPRESS_REF } from './tokens';
 
 export interface CustomComponent {
   provide: any;
@@ -28,7 +34,7 @@ export type OpaqueToken = string | symbol | object | Metatype<any>;
 export type CustomClass = CustomComponent & { useClass: Metatype<any> };
 export type CustomFactory = CustomComponent & {
   useFactory: (...args) => any;
-  inject?: Metatype<any>[];
+  inject?: OpaqueToken[];
 };
 export type CustomValue = CustomComponent & { useValue: any };
 export type ComponentMetatype =
@@ -92,6 +98,7 @@ export class Module {
     this.addModuleRef();
     this.addModuleAsComponent();
     this.addReflector();
+    this.addApplicationRef(container.getApplicationRef());
     this.addExternalContextCreator(container);
     this.addModulesContainer(container);
   }
@@ -121,6 +128,15 @@ export class Module {
       metatype: Reflector,
       isResolved: false,
       instance: null,
+    });
+  }
+
+  public addApplicationRef(applicationRef: any) {
+    this._components.set(EXPRESS_REF, {
+      name: EXPRESS_REF,
+      metatype: {} as any,
+      isResolved: true,
+      instance: applicationRef,
     });
   }
 
@@ -160,10 +176,9 @@ export class Module {
     });
   }
 
-  public addComponent(component: ComponentMetatype) {
+  public addComponent(component: ComponentMetatype): string {
     if (this.isCustomProvider(component)) {
-      this.addCustomProvider(component, this._components);
-      return;
+      return this.addCustomProvider(component, this._components);
     }
     this._components.set((component as Metatype<Injectable>).name, {
       name: (component as Metatype<Injectable>).name,
@@ -171,6 +186,7 @@ export class Module {
       instance: null,
       isResolved: false,
     });
+    return (component as Metatype<Injectable>).name;
   }
 
   public isCustomProvider(
@@ -182,7 +198,7 @@ export class Module {
   public addCustomProvider(
     component: CustomFactory | CustomValue | CustomClass,
     collection: Map<string, any>,
-  ) {
+  ): string {
     const { provide } = component;
     const name = isFunction(provide) ? provide.name : provide;
     const comp = {
@@ -194,6 +210,8 @@ export class Module {
     else if (this.isCustomValue(comp)) this.addCustomValue(comp, collection);
     else if (this.isCustomFactory(comp))
       this.addCustomFactory(comp, collection);
+
+    return name;
   }
 
   public isCustomClass(component): component is CustomClass {
@@ -206,6 +224,10 @@ export class Module {
 
   public isCustomFactory(component): component is CustomFactory {
     return !isUndefined((component as CustomFactory).useFactory);
+  }
+
+  public isDynamicModule(exported): exported is DynamicModule {
+    return exported && exported.module;
   }
 
   public addCustomClass(component: CustomClass, collection: Map<string, any>) {
@@ -245,9 +267,18 @@ export class Module {
     });
   }
 
-  public addExportedComponent(exportedComponent: ComponentMetatype) {
-    if (this.isCustomProvider(exportedComponent)) {
-      return this.addCustomExportedComponent(exportedComponent);
+  public addExportedComponent(
+    exportedComponent: ComponentMetatype | string | DynamicModule,
+  ) {
+    if (this.isCustomProvider(exportedComponent as any)) {
+      return this.addCustomExportedComponent(exportedComponent as any);
+    }
+    else if (isString(exportedComponent)) {
+      return this._exports.add(exportedComponent);
+    }
+    else if (this.isDynamicModule(exportedComponent)) {
+      const { module } = exportedComponent;
+      return this._exports.add(module.name);
     }
     this._exports.add(exportedComponent.name);
   }

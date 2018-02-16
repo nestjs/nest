@@ -1,4 +1,5 @@
 import { Metatype } from './metatype.interface';
+import { LoggerService } from '../services/logger.service';
 
 export interface INestApplicationContext {
   /**

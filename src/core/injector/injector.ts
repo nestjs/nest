@@ -307,10 +307,10 @@ export class Injector {
       }
       return component;
     } catch (e) {
-      if (e instanceof UndefinedDependencyException) {
-        throw e;
+      if (e instanceof RuntimeException) {
+        return null;
       }
-      return null;
+      throw e;
     }
   }
 

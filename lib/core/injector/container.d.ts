@@ -10,6 +10,9 @@ export declare class NestContainer {
     private readonly modules;
     private readonly dynamicModulesMetadata;
     private readonly moduleTokenFactory;
+    private applicationRef;
+    setApplicationRef(applicationRef: any): void;
+    getApplicationRef(): any;
     addModule(metatype: NestModuleMetatype | DynamicModule, scope: NestModuleMetatype[]): void;
     extractMetadata(metatype: NestModuleMetatype | DynamicModule): {
         type: NestModuleMetatype;
@@ -22,7 +25,7 @@ export declare class NestContainer {
     addGlobalModule(module: Module): void;
     getModules(): ModulesContainer;
     addRelatedModule(relatedModule: NestModuleMetatype | DynamicModule, token: string): void;
-    addComponent(component: Metatype<Injectable>, token: string): void;
+    addComponent(component: Metatype<Injectable>, token: string): string;
     addInjectable(injectable: Metatype<Injectable>, token: string): void;
     addExportedComponent(exportedComponent: Metatype<Injectable>, token: string): void;
     addController(controller: Metatype<Controller>, token: string): void;

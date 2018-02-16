@@ -33,6 +33,12 @@ describe('ApplicationConfig', () => {
 
       expect(appConfig.getGlobalPipes()).to.be.eql(pipes);
     });
+    it('should add pipe', () => {
+      const pipe = 'testOne';
+      appConfig.addGlobalPipe(pipe as any);
+
+      expect(appConfig.getGlobalPipes()).to.contain(pipe);
+    });
   });
   describe('Filters', () => {
     it('should set global filters', () => {
@@ -40,6 +46,12 @@ describe('ApplicationConfig', () => {
       appConfig.useGlobalFilters(...(filters as any));
 
       expect(appConfig.getGlobalFilters()).to.be.eql(filters);
+    });
+    it('should add filter', () => {
+      const filter = 'testOne';
+      appConfig.addGlobalFilter(filter as any);
+
+      expect(appConfig.getGlobalFilters()).to.contain(filter);
     });
   });
   describe('Guards', () => {
@@ -49,6 +61,12 @@ describe('ApplicationConfig', () => {
 
       expect(appConfig.getGlobalGuards()).to.be.eql(guards);
     });
+    it('should add guard', () => {
+      const guard = 'testOne';
+      appConfig.addGlobalGuard(guard as any);
+
+      expect(appConfig.getGlobalGuards()).to.contain(guard);
+    });
   });
   describe('Interceptors', () => {
     it('should set global interceptors', () => {
@@ -56,6 +74,12 @@ describe('ApplicationConfig', () => {
       appConfig.useGlobalInterceptors(...(interceptors as any));
 
       expect(appConfig.getGlobalInterceptors()).to.be.eql(interceptors);
+    });
+    it('should add interceptor', () => {
+      const interceptor = 'testOne';
+      appConfig.addGlobalInterceptor(interceptor as any);
+
+      expect(appConfig.getGlobalInterceptors()).to.contain(interceptor);
     });
   });
 });

@@ -51,7 +51,7 @@ describe('RoutesResolver', () => {
       });
 
       const use = sinon.spy();
-      routesResolver.setupRouters(routes, '', { use } as any);
+      routesResolver.setupRouters(routes, '', undefined, { use } as any);
       expect(use.calledWith('/global', router)).to.be.true;
     });
   });
@@ -69,7 +69,7 @@ describe('RoutesResolver', () => {
       const spy = sinon
         .stub(routesResolver, 'setupRouters')
         .callsFake(() => undefined);
-      routesResolver.resolve({ use: sinon.spy() } as any);
+      routesResolver.resolve({ use: sinon.spy() } as any, { use: sinon.spy() } as any);
       expect(spy.calledTwice).to.be.true;
     });
   });

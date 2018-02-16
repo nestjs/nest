@@ -6,10 +6,13 @@ import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-met
 import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { MetadataScanner } from '../core/metadata-scanner';
 import { DynamicModule } from '@nestjs/common';
+import { ApplicationConfig } from './application-config';
 export declare class DependenciesScanner {
     private readonly container;
     private readonly metadataScanner;
-    constructor(container: NestContainer, metadataScanner: MetadataScanner);
+    private readonly applicationConfig;
+    private readonly applicationProvidersApplyMap;
+    constructor(container: NestContainer, metadataScanner: MetadataScanner, applicationConfig?: ApplicationConfig);
     scan(module: NestModuleMetatype): void;
     scanForModules(module: NestModuleMetatype | DynamicModule, scope?: NestModuleMetatype[]): void;
     storeModule(module: any, scope: NestModuleMetatype[]): void;
@@ -25,9 +28,13 @@ export declare class DependenciesScanner {
     reflectInterceptors(component: Metatype<Injectable>, token: string): void;
     reflectKeyMetadata(component: Metatype<Injectable>, key: string, method: string): any;
     storeRelatedModule(related: any, token: string): void;
-    storeComponent(component: Metatype<Injectable>, token: string): void;
+    storeComponent(component: any, token: string): string;
     storeInjectable(component: Metatype<Injectable>, token: string): void;
     storeExportedComponent(exportedComponent: Metatype<Injectable>, token: string): void;
     storeRoute(route: Metatype<Controller>, token: string): void;
     reflectMetadata(metatype: any, metadata: string): any;
+    applyApplicationProviders(): void;
+    getApplyProvidersMap(): {
+        [type: string]: Function;
+    };
 }

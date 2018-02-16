@@ -11,6 +11,7 @@ import { RouterExplorer } from './interfaces/explorer.inteface';
 import { ExpressRouterExplorer } from './router-explorer';
 import { ApplicationConfig } from './../application-config';
 import { NotFoundException } from '@nestjs/common';
+import { MODULE_PATH } from '@nestjs/common/constants';
 
 export class RoutesResolver implements Resolver {
   private readonly logger = new Logger(RoutesResolver.name, true);
@@ -34,23 +35,27 @@ export class RoutesResolver implements Resolver {
     );
   }
 
-  public resolve(express: Application) {
+  public resolve(router, express: Application) {
     const modules = this.container.getModules();
-    modules.forEach(({ routes }, moduleName) =>
-      this.setupRouters(routes, moduleName, express),
-    );
+    modules.forEach(({ routes, metatype }, moduleName) => {
+      const path = metatype
+        ? Reflect.getMetadata(MODULE_PATH, metatype)
+        : undefined;
+      this.setupRouters(routes, moduleName, path, router);
+    });
 
-    this.setupNotFoundHandler(express);
+    this.setupNotFoundHandler(router);
     this.setupExceptionHandler(express);
   }
 
   public setupRouters(
     routes: Map<string, InstanceWrapper<Controller>>,
     moduleName: string,
+    modulePath: string,
     express: Application,
   ) {
     routes.forEach(({ instance, metatype }) => {
-      const path = this.routerBuilder.fetchRouterPath(metatype);
+      const path = this.routerBuilder.fetchRouterPath(metatype, modulePath);
       const controllerName = metatype.name;
 
       this.logger.log(ControllerMappingMessage(controllerName, path));

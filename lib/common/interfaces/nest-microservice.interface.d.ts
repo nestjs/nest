@@ -3,7 +3,8 @@ import { ExceptionFilter } from './exceptions/exception-filter.interface';
 import { PipeTransform } from './pipe-transform.interface';
 import { NestInterceptor } from './nest-interceptor.interface';
 import { CanActivate } from './can-activate.interface';
-export interface INestMicroservice {
+import { INestApplicationContext } from './nest-application-context.interface';
+export interface INestMicroservice extends INestApplicationContext {
     /**
      * Starts the microservice.
      *
@@ -12,37 +13,43 @@ export interface INestMicroservice {
      */
     listen(callback: () => void): any;
     /**
+     * Starts the microservice and can be awaited.
+     *
+     * @returns Promise
+     */
+    listenAsync(): Promise<any>;
+    /**
      * Setup Web Sockets Adapter, which will be used inside Gateways.
      * Use, when you want to override default `socket.io` library.
      *
      * @param  {WebSocketAdapter} adapter
      * @returns void
      */
-    useWebSocketAdapter(adapter: WebSocketAdapter): void;
+    useWebSocketAdapter(adapter: WebSocketAdapter): this;
     /**
      * Setups exception filters as a global filters (will be used within every message pattern handler)
      *
      * @param  {ExceptionFilter[]} ...filters
      */
-    useGlobalFilters(...filters: ExceptionFilter[]): any;
+    useGlobalFilters(...filters: ExceptionFilter[]): this;
     /**
      * Setups pipes as a global pipes (will be used within every message pattern handler)
      *
      * @param  {PipeTransform[]} ...pipes
      */
-    useGlobalPipes(...pipes: PipeTransform<any>[]): any;
+    useGlobalPipes(...pipes: PipeTransform<any>[]): this;
     /**
      * Setups interceptors as a global interceptors (will be used within every message pattern handler)
      *
      * @param  {NestInterceptor[]} ...interceptors
      */
-    useGlobalInterceptors(...interceptors: NestInterceptor[]): any;
+    useGlobalInterceptors(...interceptors: NestInterceptor[]): this;
     /**
      * Setups guards as a global guards (will be used within every message pattern handler)
      *
      * @param  {CanActivate[]} ...guards
      */
-    useGlobalGuards(...guards: CanActivate[]): any;
+    useGlobalGuards(...guards: CanActivate[]): this;
     /**
      * Terminates the application (both NestMicroservice and every Web Socket Gateway)
      *

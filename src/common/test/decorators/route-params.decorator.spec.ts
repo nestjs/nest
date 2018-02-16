@@ -182,3 +182,27 @@ describe('@Patch', () => {
     expect(path).to.be.eql('/');
   });
 });
+
+
+describe('Inheritance', () => {
+  const requestPath = 'test';
+  const requestProps = {
+    path: requestPath,
+    method: RequestMethod.GET,
+  };
+
+  it('should enhance subclass with expected request metadata', () => {
+    class Parent {
+      @Get(requestPath)
+      public static test() {}
+    }
+
+    class Test extends Parent {}
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+
+    expect(method).to.be.eql(requestProps.method);
+    expect(path).to.be.eql(requestPath);
+  });
+});

@@ -1,7 +1,37 @@
+## 4.6.2
+- **core**: [improvement] simplify `NestFactory.create(...args)` signature
+
+## 4.6.1
+- **common**: [improvement] create `ModuleMetadata` interface
+- **common**: [bugfix] update `class-validator` [#417](https://github.com/nestjs/nest/issues/417)
+- **core**: [feature] add `appOptions` property to `create[..]` methods of `NestFactory`
+- **core**: [improvement] majority of methods (`INestApplication`, `INestMicroservice`, and `INestApplicationContext`) return `this` instead of `void`
+- **core**: [refactor] remove static dependencies & relationships
+- **core**: [bugfix] catch error thrown by `bodyParser` in exception filter [#422](https://github.com/nestjs/nest/issues/422)
+
+## 4.6.0
+- **common**: [feature] `ValidationPipe` improvements [#383](https://github.com/nestjs/nest/pull/383)
+- **common**: [feature] `ParseIntPipe` improvements [#385](https://github.com/nestjs/nest/pull/385)
+- **common**: [feature] add `FileInterceptor`, `FilesInterceptor`, `@UploadedFile()` and `@UploadedFiles()` (`multer` integration)
+- **common**: [feature] add `HttpModule` that exposes `HttpService` (`axios` integration)
+- **core**: [feature] add `app.disable()` and `app.enable()` wrappers around `express` app
+- **core**: [feature] add ability to inject `express` reference (`EXPRESS_REF` token)
+- **core**: [feature] enable possibility to extend metadata (inheritance support) [#228](https://github.com/nestjs/nest/issues/228)
+- **core**: [feature] `NestFactory.create()` now accepts third argument `HttpsOptions`
+- **core**: [feature] add `app.enableCors()` to `INestApplication` (`cors` integration)
+- **core**: [feature] add `@Render()` decorator (MVC applications)
+- **core**: [feature] provide `Logger.overrideLogger()` [#247](https://github.com/nestjs/nest/issues/247)
+- **core**: [improvement] simplify HTTPS usage
+- **core**: [bugfix] custom transport strategy - thrown exceptions issue [#290](https://github.com/nestjs/nest/issues/290)
+- **core**: [bugfix] injector fails silently [#287](https://github.com/nestjs/nest/issues/287)
+- **core**: [bugfix] secure websockets (`wss://`) [#384](https://github.com/nestjs/nest/issues/384)
+- **core**: [bugfix] can't select/get from context when using `NestFactory.createMicroservice()` [#398](https://github.com/nestjs/nest/issues/398)
+- **core**: [bugfix] interceptor `$stream` observable returns another observable instead of the response object [#376](https://github.com/nestjs/nest/issues/376)
+- **core**: [bugfix] `Observable.throw` from controller results in unhandled rejection promise [#373](https://github.com/nestjs/nest/issues/373)
+- **microservices**: [feature]: add `listenAsync()` to `INestMicroservice` instance
+
 ## 4.5.10
 - **core**: [bugfix] #343
-
-## 4.5.7
 - **core**: [bugfix] #337 
 
 ## 4.5.6
