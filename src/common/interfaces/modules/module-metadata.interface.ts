@@ -4,8 +4,9 @@ import { DynamicModule } from './dynamic-module.interface';
 
 export interface ModuleMetadata {
   imports?: any[];
-  components?: any[];
   controllers?: any[];
+  providers?: any[];
   exports?: any[];
   modules?: any[];
+  components?: any[];
 }

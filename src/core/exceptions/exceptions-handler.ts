@@ -1,4 +1,3 @@
-import { HttpException as DeprecatedHttpException } from './http-exception';
 import { messages } from '../constants';
 import { Logger } from '@nestjs/common';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
@@ -13,12 +12,7 @@ export class ExceptionsHandler {
   public next(exception: Error | HttpException | any, response) {
     if (this.invokeCustomFilters(exception, response)) return;
 
-    if (
-      !(
-        exception instanceof HttpException ||
-        exception instanceof DeprecatedHttpException
-      )
-    ) {
+    if (!(exception instanceof HttpException)) {
       response.status(500).json({
         statusCode: 500,
         message: messages.UNKNOWN_EXCEPTION_MESSAGE,

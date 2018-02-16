@@ -1,4 +1,12 @@
 /**
+ * Defines the injectable class. This class can inject dependencies through constructor.
+ * Those dependencies should belongs to the same module.
+ */
+export function Injectable(): ClassDecorator {
+  return (target: object) => {};
+}
+
+/**
  * Defines the Component. The component can inject dependencies through constructor.
  * Those dependencies should belongs to the same module.
  */

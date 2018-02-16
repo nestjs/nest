@@ -3,8 +3,8 @@ import { SELF_DECLARED_DEPS_METADATA } from '../../constants';
 import { isFunction } from '../../utils/shared.utils';
 
 /**
- * Injects component, which has to be available in the current injector (module) scope.
- * Components are recognized by types / or tokens.
+ * Injects provider, which has to be available in the current injector (module) scope.
+ * Providers are recognized by types / or tokens.
  */
 export function Inject(token): ParameterDecorator {
   return (target, key, index) => {
