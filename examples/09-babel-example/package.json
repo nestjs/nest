@@ -9,17 +9,17 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@nestjs/common": "^4.3.0",
-    "@nestjs/core": "^4.3.0",
-    "@nestjs/microservices": "^4.3.0",
-    "@nestjs/testing": "^4.3.0",
-    "@nestjs/websockets": "^4.3.0",
+    "@nestjs/common": "^5.0.0",
+    "@nestjs/core": "^5.0.0",
+    "@nestjs/microservices": "^5.0.0",
+    "@nestjs/testing": "^5.0.0",
+    "@nestjs/websockets": "^5.0.0",
     "babel-core": "^6.26.0",
     "babel-polyfill": "^6.26.0",
     "body-parser": "^1.17.2",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
-    "rxjs": "^5.4.3"
+    "rxjs": "^5.5.6"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

@@ -6,8 +6,8 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/from';
-import 'rxjs/add/operator/map';
+import { from } from 'rxjs/observable/from';
+import { map } from 'rxjs/operators';
 
 @WebSocketGateway()
 export class EventsGateway {
@@ -18,6 +18,6 @@ export class EventsGateway {
     const event = 'events';
     const response = [1, 2, 3];
 
-    return Observable.from(response).map(res => ({ event, data: res }));
+    return from(response).pipe(map(res => ({ event, data: res })));
   }
 }

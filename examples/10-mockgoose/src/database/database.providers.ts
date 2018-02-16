@@ -21,7 +21,6 @@ export const databaseProviders = [
           useMongoClient: true,
         });
       }
-
       return mongoose;
     },
   },

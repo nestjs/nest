@@ -4,7 +4,7 @@
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js",
+    "start": "ts-node src/main",
     "prestart:prod": "tsc",
     "start:prod": "node dist/main.js",
     "test": "jest --config=jest.json",
@@ -14,17 +14,17 @@
     "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "^4.4.2",
-    "@nestjs/core": "^4.4.2",
-    "@nestjs/microservices": "^4.3.0",
+    "@nestjs/common": "^5.0.0",
+    "@nestjs/core": "^5.0.0",
+    "@nestjs/microservices": "^5.0.0",
     "@nestjs/swagger": "^1.1.2",
-    "@nestjs/testing": "^4.3.0",
-    "@nestjs/websockets": "^4.3.0",
+    "@nestjs/testing": "^5.0.0",
+    "@nestjs/websockets": "^5.0.0",
     "class-transformer": "^0.1.7",
     "class-validator": "^0.7.2",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
-    "rxjs": "^5.4.3",
+    "rxjs": "^5.5.6",
     "typescript": "^2.4.2"
   },
   "devDependencies": {
