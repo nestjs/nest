@@ -12,5 +12,5 @@ export interface INestApplicationContext {
    * Makes possible to retrieve the instance of the component or controller available inside the processed module.
    * @returns T
    */
-  get<T>(metatypeOrToken: Metatype<T> | string): T;
+  get<T>(metatypeOrToken: Metatype<T> | string | Symbol): T;
 }
