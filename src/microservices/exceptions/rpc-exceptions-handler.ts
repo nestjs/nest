@@ -5,7 +5,8 @@ import { messages } from '@nestjs/core/constants';
 import { Observable } from 'rxjs/Observable';
 import { RpcException } from './rpc-exception';
 import { RpcExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
-import 'rxjs/add/observable/throw';
+import { _throw } from 'rxjs/observable/throw';
+
 
 export class RpcExceptionsHandler {
   private static readonly logger = new Logger(RpcExceptionsHandler.name);
@@ -27,11 +28,11 @@ export class RpcExceptionsHandler {
       const logger = RpcExceptionsHandler.logger;
       logger.error.apply(logger, loggerArgs);
 
-      return Observable.throw({ status, message });
+      return _throw({ status, message });
     }
     const res = exception.getError();
     const message = isObject(res) ? res : { status, message: res };
-    return Observable.throw(message);
+    return _throw(message);
   }
 
   public setCustomFilters(filters: RpcExceptionFilterMetadata[]) {

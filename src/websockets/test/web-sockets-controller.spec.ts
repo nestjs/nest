@@ -325,7 +325,7 @@ describe('WebSocketsController', () => {
           const value = 100;
           expect(
             await (await instance.pickResult(
-              Promise.resolve(Observable.of(value)),
+              Promise.resolve(of(value)),
             )).toPromise(),
           ).to.be.eq(100);
         });

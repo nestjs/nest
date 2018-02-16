@@ -1,7 +1,7 @@
-import { Component } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Cat } from './interfaces/cat.interface';
 
-@Component()
+@Injectable()
 export class CatsService {
   private readonly cats: Cat[] = [{ id: 1, name: 'Cat', age: 5 }];
 

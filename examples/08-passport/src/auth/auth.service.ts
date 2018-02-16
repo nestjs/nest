@@ -1,7 +1,7 @@
 import * as jwt from 'jsonwebtoken';
-import { Component, Inject } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 
-@Component()
+@Injectable()
 export class AuthService {
   async createToken() {
     const expiresIn = 60 * 60,

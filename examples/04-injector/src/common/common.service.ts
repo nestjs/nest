@@ -1,7 +1,7 @@
-import { Component } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CoreService } from '../core/core.service';
 
-@Component()
+@Injectable()
 export class CommonService {
   constructor(private readonly coreService: CoreService) {
     console.log('CommonService', coreService);

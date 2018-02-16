@@ -1,9 +1,9 @@
-import { Component, Inject } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Photo } from './photo.entity';
 
-@Component()
+@Injectable()
 export class PhotoService {
   constructor(
     @InjectRepository(Photo)

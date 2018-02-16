@@ -15,7 +15,7 @@ describe('Cats', () => {
     const module = await Test.createTestingModule({
       imports: [CatsModule],
     })
-      .overrideComponent(CatsService)
+      .overrideProvider(CatsService)
       .useValue(catsService)
       .compile();
 

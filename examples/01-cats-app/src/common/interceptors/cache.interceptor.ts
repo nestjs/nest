@@ -1,8 +1,8 @@
-import { Interceptor, NestInterceptor, ExecutionContext } from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/of';
+import { of } from 'rxjs/observable/of';
 
-@Interceptor()
+@Injectable()
 export abstract class CacheInterceptor implements NestInterceptor {
   protected abstract readonly isCached: () => boolean;
 
@@ -12,7 +12,7 @@ export abstract class CacheInterceptor implements NestInterceptor {
     stream$: Observable<any>,
   ): Observable<any> {
     if (this.isCached()) {
-      return Observable.of([]);
+      return of([]);
     }
     return stream$;
   }

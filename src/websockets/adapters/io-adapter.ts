@@ -4,10 +4,8 @@ import { MessageMappingProperties } from '../gateway-metadata-explorer';
 import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
 import { WebSocketAdapter } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/fromEvent';
-import 'rxjs/add/operator/switchMap';
-import 'rxjs/add/operator/filter';
-import 'rxjs/add/operator/do';
+import { switchMap, filter, tap } from 'rxjs/operators';
+import { fromEvent } from 'rxjs/observable/fromEvent';
 
 export class IoAdapter implements WebSocketAdapter {
   constructor(private readonly httpServer: Server | null = null) {}
@@ -43,9 +41,11 @@ export class IoAdapter implements WebSocketAdapter {
     process: (data: any) => Observable<any>,
   ) {
     handlers.forEach(({ message, callback }) =>
-      Observable.fromEvent(client, message)
-        .switchMap(data => process(callback(data)))
-        .filter(result => !!result && result.event)
+      fromEvent(client, message)
+        .pipe(
+          switchMap(data => process(callback(data))),
+          filter(result => !!result && result.event),
+        )
         .subscribe(({ event, data }) => client.emit(event, data)),
     );
   }

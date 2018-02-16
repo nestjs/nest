@@ -1,6 +1,6 @@
-import { CanActivate, Guard, ExecutionContext } from '@nestjs/common';
+import { CanActivate, Injectable, ExecutionContext } from '@nestjs/common';
 
-@Guard()
+@Injectable()
 export class CatsGuard implements CanActivate {
   canActivate(request: any, context: ExecutionContext): boolean {
     return true;

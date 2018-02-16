@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { GuardsConsumer } from './../../guards/guards-consumer';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/of';
+import { of } from 'rxjs/observable/of';
 
 describe('GuardsConsumer', () => {
   let consumer: GuardsConsumer;
@@ -52,7 +52,7 @@ describe('GuardsConsumer', () => {
     describe('when result is Observable', () => {
       it('should returns promise', () => {
         expect(
-          consumer.pickResult(Observable.of(true)),
+          consumer.pickResult(of(true)),
         ).to.eventually.instanceOf(Promise);
       });
     });

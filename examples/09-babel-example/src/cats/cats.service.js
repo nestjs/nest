@@ -1,7 +1,7 @@
-import { Component } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CatsModule } from './cats.module';
 
-@Component()
+@Injectable()
 export class CatsService {
   constructor() {
     this.cats = [];

@@ -1,4 +1,4 @@
-import { HttpException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import {
   PipeTransform,
   Pipe,
@@ -18,7 +18,7 @@ export class ValidationPipe implements PipeTransform<any> {
     const object = plainToClass(metatype, value);
     const errors = await validate(object);
     if (errors.length > 0) {
-      throw new HttpException('Validation failed', HttpStatus.BAD_REQUEST);
+      throw new BadRequestException('Validation failed');
     }
     return value;
   }

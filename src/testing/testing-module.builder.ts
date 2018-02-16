@@ -1,3 +1,4 @@
+import * as deprecate from 'deprecate';
 import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { OverrideByFactoryOptions, OverrideBy } from './interfaces';
@@ -28,7 +29,13 @@ export class TestingModuleBuilder {
     return this.override(typeOrToken, false);
   }
 
+  /** @deprecated */
   public overrideComponent(typeOrToken): OverrideBy {
+    deprecate('The "overrideComponent()" method is deprecated and will be removed within next major release. Use "overrideProvider()" instead.')
+    return this.override(typeOrToken, true);
+  }
+
+  public overrideProvider(typeOrToken): OverrideBy {
     return this.override(typeOrToken, true);
   }
 

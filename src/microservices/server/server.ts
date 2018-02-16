@@ -4,11 +4,11 @@ import { Observable } from 'rxjs/Observable';
 import { MicroserviceResponse } from '../index';
 import { Subscription } from 'rxjs/Subscription';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import 'rxjs/add/operator/catch';
-import 'rxjs/add/operator/finally';
-import 'rxjs/add/observable/empty';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/observable/fromPromise';
+import { catchError } from 'rxjs/operators';
+import { finalize } from 'rxjs/operators';
+import { empty } from 'rxjs/observable/empty';
+import { of } from 'rxjs/observable/of';
+import { fromPromise } from 'rxjs/observable/fromPromise';
 
 export abstract class Server {
   protected readonly messageHandlers: MessageHandlers = {};
@@ -27,19 +27,21 @@ export abstract class Server {
     respond: (data: MicroserviceResponse) => void,
   ): Subscription {
     return stream$
-      .catch(err => {
-        respond({ err, response: null });
-        return Observable.empty();
-      })
-      .finally(() => respond({ disposed: true }))
+      .pipe(
+        catchError(err => {
+          respond({ err, response: null });
+          return empty();
+        }),
+        finalize(() => respond({ disposed: true })),
+      )
       .subscribe(response => respond({ err: null, response }));
   }
 
   public transformToObservable(resultOrDeffered) {
     if (resultOrDeffered instanceof Promise) {
-      return Observable.fromPromise(resultOrDeffered);
+      return fromPromise(resultOrDeffered);
     } else if (!(resultOrDeffered && isFunction(resultOrDeffered.subscribe))) {
-      return Observable.of(resultOrDeffered);
+      return of(resultOrDeffered);
     }
     return resultOrDeffered;
   }

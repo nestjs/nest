@@ -1,8 +1,8 @@
-import { Interceptor, NestInterceptor, ExecutionContext } from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/operator/do';
 
-@Interceptor()
+@Injectable()
 export class LoggingInterceptor implements NestInterceptor {
   intercept(
     dataOrRequest,

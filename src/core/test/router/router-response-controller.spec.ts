@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { RouterResponseController } from '../../router/router-response-controller';
 import { RequestMethod } from './../../../common';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/of';
+import { of } from 'rxjs/observable/of';
 
 describe('RouterResponseController', () => {
   let routerResponseController: RouterResponseController;
@@ -68,7 +68,7 @@ describe('RouterResponseController', () => {
           const value = 100;
           expect(
             await routerResponseController.transformToResult(
-              Observable.of(value),
+              of(value),
             ),
           ).to.be.eq(100);
         });

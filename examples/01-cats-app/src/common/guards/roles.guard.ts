@@ -1,8 +1,7 @@
-import { Guard, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-@Guard()
+@Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
@@ -12,7 +11,6 @@ export class RolesGuard implements CanActivate {
     if (!roles) {
       return true;
     }
-
     const user = req.user;
     const hasRole = () =>
       !!user.roles.find(role => !!roles.find(item => item === role));

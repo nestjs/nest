@@ -13,8 +13,8 @@
     "optional": "0.1.4"
   },
   "peerDependencies": {
-    "@nestjs/common": "^4.*",
+    "@nestjs/common": "^5.*",
     "reflect-metadata": "0.1.10",
-    "rxjs": "^5.4.2"
+    "rxjs": "^5.5.6"
   }
 }

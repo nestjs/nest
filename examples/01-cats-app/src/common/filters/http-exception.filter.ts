@@ -6,9 +6,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, response) {
     const status = exception.getStatus();
 
-    response.status(status).json({
-      statusCode: status,
-      message: `It's a message from the exception filter`,
-    });
+    response
+      .status(status)
+      .json({
+        statusCode: status,
+        message: `This is a message from the exception filter`,
+      });
   }
 }

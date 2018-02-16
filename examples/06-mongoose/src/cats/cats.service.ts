@@ -1,9 +1,9 @@
 import { Model } from 'mongoose';
-import { Component, Inject } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Cat } from './interfaces/cat.interface';
 import { CreateCatDto } from './dto/create-cat.dto';
 
-@Component()
+@Injectable()
 export class CatsService {
   constructor(@Inject('CatModelToken') private readonly catModel: Model<Cat>) {}
 

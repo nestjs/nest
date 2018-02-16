@@ -6,7 +6,7 @@ import { FeatureModule } from '../feature/feature.module';
 
 @Module({
   imports: [CommonModule],
-  components: [CoreService, ContextService],
+  providers: [CoreService, ContextService],
   exports: [CommonModule],
 })
 export class CoreModule {}

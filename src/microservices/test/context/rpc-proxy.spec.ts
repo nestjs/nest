@@ -4,7 +4,7 @@ import { RpcProxy } from './../../context/rpc-proxy';
 import { RpcExceptionsHandler } from './../../exceptions/rpc-exceptions-handler';
 import { RpcException } from '../../exceptions/rpc-exception';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/of';
+import { of } from 'rxjs/observable/of';
 
 describe('RpcProxy', () => {
   let routerProxy: RpcProxy;
@@ -20,7 +20,7 @@ describe('RpcProxy', () => {
   describe('create', () => {
     it('should method return thunk', async () => {
       const proxy = await routerProxy.create(
-        async data => Observable.of(true),
+        async data => of(true),
         handler,
       );
       expect(typeof proxy === 'function').to.be.true;

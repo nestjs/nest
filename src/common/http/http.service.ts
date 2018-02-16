@@ -4,32 +4,32 @@ import {
   AxiosRequestConfig,
   AxiosResponse,
 } from './interfaces/axios.interfaces';
-import 'rxjs/add/observable/fromPromise';
+import { fromPromise } from 'rxjs/observable/fromPromise';
 
 export class HttpService {
   request<T = any>(config: AxiosRequestConfig): Observable<AxiosResponse<T>> {
-    return Observable.fromPromise(axios.request<T>(config));
+    return fromPromise(axios.request<T>(config));
   }
   
   get<T = any>(
     url: string,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<T>> {
-    return Observable.fromPromise(axios.get<T>(url, config));
+    return fromPromise(axios.get<T>(url, config));
   }
 
   delete(
     url: string,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<any>> {
-    return Observable.fromPromise(axios.delete(url, config));
+    return fromPromise(axios.delete(url, config));
   }
 
   head(
     url: string,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<any>> {
-    return Observable.fromPromise(axios.head(url, config));
+    return fromPromise(axios.head(url, config));
   }
 
   post(
@@ -37,7 +37,7 @@ export class HttpService {
     data?,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<any>> {
-    return Observable.fromPromise(axios.post(url, data, config));
+    return fromPromise(axios.post(url, data, config));
   }
 
   put(
@@ -45,7 +45,7 @@ export class HttpService {
     data?,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<any>> {
-    return Observable.fromPromise(axios.post(url, data, config));
+    return fromPromise(axios.post(url, data, config));
   }
 
   patch(
@@ -53,6 +53,6 @@ export class HttpService {
     data?,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<any>> {
-    return Observable.fromPromise(axios.post(url, data, config));
+    return fromPromise(axios.post(url, data, config));
   }
 }

@@ -3,8 +3,9 @@ import { expect } from 'chai';
 import { RpcExceptionsHandler } from './../../exceptions/rpc-exceptions-handler';
 import { RpcException } from './../../exceptions/rpc-exception';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/observable/empty';
+import { of } from 'rxjs/observable/of';
+import { empty } from 'rxjs/observable/empty';
+import { catchError } from 'rxjs/operators';
 
 describe('RpcExceptionsHandler', () => {
   let handler: RpcExceptionsHandler;
@@ -17,14 +18,16 @@ describe('RpcExceptionsHandler', () => {
     it('should method returns expected stream with message when exception is unknown', done => {
       const stream$ = handler.handle(new Error());
       stream$
-        .catch(err => {
-          expect(err).to.be.eql({
-            status: 'error',
-            message: 'Internal server error',
-          });
-          done();
-          return Observable.empty();
-        })
+        .pipe(
+          catchError(err => {
+            expect(err).to.be.eql({
+              status: 'error',
+              message: 'Internal server error',
+            });
+            done();
+            return empty();
+          }),
+        )
         .subscribe(() => ({}));
     });
     describe('when exception is instance of WsException', () => {
@@ -34,11 +37,13 @@ describe('RpcExceptionsHandler', () => {
         };
         const stream$ = handler.handle(new RpcException(message));
         stream$
-          .catch(err => {
-            expect(err).to.be.eql(message);
-            done();
-            return Observable.empty();
-          })
+          .pipe(
+            catchError(err => {
+              expect(err).to.be.eql(message);
+              done();
+              return empty();
+            }),
+          )
           .subscribe(() => ({}));
       });
       it('should method emit expected status and transform message to json', done => {
@@ -46,16 +51,18 @@ describe('RpcExceptionsHandler', () => {
 
         const stream$ = handler.handle(new RpcException(message));
         stream$
-          .catch(err => {
-            expect(err).to.be.eql({ message, status: 'error' });
-            done();
-            return Observable.empty();
-          })
+          .pipe(
+            catchError(err => {
+              expect(err).to.be.eql({ message, status: 'error' });
+              done();
+              return empty();
+            }),
+          )
           .subscribe(() => ({}));
       });
     });
     describe('when "invokeCustomFilters" returns observable', () => {
-      const observable$ = Observable.of(true);
+      const observable$ = of(true);
       beforeEach(() => {
         sinon.stub(handler, 'invokeCustomFilters').returns(observable$);
       });

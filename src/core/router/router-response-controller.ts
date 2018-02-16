@@ -1,6 +1,5 @@
 import { RequestMethod, HttpStatus } from '@nestjs/common';
 import { isNil, isObject, isFunction } from '@nestjs/common/utils/shared.utils';
-import 'rxjs/add/operator/toPromise';
 
 export class RouterResponseController {
   public async apply(resultOrDeffered, response, httpStatusCode: number) {

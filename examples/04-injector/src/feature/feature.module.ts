@@ -4,6 +4,6 @@ import { CoreModule } from '../core/core.module';
 
 @Module({
   imports: [CoreModule],
-  components: [FeatureService],
+  providers: [FeatureService],
 })
 export class FeatureModule {}

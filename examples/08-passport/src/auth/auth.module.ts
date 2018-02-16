@@ -10,7 +10,7 @@ import { JwtStrategy } from './passport/jwt.strategy';
 import { AuthController } from './auth.controller';
 
 @Module({
-  components: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
 })
 export class AuthModule implements NestModule {

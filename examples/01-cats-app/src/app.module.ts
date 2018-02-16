@@ -7,10 +7,10 @@ import { CatsController } from './cats/cats.controller';
   imports: [CatsModule],
 })
 export class ApplicationModule implements NestModule {
-  configure(consumer: MiddlewaresConsumer): void {
+  configure(consumer: MiddlewaresConsumer) {
     consumer
       .apply(LoggerMiddleware)
-      .with('ApplicationModule')
+      .with('Context')
       .forRoutes(CatsController);
   }
 }

@@ -10,7 +10,6 @@ import { Controller } from '@nestjs/common/interfaces';
 import { CanActivate, HttpStatus, ExecutionContext } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
 import { FORBIDDEN_MESSAGE } from './constants';
-import 'rxjs/add/operator/toPromise';
 
 export class GuardsConsumer {
   public async tryActivate(

@@ -9,11 +9,9 @@ import {
 import { Controller } from '@nestjs/common/interfaces';
 import { HttpStatus, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/toPromise';
-import 'rxjs/add/observable/defer';
-import 'rxjs/add/observable/fromPromise';
-import 'rxjs/add/operator/take';
-import 'rxjs/add/operator/switchMap';
+import { defer } from 'rxjs/observable/defer';
+import { fromPromise } from 'rxjs/observable/fromPromise';
+import { take, switchMap } from 'rxjs/operators';
 
 export class InterceptorsConsumer {
   public async intercept(
@@ -24,10 +22,10 @@ export class InterceptorsConsumer {
     next: () => Promise<any>,
   ): Promise<any> {
     if (!interceptors || isEmpty(interceptors)) {
-      return await (await next());
+      return await await next();
     }
     const context = this.createContext(instance, callback);
-    const start$ = Observable.defer(() => this.transformDeffered(next));
+    const start$ = defer(() => this.transformDeffered(next));
     const result$ = await interceptors.reduce(
       async (stream$, interceptor) =>
         await interceptor.intercept(dataOrRequest, context, await stream$),
@@ -47,10 +45,11 @@ export class InterceptorsConsumer {
   }
 
   public transformDeffered(next: () => Promise<any>): Observable<any> {
-    return Observable.fromPromise(next())
-      .switchMap((res) => {
+    return fromPromise(next()).pipe(
+      switchMap(res => {
         const isDeffered = res instanceof Promise || res instanceof Observable;
         return isDeffered ? res : Promise.resolve(res);
-      });
+      }),
+    );
   }
 }

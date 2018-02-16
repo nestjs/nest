@@ -2,6 +2,7 @@ import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import { InvalidMessageException } from '../exceptions/invalid-message.exception';
+import { _throw } from 'rxjs/observable/throw';
 
 export abstract class ClientProxy {
   protected abstract sendSingleMessage(
@@ -11,9 +12,9 @@ export abstract class ClientProxy {
 
   public send<T>(pattern, data): Observable<T> {
     if (isNil(pattern) || isNil(data)) {
-      return Observable.throw(new InvalidMessageException());
+      return _throw(new InvalidMessageException());
     }
-    return Observable.create((observer: Observer<T>) => {
+    return new Observable((observer: Observer<T>) => {
       this.sendSingleMessage({ pattern, data }, this.createObserver(observer));
     });
   }

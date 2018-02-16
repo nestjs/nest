@@ -18,9 +18,9 @@ import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from './context/ws-context-creator';
 import { Observable } from 'rxjs/Observable';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import 'rxjs/add/observable/fromPromise';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/operator/switchMap';
+import { fromPromise } from 'rxjs/observable/fromPromise';
+import { of } from 'rxjs/observable/of';
+import { switchMap } from 'rxjs/operators';
 
 export class WebSocketsController {
   private readonly metadataExplorer = new GatewayMetadataExplorer(
@@ -148,7 +148,7 @@ export class WebSocketsController {
       callback: callback.bind(instance, client),
     }));
     adapter.bindMessageHandlers(client, handlers, data =>
-      Observable.fromPromise(this.pickResult(data)).switchMap(stream => stream),
+      fromPromise(this.pickResult(data)).pipe(switchMap(stream => stream)),
     );
   }
 
@@ -160,9 +160,9 @@ export class WebSocketsController {
       return result;
     }
     if (result instanceof Promise) {
-      return Observable.fromPromise(result);
+      return fromPromise(result);
     }
-    return Observable.of(result);
+    return of(result);
   }
 
   private hookServerToProperties(instance: NestGateway, server) {

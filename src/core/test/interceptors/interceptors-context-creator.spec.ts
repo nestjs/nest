@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { Observable } from 'rxjs/Observable';
 import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
-import 'rxjs/add/observable/of';
+import { of } from 'rxjs/observable/of';
 
 describe('InterceptorsContextCreator', () => {
   let interceptorsContextCreator: InterceptorsContextCreator;
@@ -15,13 +15,13 @@ describe('InterceptorsContextCreator', () => {
       {
         name: 'test',
         instance: {
-          intercept: () => Observable.of(true),
+          intercept: () => of(true),
         },
       },
       {
         name: 'test2',
         instance: {
-          intercept: () => Observable.of(true),
+          intercept: () => of(true),
         },
       },
       {},

@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { FileInterceptor } from './../../interceptors/file.interceptor';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/of';
+import { of } from 'rxjs/observable/of';
 
 describe('FileInterceptor', () => {
   it('should return metatype with expected structure', async () => {
@@ -12,7 +12,7 @@ describe('FileInterceptor', () => {
   describe('intercept', () => {
     let stream$;
     beforeEach(() => {
-      stream$ = Observable.of('test');
+      stream$ = of('test');
     });
     it('should call single() with expected params', async () => {
       const fieldName = 'file';

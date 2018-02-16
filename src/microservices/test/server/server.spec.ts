@@ -2,7 +2,8 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { Server } from '../../server/server';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/toPromise';
+import { _throw } from 'rxjs/observable/throw';
+import { of } from 'rxjs/observable/of';
 
 class TestServer extends Server {
   public listen(callback: () => void) {}
@@ -26,7 +27,7 @@ describe('Server', () => {
     let stream$: Observable<string>;
     let sendSpy: sinon.SinonSpy;
     beforeEach(() => {
-      stream$ = Observable.of('test');
+      stream$ = of('test');
     });
     describe('when stream', () => {
       beforeEach(() => {
@@ -34,7 +35,7 @@ describe('Server', () => {
       });
       describe('throws exception', () => {
         beforeEach(() => {
-          server.send(Observable.throw('test'), sendSpy);
+          server.send(_throw('test') as any, sendSpy);
         });
         it('should send error', () => {
           expect(sendSpy.calledWith({ err: 'test', response: null })).to.be
@@ -75,7 +76,7 @@ describe('Server', () => {
           const value = 100;
           expect(
             await server
-              .transformToObservable(Observable.of(value))
+              .transformToObservable(of(value))
               .toPromise(),
           ).to.be.eq(100);
         });

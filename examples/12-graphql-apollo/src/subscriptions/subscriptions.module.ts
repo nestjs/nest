@@ -18,7 +18,7 @@ export class SubscriptionsModule implements OnModuleDestroy {
     const providers = createSubscriptionProviders(port);
     return {
       module: SubscriptionsModule,
-      components: [...providers],
+      providers: [...providers],
       exports: [...providers],
     };
   }

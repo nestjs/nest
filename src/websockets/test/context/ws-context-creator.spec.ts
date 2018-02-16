@@ -12,7 +12,7 @@ import { GuardsContextCreator } from '../../../core/guards/guards-context-creato
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
 import { NestContainer } from '../../../core/injector/container';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/of';
+import { of } from 'rxjs/observable/of';
 import { WsException } from '../../index';
 import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
@@ -45,7 +45,7 @@ describe('WsContextCreator', () => {
   class Test {
     @UsePipes(new TestPipe())
     test(client: string, data: number) {
-      return Observable.of(false);
+      return of(false);
     }
   }
 

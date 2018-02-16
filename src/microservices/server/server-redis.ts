@@ -4,9 +4,9 @@ import { NO_PATTERN_MESSAGE } from '../constants';
 import { MicroserviceConfiguration } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy } from './../interfaces';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/catch';
-import 'rxjs/add/observable/empty';
-import 'rxjs/add/operator/finally';
+import { catchError } from 'rxjs/operators';
+import { empty } from 'rxjs/observable/empty';
+import { finalize } from 'rxjs/operators';
 
 const DEFAULT_URL = 'redis://localhost:6379';
 const CONNECT_EVENT = 'connect';

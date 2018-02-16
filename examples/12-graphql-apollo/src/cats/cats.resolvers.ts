@@ -1,4 +1,4 @@
-import { Component, UseGuards } from '@nestjs/common';
+import { Injectable, UseGuards } from '@nestjs/common';
 import { Query, Mutation, Resolver, DelegateProperty, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 

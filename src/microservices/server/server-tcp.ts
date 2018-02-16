@@ -5,9 +5,9 @@ import { NO_PATTERN_MESSAGE } from '../constants';
 import { Server } from './server';
 import { CustomTransportStrategy } from './../interfaces';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/catch';
-import 'rxjs/add/observable/empty';
-import 'rxjs/add/operator/finally';
+import { catchError } from 'rxjs/operators';
+import { empty } from 'rxjs/observable/empty';
+import { finalize } from 'rxjs/operators';
 
 const DEFAULT_PORT = 3000;
 const MESSAGE_EVENT = 'message';

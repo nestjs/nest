@@ -2,8 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { Observable } from 'rxjs/Observable';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/operator/toPromise';
+import { of } from 'rxjs/observable/of';
 
 describe('InterceptorsConsumer', () => {
   let consumer: InterceptorsConsumer;
@@ -12,10 +11,10 @@ describe('InterceptorsConsumer', () => {
     consumer = new InterceptorsConsumer();
     interceptors = [
       {
-        intercept: sinon.stub().returns(Observable.of(true)),
+        intercept: sinon.stub().returns(of(true)),
       },
       {
-        intercept: sinon.stub().returns(Observable.of(true)),
+        intercept: sinon.stub().returns(of(true)),
       },
     ];
   });
@@ -89,7 +88,7 @@ describe('InterceptorsConsumer', () => {
     describe('when next() result is Observable', () => {
       it('should return Observable', async () => {
         const val = 3;
-        const next = async () => Observable.of(val);
+        const next = async () => of(val);
         expect(
           await (await (consumer.transformDeffered(next) as any)).toPromise(),
         ).to.be.eql(val);

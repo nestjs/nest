@@ -4,7 +4,7 @@
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js",
+    "start": "ts-node server/main.ts",
     "prestart:prod": "tsc",
     "start:prod": "node dist/main.js"
   },

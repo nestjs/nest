@@ -38,9 +38,9 @@ export function Module(obj: ModuleMetadata): ClassDecorator {
   const propsKeys = Object.keys(obj);
 
   validateKeys(propsKeys);
-  overrideModuleMetadata(obj);
   showDeprecatedWarnings(obj);
-
+  overrideModuleMetadata(obj);
+  
   return (target: object) => {
     for (const property in obj) {
       if (obj.hasOwnProperty(property)) {
@@ -61,8 +61,8 @@ function overrideModuleMetadata(metadata: ModuleMetadata) {
 }
 
 function showDeprecatedWarnings(metadata: ModuleMetadata) {
-  const modulesDeprecatedWarning = 'The `modules` key in the @Module() decorator is deprecated. Use the `imports` key instead.';
-  const componentsDeprecatetWarning = 'The `components` key in the @Module() decorator is deprecated. Use the `providers` key instead.';
+  const modulesDeprecatedWarning = 'The "modules" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "imports" key instead.';
+  const componentsDeprecatetWarning = 'The "components" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "providers" key instead.';
   
   metadata.modules && deprecate(modulesDeprecatedWarning);
   metadata.components && deprecate(componentsDeprecatetWarning);
