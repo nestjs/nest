@@ -1,7 +1,8 @@
 import 'reflect-metadata';
+import * as deprecate from 'deprecate';
+import { metadata } from '../../constants';
 import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface';
 import { InvalidModuleConfigException } from './exceptions/invalid-module-config.exception';
-import { metadata } from '../../constants';
 
 const metadataKeys = [
   metadata.MODULES,
@@ -36,6 +37,10 @@ const validateKeys = (keys: string[]) => {
 export function Module(obj: ModuleMetadata): ClassDecorator {
   const propsKeys = Object.keys(obj);
   validateKeys(propsKeys);
+
+  if (obj.modules) {
+    deprecate('The `modules` key in the Module decorator is deprecated. Use the `imports` key to load modules.');
+  }
   overrideModuleMetadata(obj);
 
   return (target: object) => {

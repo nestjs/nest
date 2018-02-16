@@ -8,7 +8,8 @@
     "axios": "0.17.1",
     "class-transformer": "0.1.8",
     "class-validator": "0.8.1",
-    "cli-color": "1.1.0"
+    "cli-color": "1.1.0",
+    "deprecate": "1.0.0"
   },
   "peerDependencies": {
     "reflect-metadata": "0.1.10"
