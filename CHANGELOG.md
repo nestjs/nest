@@ -1,3 +1,7 @@
+## 4.6.3
+### Bug Fixes
+- **core**: error thrown when connecting to microservice (hybrid applicaton) [#425](https://github.com/nestjs/nest/issues/425)
+
 ## 4.6.2
 ### Improvements
 - **core**: simplify `NestFactory.create(...args)` signature

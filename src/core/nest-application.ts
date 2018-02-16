@@ -116,7 +116,8 @@ export class NestApplication extends NestApplicationContext
   }
 
   public async init(): Promise<this> {
-    const useBodyParser = this.appOptions && this.appOptions.bodyParser !== false;
+    const useBodyParser =
+      this.appOptions && this.appOptions.bodyParser !== false;
     useBodyParser && this.setupParserMiddlewares();
 
     await this.setupModules();
@@ -161,7 +162,12 @@ export class NestApplication extends NestApplicationContext
     if (!NestMicroservice) {
       throw new MicroservicesPackageNotFoundException();
     }
-    const instance = new NestMicroservice(this.container as any, config as any);
+    const applicationConfig = new ApplicationConfig();
+    const instance = new NestMicroservice(
+      this.container as any,
+      config as any,
+      applicationConfig,
+    );
     instance.setupListeners();
     instance.setIsInitialized(true);
     instance.setIsInitHookCalled(true);
