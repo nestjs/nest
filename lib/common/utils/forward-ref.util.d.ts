@@ -1,3 +1,3 @@
-export declare function forwardRef(fn: () => any): {
+export declare const forwardRef: (fn: () => any) => {
     forwardRef: () => any;
 };

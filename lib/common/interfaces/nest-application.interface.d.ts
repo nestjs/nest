@@ -9,48 +9,48 @@ export interface INestApplication extends INestApplicationContext {
      *
      * @returns Promise
      */
-    init(): Promise<void>;
+    init(): Promise<this>;
     /**
      * A wrapper function around native `express.use()` method.
      * Example `app.use(cors())`
      *
      * @returns void
      */
-    use(...args: any[]): void;
+    use(...args: any[]): this;
     /**
      * A wrapper function around native `express.set()` method.
      * Example `app.set('trust proxy', 'loopback')`
      *
      * @returns void
      */
-    set(...args: any[]): void;
+    set(...args: any[]): this;
     /**
      * A wrapper function around native `express.engine()` method.
      * Example `app.engine('mustache', mustacheExpress())`
      *
      * @returns void
      */
-    engine(...args: any[]): void;
+    engine(...args: any[]): this;
     /**
      * A wrapper function around native `express.enable()` method.
      * Example `app.enable('x-powered-by')`
      *
      * @returns void
      */
-    enable(...args: any[]): void;
+    enable(...args: any[]): this;
     /**
      * Enables CORS (Cross-Origin Resource Sharing)
      *
      * @returns void
      */
-    enableCors(): void;
+    enableCors(): this;
     /**
      * A wrapper function around native `express.disable()` method.
      * Example `app.disable('x-powered-by')`
      *
      * @returns void
      */
-    disable(...args: any[]): void;
+    disable(...args: any[]): this;
     /**
      * Starts the application.
      *
@@ -75,7 +75,7 @@ export interface INestApplication extends INestApplicationContext {
      * @param  {string} prefix The prefix for the every HTTP route path (for example `/v1/api`)
      * @returns void
      */
-    setGlobalPrefix(prefix: string): void;
+    setGlobalPrefix(prefix: string): this;
     /**
      * Setup Web Sockets Adapter, which will be used inside Gateways.
      * Use, when you want to override default `socket.io` library.
@@ -83,7 +83,7 @@ export interface INestApplication extends INestApplicationContext {
      * @param  {WebSocketAdapter} adapter
      * @returns void
      */
-    useWebSocketAdapter(adapter: WebSocketAdapter): void;
+    useWebSocketAdapter(adapter: WebSocketAdapter): this;
     /**
      * Connects microservice to the NestApplication instance. It transforms application to the hybrid instance.
      *
@@ -109,7 +109,7 @@ export interface INestApplication extends INestApplicationContext {
      * @param  {Function} callback Optional callback function
      * @returns void
      */
-    startAllMicroservices(callback?: () => void): void;
+    startAllMicroservices(callback?: () => void): this;
     /**
      * Starts all the connected microservices and can be awaited
      *
@@ -121,25 +121,25 @@ export interface INestApplication extends INestApplicationContext {
      *
      * @param  {ExceptionFilter[]} ...filters
      */
-    useGlobalFilters(...filters: ExceptionFilter[]): any;
+    useGlobalFilters(...filters: ExceptionFilter[]): this;
     /**
      * Setups pipes as a global pipes (will be used within every HTTP route handler)
      *
      * @param  {PipeTransform[]} ...pipes
      */
-    useGlobalPipes(...pipes: PipeTransform<any>[]): any;
+    useGlobalPipes(...pipes: PipeTransform<any>[]): this;
     /**
      * Setups interceptors as a global interceptors (will be used within every HTTP route handler)
      *
      * @param  {NestInterceptor[]} ...interceptors
      */
-    useGlobalInterceptors(...interceptors: NestInterceptor[]): any;
+    useGlobalInterceptors(...interceptors: NestInterceptor[]): this;
     /**
      * Setups guards as a global guards (will be used within every HTTP route handler)
      *
      * @param  {CanActivate[]} ...guards
      */
-    useGlobalGuards(...guards: CanActivate[]): any;
+    useGlobalGuards(...guards: CanActivate[]): this;
     /**
      * Terminates the application (both NestApplication, Web Socket Gateways and every connected microservice)
      *

@@ -35,16 +35,16 @@ export class RoutesResolver implements Resolver {
     );
   }
 
-  public resolve(express: Application) {
+  public resolve(router, express: Application) {
     const modules = this.container.getModules();
     modules.forEach(({ routes, metatype }, moduleName) => {
       const path = metatype
         ? Reflect.getMetadata(MODULE_PATH, metatype)
         : undefined;
-      this.setupRouters(routes, moduleName, path, express);
+      this.setupRouters(routes, moduleName, path, router);
     });
 
-    this.setupNotFoundHandler(express);
+    this.setupNotFoundHandler(router);
     this.setupExceptionHandler(express);
   }
 

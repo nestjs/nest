@@ -122,12 +122,12 @@ export class NestContainer {
     module.addRelatedModule(related);
   }
 
-  public addComponent(component: Metatype<Injectable>, token: string) {
+  public addComponent(component: Metatype<Injectable>, token: string): string {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
     const module = this.modules.get(token);
-    module.addComponent(component);
+    return module.addComponent(component);
   }
 
   public addInjectable(injectable: Metatype<Injectable>, token: string) {

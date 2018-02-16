@@ -25,7 +25,7 @@ export declare class NestContainer {
     addGlobalModule(module: Module): void;
     getModules(): ModulesContainer;
     addRelatedModule(relatedModule: NestModuleMetatype | DynamicModule, token: string): void;
-    addComponent(component: Metatype<Injectable>, token: string): void;
+    addComponent(component: Metatype<Injectable>, token: string): string;
     addInjectable(injectable: Metatype<Injectable>, token: string): void;
     addExportedComponent(exportedComponent: Metatype<Injectable>, token: string): void;
     addController(controller: Metatype<Controller>, token: string): void;
