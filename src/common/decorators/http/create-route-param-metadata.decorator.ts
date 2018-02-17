@@ -2,7 +2,7 @@ import {
   ROUTE_ARGS_METADATA,
   CUSTOM_ROUTE_AGRS_METADATA,
 } from '../../constants';
-import { CustomParamFactory } from '../../interfaces/custom-route-param-factory.interface';
+import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface';
 import { RouteParamsMetadata, ParamData } from './route-params.decorator';
 import { PipeTransform } from '../../index';
 import { isNil, isString } from '../../utils/shared.utils';

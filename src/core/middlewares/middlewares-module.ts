@@ -13,7 +13,7 @@ import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 import { Module } from '../injector/module';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { NestMiddleware } from '@nestjs/common/interfaces/middlewares/nest-middleware.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from './../application-config';
@@ -122,7 +122,7 @@ export class MiddlewaresModule {
 
     const middlewares = [].concat(config.middlewares);
     await Promise.all(
-      middlewares.map(async (metatype: Metatype<NestMiddleware>) => {
+      middlewares.map(async (metatype: Type<NestMiddleware>) => {
         const collection = middlewaresContainer.getMiddlewares(module);
         const middleware = collection.get(metatype.name);
         if (isUndefined(middleware)) {
@@ -137,7 +137,7 @@ export class MiddlewaresModule {
 
   private async setupHandler(
     instance: NestMiddleware,
-    metatype: Metatype<NestMiddleware>,
+    metatype: Type<NestMiddleware>,
     app: any,
     method: RequestMethod,
     path: string,

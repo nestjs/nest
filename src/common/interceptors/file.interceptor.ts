@@ -1,5 +1,5 @@
 import * as multer from 'multer';
-import { NestInterceptor } from './../interfaces/nest-interceptor.interface';
+import { NestInterceptor } from './../interfaces/features/nest-interceptor.interface';
 import { Observable } from 'rxjs/Observable';
 import { MulterOptions } from '../interfaces/external/multer-options.interface';
 

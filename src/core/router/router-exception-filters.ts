@@ -11,7 +11,7 @@ import {
   isFunction,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import { Metatype } from '@nestjs/common/interfaces/index';
+import { Type } from '@nestjs/common/interfaces/index';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';

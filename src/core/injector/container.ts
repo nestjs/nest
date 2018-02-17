@@ -1,8 +1,7 @@
 import 'reflect-metadata';
-import { Controller, Injectable } from '@nestjs/common/interfaces';
+import { Controller } from '@nestjs/common/interfaces';
 import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { SHARED_MODULE_METADATA } from '@nestjs/common/constants';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Module } from './module';
@@ -32,8 +31,8 @@ export class NestContainer {
   }
 
   public addModule(
-    metatype: NestModuleMetatype | DynamicModule,
-    scope: NestModuleMetatype[],
+    metatype: Type<any> | DynamicModule,
+    scope: Type<any>[],
   ) {
     if (!metatype) {
       throw new InvalidModuleException(scope);
@@ -51,9 +50,9 @@ export class NestContainer {
   }
 
   public extractMetadata(
-    metatype: NestModuleMetatype | DynamicModule,
+    metatype: Type<any> | DynamicModule,
   ): {
-    type: NestModuleMetatype;
+    type: Type<any>;
     dynamicMetadata?: Partial<DynamicModule> | undefined;
   } {
     if (!this.isDynamicModule(metatype)) {
@@ -64,15 +63,15 @@ export class NestContainer {
   }
 
   public isDynamicModule(
-    module: NestModuleMetatype | DynamicModule,
+    module: Type<any> | DynamicModule,
   ): module is DynamicModule {
-    return (module as DynamicModule).module;
+    return !!(module as DynamicModule).module;
   }
 
   public addDynamicMetadata(
     token: string,
     dynamicModuleMetadata: Partial<DynamicModule>,
-    scope: NestModuleMetatype[],
+    scope: Type<any>[],
   ) {
     if (!dynamicModuleMetadata) {
       return undefined;
@@ -84,14 +83,14 @@ export class NestContainer {
     this.addDynamicModules(imports, scope);
   }
 
-  public addDynamicModules(modules: any[], scope: NestModuleMetatype[]) {
+  public addDynamicModules(modules: any[], scope: Type<any>[]) {
     if (!modules) {
       return;
     }
     modules.map(module => this.addModule(module, scope));
   }
 
-  public isGlobalModule(metatype: NestModuleMetatype): boolean {
+  public isGlobalModule(metatype: Type<any>): boolean {
     return !!Reflect.getMetadata(GLOBAL_MODULE_METADATA, metatype);
   }
 
@@ -104,7 +103,7 @@ export class NestContainer {
   }
 
   public addRelatedModule(
-    relatedModule: NestModuleMetatype | DynamicModule,
+    relatedModule: Type<any> | DynamicModule,
     token: string,
   ) {
     if (!this.modules.has(token)) return;
@@ -122,7 +121,7 @@ export class NestContainer {
     module.addRelatedModule(related);
   }
 
-  public addComponent(component: Metatype<Injectable>, token: string): string {
+  public addComponent(component: Type<any>, token: string): string {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
@@ -130,7 +129,7 @@ export class NestContainer {
     return module.addComponent(component);
   }
 
-  public addInjectable(injectable: Metatype<Injectable>, token: string) {
+  public addInjectable(injectable: Type<any>, token: string) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
@@ -139,7 +138,7 @@ export class NestContainer {
   }
 
   public addExportedComponent(
-    exportedComponent: Metatype<Injectable>,
+    exportedComponent: Type<any>,
     token: string,
   ) {
     if (!this.modules.has(token)) {
@@ -149,7 +148,7 @@ export class NestContainer {
     module.addExportedComponent(exportedComponent);
   }
 
-  public addController(controller: Metatype<Controller>, token: string) {
+  public addController(controller: Type<any>, token: string) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
@@ -190,7 +189,7 @@ export class NestContainer {
   ): any[] {
     const metadata = this.dynamicModulesMetadata.get(token);
     if (metadata && metadata[metadataKey]) {
-      return metadata[metadataKey];
+      return metadata[metadataKey] as any[];
     }
     return [];
   }
@@ -198,12 +197,12 @@ export class NestContainer {
 
 export interface InstanceWrapper<T> {
   name: any;
-  metatype: Metatype<T>;
+  metatype: Type<T>;
   instance: T;
   isResolved: boolean;
   isPending?: boolean;
   done$?: Promise<void>;
-  inject?: Metatype<any>[];
+  inject?: Type<any>[];
   isNotMetatype?: boolean;
   forwardRef?: boolean;
   async?: boolean;

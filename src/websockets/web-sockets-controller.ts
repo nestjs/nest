@@ -10,7 +10,7 @@ import {
 import { Subject } from 'rxjs/Subject';
 import { SocketServerProvider } from './socket-server-provider';
 import { NAMESPACE_METADATA, PORT_METADATA } from './constants';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { MiddlewaresInjector } from './middlewares-injector';
@@ -39,7 +39,7 @@ export class WebSocketsController {
 
   public hookGatewayIntoServer(
     instance: NestGateway,
-    metatype: Metatype<Injectable>,
+    metatype: Type<any>,
     module: string,
   ) {
     const namespace = Reflect.getMetadata(NAMESPACE_METADATA, metatype) || '';

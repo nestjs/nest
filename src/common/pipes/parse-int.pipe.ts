@@ -1,5 +1,5 @@
 import { BadRequestException } from '../exceptions/bad-request.exception';
-import { PipeTransform } from '../interfaces/pipe-transform.interface';
+import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { ArgumentMetadata, Pipe } from '../index';
 
 @Pipe()

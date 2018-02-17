@@ -9,8 +9,7 @@ import {
   GUARDS_METADATA,
   INTERCEPTORS_METADATA,
 } from '@nestjs/common/constants';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { MetadataScanner } from '../core/metadata-scanner';
 import { DynamicModule } from '@nestjs/common';
 import { ApplicationConfig } from './application-config';
@@ -30,15 +29,15 @@ export class DependenciesScanner {
     private readonly applicationConfig = new ApplicationConfig(),
   ) {}
 
-  public scan(module: NestModuleMetatype) {
+  public scan(module: Type<any>) {
     this.scanForModules(module);
     this.scanModulesForDependencies();
     this.container.bindGlobalScope();
   }
 
   public scanForModules(
-    module: NestModuleMetatype | DynamicModule,
-    scope: NestModuleMetatype[] = [],
+    module: Type<any> | DynamicModule,
+    scope: Type<any>[] = [],
   ) {
     this.storeModule(module, scope);
 
@@ -48,7 +47,7 @@ export class DependenciesScanner {
     });
   }
 
-  public storeModule(module: any, scope: NestModuleMetatype[]) {
+  public storeModule(module: any, scope: Type<any>[]) {
     if (module && module.forwardRef) {
       return this.container.addModule(module.forwardRef(), scope);
     }
@@ -66,7 +65,7 @@ export class DependenciesScanner {
     });
   }
 
-  public reflectRelatedModules(module: NestModuleMetatype, token: string) {
+  public reflectRelatedModules(module: Type<any>, token: string) {
     const modules = [
       ...this.reflectMetadata(module, metadata.MODULES),
       ...this.container.getDynamicMetadataByToken(
@@ -81,7 +80,7 @@ export class DependenciesScanner {
     modules.map(related => this.storeRelatedModule(related, token));
   }
 
-  public reflectComponents(module: NestModuleMetatype, token: string) {
+  public reflectComponents(module: Type<any>, token: string) {
     const components = [
       ...this.reflectMetadata(module, metadata.COMPONENTS),
       ...this.container.getDynamicMetadataByToken(
@@ -97,13 +96,13 @@ export class DependenciesScanner {
   }
 
   public reflectComponentMetadata(
-    component: Metatype<Injectable>,
+    component: Type<Injectable>,
     token: string,
   ) {
     this.reflectGatewaysMiddlewares(component, token);
   }
 
-  public reflectControllers(module: NestModuleMetatype, token: string) {
+  public reflectControllers(module: Type<any>, token: string) {
     const routes = [
       ...this.reflectMetadata(module, metadata.CONTROLLERS),
       ...this.container.getDynamicMetadataByToken(
@@ -117,7 +116,7 @@ export class DependenciesScanner {
     });
   }
 
-  public reflectDynamicMetadata(obj: Metatype<Injectable>, token: string) {
+  public reflectDynamicMetadata(obj: Type<Injectable>, token: string) {
     if (!obj || !obj.prototype) {
       return;
     }
@@ -125,7 +124,7 @@ export class DependenciesScanner {
     this.reflectInterceptors(obj, token);
   }
 
-  public reflectExports(module: NestModuleMetatype, token: string) {
+  public reflectExports(module: Type<any>, token: string) {
     const exports = [
       ...this.reflectMetadata(module, metadata.EXPORTS),
       ...this.container.getDynamicMetadataByToken(
@@ -139,14 +138,14 @@ export class DependenciesScanner {
   }
 
   public reflectGatewaysMiddlewares(
-    component: Metatype<Injectable>,
+    component: Type<Injectable>,
     token: string,
   ) {
     const middlewares = this.reflectMetadata(component, GATEWAY_MIDDLEWARES);
     middlewares.map(middleware => this.storeComponent(middleware, token));
   }
 
-  public reflectGuards(component: Metatype<Injectable>, token: string) {
+  public reflectGuards(component: Type<Injectable>, token: string) {
     const controllerGuards = this.reflectMetadata(component, GUARDS_METADATA);
     const methodsGuards = this.metadataScanner.scanFromPrototype(
       null,
@@ -162,7 +161,7 @@ export class DependenciesScanner {
     );
   }
 
-  public reflectInterceptors(component: Metatype<Injectable>, token: string) {
+  public reflectInterceptors(component: Type<Injectable>, token: string) {
     const controllerInterceptors = this.reflectMetadata(
       component,
       INTERCEPTORS_METADATA,
@@ -182,7 +181,7 @@ export class DependenciesScanner {
   }
 
   public reflectKeyMetadata(
-    component: Metatype<Injectable>,
+    component: Type<Injectable>,
     key: string,
     method: string,
   ) {
@@ -218,18 +217,18 @@ export class DependenciesScanner {
     this.container.addComponent(component, token);
   }
 
-  public storeInjectable(component: Metatype<Injectable>, token: string) {
+  public storeInjectable(component: Type<Injectable>, token: string) {
     this.container.addInjectable(component, token);
   }
 
   public storeExportedComponent(
-    exportedComponent: Metatype<Injectable>,
+    exportedComponent: Type<Injectable>,
     token: string,
   ) {
     this.container.addExportedComponent(exportedComponent, token);
   }
 
-  public storeRoute(route: Metatype<Controller>, token: string) {
+  public storeRoute(route: Type<Controller>, token: string) {
     this.container.addController(route, token);
   }
 

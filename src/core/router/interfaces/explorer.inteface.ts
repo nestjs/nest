@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common/interfaces/index';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 
 export interface RouterExplorer {
-  explore(instance: Controller, metatype: Metatype<Controller>, module: string);
-  fetchRouterPath(metatype: Metatype<Controller>, prefix?: string): string;
+  explore(instance: Controller, metatype: Type<Controller>, module: string);
+  fetchRouterPath(metatype: Type<Controller>, prefix?: string): string;
 }

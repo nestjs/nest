@@ -6,7 +6,6 @@ import { ModuleMetadata } from '@nestjs/common/interfaces/modules/module-metadat
 import { Module } from '@nestjs/common/utils/decorators/module.decorator';
 import { DependenciesScanner } from '@nestjs/core/scanner';
 import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { NestEnvironment } from '@nestjs/common/enums/nest-environment.enum';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';

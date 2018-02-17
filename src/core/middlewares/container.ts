@@ -1,6 +1,6 @@
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middlewares/middleware-configuration.interface';
 import { NestMiddleware } from '@nestjs/common/interfaces/middlewares/nest-middleware.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 
 export class MiddlewaresContainer {
   private readonly middlewares = new Map<
@@ -51,5 +51,5 @@ export class MiddlewaresContainer {
 
 export interface MiddlewareWrapper {
   instance: NestMiddleware;
-  metatype: Metatype<NestMiddleware>;
+  metatype: Type<NestMiddleware>;
 }

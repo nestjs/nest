@@ -11,7 +11,7 @@ import {
   isFunction,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import { Metatype } from '@nestjs/common/interfaces/index';
+import { Type } from '@nestjs/common/interfaces/index';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';
@@ -35,7 +35,7 @@ export class BaseExceptionFilterContext extends ContextCreator {
       .toArray() as R;
   }
 
-  public reflectCatchExceptions(instance: ExceptionFilter): Metatype<any>[] {
+  public reflectCatchExceptions(instance: ExceptionFilter): Type<any>[] {
     const prototype = Object.getPrototypeOf(instance);
     return (
       Reflect.getMetadata(FILTER_CATCH_EXCEPTIONS, prototype.constructor) || []

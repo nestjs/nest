@@ -1,6 +1,6 @@
 import { validate, ValidatorOptions } from 'class-validator';
 import { classToPlain, plainToClass } from 'class-transformer';
-import { PipeTransform } from '../interfaces/pipe-transform.interface';
+import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { ArgumentMetadata, BadRequestException } from '../index';
 import { isNil } from '../utils/shared.utils';
 import { Pipe } from './../decorators/core/component.decorator';

@@ -6,8 +6,7 @@ import {
   DynamicModule,
 } from '@nestjs/common/interfaces';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { ModuleRef } from './module-ref';
 import {
   isFunction,
@@ -30,15 +29,15 @@ export interface CustomComponent {
   provide: any;
   name: string;
 }
-export type OpaqueToken = string | symbol | object | Metatype<any>;
-export type CustomClass = CustomComponent & { useClass: Metatype<any> };
+export type OpaqueToken = string | symbol | object | Type<any>;
+export type CustomClass = CustomComponent & { useClass: Type<any> };
 export type CustomFactory = CustomComponent & {
   useFactory: (...args) => any;
   inject?: OpaqueToken[];
 };
 export type CustomValue = CustomComponent & { useValue: any };
 export type ComponentMetatype =
-  | Metatype<Injectable>
+  | Type<Injectable>
   | CustomFactory
   | CustomValue
   | CustomClass;
@@ -51,14 +50,14 @@ export class Module {
   private _exports = new Set<string>();
 
   constructor(
-    private _metatype: NestModuleMetatype,
-    private _scope: NestModuleMetatype[],
+    private _metatype: Type<any>,
+    private _scope: Type<any>[],
     container: NestContainer,
   ) {
     this.addCoreInjectables(container);
   }
 
-  get scope(): NestModuleMetatype[] {
+  get scope(): Type<any>[] {
     return this._scope;
   }
 
@@ -90,7 +89,7 @@ export class Module {
     return module.instance as NestModule;
   }
 
-  get metatype(): NestModuleMetatype {
+  get metatype(): Type<any> {
     return this._metatype;
   }
 
@@ -164,7 +163,7 @@ export class Module {
     });
   }
 
-  public addInjectable(injectable: Metatype<Injectable>) {
+  public addInjectable(injectable: Type<Injectable>) {
     if (this.isCustomProvider(injectable)) {
       return this.addCustomProvider(injectable, this._injectables);
     }
@@ -180,13 +179,13 @@ export class Module {
     if (this.isCustomProvider(component)) {
       return this.addCustomProvider(component, this._components);
     }
-    this._components.set((component as Metatype<Injectable>).name, {
-      name: (component as Metatype<Injectable>).name,
-      metatype: component as Metatype<Injectable>,
+    this._components.set((component as Type<Injectable>).name, {
+      name: (component as Type<Injectable>).name,
+      metatype: component as Type<Injectable>,
       instance: null,
       isResolved: false,
     });
-    return (component as Metatype<Injectable>).name;
+    return (component as Type<Injectable>).name;
   }
 
   public isCustomProvider(
@@ -293,7 +292,7 @@ export class Module {
     this._exports.add(provide.name);
   }
 
-  public addRoute(route: Metatype<Controller>) {
+  public addRoute(route: Type<Controller>) {
     this._routes.set(route.name, {
       name: route.name,
       metatype: route,
@@ -321,7 +320,7 @@ export class Module {
       public readonly components = components;
 
       public get<T>(type: OpaqueToken): T {
-        const name = isFunction(type) ? (type as Metatype<any>).name : type;
+        const name = isFunction(type) ? (type as Type<any>).name : type;
         const exists = this.components.has(name);
 
         return exists ? (this.components.get(name).instance as T) : null;

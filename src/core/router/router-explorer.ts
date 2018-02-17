@@ -4,7 +4,7 @@ import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { ExpressAdapter } from '../adapters/express-adapter';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { PATH_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
@@ -50,7 +50,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
 
   public explore(
     instance: Controller,
-    metatype: Metatype<Controller>,
+    metatype: Type<Controller>,
     module: string,
   ) {
     const router = (this.expressAdapter as any).createRouter();
@@ -61,7 +61,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
   }
 
   public fetchRouterPath(
-    metatype: Metatype<Controller>,
+    metatype: Type<Controller>,
     prefix?: string,
   ): string {
     let path = Reflect.getMetadata(PATH_METADATA, metatype);

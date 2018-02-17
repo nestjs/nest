@@ -3,7 +3,7 @@ import { InstanceWrapper } from './container';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { Module } from './module';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { MiddlewareWrapper } from '../middlewares/container';
@@ -161,7 +161,7 @@ export class Injector {
     isResolved && (await callback(instances));
   }
 
-  public reflectConstructorParams<T>(type: Metatype<T>): any[] {
+  public reflectConstructorParams<T>(type: Type<T>): any[] {
     const paramtypes = Reflect.getMetadata(PARAMTYPES_METADATA, type) || [];
     const selfParams = this.reflectSelfParams<T>(type);
 
@@ -169,13 +169,13 @@ export class Injector {
     return paramtypes;
   }
 
-  public reflectSelfParams<T>(type: Metatype<T>): any[] {
+  public reflectSelfParams<T>(type: Type<T>): any[] {
     return Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, type) || [];
   }
 
   public async resolveSingleParam<T>(
     wrapper: InstanceWrapper<T>,
-    param: Metatype<any> | string | symbol | any,
+    param: Type<any> | string | symbol | any,
     { index, length }: { index: number; length: number },
     module: Module,
     context: Module[],
@@ -186,7 +186,7 @@ export class Injector {
     const token = this.resolveParamToken(wrapper, param);
     return await this.resolveComponentInstance<T>(
       module,
-      isFunction(token) ? (token as Metatype<any>).name : token,
+      isFunction(token) ? (token as Type<any>).name : token,
       { index, length },
       wrapper,
       context,
@@ -195,7 +195,7 @@ export class Injector {
 
   public resolveParamToken<T>(
     wrapper: InstanceWrapper<T>,
-    param: Metatype<any> | string | symbol | any,
+    param: Type<any> | string | symbol | any,
   ) {
     if (!param.forwardRef) {
       return param;

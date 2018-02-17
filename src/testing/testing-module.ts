@@ -1,8 +1,8 @@
 import * as express from 'express';
 import * as optional from 'optional';
 import { NestContainer } from '@nestjs/core/injector/container';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { NestApplication, NestApplicationContext } from '@nestjs/core';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { MicroservicesPackageNotFoundException } from '@nestjs/core/errors/exceptions/microservices-package-not-found.exception';
@@ -14,7 +14,7 @@ const { NestMicroservice } =
 export class TestingModule extends NestApplicationContext {
   constructor(
     container: NestContainer,
-    scope: NestModuleMetatype[],
+    scope: Type<any>[],
     contextModule,
   ) {
     super(container, scope, contextModule);

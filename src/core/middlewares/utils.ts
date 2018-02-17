@@ -1,5 +1,5 @@
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { Metatype } from '@nestjs/common/interfaces';
+import { Type } from '@nestjs/common/interfaces';
 
 export const filterMiddlewares = middlewares => {
   return []
@@ -24,7 +24,7 @@ export const isClass = middleware => {
   return middleware.toString().substring(0, 5) === 'class';
 };
 
-export const assignToken = (metatype): Metatype<any> => {
+export const assignToken = (metatype): Type<any> => {
   this.id = this.id || 1;
   Object.defineProperty(metatype, 'name', { value: ++this.id });
   return metatype;

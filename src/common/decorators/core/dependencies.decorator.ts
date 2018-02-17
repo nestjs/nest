@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { PARAMTYPES_METADATA } from '../../constants';
 
-const flatten = arr => {
+export function flatten(arr) {
   const flat = [].concat(...arr);
   return flat.some(Array.isArray) ? flatten(flat) : flat;
 };

@@ -1,7 +1,6 @@
 import { ModuleTokenFactory } from './injector/module-token-factory';
 import { NestContainer, InstanceWrapper } from './injector/container';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Metatype } from '@nestjs/common/interfaces';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { INestApplicationContext } from '@nestjs/common';
 
@@ -10,11 +9,11 @@ export class NestApplicationContext implements INestApplicationContext {
 
   constructor(
     protected readonly container: NestContainer,
-    private readonly scope: NestModuleMetatype[],
+    private readonly scope: Type<any>[],
     protected contextModule,
   ) {}
 
-  public select<T>(module: Metatype<T>): INestApplicationContext {
+  public select<T>(module: Type<T>): INestApplicationContext {
     const modules = this.container.getModules();
     const moduleMetatype = this.contextModule.metatype;
     const scope = this.scope.concat(moduleMetatype);
@@ -26,12 +25,12 @@ export class NestApplicationContext implements INestApplicationContext {
       : null;
   }
 
-  public get<T>(metatypeOrToken: Metatype<T> | string | symbol): T {
+  public get<T>(metatypeOrToken: Type<T> | string | symbol): T {
     return this.findInstanceByPrototypeOrToken<T>(metatypeOrToken);
   }
 
   private findInstanceByPrototypeOrToken<T>(
-    metatypeOrToken: Metatype<T> | string | symbol,
+    metatypeOrToken: Type<T> | string | symbol,
   ) {
     const dependencies = new Map([
       ...this.contextModule.components,

@@ -13,7 +13,6 @@ import {
   isFunction,
 } from '@nestjs/common/utils/shared.utils';
 import { RpcExceptionFilter } from '@nestjs/common/interfaces/exceptions';
-import { Metatype } from '@nestjs/common/interfaces';
 import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 

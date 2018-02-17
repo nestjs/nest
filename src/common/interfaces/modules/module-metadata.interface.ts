@@ -1,12 +1,14 @@
 import { NestModule } from './nest-module.interface';
 import { Controller } from '../controllers/controller.interface';
 import { DynamicModule } from './dynamic-module.interface';
+import { Type } from '../type.interface';
+import { Provider } from './provider.interface';
 
 export interface ModuleMetadata {
-  imports?: any[];
-  controllers?: any[];
-  providers?: any[];
-  exports?: any[];
-  modules?: any[];
-  components?: any[];
+  imports?: Array<Type<any> | DynamicModule | any[]>;
+  controllers?: Type<any>[];
+  providers?: Provider[];
+  exports?: Array<DynamicModule | string | Provider | any[]>;
+  modules?: Array<Type<any> | DynamicModule | any[]>;
+  components?: Provider[];
 }

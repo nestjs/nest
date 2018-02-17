@@ -7,11 +7,12 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { BindResolveMiddlewareValues } from '@nestjs/common/utils/bind-resolve-values.util';
 import { Logger } from '@nestjs/common/services/logger.service';
-import { Metatype, MiddlewaresConsumer } from '@nestjs/common/interfaces';
+import { Type, MiddlewaresConsumer, RequestMappingMetadata } from '@nestjs/common/interfaces';
 import { MiddlewareConfigProxy } from '@nestjs/common/interfaces/middlewares';
 import { RoutesMapper } from './routes-mapper';
 import { NestMiddleware } from '@nestjs/common';
 import { filterMiddlewares } from './utils';
+import { flatten } from '@nestjs/common/decorators/core/dependencies.decorator'
 
 export class MiddlewareBuilder implements MiddlewaresConsumer {
   private readonly middlewaresCollection = new Set<MiddlewareConfiguration>();
@@ -19,8 +20,8 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
 
   constructor(private readonly routesMapper: RoutesMapper) {}
 
-  public apply(middlewares: any | any[]): MiddlewareConfigProxy {
-    return new MiddlewareBuilder.ConfigProxy(this, middlewares);
+  public apply(...middlewares: Array<Type<any> | Function | any>): MiddlewareConfigProxy {
+    return new MiddlewareBuilder.ConfigProxy(this, flatten(middlewares));
   }
 
   public build() {
@@ -28,7 +29,7 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
   }
 
   private bindValuesToResolve(
-    middlewares: Metatype<any> | Metatype<any>[],
+    middlewares: Type<any> | Type<any>[],
     resolveParams: any[],
   ) {
     if (isNil(resolveParams)) {
@@ -51,7 +52,7 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
       return this;
     }
 
-    public forRoutes(...routes): MiddlewaresConsumer {
+    public forRoutes(...routes: Array<Type<any> | RequestMappingMetadata>): MiddlewaresConsumer {
       const {
         middlewaresCollection,
         bindValuesToResolve,

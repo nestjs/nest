@@ -3,7 +3,6 @@ import { DependenciesScanner } from './scanner';
 import { InstanceLoader } from './injector/instance-loader';
 import { NestContainer } from './injector/container';
 import { ExceptionsZone } from './errors/exceptions-zone';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { messages } from './constants';
