@@ -73,4 +73,38 @@ describe('ServerTCP', () => {
       expect(handler.calledOnce).to.be.true;
     });
   });
+  describe('handleClose', () => {
+    describe('when is terminated', () => {
+      it('should return undefined', () => {
+        (server as any).isExplicitlyTerminated = true;
+        const result = server.handleClose();
+        expect(result).to.be.undefined;
+      });
+    });
+    describe('when "retryAttempts" does not exist', () => {
+      it('should return undefined', () => {
+        (server as any).config.retryAttempts = undefined;
+        const result = server.handleClose();
+        expect(result).to.be.undefined;
+      });
+    });
+    describe('when "retryAttemptsCount" count is max', () => {
+      it('should return undefined', () => {
+        (server as any).config.retryAttempts = 3;
+        (server as any).retryAttemptsCount = 3;
+        const result = server.handleClose();
+        expect(result).to.be.undefined;
+      });
+    });
+    describe('otherwise', () => {
+      it('should return delay (ms)', () => {
+        (server as any).isExplicitlyTerminated = false;
+        (server as any).config.retryAttempts = 3;
+        (server as any).retryAttemptsCount = 2;
+        (server as any).config.retryDelay = 3;
+        const result = server.handleClose();
+        expect(result).to.be.not.undefined;
+      });
+    })
+  });
 });

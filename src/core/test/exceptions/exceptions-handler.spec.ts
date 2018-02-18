@@ -1,10 +1,10 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
-import { HttpException } from '../../exceptions/http-exception';
 import { Logger } from '../../../common/services/logger.service';
 import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
+import { HttpException } from '@nestjs/common';
 
 describe('ExceptionsHandler', () => {
   let handler: ExceptionsHandler;

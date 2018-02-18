@@ -91,4 +91,21 @@ describe('Server', () => {
       });
     });
   });
+  describe('getHandlerByPattern', () => {
+    describe('when handler exists', () => {
+      it('should return expected handler', () => {
+        const pattern = 'pattern';
+        const expectedResult = {};
+        (server as any).messageHandlers[pattern] = expectedResult;
+        expect(server.getHandlerByPattern(pattern)).to.be.eql(expectedResult);
+      });
+    });
+    describe('when handler does not exists', () => {
+      it('should return null', () => {
+        const pattern = 'test';
+        const expectedResult = null;
+        expect(server.getHandlerByPattern(pattern)).to.be.eql(null);
+      });
+    });
+  });
 });

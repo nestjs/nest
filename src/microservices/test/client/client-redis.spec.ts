@@ -1,6 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ClientRedis } from '../../client/client-redis';
+import { ERROR_EVENT } from '../../constants';
 
 describe('ClientRedis', () => {
   const test = 'test';
@@ -44,8 +45,8 @@ describe('ClientRedis', () => {
         unsubscribe: unsubscribeSpy,
       };
       pub = { publish: publishSpy };
-      (client as any).sub = sub;
-      (client as any).pub = pub;
+      (client as any).subClient = sub;
+      (client as any).pubClient = pub;
       initSpy = sinon.spy(client, 'init');
     });
     afterEach(() => {
@@ -56,8 +57,8 @@ describe('ClientRedis', () => {
       expect(initSpy.called).to.be.false;
     });
     it('should call "init()" when pub and sub are null', () => {
-      (client as any).sub = null;
-      (client as any).pub = null;
+      (client as any).subClient = null;
+      (client as any).pubClient = null;
       client['sendSingleMessage'](msg, () => {});
       expect(initSpy.called).to.be.true;
     });
@@ -125,15 +126,15 @@ describe('ClientRedis', () => {
       subClose = sinon.spy();
       pub = { quit: pubClose };
       sub = { quit: subClose };
-      (client as any).pub = pub;
-      (client as any).sub = sub;
+      (client as any).pubClient = pub;
+      (client as any).subClient = sub;
     });
     it('should close "pub" when it is not null', () => {
       client.close();
       expect(pubClose.called).to.be.true;
     });
     it('should not close "pub" when it is null', () => {
-      (client as any).pub = null;
+      (client as any).pubClient = null;
       client.close();
       expect(pubClose.called).to.be.false;
     });
@@ -142,7 +143,7 @@ describe('ClientRedis', () => {
       expect(subClose.called).to.be.true;
     });
     it('should not close "sub" when it is null', () => {
-      (client as any).sub = null;
+      (client as any).subClient = null;
       client.close();
       expect(subClose.called).to.be.false;
     });
@@ -153,7 +154,7 @@ describe('ClientRedis', () => {
 
     beforeEach(() => {
       createClientSpy = sinon.spy(client, 'createClient');
-      handleErrorsSpy = sinon.spy(client, 'handleErrors');
+      handleErrorsSpy = sinon.spy(client, 'handleError');
       client.init(sinon.spy());
     });
     afterEach(() => {
@@ -163,8 +164,64 @@ describe('ClientRedis', () => {
     it('should call "createClient" twice', () => {
       expect(createClientSpy.calledTwice).to.be.true;
     });
-    it('should call "handleErrors" twice', () => {
+    it('should call "handleError" twice', () => {
       expect(handleErrorsSpy.calledTwice).to.be.true;
     });
+  });
+  describe('handleError', () => {
+    it('should bind error event handler and call callback with error', () => {
+      const callback = sinon.spy();
+      const stream = {
+        on: (name, fn) => {
+          const err = { code: 'ECONNREFUSED' };
+          fn(err);
+        
+          expect(name).to.be.eql(ERROR_EVENT);
+          expect(callback.called).to.be.true;
+          expect(callback.calledWith(err, null)).to.be.true;
+        },
+      };
+      client.handleError(stream, callback);
+    });
+  });
+  describe('getClientOptions', () => {
+    it('should return options object with "retry_strategy" and call "createRetryStrategy"', () => {
+      const createSpy = sinon.spy(client, 'createRetryStrategy');
+      const { retry_strategy } = client.getClientOptions();
+      retry_strategy({} as any);
+      expect(createSpy.called).to.be.true;
+    });
+  });
+  describe('createRetryStrategy', () => {
+    describe('when is terminated', () => {
+      it('should return undefined', () => {
+        (client as any).isExplicitlyTerminated = true;
+        const result = client.createRetryStrategy({} as any);
+        expect(result).to.be.undefined;
+      });
+    });
+    describe('when "retryAttempts" does not exist', () => {
+      it('should return undefined', () => {
+        (client as any).metadata.retryAttempts = undefined;
+        const result = client.createRetryStrategy({} as any);
+        expect(result).to.be.undefined;
+      });
+    });
+    describe('when "attempts" count is max', () => {
+      it('should return undefined', () => {
+        (client as any).metadata.retryAttempts = 3;
+        const result = client.createRetryStrategy({ attempt: 4 } as any);
+        expect(result).to.be.undefined;
+      });
+    });
+    describe('otherwise', () => {
+      it('should return delay (ms)', () => {
+        (client as any).isExplicitlyTerminated = false;
+        (client as any).metadata.retryAttempts = 3;
+        (client as any).metadata.retryDelay = 3;
+        const result = client.createRetryStrategy({ attempt: 2 } as any);
+        expect(result).to.be.eql((client as any).metadata.retryDelay);
+      });
+    })
   });
 });

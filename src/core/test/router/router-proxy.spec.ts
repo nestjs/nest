@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RouterProxy } from '../../router/router-proxy';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
-import { HttpException } from '../../exceptions/http-exception';
+import { HttpException } from '../../../common/exceptions/http.exception';
 
 describe('RouterProxy', () => {
   let routerProxy: RouterProxy;

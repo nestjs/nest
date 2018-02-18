@@ -2,27 +2,22 @@ import * as redis from 'redis';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientMetadata } from '../interfaces/client-metadata.interface';
-
-const DEFAULT_URL = 'redis://localhost:6379';
-const MESSAGE_EVENT = 'message';
-const ERROR_EVENT = 'error';
+import { REDIS_DEFAULT_URL, MESSAGE_EVENT, ERROR_EVENT } from './../constants';
 
 export class ClientRedis extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
   private readonly url: string;
+  private pubClient: redis.RedisClient;
+  private subClient: redis.RedisClient;
+  private isExplicitlyTerminated = false;
 
-  private pub: redis.RedisClient;
-  private sub: redis.RedisClient;
-
-  constructor(metadata: ClientMetadata) {
+  constructor(private readonly metadata: ClientMetadata) {
     super();
-
-    const { url } = metadata;
-    this.url = url || DEFAULT_URL;
+    this.url = metadata.url || REDIS_DEFAULT_URL;
   }
 
   protected sendSingleMessage(msg, callback: (...args) => any) {
-    if (!this.pub || !this.sub) {
+    if (!this.pubClient || !this.subClient) {
       this.init(callback);
     }
     const pattern = JSON.stringify(msg.pattern);
@@ -30,16 +25,16 @@ export class ClientRedis extends ClientProxy {
       const { err, response, disposed } = JSON.parse(message);
       if (disposed) {
         callback(null, null, true);
-        this.sub.unsubscribe(this.getResPatternName(pattern));
-        this.sub.removeListener(MESSAGE_EVENT, responseCallback);
+        this.subClient.unsubscribe(this.getResPatternName(pattern));
+        this.subClient.removeListener(MESSAGE_EVENT, responseCallback);
         return;
       }
       callback(err, response);
     };
 
-    this.sub.on(MESSAGE_EVENT, responseCallback);
-    this.sub.subscribe(this.getResPatternName(pattern));
-    this.pub.publish(this.getAckPatternName(pattern), JSON.stringify(msg));
+    this.subClient.on(MESSAGE_EVENT, responseCallback);
+    this.subClient.subscribe(this.getResPatternName(pattern));
+    this.pubClient.publish(this.getAckPatternName(pattern), JSON.stringify(msg));
     return responseCallback;
   }
 
@@ -52,28 +47,48 @@ export class ClientRedis extends ClientProxy {
   }
 
   public close() {
-    this.pub && this.pub.quit();
-    this.sub && this.sub.quit();
+    this.pubClient && this.pubClient.quit();
+    this.subClient && this.subClient.quit();
   }
 
   public init(callback: (...args) => any) {
-    this.pub = this.createClient();
-    this.sub = this.createClient();
+    this.pubClient = this.createClient();
+    this.subClient = this.createClient();
 
-    this.handleErrors(this.pub, callback);
-    this.handleErrors(this.sub, callback);
+    this.handleError(this.pubClient, callback);
+    this.handleError(this.subClient, callback);
   }
 
   public createClient(): redis.RedisClient {
-    return redis.createClient({ url: this.url });
+    return redis.createClient({ ...this.getClientOptions(), url: this.url });
   }
 
-  public handleErrors(stream, callback: (...args) => any) {
+  public handleError(stream, callback: (...args) => any) {
     stream.on(ERROR_EVENT, err => {
       if (err.code === 'ECONNREFUSED') {
         callback(err, null);
       }
       this.logger.error(err);
     });
+  }
+
+  public getClientOptions(): Partial<redis.ClientOpts> {
+    const retry_strategy = options => this.createRetryStrategy(options);
+    return {
+      retry_strategy,
+    };
+  }
+
+  public createRetryStrategy(
+    options: redis.RetryStrategyOptions,
+  ): undefined | number {
+    if (
+      this.isExplicitlyTerminated ||
+      !this.metadata.retryAttempts ||
+      options.attempt > this.metadata.retryAttempts
+    ) {
+      return undefined;
+    }
+    return this.metadata.retryDelay || 0;
   }
 }

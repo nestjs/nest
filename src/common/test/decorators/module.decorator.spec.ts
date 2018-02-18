@@ -11,7 +11,7 @@ describe('@Module', () => {
     controllers: ['Test'],
   };
 
-  @Module(moduleProps)
+  @Module(moduleProps as any)
   class TestModule {}
 
   it('should enhance class with expected module metadata', () => {
@@ -38,24 +38,46 @@ describe('@Module', () => {
   });
 
   describe(`when "imports" is used`, () => {
-    const imports = ['Imports'];
+    const imports = ['imports'];
     @Module({
       imports,
-    })
+    } as any)
     class TestModule2 {}
-    it(`should override "modules" metadata when there is no modules`, () => {
+    it(`should override "modules" metadata when "imports" exists`, () => {
       const modules = Reflect.getMetadata('modules', TestModule2);
       expect(modules).to.be.eql(imports);
     });
 
     @Module({
-      ...moduleProps,
-      imports,
-    })
+      ...moduleProps as any,
+      imports: null,
+    } as any)
     class TestModule3 {}
-    it(`should not override "modules" metadata when there is no modules`, () => {
+    it(`should not override "modules" metadata when "imports" does not exist`, () => {
       const modules = Reflect.getMetadata('modules', TestModule3);
       expect(modules).to.be.eql(moduleProps.modules);
+    });
+  });
+
+  describe(`when "providers" is used`, () => {
+    const providers = ['providers'];
+    @Module({
+      providers,
+    } as any)
+    class TestModule2 {}
+    it(`should override "components" metadata when "providers" exists`, () => {
+      const components = Reflect.getMetadata('components', TestModule2);
+      expect(components).to.be.eql(providers);
+    });
+
+    @Module({
+      ...moduleProps as any,
+      providers: null,
+    } as any)
+    class TestModule3 {}
+    it(`should not override "components" metadata when "providers" does not exist`, () => {
+      const components = Reflect.getMetadata('components', TestModule3);
+      expect(components).to.be.eql(moduleProps.components);
     });
   });
 });

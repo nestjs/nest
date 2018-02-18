@@ -18,6 +18,12 @@ export abstract class Server {
     return this.messageHandlers;
   }
 
+  public getHandlerByPattern(
+    pattern: string,
+  ): (data) => Promise<Observable<any>> | null {
+    return this.messageHandlers[pattern] ? this.messageHandlers[pattern] : null;
+  }
+
   public add(pattern, callback: (data) => Promise<Observable<any>>) {
     this.messageHandlers[JSON.stringify(pattern)] = callback;
   }

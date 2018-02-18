@@ -7,52 +7,57 @@ import { Observable } from 'rxjs/Observable';
 import { catchError } from 'rxjs/operators';
 import { empty } from 'rxjs/observable/empty';
 import { finalize } from 'rxjs/operators';
-
-const DEFAULT_URL = 'redis://localhost:6379';
-const CONNECT_EVENT = 'connect';
-const MESSAGE_EVENT = 'message';
-const ERROR_EVENT = 'error';
+import {
+  REDIS_DEFAULT_URL,
+  CONNECT_EVENT,
+  MESSAGE_EVENT,
+  ERROR_EVENT,
+} from './../constants';
 
 export class ServerRedis extends Server implements CustomTransportStrategy {
   private readonly url: string;
-  private sub = null;
-  private pub = null;
+  private subClient: redis.RedisClient;
+  private pubClient: redis.RedisClient;
+  private isExplicitlyTerminated = false;
 
-  constructor(config: MicroserviceConfiguration) {
+  constructor(private readonly config: MicroserviceConfiguration) {
     super();
-    this.url = config.url || DEFAULT_URL;
+    this.url = config.url || REDIS_DEFAULT_URL;
   }
 
   public listen(callback: () => void) {
-    this.sub = this.createRedisClient();
-    this.pub = this.createRedisClient();
+    this.subClient = this.createRedisClient();
+    this.pubClient = this.createRedisClient();
 
-    this.handleErrors(this.pub);
-    this.handleErrors(this.sub);
+    this.handleError(this.pubClient);
+    this.handleError(this.subClient);
     this.start(callback);
   }
 
   public start(callback?: () => void) {
-    this.sub.on(CONNECT_EVENT, () =>
-      this.handleConnection(callback, this.sub, this.pub),
+    this.bindEvents(this.subClient, this.pubClient);
+    this.subClient.on(CONNECT_EVENT, callback);
+  }
+
+  public bindEvents(
+    subClient: redis.RedisClient,
+    pubClient: redis.RedisClient,
+  ) {
+    subClient.on(MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
+    const patterns = Object.keys(this.messageHandlers);
+    patterns.forEach(pattern =>
+      subClient.subscribe(this.getAckQueueName(pattern)),
     );
   }
 
   public close() {
-    this.pub && this.pub.quit();
-    this.sub && this.sub.quit();
+    this.isExplicitlyTerminated = true;
+    this.pubClient && this.pubClient.quit();
+    this.subClient && this.subClient.quit();
   }
 
-  public createRedisClient() {
-    return redis.createClient({ url: this.url });
-  }
-
-  public handleConnection(callback, sub, pub) {
-    sub.on(MESSAGE_EVENT, this.getMessageHandler(pub).bind(this));
-
-    const patterns = Object.keys(this.messageHandlers);
-    patterns.forEach(pattern => sub.subscribe(this.getAckQueueName(pattern)));
-    callback && callback();
+  public createRedisClient(): redis.RedisClient {
+    return redis.createClient({ ...this.getClientOptions(), url: this.url });
   }
 
   public getMessageHandler(pub) {
@@ -78,9 +83,8 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getPublisher(pub, pattern) {
-    return respond => {
+    return respond =>
       pub.publish(this.getResQueueName(pattern), JSON.stringify(respond));
-    };
   }
 
   public tryParse(content) {
@@ -91,15 +95,35 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     }
   }
 
-  public getAckQueueName(pattern) {
+  public getAckQueueName(pattern): string {
     return `${pattern}_ack`;
   }
 
-  public getResQueueName(pattern) {
+  public getResQueueName(pattern): string {
     return `${pattern}_res`;
   }
 
-  public handleErrors(stream) {
+  public handleError(stream) {
     stream.on(ERROR_EVENT, err => this.logger.error(err));
+  }
+
+  public getClientOptions(): Partial<redis.ClientOpts> {
+    const retry_strategy = options => this.createRetryStrategy(options);
+    return {
+      retry_strategy,
+    };
+  }
+
+  public createRetryStrategy(
+    options: redis.RetryStrategyOptions,
+  ): undefined | number {
+    if (
+      this.isExplicitlyTerminated ||
+      !this.config.retryAttempts ||
+      options.attempt > this.config.retryAttempts
+    ) {
+      return undefined;
+    }
+    return this.config.retryDelay || 0;
   }
 }

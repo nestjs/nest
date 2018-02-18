@@ -10,6 +10,7 @@ import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from '../context/ws-context-creator';
 import { Observable } from 'rxjs/Observable';
 import { IoAdapter } from '../index';
+import { of } from 'rxjs/observable/of';
 
 describe('WebSocketsController', () => {
   let instance: WebSocketsController;

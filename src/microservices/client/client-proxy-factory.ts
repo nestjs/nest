@@ -8,7 +8,6 @@ import { Closeable } from '../interfaces/closeable.interface';
 export class ClientProxyFactory {
   public static create(metadata: ClientMetadata): ClientProxy & Closeable {
     const { transport } = metadata;
-
     switch (transport) {
       case Transport.REDIS:
         return new ClientRedis(metadata);

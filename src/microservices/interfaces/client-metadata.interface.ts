@@ -5,4 +5,6 @@ export interface ClientMetadata {
   url?: string;
   port?: number;
   host?: string;
+  retryAttempts?: number;
+  retryDelay?: number;
 }

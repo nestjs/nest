@@ -1,25 +1,25 @@
 import * as net from 'net';
 import * as JsonSocket from 'json-socket';
 import { Server as NetSocket } from 'net';
-import { NO_PATTERN_MESSAGE } from '../constants';
+import { NO_PATTERN_MESSAGE, CLOSE_EVENT } from '../constants';
 import { Server } from './server';
 import { CustomTransportStrategy } from './../interfaces';
 import { Observable } from 'rxjs/Observable';
 import { catchError } from 'rxjs/operators';
 import { empty } from 'rxjs/observable/empty';
 import { finalize } from 'rxjs/operators';
-
-const DEFAULT_PORT = 3000;
-const MESSAGE_EVENT = 'message';
-const ERROR_EVENT = 'error';
+import { TCP_DEFAULT_PORT, MESSAGE_EVENT, ERROR_EVENT } from './../constants';
+import { MicroserviceConfiguration } from '../interfaces/microservice-configuration.interface';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
   private readonly port: number;
   private server: NetSocket;
+  private isExplicitlyTerminated = false;
+  private retryAttemptsCount = 0;
 
-  constructor(config) {
+  constructor(private readonly config: MicroserviceConfiguration) {
     super();
-    this.port = config.port || DEFAULT_PORT;
+    this.port = config.port || TCP_DEFAULT_PORT;
     this.init();
   }
 
@@ -28,6 +28,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   }
 
   public close() {
+    this.isExplicitlyTerminated = true;
     this.server.close();
   }
 
@@ -43,7 +44,6 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
       socket.sendMessage({ status, error: NO_PATTERN_MESSAGE });
       return;
     }
-
     const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(
       await handler(msg.data),
@@ -51,9 +51,25 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     response$ && this.send(response$, socket.sendMessage.bind(socket));
   }
 
+  public handleClose(): undefined | NodeJS.Timer {
+    if (
+      this.isExplicitlyTerminated ||
+      !this.config.retryAttempts ||
+      this.retryAttemptsCount >= this.config.retryAttempts
+    ) {
+      return undefined;
+    }
+    ++this.retryAttemptsCount;
+    return setTimeout(
+      () => this.server.listen(this.port),
+      this.config.retryDelay || 0,
+    );
+  }
+
   private init() {
     this.server = net.createServer(this.bindHandler.bind(this));
     this.server.on(ERROR_EVENT, this.handleError.bind(this));
+    this.server.on(CLOSE_EVENT, this.handleClose.bind(this));
   }
 
   private getSocketInstance(socket) {

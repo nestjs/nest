@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ModuleTokenFactory } from '../../injector/module-token-factory';
-import { Shared, SingleScope } from '../../../index';
+import { SingleScope } from '../../../index';
 
 describe('ModuleTokenFactory', () => {
   let factory: ModuleTokenFactory;
@@ -64,7 +64,7 @@ describe('ModuleTokenFactory', () => {
     describe('when metadata exists', () => {
       it('should return stringified metadata', () => {
         const metadata = { components: ['', {}] };
-        expect(factory.getDynamicMetadataToken(metadata)).to.be.eql(
+        expect(factory.getDynamicMetadataToken(metadata as any)).to.be.eql(
           JSON.stringify(metadata),
         );
       });

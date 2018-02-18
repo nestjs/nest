@@ -1,27 +1,34 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ClientTCP } from '../../client/client-tcp';
+import { MESSAGE_EVENT } from '../../constants';
 
 describe('ClientTCP', () => {
   const client = new ClientTCP({});
   let socket: {
     connect: sinon.SinonSpy;
     sendMessage: sinon.SinonSpy;
+    _socket: {
+      removeListener: sinon.SinonSpy;
+      once: sinon.SinonStub;
+    },
     on: sinon.SinonStub;
     end: sinon.SinonSpy;
   };
   let createSocketStub: sinon.SinonStub;
 
   beforeEach(() => {
+    const onFakeCallback = (event, callback) =>
+      event !== 'error' && event !== 'close' && callback({});
+    
     socket = {
       connect: sinon.spy(),
       sendMessage: sinon.spy(),
-      on: sinon
-        .stub()
-        .callsFake(
-          (event, callback) =>
-            event !== 'error' && event !== 'close' && callback({}),
-        ),
+      on: sinon.stub().callsFake(onFakeCallback),
+      _socket: {
+        removeListener: sinon.spy(),
+        once: sinon.stub().callsFake(onFakeCallback),
+      },
       end: sinon.spy(),
     };
     createSocketStub = sinon
@@ -68,12 +75,14 @@ describe('ClientTCP', () => {
   describe('handleResponse', () => {
     let callback;
     describe('when disposed', () => {
+      const context = () => ({});
       beforeEach(() => {
         callback = sinon.spy();
-        client.handleResponse(socket, callback, { disposed: true });
+        client.handleResponse(socket, callback, { disposed: true }, context);
       });
-      it('should end server', () => {
-        expect(socket.end.called).to.be.true;
+      it('should remove listener', () => {
+        expect(socket._socket.removeListener.called).to.be.true;
+        expect(socket._socket.removeListener.calledWith(MESSAGE_EVENT, context)).to.be.true;
       });
       it('should emit disposed callback', () => {
         expect(callback.called).to.be.true;
@@ -82,10 +91,11 @@ describe('ClientTCP', () => {
     });
     describe('when not disposed', () => {
       let buffer;
+      const context = () => ({});
       beforeEach(() => {
         buffer = { err: 'test', response: 'res' };
         callback = sinon.spy();
-        client.handleResponse(socket, callback, buffer);
+        client.handleResponse(socket, callback, buffer, context);
       });
       it('should not end server', () => {
         expect(socket.end.called).to.be.false;
@@ -110,6 +120,23 @@ describe('ClientTCP', () => {
     });
     it('should set "socket" to null', () => {
       expect((client as any).socket).to.be.null;
+    });
+  });
+  describe('handleError', () => {
+    it('should call callback with error', () => {
+      const callback = sinon.spy();
+      const err = { code: 'ECONNREFUSED' };
+      client.handleError(err, callback);
+    
+      expect(callback.called).to.be.true;
+      expect(callback.calledWith(err, null)).to.be.true;
+    });
+    it('should not call callback with error', () => {
+      const callback = sinon.spy();
+      const err = {};
+      client.handleError(err, callback);
+  
+      expect(callback.called).to.be.false;
     });
   });
 });

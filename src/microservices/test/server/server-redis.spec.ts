@@ -22,22 +22,25 @@ describe('ServerRedis', () => {
       createRedisClient = sinon
         .stub(server, 'createRedisClient')
         .callsFake(() => client);
+
+        server.listen(null);
     });
     it('should bind "error" event to handler', () => {
-      server.listen(null);
       expect(onSpy.getCall(0).args[0]).to.be.equal('error');
     });
     it('should bind "connect" event to handler', () => {
-      server.listen(null);
-      expect(onSpy.getCall(2).args[0]).to.be.equal('connect');
+      expect(onSpy.getCall(3).args[0]).to.be.equal('connect');
+    });
+    it('should bind "message" event to handler', () => {
+      expect(onSpy.getCall(2).args[0]).to.be.equal('message');
     });
   });
   describe('close', () => {
     const pub = { quit: sinon.spy() };
     const sub = { quit: sinon.spy() };
     beforeEach(() => {
-      (server as any).pub = pub;
-      (server as any).sub = sub;
+      (server as any).pubClient = pub;
+      (server as any).subClient = sub;
     });
     it('should close pub & sub server', () => {
       server.close();
@@ -58,7 +61,7 @@ describe('ServerRedis', () => {
       };
     });
     it('should bind "message" event to handler', () => {
-      server.handleConnection(null, sub, null);
+      server.bindEvents(sub, null);
       expect(onSpy.getCall(0).args[0]).to.be.equal('message');
     });
     it('should subscribe each acknowledge patterns', () => {
@@ -67,15 +70,10 @@ describe('ServerRedis', () => {
       (server as any).messageHandlers = {
         [pattern]: handler,
       };
-      server.handleConnection(null, sub, null);
+      server.bindEvents(sub, null);
 
       const expectedPattern = 'test_ack';
       expect(subscribeSpy.calledWith(expectedPattern)).to.be.true;
-    });
-    it('should call callback if exists', () => {
-      const callback = sinon.spy();
-      server.handleConnection(callback, sub, null);
-      expect(callback.calledOnce).to.be.true;
     });
   });
   describe('getMessageHandler', () => {
@@ -159,5 +157,45 @@ describe('ServerRedis', () => {
       const expectedResult = test + '_res';
       expect(server.getResQueueName(test)).to.equal(expectedResult);
     });
+  });
+  describe('getClientOptions', () => {
+    it('should return options object with "retry_strategy" and call "createRetryStrategy"', () => {
+      const createSpy = sinon.spy(server, 'createRetryStrategy');
+      const { retry_strategy } = server.getClientOptions();
+      retry_strategy({} as any);
+      expect(createSpy.called).to.be.true;
+    });
+  });
+  describe('createRetryStrategy', () => {
+    describe('when is terminated', () => {
+      it('should return undefined', () => {
+        (server as any).isExplicitlyTerminated = true;
+        const result = server.createRetryStrategy({} as any);
+        expect(result).to.be.undefined;
+      });
+    });
+    describe('when "retryAttempts" does not exist', () => {
+      it('should return undefined', () => {
+        (server as any).config.retryAttempts = undefined;
+        const result = server.createRetryStrategy({} as any);
+        expect(result).to.be.undefined;
+      });
+    });
+    describe('when "attempts" count is max', () => {
+      it('should return undefined', () => {
+        (server as any).config.retryAttempts = 3;
+        const result = server.createRetryStrategy({ attempt: 4 } as any);
+        expect(result).to.be.undefined;
+      });
+    });
+    describe('otherwise', () => {
+      it('should return delay (ms)', () => {
+        (server as any).isExplicitlyTerminated = false;
+        (server as any).config.retryAttempts = 3;
+        (server as any).config.retryDelay = 3;
+        const result = server.createRetryStrategy({ attempt: 2 } as any);
+        expect(result).to.be.eql((server as any).config.retryDelay);
+      });
+    })
   });
 });

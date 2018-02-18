@@ -3,8 +3,8 @@ import { Server, CustomTransportStrategy } from '@nestjs/microservices';
 import { Observable } from 'rxjs/Observable';
 
 export class RabbitMQServer extends Server implements CustomTransportStrategy {
-  private server: amqp.Connection = null;
-  private channel: amqp.Channel = null;
+  private server: amqp.Connection;
+  private channel: amqp.Channel;
 
   constructor(private readonly host: string, private readonly queue: string) {
     super();
@@ -25,14 +25,12 @@ export class RabbitMQServer extends Server implements CustomTransportStrategy {
   private async handleMessage(message) {
     const { content } = message;
     const messageObj = JSON.parse(content.toString());
-
-    const handlers = this.getHandlers();
     const pattern = JSON.stringify(messageObj.pattern);
-    if (!this.messageHandlers[pattern]) {
+
+    const handler = this.getHandlerByPattern(pattern);
+    if (!handler) {
       return;
     }
-
-    const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(
       await handler(messageObj.data),
     ) as Observable<any>;

@@ -150,8 +150,8 @@ describe('NestContainer', () => {
       });
     });
     describe('when module is a dynamic module', () => {
-      it('should return undefined', () => {
-        expect(container.isDynamicModule({ x: true } as any)).to.be.undefined;
+      it('should return false', () => {
+        expect(container.isDynamicModule({ x: true } as any)).to.be.false;
       });
     });
   });

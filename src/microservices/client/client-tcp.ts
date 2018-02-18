@@ -3,33 +3,33 @@ import * as JsonSocket from 'json-socket';
 import { ClientProxy } from './client-proxy';
 import { ClientMetadata } from '../interfaces/client-metadata.interface';
 import { Logger } from '@nestjs/common';
-
-const DEFAULT_PORT = 3000;
-const DEFAULT_HOST = 'localhost';
-const CONNECT_EVENT = 'connect';
-const MESSAGE_EVENT = 'message';
-const ERROR_EVENT = 'error';
-const CLOSE_EVENT = 'close';
+import {
+  TCP_DEFAULT_PORT,
+  TCP_DEFAULT_HOST,
+  CONNECT_EVENT,
+  MESSAGE_EVENT,
+  ERROR_EVENT,
+  CLOSE_EVENT,
+} from './../constants';
 
 export class ClientTCP extends ClientProxy {
   private readonly logger = new Logger(ClientTCP.name);
   private readonly port: number;
   private readonly host: string;
   private isConnected = false;
-  private socket;
+  private socket: JsonSocket;
 
   constructor({ port, host }: ClientMetadata) {
     super();
-    this.port = port || DEFAULT_PORT;
-    this.host = host || DEFAULT_HOST;
+    this.port = port || TCP_DEFAULT_PORT;
+    this.host = host || TCP_DEFAULT_HOST;
   }
 
-  public init(callback: (...args) => any): Promise<{}> {
+  public init(callback: (...args) => any): Promise<JsonSocket> {
     this.socket = this.createSocket();
-
     return new Promise(resolve => {
       this.bindEvents(this.socket, callback);
-      this.socket.on(CONNECT_EVENT, () => {
+      this.socket._socket.once(CONNECT_EVENT, () => {
         this.isConnected = true;
         resolve(this.socket);
       });
@@ -38,11 +38,12 @@ export class ClientTCP extends ClientProxy {
   }
 
   protected async sendSingleMessage(msg, callback: (...args) => any) {
-    const sendMessage = socket => {
+    const self = this;
+    const sendMessage = (socket: JsonSocket) => {
       socket.sendMessage(msg);
-      socket.on(MESSAGE_EVENT, buffer =>
-        this.handleResponse(socket, callback, buffer),
-      );
+      socket.on(MESSAGE_EVENT, function(buffer) {
+        self.handleResponse(socket, callback, buffer, this);
+      });
     };
     if (this.isConnected) {
       sendMessage(this.socket);
@@ -52,36 +53,43 @@ export class ClientTCP extends ClientProxy {
     sendMessage(socket);
   }
 
-  public handleResponse(socket, callback: (...args) => any, buffer) {
+  public handleResponse(
+    socket: JsonSocket,
+    callback: (...args) => any,
+    buffer: any,
+    context: Function,
+  ) {
     const { err, response, disposed } = buffer;
     if (disposed) {
       callback(null, null, true);
-      socket.end();
-      return;
+      return socket._socket.removeListener(MESSAGE_EVENT, context);
     }
     callback(err, response);
   }
 
-  public createSocket() {
+  public createSocket(): JsonSocket {
     return new JsonSocket(new net.Socket());
   }
 
   public close() {
     this.socket && this.socket.end();
-    this.isConnected = false;
-    this.socket = null;
+    this.handleClose();
   }
 
-  public bindEvents(socket, callback: (...args) => any) {
-    socket.on(ERROR_EVENT, err => {
-      if (err.code === 'ECONNREFUSED') {
-        callback(err, null);
-      }
-      this.logger.error(err);
-    });
-    socket.on(CLOSE_EVENT, () => {
-      this.isConnected = false;
-      this.socket = null;
-    });
+  public bindEvents(socket: JsonSocket, callback: (...args) => any) {
+    socket.on(ERROR_EVENT, err => this.handleError(err, callback));
+    socket.on(CLOSE_EVENT, () => this.handleClose());
+  }
+
+  public handleError(err: any, callback: (...args) => any) {
+    if (err.code === 'ECONNREFUSED') {
+      callback(err, null);
+    }
+    this.logger.error(err);
+  }
+
+  public handleClose() {
+    this.isConnected = false;
+    this.socket = null;
   }
 }
