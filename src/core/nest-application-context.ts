@@ -13,7 +13,12 @@ export class NestApplicationContext implements INestApplicationContext {
     protected contextModule,
   ) {}
 
-  public select<T>(module: Type<T>): INestApplicationContext {
+  public selectContextModule() {
+    const modules = this.container.getModules().values();
+    this.contextModule = modules.next().value;
+  }
+
+  public select<T>(module: Metatype<T>): INestApplicationContext {
     const modules = this.container.getModules();
     const moduleMetatype = this.contextModule.metatype;
     const scope = this.scope.concat(moduleMetatype);

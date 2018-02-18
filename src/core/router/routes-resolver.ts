@@ -10,7 +10,7 @@ import { MetadataScanner } from '../metadata-scanner';
 import { RouterExplorer } from './interfaces/explorer.inteface';
 import { ExpressRouterExplorer } from './router-explorer';
 import { ApplicationConfig } from './../application-config';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants';
 
 export class RoutesResolver implements Resolver {
@@ -43,8 +43,8 @@ export class RoutesResolver implements Resolver {
         : undefined;
       this.setupRouters(routes, moduleName, path, router);
     });
-
     this.setupNotFoundHandler(router);
+    this.setupExceptionHandler(router);
     this.setupExceptionHandler(express);
   }
 
@@ -79,7 +79,7 @@ export class RoutesResolver implements Resolver {
 
   public setupExceptionHandler(express: Application) {
     const callback = (err, req, res, next) => {
-      throw err;
+      throw this.mapExternalException(err);
     };
     const exceptionHandler = this.routerExceptionsFilter.create(
       {},
@@ -90,5 +90,14 @@ export class RoutesResolver implements Resolver {
       exceptionHandler,
     );
     express.use(proxy);
+  }
+
+  public mapExternalException(err: any) {
+    switch (true) {
+      case (err instanceof SyntaxError): 
+        return new BadRequestException(err.message);
+      default: 
+        return err; 
+    }
   }
 }

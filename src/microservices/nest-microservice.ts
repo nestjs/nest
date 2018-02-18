@@ -58,6 +58,8 @@ export class NestMicroservice extends NestApplicationContext
     this.server = strategy
       ? strategy
       : ServerFactory.create(this.microserviceConfig);
+    
+    this.selectContextModule();
   }
 
   public setupModules() {
