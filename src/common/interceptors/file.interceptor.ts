@@ -13,9 +13,12 @@ export function FileInterceptor(fieldName: string, options?: MulterOptions) {
       context,
       stream$: Observable<any>,
     ): Promise<Observable<any>> {
-      await new Promise((resolve, reject) =>
+      const fileOrError = await new Promise((resolve, reject) =>
         this.upload.single(fieldName)(request, request.res, resolve),
       );
+      if (fileOrError instanceof Error) {
+        throw fileOrError;
+      }
       return stream$;
     }
   });
