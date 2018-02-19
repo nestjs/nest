@@ -12,9 +12,12 @@ export function FilesInterceptor(fieldName: string, maxCount?: number, options?:
       context,
       stream$: Observable<any>,
     ): Promise<Observable<any>> {
-      await new Promise((resolve, reject) =>
+      const filesOrError = await new Promise((resolve, reject) =>
         this.upload.array(fieldName, maxCount)(request, request.res, resolve),
       );
+      if (filesOrError instanceof Error) {
+        throw filesOrError;
+      }
       return stream$;
     }
   };
