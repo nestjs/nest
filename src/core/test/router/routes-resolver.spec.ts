@@ -5,6 +5,7 @@ import { Controller } from '../../../common/decorators/core/controller.decorator
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { ApplicationConfig } from '../../application-config';
+import { BadRequestException } from '@nestjs/common';
 
 describe('RoutesResolver', () => {
   @Controller('global')
@@ -71,6 +72,25 @@ describe('RoutesResolver', () => {
         .callsFake(() => undefined);
       routesResolver.resolve({ use: sinon.spy() } as any, { use: sinon.spy() } as any);
       expect(spy.calledTwice).to.be.true;
+    });
+  });
+
+  describe('mapExternalExceptions', () => {
+    describe('when exception prototype is', () => {
+      describe('SyntaxError', () => {
+        it('should map to BadRequestException', () => {
+          const err = new SyntaxError();
+          const outputErr = routesResolver.mapExternalException(err);
+          expect(outputErr).to.be.instanceof(BadRequestException);
+        });
+      });
+      describe('other', () => {
+        it('should behave as an identity', () => {
+          const err = new Error();
+          const outputErr = routesResolver.mapExternalException(err);
+          expect(outputErr).to.be.eql(err);
+        });
+      });
     });
   });
 });
