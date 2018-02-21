@@ -1,3 +1,12 @@
+## 4.6.5
+### Bug Fixes
+- **common**: `File(s)Interceptor` does not populate thrown exception [#437](https://github.com/nestjs/nest/issues/437)
+
+### Improvements
+- **common**: `HttpException` extends `Error`
+- **microservices**: `RpcException` extends `Error`
+- **websockets**: `WsException` extends `Error`
+
 ## 4.6.4
 ### Bug Fixes
 - **common**: logger overrides custom logger scope [#435](https://github.com/nestjs/nest/issues/435)
