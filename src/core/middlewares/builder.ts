@@ -36,7 +36,6 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
     if (isUndefined(middlewares) || isUndefined(forRoutes)) {
       throw new InvalidMiddlewareConfigurationException();
     }
-
     this.middlewaresCollection.add(configuration);
     return this;
   }

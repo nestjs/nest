@@ -5,18 +5,25 @@ import { MulterOptions } from '../interfaces/external/multer-options.interface';
 import { mixin } from '../decorators/core/component.decorator';
 
 export function FileInterceptor(fieldName: string, options?: MulterOptions) {
-  return mixin(class implements NestInterceptor {
-    readonly upload = multer(options);
+  return mixin(
+    class implements NestInterceptor {
+      readonly upload = multer(options);
 
-    async intercept(
-      request,
-      context,
-      stream$: Observable<any>,
-    ): Promise<Observable<any>> {
-      await new Promise((resolve, reject) =>
-        this.upload.single(fieldName)(request, request.res, resolve),
-      );
-      return stream$;
-    }
-  });
+      async intercept(
+        request,
+        context,
+        stream$: Observable<any>,
+      ): Promise<Observable<any>> {
+        await new Promise((resolve, reject) =>
+          this.upload.single(fieldName)(request, request.res, err => {
+            if (err) {
+              return reject(err);
+            }
+            resolve();
+          }),
+        );
+        return stream$;
+      }
+    },
+  );
 }

@@ -17,4 +17,5 @@ export declare class RoutesResolver implements Resolver {
     setupRouters(routes: Map<string, InstanceWrapper<Controller>>, moduleName: string, modulePath: string, express: Application): void;
     setupNotFoundHandler(express: Application): void;
     setupExceptionHandler(express: Application): void;
+    mapExternalException(err: any): any;
 }

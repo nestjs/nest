@@ -1,5 +1,10 @@
 ## 4.6.4
 ### Bug Fixes
+- **common**: logger overrides custom logger scope [#435](https://github.com/nestjs/nest/issues/435)
+- **common**: `FileInterceptor` supports only one options at once [#429](https://github.com/nestjs/nest/issues/429)
+- **common**: support `symbol` as a token (`NestApplicationContext`)
+- **core**: fix exception handler (exceception thrown in the `done()` callback) [#431](https://github.com/nestjs/nest/issues/431)
+- **core**: incorrect HTTP response on `SyntaxError` [#430](https://github.com/nestjs/nest/issues/430)
 - **microservices**: can't select/get from context when using `NestFactory.createMicroservice` [#398](https://github.com/nestjs/nest/issues/398)
 
 ## 4.6.3
