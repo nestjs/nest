@@ -8,6 +8,7 @@ export declare class NestApplicationContext implements INestApplicationContext {
     protected contextModule: any;
     private readonly moduleTokenFactory;
     constructor(container: NestContainer, scope: NestModuleMetatype[], contextModule: any);
+    selectContextModule(): void;
     select<T>(module: Metatype<T>): INestApplicationContext;
     get<T>(metatypeOrToken: Metatype<T> | string | symbol): T;
     private findInstanceByPrototypeOrToken<T>(metatypeOrToken);

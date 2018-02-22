@@ -21,7 +21,6 @@ export declare class NestApplication extends NestApplicationContext implements I
     private readonly microservices;
     private isInitialized;
     constructor(container: NestContainer, express: any, config: ApplicationConfig, appOptions?: NestApplicationOptions);
-    selectContextModule(): void;
     applyOptions(): any;
     createServer(): any;
     setupModules(): Promise<void>;
