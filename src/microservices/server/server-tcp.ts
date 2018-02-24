@@ -51,7 +51,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     response$ && this.send(response$, socket.sendMessage.bind(socket));
   }
 
-  public handleClose(): undefined | NodeJS.Timer {
+  public handleClose(): undefined | number | NodeJS.Timer {
     if (
       this.isExplicitlyTerminated ||
       !this.config.retryAttempts ||
@@ -72,7 +72,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     this.server.on(CLOSE_EVENT, this.handleClose.bind(this));
   }
 
-  private getSocketInstance(socket) {
+  private getSocketInstance(socket): JsonSocket {
     return new JsonSocket(socket);
   }
 }

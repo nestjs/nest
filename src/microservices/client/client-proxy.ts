@@ -5,8 +5,8 @@ import { InvalidMessageException } from '../exceptions/invalid-message.exception
 import { _throw } from 'rxjs/observable/throw';
 
 export abstract class ClientProxy {
-  protected abstract sendSingleMessage(
-    msg,
+  protected abstract sendMessage(
+    msg: any,
     callback: (err, result, disposed?: boolean) => void,
   );
 
@@ -15,7 +15,7 @@ export abstract class ClientProxy {
       return _throw(new InvalidMessageException());
     }
     return new Observable((observer: Observer<T>) => {
-      this.sendSingleMessage({ pattern, data }, this.createObserver(observer));
+      this.sendMessage({ pattern, data }, this.createObserver(observer));
     });
   }
 

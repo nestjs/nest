@@ -16,7 +16,7 @@ export class ClientRedis extends ClientProxy {
     this.url = metadata.url || REDIS_DEFAULT_URL;
   }
 
-  protected sendSingleMessage(msg, callback: (...args) => any) {
+  protected sendMessage(msg, callback: (...args) => any) {
     if (!this.pubClient || !this.subClient) {
       this.init(callback);
     }

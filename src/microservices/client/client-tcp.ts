@@ -37,20 +37,20 @@ export class ClientTCP extends ClientProxy {
     });
   }
 
-  protected async sendSingleMessage(msg, callback: (...args) => any) {
+  protected async sendMessage(msg, callback: (...args) => any) {
     const self = this;
-    const sendMessage = (socket: JsonSocket) => {
+    const processMessage = (socket: JsonSocket) => {
       socket.sendMessage(msg);
       socket.on(MESSAGE_EVENT, function(buffer) {
         self.handleResponse(socket, callback, buffer, this);
       });
     };
     if (this.isConnected) {
-      sendMessage(this.socket);
+      processMessage(this.socket);
       return Promise.resolve();
     }
     const socket = await this.init(callback);
-    sendMessage(socket);
+    processMessage(socket);
   }
 
   public handleResponse(
