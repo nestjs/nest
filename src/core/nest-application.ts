@@ -37,6 +37,7 @@ import { MiddlewaresContainer } from './middlewares/container';
 import { NestApplicationContext } from './nest-application-context';
 import { HttpsOptions } from '@nestjs/common/interfaces/https-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
@@ -215,8 +216,8 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public enableCors(): this {
-    this.express.use(cors());
+  public enableCors(options?: CorsOptions): this {
+    this.express.use(cors(options));
     return this;
   }
 
