@@ -78,6 +78,10 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://opencollective.com/nest/backer/31/website" target="_blank"><img src="https://opencollective.com/nest/backer/31/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/32/website" target="_blank"><img src="https://opencollective.com/nest/backer/32/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/33/website" target="_blank"><img src="https://opencollective.com/nest/backer/33/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/34/website" target="_blank"><img src="https://opencollective.com/nest/backer/34/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/35/website" target="_blank"><img src="https://opencollective.com/nest/backer/35/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/36/website" target="_blank"><img src="https://opencollective.com/nest/backer/36/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/37/website" target="_blank"><img src="https://opencollective.com/nest/backer/37/avatar.svg"></a>
 
 ## People
 
