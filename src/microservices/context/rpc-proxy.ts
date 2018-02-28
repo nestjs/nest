@@ -3,12 +3,12 @@ import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
 
 export class RpcProxy {
   public create(
-    targetCallback: (data) => Promise<Observable<any>>,
+    targetCallback: (...args) => Promise<Observable<any>>,
     exceptionsHandler: RpcExceptionsHandler,
-  ): (data) => Promise<Observable<any>> {
-    return async data => {
+  ): (...args) => Promise<Observable<any>> {
+    return async (...args) => {
       try {
-        return await targetCallback(data);
+        return await targetCallback(...args);
       } catch (e) {
         return exceptionsHandler.handle(e);
       }

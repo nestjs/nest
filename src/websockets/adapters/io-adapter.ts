@@ -10,17 +10,17 @@ import { fromEvent } from 'rxjs/observable/fromEvent';
 export class IoAdapter implements WebSocketAdapter {
   constructor(private readonly httpServer: Server | null = null) {}
 
-  public create(port: number) {
+  public create(port: number): any {
     return this.createIOServer(port);
   }
 
-  public createWithNamespace(port: number, namespace: string, server?: any) {
+  public createWithNamespace(port: number, namespace: string, server?: any): any {
     return server
       ? server.of(namespace)
       : this.createIOServer(port).of(namespace);
   }
 
-  public createIOServer(port: number) {
+  public createIOServer(port: number): any {
     if (this.httpServer && port === 0) {
       return io.listen(this.httpServer);
     }

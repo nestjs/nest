@@ -43,7 +43,8 @@ export class RpcContextCreator {
       module,
     );
 
-    return this.rpcProxy.create(async data => {
+    return this.rpcProxy.create(async (...args) => {
+      const [data, ...params] = args;
       const canActivate = await this.guardsConsumer.tryActivate(
         guards,
         data,
@@ -59,7 +60,7 @@ export class RpcContextCreator {
           { metatype },
           pipes,
         );
-        return callback.call(instance, result);
+        return callback.call(instance, result, params);
       };
 
       return await this.interceptorsConsumer.intercept(

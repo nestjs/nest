@@ -41,7 +41,6 @@ export class ExternalContextCreator {
       if (!canActivate) {
         throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
       }
-
       const handler = () => callback.apply(instance, args);
       return await this.interceptorsConsumer.intercept(
         interceptors,
