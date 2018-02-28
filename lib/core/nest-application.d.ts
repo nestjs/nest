@@ -7,6 +7,7 @@ import { ApplicationConfig } from './application-config';
 import { NestContainer } from './injector/container';
 import { NestApplicationContext } from './nest-application-context';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 export declare class NestApplication extends NestApplicationContext implements INestApplication {
     private readonly express;
     private readonly config;
@@ -38,7 +39,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     set(...args: any[]): this;
     disable(...args: any[]): this;
     enable(...args: any[]): this;
-    enableCors(): this;
+    enableCors(options?: CorsOptions): this;
     listen(port: number | string, callback?: () => void): any;
     listen(port: number | string, hostname: string, callback?: () => void): any;
     listenAsync(port: number | string, hostname?: string): Promise<any>;
