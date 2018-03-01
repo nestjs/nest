@@ -53,8 +53,8 @@ export class NestFactoryStatic {
       ? [expressOrOptions, options]
       : [ExpressAdapter.create(), expressOrOptions];
 
-    const container = new NestContainer();
     const applicationConfig = new ApplicationConfig();
+    const container = new NestContainer(applicationConfig);
 
     this.applyLogger(appOptions);
     await this.initialize(
@@ -87,8 +87,8 @@ export class NestFactoryStatic {
     if (!NestMicroservice) {
       throw new MicroservicesPackageNotFoundException();
     }
-    const container = new NestContainer();
     const applicationConfig = new ApplicationConfig();
+    const container = new NestContainer(applicationConfig);
 
     this.applyLogger(options);
     await this.initialize(module, container, applicationConfig);

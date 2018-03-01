@@ -1,9 +1,12 @@
 ## 4.6.5
 ### Bug Fixes
 - **common**: `File(s)Interceptor` does not populate thrown exception [#437](https://github.com/nestjs/nest/issues/437)
+- **core**: `NestFactory.create()` returns `any`
+- **core**: use `ApplicationConfig` within `ExternalContextCreator` [#434](https://github.com/nestjs/nest/issues/434) 
 
 ### Improvements
 - **common**: `HttpException` extends `Error`
+- **core**: make `cors` middleware customizable (`enableCors()`, `{ cors }`) [#457](https://github.com/nestjs/nest/issues/437) 
 - **microservices**: `RpcException` extends `Error`
 - **websockets**: `WsException` extends `Error`
 
