@@ -1,12 +1,14 @@
+/// <reference types="node" />
 import { Server } from './server';
 import { CustomTransportStrategy } from './../interfaces';
-import 'rxjs/add/operator/catch';
-import 'rxjs/add/observable/empty';
-import 'rxjs/add/operator/finally';
+import { MicroserviceConfiguration } from '../interfaces/microservice-configuration.interface';
 export declare class ServerTCP extends Server implements CustomTransportStrategy {
+    private readonly config;
     private readonly port;
     private server;
-    constructor(config: any);
+    private isExplicitlyTerminated;
+    private retryAttemptsCount;
+    constructor(config: MicroserviceConfiguration);
     listen(callback: () => void): void;
     close(): void;
     bindHandler(socket: any): void;
@@ -14,6 +16,7 @@ export declare class ServerTCP extends Server implements CustomTransportStrategy
         pattern: any;
         data: {};
     }): Promise<void>;
+    handleClose(): undefined | number | NodeJS.Timer;
     private init();
     private getSocketInstance(socket);
 }

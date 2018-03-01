@@ -1,18 +1,14 @@
 import 'reflect-metadata';
 import { NestGateway } from './interfaces/nest-gateway.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
 import { MessageMappingProperties } from './gateway-metadata-explorer';
 import { Subject } from 'rxjs/Subject';
 import { SocketServerProvider } from './socket-server-provider';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from './context/ws-context-creator';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/fromPromise';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/operator/switchMap';
 export declare class WebSocketsController {
     private readonly socketServerProvider;
     private readonly container;
@@ -21,7 +17,7 @@ export declare class WebSocketsController {
     private readonly metadataExplorer;
     private readonly middlewaresInjector;
     constructor(socketServerProvider: SocketServerProvider, container: NestContainer, config: ApplicationConfig, contextCreator: WsContextCreator);
-    hookGatewayIntoServer(instance: NestGateway, metatype: Metatype<Injectable>, module: string): void;
+    hookGatewayIntoServer(instance: NestGateway, metatype: Type<any>, module: string): void;
     subscribeObservableServer(instance: NestGateway, namespace: string, port: number, module: string): void;
     injectMiddlewares({server}: {
         server: any;

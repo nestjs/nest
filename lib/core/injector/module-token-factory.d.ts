@@ -1,9 +1,9 @@
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { DynamicModule } from '@nestjs/common';
 export declare class ModuleTokenFactory {
-    create(metatype: NestModuleMetatype, scope: NestModuleMetatype[], dynamicModuleMetadata?: Partial<DynamicModule> | undefined): string;
+    create(metatype: Type<any>, scope: Type<any>[], dynamicModuleMetadata?: Partial<DynamicModule> | undefined): string;
     getDynamicMetadataToken(dynamicModuleMetadata: Partial<DynamicModule> | undefined): string;
-    getModuleName(metatype: NestModuleMetatype): string;
-    getScopeStack(scope: NestModuleMetatype[]): string[];
+    getModuleName(metatype: Type<any>): string;
+    getScopeStack(scope: Type<any>[]): string[];
     private reflectScope(metatype);
 }

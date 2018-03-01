@@ -6,7 +6,7 @@ import { INestApplicationContext } from './nest-application-context.interface';
 
 export interface INestApplication extends INestApplicationContext {
   /**
-   * Initializes application. It is not necessary to call this method directly.
+   * Initializes application. It is not mandatory to call this method directly.
    *
    * @returns Promise
    */
@@ -88,7 +88,7 @@ export interface INestApplication extends INestApplicationContext {
   setGlobalPrefix(prefix: string): this;
 
   /**
-   * Setup Web Sockets Adapter, which will be used inside Gateways.
+   * Setup Ws Adapter which will be used inside Gateways.
    * Use, when you want to override default `socket.io` library.
    *
    * @param  {WebSocketAdapter} adapter
@@ -119,7 +119,7 @@ export interface INestApplication extends INestApplicationContext {
   getHttpServer(): any;
 
   /**
-   * Starts all the connected microservices asynchronously
+   * Starts all connected microservices asynchronously
    *
    * @param  {Function} callback Optional callback function
    * @returns void
@@ -127,7 +127,7 @@ export interface INestApplication extends INestApplicationContext {
   startAllMicroservices(callback?: () => void): this;
 
   /**
-   * Starts all the connected microservices and can be awaited
+   * Starts all connected microservices and can be awaited
    *
    * @returns Promise
    */
@@ -162,7 +162,7 @@ export interface INestApplication extends INestApplicationContext {
   useGlobalGuards(...guards: CanActivate[]): this;
 
   /**
-   * Terminates the application (both NestApplication, Web Socket Gateways and every connected microservice)
+   * Terminates the application (both NestApplication, Gateways and each connected microservice)
    *
    * @returns void
    */

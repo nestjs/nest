@@ -1,7 +1,7 @@
 import { INestMicroservice, ExceptionFilter, PipeTransform } from './index';
-import { WebSocketAdapter } from './web-socket-adapter.interface';
-import { CanActivate } from './can-activate.interface';
-import { NestInterceptor } from './nest-interceptor.interface';
+import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
+import { CanActivate } from './features/can-activate.interface';
+import { NestInterceptor } from './features/nest-interceptor.interface';
 import { INestApplicationContext } from './nest-application-context.interface';
 export interface INestApplication extends INestApplicationContext {
     /**

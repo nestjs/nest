@@ -1,3 +1,4 @@
+import * as JsonSocket from 'json-socket';
 import { ClientProxy } from './client-proxy';
 import { ClientMetadata } from '../interfaces/client-metadata.interface';
 export declare class ClientTCP extends ClientProxy {
@@ -7,10 +8,12 @@ export declare class ClientTCP extends ClientProxy {
     private isConnected;
     private socket;
     constructor({port, host}: ClientMetadata);
-    init(callback: (...args) => any): Promise<{}>;
-    protected sendSingleMessage(msg: any, callback: (...args) => any): Promise<void>;
-    handleResponse(socket: any, callback: (...args) => any, buffer: any): void;
-    createSocket(): any;
+    init(callback: (...args) => any): Promise<JsonSocket>;
+    protected sendMessage(msg: any, callback: (...args) => any): Promise<void>;
+    handleResponse(socket: JsonSocket, callback: (...args) => any, buffer: any, context: Function): any;
+    createSocket(): JsonSocket;
     close(): void;
-    bindEvents(socket: any, callback: (...args) => any): void;
+    bindEvents(socket: JsonSocket, callback: (...args) => any): void;
+    handleError(err: any, callback: (...args) => any): void;
+    handleClose(): void;
 }

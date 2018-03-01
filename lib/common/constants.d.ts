@@ -2,6 +2,7 @@ export declare const metadata: {
     MODULES: string;
     IMPORTS: string;
     COMPONENTS: string;
+    PROVIDERS: string;
     CONTROLLERS: string;
     EXPORTS: string;
 };

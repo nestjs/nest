@@ -11,7 +11,9 @@ export declare class TestingModuleBuilder {
     constructor(metadataScanner: MetadataScanner, metadata: ModuleMetadata);
     overrideGuard(typeOrToken: any): OverrideBy;
     overrideInterceptor(typeOrToken: any): OverrideBy;
+    /** @deprecated */
     overrideComponent(typeOrToken: any): OverrideBy;
+    overrideProvider(typeOrToken: any): OverrideBy;
     compile(): Promise<TestingModule>;
     private override(typeOrToken, isComponent);
     private createOverrideByBuilder(add);

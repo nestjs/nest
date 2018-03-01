@@ -5,5 +5,7 @@ export interface MicroserviceConfiguration {
     url?: string;
     port?: number;
     host?: string;
+    retryAttempts?: number;
+    retryDelay?: number;
     strategy?: CustomTransportStrategy;
 }

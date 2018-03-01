@@ -1,7 +1,5 @@
 import 'reflect-metadata';
-import { Controller, Injectable } from '@nestjs/common/interfaces';
-import { NestModuleMetatype } from '@nestjs/common/interfaces/modules/module-metatype.interface';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Module } from './module';
 import { DynamicModule } from '@nestjs/common';
 import { ModulesContainer } from './modules-container';
@@ -13,22 +11,22 @@ export declare class NestContainer {
     private applicationRef;
     setApplicationRef(applicationRef: any): void;
     getApplicationRef(): any;
-    addModule(metatype: NestModuleMetatype | DynamicModule, scope: NestModuleMetatype[]): void;
-    extractMetadata(metatype: NestModuleMetatype | DynamicModule): {
-        type: NestModuleMetatype;
+    addModule(metatype: Type<any> | DynamicModule, scope: Type<any>[]): void;
+    extractMetadata(metatype: Type<any> | DynamicModule): {
+        type: Type<any>;
         dynamicMetadata?: Partial<DynamicModule> | undefined;
     };
-    isDynamicModule(module: NestModuleMetatype | DynamicModule): module is DynamicModule;
-    addDynamicMetadata(token: string, dynamicModuleMetadata: Partial<DynamicModule>, scope: NestModuleMetatype[]): any;
-    addDynamicModules(modules: any[], scope: NestModuleMetatype[]): void;
-    isGlobalModule(metatype: NestModuleMetatype): boolean;
+    isDynamicModule(module: Type<any> | DynamicModule): module is DynamicModule;
+    addDynamicMetadata(token: string, dynamicModuleMetadata: Partial<DynamicModule>, scope: Type<any>[]): any;
+    addDynamicModules(modules: any[], scope: Type<any>[]): void;
+    isGlobalModule(metatype: Type<any>): boolean;
     addGlobalModule(module: Module): void;
     getModules(): ModulesContainer;
-    addRelatedModule(relatedModule: NestModuleMetatype | DynamicModule, token: string): void;
-    addComponent(component: Metatype<Injectable>, token: string): string;
-    addInjectable(injectable: Metatype<Injectable>, token: string): void;
-    addExportedComponent(exportedComponent: Metatype<Injectable>, token: string): void;
-    addController(controller: Metatype<Controller>, token: string): void;
+    addRelatedModule(relatedModule: Type<any> | DynamicModule, token: string): void;
+    addComponent(component: Type<any>, token: string): string;
+    addInjectable(injectable: Type<any>, token: string): void;
+    addExportedComponent(exportedComponent: Type<any>, token: string): void;
+    addController(controller: Type<any>, token: string): void;
     clear(): void;
     replace(toReplace: any, options: any & {
         scope: any[] | null;
@@ -40,12 +38,12 @@ export declare class NestContainer {
 }
 export interface InstanceWrapper<T> {
     name: any;
-    metatype: Metatype<T>;
+    metatype: Type<T>;
     instance: T;
     isResolved: boolean;
     isPending?: boolean;
     done$?: Promise<void>;
-    inject?: Metatype<any>[];
+    inject?: Type<any>[];
     isNotMetatype?: boolean;
     forwardRef?: boolean;
     async?: boolean;

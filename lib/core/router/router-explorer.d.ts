@@ -3,7 +3,7 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
 import { ExpressAdapter } from '../adapters/express-adapter';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
 import { RouterExplorer } from './interfaces/explorer.inteface';
 import { MetadataScanner } from '../metadata-scanner';
@@ -19,8 +19,8 @@ export declare class ExpressRouterExplorer implements RouterExplorer {
     private readonly routerMethodFactory;
     private readonly logger;
     constructor(metadataScanner?: MetadataScanner, routerProxy?: RouterProxy, expressAdapter?: ExpressAdapter, exceptionsFilter?: ExceptionsFilter, config?: ApplicationConfig, container?: NestContainer);
-    explore(instance: Controller, metatype: Metatype<Controller>, module: string): any;
-    fetchRouterPath(metatype: Metatype<Controller>, prefix?: string): string;
+    explore(instance: Controller, metatype: Type<Controller>, module: string): any;
+    fetchRouterPath(metatype: Type<Controller>, prefix?: string): string;
     validateRoutePath(path: string): string;
     scanForPaths(instance: Controller, prototype?: any): RoutePathProperties[];
     exploreMethodMetadata(instance: Controller, instancePrototype: any, methodName: string): RoutePathProperties;

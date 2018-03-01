@@ -12,7 +12,7 @@ import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { TestingModuleBuilder } from './testing-module.builder';
 
 export class Test {
-  private static metadataScanner = new MetadataScanner();
+  private static readonly metadataScanner = new MetadataScanner();
 
   public static createTestingModule(metadata: ModuleMetadata) {
     this.init();

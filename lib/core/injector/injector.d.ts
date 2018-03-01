@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { InstanceWrapper } from './container';
 import { Module } from './module';
-import { Metatype } from '@nestjs/common/interfaces/metatype.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { MiddlewareWrapper } from '../middlewares/container';
@@ -14,13 +14,13 @@ export declare class Injector {
     applyDoneSubject<T>(wrapper: InstanceWrapper<T>): () => void;
     loadInstance<T>(wrapper: InstanceWrapper<T>, collection: any, module: Module, context?: Module[]): Promise<void>;
     resolveConstructorParams<T>(wrapper: InstanceWrapper<T>, module: Module, inject: any[], context: Module[], callback: (args) => void): Promise<void>;
-    reflectConstructorParams<T>(type: Metatype<T>): any[];
-    reflectSelfParams<T>(type: Metatype<T>): any[];
-    resolveSingleParam<T>(wrapper: InstanceWrapper<T>, param: Metatype<any> | string | symbol | any, {index, length}: {
+    reflectConstructorParams<T>(type: Type<T>): any[];
+    reflectSelfParams<T>(type: Type<T>): any[];
+    resolveSingleParam<T>(wrapper: InstanceWrapper<T>, param: Type<any> | string | symbol | any, {index, length}: {
         index: number;
         length: number;
     }, module: Module, context: Module[]): Promise<any>;
-    resolveParamToken<T>(wrapper: InstanceWrapper<T>, param: Metatype<any> | string | symbol | any): any;
+    resolveParamToken<T>(wrapper: InstanceWrapper<T>, param: Type<any> | string | symbol | any): any;
     resolveComponentInstance<T>(module: Module, name: any, {index, length}: {
         index: number;
         length: number;

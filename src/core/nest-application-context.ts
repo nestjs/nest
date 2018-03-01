@@ -30,17 +30,38 @@ export class NestApplicationContext implements INestApplicationContext {
       : null;
   }
 
-  public get<T>(metatypeOrToken: Type<T> | string | symbol): T {
-    return this.findInstanceByPrototypeOrToken<T>(metatypeOrToken);
+  public get<T>(typeOrToken: Type<T> | string | symbol): T | null {
+    return this.findInstanceByPrototypeOrToken<T>(
+      typeOrToken,
+      this.contextModule,
+    );
+  }
+
+  public find<T>(typeOrToken: Type<T> | string | symbol): T | null {
+    const modules = this.container.getModules();
+    const flattenModule = [...modules.values()].reduce(
+      (flatten, curr) => ({
+        components: [...flatten.components, ...curr.components],
+        routes: [...flatten.routes, ...curr.routes],
+        injectables: [...flatten.injectables, ...curr.injectables],
+      }),
+      {
+        components: [],
+        routes: [],
+        injectables: [],
+      },
+    );
+    return this.findInstanceByPrototypeOrToken<T>(typeOrToken, flattenModule);
   }
 
   private findInstanceByPrototypeOrToken<T>(
     metatypeOrToken: Type<T> | string | symbol,
-  ) {
+    contextModule,
+  ): T | null {
     const dependencies = new Map([
-      ...this.contextModule.components,
-      ...this.contextModule.routes,
-      ...this.contextModule.injectables,
+      ...contextModule.components,
+      ...contextModule.routes,
+      ...contextModule.injectables,
     ]);
     const name = isFunction(metatypeOrToken)
       ? (metatypeOrToken as any).name

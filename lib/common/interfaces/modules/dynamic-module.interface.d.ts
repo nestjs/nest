@@ -1,4 +1,5 @@
 import { ModuleMetadata } from './module-metadata.interface';
+import { Type } from '../type.interface';
 export interface DynamicModule extends ModuleMetadata {
-    module: any;
+    module: Type<any>;
 }

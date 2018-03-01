@@ -1,0 +1,146 @@
+Arguments: 
+  C:\Program Files\nodejs\node.exe C:\Users\kamil\AppData\Roaming\npm\node_modules\yarn\bin\yarn.js add deprecate
+
+PATH: 
+  C:\Program Files\Docker\Docker\Resources\bin;C:\ProgramData\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\Program Files\Microsoft SQL Server\130\Tools\Binn\;C:\Program Files\dotnet\;C:\Program Files (x86)\GtkSharp\2.12\bin;C:\Program Files\Git\cmd;K:\Program Files\MiKTeX 2.9\miktex\bin\x64\;C:\Program Files\nodejs\;C:\Users\kamil\AppData\Local\Microsoft\WindowsApps;K:\Program Files\Microsoft VS Code\bin;C:\Program Files\Docker Toolbox;K:\Program Files\MongoDB\Server\3.4\bin;C:\Users\kamil\AppData\Roaming\npm;C:\Users\kamil\AppData\Local\Programs\Python\Python36-32;C:\Users\kamil\AppData\Local\Programs\Python\Python36-32\Scripts;
+
+Yarn version: 
+  1.3.2
+
+Node version: 
+  8.9.4
+
+Platform: 
+  win32 x64
+
+npm manifest: 
+  {
+    "name": "nestjs",
+    "version": "4.6.3",
+    "description": "Modern, fast, powerful node.js web framework",
+    "main": "index.js",
+    "scripts": {
+      "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
+      "coverage": "nyc report --reporter=text-lcov | coveralls",
+      "prettier": "prettier */**/*.ts --ignore-path ./.prettierignore --write && git status",
+      "build": "gulp build && gulp move",
+      "build:lib": "gulp build --dist lib",
+      "prepublish": "npm run build:lib",
+      "publish": "./node_modules/.bin/lerna publish --exact -m \"chore(release) publish %s\"",
+      "publish:next": "./node_modules/.bin/lerna publish --npm-tag=next --skip-git"
+    },
+    "engines": {
+      "node": ">=6.11.0"
+    },
+    "author": "Kamil Mysliwiec",
+    "license": "MIT",
+    "dependencies": {
+      "@nestjs/common": "^4.0.0",
+      "@nestjs/core": "^4.0.0",
+      "@nestjs/microservices": "^4.0.0",
+      "@nestjs/testing": "^4.0.0",
+      "@nestjs/websockets": "^4.0.0",
+      "@types/axios": "^0.14.0",
+      "axios": "^0.17.1",
+      "class-transformer": "^0.1.8",
+      "class-validator": "^0.8.1",
+      "cli-color": "^1.1.0",
+      "cors": "^2.8.4",
+      "deprecate": "^1.0.0",
+      "engine.io-client": "^3.1.1",
+      "express": "^4.16.2",
+      "fast-safe-stringify": "^1.2.0",
+      "iterare": "0.0.8",
+      "json-socket": "^0.2.1",
+      "multer": "^1.3.0",
+      "opencollective": "^1.0.3",
+      "optional": "^0.1.4",
+      "redis": "^2.7.1",
+      "reflect-metadata": "^0.1.10",
+      "rxjs": "^5.5.6",
+      "rxjs-grpc": "^0.1.6",
+      "socket.io": "^2.0.3",
+      "typescript": "^2.4.1"
+    },
+    "devDependencies": {
+      "@types/chai": "^3.5.2",
+      "@types/chai-as-promised": "0.0.31",
+      "@types/express": "^4.0.39",
+      "@types/mocha": "^2.2.38",
+      "@types/node": "^7.0.5",
+      "@types/redis": "^0.12.36",
+      "@types/reflect-metadata": "0.0.5",
+      "@types/sinon": "^1.16.36",
+      "@types/socket.io": "^1.4.29",
+      "awesome-typescript-loader": "^3.0.0-beta.18",
+      "body-parser": "^1.17.2",
+      "chai": "^3.5.0",
+      "chai-as-promised": "^7.1.1",
+      "clang-format": "^1.1.0",
+      "concurrently": "^3.4.0",
+      "conventional-changelog": "^1.1.15",
+      "core-js": "^2.4.1",
+      "coveralls": "^2.11.16",
+      "gulp": "^3.9.1",
+      "gulp-clang-format": "^1.0.23",
+      "gulp-sequence": "^0.4.6",
+      "gulp-typescript": "^3.1.6",
+      "gulp-watch": "^4.3.11",
+      "imports-loader": "^0.7.0",
+      "istanbul": "^0.4.5",
+      "json-loader": "^0.5.4",
+      "lerna": "^2.5.1",
+      "mocha": "^3.2.0",
+      "nodemon": "^1.11.0",
+      "nyc": "^10.1.2",
+      "prettier": "^1.9.2",
+      "sinon": "^2.1.0",
+      "sinon-chai": "^2.8.0",
+      "ts-node": "^3.2.0"
+    },
+    "collective": {
+      "type": "opencollective",
+      "url": "https://opencollective.com/nest",
+      "logo": "https://opencollective.com/opencollective/logo.txt"
+    },
+    "nyc": {
+      "include": [
+        "src/**/*.ts"
+      ],
+      "exclude": [
+        "node_modules/",
+        "src/**/*.spec.ts",
+        "src/core/adapters/*.ts",
+        "src/websockets/adapters/*.ts",
+        "src/**/nest-*.ts",
+        "src/core/errors/**/*",
+        "src/common/exceptions/*.ts",
+        "src/common/http/*.ts",
+        "src/microservices/exceptions/",
+        "src/microservices/microservices-module.ts",
+        "src/core/middlewares/middlewares-module.ts",
+        "src/common/services/logger.service.ts"
+      ],
+      "extension": [
+        ".ts"
+      ],
+      "require": [
+        "ts-node/register"
+      ],
+      "reporter": [
+        "text-summary",
+        "html"
+      ],
+      "sourceMap": true,
+      "instrument": true
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
+
+Trace: 
+  Error: EPERM: operation not permitted, unlink 'K:\Projects\tracker-server\node_modules\@nestjs\common\node_modules\class-validator\decorator'
