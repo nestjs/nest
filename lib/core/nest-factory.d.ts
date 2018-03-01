@@ -1,5 +1,5 @@
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import { INestMicroservice, INestApplicationContext } from '@nestjs/common';
+import { INestMicroservice, INestApplicationContext, INestApplication } from '@nestjs/common';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 export declare class NestFactoryStatic {
@@ -9,8 +9,8 @@ export declare class NestFactoryStatic {
      * @returns an `Promise` of the INestApplication instance
      */
     create(module: any): any;
-    create(module: any, options: NestApplicationOptions): any;
-    create(module: any, express: any, options: NestApplicationOptions): any;
+    create(module: any, options: NestApplicationOptions): Promise<INestApplication>;
+    create(module: any, express: any, options: NestApplicationOptions): Promise<INestApplication>;
     /**
      * Creates an instance of the NestMicroservice (returns Promise)
      *
