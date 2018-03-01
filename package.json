@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "4.6.4",
+  "version": "4.6.5",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
