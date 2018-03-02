@@ -51,8 +51,8 @@ export class Module {
   private _exports = new Set<string>();
 
   constructor(
-    private _metatype: NestModuleMetatype,
-    private _scope: NestModuleMetatype[],
+    private readonly _metatype: NestModuleMetatype,
+    private readonly _scope: NestModuleMetatype[],
     container: NestContainer,
   ) {
     this.addCoreInjectables(container);
@@ -146,9 +146,9 @@ export class Module {
       metatype: ExternalContextCreator,
       isResolved: true,
       instance: new ExternalContextCreator(
-        new GuardsContextCreator(container),
+        new GuardsContextCreator(container, container.applicationConfig),
         new GuardsConsumer(),
-        new InterceptorsContextCreator(container),
+        new InterceptorsContextCreator(container, container.applicationConfig),
         new InterceptorsConsumer(),
         container.getModules(),
       ),
@@ -272,11 +272,9 @@ export class Module {
   ) {
     if (this.isCustomProvider(exportedComponent as any)) {
       return this.addCustomExportedComponent(exportedComponent as any);
-    }
-    else if (isString(exportedComponent)) {
+    } else if (isString(exportedComponent)) {
       return this._exports.add(exportedComponent);
-    }
-    else if (this.isDynamicModule(exportedComponent)) {
+    } else if (this.isDynamicModule(exportedComponent)) {
       const { module } = exportedComponent;
       return this._exports.add(module.name);
     }

@@ -1,10 +1,10 @@
-export declare class HttpException {
+export declare class HttpException extends Error {
     private readonly response;
     private readonly status;
-    private readonly message;
+    readonly message: any;
     /**
      * The base Nest Application exception, which is handled by the default Exceptions Handler.
-     * If you throw an exception from your HTTP route handlers, Nest will map them to the appropriate HTTP response and send to the client.
+     * If you throw an exception from your HTTP route handler, Nest will map them to the appropriate HTTP response and send to the client.
      *
      * When `response` is an object:
      * - object will be stringified and returned to the user as a JSON response,
