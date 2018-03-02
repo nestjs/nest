@@ -1,3 +1,7 @@
+## 4.6.6
+### Bug Fixes:
+- **common**: `File(s)Interceptor` throws http status code 500 [#465](https://github.com/nestjs/nest/issues/437)
+
 ## 4.6.5
 ### Bug Fixes
 - **common**: `File(s)Interceptor` does not populate thrown exception [#437](https://github.com/nestjs/nest/issues/437)

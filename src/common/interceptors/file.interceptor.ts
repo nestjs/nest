@@ -3,6 +3,7 @@ import { NestInterceptor } from './../interfaces/nest-interceptor.interface';
 import { Observable } from 'rxjs/Observable';
 import { MulterOptions } from '../interfaces/external/multer-options.interface';
 import { mixin } from '../decorators/core/component.decorator';
+import { transformException } from './multer/multer.utils';
 
 export function FileInterceptor(fieldName: string, options?: MulterOptions) {
   return mixin(
@@ -17,7 +18,8 @@ export function FileInterceptor(fieldName: string, options?: MulterOptions) {
         await new Promise((resolve, reject) =>
           this.upload.single(fieldName)(request, request.res, err => {
             if (err) {
-              return reject(err);
+              const error = transformException(err);
+              return reject(error);
             }
             resolve();
           }),
