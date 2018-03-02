@@ -22,29 +22,34 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-### [中文说明](readme_zh.md)
 
-## Description
+### [English](readme.md)
 
-<p>Nest is a framework for building efficient, scalable <a href="http://nodejs.org" target="_blank">Node.js</a> server-side applications. It uses modern JavaScript, is built with  <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).</p>
-<p>Under the hood, Nest makes use of <a href="https://expressjs.com/" target="_blank">Express</a>, allowing for easy use of the myriad third-party plugins which are available.</p>
+## 介绍
 
-## Philosophy
+<p>Nest是构建高效，可扩展的 <a href="https://nodejs.org" target="_blank">Node.js</a> Web 应用程序的框架。 它使用现代的 JavaScript 或 <a href="https://www.tslang.cn" target="_blank">TypeScript</a>（保留与纯 JavaScript 的兼容性），并结合 OOP（面向对象编程），FP（函数式编程）和FRP（函数响应式编程）的元素。</p>
+<p>在底层，Nest 使用了 <a href="http://www.expressjs.com.cn" target="_blank">Express</a>，可以方便地使用各种可用的第三方插件。</p>
 
-<p>In recent years, thanks to Node.js, JavaScript has become the “lingua franca” of the web for both front and backend applications, giving rise to awesome projects like <a href="https://angular.io/" target="_blank">Angular</a>, <a href="https://github.com/facebook/react" target="_blank">React</a> and <a href="https://github.com/vuejs/vue" target="_blank">Vue</a> which improve developer productivity and enable the construction of fast, testable, extensible frontend applications. However, on the server-side, while there are a lot of superb libraries, helpers and tools for Node, none of them effectively solve the main problem - the architecture.</p>
-<p>Nest aims to provide an application architecture out of the box which allows for effortless creation of highly testable, scalable, loosely coupled and easily maintainable applications.</p>
+## 设计哲学
 
-## Getting started
+<p>近几年，由于 Node.js，JavaScript 已经成为 Web 前端和后端应用程序的「通用语言」，并且有了 <a href="https://angular.cn" target="_blank">Angular</a> ，cations, giving rise to awesome projects like <a href="https://angular.cn" target="_blank">Angular</a>,  和 <a href="https://github.com/vuejs/vue" target="_blank">Vue</a>  等令人耳目一新的项目，提高了开发人员的生产力，使得可以快速构建可测试的且可扩展的前端应用程序。 然而，在服务器端，虽然有很多优秀的库、helper 和 Node 工具，但是它们都没有有效地解决主要问题 - 架构。</p>
 
-To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
+<p>Nest 旨在提供一个开箱即用的应用程序体系结构，允许轻松创建高度可测试，可扩展，松散耦合且易于维护的应用程序。</p>
 
-## Sponsors
+## 开始
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://opencollective.com/nest). Thanks! :heart_eyes:
+要查看 [指南](https://docs.nestjs.cn), 请浏览 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
+
+英文官方原文档： [docs.nestjs.com](https://docs.nestjs.com). 
+
+## 赞助商
+
+Nest是一个MIT许可的开源项目。它的发展得益于赞助商和支持者的支持。如果你想加入他们，请[查看更多](https://opencollective.com/nest)。谢谢！ :heart_eyes:
+
 
 <a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="210" /></a> &nbsp; &nbsp; <a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.png" width="160" /></a>
 
-## Backers 
+## 支持者
 
 <a href="https://opencollective.com/nest/backer/0/website" target="_blank"><img src="https://opencollective.com/nest/backer/0/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/1/website" target="_blank"><img src="https://opencollective.com/nest/backer/1/avatar.svg"></a>
@@ -89,10 +94,10 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://opencollective.com/nest/backer/40/website" target="_blank"><img src="https://opencollective.com/nest/backer/40/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/41/website" target="_blank"><img src="https://opencollective.com/nest/backer/41/avatar.svg"></a>
 
-## People
+## 相关人员
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
+- 作者 - [Kamil Myśliwiec](https://kamilmysliwiec.com)
+- 网站 - [https://nestjs.com](https://nestjs.com/)
 
 ## License
 
