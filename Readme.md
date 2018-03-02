@@ -22,7 +22,7 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-### [中文说明](readme_zh.md)
+<h4 align="center"> <a href="readme_zh.md">中文说明</a></h4>
 
 ## Description
 
