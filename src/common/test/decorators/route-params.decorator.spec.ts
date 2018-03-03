@@ -183,7 +183,6 @@ describe('@Patch', () => {
   });
 });
 
-
 describe('Inheritance', () => {
   const requestPath = 'test';
   const requestProps = {

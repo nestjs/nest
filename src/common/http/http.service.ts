@@ -7,32 +7,32 @@ import {
 import 'rxjs/add/observable/fromPromise';
 
 export class HttpService {
-  request<T = any>(config: AxiosRequestConfig): Observable<AxiosResponse<T>> {
+  public request<T = any>(config: AxiosRequestConfig): Observable<AxiosResponse<T>> {
     return Observable.fromPromise(axios.request<T>(config));
   }
-  
-  get<T = any>(
+
+  public get<T = any>(
     url: string,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<T>> {
     return Observable.fromPromise(axios.get<T>(url, config));
   }
 
-  delete(
+  public delete(
     url: string,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<any>> {
     return Observable.fromPromise(axios.delete(url, config));
   }
 
-  head(
+  public head(
     url: string,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<any>> {
     return Observable.fromPromise(axios.head(url, config));
   }
 
-  post(
+  public post(
     url: string,
     data?,
     config?: AxiosRequestConfig,
@@ -40,7 +40,7 @@ export class HttpService {
     return Observable.fromPromise(axios.post(url, data, config));
   }
 
-  put(
+  public put(
     url: string,
     data?,
     config?: AxiosRequestConfig,
@@ -48,7 +48,7 @@ export class HttpService {
     return Observable.fromPromise(axios.post(url, data, config));
   }
 
-  patch(
+  public patch(
     url: string,
     data?,
     config?: AxiosRequestConfig,

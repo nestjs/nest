@@ -33,15 +33,11 @@ export class NestFactoryStatic {
    * Creates an instance of the NestApplication (returns Promise)
    * @returns an `Promise` of the INestApplication instance
    */
-  public async create(module: any): Promise<INestApplication>;
-  public async create(
-    module: any,
-    options: NestApplicationOptions,
-  ): Promise<INestApplication>;
+  public async create(module: any, options?: NestApplicationOptions): Promise<INestApplication>;
   public async create(
     module: any,
     express: any,
-    options: NestApplicationOptions,
+    options?: NestApplicationOptions,
   ): Promise<INestApplication>;
   public async create(
     module: any,

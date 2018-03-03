@@ -12,12 +12,12 @@ export class WsExceptionsHandler {
     if (this.invokeCustomFilters(exception, client) || !client.emit) return;
 
     const status = 'error';
+    let message: any = messages.UNKNOWN_EXCEPTION_MESSAGE;
     if (!(exception instanceof WsException)) {
-      const message = messages.UNKNOWN_EXCEPTION_MESSAGE;
       return client.emit('exception', { status, message });
     }
     const result = exception.getError();
-    const message = isObject(result)
+    message = isObject(result)
       ? result
       : {
           status,

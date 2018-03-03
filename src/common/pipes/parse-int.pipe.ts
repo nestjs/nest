@@ -4,7 +4,7 @@ import { ArgumentMetadata, Pipe } from '../index';
 
 @Pipe()
 export class ParseIntPipe implements PipeTransform<string> {
-  async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
+  public async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
     const isNumeric =
       'string' === typeof value &&
       !isNaN(parseFloat(value)) &&

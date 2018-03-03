@@ -27,9 +27,9 @@ describe('ValidationPipe', () => {
       it('should return the value unchanged', async () => {
         const testObj = { prop1: 'value1', prop2: 'value2' };
         expect(await target.transform(testObj, {} as any)).to.equal(testObj);
-        expect(await target.transform(testObj, metadata as any)).to.not.be.instanceOf(
-          TestModel,
-        );
+        expect(
+          await target.transform(testObj, metadata as any),
+        ).to.not.be.instanceOf(TestModel);
       });
     });
     describe('when validation fails', () => {
@@ -43,43 +43,55 @@ describe('ValidationPipe', () => {
     });
     describe('when validation transforms', () => {
       it('should return a TestModel instance', async () => {
-        target = new ValidationPipe({transform: true});
-        const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3'};
-        expect(await target.transform(testObj, metadata)).to.be.instanceOf(TestModel);
+        target = new ValidationPipe({ transform: true });
+        const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
+        expect(await target.transform(testObj, metadata)).to.be.instanceOf(
+          TestModel,
+        );
       });
       describe('when validation strips', () => {
         it('should return a TestModel without extra properties', async () => {
-          target = new ValidationPipe({whitelist: true});
-          const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3'};
-          expect(await target.transform(testObj, metadata)).to.not.be.instanceOf(TestModel);
-          expect(await target.transform(testObj, metadata)).to.not.have.property('prop3');
+          target = new ValidationPipe({ whitelist: true });
+          const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
+          expect(
+            await target.transform(testObj, metadata),
+          ).to.not.be.instanceOf(TestModel);
+          expect(
+            await target.transform(testObj, metadata),
+          ).to.not.have.property('prop3');
         });
       });
       describe('when validation rejects', () => {
         it('should throw an error', () => {
-          target = new ValidationPipe({forbidNonWhitelisted: true});
+          target = new ValidationPipe({ forbidNonWhitelisted: true });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
           expect(target.transform(testObj, metadata)).to.be.rejected;
         });
       });
     });
-    describe('when validation does\'t transform', () => {
+    describe("when validation does't transform", () => {
       describe('when validation strips', () => {
         it('should return a plain object without extra properties', async () => {
-          target = new ValidationPipe({transform: false, whitelist: true});
-          const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3'};
-          expect(await target.transform(testObj, metadata)).to.not.be.instanceOf(TestModel);
-          expect(await target.transform(testObj, metadata)).to.not.have.property('prop3');
+          target = new ValidationPipe({ transform: false, whitelist: true });
+          const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
+          expect(
+            await target.transform(testObj, metadata),
+          ).to.not.be.instanceOf(TestModel);
+          expect(
+            await target.transform(testObj, metadata),
+          ).to.not.have.property('prop3');
         });
       });
       describe('when validation rejects', () => {
         it('should throw an error', () => {
-          target = new ValidationPipe({transform: false, forbidNonWhitelisted: true});
+          target = new ValidationPipe({
+            transform: false,
+            forbidNonWhitelisted: true,
+          });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
           expect(target.transform(testObj, metadata)).to.be.rejected;
         });
       });
     });
   });
-
 });

@@ -6,6 +6,7 @@
   "scripts": {
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "lint": "tslint -p tsconfig.json -c tslint.json",
     "prettier": "prettier */**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist lib",

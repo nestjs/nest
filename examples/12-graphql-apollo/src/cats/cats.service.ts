@@ -5,7 +5,7 @@ import { Cat } from './interfaces/cat.interface';
 export class CatsService {
   private readonly cats: Cat[] = [{ id: 1, name: 'Cat', age: 5 }];
 
-  create(cat: Cat): Cat{
+  create(cat: Cat): Cat {
     this.cats.push(cat);
     return cat;
   }

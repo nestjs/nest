@@ -17,9 +17,8 @@ export class RpcExceptionsHandler {
       return filterResult$;
     }
     const status = 'error';
+    let message: any = messages.UNKNOWN_EXCEPTION_MESSAGE;
     if (!(exception instanceof RpcException)) {
-      const message = messages.UNKNOWN_EXCEPTION_MESSAGE;
-
       const isError = isObject(exception) && (exception as Error).message;
       const loggerArgs = isError
         ? [(exception as Error).message, (exception as Error).stack]
@@ -30,7 +29,7 @@ export class RpcExceptionsHandler {
       return Observable.throw({ status, message });
     }
     const res = exception.getError();
-    const message = isObject(res) ? res : { status, message: res };
+    message = isObject(res) ? res : { status, message: res };
     return Observable.throw(message);
   }
 
