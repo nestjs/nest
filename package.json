@@ -25,6 +25,7 @@
     "@nestjs/microservices": "^4.0.0",
     "@nestjs/testing": "^4.0.0",
     "@nestjs/websockets": "^4.0.0",
+    "@types/axios": "^0.14.0",
     "axios": "^0.17.1",
     "class-transformer": "^0.1.8",
     "class-validator": "^0.8.1",
@@ -78,8 +79,7 @@
     "prettier": "^1.9.2",
     "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
-    "ts-node": "^3.2.0",
-    "tslint": "^5.9.1"
+    "ts-node": "^3.2.0"
   },
   "collective": {
     "type": "opencollective",
