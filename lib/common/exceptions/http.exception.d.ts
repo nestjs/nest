@@ -16,7 +16,7 @@ export declare class HttpException extends Error {
      * statusCode: X
      * ```
      */
-    constructor(response: string | object, status: number);
+    constructor(response: string | object, status?: number);
     getResponse(): string | object;
     getStatus(): number;
 }
