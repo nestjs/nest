@@ -18,41 +18,41 @@ export class HttpService {
     return Observable.fromPromise(axios.get<T>(url, config));
   }
 
-  delete(
+  delete<T = any>(
     url: string,
     config?: AxiosRequestConfig,
-  ): Observable<AxiosResponse<any>> {
+  ): Observable<AxiosResponse<T>> {
     return Observable.fromPromise(axios.delete(url, config));
   }
 
-  head(
+  head<T = any>(
     url: string,
     config?: AxiosRequestConfig,
-  ): Observable<AxiosResponse<any>> {
+  ): Observable<AxiosResponse<T>> {
     return Observable.fromPromise(axios.head(url, config));
   }
 
-  post(
+  post<T = any>(
     url: string,
     data?,
     config?: AxiosRequestConfig,
-  ): Observable<AxiosResponse<any>> {
+  ): Observable<AxiosResponse<T>> {
     return Observable.fromPromise(axios.post(url, data, config));
   }
 
-  put(
+  put<T = any>(
     url: string,
     data?,
     config?: AxiosRequestConfig,
-  ): Observable<AxiosResponse<any>> {
+  ): Observable<AxiosResponse<T>> {
     return Observable.fromPromise(axios.post(url, data, config));
   }
 
-  patch(
+  patch<T = any>(
     url: string,
     data?,
     config?: AxiosRequestConfig,
-  ): Observable<AxiosResponse<any>> {
+  ): Observable<AxiosResponse<T>> {
     return Observable.fromPromise(axios.post(url, data, config));
   }
 }
