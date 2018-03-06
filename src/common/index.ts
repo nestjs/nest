@@ -7,6 +7,7 @@
 
 export * from './decorators';
 export * from './enums';
+export * from './http';
 export {
   NestModule,
   INestApplication,
