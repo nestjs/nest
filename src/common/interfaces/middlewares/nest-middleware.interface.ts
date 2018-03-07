@@ -1,11 +1,4 @@
-import { ExpressMiddleware } from './express-middleware.interface';
-
-export type AsyncExpressMiddleware = Promise<ExpressMiddleware>;
+export type MiddlewareFunction = (req, res, next) => any | Promise<any>;
 export interface NestMiddleware {
-  resolve(
-    ...args
-  ):
-    | ExpressMiddleware
-    | AsyncExpressMiddleware
-    | Promise<AsyncExpressMiddleware>;
+  resolve(...args): MiddlewareFunction | Promise<MiddlewareFunction>;
 }
