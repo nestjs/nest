@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ClientRedis } from '../../client/client-redis';
-import { ERROR_EVENT } from '../../constants';
+import { ERROR_EVENT, CONNECT_EVENT } from '../../constants';
 
 describe('ClientRedis', () => {
   const test = 'test';
@@ -19,7 +19,7 @@ describe('ClientRedis', () => {
       expect(client.getResPatternName(test)).to.equal(expectedResult);
     });
   });
-  describe('sendSingleMessage', () => {
+  describe('sendMessage', () => {
     const pattern = 'test';
     const msg = { pattern };
     let subscribeSpy: sinon.SinonSpy,
@@ -43,6 +43,7 @@ describe('ClientRedis', () => {
         on: onSpy,
         removeListener: removeListenerSpy,
         unsubscribe: unsubscribeSpy,
+        addListener: () => ({}),
       };
       pub = { publish: publishSpy };
       (client as any).subClient = sub;
@@ -53,26 +54,26 @@ describe('ClientRedis', () => {
       initSpy.restore();
     });
     it('should not call "init()" when pub and sub are null', () => {
-      client['sendSingleMessage'](msg, () => {});
+      client['sendMessage'](msg, () => {});
       expect(initSpy.called).to.be.false;
     });
     it('should call "init()" when pub and sub are null', () => {
       (client as any).subClient = null;
       (client as any).pubClient = null;
-      client['sendSingleMessage'](msg, () => {});
+      client['sendMessage'](msg, () => {});
       expect(initSpy.called).to.be.true;
     });
     it('should subscribe to response pattern name', () => {
-      client['sendSingleMessage'](msg, () => {});
+      client['sendMessage'](msg, () => {});
       expect(subscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;
     });
     it('should publish stringified message to acknowledge pattern name', () => {
-      client['sendSingleMessage'](msg, () => {});
+      client['sendMessage'](msg, () => {});
       expect(publishSpy.calledWith(`"${pattern}"_ack`, JSON.stringify(msg))).to
         .be.true;
     });
     it('should listen on messages', () => {
-      client['sendSingleMessage'](msg, () => {});
+      client['sendMessage'](msg, () => {});
       expect(onSpy.called).to.be.true;
     });
     describe('responseCallback', () => {
@@ -85,7 +86,7 @@ describe('ClientRedis', () => {
       describe('not disposed', () => {
         beforeEach(() => {
           callback = sinon.spy();
-          subscription = client['sendSingleMessage'](msg, callback);
+          subscription = client['sendMessage'](msg, callback);
           subscription(null, JSON.stringify(resMsg));
         });
         it('should call callback with expected arguments', () => {
@@ -101,7 +102,7 @@ describe('ClientRedis', () => {
       describe('disposed', () => {
         beforeEach(() => {
           callback = sinon.spy();
-          subscription = client['sendSingleMessage'](msg, callback);
+          subscription = client['sendMessage'](msg, callback);
           subscription(null, JSON.stringify({ disposed: true }));
         });
         it('should call callback with dispose param', () => {
@@ -171,17 +172,28 @@ describe('ClientRedis', () => {
   describe('handleError', () => {
     it('should bind error event handler and call callback with error', () => {
       const callback = sinon.spy();
-      const stream = {
-        on: (name, fn) => {
-          const err = { code: 'ECONNREFUSED' };
-          fn(err);
-        
-          expect(name).to.be.eql(ERROR_EVENT);
-          expect(callback.called).to.be.true;
-          expect(callback.calledWith(err, null)).to.be.true;
-        },
+      const removeListenerSpy = sinon.spy();
+
+      const addListener = (name, fn) => {
+        const err = { code: 'ECONNREFUSED' };
+        fn(err);
+      
+        expect(name).to.be.eql(ERROR_EVENT);
+        expect(callback.called).to.be.true;
+        expect(callback.calledWith(err, null)).to.be.true;
       };
-      client.handleError(stream, callback);
+      const onCallback = (name, fn) => {
+        fn();
+        expect(name).to.be.eql(CONNECT_EVENT);
+        expect(removeListenerSpy.called).to.be.true;
+      };
+
+      const stream = {
+        addListener,
+        on: onCallback,
+        removeListener: removeListenerSpy,
+      };
+      client.handleError(stream as any, callback);
     });
   });
   describe('getClientOptions', () => {

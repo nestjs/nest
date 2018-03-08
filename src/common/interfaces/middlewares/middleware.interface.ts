@@ -1,1 +1,1 @@
-export type Middleware = (req?, res?, next?) => any;
+export type FunctionMiddleware = (req?, res?, next?) => any;

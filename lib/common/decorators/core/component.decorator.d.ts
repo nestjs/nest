@@ -1,15 +1,15 @@
 /**
  * Defines the injectable class. This class can inject dependencies through constructor.
- * Those dependencies should belongs to the same module.
+ * Those dependencies have to belong to the same module.
  */
 export declare function Injectable(): ClassDecorator;
 /**
  * Defines the Component. The component can inject dependencies through constructor.
- * Those dependencies should belongs to the same module.
+ * Those dependencies have to belong to the same module.
  */
 export declare function Component(): ClassDecorator;
 /**
- * Defines the Pipe. The Pipe should implements the `PipeTransform` interface.
+ * Defines the Pipe. The Pipe should implement the `PipeTransform` interface.
  */
 export declare function Pipe(): ClassDecorator;
 /**

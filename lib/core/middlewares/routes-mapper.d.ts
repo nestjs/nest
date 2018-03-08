@@ -1,11 +1,10 @@
 import 'reflect-metadata';
+import { NestContainer } from '../injector/container';
 export declare class RoutesMapper {
     private readonly routerExplorer;
-    mapRouteToRouteProps(routeMetatype: any): {
-        path: string;
-        method: any;
-    }[];
-    private mapObjectToRouteProps(route);
+    constructor(container: NestContainer);
+    mapRouteToRouteProps(routeMetatype: any): string[];
+    private mapObjectToPath(routeOrPath);
     private validateGlobalPath(path);
     private validateRoutePath(path);
 }

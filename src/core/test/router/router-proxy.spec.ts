@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { RouterProxy } from '../../router/router-proxy';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
 import { HttpException } from '../../../common/exceptions/http.exception';
+import { ExpressAdapter } from '../../adapters/express-adapter';
 
 describe('RouterProxy', () => {
   let routerProxy: RouterProxy;
@@ -10,7 +11,7 @@ describe('RouterProxy', () => {
   let handler: ExceptionsHandler;
 
   beforeEach(() => {
-    handler = new ExceptionsHandler();
+    handler = new ExceptionsHandler(new ExpressAdapter({}));
     handlerMock = sinon.mock(handler);
     routerProxy = new RouterProxy();
   });

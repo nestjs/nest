@@ -1,5 +1,5 @@
 /**
- * Defines the HTTP status code, which should be sent with response.
+ * Defines the HTTP response status code.
  * It overrides default status code for the given request method.
  *
  * @param  {number} statusCode

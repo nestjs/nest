@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 
 class TestClientProxy extends ClientProxy {
-  public sendSingleMessage(pattern, callback) {}
+  public sendMessage(pattern, callback) {}
 }
 
 describe('ClientProxy', () => {
@@ -16,15 +16,15 @@ describe('ClientProxy', () => {
       const stream$ = client.send({}, '');
       expect(stream$ instanceof Observable).to.be.true;
     });
-    it(`should call "sendSingleMessage" on subscribe`, () => {
+    it(`should call "sendMessage" on subscribe`, () => {
       const pattern = { test: 3 };
       const data = 'test';
-      const sendSingleMessageSpy = sinon.spy();
+      const sendMessageSpy = sinon.spy();
       const stream$ = client.send(pattern, data);
-      client.sendSingleMessage = sendSingleMessageSpy;
+      client.sendMessage = sendMessageSpy;
 
       stream$.subscribe();
-      expect(sendSingleMessageSpy.calledOnce).to.be.true;
+      expect(sendMessageSpy.calledOnce).to.be.true;
     });
     it('should return ErrorObservable', () => {
       const err$ = client.send(null, null);

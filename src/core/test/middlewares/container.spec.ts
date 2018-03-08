@@ -34,7 +34,7 @@ describe('MiddlewaresContainer', () => {
     const config: MiddlewareConfiguration[] = [
       {
         middlewares: [TestMiddleware],
-        forRoutes: [TestRoute, { path: 'test' }],
+        forRoutes: [TestRoute, 'test'],
       },
     ];
     container.addConfig(config, 'Module' as any);

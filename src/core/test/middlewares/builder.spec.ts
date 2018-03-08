@@ -2,13 +2,14 @@ import { expect } from 'chai';
 import { MiddlewareBuilder } from '../../middlewares/builder';
 import { InvalidMiddlewareConfigurationException } from '../../errors/exceptions/invalid-middleware-configuration.exception';
 import { RoutesMapper } from '../../middlewares/routes-mapper';
-import { Controller, Get } from '../../../index';
+import { Get, Controller } from '../../../common';
+import { NestContainer } from '../../injector/container';
 
 describe('MiddlewareBuilder', () => {
   let builder: MiddlewareBuilder;
 
   beforeEach(() => {
-    builder = new MiddlewareBuilder(new RoutesMapper());
+    builder = new MiddlewareBuilder(new RoutesMapper(new NestContainer()));
   });
   describe('apply', () => {
     let configProxy;
@@ -37,11 +38,8 @@ describe('MiddlewareBuilder', () => {
             {
               middlewares: [],
               forRoutes: [
-                route,
-                {
-                  path: '/path/route',
-                  method: 0,
-                },
+                route.path,
+                '/path/route',
               ],
             },
           ]);

@@ -5,7 +5,7 @@ import { Server } from './server/server';
 export declare class MicroservicesModule {
     private readonly clientsContainer;
     private listenersController;
-    setup(container: any, config: any): void;
+    register(container: any, config: any): void;
     setupListeners(container: any, server: Server & CustomTransportStrategy): void;
     setupClients(container: any): void;
     bindListeners(controllers: Map<string, InstanceWrapper<Controller>>, server: Server & CustomTransportStrategy, module: string): void;

@@ -8,7 +8,7 @@ export interface INestMicroservice extends INestApplicationContext {
     /**
      * Starts the microservice.
      *
-     * @param  {Function} callback Callback called after instant
+     * @param  {Function} callback
      * @returns Promise
      */
     listen(callback: () => void): any;
@@ -19,7 +19,7 @@ export interface INestMicroservice extends INestApplicationContext {
      */
     listenAsync(): Promise<any>;
     /**
-     * Setup Web Sockets Adapter, which will be used inside Gateways.
+     * Setup Ws Adapter which will be used inside Gateways.
      * Use, when you want to override default `socket.io` library.
      *
      * @param  {WebSocketAdapter} adapter
@@ -51,7 +51,7 @@ export interface INestMicroservice extends INestApplicationContext {
      */
     useGlobalGuards(...guards: CanActivate[]): this;
     /**
-     * Terminates the application (both NestMicroservice and every Web Socket Gateway)
+     * Terminates the application (both NestMicroservice and Gateways)
      *
      * @returns void
      */

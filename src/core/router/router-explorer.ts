@@ -141,7 +141,6 @@ export class RouterExplorer {
     basePath: string,
   ) {
     const { path, requestMethod, targetCallback, methodName } = pathProperties;
-
     const routerMethod = this.routerMethodFactory
       .get(router, requestMethod)
       .bind(router);

@@ -9,7 +9,7 @@ export declare class NestApplicationContext implements INestApplicationContext {
     constructor(container: NestContainer, scope: Type<any>[], contextModule: any);
     selectContextModule(): void;
     select<T>(module: Type<T>): INestApplicationContext;
-    get<T>(typeOrToken: Type<T> | string | symbol): T;
-    find<T>(typeOrToken: Type<T> | string | symbol): T;
+    get<T>(typeOrToken: Type<T> | string | symbol): T | null;
+    find<T>(typeOrToken: Type<T> | string | symbol): T | null;
     private findInstanceByPrototypeOrToken<T>(metatypeOrToken, contextModule);
 }

@@ -13,6 +13,8 @@ import { RoutesMapper } from '../../middlewares/routes-mapper';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { ApplicationConfig } from '../../application-config';
 import { MiddlewaresContainer } from '../../middlewares/container';
+import { ExpressAdapter } from '../../adapters/express-adapter';
+import { NestContainer } from '../../injector/container';
 
 describe('MiddlewaresModule', () => {
   let middlewaresModule: MiddlewaresModule;
@@ -40,6 +42,7 @@ describe('MiddlewaresModule', () => {
     middlewaresModule = new MiddlewaresModule();
     (middlewaresModule as any).routerExceptionFilter = new RouterExceptionFilters(
       new ApplicationConfig(),
+      new ExpressAdapter({}),
     );
   });
 
@@ -57,12 +60,15 @@ describe('MiddlewaresModule', () => {
       );
 
       expect(configureSpy.calledOnce).to.be.true;
-      expect(configureSpy.calledWith(new MiddlewareBuilder(new RoutesMapper())))
-        .to.be.true;
+      expect(
+        configureSpy.calledWith(
+          new MiddlewareBuilder((middlewaresModule as any).routesMapper),
+        ),
+      ).to.be.true;
     });
   });
 
-  describe('setupRouteMiddleware', () => {
+  describe('registerRouteMiddleware', () => {
     it('should throw "RuntimeException" exception when middlewares is not stored in container', () => {
       const route = { path: 'Test' };
       const configuration = {
@@ -74,7 +80,7 @@ describe('MiddlewaresModule', () => {
       const app = { use: useSpy };
 
       expect(
-        middlewaresModule.setupRouteMiddleware(
+        middlewaresModule.registerRouteMiddleware(
           new MiddlewaresContainer(),
           route as any,
           configuration,
@@ -108,7 +114,7 @@ describe('MiddlewaresModule', () => {
       } as any);
 
       expect(
-        middlewaresModule.setupRouteMiddleware(
+        middlewaresModule.registerRouteMiddleware(
           container,
           route as any,
           configuration,
@@ -119,17 +125,16 @@ describe('MiddlewaresModule', () => {
     });
 
     it('should store middlewares when middleware is stored in container', () => {
-      const route = { path: 'Test', method: RequestMethod.GET };
+      const route = 'testPath';
       const configuration = {
         middlewares: [TestMiddleware],
-        forRoutes: [{ path: 'test' }, AnotherRoute, TestRoute],
+        forRoutes: ['test', AnotherRoute, TestRoute],
       };
 
       const useSpy = sinon.spy();
       const app = {
-        get: useSpy,
+        use: useSpy,
       };
-
       const container = new MiddlewaresContainer();
       const moduleKey = 'Test' as any;
       container.addConfig([configuration], moduleKey);
@@ -140,7 +145,7 @@ describe('MiddlewaresModule', () => {
         instance,
       });
 
-      middlewaresModule.setupRouteMiddleware(
+      middlewaresModule.registerRouteMiddleware(
         container,
         route,
         configuration,

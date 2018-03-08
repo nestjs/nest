@@ -5,6 +5,7 @@ import { Controller } from '../../../common/decorators/core/controller.decorator
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { MetadataScanner } from '../../metadata-scanner';
+import { NestContainer } from '../../injector/container';
 
 describe('RouterExplorer', () => {
   @Controller('global')
@@ -21,7 +22,7 @@ describe('RouterExplorer', () => {
 
   let routerBuilder: RouterExplorer;
   beforeEach(() => {
-    routerBuilder = new RouterExplorer(new MetadataScanner(), null);
+    routerBuilder = new RouterExplorer(new MetadataScanner(), new NestContainer());
   });
   describe('scanForPaths', () => {
     it('should method return expected list of route paths', () => {
@@ -61,17 +62,17 @@ describe('RouterExplorer', () => {
         { path: 'test', requestMethod: RequestMethod.GET },
       ];
 
-      routerBuilder.applyPathsToRouterProxy(null, paths as any, null, '');
+      routerBuilder.applyPathsToRouterProxy(null, paths as any, null, '', '');
 
       expect(bindStub.calledWith(null, paths[0], null)).to.be.true;
       expect(bindStub.callCount).to.be.eql(paths.length);
     });
   });
 
-  describe('fetchRouterPath', () => {
+  describe('extractRouterPath', () => {
     it('should return expected path', () => {
-      expect(routerBuilder.fetchRouterPath(TestRoute)).to.be.eql('/global');
-      expect(routerBuilder.fetchRouterPath(TestRoute, '/module')).to.be.eql(
+      expect(routerBuilder.extractRouterPath(TestRoute)).to.be.eql('/global');
+      expect(routerBuilder.extractRouterPath(TestRoute, '/module')).to.be.eql(
         '/module/global',
       );
     });

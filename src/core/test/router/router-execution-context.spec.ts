@@ -4,7 +4,7 @@ import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { createRouteParamDecorator } from '../../../common/decorators/http/create-route-param-metadata.decorator';
 import { RouterExecutionContext } from '../../router/router-execution-context';
-import { RouteParamsMetadata, Request, Body } from '../../../index';
+import { RouteParamsMetadata, Request, Body } from '../../../common';
 import { RouteParamsFactory } from '../../router/route-params-factory';
 import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { PipesConsumer } from '../../pipes/pipes-consumer';
@@ -14,6 +14,7 @@ import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { NestContainer } from '../../injector/container';
 import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
+import { ExpressAdapter } from '../../adapters/express-adapter';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;
@@ -44,6 +45,7 @@ describe('RouterExecutionContext', () => {
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
       new InterceptorsConsumer(),
+      new ExpressAdapter({}),
     );
   });
   describe('create', () => {

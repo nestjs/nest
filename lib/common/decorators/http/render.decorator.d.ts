@@ -1,5 +1,5 @@
 import 'reflect-metadata';
 /**
- * Defines a template that should be rendered by a controller.
+ * Defines a template to be rendered by the controller.
  */
 export declare function Render(template: string): MethodDecorator;

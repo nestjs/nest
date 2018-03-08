@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ModuleTokenFactory } from '../../injector/module-token-factory';
-import { SingleScope } from '../../../index';
+import { SingleScope } from '../../../common';
 
 describe('ModuleTokenFactory', () => {
   let factory: ModuleTokenFactory;

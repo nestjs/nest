@@ -4,13 +4,14 @@ import { RouterResponseController } from '../../router/router-response-controlle
 import { RequestMethod } from './../../../common';
 import { Observable } from 'rxjs/Observable';
 import { of } from 'rxjs/observable/of';
+import { ExpressAdapter } from '../../adapters/express-adapter';
 
 describe('RouterResponseController', () => {
   let routerResponseController: RouterResponseController;
   let handlerMock: sinon.SinonMock;
 
   beforeEach(() => {
-    routerResponseController = new RouterResponseController();
+    routerResponseController = new RouterResponseController(new ExpressAdapter({}));
   });
 
   describe('apply', () => {

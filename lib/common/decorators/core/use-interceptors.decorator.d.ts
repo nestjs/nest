@@ -1,10 +1,10 @@
 /**
- * Setups interceptors to the chosen context.
+ * Binds interceptors to the particular context.
  * When the `@UseInterceptors()` is used on the controller level:
- * - Interceptor will be set up to every handler (every method)
+ * - Interceptor will be register to each handler (every method)
  *
  * When the `@UseInterceptors()` is used on the handle level:
- * - Interceptor will be set up only to specified method
+ * - Interceptor will be registered only to specified method
  *
  * @param  {} ...interceptors (types)
  */

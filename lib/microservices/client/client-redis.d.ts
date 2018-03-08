@@ -15,7 +15,7 @@ export declare class ClientRedis extends ClientProxy {
     close(): void;
     init(callback: (...args) => any): void;
     createClient(): redis.RedisClient;
-    handleError(stream: any, callback: (...args) => any): void;
+    handleError(client: redis.RedisClient, callback: (...args) => any): void;
     getClientOptions(): Partial<redis.ClientOpts>;
     createRetryStrategy(options: redis.RetryStrategyOptions): undefined | number;
 }

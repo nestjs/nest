@@ -2,18 +2,19 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RoutesResolver } from '../../router/routes-resolver';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
+import { Get } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { ApplicationConfig } from '../../application-config';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, Post } from '@nestjs/common';
+import { ExpressAdapter } from '../../adapters/express-adapter';
 
 describe('RoutesResolver', () => {
   @Controller('global')
   class TestRoute {
-    @RequestMapping({ path: 'test' })
+    @Get('test')
     public getTest() {}
 
-    @RequestMapping({ path: 'another-test', method: RequestMethod.POST })
+    @Post('another-test')
     public anotherTest() {}
   }
 
@@ -26,6 +27,9 @@ describe('RoutesResolver', () => {
     modules = new Map();
     container = {
       getModules: () => modules,
+      getApplicationRef: () => ({
+        use: () => ({})
+      })
     };
     router = {
       get() {},
@@ -36,29 +40,39 @@ describe('RoutesResolver', () => {
   beforeEach(() => {
     routesResolver = new RoutesResolver(
       container,
-      {
-        createRouter: () => router,
-      },
       new ApplicationConfig(),
     );
   });
 
-  describe('setupRouters', () => {
-    it('should method setup controllers to router instance', () => {
+  describe('registerRouters', () => {
+    it('should method register controllers to router instance', () => {
       const routes = new Map();
-      routes.set('TestRoute', {
+      const routeWrapper = {
         instance: new TestRoute(),
         metatype: TestRoute,
-      });
+      };
+      routes.set('TestRoute', routeWrapper);
 
-      const use = sinon.spy();
-      routesResolver.setupRouters(routes, '', undefined, { use } as any);
-      expect(use.calledWith('/global', router)).to.be.true;
+      const appInstance = new ExpressAdapter(router);
+      const exploreSpy = sinon.spy((routesResolver as any).routerBuilder, 'explore');
+      const moduleName = '';
+
+      sinon.stub((routesResolver as any).routerBuilder, 'extractRouterPath').callsFake(() => '');
+      routesResolver.registerRouters(routes, moduleName, '', appInstance);
+
+      expect(exploreSpy.called).to.be.true;
+      expect(exploreSpy.calledWith(
+        routeWrapper.instance,
+        routeWrapper.metatype,
+        moduleName,
+        appInstance,
+        '',
+      )).to.be.true;
     });
   });
 
   describe('resolve', () => {
-    it('should call "setupRouters" for each module', () => {
+    it('should call "registerRouters" for each module', () => {
       const routes = new Map();
       routes.set('TestRoute', {
         instance: new TestRoute(),
@@ -68,7 +82,7 @@ describe('RoutesResolver', () => {
       modules.set('TestModule2', { routes });
 
       const spy = sinon
-        .stub(routesResolver, 'setupRouters')
+        .stub(routesResolver, 'registerRouters')
         .callsFake(() => undefined);
       routesResolver.resolve({ use: sinon.spy() } as any, { use: sinon.spy() } as any);
       expect(spy.calledTwice).to.be.true;

@@ -5,6 +5,7 @@ import { UseFilters } from '../../../common/decorators/core/exception-filters.de
 import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { ApplicationConfig } from '../../application-config';
+import { ExpressAdapter } from '../../adapters/express-adapter';
 
 describe('RouterExceptionFilters', () => {
   let moduleName: string;
@@ -18,7 +19,10 @@ describe('RouterExceptionFilters', () => {
 
   beforeEach(() => {
     moduleName = 'Test';
-    exceptionFilter = new RouterExceptionFilters(new ApplicationConfig());
+    exceptionFilter = new RouterExceptionFilters(
+      new ApplicationConfig(),
+      new ExpressAdapter({}),
+    );
   });
   describe('create', () => {
     describe('when filters metadata is empty', () => {

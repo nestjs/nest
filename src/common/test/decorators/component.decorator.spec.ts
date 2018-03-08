@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { Component, Middleware, Interceptor, mixin } from '../../index';
+import { Component, FunctionMiddleware, Interceptor, mixin, Injectable } from '../../index';
 
 describe('@Component', () => {
   @Component()
@@ -19,8 +19,8 @@ describe('@Component', () => {
   });
 });
 
-describe('@Middleware', () => {
-  @Middleware()
+describe('@Injectable', () => {
+  @Injectable()
   class TestMiddleware {
     constructor(param: number, test: string) {}
   }

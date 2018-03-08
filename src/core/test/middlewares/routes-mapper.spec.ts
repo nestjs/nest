@@ -4,6 +4,7 @@ import { Controller } from '../../../common/decorators/core/controller.decorator
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception';
+import { NestContainer } from '../../injector/container';
 
 describe('RoutesMapper', () => {
   @Controller('test')
@@ -17,7 +18,7 @@ describe('RoutesMapper', () => {
 
   let mapper: RoutesMapper;
   beforeEach(() => {
-    mapper = new RoutesMapper();
+    mapper = new RoutesMapper(new NestContainer());
   });
 
   it('should map @Controller() to "ControllerMetadata" in forRoutes', () => {
@@ -27,15 +28,11 @@ describe('RoutesMapper', () => {
     };
 
     expect(mapper.mapRouteToRouteProps(config.forRoutes[0])).to.deep.equal([
-      {
-        path: '/test',
-        method: RequestMethod.GET,
-      },
+      '/test'
     ]);
-
     expect(mapper.mapRouteToRouteProps(config.forRoutes[1])).to.deep.equal([
-      { path: '/test/test', method: RequestMethod.GET },
-      { path: '/test/another', method: RequestMethod.DELETE },
+      '/test/test',
+      '/test/another',
     ]);
   });
 

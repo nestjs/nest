@@ -12,7 +12,7 @@ export {
   INestApplication,
   INestMicroservice,
   NestMiddleware,
-  Middleware,
+  FunctionMiddleware,
   MiddlewaresConsumer,
   OnModuleInit,
   ExceptionFilter,
