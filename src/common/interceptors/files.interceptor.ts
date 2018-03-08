@@ -2,6 +2,7 @@ import * as multer from 'multer';
 import { NestInterceptor } from './../interfaces/features/nest-interceptor.interface';
 import { Observable } from 'rxjs/Observable';
 import { MulterOptions } from '../interfaces/external/multer-options.interface';
+import { transformException } from './multer/multer.utils';
 
 export function FilesInterceptor(fieldName: string, maxCount?: number, options?: MulterOptions) {
   const Interceptor = class implements NestInterceptor {
@@ -13,7 +14,13 @@ export function FilesInterceptor(fieldName: string, maxCount?: number, options?:
       stream$: Observable<any>,
     ): Promise<Observable<any>> {
       await new Promise((resolve, reject) =>
-        this.upload.array(fieldName, maxCount)(request, request.res, resolve),
+        this.upload.array(fieldName, maxCount)(request, request.res, err => {
+          if (err) {
+            const error = transformException(err);
+            return reject(error);
+          }
+          resolve();
+        }),
       );
       return stream$;
     }

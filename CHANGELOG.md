@@ -1,5 +1,26 @@
+## 4.6.6
+### Bug Fixes:
+- **common**: `File(s)Interceptor` throws http status code 500 [#465](https://github.com/nestjs/nest/issues/437)
+
+## 4.6.5
+### Bug Fixes
+- **common**: `File(s)Interceptor` does not populate thrown exception [#437](https://github.com/nestjs/nest/issues/437)
+- **core**: `NestFactory.create()` returns `any`
+- **core**: use `ApplicationConfig` within `ExternalContextCreator` [#434](https://github.com/nestjs/nest/issues/434) 
+
+### Improvements
+- **common**: `HttpException` extends `Error`
+- **core**: make `cors` middleware customizable (`enableCors()`, `{ cors }`) [#457](https://github.com/nestjs/nest/issues/437) 
+- **microservices**: `RpcException` extends `Error`
+- **websockets**: `WsException` extends `Error`
+
 ## 4.6.4
 ### Bug Fixes
+- **common**: logger overrides custom logger scope [#435](https://github.com/nestjs/nest/issues/435)
+- **common**: `FileInterceptor` supports only one options at once [#429](https://github.com/nestjs/nest/issues/429)
+- **common**: support `symbol` as a token (`NestApplicationContext`)
+- **core**: fix exception handler (exceception thrown in the `done()` callback) [#431](https://github.com/nestjs/nest/issues/431)
+- **core**: incorrect HTTP response on `SyntaxError` [#430](https://github.com/nestjs/nest/issues/430)
 - **microservices**: can't select/get from context when using `NestFactory.createMicroservice` [#398](https://github.com/nestjs/nest/issues/398)
 
 ## 4.6.3

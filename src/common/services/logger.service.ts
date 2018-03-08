@@ -24,7 +24,8 @@ export class Logger implements LoggerService {
 
   log(message: string) {
     const { logger } = Logger;
-    (logger as typeof Logger).log(
+    (logger as typeof Logger).log.call(
+      logger,
       message,
       this.context,
       this.isTimeDiffEnabled,
@@ -33,7 +34,8 @@ export class Logger implements LoggerService {
 
   error(message: string, trace = '') {
     const { logger } = Logger;
-    (logger as typeof Logger).error(
+    (logger as typeof Logger).error.call(
+      logger,
       message,
       trace,
       this.context,
@@ -43,7 +45,8 @@ export class Logger implements LoggerService {
 
   warn(message: string) {
     const { logger } = Logger;
-    (logger as typeof Logger).warn(
+    (logger as typeof Logger).warn.call(
+      logger,
       message,
       this.context,
       this.isTimeDiffEnabled,

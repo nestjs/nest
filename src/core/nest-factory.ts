@@ -33,9 +33,16 @@ export class NestFactoryStatic {
    * Creates an instance of the NestApplication (returns Promise)
    * @returns an `Promise` of the INestApplication instance
    */
-  public async create(module: any);
-  public async create(module: any, options: NestApplicationOptions);
-  public async create(module: any, httpServer: HttpServer, options?: NestApplicationOptions);
+  public async create(module: any): Promise<INestApplication>;
+  public async create(
+    module: any,
+    options: NestApplicationOptions,
+  ): Promise<INestApplication>;
+  public async create(
+    module: any,
+    httpServer: HttpServer,
+    options?: NestApplicationOptions,
+  ): Promise<INestApplication>;
   public async create(
     module: any,
     serverOrOptions?: any,
@@ -46,8 +53,8 @@ export class NestFactoryStatic {
       ? [serverOrOptions, options]
       : [ExpressFactory.create(), serverOrOptions];
 
-    const container = new NestContainer();
     const applicationConfig = new ApplicationConfig();
+    const container = new NestContainer(applicationConfig);
 
     this.applyLogger(appOptions);
     await this.initialize(
@@ -80,8 +87,8 @@ export class NestFactoryStatic {
     if (!NestMicroservice) {
       throw new MicroservicesPackageNotFoundException();
     }
-    const container = new NestContainer();
     const applicationConfig = new ApplicationConfig();
+    const container = new NestContainer(applicationConfig);
 
     this.applyLogger(options);
     await this.initialize(module, container, applicationConfig);

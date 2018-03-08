@@ -1,6 +1,7 @@
 # dependencies
 node_modules/
 package-lock.json
+
 # IDE
 /.idea
 /.awcache
@@ -9,6 +10,7 @@ package-lock.json
 # misc
 lerna-debug.log
 npm-debug.log
+yarn-error.log
 /src/common/npm-debug.log
 /src/core/npm-debug.log
 /src/testing/npm-debug.log

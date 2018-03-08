@@ -18,8 +18,8 @@ export declare type CustomValue = CustomComponent & {
 };
 export declare type ComponentMetatype = Type<Injectable> | CustomFactory | CustomValue | CustomClass;
 export declare class Module {
-    private _metatype;
-    private _scope;
+    private readonly _metatype;
+    private readonly _scope;
     private _relatedModules;
     private _components;
     private _injectables;

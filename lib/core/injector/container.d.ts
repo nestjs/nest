@@ -3,12 +3,16 @@ import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Module } from './module';
 import { DynamicModule } from '@nestjs/common';
 import { ModulesContainer } from './modules-container';
+import { ApplicationConfig } from './../application-config';
 export declare class NestContainer {
+    private readonly _applicationConfig;
     private readonly globalModules;
     private readonly modules;
     private readonly dynamicModulesMetadata;
     private readonly moduleTokenFactory;
     private applicationRef;
+    constructor(_applicationConfig?: ApplicationConfig);
+    readonly applicationConfig: ApplicationConfig | undefined;
     setApplicationRef(applicationRef: any): void;
     getApplicationRef(): any;
     addModule(metatype: Type<any> | DynamicModule, scope: Type<any>[]): void;

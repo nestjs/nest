@@ -23,6 +23,7 @@ import {
   isUndefined,
   validatePath,
   isFunction,
+  isObject,
 } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { ApplicationConfig } from './application-config';
@@ -37,6 +38,7 @@ import { MiddlewaresContainer } from './middlewares/container';
 import { NestApplicationContext } from './nest-application-context';
 import { HttpsOptions } from '@nestjs/common/interfaces/external/https-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
@@ -84,10 +86,14 @@ export class NestApplication extends NestApplicationContext
   }
 
   public applyOptions() {
-    if (!this.appOptions) {
+    if (!this.appOptions || !this.appOptions.cors) {
       return undefined;
     }
-    this.appOptions.cors && this.enableCors();
+    const isCorsOptionsObj = isObject(this.appOptions.cors);
+    if (!isCorsOptionsObj) {
+      return this.enableCors();
+    }
+    this.enableCors(this.appOptions.cors as CorsOptions);
   }
 
   public createServer(): any {
@@ -231,8 +237,8 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public enableCors(): this {
-    this.httpAdapter.use(cors());
+  public enableCors(options?: CorsOptions): this {
+    this.httpAdapter.use(cors(options));
     return this;
   }
 

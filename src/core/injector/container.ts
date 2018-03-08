@@ -11,6 +11,7 @@ import { InvalidModuleException } from './../errors/exceptions/invalid-module.ex
 import { DynamicModule } from '@nestjs/common';
 import { ModulesContainer } from './modules-container';
 import { NestApplicationContext } from './../nest-application-context';
+import { ApplicationConfig } from './../application-config';
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
@@ -21,6 +22,14 @@ export class NestContainer {
   >();
   private readonly moduleTokenFactory = new ModuleTokenFactory();
   private applicationRef: any;
+
+  constructor(
+    private readonly _applicationConfig: ApplicationConfig = void 0,
+  ) {}
+
+  get applicationConfig(): ApplicationConfig | undefined {
+    return this._applicationConfig;
+  }
 
   public setApplicationRef(applicationRef: any) {
     this.applicationRef = applicationRef;
