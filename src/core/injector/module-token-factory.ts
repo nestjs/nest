@@ -43,10 +43,10 @@ export class ModuleTokenFactory {
   }
 
   private reflectScope(metatype: Type<any>) {
-    const reflectedScope = Reflect.getMetadata(
+    const scope = Reflect.getMetadata(
       SHARED_MODULE_METADATA,
       metatype,
     );
-    return reflectedScope ? reflectedScope : 'global';
+    return scope ? scope : 'global';
   }
 }

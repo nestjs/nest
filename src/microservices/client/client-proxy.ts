@@ -24,11 +24,9 @@ export abstract class ClientProxy {
   ): (err, result, disposed?: boolean) => void {
     return (err, result, disposed) => {
       if (err) {
-        observer.error(err);
-        return;
+        return observer.error(err);
       } else if (disposed) {
-        observer.complete();
-        return;
+        return observer.complete();
       }
       observer.next(result);
     };

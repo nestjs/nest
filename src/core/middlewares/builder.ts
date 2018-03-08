@@ -40,7 +40,7 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
   }
 
   private static ConfigProxy = class implements MiddlewareConfigProxy {
-    private contextArgs = null;
+    private contextParameters = null;
     private includedRoutes: any[];
 
     constructor(private readonly builder: MiddlewareBuilder, middlewares) {
@@ -48,11 +48,11 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
     }
 
     public with(...args): MiddlewareConfigProxy {
-      this.contextArgs = args;
+      this.contextParameters = args;
       return this;
     }
 
-    public forRoutes(...routes: Array<Type<any> | RequestMappingMetadata>): MiddlewaresConsumer {
+    public forRoutes(...routes: Array<Type<any> | RequestMappingMetadata | string>): MiddlewaresConsumer {
       const {
         middlewaresCollection,
         bindValuesToResolve,
@@ -63,7 +63,7 @@ export class MiddlewareBuilder implements MiddlewaresConsumer {
         routes.map(route => routesMapper.mapRouteToRouteProps(route)),
       );
       const configuration = {
-        middlewares: bindValuesToResolve(this.includedRoutes, this.contextArgs),
+        middlewares: bindValuesToResolve(this.includedRoutes, this.contextParameters),
         forRoutes,
       };
       middlewaresCollection.add(configuration);

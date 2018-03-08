@@ -2,6 +2,6 @@ import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.excepti
 
 export class InvalidMessageException extends RuntimeException {
   constructor() {
-    super(`Invalid message pattern or data!`);
+    super(`Invalid data or message pattern (undefined / null)`);
   }
 }

@@ -19,7 +19,7 @@ export class MicroservicesModule {
   private readonly clientsContainer = new ClientsContainer();
   private listenersController: ListenersController;
 
-  public setup(container, config) {
+  public register(container, config) {
     const contextCreator = new RpcContextCreator(
       new RpcProxy(),
       new ExceptionFiltersContext(config),

@@ -1,8 +1,8 @@
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 
-export const ModuleInitMessage = (module: string) =>
+export const moduleInitMessage = (module: string) =>
   `${module} dependencies initialized`;
-export const RouteMappedMessage = (path: string, method) =>
+export const routeMappedMessage = (path: string, method) =>
   `Mapped {${path}, ${RequestMethod[method]}} route`;
-export const ControllerMappingMessage = (name: string, path: string) =>
+export const controllerMappingMessage = (name: string, path: string) =>
   `${name} {${path}}:`;

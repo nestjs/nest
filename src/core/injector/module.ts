@@ -23,7 +23,7 @@ import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
 import { GuardsConsumer } from './../guards/guards-consumer';
 import { ModulesContainer } from './modules-container';
 import { Reflector } from '../services/reflector.service';
-import { EXPRESS_REF } from './tokens';
+import { HTTP_SERVER_REF } from './tokens';
 
 export interface CustomComponent {
   provide: any;
@@ -131,8 +131,8 @@ export class Module {
   }
 
   public addApplicationRef(applicationRef: any) {
-    this._components.set(EXPRESS_REF, {
-      name: EXPRESS_REF,
+    this._components.set(HTTP_SERVER_REF, {
+      name: HTTP_SERVER_REF,
       metatype: {} as any,
       isResolved: true,
       instance: applicationRef,

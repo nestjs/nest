@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ExpressRouterExplorer } from '../../router/router-explorer';
+import { RouterExplorer } from '../../router/router-explorer';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
@@ -19,9 +19,9 @@ describe('RouterExplorer', () => {
     public anotherTest() {}
   }
 
-  let routerBuilder: ExpressRouterExplorer;
+  let routerBuilder: RouterExplorer;
   beforeEach(() => {
-    routerBuilder = new ExpressRouterExplorer(new MetadataScanner(), null);
+    routerBuilder = new RouterExplorer(new MetadataScanner(), null);
   });
   describe('scanForPaths', () => {
     it('should method return expected list of route paths', () => {

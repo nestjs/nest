@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { RENDER_METADATA } from '../../constants';
 
 /**
- * Defines a template that should be rendered by a controller.
+ * Defines a template to be rendered by the controller.
  */
 export function Render(template: string): MethodDecorator {
   return (target: object, key, descriptor) => {

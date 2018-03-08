@@ -2,12 +2,12 @@ import { PipeTransform } from '../../interfaces/index';
 import { PIPES_METADATA } from '../../constants';
 
 /**
- * Setups pipes to the chosen context.
+ * Binds pipes to the particular context.
  * When the `@UsePipes()` is used on the controller level:
- * - Pipe will be set up to every handler (every method)
+ * - Pipe will be register to each handler (every method)
  *
  * When the `@UsePipes()` is used on the handle level:
- * - Pipe will be set up only to specified method
+ * - Pipe will be registered only to specified method
  *
  * @param  {PipeTransform[]} ...pipes (instances)
  */

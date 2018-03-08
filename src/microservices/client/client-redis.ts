@@ -2,7 +2,12 @@ import * as redis from 'redis';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientMetadata } from '../interfaces/client-metadata.interface';
-import { REDIS_DEFAULT_URL, MESSAGE_EVENT, ERROR_EVENT } from './../constants';
+import {
+  REDIS_DEFAULT_URL,
+  MESSAGE_EVENT,
+  ERROR_EVENT,
+  CONNECT_EVENT,
+} from './../constants';
 
 export class ClientRedis extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
@@ -31,10 +36,12 @@ export class ClientRedis extends ClientProxy {
       }
       callback(err, response);
     };
-
     this.subClient.on(MESSAGE_EVENT, responseCallback);
     this.subClient.subscribe(this.getResPatternName(pattern));
-    this.pubClient.publish(this.getAckPatternName(pattern), JSON.stringify(msg));
+    this.pubClient.publish(
+      this.getAckPatternName(pattern),
+      JSON.stringify(msg),
+    );
     return responseCallback;
   }
 
@@ -49,6 +56,7 @@ export class ClientRedis extends ClientProxy {
   public close() {
     this.pubClient && this.pubClient.quit();
     this.subClient && this.subClient.quit();
+    this.pubClient = this.subClient = null;
   }
 
   public init(callback: (...args) => any) {
@@ -63,12 +71,18 @@ export class ClientRedis extends ClientProxy {
     return redis.createClient({ ...this.getClientOptions(), url: this.url });
   }
 
-  public handleError(stream, callback: (...args) => any) {
-    stream.on(ERROR_EVENT, err => {
+  public handleError(client: redis.RedisClient, callback: (...args) => any) {
+    const errorCallback = err => {
       if (err.code === 'ECONNREFUSED') {
         callback(err, null);
+        this.pubClient = this.subClient = null;
       }
       this.logger.error(err);
+    };
+    client.addListener(ERROR_EVENT, errorCallback);
+    client.on(CONNECT_EVENT, () => {
+      client.removeListener(ERROR_EVENT, errorCallback);
+      client.addListener(ERROR_EVENT, err => this.logger.error(err));
     });
   }
 

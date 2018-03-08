@@ -23,6 +23,7 @@ import {
   HttpStatus,
   RequestMethod,
   HttpException,
+  HttpServer,
 } from '@nestjs/common';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { GuardsConsumer } from '../guards/guards-consumer';
@@ -40,7 +41,7 @@ export interface ParamProperties {
 }
 
 export class RouterExecutionContext {
-  private readonly responseController = new RouterResponseController();
+  private readonly responseController: RouterResponseController;
   constructor(
     private readonly paramsFactory: IRouteParamsFactory,
     private readonly pipesContextCreator: PipesContextCreator,
@@ -49,7 +50,10 @@ export class RouterExecutionContext {
     private readonly guardsConsumer: GuardsConsumer,
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
     private readonly interceptorsConsumer: InterceptorsConsumer,
-  ) {}
+    private readonly applicationRef: HttpServer,
+  ) {
+    this.responseController = new RouterResponseController(applicationRef);
+  }
 
   public create(
     instance: Controller,

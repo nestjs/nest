@@ -6,7 +6,7 @@ import {
 } from '../../constants';
 /**
  * Makes the module global-scoped.
- * Once imported will be available for all of the existing modules.
+ * Once imported will be available for all existing modules.
  */
 export function Global(): ClassDecorator {
   return (target: any) => {

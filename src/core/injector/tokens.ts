@@ -1,1 +1,1 @@
-export const EXPRESS_REF = 'EXPRESS_REF';
+export const HTTP_SERVER_REF = 'HTTP_SERVER_REF';

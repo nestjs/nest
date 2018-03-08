@@ -2,7 +2,7 @@ import * as deprecate from 'deprecate';
 
 /**
  * Defines the injectable class. This class can inject dependencies through constructor.
- * Those dependencies should belongs to the same module.
+ * Those dependencies have to belong to the same module.
  */
 export function Injectable(): ClassDecorator {
   return (target: object) => {};
@@ -10,7 +10,7 @@ export function Injectable(): ClassDecorator {
 
 /**
  * Defines the Component. The component can inject dependencies through constructor.
- * Those dependencies should belongs to the same module.
+ * Those dependencies have to belong to the same module.
  */
 export function Component(): ClassDecorator {
   deprecate('The @Component() decorator is deprecated and will be removed within next major release. Use @Injectable() instead.')
@@ -18,7 +18,7 @@ export function Component(): ClassDecorator {
 }
 
 /**
- * Defines the Pipe. The Pipe should implements the `PipeTransform` interface.
+ * Defines the Pipe. The Pipe should implement the `PipeTransform` interface.
  */
 export function Pipe(): ClassDecorator {
   return (target: object) => {};

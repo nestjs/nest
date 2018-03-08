@@ -1,7 +1,7 @@
 /*
  * Nest @common
- * Copyright(c) 2017-... Kamil Mysliwiec
- * www.nestjs.com || www.kamilmysliwiec.com
+ * Copyright(c) 2017 - 2018 Kamil Mysliwiec
+ * https://nestjs.com
  * MIT Licensed
  */
 
@@ -11,10 +11,8 @@ export {
   NestModule,
   INestApplication,
   INestMicroservice,
-  MiddlewareConfigProxy,
-  MiddlewareConfiguration,
   NestMiddleware,
-  ExpressMiddleware,
+  Middleware,
   MiddlewaresConsumer,
   OnModuleInit,
   ExceptionFilter,
@@ -30,6 +28,8 @@ export {
   NestInterceptor,
   DynamicModule,
   INestApplicationContext,
+  HttpServer,
+  HttpServerFactory,
 } from './interfaces';
 export * from './interceptors';
 export * from './services/logger.service';

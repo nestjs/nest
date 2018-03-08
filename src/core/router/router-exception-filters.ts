@@ -18,9 +18,13 @@ import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-
 import { RouterProxyCallback } from './../router/router-proxy';
 import { ApplicationConfig } from './../application-config';
 import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context';
+import { HttpServer } from '@nestjs/common';
 
 export class RouterExceptionFilters extends BaseExceptionFilterContext {
-  constructor(private readonly config: ApplicationConfig) {
+  constructor(
+    private readonly config: ApplicationConfig,
+    private readonly applicationRef: HttpServer,
+  ) {
     super();
   }
 
@@ -28,7 +32,7 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
     instance: Controller,
     callback: RouterProxyCallback,
   ): ExceptionsHandler {
-    const exceptionHandler = new ExceptionsHandler();
+    const exceptionHandler = new ExceptionsHandler(this.applicationRef);
     const filters = this.createContext(
       instance,
       callback,

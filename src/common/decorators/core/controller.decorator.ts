@@ -5,7 +5,7 @@ import { PATH_METADATA } from '../../constants';
 
 /**
  * Defines the Controller. The controller can inject dependencies through constructor.
- * Those dependencies should belongs to the same module.
+ * Those dependencies have to belong to the same module.
  */
 export function Controller(prefix?: string): ClassDecorator {
   const path = isUndefined(prefix) ? '/' : prefix;

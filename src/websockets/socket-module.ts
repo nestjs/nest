@@ -24,7 +24,7 @@ export class SocketModule {
   private socketsContainer = new SocketsContainer();
   private webSocketsController: WebSocketsController;
 
-  public setup(container, config) {
+  public register(container, config) {
     this.webSocketsController = new WebSocketsController(
       new SocketServerProvider(this.socketsContainer, config),
       container,

@@ -9,16 +9,17 @@ import { messages } from './constants';
 import { NestApplication } from './nest-application';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
-import { ExpressAdapter } from './adapters/express-adapter';
+import { ExpressFactory } from './adapters/express-factory';
 import {
   INestApplication,
   INestMicroservice,
   INestApplicationContext,
+  HttpServer,
 } from '@nestjs/common';
 import { MetadataScanner } from './metadata-scanner';
 import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
 import { NestApplicationContext } from './nest-application-context';
-import { HttpsOptions } from '@nestjs/common/interfaces/https-options.interface';
+import { HttpsOptions } from '@nestjs/common/interfaces/external/https-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { ApplicationConfig } from './application-config';
@@ -34,16 +35,16 @@ export class NestFactoryStatic {
    */
   public async create(module: any);
   public async create(module: any, options: NestApplicationOptions);
-  public async create(module: any, express: any, options: NestApplicationOptions);
+  public async create(module: any, httpServer: HttpServer, options?: NestApplicationOptions);
   public async create(
     module: any,
-    expressOrOptions?: any,
+    serverOrOptions?: any,
     options?: NestApplicationOptions,
   ): Promise<INestApplication> {
-    const isExpressInstance = expressOrOptions && expressOrOptions.response;
-    const [expressInstance, appOptions] = isExpressInstance
-      ? [expressOrOptions, options]
-      : [ExpressAdapter.create(), expressOrOptions];
+    const isHttpServer = serverOrOptions && serverOrOptions.patch;
+    const [httpServer, appOptions] = isHttpServer
+      ? [serverOrOptions, options]
+      : [ExpressFactory.create(), serverOrOptions];
 
     const container = new NestContainer();
     const applicationConfig = new ApplicationConfig();
@@ -53,12 +54,12 @@ export class NestFactoryStatic {
       module,
       container,
       applicationConfig,
-      expressInstance,
+      httpServer,
     );
     return this.createNestInstance<NestApplication>(
       new NestApplication(
         container,
-        expressInstance,
+        httpServer,
         applicationConfig,
         appOptions,
       ),
@@ -120,7 +121,7 @@ export class NestFactoryStatic {
     module,
     container: NestContainer,
     config = new ApplicationConfig(),
-    express = null,
+    httpServer: HttpServer = null,
   ) {
     const instanceLoader = new InstanceLoader(container);
     const dependenciesScanner = new DependenciesScanner(
@@ -128,7 +129,7 @@ export class NestFactoryStatic {
       new MetadataScanner(),
       config,
     );
-    container.setApplicationRef(express);
+    container.setApplicationRef(httpServer);
     try {
       this.logger.log(messages.APPLICATION_START);
       await ExceptionsZone.asyncRun(async () => {

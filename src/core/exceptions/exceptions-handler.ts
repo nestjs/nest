@@ -1,5 +1,5 @@
 import { messages } from '../constants';
-import { Logger } from '@nestjs/common';
+import { Logger, HttpServer } from '@nestjs/common';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
 import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
 import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
@@ -9,18 +9,22 @@ export class ExceptionsHandler {
   private static readonly logger = new Logger(ExceptionsHandler.name);
   private filters: ExceptionFilterMetadata[] = [];
 
+  constructor(private readonly applicationRef: HttpServer) {}
+
   public next(exception: Error | HttpException | any, response) {
     if (this.invokeCustomFilters(exception, response)) return;
 
     if (!(exception instanceof HttpException)) {
-      response.status(500).json({
+      const body = {
         statusCode: 500,
         message: messages.UNKNOWN_EXCEPTION_MESSAGE,
-      });
-      if (isObject(exception) && (exception as Error).message) {
+      };
+      const statusCode = 500;
+      this.applicationRef.reply(response, body, statusCode);
+      if (this.isExceptionObject(exception)) {
         return ExceptionsHandler.logger.error(
-          (exception as Error).message,
-          (exception as Error).stack,
+          exception.message,
+          exception.stack,
         );
       }
       return ExceptionsHandler.logger.error(exception);
@@ -32,7 +36,7 @@ export class ExceptionsHandler {
           statusCode: exception.getStatus(),
           message: res,
         };
-    response.status(exception.getStatus()).json(message);
+    this.applicationRef.reply(response, message, exception.getStatus());
   }
 
   public setCustomFilters(filters: ExceptionFilterMetadata[]) {
@@ -55,5 +59,9 @@ export class ExceptionsHandler {
     });
     filter && filter.func(exception, response);
     return !!filter;
+  }
+
+  public isExceptionObject(err): err is Error {
+    return isObject(err) && !!(err as Error).message;
   }
 }

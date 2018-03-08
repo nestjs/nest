@@ -34,8 +34,8 @@ export class NestMicroservice extends NestApplicationContext
   private readonly logger = new Logger(NestMicroservice.name, true);
   private readonly microservicesModule = new MicroservicesModule();
   private readonly socketModule = SocketModule ? new SocketModule() : null;
-  private readonly microserviceConfig: MicroserviceConfiguration;
-  private readonly server: Server & CustomTransportStrategy;
+  private microserviceConfig: MicroserviceConfiguration;
+  private server: Server & CustomTransportStrategy;
   private isTerminated = false;
   private isInitialized = false;
   private isInitHookCalled = false;
@@ -46,10 +46,19 @@ export class NestMicroservice extends NestApplicationContext
     private readonly applicationConfig: ApplicationConfig,
   ) {
     super(container, [], null);
-  
+
+    this.registerWsAdapter();
+    this.microservicesModule.register(container, this.applicationConfig);
+    this.createServer(config);
+    this.selectContextModule();
+  }
+
+  public registerWsAdapter() {
     const ioAdapter = IoAdapter ? new IoAdapter() : null;
     this.applicationConfig.setIoAdapter(ioAdapter);
-    this.microservicesModule.setup(container, this.applicationConfig);
+  }
+
+  public createServer(config: MicroserviceConfiguration) {
     this.microserviceConfig = {
       transport: Transport.TCP,
       ...config,
@@ -58,21 +67,19 @@ export class NestMicroservice extends NestApplicationContext
     this.server = strategy
       ? strategy
       : ServerFactory.create(this.microserviceConfig);
-    
-    this.selectContextModule();
   }
 
-  public setupModules() {
-    this.socketModule && this.socketModule.setup(this.container, this.applicationConfig);
+  public registerModules() {
+    this.socketModule && this.socketModule.register(this.container, this.applicationConfig);
     this.microservicesModule.setupClients(this.container);
 
-    this.setupListeners();
+    this.registerListeners();
     this.setIsInitialized(true);
 
     !this.isInitHookCalled && this.callInitHook();
   }
 
-  public setupListeners() {
+  public registerListeners() {
     this.microservicesModule.setupListeners(this.container, this.server);
   }
 
@@ -102,7 +109,7 @@ export class NestMicroservice extends NestApplicationContext
   }
 
   public listen(callback: () => void) {
-    !this.isInitialized && this.setupModules();
+    !this.isInitialized && this.registerModules();
 
     this.logger.log(messages.MICROSERVICE_READY);
     this.server.listen(callback);

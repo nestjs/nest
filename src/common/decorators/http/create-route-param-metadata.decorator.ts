@@ -1,3 +1,4 @@
+import * as deprecate from 'deprecate';
 import {
   ROUTE_ARGS_METADATA,
   CUSTOM_ROUTE_AGRS_METADATA,
@@ -28,12 +29,12 @@ const randomString = () =>
   Math.random()
     .toString(36)
     .substring(2, 15);
-
+  
 /**
- * Create route params custom decorator
+ * Creates HTTP route param decorator
  * @param factory
  */
-export function createRouteParamDecorator(
+export function createParamDecorator(
   factory: CustomParamFactory,
 ): (data?: any, ...pipes: PipeTransform<any>[]) => ParameterDecorator {
   const paramtype = randomString() + randomString();
@@ -50,4 +51,16 @@ export function createRouteParamDecorator(
       key,
     );
   };
+}
+
+/**
+ * Creates route params custom decorator
+ * @deprecated
+ * @param factory
+ */
+export function createRouteParamDecorator(
+  factory: CustomParamFactory,
+): (data?: any, ...pipes: PipeTransform<any>[]) => ParameterDecorator {
+  deprecate('The "createRouteParamDecorator" function is deprecated and will be removed within next major release. Use "createParamDecorator" instead.')
+  return createParamDecorator(factory);
 }

@@ -1,4 +1,3 @@
-import * as express from 'express';
 import * as optional from 'optional';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { NestApplication, NestApplicationContext } from '@nestjs/core';
@@ -7,25 +6,23 @@ import { INestApplication, INestMicroservice } from '@nestjs/common';
 import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { MicroservicesPackageNotFoundException } from '@nestjs/core/errors/exceptions/microservices-package-not-found.exception';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { HttpServer } from '@nestjs/common';
+import { ExpressFactory } from '@nestjs/core/adapters/express-factory';
 
 const { NestMicroservice } =
   optional('@nestjs/microservices/nest-microservice') || ({} as any);
 
 export class TestingModule extends NestApplicationContext {
-  constructor(
-    container: NestContainer,
-    scope: Type<any>[],
-    contextModule,
-  ) {
+  constructor(container: NestContainer, scope: Type<any>[], contextModule) {
     super(container, scope, contextModule);
   }
 
   public createNestApplication(
-    expressInstance: any = express(),
+    httpServer: HttpServer = ExpressFactory.create(),
   ): INestApplication {
     return new NestApplication(
       this.container,
-      expressInstance,
+      httpServer,
       new ApplicationConfig(),
     );
   }

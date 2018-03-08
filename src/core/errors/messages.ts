@@ -27,4 +27,4 @@ export const INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuratio
 export const UNKNOWN_REQUEST_MAPPING = `Request mapping properties not defined in the @RequestMapping() annotation!`;
 export const UNHANDLED_RUNTIME_EXCEPTION = `Unhandled Runtime Exception.`;
 export const INVALID_EXCEPTION_FILTER = `Invalid exception filters (@UseFilters()).`;
-export const MICROSERVICES_PACKAGE_NOT_FOUND_EXCEPTION = `Unable to load @nestjs/microservices packages (please, make sure whether it's installed already).`;
+export const MICROSERVICES_PACKAGE_NOT_FOUND_EXCEPTION = `Unable to load @nestjs/microservices package (please, make sure whether it's installed already).`;

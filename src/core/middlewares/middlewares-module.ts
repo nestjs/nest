@@ -20,18 +20,20 @@ import { ApplicationConfig } from './../application-config';
 import { RouterExceptionFilters } from './../router/router-exception-filters';
 
 export class MiddlewaresModule {
-  private readonly routesMapper = new RoutesMapper();
   private readonly routerProxy = new RouterProxy();
   private readonly routerMethodFactory = new RouterMethodFactory();
   private routerExceptionFilter: RouterExceptionFilters;
+  private routesMapper: RoutesMapper;
   private resolver: MiddlewaresResolver;
 
-  public async setup(
+  public async register(
     middlewaresContainer: MiddlewaresContainer,
     container: NestContainer,
     config: ApplicationConfig,
   ) {
-    this.routerExceptionFilter = new RouterExceptionFilters(config);
+    const appRef = container.getApplicationRef();
+    this.routerExceptionFilter = new RouterExceptionFilters(config, appRef);
+    this.routesMapper = new RoutesMapper(container);
     this.resolver = new MiddlewaresResolver(middlewaresContainer);
 
     const modules = container.getModules();
@@ -68,7 +70,7 @@ export class MiddlewaresModule {
     middlewaresContainer.addConfig(config, module);
   }
 
-  public async setupMiddlewares(
+  public async registerMiddlewares(
     middlewaresContainer: MiddlewaresContainer,
     app,
   ) {
@@ -77,7 +79,7 @@ export class MiddlewaresModule {
       [...configs.entries()].map(async ([module, moduleConfigs]) => {
         await Promise.all(
           [...moduleConfigs].map(async (config: MiddlewareConfiguration) => {
-            await this.setupMiddlewareConfig(
+            await this.registerMiddlewareConfig(
               middlewaresContainer,
               config,
               module,
@@ -89,7 +91,7 @@ export class MiddlewaresModule {
     );
   }
 
-  public async setupMiddlewareConfig(
+  public async registerMiddlewareConfig(
     middlewaresContainer: MiddlewaresContainer,
     config: MiddlewareConfiguration,
     module: string,
@@ -97,29 +99,25 @@ export class MiddlewaresModule {
   ) {
     const { forRoutes } = config;
     await Promise.all(
-      forRoutes.map(
-        async (route: ControllerMetadata & { method: RequestMethod }) => {
-          await this.setupRouteMiddleware(
-            middlewaresContainer,
-            route,
-            config,
-            module,
-            app,
-          );
-        },
-      ),
+      forRoutes.map(async (routePath: string) => {
+        await this.registerRouteMiddleware(
+          middlewaresContainer,
+          routePath,
+          config,
+          module,
+          app,
+        );
+      }),
     );
   }
 
-  public async setupRouteMiddleware(
+  public async registerRouteMiddleware(
     middlewaresContainer: MiddlewaresContainer,
-    route: ControllerMetadata & { method: RequestMethod },
+    routePath: string,
     config: MiddlewareConfiguration,
     module: string,
     app,
   ) {
-    const { path, method } = route;
-
     const middlewares = [].concat(config.middlewares);
     await Promise.all(
       middlewares.map(async (metatype: Type<NestMiddleware>) => {
@@ -130,7 +128,13 @@ export class MiddlewaresModule {
         }
 
         const { instance } = middleware as MiddlewareWrapper;
-        await this.setupHandler(instance, metatype, app, method, path);
+        await this.setupHandler(
+          instance,
+          metatype,
+          app,
+          RequestMethod.ALL,
+          routePath,
+        );
       }),
     );
   }

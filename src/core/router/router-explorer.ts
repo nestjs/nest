@@ -3,17 +3,15 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
-import { ExpressAdapter } from '../adapters/express-adapter';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { PATH_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
 import { Logger } from '@nestjs/common/services/logger.service';
-import { RouteMappedMessage } from '../helpers/messages';
+import { routeMappedMessage } from '../helpers/messages';
 import { RouterExecutionContext } from './router-execution-context';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
 import { RouteParamsFactory } from './route-params-factory';
-import { RouterExplorer } from './interfaces/explorer.inteface';
 import { MetadataScanner } from '../metadata-scanner';
 import { ApplicationConfig } from './../application-config';
 import { PipesContextCreator } from './../pipes/pipes-context-creator';
@@ -24,18 +22,17 @@ import { GuardsConsumer } from '../guards/guards-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 
-export class ExpressRouterExplorer implements RouterExplorer {
+export class RouterExplorer {
   private readonly executionContextCreator: RouterExecutionContext;
   private readonly routerMethodFactory = new RouterMethodFactory();
-  private readonly logger = new Logger('RouterExplorer', true);
+  private readonly logger = new Logger(RouterExplorer.name, true);
 
   constructor(
-    private readonly metadataScanner?: MetadataScanner,
+    private readonly metadataScanner: MetadataScanner,
+    container: NestContainer,
     private readonly routerProxy?: RouterProxy,
-    private readonly expressAdapter?: ExpressAdapter,
     private readonly exceptionsFilter?: ExceptionsFilter,
     private readonly config?: ApplicationConfig,
-    container?: NestContainer,
   ) {
     this.executionContextCreator = new RouterExecutionContext(
       new RouteParamsFactory(),
@@ -45,6 +42,7 @@ export class ExpressRouterExplorer implements RouterExplorer {
       new GuardsConsumer(),
       new InterceptorsContextCreator(container, config),
       new InterceptorsConsumer(),
+      container.getApplicationRef(),
     );
   }
 
@@ -52,15 +50,20 @@ export class ExpressRouterExplorer implements RouterExplorer {
     instance: Controller,
     metatype: Type<Controller>,
     module: string,
+    appInstance,
+    basePath: string,
   ) {
-    const router = (this.expressAdapter as any).createRouter();
     const routerPaths = this.scanForPaths(instance);
-
-    this.applyPathsToRouterProxy(router, routerPaths, instance, module);
-    return router;
+    this.applyPathsToRouterProxy(
+      appInstance,
+      routerPaths,
+      instance,
+      module,
+      basePath,
+    );
   }
 
-  public fetchRouterPath(
+  public extractRouterPath(
     metatype: Type<Controller>,
     prefix?: string,
   ): string {
@@ -98,7 +101,6 @@ export class ExpressRouterExplorer implements RouterExplorer {
     if (isUndefined(routePath)) {
       return null;
     }
-
     const requestMethod: RequestMethod = Reflect.getMetadata(
       METHOD_METADATA,
       targetCallback,
@@ -116,11 +118,18 @@ export class ExpressRouterExplorer implements RouterExplorer {
     routePaths: RoutePathProperties[],
     instance: Controller,
     module: string,
+    basePath: string,
   ) {
     (routePaths || []).map(pathProperties => {
       const { path, requestMethod } = pathProperties;
-      this.applyCallbackToRouter(router, pathProperties, instance, module);
-      this.logger.log(RouteMappedMessage(path, requestMethod));
+      this.applyCallbackToRouter(
+        router,
+        pathProperties,
+        instance,
+        module,
+        basePath,
+      );
+      this.logger.log(routeMappedMessage(path, requestMethod));
     });
   }
 
@@ -129,12 +138,14 @@ export class ExpressRouterExplorer implements RouterExplorer {
     pathProperties: RoutePathProperties,
     instance: Controller,
     module: string,
+    basePath: string,
   ) {
     const { path, requestMethod, targetCallback, methodName } = pathProperties;
 
     const routerMethod = this.routerMethodFactory
       .get(router, requestMethod)
       .bind(router);
+
     const proxy = this.createCallbackProxy(
       instance,
       targetCallback,
@@ -142,7 +153,10 @@ export class ExpressRouterExplorer implements RouterExplorer {
       module,
       requestMethod,
     );
-    routerMethod(path, proxy);
+    const stripSlash = str =>
+      str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
+    const fullPath = stripSlash(basePath) + path;
+    routerMethod(stripSlash(fullPath) || '/', proxy);
   }
 
   private createCallbackProxy(

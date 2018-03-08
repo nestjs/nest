@@ -23,3 +23,5 @@ export * from './features/execution-context.interface';
 export * from './features/nest-interceptor.interface';
 export * from './features/custom-route-param-factory.interface';
 export * from './modules/dynamic-module.interface';
+export * from './http/http-server.interface';
+export * from './http/http-server-factory.interface';

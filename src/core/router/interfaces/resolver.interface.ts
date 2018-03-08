@@ -1,3 +1,3 @@
 export interface Resolver {
-  resolve(router, express);
+  resolve(instance, basePath: string);
 }

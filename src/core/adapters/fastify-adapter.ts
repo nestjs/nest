@@ -3,12 +3,9 @@ import {
   RequestHandler,
   ErrorHandler,
 } from '@nestjs/common/interfaces';
-import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 
-export class ExpressAdapter implements HttpServer {
-  private readonly isExpress = true;
-
-  constructor(private readonly instance) {}
+export class FastifyAdapter implements HttpServer {
+  constructor(protected readonly instance) {}
 
   use(handler: RequestHandler | ErrorHandler);
   use(path: any, handler: RequestHandler | ErrorHandler);
@@ -67,46 +64,26 @@ export class ExpressAdapter implements HttpServer {
   }
 
   reply(response, body: any, statusCode: number) {
-    const res = response.status(statusCode);
-    if (isNil(body)) {
-      return res.send();
-    }
-    return isObject(body) ? res.json(body) : res.send(String(body));
+    return response.code(statusCode).send(body);
   }
 
   render(response, view: string, options: any) {
-    return response.render(view, options);
+    return response.view(view, options);
   }
 
   setErrorHandler(handler: Function) {
-    return this.use(handler as any);
+    return this.instance.setErrorHandler(handler);
   }
 
   setNotFoundHandler(handler: Function) {
-    return this.use(handler as any);
+    return this.instance.setNotFoundHandler(handler);
   }
 
   getHttpServer() {
-    return this.instance;
+    return this.instance.server;
   }
 
   close() {
     return this.instance.close();
-  }
-
-  set(...args) {
-    return this.instance.set(...args);
-  }
-
-  enable(...args) {
-    return this.instance.set(...args);
-  }
-
-  disable(...args) {
-    return this.instance.set(...args);
-  }
-
-  engine(...args) {
-    return this.instance.set(...args);
   }
 }

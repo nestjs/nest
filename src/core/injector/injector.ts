@@ -65,7 +65,8 @@ export class Injector {
     if (!collection) return null;
 
     const target = collection.get(name);
-    if (target.isResolved || !isNil(target.inject)) return null;
+    if (target.isResolved || !isNil(target.inject) || !metatype.prototype)
+      return null;
 
     collection.set(name, {
       ...collection.get(name),

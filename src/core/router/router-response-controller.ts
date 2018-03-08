@@ -1,19 +1,17 @@
-import { RequestMethod, HttpStatus } from '@nestjs/common';
+import { RequestMethod, HttpStatus, HttpServer } from '@nestjs/common';
 import { isNil, isObject, isFunction } from '@nestjs/common/utils/shared.utils';
 
 export class RouterResponseController {
+  constructor(private readonly applicationRef: HttpServer) {}
+
   public async apply(resultOrDeffered, response, httpStatusCode: number) {
     const result = await this.transformToResult(resultOrDeffered);
-    const res = response.status(httpStatusCode);
-    if (isNil(result)) {
-      return res.send();
-    }
-    return isObject(result) ? res.json(result) : res.send(String(result));
+    return this.applicationRef.reply(response, result, httpStatusCode);
   }
 
   public async render(resultOrDeffered, response, template: string) {
     const result = await this.transformToResult(resultOrDeffered);
-    response.render(template, result);
+    this.applicationRef.render(response, template, result);
   }
 
   public async transformToResult(resultOrDeffered) {

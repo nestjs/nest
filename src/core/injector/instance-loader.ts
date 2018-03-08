@@ -5,7 +5,7 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Module } from './module';
 import { Logger, OnModuleInit } from '@nestjs/common';
-import { ModuleInitMessage } from '../helpers/messages';
+import { moduleInitMessage } from '../helpers/messages';
 import { isUndefined, isNil } from '@nestjs/common/utils/shared.utils';
 
 export class InstanceLoader {
@@ -36,7 +36,7 @@ export class InstanceLoader {
       await this.createInstancesOfRoutes(module);
 
       const { name } = module.metatype;
-      this.logger.log(ModuleInitMessage(name));
+      this.logger.log(moduleInitMessage(name));
     }
   }
 
