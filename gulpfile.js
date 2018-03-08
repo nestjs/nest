@@ -1,6 +1,8 @@
 const gulp = require('gulp');
 const ts = require('gulp-typescript');
 const gulpSequence = require('gulp-sequence');
+const sourcemaps = require('gulp-sourcemaps');
+const clean = require('gulp-clean');
 
 const packages = {
 	common: ts.createProject('src/common/tsconfig.json'),
@@ -23,6 +25,20 @@ gulp.task('default', function() {
 	});
 });
 
+gulp.task('copy:ts', function(){
+    return gulp.src(['src/**/*.ts'])
+        .pipe(gulp.dest('./lib'));
+});
+
+gulp.task('clean:lib', function(){
+    return gulp.src([
+        'lib/**/*.js.map',
+        'lib/**/*.ts',
+        '!lib/**/*.d.ts'
+    ], {read: false})
+        .pipe(clean());
+});
+
 modules.forEach(module => {
 	gulp.task(module, () => {
 		return packages[module]
@@ -32,8 +48,28 @@ modules.forEach(module => {
 	});
 });
 
+modules.forEach(module => {
+    gulp.task(module + ':dev', () => {
+        return packages[module]
+            .src()
+            .pipe(sourcemaps.init())
+            .pipe(packages[module]())
+            .pipe(sourcemaps.mapSources(sourcePath => './' + sourcePath.split('/').pop()))
+            .pipe(sourcemaps.write('.'))
+            .pipe(gulp.dest(`${dist}/${module}`));
+    });
+});
+
 gulp.task('build', function(cb) {
 	gulpSequence('common', modules.filter((module) => module !== 'common'), cb);
+});
+
+gulp.task('build:dev', function(cb) {
+    gulpSequence(
+        'common:dev',
+        modules.filter((module) => module !== 'common').map((module) => module + ':dev'),
+        'copy:ts',
+        cb);
 });
 
 gulp.task('move', function() {
