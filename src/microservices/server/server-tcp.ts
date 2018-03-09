@@ -40,7 +40,10 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     const pattern = JSON.stringify(msg.pattern);
     const status = 'error';
     if (!this.messageHandlers[pattern]) {
-      socket.sendMessage({ status, error: NO_PATTERN_MESSAGE });
+      const errStr = NO_PATTERN_MESSAGE + ` {${pattern}} . server: ${JSON.stringify(this.server.address())}. socket:${socket._socket.remoteAddress}+:${socket._socket.remotePort}`;
+      this.handleError(errStr);
+      socket.sendMessage({ status, err: errStr, response: null });
+      socket.sendMessage({ disposed: true });
       return;
     }
 
