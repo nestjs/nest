@@ -3,7 +3,7 @@ import { Transport } from '@nestjs/microservices';
 import { ApplicationModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice(ApplicationModule);
+  const app = await NestFactory.createMicroservice(ApplicationModule,{port:3006});
   await app.listenAsync();
 
   /** Hybrid application (HTTP + (n)Microservices)
