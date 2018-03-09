@@ -12,6 +12,6 @@
     "deprecate": "1.0.0"
   },
   "peerDependencies": {
-    "reflect-metadata": "0.1.10"
+    "reflect-metadata": "0.1.12"
   }
 }
