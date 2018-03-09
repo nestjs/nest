@@ -24,7 +24,6 @@
     "@nestjs/microservices": "^4.0.0",
     "@nestjs/testing": "^4.0.0",
     "@nestjs/websockets": "^4.0.0",
-    "@types/axios": "^0.14.0",
     "axios": "^0.17.1",
     "class-transformer": "^0.1.8",
     "class-validator": "^0.8.1",
