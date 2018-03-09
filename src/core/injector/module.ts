@@ -136,7 +136,7 @@ export class Module {
       name: EXPRESS_REF,
       metatype: {} as any,
       isResolved: true,
-      instance: applicationRef,
+      instance: applicationRef || {},
     });
   }
 
