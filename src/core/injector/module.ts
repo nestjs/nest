@@ -270,15 +270,18 @@ export class Module {
   public addExportedComponent(
     exportedComponent: ComponentMetatype | string | DynamicModule,
   ) {
+    const addExportedUnit = (token: string) =>
+      this._exports.add(this.validateExportedProvider(token));
+
     if (this.isCustomProvider(exportedComponent as any)) {
       return this.addCustomExportedComponent(exportedComponent as any);
     } else if (isString(exportedComponent)) {
-      return this._exports.add(exportedComponent);
+      return addExportedUnit(exportedComponent);
     } else if (this.isDynamicModule(exportedComponent)) {
       const { module } = exportedComponent;
-      return this._exports.add(module.name);
+      return addExportedUnit(module.name);
     }
-    this._exports.add(exportedComponent.name);
+    addExportedUnit(exportedComponent.name);
   }
 
   public addCustomExportedComponent(
@@ -286,9 +289,26 @@ export class Module {
   ) {
     const provide = exportedComponent.provide;
     if (isString(provide) || isSymbol(provide)) {
-      return this._exports.add(provide);
+      return this._exports.add(this.validateExportedProvider(provide));
     }
-    this._exports.add(provide.name);
+    this._exports.add(this.validateExportedProvider(provide.name));
+  }
+
+  public validateExportedProvider(token: string) {
+    if (this._components.has(token)) {
+      return token;
+    }
+    const relatedModules = [...this._relatedModules.values()];
+    const modulesTokens = relatedModules
+      .map(({ metatype }) => metatype)
+      .filter((metatype) => !!metatype)
+      .map(({ name }) => name);
+  
+    if (modulesTokens.indexOf(token) < 0) {
+      const { name } = this.metatype;
+      throw new UnknownExportException(name);
+    }
+    return token;
   }
 
   public addRoute(route: Metatype<Controller>) {

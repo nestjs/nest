@@ -76,8 +76,8 @@ describe('ClientRedis', () => {
     });
     describe('responseCallback', () => {
       let callback, subscription;
-      const resMsg = {
-        err: 'err',
+      const responseMessage = {
+        err: null,
         response: 'test',
       };
 
@@ -85,10 +85,10 @@ describe('ClientRedis', () => {
         beforeEach(() => {
           callback = sinon.spy();
           subscription = client['sendSingleMessage'](msg, callback);
-          subscription(null, JSON.stringify(resMsg));
+          subscription(null, JSON.stringify(responseMessage));
         });
         it('should call callback with expected arguments', () => {
-          expect(callback.calledWith(resMsg.err, resMsg.response)).to.be.true;
+          expect(callback.calledWith(null, responseMessage.response)).to.be.true;
         });
         it('should not unsubscribe to response pattern name', () => {
           expect(unsubscribeSpy.calledWith(`"${pattern}"_res`)).to.be.false;
@@ -105,7 +105,7 @@ describe('ClientRedis', () => {
         });
         it('should call callback with dispose param', () => {
           expect(callback.called).to.be.true;
-          expect(callback.calledWith(null, null, true)).to.be.true;
+          expect(callback.calledWith(undefined, null, true)).to.be.true;
         });
         it('should unsubscribe to response pattern name', () => {
           expect(unsubscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;

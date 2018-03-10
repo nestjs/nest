@@ -213,6 +213,9 @@ describe('Module', () => {
   });
 
   describe('when exported component is custom provided', () => {
+    beforeEach(() => {
+      sinon.stub(module, 'validateExportedProvider').callsFake(o => o);
+    });
     it('should call `addCustomExportedComponent`', () => {
       const addCustomExportedComponentSpy = sinon.spy(
         module,
@@ -305,6 +308,32 @@ describe('Module', () => {
       });
       it('should return null if not exists', () => {
         expect(moduleRef.get('fail')).to.be.null;
+      });
+    });
+  });
+  describe('validateExportedProvider', () => {
+    const token = 'token';
+
+    describe('when unit exists in component collection', () => {
+      it('should behave as identity', () => {
+        (module as any)._components = new Map([[token, true]]);
+        expect(module.validateExportedProvider(token)).to.be.eql(token);
+      });
+    });
+    describe('when unit exists in related modules collection', () => {
+      it('should behave as identity', () => {
+        const metatype = { name: token };
+        (module as any)._relatedModules = new Set([
+          new Module(metatype as any, [], new NestContainer()),
+        ]);
+        expect(module.validateExportedProvider(token)).to.be.eql(token);
+      });
+    });
+    describe('when unit does not exist in both component and related modules collections', () => {
+      it('should throw UnknownExportException', () => {
+        expect(() => module.validateExportedProvider(token)).to.throws(
+          UnknownExportException,
+        );
       });
     });
   });
