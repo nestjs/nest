@@ -77,13 +77,13 @@ describe('ClientTCP', () => {
       });
       it('should emit disposed callback', () => {
         expect(callback.called).to.be.true;
-        expect(callback.calledWith(null, null, true)).to.be.true;
+        expect(callback.calledWith(undefined, null, true)).to.be.true;
       });
     });
     describe('when not disposed', () => {
       let buffer;
       beforeEach(() => {
-        buffer = { err: 'test', response: 'res' };
+        buffer = { err: null, response: 'res' };
         callback = sinon.spy();
         client.handleResponse(socket, callback, buffer);
       });

@@ -28,8 +28,9 @@ export class ClientRedis extends ClientProxy {
     const pattern = JSON.stringify(msg.pattern);
     const responseCallback = (channel, message) => {
       const { err, response, disposed } = JSON.parse(message);
-      if (disposed) {
-        callback(null, null, true);
+
+      if (disposed || err) {
+        callback(err, null, true);
         this.sub.unsubscribe(this.getResPatternName(pattern));
         this.sub.removeListener(MESSAGE_EVENT, responseCallback);
         return;
