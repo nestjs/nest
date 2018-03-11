@@ -8,6 +8,4 @@
  *
  * @param  {} ...interceptors (types)
  */
-export declare function UseInterceptors(
-  ...interceptors: any[]
-): (target: object, key?: any, descriptor?: any) => any;
+export declare function UseInterceptors(...interceptors: any[]): (target: object, key?: any, descriptor?: any) => any;

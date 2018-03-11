@@ -3,21 +3,17 @@ import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 import { ClientMetadata } from './interfaces/client-metadata.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 export declare class ListenerMetadataExplorer {
-  private readonly metadataScanner;
-  constructor(metadataScanner: MetadataScanner);
-  explore(instance: Controller): PatternProperties[];
-  exploreMethodMetadata(
-    instance: any,
-    instancePrototype: any,
-    methodName: string,
-  ): PatternProperties;
-  scanForClientHooks(instance: Controller): IterableIterator<ClientProperties>;
+    private readonly metadataScanner;
+    constructor(metadataScanner: MetadataScanner);
+    explore(instance: Controller): PatternProperties[];
+    exploreMethodMetadata(instance: any, instancePrototype: any, methodName: string): PatternProperties;
+    scanForClientHooks(instance: Controller): IterableIterator<ClientProperties>;
 }
 export interface ClientProperties {
-  property: string;
-  metadata: ClientMetadata;
+    property: string;
+    metadata: ClientMetadata;
 }
 export interface PatternProperties {
-  pattern: PatternMetadata;
-  targetCallback: (...args) => any;
+    pattern: PatternMetadata;
+    targetCallback: (...args) => any;
 }

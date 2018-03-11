@@ -84,7 +84,6 @@
     "prettier": "^1.9.2",
     "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
-    "supertest": "^3.0.0",
     "ts-node": "^3.2.0"
   },
   "collective": {

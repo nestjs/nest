@@ -1,3 +1,3 @@
 export interface Resolver {
-  resolve(router: any, express: any): any;
+    resolve(router: any, express: any): any;
 }

@@ -1,3 +1,3 @@
 export interface OnModuleDestroy {
-  onModuleDestroy(): any;
+    onModuleDestroy(): any;
 }

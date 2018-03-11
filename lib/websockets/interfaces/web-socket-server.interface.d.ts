@@ -1,4 +1,4 @@
 export interface WebSocketServerData {
-  port: number;
-  namespace: string;
+    port: number;
+    namespace: string;
 }
