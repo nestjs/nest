@@ -116,7 +116,7 @@ export class NestMicroservice extends NestApplicationContext
   }
 
   public async listenAsync(): Promise<any> {
-    return await new Promise((resolve) => this.listen(resolve));
+    return await new Promise(resolve => this.listen(resolve));
   }
 
   public close() {

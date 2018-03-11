@@ -20,6 +20,7 @@ export class TestingModule extends NestApplicationContext {
   public createNestApplication(
     httpServer: HttpServer = ExpressFactory.create(),
   ): INestApplication {
+    this.container.setApplicationRef(httpServer);
     return new NestApplication(
       this.container,
       httpServer,

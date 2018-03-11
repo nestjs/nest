@@ -16,7 +16,7 @@ describe('MetadataScanner', () => {
       }
       set valParent(value) {}
     }
-    
+
     class Test extends Parent {
       constructor() {
         super();

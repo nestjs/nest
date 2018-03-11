@@ -60,8 +60,8 @@ export class ClientTCP extends ClientProxy {
     context: Function,
   ) {
     const { err, response, disposed } = buffer;
-    if (disposed) {
-      callback(null, null, true);
+    if (disposed || err) {
+      callback(err, null, true);
       return socket._socket.removeListener(MESSAGE_EVENT, context);
     }
     callback(err, response);

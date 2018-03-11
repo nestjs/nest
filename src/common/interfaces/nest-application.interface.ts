@@ -69,7 +69,11 @@ export interface INestApplication extends INestApplicationContext {
    * @returns Promise
    */
   listen(port: number | string, callback?: () => void): Promise<any>;
-  listen(port: number | string, hostname: string, callback?: () => void): Promise<any>;
+  listen(
+    port: number | string,
+    hostname: string,
+    callback?: () => void,
+  ): Promise<any>;
 
   /**
    * Starts the application and can be awaited.

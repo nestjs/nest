@@ -1,6 +1,13 @@
 ## 4.6.6
 ### Bug Fixes:
 - **common**: `File(s)Interceptor` throws http status code 500 [#465](https://github.com/nestjs/nest/issues/437)
+- **core**: e2e testing, `EXPRESS_REF` injector issue [#484](https://github.com/nestjs/nest/issues/484)
+- **microservices**: `NO_PATTERN_MESSAGE` bugfix [#491](https://github.com/nestjs/nest/issues/491)
+
+### Improvements:
+- **common**: `class-transformer` update [#483](https://github.com/nestjs/nest/pull/483/)
+- **common**: `HttpService` improvements, remove duplicated `axios` interfaces [#470](https://github.com/nestjs/nest/pull/470)
+- **core**: far more meaningful exception when not available component is exported (module inconsistency) [#479](https://github.com/nestjs/nest/issues/479)
 
 ## 4.6.5
 ### Bug Fixes

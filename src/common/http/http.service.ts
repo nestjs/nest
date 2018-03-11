@@ -1,16 +1,12 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Observable } from 'rxjs/Observable';
-import {
-  AxiosRequestConfig,
-  AxiosResponse,
-} from './interfaces/axios.interfaces';
 import { fromPromise } from 'rxjs/observable/fromPromise';
 
 export class HttpService {
   request<T = any>(config: AxiosRequestConfig): Observable<AxiosResponse<T>> {
     return fromPromise(axios.request<T>(config));
   }
-  
+
   get<T = any>(
     url: string,
     config?: AxiosRequestConfig,

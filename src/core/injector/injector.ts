@@ -353,10 +353,12 @@ export class Injector {
       modules.map((module: Module) => {
         const { relatedModules, exports } = module;
         return this.flatMap(
-          [...relatedModules.values()].filter(related => {
-            const { metatype } = related;
-            return exports.has(metatype.name);
-          }),
+          [...relatedModules.values()]
+            .filter(related => !!related)
+            .filter(related => {
+              const { metatype } = related;
+              return exports.has(metatype.name);
+            }),
         );
       }),
     );
