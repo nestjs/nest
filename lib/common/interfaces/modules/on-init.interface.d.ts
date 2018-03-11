@@ -1,3 +1,3 @@
 export interface OnModuleInit {
-    onModuleInit(): any;
+  onModuleInit(): any;
 }

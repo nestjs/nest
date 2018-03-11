@@ -94,10 +94,10 @@ export class RoutesResolver implements Resolver {
 
   public mapExternalException(err: any) {
     switch (true) {
-      case (err instanceof SyntaxError): 
+      case err instanceof SyntaxError:
         return new BadRequestException(err.message);
-      default: 
-        return err; 
+      default:
+        return err;
     }
   }
 }

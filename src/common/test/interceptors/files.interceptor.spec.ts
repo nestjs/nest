@@ -17,10 +17,12 @@ describe('FilesInterceptor', () => {
     it('should call array() with expected params', async () => {
       const fieldName = 'file';
       const maxCount = 10;
-      const target = new (FilesInterceptor(fieldName, maxCount));
+      const target = new (FilesInterceptor(fieldName, maxCount))();
 
       const callback = (req, res, next) => next();
-      const arraySpy = sinon.stub((target as any).upload, 'array').returns(callback);
+      const arraySpy = sinon
+        .stub((target as any).upload, 'array')
+        .returns(callback);
 
       await target.intercept({}, null, stream$);
 

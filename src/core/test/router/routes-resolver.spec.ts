@@ -70,7 +70,10 @@ describe('RoutesResolver', () => {
       const spy = sinon
         .stub(routesResolver, 'setupRouters')
         .callsFake(() => undefined);
-      routesResolver.resolve({ use: sinon.spy() } as any, { use: sinon.spy() } as any);
+      routesResolver.resolve(
+        { use: sinon.spy() } as any,
+        { use: sinon.spy() } as any,
+      );
       expect(spy.calledTwice).to.be.true;
     });
   });

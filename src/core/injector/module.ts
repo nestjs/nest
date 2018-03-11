@@ -301,9 +301,9 @@ export class Module {
     const relatedModules = [...this._relatedModules.values()];
     const modulesTokens = relatedModules
       .map(({ metatype }) => metatype)
-      .filter((metatype) => !!metatype)
+      .filter(metatype => !!metatype)
       .map(({ name }) => name);
-  
+
     if (modulesTokens.indexOf(token) < 0) {
       const { name } = this.metatype;
       throw new UnknownExportException(name);

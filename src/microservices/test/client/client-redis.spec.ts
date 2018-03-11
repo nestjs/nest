@@ -88,7 +88,8 @@ describe('ClientRedis', () => {
           subscription(null, JSON.stringify(responseMessage));
         });
         it('should call callback with expected arguments', () => {
-          expect(callback.calledWith(null, responseMessage.response)).to.be.true;
+          expect(callback.calledWith(null, responseMessage.response)).to.be
+            .true;
         });
         it('should not unsubscribe to response pattern name', () => {
           expect(unsubscribeSpy.calledWith(`"${pattern}"_res`)).to.be.false;

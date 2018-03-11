@@ -8,5 +8,5 @@ export enum RouteParamtypes {
   HEADERS,
   SESSION,
   FILE,
-  FILES
+  FILES,
 }

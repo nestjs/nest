@@ -10,27 +10,53 @@ import { MetadataScanner } from '../metadata-scanner';
 import { ApplicationConfig } from './../application-config';
 import { NestContainer } from '../injector/container';
 export declare class ExpressRouterExplorer implements RouterExplorer {
-    private readonly metadataScanner;
-    private readonly routerProxy;
-    private readonly expressAdapter;
-    private readonly exceptionsFilter;
-    private readonly config;
-    private readonly executionContextCreator;
-    private readonly routerMethodFactory;
-    private readonly logger;
-    constructor(metadataScanner?: MetadataScanner, routerProxy?: RouterProxy, expressAdapter?: ExpressAdapter, exceptionsFilter?: ExceptionsFilter, config?: ApplicationConfig, container?: NestContainer);
-    explore(instance: Controller, metatype: Metatype<Controller>, module: string): any;
-    fetchRouterPath(metatype: Metatype<Controller>, prefix?: string): string;
-    validateRoutePath(path: string): string;
-    scanForPaths(instance: Controller, prototype?: any): RoutePathProperties[];
-    exploreMethodMetadata(instance: Controller, instancePrototype: any, methodName: string): RoutePathProperties;
-    applyPathsToRouterProxy(router: any, routePaths: RoutePathProperties[], instance: Controller, module: string): void;
-    private applyCallbackToRouter(router, pathProperties, instance, module);
-    private createCallbackProxy(instance, callback, methodName, module, requestMethod);
+  private readonly metadataScanner;
+  private readonly routerProxy;
+  private readonly expressAdapter;
+  private readonly exceptionsFilter;
+  private readonly config;
+  private readonly executionContextCreator;
+  private readonly routerMethodFactory;
+  private readonly logger;
+  constructor(
+    metadataScanner?: MetadataScanner,
+    routerProxy?: RouterProxy,
+    expressAdapter?: ExpressAdapter,
+    exceptionsFilter?: ExceptionsFilter,
+    config?: ApplicationConfig,
+    container?: NestContainer,
+  );
+  explore(
+    instance: Controller,
+    metatype: Metatype<Controller>,
+    module: string,
+  ): any;
+  fetchRouterPath(metatype: Metatype<Controller>, prefix?: string): string;
+  validateRoutePath(path: string): string;
+  scanForPaths(instance: Controller, prototype?: any): RoutePathProperties[];
+  exploreMethodMetadata(
+    instance: Controller,
+    instancePrototype: any,
+    methodName: string,
+  ): RoutePathProperties;
+  applyPathsToRouterProxy(
+    router: any,
+    routePaths: RoutePathProperties[],
+    instance: Controller,
+    module: string,
+  ): void;
+  private applyCallbackToRouter(router, pathProperties, instance, module);
+  private createCallbackProxy(
+    instance,
+    callback,
+    methodName,
+    module,
+    requestMethod,
+  );
 }
 export interface RoutePathProperties {
-    path: string;
-    requestMethod: RequestMethod;
-    targetCallback: RouterProxyCallback;
-    methodName: string;
+  path: string;
+  requestMethod: RequestMethod;
+  targetCallback: RouterProxyCallback;
+  methodName: string;
 }

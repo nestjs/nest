@@ -1,2 +1,1 @@
-export declare class HttpModule {
-}
+export declare class HttpModule {}

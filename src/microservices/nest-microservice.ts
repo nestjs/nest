@@ -46,7 +46,7 @@ export class NestMicroservice extends NestApplicationContext
     private readonly applicationConfig: ApplicationConfig,
   ) {
     super(container, [], null);
-  
+
     const ioAdapter = IoAdapter ? new IoAdapter() : null;
     this.applicationConfig.setIoAdapter(ioAdapter);
     this.microservicesModule.setup(container, this.applicationConfig);
@@ -58,12 +58,13 @@ export class NestMicroservice extends NestApplicationContext
     this.server = strategy
       ? strategy
       : ServerFactory.create(this.microserviceConfig);
-    
+
     this.selectContextModule();
   }
 
   public setupModules() {
-    this.socketModule && this.socketModule.setup(this.container, this.applicationConfig);
+    this.socketModule &&
+      this.socketModule.setup(this.container, this.applicationConfig);
     this.microservicesModule.setupClients(this.container);
 
     this.setupListeners();
@@ -109,7 +110,7 @@ export class NestMicroservice extends NestApplicationContext
   }
 
   public async listenAsync(): Promise<any> {
-    return await new Promise((resolve) => this.listen(resolve));
+    return await new Promise(resolve => this.listen(resolve));
   }
 
   public close() {
