@@ -22,7 +22,7 @@ gulp.task('default', function() {
   modules.forEach(module => {
     gulp.watch(
       [`${source}/${module}/**/*.ts`, `${source}/${module}/*.ts`],
-      [module],
+      [module]
     );
   });
 });
@@ -53,7 +53,7 @@ modules.forEach(module => {
       .pipe(sourcemaps.init())
       .pipe(packages[module]())
       .pipe(
-        sourcemaps.mapSources(sourcePath => './' + sourcePath.split('/').pop()),
+        sourcemaps.mapSources(sourcePath => './' + sourcePath.split('/').pop())
       )
       .pipe(sourcemaps.write('.'))
       .pipe(gulp.dest(`${dist}/${module}`));
@@ -71,7 +71,7 @@ gulp.task('build:dev', function(cb) {
       .filter(module => module !== 'common')
       .map(module => module + ':dev'),
     'copy:ts',
-    cb,
+    cb
   );
 });
 
