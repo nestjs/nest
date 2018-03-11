@@ -36,11 +36,16 @@
 
 To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
 
-## Sponsors
+## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://opencollective.com/nest).
 
-<a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="210" /></a> &nbsp; &nbsp; <a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.png" width="160" /></a>
+#### Principal Sponsor
+
+<a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="210" /></a> 
+
+#### Sponsors
+<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.svg" width="160" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="160" /></a>
 
 ## Backers 
 
@@ -86,11 +91,14 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://opencollective.com/nest/backer/39/website" target="_blank"><img src="https://opencollective.com/nest/backer/39/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/40/website" target="_blank"><img src="https://opencollective.com/nest/backer/40/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/41/website" target="_blank"><img src="https://opencollective.com/nest/backer/41/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/42/website" target="_blank"><img src="https://opencollective.com/nest/backer/42/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/43/website" target="_blank"><img src="https://opencollective.com/nest/backer/43/avatar.svg"></a>
 
-## People
+## Stay in touch
 
 - Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
 - Website - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
 
 ## License
 

@@ -55,6 +55,7 @@ export declare class Module {
     addCustomFactory(component: CustomFactory, collection: Map<string, any>): void;
     addExportedComponent(exportedComponent: ComponentMetatype | string | DynamicModule): Set<string>;
     addCustomExportedComponent(exportedComponent: CustomFactory | CustomValue | CustomClass): Set<string>;
+    validateExportedProvider(token: string): string;
     addRoute(route: Metatype<Controller>): void;
     addRelatedModule(relatedModule: any): void;
     replace(toReplace: any, options: any): string;

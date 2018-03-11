@@ -27,7 +27,7 @@ export class RouteParamsFactory implements IRouteParamsFactory {
       case RouteParamtypes.FILE:
         return req.file;
       case RouteParamtypes.FILES:
-        return req.files; 
+        return req.files;
       default:
         return null;
     }

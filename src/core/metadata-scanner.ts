@@ -28,7 +28,7 @@ export class MetadataScanner {
           }
           return !isConstructor(prop) && isFunction(prototype[prop]);
         })
-        .toArray()
+        .toArray();
     } while (
       (prototype = Reflect.getPrototypeOf(prototype)) &&
       prototype != Object.prototype

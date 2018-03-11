@@ -106,10 +106,7 @@ describe('RouteParamsFactory', () => {
       describe(`RouteParamtypes.FILE`, () => {
         it('should returns file object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(
-              RouteParamtypes.FILE,
-              ...args,
-            ),
+            (factory as any).exchangeKeyForValue(RouteParamtypes.FILE, ...args),
           ).to.be.eql(req.file);
         });
       });

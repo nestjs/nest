@@ -4,7 +4,11 @@ import { Observable } from 'rxjs/Observable';
 import { MulterOptions } from '../interfaces/external/multer-options.interface';
 import { transformException } from './multer/multer.utils';
 
-export function FilesInterceptor(fieldName: string, maxCount?: number, options?: MulterOptions) {
+export function FilesInterceptor(
+  fieldName: string,
+  maxCount?: number,
+  options?: MulterOptions,
+) {
   const Interceptor = class implements NestInterceptor {
     readonly upload = multer(options);
 

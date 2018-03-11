@@ -33,7 +33,9 @@ export class ValidationPipe implements PipeTransform<any> {
     }
     return this.isTransformEnabled
       ? entity
-      : Object.keys(this.validatorOptions).length > 0 ? classToPlain(entity) : value;
+      : Object.keys(this.validatorOptions).length > 0
+        ? classToPlain(entity)
+        : value;
   }
 
   private toValidate(metadata: ArgumentMetadata): boolean {

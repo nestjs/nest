@@ -36,7 +36,7 @@ export class ApplicationConfig implements ConfigurationProvider {
   public addGlobalPipe(pipe: PipeTransform<any>) {
     this.globalPipes.push(pipe);
   }
-  
+
   public useGlobalPipes(...pipes: PipeTransform<any>[]) {
     this.globalPipes = this.globalPipes.concat(pipes);
   }
