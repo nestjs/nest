@@ -51,7 +51,6 @@
     "rxjs-grpc": "^0.1.6",
     "socket.io": "^2.0.3",
     "trouter": "^1.0.0",
-    "turbo-http": "^0.1.1",
     "typescript": "^2.4.1"
   },
   "devDependencies": {
