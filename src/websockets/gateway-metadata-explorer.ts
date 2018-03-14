@@ -70,4 +70,7 @@ export class GatewayMetadataExplorer {
 export interface MessageMappingProperties {
   message: string;
   callback: (...args) => Observable<any> | Promise<any> | void;
+
+  // allow any number of additional properties for metadata
+  [key: string]: any;
 }
