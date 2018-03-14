@@ -26,5 +26,17 @@ describe('FileInterceptor', () => {
       expect(singleSpy.called).to.be.true;
       expect(singleSpy.calledWith(fieldName)).to.be.true;
     });
+    it('should transform exception', async () => {
+      const fieldName = 'file';
+      const target = new (FileInterceptor(fieldName));
+      const err = {};
+      const callback = (req, res, next) => next(err);
+
+      (target as any).upload = {
+        single: () => callback,
+      };
+      const req = {};
+      expect(target.intercept(req, null, stream$)).to.eventually.throw();
+    });
   });
 });
