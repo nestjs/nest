@@ -10,18 +10,10 @@ export declare class RoutesResolver implements Resolver {
     private readonly routerProxy;
     private readonly routerExceptionsFilter;
     private readonly routerBuilder;
-<<<<<<< HEAD
     constructor(container: NestContainer, config: ApplicationConfig);
     resolve(appInstance: any, basePath: string): void;
     registerRouters(routes: Map<string, InstanceWrapper<Controller>>, moduleName: string, basePath: string, appInstance: HttpServer): void;
     registerNotFoundHandler(): void;
     registerExceptionHandler(): void;
-=======
-    constructor(container: NestContainer, expressAdapter: any, config: ApplicationConfig);
-    resolve(router: any, express: Application): void;
-    setupRouters(routes: Map<string, InstanceWrapper<Controller>>, moduleName: string, modulePath: string, express: Application): void;
-    setupNotFoundHandler(express: Application): void;
-    setupExceptionHandler(express: Application): void;
->>>>>>> master
     mapExternalException(err: any): any;
 }

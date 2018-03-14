@@ -24,6 +24,9 @@ import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-ap
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { ApplicationConfig } from './application-config';
 import { ExpressAdapter } from './adapters/express-adapter';
+import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
+import { FastifyAdapter } from './adapters/fastify-adapter';
+import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 
 const { NestMicroservice } =
   optional('@nestjs/microservices/nest-microservice') || ({} as any);
@@ -34,21 +37,30 @@ export class NestFactoryStatic {
    * Creates an instance of the NestApplication (returns Promise)
    * @returns an `Promise` of the INestApplication instance
    */
-  public async create(module: any): Promise<INestApplication>;
+  public async create(
+    module: any,
+  ): Promise<INestApplication & INestExpressApplication>;
   public async create(
     module: any,
     options: NestApplicationOptions,
-  ): Promise<INestApplication>;
+  ): Promise<INestApplication & INestExpressApplication>;
   public async create(
     module: any,
-    httpServer: HttpServer | any,
+    httpServer: FastifyAdapter,
     options?: NestApplicationOptions,
-  ): Promise<INestApplication>;
+  ): Promise<INestApplication & INestFastifyApplication>;
+  public async create(
+    module: any,
+    httpServer: HttpServer,
+    options?: NestApplicationOptions,
+  ): Promise<INestApplication & INestExpressApplication>;
   public async create(
     module: any,
     serverOrOptions?: any,
     options?: NestApplicationOptions,
-  ): Promise<INestApplication> {
+  ): Promise<
+    INestApplication & (INestExpressApplication | INestFastifyApplication)
+  > {
     const isHttpServer = serverOrOptions && serverOrOptions.patch;
     let [httpServer, appOptions] = isHttpServer
       ? [serverOrOptions, options]
@@ -57,7 +69,7 @@ export class NestFactoryStatic {
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
     httpServer = this.applyExpressAdapter(httpServer);
-  
+
     this.applyLogger(appOptions);
     await this.initialize(module, container, applicationConfig, httpServer);
     return this.createNestInstance<NestApplication>(

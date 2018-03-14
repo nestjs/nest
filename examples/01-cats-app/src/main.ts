@@ -5,7 +5,7 @@ import { FastifyAdapter } from '@nestjs/core/adapters/fastify-adapter';
 import * as fastify from 'fastify';
 
 async function bootstrap() {
-  const app = await NestFactory.create(ApplicationModule, new FastifyAdapter(fastify()));
+  const app = await NestFactory.create(ApplicationModule);
   app.useGlobalPipes(new ValidationPipe());
   await app.listen(3000);
 }

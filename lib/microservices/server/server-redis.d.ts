@@ -14,8 +14,8 @@ export declare class ServerRedis extends Server implements CustomTransportStrate
     bindEvents(subClient: redis.RedisClient, pubClient: redis.RedisClient): void;
     close(): void;
     createRedisClient(): redis.RedisClient;
-    getMessageHandler(pub: any): (channel: any, buffer: any) => Promise<void>;
-    handleMessage(channel: any, buffer: any, pub: any): Promise<void>;
+    getMessageHandler(pub: any): (channel: any, buffer: any) => Promise<any>;
+    handleMessage(channel: any, buffer: any, pub: any): Promise<any>;
     getPublisher(pub: any, pattern: any): (respond: any) => any;
     tryParse(content: any): any;
     getAckQueueName(pattern: any): string;

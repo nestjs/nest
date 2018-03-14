@@ -8,4 +8,5 @@ export declare class TestingModule extends NestApplicationContext {
     constructor(container: NestContainer, scope: Type<any>[], contextModule: any);
     createNestApplication(httpServer?: HttpServer): INestApplication;
     createNestMicroservice(config: MicroserviceConfiguration): INestMicroservice;
+    private applyExpressAdapter(httpAdapter);
 }

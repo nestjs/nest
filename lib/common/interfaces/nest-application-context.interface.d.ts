@@ -9,14 +9,10 @@ export interface INestApplicationContext {
      * Retrieves an instance of either injectable or controller available inside the processed module, otherwise, returns null.
      * @returns T
      */
-<<<<<<< HEAD
     get<T>(typeOrToken: Type<T> | string | symbol): T | null;
     /**
      * Retrieves an instance of either injectable or controller available inside any module, otherwise, returns null.
      * @returns T
      */
     find<T>(typeOrToken: Type<T> | string | symbol): T | null;
-=======
-    get<T>(metatypeOrToken: Metatype<T> | string | symbol): T;
->>>>>>> master
 }

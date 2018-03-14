@@ -41,6 +41,9 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { HttpServer } from '@nestjs/common/interfaces';
 import { ExpressAdapter } from './adapters/express-adapter';
+import { FastifyAdapter } from './adapters/fastify-adapter';
+import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
+import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
@@ -52,7 +55,10 @@ const { IoAdapter } =
   optional('@nestjs/websockets/adapters/io-adapter') || ({} as any);
 
 export class NestApplication extends NestApplicationContext
-  implements INestApplication {
+  implements
+    INestApplication,
+    INestExpressApplication,
+    INestFastifyApplication {
   private readonly logger = new Logger(NestApplication.name, true);
   private readonly middlewaresModule = new MiddlewaresModule();
   private readonly middlewaresContainer = new MiddlewaresContainer();
@@ -255,6 +261,12 @@ export class NestApplication extends NestApplicationContext
       return this;
     }
     (this.httpAdapter as ExpressAdapter).enable(...args);
+    return this;
+  }
+
+  public register(...args): this {
+    const adapter = this.httpAdapter as FastifyAdapter;
+    adapter.register && adapter.register(...args);
     return this;
   }
 

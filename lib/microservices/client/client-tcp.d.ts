@@ -8,17 +8,10 @@ export declare class ClientTCP extends ClientProxy {
     private isConnected;
     private socket;
     constructor({port, host}: ClientMetadata);
-<<<<<<< HEAD
     init(callback: (...args) => any): Promise<JsonSocket>;
     protected sendMessage(msg: any, callback: (...args) => any): Promise<void>;
     handleResponse(socket: JsonSocket, callback: (...args) => any, buffer: any, context: Function): any;
     createSocket(): JsonSocket;
-=======
-    init(callback: (...args) => any): Promise<{}>;
-    protected sendSingleMessage(msg: any, callback: (...args) => any): Promise<void>;
-    handleResponse(socket: any, callback: (...args) => any, buffer: any): any;
-    createSocket(): any;
->>>>>>> master
     close(): void;
     bindEvents(socket: JsonSocket, callback: (...args) => any): void;
     handleError(err: any, callback: (...args) => any): void;
