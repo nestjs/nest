@@ -5,10 +5,12 @@ import { WebSocketServer } from '../utils/gateway-server.decorator';
 import { SubscribeMessage } from '../utils/subscribe-message.decorator';
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
 import { MetadataScanner } from '../../core/metadata-scanner';
+import { ExtraMessage } from './fixtures/extra-message.decorator';
 
 describe('GatewayMetadataExplorer', () => {
   const message = 'test';
   const secMessage = 'test2';
+  const extra = 'hotness';
 
   @WebSocketGateway()
   class Test {
@@ -27,6 +29,9 @@ describe('GatewayMetadataExplorer', () => {
 
     @SubscribeMessage({ value: secMessage })
     public testSec() {}
+
+    @ExtraMessage({ value: secMessage }, extra)
+    public testExtra() {}
 
     public noMessage() {}
   }
@@ -64,6 +69,12 @@ describe('GatewayMetadataExplorer', () => {
       const metadata = instance.exploreMethodMetadata(test, 'test');
       expect(metadata).to.have.keys(['callback', 'message']);
       expect(metadata.message).to.eql(message);
+    });
+    it(`should return extra metadata for compatible decorators`, () => {
+      const metadata = instance.exploreMethodMetadata(test, 'testExtra');
+      expect(metadata).to.have.keys(['callback', 'message', 'extra']);
+      expect(metadata.message).to.eql(message);
+      expect(metadata.extra).to.eql(extra);
     });
   });
   describe('scanForServerHooks', () => {
