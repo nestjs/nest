@@ -30,7 +30,7 @@ describe('GatewayMetadataExplorer', () => {
     @SubscribeMessage({ value: secMessage })
     public testSec() {}
 
-    @ExtraMessage({ value: secMessage }, extra)
+    @ExtraMessage(message, extra)
     public testExtra() {}
 
     public noMessage() {}
