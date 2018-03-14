@@ -9,6 +9,7 @@ import 'rxjs/add/operator/filter';
 
 export class WsAdapter implements WebSocketAdapter {
   public create(port: number) {
+    console.log(port);
     return new WebSocket.Server({ port });
   }
 
