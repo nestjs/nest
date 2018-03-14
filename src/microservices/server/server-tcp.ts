@@ -40,9 +40,9 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   public async handleMessage(socket, msg: { pattern: any; data: {} }) {
     const pattern = JSON.stringify(msg.pattern);
     const status = 'error';
+
     if (!this.messageHandlers[pattern]) {
-      socket.sendMessage({ status, error: NO_PATTERN_MESSAGE });
-      return;
+      return socket.sendMessage({ status, err: NO_PATTERN_MESSAGE });
     }
     const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(

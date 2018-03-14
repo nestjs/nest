@@ -336,7 +336,7 @@ describe('RouterExecutionContext', () => {
         const template = 'template';
         const value = 'test';
         const response = { render: sinon.spy() };
-        
+
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
         const handler = contextCreator.createHandleResponseFn(null, true, 100);
         handler(value, response);
@@ -348,7 +348,7 @@ describe('RouterExecutionContext', () => {
       it('should not call "res.render()"', () => {
         const result = Promise.resolve('test');
         const response = { render: sinon.spy() };
-        
+
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
         const handler = contextCreator.createHandleResponseFn(null, true, 100);
         handler(result, response);

@@ -4,12 +4,12 @@ export interface ErrorHandler {
   (
     error: any,
     req: Partial<IncomingMessage>,
-    res: ServerResponse,
-    next: Function,
+    res: ServerResponse | any,
+    next?: Function,
   ): any;
 }
 export interface RequestHandler {
-  (req: Partial<IncomingMessage>, res: ServerResponse, next: Function): any;
+  (req: Partial<IncomingMessage>, res: ServerResponse | any, next?: Function): any;
 }
 
 export interface HttpServer {

@@ -23,6 +23,7 @@ import { HttpsOptions } from '@nestjs/common/interfaces/external/https-options.i
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { ApplicationConfig } from './application-config';
+import { ExpressAdapter } from './adapters/express-adapter';
 
 const { NestMicroservice } =
   optional('@nestjs/microservices/nest-microservice') || ({} as any);
@@ -40,7 +41,7 @@ export class NestFactoryStatic {
   ): Promise<INestApplication>;
   public async create(
     module: any,
-    httpServer: HttpServer,
+    httpServer: HttpServer | any,
     options?: NestApplicationOptions,
   ): Promise<INestApplication>;
   public async create(
@@ -49,27 +50,18 @@ export class NestFactoryStatic {
     options?: NestApplicationOptions,
   ): Promise<INestApplication> {
     const isHttpServer = serverOrOptions && serverOrOptions.patch;
-    const [httpServer, appOptions] = isHttpServer
+    let [httpServer, appOptions] = isHttpServer
       ? [serverOrOptions, options]
       : [ExpressFactory.create(), serverOrOptions];
 
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
-
+    httpServer = this.applyExpressAdapter(httpServer);
+  
     this.applyLogger(appOptions);
-    await this.initialize(
-      module,
-      container,
-      applicationConfig,
-      httpServer,
-    );
+    await this.initialize(module, container, applicationConfig, httpServer);
     return this.createNestInstance<NestApplication>(
-      new NestApplication(
-        container,
-        httpServer,
-        applicationConfig,
-        appOptions,
-      ),
+      new NestApplication(container, httpServer, applicationConfig, appOptions),
     );
   }
 
@@ -179,6 +171,14 @@ export class NestFactoryStatic {
       return;
     }
     Logger.overrideLogger(options.logger);
+  }
+
+  private applyExpressAdapter(httpAdapter: HttpServer): HttpServer {
+    const isAdapter = !!httpAdapter.getHttpServer;
+    if (isAdapter) {
+      return httpAdapter;
+    }
+    return new ExpressAdapter(httpAdapter);
   }
 }
 

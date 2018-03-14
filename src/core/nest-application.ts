@@ -39,6 +39,8 @@ import { NestApplicationContext } from './nest-application-context';
 import { HttpsOptions } from '@nestjs/common/interfaces/external/https-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { HttpServer } from '@nestjs/common/interfaces';
+import { ExpressAdapter } from './adapters/express-adapter';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
@@ -65,7 +67,7 @@ export class NestApplication extends NestApplicationContext
 
   constructor(
     container: NestContainer,
-    private readonly httpAdapter: any,
+    private httpAdapter: HttpServer,
     private readonly config: ApplicationConfig,
     private readonly appOptions: NestApplicationOptions = {},
   ) {
@@ -74,6 +76,7 @@ export class NestApplication extends NestApplicationContext
     this.applyOptions();
     this.selectContextModule();
     this.registerHttpServer();
+
     this.routesResolver = new RoutesResolver(this.container, this.config);
   }
 
@@ -98,17 +101,22 @@ export class NestApplication extends NestApplicationContext
 
   public createServer(): any {
     const isHttpsEnabled = this.appOptions && this.appOptions.httpsOptions;
-    if (isHttpsEnabled && this.httpAdapter.isExpress) {
-      return https.createServer(this.appOptions.httpsOptions, this.httpAdapter);
+    const isExpress = this.isExpress();
+
+    if (isHttpsEnabled && isExpress) {
+      return https.createServer(
+        this.appOptions.httpsOptions,
+        this.httpAdapter.getHttpServer(),
+      );
     }
-    if (this.httpAdapter.isExpress) {
+    if (isExpress) {
       return http.createServer(this.httpAdapter.getHttpServer());
     }
     return this.httpAdapter;
   }
 
   public getUnderlyingHttpServer(): any {
-    return this.httpAdapter.isExpress
+    return this.isExpress()
       ? this.httpServer
       : this.httpAdapter.getHttpServer();
   }
@@ -143,7 +151,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public registerParserMiddlewares() {
-    if (!this.httpAdapter.isExpress) {
+    if (!this.isExpress()) {
       return void 0;
     }
     const parserMiddlewares = {
@@ -155,7 +163,8 @@ export class NestApplication extends NestApplicationContext
       .forEach(parserKey => this.httpAdapter.use(parserMiddlewares[parserKey]));
   }
 
-  public isMiddlewareApplied(app, name: string): boolean {
+  public isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean {
+    const app = this.httpAdapter.getHttpServer();
     return (
       !!app._router &&
       !!app._router.stack &&
@@ -185,7 +194,7 @@ export class NestApplication extends NestApplicationContext
       config as any,
       applicationConfig,
     );
-    instance.setupListeners();
+    instance.registerListeners();
     instance.setIsInitialized(true);
     instance.setIsInitHookCalled(true);
 
@@ -212,28 +221,40 @@ export class NestApplication extends NestApplicationContext
     return new Promise(resolve => this.startAllMicroservices(resolve));
   }
 
-  public use(...args): this {
-    this.httpAdapter.use(...args);
+  public use(...args: any[]): this {
+    (this.httpAdapter as any).use(...args);
     return this;
   }
 
   public engine(...args): this {
-    this.httpAdapter.engine && this.httpAdapter.engine(...args);
+    if (!this.isExpress()) {
+      return this;
+    }
+    (this.httpAdapter as ExpressAdapter).engine(...args);
     return this;
   }
 
   public set(...args): this {
-    this.httpAdapter.set && this.httpAdapter.set(...args);
+    if (!this.isExpress()) {
+      return this;
+    }
+    (this.httpAdapter as ExpressAdapter).set(...args);
     return this;
   }
 
   public disable(...args): this {
-    this.httpAdapter.disable && this.httpAdapter.disable(...args);
+    if (!this.isExpress()) {
+      return this;
+    }
+    (this.httpAdapter as ExpressAdapter).disable(...args);
     return this;
   }
 
   public enable(...args): this {
-    this.httpAdapter.enable && this.httpAdapter.enable(...args);
+    if (!this.isExpress()) {
+      return this;
+    }
+    (this.httpAdapter as ExpressAdapter).enable(...args);
     return this;
   }
 
@@ -306,6 +327,14 @@ export class NestApplication extends NestApplicationContext
       this.middlewaresContainer,
       instance,
     );
+  }
+
+  private isExpress(): boolean {
+    const isExpress = !this.httpAdapter.getHttpServer;
+    if (isExpress) {
+      return isExpress;
+    }
+    return this.httpAdapter instanceof ExpressAdapter;
   }
 
   private listenToPromise(microservice: INestMicroservice) {

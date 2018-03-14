@@ -16,9 +16,11 @@ describe('FileInterceptor', () => {
     });
     it('should call single() with expected params', async () => {
       const fieldName = 'file';
-      const target = new (FileInterceptor(fieldName));
+      const target = new (FileInterceptor(fieldName))();
       const callback = (req, res, next) => next();
-      const singleSpy = sinon.stub((target as any).upload, 'single').returns(callback);
+      const singleSpy = sinon
+        .stub((target as any).upload, 'single')
+        .returns(callback);
       const req = {};
 
       await target.intercept(req, null, stream$);

@@ -1,10 +1,11 @@
 {
   "name": "nestjs",
-  "version": "4.6.5",
+  "version": "4.6.6",
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
+    "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "prettier": "prettier */**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
@@ -16,6 +17,10 @@
   "engines": {
     "node": ">=6.11.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nestjs/nest"
+  },
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "dependencies": {
@@ -24,7 +29,6 @@
     "@nestjs/microservices": "^4.0.0",
     "@nestjs/testing": "^4.0.0",
     "@nestjs/websockets": "^4.0.0",
-    "@types/axios": "^0.14.0",
     "axios": "^0.17.1",
     "class-transformer": "^0.1.8",
     "class-validator": "^0.8.1",
@@ -47,7 +51,6 @@
     "rxjs-grpc": "^0.1.6",
     "socket.io": "^2.0.3",
     "trouter": "^1.0.0",
-    "turbo-http": "^0.1.1",
     "typescript": "^2.4.1"
   },
   "devDependencies": {
@@ -72,7 +75,9 @@
     "coveralls": "^2.11.16",
     "gulp": "^3.9.1",
     "gulp-clang-format": "^1.0.23",
+    "gulp-clean": "^0.4.0",
     "gulp-sequence": "^0.4.6",
+    "gulp-sourcemaps": "^2.6.4",
     "gulp-typescript": "^3.1.6",
     "gulp-watch": "^4.3.11",
     "imports-loader": "^0.7.0",

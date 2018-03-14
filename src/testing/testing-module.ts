@@ -8,6 +8,7 @@ import { MicroservicesPackageNotFoundException } from '@nestjs/core/errors/excep
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { HttpServer } from '@nestjs/common';
 import { ExpressFactory } from '@nestjs/core/adapters/express-factory';
+import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
 
 const { NestMicroservice } =
   optional('@nestjs/microservices/nest-microservice') || ({} as any);
@@ -20,6 +21,8 @@ export class TestingModule extends NestApplicationContext {
   public createNestApplication(
     httpServer: HttpServer = ExpressFactory.create(),
   ): INestApplication {
+    httpServer = this.applyExpressAdapter(httpServer);
+    this.container.setApplicationRef(httpServer);
     return new NestApplication(
       this.container,
       httpServer,
@@ -38,5 +41,13 @@ export class TestingModule extends NestApplicationContext {
       config,
       new ApplicationConfig(),
     );
+  }
+
+  private applyExpressAdapter(httpAdapter: HttpServer): HttpServer {
+    const isAdapter = !!httpAdapter.getHttpServer;
+    if (isAdapter) {
+      return httpAdapter;
+    }
+    return new ExpressAdapter(httpAdapter);
   }
 }

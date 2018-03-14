@@ -198,7 +198,7 @@ describe('DependenciesScanner', () => {
           mockContainer.expects('addComponent').callsFake(() => false);
           scanner.storeComponent(component, token);
           const applyMap = (scanner as any).applicationProvidersApplyMap;
-          
+
           expect(applyMap).to.have.length(1);
           expect(applyMap[0].moduleToken).to.be.eql(token);
         });
@@ -219,28 +219,33 @@ describe('DependenciesScanner', () => {
           expectation.verify();
         });
         it('should not push new object to "applicationProvidersApplyMap" array', () => {
-          expect(
-            (scanner as any).applicationProvidersApplyMap
-          ).to.have.length(0);
+          expect((scanner as any).applicationProvidersApplyMap).to.have.length(
+            0,
+          );
 
           mockContainer.expects('addComponent').callsFake(() => false);
           scanner.storeComponent(component, token);
-          expect(
-            (scanner as any).applicationProvidersApplyMap
-          ).to.have.length(0);
+          expect((scanner as any).applicationProvidersApplyMap).to.have.length(
+            0,
+          );
         });
       });
     });
   });
   describe('applyApplicationProviders', () => {
     it('should apply each provider', () => {
-      const provider = { moduleToken: 'moduleToken', providerToken: 'providerToken' };
+      const provider = {
+        moduleToken: 'moduleToken',
+        providerToken: 'providerToken',
+      };
       (scanner as any).applicationProvidersApplyMap = [provider];
 
       const expectedInstance = {};
-      mockContainer.expects('getModules').callsFake(() => ({ get: () => ({
-        components: { get: () => ({ instance: expectedInstance }) }
-      })}));
+      mockContainer.expects('getModules').callsFake(() => ({
+        get: () => ({
+          components: { get: () => ({ instance: expectedInstance }) },
+        }),
+      }));
       const applySpy = sinon.spy();
       sinon.stub(scanner, 'getApplyProvidersMap').callsFake(() => ({
         [provider.providerToken]: applySpy,
@@ -254,7 +259,8 @@ describe('DependenciesScanner', () => {
     describe(`when token is ${APP_INTERCEPTOR}`, () => {
       it('call "addGlobalInterceptor"', () => {
         const addSpy = sinon.spy(
-          (scanner as any).applicationConfig, 'addGlobalInterceptor'
+          (scanner as any).applicationConfig,
+          'addGlobalInterceptor',
         );
         scanner.getApplyProvidersMap()[APP_INTERCEPTOR](null);
         expect(addSpy.called).to.be.true;
@@ -263,7 +269,8 @@ describe('DependenciesScanner', () => {
     describe(`when token is ${APP_GUARD}`, () => {
       it('call "addGlobalGuard"', () => {
         const addSpy = sinon.spy(
-          (scanner as any).applicationConfig, 'addGlobalGuard'
+          (scanner as any).applicationConfig,
+          'addGlobalGuard',
         );
         scanner.getApplyProvidersMap()[APP_GUARD](null);
         expect(addSpy.called).to.be.true;
@@ -272,7 +279,8 @@ describe('DependenciesScanner', () => {
     describe(`when token is ${APP_PIPE}`, () => {
       it('call "addGlobalPipe"', () => {
         const addSpy = sinon.spy(
-          (scanner as any).applicationConfig, 'addGlobalPipe'
+          (scanner as any).applicationConfig,
+          'addGlobalPipe',
         );
         scanner.getApplyProvidersMap()[APP_PIPE](null);
         expect(addSpy.called).to.be.true;
@@ -281,7 +289,8 @@ describe('DependenciesScanner', () => {
     describe(`when token is ${APP_FILTER}`, () => {
       it('call "addGlobalFilter"', () => {
         const addSpy = sinon.spy(
-          (scanner as any).applicationConfig, 'addGlobalFilter'
+          (scanner as any).applicationConfig,
+          'addGlobalFilter',
         );
         scanner.getApplyProvidersMap()[APP_FILTER](null);
         expect(addSpy.called).to.be.true;

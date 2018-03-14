@@ -6,8 +6,6 @@ import {
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 
 export class ExpressAdapter implements HttpServer {
-  private readonly isExpress = true;
-
   constructor(private readonly instance) {}
 
   use(handler: RequestHandler | ErrorHandler);

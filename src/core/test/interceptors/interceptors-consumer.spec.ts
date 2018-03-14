@@ -75,14 +75,18 @@ describe('InterceptorsConsumer', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = async () => val;
-        expect(await (await consumer.transformDeffered(next).toPromise())).to.be.eql(val);
+        expect(
+          await await consumer.transformDeffered(next).toPromise(),
+        ).to.be.eql(val);
       });
     });
     describe('when next() result is Promise', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = () => Promise.resolve(val);
-        expect(await (await consumer.transformDeffered(next).toPromise())).to.be.eql(val);
+        expect(
+          await await consumer.transformDeffered(next).toPromise(),
+        ).to.be.eql(val);
       });
     });
     describe('when next() result is Observable', () => {
