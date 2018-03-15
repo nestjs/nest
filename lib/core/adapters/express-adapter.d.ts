@@ -1,7 +1,6 @@
 import { HttpServer, RequestHandler, ErrorHandler } from '@nestjs/common/interfaces';
 export declare class ExpressAdapter implements HttpServer {
     private readonly instance;
-    private readonly isExpress;
     constructor(instance: any);
     use(handler: RequestHandler | ErrorHandler): any;
     use(path: any, handler: RequestHandler | ErrorHandler): any;

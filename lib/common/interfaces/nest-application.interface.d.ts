@@ -12,7 +12,7 @@ export interface INestApplication extends INestApplicationContext {
      */
     init(): Promise<this>;
     /**
-     * A wrapper function around native `express.use()` method.
+     * A wrapper function around HTTP adapter method: `adapter.use()`.
      * Example `app.use(cors())`
      *
      * @returns void

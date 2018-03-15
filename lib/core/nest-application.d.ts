@@ -8,8 +8,9 @@ import { NestContainer } from './injector/container';
 import { NestApplicationContext } from './nest-application-context';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { HttpServer } from '@nestjs/common/interfaces';
 export declare class NestApplication extends NestApplicationContext implements INestApplication {
-    private readonly httpAdapter;
+    private httpAdapter;
     private readonly config;
     private readonly appOptions;
     private readonly logger;
@@ -21,20 +22,15 @@ export declare class NestApplication extends NestApplicationContext implements I
     private readonly microservices;
     private httpServer;
     private isInitialized;
-<<<<<<< HEAD
-    constructor(container: NestContainer, httpAdapter: any, config: ApplicationConfig, appOptions?: NestApplicationOptions);
+    constructor(container: NestContainer, httpAdapter: HttpServer, config: ApplicationConfig, appOptions?: NestApplicationOptions);
     registerHttpServer(): void;
-    applyOptions(): any;
-=======
-    constructor(container: NestContainer, express: any, config: ApplicationConfig, appOptions?: NestApplicationOptions);
     applyOptions(): this;
->>>>>>> master
     createServer(): any;
     getUnderlyingHttpServer(): any;
     registerModules(): Promise<void>;
     init(): Promise<this>;
     registerParserMiddlewares(): any;
-    isMiddlewareApplied(app: any, name: string): boolean;
+    isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean;
     registerRouter(): Promise<void>;
     connectMicroservice(config: MicroserviceConfiguration): INestMicroservice;
     getMicroservices(): INestMicroservice[];
@@ -58,6 +54,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     useGlobalInterceptors(...interceptors: NestInterceptor[]): this;
     useGlobalGuards(...guards: CanActivate[]): this;
     private registerMiddlewares(instance);
+    private isExpress();
     private listenToPromise(microservice);
     private callInitHook();
     private callModuleInitHook(module);

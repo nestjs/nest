@@ -54,7 +54,7 @@
     "rxjs-grpc": "^0.1.6",
     "socket.io": "^2.0.3",
     "trouter": "^1.0.0",
-    "typescript": "^2.4.1"
+    "typescript": "^2.7.2"
   },
   "devDependencies": {
     "@types/chai": "^3.5.2",
