@@ -41,6 +41,8 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { HttpServer } from '@nestjs/common/interfaces';
 import { ExpressAdapter } from './adapters/express-adapter';
+import { FastifyAdapter } from './adapters/fastify-adapter';
+import * as formbody from 'fastify-formbody';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
@@ -151,6 +153,9 @@ export class NestApplication extends NestApplicationContext
   }
 
   public registerParserMiddlewares() {
+    if (this.httpAdapter instanceof FastifyAdapter) {
+      return this.httpAdapter.register(formbody);
+    }
     if (!this.isExpress()) {
       return void 0;
     }

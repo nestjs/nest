@@ -1,6 +1,6 @@
 import { Transport } from './../enums/transport.enum';
 
-export interface ClientMetadata {
+export interface ClientOptions {
   transport?: Transport;
   url?: string;
   port?: number;

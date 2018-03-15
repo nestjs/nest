@@ -7,8 +7,10 @@ import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
 import { ModuleMetadata } from '@nestjs/common/interfaces';
 import { TestingModule } from './testing-module';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 
 export class TestingModuleBuilder {
+  private readonly applicationConfig = new ApplicationConfig();
   private readonly container = new NestContainer();
   private readonly overloadsMap = new Map();
   private readonly scanner: DependenciesScanner;
@@ -16,7 +18,11 @@ export class TestingModuleBuilder {
   private readonly module: any;
 
   constructor(metadataScanner: MetadataScanner, metadata: ModuleMetadata) {
-    this.scanner = new DependenciesScanner(this.container, metadataScanner);
+    this.scanner = new DependenciesScanner(
+      this.container, 
+      metadataScanner, 
+      this.applicationConfig,
+    );
     this.module = this.createModule(metadata);
     this.scanner.scan(this.module);
   }
@@ -44,10 +50,11 @@ export class TestingModuleBuilder {
       this.container.replace(component, options);
     });
     await this.instanceLoader.createInstancesOfDependencies();
+    this.scanner.applyApplicationProviders();
 
     const modules = this.container.getModules().values();
     const root = modules.next().value;
-    return new TestingModule(this.container, [], root);
+    return new TestingModule(this.container, [], root, this.applicationConfig);
   }
 
   private override(typeOrToken, isComponent: boolean): OverrideBy {

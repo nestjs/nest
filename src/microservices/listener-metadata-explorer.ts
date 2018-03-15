@@ -7,7 +7,7 @@ import {
   CLIENT_METADATA,
 } from './constants';
 import { PatternMetadata } from './interfaces/pattern-metadata.interface';
-import { ClientMetadata } from './interfaces/client-metadata.interface';
+import { ClientOptions } from './interfaces/client-metadata.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 
 export class ListenerMetadataExplorer {
@@ -66,7 +66,7 @@ export class ListenerMetadataExplorer {
 
 export interface ClientProperties {
   property: string;
-  metadata: ClientMetadata;
+  metadata: ClientOptions;
 }
 
 export interface PatternProperties {

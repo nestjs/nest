@@ -3,13 +3,14 @@ import * as JsonSocket from 'json-socket';
 import { Server as NetSocket } from 'net';
 import { NO_PATTERN_MESSAGE, CLOSE_EVENT } from '../constants';
 import { Server } from './server';
-import { CustomTransportStrategy } from './../interfaces';
+import { CustomTransportStrategy, ReadPacket } from './../interfaces';
 import { Observable } from 'rxjs/Observable';
 import { catchError } from 'rxjs/operators';
 import { empty } from 'rxjs/observable/empty';
 import { finalize } from 'rxjs/operators';
 import { TCP_DEFAULT_PORT, MESSAGE_EVENT, ERROR_EVENT } from './../constants';
-import { MicroserviceConfiguration } from '../interfaces/microservice-configuration.interface';
+import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
+import { PacketId } from './../interfaces';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
   private readonly port: number;
@@ -17,7 +18,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   private isExplicitlyTerminated = false;
   private retryAttemptsCount = 0;
 
-  constructor(private readonly config: MicroserviceConfiguration) {
+  constructor(private readonly config: MicroserviceOptions) {
     super();
     this.port = config.port || TCP_DEFAULT_PORT;
     this.init();
@@ -33,22 +34,32 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   }
 
   public bindHandler(socket) {
-    const sock = this.getSocketInstance(socket);
-    sock.on(MESSAGE_EVENT, async msg => await this.handleMessage(sock, msg));
+    const readSocket = this.getSocketInstance(socket);
+    readSocket.on(
+      MESSAGE_EVENT,
+      async msg => await this.handleMessage(readSocket, msg),
+    );
   }
 
-  public async handleMessage(socket, msg: { pattern: any; data: {} }) {
-    const pattern = JSON.stringify(msg.pattern);
+  public async handleMessage(socket, packet: ReadPacket & PacketId) {
+    const pattern = JSON.stringify(packet.pattern);
     const status = 'error';
 
     if (!this.messageHandlers[pattern]) {
-      return socket.sendMessage({ status, err: NO_PATTERN_MESSAGE });
+      return socket.sendMessage({
+        id: packet.id,
+        status,
+        err: NO_PATTERN_MESSAGE,
+      });
     }
     const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(
-      await handler(msg.data),
+      await handler(packet.data),
     ) as Observable<any>;
-    response$ && this.send(response$, socket.sendMessage.bind(socket));
+    response$ &&
+      this.send(response$, data =>
+        socket.sendMessage(Object.assign(data, { id: packet.id })),
+      );
   }
 
   public handleClose(): undefined | number | NodeJS.Timer {

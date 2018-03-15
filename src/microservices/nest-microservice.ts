@@ -5,7 +5,7 @@ import { MicroservicesModule } from './microservices-module';
 import { messages } from '@nestjs/core/constants';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { Server } from './server/server';
-import { MicroserviceConfiguration } from './interfaces/microservice-configuration.interface';
+import { MicroserviceOptions } from './interfaces/microservice-configuration.interface';
 import { ServerFactory } from './server/server-factory';
 import { Transport } from './enums/transport.enum';
 import {
@@ -34,7 +34,7 @@ export class NestMicroservice extends NestApplicationContext
   private readonly logger = new Logger(NestMicroservice.name, true);
   private readonly microservicesModule = new MicroservicesModule();
   private readonly socketModule = SocketModule ? new SocketModule() : null;
-  private microserviceConfig: MicroserviceConfiguration;
+  private microserviceConfig: MicroserviceOptions;
   private server: Server & CustomTransportStrategy;
   private isTerminated = false;
   private isInitialized = false;
@@ -42,7 +42,7 @@ export class NestMicroservice extends NestApplicationContext
 
   constructor(
     container: NestContainer,
-    config: MicroserviceConfiguration = {},
+    config: MicroserviceOptions = {},
     private readonly applicationConfig: ApplicationConfig,
   ) {
     super(container, [], null);
@@ -58,7 +58,7 @@ export class NestMicroservice extends NestApplicationContext
     this.applicationConfig.setIoAdapter(ioAdapter);
   }
 
-  public createServer(config: MicroserviceConfiguration) {
+  public createServer(config: MicroserviceOptions) {
     this.microserviceConfig = {
       transport: Transport.TCP,
       ...config,

@@ -1,7 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { MessageHandlers } from '../interfaces/message-handlers.interface';
 import { Observable } from 'rxjs/Observable';
-import { MicroserviceResponse } from '../index';
 import { Subscription } from 'rxjs/Subscription';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { catchError } from 'rxjs/operators';
@@ -9,6 +8,7 @@ import { finalize } from 'rxjs/operators';
 import { empty } from 'rxjs/observable/empty';
 import { of } from 'rxjs/observable/of';
 import { fromPromise } from 'rxjs/observable/fromPromise';
+import { WritePacket } from './../interfaces';
 
 export abstract class Server {
   protected readonly messageHandlers: MessageHandlers = {};
@@ -30,7 +30,7 @@ export abstract class Server {
 
   public send(
     stream$: Observable<any>,
-    respond: (data: MicroserviceResponse) => void,
+    respond: (data: WritePacket) => void,
   ): Subscription {
     return stream$
       .pipe(
@@ -38,7 +38,7 @@ export abstract class Server {
           respond({ err, response: null });
           return empty();
         }),
-        finalize(() => respond({ disposed: true })),
+        finalize(() => respond({ isDisposed: true })),
       )
       .subscribe(response => respond({ err: null, response }));
   }

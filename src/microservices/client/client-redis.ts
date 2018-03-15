@@ -1,13 +1,16 @@
 import * as redis from 'redis';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
-import { ClientMetadata } from '../interfaces/client-metadata.interface';
+import { ClientOptions } from '../interfaces/client-metadata.interface';
 import {
   REDIS_DEFAULT_URL,
   MESSAGE_EVENT,
   ERROR_EVENT,
   CONNECT_EVENT,
+  SUBSCRIBE,
 } from './../constants';
+import { WritePacket } from './../interfaces';
+import { ReadPacket, PacketId } from './../interfaces';
 
 export class ClientRedis extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
@@ -16,32 +19,54 @@ export class ClientRedis extends ClientProxy {
   private subClient: redis.RedisClient;
   private isExplicitlyTerminated = false;
 
-  constructor(private readonly metadata: ClientMetadata) {
+  constructor(private readonly options: ClientOptions) {
     super();
-    this.url = metadata.url || REDIS_DEFAULT_URL;
+    this.url = options.url || REDIS_DEFAULT_URL;
   }
 
-  protected sendMessage(msg, callback: (...args) => any) {
+  protected async sendMessage(
+    partialPacket: ReadPacket,
+    callback: (packet: WritePacket) => any,
+  ) {
     if (!this.pubClient || !this.subClient) {
       this.init(callback);
     }
-    const pattern = JSON.stringify(msg.pattern);
-    const responseCallback = (channel, message) => {
-      const { err, response, disposed } = JSON.parse(message);
-
-      if (disposed || err) {
-        callback(err, null, true);
-        this.subClient.unsubscribe(this.getResPatternName(pattern));
+    const packet = this.assignPacketId(partialPacket);
+    const pattern = JSON.stringify(partialPacket.pattern);
+    const responseChannel = this.getResPatternName(pattern, packet.id);
+    const responseCallback = (channel: string, buffer: string) => {
+      if (responseChannel !== channel) {
+        return void 0;
+      }
+      const { err, response, isDisposed } = JSON.parse(buffer) as WritePacket &
+        PacketId;
+      if (isDisposed || err) {
+        callback({
+          err,
+          response: null,
+          isDisposed: true,
+        });
+        this.subClient.unsubscribe(channel);
         this.subClient.removeListener(MESSAGE_EVENT, responseCallback);
         return;
       }
-      callback(err, response);
+      callback({
+        err,
+        response,
+      });
     };
     this.subClient.on(MESSAGE_EVENT, responseCallback);
-    this.subClient.subscribe(this.getResPatternName(pattern));
+    this.subClient.subscribe(responseChannel);
+    await new Promise(resolve =>
+      this.subClient.on(
+        SUBSCRIBE,
+        channel => channel === responseChannel && resolve(),
+      ),
+    );
+
     this.pubClient.publish(
       this.getAckPatternName(pattern),
-      JSON.stringify(msg),
+      JSON.stringify(packet),
     );
     return responseCallback;
   }
@@ -50,8 +75,8 @@ export class ClientRedis extends ClientProxy {
     return `${pattern}_ack`;
   }
 
-  public getResPatternName(pattern: string): string {
-    return `${pattern}_res`;
+  public getResPatternName(pattern: string, id: string): string {
+    return `${pattern}_${id}_res`;
   }
 
   public close() {
@@ -99,11 +124,11 @@ export class ClientRedis extends ClientProxy {
   ): undefined | number {
     if (
       this.isExplicitlyTerminated ||
-      !this.metadata.retryAttempts ||
-      options.attempt > this.metadata.retryAttempts
+      !this.options.retryAttempts ||
+      options.attempt > this.options.retryAttempts
     ) {
       return undefined;
     }
-    return this.metadata.retryDelay || 0;
+    return this.options.retryDelay || 0;
   }
 }

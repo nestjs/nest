@@ -14,7 +14,12 @@ const { NestMicroservice } =
   optional('@nestjs/microservices/nest-microservice') || ({} as any);
 
 export class TestingModule extends NestApplicationContext {
-  constructor(container: NestContainer, scope: Type<any>[], contextModule) {
+  constructor(
+    container: NestContainer, 
+    scope: Type<any>[], 
+    contextModule, 
+    private readonly applicationConfig: ApplicationConfig,
+  ) {
     super(container, scope, contextModule);
   }
 
@@ -26,7 +31,7 @@ export class TestingModule extends NestApplicationContext {
     return new NestApplication(
       this.container,
       httpServer,
-      new ApplicationConfig(),
+      this.applicationConfig,
     );
   }
 
@@ -39,7 +44,7 @@ export class TestingModule extends NestApplicationContext {
     return new NestMicroservice(
       this.container,
       config,
-      new ApplicationConfig(),
+      this.applicationConfig,
     );
   }
 

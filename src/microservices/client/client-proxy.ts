@@ -3,11 +3,12 @@ import { Observer } from 'rxjs/Observer';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import { InvalidMessageException } from '../exceptions/invalid-message.exception';
 import { _throw } from 'rxjs/observable/throw';
+import { ReadPacket, PacketId, WritePacket } from './../interfaces';
 
 export abstract class ClientProxy {
   protected abstract sendMessage(
-    msg: any,
-    callback: (err, result, disposed?: boolean) => void,
+    packet: ReadPacket,
+    callback: (packet: WritePacket) => void,
   );
 
   public send<T>(pattern, data): Observable<T> {
@@ -21,14 +22,22 @@ export abstract class ClientProxy {
 
   protected createObserver<T>(
     observer: Observer<T>,
-  ): (err, result, disposed?: boolean) => void {
-    return (err, result, disposed) => {
+  ): (packet: WritePacket) => void {
+    return ({ err, response, isDisposed }: WritePacket) => {
       if (err) {
         return observer.error(err);
-      } else if (disposed) {
+      } else if (isDisposed) {
         return observer.complete();
       }
-      observer.next(result);
+      observer.next(response);
     };
+  }
+
+  protected assignPacketId(packet: ReadPacket): ReadPacket & PacketId {
+    const id =
+      Math.random()
+        .toString(36)
+        .substr(2, 5) + Date.now();
+    return Object.assign(packet, { id });
   }
 }

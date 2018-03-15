@@ -1,7 +1,7 @@
 import * as net from 'net';
 import * as JsonSocket from 'json-socket';
 import { ClientProxy } from './client-proxy';
-import { ClientMetadata } from '../interfaces/client-metadata.interface';
+import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { Logger } from '@nestjs/common';
 import {
   TCP_DEFAULT_PORT,
@@ -11,6 +11,8 @@ import {
   ERROR_EVENT,
   CLOSE_EVENT,
 } from './../constants';
+import { WritePacket } from './../interfaces';
+import { ReadPacket, PacketId } from 'src/microservices';
 
 export class ClientTCP extends ClientProxy {
   private readonly logger = new Logger(ClientTCP.name);
@@ -19,7 +21,7 @@ export class ClientTCP extends ClientProxy {
   private isConnected = false;
   private socket: JsonSocket;
 
-  constructor({ port, host }: ClientMetadata) {
+  constructor({ port, host }: ClientOptions) {
     super();
     this.port = port || TCP_DEFAULT_PORT;
     this.host = host || TCP_DEFAULT_HOST;
@@ -37,34 +39,48 @@ export class ClientTCP extends ClientProxy {
     });
   }
 
-  protected async sendMessage(msg, callback: (...args) => any) {
-    const self = this;
-    const processMessage = (socket: JsonSocket) => {
-      socket.sendMessage(msg);
-      socket.on(MESSAGE_EVENT, function(buffer) {
-        self.handleResponse(socket, callback, buffer, this);
-      });
+  protected async sendMessage(
+    partialPacket: ReadPacket,
+    callback: (packet: WritePacket) => any,
+  ) {
+    const handleRequestResponse = (socket: JsonSocket) => {
+      const packet = this.assignPacketId(partialPacket);
+      socket.sendMessage(packet);
+      const listener = (buffer: WritePacket & PacketId) => {
+        if (buffer.id !== packet.id) {
+          return void 0;
+        }
+        this.handleResponse(socket, callback, buffer, listener);
+      };
+      socket.on(MESSAGE_EVENT, listener);
     };
     if (this.isConnected) {
-      processMessage(this.socket);
-      return Promise.resolve();
+      return handleRequestResponse(this.socket);
     }
     const socket = await this.init(callback);
-    processMessage(socket);
+    handleRequestResponse(socket);
+    return 
   }
 
   public handleResponse(
     socket: JsonSocket,
-    callback: (...args) => any,
-    buffer: any,
+    callback: (packet: WritePacket) => any,
+    buffer: WritePacket,
     context: Function,
   ) {
-    const { err, response, disposed } = buffer;
-    if (disposed || err) {
-      callback(err, null, true);
+    const { err, response, isDisposed } = buffer;
+    if (isDisposed || err) {
+      callback({
+        err,
+        response: null,
+        isDisposed: true,
+      });
       return socket._socket.removeListener(MESSAGE_EVENT, context);
     }
-    callback(err, response);
+    callback({
+      err,
+      response,
+    });
   }
 
   public createSocket(): JsonSocket {
