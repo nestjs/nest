@@ -9,26 +9,26 @@ import { ReadPacket, PacketId } from 'src/microservices';
 export class ClientNats extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
   private readonly url: string;
-  private pubClient: nats.Client;
-  private subClient: nats.Client;
+  private publisher: nats.Client;
+  private consumer: nats.Client;
 
   constructor(private readonly options: ClientOptions) {
     super();
     this.url = options.url || NATS_DEFAULT_URL;
   }
 
-  protected async sendMessage(
+  protected async publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ) {
-    if (!this.pubClient || !this.subClient) {
+    if (!this.publisher || !this.consumer) {
       await this.init(callback);
     }
     const packet = this.assignPacketId(partialPacket);
     const pattern = JSON.stringify(partialPacket.pattern);
     const responseChannel = this.getResPatternName(pattern, packet.id);
 
-    const subscriptionId = this.subClient.subscribe(
+    const subscriptionId = this.consumer.subscribe(
       responseChannel,
       (message: WritePacket & PacketId) => {
         const { err, response, isDisposed } = message;
@@ -38,7 +38,7 @@ export class ClientNats extends ClientProxy {
             response: null,
             isDisposed: true,
           });
-          return this.subClient.unsubscribe(subscriptionId);
+          return this.consumer.unsubscribe(subscriptionId);
         }
         callback({
           err,
@@ -46,7 +46,7 @@ export class ClientNats extends ClientProxy {
         });
       },
     );
-    this.pubClient.publish(this.getAckPatternName(pattern), packet as any);
+    this.publisher.publish(this.getAckPatternName(pattern), packet as any);
   }
 
   public getAckPatternName(pattern: string): string {
@@ -58,17 +58,17 @@ export class ClientNats extends ClientProxy {
   }
 
   public close() {
-    this.pubClient && this.pubClient.close();
-    this.subClient && this.subClient.close();
-    this.pubClient = this.subClient = null;
+    this.publisher && this.publisher.close();
+    this.consumer && this.consumer.close();
+    this.publisher = this.consumer = null;
   }
 
   public async init(callback: (...args) => any) {
-    this.pubClient = await this.createClient();
-    this.subClient = await this.createClient();
+    this.publisher = await this.createClient();
+    this.consumer = await this.createClient();
 
-    this.handleError(this.pubClient, callback);
-    this.handleError(this.subClient, callback);
+    this.handleError(this.publisher, callback);
+    this.handleError(this.consumer, callback);
   }
 
   public createClient(): Promise<nats.Client> {
@@ -85,7 +85,7 @@ export class ClientNats extends ClientProxy {
     const errorCallback = err => {
       if (err.code === 'ECONNREFUSED') {
         callback(err, null);
-        this.pubClient = this.subClient = null;
+        this.publisher = this.consumer = null;
       }
       this.logger.error(err);
     };

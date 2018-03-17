@@ -24,7 +24,7 @@ export class ClientRedis extends ClientProxy {
     this.url = options.url || REDIS_DEFAULT_URL;
   }
 
-  protected async sendMessage(
+  protected async publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ) {

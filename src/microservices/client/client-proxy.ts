@@ -6,7 +6,7 @@ import { _throw } from 'rxjs/observable/throw';
 import { ReadPacket, PacketId, WritePacket } from './../interfaces';
 
 export abstract class ClientProxy {
-  protected abstract sendMessage(
+  protected abstract publish(
     packet: ReadPacket,
     callback: (packet: WritePacket) => void,
   );
@@ -16,7 +16,7 @@ export abstract class ClientProxy {
       return _throw(new InvalidMessageException());
     }
     return new Observable((observer: Observer<T>) => {
-      this.sendMessage({ pattern, data }, this.createObserver(observer));
+      this.publish({ pattern, data }, this.createObserver(observer));
     });
   }
 

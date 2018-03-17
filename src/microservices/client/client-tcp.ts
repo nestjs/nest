@@ -39,7 +39,7 @@ export class ClientTCP extends ClientProxy {
     });
   }
 
-  protected async sendMessage(
+  protected async publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ) {

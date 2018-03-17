@@ -1,6 +1,6 @@
-import * as nats from 'nats';
+import * as stan from 'node-nats-streaming';
 import { Server } from './server';
-import { NO_PATTERN_MESSAGE } from '../constants';
+import { NO_PATTERN_MESSAGE, MESSAGE_EVENT, STAN_DEFAULT_URL } from '../constants';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy, PacketId } from './../interfaces';
 import { Observable } from 'rxjs/Observable';
@@ -10,36 +10,37 @@ import { finalize } from 'rxjs/operators';
 import { NATS_DEFAULT_URL, CONNECT_EVENT, ERROR_EVENT } from './../constants';
 import { ReadPacket } from './../interfaces/packet.interface';
 
-export class ServerNats extends Server implements CustomTransportStrategy {
+export class ServerStan extends Server implements CustomTransportStrategy {
   private readonly url: string;
-  private consumer: nats.Client;
-  private publisher: nats.Client;
+  private consumer: stan.Stan;
+  private publisher: stan.Stan;
 
   constructor(private readonly options: MicroserviceOptions) {
     super();
-    this.url = options.url || NATS_DEFAULT_URL;
+    this.url = options.url || STAN_DEFAULT_URL;
   }
 
-  public listen(callback: () => void) {
-    this.consumer = this.createNatsClient();
-    this.publisher = this.createNatsClient();
-
-    this.handleError(this.publisher);
-    this.handleError(this.consumer);
+  public async listen(callback: () => void) {
+    this.consumer = await this.createStanClient('consumer');
+    this.publisher = await this.createStanClient('producer');
+  
     this.start(callback);
   }
 
   public start(callback?: () => void) {
     this.bindEvents(this.consumer, this.publisher);
-    this.consumer.on(CONNECT_EVENT, callback);
+    callback();
   }
 
-  public bindEvents(consumer: nats.Client, publisher: nats.Client) {
+  public bindEvents(consumer: stan.Stan, publisher: stan.Stan) {
     const registeredPatterns = Object.keys(this.messageHandlers);
     registeredPatterns.forEach(pattern => {
       const channel = this.getAckQueueName(pattern);
-      consumer.subscribe(
-        channel,
+
+      // TODO: Add opts
+      const subscription = consumer.subscribe(channel, 'default');
+      subscription.on(
+        MESSAGE_EVENT,
         () => this.getMessageHandler(channel, publisher),
       );
     });
@@ -51,23 +52,24 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     this.publisher = this.consumer = null;
   }
 
-  public createNatsClient(): nats.Client {
-    return nats.connect({
+  public createStanClient(clientId: string): Promise<stan.Stan> {
+    const client = stan.connect('clusterId', clientId, {
       url: this.url,
-      json: true,
-      maxReconnectAttempts: this.options.retryAttempts,
-      reconnectTimeWait: this.options.retryDelay,
     });
+    this.handleError(client);
+    return new Promise(resolve =>
+      client.on(CONNECT_EVENT, () => resolve(client)),
+    );
   }
 
-  public getMessageHandler(channel: string, pubClient: nats.Client) {
+  public getMessageHandler(channel: string, pubClient: stan.Stan) {
     return async buffer => await this.handleMessage(channel, buffer, pubClient);
   }
 
   public async handleMessage(
     channel: string,
     message: ReadPacket & PacketId,
-    pub: nats.Client,
+    pub: stan.Stan,
   ) {
     const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(pub, pattern, message.id);
@@ -83,12 +85,12 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     response$ && this.send(response$, publish);
   }
 
-  public getPublisher(publisher: nats.Client, pattern: any, id: string) {
+  public getPublisher(publisher: stan.Stan, pattern: any, id: string) {
     return response =>
-      publisher.publish(
-        this.getResQueueName(pattern, id),
-        Object.assign(response, { id }) as any,
-      );
+      publisher.publish(this.getResQueueName(pattern, id), Object.assign(
+        response,
+        { id },
+      ) as any);
   }
 
   public getAckQueueName(pattern: string): string {
