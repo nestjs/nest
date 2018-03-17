@@ -24,7 +24,6 @@ yarn-error.log
 
 # tests
 /test
-/integration
 /coverage
 /.nyc_output
 build/config\.gypi

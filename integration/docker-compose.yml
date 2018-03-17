@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+  redis:
+    container_name: redis_integration
+    image: redis
+    ports:
+      - "6379:6379"
+    restart: always
+  nats:
+    container_name: nats_integration
+    image: nats
+    expose:
+      - "4222"
+    ports:
+      - "8222:8222"
+      - "4222:4222"
+    restart: always
