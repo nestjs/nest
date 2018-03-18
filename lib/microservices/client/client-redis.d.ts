@@ -1,17 +1,19 @@
 import * as redis from 'redis';
 import { ClientProxy } from './client-proxy';
-import { ClientMetadata } from '../interfaces/client-metadata.interface';
+import { ClientOptions } from '../interfaces/client-metadata.interface';
+import { WritePacket } from './../interfaces';
+import { ReadPacket } from './../interfaces';
 export declare class ClientRedis extends ClientProxy {
-    private readonly metadata;
+    private readonly options;
     private readonly logger;
     private readonly url;
     private pubClient;
     private subClient;
     private isExplicitlyTerminated;
-    constructor(metadata: ClientMetadata);
-    protected sendMessage(msg: any, callback: (...args) => any): (channel: any, message: any) => void;
+    constructor(options: ClientOptions);
+    protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): Promise<(channel: string, buffer: string) => any>;
     getAckPatternName(pattern: string): string;
-    getResPatternName(pattern: string): string;
+    getResPatternName(pattern: string, id: string): string;
     close(): void;
     init(callback: (...args) => any): void;
     createClient(): redis.RedisClient;

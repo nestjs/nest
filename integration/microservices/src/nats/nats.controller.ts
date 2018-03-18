@@ -12,7 +12,7 @@ import { scan } from 'rxjs/operators';
 
 @Controller()
 export class NatsController {
-  @Client({ transport: Transport.NATS, url: 'nats://localhost:4222' })
+  @Client({ transport: Transport.NATS })
   client: ClientProxy;
 
   @Post()

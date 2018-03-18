@@ -26,7 +26,7 @@ import {
   isFunction,
   isObject,
 } from '@nestjs/common/utils/shared.utils';
-import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
+import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { ApplicationConfig } from './application-config';
 import { messages } from './constants';
 import { NestContainer } from './injector/container';
@@ -56,8 +56,7 @@ const { IoAdapter } =
   optional('@nestjs/websockets/adapters/io-adapter') || ({} as any);
 
 export class NestApplication extends NestApplicationContext
-  implements
-    INestApplication,
+  implements INestApplication,
     INestExpressApplication,
     INestFastifyApplication {
   private readonly logger = new Logger(NestApplication.name, true);
@@ -192,16 +191,14 @@ export class NestApplication extends NestApplicationContext
     this.routesResolver.resolve(this.httpAdapter, basePath);
   }
 
-  public connectMicroservice(
-    config: MicroserviceConfiguration,
-  ): INestMicroservice {
+  public connectMicroservice(options: MicroserviceOptions): INestMicroservice {
     if (!NestMicroservice) {
       throw new MicroservicesPackageNotFoundException();
     }
     const applicationConfig = new ApplicationConfig();
     const instance = new NestMicroservice(
       this.container as any,
-      config as any,
+      options as any,
       applicationConfig,
     );
     instance.registerListeners();

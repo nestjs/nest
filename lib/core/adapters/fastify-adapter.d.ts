@@ -1,5 +1,5 @@
-import { HttpServer, RequestHandler, ErrorHandler } from '@nestjs/common/interfaces';
-export declare class FastifyAdapter implements HttpServer {
+import { RequestHandler, ErrorHandler } from '@nestjs/common/interfaces';
+export declare class FastifyAdapter {
     protected readonly instance: any;
     constructor(instance: any);
     use(handler: RequestHandler | ErrorHandler): any;
@@ -25,5 +25,6 @@ export declare class FastifyAdapter implements HttpServer {
     setErrorHandler(handler: Function): any;
     setNotFoundHandler(handler: Function): any;
     getHttpServer(): any;
+    register(...args: any[]): any;
     close(): any;
 }

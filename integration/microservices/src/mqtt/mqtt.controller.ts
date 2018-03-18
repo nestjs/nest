@@ -11,8 +11,8 @@ import { from } from 'rxjs/observable/from';
 import { scan } from 'rxjs/operators';
 
 @Controller()
-export class NatsController {
-  @Client({ transport: Transport.STAN })
+export class MqttController {
+  @Client({ transport: Transport.MQTT })
   client: ClientProxy;
 
   @Post()

@@ -8,7 +8,6 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 import { messages } from './constants';
 import { NestApplication } from './nest-application';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { ExpressFactory } from './adapters/express-factory';
 import {
   INestApplication,

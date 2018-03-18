@@ -1,7 +1,10 @@
 import * as nats from 'nats';
 import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
-import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  MicroserviceOptions,
+  NatsOptions,
+} from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy, PacketId } from './../interfaces';
 import { Observable } from 'rxjs/Observable';
 import { catchError } from 'rxjs/operators';
@@ -12,65 +15,62 @@ import { ReadPacket } from './../interfaces/packet.interface';
 
 export class ServerNats extends Server implements CustomTransportStrategy {
   private readonly url: string;
-  private consumer: nats.Client;
-  private publisher: nats.Client;
+  private natsClient: nats.Client;
 
   constructor(private readonly options: MicroserviceOptions) {
     super();
-    this.url = options.url || NATS_DEFAULT_URL;
+    this.url =
+      this.getOptionsProp<NatsOptions>(this.options, 'url') ||
+      NATS_DEFAULT_URL;
   }
 
   public listen(callback: () => void) {
-    this.consumer = this.createNatsClient();
-    this.publisher = this.createNatsClient();
-
-    this.handleError(this.publisher);
-    this.handleError(this.consumer);
+    this.natsClient = this.createNatsClient();
+    this.handleError(this.natsClient);
     this.start(callback);
   }
 
   public start(callback?: () => void) {
-    this.bindEvents(this.consumer, this.publisher);
-    this.consumer.on(CONNECT_EVENT, callback);
+    this.bindEvents(this.natsClient);
+    this.natsClient.on(CONNECT_EVENT, callback);
   }
 
-  public bindEvents(consumer: nats.Client, publisher: nats.Client) {
+  public bindEvents(client: nats.Client) {
     const registeredPatterns = Object.keys(this.messageHandlers);
     registeredPatterns.forEach(pattern => {
       const channel = this.getAckQueueName(pattern);
-      consumer.subscribe(
+      client.subscribe(
         channel,
-        () => this.getMessageHandler(channel, publisher),
+        this.getMessageHandler(channel, client).bind(this),
       );
     });
   }
 
   public close() {
-    this.publisher && this.publisher.close();
-    this.consumer && this.consumer.close();
-    this.publisher = this.consumer = null;
+    this.natsClient && this.natsClient.close();
+    this.natsClient = null;
   }
 
   public createNatsClient(): nats.Client {
+    const options = this.options.options || ({} as NatsOptions);
     return nats.connect({
+      ...(options as any),
       url: this.url,
       json: true,
-      maxReconnectAttempts: this.options.retryAttempts,
-      reconnectTimeWait: this.options.retryDelay,
     });
   }
 
-  public getMessageHandler(channel: string, pubClient: nats.Client) {
-    return async buffer => await this.handleMessage(channel, buffer, pubClient);
+  public getMessageHandler(channel: string, client: nats.Client) {
+    return async buffer => await this.handleMessage(channel, buffer, client);
   }
 
   public async handleMessage(
     channel: string,
     message: ReadPacket & PacketId,
-    pub: nats.Client,
+    client: nats.Client,
   ) {
     const pattern = channel.replace(/_ack$/, '');
-    const publish = this.getPublisher(pub, pattern, message.id);
+    const publish = this.getPublisher(client, pattern, message.id);
     const status = 'error';
 
     if (!this.messageHandlers[pattern]) {
@@ -85,18 +85,17 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
   public getPublisher(publisher: nats.Client, pattern: any, id: string) {
     return response =>
-      publisher.publish(
-        this.getResQueueName(pattern, id),
-        Object.assign(response, { id }) as any,
-      );
+      publisher.publish(this.getResQueueName(pattern), Object.assign(response, {
+        id,
+      }) as any);
   }
 
   public getAckQueueName(pattern: string): string {
     return `${pattern}_ack`;
   }
 
-  public getResQueueName(pattern: string, id: string): string {
-    return `${pattern}_${id}_res`;
+  public getResQueueName(pattern: string): string {
+    return `${pattern}_res`;
   }
 
   public handleError(stream) {

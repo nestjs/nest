@@ -1,7 +1,7 @@
 import { Transport } from '../enums/transport.enum';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Server } from './../server/server';
-export interface MicroserviceConfiguration {
+export interface MicroserviceOptions {
     transport?: Transport;
     url?: string;
     port?: number;

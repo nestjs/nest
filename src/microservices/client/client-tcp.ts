@@ -1,7 +1,10 @@
 import * as net from 'net';
 import * as JsonSocket from 'json-socket';
 import { ClientProxy } from './client-proxy';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
+import {
+  ClientOptions,
+  TcpClientOptions,
+} from '../interfaces/client-metadata.interface';
 import { Logger } from '@nestjs/common';
 import {
   TCP_DEFAULT_PORT,
@@ -21,10 +24,14 @@ export class ClientTCP extends ClientProxy {
   private isConnected = false;
   private socket: JsonSocket;
 
-  constructor({ port, host }: ClientOptions) {
+  constructor(options: ClientOptions) {
     super();
-    this.port = port || TCP_DEFAULT_PORT;
-    this.host = host || TCP_DEFAULT_HOST;
+    this.port =
+      this.getOptionsProp<TcpClientOptions>(options, 'port') ||
+      TCP_DEFAULT_PORT;
+    this.host =
+      this.getOptionsProp<TcpClientOptions>(options, 'host') ||
+      TCP_DEFAULT_HOST;
   }
 
   public init(callback: (...args) => any): Promise<JsonSocket> {
@@ -59,7 +66,7 @@ export class ClientTCP extends ClientProxy {
     }
     const socket = await this.init(callback);
     handleRequestResponse(socket);
-    return 
+    return;
   }
 
   public handleResponse(

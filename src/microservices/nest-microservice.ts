@@ -70,7 +70,8 @@ export class NestMicroservice extends NestApplicationContext
   }
 
   public registerModules() {
-    this.socketModule && this.socketModule.register(this.container, this.applicationConfig);
+    this.socketModule &&
+      this.socketModule.register(this.container, this.applicationConfig);
     this.microservicesModule.setupClients(this.container);
 
     this.registerListeners();

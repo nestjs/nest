@@ -95,10 +95,7 @@ export class DependenciesScanner {
     });
   }
 
-  public reflectComponentMetadata(
-    component: Type<Injectable>,
-    token: string,
-  ) {
+  public reflectComponentMetadata(component: Type<Injectable>, token: string) {
     this.reflectGatewaysMiddlewares(component, token);
   }
 

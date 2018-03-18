@@ -8,7 +8,8 @@ import { Server } from './server';
 import { Transport } from '../enums/transport.enum';
 import { race } from 'rxjs/operators/race';
 import { ServerNats } from './server-nats';
-import { ServerStan } from './server-stan';
+import { ServerMqtt } from './server-mqtt';
+import { ServerGrpc } from './server-grpc';
 
 export class ServerFactory {
   public static create(
@@ -20,8 +21,10 @@ export class ServerFactory {
         return new ServerRedis(options);
       case Transport.NATS:
         return new ServerNats(options);
-      case Transport.STAN:
-        return new ServerStan(options);
+      case Transport.MQTT:
+        return new ServerMqtt(options);
+      case Transport.GRPC:
+        return new ServerGrpc(options);
       default:
         return new ServerTCP(options);
     }

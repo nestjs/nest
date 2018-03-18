@@ -9,8 +9,12 @@ import {
   CONNECT_EVENT,
   SUBSCRIBE,
 } from './../constants';
-import { WritePacket } from './../interfaces';
-import { ReadPacket, PacketId } from './../interfaces';
+import {
+  WritePacket,
+  RedisOptions,
+  ReadPacket,
+  PacketId,
+} from './../interfaces';
 
 export class ClientRedis extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
@@ -21,7 +25,7 @@ export class ClientRedis extends ClientProxy {
 
   constructor(private readonly options: ClientOptions) {
     super();
-    this.url = options.url || REDIS_DEFAULT_URL;
+    this.url = this.getOptionsProp<RedisOptions>(options, 'url') || REDIS_DEFAULT_URL;
   }
 
   protected async publish(
@@ -33,13 +37,14 @@ export class ClientRedis extends ClientProxy {
     }
     const packet = this.assignPacketId(partialPacket);
     const pattern = JSON.stringify(partialPacket.pattern);
-    const responseChannel = this.getResPatternName(pattern, packet.id);
+    const responseChannel = this.getResPatternName(pattern);
     const responseCallback = (channel: string, buffer: string) => {
-      if (responseChannel !== channel) {
+      const { err, response, isDisposed, id } = JSON.parse(
+        buffer,
+      ) as WritePacket & PacketId;
+      if (id !== packet.id) {
         return void 0;
       }
-      const { err, response, isDisposed } = JSON.parse(buffer) as WritePacket &
-        PacketId;
       if (isDisposed || err) {
         callback({
           err,
@@ -75,8 +80,8 @@ export class ClientRedis extends ClientProxy {
     return `${pattern}_ack`;
   }
 
-  public getResPatternName(pattern: string, id: string): string {
-    return `${pattern}_${id}_res`;
+  public getResPatternName(pattern: string): string {
+    return `${pattern}_res`;
   }
 
   public close() {
@@ -124,11 +129,12 @@ export class ClientRedis extends ClientProxy {
   ): undefined | number {
     if (
       this.isExplicitlyTerminated ||
-      !this.options.retryAttempts ||
-      options.attempt > this.options.retryAttempts
+      !this.getOptionsProp<RedisOptions>(this.options, 'retryAttempts') ||
+      options.attempt >
+        this.getOptionsProp<RedisOptions>(this.options, 'retryAttempts')
     ) {
       return undefined;
     }
-    return this.options.retryDelay || 0;
+    return this.getOptionsProp(this.options, 'retryDelay') || 0;
   }
 }

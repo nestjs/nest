@@ -3,34 +3,37 @@ import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { NATS_DEFAULT_URL, ERROR_EVENT, CONNECT_EVENT } from './../constants';
-import { WritePacket } from './../interfaces';
+import { WritePacket, NatsOptions } from './../interfaces';
 import { ReadPacket, PacketId } from 'src/microservices';
 
 export class ClientNats extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
   private readonly url: string;
-  private publisher: nats.Client;
-  private consumer: nats.Client;
+  private natsClient: nats.Client;
 
   constructor(private readonly options: ClientOptions) {
     super();
-    this.url = options.url || NATS_DEFAULT_URL;
+    this.url =
+      this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
   }
 
   protected async publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ) {
-    if (!this.publisher || !this.consumer) {
+    if (!this.natsClient) {
       await this.init(callback);
     }
     const packet = this.assignPacketId(partialPacket);
     const pattern = JSON.stringify(partialPacket.pattern);
-    const responseChannel = this.getResPatternName(pattern, packet.id);
+    const responseChannel = this.getResPatternName(pattern);
 
-    const subscriptionId = this.consumer.subscribe(
+    const subscriptionId = this.natsClient.subscribe(
       responseChannel,
       (message: WritePacket & PacketId) => {
+        if (message.id !== packet.id) {
+          return void 0;
+        }
         const { err, response, isDisposed } = message;
         if (isDisposed || err) {
           callback({
@@ -38,7 +41,7 @@ export class ClientNats extends ClientProxy {
             response: null,
             isDisposed: true,
           });
-          return this.consumer.unsubscribe(subscriptionId);
+          return this.natsClient.unsubscribe(subscriptionId);
         }
         callback({
           err,
@@ -46,37 +49,33 @@ export class ClientNats extends ClientProxy {
         });
       },
     );
-    this.publisher.publish(this.getAckPatternName(pattern), packet as any);
+    this.natsClient.publish(this.getAckPatternName(pattern), packet as any);
   }
 
   public getAckPatternName(pattern: string): string {
     return `${pattern}_ack`;
   }
 
-  public getResPatternName(pattern: string, id: string): string {
-    return `${pattern}_${id}_res`;
+  public getResPatternName(pattern: string): string {
+    return `${pattern}_res`;
   }
 
   public close() {
-    this.publisher && this.publisher.close();
-    this.consumer && this.consumer.close();
-    this.publisher = this.consumer = null;
+    this.natsClient && this.natsClient.close();
+    this.natsClient = null;
   }
 
   public async init(callback: (...args) => any) {
-    this.publisher = await this.createClient();
-    this.consumer = await this.createClient();
-
-    this.handleError(this.publisher, callback);
-    this.handleError(this.consumer, callback);
+    this.natsClient = await this.createClient();
+    this.handleError(this.natsClient, callback);
   }
 
   public createClient(): Promise<nats.Client> {
+    const options = this.options.options || ({} as NatsOptions);
     const client = nats.connect({
+      ...(options as any),
       url: this.url,
       json: true,
-      maxReconnectAttempts: this.options.retryAttempts,
-      reconnectTimeWait: this.options.retryDelay,
     });
     return new Promise(resolve => client.on(CONNECT_EVENT, resolve));
   }
@@ -85,7 +84,7 @@ export class ClientNats extends ClientProxy {
     const errorCallback = err => {
       if (err.code === 'ECONNREFUSED') {
         callback(err, null);
-        this.publisher = this.consumer = null;
+        this.natsClient = null;
       }
       this.logger.error(err);
     };

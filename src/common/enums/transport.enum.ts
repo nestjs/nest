@@ -1,4 +1,7 @@
 export enum Transport {
-  TCP = 0,
-  REDIS = 1,
+  TCP,
+  REDIS,
+  NATS,
+  MQTT,
+  GRPC,
 }

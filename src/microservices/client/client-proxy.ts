@@ -3,7 +3,7 @@ import { Observer } from 'rxjs/Observer';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import { InvalidMessageException } from '../exceptions/invalid-message.exception';
 import { _throw } from 'rxjs/observable/throw';
-import { ReadPacket, PacketId, WritePacket } from './../interfaces';
+import { ReadPacket, PacketId, WritePacket, ClientOptions } from './../interfaces';
 
 export abstract class ClientProxy {
   protected abstract publish(
@@ -39,5 +39,13 @@ export abstract class ClientProxy {
         .toString(36)
         .substr(2, 5) + Date.now();
     return Object.assign(packet, { id });
+  }
+
+  protected getOptionsProp<T>(
+    obj: ClientOptions,
+    prop: keyof T,
+    defaultValue = undefined,
+  ) {
+    return obj && obj.options ? obj.options[prop as any] : defaultValue;
   }
 }

@@ -8,7 +8,7 @@ import { finalize } from 'rxjs/operators';
 import { empty } from 'rxjs/observable/empty';
 import { of } from 'rxjs/observable/of';
 import { fromPromise } from 'rxjs/observable/fromPromise';
-import { WritePacket } from './../interfaces';
+import { WritePacket, MicroserviceOptions } from './../interfaces';
 
 export abstract class Server {
   protected readonly messageHandlers: MessageHandlers = {};
@@ -50,6 +50,14 @@ export abstract class Server {
       return of(resultOrDeffered);
     }
     return resultOrDeffered;
+  }
+
+  public getOptionsProp<T>(
+    obj: MicroserviceOptions,
+    prop: keyof T,
+    defaultValue = undefined,
+  ) {
+    return obj && obj.options ? obj.options[prop as any] : defaultValue;
   }
 
   protected handleError(error: string) {

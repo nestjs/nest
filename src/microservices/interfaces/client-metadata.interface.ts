@@ -1,10 +1,23 @@
 import { Transport } from './../enums/transport.enum';
+import {
+  TcpOptions,
+  RedisOptions,
+  NatsOptions,
+  MqttOptions,
+  GrpcOptions,
+} from './microservice-configuration.interface';
 
 export interface ClientOptions {
   transport?: Transport;
-  url?: string;
-  port?: number;
+  options?:
+    | TcpClientOptions
+    | RedisOptions
+    | NatsOptions
+    | MqttOptions
+    | GrpcOptions;
+}
+
+export interface TcpClientOptions {
   host?: string;
-  retryAttempts?: number;
-  retryDelay?: number;
+  port?: number;
 }

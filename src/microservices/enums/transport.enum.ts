@@ -2,5 +2,6 @@ export enum Transport {
   TCP,
   REDIS,
   NATS,
-  STAN,
+  MQTT,
+  GRPC,
 }

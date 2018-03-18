@@ -3,7 +3,7 @@ import { PATTERN_METADATA, PATTERN_HANDLER_METADATA } from '../constants';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 
 /**
- * Subscribes to the messages, which fulfils chosen pattern.
+ * Subscribes to incoming messages which fulfils chosen pattern.
  */
 export const MessagePattern = (
   metadata?: PatternMetadata | string,
@@ -14,3 +14,9 @@ export const MessagePattern = (
     return descriptor;
   };
 };
+
+/**
+ * Registers gRPC route handler for specified service.
+ */
+export const GrpcRoute = (service: string, rpc: string) =>
+  MessagePattern({ service, rpc });

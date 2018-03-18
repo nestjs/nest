@@ -7,7 +7,6 @@ import { RpcException } from './rpc-exception';
 import { RpcExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
 import { _throw } from 'rxjs/observable/throw';
 
-
 export class RpcExceptionsHandler {
   private static readonly logger = new Logger(RpcExceptionsHandler.name);
   private filters: RpcExceptionFilterMetadata[] = [];

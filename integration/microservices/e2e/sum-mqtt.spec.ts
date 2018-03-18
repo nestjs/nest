@@ -1,23 +1,23 @@
-/*import * as express from 'express';
+import * as express from 'express';
 import * as request from 'supertest';
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
-import { NatsController } from '../src/nats/nats.controller';
+import { MqttController } from '../src/mqtt/mqtt.controller';
 
-describe('STAN transport', () => {
+describe('MQTT transport', () => {
   let server;
   let app: INestApplication;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      controllers: [NatsController],
+      controllers: [MqttController],
     }).compile();
 
     server = express();
     app = module.createNestApplication(server);
     app.connectMicroservice({
-      transport: Transport.STAN,
+      transport: Transport.MQTT,
     });
     await app.startAllMicroservicesAsync();
     await app.init();
@@ -45,6 +45,19 @@ describe('STAN transport', () => {
       .expect(200, '15');
   });
 
+  it(`/POST (concurrent)`, () => {
+    return request(server)
+      .post('/concurrent')
+      .send([
+        [1, 2, 3, 4, 5],
+        [6, 7, 8, 9, 10],
+        [11, 12, 13, 14, 15],
+        [16, 17, 18, 19, 20],
+        [21, 22, 23, 24, 25],
+      ])
+      .expect(200, 'true');
+  });
+
   it(`/POST (streaming)`, () => {
     return request(server)
       .post('/stream')
@@ -56,4 +69,3 @@ describe('STAN transport', () => {
     await app.close();
   });
 });
-*/

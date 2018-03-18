@@ -9,7 +9,10 @@ import { catchError } from 'rxjs/operators';
 import { empty } from 'rxjs/observable/empty';
 import { finalize } from 'rxjs/operators';
 import { TCP_DEFAULT_PORT, MESSAGE_EVENT, ERROR_EVENT } from './../constants';
-import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  MicroserviceOptions,
+  TcpOptions,
+} from '../interfaces/microservice-configuration.interface';
 import { PacketId } from './../interfaces';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
@@ -20,7 +23,9 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
 
   constructor(private readonly config: MicroserviceOptions) {
     super();
-    this.port = config.port || TCP_DEFAULT_PORT;
+    this.port =
+      this.getOptionsProp<TcpOptions>(config, 'port') ||
+      TCP_DEFAULT_PORT;
     this.init();
   }
 
@@ -65,15 +70,25 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   public handleClose(): undefined | number | NodeJS.Timer {
     if (
       this.isExplicitlyTerminated ||
-      !this.config.retryAttempts ||
-      this.retryAttemptsCount >= this.config.retryAttempts
+      !this.getOptionsProp<TcpOptions>(
+        this.config,
+        'retryAttempts',
+      ) ||
+      this.retryAttemptsCount >=
+        this.getOptionsProp<TcpOptions>(
+          this.config,
+          'retryAttempts',
+        )
     ) {
       return undefined;
     }
     ++this.retryAttemptsCount;
     return setTimeout(
       () => this.server.listen(this.port),
-      this.config.retryDelay || 0,
+      this.getOptionsProp<TcpOptions>(
+        this.config,
+        'retryDelay',
+      ) || 0,
     );
   }
 

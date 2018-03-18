@@ -1,7 +1,10 @@
 import * as mqtt from 'mqtt';
 import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
-import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  MicroserviceOptions,
+  MqttOptions,
+} from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy, PacketId } from './../interfaces';
 import { Observable } from 'rxjs/Observable';
 import { catchError } from 'rxjs/operators';
@@ -17,51 +20,42 @@ import { ReadPacket } from '@nestjs/microservices';
 
 export class ServerMqtt extends Server implements CustomTransportStrategy {
   private readonly url: string;
-  private subClient: mqtt.MqttClient;
-  private pubClient: mqtt.MqttClient;
+  private mqttClient: mqtt.MqttClient;
 
   constructor(private readonly options: MicroserviceOptions) {
     super();
-    this.url = options.url || MQTT_DEFAULT_URL;
+    this.url =
+      this.getOptionsProp<MqttOptions>(options, 'url') ||
+      MQTT_DEFAULT_URL;
   }
 
   public async listen(callback: () => void) {
-    this.subClient = await this.createMqttClient();
-    this.pubClient = await this.createMqttClient();
-
-    this.handleError(this.pubClient);
-    this.handleError(this.subClient);
+    this.mqttClient = this.createMqttClient();
     this.start(callback);
   }
 
   public start(callback?: () => void) {
-    this.bindEvents(this.subClient, this.pubClient);
-    this.subClient.on(CONNECT_EVENT, callback);
+    this.handleError(this.mqttClient);
+    this.bindEvents(this.mqttClient);
+
+    this.mqttClient.on(CONNECT_EVENT, callback);
   }
 
-  public bindEvents(
-    subClient: mqtt.MqttClient,
-    pubClient: mqtt.MqttClient,
-  ) {
-    subClient.on(MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
+  public bindEvents(mqttClient: mqtt.MqttClient) {
+    mqttClient.on(MESSAGE_EVENT, this.getMessageHandler(mqttClient).bind(this));
     const registeredPatterns = Object.keys(this.messageHandlers);
     registeredPatterns.forEach(pattern =>
-      subClient.subscribe(this.getAckQueueName(pattern)),
+      mqttClient.subscribe(this.getAckQueueName(pattern)),
     );
   }
 
   public close() {
-    this.pubClient && this.pubClient.end();
-    this.subClient && this.subClient.end();
+    this.mqttClient && this.mqttClient.end();
   }
 
-  public createMqttClient(): Promise<mqtt.MqttClient> {
-    const client = mqtt.connect(this.url, {
-      reconnectPeriod: this.options.retryDelay,
-    });
-    return new Promise(resolve =>
-      client.on(CONNECT_EVENT, () => resolve(client)),
-    );
+  public createMqttClient(): mqtt.MqttClient {
+    return mqtt.connect(this.url, this.options
+      .options as MqttOptions);
   }
 
   public getMessageHandler(pub: mqtt.MqttClient): any {
@@ -70,11 +64,11 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public async handleMessage(
-    channel,
-    buffer: string | any,
+    channel: string,
+    buffer: Buffer,
     pub: mqtt.MqttClient,
   ): Promise<any> {
-    const packet = this.serialize(buffer);
+    const packet = this.deserialize(buffer.toString());
     const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(pub, pattern, packet.id);
     const status = 'error';
@@ -89,15 +83,15 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     response$ && this.send(response$, publish);
   }
 
-  public getPublisher(pub: mqtt.MqttClient, pattern: any, id: string): any {
+  public getPublisher(client: mqtt.MqttClient, pattern: any, id: string): any {
     return response =>
-      pub.publish(
-        this.getResQueueName(pattern, id),
+      client.publish(
+        this.getResQueueName(pattern),
         JSON.stringify(Object.assign(response, { id })),
       );
   }
 
-  public serialize(content): ReadPacket & PacketId {
+  public deserialize(content): ReadPacket & PacketId {
     try {
       return JSON.parse(content);
     } catch (e) {
@@ -109,8 +103,8 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     return `${pattern}_ack`;
   }
 
-  public getResQueueName(pattern: string, id: string): string {
-    return `${pattern}_${id}_res`;
+  public getResQueueName(pattern: string): string {
+    return `${pattern}_res`;
   }
 
   public handleError(stream) {

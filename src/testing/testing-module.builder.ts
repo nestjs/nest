@@ -19,8 +19,8 @@ export class TestingModuleBuilder {
 
   constructor(metadataScanner: MetadataScanner, metadata: ModuleMetadata) {
     this.scanner = new DependenciesScanner(
-      this.container, 
-      metadataScanner, 
+      this.container,
+      metadataScanner,
       this.applicationConfig,
     );
     this.module = this.createModule(metadata);
@@ -37,7 +37,9 @@ export class TestingModuleBuilder {
 
   /** @deprecated */
   public overrideComponent(typeOrToken): OverrideBy {
-    deprecate('The "overrideComponent()" method is deprecated and will be removed within next major release. Use "overrideProvider()" instead.')
+    deprecate(
+      'The "overrideComponent()" method is deprecated and will be removed within next major release. Use "overrideProvider()" instead.',
+    );
     return this.override(typeOrToken, true);
   }
 

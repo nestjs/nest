@@ -1,7 +1,10 @@
 import * as redis from 'redis';
 import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
-import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  MicroserviceOptions,
+  RedisOptions,
+} from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy, PacketId } from './../interfaces';
 import { Observable } from 'rxjs/Observable';
 import { catchError } from 'rxjs/operators';
@@ -23,7 +26,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
   constructor(private readonly options: MicroserviceOptions) {
     super();
-    this.url = options.url || REDIS_DEFAULT_URL;
+    this.url =
+      this.getOptionsProp<RedisOptions>(this.options, 'url') ||
+      REDIS_DEFAULT_URL;
   }
 
   public listen(callback: () => void) {
@@ -71,7 +76,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     buffer: string | any,
     pub: redis.RedisClient,
   ) {
-    const packet = this.serialize(buffer);
+    const packet = this.deserialize(buffer);
     const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(pub, pattern, packet.id);
     const status = 'error';
@@ -89,12 +94,12 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   public getPublisher(pub: redis.RedisClient, pattern: any, id: string) {
     return response =>
       pub.publish(
-        this.getResQueueName(pattern, id),
+        this.getResQueueName(pattern),
         JSON.stringify(Object.assign(response, { id })),
       );
   }
 
-  public serialize(content): ReadPacket & PacketId {
+  public deserialize(content): ReadPacket & PacketId {
     try {
       return JSON.parse(content);
     } catch (e) {
@@ -106,8 +111,8 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     return `${pattern}_ack`;
   }
 
-  public getResQueueName(pattern: string, id: string): string {
-    return `${pattern}_${id}_res`;
+  public getResQueueName(pattern: string): string {
+    return `${pattern}_res`;
   }
 
   public handleError(stream) {
@@ -126,11 +131,18 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   ): undefined | number {
     if (
       this.isExplicitlyTerminated ||
-      !this.options.retryAttempts ||
-      options.attempt > this.options.retryAttempts
+      !this.getOptionsProp<RedisOptions>(
+        this.options,
+        'retryAttempts',
+      ) ||
+      options.attempt >
+        this.getOptionsProp<RedisOptions>(
+          this.options,
+          'retryAttempts',
+        )
     ) {
       return undefined;
     }
-    return this.options.retryDelay || 0;
+    return this.getOptionsProp(this.options, 'retryDelay') || 0;
   }
 }
