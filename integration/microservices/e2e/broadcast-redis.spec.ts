@@ -4,7 +4,7 @@ import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { RedisController } from '../src/redis/redis.controller';
-import { RedisMulticastController } from '../src/redis/redis-multicast.controller';
+import { RedisBroadcastController } from '../src/redis/redis-broadcast.controller';
 
 describe('REDIS transport', () => {
   let server;
@@ -12,7 +12,7 @@ describe('REDIS transport', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      controllers: [RedisMulticastController],
+      controllers: [RedisBroadcastController],
     }).compile();
 
     server = express();
@@ -27,9 +27,9 @@ describe('REDIS transport', () => {
     await app.init();
   });
 
-  it(`Multicast (2 subscribers)`, () => {
+  it(`Broadcast (2 subscribers)`, () => {
     return request(server)
-      .get('/multicast')
+      .get('/broadcast')
       .expect(200, '2');
   });
 

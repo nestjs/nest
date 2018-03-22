@@ -3,7 +3,7 @@ import * as request from 'supertest';
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
-import { MqttMulticastController } from '../src/mqtt/mqtt-multicast.controller';
+import { MqttBroadcastController } from '../src/mqtt/mqtt-broadcast.controller';
 
 describe('MQTT transport', () => {
   let server;
@@ -11,7 +11,7 @@ describe('MQTT transport', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      controllers: [MqttMulticastController],
+      controllers: [MqttBroadcastController],
     }).compile();
 
     server = express();
@@ -26,9 +26,9 @@ describe('MQTT transport', () => {
     await app.init();
   });
 
-  it(`Multicast (2 subscribers)`, () => {
+  it(`Broadcast (2 subscribers)`, () => {
     return request(server)
-      .get('/multicast')
+      .get('/broadcast')
       .expect(200, '2');
   });
 

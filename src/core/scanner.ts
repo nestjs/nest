@@ -66,7 +66,11 @@ export class DependenciesScanner {
     });
   }
 
-  public reflectRelatedModules(module: Type<any>, token: string, context: string) {
+  public reflectRelatedModules(
+    module: Type<any>,
+    token: string,
+    context: string,
+  ) {
     const modules = [
       ...this.reflectMetadata(module, metadata.MODULES),
       ...this.container.getDynamicMetadataByToken(

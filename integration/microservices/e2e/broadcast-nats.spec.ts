@@ -3,7 +3,7 @@ import * as request from 'supertest';
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
-import { NatsMulticastController } from '../src/nats/nats-multicast.controller';
+import { NatsBroadcastController } from '../src/nats/nats-broadcast.controller';
 
 describe('NATS transport', () => {
   let server;
@@ -11,7 +11,7 @@ describe('NATS transport', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      controllers: [NatsMulticastController],
+      controllers: [NatsBroadcastController],
     }).compile();
 
     server = express();
@@ -27,9 +27,9 @@ describe('NATS transport', () => {
     await app.init();
   });
 
-  it(`Multicast (2 subscribers)`, () => {
+  it(`Broadcast (2 subscribers)`, () => {
     return request(server)
-      .get('/multicast')
+      .get('/broadcast')
       .expect(200, '2');
   });
 

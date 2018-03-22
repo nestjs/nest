@@ -9,10 +9,7 @@ import {
 } from './gateway-metadata-explorer';
 import { Subject } from 'rxjs/Subject';
 import { SocketServerProvider } from './socket-server-provider';
-import {
-  PORT_METADATA,
-  GATEWAY_OPTIONS,
-} from './constants';
+import { PORT_METADATA, GATEWAY_OPTIONS } from './constants';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { NestContainer } from '@nestjs/core/injector/container';
@@ -47,7 +44,7 @@ export class WebSocketsController {
   ) {
     const options = Reflect.getMetadata(GATEWAY_OPTIONS, metatype) || {};
     const port = Reflect.getMetadata(PORT_METADATA, metatype) || 0;
-    
+
     if (!Number.isInteger(port)) {
       throw new InvalidSocketPortException(port, metatype);
     }

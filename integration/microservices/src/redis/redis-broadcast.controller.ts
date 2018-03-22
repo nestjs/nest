@@ -9,21 +9,21 @@ import { Observable } from 'rxjs/Observable';
 import { scan, take } from 'rxjs/operators';
 
 @Controller()
-export class RedisMulticastController {
+export class RedisBroadcastController {
   @Client({ transport: Transport.REDIS })
   client: ClientProxy;
 
-  @Get('multicast')
+  @Get('broadcast')
   multicats() {
-    return this.client.send<number>({ cmd: 'multicast' }, {})
+    return this.client.send<number>({ cmd: 'broadcast' }, {})
       .pipe(
         scan((a, b) => a + b),
         take(2),
       );
   }
 
-  @MessagePattern({ cmd: 'multicast' })
-  replyMulticast(): Observable<number> {
+  @MessagePattern({ cmd: 'broadcast' })
+  replyBroadcast(): Observable<number> {
     return new Observable((observer) => observer.next(1));
   }
 }
