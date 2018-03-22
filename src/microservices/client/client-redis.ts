@@ -25,7 +25,8 @@ export class ClientRedis extends ClientProxy {
 
   constructor(private readonly options: ClientOptions) {
     super();
-    this.url = this.getOptionsProp<RedisOptions>(options, 'url') || REDIS_DEFAULT_URL;
+    this.url =
+      this.getOptionsProp<RedisOptions>(options, 'url') || REDIS_DEFAULT_URL;
   }
 
   protected async publish(
@@ -62,12 +63,16 @@ export class ClientRedis extends ClientProxy {
     };
     this.subClient.on(MESSAGE_EVENT, responseCallback);
     this.subClient.subscribe(responseChannel);
-    await new Promise(resolve =>
-      this.subClient.on(
-        SUBSCRIBE,
-        channel => channel === responseChannel && resolve(),
-      ),
-    );
+    await new Promise(resolve => {
+      const handler = channel => {
+        if (channel && channel !== responseChannel) {
+          return void 0;
+        }
+        this.subClient.removeListener(SUBSCRIBE, handler);
+        resolve();
+      };
+      this.subClient.on(SUBSCRIBE, handler);
+    });
 
     this.pubClient.publish(
       this.getAckPatternName(pattern),

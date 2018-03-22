@@ -21,10 +21,10 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   private isExplicitlyTerminated = false;
   private retryAttemptsCount = 0;
 
-  constructor(private readonly config: MicroserviceOptions) {
+  constructor(private readonly options: MicroserviceOptions) {
     super();
     this.port =
-      this.getOptionsProp<TcpOptions>(config, 'port') ||
+      this.getOptionsProp<TcpOptions>(options, 'port') ||
       TCP_DEFAULT_PORT;
     this.init();
   }
@@ -71,12 +71,12 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     if (
       this.isExplicitlyTerminated ||
       !this.getOptionsProp<TcpOptions>(
-        this.config,
+        this.options,
         'retryAttempts',
       ) ||
       this.retryAttemptsCount >=
         this.getOptionsProp<TcpOptions>(
-          this.config,
+          this.options,
           'retryAttempts',
         )
     ) {
@@ -86,7 +86,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     return setTimeout(
       () => this.server.listen(this.port),
       this.getOptionsProp<TcpOptions>(
-        this.config,
+        this.options,
         'retryDelay',
       ) || 0,
     );

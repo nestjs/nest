@@ -31,4 +31,19 @@ describe('SocketsContainer', () => {
       expect(setSpy.calledWith({ namespace, port }, server));
     });
   });
+  describe('getAllServers', () => {
+    it('should return "observableServers"', () => {
+      const collection = ['test'];
+      (instance as any).observableServers = collection;
+      expect(instance.getAllServers()).to.be.eq(collection);
+    });
+  });
+  describe('clear', () => {
+    it('should clear servers collection', () => {
+      const collection = { clear: sinon.spy() };
+      (instance as any).observableServers = collection;
+      instance.clear();
+      expect(collection.clear.called).to.be.true;
+    });
+  })
 });

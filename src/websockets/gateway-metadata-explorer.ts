@@ -30,7 +30,6 @@ export class GatewayMetadataExplorer {
       MESSAGE_MAPPING_METADATA,
       callback,
     );
-
     if (isUndefined(isMessageMapping)) {
       return null;
     }
@@ -59,6 +58,6 @@ export class GatewayMetadataExplorer {
 }
 
 export interface MessageMappingProperties {
-  message: string;
-  callback: (...args) => Observable<any> | Promise<any> | void;
+  message: any;
+  callback: (...args) => Observable<any> | Promise<any> | any;
 }

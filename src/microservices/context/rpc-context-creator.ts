@@ -29,7 +29,7 @@ export class RpcContextCreator {
     instance: Controller,
     callback: (data) => Observable<any>,
     module,
-  ): (data) => Promise<Observable<any>> {
+  ): (...args) => Promise<Observable<any>> {
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
       callback,

@@ -55,6 +55,8 @@ describe('RpcContextCreator', () => {
     exceptionFiltersContext = new ExceptionFiltersContext(
       new ApplicationConfig() as any,
     );
+    sinon.stub(rpcProxy, 'create').callsFake(a => a);
+
     pipesCreator = new PipesContextCreator();
     pipesConsumer = new PipesConsumer();
     guardsContextCreator = new GuardsContextCreator(new NestContainer());

@@ -1,17 +1,15 @@
 import { Observable } from 'rxjs/Observable';
 
 export interface WebSocketAdapter {
-  create(port: number);
-  createWithNamespace?(port: number, namespace: string, server?);
+  create(port: number, options?: any & { namespace?: string; server?: any });
   bindClientConnect(server, callback: (...args) => void);
   bindClientDisconnect?(client, callback: (...args) => void);
   bindMessageHandlers(
     client,
     handler: {
-      message: string;
-      callback: (...args) => Observable<any> | Promise<any> | void;
+      message: any;
+      callback: (...args) => Observable<any> | Promise<any> | any;
     }[],
     process: (data) => Observable<any>,
   );
-  bindMiddleware?(server, middleware: (socket, next) => void);
 }

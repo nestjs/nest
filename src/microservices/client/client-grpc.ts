@@ -8,6 +8,7 @@ import { ClientGrpc } from './../interfaces';
 import { Observable } from 'rxjs/Observable';
 import { InvalidGrpcServiceException } from '../exceptions/invalid-grpc-service.exception';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
+import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
 
 export interface GrpcService {
   [name: string]: (...args: any[]) => Observable<any>;
@@ -84,9 +85,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public createClient(): any {
-    const grpcContext = grpc.load(
-      this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),
-    );
+    const grpcContext = this.loadProto();
     const packageName = this.getOptionsProp<GrpcOptions>(
       this.options,
       'package',
@@ -96,6 +95,18 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       throw new InvalidGrpcPackageException();
     }
     return grpcPackage;
+  }
+
+  public loadProto(): grpc.GrpcObject {
+    try {
+      const context = grpc.load(
+        this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),
+      );
+      return context;
+    }
+    catch (e) {
+      throw new InvalidProtoDefinitionException();
+    }
   }
 
   public lookupPackage(root: any, packageName: string) {

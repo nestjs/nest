@@ -32,7 +32,7 @@ describe('SocketServerProvider', () => {
       const server = { test: 'test' };
       mockContainer.expects('getServerByPort').returns(server);
 
-      const result = instance.scanForSocketServer(null, port);
+      const result = instance.scanForSocketServer({ namespace: null }, port);
 
       expect(createSocketServerSpy.called).to.be.false;
       expect(result).to.eq(server);
@@ -40,7 +40,7 @@ describe('SocketServerProvider', () => {
     it(`should call "createSocketServer" when server is not stored already`, () => {
       mockContainer.expects('getServerByPort').returns(null);
 
-      instance.scanForSocketServer(namespace, port);
+      instance.scanForSocketServer({ namespace }, port);
       expect(createSocketServerSpy.called).to.be.true;
     });
   });

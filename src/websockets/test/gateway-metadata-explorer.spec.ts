@@ -22,10 +22,10 @@ describe('GatewayMetadataExplorer', () => {
 
     constructor() {}
 
-    @SubscribeMessage({ value: message })
+    @SubscribeMessage(message)
     public test() {}
 
-    @SubscribeMessage({ value: secMessage })
+    @SubscribeMessage(secMessage)
     public testSec() {}
 
     public noMessage() {}

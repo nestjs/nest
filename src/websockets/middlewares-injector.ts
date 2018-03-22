@@ -24,7 +24,7 @@ export class MiddlewaresInjector {
   ) {}
 
   public inject(server, instance: NestGateway, module: string) {
-    const adapter = this.config.getIoAdapter();
+    const adapter: any = this.config.getIoAdapter();
     if (!adapter.bindMiddleware) {
       return;
     }
@@ -49,7 +49,7 @@ export class MiddlewaresInjector {
     components: Map<string, InstanceWrapper<Injectable>>,
     tokens: any[],
   ) {
-    const adapter = this.config.getIoAdapter();
+    const adapter: any = this.config.getIoAdapter();
     iterate(tokens)
       .map(token => this.bindMiddleware(token.name, components))
       .filter(middleware => !isNil(middleware))

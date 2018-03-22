@@ -4,7 +4,7 @@ import { SubscribeMessage } from '../../utils/subscribe-message.decorator';
 
 describe('@SubscribeMessage', () => {
   class TestGateway {
-    @SubscribeMessage({ value: 'filter' })
+    @SubscribeMessage('filter')
     static fn() {}
   }
 

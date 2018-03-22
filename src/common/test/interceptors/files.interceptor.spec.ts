@@ -29,5 +29,17 @@ describe('FilesInterceptor', () => {
       expect(arraySpy.called).to.be.true;
       expect(arraySpy.calledWith(fieldName, maxCount)).to.be.true;
     });
+    it('should transform exception', async () => {
+      const fieldName = 'file';
+      const target = new (FilesInterceptor(fieldName));
+      const err = {};
+      const callback = (req, res, next) => next(err);
+
+      (target as any).upload = {
+        array: () => callback,
+      };
+      const req = {};
+      expect(target.intercept(req, null, stream$)).to.eventually.throw();
+    });
   });
 });

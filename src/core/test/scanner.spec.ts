@@ -156,7 +156,7 @@ describe('DependenciesScanner', () => {
       const module = { forwardRef: sinon.stub().returns({}) };
 
       sinon.stub(container, 'addRelatedModule').returns({});
-      scanner.storeRelatedModule(module as any, [] as any);
+      scanner.storeRelatedModule(module as any, [] as any, 'test');
       expect(module.forwardRef.called).to.be.true;
     });
   });

@@ -14,8 +14,7 @@ import {
   ERROR_EVENT,
   CLOSE_EVENT,
 } from './../constants';
-import { WritePacket } from './../interfaces';
-import { ReadPacket, PacketId } from 'src/microservices';
+import { WritePacket, ReadPacket, PacketId } from './../interfaces';
 
 export class ClientTCP extends ClientProxy {
   private readonly logger = new Logger(ClientTCP.name);

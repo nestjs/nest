@@ -9,7 +9,10 @@ import {
 } from './gateway-metadata-explorer';
 import { Subject } from 'rxjs/Subject';
 import { SocketServerProvider } from './socket-server-provider';
-import { NAMESPACE_METADATA, PORT_METADATA } from './constants';
+import {
+  PORT_METADATA,
+  GATEWAY_OPTIONS,
+} from './constants';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { NestContainer } from '@nestjs/core/injector/container';
@@ -42,18 +45,18 @@ export class WebSocketsController {
     metatype: Type<any>,
     module: string,
   ) {
-    const namespace = Reflect.getMetadata(NAMESPACE_METADATA, metatype) || '';
+    const options = Reflect.getMetadata(GATEWAY_OPTIONS, metatype) || {};
     const port = Reflect.getMetadata(PORT_METADATA, metatype) || 0;
-
+    
     if (!Number.isInteger(port)) {
       throw new InvalidSocketPortException(port, metatype);
     }
-    this.subscribeObservableServer(instance, namespace, port, module);
+    this.subscribeObservableServer(instance, options, port, module);
   }
 
   public subscribeObservableServer(
     instance: NestGateway,
-    namespace: string,
+    options: any,
     port: number,
     module: string,
   ) {
@@ -65,10 +68,9 @@ export class WebSocketsController {
       }),
     );
     const observableServer = this.socketServerProvider.scanForSocketServer(
-      namespace,
+      options,
       port,
     );
-
     this.injectMiddlewares(observableServer, instance, module);
     this.hookServerToProperties(instance, observableServer.server);
     this.subscribeEvents(instance, messageHandlers, observableServer);

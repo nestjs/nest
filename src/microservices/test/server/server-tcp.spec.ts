@@ -49,6 +49,7 @@ describe('ServerTCP', () => {
     const msg = {
       pattern: 'test',
       data: 'tests',
+      id: '3',
     };
     beforeEach(() => {
       socket = {
@@ -59,6 +60,7 @@ describe('ServerTCP', () => {
       server.handleMessage(socket, msg);
       expect(
         socket.sendMessage.calledWith({
+          id: msg.id,
           status: 'error',
           err: NO_PATTERN_MESSAGE,
         }),
@@ -83,14 +85,14 @@ describe('ServerTCP', () => {
     });
     describe('when "retryAttempts" does not exist', () => {
       it('should return undefined', () => {
-        (server as any).config.retryAttempts = undefined;
+        (server as any).options.retryAttempts = undefined;
         const result = server.handleClose();
         expect(result).to.be.undefined;
       });
     });
     describe('when "retryAttemptsCount" count is max', () => {
       it('should return undefined', () => {
-        (server as any).config.retryAttempts = 3;
+        (server as any).options.retryAttempts = 3;
         (server as any).retryAttemptsCount = 3;
         const result = server.handleClose();
         expect(result).to.be.undefined;
@@ -98,10 +100,11 @@ describe('ServerTCP', () => {
     });
     describe('otherwise', () => {
       it('should return delay (ms)', () => {
+        (server as any).options.options = {};
         (server as any).isExplicitlyTerminated = false;
-        (server as any).config.retryAttempts = 3;
+        (server as any).options.options.retryAttempts = 3;
         (server as any).retryAttemptsCount = 2;
-        (server as any).config.retryDelay = 3;
+        (server as any).options.options.retryDelay = 3;
         const result = server.handleClose();
         expect(result).to.be.not.undefined;
       });

@@ -42,7 +42,7 @@ describe('Server', () => {
             .true;
         });
         it('should send "complete" event', () => {
-          expect(sendSpy.calledWith({ disposed: true })).to.be.true;
+          expect(sendSpy.calledWith({ isDisposed: true })).to.be.true;
         });
       });
       describe('emits response', () => {
@@ -54,7 +54,7 @@ describe('Server', () => {
             .true;
         });
         it('should send "complete" event', () => {
-          expect(sendSpy.calledWith({ disposed: true })).to.be.true;
+          expect(sendSpy.calledWith({ isDisposed: true })).to.be.true;
         });
       });
     });

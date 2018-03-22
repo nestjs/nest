@@ -23,7 +23,7 @@ export class ClientMqtt extends ClientProxy {
       this.getOptionsProp<MqttOptions>(this.options, 'url') || MQTT_DEFAULT_URL;
   }
 
-  protected async publish(
+  protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ) {

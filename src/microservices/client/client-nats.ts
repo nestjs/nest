@@ -3,8 +3,12 @@ import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { NATS_DEFAULT_URL, ERROR_EVENT, CONNECT_EVENT } from './../constants';
-import { WritePacket, NatsOptions } from './../interfaces';
-import { ReadPacket, PacketId } from 'src/microservices';
+import {
+  WritePacket,
+  NatsOptions,
+  ReadPacket,
+  PacketId,
+} from './../interfaces';
 
 export class ClientNats extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
@@ -28,28 +32,30 @@ export class ClientNats extends ClientProxy {
     const pattern = JSON.stringify(partialPacket.pattern);
     const responseChannel = this.getResPatternName(pattern);
 
-    const subscriptionId = this.natsClient.subscribe(
-      responseChannel,
-      (message: WritePacket & PacketId) => {
-        if (message.id !== packet.id) {
-          return void 0;
-        }
-        const { err, response, isDisposed } = message;
-        if (isDisposed || err) {
-          callback({
-            err,
-            response: null,
-            isDisposed: true,
-          });
-          return this.natsClient.unsubscribe(subscriptionId);
-        }
+    const subscriptionHandler = (message: WritePacket & PacketId) => {
+      if (message.id !== packet.id) {
+        return void 0;
+      }
+      const { err, response, isDisposed } = message;
+      if (isDisposed || err) {
         callback({
           err,
-          response,
+          response: null,
+          isDisposed: true,
         });
-      },
+        return this.natsClient.unsubscribe(subscriptionId);
+      }
+      callback({
+        err,
+        response,
+      });
+    };
+    const subscriptionId = this.natsClient.subscribe(
+      responseChannel,
+      subscriptionHandler,
     );
     this.natsClient.publish(this.getAckPatternName(pattern), packet as any);
+    return subscriptionHandler;
   }
 
   public getAckPatternName(pattern: string): string {

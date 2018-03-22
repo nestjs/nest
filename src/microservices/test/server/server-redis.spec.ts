@@ -83,18 +83,21 @@ describe('ServerRedis', () => {
   });
   describe('handleMessage', () => {
     let getPublisherSpy: sinon.SinonSpy;
+
     const channel = 'test';
     const data = 'test';
+    const id = '3';
 
     beforeEach(() => {
       getPublisherSpy = sinon.spy();
       sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
-      sinon.stub(server, 'tryParse').callsFake(() => ({ data }));
+      sinon.stub(server, 'deserialize').callsFake(() => ({ id, data }));
     });
     it(`should publish NO_PATTERN_MESSAGE if pattern not exists in messageHandlers object`, () => {
-      server.handleMessage(channel, {}, null);
+      server.handleMessage(channel, JSON.stringify({ id }), null);
       expect(
         getPublisherSpy.calledWith({
+          id,
           status: 'error',
           err: NO_PATTERN_MESSAGE,
         }),
@@ -113,6 +116,8 @@ describe('ServerRedis', () => {
   describe('getPublisher', () => {
     let publisherSpy: sinon.SinonSpy;
     let pub, publisher;
+  
+    const id = '1';
     const pattern = 'test';
 
     beforeEach(() => {
@@ -120,28 +125,28 @@ describe('ServerRedis', () => {
       pub = {
         publish: publisherSpy,
       };
-      publisher = server.getPublisher(pub, pattern);
+      publisher = server.getPublisher(pub, pattern, id);
     });
     it(`should return function`, () => {
-      expect(typeof server.getPublisher(null, null)).to.be.eql('function');
+      expect(typeof server.getPublisher(null, null, id)).to.be.eql('function');
     });
     it(`should call "publish" with expected arguments`, () => {
       const respond = 'test';
-      publisher(respond);
-      expect(publisherSpy.calledWith(`${pattern}_res`, JSON.stringify(respond)))
+      publisher({ respond, id });
+      expect(publisherSpy.calledWith(`${pattern}_res`, JSON.stringify({ respond, id })))
         .to.be.true;
     });
   });
-  describe('tryParse', () => {
+  describe('deserialize', () => {
     it(`should return parsed json`, () => {
       const obj = { test: 'test' };
-      expect(server.tryParse(obj)).to.deep.equal(
+      expect(server.deserialize(obj)).to.deep.equal(
         JSON.parse(JSON.stringify(obj)),
       );
     });
     it(`should not parse argument if it is not an object`, () => {
       const content = 'test';
-      expect(server.tryParse(content)).to.equal(content);
+      expect(server.deserialize(content)).to.equal(content);
     });
   });
   describe('getAckPatternName', () => {
@@ -176,25 +181,28 @@ describe('ServerRedis', () => {
     });
     describe('when "retryAttempts" does not exist', () => {
       it('should return undefined', () => {
-        (server as any).config.retryAttempts = undefined;
+        (server as any).options.options = {};
+        (server as any).options.options.retryAttempts = undefined;
         const result = server.createRetryStrategy({} as any);
         expect(result).to.be.undefined;
       });
     });
     describe('when "attempts" count is max', () => {
       it('should return undefined', () => {
-        (server as any).config.retryAttempts = 3;
+        (server as any).options.options = {};
+        (server as any).options.options.retryAttempts = 3;
         const result = server.createRetryStrategy({ attempt: 4 } as any);
         expect(result).to.be.undefined;
       });
     });
     describe('otherwise', () => {
       it('should return delay (ms)', () => {
+        (server as any).options.options = {};
         (server as any).isExplicitlyTerminated = false;
-        (server as any).config.retryAttempts = 3;
-        (server as any).config.retryDelay = 3;
+        (server as any).options.options.retryAttempts = 3;
+        (server as any).options.options.retryDelay = 3;
         const result = server.createRetryStrategy({ attempt: 2 } as any);
-        expect(result).to.be.eql((server as any).config.retryDelay);
+        expect(result).to.be.eql((server as any).options.options.retryDelay);
       });
     })
   });

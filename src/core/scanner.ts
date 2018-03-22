@@ -13,8 +13,9 @@ import { Type } from '@nestjs/common/interfaces/type.interface';
 import { MetadataScanner } from '../core/metadata-scanner';
 import { DynamicModule } from '@nestjs/common';
 import { ApplicationConfig } from './application-config';
-import { isNil } from '@nestjs/common/utils/shared.utils';
+import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { APP_INTERCEPTOR, APP_PIPE, APP_GUARD, APP_FILTER } from './constants';
+import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
 
 interface ApplicationProviderWrapper {
   moduleToken: string;
@@ -58,14 +59,14 @@ export class DependenciesScanner {
     const modules = this.container.getModules();
 
     modules.forEach(({ metatype }, token) => {
-      this.reflectRelatedModules(metatype, token);
+      this.reflectRelatedModules(metatype, token, metatype.name);
       this.reflectComponents(metatype, token);
       this.reflectControllers(metatype, token);
       this.reflectExports(metatype, token);
     });
   }
 
-  public reflectRelatedModules(module: Type<any>, token: string) {
+  public reflectRelatedModules(module: Type<any>, token: string, context: string) {
     const modules = [
       ...this.reflectMetadata(module, metadata.MODULES),
       ...this.container.getDynamicMetadataByToken(
@@ -77,7 +78,7 @@ export class DependenciesScanner {
         metadata.IMPORTS as 'imports',
       ),
     ];
-    modules.map(related => this.storeRelatedModule(related, token));
+    modules.map(related => this.storeRelatedModule(related, token, context));
   }
 
   public reflectComponents(module: Type<any>, token: string) {
@@ -189,8 +190,11 @@ export class DependenciesScanner {
     return descriptor ? Reflect.getMetadata(key, descriptor.value) : undefined;
   }
 
-  public storeRelatedModule(related: any, token: string) {
-    if (related.forwardRef) {
+  public storeRelatedModule(related: any, token: string, context: string) {
+    if (isUndefined(related)) {
+      throw new CircularDependencyException(context);
+    }
+    if (related && related.forwardRef) {
       return this.container.addRelatedModule(related.forwardRef(), token);
     }
     this.container.addRelatedModule(related, token);

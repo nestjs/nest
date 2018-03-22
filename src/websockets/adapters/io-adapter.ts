@@ -6,25 +6,28 @@ import { WebSocketAdapter } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
 import { switchMap, filter, tap } from 'rxjs/operators';
 import { fromEvent } from 'rxjs/observable/fromEvent';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 
 export class IoAdapter implements WebSocketAdapter {
   constructor(private readonly httpServer: Server | null = null) {}
 
-  public create(port: number): any {
-    return this.createIOServer(port);
-  }
-
-  public createWithNamespace(port: number, namespace: string, server?: any): any {
-    return server
-      ? server.of(namespace)
-      : this.createIOServer(port).of(namespace);
-  }
-
-  public createIOServer(port: number): any {
-    if (this.httpServer && port === 0) {
-      return io.listen(this.httpServer);
+  public create(port: number, options?: any & { namespace?: string, server?: any}): any {
+    if (!options) {
+      return this.createIOServer(port);
     }
-    return io(port);
+    const { namespace, server, ...opt } = options;
+    return server && isFunction(server.of)
+      ? server.of(namespace)
+      : namespace 
+        ? this.createIOServer(port, opt).of(namespace)
+        : this.createIOServer(port, opt);
+  }
+
+  public createIOServer(port: number, options?: any): any {
+    if (this.httpServer && port === 0) {
+      return io(this.httpServer, options);
+    }
+    return io(port, options);
   }
 
   public bindClientConnect(server, callback: (...args) => void) {

@@ -11,6 +11,7 @@ import { WsContextCreator } from '../context/ws-context-creator';
 import { Observable } from 'rxjs/Observable';
 import { IoAdapter } from '../index';
 import { of } from 'rxjs/observable/of';
+import { PORT_METADATA } from '../constants';
 
 describe('WebSocketsController', () => {
   let instance: WebSocketsController;
@@ -20,7 +21,7 @@ describe('WebSocketsController', () => {
 
   const port = 90,
     namespace = '/';
-  @WebSocketGateway({ port, namespace })
+  @WebSocketGateway(port, { namespace })
   class Test {}
 
   beforeEach(() => {
@@ -37,7 +38,7 @@ describe('WebSocketsController', () => {
   describe('hookGatewayIntoServer', () => {
     let subscribeObservableServer: sinon.SinonSpy;
 
-    @WebSocketGateway({ port: 'test' } as any)
+    @WebSocketGateway('test')
     class InvalidGateway {}
 
     @WebSocketGateway()
@@ -48,6 +49,7 @@ describe('WebSocketsController', () => {
       (instance as any).subscribeObservableServer = subscribeObservableServer;
     });
     it('should throws "InvalidSocketPortException" when port is not a number', () => {
+      Reflect.defineMetadata(PORT_METADATA, 'test', InvalidGateway);
       expect(() =>
         instance.hookGatewayIntoServer(
           new InvalidGateway(),
@@ -59,12 +61,12 @@ describe('WebSocketsController', () => {
     it('should call "subscribeObservableServer" with default values when metadata is empty', () => {
       const gateway = new DefaultGateway();
       instance.hookGatewayIntoServer(gateway, DefaultGateway, '');
-      expect(subscribeObservableServer.calledWith(gateway, '', 0)).to.be.true;
+      expect(subscribeObservableServer.calledWith(gateway, {}, 0, '')).to.be.true;
     });
     it('should call "subscribeObservableServer" when metadata is valid', () => {
       const gateway = new Test();
       instance.hookGatewayIntoServer(gateway, Test, '');
-      expect(subscribeObservableServer.calledWith(gateway, namespace, port)).to
+      expect(subscribeObservableServer.calledWith(gateway, { namespace }, port, '')).to
         .be.true;
     });
   });
