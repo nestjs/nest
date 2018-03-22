@@ -14,6 +14,12 @@ describe('@UseGuards', () => {
     public static test() {}
   }
 
+  class Test2 {
+    @UseGuards(...(guards as any))
+    @UseGuards(...(guards as any))
+    public static test() {}
+  }
+
   it('should enhance class with expected guards array', () => {
     const metadata = Reflect.getMetadata(GUARDS_METADATA, Test);
     expect(metadata).to.be.eql(guards);
@@ -22,5 +28,10 @@ describe('@UseGuards', () => {
   it('should enhance method with expected guards array', () => {
     const metadata = Reflect.getMetadata(GUARDS_METADATA, TestWithMethod.test);
     expect(metadata).to.be.eql(guards);
+  });
+
+  it('should enhance class with multiple guards array', () => {
+    const metadata = Reflect.getMetadata(GUARDS_METADATA, Test2.test);
+    expect(metadata).to.be.eql(guards.concat(guards));
   });
 });

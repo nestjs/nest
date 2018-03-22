@@ -1,3 +1,3 @@
-export interface WsExceptionFilter {
-  catch(exception, client);
+export interface WsExceptionFilter<T = any, R = any> {
+  catch(exception: T, client: R);
 }

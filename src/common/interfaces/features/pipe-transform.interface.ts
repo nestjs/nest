@@ -1,6 +1,6 @@
 import { Paramtype } from './paramtype.interface';
 
-export type Transform<T> = (value: T, metadata: ArgumentMetadata) => any;
+export type Transform<T = any> = (value: T, metadata: ArgumentMetadata) => any;
 
 export interface ArgumentMetadata {
   type: Paramtype;
@@ -8,6 +8,6 @@ export interface ArgumentMetadata {
   data?: string;
 }
 
-export interface PipeTransform<T> {
-  transform(value: T, metadata: ArgumentMetadata): any;
+export interface PipeTransform<T = any, R = any> {
+  transform(value: T, metadata: ArgumentMetadata): R;
 }

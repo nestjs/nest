@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs/Observable';
 
-export interface WebSocketAdapter {
-  create(port: number, options?: any & { namespace?: string; server?: any });
+export interface WebSocketAdapter<T = any> {
+  create(port: number, options?: T);
   bindClientConnect(server, callback: (...args) => void);
   bindClientDisconnect?(client, callback: (...args) => void);
   bindMessageHandlers(

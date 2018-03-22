@@ -1,4 +1,5 @@
 import { INTERCEPTORS_METADATA } from '../../constants';
+import { extendArrayMetadata } from '../../utils/extend-metadata.util';
 
 /**
  * Binds interceptors to the particular context.
@@ -10,17 +11,17 @@ import { INTERCEPTORS_METADATA } from '../../constants';
  *
  * @param  {} ...interceptors (types)
  */
-export function UseInterceptors(...interceptors) {
+export function UseInterceptors(...interceptors: any[]) {
   return (target: object, key?, descriptor?) => {
     if (descriptor) {
-      Reflect.defineMetadata(
+      extendArrayMetadata(
         INTERCEPTORS_METADATA,
         interceptors,
         descriptor.value,
       );
       return descriptor;
     }
-    Reflect.defineMetadata(INTERCEPTORS_METADATA, interceptors, target);
+    extendArrayMetadata(INTERCEPTORS_METADATA, interceptors, target);
     return target;
   };
 }

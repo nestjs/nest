@@ -1,4 +1,4 @@
-export interface WsResponse<T> {
+export interface WsResponse<T = any> {
   event: string;
   data: T;
 }

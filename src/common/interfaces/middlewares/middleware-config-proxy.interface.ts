@@ -18,7 +18,7 @@ export interface MiddlewareConfigProxy {
    * method: RequestMethod;
    * ```
    *
-   * When you passe Controller class, Nest will attach middleware to every HTTP route handler inside this controller.
+   * When you pass Controller class, Nest will attach middleware to every HTTP route handler inside this controller.
    *
    * @param  {} ...routes
    * @returns MiddlewaresConsumer

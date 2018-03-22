@@ -5,8 +5,8 @@ import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 /**
  * Subscribes to incoming messages which fulfils chosen pattern.
  */
-export const MessagePattern = (
-  metadata?: PatternMetadata | string,
+export const MessagePattern = <T = PatternMetadata | string>(
+  metadata?: T,
 ): MethodDecorator => {
   return (target, key, descriptor: PropertyDescriptor) => {
     Reflect.defineMetadata(PATTERN_METADATA, metadata, descriptor.value);

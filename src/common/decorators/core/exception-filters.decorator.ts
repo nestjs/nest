@@ -2,18 +2,19 @@ import 'reflect-metadata';
 import { EXCEPTION_FILTERS_METADATA } from '../../constants';
 import { Logger } from '@nestjs/common';
 import { ExceptionFilter } from '../../index';
+import { extendArrayMetadata } from '../../utils/extend-metadata.util';
 
 const defineFiltersMetadata = (...filters: ExceptionFilter[]) => {
   return (target: object, key?, descriptor?) => {
     if (descriptor) {
-      Reflect.defineMetadata(
+      extendArrayMetadata(
         EXCEPTION_FILTERS_METADATA,
         filters,
         descriptor.value,
       );
       return descriptor;
     }
-    Reflect.defineMetadata(EXCEPTION_FILTERS_METADATA, filters, target);
+    extendArrayMetadata(EXCEPTION_FILTERS_METADATA, filters, target);
     return target;
   };
 };

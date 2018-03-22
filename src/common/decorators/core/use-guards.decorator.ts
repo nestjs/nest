@@ -1,4 +1,5 @@
 import { GUARDS_METADATA } from '../../constants';
+import { extendArrayMetadata } from '../../utils/extend-metadata.util';
 
 /**
  * Binds guards to the particular context.
@@ -10,13 +11,13 @@ import { GUARDS_METADATA } from '../../constants';
  *
  * @param  {} ...guards (types)
  */
-export function UseGuards(...guards) {
+export function UseGuards(...guards: any[]) {
   return (target: object, key?, descriptor?) => {
     if (descriptor) {
-      Reflect.defineMetadata(GUARDS_METADATA, guards, descriptor.value);
+      extendArrayMetadata(GUARDS_METADATA, guards, descriptor.value);
       return descriptor;
     }
-    Reflect.defineMetadata(GUARDS_METADATA, guards, target);
+    extendArrayMetadata(GUARDS_METADATA, guards, target);
     return target;
   };
 }

@@ -1,5 +1,6 @@
 import { PipeTransform } from '../../interfaces/index';
 import { PIPES_METADATA } from '../../constants';
+import { extendArrayMetadata } from '../../utils/extend-metadata.util';
 
 /**
  * Binds pipes to the particular context.
@@ -14,10 +15,10 @@ import { PIPES_METADATA } from '../../constants';
 export function UsePipes(...pipes: PipeTransform<any>[]) {
   return (target: object, key?, descriptor?) => {
     if (descriptor) {
-      Reflect.defineMetadata(PIPES_METADATA, pipes, descriptor.value);
+      extendArrayMetadata(PIPES_METADATA, pipes, descriptor.value);
       return descriptor;
     }
-    Reflect.defineMetadata(PIPES_METADATA, pipes, target);
+    extendArrayMetadata(PIPES_METADATA, pipes, target);
     return target;
   };
 }
