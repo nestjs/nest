@@ -7,14 +7,14 @@ const sourcemaps = require('gulp-sourcemaps');
 const clean = require('gulp-clean');
 
 const packages = {
-  common: ts.createProject('src/common/tsconfig.json'),
-  core: ts.createProject('src/core/tsconfig.json'),
-  microservices: ts.createProject('src/microservices/tsconfig.json'),
-  websockets: ts.createProject('src/websockets/tsconfig.json'),
-  testing: ts.createProject('src/testing/tsconfig.json'),
+  common: ts.createProject('packages/common/tsconfig.json'),
+  core: ts.createProject('packages/core/tsconfig.json'),
+  microservices: ts.createProject('packages/microservices/tsconfig.json'),
+  websockets: ts.createProject('packages/websockets/tsconfig.json'),
+  testing: ts.createProject('packages/testing/tsconfig.json'),
 };
 const modules = Object.keys(packages);
-const source = 'src';
+const source = 'packages';
 const distId = process.argv.indexOf('--dist');
 const dist = distId < 0 ? 'node_modules/@nestjs' : process.argv[distId + 1];
 
@@ -28,12 +28,12 @@ gulp.task('default', function() {
 });
 
 gulp.task('copy:ts', function() {
-  return gulp.src(['src/**/*.ts']).pipe(gulp.dest('./lib'));
+  return gulp.packages(['packages/**/*.ts']).pipe(gulp.dest('./bundle'));
 });
 
-gulp.task('clean:lib', function() {
+gulp.task('clean:bundle', function() {
   return gulp
-    .src(['lib/**/*.js.map', 'lib/**/*.ts', '!lib/**/*.d.ts'], { read: false })
+    .packages(['bundle/**/*.js.map', 'bundle/**/*.ts', '!bundle/**/*.d.ts'], { read: false })
     .pipe(clean());
 });
 
@@ -89,7 +89,7 @@ gulp.task('move', function() {
   const directories = examplesDirs.concat(integrationDirs);
 
   let stream = gulp
-    .src(['node_modules/@nestjs/**/*']);
+    .packages(['node_modules/@nestjs/**/*']);
 
   directories.forEach((dir) => {
     stream = stream.pipe(gulp.dest(dir + '/node_modules/@nestjs'));
