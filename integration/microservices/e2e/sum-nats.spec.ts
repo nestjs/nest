@@ -18,7 +18,9 @@ describe('NATS transport', () => {
     app = module.createNestApplication(server);
     app.connectMicroservice({
       transport: Transport.NATS,
-      url: 'nats://localhost:4222'
+      options: {
+        url: 'nats://localhost:4222'
+      },
     });
     await app.startAllMicroservicesAsync();
     await app.init();

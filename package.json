@@ -4,7 +4,7 @@
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
-    "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
+    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
     "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "prettier": "prettier */**/*.ts --ignore-path ./.prettierignore --write && git status",
@@ -70,6 +70,7 @@
     "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "^1.16.36",
     "@types/socket.io": "^1.4.32",
+    "@types/ws": "^4.0.1",
     "awesome-typescript-loader": "^3.0.0-beta.18",
     "body-parser": "^1.17.2",
     "chai": "^3.5.0",
@@ -79,6 +80,7 @@
     "conventional-changelog": "^1.1.15",
     "core-js": "^2.4.1",
     "coveralls": "^2.11.16",
+    "fastify-static": "^0.8.0",
     "gulp": "^3.9.1",
     "gulp-clang-format": "^1.0.23",
     "gulp-clean": "^0.4.0",
@@ -96,6 +98,7 @@
     "prettier": "^1.9.2",
     "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
+    "socket.io-client": "^2.0.4",
     "supertest": "^3.0.0",
     "ts-node": "^3.2.0",
     "typescript": "^2.7.2"
@@ -107,21 +110,21 @@
   },
   "nyc": {
     "include": [
-      "src/**/*.ts"
+      "packages/**/*.ts"
     ],
     "exclude": [
       "node_modules/",
-      "src/**/*.spec.ts",
-      "src/core/adapters/*.ts",
-      "src/websockets/adapters/*.ts",
-      "src/**/nest-*.ts",
-      "src/core/errors/**/*",
-      "src/common/exceptions/*.ts",
-      "src/common/http/*.ts",
-      "src/microservices/exceptions/",
-      "src/microservices/microservices-module.ts",
-      "src/core/middlewares/middlewares-module.ts",
-      "src/common/services/logger.service.ts"
+      "packages/**/*.spec.ts",
+      "packages/core/adapters/*.ts",
+      "packages/websockets/adapters/*.ts",
+      "packages/**/nest-*.ts",
+      "packages/core/errors/**/*",
+      "packages/common/exceptions/*.ts",
+      "packages/common/http/*.ts",
+      "packages/microservices/exceptions/",
+      "packages/microservices/microservices-module.ts",
+      "packages/core/middlewares/middlewares-module.ts",
+      "packages/common/services/logger.service.ts"
     ],
     "extension": [
       ".ts"

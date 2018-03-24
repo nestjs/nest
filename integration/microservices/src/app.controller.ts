@@ -4,11 +4,12 @@ import {
   MessagePattern,
   ClientProxy,
   Transport,
+  ClientProxyFactory,
 } from '@nestjs/microservices';
 import { Observable } from 'rxjs/Observable';
 import { of } from 'rxjs/observable/of';
 import { from } from 'rxjs/observable/from';
-import { scan } from 'rxjs/operators';
+import { scan, tap } from 'rxjs/operators';
 
 @Controller()
 export class AppController {
@@ -45,7 +46,7 @@ export class AppController {
       .map(async tab => await send(tab))
       .reduce(async (a, b) => (await a) && (await b));
   }
-
+  
   @MessagePattern({ cmd: 'sum' })
   sum(data: number[]): number {
     return (data || []).reduce((a, b) => a + b);
