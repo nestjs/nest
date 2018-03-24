@@ -56,4 +56,8 @@ export class IoAdapter implements WebSocketAdapter {
   public bindMiddleware(server, middleware: (socket, next) => void) {
     server.use(middleware);
   }
+
+  public close(server) {
+    isFunction(server.close) && server.close();
+  }
 }

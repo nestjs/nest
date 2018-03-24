@@ -98,6 +98,10 @@ export class FastifyAdapter {
     return this.instance.register(...args);
   }
 
+  inject(...args) {
+    return this.instance.inject(...args);
+  }
+
   close() {
     return this.instance.close();
   }

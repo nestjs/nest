@@ -47,7 +47,7 @@ export class RpcContextCreator {
       const [data, ...params] = args;
       const canActivate = await this.guardsConsumer.tryActivate(
         guards,
-        data,
+        args,
         instance,
         callback,
       );
@@ -65,7 +65,7 @@ export class RpcContextCreator {
 
       return await this.interceptorsConsumer.intercept(
         interceptors,
-        data,
+        args,
         instance,
         callback,
         handler,

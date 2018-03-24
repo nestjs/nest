@@ -21,10 +21,12 @@ import { InterceptorsContextCreator } from '@nestjs/core/interceptors/intercepto
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 
 export class SocketModule {
-  private socketsContainer = new SocketsContainer();
+  private readonly socketsContainer = new SocketsContainer();
+  private applicationConfig: ApplicationConfig;
   private webSocketsController: WebSocketsController;
 
   public register(container, config) {
+    this.applicationConfig = config;
     this.webSocketsController = new WebSocketsController(
       new SocketServerProvider(this.socketsContainer, config),
       container,
@@ -65,9 +67,13 @@ export class SocketModule {
     );
   }
 
-  public close() {
+  public async close() {
+    if (!this.applicationConfig) {
+      return void 0;
+    }
+    const adapter = this.applicationConfig.getIoAdapter();
     const servers = this.socketsContainer.getAllServers();
-    servers.forEach(({ server }) => server && server.close && server.close());
+    servers.forEach(({ server }) => server && adapter.close(server));
     this.socketsContainer.clear();
   }
 

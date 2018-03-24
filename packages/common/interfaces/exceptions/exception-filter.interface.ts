@@ -1,3 +1,5 @@
-export interface ExceptionFilter<T = any, R = any> {
-  catch(exception: T, response: R);
+import { ArgumentsHost } from './../features/arguments-host.interface';
+
+export interface ExceptionFilter<T = any> {
+  catch(exception: T, host: ArgumentsHost);
 }

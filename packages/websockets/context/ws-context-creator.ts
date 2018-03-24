@@ -46,7 +46,7 @@ export class WsContextCreator {
     return this.wsProxy.create(async (client, data) => {
       const canActivate = await this.guardsConsumer.tryActivate(
         guards,
-        data,
+        [client, data],
         instance,
         callback,
       );
@@ -63,7 +63,7 @@ export class WsContextCreator {
       };
       return await this.interceptorsConsumer.intercept(
         interceptors,
-        data,
+        [client, data],
         instance,
         callback,
         handler,

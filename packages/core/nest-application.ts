@@ -272,6 +272,11 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
+  public inject(...args) {
+    const adapter = this.httpAdapter as FastifyAdapter;
+    return adapter.inject && adapter.inject(...args);
+  }
+
   public enableCors(options?: CorsOptions): this {
     this.httpAdapter.use(cors(options));
     return this;

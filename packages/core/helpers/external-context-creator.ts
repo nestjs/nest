@@ -31,10 +31,9 @@ export class ExternalContextCreator {
       module,
     );
     return async (...args) => {
-      const [req] = args;
       const canActivate = await this.guardsConsumer.tryActivate(
         guards,
-        req,
+        args,
         instance,
         callback,
       );
@@ -44,7 +43,7 @@ export class ExternalContextCreator {
       const handler = () => callback.apply(instance, args);
       return await this.interceptorsConsumer.intercept(
         interceptors,
-        req,
+        args,
         instance,
         callback,
         handler,

@@ -67,4 +67,8 @@ export class WsAdapter implements WebSocketAdapter {
     const { callback } = messageHandler;
     return process(callback(message.data));
   }
+
+  public close(server) {
+    isFunction(server.close) && server.close();
+  }
 }

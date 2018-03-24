@@ -4,6 +4,7 @@ import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/ex
 import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
 import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
 import { HttpException } from '@nestjs/common';
+import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
 
 export class ExceptionsHandler {
   private static readonly logger = new Logger(ExceptionsHandler.name);
@@ -11,8 +12,8 @@ export class ExceptionsHandler {
 
   constructor(private readonly applicationRef: HttpServer) {}
 
-  public next(exception: Error | HttpException | any, response) {
-    if (this.invokeCustomFilters(exception, response)) return;
+  public next(exception: Error | HttpException | any, ctx: ArgumentsHost) {
+    if (this.invokeCustomFilters(exception, ctx)) return;
 
     if (!(exception instanceof HttpException)) {
       const body = {
@@ -20,7 +21,7 @@ export class ExceptionsHandler {
         message: messages.UNKNOWN_EXCEPTION_MESSAGE,
       };
       const statusCode = 500;
-      this.applicationRef.reply(response, body, statusCode);
+      this.applicationRef.reply(ctx.getArgByIndex(1), body, statusCode);
       if (this.isExceptionObject(exception)) {
         return ExceptionsHandler.logger.error(
           exception.message,
@@ -36,7 +37,11 @@ export class ExceptionsHandler {
           statusCode: exception.getStatus(),
           message: res,
         };
-    this.applicationRef.reply(response, message, exception.getStatus());
+    this.applicationRef.reply(
+      ctx.getArgByIndex(1),
+      message,
+      exception.getStatus(),
+    );
   }
 
   public setCustomFilters(filters: ExceptionFilterMetadata[]) {

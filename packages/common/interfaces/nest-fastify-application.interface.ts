@@ -14,10 +14,10 @@ export interface INestFastifyApplication {
    * @returns this
    */
   useStaticAssets(options: {
-    root: string,
-    prefix: string,
-    setHeaders: Function,
-    send: any,
+    root: string;
+    prefix: string;
+    setHeaders: Function;
+    send: any;
   }): this;
 
   /**
@@ -26,4 +26,52 @@ export interface INestFastifyApplication {
    * @returns this
    */
   setViewEngine(options: any): this;
+
+  /**
+   * A wrapper function around native `fastify.inject()` method.
+   * @returns void
+   */
+  inject(opts: HTTPInjectOptions | string): Promise<HTTPInjectResponse>;
+}
+
+/** Reference: https://github.com/fastify/fastify */
+export type HTTPMethod =
+  | 'DELETE'
+  | 'GET'
+  | 'HEAD'
+  | 'PATCH'
+  | 'POST'
+  | 'PUT'
+  | 'OPTIONS';
+
+/**
+ * Fake http inject options
+ */
+export interface HTTPInjectOptions {
+  url: string;
+  method?: HTTPMethod;
+  authority?: string;
+  headers?: object;
+  remoteAddress?: string;
+  payload?: string | object | Buffer | any;
+  simulate?: {
+    end?: boolean;
+    split?: boolean;
+    error?: boolean;
+    close?: boolean;
+  };
+  validate?: boolean;
+}
+
+/**
+ * Fake http inject response
+ */
+export interface HTTPInjectResponse {
+  raw: any;
+  headers: object;
+  statusCode: number;
+  statusMessage: string;
+  payload: string;
+  rawPayload: Buffer;
+  trailers: object;
 }

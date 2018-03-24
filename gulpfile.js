@@ -84,12 +84,12 @@ gulp.task('move', function() {
   const getDirs = (base) => getFolders(base)
     .map((path) => `${base}/${path}`);
 
-  const examplesDirs = getDirs('examples');
+  const examplesDirs = getDirs('sample');
   const integrationDirs = getDirs('integration');
   const directories = examplesDirs.concat(integrationDirs);
 
   let stream = gulp
-    .packages(['node_modules/@nestjs/**/*']);
+    .src(['node_modules/@nestjs/**/*']);
 
   directories.forEach((dir) => {
     stream = stream.pipe(gulp.dest(dir + '/node_modules/@nestjs'));

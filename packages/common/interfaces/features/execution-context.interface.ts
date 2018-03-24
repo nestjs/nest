@@ -1,8 +1,7 @@
 import { Type } from './../index';
+import { ArgumentsHost } from './arguments-host.interface';
 
-export interface ExecutionContext {
+export interface ExecutionContext extends ArgumentsHost {
   getClass<T = any>(): Type<T>;
   getHandler(): Function;
-  getArgs<T extends Array<any> = any[]>(): T;
-  getArgByIndex<T = any>(index: number): T;
 }

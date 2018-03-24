@@ -8,23 +8,23 @@ import { ApplicationModule } from './../src/app.module';
 import { FastifyAdapter } from '@nestjs/core/adapters/fastify-adapter';
 import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
 import { HelloService } from '../src/hello/hello.service';
+import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 
 describe('Hello world (fastify adapter)', () => {
   let server;
-  let app: INestApplication;
+  let app: INestApplication & INestFastifyApplication
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       imports: [ApplicationModule],
     }).compile();
 
-    server = fastify();
-    app = module.createNestApplication(new FastifyAdapter(server));
+    app = module.createNestApplication(new FastifyAdapter());
     await app.init();
   });
 
   it(`/GET`, () => {
-    return server
+    return app
       .inject({
         method: 'GET',
         url: '/hello',
@@ -33,7 +33,7 @@ describe('Hello world (fastify adapter)', () => {
   });
 
   it(`/GET (Promise/async)`, () => {
-    return server
+    return app
       .inject({
         method: 'GET',
         url: '/hello/async',
@@ -42,7 +42,7 @@ describe('Hello world (fastify adapter)', () => {
   });
 
   it(`/GET (Observable stream)`, () => {
-    return server
+    return app
       .inject({
         method: 'GET',
         url: '/hello/stream',

@@ -7,16 +7,17 @@ import {
   isEmpty,
 } from '@nestjs/common/utils/shared.utils';
 import { Controller } from '@nestjs/common/interfaces';
-import { HttpStatus, ExecutionContext, NestInterceptor } from '@nestjs/common';
+import { HttpStatus, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
 import { defer } from 'rxjs/observable/defer';
 import { fromPromise } from 'rxjs/observable/fromPromise';
 import { take, switchMap } from 'rxjs/operators';
+import { ExecutionContextHost } from '../helpers/execution-context.host';
 
 export class InterceptorsConsumer {
   public async intercept(
     interceptors: NestInterceptor[],
-    dataOrRequest: any,
+    args: any[],
     instance: Controller,
     callback: (...args) => any,
     next: () => Promise<any>,
@@ -24,24 +25,26 @@ export class InterceptorsConsumer {
     if (!interceptors || isEmpty(interceptors)) {
       return await await next();
     }
-    const context = this.createContext(instance, callback);
+    const context = this.createContext(args, instance, callback);
     const start$ = defer(() => this.transformDeffered(next));
     const result$ = await interceptors.reduce(
       async (stream$, interceptor) =>
-        await interceptor.intercept(dataOrRequest, context, await stream$),
+        await interceptor.intercept(context, await stream$),
       Promise.resolve(start$),
     );
     return await result$.toPromise();
   }
 
   public createContext(
+    args: any[],
     instance: Controller,
     callback: (...args) => any,
-  ): ExecutionContext {
-    return {
-      parent: instance.constructor,
-      handler: callback,
-    };
+  ): ExecutionContextHost {
+    return new ExecutionContextHost(
+      args,
+      instance.constructor as any,
+      callback,
+    );
   }
 
   public transformDeffered(next: () => Promise<any>): Observable<any> {

@@ -1,3 +1,6 @@
-export interface WsExceptionFilter<T = any, R = any> {
-  catch(exception: T, client: R);
+import { ArgumentsHost } from './../features/arguments-host.interface';
+
+export interface WsExceptionFilter<T = any> {
+  catch(exception: T, host: ArgumentsHost);
 }
+

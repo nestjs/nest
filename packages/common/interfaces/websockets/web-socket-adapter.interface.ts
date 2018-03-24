@@ -12,4 +12,5 @@ export interface WebSocketAdapter<T = any> {
     }[],
     process: (data) => Observable<any>,
   );
+  close(server);
 }

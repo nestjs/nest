@@ -6,13 +6,17 @@ import { Observable } from 'rxjs/Observable';
 import { RpcException } from './rpc-exception';
 import { RpcExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
 import { _throw } from 'rxjs/observable/throw';
+import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
 
 export class RpcExceptionsHandler {
   private static readonly logger = new Logger(RpcExceptionsHandler.name);
   private filters: RpcExceptionFilterMetadata[] = [];
 
-  public handle(exception: Error | RpcException | any): Observable<any> {
-    const filterResult$ = this.invokeCustomFilters(exception);
+  public handle(
+    exception: Error | RpcException | any,
+    host: ArgumentsHost,
+  ): Observable<any> {
+    const filterResult$ = this.invokeCustomFilters(exception, host);
     if (filterResult$) {
       return filterResult$;
     }
@@ -41,7 +45,7 @@ export class RpcExceptionsHandler {
     this.filters = filters;
   }
 
-  public invokeCustomFilters(exception): Observable<any> | null {
+  public invokeCustomFilters(exception, host: ArgumentsHost): Observable<any> | null {
     if (isEmpty(this.filters)) return null;
 
     const filter = this.filters.find(({ exceptionMetatypes, func }) => {
@@ -52,6 +56,6 @@ export class RpcExceptionsHandler {
         );
       return hasMetatype;
     });
-    return filter ? filter.func(exception) : null;
+    return filter ? filter.func(exception, host) : null;
   }
 }

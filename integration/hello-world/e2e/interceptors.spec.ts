@@ -10,14 +10,14 @@ const RETURN_VALUE = 'test';
 
 @Injectable()
 export class OverrideInterceptor {
-  intercept(data, context, stream) {
+  intercept(context, stream) {
     return of(RETURN_VALUE);
   }
 }
 
 @Injectable()
 export class TransformInterceptor {
-  intercept(data, context, stream) {
+  intercept(context, stream) {
     return stream.pipe(map(data => ({ data })));
   }
 }

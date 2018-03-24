@@ -7,23 +7,24 @@ import {
   isEmpty,
 } from '@nestjs/common/utils/shared.utils';
 import { Controller } from '@nestjs/common/interfaces';
-import { CanActivate, HttpStatus, ExecutionContext } from '@nestjs/common';
+import { CanActivate, HttpStatus } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
 import { FORBIDDEN_MESSAGE } from './constants';
+import { ExecutionContextHost } from '../helpers/execution-context.host';
 
 export class GuardsConsumer {
   public async tryActivate(
     guards: CanActivate[],
-    data,
+    args: any[],
     instance: Controller,
     callback: (...args) => any,
   ): Promise<boolean> {
     if (!guards || isEmpty(guards)) {
       return true;
     }
-    const context = this.createContext(instance, callback);
+    const context = this.createContext(args, instance, callback);
     for (const guard of guards) {
-      const result = guard.canActivate(data, context);
+      const result = guard.canActivate(context);
       if (await this.pickResult(result)) {
         continue;
       }
@@ -33,13 +34,15 @@ export class GuardsConsumer {
   }
 
   public createContext(
+    args: any[],
     instance: Controller,
     callback: (...args) => any,
-  ): ExecutionContext {
-    return {
-      parent: instance.constructor,
-      handler: callback,
-    };
+  ): ExecutionContextHost {
+    return new ExecutionContextHost(
+      args,
+      instance.constructor as any,
+      callback,
+    );
   }
 
   public async pickResult(

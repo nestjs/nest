@@ -4,12 +4,14 @@ import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/ex
 import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
 import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/invalid-exception-filter.exception';
 import { WsException } from '../exceptions/ws-exception';
+import { ArgumentsHost } from '@nestjs/common';
 
 export class WsExceptionsHandler {
   private filters: ExceptionFilterMetadata[] = [];
 
-  public handle(exception: Error | WsException | any, client) {
-    if (this.invokeCustomFilters(exception, client) || !client.emit) return;
+  public handle(exception: Error | WsException | any, args: ArgumentsHost) {
+    const client = args.switchToWs().getClient();
+    if (this.invokeCustomFilters(exception, args) || !client.emit) return;
 
     const status = 'error';
     if (!(exception instanceof WsException)) {
@@ -33,7 +35,7 @@ export class WsExceptionsHandler {
     this.filters = filters;
   }
 
-  public invokeCustomFilters(exception, client): boolean {
+  public invokeCustomFilters(exception, args: ArgumentsHost): boolean {
     if (isEmpty(this.filters)) return false;
 
     const filter = this.filters.find(({ exceptionMetatypes, func }) => {
@@ -44,7 +46,7 @@ export class WsExceptionsHandler {
         );
       return hasMetatype;
     });
-    filter && filter.func(exception, client);
+    filter && filter.func(exception, args);
     return !!filter;
   }
 }
