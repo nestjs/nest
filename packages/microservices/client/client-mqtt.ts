@@ -12,6 +12,8 @@ import {
 import { WritePacket, MqttOptions } from './../interfaces';
 import { ReadPacket, PacketId } from './../interfaces';
 
+let mqttPackage: any = {};
+
 export class ClientMqtt extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
   private readonly url: string;
@@ -21,6 +23,8 @@ export class ClientMqtt extends ClientProxy {
     super();
     this.url =
       this.getOptionsProp<MqttOptions>(this.options, 'url') || MQTT_DEFAULT_URL;
+
+    mqttPackage = this.loadPackage('mqtt', ClientMqtt.name);
   }
 
   protected publish(
@@ -83,7 +87,7 @@ export class ClientMqtt extends ClientProxy {
   }
 
   public createClient(): mqtt.MqttClient {
-    return mqtt.connect(this.url, this.options.options as MqttOptions);
+    return mqttPackage.connect(this.url, this.options.options as MqttOptions);
   }
 
   public handleError(client: mqtt.MqttClient, callback: (...args) => any) {

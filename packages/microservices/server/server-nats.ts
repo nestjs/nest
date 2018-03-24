@@ -13,6 +13,8 @@ import { finalize } from 'rxjs/operators';
 import { NATS_DEFAULT_URL, CONNECT_EVENT, ERROR_EVENT } from './../constants';
 import { ReadPacket } from './../interfaces/packet.interface';
 
+let natsPackage: any = {};
+
 export class ServerNats extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private natsClient: nats.Client;
@@ -20,8 +22,9 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   constructor(private readonly options: MicroserviceOptions) {
     super();
     this.url =
-      this.getOptionsProp<NatsOptions>(this.options, 'url') ||
-      NATS_DEFAULT_URL;
+      this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
+
+    natsPackage = this.loadPackage('nats', ServerNats.name);
   }
 
   public listen(callback: () => void) {
@@ -53,7 +56,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
   public createNatsClient(): nats.Client {
     const options = this.options.options || ({} as NatsOptions);
-    return nats.connect({
+    return natsPackage.connect({
       ...(options as any),
       url: this.url,
       json: true,

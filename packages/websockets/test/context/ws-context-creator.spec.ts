@@ -66,7 +66,7 @@ describe('WsContextCreator', () => {
       guardsContextCreator as any,
       guardsConsumer as any,
       new InterceptorsContextCreator(new NestContainer()) as any,
-      new InterceptorsConsumer(),
+      new InterceptorsConsumer() as any,
     );
 
     instance = new Test();

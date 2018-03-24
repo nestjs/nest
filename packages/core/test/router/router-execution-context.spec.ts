@@ -327,7 +327,7 @@ describe('RouterExecutionContext', () => {
     it('should throw exception when "tryActivate" returns false', () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
       sinon.stub(guardsConsumer, 'tryActivate', () => false);
-      expect(guardsFn({})).to.eventually.throw();
+      expect(guardsFn([])).to.eventually.throw();
     });
   });
   describe('createHandleResponseFn', () => {

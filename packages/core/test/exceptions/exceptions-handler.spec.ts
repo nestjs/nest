@@ -6,6 +6,7 @@ import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
 import { HttpException } from '@nestjs/common';
 import { ExpressAdapter } from './../../adapters/express-adapter';
+import { ExecutionContextHost } from '../../helpers/execution-context.host';
 
 describe('ExceptionsHandler', () => {
   let handler: ExceptionsHandler;
@@ -30,7 +31,7 @@ describe('ExceptionsHandler', () => {
 
   describe('next', () => {
     it('should method send expected response status code and message when exception is unknown', () => {
-      handler.next(new Error(), response);
+      handler.next(new Error(), new ExecutionContextHost([0, response]));
 
       expect(statusStub.calledWith(500)).to.be.true;
       expect(
@@ -46,7 +47,10 @@ describe('ExceptionsHandler', () => {
         const message = {
           custom: 'Unauthorized',
         };
-        handler.next(new HttpException(message, status), response);
+        handler.next(
+          new HttpException(message, status),
+          new ExecutionContextHost([0, response]),
+        );
 
         expect(statusStub.calledWith(status)).to.be.true;
         expect(jsonStub.calledWith(message)).to.be.true;
@@ -55,7 +59,10 @@ describe('ExceptionsHandler', () => {
         const status = 401;
         const message = 'Unauthorized';
 
-        handler.next(new HttpException(message, status), response);
+        handler.next(
+          new HttpException(message, status),
+          new ExecutionContextHost([0, response]),
+        );
 
         expect(statusStub.calledWith(status)).to.be.true;
         expect(jsonStub.calledWith({ message, statusCode: status })).to.be.true;

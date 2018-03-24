@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { FileInterceptor } from './../../interceptors/file.interceptor';
 import { Observable } from 'rxjs/Observable';
 import { of } from 'rxjs/observable/of';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 
 describe('FileInterceptor', () => {
   it('should return metatype with expected structure', async () => {
@@ -21,9 +22,8 @@ describe('FileInterceptor', () => {
       const singleSpy = sinon
         .stub((target as any).upload, 'single')
         .returns(callback);
-      const req = {};
 
-      await target.intercept(req, null, stream$);
+      await target.intercept(new ExecutionContextHost([]), stream$);
 
       expect(singleSpy.called).to.be.true;
       expect(singleSpy.calledWith(fieldName)).to.be.true;
@@ -37,8 +37,7 @@ describe('FileInterceptor', () => {
       (target as any).upload = {
         single: () => callback,
       };
-      const req = {};
-      expect(target.intercept(req, null, stream$)).to.eventually.throw();
+      expect(target.intercept(new ExecutionContextHost([]), stream$)).to.eventually.throw();
     });
   });
 });

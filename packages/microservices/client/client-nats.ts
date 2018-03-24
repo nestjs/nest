@@ -10,6 +10,8 @@ import {
   PacketId,
 } from './../interfaces';
 
+let natsPackage: any = {};
+
 export class ClientNats extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
   private readonly url: string;
@@ -19,6 +21,8 @@ export class ClientNats extends ClientProxy {
     super();
     this.url =
       this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
+    
+    natsPackage = this.loadPackage('nats', ClientNats.name);
   }
 
   protected async publish(
@@ -78,7 +82,7 @@ export class ClientNats extends ClientProxy {
 
   public createClient(): Promise<nats.Client> {
     const options = this.options.options || ({} as NatsOptions);
-    const client = nats.connect({
+    const client = natsPackage.connect({
       ...(options as any),
       url: this.url,
       json: true,

@@ -16,7 +16,7 @@ describe('RpcExceptionsHandler', () => {
 
   describe('handle', () => {
     it('should method returns expected stream with message when exception is unknown', done => {
-      const stream$ = handler.handle(new Error());
+      const stream$ = handler.handle(new Error(), null);
       stream$
         .pipe(
           catchError(err => {
@@ -35,7 +35,7 @@ describe('RpcExceptionsHandler', () => {
         const message = {
           custom: 'Unauthorized',
         };
-        const stream$ = handler.handle(new RpcException(message));
+        const stream$ = handler.handle(new RpcException(message), null);
         stream$
           .pipe(
             catchError(err => {
@@ -49,7 +49,7 @@ describe('RpcExceptionsHandler', () => {
       it('should method emit expected status and transform message to json', done => {
         const message = 'Unauthorized';
 
-        const stream$ = handler.handle(new RpcException(message));
+        const stream$ = handler.handle(new RpcException(message), null);
         stream$
           .pipe(
             catchError(err => {
@@ -67,7 +67,7 @@ describe('RpcExceptionsHandler', () => {
         sinon.stub(handler, 'invokeCustomFilters').returns(observable$);
       });
       it('should returns observable', () => {
-        const result = handler.handle(new RpcException(''));
+        const result = handler.handle(new RpcException(''), null);
         expect(result).to.be.eql(observable$);
       });
     });
@@ -85,7 +85,7 @@ describe('RpcExceptionsHandler', () => {
   describe('invokeCustomFilters', () => {
     describe('when filters array is empty', () => {
       it('should returns identity', () => {
-        expect(handler.invokeCustomFilters(null)).to.be.null;
+        expect(handler.invokeCustomFilters(null, null)).to.be.null;
       });
     });
     describe('when filters array is not empty', () => {
@@ -101,26 +101,26 @@ describe('RpcExceptionsHandler', () => {
           (handler as any).filters = filters;
         });
         it('should call funcSpy', () => {
-          handler.invokeCustomFilters(new TestException());
+          handler.invokeCustomFilters(new TestException(), null);
           expect(funcSpy.notCalled).to.be.false;
         });
         it('should call funcSpy with exception and response passed as an arguments', () => {
           const exception = new TestException();
-          handler.invokeCustomFilters(exception);
+          handler.invokeCustomFilters(exception, null);
           expect(funcSpy.calledWith(exception)).to.be.true;
         });
         it('should returns stream', () => {
-          expect(handler.invokeCustomFilters(new TestException())).to.be.not
+          expect(handler.invokeCustomFilters(new TestException(), null)).to.be.not
             .null;
         });
       });
       describe('when filter does not exists in filters array', () => {
         it('should not call funcSpy', () => {
-          handler.invokeCustomFilters(new TestException());
+          handler.invokeCustomFilters(new TestException(), null);
           expect(funcSpy.notCalled).to.be.true;
         });
         it('should returns null', () => {
-          expect(handler.invokeCustomFilters(new TestException())).to.be.null;
+          expect(handler.invokeCustomFilters(new TestException(), null)).to.be.null;
         });
       });
     });

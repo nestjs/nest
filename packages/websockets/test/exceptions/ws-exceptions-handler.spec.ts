@@ -2,6 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { WsExceptionsHandler } from './../../exceptions/ws-exceptions-handler';
 import { WsException } from './../../exceptions/ws-exception';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 
 describe('WsExceptionsHandler', () => {
   let handler: WsExceptionsHandler;
@@ -19,7 +20,7 @@ describe('WsExceptionsHandler', () => {
 
   describe('handle', () => {
     it('should method emit expected status code message when exception is unknown', () => {
-      handler.handle(new Error(), client);
+      handler.handle(new Error(), new ExecutionContextHost([client]),);
       expect(
         emitStub.calledWith('exception', {
           status: 'error',
@@ -32,13 +33,16 @@ describe('WsExceptionsHandler', () => {
         const message = {
           custom: 'Unauthorized',
         };
-        handler.handle(new WsException(message), client);
+        handler.handle(
+          new WsException(message),
+          new ExecutionContextHost([client]),
+        );
         expect(emitStub.calledWith('exception', message)).to.be.true;
       });
       it('should method emit expected status and transform message to json', () => {
         const message = 'Unauthorized';
 
-        handler.handle(new WsException(message), client);
+        handler.handle(new WsException(message), new ExecutionContextHost([client]));
         expect(emitStub.calledWith('exception', { message, status: 'error' }))
           .to.be.true;
       });
@@ -48,7 +52,7 @@ describe('WsExceptionsHandler', () => {
         sinon.stub(handler, 'invokeCustomFilters').returns(true);
       });
       it('should not call `emit`', () => {
-        handler.handle(new WsException(''), client);
+        handler.handle(new WsException(''), new ExecutionContextHost([client]));
         expect(emitStub.notCalled).to.be.true;
       });
     });
@@ -89,7 +93,7 @@ describe('WsExceptionsHandler', () => {
           const exception = new TestException();
           const res = { foo: 'bar' };
 
-          handler.invokeCustomFilters(exception, res);
+          handler.invokeCustomFilters(exception, res as any);
           expect(funcSpy.calledWith(exception, res)).to.be.true;
         });
         it('should returns true', () => {

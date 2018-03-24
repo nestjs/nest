@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { Observable } from 'rxjs/Observable';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 import { of } from 'rxjs/observable/of';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 
 describe('InterceptorsConsumer', () => {
   let consumer: InterceptorsConsumer;
@@ -62,12 +63,10 @@ describe('InterceptorsConsumer', () => {
     it('should returns execution context object', () => {
       const instance = { constructor: {} };
       const callback = () => null;
-      const context = consumer.createContext(instance, callback);
+      const context = consumer.createContext([], instance, callback);
 
-      expect(context).to.be.eql({
-        parent: instance.constructor,
-        handler: callback,
-      });
+      expect(context.getClass()).to.be.eql(instance.constructor);
+      expect(context.getHandler()).to.be.eql(callback);
     });
   });
   describe('transformDeffered', () => {

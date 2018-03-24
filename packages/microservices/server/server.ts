@@ -9,6 +9,7 @@ import { empty } from 'rxjs/observable/empty';
 import { of } from 'rxjs/observable/of';
 import { fromPromise } from 'rxjs/observable/fromPromise';
 import { WritePacket, MicroserviceOptions } from './../interfaces';
+import { MissingRequiredDependencyException } from '@nestjs/core/errors/exceptions/missing-dependency.exception';
 
 export abstract class Server {
   protected readonly messageHandlers: MessageHandlers = {};
@@ -62,5 +63,13 @@ export abstract class Server {
 
   protected handleError(error: string) {
     this.logger.error(error);
+  }
+
+  protected loadPackage(name: string, ctx: string) {
+    try {
+      return require(name);
+    } catch (e) {
+      throw new MissingRequiredDependencyException(name, ctx);
+    }
   }
 }

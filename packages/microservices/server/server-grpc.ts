@@ -9,6 +9,8 @@ import { Observable } from 'rxjs/Observable';
 import { GRPC_DEFAULT_URL } from './../constants';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
 
+let grpcPackage: any = {};
+
 export class ServerGrpc extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private grpcClient: any;
@@ -16,8 +18,9 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   constructor(private readonly options: MicroserviceOptions) {
     super();
     this.url =
-      this.getOptionsProp<GrpcOptions>(options, 'url') ||
-      GRPC_DEFAULT_URL;
+      this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
+
+    grpcPackage = this.loadPackage('grpc', ServerGrpc.name);
   }
 
   public async listen(callback: () => void) {
@@ -32,22 +35,22 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public async bindEvents() {
-    const grpcContext = grpc.load(
+    const grpcContext = grpcPackage.load(
       this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),
     );
     const packageName = this.getOptionsProp<GrpcOptions>(
       this.options,
       'package',
     );
-    const grpcPackage = this.lookupPackage(grpcContext, packageName);
+    const grpcPkg = this.lookupPackage(grpcContext, packageName);
 
-    if (!grpcPackage) {
+    if (!grpcPkg) {
       throw new InvalidGrpcPackageException();
     }
-    for (const name of this.getServiceNames(grpcPackage)) {
+    for (const name of this.getServiceNames(grpcPkg)) {
       this.grpcClient.addService(
-        grpcPackage[name].service,
-        await this.createService(grpcPackage[name], name),
+        grpcPkg[name].service,
+        await this.createService(grpcPkg[name], name),
       );
     }
   }
@@ -123,14 +126,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public createClient(): any {
-    const server = new grpc.Server();
+    const server = new grpcPackage.Server();
     const credentials = this.getOptionsProp<GrpcOptions>(
       this.options,
       'credentials',
     );
     server.bind(
       this.url,
-      credentials || grpc.ServerCredentials.createInsecure(),
+      credentials || grpcPackage.ServerCredentials.createInsecure(),
     );
     return server;
   }

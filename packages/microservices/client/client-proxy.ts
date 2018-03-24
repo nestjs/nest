@@ -4,6 +4,7 @@ import { isNil } from '@nestjs/common/utils/shared.utils';
 import { InvalidMessageException } from '../exceptions/invalid-message.exception';
 import { _throw } from 'rxjs/observable/throw';
 import { ReadPacket, PacketId, WritePacket, ClientOptions } from './../interfaces';
+import { MissingRequiredDependencyException } from '@nestjs/core/errors/exceptions/missing-dependency.exception';
 
 export abstract class ClientProxy {
   protected abstract publish(
@@ -18,6 +19,14 @@ export abstract class ClientProxy {
     return new Observable((observer: Observer<T>) => {
       this.publish({ pattern, data }, this.createObserver(observer));
     });
+  }
+
+  protected loadPackage(name: string, ctx: string) {
+    try {
+      return require(name);
+    } catch (e) {
+      throw new MissingRequiredDependencyException(name, ctx);
+    }
   }
 
   protected createObserver<T>(

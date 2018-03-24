@@ -18,6 +18,8 @@ import {
 } from './../constants';
 import { ReadPacket } from '@nestjs/microservices';
 
+let mqttPackage: any = {};
+
 export class ServerMqtt extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private mqttClient: mqtt.MqttClient;
@@ -25,8 +27,9 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   constructor(private readonly options: MicroserviceOptions) {
     super();
     this.url =
-      this.getOptionsProp<MqttOptions>(options, 'url') ||
-      MQTT_DEFAULT_URL;
+      this.getOptionsProp<MqttOptions>(options, 'url') || MQTT_DEFAULT_URL;
+
+    mqttPackage = this.loadPackage('mqtt', ServerMqtt.name);
   }
 
   public async listen(callback: () => void) {
@@ -54,8 +57,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public createMqttClient(): mqtt.MqttClient {
-    return mqtt.connect(this.url, this.options
-      .options as MqttOptions);
+    return mqttPackage.connect(this.url, this.options.options as MqttOptions);
   }
 
   public getMessageHandler(pub: mqtt.MqttClient): any {

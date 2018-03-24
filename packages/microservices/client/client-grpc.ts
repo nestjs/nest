@@ -10,6 +10,8 @@ import { InvalidGrpcServiceException } from '../exceptions/invalid-grpc-service.
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
 
+let grpcPackage: any = {};
+
 export interface GrpcService {
   [name: string]: (...args: any[]) => Observable<any>;
 }
@@ -23,6 +25,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     super();
     this.url =
       this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
+
+    grpcPackage = this.loadPackage('grpc', ClientGrpcProxy.name);
     this.grpcClient = this.createClient();
   }
 
@@ -33,7 +37,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     }
     const grpcClient = new this.grpcClient[name](
       this.url,
-      credentials || grpc.credentials.createInsecure(),
+      credentials || grpcPackage.credentials.createInsecure(),
       options,
     );
     const protoMethods = Object.keys(this.grpcClient[name].prototype);
@@ -99,7 +103,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
   public loadProto(): grpc.GrpcObject {
     try {
-      const context = grpc.load(
+      const context = grpcPackage.load(
         this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),
       );
       return context;

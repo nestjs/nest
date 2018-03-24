@@ -18,6 +18,8 @@ import {
 } from './../constants';
 import { ReadPacket } from '@nestjs/microservices';
 
+let redisPackage: any = {};
+
 export class ServerRedis extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private subClient: redis.RedisClient;
@@ -29,6 +31,8 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     this.url =
       this.getOptionsProp<RedisOptions>(this.options, 'url') ||
       REDIS_DEFAULT_URL;
+
+    redisPackage = this.loadPackage('redis', ServerRedis.name);
   }
 
   public listen(callback: () => void) {
@@ -63,7 +67,10 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public createRedisClient(): redis.RedisClient {
-    return redis.createClient({ ...this.getClientOptions(), url: this.url });
+    return redisPackage.createClient({
+      ...this.getClientOptions(),
+      url: this.url,
+    });
   }
 
   public getMessageHandler(pub: redis.RedisClient) {
@@ -131,15 +138,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   ): undefined | number {
     if (
       this.isExplicitlyTerminated ||
-      !this.getOptionsProp<RedisOptions>(
-        this.options,
-        'retryAttempts',
-      ) ||
+      !this.getOptionsProp<RedisOptions>(this.options, 'retryAttempts') ||
       options.attempt >
-        this.getOptionsProp<RedisOptions>(
-          this.options,
-          'retryAttempts',
-        )
+        this.getOptionsProp<RedisOptions>(this.options, 'retryAttempts')
     ) {
       return undefined;
     }

@@ -16,7 +16,7 @@ describe('GuardsConsumer', () => {
       it('should return true', async () => {
         const canActivate = await consumer.tryActivate(
           [],
-          {},
+          [],
           { constructor: null },
           null,
         );
@@ -28,7 +28,7 @@ describe('GuardsConsumer', () => {
         it('should return false', async () => {
           const canActivate = await consumer.tryActivate(
             [...guards, { canActivate: () => false }],
-            {},
+            [],
             { constructor: null },
             null,
           );
@@ -39,7 +39,7 @@ describe('GuardsConsumer', () => {
         it('should return true', async () => {
           const canActivate = await consumer.tryActivate(
             guards,
-            {},
+            [],
             { constructor: null },
             null,
           );

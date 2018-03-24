@@ -16,6 +16,8 @@ import {
   PacketId,
 } from './../interfaces';
 
+let redisPackage: any = {};
+
 export class ClientRedis extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
   private readonly url: string;
@@ -27,6 +29,8 @@ export class ClientRedis extends ClientProxy {
     super();
     this.url =
       this.getOptionsProp<RedisOptions>(options, 'url') || REDIS_DEFAULT_URL;
+
+    redisPackage = this.loadPackage('redis', ClientRedis.name);
   }
 
   protected async publish(
@@ -104,7 +108,10 @@ export class ClientRedis extends ClientProxy {
   }
 
   public createClient(): redis.RedisClient {
-    return redis.createClient({ ...this.getClientOptions(), url: this.url });
+    return redisPackage.createClient({
+      ...this.getClientOptions(),
+      url: this.url,
+    });
   }
 
   public handleError(client: redis.RedisClient, callback: (...args) => any) {
