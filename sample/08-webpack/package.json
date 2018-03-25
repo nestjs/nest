@@ -1,0 +1,40 @@
+{
+  "name": "nest-typescript-starter",
+  "version": "1.0.0",
+  "description": "Nest TypeScript starter repository",
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js",
+    "start:watch": "nodemon",
+    "prestart:prod": "tsc",
+    "start:prod": "node dist/main.js",
+    "webpack": "webpack --config webpack.config.js"
+  },
+  "dependencies": {
+    "@angular/core": "^5.2.3",
+    "@angular/platform-server": "^5.2.3",
+    "@nestjs/common": "^4.5.9",
+    "@nestjs/core": "^4.6.4",
+    "@nestjs/microservices": "^4.5.8",
+    "@nestjs/testing": "^4.5.5",
+    "@nestjs/websockets": "^4.5.8",
+    "cors": "^2.8.4",
+    "deprecate": "^1.0.0",
+    "domino": "^2.0.0",
+    "multer": "^1.3.0",
+    "redis": "^2.7.1",
+    "reflect-metadata": "^0.1.12",
+    "rxjs": "^5.5.6",
+    "typescript": "^2.6.2",
+    "zone.js": "^0.8.20"
+  },
+  "devDependencies": {
+    "@types/node": "^9.3.0",
+    "nodemon": "^1.14.1",
+    "ts-loader": "^4.0.0",
+    "ts-node": "^4.1.0",
+    "webpack": "^4.0.0",
+    "webpack-cli": "^2.0.8",
+    "webpack-node-externals": "^1.6.0"
+  }
+}
