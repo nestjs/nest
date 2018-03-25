@@ -44,7 +44,7 @@ export abstract class Server {
       .subscribe(response => respond({ err: null, response }));
   }
 
-  public transformToObservable(resultOrDeffered) {
+  public transformToObservable<T = any>(resultOrDeffered): Observable<T> {
     if (resultOrDeffered instanceof Promise) {
       return fromPromise(resultOrDeffered);
     } else if (!(resultOrDeffered && isFunction(resultOrDeffered.subscribe))) {
@@ -53,9 +53,9 @@ export abstract class Server {
     return resultOrDeffered;
   }
 
-  public getOptionsProp<T>(
+  public getOptionsProp<T extends { options? }>(
     obj: MicroserviceOptions,
-    prop: keyof T,
+    prop: keyof T['options'],
     defaultValue = undefined,
   ) {
     return obj && obj.options ? obj.options[prop as any] : defaultValue;

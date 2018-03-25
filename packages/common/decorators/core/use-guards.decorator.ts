@@ -1,5 +1,7 @@
 import { GUARDS_METADATA } from '../../constants';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';
+import { validateEach } from '../../utils/validate-each.util';
+import { isFunction } from '../../utils/shared.utils';
 
 /**
  * Binds guards to the particular context.
@@ -12,11 +14,13 @@ import { extendArrayMetadata } from '../../utils/extend-metadata.util';
  * @param  {} ...guards (types)
  */
 export function UseGuards(...guards: any[]) {
-  return (target: object, key?, descriptor?) => {
+  return (target: any, key?, descriptor?) => {
     if (descriptor) {
+      validateEach(target.constructor, guards, isFunction, '@UseGuards', 'guard');
       extendArrayMetadata(GUARDS_METADATA, guards, descriptor.value);
       return descriptor;
     }
+    validateEach(target, guards, isFunction, '@UseGuards', 'guard');
     extendArrayMetadata(GUARDS_METADATA, guards, target);
     return target;
   };

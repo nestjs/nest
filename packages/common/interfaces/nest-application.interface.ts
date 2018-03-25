@@ -4,6 +4,7 @@ import { CanActivate } from './features/can-activate.interface';
 import { NestInterceptor } from './features/nest-interceptor.interface';
 import { INestApplicationContext } from './nest-application-context.interface';
 import { CorsOptions } from './external/cors-options.interface';
+import { MicroserviceOptions } from './microservices/microservice-configuration.interface';
 
 export interface INestApplication extends INestApplicationContext {
   /**
@@ -70,12 +71,12 @@ export interface INestApplication extends INestApplicationContext {
   useWebSocketAdapter(adapter: WebSocketAdapter): this;
 
   /**
-   * Connects microservice to the NestApplication instance. It transforms application to the hybrid instance.
+   * Connects microservice to the NestApplication instance. Transforms application to the hybrid instance.
    *
-   * @param  {MicroserviceConfiguration} config Microservice configuration objet
+   * @param  {MicroserviceOptions} options Microservice options object
    * @returns INestMicroservice
    */
-  connectMicroservice(config): INestMicroservice;
+  connectMicroservice(options: MicroserviceOptions): INestMicroservice;
 
   /**
    * Returns array of the connected microservices to the NestApplication.

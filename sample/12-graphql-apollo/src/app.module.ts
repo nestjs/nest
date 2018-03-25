@@ -9,19 +9,20 @@ import { GraphQLModule, GraphQLFactory } from '@nestjs/graphql';
 
 import { CatsModule } from './cats/cats.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { SubscriptionsService } from './subscriptions/subscriptions.service';
 
 @Module({
   imports: [SubscriptionsModule.forRoot(), CatsModule, GraphQLModule],
 })
 export class ApplicationModule implements NestModule {
   constructor(
-    private readonly subscriptionsModule: SubscriptionsModule,
+    private readonly subscriptionsService: SubscriptionsService,
     private readonly graphQLFactory: GraphQLFactory,
   ) {}
 
   configure(consumer: MiddlewaresConsumer) {
     const schema = this.createSchema();
-    this.subscriptionsModule.createSubscriptionServer(schema);
+    this.subscriptionsService.createSubscriptionServer(schema);
 
     consumer
       .apply(
@@ -30,14 +31,13 @@ export class ApplicationModule implements NestModule {
           subscriptionsEndpoint: `ws://localhost:3001/subscriptions`,
         }),
       )
-      .forRoutes({ path: '/graphiql', method: RequestMethod.GET })
+      .forRoutes('/graphiql')
       .apply(graphqlExpress(req => ({ schema, rootValue: req })))
-      .forRoutes({ path: '/graphql', method: RequestMethod.ALL });
+      .forRoutes('/graphql');
   }
 
   createSchema() {
     const typeDefs = this.graphQLFactory.mergeTypesByPaths('./**/*.graphql');
-    const schema = this.graphQLFactory.createSchema({ typeDefs });
-    return schema;
+    return this.graphQLFactory.createSchema({ typeDefs });
   }
 }

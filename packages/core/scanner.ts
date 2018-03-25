@@ -92,6 +92,10 @@ export class DependenciesScanner {
         token,
         metadata.COMPONENTS as 'components',
       ),
+      ...this.container.getDynamicMetadataByToken(
+        token,
+        metadata.PROVIDERS as 'providers',
+      ),
     ];
     components.map(component => {
       this.storeComponent(component, token);

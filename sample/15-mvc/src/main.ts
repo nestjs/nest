@@ -6,9 +6,9 @@ import { ApplicationModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(ApplicationModule);
 
-  app.use(express.static(path.join(__dirname, 'public')));
-  app.set('views', __dirname + '/views');
-  app.set('view engine', 'jade');
+  app.useStaticAssets(__dirname + '/public');
+  app.setBaseViewsDir(__dirname + '/views');
+  app.setViewEngine('hbs');
 
   await app.listen(3000);
 }

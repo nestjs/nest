@@ -7,7 +7,7 @@ service Math {
 }
 
 message SumResult {
-  required int32 result = 1;
+  int32 result = 1;
 }
 
 message RequestSum {

@@ -7,6 +7,7 @@ import { ReadPacket, PacketId, WritePacket, ClientOptions } from './../interface
 import { MissingRequiredDependencyException } from '@nestjs/core/errors/exceptions/missing-dependency.exception';
 
 export abstract class ClientProxy {
+  public abstract close(): any;
   protected abstract publish(
     packet: ReadPacket,
     callback: (packet: WritePacket) => void,
@@ -50,9 +51,9 @@ export abstract class ClientProxy {
     return Object.assign(packet, { id });
   }
 
-  protected getOptionsProp<T>(
+  protected getOptionsProp<T extends { options? }>(
     obj: ClientOptions,
-    prop: keyof T,
+    prop: keyof T['options'],
     defaultValue = undefined,
   ) {
     return obj && obj.options ? obj.options[prop as any] : defaultValue;

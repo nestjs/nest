@@ -2,9 +2,14 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import { EXCEPTION_FILTERS_METADATA } from '../../constants';
 import { UseFilters } from '../../decorators/core/exception-filters.decorator';
+import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
+
+class Filter {
+  catch() {}
+}
 
 describe('@UseFilters', () => {
-  const filters = ['exception', 'exception2'];
+  const filters = [new Filter(), new Filter()];
 
   @UseFilters(...(filters as any))
   class Test {}
@@ -25,5 +30,14 @@ describe('@UseFilters', () => {
       TestWithMethod.test,
     );
     expect(metadata).to.be.eql(filters);
+  });
+
+  it('when object is invalid should throw exception', () => {
+    try {
+      UseFilters('test' as any)({});
+    }
+    catch (e) {
+      expect(e).to.be.instanceof(InvalidDecoratorItemException);
+    }
   });
 });

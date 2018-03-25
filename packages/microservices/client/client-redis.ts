@@ -1,4 +1,4 @@
-import * as redis from 'redis';
+import { ClientOpts, RetryStrategyOptions, RedisClient } from 'redis';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
@@ -21,8 +21,8 @@ let redisPackage: any = {};
 export class ClientRedis extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
   private readonly url: string;
-  private pubClient: redis.RedisClient;
-  private subClient: redis.RedisClient;
+  private pubClient: RedisClient;
+  private subClient: RedisClient;
   private isExplicitlyTerminated = false;
 
   constructor(private readonly options: ClientOptions) {
@@ -107,14 +107,14 @@ export class ClientRedis extends ClientProxy {
     this.handleError(this.subClient, callback);
   }
 
-  public createClient(): redis.RedisClient {
+  public createClient(): RedisClient {
     return redisPackage.createClient({
       ...this.getClientOptions(),
       url: this.url,
     });
   }
 
-  public handleError(client: redis.RedisClient, callback: (...args) => any) {
+  public handleError(client: RedisClient, callback: (...args) => any) {
     const errorCallback = err => {
       if (err.code === 'ECONNREFUSED') {
         callback(err, null);
@@ -129,7 +129,7 @@ export class ClientRedis extends ClientProxy {
     });
   }
 
-  public getClientOptions(): Partial<redis.ClientOpts> {
+  public getClientOptions(): Partial<ClientOpts> {
     const retry_strategy = options => this.createRetryStrategy(options);
     return {
       retry_strategy,
@@ -137,7 +137,7 @@ export class ClientRedis extends ClientProxy {
   }
 
   public createRetryStrategy(
-    options: redis.RetryStrategyOptions,
+    options: RetryStrategyOptions,
   ): undefined | number {
     if (
       this.isExplicitlyTerminated ||

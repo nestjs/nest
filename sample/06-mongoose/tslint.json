@@ -12,6 +12,7 @@
             true,
             "single"
         ],
+        "ban-types": false,
         "ordered-imports": [
             false
         ],

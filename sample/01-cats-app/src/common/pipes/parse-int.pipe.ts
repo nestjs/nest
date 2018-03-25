@@ -3,7 +3,6 @@ import {
   PipeTransform,
   Pipe,
   ArgumentMetadata,
-  HttpStatus,
 } from '@nestjs/common';
 
 @Pipe()

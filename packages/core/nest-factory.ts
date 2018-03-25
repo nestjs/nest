@@ -26,6 +26,7 @@ import { ExpressAdapter } from './adapters/express-adapter';
 import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
 import { FastifyAdapter } from './adapters/fastify-adapter';
 import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
+import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 
 const { NestMicroservice } =
   optional('@nestjs/microservices/nest-microservice') || ({} as any);
@@ -80,12 +81,12 @@ export class NestFactoryStatic {
    * Creates an instance of the NestMicroservice (returns Promise)
    *
    * @param  {} module Entry (root) application module class
-   * @param  {NestMicroserviceOptions} options Optional microservice configuration
+   * @param  {NestMicroserviceOptions & MicroserviceOptions} options Optional microservice configuration
    * @returns an `Promise` of the INestMicroservice instance
    */
   public async createMicroservice(
     module,
-    options?: NestMicroserviceOptions,
+    options?: NestMicroserviceOptions & MicroserviceOptions,
   ): Promise<INestMicroservice> {
     if (!NestMicroservice) {
       throw new MicroservicesPackageNotFoundException();

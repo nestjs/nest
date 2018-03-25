@@ -19,7 +19,6 @@
     "@nestjs/microservices": "^5.0.0",
     "@nestjs/testing": "^5.0.0",
     "@nestjs/websockets": "^5.0.0",
-    "amqplib": "^0.5.2",
     "class-transformer": "^0.1.7",
     "class-validator": "^0.8.1",
     "fastify": "^1.1.0",

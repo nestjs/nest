@@ -1,6 +1,8 @@
 import { PipeTransform } from '../../interfaces/index';
 import { PIPES_METADATA } from '../../constants';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';
+import { validateEach } from '../../utils/validate-each.util';
+import { isFunction } from '../../utils/shared.utils';
 
 /**
  * Binds pipes to the particular context.
@@ -13,11 +15,14 @@ import { extendArrayMetadata } from '../../utils/extend-metadata.util';
  * @param  {PipeTransform[]} ...pipes (instances)
  */
 export function UsePipes(...pipes: PipeTransform<any>[]) {
-  return (target: object, key?, descriptor?) => {
+  return (target: any, key?, descriptor?) => {
+    const isPipeValid = (pipe) => isFunction(pipe.transform);
     if (descriptor) {
+      validateEach(target.constructor, pipes, isPipeValid, '@UsePipes', 'pipe');
       extendArrayMetadata(PIPES_METADATA, pipes, descriptor.value);
       return descriptor;
     }
+    validateEach(target, pipes, isPipeValid, '@UsePipes', 'pipe');
     extendArrayMetadata(PIPES_METADATA, pipes, target);
     return target;
   };

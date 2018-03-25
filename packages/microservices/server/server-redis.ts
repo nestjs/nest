@@ -1,4 +1,4 @@
-import * as redis from 'redis';
+import { RedisClient, ClientOpts, RetryStrategyOptions } from 'redis';
 import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
 import {
@@ -22,8 +22,8 @@ let redisPackage: any = {};
 
 export class ServerRedis extends Server implements CustomTransportStrategy {
   private readonly url: string;
-  private subClient: redis.RedisClient;
-  private pubClient: redis.RedisClient;
+  private subClient: RedisClient;
+  private pubClient: RedisClient;
   private isExplicitlyTerminated = false;
 
   constructor(private readonly options: MicroserviceOptions) {
@@ -50,12 +50,12 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public bindEvents(
-    subClient: redis.RedisClient,
-    pubClient: redis.RedisClient,
+    subClient: RedisClient,
+    pubClient: RedisClient,
   ) {
     subClient.on(MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
-    const registeredPatterns = Object.keys(this.messageHandlers);
-    registeredPatterns.forEach(pattern =>
+    const subscribePatterns = Object.keys(this.messageHandlers);
+    subscribePatterns.forEach(pattern =>
       subClient.subscribe(this.getAckQueueName(pattern)),
     );
   }
@@ -66,14 +66,14 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     this.subClient && this.subClient.quit();
   }
 
-  public createRedisClient(): redis.RedisClient {
+  public createRedisClient(): RedisClient {
     return redisPackage.createClient({
       ...this.getClientOptions(),
       url: this.url,
     });
   }
 
-  public getMessageHandler(pub: redis.RedisClient) {
+  public getMessageHandler(pub: RedisClient) {
     return async (channel, buffer) =>
       await this.handleMessage(channel, buffer, pub);
   }
@@ -81,7 +81,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   public async handleMessage(
     channel,
     buffer: string | any,
-    pub: redis.RedisClient,
+    pub: RedisClient,
   ) {
     const packet = this.deserialize(buffer);
     const pattern = channel.replace(/_ack$/, '');
@@ -98,7 +98,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     response$ && this.send(response$, publish);
   }
 
-  public getPublisher(pub: redis.RedisClient, pattern: any, id: string) {
+  public getPublisher(pub: RedisClient, pattern: any, id: string) {
     return response =>
       pub.publish(
         this.getResQueueName(pattern),
@@ -126,7 +126,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     stream.on(ERROR_EVENT, err => this.logger.error(err));
   }
 
-  public getClientOptions(): Partial<redis.ClientOpts> {
+  public getClientOptions(): Partial<ClientOpts> {
     const retry_strategy = options => this.createRetryStrategy(options);
     return {
       retry_strategy,
@@ -134,7 +134,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public createRetryStrategy(
-    options: redis.RetryStrategyOptions,
+    options: RetryStrategyOptions,
   ): undefined | number {
     if (
       this.isExplicitlyTerminated ||

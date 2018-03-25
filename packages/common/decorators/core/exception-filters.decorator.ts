@@ -3,10 +3,14 @@ import { EXCEPTION_FILTERS_METADATA } from '../../constants';
 import { Logger } from '@nestjs/common';
 import { ExceptionFilter } from '../../index';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';
+import { isFunction } from '../../utils/shared.utils';
+import { validateEach } from '../../utils/validate-each.util';
 
 const defineFiltersMetadata = (...filters: ExceptionFilter[]) => {
-  return (target: object, key?, descriptor?) => {
+  return (target: any, key?, descriptor?) => {
+    const isFilterValid = (filter) => isFunction(filter.catch);
     if (descriptor) {
+      validateEach(target.constructor, filters, isFilterValid, '@UseFilters', 'filter');
       extendArrayMetadata(
         EXCEPTION_FILTERS_METADATA,
         filters,
@@ -14,6 +18,7 @@ const defineFiltersMetadata = (...filters: ExceptionFilter[]) => {
       );
       return descriptor;
     }
+    validateEach(target, filters, isFilterValid, '@UseFilters', 'filter');
     extendArrayMetadata(EXCEPTION_FILTERS_METADATA, filters, target);
     return target;
   };

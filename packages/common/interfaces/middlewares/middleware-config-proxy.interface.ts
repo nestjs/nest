@@ -1,5 +1,6 @@
 import { MiddlewaresConsumer } from './middlewares-consumer.interface';
 import { RequestMappingMetadata } from '../request-mapping-metadata.interface';
+import { Type } from '../type.interface';
 
 export interface MiddlewareConfigProxy {
   /**
@@ -8,20 +9,14 @@ export interface MiddlewareConfigProxy {
    * @param  {} ...data
    * @returns MiddlewareConfigProxy
    */
-  with(...data): MiddlewareConfigProxy;
+  with(...data: any[]): MiddlewareConfigProxy;
 
   /**
-   * Attaches passed routes / controllers to the processed middleware(s).
-   * Single route can be defined as a literal object:
-   * ```
-   * path: string;
-   * method: RequestMethod;
-   * ```
-   *
+   * Attaches passed either routes (strings) or controllers to the processed middleware(s).
    * When you pass Controller class, Nest will attach middleware to every HTTP route handler inside this controller.
    *
    * @param  {} ...routes
    * @returns MiddlewaresConsumer
    */
-  forRoutes(...routes): MiddlewaresConsumer;
+  forRoutes(...routes: (string | Type<any>)[]): MiddlewaresConsumer;
 }

@@ -41,7 +41,6 @@ describe('RoutesMapper', () => {
       middlewares: 'Test',
       forRoutes: [{ method: RequestMethod.GET }],
     };
-
     expect(
       mapper.mapRouteToRouteProps.bind(mapper, config.forRoutes[0]),
     ).throws(UnknownRequestMappingException);

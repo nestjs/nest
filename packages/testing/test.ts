@@ -3,7 +3,6 @@ import {
   InstanceWrapper,
 } from '@nestjs/core/injector/container';
 import { ModuleMetadata } from '@nestjs/common/interfaces/modules/module-metadata.interface';
-import { Module } from '@nestjs/common/utils/decorators/module.decorator';
 import { DependenciesScanner } from '@nestjs/core/scanner';
 import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
 import { Logger } from '@nestjs/common/services/logger.service';

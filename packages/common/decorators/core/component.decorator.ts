@@ -53,6 +53,6 @@ export function mixin(mixinClass) {
   Object.defineProperty(mixinClass, 'name', {
     value: JSON.stringify(this.offset),
   });
-  Component()(mixinClass);
+  Injectable()(mixinClass);
   return mixinClass;
 }

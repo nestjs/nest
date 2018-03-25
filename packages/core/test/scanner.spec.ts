@@ -12,6 +12,8 @@ import { GUARDS_METADATA } from '../../common/constants';
 import { ApplicationConfig } from '../application-config';
 import { APP_INTERCEPTOR, APP_GUARD, APP_PIPE, APP_FILTER } from '../constants';
 
+class Guard {}
+
 describe('DependenciesScanner', () => {
   @Component()
   class TestComponent {}
@@ -123,7 +125,7 @@ describe('DependenciesScanner', () => {
   });
 
   class CompMethod {
-    @UseGuards('test')
+    @UseGuards(Guard)
     public method() {}
   }
   describe('reflectKeyMetadata', () => {
@@ -137,7 +139,7 @@ describe('DependenciesScanner', () => {
         GUARDS_METADATA,
         'method',
       );
-      expect(result).to.be.eql(['test']);
+      expect(result).to.be.eql([Guard]);
     });
   });
 

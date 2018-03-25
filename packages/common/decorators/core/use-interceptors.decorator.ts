@@ -1,5 +1,7 @@
 import { INTERCEPTORS_METADATA } from '../../constants';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';
+import { isFunction } from '../../utils/shared.utils';
+import { validateEach } from '../../utils/validate-each.util';
 
 /**
  * Binds interceptors to the particular context.
@@ -12,8 +14,15 @@ import { extendArrayMetadata } from '../../utils/extend-metadata.util';
  * @param  {} ...interceptors (types)
  */
 export function UseInterceptors(...interceptors: any[]) {
-  return (target: object, key?, descriptor?) => {
+  return (target: any, key?, descriptor?) => {
     if (descriptor) {
+      validateEach(
+        target.constructor,
+        interceptors,
+        isFunction,
+        '@UseInterceptors',
+        'interceptor',
+      );
       extendArrayMetadata(
         INTERCEPTORS_METADATA,
         interceptors,
@@ -21,6 +30,13 @@ export function UseInterceptors(...interceptors: any[]) {
       );
       return descriptor;
     }
+    validateEach(
+      target,
+      interceptors,
+      isFunction,
+      '@UseInterceptors',
+      'interceptor',
+    );
     extendArrayMetadata(INTERCEPTORS_METADATA, interceptors, target);
     return target;
   };

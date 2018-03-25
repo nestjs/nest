@@ -1,16 +1,30 @@
-import * as WebSocket from 'ws';
 import { Server } from 'http';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
-import { CONNECTION_EVENT, DISCONNECT_EVENT, CLOSE_EVENT } from '../constants';
-import { WebSocketAdapter } from '@nestjs/common';
+import {
+  CONNECTION_EVENT,
+  DISCONNECT_EVENT,
+  CLOSE_EVENT,
+  ERROR_EVENT,
+} from '../constants';
+import { WebSocketAdapter, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
 import { mergeMap, filter, tap } from 'rxjs/operators';
 import { fromEvent } from 'rxjs/observable/fromEvent';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import 'rxjs/add/observable/empty';
+import { empty } from 'rxjs/observable/empty';
+import { MissingRequiredDependencyException } from '@nestjs/core/errors/exceptions/missing-dependency.exception';
+
+let wsPackage: any = {};
 
 export class WsAdapter implements WebSocketAdapter {
-  constructor(private readonly httpServer: Server | null = null) {}
+  private readonly logger = new Logger(WsAdapter.name);
+  constructor(private readonly httpServer: Server | null = null) {
+    try {
+      wsPackage = require('ws');
+    } catch (e) {
+      throw new MissingRequiredDependencyException('ws', 'WsAdapter');
+    }
+  }
 
   public create(
     port: number,
@@ -18,17 +32,21 @@ export class WsAdapter implements WebSocketAdapter {
   ): any {
     const { server, ...wsOptions } = options;
     if (port === 0 && this.httpServer) {
-      return new WebSocket.Server({
-        server: this.httpServer,
-        ...wsOptions,
-      });
+      return this.bindErrorHandler(
+        new wsPackage.Server({
+          server: this.httpServer,
+          ...wsOptions,
+        }),
+      );
     }
     return server
       ? server
-      : new WebSocket.Server({
-          port,
-          ...wsOptions,
-        });
+      : this.bindErrorHandler(
+          new wsPackage.Server({
+            port,
+            ...wsOptions,
+          }),
+        );
   }
 
   public bindClientConnect(server, callback: (...args) => void) {
@@ -62,7 +80,7 @@ export class WsAdapter implements WebSocketAdapter {
       handler => handler.message === message.event,
     );
     if (!messageHandler) {
-      return Observable.empty();
+      return empty();
     }
     const { callback } = messageHandler;
     return process(callback(message.data));
@@ -70,5 +88,10 @@ export class WsAdapter implements WebSocketAdapter {
 
   public close(server) {
     isFunction(server.close) && server.close();
+  }
+
+  public bindErrorHandler(server) {
+    server.on(ERROR_EVENT, err => this.logger.error(err));
+    return server;
   }
 }

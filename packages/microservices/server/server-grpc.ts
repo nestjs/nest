@@ -1,4 +1,4 @@
-import * as grpc from 'grpc';
+import { GrpcObject } from 'grpc';
 import { Server } from './server';
 import {
   MicroserviceOptions,
@@ -8,6 +8,7 @@ import { CustomTransportStrategy } from './../interfaces';
 import { Observable } from 'rxjs/Observable';
 import { GRPC_DEFAULT_URL } from './../constants';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
+import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
 
 let grpcPackage: any = {};
 
@@ -35,9 +36,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public async bindEvents() {
-    const grpcContext = grpcPackage.load(
-      this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),
-    );
+    const grpcContext = this.loadProto();
     const packageName = this.getOptionsProp<GrpcOptions>(
       this.options,
       'package',
@@ -145,5 +144,17 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       pkg = pkg[name];
     }
     return pkg;
+  }
+
+  public loadProto(): GrpcObject {
+    try {
+      const context = grpcPackage.load(
+        this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),
+      );
+      return context;
+    }
+    catch (e) {
+      throw new InvalidProtoDefinitionException();
+    }
   }
 }

@@ -1,4 +1,4 @@
-import * as mqtt from 'mqtt';
+import { MqttClient } from 'mqtt';
 import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
 import {
@@ -22,7 +22,7 @@ let mqttPackage: any = {};
 
 export class ServerMqtt extends Server implements CustomTransportStrategy {
   private readonly url: string;
-  private mqttClient: mqtt.MqttClient;
+  private mqttClient:MqttClient;
 
   constructor(private readonly options: MicroserviceOptions) {
     super();
@@ -44,7 +44,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     this.mqttClient.on(CONNECT_EVENT, callback);
   }
 
-  public bindEvents(mqttClient: mqtt.MqttClient) {
+  public bindEvents(mqttClient: MqttClient) {
     mqttClient.on(MESSAGE_EVENT, this.getMessageHandler(mqttClient).bind(this));
     const registeredPatterns = Object.keys(this.messageHandlers);
     registeredPatterns.forEach(pattern =>
@@ -56,11 +56,11 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     this.mqttClient && this.mqttClient.end();
   }
 
-  public createMqttClient(): mqtt.MqttClient {
+  public createMqttClient(): MqttClient {
     return mqttPackage.connect(this.url, this.options.options as MqttOptions);
   }
 
-  public getMessageHandler(pub: mqtt.MqttClient): any {
+  public getMessageHandler(pub: MqttClient): any {
     return async (channel, buffer) =>
       await this.handleMessage(channel, buffer, pub);
   }
@@ -68,7 +68,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   public async handleMessage(
     channel: string,
     buffer: Buffer,
-    pub: mqtt.MqttClient,
+    pub: MqttClient,
   ): Promise<any> {
     const packet = this.deserialize(buffer.toString());
     const pattern = channel.replace(/_ack$/, '');
@@ -85,7 +85,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     response$ && this.send(response$, publish);
   }
 
-  public getPublisher(client: mqtt.MqttClient, pattern: any, id: string): any {
+  public getPublisher(client: MqttClient, pattern: any, id: string): any {
     return response =>
       client.publish(
         this.getResQueueName(pattern),

@@ -1,4 +1,4 @@
-import { Controller, Get, UseInterceptors } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import {
   ClientProxy,
   Client,
@@ -6,10 +6,8 @@ import {
   MessagePattern,
 } from '@nestjs/microservices';
 import { Observable } from 'rxjs/Observable';
-import { LoggingInterceptor } from '../common/interceptors/logging.interceptor';
 
 @Controller()
-@UseInterceptors(LoggingInterceptor)
 export class MathController {
   @Client({ transport: Transport.TCP })
   client: ClientProxy;

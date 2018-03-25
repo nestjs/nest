@@ -40,7 +40,9 @@ export interface INestExpressApplication {
    *
    * @returns this
    */
-  useStaticAssets(path: string, options: ServeStaticOptions): this;
+  useStaticAssets(options: any): this;
+  useStaticAssets(path: string, options?: ServeStaticOptions);
+  useStaticAssets(pathOrOptions: any, options?: ServeStaticOptions): this;
 
   /**
    * Sets a base directory for templates (views).

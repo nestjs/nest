@@ -1,4 +1,4 @@
-import * as nats from 'nats';
+import { Client } from 'nats';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
@@ -15,7 +15,7 @@ let natsPackage: any = {};
 export class ClientNats extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
   private readonly url: string;
-  private natsClient: nats.Client;
+  private natsClient: Client;
 
   constructor(private readonly options: ClientOptions) {
     super();
@@ -80,7 +80,7 @@ export class ClientNats extends ClientProxy {
     this.handleError(this.natsClient, callback);
   }
 
-  public createClient(): Promise<nats.Client> {
+  public createClient(): Promise<Client> {
     const options = this.options.options || ({} as NatsOptions);
     const client = natsPackage.connect({
       ...(options as any),
@@ -90,7 +90,7 @@ export class ClientNats extends ClientProxy {
     return new Promise(resolve => client.on(CONNECT_EVENT, resolve));
   }
 
-  public handleError(client: nats.Client, callback: (...args) => any) {
+  public handleError(client: Client, callback: (...args) => any) {
     const errorCallback = err => {
       if (err.code === 'ECONNREFUSED') {
         callback(err, null);

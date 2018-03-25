@@ -6,6 +6,7 @@ import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 
 class TestClientProxy extends ClientProxy {
   public publish(pattern, callback) {}
+  public close() {}
 }
 
 describe('ClientProxy', () => {

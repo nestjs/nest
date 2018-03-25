@@ -12,7 +12,6 @@ import { _throw } from 'rxjs/observable/throw';
 @Injectable()
 export class ExceptionInterceptor implements NestInterceptor {
   intercept(
-    dataOrRequest,
     context: ExecutionContext,
     stream$: Observable<any>,
   ): Observable<any> {

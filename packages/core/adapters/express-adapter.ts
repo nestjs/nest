@@ -10,12 +10,8 @@ import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-sta
 export class ExpressAdapter implements HttpServer {
   constructor(private readonly instance) {}
 
-  use(handler: RequestHandler | ErrorHandler);
-  use(path: any, handler: RequestHandler | ErrorHandler);
-  use(pathOrHandler: any, handler?: RequestHandler | ErrorHandler | undefined) {
-    return handler
-      ? this.instance.use(pathOrHandler, handler)
-      : this.instance.use(pathOrHandler);
+  use(...args: any[]) {
+    return this.instance.use(...args);
   }
 
   get(handler: RequestHandler);

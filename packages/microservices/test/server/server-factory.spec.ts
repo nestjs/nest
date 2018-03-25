@@ -43,8 +43,10 @@ describe('ServerFactory', () => {
 
     it(`should return grpc server`, () => {
       expect(
-        ServerFactory.create({ transport: Transport.GRPC }) instanceof
-          ServerGrpc,
+        ServerFactory.create({
+          transport: Transport.GRPC,
+          options: { protoPath: '', package: '' },
+        }) instanceof ServerGrpc,
       ).to.be.true;
     });
   });

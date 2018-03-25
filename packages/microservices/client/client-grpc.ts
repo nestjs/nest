@@ -1,4 +1,4 @@
-import * as grpc from 'grpc';
+import { GrpcObject } from 'grpc';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
@@ -11,10 +11,6 @@ import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.
 import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
 
 let grpcPackage: any = {};
-
-export interface GrpcService {
-  [name: string]: (...args: any[]) => Observable<any>;
-}
 
 export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   private readonly logger = new Logger(ClientProxy.name);
@@ -30,7 +26,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     this.grpcClient = this.createClient();
   }
 
-  public getService<T extends GrpcService = any>(name: string): T {
+  public getService<T = any>(name: string): T {
     var options, credentials;
     if (!this.grpcClient[name]) {
       throw new InvalidGrpcServiceException();
@@ -101,7 +97,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     return grpcPackage;
   }
 
-  public loadProto(): grpc.GrpcObject {
+  public loadProto(): GrpcObject {
     try {
       const context = grpcPackage.load(
         this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),

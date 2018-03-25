@@ -1,4 +1,4 @@
-import * as nats from 'nats';
+import { Client } from 'nats';
 import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
 import {
@@ -17,7 +17,7 @@ let natsPackage: any = {};
 
 export class ServerNats extends Server implements CustomTransportStrategy {
   private readonly url: string;
-  private natsClient: nats.Client;
+  private natsClient: Client;
 
   constructor(private readonly options: MicroserviceOptions) {
     super();
@@ -38,7 +38,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     this.natsClient.on(CONNECT_EVENT, callback);
   }
 
-  public bindEvents(client: nats.Client) {
+  public bindEvents(client: Client) {
     const registeredPatterns = Object.keys(this.messageHandlers);
     registeredPatterns.forEach(pattern => {
       const channel = this.getAckQueueName(pattern);
@@ -54,7 +54,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     this.natsClient = null;
   }
 
-  public createNatsClient(): nats.Client {
+  public createNatsClient(): Client {
     const options = this.options.options || ({} as NatsOptions);
     return natsPackage.connect({
       ...(options as any),
@@ -63,14 +63,14 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     });
   }
 
-  public getMessageHandler(channel: string, client: nats.Client) {
+  public getMessageHandler(channel: string, client: Client) {
     return async buffer => await this.handleMessage(channel, buffer, client);
   }
 
   public async handleMessage(
     channel: string,
     message: ReadPacket & PacketId,
-    client: nats.Client,
+    client: Client,
   ) {
     const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(client, pattern, message.id);
@@ -86,7 +86,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     response$ && this.send(response$, publish);
   }
 
-  public getPublisher(publisher: nats.Client, pattern: any, id: string) {
+  public getPublisher(publisher: Client, pattern: any, id: string) {
     return response =>
       publisher.publish(this.getResQueueName(pattern), Object.assign(response, {
         id,

@@ -1,19 +1,12 @@
-import * as WebSocket from 'ws';
-import { Module, DynamicModule, Inject, OnModuleDestroy } from '@nestjs/common';
-import { SubscriptionServer, ServerOptions } from 'subscriptions-transport-ws';
-import { execute, subscribe } from 'graphql';
-
+import { Module, DynamicModule } from '@nestjs/common';
 import { createSubscriptionProviders } from './subscription.providers';
-import { SUBSCRIPTION_SERVER } from './subscription.constants';
+import { SubscriptionsService } from './subscriptions.service';
 
 @Module({
-  exports: [SubscriptionsModule],
+  providers: [SubscriptionsService],
+  exports: [SubscriptionsService],
 })
-export class SubscriptionsModule implements OnModuleDestroy {
-  private subscriptionServer: SubscriptionServer;
-
-  constructor(@Inject(SUBSCRIPTION_SERVER) private readonly ws) {}
-
+export class SubscriptionsModule {
   static forRoot(port: number = 3001): DynamicModule {
     const providers = createSubscriptionProviders(port);
     return {
@@ -21,29 +14,5 @@ export class SubscriptionsModule implements OnModuleDestroy {
       providers: [...providers],
       exports: [...providers],
     };
-  }
-
-  createSubscriptionServer(
-    schema: any,
-    options: ServerOptions = {},
-    socketOptions: WebSocket.ServerOption = {},
-  ) {
-    this.subscriptionServer = new SubscriptionServer(
-      {
-        execute,
-        subscribe,
-        schema,
-        ...options,
-      },
-      {
-        server: this.ws,
-        path: '/subscriptions',
-        ...socketOptions,
-      },
-    );
-  }
-
-  onModuleDestroy() {
-    this.ws.close();
   }
 }

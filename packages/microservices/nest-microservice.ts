@@ -59,14 +59,20 @@ export class NestMicroservice extends NestApplicationContext
   }
 
   public createServer(config: MicroserviceOptions) {
-    this.microserviceConfig = {
-      transport: Transport.TCP,
-      ...config,
-    };
-    const { strategy } = config;
-    this.server = strategy
-      ? strategy
-      : ServerFactory.create(this.microserviceConfig);
+    try {
+      this.microserviceConfig = {
+        transport: Transport.TCP,
+        ...config,
+      } as any;
+      const { strategy } = config as any;
+      this.server = strategy
+        ? strategy
+        : ServerFactory.create(this.microserviceConfig);
+    }
+    catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
   }
 
   public registerModules() {

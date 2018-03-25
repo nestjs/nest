@@ -2,9 +2,12 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import { UseInterceptors } from '../../decorators/core/use-interceptors.decorator';
 import { INTERCEPTORS_METADATA } from '../../constants';
+import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
+
+class Interceptor {}
 
 describe('@UseInterceptors', () => {
-  const interceptors = ['interceptor1', 'interceptor2'];
+  const interceptors = [Interceptor, Interceptor];
 
   @UseInterceptors(...(interceptors as any))
   class Test {}
@@ -25,5 +28,14 @@ describe('@UseInterceptors', () => {
       TestWithMethod.test,
     );
     expect(metadata).to.be.eql(interceptors);
+  });
+
+  it('when object is invalid should throw exception', () => {
+    try {
+      UseInterceptors('test')({});
+    }
+    catch (e) {
+      expect(e).to.be.instanceof(InvalidDecoratorItemException);
+    }
   });
 });

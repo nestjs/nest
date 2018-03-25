@@ -5,7 +5,6 @@ import {
   Body,
   Bind,
   Dependencies,
-  ReflectMetadata,
   Param,
 } from '@nestjs/common';
 import { CatsService } from './cats.service';

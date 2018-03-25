@@ -1,4 +1,4 @@
-import * as mqtt from 'mqtt';
+import { MqttClient } from 'mqtt';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
@@ -17,7 +17,7 @@ let mqttPackage: any = {};
 export class ClientMqtt extends ClientProxy {
   private readonly logger = new Logger(ClientProxy.name);
   private readonly url: string;
-  private mqttClient: mqtt.MqttClient;
+  private mqttClient: MqttClient;
 
   constructor(private readonly options: ClientOptions) {
     super();
@@ -86,11 +86,11 @@ export class ClientMqtt extends ClientProxy {
     this.handleError(this.mqttClient, callback);
   }
 
-  public createClient(): mqtt.MqttClient {
+  public createClient(): MqttClient {
     return mqttPackage.connect(this.url, this.options.options as MqttOptions);
   }
 
-  public handleError(client: mqtt.MqttClient, callback: (...args) => any) {
+  public handleError(client: MqttClient, callback: (...args) => any) {
     const errorCallback = err => {
       if (err.code === 'ECONNREFUSED') {
         callback(err, null);

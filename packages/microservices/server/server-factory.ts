@@ -15,7 +15,7 @@ export class ServerFactory {
   public static create(
     options: MicroserviceOptions,
   ): Server & CustomTransportStrategy {
-    const { transport } = options;
+    const { transport } = options as any;
     switch (transport) {
       case Transport.REDIS:
         return new ServerRedis(options);

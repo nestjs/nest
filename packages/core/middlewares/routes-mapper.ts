@@ -2,10 +2,15 @@ import 'reflect-metadata';
 import { RouterExplorer } from '../router/router-explorer';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
-import { isUndefined, validatePath, isString } from '@nestjs/common/utils/shared.utils';
+import {
+  isUndefined,
+  validatePath,
+  isString,
+} from '@nestjs/common/utils/shared.utils';
 import { PATH_METADATA } from '@nestjs/common/constants';
 import { MetadataScanner } from '../metadata-scanner';
 import { NestContainer } from '../injector/container';
+import { Type } from '@nestjs/common/interfaces';
 
 export class RoutesMapper {
   private readonly routerExplorer: RouterExplorer;
@@ -14,18 +19,25 @@ export class RoutesMapper {
     this.routerExplorer = new RouterExplorer(new MetadataScanner(), container);
   }
 
-  public mapRouteToRouteProps(routeMetatype): string[] {
-    const routePath: string = Reflect.getMetadata(PATH_METADATA, routeMetatype);
+  public mapRouteToRouteProps(route: Type<any> | any | string): string[] {
+    if (isString(route)) {
+      return [route];
+    }
+    const routePath: string = Reflect.getMetadata(PATH_METADATA, route);
     if (isUndefined(routePath)) {
-      return [this.mapObjectToPath(routeMetatype)];
+      return [this.mapObjectToPath(route)];
     }
     const paths = this.routerExplorer.scanForPaths(
-      Object.create(routeMetatype),
-      routeMetatype.prototype,
+      Object.create(route),
+      route.prototype,
     );
-    const uniquePathsSet = new Set(paths.map(route => (
-      this.validateGlobalPath(routePath) + this.validateRoutePath(route.path)
-    )));
+    const uniquePathsSet = new Set(
+      paths.map(
+        route =>
+          this.validateGlobalPath(routePath) +
+          this.validateRoutePath(route.path),
+      ),
+    );
     return [...uniquePathsSet.values()];
   }
 

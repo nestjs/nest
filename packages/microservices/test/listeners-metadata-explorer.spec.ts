@@ -13,8 +13,8 @@ describe('ListenerMetadataExplorer', () => {
   const clientSecMetadata = { transport: Transport.REDIS };
 
   class Test {
-    @Client(clientMetadata) public client;
-    @Client(clientSecMetadata) public redisClient;
+    @Client(clientMetadata as any) public client;
+    @Client(clientSecMetadata as any) public redisClient;
 
     get testGet() {
       return 0;

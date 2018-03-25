@@ -3,7 +3,6 @@ import * as http from 'http';
 import * as https from 'https';
 import * as optional from 'optional';
 import * as bodyParser from 'body-parser';
-import * as formbody from 'fastify-formbody';
 import iterate from 'iterare';
 import {
   CanActivate,
@@ -46,6 +45,7 @@ import { FastifyAdapter } from './adapters/fastify-adapter';
 import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
 import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
+import { MissingRequiredDependencyException } from './errors/exceptions/missing-dependency.exception';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
@@ -159,7 +159,9 @@ export class NestApplication extends NestApplicationContext
 
   public registerParserMiddlewares() {
     if (this.httpAdapter instanceof FastifyAdapter) {
-      return this.httpAdapter.register(formbody);
+      return this.httpAdapter.register(
+        this.loadPackage('fastify-formbody', 'FastifyAdapter'),
+      );
     }
     if (!this.isExpress()) {
       return void 0;
@@ -341,23 +343,31 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  useStaticAssets(options: any): this;
-  useStaticAssets(path: string, options?: ServeStaticOptions);
-  useStaticAssets(pathOrOptions: any, options?: ServeStaticOptions): this {
+  public useStaticAssets(options: any): this;
+  public useStaticAssets(path: string, options?: ServeStaticOptions);
+  public useStaticAssets(pathOrOptions: any, options?: ServeStaticOptions): this {
     this.httpAdapter.useStaticAssets &&
       this.httpAdapter.useStaticAssets(pathOrOptions, options);
     return this;
   }
 
-  setBaseViewsDir(path: string): this {
+  public setBaseViewsDir(path: string): this {
     this.httpAdapter.setBaseViewsDir && this.httpAdapter.setBaseViewsDir(path);
     return this;
   }
 
-  setViewEngine(engineOrOptions: any): this {
+  public setViewEngine(engineOrOptions: any): this {
     this.httpAdapter.setViewEngine &&
       this.httpAdapter.setViewEngine(engineOrOptions);
     return this;
+  }
+
+  private loadPackage(name: string, ctx: string) {
+    try {
+      return require(name);
+    } catch (e) {
+      throw new MissingRequiredDependencyException(name, ctx);
+    }
   }
 
   private async registerMiddlewares(instance) {

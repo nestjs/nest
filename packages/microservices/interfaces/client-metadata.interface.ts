@@ -7,17 +7,17 @@ import {
   GrpcOptions,
 } from './microservice-configuration.interface';
 
-export interface ClientOptions {
-  transport?: Transport;
-  options?:
-    | TcpClientOptions
-    | RedisOptions
-    | NatsOptions
-    | MqttOptions
-    | GrpcOptions;
-}
+export type ClientOptions =
+  | RedisOptions
+  | NatsOptions
+  | MqttOptions
+  | GrpcOptions
+  | TcpClientOptions;
 
 export interface TcpClientOptions {
-  host?: string;
-  port?: number;
+  transport: Transport.TCP;
+  options?: {
+    host?: string;
+    port?: number;
+  };
 }

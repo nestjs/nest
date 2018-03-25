@@ -13,10 +13,9 @@
     "@nestjs/core": "^5.0.0",
     "@nestjs/typeorm": "^2.0.0",
     "mysql": "^2.15.0",
-    "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.5.6",
-    "typeorm": "^0.1.12",
+    "typeorm": "^0.1.16",
     "typescript": "^2.4.2"
   },
   "devDependencies": {
