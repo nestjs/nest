@@ -9,7 +9,7 @@ export declare class ClientTCP extends ClientProxy {
     constructor({port, host}: ClientMetadata);
     init(callback: (...args) => any): Promise<{}>;
     protected sendSingleMessage(msg: any, callback: (...args) => any): Promise<void>;
-    handleResponse(socket: any, callback: (...args) => any, buffer: any): void;
+    handleResponse(socket: any, callback: (...args) => any, buffer: any): any;
     createSocket(): any;
     close(): void;
     bindEvents(socket: any, callback: (...args) => any): void;

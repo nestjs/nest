@@ -98,7 +98,7 @@ describe('ServerRedis', () => {
       expect(
         getPublisherSpy.calledWith({
           status: 'error',
-          error: NO_PATTERN_MESSAGE,
+          err: NO_PATTERN_MESSAGE,
         }),
       ).to.be.true;
     });

@@ -54,10 +54,9 @@ export class ClientTCP extends ClientProxy {
 
   public handleResponse(socket, callback: (...args) => any, buffer) {
     const { err, response, disposed } = buffer;
-    if (disposed) {
-      callback(null, null, true);
-      socket.end();
-      return;
+    if (disposed || err) {
+      callback(err, null, true);
+      return socket.end();
     }
     callback(err, response);
   }

@@ -13,7 +13,7 @@ export declare class ServerTCP extends Server implements CustomTransportStrategy
     handleMessage(socket: any, msg: {
         pattern: any;
         data: {};
-    }): Promise<void>;
+    }): Promise<any>;
     private init();
     private getSocketInstance(socket);
 }

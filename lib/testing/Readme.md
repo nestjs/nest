@@ -7,14 +7,14 @@
 [linux-image]: https://img.shields.io/travis/nestjs/nest/master.svg?label=linux
 [linux-url]: https://travis-ci.org/nestjs/nest
   
-  <p align="center">A progressive <a href="http://nodejs.org" target="blank">Node.js</a> framework for building efficient and scalable web applications, heavily inspired by <a href="https://angular.io" target="blank">Angular</a>.</p>
+  <p align="center">A progressive <a href="http://nodejs.org" target="blank">Node.js</a> framework for building efficient and scalable server-side applications, heavily inspired by <a href="https://angular.io" target="blank">Angular</a>.</p>
     <p align="center">
 <a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
 <a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
 <a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/dm/@nestjs/core.svg" alt="NPM Downloads" /></a>
 <a href="https://travis-ci.org/nestjs/nest"><img src="https://api.travis-ci.org/nestjs/nest.svg?branch=master" alt="Travis" /></a>
 <a href="https://travis-ci.org/nestjs/nest"><img src="https://img.shields.io/travis/nestjs/nest/master.svg?label=linux" alt="Linux" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#4" alt="Coverage" /></a>
+<a href="https://coveralls.io/github/nestjs/nest?branch=master"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#5" alt="Coverage" /></a>
 <a href="https://gitter.im/nestjs/nestjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge"><img src="https://badges.gitter.im/nestjs/nestjs.svg" alt="Gitter" /></a>
 <a href="https://opencollective.com/nest#backer"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
 <a href="https://opencollective.com/nest#sponsor"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
@@ -24,7 +24,7 @@
 
 ## Description
 
-<p>Nest is a framework for building efficient, scalable <a href="http://nodejs.org" target="_blank">Node.js</a> web applications. It uses modern JavaScript, is built with  <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).</p>
+<p>Nest is a framework for building efficient, scalable <a href="http://nodejs.org" target="_blank">Node.js</a> server-side applications. It uses modern JavaScript, is built with  <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).</p>
 <p>Under the hood, Nest makes use of <a href="https://expressjs.com/" target="_blank">Express</a>, allowing for easy use of the myriad third-party plugins which are available.</p>
 
 ## Philosophy
@@ -36,11 +36,16 @@
 
 To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
 
-## Sponsors
+## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://opencollective.com/nest). Thanks! :heart_eyes:
+Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://opencollective.com/nest).
 
-<a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="210" /></a>
+#### Principal Sponsor
+
+<a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="210" /></a> 
+
+#### Sponsors
+<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.svg" width="160" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="160" /></a>
 
 ## Backers 
 
@@ -74,12 +79,29 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://opencollective.com/nest/backer/27/website" target="_blank"><img src="https://opencollective.com/nest/backer/27/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/28/website" target="_blank"><img src="https://opencollective.com/nest/backer/28/avatar.svg"></a>
 <a href="https://opencollective.com/nest/backer/29/website" target="_blank"><img src="https://opencollective.com/nest/backer/29/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/30/website" target="_blank"><img src="https://opencollective.com/nest/backer/30/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/31/website" target="_blank"><img src="https://opencollective.com/nest/backer/31/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/32/website" target="_blank"><img src="https://opencollective.com/nest/backer/32/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/33/website" target="_blank"><img src="https://opencollective.com/nest/backer/33/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/34/website" target="_blank"><img src="https://opencollective.com/nest/backer/34/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/35/website" target="_blank"><img src="https://opencollective.com/nest/backer/35/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/36/website" target="_blank"><img src="https://opencollective.com/nest/backer/36/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/37/website" target="_blank"><img src="https://opencollective.com/nest/backer/37/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/38/website" target="_blank"><img src="https://opencollective.com/nest/backer/38/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/39/website" target="_blank"><img src="https://opencollective.com/nest/backer/39/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/40/website" target="_blank"><img src="https://opencollective.com/nest/backer/40/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/41/website" target="_blank"><img src="https://opencollective.com/nest/backer/41/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/42/website" target="_blank"><img src="https://opencollective.com/nest/backer/42/avatar.svg"></a>
+<a href="https://opencollective.com/nest/backer/43/website" target="_blank"><img src="https://opencollective.com/nest/backer/43/avatar.svg"></a>
 
-## People
+## Stay in touch
 
 - Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
 - Website - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
 
 ## License
 
   Nest is [MIT licensed](LICENSE).
+
+<h4 align="center"> <a href="readme_zh.md">中文说明</a></h4>

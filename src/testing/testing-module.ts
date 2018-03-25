@@ -23,6 +23,7 @@ export class TestingModule extends NestApplicationContext {
   public createNestApplication(
     expressInstance: any = express(),
   ): INestApplication {
+    this.container.setApplicationRef(expressInstance);
     return new NestApplication(
       this.container,
       expressInstance,

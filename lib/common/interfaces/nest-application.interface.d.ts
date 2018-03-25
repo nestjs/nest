@@ -3,6 +3,7 @@ import { WebSocketAdapter } from './web-socket-adapter.interface';
 import { CanActivate } from './can-activate.interface';
 import { NestInterceptor } from './nest-interceptor.interface';
 import { INestApplicationContext } from './nest-application-context.interface';
+import { CorsOptions } from './external/cors-options.interface';
 export interface INestApplication extends INestApplicationContext {
     /**
      * Initializes application. It is not necessary to call this method directly.
@@ -43,7 +44,7 @@ export interface INestApplication extends INestApplicationContext {
      *
      * @returns void
      */
-    enableCors(): this;
+    enableCors(options?: CorsOptions): this;
     /**
      * A wrapper function around native `express.disable()` method.
      * Example `app.disable('x-powered-by')`

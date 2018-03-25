@@ -67,8 +67,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     const status = 'error';
 
     if (!this.messageHandlers[pattern]) {
-      publish({ status, error: NO_PATTERN_MESSAGE });
-      return;
+      return publish({ status, err: NO_PATTERN_MESSAGE });
     }
     const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(
