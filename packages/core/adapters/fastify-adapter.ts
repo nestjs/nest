@@ -108,9 +108,9 @@ export class FastifyAdapter {
 
   useStaticAssets(options: {
     root: string;
-    prefix: string;
-    setHeaders: Function;
-    send: any;
+    prefix?: string;
+    setHeaders?: Function;
+    send?: any;
   }) {
     try {
       return this.register(require('fastify-static'), options);
@@ -131,5 +131,13 @@ export class FastifyAdapter {
         'FastifyAdapter.setViewEngine()',
       );
     }
+  }
+
+  getRequestMethod(request): string {
+    return request.raw.method;
+  }
+
+  getRequestUrl(request): string {
+    return request.raw.url;
   }
 }

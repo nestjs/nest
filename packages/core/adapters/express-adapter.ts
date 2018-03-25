@@ -117,4 +117,12 @@ export class ExpressAdapter implements HttpServer {
   setViewEngine(engine: string) {
     return this.set('view engine', engine);
   }
+
+  getRequestMethod(request): string {
+    return request.method;
+  }
+
+  getRequestUrl(request): string {
+    return request.url;
+  }
 }

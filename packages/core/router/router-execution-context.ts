@@ -134,7 +134,7 @@ export class RouterExecutionContext {
     return Reflect.getMetadata(HTTP_CODE_METADATA, callback);
   }
 
-  public reflectRenderTemplate(callback): boolean {
+  public reflectRenderTemplate(callback): string {
     return Reflect.getMetadata(RENDER_METADATA, callback);
   }
 
@@ -264,7 +264,8 @@ export class RouterExecutionContext {
   ) {
     const renderTemplate = this.reflectRenderTemplate(callback);
     if (!!renderTemplate) {
-      return (result, res) => res.render(renderTemplate, result);
+      return (result, res) =>
+        this.responseController.render(result, res, renderTemplate);
     }
     return async (result, res) =>
       !isResponseHandled &&

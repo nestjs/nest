@@ -1,9 +1,8 @@
-import { Component } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-@Component()
+@Injectable()
 export class AppService {
   get() {
-    return 'ssxd';
+    return 'Hello world!';
   }   
 }
-     

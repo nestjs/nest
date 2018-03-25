@@ -15,9 +15,9 @@ export interface INestFastifyApplication {
    */
   useStaticAssets(options: {
     root: string;
-    prefix: string;
-    setHeaders: Function;
-    send: any;
+    prefix?: string;
+    setHeaders?: Function;
+    send?: any;
   }): this;
 
   /**

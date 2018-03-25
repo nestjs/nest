@@ -38,6 +38,8 @@ export interface HttpServer {
   useStaticAssets?(...args: any[]): this;
   setBaseViewsDir?(path: string): this;
   setViewEngine?(engineOrOptions: any): this;
+  getRequestMethod?(request): string;
+  getRequestUrl?(request): string;
   getHttpServer(): any;
   close();
 }
