@@ -7,7 +7,7 @@
   "dependencies": {
     "body-parser": "1.18.2",
     "cors": "2.8.4",
-    "express": "4.16.2",
+    "express": "4.16.3",
     "iterare": "0.0.8",
     "multer": "1.3.0",
     "optional": "0.1.4"
