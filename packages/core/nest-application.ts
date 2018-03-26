@@ -345,7 +345,10 @@ export class NestApplication extends NestApplicationContext
 
   public useStaticAssets(options: any): this;
   public useStaticAssets(path: string, options?: ServeStaticOptions);
-  public useStaticAssets(pathOrOptions: any, options?: ServeStaticOptions): this {
+  public useStaticAssets(
+    pathOrOptions: any,
+    options?: ServeStaticOptions,
+  ): this {
     this.httpAdapter.useStaticAssets &&
       this.httpAdapter.useStaticAssets(pathOrOptions, options);
     return this;

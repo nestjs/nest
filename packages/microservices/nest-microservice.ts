@@ -68,8 +68,7 @@ export class NestMicroservice extends NestApplicationContext
       this.server = strategy
         ? strategy
         : ServerFactory.create(this.microserviceConfig);
-    }
-    catch (e) {
+    } catch (e) {
       this.logger.error(e);
       throw e;
     }

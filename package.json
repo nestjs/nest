@@ -4,15 +4,21 @@
   "description": "Modern, fast, powerful node.js web framework",
   "main": "index.js",
   "scripts": {
-    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
-    "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
+    "precommit": "lint-staged",
+    "test":
+      "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
+    "integration-test":
+      "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "prettier": "prettier */**/*.ts --ignore-path ./.prettierignore --write && git status",
+    "prettier":
+      "prettier */**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist lib",
     "prepublish": "npm run build:lib",
-    "publish": "./node_modules/.bin/lerna publish --exact -m \"chore(release) publish %s\"",
-    "publish:next": "./node_modules/.bin/lerna publish --npm-tag=next --skip-git"
+    "publish":
+      "./node_modules/.bin/lerna publish --exact -m \"chore(release) publish %s\"",
+    "publish:next":
+      "./node_modules/.bin/lerna publish --npm-tag=next --skip-git"
   },
   "engines": {
     "node": ">=6.11.0"
@@ -88,10 +94,12 @@
     "gulp-sourcemaps": "^2.6.4",
     "gulp-typescript": "^3.1.6",
     "gulp-watch": "^4.3.11",
+    "husky": "^0.14.3",
     "imports-loader": "^0.7.0",
     "istanbul": "^0.4.5",
     "json-loader": "^0.5.4",
     "lerna": "^2.5.1",
+    "lint-staged": "^7.0.0",
     "mocha": "^3.2.0",
     "nodemon": "^1.11.0",
     "nyc": "^10.1.2",
@@ -109,9 +117,7 @@
     "logo": "https://opencollective.com/opencollective/logo.txt"
   },
   "nyc": {
-    "include": [
-      "packages/**/*.ts"
-    ],
+    "include": ["packages/**/*.ts"],
     "exclude": [
       "node_modules/",
       "packages/**/*.spec.ts",
@@ -126,17 +132,13 @@
       "packages/core/middlewares/middlewares-module.ts",
       "packages/common/services/logger.service.ts"
     ],
-    "extension": [
-      ".ts"
-    ],
-    "require": [
-      "ts-node/register"
-    ],
-    "reporter": [
-      "text-summary",
-      "html"
-    ],
+    "extension": [".ts"],
+    "require": ["ts-node/register"],
+    "reporter": ["text-summary", "html"],
     "sourceMap": true,
     "instrument": true
+  },
+  "lint-staged": {
+    "*.{ts,json,css,md}": ["prettier --write", "git add"]
   }
 }
