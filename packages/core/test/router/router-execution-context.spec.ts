@@ -332,14 +332,14 @@ describe('RouterExecutionContext', () => {
   });
   describe('createHandleResponseFn', () => {
     describe('when "renderTemplate" is defined', () => {
-      it('should call "res.render()" with expected args', () => {
+      it('should call "res.render()" with expected args', async () => {
         const template = 'template';
         const value = 'test';
         const response = { render: sinon.spy() };
 
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
         const handler = contextCreator.createHandleResponseFn(null, true, 100);
-        handler(value, response);
+        await handler(value, response);
 
         expect(response.render.calledWith(template, value)).to.be.true;
       });

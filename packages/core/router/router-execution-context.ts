@@ -264,8 +264,8 @@ export class RouterExecutionContext {
   ) {
     const renderTemplate = this.reflectRenderTemplate(callback);
     if (!!renderTemplate) {
-      return (result, res) =>
-        this.responseController.render(result, res, renderTemplate);
+      return async (result, res) =>
+        await this.responseController.render(result, res, renderTemplate);
     }
     return async (result, res) =>
       !isResponseHandled &&
