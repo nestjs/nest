@@ -13,7 +13,6 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { Type } from '@nestjs/common/interfaces/index';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
-import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';
 import { RouterProxyCallback } from './../router/router-proxy';
 import { ApplicationConfig } from './../application-config';

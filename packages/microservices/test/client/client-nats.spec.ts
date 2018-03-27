@@ -186,8 +186,15 @@ describe('ClientNats', () => {
     let createClientSpy: sinon.SinonSpy;
     let handleErrorsSpy: sinon.SinonSpy;
 
+    const natsClient = {
+      addListener: sinon.spy(),
+      on: sinon.spy(),
+    };
+
     beforeEach(async () => {
-      createClientSpy = sinon.spy(client, 'createClient');
+      createClientSpy = sinon
+        .stub(client, 'createClient')
+        .callsFake(() => natsClient);
       handleErrorsSpy = sinon.spy(client, 'handleError');
       await client.init(sinon.spy());
     });

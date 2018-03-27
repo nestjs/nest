@@ -34,8 +34,8 @@ const { NestMicroservice } =
 export class NestFactoryStatic {
   private readonly logger = new Logger('NestFactory', true);
   /**
-   * Creates an instance of the NestApplication (returns Promise)
-   * @returns an `Promise` of the INestApplication instance
+   * Creates an instance of the NestApplication
+   * @returns {Promise}
    */
   public async create(
     module: any,
@@ -78,11 +78,11 @@ export class NestFactoryStatic {
   }
 
   /**
-   * Creates an instance of the NestMicroservice (returns Promise)
+   * Creates an instance of the NestMicroservice
    *
    * @param  {} module Entry (root) application module class
    * @param  {NestMicroserviceOptions & MicroserviceOptions} options Optional microservice configuration
-   * @returns an `Promise` of the INestMicroservice instance
+   * @returns {Promise}
    */
   public async createMicroservice(
     module,
@@ -102,11 +102,11 @@ export class NestFactoryStatic {
   }
 
   /**
-   * Creates an instance of the NestApplicationContext (returns Promise)
+   * Creates an instance of the NestApplicationContext
    *
    * @param  {} module Entry (root) application module class
    * @param  {NestApplicationContextOptions} options Optional Nest application configuration
-   * @returns an `Promise` of the INestApplicationContext instance
+   * @returns {Promise}
    */
   public async createApplicationContext(
     module,
@@ -120,7 +120,7 @@ export class NestFactoryStatic {
     const modules = container.getModules().values();
     const root = modules.next().value;
     return this.createNestInstance<INestApplicationContext>(
-      new NestApplicationContext(container, [], root),
+      new NestApplicationContext(container, [], root, false),
     );
   }
 

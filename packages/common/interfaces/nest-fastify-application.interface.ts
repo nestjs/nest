@@ -3,7 +3,7 @@ export interface INestFastifyApplication {
    * A wrapper function around native `fastify.register()` method.
    * Example `app.register(require('fastify-formbody'))`
    *
-   * @returns this
+   * @returns {this}
    */
   register(...args): this;
 
@@ -11,7 +11,7 @@ export interface INestFastifyApplication {
    * Sets a base directory for public assets.
    * Example `app.useStaticAssets({ root: 'public' })`
    *
-   * @returns this
+   * @returns {this}
    */
   useStaticAssets(options: {
     root: string;
@@ -23,13 +23,13 @@ export interface INestFastifyApplication {
   /**
    * Sets a view engine for templates (views), for example: `pug`, `handlebars`, or `ejs`.
    *
-   * @returns this
+   * @returns {this}
    */
   setViewEngine(options: any): this;
 
   /**
    * A wrapper function around native `fastify.inject()` method.
-   * @returns void
+   * @returns {void}
    */
   inject(opts: HTTPInjectOptions | string): Promise<HTTPInjectResponse>;
 }

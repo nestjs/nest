@@ -1,0 +1,28 @@
+import { GrpcObject } from 'grpc';
+import { Server } from './server';
+import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
+import { CustomTransportStrategy } from './../interfaces';
+export declare class ServerGrpc extends Server
+  implements CustomTransportStrategy {
+  private readonly options;
+  private readonly url;
+  private grpcClient;
+  constructor(options: MicroserviceOptions);
+  listen(callback: () => void): Promise<void>;
+  start(callback?: () => void): Promise<void>;
+  bindEvents(): Promise<void>;
+  getServiceNames(grpcPackage: any): string[];
+  createService(grpcService: any, name: string): Promise<{}>;
+  createPattern(service: string, methodName: string): string;
+  createServiceMethod(
+    methodHandler: Function,
+    protoNativeHandler: any,
+  ): Function;
+  createUnaryServiceMethod(methodHandler: any): Function;
+  createStreamServiceMethod(methodHandler: any): Function;
+  close(): void;
+  deserialize(obj: any): any;
+  createClient(): any;
+  lookupPackage(root: any, packageName: string): any;
+  loadProto(): GrpcObject;
+}

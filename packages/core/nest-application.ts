@@ -394,26 +394,6 @@ export class NestApplication extends NestApplicationContext
     });
   }
 
-  private callInitHook() {
-    const modules = this.container.getModules();
-    modules.forEach(module => {
-      this.callModuleInitHook(module);
-    });
-  }
-
-  private callModuleInitHook(module: Module) {
-    const components = [...module.routes, ...module.components];
-    iterate(components)
-      .map(([key, { instance }]) => instance)
-      .filter(instance => !isNil(instance))
-      .filter(this.hasOnModuleInitHook)
-      .forEach(instance => (instance as OnModuleInit).onModuleInit());
-  }
-
-  private hasOnModuleInitHook(instance): instance is OnModuleInit {
-    return !isUndefined((instance as OnModuleInit).onModuleInit);
-  }
-
   private callDestroyHook() {
     const modules = this.container.getModules();
     modules.forEach(module => {

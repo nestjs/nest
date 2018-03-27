@@ -6,7 +6,7 @@ export interface INestExpressApplication {
    * A wrapper function around native `express.set()` method.
    * Example `app.set('trust proxy', 'loopback')`
    *
-   * @returns this
+   * @returns {this}
    */
   set(...args): this;
 
@@ -14,7 +14,7 @@ export interface INestExpressApplication {
    * A wrapper function around native `express.engine()` method.
    * Example `app.engine('mustache', mustacheExpress())`
    *
-   * @returns this
+   * @returns {this}
    */
   engine(...args): this;
 
@@ -22,7 +22,7 @@ export interface INestExpressApplication {
    * A wrapper function around native `express.enable()` method.
    * Example `app.enable('x-powered-by')`
    *
-   * @returns this
+   * @returns {this}
    */
   enable(...args): this;
 
@@ -30,7 +30,7 @@ export interface INestExpressApplication {
    * A wrapper function around native `express.disable()` method.
    * Example `app.disable('x-powered-by')`
    *
-   * @returns this
+   * @returns {this}
    */
   disable(...args): this;
 
@@ -38,7 +38,7 @@ export interface INestExpressApplication {
    * Sets a base directory for public assets.
    * Example `app.useStaticAssets('public')
    *
-   * @returns this
+   * @returns {this}
    */
   useStaticAssets(options: any): this;
   useStaticAssets(path: string, options?: ServeStaticOptions);
@@ -48,7 +48,7 @@ export interface INestExpressApplication {
    * Sets a base directory for templates (views).
    * Example `app.setBaseViewsDir('views')`
    *
-   * @returns this
+   * @returns {this}
    */
   setBaseViewsDir(path: string): this;
 
@@ -56,7 +56,7 @@ export interface INestExpressApplication {
    * Sets a view engine for templates (views).
    * Example `app.setViewEngine('pug')`
    *
-   * @returns this
+   * @returns {this}
    */
   setViewEngine(engine: string): this;
 }

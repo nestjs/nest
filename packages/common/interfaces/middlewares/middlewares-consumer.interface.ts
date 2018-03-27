@@ -6,7 +6,7 @@ export interface MiddlewaresConsumer {
    * that subsequently could be attached to the passed either routes or controllers.
    *
    * @param  {any|any[]} middlewares
-   * @returns MiddlewareConfigProxy
+   * @returns {MiddlewareConfigProxy}
    */
   apply(middlewares: any | any[]): MiddlewareConfigProxy;
 }

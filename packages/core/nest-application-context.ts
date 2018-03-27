@@ -1,8 +1,16 @@
+import iterate from 'iterare';
 import { ModuleTokenFactory } from './injector/module-token-factory';
 import { NestContainer, InstanceWrapper } from './injector/container';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { INestApplicationContext } from '@nestjs/common';
+import {
+  isFunction,
+  isNil,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
+import { INestApplicationContext, OnModuleInit } from '@nestjs/common';
+import { Module } from './injector/module';
+import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
+import { UnknownElementException } from './errors/exceptions/unknown-element.exception';
 
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
@@ -10,8 +18,11 @@ export class NestApplicationContext implements INestApplicationContext {
   constructor(
     protected readonly container: NestContainer,
     private readonly scope: Type<any>[],
-    protected contextModule,
-  ) {}
+    protected contextModule: Module,
+    isInitialized = true,
+  ) {
+    !isInitialized && this.callInitHook();
+  }
 
   public selectContextModule() {
     const modules = this.container.getModules().values();
@@ -25,9 +36,10 @@ export class NestApplicationContext implements INestApplicationContext {
 
     const token = this.moduleTokenFactory.create(module as any, scope);
     const selectedModule = modules.get(token);
-    return selectedModule
-      ? new NestApplicationContext(this.container, scope, selectedModule)
-      : null;
+    if (!selectedModule) {
+      throw new UnknownModuleException();
+    }
+    return new NestApplicationContext(this.container, scope, selectedModule);
   }
 
   public get<T>(typeOrToken: Type<T> | string | symbol): T | null {
@@ -54,6 +66,26 @@ export class NestApplicationContext implements INestApplicationContext {
     return this.findInstanceByPrototypeOrToken<T>(typeOrToken, flattenModule);
   }
 
+  protected callInitHook() {
+    const modules = this.container.getModules();
+    modules.forEach(module => {
+      this.callModuleInitHook(module);
+    });
+  }
+
+  protected callModuleInitHook(module: Module) {
+    const components = [...module.routes, ...module.components];
+    iterate(components)
+      .map(([key, { instance }]) => instance)
+      .filter(instance => !isNil(instance))
+      .filter(this.hasOnModuleInitHook)
+      .forEach(instance => (instance as OnModuleInit).onModuleInit());
+  }
+
+  protected hasOnModuleInitHook(instance): instance is OnModuleInit {
+    return !isUndefined((instance as OnModuleInit).onModuleInit);
+  }
+
   private findInstanceByPrototypeOrToken<T>(
     metatypeOrToken: Type<T> | string | symbol,
     contextModule,
@@ -67,8 +99,9 @@ export class NestApplicationContext implements INestApplicationContext {
       ? (metatypeOrToken as any).name
       : metatypeOrToken;
     const instanceWrapper = dependencies.get(name);
-    return instanceWrapper
-      ? (instanceWrapper as InstanceWrapper<any>).instance
-      : null;
+    if (!instanceWrapper) {
+      throw new UnknownElementException();
+    }
+    return (instanceWrapper as InstanceWrapper<any>).instance;
   }
 }
