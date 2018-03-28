@@ -82,7 +82,7 @@ export class NestApplicationContext implements INestApplicationContext {
       .forEach(instance => (instance as OnModuleInit).onModuleInit());
   }
 
-  protected hasOnModuleInitHook(instance): instance is OnModuleInit {
+  protected hasOnModuleInitHook(instance: any): instance is OnModuleInit {
     return !isUndefined((instance as OnModuleInit).onModuleInit);
   }
 

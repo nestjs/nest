@@ -3,9 +3,9 @@ import { Paramtype } from './paramtype.interface';
 export type Transform<T = any> = (value: T, metadata: ArgumentMetadata) => any;
 
 export interface ArgumentMetadata {
-  type: Paramtype;
-  metatype?: new (...args) => any;
-  data?: string;
+  readonly type: Paramtype;
+  readonly metatype?: new (...args) => any | undefined;
+  readonly data?: string | undefined;
 }
 
 export interface PipeTransform<T = any, R = any> {

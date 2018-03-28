@@ -142,14 +142,14 @@ export class NestMicroservice extends NestApplicationContext
     this.isInitHookCalled = isInitHookCalled;
   }
 
-  private closeApplication() {
+  protected closeApplication() {
     this.socketModule && this.socketModule.close();
 
     this.callDestroyHook();
     this.setIsTerminated(true);
   }
 
-  private callInitHook() {
+  protected callInitHook() {
     const modules = this.container.getModules();
     modules.forEach(module => {
       this.callModuleInitHook(module);
@@ -157,7 +157,7 @@ export class NestMicroservice extends NestApplicationContext
     this.setIsInitHookCalled(true);
   }
 
-  private callModuleInitHook(module: Module) {
+  protected callModuleInitHook(module: Module) {
     const components = [...module.routes, ...module.components];
     iterate(components)
       .map(([key, { instance }]) => instance)
@@ -166,7 +166,7 @@ export class NestMicroservice extends NestApplicationContext
       .forEach(instance => (instance as OnModuleInit).onModuleInit());
   }
 
-  private hasOnModuleInitHook(instance): instance is OnModuleInit {
+  protected hasOnModuleInitHook(instance: any): instance is OnModuleInit {
     return !isUndefined((instance as OnModuleInit).onModuleInit);
   }
 

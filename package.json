@@ -109,7 +109,7 @@
     "socket.io-client": "^2.0.4",
     "supertest": "^3.0.0",
     "ts-node": "^3.2.0",
-    "typescript": "^2.7.2"
+    "typescript": "^2.8.1"
   },
   "collective": {
     "type": "opencollective",
