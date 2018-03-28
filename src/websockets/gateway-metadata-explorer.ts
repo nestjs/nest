@@ -35,10 +35,19 @@ export class GatewayMetadataExplorer {
       return null;
     }
     const message = Reflect.getMetadata(MESSAGE_METADATA, callback);
-    return {
+    const otherKeys = Reflect.getOwnMetadataKeys(callback)
+                        .filter(key => key !== MESSAGE_METADATA && key !== MESSAGE_MAPPING_METADATA);
+
+    const result = {
       callback,
-      message,
+      message
     };
+
+    for (const key of otherKeys) {
+      result[key] = Reflect.getMetadata(key, callback);
+    }
+
+    return result;
   }
 
   public *scanForServerHooks(instance: NestGateway): IterableIterator<string> {
@@ -61,4 +70,7 @@ export class GatewayMetadataExplorer {
 export interface MessageMappingProperties {
   message: string;
   callback: (...args) => Observable<any> | Promise<any> | void;
+
+  // allow any number of additional properties for metadata
+  [key: string]: any;
 }

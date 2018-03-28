@@ -59,10 +59,14 @@ export class WebSocketsController {
   ) {
     const plainMessageHandlers = this.metadataExplorer.explore(instance);
     const messageHandlers = plainMessageHandlers.map(
-      ({ callback, message }) => ({
-        message,
-        callback: this.contextCreator.create(instance, callback, module),
-      }),
+      (handler) => {
+        const { callback } = handler;
+        const result = Object.assign({}, handler, {
+          callback: this.contextCreator.create(instance, callback, module)
+        });
+
+        return result;
+      }
     );
     const observableServer = this.socketServerProvider.scanForSocketServer(
       namespace,
