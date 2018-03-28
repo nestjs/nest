@@ -9,7 +9,8 @@
     "axios": "0.18.0",
     "class-transformer": "0.1.9",
     "class-validator": "0.8.5",
-    "cli-color": "1.1.0"
+    "cli-color": "1.1.0",
+    "multer": "1.3.0"
   },
   "peerDependencies": {
     "reflect-metadata": "0.1.12"
