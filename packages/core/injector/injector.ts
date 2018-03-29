@@ -32,7 +32,6 @@ export class Injector {
       wrapper as any,
       module,
       null,
-      null,
       instances => {
         collection.set(metatype.name, {
           instance: new metatype(...instances),
@@ -77,10 +76,9 @@ export class Injector {
   public async loadInstanceOfComponent(
     wrapper: InstanceWrapper<Injectable>,
     module: Module,
-    context: Module[] = [],
   ) {
     const components = module.components;
-    await this.loadInstance<Injectable>(wrapper, components, module, context);
+    await this.loadInstance<Injectable>(wrapper, components, module);
   }
 
   public applyDoneSubject<T>(wrapper: InstanceWrapper<T>): () => void {
@@ -96,7 +94,6 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     collection,
     module: Module,
-    context: Module[] = [],
   ) {
     if (wrapper.isPending) {
       return await wrapper.done$;
@@ -113,7 +110,6 @@ export class Injector {
       wrapper,
       module,
       inject,
-      context,
       async instances => {
         if (isNil(inject)) {
           currentMetatype.instance = Object.assign(
@@ -136,7 +132,6 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     module: Module,
     inject: any[],
-    context: Module[],
     callback: (args) => void,
   ) {
     let isResolved = true;
@@ -151,7 +146,6 @@ export class Injector {
           param,
           { index, length: args.length },
           module,
-          context,
         );
         if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
           isResolved = false;
@@ -179,7 +173,6 @@ export class Injector {
     param: Type<any> | string | symbol | any,
     { index, length }: { index: number; length: number },
     module: Module,
-    context: Module[],
   ) {
     if (isUndefined(param)) {
       throw new UndefinedDependencyException(wrapper.name, index, length);
@@ -190,7 +183,6 @@ export class Injector {
       isFunction(token) ? (token as Type<any>).name : token,
       { index, length },
       wrapper,
-      context,
     );
   }
 
@@ -210,15 +202,13 @@ export class Injector {
     name: any,
     { index, length }: { index: number; length: number },
     wrapper: InstanceWrapper<T>,
-    context: Module[],
   ) {
     const components = module.components;
-    const instanceWrapper = await this.scanForComponent(
+    const instanceWrapper = await this.lookupComponent(
       components,
       module,
       { name, index, length },
       wrapper,
-      context,
     );
     if (!instanceWrapper.isResolved && !instanceWrapper.forwardRef) {
       await this.loadInstanceOfComponent(instanceWrapper, module);
@@ -229,43 +219,31 @@ export class Injector {
     return instanceWrapper;
   }
 
-  public async scanForComponent(
+  public async lookupComponent(
     components: Map<string, any>,
     module: Module,
     { name, index, length }: { name: any; index: number; length: number },
     { metatype },
-    context: Module[] = [],
   ) {
-    const component = await this.scanForComponentInScopes(
-      context,
-      { name, index, length },
-      metatype,
-    );
-    if (component) {
-      return component;
-    }
     const scanInExports = () =>
-      this.scanForComponentInExports(
+      this.lookupComponentInExports(
         components,
         { name, index, length },
         module,
         metatype,
-        context,
       );
     return components.has(name) ? components.get(name) : await scanInExports();
   }
 
-  public async scanForComponentInExports(
+  public async lookupComponentInExports(
     components: Map<string, any>,
     { name, index, length }: { name: any; index: number; length: number },
     module: Module,
     metatype,
-    context: Module[] = [],
   ) {
-    const instanceWrapper = await this.scanForComponentInRelatedModules(
+    const instanceWrapper = await this.lookupComponentInRelatedModules(
       module,
       name,
-      context,
     );
     if (isNil(instanceWrapper)) {
       throw new UnknownDependenciesException(metatype.name, index, length);
@@ -273,66 +251,18 @@ export class Injector {
     return instanceWrapper;
   }
 
-  public async scanForComponentInScopes(
-    context: Module[],
-    { name, index, length }: { name: any; index: number; length: number },
-    metatype,
-  ) {
-    context = context || [];
-    for (const ctx of context) {
-      const component = await this.scanForComponentInScope(
-        ctx,
-        { name, index, length },
-        metatype,
-      );
-      if (component) return component;
-    }
-    return null;
-  }
-
-  public async scanForComponentInScope(
-    context: Module,
-    { name, index, length }: { name: any; index: number; length: number },
-    metatype,
-  ) {
-    try {
-      const component = await this.scanForComponent(
-        context.components,
-        context,
-        { name, index, length },
-        { metatype },
-        null,
-      );
-      if (!component.isResolved && !component.forwardRef) {
-        await this.loadInstanceOfComponent(component, context);
-      }
-      return component;
-    } catch (e) {
-      if (e instanceof RuntimeException) {
-        return null;
-      }
-      throw e;
-    }
-  }
-
-  public async scanForComponentInRelatedModules(
-    module: Module,
-    name: any,
-    context: Module[],
-  ) {
+  public async lookupComponentInRelatedModules(module: Module, name: any) {
     let component = null;
     const relatedModules = module.relatedModules || [];
 
     for (const relatedModule of this.flatMap([...relatedModules.values()])) {
       const { components, exports } = relatedModule;
-      const isInScope = context === null;
-      if ((!exports.has(name) && !isInScope) || !components.has(name)) {
+      if (!exports.has(name) || !components.has(name)) {
         continue;
       }
       component = components.get(name);
       if (!component.isResolved && !component.forwardRef) {
-        const ctx = isInScope ? [module] : [].concat(context, module);
-        await this.loadInstanceOfComponent(component, relatedModule, ctx);
+        await this.loadInstanceOfComponent(component, relatedModule);
         break;
       }
     }
@@ -348,19 +278,20 @@ export class Injector {
   }
 
   public flatMap(modules: Module[]): Module[] {
-    return modules.concat.apply(
-      modules,
-      modules.map((module: Module) => {
-        const { relatedModules, exports } = module;
-        return this.flatMap(
-          [...relatedModules.values()]
-            .filter(related => !!related)
-            .filter(related => {
-              const { metatype } = related;
-              return exports.has(metatype.name);
-            }),
-        );
-      }),
-    );
+    if (!modules) {
+      return [];
+    }
+    const flatten = (module: Module) => {
+      const { relatedModules, exports } = module;
+      return this.flatMap(
+        [...relatedModules.values()]
+          .filter(related => !!related)
+          .filter(related => {
+            const { metatype } = related;
+            return exports.has(metatype.name);
+          }),
+      );
+    };
+    return modules.concat.apply(modules, modules.map(flatten));
   }
 }

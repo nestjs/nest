@@ -30,14 +30,16 @@ export class InstanceLoader {
   }
 
   private async createInstances(modules: Map<string, Module>) {
-    for (const module of [...modules.values()]) {
-      await this.createInstancesOfComponents(module);
-      await this.createInstancesOfInjectables(module);
-      await this.createInstancesOfRoutes(module);
+    await Promise.all(
+      [...modules.values()].map(async module => {
+        await this.createInstancesOfComponents(module);
+        await this.createInstancesOfInjectables(module);
+        await this.createInstancesOfRoutes(module);
 
-      const { name } = module.metatype;
-      this.logger.log(moduleInitMessage(name));
-    }
+        const { name } = module.metatype;
+        this.logger.log(moduleInitMessage(name));
+      }),
+    );
   }
 
   private createPrototypesOfComponents(module: Module) {
@@ -50,9 +52,12 @@ export class InstanceLoader {
   }
 
   private async createInstancesOfComponents(module: Module) {
-    for (const [key, wrapper] of module.components) {
-      await this.injector.loadInstanceOfComponent(wrapper, module);
-    }
+    await Promise.all(
+      [...module.components.values()].map(
+        async wrapper =>
+          await this.injector.loadInstanceOfComponent(wrapper, module),
+      ),
+    );
   }
 
   private createPrototypesOfRoutes(module: Module) {

@@ -179,7 +179,6 @@ describe('Injector', () => {
           undefined,
           { index: 0, length: 5 },
           null,
-          [],
         ),
       ).to.eventually.be.rejected;
     });
@@ -277,13 +276,13 @@ describe('Injector', () => {
     });
   });
 
-  describe('scanForComponent', () => {
-    let scanForComponentInRelatedModules: sinon.SinonStub;
+  describe('lookupComponent', () => {
+    let lookupComponentInRelatedModules: sinon.SinonStub;
     const metatype = { name: 'test', metatype: { name: 'test' } };
 
     beforeEach(() => {
-      scanForComponentInRelatedModules = sinon.stub();
-      (injector as any).scanForComponentInRelatedModules = scanForComponentInRelatedModules;
+      lookupComponentInRelatedModules = sinon.stub();
+      (injector as any).lookupComponentInRelatedModules = lookupComponentInRelatedModules;
     });
 
     it('should return object from collection if exists', async () => {
@@ -292,7 +291,7 @@ describe('Injector', () => {
         has: () => true,
         get: () => instance,
       };
-      const result = await injector.scanForComponent(
+      const result = await injector.lookupComponent(
         collection as any,
         null,
         { name: metatype.name, index: 0, length: 10 },
@@ -301,28 +300,28 @@ describe('Injector', () => {
       expect(result).to.be.equal(instance);
     });
 
-    it('should call "scanForComponentInRelatedModules" when object is not in collection', async () => {
-      scanForComponentInRelatedModules.returns({});
+    it('should call "lookupComponentInRelatedModules" when object is not in collection', async () => {
+      lookupComponentInRelatedModules.returns({});
       const collection = {
         has: () => false,
       };
-      await injector.scanForComponent(
+      await injector.lookupComponent(
         collection as any,
         null,
         { name: metatype.name, index: 0, length: 10 },
         metatype,
       );
-      expect(scanForComponentInRelatedModules.called).to.be.true;
+      expect(lookupComponentInRelatedModules.called).to.be.true;
     });
 
     it('should throw "UnknownDependenciesException" when instanceWrapper is null and "exports" collection does not contain token', () => {
-      scanForComponentInRelatedModules.returns(null);
+      lookupComponentInRelatedModules.returns(null);
       const collection = {
         has: () => false,
       };
       const module = { exports: collection };
       expect(
-        injector.scanForComponent(
+        injector.lookupComponent(
           collection as any,
           module as any,
           { name: metatype.name, index: 0, length: 10 },
@@ -332,13 +331,13 @@ describe('Injector', () => {
     });
 
     it('should not throw "UnknownDependenciesException" instanceWrapper is not null', () => {
-      scanForComponentInRelatedModules.returns({});
+      lookupComponentInRelatedModules.returns({});
       const collection = {
         has: () => false,
       };
       const module = { exports: collection };
       expect(
-        injector.scanForComponent(
+        injector.lookupComponent(
           collection as any,
           module as any,
           { name: metatype.name, index: 0, length: 10 },
@@ -348,7 +347,7 @@ describe('Injector', () => {
     });
   });
 
-  describe('scanForComponentInRelatedModules', () => {
+  describe('lookupComponentInRelatedModules', () => {
     let loadInstanceOfComponent: sinon.SinonSpy;
     const metatype = { name: 'test' };
     const module = {
@@ -361,10 +360,9 @@ describe('Injector', () => {
     });
 
     it('should return null when there is no related modules', async () => {
-      const result = await injector.scanForComponentInRelatedModules(
+      const result = await injector.lookupComponentInRelatedModules(
         module as any,
         null,
-        [],
       );
       expect(result).to.be.eq(null);
     });
@@ -386,10 +384,9 @@ describe('Injector', () => {
         ] as any),
       };
       expect(
-        injector.scanForComponentInRelatedModules(
+        injector.lookupComponentInRelatedModules(
           module as any,
           metatype as any,
-          [],
         ),
       ).to.be.eventually.eq(null);
 
@@ -409,10 +406,9 @@ describe('Injector', () => {
         ] as any),
       };
       expect(
-        injector.scanForComponentInRelatedModules(
+        injector.lookupComponentInRelatedModules(
           module as any,
           metatype as any,
-          [],
         ),
       ).to.eventually.be.eq(null);
     });
@@ -437,10 +433,9 @@ describe('Injector', () => {
           ],
         ] as any),
       };
-      await injector.scanForComponentInRelatedModules(
+      await injector.lookupComponentInRelatedModules(
         module as any,
         metatype as any,
-        [],
       );
       expect(loadInstanceOfComponent.called).to.be.true;
     });
@@ -465,105 +460,11 @@ describe('Injector', () => {
           ],
         ] as any),
       };
-      await injector.scanForComponentInRelatedModules(
+      await injector.lookupComponentInRelatedModules(
         module as any,
         metatype as any,
-        [],
       );
       expect(loadInstanceOfComponent.called).to.be.false;
-    });
-  });
-
-  describe('scanForComponentInScopes', () => {
-    it('should returns null when component is not available in any scope', () => {
-      expect(
-        injector.scanForComponentInScopes(
-          [],
-          { name: '', index: 0, length: 10 },
-          {},
-        ),
-      ).to.eventually.be.null;
-    });
-    it('should returns wrapper when component is available in any scope', () => {
-      const component = 'test';
-      sinon.stub(injector, 'scanForComponentInScope').returns(component);
-      expect(
-        injector.scanForComponentInScopes(
-          [{}] as any,
-          { name: '', index: 0, length: 10 },
-          {},
-        ),
-      ).to.eventually.be.eql(component);
-    });
-  });
-
-  describe('scanForComponentInScope', () => {
-    it('should returns null when scope throws exception', () => {
-      sinon.stub(injector, 'scanForComponent').throws('exception');
-      expect(
-        injector.scanForComponentInScope(
-          {} as any,
-          { name: '', index: 0, length: 10 },
-          {},
-        ),
-      ).to.eventually.be.null;
-    });
-
-    it('should rethrow UndefinedDependencyException', () => {
-      sinon
-        .stub(injector, 'scanForComponent')
-        .throws(new UndefinedDependencyException('type', 0, 10));
-      expect(
-        injector.scanForComponentInScope(
-          {} as any,
-          { name: 'type', index: 0, length: 10 },
-          {},
-        ),
-      ).to.eventually.throw();
-    });
-
-    describe('when instanceWrapper is not resolved and does not have forward ref', () => {
-      it('should call loadInstanceOfComponent', async () => {
-        const loadStub = sinon
-          .stub(injector, 'loadInstanceOfComponent')
-          .callsFake(() => null);
-        sinon.stub(injector, 'scanForComponent').returns({ isResolved: false });
-
-        await injector.scanForComponentInScope(
-          [] as any,
-          { name: 'name', index: 0, length: 10 },
-          {} as any,
-        );
-        expect(loadStub.called).to.be.true;
-      });
-      it('should not call loadInstanceOfComponent (isResolved)', async () => {
-        const loadStub = sinon
-          .stub(injector, 'loadInstanceOfComponent')
-          .callsFake(() => null);
-        sinon.stub(injector, 'scanForComponent').returns({ isResolved: true });
-
-        await injector.scanForComponentInScope(
-          [] as any,
-          { name: 'name', index: 0, length: 10 },
-          {} as any,
-        );
-        expect(loadStub.called).to.be.false;
-      });
-      it('should not call loadInstanceOfComponent (forwardRef)', async () => {
-        const loadStub = sinon
-          .stub(injector, 'loadInstanceOfComponent')
-          .callsFake(() => null);
-        sinon
-          .stub(injector, 'scanForComponent')
-          .returns({ isResolved: false, forwardRef: true });
-
-        await injector.scanForComponentInScope(
-          [] as any,
-          { name: 'name', index: 0, length: 10 },
-          {} as any,
-        );
-        expect(loadStub.called).to.be.false;
-      });
     });
   });
 
@@ -619,14 +520,13 @@ describe('Injector', () => {
         const loadStub = sinon
           .stub(injector, 'loadInstanceOfComponent')
           .callsFake(() => null);
-        sinon.stub(injector, 'scanForComponent').returns({ isResolved: false });
+        sinon.stub(injector, 'lookupComponent').returns({ isResolved: false });
 
         await injector.resolveComponentInstance(
           module,
           '',
           { index: 0, length: 10 },
           {} as any,
-          [],
         );
         expect(loadStub.called).to.be.true;
       });
@@ -634,14 +534,13 @@ describe('Injector', () => {
         const loadStub = sinon
           .stub(injector, 'loadInstanceOfComponent')
           .callsFake(() => null);
-        sinon.stub(injector, 'scanForComponent').returns({ isResolved: true });
+        sinon.stub(injector, 'lookupComponent').returns({ isResolved: true });
 
         await injector.resolveComponentInstance(
           module,
           '',
           { index: 0, length: 10 },
           {} as any,
-          [],
         );
         expect(loadStub.called).to.be.false;
       });
@@ -650,7 +549,7 @@ describe('Injector', () => {
           .stub(injector, 'loadInstanceOfComponent')
           .callsFake(() => null);
         sinon
-          .stub(injector, 'scanForComponent')
+          .stub(injector, 'lookupComponent')
           .returns({ isResolved: false, forwardRef: true });
 
         await injector.resolveComponentInstance(
@@ -658,7 +557,6 @@ describe('Injector', () => {
           '',
           { index: 0, length: 10 },
           {} as any,
-          [],
         );
         expect(loadStub.called).to.be.false;
       });
@@ -671,7 +569,7 @@ describe('Injector', () => {
           .callsFake(() => null);
 
         const instance = Promise.resolve(true);
-        sinon.stub(injector, 'scanForComponent').returns({
+        sinon.stub(injector, 'lookupComponent').returns({
           isResolved: false,
           forwardRef: true,
           async: true,
@@ -682,7 +580,6 @@ describe('Injector', () => {
           '',
           { index: 0, length: 10 },
           {} as any,
-          [],
         );
         expect(result.instance).to.be.true;
       });
