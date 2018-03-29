@@ -200,15 +200,16 @@ export class Module {
   ): string {
     const { provide } = component;
     const name = isFunction(provide) ? provide.name : provide;
-    const comp = {
+    const componentWithName = {
       ...component,
       name,
     };
-
-    if (this.isCustomClass(comp)) this.addCustomClass(comp, collection);
-    else if (this.isCustomValue(comp)) this.addCustomValue(comp, collection);
-    else if (this.isCustomFactory(comp))
-      this.addCustomFactory(comp, collection);
+    if (this.isCustomClass(componentWithName))
+      this.addCustomClass(componentWithName, collection);
+    else if (this.isCustomValue(componentWithName))
+      this.addCustomValue(componentWithName, collection);
+    else if (this.isCustomFactory(componentWithName))
+      this.addCustomFactory(componentWithName, collection);
 
     return name;
   }

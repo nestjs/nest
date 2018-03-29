@@ -12,7 +12,7 @@ import { Cat } from './interfaces/cat.interface';
 import { CatsService } from './cats.service';
 import { CatsGuard } from './cats.guard';
 
-const pubsub = new PubSub();
+const pubSub = new PubSub();
 
 @Resolver('Cat')
 export class CatsResolvers {
@@ -33,14 +33,14 @@ export class CatsResolvers {
   @Mutation('createCat')
   async create(obj, args: Cat, context, info): Promise<Cat> {
     const createdCat = await this.catsService.create(args);
-    pubsub.publish('catCreated', { catCreated: createdCat });
+    pubSub.publish('catCreated', { catCreated: createdCat });
     return createdCat;
   }
 
   @Subscription('catCreated')
   catCreated() {
     return {
-      subscribe: () => pubsub.asyncIterator('catCreated'),
+      subscribe: () => pubSub.asyncIterator('catCreated'),
     };
   }
 }
