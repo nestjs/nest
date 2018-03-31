@@ -14,12 +14,20 @@ import {
 import { RpcExceptionFilter } from '@nestjs/common/interfaces/exceptions';
 import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
 import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
+import { NestContainer } from '@nestjs/core/injector/container';
 
 export class ExceptionFiltersContext extends BaseExceptionFilterContext {
+  constructor(container: NestContainer) {
+    super(container);
+  }
+
   public create(
     instance: Controller,
     callback: (client, data) => any,
+    module: string,
   ): WsExceptionsHandler {
+    this.moduleContext = module;
+
     const exceptionHandler = new WsExceptionsHandler();
     const filters = this.createContext(
       instance,

@@ -4,6 +4,7 @@ import { UseFilters } from '../../../common/decorators/core/exception-filters.de
 import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { ExceptionFiltersContext } from './../../context/exception-filters-context';
 import { ApplicationConfig } from './../../../core/application-config';
+import { NestContainer } from '@nestjs/core/injector/container';
 
 describe('ExceptionFiltersContext', () => {
   let moduleName: string;
@@ -18,6 +19,7 @@ describe('ExceptionFiltersContext', () => {
   beforeEach(() => {
     moduleName = 'Test';
     exceptionFilter = new ExceptionFiltersContext(
+      new NestContainer(),
       new ApplicationConfig() as any,
     );
   });
@@ -31,6 +33,7 @@ describe('ExceptionFiltersContext', () => {
         const filter = exceptionFilter.create(
           new EmptyMetadata(),
           () => ({} as any),
+          undefined,
         );
         expect((filter as any).filters).to.be.empty;
       });
@@ -43,6 +46,7 @@ describe('ExceptionFiltersContext', () => {
         const filter = exceptionFilter.create(
           new WithMetadata(),
           () => ({} as any),
+          undefined,
         );
         expect((filter as any).filters).to.not.be.empty;
       });

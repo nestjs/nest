@@ -12,13 +12,13 @@ import { isFunction } from '../../utils/shared.utils';
  * When the `@UsePipes()` is used on the handle level:
  * - Pipe will be registered only to specified method
  *
- * @param  {PipeTransform[]} ...pipes (instances)
+ * @param  {PipeTransform[]} ...pipes
  */
-export function UsePipes(...pipes: PipeTransform<any>[]) {
+export function UsePipes(...pipes: (PipeTransform | Function)[]) {
   return (target: any, key?, descriptor?) => {
-    const isPipeValid = (pipe) => isFunction(pipe.transform);
+    const isPipeValid = pipe =>
+      pipe && (isFunction(pipe) || isFunction(pipe.transform));
     if (descriptor) {
-      validateEach(target.constructor, pipes, isPipeValid, '@UsePipes', 'pipe');
       extendArrayMetadata(PIPES_METADATA, pipes, descriptor.value);
       return descriptor;
     }

@@ -32,7 +32,11 @@ export class MiddlewaresModule {
     config: ApplicationConfig,
   ) {
     const appRef = container.getApplicationRef();
-    this.routerExceptionFilter = new RouterExceptionFilters(config, appRef);
+    this.routerExceptionFilter = new RouterExceptionFilters(
+      container,
+      config,
+      appRef,
+    );
     this.routesMapper = new RoutesMapper(container);
     this.resolver = new MiddlewaresResolver(middlewaresContainer);
 
@@ -152,6 +156,7 @@ export class MiddlewaresModule {
     const exceptionsHandler = this.routerExceptionFilter.create(
       instance,
       instance.resolve,
+      undefined,
     );
     const router = this.routerMethodFactory.get(app, method).bind(app);
 

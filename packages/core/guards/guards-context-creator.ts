@@ -35,40 +35,37 @@ export class GuardsContextCreator extends ContextCreator {
   public createConcreteContext<T extends any[], R extends any[]>(
     metadata: T,
   ): R {
-    if (isUndefined(metadata) || isEmpty(metadata) || !this.moduleContext) {
+    if (isUndefined(metadata) || isEmpty(metadata)) {
       return [] as R;
     }
-    const isGlobalMetadata = metadata === this.getGlobalMetadata();
-    return isGlobalMetadata
-      ? this.createGlobalMetadataContext<T, R>(metadata)
-      : (iterate(metadata)
-          .filter((metatype: any) => metatype && metatype.name)
-          .map(metatype => this.getInstanceByMetatype(metatype))
-          .filter((wrapper: any) => wrapper && wrapper.instance)
-          .map(wrapper => wrapper.instance)
-          .filter(
-            (guard: CanActivate) => guard && isFunction(guard.canActivate),
-          )
-          .toArray() as R);
-  }
-
-  public createGlobalMetadataContext<T extends any[], R extends any[]>(
-    metadata: T,
-  ): R {
     return iterate(metadata)
-      .filter(
-        guard => guard && guard.canActivate && isFunction(guard.canActivate),
-      )
+      .filter((guard: any) => guard && (guard.name || guard.canActivate))
+      .map(guard => this.getGuardInstance(guard))
+      .filter((guard: CanActivate) => guard && isFunction(guard.canActivate))
       .toArray() as R;
   }
 
-  public getInstanceByMetatype(metatype): { instance: any } | undefined {
+  public getGuardInstance(guard: Function | CanActivate) {
+    const isObject = !!(guard as CanActivate).canActivate;
+    if (isObject) {
+      return guard;
+    }
+    const instanceWrapper = this.getInstanceByMetatype(guard);
+    return instanceWrapper && instanceWrapper.instance
+      ? instanceWrapper.instance
+      : null;
+  }
+
+  public getInstanceByMetatype(guard): { instance: any } | undefined {
+    if (!this.moduleContext) {
+      return undefined;
+    }
     const collection = this.container.getModules();
     const module = collection.get(this.moduleContext);
     if (!module) {
       return undefined;
     }
-    return module.injectables.get((metatype as any).name);
+    return module.injectables.get((guard as any).name);
   }
 
   public getGlobalMetadata<T extends any[]>(): T {

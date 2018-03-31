@@ -6,11 +6,19 @@ import { extendArrayMetadata } from '../../utils/extend-metadata.util';
 import { isFunction } from '../../utils/shared.utils';
 import { validateEach } from '../../utils/validate-each.util';
 
-const defineFiltersMetadata = (...filters: ExceptionFilter[]) => {
+const defineFiltersMetadata = (...filters: (Function | ExceptionFilter)[]) => {
   return (target: any, key?, descriptor?) => {
-    const isFilterValid = (filter) => isFunction(filter.catch);
+    const isFilterValid = filter =>
+      filter && (isFunction(filter) || isFunction(filter.catch));
+
     if (descriptor) {
-      validateEach(target.constructor, filters, isFilterValid, '@UseFilters', 'filter');
+      validateEach(
+        target.constructor,
+        filters,
+        isFilterValid,
+        '@UseFilters',
+        'filter',
+      );
       extendArrayMetadata(
         EXCEPTION_FILTERS_METADATA,
         filters,
@@ -32,7 +40,7 @@ const defineFiltersMetadata = (...filters: ExceptionFilter[]) => {
  * When the `@UseFilters()` is used on the handle level:
  * - Exception Filter will be set up only to specified method
  *
- * @param  {ExceptionFilter[]} ...filters (instances)
+ * @param  {ExceptionFilter[]} ...filters
  */
-export const UseFilters = (...filters: ExceptionFilter[]) =>
+export const UseFilters = (...filters: (ExceptionFilter | Function)[]) =>
   defineFiltersMetadata(...filters);

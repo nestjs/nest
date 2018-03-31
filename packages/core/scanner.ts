@@ -8,12 +8,17 @@ import {
   EXCEPTION_FILTERS_METADATA,
   GUARDS_METADATA,
   INTERCEPTORS_METADATA,
+  PIPES_METADATA,
 } from '@nestjs/common/constants';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { MetadataScanner } from '../core/metadata-scanner';
 import { DynamicModule } from '@nestjs/common';
 import { ApplicationConfig } from './application-config';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isNil,
+  isUndefined,
+  isFunction,
+} from '@nestjs/common/utils/shared.utils';
 import { APP_INTERCEPTOR, APP_PIPE, APP_GUARD, APP_FILTER } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
 
@@ -126,8 +131,10 @@ export class DependenciesScanner {
     if (!obj || !obj.prototype) {
       return;
     }
-    this.reflectGuards(obj, token);
-    this.reflectInterceptors(obj, token);
+    this.reflectInjectables(obj, token, GUARDS_METADATA);
+    this.reflectInjectables(obj, token, INTERCEPTORS_METADATA);
+    this.reflectInjectables(obj, token, EXCEPTION_FILTERS_METADATA);
+    this.reflectInjectables(obj, token, PIPES_METADATA);
   }
 
   public reflectExports(module: Type<any>, token: string) {
@@ -151,38 +158,28 @@ export class DependenciesScanner {
     middlewares.map(middleware => this.storeComponent(middleware, token));
   }
 
-  public reflectGuards(component: Type<Injectable>, token: string) {
-    const controllerGuards = this.reflectMetadata(component, GUARDS_METADATA);
-    const methodsGuards = this.metadataScanner.scanFromPrototype(
+  public reflectInjectables(
+    component: Type<Injectable>,
+    token: string,
+    metadataKey: string,
+  ) {
+    const controllerInjectables = this.reflectMetadata(component, metadataKey);
+    const methodsInjectables = this.metadataScanner.scanFromPrototype(
       null,
       component.prototype,
-      this.reflectKeyMetadata.bind(this, component, GUARDS_METADATA),
+      this.reflectKeyMetadata.bind(this, component, metadataKey),
     );
-    const flattenMethodsGuards = methodsGuards.reduce<any[]>(
+    const flattenMethodsInjectables = methodsInjectables.reduce<any[]>(
       (a: any[], b) => a.concat(b),
       [],
     );
-    [...controllerGuards, ...flattenMethodsGuards].map(guard =>
-      this.storeInjectable(guard, token),
-    );
-  }
+    const mergedInjectableConstructors = [
+      ...controllerInjectables,
+      ...flattenMethodsInjectables,
+    ].filter(isFunction);
 
-  public reflectInterceptors(component: Type<Injectable>, token: string) {
-    const controllerInterceptors = this.reflectMetadata(
-      component,
-      INTERCEPTORS_METADATA,
-    );
-    const methodsInterceptors = this.metadataScanner.scanFromPrototype(
-      null,
-      component.prototype,
-      this.reflectKeyMetadata.bind(this, component, INTERCEPTORS_METADATA),
-    );
-    const flattenMethodsInterceptors = methodsInterceptors.reduce<any[]>(
-      (a: any[], b) => a.concat(b),
-      [],
-    );
-    [...controllerInterceptors, ...flattenMethodsInterceptors].map(guard =>
-      this.storeInjectable(guard, token),
+    mergedInjectableConstructors.map(injectable =>
+      this.storeInjectable(injectable, token),
     );
   }
 

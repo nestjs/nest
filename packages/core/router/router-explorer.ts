@@ -36,7 +36,7 @@ export class RouterExplorer {
   ) {
     this.executionContextCreator = new RouterExecutionContext(
       new RouteParamsFactory(),
-      new PipesContextCreator(config),
+      new PipesContextCreator(container, config),
       new PipesConsumer(),
       new GuardsContextCreator(container, config),
       new GuardsConsumer(),
@@ -172,7 +172,11 @@ export class RouterExplorer {
       module,
       requestMethod,
     );
-    const exceptionFilter = this.exceptionsFilter.create(instance, callback);
+    const exceptionFilter = this.exceptionsFilter.create(
+      instance,
+      callback,
+      module,
+    );
     return this.routerProxy.createProxy(executionContext, exceptionFilter);
   }
 }

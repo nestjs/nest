@@ -33,8 +33,9 @@ export class WsContextCreator {
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
       callback,
+      module,
     );
-    const pipes = this.pipesCreator.create(instance, callback);
+    const pipes = this.pipesCreator.create(instance, callback, module);
     const guards = this.guardsContextCreator.create(instance, callback, module);
     const metatype = this.getDataMetatype(instance, callback);
     const interceptors = this.interceptorsContextCreator.create(

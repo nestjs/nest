@@ -80,8 +80,8 @@ export class SocketModule {
   private getContextCreator(container): WsContextCreator {
     return new WsContextCreator(
       new WsProxy(),
-      new ExceptionFiltersContext(),
-      new PipesContextCreator(),
+      new ExceptionFiltersContext(container),
+      new PipesContextCreator(container),
       new PipesConsumer(),
       new GuardsContextCreator(container),
       new GuardsConsumer(),

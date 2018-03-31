@@ -83,16 +83,12 @@ describe('DependenciesScanner', () => {
   describe('reflectDynamicMetadata', () => {
     describe('when param has prototype', () => {
       it('should call "reflectGuards" and "reflectInterceptors"', () => {
-        const reflectGuards = sinon
-          .stub(scanner, 'reflectGuards')
+        const reflectInjectables = sinon
+          .stub(scanner, 'reflectInjectables')
           .callsFake(() => undefined);
-        const reflectInterceptors = sinon
-          .stub(scanner, 'reflectInterceptors')
-          .callsFake(() => undefined);
-        scanner.reflectDynamicMetadata({ prototype: true } as any, '');
 
-        expect(reflectGuards.called).to.be.true;
-        expect(reflectInterceptors.called).to.be.true;
+        scanner.reflectDynamicMetadata({ prototype: true } as any, '');
+        expect(reflectInjectables.called).to.be.true;
       });
     });
     describe('when param has not prototype', () => {

@@ -6,6 +6,7 @@ import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { ApplicationConfig } from '../../application-config';
 import { ExpressAdapter } from '../../adapters/express-adapter';
+import { NestContainer } from '../../injector/container';
 
 describe('RouterExceptionFilters', () => {
   let moduleName: string;
@@ -20,6 +21,7 @@ describe('RouterExceptionFilters', () => {
   beforeEach(() => {
     moduleName = 'Test';
     exceptionFilter = new RouterExceptionFilters(
+      new NestContainer(),
       new ApplicationConfig(),
       new ExpressAdapter({}),
     );
@@ -34,6 +36,7 @@ describe('RouterExceptionFilters', () => {
         const filter = exceptionFilter.create(
           new EmptyMetadata(),
           () => ({} as any),
+          undefined,
         );
         expect((filter as any).filters).to.be.empty;
       });
@@ -46,6 +49,7 @@ describe('RouterExceptionFilters', () => {
         const filter = exceptionFilter.create(
           new WithMetadata(),
           () => ({} as any),
+          undefined,
         );
         expect((filter as any).filters).to.not.be.empty;
       });

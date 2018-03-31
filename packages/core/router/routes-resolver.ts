@@ -23,6 +23,7 @@ export class RoutesResolver implements Resolver {
     private readonly config: ApplicationConfig,
   ) {
     this.routerExceptionsFilter = new RouterExceptionFilters(
+      container,
       config,
       container.getApplicationRef(),
     );
@@ -76,7 +77,11 @@ export class RoutesResolver implements Resolver {
       const url = applicationRef.getRequestUrl(req);
       throw new NotFoundException(`Cannot ${method} ${url}`);
     };
-    const handler = this.routerExceptionsFilter.create({}, callback as any);
+    const handler = this.routerExceptionsFilter.create(
+      {},
+      callback as any,
+      undefined,
+    );
     const proxy = this.routerProxy.createProxy(callback, handler);
     applicationRef.setNotFoundHandler &&
       applicationRef.setNotFoundHandler(proxy);
@@ -86,11 +91,14 @@ export class RoutesResolver implements Resolver {
     const callback = (err, req, res, next) => {
       throw this.mapExternalException(err);
     };
-    const handler = this.routerExceptionsFilter.create({}, callback as any);
+    const handler = this.routerExceptionsFilter.create(
+      {},
+      callback as any,
+      undefined,
+    );
     const proxy = this.routerProxy.createExceptionLayerProxy(callback, handler);
     const applicationRef = this.container.getApplicationRef();
-    applicationRef.setErrorHandler &&
-      applicationRef.setErrorHandler(proxy);
+    applicationRef.setErrorHandler && applicationRef.setErrorHandler(proxy);
   }
 
   public mapExternalException(err: any) {

@@ -41,6 +41,7 @@ describe('MiddlewaresModule', () => {
   beforeEach(() => {
     middlewaresModule = new MiddlewaresModule();
     (middlewaresModule as any).routerExceptionFilter = new RouterExceptionFilters(
+      new NestContainer(),
       new ApplicationConfig(),
       new ExpressAdapter({}),
     );

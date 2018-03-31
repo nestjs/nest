@@ -15,16 +15,23 @@ import {
 import { RpcExceptionFilter } from '@nestjs/common/interfaces/exceptions';
 import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { NestContainer } from '@nestjs/core/injector/container';
 
 export class ExceptionFiltersContext extends BaseExceptionFilterContext {
-  constructor(private readonly config: ApplicationConfig) {
-    super();
+  constructor(
+    container: NestContainer,
+    private readonly config: ApplicationConfig,
+  ) {
+    super(container);
   }
 
   public create(
     instance: Controller,
     callback: (data) => Observable<any>,
+    module: string,
   ): RpcExceptionsHandler {
+    this.moduleContext = module;
+
     const exceptionHandler = new RpcExceptionsHandler();
     const filters = this.createContext(
       instance,

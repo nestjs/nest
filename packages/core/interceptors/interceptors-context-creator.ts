@@ -34,38 +34,37 @@ export class InterceptorsContextCreator extends ContextCreator {
   public createConcreteContext<T extends any[], R extends any[]>(
     metadata: T,
   ): R {
-    if (isUndefined(metadata) || isEmpty(metadata) || !this.moduleContext) {
+    if (isUndefined(metadata) || isEmpty(metadata)) {
       return [] as R;
     }
-    const isGlobalMetadata = metadata === this.getGlobalMetadata();
-    return isGlobalMetadata
-      ? this.createGlobalMetadataContext<T, R>(metadata)
-      : (iterate(metadata)
-          .filter((metatype: any) => metatype && metatype.name)
-          .map(metatype => this.getInstanceByMetatype(metatype))
-          .filter((wrapper: any) => wrapper && wrapper.instance)
-          .map(wrapper => wrapper.instance)
-          .filter(
-            (interceptor: NestInterceptor) =>
-              interceptor && isFunction(interceptor.intercept),
-          )
-          .toArray() as R);
-  }
-
-  public createGlobalMetadataContext<T extends any[], R extends any[]>(
-    metadata: T,
-  ): R {
     return iterate(metadata)
       .filter(
-        interceptor =>
-          interceptor &&
-          interceptor.intercept &&
-          isFunction(interceptor.intercept),
+        (interceptor: any) =>
+          interceptor && (interceptor.name || interceptor.intercept),
+      )
+      .map(interceptor => this.getInterceptorInstance(interceptor))
+      .filter(
+        (interceptor: NestInterceptor) =>
+          interceptor && isFunction(interceptor.intercept),
       )
       .toArray() as R;
   }
 
+  public getInterceptorInstance(interceptor: Function | NestInterceptor) {
+    const isObject = !!(interceptor as NestInterceptor).intercept;
+    if (isObject) {
+      return interceptor;
+    }
+    const instanceWrapper = this.getInstanceByMetatype(interceptor);
+    return instanceWrapper && instanceWrapper.instance
+      ? instanceWrapper.instance
+      : null;
+  }
+
   public getInstanceByMetatype(metatype): { instance: any } | undefined {
+    if (!this.moduleContext) {
+      return undefined;
+    }
     const collection = this.container.getModules();
     const module = collection.get(this.moduleContext);
     if (!module) {

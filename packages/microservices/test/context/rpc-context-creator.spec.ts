@@ -51,15 +51,17 @@ describe('RpcContextCreator', () => {
   }
 
   beforeEach(() => {
+    const container: any = new NestContainer();
     rpcProxy = new RpcProxy();
     exceptionFiltersContext = new ExceptionFiltersContext(
+      container,
       new ApplicationConfig() as any,
     );
     sinon.stub(rpcProxy, 'create').callsFake(a => a);
 
-    pipesCreator = new PipesContextCreator();
+    pipesCreator = new PipesContextCreator(container);
     pipesConsumer = new PipesConsumer();
-    guardsContextCreator = new GuardsContextCreator(new NestContainer());
+    guardsContextCreator = new GuardsContextCreator(container);
     guardsConsumer = new GuardsConsumer();
     contextCreator = new RpcContextCreator(
       rpcProxy,
@@ -68,7 +70,7 @@ describe('RpcContextCreator', () => {
       pipesConsumer as any,
       guardsContextCreator as any,
       guardsConsumer as any,
-      new InterceptorsContextCreator(new NestContainer()) as any,
+      new InterceptorsContextCreator(container) as any,
       new InterceptorsConsumer() as any,
     );
 

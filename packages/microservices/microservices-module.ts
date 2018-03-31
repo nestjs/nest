@@ -22,8 +22,8 @@ export class MicroservicesModule {
   public register(container, config) {
     const contextCreator = new RpcContextCreator(
       new RpcProxy(),
-      new ExceptionFiltersContext(config),
-      new PipesContextCreator(config),
+      new ExceptionFiltersContext(container, config),
+      new PipesContextCreator(container, config),
       new PipesConsumer(),
       new GuardsContextCreator(container, config),
       new GuardsConsumer(),

@@ -1,8 +1,10 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { Observable } from 'rxjs/Observable';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
 import { of } from 'rxjs/observable/of';
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
+
+class Interceptor {}
 
 describe('InterceptorsContextCreator', () => {
   let interceptorsContextCreator: InterceptorsContextCreator;
@@ -60,6 +62,58 @@ describe('InterceptorsContextCreator', () => {
         expect(
           interceptorsContextCreator.createConcreteContext(interceptors),
         ).to.have.length(2);
+      });
+    });
+  });
+
+  describe('getInterceptorInstance', () => {
+    describe('when param is an object', () => {
+      it('should return instance', () => {
+        const instance = { intercept: () => null };
+        expect(
+          interceptorsContextCreator.getInterceptorInstance(instance),
+        ).to.be.eql(instance);
+      });
+    });
+    describe('when param is a constructor', () => {
+      it('should pick instance from container', () => {
+        const wrapper = { instance: 'test' };
+        sinon
+          .stub(interceptorsContextCreator, 'getInstanceByMetatype')
+          .callsFake(() => wrapper);
+        expect(
+          interceptorsContextCreator.getInterceptorInstance(Interceptor),
+        ).to.be.eql(wrapper.instance);
+      });
+      it('should return null', () => {
+        sinon
+          .stub(interceptorsContextCreator, 'getInstanceByMetatype')
+          .callsFake(() => null);
+        expect(
+          interceptorsContextCreator.getInterceptorInstance(Interceptor),
+        ).to.be.eql(null);
+      });
+    });
+  });
+
+  describe('getInstanceByMetatype', () => {
+    describe('when "moduleContext" is nil', () => {
+      it('should return undefined', () => {
+        (interceptorsContextCreator as any).moduleContext = undefined;
+        expect(interceptorsContextCreator.getInstanceByMetatype(null)).to.be
+          .undefined;
+      });
+    });
+    describe('when "moduleContext" is not nil', () => {
+      beforeEach(() => {
+        (interceptorsContextCreator as any).moduleContext = 'test';
+      });
+
+      describe('and when module exists', () => {
+        it('should return undefined', () => {
+          expect(interceptorsContextCreator.getInstanceByMetatype({})).to.be
+            .undefined;
+        });
       });
     });
   });

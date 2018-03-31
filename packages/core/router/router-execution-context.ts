@@ -65,7 +65,7 @@ export class RouterExecutionContext {
     const metadata = this.reflectCallbackMetadata(instance, methodName) || {};
     const keys = Object.keys(metadata);
     const argsLength = this.getArgumentsLength(keys, metadata);
-    const pipes = this.pipesContextCreator.create(instance, callback);
+    const pipes = this.pipesContextCreator.create(instance, callback, module);
     const paramtypes = this.reflectCallbackParamtypes(instance, methodName);
     const guards = this.guardsContextCreator.create(instance, callback, module);
     const interceptors = this.interceptorsContextCreator.create(

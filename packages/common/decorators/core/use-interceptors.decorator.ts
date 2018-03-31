@@ -2,6 +2,7 @@ import { INTERCEPTORS_METADATA } from '../../constants';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';
 import { isFunction } from '../../utils/shared.utils';
 import { validateEach } from '../../utils/validate-each.util';
+import { NestInterceptor } from '../../interfaces';
 
 /**
  * Binds interceptors to the particular context.
@@ -11,15 +12,21 @@ import { validateEach } from '../../utils/validate-each.util';
  * When the `@UseInterceptors()` is used on the handle level:
  * - Interceptor will be registered only to specified method
  *
- * @param  {} ...interceptors (types)
+ * @param  {} ...interceptors
  */
-export function UseInterceptors(...interceptors: any[]) {
+export function UseInterceptors(
+  ...interceptors: (NestInterceptor | Function)[]
+) {
   return (target: any, key?, descriptor?) => {
+    const isValidInterceptor = interceptor =>
+      interceptor &&
+      (isFunction(interceptor) || isFunction(interceptor.intercept));
+
     if (descriptor) {
       validateEach(
         target.constructor,
         interceptors,
-        isFunction,
+        isValidInterceptor,
         '@UseInterceptors',
         'interceptor',
       );
@@ -33,7 +40,7 @@ export function UseInterceptors(...interceptors: any[]) {
     validateEach(
       target,
       interceptors,
-      isFunction,
+      isValidInterceptor,
       '@UseInterceptors',
       'interceptor',
     );
