@@ -22,7 +22,7 @@ export class Logger implements LoggerService {
     private readonly isTimeDiffEnabled = false,
   ) {}
 
-  log(message: string) {
+  public log(message: string) {
     const { logger } = Logger;
     (logger as typeof Logger).log.call(
       logger,
@@ -32,7 +32,7 @@ export class Logger implements LoggerService {
     );
   }
 
-  error(message: string, trace = '') {
+  public error(message: string, trace = '') {
     const { logger } = Logger;
     (logger as typeof Logger).error.call(
       logger,
@@ -43,7 +43,7 @@ export class Logger implements LoggerService {
     );
   }
 
-  warn(message: string) {
+  public warn(message: string) {
     const { logger } = Logger;
     (logger as typeof Logger).warn.call(
       logger,
@@ -53,19 +53,19 @@ export class Logger implements LoggerService {
     );
   }
 
-  static overrideLogger(logger: LoggerService) {
+  public static overrideLogger(logger: LoggerService) {
     this.logger = logger;
   }
 
-  static setMode(mode: NestEnvironment) {
+  public static setMode(mode: NestEnvironment) {
     this.contextEnv = mode;
   }
 
-  static log(message: string, context = '', isTimeDiffEnabled = true) {
+  public static log(message: string, context = '', isTimeDiffEnabled = true) {
     this.printMessage(message, clc.green, context, isTimeDiffEnabled);
   }
 
-  static error(
+  public static error(
     message: string,
     trace = '',
     context = '',
@@ -75,7 +75,7 @@ export class Logger implements LoggerService {
     this.printStackTrace(trace);
   }
 
-  static warn(message: string, context = '', isTimeDiffEnabled = true) {
+  public static warn(message: string, context = '', isTimeDiffEnabled = true) {
     this.printMessage(message, clc.yellow, context, isTimeDiffEnabled);
   }
 

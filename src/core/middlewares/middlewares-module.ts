@@ -151,8 +151,8 @@ export class MiddlewaresModule {
     );
     const router = this.routerMethodFactory.get(app, method).bind(app);
 
-    const setupWithProxy = middleware =>
-      this.setupHandlerWithProxy(exceptionsHandler, router, middleware, path);
+    const setupWithProxy = mw =>
+      this.setupHandlerWithProxy(exceptionsHandler, router, mw, path);
     const resolve = instance.resolve();
     if (!(resolve instanceof Promise)) {
       setupWithProxy(resolve);

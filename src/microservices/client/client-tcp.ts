@@ -38,10 +38,10 @@ export class ClientTCP extends ClientProxy {
   }
 
   protected async sendSingleMessage(msg, callback: (...args) => any) {
-    const sendMessage = socket => {
-      socket.sendMessage(msg);
-      socket.on(MESSAGE_EVENT, buffer =>
-        this.handleResponse(socket, callback, buffer),
+    const sendMessage = sock => {
+      sock.sendMessage(msg);
+      sock.on(MESSAGE_EVENT, buffer =>
+        this.handleResponse(sock, callback, buffer),
       );
     };
     if (this.isConnected) {

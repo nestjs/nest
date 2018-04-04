@@ -17,7 +17,7 @@ const assignMetadata = (
   paramtype: RouteParamtypes,
   index: number,
   data?: ParamData,
-  ...pipes: PipeTransform<any>[]
+  ...pipes: PipeTransform<any>[],
 ) => ({
   ...args,
   [`${paramtype}:${index}`]: {
@@ -41,7 +41,7 @@ const createRouteParamDecorator = (paramtype: RouteParamtypes) => {
 
 const createPipesRouteParamDecorator = (paramtype: RouteParamtypes) => (
   data?,
-  ...pipes: PipeTransform<any>[]
+  ...pipes: PipeTransform<any>[],
 ): ParameterDecorator => (target, key, index) => {
   const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, target, key) || {};
   const hasParamData = isNil(data) || isString(data);
@@ -78,12 +78,11 @@ export const Headers: (
   property?: string,
 ) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.HEADERS);
 
-export function Query();
 export function Query(...pipes: PipeTransform<any>[]);
 export function Query(property: string, ...pipes: PipeTransform<any>[]);
 export function Query(
   property?: string | PipeTransform<any>,
-  ...pipes: PipeTransform<any>[]
+  ...pipes: PipeTransform<any>[],
 ) {
   return createPipesRouteParamDecorator(RouteParamtypes.QUERY)(
     property,
@@ -91,12 +90,11 @@ export function Query(
   );
 }
 
-export function Body();
 export function Body(...pipes: PipeTransform<any>[]);
 export function Body(property: string, ...pipes: PipeTransform<any>[]);
 export function Body(
   property?: string | PipeTransform<any>,
-  ...pipes: PipeTransform<any>[]
+  ...pipes: PipeTransform<any>[],
 ) {
   return createPipesRouteParamDecorator(RouteParamtypes.BODY)(
     property,
@@ -104,12 +102,11 @@ export function Body(
   );
 }
 
-export function Param();
 export function Param(...pipes: PipeTransform<any>[]);
 export function Param(property: string, ...pipes: PipeTransform<any>[]);
 export function Param(
   property?: string | PipeTransform<any>,
-  ...pipes: PipeTransform<any>[]
+  ...pipes: PipeTransform<any>[],
 ) {
   return createPipesRouteParamDecorator(RouteParamtypes.PARAM)(
     property,

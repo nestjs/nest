@@ -1,3 +1,1 @@
-export interface ExpressMiddleware {
-    (req?: any, res?: any, next?: any): void;
-}
+export declare type ExpressMiddleware = (req?, res?, next?) => void;

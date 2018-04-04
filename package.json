@@ -7,6 +7,7 @@
     "test": "nyc --require ts-node/register mocha src/**/*.spec.ts --reporter spec",
     "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "lint": "tslint -p tsconfig.json -c tslint.json",
     "prettier": "prettier */**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist lib",
@@ -84,7 +85,8 @@
     "prettier": "^1.9.2",
     "sinon": "^2.1.0",
     "sinon-chai": "^2.8.0",
-    "ts-node": "^3.2.0"
+    "ts-node": "^3.2.0",
+    "tslint": "^5.9.1"
   },
   "collective": {
     "type": "opencollective",

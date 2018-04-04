@@ -10,9 +10,9 @@ export function FilesInterceptor(
   options?: MulterOptions,
 ) {
   const Interceptor = class implements NestInterceptor {
-    readonly upload = multer(options);
+    public readonly upload = multer(options);
 
-    async intercept(
+    public async intercept(
       request,
       context,
       stream$: Observable<any>,

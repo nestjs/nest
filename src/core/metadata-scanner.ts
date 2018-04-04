@@ -18,7 +18,7 @@ export class MetadataScanner {
       .toArray();
   }
 
-  *getAllFilteredMethodNames(prototype): IterableIterator<string> {
+  public *getAllFilteredMethodNames(prototype): IterableIterator<string> {
     do {
       yield* iterate(Object.getOwnPropertyNames(prototype))
         .filter(prop => {
@@ -30,7 +30,9 @@ export class MetadataScanner {
         })
         .toArray();
     } while (
+      /* tslint:disable-next-line:no-conditional-assignment */
       (prototype = Reflect.getPrototypeOf(prototype)) &&
+      /* tslint:disable-next-line:triple-equals */
       prototype != Object.prototype
     );
   }

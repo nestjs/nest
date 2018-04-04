@@ -32,7 +32,7 @@ export declare class DependenciesScanner {
     storeInjectable(component: Metatype<Injectable>, token: string): void;
     storeExportedComponent(exportedComponent: Metatype<Injectable>, token: string): void;
     storeRoute(route: Metatype<Controller>, token: string): void;
-    reflectMetadata(metatype: any, metadata: string): any;
+    reflectMetadata(metatype: any, targetMetadata: string): any;
     applyApplicationProviders(): void;
     getApplyProvidersMap(): {
         [type: string]: Function;
