@@ -7,12 +7,12 @@
   "license": "MIT",
   "dependencies": {
     "iterare": "1.0.0",
-    "socket.io": "^2.0.3"
+    "socket.io": "^2.0.3",
+    "reflect-metadata": "0.1.12"
   },
   "peerDependencies": {
     "@nestjs/common": "^5.*",
     "@nestjs/core": "^5.*",
-    "reflect-metadata": "0.1.12",
     "rxjs": "^5.5.8"
   }
 }
