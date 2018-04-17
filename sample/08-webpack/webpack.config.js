@@ -20,13 +20,11 @@ module.exports = {
       },
     ],
   },
-  mode: "development",
+  mode: 'development',
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
   },
-  plugins: [
-    new webpack.HotModuleReplacementPlugin(),
-  ],
+  plugins: [new webpack.HotModuleReplacementPlugin()],
   output: {
     path: path.join(__dirname, 'dist'),
     filename: 'server.js',

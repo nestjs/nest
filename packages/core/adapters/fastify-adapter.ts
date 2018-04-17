@@ -8,11 +8,11 @@ import { MissingRequiredDependencyException } from '../errors/exceptions/missing
 
 export class FastifyAdapter {
   private readonly logger = new Logger(FastifyAdapter.name);
-  protected readonly instance;
+  protected readonly instance: any;
 
-  constructor() {
+  constructor(options?: any) {
     try {
-      this.instance = require('fastify')();
+      this.instance = require('fastify')(options);
     } catch (e) {
       throw new MissingRequiredDependencyException('fastify', 'FastifyAdapter');
     }

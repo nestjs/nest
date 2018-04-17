@@ -10,7 +10,9 @@ export class ParseIntPipe implements PipeTransform<string> {
       !isNaN(parseFloat(value)) &&
       isFinite(value as any);
     if (!isNumeric) {
-      throw new BadRequestException('Numeric string is expected');
+      throw new BadRequestException(
+        'Validation failed (numeric string is expected)',
+      );
     }
     return parseInt(value, 10);
   }

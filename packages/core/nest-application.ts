@@ -74,7 +74,7 @@ export class NestApplication extends NestApplicationContext
 
   constructor(
     container: NestContainer,
-    private httpAdapter: HttpServer,
+    private readonly httpAdapter: HttpServer,
     private readonly config: ApplicationConfig,
     private readonly appOptions: NestApplicationOptions = {},
   ) {

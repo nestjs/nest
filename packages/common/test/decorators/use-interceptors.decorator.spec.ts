@@ -32,9 +32,8 @@ describe('@UseInterceptors', () => {
 
   it('when object is invalid should throw exception', () => {
     try {
-      UseInterceptors('test')({});
-    }
-    catch (e) {
+      UseInterceptors('test' as any)({});
+    } catch (e) {
       expect(e).to.be.instanceof(InvalidDecoratorItemException);
     }
   });

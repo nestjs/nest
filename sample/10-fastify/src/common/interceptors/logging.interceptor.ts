@@ -6,13 +6,11 @@ import { tap } from 'rxjs/operators';
 export class LoggingInterceptor implements NestInterceptor {
   intercept(
     context: ExecutionContext,
-    stream$: Observable<any>,
+    call$: Observable<any>,
   ): Observable<any> {
     console.log('Before...');
 
     const now = Date.now();
-    return stream$.pipe(
-      tap(() => console.log(`After... ${Date.now() - now}ms`)),
-    );
+    return call$.pipe(tap(() => console.log(`After... ${Date.now() - now}ms`)));
   }
 }

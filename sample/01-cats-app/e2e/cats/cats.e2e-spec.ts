@@ -1,4 +1,3 @@
-import * as express from 'express';
 import * as request from 'supertest';
 import { Test } from '@nestjs/testing';
 import { CatsModule } from '../../src/cats/cats.module';
@@ -6,10 +5,8 @@ import { CatsService } from '../../src/cats/cats.service';
 import { INestApplication } from '@nestjs/common';
 
 describe('Cats', () => {
-  let server;
   let app: INestApplication;
-
-  const catsService = { findAll: () => ['test'] };
+  let catsService = { findAll: () => ['test'] };
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -19,13 +16,12 @@ describe('Cats', () => {
       .useValue(catsService)
       .compile();
 
-    server = express();
-    app = module.createNestApplication(server);
+    app = module.createNestApplication();
     await app.init();
   });
 
   it(`/GET cats`, () => {
-    return request(server)
+    return request(app.getHttpServer())
       .get('/cats')
       .expect(200)
       .expect({

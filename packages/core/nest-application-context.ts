@@ -14,6 +14,7 @@ import { UnknownElementException } from './errors/exceptions/unknown-element.exc
 
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
+  private contextModuleFixture: Partial<Module>;
 
   constructor(
     protected readonly container: NestContainer,
@@ -42,28 +43,25 @@ export class NestApplicationContext implements INestApplicationContext {
     return new NestApplicationContext(this.container, scope, selectedModule);
   }
 
-  public get<T>(typeOrToken: Type<T> | string | symbol): T | null {
+  public get<T>(
+    typeOrToken: Type<T> | string | symbol,
+    options: { strict: boolean } = { strict: false },
+  ): T {
+    if (!(options && options.strict)) {
+      return this.find<T>(typeOrToken);
+    }
     return this.findInstanceByPrototypeOrToken<T>(
       typeOrToken,
       this.contextModule,
     );
   }
 
-  public find<T>(typeOrToken: Type<T> | string | symbol): T | null {
-    const modules = this.container.getModules();
-    const flattenModule = [...modules.values()].reduce(
-      (flatten, curr) => ({
-        components: [...flatten.components, ...curr.components],
-        routes: [...flatten.routes, ...curr.routes],
-        injectables: [...flatten.injectables, ...curr.injectables],
-      }),
-      {
-        components: [],
-        routes: [],
-        injectables: [],
-      },
+  public find<T>(typeOrToken: Type<T> | string | symbol): T {
+    this.initFlattenModule();
+    return this.findInstanceByPrototypeOrToken<T>(
+      typeOrToken,
+      this.contextModuleFixture,
     );
-    return this.findInstanceByPrototypeOrToken<T>(typeOrToken, flattenModule);
   }
 
   protected callInitHook() {
@@ -89,7 +87,7 @@ export class NestApplicationContext implements INestApplicationContext {
   private findInstanceByPrototypeOrToken<T>(
     metatypeOrToken: Type<T> | string | symbol,
     contextModule,
-  ): T | null {
+  ): T {
     const dependencies = new Map([
       ...contextModule.components,
       ...contextModule.routes,
@@ -103,5 +101,25 @@ export class NestApplicationContext implements INestApplicationContext {
       throw new UnknownElementException();
     }
     return (instanceWrapper as InstanceWrapper<any>).instance;
+  }
+
+  private initFlattenModule() {
+    if (this.contextModuleFixture) {
+      return undefined;
+    }
+    const modules = this.container.getModules();
+    const initialValue = {
+      components: [],
+      routes: [],
+      injectables: [],
+    };
+    this.contextModuleFixture = [...modules.values()].reduce(
+      (flatten, curr) => ({
+        components: [...flatten.components, ...curr.components],
+        routes: [...flatten.routes, ...curr.routes],
+        injectables: [...flatten.injectables, ...curr.injectables],
+      }),
+      initialValue,
+    ) as any;
   }
 }

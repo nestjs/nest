@@ -13,10 +13,10 @@ export function FileInterceptor(fieldName: string, options?: MulterOptions) {
 
       async intercept(
         context: ExecutionContext,
-        stream$: Observable<any>,
+        call$: Observable<any>,
       ): Promise<Observable<any>> {
         const ctx = context.switchToHttp();
-        
+
         await new Promise((resolve, reject) =>
           this.upload.single(fieldName)(
             ctx.getRequest(),
@@ -30,7 +30,7 @@ export function FileInterceptor(fieldName: string, options?: MulterOptions) {
             },
           ),
         );
-        return stream$;
+        return call$;
       }
     },
   );

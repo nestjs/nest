@@ -46,7 +46,7 @@ export class GuardsContextCreator extends ContextCreator {
   }
 
   public getGuardInstance(guard: Function | CanActivate) {
-    const isObject = !!(guard as CanActivate).canActivate;
+    const isObject = (guard as CanActivate).canActivate;
     if (isObject) {
       return guard;
     }

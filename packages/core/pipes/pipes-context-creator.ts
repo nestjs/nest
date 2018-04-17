@@ -49,7 +49,7 @@ export class PipesContextCreator extends ContextCreator {
   }
 
   public getPipeInstance(pipe: Function | PipeTransform) {
-    const isObject = !!(pipe as PipeTransform).transform;
+    const isObject = (pipe as PipeTransform).transform;
     if (isObject) {
       return pipe;
     }
@@ -76,5 +76,9 @@ export class PipesContextCreator extends ContextCreator {
       return [] as T;
     }
     return this.config.getGlobalPipes() as T;
+  }
+
+  public setModuleContext(context: string) {
+    this.moduleContext = context;
   }
 }

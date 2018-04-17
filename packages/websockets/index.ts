@@ -5,6 +5,7 @@
  * MIT Licensed
  */
 
+export * from './adapters/ws-adapter';
 export * from './adapters/io-adapter';
 export * from './interfaces';
 export * from './exceptions/ws-exception';

@@ -22,7 +22,7 @@ let mqttPackage: any = {};
 
 export class ServerMqtt extends Server implements CustomTransportStrategy {
   private readonly url: string;
-  private mqttClient:MqttClient;
+  private mqttClient: MqttClient;
 
   constructor(private readonly options: MicroserviceOptions) {
     super();

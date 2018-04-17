@@ -5,9 +5,9 @@ import { Constructor } from '../utils/merge-with-values.util';
 declare const process;
 
 export interface LoggerService {
-  log(message: string): void;
-  error(message: string, trace: string): void;
-  warn(message: string): void;
+  log(message: string);
+  error(message: string, trace: string);
+  warn(message: string);
 }
 
 export class Logger implements LoggerService {
@@ -24,37 +24,30 @@ export class Logger implements LoggerService {
 
   log(message: string) {
     const { logger } = Logger;
-    (logger as typeof Logger).log.call(
-      logger,
-      message,
-      this.context,
-      this.isTimeDiffEnabled,
-    );
+    logger &&
+      logger.log.call(logger, message, this.context, this.isTimeDiffEnabled);
   }
 
   error(message: string, trace = '') {
     const { logger } = Logger;
-    (logger as typeof Logger).error.call(
-      logger,
-      message,
-      trace,
-      this.context,
-      this.isTimeDiffEnabled,
-    );
+    logger &&
+      logger.error.call(
+        logger,
+        message,
+        trace,
+        this.context,
+        this.isTimeDiffEnabled,
+      );
   }
 
   warn(message: string) {
     const { logger } = Logger;
-    (logger as typeof Logger).warn.call(
-      logger,
-      message,
-      this.context,
-      this.isTimeDiffEnabled,
-    );
+    logger &&
+      logger.warn.call(logger, message, this.context, this.isTimeDiffEnabled);
   }
 
-  static overrideLogger(logger: LoggerService) {
-    this.logger = logger;
+  static overrideLogger(logger: LoggerService | boolean) {
+    this.logger = logger ? (logger as LoggerService) : null;
   }
 
   static setMode(mode: NestEnvironment) {

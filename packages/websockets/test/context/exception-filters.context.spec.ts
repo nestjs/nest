@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { ExceptionFiltersContext } from './../../context/exception-filters-context';
+import { NestContainer } from '../../../core/injector/container';
 
 describe('ExceptionFiltersContext', () => {
   let moduleName: string;
@@ -16,7 +17,7 @@ describe('ExceptionFiltersContext', () => {
 
   beforeEach(() => {
     moduleName = 'Test';
-    exceptionFilter = new ExceptionFiltersContext();
+    exceptionFilter = new ExceptionFiltersContext(new NestContainer() as any);
   });
   describe('create', () => {
     describe('when filters metadata is empty', () => {
@@ -28,6 +29,7 @@ describe('ExceptionFiltersContext', () => {
         const filter = exceptionFilter.create(
           new EmptyMetadata(),
           () => ({} as any),
+          '',
         );
         expect((filter as any).filters).to.be.empty;
       });
@@ -40,6 +42,7 @@ describe('ExceptionFiltersContext', () => {
         const filter = exceptionFilter.create(
           new WithMetadata(),
           () => ({} as any),
+          '',
         );
         expect((filter as any).filters).to.not.be.empty;
       });

@@ -9,14 +9,11 @@ export interface INestApplicationContext {
   select<T>(module: Type<T>): INestApplicationContext;
 
   /**
-   * Retrieves an instance of either injectable or controller available inside the processed module, otherwise, returns null.
+   * Retrieves an instance of either injectable or controller available anywhere, otherwise, throws exception.
    * @returns {T}
    */
-  get<T>(typeOrToken: Type<T> | string | symbol): T | null;
-
-  /**
-   * Retrieves an instance of either injectable or controller available inside any module, otherwise, returns null.
-   * @returns {T}
-   */
-  find<T>(typeOrToken: Type<T> | string | symbol): T | null;
+  get<T>(
+    typeOrToken: Type<T> | string | symbol,
+    options?: { strict: boolean },
+  ): T;
 }

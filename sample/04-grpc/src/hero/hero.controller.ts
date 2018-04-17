@@ -1,39 +1,37 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, OnModuleInit } from '@nestjs/common';
 import {
   ClientProxy,
   Client,
-  Transport,
   MessagePattern,
   GrpcRoute,
   ClientGrpc,
 } from '@nestjs/microservices';
 import { Observable } from 'rxjs/Observable';
-import { join } from 'path';
+import { grpcClientOptions } from './../grpc-client.options';
+import { HeroById } from './interfaces/hero-by-id.interface';
+import { Hero } from './interfaces/hero.interface';
 
 interface HeroService {
-  FindOne(data: { id: number }): Observable<any>;
+  findOne(data: { id: number }): Observable<any>;
 }
 
 @Controller()
-export class HeroController {
-  @Client({
-    transport: Transport.GRPC,
-    options: {
-      package: 'hero',
-      protoPath: join(__dirname, './hero.proto'),
-    },
-  })
-  client: ClientGrpc;
+export class HeroController implements OnModuleInit {
+  @Client(grpcClientOptions) private readonly client: ClientGrpc;
+  private heroService: HeroService;
+
+  onModuleInit() {
+    this.heroService = this.client.getService<HeroService>('HeroService');
+  }
 
   @Get()
   call(): Observable<any> {
-    const heroService = this.client.getService<HeroService>('HeroService');
-    return heroService.FindOne({ id: 1 });
+    return this.heroService.findOne({ id: 1 });
   }
 
   @GrpcRoute('HeroService', 'FindOne')
-  findOne(data: { id: number }): any {
-    const items = [{ id: 1, name: 'John' }, { id: 2, name: 'Doe' }];
+  findOne(data: HeroById): Hero {
+    const items: Hero[] = [{ id: 1, name: 'John' }, { id: 2, name: 'Doe' }];
     return items.find(({ id }) => id === data.id);
   }
 }

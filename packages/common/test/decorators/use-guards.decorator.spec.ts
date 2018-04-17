@@ -40,9 +40,8 @@ describe('@UseGuards', () => {
 
   it('when object is invalid should throw exception', () => {
     try {
-      UseGuards('test')({});
-    }
-    catch (e) {
+      UseGuards('test' as any)({});
+    } catch (e) {
       expect(e).to.be.instanceof(InvalidDecoratorItemException);
     }
   });

@@ -29,7 +29,7 @@ const randomString = () =>
   Math.random()
     .toString(36)
     .substring(2, 15);
-  
+
 /**
  * Creates HTTP route param decorator
  * @param factory
@@ -54,13 +54,15 @@ export function createParamDecorator(
 }
 
 /**
- * Creates route params custom decorator
+ * Creates HTTP route param decorator
  * @deprecated
  * @param factory
  */
 export function createRouteParamDecorator(
   factory: CustomParamFactory,
 ): (data?: any, ...pipes: PipeTransform<any>[]) => ParameterDecorator {
-  deprecate('The "createRouteParamDecorator" function is deprecated and will be removed within next major release. Use "createParamDecorator" instead.')
+  deprecate(
+    'The "createRouteParamDecorator" function is deprecated and will be removed within next major release. Use "createParamDecorator" instead.',
+  );
   return createParamDecorator(factory);
 }

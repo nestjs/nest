@@ -6,8 +6,8 @@ import { map } from 'rxjs/operators';
 export class TransformInterceptor implements NestInterceptor {
   intercept(
     context: ExecutionContext,
-    stream$: Observable<any>,
+    call$: Observable<any>,
   ): Observable<any> {
-    return stream$.pipe(map(data => ({ data })));
+    return call$.pipe(map(data => ({ data })));
   }
 }

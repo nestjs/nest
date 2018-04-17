@@ -27,7 +27,6 @@ import {
 } from '@nestjs/common';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { GuardsConsumer } from '../guards/guards-consumer';
-import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { RouterResponseController } from './router-response-controller';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
@@ -36,7 +35,7 @@ export interface ParamProperties {
   index: number;
   type: RouteParamtypes | string;
   data: ParamData;
-  pipes: PipeTransform<any>[];
+  pipes: PipeTransform[];
   extractValue: (req, res, next) => any;
 }
 
@@ -74,7 +73,7 @@ export class RouterExecutionContext {
       module,
     );
     const httpCode = this.reflectHttpStatusCode(callback);
-    const paramsMetadata = this.exchangeKeysForValues(keys, metadata);
+    const paramsMetadata = this.exchangeKeysForValues(keys, metadata, module);
     const isResponseHandled = paramsMetadata.some(
       ({ type }) =>
         type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
@@ -94,7 +93,7 @@ export class RouterExecutionContext {
 
     return async (req, res, next) => {
       const args = this.createNullArray(argsLength);
-      fnCanActivate && (await fnCanActivate([res, res]));
+      fnCanActivate && (await fnCanActivate([req, res]));
 
       const handler = async () => {
         fnApplyPipes && (await fnApplyPipes(args, req, res, next));
@@ -152,9 +151,14 @@ export class RouterExecutionContext {
   public exchangeKeysForValues(
     keys: string[],
     metadata: RouteParamsMetadata,
+    moduleContext: string,
   ): ParamProperties[] {
+    this.pipesContextCreator.setModuleContext(moduleContext);
     return keys.map(key => {
-      const { index, data, pipes } = metadata[key];
+      const { index, data, pipes: pipesCollection } = metadata[key];
+      const pipes = this.pipesContextCreator.createConcreteContext(
+        pipesCollection,
+      );
       const type = this.mapParamType(key);
 
       if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {
@@ -221,7 +225,7 @@ export class RouterExecutionContext {
         callback,
       );
       if (!canActivate) {
-        throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
+        return false;
       }
     };
     return guards.length ? canActivateFn : null;

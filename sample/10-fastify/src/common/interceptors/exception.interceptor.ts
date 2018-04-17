@@ -13,9 +13,9 @@ import { _throw } from 'rxjs/observable/throw';
 export class ExceptionInterceptor implements NestInterceptor {
   intercept(
     context: ExecutionContext,
-    stream$: Observable<any>,
+    call$: Observable<any>,
   ): Observable<any> {
-    return stream$.pipe(
+    return call$.pipe(
       catchError(err =>
         _throw(
           new HttpException(

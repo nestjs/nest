@@ -9,7 +9,8 @@
     "start:prod": "node dist/main.js",
     "test": "jest --config=jest.json",
     "test:watch": "jest --watch --config=jest.json",
-    "test:coverage": "jest --config=jest.json --coverage --coverageDirectory=coverage",
+    "test:coverage":
+      "jest --config=jest.json --coverage --coverageDirectory=coverage",
     "e2e": "jest --config=e2e/jest-e2e.json --forceExit",
     "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
   },
@@ -21,8 +22,6 @@
     "@nestjs/websockets": "^5.0.0",
     "class-transformer": "^0.1.7",
     "class-validator": "^0.8.1",
-    "fastify": "^1.1.0",
-    "ioredis": "^3.2.2",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.5.6",

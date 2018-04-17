@@ -10,19 +10,14 @@ import { catchError } from 'rxjs/operators';
 import { _throw } from 'rxjs/observable/throw';
 
 @Injectable()
-export class ExceptionInterceptor implements NestInterceptor {
+export class ErrorsInterceptor implements NestInterceptor {
   intercept(
     context: ExecutionContext,
-    stream$: Observable<any>,
+    call$: Observable<any>,
   ): Observable<any> {
-    return stream$.pipe(
+    return call$.pipe(
       catchError(err =>
-        _throw(
-          new HttpException(
-            'Exception interceptor message',
-            HttpStatus.BAD_GATEWAY,
-          ),
-        ),
+        _throw(new HttpException('Message', HttpStatus.BAD_GATEWAY)),
       ),
     );
   }

@@ -51,7 +51,7 @@ export class InterceptorsContextCreator extends ContextCreator {
   }
 
   public getInterceptorInstance(interceptor: Function | NestInterceptor) {
-    const isObject = !!(interceptor as NestInterceptor).intercept;
+    const isObject = (interceptor as NestInterceptor).intercept;
     if (isObject) {
       return interceptor;
     }

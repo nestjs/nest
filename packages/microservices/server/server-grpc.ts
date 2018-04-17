@@ -42,7 +42,6 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       'package',
     );
     const grpcPkg = this.lookupPackage(grpcContext, packageName);
-
     if (!grpcPkg) {
       throw new InvalidGrpcPackageException();
     }
@@ -94,7 +93,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public createUnaryServiceMethod(methodHandler): Function {
     return async (call, callback) => {
-      const handler = methodHandler(call.request);
+      const handler = methodHandler(call.request, call.metadata);
       this.transformToObservable(await handler).subscribe(
         data => callback(null, data),
         err => callback(err),
@@ -104,7 +103,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public createStreamServiceMethod(methodHandler): Function {
     return async (call, callback) => {
-      const handler = methodHandler(call.request);
+      const handler = methodHandler(call.request, call.metadata);
       const result$ = this.transformToObservable(await handler);
       await result$.forEach(data => call.write(data));
       call.end();
@@ -152,8 +151,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),
       );
       return context;
-    }
-    catch (e) {
+    } catch (e) {
       throw new InvalidProtoDefinitionException();
     }
   }

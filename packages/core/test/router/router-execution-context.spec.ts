@@ -39,7 +39,7 @@ describe('RouterExecutionContext', () => {
 
     contextCreator = new RouterExecutionContext(
       factory,
-      new PipesContextCreator(new ApplicationConfig()),
+      new PipesContextCreator(new NestContainer(), new ApplicationConfig()),
       consumer,
       new GuardsContextCreator(new NestContainer()),
       guardsConsumer,
@@ -213,7 +213,7 @@ describe('RouterExecutionContext', () => {
         },
       };
       const keys = Object.keys(metadata);
-      const values = contextCreator.exchangeKeysForValues(keys, metadata);
+      const values = contextCreator.exchangeKeysForValues(keys, metadata, '');
       const expectedValues = [
         { index: 0, type: RouteParamtypes.REQUEST, data: 'test' },
         { index: 2, type: RouteParamtypes.BODY, data: 'test' },

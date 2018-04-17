@@ -27,6 +27,14 @@ export class TestingModuleBuilder {
     this.scanner.scan(this.module);
   }
 
+  public overridePipe(typeOrToken): OverrideBy {
+    return this.override(typeOrToken, false);
+  }
+
+  public overrideFilter(typeOrToken): OverrideBy {
+    return this.override(typeOrToken, false);
+  }
+
   public overrideGuard(typeOrToken): OverrideBy {
     return this.override(typeOrToken, false);
   }

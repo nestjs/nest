@@ -15,10 +15,10 @@ export function FilesInterceptor(
 
     async intercept(
       context: ExecutionContext,
-      stream$: Observable<any>,
+      call$: Observable<any>,
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
-      
+
       await new Promise((resolve, reject) =>
         this.upload.array(fieldName, maxCount)(
           ctx.getRequest(),
@@ -32,7 +32,7 @@ export function FilesInterceptor(
           },
         ),
       );
-      return stream$;
+      return call$;
     }
   };
   return Interceptor;

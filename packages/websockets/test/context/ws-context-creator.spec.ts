@@ -52,9 +52,11 @@ describe('WsContextCreator', () => {
   beforeEach(() => {
     wsProxy = new WsProxy();
     sinon.stub(wsProxy, 'create').callsFake(a => a);
-    
-    exceptionFiltersContext = new ExceptionFiltersContext();
-    pipesCreator = new PipesContextCreator();
+
+    exceptionFiltersContext = new ExceptionFiltersContext(
+      new NestContainer() as any,
+    );
+    pipesCreator = new PipesContextCreator(new NestContainer() as any);
     pipesConsumer = new PipesConsumer();
     guardsContextCreator = new GuardsContextCreator(new NestContainer());
     guardsConsumer = new GuardsConsumer();
