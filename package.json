@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "4.6.6",
+  "version": "5.0.0",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "precommit": "lint-staged",
