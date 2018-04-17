@@ -9,12 +9,12 @@
     "iterare": "0.0.8",
     "json-socket": "^0.2.1",
     "optional": "0.1.4",
-    "redis": "^2.7.1"
+    "redis": "^2.7.1",
+    "reflect-metadata": "0.1.12"
   },
   "peerDependencies": {
     "@nestjs/common": "^5.*",
     "@nestjs/core": "^5.*",
-    "reflect-metadata": "0.1.12",
     "rxjs": "^5.5.6"
   }
 }

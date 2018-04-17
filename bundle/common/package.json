@@ -9,10 +9,8 @@
     "axios": "0.17.1",
     "class-transformer": "0.1.9",
     "class-validator": "0.8.1",
-    "cli-color": "1.1.0",
-    "deprecate": "1.0.0"
-  },
-  "peerDependencies": {
+    "cli-color": "1.2.0",
+    "deprecate": "1.0.0",
     "reflect-metadata": "0.1.12"
   }
 }

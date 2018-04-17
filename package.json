@@ -12,7 +12,7 @@
     "prettier":
       "prettier */**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
-    "build:lib": "gulp build --dist lib",
+    "build:lib": "gulp build --dist bundle",
     "prepublish": "npm run build:lib",
     "publish":
       "./node_modules/.bin/lerna publish --exact -m \"chore(release) publish %s\"",
