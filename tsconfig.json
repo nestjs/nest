@@ -14,8 +14,8 @@
     "outDir": "dist"
   },
   "include": [
-    "src/**/*",
-    "example/**/*",
+    "packages/**/*",
+    "sample/**/*",
     "integration/**/*"
   ],
   "exclude": [

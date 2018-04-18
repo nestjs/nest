@@ -1,7 +1,0 @@
-{
-  "type": "mongodb",
-  "host": "localhost",
-  "database": "nest",
-  "entities": ["src/**/**.entity{.ts,.js}"],
-  "synchronize": true
-}

@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+  redis:
+    container_name: test-redis
+    image: redis
+    ports:
+      - "6379:6379"
+    restart: always
+  nats:
+    container_name: test-nats
+    image: nats
+    ports:
+      - "8222:8222"
+      - "4222:4222"
+      - "6222:6222"
+    restart: always
+  mqtt:
+    container_name: test-mqtt
+    image: toke/mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    restart: always

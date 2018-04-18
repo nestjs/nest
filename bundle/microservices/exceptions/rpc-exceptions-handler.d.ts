@@ -1,0 +1,10 @@
+import { Observable } from 'rxjs/Observable';
+import { RpcException } from './rpc-exception';
+import { RpcExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
+export declare class RpcExceptionsHandler {
+    private static readonly logger;
+    private filters;
+    handle(exception: Error | RpcException | any): Observable<any>;
+    setCustomFilters(filters: RpcExceptionFilterMetadata[]): void;
+    invokeCustomFilters(exception: any): Observable<any> | null;
+}
