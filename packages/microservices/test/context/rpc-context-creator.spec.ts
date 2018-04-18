@@ -1,6 +1,12 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { Guard, Pipe, UseGuards, Component, UsePipes } from './../../../common';
+import {
+  Guard,
+  Injectable,
+  UseGuards,
+  Component,
+  UsePipes,
+} from './../../../common';
 import { RpcProxy } from './../../context/rpc-proxy';
 import { RpcContextCreator } from './../../context/rpc-context-creator';
 import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler';
@@ -23,7 +29,7 @@ class TestGuard {
   canActivate: () => true;
 }
 
-@Pipe()
+@Injectable()
 class TestPipe {
   transform(val) {
     return val;

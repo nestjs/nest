@@ -3,13 +3,13 @@ import { classToPlain, plainToClass } from 'class-transformer';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { ArgumentMetadata, BadRequestException } from '../index';
 import { isNil } from '../utils/shared.utils';
-import { Pipe } from './../decorators/core/component.decorator';
+import { Injectable } from './../decorators/core/component.decorator';
 
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
 }
 
-@Pipe()
+@Injectable()
 export class ValidationPipe implements PipeTransform<any> {
   private isTransformEnabled: boolean;
   private validatorOptions: ValidatorOptions;

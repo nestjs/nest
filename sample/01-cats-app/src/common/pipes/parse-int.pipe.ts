@@ -1,11 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
-import {
-  PipeTransform,
-  Pipe,
-  ArgumentMetadata,
-} from '@nestjs/common';
+import { PipeTransform, Pipe, ArgumentMetadata } from '@nestjs/common';
 
-@Pipe()
+@Injectable()
 export class ParseIntPipe implements PipeTransform<string> {
   async transform(value: string, metadata: ArgumentMetadata) {
     const val = parseInt(value, 10);

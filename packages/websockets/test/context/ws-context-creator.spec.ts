@@ -1,6 +1,12 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { Guard, Pipe, UseGuards, Component, UsePipes } from './../../../common';
+import {
+  Guard,
+  Injectable,
+  UseGuards,
+  Component,
+  UsePipes,
+} from './../../../common';
 import { WsProxy } from './../../context/ws-proxy';
 import { WsContextCreator } from './../../context/ws-context-creator';
 import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
@@ -22,7 +28,7 @@ class TestGuard {
   canActivate: () => true;
 }
 
-@Pipe()
+@Injectable()
 class TestPipe {
   transform(val) {
     return val;

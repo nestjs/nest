@@ -1,8 +1,8 @@
 import { BadRequestException } from '../exceptions/bad-request.exception';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
-import { ArgumentMetadata, Pipe } from '../index';
+import { ArgumentMetadata, Injectable } from '../index';
 
-@Pipe()
+@Injectable()
 export class ParseIntPipe implements PipeTransform<string> {
   async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
     const isNumeric =
