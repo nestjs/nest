@@ -1,0 +1,16 @@
+{
+  "name": "@nestjs/testing",
+  "version": "5.0.0-beta.2",
+  "description":
+    "Nest - modern, fast, powerful node.js web framework (@testing)",
+  "author": "Kamil Mysliwiec",
+  "license": "MIT",
+  "dependencies": {
+    "deprecate": "1.0.0",
+    "optional": "0.1.4"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "5.*",
+    "@nestjs/core": "^5.*"
+  }
+}

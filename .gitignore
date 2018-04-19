@@ -8,6 +8,7 @@ package-lock.json
 /.vscode
 
 # misc
+.DS_Store
 lerna-debug.log
 npm-debug.log
 yarn-error.log
@@ -24,6 +25,6 @@ yarn-error.log
 
 # tests
 /test
-/integration
 /coverage
 /.nyc_output
+build/config\.gypi
