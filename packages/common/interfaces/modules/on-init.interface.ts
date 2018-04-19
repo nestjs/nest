@@ -1,3 +1,4 @@
 export interface OnModuleInit {
-  onModuleInit();
+  onModuleInit(): any;
+  onModuleInit(): Promise<any>;
 }

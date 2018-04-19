@@ -151,7 +151,8 @@ export class NestApplication extends NestApplicationContext
     await this.registerModules();
     await this.registerRouter();
 
-    this.callInitHook();
+    await this.callInitHook();
+
     this.logger.log(messages.APPLICATION_READY);
     this.isInitialized = true;
     return this;
@@ -303,14 +304,14 @@ export class NestApplication extends NestApplicationContext
     });
   }
 
-  public close() {
+  public async close() {
     this.socketModule && this.socketModule.close();
     this.httpServer && this.httpServer.close();
     this.microservices.forEach(microservice => {
       microservice.setIsTerminated(true);
       microservice.close();
     });
-    this.callDestroyHook();
+    await this.callDestroyHook();
   }
 
   public setGlobalPrefix(prefix: string): this {
@@ -394,20 +395,46 @@ export class NestApplication extends NestApplicationContext
     });
   }
 
-  private callDestroyHook() {
+  private async callInitHook() {
     const modules = this.container.getModules();
-    modules.forEach(module => {
-      this.callModuleDestroyHook(module);
-    });
+    await Promise.all(
+      iterate(modules.values()).map(module => this.callModuleInitHook(module)),
+    );
   }
 
-  private callModuleDestroyHook(module: Module) {
+  private async callModuleInitHook(module: Module) {
     const components = [...module.routes, ...module.components];
-    iterate(components)
-      .map(([key, { instance }]) => instance)
-      .filter(instance => !isNil(instance))
-      .filter(this.hasOnModuleDestroyHook)
-      .forEach(instance => (instance as OnModuleDestroy).onModuleDestroy());
+    await Promise.all(
+      iterate(components)
+        .map(([key, { instance }]) => instance)
+        .filter(instance => !isNil(instance))
+        .filter(this.hasOnModuleInitHook)
+        .map(instance => (instance as OnModuleInit).onModuleInit()),
+    );
+  }
+
+  private hasOnModuleInitHook(instance): instance is OnModuleInit {
+    return !isUndefined((instance as OnModuleInit).onModuleInit);
+  }
+
+  private async callDestroyHook() {
+    const modules = this.container.getModules();
+    await Promise.all(
+      iterate(modules.values()).map(module =>
+        this.callModuleDestroyHook(module),
+      ),
+    );
+  }
+
+  private async callModuleDestroyHook(module: Module) {
+    const components = [...module.routes, ...module.components];
+    await Promise.all(
+      iterate(components)
+        .map(([key, { instance }]) => instance)
+        .filter(instance => !isNil(instance))
+        .filter(this.hasOnModuleDestroyHook)
+        .map(instance => (instance as OnModuleDestroy).onModuleDestroy()),
+    );
   }
 
   private hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
