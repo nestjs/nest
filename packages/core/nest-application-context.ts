@@ -64,7 +64,7 @@ export class NestApplicationContext implements INestApplicationContext {
     );
   }
 
-  protected callInitHook() {
+  protected async callInitHook() {
     const modules = this.container.getModules();
     modules.forEach(module => {
       this.callModuleInitHook(module);

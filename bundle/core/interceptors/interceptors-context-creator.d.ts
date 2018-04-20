@@ -10,7 +10,7 @@ export declare class InterceptorsContextCreator extends ContextCreator {
     constructor(container: NestContainer, config?: ConfigurationProvider);
     create(instance: Controller, callback: (...args) => any, module: string): NestInterceptor[];
     createConcreteContext<T extends any[], R extends any[]>(metadata: T): R;
-    createGlobalMetadataContext<T extends any[], R extends any[]>(metadata: T): R;
+    getInterceptorInstance(interceptor: Function | NestInterceptor): any;
     getInstanceByMetatype(metatype: any): {
         instance: any;
     } | undefined;

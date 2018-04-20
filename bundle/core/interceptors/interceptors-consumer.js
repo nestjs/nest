@@ -13,23 +13,21 @@ const Observable_1 = require("rxjs/Observable");
 const defer_1 = require("rxjs/observable/defer");
 const fromPromise_1 = require("rxjs/observable/fromPromise");
 const operators_1 = require("rxjs/operators");
+const execution_context_host_1 = require("../helpers/execution-context.host");
 class InterceptorsConsumer {
-    intercept(interceptors, dataOrRequest, instance, callback, next) {
+    intercept(interceptors, args, instance, callback, next) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!interceptors || shared_utils_1.isEmpty(interceptors)) {
                 return yield yield next();
             }
-            const context = this.createContext(instance, callback);
+            const context = this.createContext(args, instance, callback);
             const start$ = defer_1.defer(() => this.transformDeffered(next));
-            const result$ = yield interceptors.reduce((stream$, interceptor) => __awaiter(this, void 0, void 0, function* () { return yield interceptor.intercept(dataOrRequest, context, yield stream$); }), Promise.resolve(start$));
+            const result$ = yield interceptors.reduce((stream$, interceptor) => __awaiter(this, void 0, void 0, function* () { return yield interceptor.intercept(context, yield stream$); }), Promise.resolve(start$));
             return yield result$.toPromise();
         });
     }
-    createContext(instance, callback) {
-        return {
-            parent: instance.constructor,
-            handler: callback,
-        };
+    createContext(args, instance, callback) {
+        return new execution_context_host_1.ExecutionContextHost(args, instance.constructor, callback);
     }
     transformDeffered(next) {
         return fromPromise_1.fromPromise(next()).pipe(operators_1.switchMap(res => {

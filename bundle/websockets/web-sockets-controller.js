@@ -28,20 +28,20 @@ class WebSocketsController {
         this.middlewaresInjector = new middlewares_injector_1.MiddlewaresInjector(container, config);
     }
     hookGatewayIntoServer(instance, metatype, module) {
-        const namespace = Reflect.getMetadata(constants_1.NAMESPACE_METADATA, metatype) || '';
+        const options = Reflect.getMetadata(constants_1.GATEWAY_OPTIONS, metatype) || {};
         const port = Reflect.getMetadata(constants_1.PORT_METADATA, metatype) || 0;
         if (!Number.isInteger(port)) {
             throw new invalid_socket_port_exception_1.InvalidSocketPortException(port, metatype);
         }
-        this.subscribeObservableServer(instance, namespace, port, module);
+        this.subscribeObservableServer(instance, options, port, module);
     }
-    subscribeObservableServer(instance, namespace, port, module) {
+    subscribeObservableServer(instance, options, port, module) {
         const plainMessageHandlers = this.metadataExplorer.explore(instance);
         const messageHandlers = plainMessageHandlers.map(({ callback, message }) => ({
             message,
             callback: this.contextCreator.create(instance, callback, module),
         }));
-        const observableServer = this.socketServerProvider.scanForSocketServer(namespace, port);
+        const observableServer = this.socketServerProvider.scanForSocketServer(options, port);
         this.injectMiddlewares(observableServer, instance, module);
         this.hookServerToProperties(instance, observableServer.server);
         this.subscribeEvents(instance, messageHandlers, observableServer);
@@ -90,7 +90,7 @@ class WebSocketsController {
             message,
             callback: callback.bind(instance, client),
         }));
-        adapter.bindMessageHandlers(client, handlers, data => fromPromise_1.fromPromise(this.pickResult(data)).pipe(operators_1.switchMap(stream => stream)));
+        adapter.bindMessageHandlers(client, handlers, data => fromPromise_1.fromPromise(this.pickResult(data)).pipe(operators_1.mergeMap(stream => stream)));
     }
     pickResult(defferedResult) {
         return __awaiter(this, void 0, void 0, function* () {

@@ -8,8 +8,9 @@ class WsExceptionsHandler {
     constructor() {
         this.filters = [];
     }
-    handle(exception, client) {
-        if (this.invokeCustomFilters(exception, client) || !client.emit)
+    handle(exception, args) {
+        const client = args.switchToWs().getClient();
+        if (this.invokeCustomFilters(exception, args) || !client.emit)
             return;
         const status = 'error';
         if (!(exception instanceof ws_exception_1.WsException)) {
@@ -31,7 +32,7 @@ class WsExceptionsHandler {
         }
         this.filters = filters;
     }
-    invokeCustomFilters(exception, client) {
+    invokeCustomFilters(exception, args) {
         if (shared_utils_1.isEmpty(this.filters))
             return false;
         const filter = this.filters.find(({ exceptionMetatypes, func }) => {
@@ -39,7 +40,7 @@ class WsExceptionsHandler {
                 !!exceptionMetatypes.find(ExceptionMetatype => exception instanceof ExceptionMetatype);
             return hasMetatype;
         });
-        filter && filter.func(exception, client);
+        filter && filter.func(exception, args);
         return !!filter;
     }
 }

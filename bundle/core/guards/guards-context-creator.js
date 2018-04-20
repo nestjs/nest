@@ -16,32 +16,35 @@ class GuardsContextCreator extends context_creator_1.ContextCreator {
         return this.createContext(instance, callback, constants_1.GUARDS_METADATA);
     }
     createConcreteContext(metadata) {
-        if (shared_utils_1.isUndefined(metadata) || shared_utils_1.isEmpty(metadata) || !this.moduleContext) {
+        if (shared_utils_1.isUndefined(metadata) || shared_utils_1.isEmpty(metadata)) {
             return [];
         }
-        const isGlobalMetadata = metadata === this.getGlobalMetadata();
-        return isGlobalMetadata
-            ? this.createGlobalMetadataContext(metadata)
-            : iterare_1.default(metadata)
-                .filter((metatype) => metatype && metatype.name)
-                .map(metatype => this.getInstanceByMetatype(metatype))
-                .filter((wrapper) => wrapper && wrapper.instance)
-                .map(wrapper => wrapper.instance)
-                .filter((guard) => guard && shared_utils_1.isFunction(guard.canActivate))
-                .toArray();
-    }
-    createGlobalMetadataContext(metadata) {
         return iterare_1.default(metadata)
-            .filter(guard => guard && guard.canActivate && shared_utils_1.isFunction(guard.canActivate))
+            .filter((guard) => guard && (guard.name || guard.canActivate))
+            .map(guard => this.getGuardInstance(guard))
+            .filter((guard) => guard && shared_utils_1.isFunction(guard.canActivate))
             .toArray();
     }
-    getInstanceByMetatype(metatype) {
+    getGuardInstance(guard) {
+        const isObject = guard.canActivate;
+        if (isObject) {
+            return guard;
+        }
+        const instanceWrapper = this.getInstanceByMetatype(guard);
+        return instanceWrapper && instanceWrapper.instance
+            ? instanceWrapper.instance
+            : null;
+    }
+    getInstanceByMetatype(guard) {
+        if (!this.moduleContext) {
+            return undefined;
+        }
         const collection = this.container.getModules();
         const module = collection.get(this.moduleContext);
         if (!module) {
             return undefined;
         }
-        return module.injectables.get(metatype.name);
+        return module.injectables.get(guard.name);
     }
     getGlobalMetadata() {
         if (!this.config) {

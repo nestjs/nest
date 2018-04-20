@@ -18,7 +18,7 @@ export declare class RpcContextCreator {
     private readonly interceptorsContextCreator;
     private readonly interceptorsConsumer;
     constructor(rpcProxy: RpcProxy, exceptionFiltersContext: ExceptionFiltersContext, pipesCreator: PipesContextCreator, pipesConsumer: PipesConsumer, guardsContextCreator: GuardsContextCreator, guardsConsumer: GuardsConsumer, interceptorsContextCreator: InterceptorsContextCreator, interceptorsConsumer: InterceptorsConsumer);
-    create(instance: Controller, callback: (data) => Observable<any>, module: any): (data) => Promise<Observable<any>>;
+    create(instance: Controller, callback: (data) => Observable<any>, module: any): (...args) => Promise<Observable<any>>;
     reflectCallbackParamtypes(instance: Controller, callback: (...args) => any): any[];
     getDataMetatype(instance: any, callback: any): any;
 }

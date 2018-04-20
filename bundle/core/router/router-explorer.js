@@ -23,7 +23,7 @@ class RouterExplorer {
         this.config = config;
         this.routerMethodFactory = new router_method_factory_1.RouterMethodFactory();
         this.logger = new logger_service_1.Logger(RouterExplorer.name, true);
-        this.executionContextCreator = new router_execution_context_1.RouterExecutionContext(new route_params_factory_1.RouteParamsFactory(), new pipes_context_creator_1.PipesContextCreator(config), new pipes_consumer_1.PipesConsumer(), new guards_context_creator_1.GuardsContextCreator(container, config), new guards_consumer_1.GuardsConsumer(), new interceptors_context_creator_1.InterceptorsContextCreator(container, config), new interceptors_consumer_1.InterceptorsConsumer(), container.getApplicationRef());
+        this.executionContextCreator = new router_execution_context_1.RouterExecutionContext(new route_params_factory_1.RouteParamsFactory(), new pipes_context_creator_1.PipesContextCreator(container, config), new pipes_consumer_1.PipesConsumer(), new guards_context_creator_1.GuardsContextCreator(container, config), new guards_consumer_1.GuardsConsumer(), new interceptors_context_creator_1.InterceptorsContextCreator(container, config), new interceptors_consumer_1.InterceptorsConsumer(), container.getApplicationRef());
     }
     explore(instance, metatype, module, appInstance, basePath) {
         const routerPaths = this.scanForPaths(instance);
@@ -80,7 +80,7 @@ class RouterExplorer {
     }
     createCallbackProxy(instance, callback, methodName, module, requestMethod) {
         const executionContext = this.executionContextCreator.create(instance, callback, methodName, module, requestMethod);
-        const exceptionFilter = this.exceptionsFilter.create(instance, callback);
+        const exceptionFilter = this.exceptionsFilter.create(instance, callback, module);
         return this.routerProxy.createProxy(executionContext, exceptionFilter);
     }
 }

@@ -1,3 +1,4 @@
+import { NestInterceptor } from '../../interfaces';
 /**
  * Binds interceptors to the particular context.
  * When the `@UseInterceptors()` is used on the controller level:
@@ -6,6 +7,6 @@
  * When the `@UseInterceptors()` is used on the handle level:
  * - Interceptor will be registered only to specified method
  *
- * @param  {} ...interceptors (types)
+ * @param  {} ...interceptors
  */
-export declare function UseInterceptors(...interceptors: any[]): (target: object, key?: any, descriptor?: any) => any;
+export declare function UseInterceptors(...interceptors: (NestInterceptor | Function)[]): (target: any, key?: any, descriptor?: any) => any;

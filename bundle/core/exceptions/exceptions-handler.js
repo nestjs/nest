@@ -10,8 +10,8 @@ class ExceptionsHandler {
         this.applicationRef = applicationRef;
         this.filters = [];
     }
-    next(exception, response) {
-        if (this.invokeCustomFilters(exception, response))
+    next(exception, ctx) {
+        if (this.invokeCustomFilters(exception, ctx))
             return;
         if (!(exception instanceof common_2.HttpException)) {
             const body = {
@@ -19,7 +19,7 @@ class ExceptionsHandler {
                 message: constants_1.messages.UNKNOWN_EXCEPTION_MESSAGE,
             };
             const statusCode = 500;
-            this.applicationRef.reply(response, body, statusCode);
+            this.applicationRef.reply(ctx.getArgByIndex(1), body, statusCode);
             if (this.isExceptionObject(exception)) {
                 return ExceptionsHandler.logger.error(exception.message, exception.stack);
             }
@@ -32,7 +32,7 @@ class ExceptionsHandler {
                 statusCode: exception.getStatus(),
                 message: res,
             };
-        this.applicationRef.reply(response, message, exception.getStatus());
+        this.applicationRef.reply(ctx.getArgByIndex(1), message, exception.getStatus());
     }
     setCustomFilters(filters) {
         if (!Array.isArray(filters)) {

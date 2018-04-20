@@ -14,12 +14,16 @@ const client_proxy_1 = require("./client-proxy");
 const common_1 = require("@nestjs/common");
 const constants_1 = require("./../constants");
 class ClientTCP extends client_proxy_1.ClientProxy {
-    constructor({ port, host }) {
+    constructor(options) {
         super();
         this.logger = new common_1.Logger(ClientTCP.name);
         this.isConnected = false;
-        this.port = port || constants_1.TCP_DEFAULT_PORT;
-        this.host = host || constants_1.TCP_DEFAULT_HOST;
+        this.port =
+            this.getOptionsProp(options, 'port') ||
+                constants_1.TCP_DEFAULT_PORT;
+        this.host =
+            this.getOptionsProp(options, 'host') ||
+                constants_1.TCP_DEFAULT_HOST;
     }
     init(callback) {
         this.socket = this.createSocket();

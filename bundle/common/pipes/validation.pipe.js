@@ -66,7 +66,7 @@ let ValidationPipe = class ValidationPipe {
     }
 };
 ValidationPipe = __decorate([
-    component_decorator_1.Pipe(),
+    component_decorator_1.Injectable(),
     __metadata("design:paramtypes", [Object])
 ], ValidationPipe);
 exports.ValidationPipe = ValidationPipe;

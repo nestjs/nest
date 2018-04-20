@@ -140,6 +140,6 @@
     "instrument": true
   },
   "lint-staged": {
-    "*.{ts,json,css,md}": ["prettier --write", "git add"]
+    "src/**/*.{ts,json,css,md}": ["npm run prettier", "git add"]
   }
 }

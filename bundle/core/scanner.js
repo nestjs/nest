@@ -5,6 +5,7 @@ const constants_1 = require("@nestjs/common/constants");
 const application_config_1 = require("./application-config");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const constants_2 = require("./constants");
+const circular_dependency_exception_1 = require("./errors/exceptions/circular-dependency.exception");
 class DependenciesScanner {
     constructor(container, metadataScanner, applicationConfig = new application_config_1.ApplicationConfig()) {
         this.container = container;
@@ -33,24 +34,25 @@ class DependenciesScanner {
     scanModulesForDependencies() {
         const modules = this.container.getModules();
         modules.forEach(({ metatype }, token) => {
-            this.reflectRelatedModules(metatype, token);
+            this.reflectRelatedModules(metatype, token, metatype.name);
             this.reflectComponents(metatype, token);
             this.reflectControllers(metatype, token);
             this.reflectExports(metatype, token);
         });
     }
-    reflectRelatedModules(module, token) {
+    reflectRelatedModules(module, token, context) {
         const modules = [
             ...this.reflectMetadata(module, constants_1.metadata.MODULES),
             ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.MODULES),
             ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.IMPORTS),
         ];
-        modules.map(related => this.storeRelatedModule(related, token));
+        modules.map(related => this.storeRelatedModule(related, token, context));
     }
     reflectComponents(module, token) {
         const components = [
             ...this.reflectMetadata(module, constants_1.metadata.COMPONENTS),
             ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.COMPONENTS),
+            ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.PROVIDERS),
         ];
         components.map(component => {
             this.storeComponent(component, token);
@@ -75,8 +77,10 @@ class DependenciesScanner {
         if (!obj || !obj.prototype) {
             return;
         }
-        this.reflectGuards(obj, token);
-        this.reflectInterceptors(obj, token);
+        this.reflectInjectables(obj, token, constants_1.GUARDS_METADATA);
+        this.reflectInjectables(obj, token, constants_1.INTERCEPTORS_METADATA);
+        this.reflectInjectables(obj, token, constants_1.EXCEPTION_FILTERS_METADATA);
+        this.reflectInjectables(obj, token, constants_1.PIPES_METADATA);
     }
     reflectExports(module, token) {
         const exports = [
@@ -89,24 +93,25 @@ class DependenciesScanner {
         const middlewares = this.reflectMetadata(component, constants_1.GATEWAY_MIDDLEWARES);
         middlewares.map(middleware => this.storeComponent(middleware, token));
     }
-    reflectGuards(component, token) {
-        const controllerGuards = this.reflectMetadata(component, constants_1.GUARDS_METADATA);
-        const methodsGuards = this.metadataScanner.scanFromPrototype(null, component.prototype, this.reflectKeyMetadata.bind(this, component, constants_1.GUARDS_METADATA));
-        const flattenMethodsGuards = methodsGuards.reduce((a, b) => a.concat(b), []);
-        [...controllerGuards, ...flattenMethodsGuards].map(guard => this.storeInjectable(guard, token));
-    }
-    reflectInterceptors(component, token) {
-        const controllerInterceptors = this.reflectMetadata(component, constants_1.INTERCEPTORS_METADATA);
-        const methodsInterceptors = this.metadataScanner.scanFromPrototype(null, component.prototype, this.reflectKeyMetadata.bind(this, component, constants_1.INTERCEPTORS_METADATA));
-        const flattenMethodsInterceptors = methodsInterceptors.reduce((a, b) => a.concat(b), []);
-        [...controllerInterceptors, ...flattenMethodsInterceptors].map(guard => this.storeInjectable(guard, token));
+    reflectInjectables(component, token, metadataKey) {
+        const controllerInjectables = this.reflectMetadata(component, metadataKey);
+        const methodsInjectables = this.metadataScanner.scanFromPrototype(null, component.prototype, this.reflectKeyMetadata.bind(this, component, metadataKey));
+        const flattenMethodsInjectables = methodsInjectables.reduce((a, b) => a.concat(b), []);
+        const mergedInjectableConstructors = [
+            ...controllerInjectables,
+            ...flattenMethodsInjectables,
+        ].filter(shared_utils_1.isFunction);
+        mergedInjectableConstructors.map(injectable => this.storeInjectable(injectable, token));
     }
     reflectKeyMetadata(component, key, method) {
         const descriptor = Reflect.getOwnPropertyDescriptor(component.prototype, method);
         return descriptor ? Reflect.getMetadata(key, descriptor.value) : undefined;
     }
-    storeRelatedModule(related, token) {
-        if (related.forwardRef) {
+    storeRelatedModule(related, token, context) {
+        if (shared_utils_1.isUndefined(related)) {
+            throw new circular_dependency_exception_1.CircularDependencyException(context);
+        }
+        if (related && related.forwardRef) {
             return this.container.addRelatedModule(related.forwardRef(), token);
         }
         this.container.addRelatedModule(related, token);

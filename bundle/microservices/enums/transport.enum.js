@@ -5,5 +5,6 @@ var Transport;
     Transport[Transport["TCP"] = 0] = "TCP";
     Transport[Transport["REDIS"] = 1] = "REDIS";
     Transport[Transport["NATS"] = 2] = "NATS";
-    Transport[Transport["STAN"] = 3] = "STAN";
+    Transport[Transport["MQTT"] = 3] = "MQTT";
+    Transport[Transport["GRPC"] = 4] = "GRPC";
 })(Transport = exports.Transport || (exports.Transport = {}));

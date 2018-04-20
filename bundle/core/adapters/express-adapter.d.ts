@@ -1,9 +1,9 @@
-import { HttpServer, RequestHandler, ErrorHandler } from '@nestjs/common/interfaces';
+import { HttpServer, RequestHandler } from '@nestjs/common/interfaces';
+import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
 export declare class ExpressAdapter implements HttpServer {
     private readonly instance;
     constructor(instance: any);
-    use(handler: RequestHandler | ErrorHandler): any;
-    use(path: any, handler: RequestHandler | ErrorHandler): any;
+    use(...args: any[]): any;
     get(handler: RequestHandler): any;
     get(path: any, handler: RequestHandler): any;
     post(handler: RequestHandler): any;
@@ -30,4 +30,9 @@ export declare class ExpressAdapter implements HttpServer {
     enable(...args: any[]): any;
     disable(...args: any[]): any;
     engine(...args: any[]): any;
+    useStaticAssets(path: string, options: ServeStaticOptions): any;
+    setBaseViewsDir(path: string): any;
+    setViewEngine(engine: string): any;
+    getRequestMethod(request: any): string;
+    getRequestUrl(request: any): string;
 }

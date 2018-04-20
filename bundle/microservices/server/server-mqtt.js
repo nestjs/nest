@@ -8,50 +8,46 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const mqtt = require("mqtt");
 const server_1 = require("./server");
 const constants_1 = require("../constants");
 const constants_2 = require("./../constants");
+let mqttPackage = {};
 class ServerMqtt extends server_1.Server {
     constructor(options) {
         super();
         this.options = options;
-        this.url = options.url || constants_2.MQTT_DEFAULT_URL;
+        this.url =
+            this.getOptionsProp(options, 'url') || constants_2.MQTT_DEFAULT_URL;
+        mqttPackage = this.loadPackage('mqtt', ServerMqtt.name);
     }
     listen(callback) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.subClient = yield this.createMqttClient();
-            this.pubClient = yield this.createMqttClient();
-            this.handleError(this.pubClient);
-            this.handleError(this.subClient);
+            this.mqttClient = this.createMqttClient();
             this.start(callback);
         });
     }
     start(callback) {
-        this.bindEvents(this.subClient, this.pubClient);
-        this.subClient.on(constants_2.CONNECT_EVENT, callback);
+        this.handleError(this.mqttClient);
+        this.bindEvents(this.mqttClient);
+        this.mqttClient.on(constants_2.CONNECT_EVENT, callback);
     }
-    bindEvents(subClient, pubClient) {
-        subClient.on(constants_2.MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
+    bindEvents(mqttClient) {
+        mqttClient.on(constants_2.MESSAGE_EVENT, this.getMessageHandler(mqttClient).bind(this));
         const registeredPatterns = Object.keys(this.messageHandlers);
-        registeredPatterns.forEach(pattern => subClient.subscribe(this.getAckQueueName(pattern)));
+        registeredPatterns.forEach(pattern => mqttClient.subscribe(this.getAckQueueName(pattern)));
     }
     close() {
-        this.pubClient && this.pubClient.end();
-        this.subClient && this.subClient.end();
+        this.mqttClient && this.mqttClient.end();
     }
     createMqttClient() {
-        const client = mqtt.connect(this.url, {
-            reconnectPeriod: this.options.retryDelay,
-        });
-        return new Promise(resolve => client.on(constants_2.CONNECT_EVENT, () => resolve(client)));
+        return mqttPackage.connect(this.url, this.options.options);
     }
     getMessageHandler(pub) {
         return (channel, buffer) => __awaiter(this, void 0, void 0, function* () { return yield this.handleMessage(channel, buffer, pub); });
     }
     handleMessage(channel, buffer, pub) {
         return __awaiter(this, void 0, void 0, function* () {
-            const packet = this.serialize(buffer);
+            const packet = this.deserialize(buffer.toString());
             const pattern = channel.replace(/_ack$/, '');
             const publish = this.getPublisher(pub, pattern, packet.id);
             const status = 'error';
@@ -63,10 +59,10 @@ class ServerMqtt extends server_1.Server {
             response$ && this.send(response$, publish);
         });
     }
-    getPublisher(pub, pattern, id) {
-        return response => pub.publish(this.getResQueueName(pattern, id), JSON.stringify(Object.assign(response, { id })));
+    getPublisher(client, pattern, id) {
+        return response => client.publish(this.getResQueueName(pattern), JSON.stringify(Object.assign(response, { id })));
     }
-    serialize(content) {
+    deserialize(content) {
         try {
             return JSON.parse(content);
         }
@@ -77,8 +73,8 @@ class ServerMqtt extends server_1.Server {
     getAckQueueName(pattern) {
         return `${pattern}_ack`;
     }
-    getResQueueName(pattern, id) {
-        return `${pattern}_${id}_res`;
+    getResQueueName(pattern) {
+        return `${pattern}_res`;
     }
     handleError(stream) {
         stream.on(constants_2.ERROR_EVENT, err => this.logger.error(err));

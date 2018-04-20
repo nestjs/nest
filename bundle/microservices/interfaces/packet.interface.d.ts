@@ -7,6 +7,6 @@ export interface ReadPacket<T = any> {
 }
 export interface WritePacket<T = any> {
     err?: any;
-    response?: any;
+    response?: T;
     isDisposed?: boolean;
 }

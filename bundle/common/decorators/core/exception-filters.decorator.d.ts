@@ -8,6 +8,6 @@ import { ExceptionFilter } from '../../index';
  * When the `@UseFilters()` is used on the handle level:
  * - Exception Filter will be set up only to specified method
  *
- * @param  {ExceptionFilter[]} ...filters (instances)
+ * @param  {ExceptionFilter[]} ...filters
  */
-export declare const UseFilters: (...filters: ExceptionFilter[]) => (target: object, key?: any, descriptor?: any) => any;
+export declare const UseFilters: (...filters: (Function | ExceptionFilter<any>)[]) => (target: any, key?: any, descriptor?: any) => any;

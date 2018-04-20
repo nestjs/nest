@@ -8,17 +8,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const redis = require("redis");
 const client_proxy_1 = require("./client-proxy");
 const logger_service_1 = require("@nestjs/common/services/logger.service");
 const constants_1 = require("./../constants");
+let redisPackage = {};
 class ClientRedis extends client_proxy_1.ClientProxy {
     constructor(options) {
         super();
         this.options = options;
         this.logger = new logger_service_1.Logger(client_proxy_1.ClientProxy.name);
         this.isExplicitlyTerminated = false;
-        this.url = options.url || constants_1.REDIS_DEFAULT_URL;
+        this.url =
+            this.getOptionsProp(options, 'url') || constants_1.REDIS_DEFAULT_URL;
+        redisPackage = this.loadPackage('redis', ClientRedis.name);
     }
     publish(partialPacket, callback) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -27,12 +29,12 @@ class ClientRedis extends client_proxy_1.ClientProxy {
             }
             const packet = this.assignPacketId(partialPacket);
             const pattern = JSON.stringify(partialPacket.pattern);
-            const responseChannel = this.getResPatternName(pattern, packet.id);
+            const responseChannel = this.getResPatternName(pattern);
             const responseCallback = (channel, buffer) => {
-                if (responseChannel !== channel) {
+                const { err, response, isDisposed, id } = JSON.parse(buffer);
+                if (id !== packet.id) {
                     return void 0;
                 }
-                const { err, response, isDisposed } = JSON.parse(buffer);
                 if (isDisposed || err) {
                     callback({
                         err,
@@ -50,7 +52,16 @@ class ClientRedis extends client_proxy_1.ClientProxy {
             };
             this.subClient.on(constants_1.MESSAGE_EVENT, responseCallback);
             this.subClient.subscribe(responseChannel);
-            yield new Promise(resolve => this.subClient.on(constants_1.SUBSCRIBE, channel => channel === responseChannel && resolve()));
+            yield new Promise(resolve => {
+                const handler = channel => {
+                    if (channel && channel !== responseChannel) {
+                        return void 0;
+                    }
+                    this.subClient.removeListener(constants_1.SUBSCRIBE, handler);
+                    resolve();
+                };
+                this.subClient.on(constants_1.SUBSCRIBE, handler);
+            });
             this.pubClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
             return responseCallback;
         });
@@ -58,8 +69,8 @@ class ClientRedis extends client_proxy_1.ClientProxy {
     getAckPatternName(pattern) {
         return `${pattern}_ack`;
     }
-    getResPatternName(pattern, id) {
-        return `${pattern}_${id}_res`;
+    getResPatternName(pattern) {
+        return `${pattern}_res`;
     }
     close() {
         this.pubClient && this.pubClient.quit();
@@ -73,7 +84,7 @@ class ClientRedis extends client_proxy_1.ClientProxy {
         this.handleError(this.subClient, callback);
     }
     createClient() {
-        return redis.createClient(Object.assign({}, this.getClientOptions(), { url: this.url }));
+        return redisPackage.createClient(Object.assign({}, this.getClientOptions(), { url: this.url }));
     }
     handleError(client, callback) {
         const errorCallback = err => {
@@ -97,11 +108,12 @@ class ClientRedis extends client_proxy_1.ClientProxy {
     }
     createRetryStrategy(options) {
         if (this.isExplicitlyTerminated ||
-            !this.options.retryAttempts ||
-            options.attempt > this.options.retryAttempts) {
+            !this.getOptionsProp(this.options, 'retryAttempts') ||
+            options.attempt >
+                this.getOptionsProp(this.options, 'retryAttempts')) {
             return undefined;
         }
-        return this.options.retryDelay || 0;
+        return this.getOptionsProp(this.options, 'retryDelay') || 0;
     }
 }
 exports.ClientRedis = ClientRedis;

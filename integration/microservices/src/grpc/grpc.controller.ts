@@ -26,7 +26,7 @@ export class GrpcController {
   @HttpCode(200)
   call(@Body() data: number[]): Observable<number> {
     const svc = this.client.getService<any>('Math');
-    return svc.Sum(data);
+    return svc.sum(data);
   }
 
   @GrpcRoute('Math', 'Sum')

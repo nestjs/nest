@@ -1,5 +1,5 @@
 import 'reflect-metadata';
 /**
- * Attaches the native Web Socket Server to the given property.
+ * Attaches native Web Socket Server to a given property.
  */
 export declare const WebSocketServer: () => PropertyDecorator;

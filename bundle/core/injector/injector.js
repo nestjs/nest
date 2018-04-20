@@ -21,7 +21,7 @@ class Injector {
             const currentMetatype = collection.get(metatype.name);
             if (currentMetatype.instance !== null)
                 return;
-            yield this.resolveConstructorParams(wrapper, module, null, null, instances => {
+            yield this.resolveConstructorParams(wrapper, module, null, instances => {
                 collection.set(metatype.name, {
                     instance: new metatype(...instances),
                     metatype,
@@ -49,10 +49,10 @@ class Injector {
             return null;
         collection.set(name, Object.assign({}, collection.get(name), { instance: Object.create(metatype.prototype) }));
     }
-    loadInstanceOfComponent(wrapper, module, context = []) {
+    loadInstanceOfComponent(wrapper, module) {
         return __awaiter(this, void 0, void 0, function* () {
             const components = module.components;
-            yield this.loadInstance(wrapper, components, module, context);
+            yield this.loadInstance(wrapper, components, module);
         });
     }
     applyDoneSubject(wrapper) {
@@ -63,7 +63,7 @@ class Injector {
         wrapper.isPending = true;
         return done;
     }
-    loadInstance(wrapper, collection, module, context = []) {
+    loadInstance(wrapper, collection, module) {
         return __awaiter(this, void 0, void 0, function* () {
             if (wrapper.isPending) {
                 return yield wrapper.done$;
@@ -76,7 +76,7 @@ class Injector {
             }
             if (currentMetatype.isResolved)
                 return null;
-            yield this.resolveConstructorParams(wrapper, module, inject, context, (instances) => __awaiter(this, void 0, void 0, function* () {
+            yield this.resolveConstructorParams(wrapper, module, inject, (instances) => __awaiter(this, void 0, void 0, function* () {
                 if (shared_utils_1.isNil(inject)) {
                     currentMetatype.instance = Object.assign(currentMetatype.instance, new metatype(...instances));
                 }
@@ -89,14 +89,14 @@ class Injector {
             }));
         });
     }
-    resolveConstructorParams(wrapper, module, inject, context, callback) {
+    resolveConstructorParams(wrapper, module, inject, callback) {
         return __awaiter(this, void 0, void 0, function* () {
             let isResolved = true;
             const args = shared_utils_1.isNil(inject)
                 ? this.reflectConstructorParams(wrapper.metatype)
                 : inject;
             const instances = yield Promise.all(args.map((param, index) => __awaiter(this, void 0, void 0, function* () {
-                const paramWrapper = yield this.resolveSingleParam(wrapper, param, { index, length: args.length }, module, context);
+                const paramWrapper = yield this.resolveSingleParam(wrapper, param, { index, length: args.length }, module);
                 if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
                     isResolved = false;
                 }
@@ -114,13 +114,13 @@ class Injector {
     reflectSelfParams(type) {
         return Reflect.getMetadata(constants_1.SELF_DECLARED_DEPS_METADATA, type) || [];
     }
-    resolveSingleParam(wrapper, param, { index, length }, module, context) {
+    resolveSingleParam(wrapper, param, { index, length }, module) {
         return __awaiter(this, void 0, void 0, function* () {
             if (shared_utils_1.isUndefined(param)) {
                 throw new undefined_dependency_exception_1.UndefinedDependencyException(wrapper.name, index, length);
             }
             const token = this.resolveParamToken(wrapper, param);
-            return yield this.resolveComponentInstance(module, shared_utils_1.isFunction(token) ? token.name : token, { index, length }, wrapper, context);
+            return yield this.resolveComponentInstance(module, shared_utils_1.isFunction(token) ? token.name : token, { index, length }, wrapper);
         });
     }
     resolveParamToken(wrapper, param) {
@@ -130,10 +130,10 @@ class Injector {
         wrapper.forwardRef = true;
         return param.forwardRef();
     }
-    resolveComponentInstance(module, name, { index, length }, wrapper, context) {
+    resolveComponentInstance(module, name, { index, length }, wrapper) {
         return __awaiter(this, void 0, void 0, function* () {
             const components = module.components;
-            const instanceWrapper = yield this.scanForComponent(components, module, { name, index, length }, wrapper, context);
+            const instanceWrapper = yield this.lookupComponent(components, module, { name, index, length }, wrapper);
             if (!instanceWrapper.isResolved && !instanceWrapper.forwardRef) {
                 yield this.loadInstanceOfComponent(instanceWrapper, module);
             }
@@ -143,67 +143,33 @@ class Injector {
             return instanceWrapper;
         });
     }
-    scanForComponent(components, module, { name, index, length }, { metatype }, context = []) {
+    lookupComponent(components, module, { name, index, length }, { metatype }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const component = yield this.scanForComponentInScopes(context, { name, index, length }, metatype);
-            if (component) {
-                return component;
-            }
-            const scanInExports = () => this.scanForComponentInExports(components, { name, index, length }, module, metatype, context);
+            const scanInExports = () => this.lookupComponentInExports(components, { name, index, length }, module, metatype);
             return components.has(name) ? components.get(name) : yield scanInExports();
         });
     }
-    scanForComponentInExports(components, { name, index, length }, module, metatype, context = []) {
+    lookupComponentInExports(components, { name, index, length }, module, metatype) {
         return __awaiter(this, void 0, void 0, function* () {
-            const instanceWrapper = yield this.scanForComponentInRelatedModules(module, name, context);
+            const instanceWrapper = yield this.lookupComponentInRelatedModules(module, name);
             if (shared_utils_1.isNil(instanceWrapper)) {
                 throw new unknown_dependencies_exception_1.UnknownDependenciesException(metatype.name, index, length);
             }
             return instanceWrapper;
         });
     }
-    scanForComponentInScopes(context, { name, index, length }, metatype) {
-        return __awaiter(this, void 0, void 0, function* () {
-            context = context || [];
-            for (const ctx of context) {
-                const component = yield this.scanForComponentInScope(ctx, { name, index, length }, metatype);
-                if (component)
-                    return component;
-            }
-            return null;
-        });
-    }
-    scanForComponentInScope(context, { name, index, length }, metatype) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const component = yield this.scanForComponent(context.components, context, { name, index, length }, { metatype }, null);
-                if (!component.isResolved && !component.forwardRef) {
-                    yield this.loadInstanceOfComponent(component, context);
-                }
-                return component;
-            }
-            catch (e) {
-                if (e instanceof runtime_exception_1.RuntimeException) {
-                    return null;
-                }
-                throw e;
-            }
-        });
-    }
-    scanForComponentInRelatedModules(module, name, context) {
+    lookupComponentInRelatedModules(module, name) {
         return __awaiter(this, void 0, void 0, function* () {
             let component = null;
             const relatedModules = module.relatedModules || [];
             for (const relatedModule of this.flatMap([...relatedModules.values()])) {
                 const { components, exports } = relatedModule;
-                const isInScope = context === null;
-                if ((!exports.has(name) && !isInScope) || !components.has(name)) {
+                if (!exports.has(name) || !components.has(name)) {
                     continue;
                 }
                 component = components.get(name);
                 if (!component.isResolved && !component.forwardRef) {
-                    const ctx = isInScope ? [module] : [].concat(context, module);
-                    yield this.loadInstanceOfComponent(component, relatedModule, ctx);
+                    yield this.loadInstanceOfComponent(component, relatedModule);
                     break;
                 }
             }
@@ -220,7 +186,10 @@ class Injector {
         });
     }
     flatMap(modules) {
-        return modules.concat.apply(modules, modules.map((module) => {
+        if (!modules) {
+            return [];
+        }
+        const flatten = (module) => {
             const { relatedModules, exports } = module;
             return this.flatMap([...relatedModules.values()]
                 .filter(related => !!related)
@@ -228,7 +197,8 @@ class Injector {
                 const { metatype } = related;
                 return exports.has(metatype.name);
             }));
-        }));
+        };
+        return modules.concat.apply(modules, modules.map(flatten));
     }
 }
 exports.Injector = Injector;

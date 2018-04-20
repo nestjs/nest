@@ -14,7 +14,7 @@ class RoutesResolver {
         this.config = config;
         this.logger = new logger_service_1.Logger(RoutesResolver.name, true);
         this.routerProxy = new router_proxy_1.RouterProxy();
-        this.routerExceptionsFilter = new router_exception_filters_1.RouterExceptionFilters(config, container.getApplicationRef());
+        this.routerExceptionsFilter = new router_exception_filters_1.RouterExceptionFilters(container, config, container.getApplicationRef());
         this.routerBuilder = new router_explorer_1.RouterExplorer(new metadata_scanner_1.MetadataScanner(), this.container, this.routerProxy, this.routerExceptionsFilter, this.config);
     }
     resolve(appInstance, basePath) {
@@ -38,12 +38,14 @@ class RoutesResolver {
         });
     }
     registerNotFoundHandler() {
-        const callback = (req, res) => {
-            throw new common_1.NotFoundException(`Cannot ${req.method} ${req.url}`);
-        };
-        const handler = this.routerExceptionsFilter.create({}, callback);
-        const proxy = this.routerProxy.createProxy(callback, handler);
         const applicationRef = this.container.getApplicationRef();
+        const callback = (req, res) => {
+            const method = applicationRef.getRequestMethod(req);
+            const url = applicationRef.getRequestUrl(req);
+            throw new common_1.NotFoundException(`Cannot ${method} ${url}`);
+        };
+        const handler = this.routerExceptionsFilter.create({}, callback, undefined);
+        const proxy = this.routerProxy.createProxy(callback, handler);
         applicationRef.setNotFoundHandler &&
             applicationRef.setNotFoundHandler(proxy);
     }
@@ -51,11 +53,10 @@ class RoutesResolver {
         const callback = (err, req, res, next) => {
             throw this.mapExternalException(err);
         };
-        const handler = this.routerExceptionsFilter.create({}, callback);
+        const handler = this.routerExceptionsFilter.create({}, callback, undefined);
         const proxy = this.routerProxy.createExceptionLayerProxy(callback, handler);
         const applicationRef = this.container.getApplicationRef();
-        applicationRef.setErrorHandler &&
-            applicationRef.setErrorHandler(proxy);
+        applicationRef.setErrorHandler && applicationRef.setErrorHandler(proxy);
     }
     mapExternalException(err) {
         switch (true) {

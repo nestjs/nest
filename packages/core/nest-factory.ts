@@ -56,6 +56,11 @@ export class NestFactoryStatic {
   ): Promise<INestApplication & INestExpressApplication>;
   public async create(
     module: any,
+    httpServer: any,
+    options?: NestApplicationOptions,
+  ): Promise<INestApplication & INestExpressApplication>;
+  public async create(
+    module: any,
     serverOrOptions?: any,
     options?: NestApplicationOptions,
   ): Promise<
@@ -186,7 +191,7 @@ export class NestFactoryStatic {
   }
 
   private applyExpressAdapter(httpAdapter: HttpServer): HttpServer {
-    const isAdapter = !!httpAdapter.getHttpServer;
+    const isAdapter = httpAdapter.getHttpServer;
     if (isAdapter) {
       return httpAdapter;
     }

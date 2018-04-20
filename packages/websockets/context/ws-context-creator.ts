@@ -27,9 +27,9 @@ export class WsContextCreator {
 
   public create(
     instance: Controller,
-    callback: (client, data) => void,
+    callback: (...args) => void,
     module,
-  ): (client, data) => Promise<void> {
+  ): (...args) => Promise<void> {
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
       callback,
@@ -44,10 +44,10 @@ export class WsContextCreator {
       module,
     );
 
-    return this.wsProxy.create(async (client, data) => {
+    return this.wsProxy.create(async (...args) => {
       const canActivate = await this.guardsConsumer.tryActivate(
         guards,
-        [client, data],
+        args,
         instance,
         callback,
       );
@@ -55,16 +55,17 @@ export class WsContextCreator {
         throw new WsException(FORBIDDEN_MESSAGE);
       }
       const handler = async () => {
+        const [client, data, ...params] = args;
         const result = await this.pipesConsumer.applyPipes(
           data,
           { metatype },
           pipes,
         );
-        return callback.call(instance, client, result);
+        return callback.call(instance, client, result, ...params);
       };
       return await this.interceptorsConsumer.intercept(
         interceptors,
-        [client, data],
+        args,
         instance,
         callback,
         handler,

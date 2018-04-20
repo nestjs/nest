@@ -1,13 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const iterare_1 = require("iterare");
 const module_token_factory_1 = require("./injector/module-token-factory");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const unknown_module_exception_1 = require("./errors/exceptions/unknown-module.exception");
+const unknown_element_exception_1 = require("./errors/exceptions/unknown-element.exception");
 class NestApplicationContext {
-    constructor(container, scope, contextModule) {
+    constructor(container, scope, contextModule, isInitialized = true) {
         this.container = container;
         this.scope = scope;
         this.contextModule = contextModule;
         this.moduleTokenFactory = new module_token_factory_1.ModuleTokenFactory();
+        !isInitialized && this.callInitHook();
     }
     selectContextModule() {
         const modules = this.container.getModules().values();
@@ -19,25 +23,37 @@ class NestApplicationContext {
         const scope = this.scope.concat(moduleMetatype);
         const token = this.moduleTokenFactory.create(module, scope);
         const selectedModule = modules.get(token);
-        return selectedModule
-            ? new NestApplicationContext(this.container, scope, selectedModule)
-            : null;
+        if (!selectedModule) {
+            throw new unknown_module_exception_1.UnknownModuleException();
+        }
+        return new NestApplicationContext(this.container, scope, selectedModule);
     }
-    get(typeOrToken) {
+    get(typeOrToken, options = { strict: false }) {
+        if (!(options && options.strict)) {
+            return this.find(typeOrToken);
+        }
         return this.findInstanceByPrototypeOrToken(typeOrToken, this.contextModule);
     }
     find(typeOrToken) {
+        this.initFlattenModule();
+        return this.findInstanceByPrototypeOrToken(typeOrToken, this.contextModuleFixture);
+    }
+    callInitHook() {
         const modules = this.container.getModules();
-        const flattenModule = [...modules.values()].reduce((flatten, curr) => ({
-            components: [...flatten.components, ...curr.components],
-            routes: [...flatten.routes, ...curr.routes],
-            injectables: [...flatten.injectables, ...curr.injectables],
-        }), {
-            components: [],
-            routes: [],
-            injectables: [],
+        modules.forEach(module => {
+            this.callModuleInitHook(module);
         });
-        return this.findInstanceByPrototypeOrToken(typeOrToken, flattenModule);
+    }
+    callModuleInitHook(module) {
+        const components = [...module.routes, ...module.components];
+        iterare_1.default(components)
+            .map(([key, { instance }]) => instance)
+            .filter(instance => !shared_utils_1.isNil(instance))
+            .filter(this.hasOnModuleInitHook)
+            .forEach(instance => instance.onModuleInit());
+    }
+    hasOnModuleInitHook(instance) {
+        return !shared_utils_1.isUndefined(instance.onModuleInit);
     }
     findInstanceByPrototypeOrToken(metatypeOrToken, contextModule) {
         const dependencies = new Map([
@@ -49,9 +65,26 @@ class NestApplicationContext {
             ? metatypeOrToken.name
             : metatypeOrToken;
         const instanceWrapper = dependencies.get(name);
-        return instanceWrapper
-            ? instanceWrapper.instance
-            : null;
+        if (!instanceWrapper) {
+            throw new unknown_element_exception_1.UnknownElementException();
+        }
+        return instanceWrapper.instance;
+    }
+    initFlattenModule() {
+        if (this.contextModuleFixture) {
+            return undefined;
+        }
+        const modules = this.container.getModules();
+        const initialValue = {
+            components: [],
+            routes: [],
+            injectables: [],
+        };
+        this.contextModuleFixture = [...modules.values()].reduce((flatten, curr) => ({
+            components: [...flatten.components, ...curr.components],
+            routes: [...flatten.routes, ...curr.routes],
+            injectables: [...flatten.injectables, ...curr.injectables],
+        }), initialValue);
     }
 }
 exports.NestApplicationContext = NestApplicationContext;

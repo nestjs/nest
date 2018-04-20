@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const constants_1 = require("../constants");
 /**
- * Subscribes to the messages, which fulfils chosen pattern.
+ * Subscribes to incoming messages which fulfils chosen pattern.
  */
 exports.MessagePattern = (metadata) => {
     return (target, key, descriptor) => {
@@ -12,3 +12,7 @@ exports.MessagePattern = (metadata) => {
         return descriptor;
     };
 };
+/**
+ * Registers gRPC route handler for specified service.
+ */
+exports.GrpcRoute = (service, rpc) => exports.MessagePattern({ service, rpc });

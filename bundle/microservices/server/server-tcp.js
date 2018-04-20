@@ -14,12 +14,14 @@ const constants_1 = require("../constants");
 const server_1 = require("./server");
 const constants_2 = require("./../constants");
 class ServerTCP extends server_1.Server {
-    constructor(config) {
+    constructor(options) {
         super();
-        this.config = config;
+        this.options = options;
         this.isExplicitlyTerminated = false;
         this.retryAttemptsCount = 0;
-        this.port = config.port || constants_2.TCP_DEFAULT_PORT;
+        this.port =
+            this.getOptionsProp(options, 'port') ||
+                constants_2.TCP_DEFAULT_PORT;
         this.init();
     }
     listen(callback) {
@@ -52,12 +54,13 @@ class ServerTCP extends server_1.Server {
     }
     handleClose() {
         if (this.isExplicitlyTerminated ||
-            !this.config.retryAttempts ||
-            this.retryAttemptsCount >= this.config.retryAttempts) {
+            !this.getOptionsProp(this.options, 'retryAttempts') ||
+            this.retryAttemptsCount >=
+                this.getOptionsProp(this.options, 'retryAttempts')) {
             return undefined;
         }
         ++this.retryAttemptsCount;
-        return setTimeout(() => this.server.listen(this.port), this.config.retryDelay || 0);
+        return setTimeout(() => this.server.listen(this.port), this.getOptionsProp(this.options, 'retryDelay') || 0);
     }
     init() {
         this.server = net.createServer(this.bindHandler.bind(this));
