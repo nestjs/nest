@@ -14,7 +14,7 @@ export interface ParamProperties {
     index: number;
     type: RouteParamtypes | string;
     data: ParamData;
-    pipes: PipeTransform<any>[];
+    pipes: PipeTransform[];
     extractValue: (req, res, next) => any;
 }
 export declare class RouterExecutionContext {
@@ -33,10 +33,10 @@ export declare class RouterExecutionContext {
     reflectCallbackMetadata(instance: Controller, methodName: string): RouteParamsMetadata;
     reflectCallbackParamtypes(instance: Controller, methodName: string): any[];
     reflectHttpStatusCode(callback: (...args) => any): number;
-    reflectRenderTemplate(callback: any): boolean;
+    reflectRenderTemplate(callback: any): string;
     getArgumentsLength(keys: string[], metadata: RouteParamsMetadata): number;
     createNullArray(length: number): any[];
-    exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata): ParamProperties[];
+    exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata, moduleContext: string): ParamProperties[];
     getCustomFactory(factory: (...args) => void, data: any): (...args) => any;
     mergeParamsMetatypes(paramsProperties: ParamProperties[], paramtypes: any[]): (ParamProperties & {
         metatype?: any;
@@ -46,9 +46,9 @@ export declare class RouterExecutionContext {
         type: any;
         data: any;
     }, transforms: Transform<any>[]): Promise<any>;
-    createGuardsFn(guards: any[], instance: Controller, callback: (...args) => any): (req: any) => Promise<void>;
+    createGuardsFn(guards: any[], instance: Controller, callback: (...args) => any): (args: any[]) => Promise<boolean>;
     createPipesFn(pipes: any[], paramsOptions: (ParamProperties & {
         metatype?: any;
     })[]): (args: any, req: any, res: any, next: any) => Promise<void>;
-    createHandleResponseFn(callback: any, isResponseHandled: boolean, httpStatusCode: number): (result: any, res: any) => any;
+    createHandleResponseFn(callback: any, isResponseHandled: boolean, httpStatusCode: number): (result: any, res: any) => Promise<any>;
 }

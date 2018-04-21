@@ -29,7 +29,7 @@ export declare class WebSocketsController {
   ): void;
   subscribeObservableServer(
     instance: NestGateway,
-    namespace: string,
+    options: any,
     port: number,
     module: string,
   ): void;

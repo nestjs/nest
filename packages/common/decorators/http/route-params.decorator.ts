@@ -18,7 +18,7 @@ const assignMetadata = (
   paramtype: RouteParamtypes,
   index: number,
   data?: ParamData,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+  ...pipes: (Type<PipeTransform> | PipeTransform)[],
 ) => ({
   ...args,
   [`${paramtype}:${index}`]: {
@@ -42,7 +42,7 @@ const createRouteParamDecorator = (paramtype: RouteParamtypes) => {
 
 const createPipesRouteParamDecorator = (paramtype: RouteParamtypes) => (
   data?,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+  ...pipes: (Type<PipeTransform> | PipeTransform)[],
 ): ParameterDecorator => (target, key, index) => {
   const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, target, key) || {};
   const hasParamData = isNil(data) || isString(data);
@@ -80,10 +80,12 @@ export const Headers: (
 ) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.HEADERS);
 
 export function Query();
+// tslint:disable-next-line:unified-signatures
 export function Query(...pipes: (Type<PipeTransform> | PipeTransform)[]);
 export function Query(
   property: string,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+  // tslint:disable-next-line:unified-signatures
+  ...pipes: (Type<PipeTransform> | PipeTransform)[],
 );
 export function Query(
   property?: string | (Type<PipeTransform> | PipeTransform),
@@ -96,10 +98,12 @@ export function Query(
 }
 
 export function Body();
+// tslint:disable-next-line:unified-signatures
 export function Body(...pipes: (Type<PipeTransform> | PipeTransform)[]);
 export function Body(
   property: string,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+  // tslint:disable-next-line:unified-signatures
+  ...pipes: (Type<PipeTransform> | PipeTransform)[],
 );
 export function Body(
   property?: string | (Type<PipeTransform> | PipeTransform),
@@ -112,14 +116,16 @@ export function Body(
 }
 
 export function Param();
+// tslint:disable-next-line:unified-signatures
 export function Param(...pipes: (Type<PipeTransform> | PipeTransform)[]);
 export function Param(
   property: string,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+  // tslint:disable-next-line:unified-signatures
+  ...pipes: (Type<PipeTransform> | PipeTransform)[],
 );
 export function Param(
   property?: string | (Type<PipeTransform> | PipeTransform),
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+  ...pipes: (Type<PipeTransform> | PipeTransform)[],
 ) {
   return createPipesRouteParamDecorator(RouteParamtypes.PARAM)(
     property,

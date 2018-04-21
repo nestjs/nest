@@ -10,8 +10,8 @@ class RpcExceptionsHandler {
     constructor() {
         this.filters = [];
     }
-    handle(exception) {
-        const filterResult$ = this.invokeCustomFilters(exception);
+    handle(exception, host) {
+        const filterResult$ = this.invokeCustomFilters(exception, host);
         if (filterResult$) {
             return filterResult$;
         }
@@ -36,7 +36,7 @@ class RpcExceptionsHandler {
         }
         this.filters = filters;
     }
-    invokeCustomFilters(exception) {
+    invokeCustomFilters(exception, host) {
         if (shared_utils_1.isEmpty(this.filters))
             return null;
         const filter = this.filters.find(({ exceptionMetatypes, func }) => {
@@ -44,7 +44,7 @@ class RpcExceptionsHandler {
                 !!exceptionMetatypes.find(ExceptionMetatype => exception instanceof ExceptionMetatype);
             return hasMetatype;
         });
-        return filter ? filter.func(exception) : null;
+        return filter ? filter.func(exception, host) : null;
     }
 }
 RpcExceptionsHandler.logger = new common_1.Logger(RpcExceptionsHandler.name);

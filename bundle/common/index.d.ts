@@ -23,9 +23,13 @@ export {
   INestApplicationContext,
   HttpServer,
   HttpServerFactory,
+  ArgumentsHost,
+  INestExpressApplication,
+  INestFastifyApplication,
 } from './interfaces';
 export * from './interceptors';
 export * from './services/logger.service';
 export * from './pipes';
 export * from './utils';
 export * from './exceptions';
+export * from './http';

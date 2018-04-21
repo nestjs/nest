@@ -12,7 +12,7 @@ let HttpModule = class HttpModule {
 };
 HttpModule = __decorate([
     module_decorator_1.Module({
-        components: [http_service_1.HttpService],
+        providers: [http_service_1.HttpService],
         exports: [http_service_1.HttpService],
     })
 ], HttpModule);

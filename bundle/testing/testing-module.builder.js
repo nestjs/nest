@@ -25,6 +25,12 @@ class TestingModuleBuilder {
         this.module = this.createModule(metadata);
         this.scanner.scan(this.module);
     }
+    overridePipe(typeOrToken) {
+        return this.override(typeOrToken, false);
+    }
+    overrideFilter(typeOrToken) {
+        return this.override(typeOrToken, false);
+    }
     overrideGuard(typeOrToken) {
         return this.override(typeOrToken, false);
     }

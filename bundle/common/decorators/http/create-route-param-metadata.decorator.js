@@ -24,7 +24,7 @@ function createParamDecorator(factory) {
 }
 exports.createParamDecorator = createParamDecorator;
 /**
- * Creates route params custom decorator
+ * Creates HTTP route param decorator
  * @deprecated
  * @param factory
  */

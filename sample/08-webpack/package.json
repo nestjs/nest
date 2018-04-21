@@ -21,6 +21,7 @@
     "@types/node": "^9.3.0",
     "ts-loader": "^4.0.0",
     "ts-node": "^4.1.0",
+    "tslint": "^5.9.1",
     "webpack": "^4.0.0",
     "webpack-cli": "^2.0.8",
     "webpack-node-externals": "^1.6.0"

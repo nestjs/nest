@@ -16,28 +16,29 @@ class InterceptorsContextCreator extends context_creator_1.ContextCreator {
         return this.createContext(instance, callback, constants_1.INTERCEPTORS_METADATA);
     }
     createConcreteContext(metadata) {
-        if (shared_utils_1.isUndefined(metadata) || shared_utils_1.isEmpty(metadata) || !this.moduleContext) {
+        if (shared_utils_1.isUndefined(metadata) || shared_utils_1.isEmpty(metadata)) {
             return [];
         }
-        const isGlobalMetadata = metadata === this.getGlobalMetadata();
-        return isGlobalMetadata
-            ? this.createGlobalMetadataContext(metadata)
-            : iterare_1.default(metadata)
-                .filter((metatype) => metatype && metatype.name)
-                .map(metatype => this.getInstanceByMetatype(metatype))
-                .filter((wrapper) => wrapper && wrapper.instance)
-                .map(wrapper => wrapper.instance)
-                .filter((interceptor) => interceptor && shared_utils_1.isFunction(interceptor.intercept))
-                .toArray();
-    }
-    createGlobalMetadataContext(metadata) {
         return iterare_1.default(metadata)
-            .filter(interceptor => interceptor &&
-            interceptor.intercept &&
-            shared_utils_1.isFunction(interceptor.intercept))
+            .filter((interceptor) => interceptor && (interceptor.name || interceptor.intercept))
+            .map(interceptor => this.getInterceptorInstance(interceptor))
+            .filter((interceptor) => interceptor && shared_utils_1.isFunction(interceptor.intercept))
             .toArray();
     }
+    getInterceptorInstance(interceptor) {
+        const isObject = interceptor.intercept;
+        if (isObject) {
+            return interceptor;
+        }
+        const instanceWrapper = this.getInstanceByMetatype(interceptor);
+        return instanceWrapper && instanceWrapper.instance
+            ? instanceWrapper.instance
+            : null;
+    }
     getInstanceByMetatype(metatype) {
+        if (!this.moduleContext) {
+            return undefined;
+        }
         const collection = this.container.getModules();
         const module = collection.get(this.moduleContext);
         if (!module) {

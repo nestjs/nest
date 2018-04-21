@@ -7,6 +7,6 @@ import { PipeTransform } from '../../interfaces/index';
  * When the `@UsePipes()` is used on the handle level:
  * - Pipe will be registered only to specified method
  *
- * @param  {PipeTransform[]} ...pipes (instances)
+ * @param  {PipeTransform[]} ...pipes
  */
-export declare function UsePipes(...pipes: PipeTransform<any>[]): (target: object, key?: any, descriptor?: any) => any;
+export declare function UsePipes(...pipes: (PipeTransform | Function)[]): (target: any, key?: any, descriptor?: any) => any;

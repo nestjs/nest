@@ -3,13 +3,13 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.hos
 
 export class WsProxy {
   public create(
-    targetCallback: (client, data) => Promise<void>,
+    targetCallback: (...args) => Promise<void>,
     exceptionsHandler: WsExceptionsHandler,
-  ): (client, data) => Promise<void> {
-    return async (client, data) => {
-      const host = new ExecutionContextHost([client, data]);
+  ): (...args) => Promise<void> {
+    return async (...args) => {
+      const host = new ExecutionContextHost(args);
       try {
-        return await targetCallback(client, data);
+        return await targetCallback(...args);
       } catch (e) {
         exceptionsHandler.handle(e, host);
       }

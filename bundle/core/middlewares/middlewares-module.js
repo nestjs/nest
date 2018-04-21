@@ -26,7 +26,7 @@ class MiddlewaresModule {
     register(middlewaresContainer, container, config) {
         return __awaiter(this, void 0, void 0, function* () {
             const appRef = container.getApplicationRef();
-            this.routerExceptionFilter = new router_exception_filters_1.RouterExceptionFilters(config, appRef);
+            this.routerExceptionFilter = new router_exception_filters_1.RouterExceptionFilters(container, config, appRef);
             this.routesMapper = new routes_mapper_1.RoutesMapper(container);
             this.resolver = new resolver_1.MiddlewaresResolver(middlewaresContainer);
             const modules = container.getModules();
@@ -89,7 +89,7 @@ class MiddlewaresModule {
             if (shared_utils_1.isUndefined(instance.resolve)) {
                 throw new invalid_middleware_exception_1.InvalidMiddlewareException(metatype.name);
             }
-            const exceptionsHandler = this.routerExceptionFilter.create(instance, instance.resolve);
+            const exceptionsHandler = this.routerExceptionFilter.create(instance, instance.resolve, undefined);
             const router = this.routerMethodFactory.get(app, method).bind(app);
             const setupWithProxy = middleware => this.setupHandlerWithProxy(exceptionsHandler, router, middleware, path);
             const resolve = instance.resolve();

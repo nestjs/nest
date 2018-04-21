@@ -17,7 +17,7 @@ export declare class WsContextCreator {
     private readonly interceptorsContextCreator;
     private readonly interceptorsConsumer;
     constructor(wsProxy: WsProxy, exceptionFiltersContext: ExceptionFiltersContext, pipesCreator: PipesContextCreator, pipesConsumer: PipesConsumer, guardsContextCreator: GuardsContextCreator, guardsConsumer: GuardsConsumer, interceptorsContextCreator: InterceptorsContextCreator, interceptorsConsumer: InterceptorsConsumer);
-    create(instance: Controller, callback: (client, data) => void, module: any): (client, data) => Promise<void>;
+    create(instance: Controller, callback: (...args) => void, module: any): (...args) => Promise<void>;
     reflectCallbackParamtypes(instance: Controller, callback: (...args) => any): any[];
     getDataMetatype(instance: any, callback: any): any;
 }

@@ -13,7 +13,6 @@ const http = require("http");
 const https = require("https");
 const optional = require("optional");
 const bodyParser = require("body-parser");
-const formbody = require("fastify-formbody");
 const iterare_1 = require("iterare");
 const logger_service_1 = require("@nestjs/common/services/logger.service");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
@@ -26,6 +25,7 @@ const container_1 = require("./middlewares/container");
 const nest_application_context_1 = require("./nest-application-context");
 const express_adapter_1 = require("./adapters/express-adapter");
 const fastify_adapter_1 = require("./adapters/fastify-adapter");
+const missing_dependency_exception_1 = require("./errors/exceptions/missing-dependency.exception");
 const { SocketModule } = optional('@nestjs/websockets/socket-module') || {};
 const { MicroservicesModule } = optional('@nestjs/microservices/microservices-module') || {};
 const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {};
@@ -107,7 +107,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
     }
     registerParserMiddlewares() {
         if (this.httpAdapter instanceof fastify_adapter_1.FastifyAdapter) {
-            return this.httpAdapter.register(formbody);
+            return this.httpAdapter.register(this.loadPackage('fastify-formbody', 'FastifyAdapter'));
         }
         if (!this.isExpress()) {
             return void 0;
@@ -135,12 +135,12 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
             this.routesResolver.resolve(this.httpAdapter, basePath);
         });
     }
-    connectMicroservice(config) {
+    connectMicroservice(options) {
         if (!NestMicroservice) {
             throw new microservices_package_not_found_exception_1.MicroservicesPackageNotFoundException();
         }
         const applicationConfig = new application_config_1.ApplicationConfig();
-        const instance = new NestMicroservice(this.container, config, applicationConfig);
+        const instance = new NestMicroservice(this.container, options, applicationConfig);
         instance.registerListeners();
         instance.setIsInitialized(true);
         instance.setIsInitHookCalled(true);
@@ -197,6 +197,10 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         adapter.register && adapter.register(...args);
         return this;
     }
+    inject(...args) {
+        const adapter = this.httpAdapter;
+        return adapter.inject && adapter.inject(...args);
+    }
     enableCors(options) {
         this.httpAdapter.use(cors(options));
         return this;
@@ -246,6 +250,28 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         this.config.useGlobalGuards(...guards);
         return this;
     }
+    useStaticAssets(pathOrOptions, options) {
+        this.httpAdapter.useStaticAssets &&
+            this.httpAdapter.useStaticAssets(pathOrOptions, options);
+        return this;
+    }
+    setBaseViewsDir(path) {
+        this.httpAdapter.setBaseViewsDir && this.httpAdapter.setBaseViewsDir(path);
+        return this;
+    }
+    setViewEngine(engineOrOptions) {
+        this.httpAdapter.setViewEngine &&
+            this.httpAdapter.setViewEngine(engineOrOptions);
+        return this;
+    }
+    loadPackage(name, ctx) {
+        try {
+            return require(name);
+        }
+        catch (e) {
+            throw new missing_dependency_exception_1.MissingRequiredDependencyException(name, ctx);
+        }
+    }
     registerMiddlewares(instance) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.middlewaresModule.registerMiddlewares(this.middlewaresContainer, instance);
@@ -262,23 +288,6 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             yield microservice.listen(resolve);
         }));
-    }
-    callInitHook() {
-        const modules = this.container.getModules();
-        modules.forEach(module => {
-            this.callModuleInitHook(module);
-        });
-    }
-    callModuleInitHook(module) {
-        const components = [...module.routes, ...module.components];
-        iterare_1.default(components)
-            .map(([key, { instance }]) => instance)
-            .filter(instance => !shared_utils_1.isNil(instance))
-            .filter(this.hasOnModuleInitHook)
-            .forEach(instance => instance.onModuleInit());
-    }
-    hasOnModuleInitHook(instance) {
-        return !shared_utils_1.isUndefined(instance.onModuleInit);
     }
     callDestroyHook() {
         const modules = this.container.getModules();

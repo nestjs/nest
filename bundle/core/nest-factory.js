@@ -43,11 +43,11 @@ class NestFactoryStatic {
         });
     }
     /**
-     * Creates an instance of the NestMicroservice (returns Promise)
+     * Creates an instance of the NestMicroservice
      *
      * @param  {} module Entry (root) application module class
-     * @param  {NestMicroserviceOptions} options Optional microservice configuration
-     * @returns an `Promise` of the INestMicroservice instance
+     * @param  {NestMicroserviceOptions & MicroserviceOptions} options Optional microservice configuration
+     * @returns {Promise}
      */
     createMicroservice(module, options) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -62,11 +62,11 @@ class NestFactoryStatic {
         });
     }
     /**
-     * Creates an instance of the NestApplicationContext (returns Promise)
+     * Creates an instance of the NestApplicationContext
      *
      * @param  {} module Entry (root) application module class
      * @param  {NestApplicationContextOptions} options Optional Nest application configuration
-     * @returns an `Promise` of the INestApplicationContext instance
+     * @returns {Promise}
      */
     createApplicationContext(module, options) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -75,7 +75,7 @@ class NestFactoryStatic {
             yield this.initialize(module, container);
             const modules = container.getModules().values();
             const root = modules.next().value;
-            return this.createNestInstance(new nest_application_context_1.NestApplicationContext(container, [], root));
+            return this.createNestInstance(new nest_application_context_1.NestApplicationContext(container, [], root, false));
         });
     }
     createNestInstance(instance) {
@@ -129,7 +129,7 @@ class NestFactoryStatic {
         logger_service_1.Logger.overrideLogger(options.logger);
     }
     applyExpressAdapter(httpAdapter) {
-        const isAdapter = !!httpAdapter.getHttpServer;
+        const isAdapter = httpAdapter.getHttpServer;
         if (isAdapter) {
             return httpAdapter;
         }

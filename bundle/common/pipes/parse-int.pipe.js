@@ -23,13 +23,13 @@ let ParseIntPipe = class ParseIntPipe {
                 !isNaN(parseFloat(value)) &&
                 isFinite(value);
             if (!isNumeric) {
-                throw new bad_request_exception_1.BadRequestException('Numeric string is expected');
+                throw new bad_request_exception_1.BadRequestException('Validation failed (numeric string is expected)');
             }
             return parseInt(value, 10);
         });
     }
 };
 ParseIntPipe = __decorate([
-    index_1.Pipe()
+    index_1.Injectable()
 ], ParseIntPipe);
 exports.ParseIntPipe = ParseIntPipe;

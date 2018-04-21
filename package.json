@@ -3,23 +3,18 @@
   "version": "5.0.0",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
-    "precommit": "lint-staged",
-    "test":
-      "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
-    "integration-test":
-      "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "prettier":
-      "prettier */**/*.ts --ignore-path ./.prettierignore --write && git status",
+    "precommit": "lint-staged",
+    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
+    "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
+    "lint": "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\"",
+    "format": "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist bundle",
     "prepublish": "npm run build:lib",
-    "publish":
-      "./node_modules/.bin/lerna publish --exact -m \"chore(release) publish %s\"",
-    "publish:next":
-      "./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(release) publish %s\"",
-    "publish:beta":
-      "./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(release) publish %s\""
+    "publish": "./node_modules/.bin/lerna publish --exact -m \"chore(release) publish %s\"",
+    "publish:next": "./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(release) publish %s\"",
+    "publish:beta": "./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(release) publish %s\""
   },
   "engines": {
     "node": ">=6.11.0"
@@ -110,6 +105,7 @@
     "socket.io-client": "^2.0.4",
     "supertest": "^3.0.0",
     "ts-node": "^3.2.0",
+    "tslint": "^5.9.1",
     "typescript": "^2.8.1"
   },
   "collective": {
@@ -118,7 +114,9 @@
     "logo": "https://opencollective.com/opencollective/logo.txt"
   },
   "nyc": {
-    "include": ["packages/**/*.ts"],
+    "include": [
+      "packages/**/*.ts"
+    ],
     "exclude": [
       "node_modules/",
       "packages/**/*.spec.ts",
@@ -133,13 +131,23 @@
       "packages/core/middlewares/middlewares-module.ts",
       "packages/common/services/logger.service.ts"
     ],
-    "extension": [".ts"],
-    "require": ["ts-node/register"],
-    "reporter": ["text-summary", "html"],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
     "sourceMap": true,
     "instrument": true
   },
   "lint-staged": {
-    "*.{ts,json,css,md}": ["prettier --write", "git add"]
+    "packages/**/*.{ts,json}": [
+      "npm run format",
+      "git add"
+    ]
   }
 }

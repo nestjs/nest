@@ -15,16 +15,17 @@ function FilesInterceptor(fieldName, maxCount, options) {
         constructor() {
             this.upload = multer(options);
         }
-        intercept(request, context, stream$) {
+        intercept(context, call$) {
             return __awaiter(this, void 0, void 0, function* () {
-                yield new Promise((resolve, reject) => this.upload.array(fieldName, maxCount)(request, request.res, err => {
+                const ctx = context.switchToHttp();
+                yield new Promise((resolve, reject) => this.upload.array(fieldName, maxCount)(ctx.getRequest(), ctx.getResponse(), err => {
                     if (err) {
                         const error = multer_utils_1.transformException(err);
                         return reject(error);
                     }
                     resolve();
                 }));
-                return stream$;
+                return call$;
             });
         }
     };

@@ -1,4 +1,12 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const container_1 = require("./container");
@@ -19,6 +27,7 @@ class SocketModule {
         this.socketsContainer = new container_1.SocketsContainer();
     }
     register(container, config) {
+        this.applicationConfig = config;
         this.webSocketsController = new web_sockets_controller_1.WebSocketsController(new socket_server_provider_1.SocketServerProvider(this.socketsContainer, config), container, config, this.getContextCreator(container));
         const modules = container.getModules();
         modules.forEach(({ components }, moduleName) => this.hookGatewaysIntoServers(components, moduleName));
@@ -38,12 +47,18 @@ class SocketModule {
         this.webSocketsController.hookGatewayIntoServer(instance, metatype, moduleName);
     }
     close() {
-        const servers = this.socketsContainer.getAllServers();
-        servers.forEach(({ server }) => server.close());
-        this.socketsContainer.clear();
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.applicationConfig) {
+                return void 0;
+            }
+            const adapter = this.applicationConfig.getIoAdapter();
+            const servers = this.socketsContainer.getAllServers();
+            servers.forEach(({ server }) => server && adapter.close(server));
+            this.socketsContainer.clear();
+        });
     }
     getContextCreator(container) {
-        return new ws_context_creator_1.WsContextCreator(new ws_proxy_1.WsProxy(), new exception_filters_context_1.ExceptionFiltersContext(), new pipes_context_creator_1.PipesContextCreator(), new pipes_consumer_1.PipesConsumer(), new guards_context_creator_1.GuardsContextCreator(container), new guards_consumer_1.GuardsConsumer(), new interceptors_context_creator_1.InterceptorsContextCreator(container), new interceptors_consumer_1.InterceptorsConsumer());
+        return new ws_context_creator_1.WsContextCreator(new ws_proxy_1.WsProxy(), new exception_filters_context_1.ExceptionFiltersContext(container), new pipes_context_creator_1.PipesContextCreator(container), new pipes_consumer_1.PipesConsumer(), new guards_context_creator_1.GuardsContextCreator(container), new guards_consumer_1.GuardsConsumer(), new interceptors_context_creator_1.InterceptorsContextCreator(container), new interceptors_consumer_1.InterceptorsConsumer());
     }
 }
 exports.SocketModule = SocketModule;

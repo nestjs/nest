@@ -24,13 +24,12 @@ class ExternalContextCreator {
         const guards = this.guardsContextCreator.create(instance, callback, module);
         const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
         return (...args) => __awaiter(this, void 0, void 0, function* () {
-            const [req] = args;
-            const canActivate = yield this.guardsConsumer.tryActivate(guards, req, instance, callback);
+            const canActivate = yield this.guardsConsumer.tryActivate(guards, args, instance, callback);
             if (!canActivate) {
                 throw new common_1.HttpException(constants_1.FORBIDDEN_MESSAGE, common_1.HttpStatus.FORBIDDEN);
             }
             const handler = () => callback.apply(instance, args);
-            return yield this.interceptorsConsumer.intercept(interceptors, req, instance, callback, handler);
+            return yield this.interceptorsConsumer.intercept(interceptors, args, instance, callback, handler);
         });
     }
     findContextModuleName(constructor) {

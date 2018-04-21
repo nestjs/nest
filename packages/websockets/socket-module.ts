@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import iterate from 'iterare';
 import {
   NestContainer,
   InstanceWrapper,
@@ -67,13 +68,17 @@ export class SocketModule {
     );
   }
 
-  public async close() {
+  public async close(): Promise<any> {
     if (!this.applicationConfig) {
       return void 0;
     }
     const adapter = this.applicationConfig.getIoAdapter();
     const servers = this.socketsContainer.getAllServers();
-    servers.forEach(({ server }) => server && adapter.close(server));
+    await Promise.all(
+      iterate(servers.values()).map(
+        async ({ server }) => server && (await adapter.close(server)),
+      ),
+    );
     this.socketsContainer.clear();
   }
 

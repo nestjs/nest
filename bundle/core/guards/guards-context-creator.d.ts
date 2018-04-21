@@ -11,8 +11,8 @@ export declare class GuardsContextCreator extends ContextCreator {
     constructor(container: NestContainer, config?: ConfigurationProvider);
     create(instance: Controller, callback: (...args) => any, module: string): CanActivate[];
     createConcreteContext<T extends any[], R extends any[]>(metadata: T): R;
-    createGlobalMetadataContext<T extends any[], R extends any[]>(metadata: T): R;
-    getInstanceByMetatype(metatype: any): {
+    getGuardInstance(guard: Function | CanActivate): any;
+    getInstanceByMetatype(guard: any): {
         instance: any;
     } | undefined;
     getGlobalMetadata<T extends any[]>(): T;

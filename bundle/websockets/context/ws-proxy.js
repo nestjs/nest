@@ -8,14 +8,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const execution_context_host_1 = require("@nestjs/core/helpers/execution-context.host");
 class WsProxy {
     create(targetCallback, exceptionsHandler) {
-        return (client, data) => __awaiter(this, void 0, void 0, function* () {
+        return (...args) => __awaiter(this, void 0, void 0, function* () {
+            const host = new execution_context_host_1.ExecutionContextHost(args);
             try {
-                return yield targetCallback(client, data);
+                return yield targetCallback(...args);
             }
             catch (e) {
-                exceptionsHandler.handle(e, client);
+                exceptionsHandler.handle(e, host);
             }
         });
     }
