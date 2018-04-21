@@ -39,14 +39,21 @@ class NestMicroservice extends nest_application_context_1.NestApplicationContext
         this.applicationConfig.setIoAdapter(ioAdapter);
     }
     createServer(config) {
-        this.microserviceConfig = Object.assign({ transport: transport_enum_1.Transport.TCP }, config);
-        const { strategy } = config;
-        this.server = strategy
-            ? strategy
-            : server_factory_1.ServerFactory.create(this.microserviceConfig);
+        try {
+            this.microserviceConfig = Object.assign({ transport: transport_enum_1.Transport.TCP }, config);
+            const { strategy } = config;
+            this.server = strategy
+                ? strategy
+                : server_factory_1.ServerFactory.create(this.microserviceConfig);
+        }
+        catch (e) {
+            this.logger.error(e);
+            throw e;
+        }
     }
     registerModules() {
-        this.socketModule && this.socketModule.register(this.container, this.applicationConfig);
+        this.socketModule &&
+            this.socketModule.register(this.container, this.applicationConfig);
         this.microservicesModule.setupClients(this.container);
         this.registerListeners();
         this.setIsInitialized(true);

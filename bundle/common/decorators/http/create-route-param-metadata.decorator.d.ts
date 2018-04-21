@@ -6,7 +6,7 @@ import { PipeTransform } from '../../index';
  */
 export declare function createParamDecorator(factory: CustomParamFactory): (data?: any, ...pipes: PipeTransform<any>[]) => ParameterDecorator;
 /**
- * Creates route params custom decorator
+ * Creates HTTP route param decorator
  * @deprecated
  * @param factory
  */

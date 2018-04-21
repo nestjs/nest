@@ -11,5 +11,5 @@ export interface ValueProvider {
 export interface FactoryProvider {
     provide: any;
     useFactory: (...args: any[]) => any;
-    inject: Array<Type<any> | string | any>;
+    inject?: Array<Type<any> | string | any>;
 }

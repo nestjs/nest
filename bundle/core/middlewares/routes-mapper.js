@@ -10,13 +10,17 @@ class RoutesMapper {
     constructor(container) {
         this.routerExplorer = new router_explorer_1.RouterExplorer(new metadata_scanner_1.MetadataScanner(), container);
     }
-    mapRouteToRouteProps(routeMetatype) {
-        const routePath = Reflect.getMetadata(constants_1.PATH_METADATA, routeMetatype);
-        if (shared_utils_1.isUndefined(routePath)) {
-            return [this.mapObjectToPath(routeMetatype)];
+    mapRouteToRouteProps(route) {
+        if (shared_utils_1.isString(route)) {
+            return [route];
         }
-        const paths = this.routerExplorer.scanForPaths(Object.create(routeMetatype), routeMetatype.prototype);
-        const uniquePathsSet = new Set(paths.map(route => (this.validateGlobalPath(routePath) + this.validateRoutePath(route.path))));
+        const routePath = Reflect.getMetadata(constants_1.PATH_METADATA, route);
+        if (shared_utils_1.isUndefined(routePath)) {
+            return [this.mapObjectToPath(route)];
+        }
+        const paths = this.routerExplorer.scanForPaths(Object.create(route), route.prototype);
+        const uniquePathsSet = new Set(paths.map(route => this.validateGlobalPath(routePath) +
+            this.validateRoutePath(route.path)));
         return [...uniquePathsSet.values()];
     }
     mapObjectToPath(routeOrPath) {

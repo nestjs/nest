@@ -33,13 +33,13 @@ class InstanceLoader {
     }
     createInstances(modules) {
         return __awaiter(this, void 0, void 0, function* () {
-            for (const module of [...modules.values()]) {
+            yield Promise.all([...modules.values()].map((module) => __awaiter(this, void 0, void 0, function* () {
                 yield this.createInstancesOfComponents(module);
                 yield this.createInstancesOfInjectables(module);
                 yield this.createInstancesOfRoutes(module);
                 const { name } = module.metatype;
                 this.logger.log(messages_1.moduleInitMessage(name));
-            }
+            })));
         });
     }
     createPrototypesOfComponents(module) {
@@ -49,9 +49,7 @@ class InstanceLoader {
     }
     createInstancesOfComponents(module) {
         return __awaiter(this, void 0, void 0, function* () {
-            for (const [key, wrapper] of module.components) {
-                yield this.injector.loadInstanceOfComponent(wrapper, module);
-            }
+            yield Promise.all([...module.components.values()].map((wrapper) => __awaiter(this, void 0, void 0, function* () { return yield this.injector.loadInstanceOfComponent(wrapper, module); })));
         });
     }
     createPrototypesOfRoutes(module) {

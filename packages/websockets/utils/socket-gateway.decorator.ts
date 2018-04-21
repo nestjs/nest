@@ -19,7 +19,8 @@ export function WebSocketGateway(
   options?: GatewayMetadata | any,
 ): ClassDecorator {
   const isPortInt = Number.isInteger(portOrOptions as number);
-  let [port, opt] = isPortInt 
+  // tslint:disable-next-line:prefer-const
+  let [port, opt] = isPortInt
     ? [portOrOptions, options]
     : [0, portOrOptions];
 

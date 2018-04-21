@@ -6,11 +6,12 @@ const constants_1 = require("@nestjs/common/constants");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const base_exception_filter_context_1 = require("@nestjs/core/exceptions/base-exception-filter-context");
 class ExceptionFiltersContext extends base_exception_filter_context_1.BaseExceptionFilterContext {
-    constructor(config) {
-        super();
+    constructor(container, config) {
+        super(container);
         this.config = config;
     }
-    create(instance, callback) {
+    create(instance, callback, module) {
+        this.moduleContext = module;
         const exceptionHandler = new rpc_exceptions_handler_1.RpcExceptionsHandler();
         const filters = this.createContext(instance, callback, constants_1.EXCEPTION_FILTERS_METADATA);
         if (shared_utils_1.isEmpty(filters)) {

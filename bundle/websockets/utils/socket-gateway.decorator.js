@@ -2,19 +2,17 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const constants_1 = require("../constants");
-/**
- * Defines the Gateway. The gateway can inject dependencies through constructor.
- * Those dependencies should belongs to the same module. Gateway is listening on the specified port.
- */
-exports.WebSocketGateway = (metadataOrPort) => {
-    if (Number.isInteger(metadataOrPort)) {
-        metadataOrPort = { port: metadataOrPort };
-    }
-    const metadata = metadataOrPort || {};
+function WebSocketGateway(portOrOptions, options) {
+    const isPortInt = Number.isInteger(portOrOptions);
+    let [port, opt] = isPortInt
+        ? [portOrOptions, options]
+        : [0, portOrOptions];
+    opt = opt || {};
     return (target) => {
         Reflect.defineMetadata(constants_1.GATEWAY_METADATA, true, target);
-        Reflect.defineMetadata(constants_1.NAMESPACE_METADATA, metadata.namespace, target);
-        Reflect.defineMetadata(constants_1.PORT_METADATA, metadata.port, target);
-        Reflect.defineMetadata(constants_1.GATEWAY_MIDDLEWARES, metadata.middlewares, target);
+        Reflect.defineMetadata(constants_1.PORT_METADATA, port, target);
+        Reflect.defineMetadata(constants_1.GATEWAY_OPTIONS, opt, target);
+        Reflect.defineMetadata(constants_1.GATEWAY_MIDDLEWARES, opt.middlewares, target);
     };
-};
+}
+exports.WebSocketGateway = WebSocketGateway;

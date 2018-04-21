@@ -12,6 +12,6 @@ export declare class GatewayMetadataExplorer {
   scanForServerHooks(instance: NestGateway): IterableIterator<string>;
 }
 export interface MessageMappingProperties {
-  message: string;
-  callback: (...args) => Observable<any> | Promise<any> | void;
+  message: any;
+  callback: (...args) => Observable<any> | Promise<any> | any;
 }

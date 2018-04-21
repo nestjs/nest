@@ -7,6 +7,7 @@ const operators_2 = require("rxjs/operators");
 const empty_1 = require("rxjs/observable/empty");
 const of_1 = require("rxjs/observable/of");
 const fromPromise_1 = require("rxjs/observable/fromPromise");
+const missing_dependency_exception_1 = require("@nestjs/core/errors/exceptions/missing-dependency.exception");
 class Server {
     constructor() {
         this.messageHandlers = {};
@@ -38,8 +39,19 @@ class Server {
         }
         return resultOrDeffered;
     }
+    getOptionsProp(obj, prop, defaultValue = undefined) {
+        return obj && obj.options ? obj.options[prop] : defaultValue;
+    }
     handleError(error) {
         this.logger.error(error);
+    }
+    loadPackage(name, ctx) {
+        try {
+            return require(name);
+        }
+        catch (e) {
+            throw new missing_dependency_exception_1.MissingRequiredDependencyException(name, ctx);
+        }
     }
 }
 exports.Server = Server;

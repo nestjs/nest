@@ -11,16 +11,16 @@ class TestingModule extends core_1.NestApplicationContext {
         super(container, scope, contextModule);
         this.applicationConfig = applicationConfig;
     }
-    createNestApplication(httpServer = express_factory_1.ExpressFactory.create()) {
+    createNestApplication(httpServer = express_factory_1.ExpressFactory.create(), options) {
         httpServer = this.applyExpressAdapter(httpServer);
         this.container.setApplicationRef(httpServer);
         return new core_1.NestApplication(this.container, httpServer, this.applicationConfig);
     }
-    createNestMicroservice(config) {
+    createNestMicroservice(options) {
         if (!NestMicroservice) {
             throw new microservices_package_not_found_exception_1.MicroservicesPackageNotFoundException();
         }
-        return new NestMicroservice(this.container, config, this.applicationConfig);
+        return new NestMicroservice(this.container, options, this.applicationConfig);
     }
     applyExpressAdapter(httpAdapter) {
         const isAdapter = !!httpAdapter.getHttpServer;

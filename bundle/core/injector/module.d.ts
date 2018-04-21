@@ -61,7 +61,7 @@ export declare class Module {
     createModuleRefMetatype(components: any): {
         new (): {
             readonly components: any;
-            get<T>(type: any): T;
+            get<T>(type: OpaqueToken): T;
         };
     };
 }

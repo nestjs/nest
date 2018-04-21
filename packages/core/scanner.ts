@@ -238,8 +238,8 @@ export class DependenciesScanner {
     this.container.addController(route, token);
   }
 
-  public reflectMetadata(metatype, metadata: string) {
-    return Reflect.getMetadata(metadata, metatype) || [];
+  public reflectMetadata(metatype, metadataKey: string) {
+    return Reflect.getMetadata(metadataKey, metatype) || [];
   }
 
   public applyApplicationProviders() {

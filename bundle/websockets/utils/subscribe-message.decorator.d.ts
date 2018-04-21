@@ -1,7 +1,5 @@
 import 'reflect-metadata';
 /**
- * Subscribes to the messages, which fulfils chosen pattern.
+ * Subscribes to messages that fulfils chosen pattern.
  */
-export declare const SubscribeMessage: (message?: string | {
-    value: string;
-}) => MethodDecorator;
+export declare const SubscribeMessage: <T = string>(message: T) => MethodDecorator;

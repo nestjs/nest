@@ -12,10 +12,14 @@
             true,
             "single"
         ],
+        "member-access": false,
         "indent": false,
         "ordered-imports": [
             false
         ],
+        "no-implicit-dependencies": false,
+        "no-unnecessary-initializer": false,
+        "unified-signatures": false,
         "max-line-length": [
             150
         ],

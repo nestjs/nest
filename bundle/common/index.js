@@ -16,3 +16,4 @@ __export(require("./services/logger.service"));
 __export(require("./pipes"));
 __export(require("./utils"));
 __export(require("./exceptions"));
+__export(require("./http"));

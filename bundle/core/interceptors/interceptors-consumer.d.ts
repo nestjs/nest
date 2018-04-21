@@ -1,8 +1,9 @@
 import { Controller } from '@nestjs/common/interfaces';
-import { ExecutionContext, NestInterceptor } from '@nestjs/common';
+import { NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
+import { ExecutionContextHost } from '../helpers/execution-context.host';
 export declare class InterceptorsConsumer {
-    intercept(interceptors: NestInterceptor[], dataOrRequest: any, instance: Controller, callback: (...args) => any, next: () => Promise<any>): Promise<any>;
-    createContext(instance: Controller, callback: (...args) => any): ExecutionContext;
+    intercept(interceptors: NestInterceptor[], args: any[], instance: Controller, callback: (...args) => any, next: () => Promise<any>): Promise<any>;
+    createContext(args: any[], instance: Controller, callback: (...args) => any): ExecutionContextHost;
     transformDeffered(next: () => Promise<any>): Observable<any>;
 }

@@ -4,9 +4,10 @@ import { Observable } from 'rxjs/Observable';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
 import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { NestContainer } from '@nestjs/core/injector/container';
 export declare class ExceptionFiltersContext extends BaseExceptionFilterContext {
     private readonly config;
-    constructor(config: ApplicationConfig);
-    create(instance: Controller, callback: (data) => Observable<any>): RpcExceptionsHandler;
+    constructor(container: NestContainer, config: ApplicationConfig);
+    create(instance: Controller, callback: (data) => Observable<any>, module: string): RpcExceptionsHandler;
     getGlobalMetadata<T extends any[]>(): T;
 }

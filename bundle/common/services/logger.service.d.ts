@@ -1,8 +1,8 @@
 import { NestEnvironment } from '../enums/nest-environment.enum';
 export interface LoggerService {
-    log(message: string): void;
-    error(message: string, trace: string): void;
-    warn(message: string): void;
+    log(message: string): any;
+    error(message: string, trace: string): any;
+    warn(message: string): any;
 }
 export declare class Logger implements LoggerService {
     private readonly context;
@@ -15,7 +15,7 @@ export declare class Logger implements LoggerService {
     log(message: string): void;
     error(message: string, trace?: string): void;
     warn(message: string): void;
-    static overrideLogger(logger: LoggerService): void;
+    static overrideLogger(logger: LoggerService | boolean): void;
     static setMode(mode: NestEnvironment): void;
     static log(message: string, context?: string, isTimeDiffEnabled?: boolean): void;
     static error(message: string, trace?: string, context?: string, isTimeDiffEnabled?: boolean): void;

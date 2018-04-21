@@ -1,14 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const express = require("express");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 class ExpressAdapter {
     constructor(instance) {
         this.instance = instance;
     }
-    use(pathOrHandler, handler) {
-        return handler
-            ? this.instance.use(pathOrHandler, handler)
-            : this.instance.use(pathOrHandler);
+    use(...args) {
+        return this.instance.use(...args);
     }
     get(pathOrHandler, handler) {
         return this.instance.get(pathOrHandler, handler);
@@ -67,6 +66,21 @@ class ExpressAdapter {
     }
     engine(...args) {
         return this.instance.set(...args);
+    }
+    useStaticAssets(path, options) {
+        return this.use(express.static(path, options));
+    }
+    setBaseViewsDir(path) {
+        return this.set('views', path);
+    }
+    setViewEngine(engine) {
+        return this.set('view engine', engine);
+    }
+    getRequestMethod(request) {
+        return request.method;
+    }
+    getRequestUrl(request) {
+        return request.url;
     }
 }
 exports.ExpressAdapter = ExpressAdapter;

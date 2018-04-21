@@ -61,7 +61,7 @@ export class RpcContextCreator {
           { metatype },
           pipes,
         );
-        return callback.call(instance, result, params);
+        return callback.call(instance, result, ...params);
       };
 
       return await this.interceptorsConsumer.intercept(

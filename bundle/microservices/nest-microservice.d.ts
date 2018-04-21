@@ -7,8 +7,10 @@ import {
   PipeTransform,
   NestInterceptor,
   ExceptionFilter,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { Module } from '@nestjs/core/injector/module';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
 export declare class NestMicroservice extends NestApplicationContext
   implements INestMicroservice {
@@ -41,10 +43,10 @@ export declare class NestMicroservice extends NestApplicationContext
   setIsInitialized(isInitialized: boolean): void;
   setIsTerminated(isTerminaed: boolean): void;
   setIsInitHookCalled(isInitHookCalled: boolean): void;
-  private closeApplication();
-  private callInitHook();
-  private callModuleInitHook(module);
-  private hasOnModuleInitHook(instance);
+  protected closeApplication(): void;
+  protected callInitHook(): void;
+  protected callModuleInitHook(module: Module): void;
+  protected hasOnModuleInitHook(instance: any): instance is OnModuleInit;
   private callDestroyHook();
   private callModuleDestroyHook(module);
   private hasOnModuleDestroyHook(instance);

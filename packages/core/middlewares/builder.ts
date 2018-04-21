@@ -12,7 +12,7 @@ import { MiddlewareConfigProxy } from '@nestjs/common/interfaces/middlewares';
 import { RoutesMapper } from './routes-mapper';
 import { NestMiddleware } from '@nestjs/common';
 import { filterMiddlewares } from './utils';
-import { flatten } from '@nestjs/common/decorators/core/dependencies.decorator'
+import { flatten } from '@nestjs/common/decorators/core/dependencies.decorator';
 
 export class MiddlewareBuilder implements MiddlewaresConsumer {
   private readonly middlewaresCollection = new Set<MiddlewareConfiguration>();

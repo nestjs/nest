@@ -9,8 +9,7 @@
     "start:prod": "node dist/main.js",
     "test": "jest --config=jest.json",
     "test:watch": "jest --watch --config=jest.json",
-    "test:coverage":
-      "jest --config=jest.json --coverage --coverageDirectory=coverage",
+    "test:coverage": "jest --config=jest.json --coverage --coverageDirectory=coverage",
     "e2e": "jest --config=e2e/jest-e2e.json --forceExit",
     "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
   },
@@ -33,6 +32,7 @@
     "jest": "^20.0.4",
     "supertest": "^3.0.0",
     "ts-jest": "^20.0.14",
-    "ts-node": "^3.3.0"
+    "ts-node": "^3.3.0",
+    "tslint": "^5.9.1"
   }
 }

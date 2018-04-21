@@ -1,8 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const common_1 = require("@nestjs/common");
+const missing_dependency_exception_1 = require("../errors/exceptions/missing-dependency.exception");
 class FastifyAdapter {
-    constructor(instance) {
-        this.instance = instance;
+    constructor(options) {
+        this.logger = new common_1.Logger(FastifyAdapter.name);
+        try {
+            this.instance = require('fastify')(options);
+        }
+        catch (e) {
+            throw new missing_dependency_exception_1.MissingRequiredDependencyException('fastify', 'FastifyAdapter');
+        }
     }
     use(pathOrHandler, handler) {
         return handler
@@ -51,8 +59,33 @@ class FastifyAdapter {
     register(...args) {
         return this.instance.register(...args);
     }
+    inject(...args) {
+        return this.instance.inject(...args);
+    }
     close() {
         return this.instance.close();
+    }
+    useStaticAssets(options) {
+        try {
+            return this.register(require('fastify-static'), options);
+        }
+        catch (e) {
+            throw new missing_dependency_exception_1.MissingRequiredDependencyException('fastify-static', 'FastifyAdapter.useStaticAssets()');
+        }
+    }
+    setViewEngine(options) {
+        try {
+            return this.register(require('point-of-view'), options);
+        }
+        catch (e) {
+            throw new missing_dependency_exception_1.MissingRequiredDependencyException('point-of-view', 'FastifyAdapter.setViewEngine()');
+        }
+    }
+    getRequestMethod(request) {
+        return request.raw.method;
+    }
+    getRequestUrl(request) {
+        return request.raw.url;
     }
 }
 exports.FastifyAdapter = FastifyAdapter;

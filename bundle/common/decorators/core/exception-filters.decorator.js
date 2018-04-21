@@ -2,13 +2,19 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const constants_1 = require("../../constants");
+const extend_metadata_util_1 = require("../../utils/extend-metadata.util");
+const shared_utils_1 = require("../../utils/shared.utils");
+const validate_each_util_1 = require("../../utils/validate-each.util");
 const defineFiltersMetadata = (...filters) => {
     return (target, key, descriptor) => {
+        const isFilterValid = filter => filter && (shared_utils_1.isFunction(filter) || shared_utils_1.isFunction(filter.catch));
         if (descriptor) {
-            Reflect.defineMetadata(constants_1.EXCEPTION_FILTERS_METADATA, filters, descriptor.value);
+            validate_each_util_1.validateEach(target.constructor, filters, isFilterValid, '@UseFilters', 'filter');
+            extend_metadata_util_1.extendArrayMetadata(constants_1.EXCEPTION_FILTERS_METADATA, filters, descriptor.value);
             return descriptor;
         }
-        Reflect.defineMetadata(constants_1.EXCEPTION_FILTERS_METADATA, filters, target);
+        validate_each_util_1.validateEach(target, filters, isFilterValid, '@UseFilters', 'filter');
+        extend_metadata_util_1.extendArrayMetadata(constants_1.EXCEPTION_FILTERS_METADATA, filters, target);
         return target;
     };
 };
@@ -20,6 +26,6 @@ const defineFiltersMetadata = (...filters) => {
  * When the `@UseFilters()` is used on the handle level:
  * - Exception Filter will be set up only to specified method
  *
- * @param  {ExceptionFilter[]} ...filters (instances)
+ * @param  {ExceptionFilter[]} ...filters
  */
 exports.UseFilters = (...filters) => defineFiltersMetadata(...filters);

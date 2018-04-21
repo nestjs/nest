@@ -1,7 +1,8 @@
 import { RequestHandler, ErrorHandler } from '@nestjs/common/interfaces';
 export declare class FastifyAdapter {
+    private readonly logger;
     protected readonly instance: any;
-    constructor(instance: any);
+    constructor(options?: any);
     use(handler: RequestHandler | ErrorHandler): any;
     use(path: any, handler: RequestHandler | ErrorHandler): any;
     get(handler: RequestHandler): any;
@@ -26,5 +27,15 @@ export declare class FastifyAdapter {
     setNotFoundHandler(handler: Function): any;
     getHttpServer(): any;
     register(...args: any[]): any;
+    inject(...args: any[]): any;
     close(): any;
+    useStaticAssets(options: {
+        root: string;
+        prefix?: string;
+        setHeaders?: Function;
+        send?: any;
+    }): any;
+    setViewEngine(options: any): any;
+    getRequestMethod(request: any): string;
+    getRequestUrl(request: any): string;
 }

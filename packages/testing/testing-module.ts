@@ -36,6 +36,10 @@ export class TestingModule extends NestApplicationContext {
     options?: NestApplicationOptions,
   ): INestApplication & INestExpressApplication;
   public createNestApplication(
+    httpServer?: any,
+    options?: NestApplicationOptions,
+  ): INestApplication & INestExpressApplication;
+  public createNestApplication(
     httpServer: any = ExpressFactory.create(),
     options?: NestApplicationOptions,
   ): INestApplication & (INestExpressApplication | INestFastifyApplication) {

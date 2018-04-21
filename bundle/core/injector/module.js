@@ -137,13 +137,13 @@ class Module {
     addCustomProvider(component, collection) {
         const { provide } = component;
         const name = shared_utils_1.isFunction(provide) ? provide.name : provide;
-        const comp = Object.assign({}, component, { name });
-        if (this.isCustomClass(comp))
-            this.addCustomClass(comp, collection);
-        else if (this.isCustomValue(comp))
-            this.addCustomValue(comp, collection);
-        else if (this.isCustomFactory(comp))
-            this.addCustomFactory(comp, collection);
+        const componentWithName = Object.assign({}, component, { name });
+        if (this.isCustomClass(componentWithName))
+            this.addCustomClass(componentWithName, collection);
+        else if (this.isCustomValue(componentWithName))
+            this.addCustomValue(componentWithName, collection);
+        else if (this.isCustomFactory(componentWithName))
+            this.addCustomFactory(componentWithName, collection);
         return name;
     }
     isCustomClass(component) {

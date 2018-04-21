@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("../../constants");
+const extend_metadata_util_1 = require("../../utils/extend-metadata.util");
+const shared_utils_1 = require("../../utils/shared.utils");
+const validate_each_util_1 = require("../../utils/validate-each.util");
 /**
  * Binds interceptors to the particular context.
  * When the `@UseInterceptors()` is used on the controller level:
@@ -9,15 +12,19 @@ const constants_1 = require("../../constants");
  * When the `@UseInterceptors()` is used on the handle level:
  * - Interceptor will be registered only to specified method
  *
- * @param  {} ...interceptors (types)
+ * @param  {} ...interceptors
  */
 function UseInterceptors(...interceptors) {
     return (target, key, descriptor) => {
+        const isValidInterceptor = interceptor => interceptor &&
+            (shared_utils_1.isFunction(interceptor) || shared_utils_1.isFunction(interceptor.intercept));
         if (descriptor) {
-            Reflect.defineMetadata(constants_1.INTERCEPTORS_METADATA, interceptors, descriptor.value);
+            validate_each_util_1.validateEach(target.constructor, interceptors, isValidInterceptor, '@UseInterceptors', 'interceptor');
+            extend_metadata_util_1.extendArrayMetadata(constants_1.INTERCEPTORS_METADATA, interceptors, descriptor.value);
             return descriptor;
         }
-        Reflect.defineMetadata(constants_1.INTERCEPTORS_METADATA, interceptors, target);
+        validate_each_util_1.validateEach(target, interceptors, isValidInterceptor, '@UseInterceptors', 'interceptor');
+        extend_metadata_util_1.extendArrayMetadata(constants_1.INTERCEPTORS_METADATA, interceptors, target);
         return target;
     };
 }

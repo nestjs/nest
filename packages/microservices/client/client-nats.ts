@@ -21,7 +21,6 @@ export class ClientNats extends ClientProxy {
     super();
     this.url =
       this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
-    
     natsPackage = this.loadPackage('nats', ClientNats.name);
   }
 

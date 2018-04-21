@@ -29,6 +29,11 @@ export interface HttpServer {
     render(response: any, view: string, options: any): any;
     setErrorHandler?(handler: Function): any;
     setNotFoundHandler?(handler: Function): any;
+    useStaticAssets?(...args: any[]): this;
+    setBaseViewsDir?(path: string): this;
+    setViewEngine?(engineOrOptions: any): this;
+    getRequestMethod?(request: any): string;
+    getRequestUrl?(request: any): string;
     getHttpServer(): any;
     close(): any;
 }

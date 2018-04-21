@@ -33,9 +33,9 @@ export class RoutesMapper {
     );
     const uniquePathsSet = new Set(
       paths.map(
-        route =>
+        item =>
           this.validateGlobalPath(routePath) +
-          this.validateRoutePath(route.path),
+          this.validateRoutePath(item.path),
       ),
     );
     return [...uniquePathsSet.values()];

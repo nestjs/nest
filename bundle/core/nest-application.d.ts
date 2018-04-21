@@ -8,7 +8,7 @@ import {
   WebSocketAdapter,
 } from '@nestjs/common';
 import { INestApplication, INestMicroservice } from '@nestjs/common';
-import { MicroserviceConfiguration } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
+import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { ApplicationConfig } from './application-config';
 import { NestContainer } from './injector/container';
 import { NestApplicationContext } from './nest-application-context';
@@ -17,11 +17,12 @@ import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.int
 import { HttpServer } from '@nestjs/common/interfaces';
 import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
 import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
+import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
 export declare class NestApplication extends NestApplicationContext
   implements INestApplication,
     INestExpressApplication,
     INestFastifyApplication {
-  private httpAdapter;
+  private readonly httpAdapter;
   private readonly config;
   private readonly appOptions;
   private readonly logger;
@@ -48,7 +49,7 @@ export declare class NestApplication extends NestApplicationContext
   registerParserMiddlewares(): any;
   isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean;
   registerRouter(): Promise<void>;
-  connectMicroservice(config: MicroserviceConfiguration): INestMicroservice;
+  connectMicroservice(options: MicroserviceOptions): INestMicroservice;
   getMicroservices(): INestMicroservice[];
   getHttpServer(): http.Server;
   startAllMicroservices(callback?: () => void): this;
@@ -59,6 +60,7 @@ export declare class NestApplication extends NestApplicationContext
   disable(...args: any[]): this;
   enable(...args: any[]): this;
   register(...args: any[]): this;
+  inject(...args: any[]): any;
   enableCors(options?: CorsOptions): this;
   listen(port: number | string, callback?: () => void): any;
   listen(port: number | string, hostname: string, callback?: () => void): any;
@@ -70,12 +72,14 @@ export declare class NestApplication extends NestApplicationContext
   useGlobalPipes(...pipes: PipeTransform<any>[]): this;
   useGlobalInterceptors(...interceptors: NestInterceptor[]): this;
   useGlobalGuards(...guards: CanActivate[]): this;
+  useStaticAssets(options: any): this;
+  useStaticAssets(path: string, options?: ServeStaticOptions): any;
+  setBaseViewsDir(path: string): this;
+  setViewEngine(engineOrOptions: any): this;
+  private loadPackage(name, ctx);
   private registerMiddlewares(instance);
   private isExpress();
   private listenToPromise(microservice);
-  private callInitHook();
-  private callModuleInitHook(module);
-  private hasOnModuleInitHook(instance);
   private callDestroyHook();
   private callModuleDestroyHook(module);
   private hasOnModuleDestroyHook(instance);

@@ -9,18 +9,21 @@ class Logger {
     }
     log(message) {
         const { logger } = Logger;
-        logger.log.call(logger, message, this.context, this.isTimeDiffEnabled);
+        logger &&
+            logger.log.call(logger, message, this.context, this.isTimeDiffEnabled);
     }
     error(message, trace = '') {
         const { logger } = Logger;
-        logger.error.call(logger, message, trace, this.context, this.isTimeDiffEnabled);
+        logger &&
+            logger.error.call(logger, message, trace, this.context, this.isTimeDiffEnabled);
     }
     warn(message) {
         const { logger } = Logger;
-        logger.warn.call(logger, message, this.context, this.isTimeDiffEnabled);
+        logger &&
+            logger.warn.call(logger, message, this.context, this.isTimeDiffEnabled);
     }
     static overrideLogger(logger) {
-        this.logger = logger;
+        this.logger = logger ? logger : null;
     }
     static setMode(mode) {
         this.contextEnv = mode;

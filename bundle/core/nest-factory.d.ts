@@ -10,11 +10,12 @@ import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices
 import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
 import { FastifyAdapter } from './adapters/fastify-adapter';
 import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
+import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 export declare class NestFactoryStatic {
   private readonly logger;
   /**
-   * Creates an instance of the NestApplication (returns Promise)
-   * @returns an `Promise` of the INestApplication instance
+   * Creates an instance of the NestApplication
+   * @returns {Promise}
    */
   create(module: any): Promise<INestApplication & INestExpressApplication>;
   create(
@@ -31,23 +32,28 @@ export declare class NestFactoryStatic {
     httpServer: HttpServer,
     options?: NestApplicationOptions,
   ): Promise<INestApplication & INestExpressApplication>;
+  create(
+    module: any,
+    httpServer: any,
+    options?: NestApplicationOptions,
+  ): Promise<INestApplication & INestExpressApplication>;
   /**
-   * Creates an instance of the NestMicroservice (returns Promise)
+   * Creates an instance of the NestMicroservice
    *
    * @param  {} module Entry (root) application module class
-   * @param  {NestMicroserviceOptions} options Optional microservice configuration
-   * @returns an `Promise` of the INestMicroservice instance
+   * @param  {NestMicroserviceOptions & MicroserviceOptions} options Optional microservice configuration
+   * @returns {Promise}
    */
   createMicroservice(
     module: any,
-    options?: NestMicroserviceOptions,
+    options?: NestMicroserviceOptions & MicroserviceOptions,
   ): Promise<INestMicroservice>;
   /**
-   * Creates an instance of the NestApplicationContext (returns Promise)
+   * Creates an instance of the NestApplicationContext
    *
    * @param  {} module Entry (root) application module class
    * @param  {NestApplicationContextOptions} options Optional Nest application configuration
-   * @returns an `Promise` of the INestApplicationContext instance
+   * @returns {Promise}
    */
   createApplicationContext(
     module: any,

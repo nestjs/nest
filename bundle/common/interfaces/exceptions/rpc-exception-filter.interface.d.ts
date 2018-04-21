@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs/Observable';
-export interface RpcExceptionFilter {
-    catch(exception: any): Observable<any>;
+import { ArgumentsHost } from './../features/arguments-host.interface';
+export interface RpcExceptionFilter<T = any, R = any> {
+    catch(exception: T, host: ArgumentsHost): Observable<R>;
 }

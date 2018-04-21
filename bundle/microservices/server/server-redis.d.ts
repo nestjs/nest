@@ -1,4 +1,4 @@
-import * as redis from 'redis';
+import { RedisClient, ClientOpts, RetryStrategyOptions } from 'redis';
 import { Server } from './server';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy, PacketId } from './../interfaces';
@@ -12,16 +12,16 @@ export declare class ServerRedis extends Server implements CustomTransportStrate
     constructor(options: MicroserviceOptions);
     listen(callback: () => void): void;
     start(callback?: () => void): void;
-    bindEvents(subClient: redis.RedisClient, pubClient: redis.RedisClient): void;
+    bindEvents(subClient: RedisClient, pubClient: RedisClient): void;
     close(): void;
-    createRedisClient(): redis.RedisClient;
-    getMessageHandler(pub: redis.RedisClient): (channel: any, buffer: any) => Promise<boolean>;
-    handleMessage(channel: any, buffer: string | any, pub: redis.RedisClient): Promise<boolean>;
-    getPublisher(pub: redis.RedisClient, pattern: any, id: string): (response: any) => boolean;
-    serialize(content: any): ReadPacket & PacketId;
+    createRedisClient(): RedisClient;
+    getMessageHandler(pub: RedisClient): (channel: any, buffer: any) => Promise<boolean>;
+    handleMessage(channel: any, buffer: string | any, pub: RedisClient): Promise<boolean>;
+    getPublisher(pub: RedisClient, pattern: any, id: string): (response: any) => boolean;
+    deserialize(content: any): ReadPacket & PacketId;
     getAckQueueName(pattern: string): string;
-    getResQueueName(pattern: string, id: string): string;
+    getResQueueName(pattern: string): string;
     handleError(stream: any): void;
-    getClientOptions(): Partial<redis.ClientOpts>;
-    createRetryStrategy(options: redis.RetryStrategyOptions): undefined | number;
+    getClientOptions(): Partial<ClientOpts>;
+    createRetryStrategy(options: RetryStrategyOptions): undefined | number;
 }

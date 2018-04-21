@@ -4,12 +4,12 @@ import { CustomTransportStrategy, ReadPacket } from './../interfaces';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { PacketId } from './../interfaces';
 export declare class ServerTCP extends Server implements CustomTransportStrategy {
-    private readonly config;
+    private readonly options;
     private readonly port;
     private server;
     private isExplicitlyTerminated;
     private retryAttemptsCount;
-    constructor(config: MicroserviceOptions);
+    constructor(options: MicroserviceOptions);
     listen(callback: () => void): void;
     close(): void;
     bindHandler(socket: any): void;

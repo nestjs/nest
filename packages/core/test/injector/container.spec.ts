@@ -125,7 +125,7 @@ describe('NestContainer', () => {
   describe('extractMetadata', () => {
     describe('when module is a dynamic module', () => {
       it('should return object with "type" and "dynamicMetadata" property', () => {
-        const obj = { module: 'test', components: [] };
+        const obj = { module: 'test', providers: [] };
         const { module, ...dynamicMetadata } = obj;
         expect(container.extractMetadata(obj as any)).to.be.deep.equal({
           type: module,

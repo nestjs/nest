@@ -20,10 +20,7 @@ export class NestApplicationContext implements INestApplicationContext {
     protected readonly container: NestContainer,
     private readonly scope: Type<any>[],
     protected contextModule: Module,
-    isInitialized = true,
-  ) {
-    !isInitialized && this.callInitHook();
-  }
+  ) {}
 
   public selectContextModule() {
     const modules = this.container.getModules().values();
@@ -64,20 +61,29 @@ export class NestApplicationContext implements INestApplicationContext {
     );
   }
 
-  protected callInitHook() {
-    const modules = this.container.getModules();
-    modules.forEach(module => {
-      this.callModuleInitHook(module);
-    });
+  public async init(): Promise<this> {
+    await this.callInitHook();
+    return this;
   }
 
-  protected callModuleInitHook(module: Module) {
+  protected async callInitHook(): Promise<any> {
+    const modules = this.container.getModules();
+    await Promise.all(
+      iterate(modules.values()).map(
+        async module => await this.callModuleInitHook(module),
+      ),
+    );
+  }
+
+  protected async callModuleInitHook(module: Module): Promise<any> {
     const components = [...module.routes, ...module.components];
-    iterate(components)
-      .map(([key, { instance }]) => instance)
-      .filter(instance => !isNil(instance))
-      .filter(this.hasOnModuleInitHook)
-      .forEach(instance => (instance as OnModuleInit).onModuleInit());
+    await Promise.all(
+      iterate(components)
+        .map(([key, { instance }]) => instance)
+        .filter(instance => !isNil(instance))
+        .filter(this.hasOnModuleInitHook)
+        .map(async instance => await (instance as OnModuleInit).onModuleInit()),
+    );
   }
 
   protected hasOnModuleInitHook(instance: any): instance is OnModuleInit {

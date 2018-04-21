@@ -10,15 +10,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const Observable_1 = require("rxjs/Observable");
+const execution_context_host_1 = require("../helpers/execution-context.host");
 class GuardsConsumer {
-    tryActivate(guards, data, instance, callback) {
+    tryActivate(guards, args, instance, callback) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!guards || shared_utils_1.isEmpty(guards)) {
                 return true;
             }
-            const context = this.createContext(instance, callback);
+            const context = this.createContext(args, instance, callback);
             for (const guard of guards) {
-                const result = guard.canActivate(data, context);
+                const result = guard.canActivate(context);
                 if (yield this.pickResult(result)) {
                     continue;
                 }
@@ -27,11 +28,8 @@ class GuardsConsumer {
             return true;
         });
     }
-    createContext(instance, callback) {
-        return {
-            parent: instance.constructor,
-            handler: callback,
-        };
+    createContext(args, instance, callback) {
+        return new execution_context_host_1.ExecutionContextHost(args, instance.constructor, callback);
     }
     pickResult(result) {
         return __awaiter(this, void 0, void 0, function* () {

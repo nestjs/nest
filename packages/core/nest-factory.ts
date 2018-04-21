@@ -56,12 +56,18 @@ export class NestFactoryStatic {
   ): Promise<INestApplication & INestExpressApplication>;
   public async create(
     module: any,
+    httpServer: any,
+    options?: NestApplicationOptions,
+  ): Promise<INestApplication & INestExpressApplication>;
+  public async create(
+    module: any,
     serverOrOptions?: any,
     options?: NestApplicationOptions,
   ): Promise<
     INestApplication & (INestExpressApplication | INestFastifyApplication)
   > {
     const isHttpServer = serverOrOptions && serverOrOptions.patch;
+    // tslint:disable-next-line:prefer-const
     let [httpServer, appOptions] = isHttpServer
       ? [serverOrOptions, options]
       : [ExpressFactory.create(), serverOrOptions];
@@ -119,12 +125,13 @@ export class NestFactoryStatic {
 
     const modules = container.getModules().values();
     const root = modules.next().value;
-    return this.createNestInstance<INestApplicationContext>(
-      new NestApplicationContext(container, [], root, false),
+    const context = this.createNestInstance<NestApplicationContext>(
+      new NestApplicationContext(container, [], root),
     );
+    return await context.init();
   }
 
-  private createNestInstance<T>(instance: T) {
+  private createNestInstance<T>(instance: T): T {
     return this.createProxy(instance);
   }
 
@@ -186,7 +193,7 @@ export class NestFactoryStatic {
   }
 
   private applyExpressAdapter(httpAdapter: HttpServer): HttpServer {
-    const isAdapter = !!httpAdapter.getHttpServer;
+    const isAdapter = httpAdapter.getHttpServer;
     if (isAdapter) {
       return httpAdapter;
     }

@@ -10,6 +10,8 @@ export declare class TestingModuleBuilder {
   private readonly instanceLoader;
   private readonly module;
   constructor(metadataScanner: MetadataScanner, metadata: ModuleMetadata);
+  overridePipe(typeOrToken: any): OverrideBy;
+  overrideFilter(typeOrToken: any): OverrideBy;
   overrideGuard(typeOrToken: any): OverrideBy;
   overrideInterceptor(typeOrToken: any): OverrideBy;
   /** @deprecated */

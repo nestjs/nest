@@ -42,6 +42,7 @@ export interface INestExpressApplication {
    */
   useStaticAssets(options: any): this;
   useStaticAssets(path: string, options?: ServeStaticOptions);
+  // tslint:disable-next-line:unified-signatures
   useStaticAssets(pathOrOptions: any, options?: ServeStaticOptions): this;
 
   /**
