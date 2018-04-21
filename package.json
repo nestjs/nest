@@ -146,8 +146,7 @@
   },
   "lint-staged": {
     "packages/**/*.{ts,json}": [
-      "npm run lint",
-      "npm run prettier",
+      "npm run format",
       "git add"
     ]
   }
