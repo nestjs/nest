@@ -12,6 +12,7 @@
             true,
             "single"
         ],
+        "member-access": false,
         "indent": false,
         "ordered-imports": [
             false

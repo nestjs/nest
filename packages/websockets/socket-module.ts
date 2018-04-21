@@ -76,7 +76,7 @@ export class SocketModule {
     const servers = this.socketsContainer.getAllServers();
     await Promise.all(
       iterate(servers.values()).map(
-        async ({ server }) => server && await adapter.close(server),
+        async ({ server }) => server && (await adapter.close(server)),
       ),
     );
     this.socketsContainer.clear();

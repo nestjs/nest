@@ -124,12 +124,13 @@ export class NestFactoryStatic {
 
     const modules = container.getModules().values();
     const root = modules.next().value;
-    return this.createNestInstance<INestApplicationContext>(
-      new NestApplicationContext(container, [], root, false),
+    const context = this.createNestInstance<NestApplicationContext>(
+      new NestApplicationContext(container, [], root),
     );
+    return await context.init();
   }
 
-  private createNestInstance<T>(instance: T) {
+  private createNestInstance<T>(instance: T): T {
     return this.createProxy(instance);
   }
 

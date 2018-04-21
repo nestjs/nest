@@ -15,7 +15,7 @@ import { NestInterceptor } from '../../interfaces';
  * @param  {} ...interceptors
  */
 export function UseInterceptors(
-  ...interceptors: (NestInterceptor | Function)[]
+  ...interceptors: (NestInterceptor | Function)[],
 ) {
   return (target: any, key?, descriptor?) => {
     const isValidInterceptor = interceptor =>

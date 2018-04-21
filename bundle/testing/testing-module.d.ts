@@ -10,11 +10,25 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
 export declare class TestingModule extends NestApplicationContext {
-    private readonly applicationConfig;
-    constructor(container: NestContainer, scope: Type<any>[], contextModule: any, applicationConfig: ApplicationConfig);
-    createNestApplication(httpServer?: FastifyAdapter, options?: NestApplicationOptions): INestApplication & INestFastifyApplication;
-    createNestApplication(httpServer?: HttpServer, options?: NestApplicationOptions): INestApplication & INestExpressApplication;
-    createNestApplication(httpServer?: any, options?: NestApplicationOptions): INestApplication & INestExpressApplication;
-    createNestMicroservice(options: MicroserviceOptions): INestMicroservice;
-    private applyExpressAdapter(httpAdapter);
+  private readonly applicationConfig;
+  constructor(
+    container: NestContainer,
+    scope: Type<any>[],
+    contextModule: any,
+    applicationConfig: ApplicationConfig,
+  );
+  createNestApplication(
+    httpServer?: FastifyAdapter,
+    options?: NestApplicationOptions,
+  ): INestApplication & INestFastifyApplication;
+  createNestApplication(
+    httpServer?: HttpServer,
+    options?: NestApplicationOptions,
+  ): INestApplication & INestExpressApplication;
+  createNestApplication(
+    httpServer?: any,
+    options?: NestApplicationOptions,
+  ): INestApplication & INestExpressApplication;
+  createNestMicroservice(options: MicroserviceOptions): INestMicroservice;
+  private applyExpressAdapter(httpAdapter);
 }

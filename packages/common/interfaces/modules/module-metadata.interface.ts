@@ -9,6 +9,5 @@ export interface ModuleMetadata {
   controllers?: Type<any>[];
   providers?: Provider[];
   exports?: Array<DynamicModule | string | Provider | any[]>;
-  modules?: Array<Type<any> | DynamicModule | any[]>;
   components?: Provider[];
 }

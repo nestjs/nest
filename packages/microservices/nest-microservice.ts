@@ -74,7 +74,7 @@ export class NestMicroservice extends NestApplicationContext
     }
   }
 
-  public registerModules() {
+  public async registerModules(): Promise<any> {
     this.socketModule &&
       this.socketModule.register(this.container, this.applicationConfig);
     this.microservicesModule.setupClients(this.container);
@@ -82,7 +82,7 @@ export class NestMicroservice extends NestApplicationContext
     this.registerListeners();
     this.setIsInitialized(true);
 
-    !this.isInitHookCalled && this.callInitHook();
+    !this.isInitHookCalled && (await this.callInitHook());
   }
 
   public registerListeners() {
@@ -125,9 +125,9 @@ export class NestMicroservice extends NestApplicationContext
     return await new Promise(resolve => this.listen(resolve));
   }
 
-  public close() {
-    this.server.close();
-    !this.isTerminated && this.closeApplication();
+  public async close(): Promise<any> {
+    await this.server.close();
+    !this.isTerminated && (await this.closeApplication());
   }
 
   public setIsInitialized(isInitialized: boolean) {
@@ -142,48 +142,58 @@ export class NestMicroservice extends NestApplicationContext
     this.isInitHookCalled = isInitHookCalled;
   }
 
-  protected closeApplication() {
-    this.socketModule && this.socketModule.close();
-
-    this.callDestroyHook();
+  protected async closeApplication(): Promise<any> {
+    this.socketModule && (await this.socketModule.close());
+    await this.callDestroyHook();
     this.setIsTerminated(true);
   }
 
-  protected callInitHook() {
+  protected async callInitHook(): Promise<any> {
     const modules = this.container.getModules();
-    modules.forEach(module => {
-      this.callModuleInitHook(module);
-    });
+    await Promise.all(
+      iterate(modules.values()).map(
+        async module => await this.callModuleInitHook(module),
+      ),
+    );
     this.setIsInitHookCalled(true);
   }
 
-  protected callModuleInitHook(module: Module) {
+  protected async callModuleInitHook(module: Module): Promise<any> {
     const components = [...module.routes, ...module.components];
-    iterate(components)
-      .map(([key, { instance }]) => instance)
-      .filter(instance => !isNil(instance))
-      .filter(this.hasOnModuleInitHook)
-      .forEach(instance => (instance as OnModuleInit).onModuleInit());
+    await Promise.all(
+      iterate(components)
+        .map(([key, { instance }]) => instance)
+        .filter(instance => !isNil(instance))
+        .filter(this.hasOnModuleInitHook)
+        .map(async instance => await (instance as OnModuleInit).onModuleInit()),
+    );
   }
 
   protected hasOnModuleInitHook(instance: any): instance is OnModuleInit {
     return !isUndefined((instance as OnModuleInit).onModuleInit);
   }
 
-  private callDestroyHook() {
+  private async callDestroyHook(): Promise<any> {
     const modules = this.container.getModules();
-    modules.forEach(module => {
-      this.callModuleDestroyHook(module);
-    });
+    await Promise.all(
+      iterate(modules.values()).map(
+        async module => await this.callModuleDestroyHook(module),
+      ),
+    );
   }
 
-  private callModuleDestroyHook(module: Module) {
+  private async callModuleDestroyHook(module: Module): Promise<any> {
     const components = [...module.routes, ...module.components];
-    iterate(components)
-      .map(([key, { instance }]) => instance)
-      .filter(instance => !isNil(instance))
-      .filter(this.hasOnModuleDestroyHook)
-      .forEach(instance => (instance as OnModuleDestroy).onModuleDestroy());
+    await Promise.all(
+      iterate(components)
+        .map(([key, { instance }]) => instance)
+        .filter(instance => !isNil(instance))
+        .filter(this.hasOnModuleDestroyHook)
+        .map(
+          async instance =>
+            await (instance as OnModuleDestroy).onModuleDestroy(),
+        ),
+    );
   }
 
   private hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
