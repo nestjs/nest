@@ -511,7 +511,7 @@ describe('Injector', () => {
     let module;
     beforeEach(() => {
       module = {
-        components: [],
+        providers: [],
       };
     });
 

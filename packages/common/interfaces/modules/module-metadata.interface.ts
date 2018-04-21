@@ -9,5 +9,8 @@ export interface ModuleMetadata {
   controllers?: Type<any>[];
   providers?: Provider[];
   exports?: Array<DynamicModule | string | Provider | any[]>;
+  /** @deprecated */
+  modules?: Array<Type<any> | DynamicModule | any[]>;
+  /** @deprecated */
   components?: Provider[];
 }

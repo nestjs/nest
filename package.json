@@ -7,7 +7,7 @@
     "precommit": "lint-staged",
     "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
     "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
-    "lint": "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\"",
+    "lint": "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
     "format": "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist bundle",
@@ -146,7 +146,6 @@
   },
   "lint-staged": {
     "packages/**/*.{ts,json}": [
-      "npm run lint",
       "npm run format",
       "git add"
     ]

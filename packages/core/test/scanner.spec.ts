@@ -21,15 +21,15 @@ describe('DependenciesScanner', () => {
   class TestRoute {}
 
   @Module({
-    components: [TestComponent],
+    providers: [TestComponent],
     controllers: [TestRoute],
     exports: [TestComponent],
   })
   class AnotherTestModule {}
 
   @Module({
-    modules: [AnotherTestModule],
-    components: [TestComponent],
+    imports: [AnotherTestModule],
+    providers: [TestComponent],
     controllers: [TestRoute],
   })
   class TestModule {}

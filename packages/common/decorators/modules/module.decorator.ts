@@ -5,6 +5,7 @@ import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interfa
 import { InvalidModuleConfigException } from './exceptions/invalid-module-config.exception';
 
 const metadataKeys = [
+  metadata.MODULES,
   metadata.IMPORTS,
   metadata.EXPORTS,
   metadata.COMPONENTS,
@@ -49,13 +50,21 @@ export function Module(obj: ModuleMetadata): ClassDecorator {
 }
 
 function overrideModuleMetadata(moduleMetadata: ModuleMetadata) {
+  moduleMetadata.modules = moduleMetadata.imports
+    ? moduleMetadata.imports
+    : moduleMetadata.modules;
+
   moduleMetadata.components = moduleMetadata.providers
     ? moduleMetadata.providers
     : moduleMetadata.components;
 }
 
 function showDeprecatedWarnings(moduleMetadata: ModuleMetadata) {
+  const modulesDeprecatedWarning =
+    'The "modules" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "imports" key instead.';
   const componentsDeprecatetWarning =
     'The "components" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "providers" key instead.';
+
+  moduleMetadata.modules && deprecate(modulesDeprecatedWarning);
   moduleMetadata.components && deprecate(componentsDeprecatetWarning);
 }
