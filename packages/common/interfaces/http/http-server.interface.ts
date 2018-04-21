@@ -1,16 +1,12 @@
 import { IncomingMessage, ServerResponse } from 'http';
 
-export interface ErrorHandler {
-  (
+export type ErrorHandler = (
     error: any,
     req: Partial<IncomingMessage>,
     res: ServerResponse | any,
     next?: Function,
-  ): any;
-}
-export interface RequestHandler {
-  (req: Partial<IncomingMessage>, res: ServerResponse | any, next?: Function): any;
-}
+  ) => any;
+export type RequestHandler = (req: Partial<IncomingMessage>, res: ServerResponse | any, next?: Function) => any;
 
 export interface HttpServer {
   use(handler: RequestHandler | ErrorHandler): any;

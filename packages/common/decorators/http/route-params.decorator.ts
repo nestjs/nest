@@ -80,16 +80,14 @@ export const Headers: (
 ) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.HEADERS);
 
 export function Query();
-// tslint:disable-next-line:unified-signatures
 export function Query(...pipes: (Type<PipeTransform> | PipeTransform)[]);
 export function Query(
   property: string,
-  // tslint:disable-next-line:unified-signatures
   ...pipes: (Type<PipeTransform> | PipeTransform)[],
 );
 export function Query(
   property?: string | (Type<PipeTransform> | PipeTransform),
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+  ...pipes: (Type<PipeTransform> | PipeTransform)[],
 ) {
   return createPipesRouteParamDecorator(RouteParamtypes.QUERY)(
     property,
@@ -98,16 +96,14 @@ export function Query(
 }
 
 export function Body();
-// tslint:disable-next-line:unified-signatures
 export function Body(...pipes: (Type<PipeTransform> | PipeTransform)[]);
 export function Body(
   property: string,
-  // tslint:disable-next-line:unified-signatures
   ...pipes: (Type<PipeTransform> | PipeTransform)[],
 );
 export function Body(
   property?: string | (Type<PipeTransform> | PipeTransform),
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+  ...pipes: (Type<PipeTransform> | PipeTransform)[],
 ) {
   return createPipesRouteParamDecorator(RouteParamtypes.BODY)(
     property,
@@ -116,11 +112,9 @@ export function Body(
 }
 
 export function Param();
-// tslint:disable-next-line:unified-signatures
 export function Param(...pipes: (Type<PipeTransform> | PipeTransform)[]);
 export function Param(
   property: string,
-  // tslint:disable-next-line:unified-signatures
   ...pipes: (Type<PipeTransform> | PipeTransform)[],
 );
 export function Param(

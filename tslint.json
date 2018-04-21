@@ -17,6 +17,8 @@
         "ordered-imports": [
             false
         ],
+        "no-unnecessary-initializer": false,
+        "unified-signatures": false,
         "max-line-length": [
             150
         ],

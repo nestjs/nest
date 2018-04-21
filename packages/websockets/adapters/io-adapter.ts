@@ -18,7 +18,7 @@ export class IoAdapter implements WebSocketAdapter {
     const { namespace, server, ...opt } = options;
     return server && isFunction(server.of)
       ? server.of(namespace)
-      : namespace 
+      : namespace
         ? this.createIOServer(port, opt).of(namespace)
         : this.createIOServer(port, opt);
   }

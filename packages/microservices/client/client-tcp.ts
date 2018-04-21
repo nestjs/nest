@@ -49,16 +49,16 @@ export class ClientTCP extends ClientProxy {
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ) {
-    const handleRequestResponse = (socket: JsonSocket) => {
+    const handleRequestResponse = (jsonSocket: JsonSocket) => {
       const packet = this.assignPacketId(partialPacket);
-      socket.sendMessage(packet);
+      jsonSocket.sendMessage(packet);
       const listener = (buffer: WritePacket & PacketId) => {
         if (buffer.id !== packet.id) {
           return void 0;
         }
-        this.handleResponse(socket, callback, buffer, listener);
+        this.handleResponse(jsonSocket, callback, buffer, listener);
       };
-      socket.on(MESSAGE_EVENT, listener);
+      jsonSocket.on(MESSAGE_EVENT, listener);
     };
     if (this.isConnected) {
       return handleRequestResponse(this.socket);

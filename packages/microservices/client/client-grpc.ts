@@ -27,13 +27,13 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public getService<T = any>(name: string): T {
-    var options, credentials;
+    const { options } = this.options as GrpcOptions;
     if (!this.grpcClient[name]) {
       throw new InvalidGrpcServiceException();
     }
     const grpcClient = new this.grpcClient[name](
       this.url,
-      credentials || grpcPackage.credentials.createInsecure(),
+      options.credentials || grpcPackage.credentials.createInsecure(),
       options,
     );
     const protoMethods = Object.keys(this.grpcClient[name].prototype);
@@ -91,11 +91,11 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       this.options,
       'package',
     );
-    const grpcPackage = this.lookupPackage(grpcContext, packageName);
-    if (!grpcPackage) {
+    const grpcPkg = this.lookupPackage(grpcContext, packageName);
+    if (!grpcPkg) {
       throw new InvalidGrpcPackageException();
     }
-    return grpcPackage;
+    return grpcPkg;
   }
 
   public loadProto(): GrpcObject {

@@ -15,8 +15,8 @@ export class WsExceptionsHandler {
 
     const status = 'error';
     if (!(exception instanceof WsException)) {
-      const message = messages.UNKNOWN_EXCEPTION_MESSAGE;
-      return client.emit('exception', { status, message });
+      const errorMessage = messages.UNKNOWN_EXCEPTION_MESSAGE;
+      return client.emit('exception', { status, message: errorMessage });
     }
     const result = exception.getError();
     const message = isObject(result)

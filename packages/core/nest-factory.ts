@@ -67,6 +67,7 @@ export class NestFactoryStatic {
     INestApplication & (INestExpressApplication | INestFastifyApplication)
   > {
     const isHttpServer = serverOrOptions && serverOrOptions.patch;
+    // tslint:disable-next-line:prefer-const
     let [httpServer, appOptions] = isHttpServer
       ? [serverOrOptions, options]
       : [ExpressFactory.create(), serverOrOptions];

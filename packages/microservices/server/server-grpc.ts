@@ -53,13 +53,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     }
   }
 
-  public getServiceNames(grpcPackage: any) {
-    return Object.keys(grpcPackage).filter(name => grpcPackage[name].service);
+  public getServiceNames(grpcPkg: any) {
+    return Object.keys(grpcPkg).filter(name => grpcPkg[name].service);
   }
 
   public async createService(grpcService: any, name: string) {
     const service = {};
 
+    // tslint:disable-next-line:forin
     for (const methodName in grpcService.prototype) {
       const methodHandler = this.messageHandlers[
         this.createPattern(name, methodName)
