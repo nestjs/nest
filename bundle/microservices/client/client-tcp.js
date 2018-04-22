@@ -38,16 +38,16 @@ class ClientTCP extends client_proxy_1.ClientProxy {
     }
     publish(partialPacket, callback) {
         return __awaiter(this, void 0, void 0, function* () {
-            const handleRequestResponse = (socket) => {
+            const handleRequestResponse = (jsonSocket) => {
                 const packet = this.assignPacketId(partialPacket);
-                socket.sendMessage(packet);
+                jsonSocket.sendMessage(packet);
                 const listener = (buffer) => {
                     if (buffer.id !== packet.id) {
                         return void 0;
                     }
-                    this.handleResponse(socket, callback, buffer, listener);
+                    this.handleResponse(jsonSocket, callback, buffer, listener);
                 };
-                socket.on(constants_1.MESSAGE_EVENT, listener);
+                jsonSocket.on(constants_1.MESSAGE_EVENT, listener);
             };
             if (this.isConnected) {
                 return handleRequestResponse(this.socket);

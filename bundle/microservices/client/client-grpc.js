@@ -27,11 +27,11 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
         this.grpcClient = this.createClient();
     }
     getService(name) {
-        var options, credentials;
+        const { options } = this.options;
         if (!this.grpcClient[name]) {
             throw new invalid_grpc_service_exception_1.InvalidGrpcServiceException();
         }
-        const grpcClient = new this.grpcClient[name](this.url, credentials || grpcPackage.credentials.createInsecure(), options);
+        const grpcClient = new this.grpcClient[name](this.url, options.credentials || grpcPackage.credentials.createInsecure(), options);
         const protoMethods = Object.keys(this.grpcClient[name].prototype);
         const grpcService = {};
         protoMethods.forEach(m => {
@@ -71,11 +71,11 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     createClient() {
         const grpcContext = this.loadProto();
         const packageName = this.getOptionsProp(this.options, 'package');
-        const grpcPackage = this.lookupPackage(grpcContext, packageName);
-        if (!grpcPackage) {
+        const grpcPkg = this.lookupPackage(grpcContext, packageName);
+        if (!grpcPkg) {
             throw new invalid_grpc_package_exception_1.InvalidGrpcPackageException();
         }
-        return grpcPackage;
+        return grpcPkg;
     }
     loadProto() {
         try {

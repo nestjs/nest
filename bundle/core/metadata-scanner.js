@@ -20,8 +20,10 @@ class MetadataScanner {
                 return !shared_utils_1.isConstructor(prop) && shared_utils_1.isFunction(prototype[prop]);
             })
                 .toArray();
-        } while ((prototype = Reflect.getPrototypeOf(prototype)) &&
-            prototype != Object.prototype);
+        } while (
+        // tslint:disable-next-line:no-conditional-assignment
+        (prototype = Reflect.getPrototypeOf(prototype)) &&
+            prototype !== Object.prototype);
     }
 }
 exports.MetadataScanner = MetadataScanner;

@@ -12,31 +12,29 @@ class FastifyAdapter {
             throw new missing_dependency_exception_1.MissingRequiredDependencyException('fastify', 'FastifyAdapter');
         }
     }
-    use(pathOrHandler, handler) {
-        return handler
-            ? this.instance.use(pathOrHandler, handler)
-            : this.instance.use(pathOrHandler);
+    use(...args) {
+        return this.instance.use(...args);
     }
-    get(pathOrHandler, handler) {
-        return this.instance.get(pathOrHandler, handler);
+    get(...args) {
+        return this.instance.get(...args);
     }
-    post(pathOrHandler, handler) {
-        return this.instance.post(pathOrHandler, handler);
+    post(...args) {
+        return this.instance.post(...args);
     }
-    head(pathOrHandler, handler) {
-        return this.instance.head(pathOrHandler, handler);
+    head(...args) {
+        return this.instance.head(...args);
     }
-    delete(pathOrHandler, handler) {
-        return this.instance.delete(pathOrHandler, handler);
+    delete(...args) {
+        return this.instance.delete(...args);
     }
-    put(pathOrHandler, handler) {
-        return this.instance.put(pathOrHandler, handler);
+    put(...args) {
+        return this.instance.put(...args);
     }
-    patch(pathOrHandler, handler) {
-        return this.instance.patch(pathOrHandler, handler);
+    patch(...args) {
+        return this.instance.patch(...args);
     }
-    options(pathOrHandler, handler) {
-        return this.instance.options(pathOrHandler, handler);
+    options(...args) {
+        return this.instance.options(...args);
     }
     listen(port, hostname, callback) {
         return this.instance.listen(port, hostname, callback);

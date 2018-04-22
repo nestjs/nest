@@ -31,6 +31,7 @@ class NestFactoryStatic {
     create(module, serverOrOptions, options) {
         return __awaiter(this, void 0, void 0, function* () {
             const isHttpServer = serverOrOptions && serverOrOptions.patch;
+            // tslint:disable-next-line:prefer-const
             let [httpServer, appOptions] = isHttpServer
                 ? [serverOrOptions, options]
                 : [express_factory_1.ExpressFactory.create(), serverOrOptions];
@@ -75,7 +76,8 @@ class NestFactoryStatic {
             yield this.initialize(module, container);
             const modules = container.getModules().values();
             const root = modules.next().value;
-            return this.createNestInstance(new nest_application_context_1.NestApplicationContext(container, [], root, false));
+            const context = this.createNestInstance(new nest_application_context_1.NestApplicationContext(container, [], root));
+            return yield context.init();
         });
     }
     createNestInstance(instance) {

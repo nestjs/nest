@@ -4,6 +4,7 @@ require("reflect-metadata");
 const constants_1 = require("../constants");
 function WebSocketGateway(portOrOptions, options) {
     const isPortInt = Number.isInteger(portOrOptions);
+    // tslint:disable-next-line:prefer-const
     let [port, opt] = isPortInt
         ? [portOrOptions, options]
         : [0, portOrOptions];

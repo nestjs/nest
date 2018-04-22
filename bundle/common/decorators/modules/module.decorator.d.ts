@@ -6,7 +6,6 @@ import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interfa
  * - `controllers` - the list of controllers (e.g. HTTP controllers)
  * - `providers` - the list of providers that belong to this module. They can be injected between themselves.
  * - `exports` - the set of components, which should be available for modules, which imports this module
- * - `modules` - @deprecated the set of the 'imported' modules
  * - `components` - @deprecated the list of components that belong to this module. They can be injected between themselves.
  * @param obj {ModuleMetadata} Module metadata
  */

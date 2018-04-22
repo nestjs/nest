@@ -28,7 +28,6 @@ const validateKeys = (keys) => {
  * - `controllers` - the list of controllers (e.g. HTTP controllers)
  * - `providers` - the list of providers that belong to this module. They can be injected between themselves.
  * - `exports` - the set of components, which should be available for modules, which imports this module
- * - `modules` - @deprecated the set of the 'imported' modules
  * - `components` - @deprecated the list of components that belong to this module. They can be injected between themselves.
  * @param obj {ModuleMetadata} Module metadata
  */
@@ -46,17 +45,17 @@ function Module(obj) {
     };
 }
 exports.Module = Module;
-function overrideModuleMetadata(metadata) {
-    metadata.modules = metadata.imports
-        ? metadata.imports
-        : metadata.modules;
-    metadata.components = metadata.providers
-        ? metadata.providers
-        : metadata.components;
+function overrideModuleMetadata(moduleMetadata) {
+    moduleMetadata.modules = moduleMetadata.imports
+        ? moduleMetadata.imports
+        : moduleMetadata.modules;
+    moduleMetadata.components = moduleMetadata.providers
+        ? moduleMetadata.providers
+        : moduleMetadata.components;
 }
-function showDeprecatedWarnings(metadata) {
+function showDeprecatedWarnings(moduleMetadata) {
     const modulesDeprecatedWarning = 'The "modules" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "imports" key instead.';
     const componentsDeprecatetWarning = 'The "components" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "providers" key instead.';
-    metadata.modules && deprecate(modulesDeprecatedWarning);
-    metadata.components && deprecate(componentsDeprecatetWarning);
+    moduleMetadata.modules && deprecate(modulesDeprecatedWarning);
+    moduleMetadata.components && deprecate(componentsDeprecatetWarning);
 }

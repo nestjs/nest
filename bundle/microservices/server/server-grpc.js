@@ -47,12 +47,13 @@ class ServerGrpc extends server_1.Server {
             }
         });
     }
-    getServiceNames(grpcPackage) {
-        return Object.keys(grpcPackage).filter(name => grpcPackage[name].service);
+    getServiceNames(grpcPkg) {
+        return Object.keys(grpcPkg).filter(name => grpcPkg[name].service);
     }
     createService(grpcService, name) {
         return __awaiter(this, void 0, void 0, function* () {
             const service = {};
+            // tslint:disable-next-line:forin
             for (const methodName in grpcService.prototype) {
                 const methodHandler = this.messageHandlers[this.createPattern(name, methodName)];
                 if (!methodHandler) {

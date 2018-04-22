@@ -10,7 +10,7 @@ export declare class ServerGrpc extends Server implements CustomTransportStrateg
     listen(callback: () => void): Promise<void>;
     start(callback?: () => void): Promise<void>;
     bindEvents(): Promise<void>;
-    getServiceNames(grpcPackage: any): string[];
+    getServiceNames(grpcPkg: any): string[];
     createService(grpcService: any, name: string): Promise<{}>;
     createPattern(service: string, methodName: string): string;
     createServiceMethod(methodHandler: Function, protoNativeHandler: any): Function;
