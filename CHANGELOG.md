@@ -1,3 +1,9 @@
+## 5.0.0-beta.3
+### Bug Fixes
+- **core**: incorrect `ExpressAdapter` method wrappers [#585](https://github.com/nestjs/nest/issues/585)
+- **core**: the `fastify-formbody` is no longer a required dependency [#575](https://github.com/nestjs/nest/issues/575)
+- **core**: incorrect `createApplication()` typings (unable to pass express instance directly) [#575](https://github.com/nestjs/nest/issues/575)
+
 ## 5.0.0-beta.0
 ### Features
 - **core**: support async lifecycle hooks (`OnModuleInit` and `OnModuleDestroy`) [#569](https://github.com/nestjs/nest/issues/569)
