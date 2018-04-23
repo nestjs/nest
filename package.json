@@ -12,6 +12,7 @@
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist bundle",
     "prepublish": "npm run build:lib",
+    "prepublish:beta": "npm run build:lib",
     "publish": "./node_modules/.bin/lerna publish --exact -m \"chore(release) publish %s\"",
     "publish:next": "./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(release) publish %s\"",
     "publish:beta": "./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(release) publish %s\""

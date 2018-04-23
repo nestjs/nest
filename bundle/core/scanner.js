@@ -142,8 +142,8 @@ class DependenciesScanner {
     storeRoute(route, token) {
         this.container.addController(route, token);
     }
-    reflectMetadata(metatype, metadata) {
-        return Reflect.getMetadata(metadata, metatype) || [];
+    reflectMetadata(metatype, metadataKey) {
+        return Reflect.getMetadata(metadataKey, metatype) || [];
     }
     applyApplicationProviders() {
         const applyProvidersMap = this.getApplyProvidersMap();

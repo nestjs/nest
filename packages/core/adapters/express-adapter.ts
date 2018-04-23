@@ -16,44 +16,44 @@ export class ExpressAdapter implements HttpServer {
 
   get(handler: RequestHandler);
   get(path: any, handler: RequestHandler);
-  get(pathOrHandler: any, handler?: RequestHandler) {
-    return this.instance.get(pathOrHandler, handler);
+  get(...args: any[]) {
+    return this.instance.get(...args);
   }
 
   post(handler: RequestHandler);
   post(path: any, handler: RequestHandler);
-  post(pathOrHandler: any, handler?: RequestHandler) {
-    return this.instance.post(pathOrHandler, handler);
+  post(...args: any[]) {
+    return this.instance.post(...args);
   }
 
   head(handler: RequestHandler);
   head(path: any, handler: RequestHandler);
-  head(pathOrHandler: any, handler?: RequestHandler) {
-    return this.instance.head(pathOrHandler, handler);
+  head(...args: any[]) {
+    return this.instance.head(...args);
   }
 
   delete(handler: RequestHandler);
   delete(path: any, handler: RequestHandler);
-  delete(pathOrHandler: any, handler?: RequestHandler) {
-    return this.instance.delete(pathOrHandler, handler);
+  delete(...args: any[]) {
+    return this.instance.delete(...args);
   }
 
   put(handler: RequestHandler);
   put(path: any, handler: RequestHandler);
-  put(pathOrHandler: any, handler?: RequestHandler) {
-    return this.instance.put(pathOrHandler, handler);
+  put(...args: any[]) {
+    return this.instance.put(...args);
   }
 
   patch(handler: RequestHandler);
   patch(path: any, handler: RequestHandler);
-  patch(pathOrHandler: any, handler?: RequestHandler) {
-    return this.instance.patch(pathOrHandler, handler);
+  patch(...args: any[]) {
+    return this.instance.patch(...args);
   }
 
   options(handler: RequestHandler);
   options(path: any, handler: RequestHandler);
-  options(pathOrHandler: any, handler?: RequestHandler) {
-    return this.instance.options(pathOrHandler, handler);
+  options(...args: any[]) {
+    return this.instance.options(...args);
   }
 
   listen(port: string | number, callback?: () => void);

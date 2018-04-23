@@ -99,9 +99,9 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
             useBodyParser && this.registerParserMiddlewares();
             yield this.registerModules();
             yield this.registerRouter();
-            this.callInitHook();
-            this.logger.log(constants_1.messages.APPLICATION_READY);
+            yield this.callInitHook();
             this.isInitialized = true;
+            this.logger.log(constants_1.messages.APPLICATION_READY);
             return this;
         });
     }
@@ -218,13 +218,15 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         });
     }
     close() {
-        this.socketModule && this.socketModule.close();
-        this.httpServer && this.httpServer.close();
-        this.microservices.forEach(microservice => {
-            microservice.setIsTerminated(true);
-            microservice.close();
+        return __awaiter(this, void 0, void 0, function* () {
+            this.socketModule && (yield this.socketModule.close());
+            this.httpServer && this.httpServer.close();
+            yield Promise.all(iterare_1.default(this.microservices).map((microservice) => __awaiter(this, void 0, void 0, function* () {
+                microservice.setIsTerminated(true);
+                yield microservice.close();
+            })));
+            yield this.callDestroyHook();
         });
-        this.callDestroyHook();
     }
     setGlobalPrefix(prefix) {
         this.config.setGlobalPrefix(prefix);
@@ -290,18 +292,20 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         }));
     }
     callDestroyHook() {
-        const modules = this.container.getModules();
-        modules.forEach(module => {
-            this.callModuleDestroyHook(module);
+        return __awaiter(this, void 0, void 0, function* () {
+            const modules = this.container.getModules();
+            yield Promise.all(iterare_1.default(modules.values()).map((module) => __awaiter(this, void 0, void 0, function* () { return yield this.callModuleDestroyHook(module); })));
         });
     }
     callModuleDestroyHook(module) {
-        const components = [...module.routes, ...module.components];
-        iterare_1.default(components)
-            .map(([key, { instance }]) => instance)
-            .filter(instance => !shared_utils_1.isNil(instance))
-            .filter(this.hasOnModuleDestroyHook)
-            .forEach(instance => instance.onModuleDestroy());
+        return __awaiter(this, void 0, void 0, function* () {
+            const components = [...module.routes, ...module.components];
+            yield Promise.all(iterare_1.default(components)
+                .map(([key, { instance }]) => instance)
+                .filter(instance => !shared_utils_1.isNil(instance))
+                .filter(this.hasOnModuleDestroyHook)
+                .map((instance) => __awaiter(this, void 0, void 0, function* () { return yield instance.onModuleDestroy(); })));
+        });
     }
     hasOnModuleDestroyHook(instance) {
         return !shared_utils_1.isUndefined(instance.onModuleDestroy);

@@ -19,8 +19,8 @@ class RoutesMapper {
             return [this.mapObjectToPath(route)];
         }
         const paths = this.routerExplorer.scanForPaths(Object.create(route), route.prototype);
-        const uniquePathsSet = new Set(paths.map(route => this.validateGlobalPath(routePath) +
-            this.validateRoutePath(route.path)));
+        const uniquePathsSet = new Set(paths.map(item => this.validateGlobalPath(routePath) +
+            this.validateRoutePath(item.path)));
         return [...uniquePathsSet.values()];
     }
     mapObjectToPath(routeOrPath) {

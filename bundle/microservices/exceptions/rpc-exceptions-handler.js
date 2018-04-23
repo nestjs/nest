@@ -17,14 +17,14 @@ class RpcExceptionsHandler {
         }
         const status = 'error';
         if (!(exception instanceof rpc_exception_1.RpcException)) {
-            const message = constants_1.messages.UNKNOWN_EXCEPTION_MESSAGE;
+            const errorMessage = constants_1.messages.UNKNOWN_EXCEPTION_MESSAGE;
             const isError = shared_utils_1.isObject(exception) && exception.message;
             const loggerArgs = isError
                 ? [exception.message, exception.stack]
                 : [exception];
             const logger = RpcExceptionsHandler.logger;
             logger.error.apply(logger, loggerArgs);
-            return throw_1._throw({ status, message });
+            return throw_1._throw({ status, message: errorMessage });
         }
         const res = exception.getError();
         const message = shared_utils_1.isObject(res) ? res : { status, message: res };

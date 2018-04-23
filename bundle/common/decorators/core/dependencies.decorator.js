@@ -7,7 +7,6 @@ function flatten(arr) {
     return flat.some(Array.isArray) ? flatten(flat) : flat;
 }
 exports.flatten = flatten;
-;
 exports.Dependencies = (...dependencies) => {
     const flattenDeps = flatten(dependencies);
     return (target) => {

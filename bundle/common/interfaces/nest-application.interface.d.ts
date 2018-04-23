@@ -115,9 +115,9 @@ export interface INestApplication extends INestApplicationContext {
      */
     useGlobalGuards(...guards: CanActivate[]): this;
     /**
-     * Terminates the application (both NestApplication, Gateways and each connected microservice)
+     * Terminates the application (including NestApplication, Gateways, and each connected microservice)
      *
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    close(): void;
+    close(): Promise<void>;
 }

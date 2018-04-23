@@ -13,7 +13,7 @@ exports.mapToClass = middleware => {
     }
     return exports.assignToken(class {
         constructor() {
-            this.resolve = (...args) => (...args) => middleware(...args);
+            this.resolve = (...args) => (...params) => middleware(...params);
         }
     });
 };

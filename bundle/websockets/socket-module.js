@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
+const iterare_1 = require("iterare");
 const container_1 = require("./container");
 const web_sockets_controller_1 = require("./web-sockets-controller");
 const socket_server_provider_1 = require("./socket-server-provider");
@@ -53,7 +54,7 @@ class SocketModule {
             }
             const adapter = this.applicationConfig.getIoAdapter();
             const servers = this.socketsContainer.getAllServers();
-            servers.forEach(({ server }) => server && adapter.close(server));
+            yield Promise.all(iterare_1.default(servers.values()).map(({ server }) => __awaiter(this, void 0, void 0, function* () { return server && (yield adapter.close(server)); })));
             this.socketsContainer.clear();
         });
     }

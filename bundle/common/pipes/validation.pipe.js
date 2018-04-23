@@ -62,7 +62,7 @@ let ValidationPipe = class ValidationPipe {
             return false;
         }
         const types = [String, Boolean, Number, Array, Object];
-        return !types.find(type => metatype === type) && !shared_utils_1.isNil(metatype);
+        return !types.find(t => metatype === t) && !shared_utils_1.isNil(metatype);
     }
 };
 ValidationPipe = __decorate([
