@@ -1,5 +1,5 @@
 import { HelloService } from './hello.service';
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Header } from '@nestjs/common';
 import { Observable } from 'rxjs/Observable';
 import { of } from 'rxjs/observable/of';
 
@@ -8,6 +8,7 @@ export class HelloController {
   constructor(private readonly helloService: HelloService) {}
 
   @Get()
+  @Header('Authorization', 'Bearer')
   greeting(): string {
     return this.helloService.greeting();
   }

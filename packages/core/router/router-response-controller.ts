@@ -1,6 +1,11 @@
 import { RequestMethod, HttpStatus, HttpServer } from '@nestjs/common';
 import { isNil, isObject, isFunction } from '@nestjs/common/utils/shared.utils';
 
+export interface CustomHeader {
+  name: string;
+  value: string;
+}
+
 export class RouterResponseController {
   constructor(private readonly applicationRef: HttpServer) {}
 
@@ -30,5 +35,11 @@ export class RouterResponseController {
       default:
         return HttpStatus.OK;
     }
+  }
+
+  public setHeaders(response, headers: CustomHeader[]) {
+    headers.forEach(({ name, value }) =>
+      this.applicationRef.setHeader(response, name, value),
+    );
   }
 }

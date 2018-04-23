@@ -18,11 +18,20 @@ describe('Hello world (default adapter)', () => {
     await app.init();
   });
 
-  it(`/GET`, () => {
-    return request(server)
-      .get('/hello')
-      .expect(200)
-      .expect('Hello world!');
+  describe('/GET', () => {
+    it(`should return "Hello world!"`, () => {
+      return request(server)
+        .get('/hello')
+        .expect(200)
+        .expect('Hello world!');
+    });
+
+    it(`should attach response header`, () => {
+      return request(server)
+        .get('/hello')
+        .expect(200)
+        .expect('Authorization', 'Bearer');
+    });
   });
 
   it(`/GET (Promise/async)`, () => {

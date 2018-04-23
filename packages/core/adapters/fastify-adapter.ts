@@ -131,6 +131,10 @@ export class FastifyAdapter {
     }
   }
 
+  setHeader(response, name: string, value: string) {
+    return response.header(name, value);
+  }
+
   getRequestMethod(request): string {
     return request.raw.method;
   }
