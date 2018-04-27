@@ -10,17 +10,18 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
+    "@nestjs/common": "^5.0.0",
+    "@nestjs/core": "^5.0.0",
     "fastify": "^1.1.0",
     "handlebars": "^4.0.11",
     "point-of-view": "^1.0.0",
-    "reflect-metadata": "^0.1.10",
-    "rxjs": "^5.5.6",
+    "rxjs": "^6.0.0",
     "typescript": "^2.5.2"
   },
   "devDependencies": {
     "@types/node": "^8.0.28",
     "nodemon": "^1.12.1",
-    "ts-node": "^3.3.0",
+    "ts-node": "^6.0.0",
     "tslint": "^5.9.1"
   }
 }

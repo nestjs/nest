@@ -16,16 +16,14 @@
     "@nestjs/websockets": "^5.0.0",
     "class-transformer": "^0.1.7",
     "class-validator": "^0.8.1",
-    "redis": "^2.7.1",
-    "reflect-metadata": "^0.1.10",
-    "rxjs": "^5.5.6",
-    "typescript": "^2.4.2",
+    "rxjs": "^6.0.0",
+    "typescript": "^2.8.0",
     "ws": "^3.1.0"
   },
   "devDependencies": {
     "@types/node": "^7.0.41",
     "@types/ws": "^3.0.2",
-    "ts-node": "^3.3.0",
+    "ts-node": "^6.0.0",
     "tslint": "^5.9.1"
   }
 }

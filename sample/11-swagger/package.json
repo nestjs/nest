@@ -22,9 +22,8 @@
     "@nestjs/websockets": "^5.0.0",
     "class-transformer": "^0.1.7",
     "class-validator": "^0.7.2",
-    "reflect-metadata": "^0.1.10",
-    "rxjs": "^5.5.6",
-    "typescript": "^2.4.2"
+    "rxjs": "^6.0.0",
+    "typescript": "^2.8.0"
   },
   "devDependencies": {
     "@types/jest": "^20.0.8",
@@ -32,7 +31,7 @@
     "jest": "^20.0.4",
     "supertest": "^3.0.0",
     "ts-jest": "^20.0.14",
-    "ts-node": "^3.3.0",
+    "ts-node": "^6.0.0",
     "tslint": "^5.9.1"
   }
 }

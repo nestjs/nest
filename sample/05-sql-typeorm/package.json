@@ -13,14 +13,13 @@
     "@nestjs/core": "^5.0.0",
     "@nestjs/typeorm": "^2.0.0",
     "mysql": "^2.15.0",
-    "reflect-metadata": "^0.1.10",
-    "rxjs": "^5.5.6",
+    "rxjs": "^6.0.0",
     "typeorm": "^0.1.16",
-    "typescript": "^2.4.2"
+    "typescript": "^2.8.0"
   },
   "devDependencies": {
     "@types/node": "^7.0.41",
-    "ts-node": "^3.3.0",
+    "ts-node": "^6.0.0",
     "tslint": "^5.9.1"
   }
 }

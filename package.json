@@ -57,6 +57,7 @@
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^6.0.0",
+    "rxjs-compat": "^6.0.0",
     "rxjs-grpc": "^0.1.6",
     "socket.io": "^2.0.4",
     "trouter": "^1.0.0"
@@ -105,7 +106,7 @@
     "sinon-chai": "^2.8.0",
     "socket.io-client": "^2.0.4",
     "supertest": "^3.0.0",
-    "ts-node": "^3.2.0",
+    "ts-node": "^6.0.0",
     "tslint": "^5.9.1",
     "typescript": "^2.8.1"
   },

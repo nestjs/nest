@@ -9,12 +9,10 @@
     "cors": "2.8.4",
     "express": "4.16.3",
     "iterare": "0.0.8",
-    "multer": "1.3.0",
-    "optional": "0.1.4",
-    "reflect-metadata": "0.1.12"
+    "optional": "0.1.4"
   },
   "peerDependencies": {
     "@nestjs/common": "^5.*",
-    "rxjs": "^5.5.6"
+    "rxjs": "^6.0.0"
   }
 }

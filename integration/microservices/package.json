@@ -7,21 +7,19 @@
     "start": "ts-node src/main"
   },
   "dependencies": {
-    "@nestjs/common": "^4.3.0",
-    "@nestjs/core": "^4.3.0",
-    "@nestjs/microservices": "^4.3.0",
-    "@nestjs/testing": "^4.3.0",
-    "@nestjs/websockets": "^4.3.0",
+    "@nestjs/common": "^5.0.0",
+    "@nestjs/core": "^5.0.0",
+    "@nestjs/microservices": "^5.0.0",
+    "@nestjs/testing": "^5.0.0",
+    "@nestjs/websockets": "^5.0.0",
     "class-transformer": "^0.1.7",
     "class-validator": "^0.7.2",
-    "redis": "^2.7.1",
-    "reflect-metadata": "^0.1.10",
     "rxjs": "^6.0.0",
-    "typescript": "^2.4.2"
+    "typescript": "^2.8.0"
   },
   "devDependencies": {
     "@types/node": "^7.0.41",
     "supertest": "^3.0.0",
-    "ts-node": "^3.3.0"
+    "ts-node": "^6.0.0"
   }
 }

@@ -14,9 +14,7 @@
     "passport": "^0.4.0",
     "passport-http-bearer": "^1.0.1",
     "passport-jwt": "^4.0.0",
-    "redis": "^2.7.1",
-    "reflect-metadata": "^0.1.10",
-    "rxjs": "^5.5.6",
+    "rxjs": "^6.0.0",
     "typescript": "^2.8.1"
   },
   "devDependencies": {
@@ -25,7 +23,7 @@
     "jest": "^20.0.4",
     "supertest": "^3.0.0",
     "ts-jest": "^20.0.14",
-    "ts-node": "^3.3.0",
+    "ts-node": "^6.0.0",
     "tslint": "^5.9.1"
   }
 }

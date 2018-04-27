@@ -10,6 +10,9 @@
     "class-validator": "0.8.1",
     "cli-color": "1.2.0",
     "deprecate": "1.0.0",
-    "reflect-metadata": "0.1.12"
+    "multer": "1.3.0"
+  },
+  "peerDependencies": {
+    "rxjs": "^6.0.0"
   }
 }
