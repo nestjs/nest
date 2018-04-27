@@ -1,3 +1,47 @@
+## 5.0.0-beta.3
+### Bug Fixes
+- **core**: incorrect `ExpressAdapter` method wrappers [#585](https://github.com/nestjs/nest/issues/585)
+- **core**: the `fastify-formbody` is no longer a required dependency [#575](https://github.com/nestjs/nest/issues/575)
+- **core**: incorrect `createApplication()` typings (unable to pass express instance directly) [#575](https://github.com/nestjs/nest/issues/575)
+
+## 5.0.0-beta.0
+### Features
+- **core**: support async lifecycle hooks (`OnModuleInit` and `OnModuleDestroy`) [#569](https://github.com/nestjs/nest/issues/569)
+- **core**: HTTP server independence, [fastify](https://github.com/fastify/fastify) integration (`FastifyAdapter`)
+- **core**: allow binding global interceptors, filters, pipes, and guards from any module. Example:
+```typescript
+{
+  provide: APP_INTERCEPTOR,
+  useClass: LoggerInterceptor,
+}
+```
+- **core**: `@UseGuards()`, `@UsePipes()`, `@UseFilters()`, and `@UseInterceptors()` extend metadata, instead of overriding existing one
+- **core**: dependency injection everywhere (pipes, filters, interceptors, and guards)
+- **core**: pass `ArgumentsHost` to exception filters (ability to access each argument)
+- **core**: pass enhanced `ExecutionContext` to both interceptors and guards (ability to access each argument and execution context)
+- **microservices**: improve existing transporters (TCP, Redis), provide new strategies: Nats, MQTT, gRPC
+
+### Bug Fixes
+- **common**: incorrent `multer` dependency [#532](https://github.com/nestjs/nest/issues/532)
+- **core**: hanging `NestApplicationContext` process [#503](https://github.com/nestjs/nest/issues/503)
+- **microservices**: concurrency issues (both TCP and Redis transporters) [#505](https://github.com/nestjs/nest/issues/505)
+
+### Improvements
+- **all**: remove `reflect-metadata` peer dependency [#563](https://github.com/nestjs/nest/issues/563)
+- **all**: upgrade RxJS (make use of pipeable operators)
+- **core**: more descriptive exceptions (circular dependency) [#493](https://github.com/nestjs/nest/issues/493)
+- **core**: Nest container compatible with `useContainer()` (`class-validator` and `typeorm` packages) [#528](https://github.com/nestjs/nest/issues/528)
+- **core**: remove static dependencies (webpack compatibility)
+- **websockets**: `@WebSocketGateway()` takes options argument that is passed to socket.io instance [#508](https://github.com/nestjs/nest/issues/508)
+
+### Deprecations
+- **common**: deprecate `@Component()`, `@Middleware()`, `@Interceptor()`, `@Pipe()`, and `@Guard()` decorators (use `@Injectable()` instead)
+- **core**: deprecate `modules: []` property (use `imports: []` instead)
+- **core**: deprecate `components: []` property (use `providers: []` instead)
+
+### Notes
+- move from traditional express middleware model: each middleware is solely bounded to a particular path, regardless of the request method
+
 ## 4.6.6
 ### Bug Fixes:
 - **common**: `File(s)Interceptor` throws http status code 500 [#465](https://github.com/nestjs/nest/issues/437)
