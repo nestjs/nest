@@ -1,6 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { Observable } from 'rxjs/Observable';
-import { fromPromise } from 'rxjs/observable/fromPromise';
+import { Observable, from as fromPromise } from 'rxjs';
 
 export class HttpService {
   request<T = any>(config: AxiosRequestConfig): Observable<AxiosResponse<T>> {

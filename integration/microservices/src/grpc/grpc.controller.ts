@@ -7,8 +7,7 @@ import {
   GrpcRoute,
   ClientGrpc,
 } from '@nestjs/microservices';
-import { Observable } from 'rxjs/Observable';
-import { of } from 'rxjs/observable/of';
+import { Observable, of } from 'rxjs';
 import { join } from 'path';
 
 @Controller()
@@ -18,7 +17,7 @@ export class GrpcController {
     options: {
       package: 'math',
       protoPath: join(__dirname, 'math.proto'),
-    }
+    },
   })
   client: ClientGrpc;
 

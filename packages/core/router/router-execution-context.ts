@@ -28,7 +28,10 @@ import {
 } from '@nestjs/common';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { GuardsConsumer } from '../guards/guards-consumer';
-import { RouterResponseController, CustomHeader } from './router-response-controller';
+import {
+  RouterResponseController,
+  CustomHeader,
+} from './router-response-controller';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 
@@ -120,7 +123,11 @@ export class RouterExecutionContext {
     instance: Controller,
     methodName: string,
   ): RouteParamsMetadata {
-    return Reflect.getMetadata(ROUTE_ARGS_METADATA, instance, methodName);
+    return Reflect.getMetadata(
+      ROUTE_ARGS_METADATA,
+      instance.constructor,
+      methodName,
+    );
   }
 
   public reflectCallbackParamtypes(
@@ -256,9 +263,7 @@ export class RouterExecutionContext {
           args[index] = await this.getParamValue(
             value,
             { metatype, type, data },
-            pipes.concat(
-              this.pipesContextCreator.createConcreteContext(paramPipes),
-            ),
+            pipes.concat(paramPipes),
           );
         }),
       );

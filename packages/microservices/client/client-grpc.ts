@@ -5,7 +5,7 @@ import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { GrpcOptions } from './../interfaces';
 import { GRPC_DEFAULT_URL } from './../constants';
 import { ClientGrpc } from './../interfaces';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { InvalidGrpcServiceException } from '../exceptions/invalid-grpc-service.exception';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';

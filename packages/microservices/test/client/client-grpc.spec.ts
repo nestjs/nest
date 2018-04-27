@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { ClientGrpcProxy } from '../../client/client-grpc';
 import { join } from 'path';
 import { InvalidGrpcServiceException } from '../../exceptions/invalid-grpc-service.exception';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { InvalidGrpcPackageException } from '../../exceptions/invalid-grpc-package.exception';
 
 class GrpcService {

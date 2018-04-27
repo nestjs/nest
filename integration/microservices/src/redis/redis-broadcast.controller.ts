@@ -5,7 +5,7 @@ import {
   ClientProxy,
   Transport,
 } from '@nestjs/microservices';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { scan, take } from 'rxjs/operators';
 
 @Controller()

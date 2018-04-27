@@ -6,10 +6,8 @@ import {
   MqttOptions,
 } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy, PacketId } from './../interfaces';
-import { Observable } from 'rxjs/Observable';
-import { catchError } from 'rxjs/operators';
-import { empty } from 'rxjs/observable/empty';
-import { finalize } from 'rxjs/operators';
+import { Observable, EMPTY as empty } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 import {
   MQTT_DEFAULT_URL,
   CONNECT_EVENT,

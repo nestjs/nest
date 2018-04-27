@@ -3,8 +3,7 @@ import { expect } from 'chai';
 import { RpcProxy } from './../../context/rpc-proxy';
 import { RpcExceptionsHandler } from './../../exceptions/rpc-exceptions-handler';
 import { RpcException } from '../../exceptions/rpc-exception';
-import { Observable } from 'rxjs/Observable';
-import { of } from 'rxjs/observable/of';
+import { Observable, of } from 'rxjs';
 
 describe('RpcProxy', () => {
   let routerProxy: RpcProxy;

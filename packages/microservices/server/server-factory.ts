@@ -6,7 +6,7 @@ import {
 } from '../interfaces';
 import { Server } from './server';
 import { Transport } from '../enums/transport.enum';
-import { race } from 'rxjs/operators/race';
+import { race } from 'rxjs/operators';
 import { ServerNats } from './server-nats';
 import { ServerMqtt } from './server-mqtt';
 import { ServerGrpc } from './server-grpc';

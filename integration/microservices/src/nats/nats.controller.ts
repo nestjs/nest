@@ -5,16 +5,17 @@ import {
   ClientProxy,
   Transport,
 } from '@nestjs/microservices';
-import { Observable } from 'rxjs/Observable';
-import { of } from 'rxjs/observable/of';
-import { from } from 'rxjs/observable/from';
+import { Observable, of, from } from 'rxjs';
 import { scan } from 'rxjs/operators';
 
 @Controller()
 export class NatsController {
-  @Client({ transport: Transport.NATS, options: {
-    url: 'nats://localhost:4222',
-  } })
+  @Client({
+    transport: Transport.NATS,
+    options: {
+      url: 'nats://localhost:4222',
+    },
+  })
   client: ClientProxy;
 
   @Post()

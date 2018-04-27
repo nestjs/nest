@@ -16,7 +16,7 @@
     "class-validator": "^0.7.2",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
-    "rxjs": "^5.4.3",
+    "rxjs": "^6.0.0",
     "typescript": "^2.4.2"
   },
   "devDependencies": {

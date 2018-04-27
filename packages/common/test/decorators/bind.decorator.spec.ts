@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { Bind } from '../../decorators/core/bind.decorator';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
@@ -11,8 +10,11 @@ describe('@Bind', () => {
   }
 
   it('should enhance method - bind each decorator to method', () => {
-    const test = new TestWithMethod();
-    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, test, 'test');
+    const metadata = Reflect.getMetadata(
+      ROUTE_ARGS_METADATA,
+      TestWithMethod,
+      'test',
+    );
 
     expect(metadata).to.be.deep.equal({
       '0:0': {

@@ -9,6 +9,7 @@ import {
   GUARDS_METADATA,
   INTERCEPTORS_METADATA,
   PIPES_METADATA,
+  ROUTE_ARGS_METADATA,
 } from '@nestjs/common/constants';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { MetadataScanner } from '../core/metadata-scanner';
@@ -135,6 +136,7 @@ export class DependenciesScanner {
     this.reflectInjectables(obj, token, INTERCEPTORS_METADATA);
     this.reflectInjectables(obj, token, EXCEPTION_FILTERS_METADATA);
     this.reflectInjectables(obj, token, PIPES_METADATA);
+    this.reflectParamInjectables(obj, token, ROUTE_ARGS_METADATA);
   }
 
   public reflectExports(module: Type<any>, token: string) {
@@ -173,12 +175,32 @@ export class DependenciesScanner {
       (a: any[], b) => a.concat(b),
       [],
     );
-    const mergedInjectableConstructors = [
+    const mergedInjectables = [
       ...controllerInjectables,
       ...flattenMethodsInjectables,
     ].filter(isFunction);
 
-    mergedInjectableConstructors.map(injectable =>
+    mergedInjectables.map(injectable =>
+      this.storeInjectable(injectable, token),
+    );
+  }
+
+  public reflectParamInjectables(
+    component: Type<Injectable>,
+    token: string,
+    metadataKey: string,
+  ) {
+    const paramsMetadata = this.metadataScanner.scanFromPrototype(
+      null,
+      component.prototype,
+      method => Reflect.getMetadata(metadataKey, component, method),
+    );
+    const flatten = arr => arr.reduce((a, b) => a.concat(b), []);
+    const paramsInjectables = flatten(paramsMetadata).map(param =>
+      flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
+    );
+
+    flatten(paramsInjectables).map(injectable =>
       this.storeInjectable(injectable, token),
     );
   }

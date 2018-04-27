@@ -56,7 +56,7 @@
     "pump": "^3.0.0",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.10",
-    "rxjs": "^5.5.8",
+    "rxjs": "^6.0.0",
     "rxjs-grpc": "^0.1.6",
     "socket.io": "^2.0.4",
     "trouter": "^1.0.0"

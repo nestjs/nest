@@ -1,7 +1,6 @@
 import { HelloService } from './hello.service';
 import { Controller, Get, Post, Body, Header } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
-import { of } from 'rxjs/observable/of';
+import { Observable, of } from 'rxjs';
 
 @Controller('hello')
 export class HelloController {

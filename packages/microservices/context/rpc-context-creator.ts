@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RpcProxy } from './rpc-proxy';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
 import { ExceptionFiltersContext } from './exception-filters-context';

@@ -2,7 +2,6 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ClientProxy } from '../../client/client-proxy';
 import { Observable } from 'rxjs';
-import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 
 class TestClientProxy extends ClientProxy {
   public publish(pattern, callback) {}
@@ -27,9 +26,9 @@ describe('ClientProxy', () => {
       stream$.subscribe();
       expect(publishSpy.calledOnce).to.be.true;
     });
-    it('should return ErrorObservable', () => {
+    it('should return Observable with error', () => {
       const err$ = client.send(null, null);
-      expect(err$).to.be.instanceOf(ErrorObservable);
+      expect(err$).to.be.instanceOf(Observable);
     });
   });
 

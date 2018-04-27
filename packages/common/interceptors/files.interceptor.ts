@@ -1,6 +1,6 @@
 import * as multer from 'multer';
 import { NestInterceptor } from './../interfaces/features/nest-interceptor.interface';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { MulterOptions } from '../interfaces/external/multer-options.interface';
 import { transformException } from './multer/multer.utils';
 import { ExecutionContext } from './../interfaces';

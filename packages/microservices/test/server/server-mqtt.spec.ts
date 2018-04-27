@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { NO_PATTERN_MESSAGE } from '../../constants';
 import { ServerMqtt } from '../../server/server-mqtt';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 describe('ServerMqtt', () => {
   let server: ServerMqtt;

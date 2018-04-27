@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { Controller } from '@nestjs/common/interfaces';
 import { CanActivate, HttpStatus } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { FORBIDDEN_MESSAGE } from './constants';
 import { ExecutionContextHost } from '../helpers/execution-context.host';
 

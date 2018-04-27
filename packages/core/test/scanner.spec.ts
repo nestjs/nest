@@ -82,27 +82,33 @@ describe('DependenciesScanner', () => {
 
   describe('reflectDynamicMetadata', () => {
     describe('when param has prototype', () => {
-      it('should call "reflectGuards" and "reflectInterceptors"', () => {
+      it('should call "reflectParamInjectables" and "reflectInjectables"', () => {
         const reflectInjectables = sinon
           .stub(scanner, 'reflectInjectables')
           .callsFake(() => undefined);
 
+        const reflectParamInjectables = sinon
+          .stub(scanner, 'reflectParamInjectables')
+          .callsFake(() => undefined);
+
         scanner.reflectDynamicMetadata({ prototype: true } as any, '');
         expect(reflectInjectables.called).to.be.true;
+        expect(reflectParamInjectables.called).to.be.true;
       });
     });
     describe('when param has not prototype', () => {
-      it('should not call "reflectGuards" and "reflectInterceptors"', () => {
-        const reflectGuards = sinon
-          .stub(scanner, 'reflectGuards')
+      it('should not call ""reflectParamInjectables" and "reflectInjectables"', () => {
+        const reflectInjectables = sinon
+          .stub(scanner, 'reflectInjectables')
           .callsFake(() => undefined);
-        const reflectInterceptors = sinon
-          .stub(scanner, 'reflectInterceptors')
+        const reflectParamInjectables = sinon
+          .stub(scanner, 'reflectParamInjectables')
+
           .callsFake(() => undefined);
         scanner.reflectDynamicMetadata({} as any, '');
 
-        expect(reflectGuards.called).to.be.false;
-        expect(reflectInterceptors.called).to.be.false;
+        expect(reflectInjectables.called).to.be.false;
+        expect(reflectParamInjectables.called).to.be.false;
       });
     });
   });
@@ -156,6 +162,13 @@ describe('DependenciesScanner', () => {
       sinon.stub(container, 'addRelatedModule').returns({});
       scanner.storeRelatedModule(module as any, [] as any, 'test');
       expect(module.forwardRef.called).to.be.true;
+    });
+    describe('when "related" is nil', () => {
+      it('should throw exception', () => {
+        expect(() =>
+          scanner.storeRelatedModule(undefined, [] as any, 'test'),
+        ).to.throws();
+      });
     });
   });
 

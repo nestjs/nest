@@ -1,7 +1,7 @@
 import { ServerGrpc } from '../../server/server-grpc';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { join } from 'path';
 import { InvalidGrpcPackageException } from '../../exceptions/invalid-grpc-package.exception';
 

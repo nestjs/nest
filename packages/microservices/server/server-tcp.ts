@@ -4,10 +4,8 @@ import { Server as NetSocket } from 'net';
 import { NO_PATTERN_MESSAGE, CLOSE_EVENT } from '../constants';
 import { Server } from './server';
 import { CustomTransportStrategy, ReadPacket } from './../interfaces';
-import { Observable } from 'rxjs/Observable';
-import { catchError } from 'rxjs/operators';
-import { empty } from 'rxjs/observable/empty';
-import { finalize } from 'rxjs/operators';
+import { Observable, EMPTY as empty } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 import { TCP_DEFAULT_PORT, MESSAGE_EVENT, ERROR_EVENT } from './../constants';
 import {
   MicroserviceOptions,
@@ -24,8 +22,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   constructor(private readonly options: MicroserviceOptions) {
     super();
     this.port =
-      this.getOptionsProp<TcpOptions>(options, 'port') ||
-      TCP_DEFAULT_PORT;
+      this.getOptionsProp<TcpOptions>(options, 'port') || TCP_DEFAULT_PORT;
     this.init();
   }
 
@@ -70,25 +67,16 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   public handleClose(): undefined | number | NodeJS.Timer {
     if (
       this.isExplicitlyTerminated ||
-      !this.getOptionsProp<TcpOptions>(
-        this.options,
-        'retryAttempts',
-      ) ||
+      !this.getOptionsProp<TcpOptions>(this.options, 'retryAttempts') ||
       this.retryAttemptsCount >=
-        this.getOptionsProp<TcpOptions>(
-          this.options,
-          'retryAttempts',
-        )
+        this.getOptionsProp<TcpOptions>(this.options, 'retryAttempts')
     ) {
       return undefined;
     }
     ++this.retryAttemptsCount;
     return setTimeout(
       () => this.server.listen(this.port),
-      this.getOptionsProp<TcpOptions>(
-        this.options,
-        'retryDelay',
-      ) || 0,
+      this.getOptionsProp<TcpOptions>(this.options, 'retryDelay') || 0,
     );
   }
 

@@ -3,15 +3,17 @@ import { Server } from 'http';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
 import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
 import { WebSocketAdapter } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
+import { Observable, fromEvent } from 'rxjs';
 import { filter, tap, mergeMap } from 'rxjs/operators';
-import { fromEvent } from 'rxjs/observable/fromEvent';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 
 export class IoAdapter implements WebSocketAdapter {
   constructor(private readonly httpServer: Server | null = null) {}
 
-  public create(port: number, options?: any & { namespace?: string, server?: any}): any {
+  public create(
+    port: number,
+    options?: any & { namespace?: string; server?: any },
+  ): any {
     if (!options) {
       return this.createIOServer(port);
     }

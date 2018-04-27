@@ -5,7 +5,7 @@ import {
   GrpcOptions,
 } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy } from './../interfaces';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { GRPC_DEFAULT_URL } from './../constants';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';

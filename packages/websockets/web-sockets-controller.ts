@@ -7,7 +7,7 @@ import {
   GatewayMetadataExplorer,
   MessageMappingProperties,
 } from './gateway-metadata-explorer';
-import { Subject } from 'rxjs/Subject';
+import { Subject, Observable, from as fromPromise, of } from 'rxjs';
 import { SocketServerProvider } from './socket-server-provider';
 import { PORT_METADATA, GATEWAY_OPTIONS } from './constants';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -16,10 +16,7 @@ import { NestContainer } from '@nestjs/core/injector/container';
 import { MiddlewaresInjector } from './middlewares-injector';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from './context/ws-context-creator';
-import { Observable } from 'rxjs/Observable';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { fromPromise } from 'rxjs/observable/fromPromise';
-import { of } from 'rxjs/observable/of';
 import { mergeMap } from 'rxjs/operators';
 
 export class WebSocketsController {

@@ -14,7 +14,7 @@ const assignCustomMetadata = (
   index: number,
   factory: CustomParamFactory,
   data?: ParamData,
-  ...pipes: PipeTransform<any>[],
+  ...pipes: PipeTransform<any>[]
 ) => ({
   ...args,
   [`${paramtype}${CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
@@ -43,11 +43,12 @@ export function createParamDecorator(
     key,
     index,
   ) => {
-    const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, target, key) || {};
+    const args =
+      Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
       assignCustomMetadata(args, paramtype, index, factory, data, ...pipes),
-      target,
+      target.constructor,
       key,
     );
   };
