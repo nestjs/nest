@@ -1,3 +1,11 @@
+## 5.0.0-beta.4
+### Bug Fixes
+- **core**: param pipes aren't working correctly [#592](https://github.com/nestjs/nest/issues/592)
+- **microservices**: unnecessary modules required [#594](https://github.com/nestjs/nest/issues/594)
+
+### Improvements
+- **all**: upgrade RxJS version (`v6.0.0`)
+
 ## 5.0.0-beta.3
 ### Bug Fixes
 - **core**: incorrect `ExpressAdapter` method wrappers [#585](https://github.com/nestjs/nest/issues/585)
