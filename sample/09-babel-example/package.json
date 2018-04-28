@@ -17,6 +17,7 @@
     "babel-core": "^6.26.0",
     "babel-polyfill": "^6.26.0",
     "body-parser": "^1.17.2",
+    "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0"
   },
   "devDependencies": {

@@ -1,28 +1,19 @@
 "use strict";
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) if (e.indexOf(p[i]) < 0)
-            t[p[i]] = s[p[i]];
-    return t;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const constants_1 = require("@nestjs/common/constants");
 const module_1 = require("./module");
 const unknown_module_exception_1 = require("../errors/exceptions/unknown-module.exception");
-const module_token_factory_1 = require("./module-token-factory");
 const invalid_module_exception_1 = require("./../errors/exceptions/invalid-module.exception");
 const modules_container_1 = require("./modules-container");
+const compiler_1 = require("./compiler");
 class NestContainer {
     constructor(_applicationConfig = void 0) {
         this._applicationConfig = _applicationConfig;
         this.globalModules = new Set();
+        this.moduleCompiler = new compiler_1.ModuleCompiler();
         this.modules = new modules_container_1.ModulesContainer();
         this.dynamicModulesMetadata = new Map();
-        this.moduleTokenFactory = new module_token_factory_1.ModuleTokenFactory();
     }
     get applicationConfig() {
         return this._applicationConfig;
@@ -37,8 +28,7 @@ class NestContainer {
         if (!metatype) {
             throw new invalid_module_exception_1.InvalidModuleException(scope);
         }
-        const { type, dynamicMetadata } = this.extractMetadata(metatype);
-        const token = this.moduleTokenFactory.create(type, scope, dynamicMetadata);
+        const { type, dynamicMetadata, token } = this.moduleCompiler.compile(metatype, scope);
         if (this.modules.has(token)) {
             return;
         }
@@ -46,16 +36,6 @@ class NestContainer {
         this.modules.set(token, module);
         this.addDynamicMetadata(token, dynamicMetadata, [].concat(scope, type));
         this.isGlobalModule(type) && this.addGlobalModule(module);
-    }
-    extractMetadata(metatype) {
-        if (!this.isDynamicModule(metatype)) {
-            return { type: metatype };
-        }
-        const { module: type } = metatype, dynamicMetadata = __rest(metatype, ["module"]);
-        return { type, dynamicMetadata };
-    }
-    isDynamicModule(module) {
-        return !!module.module;
     }
     addDynamicMetadata(token, dynamicModuleMetadata, scope) {
         if (!dynamicModuleMetadata) {
@@ -68,7 +48,7 @@ class NestContainer {
     }
     addDynamicModules(modules, scope) {
         if (!modules) {
-            return;
+            return undefined;
         }
         modules.map(module => this.addModule(module, scope));
     }
@@ -86,8 +66,8 @@ class NestContainer {
             return;
         const module = this.modules.get(token);
         const parent = module.metatype;
-        const { type, dynamicMetadata } = this.extractMetadata(relatedModule);
-        const relatedModuleToken = this.moduleTokenFactory.create(type, [].concat(module.scope, parent), dynamicMetadata);
+        const scope = [].concat(module.scope, parent);
+        const { type, dynamicMetadata, token: relatedModuleToken, } = this.moduleCompiler.compile(relatedModule, scope);
         const related = this.modules.get(relatedModuleToken);
         module.addRelatedModule(related);
     }

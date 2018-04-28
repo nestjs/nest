@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const Observable_1 = require("rxjs/Observable");
+const rxjs_1 = require("rxjs");
 const execution_context_host_1 = require("../helpers/execution-context.host");
 class GuardsConsumer {
     tryActivate(guards, args, instance, callback) {
@@ -33,7 +33,7 @@ class GuardsConsumer {
     }
     pickResult(result) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (result instanceof Observable_1.Observable) {
+            if (result instanceof rxjs_1.Observable) {
                 return yield result.toPromise();
             }
             if (result instanceof Promise) {

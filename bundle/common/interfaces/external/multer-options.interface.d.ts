@@ -1,4 +1,7 @@
 /// <reference types="node" />
+/**
+ * @see https://github.com/expressjs/multer
+ */
 export interface MulterOptions {
     dest?: string;
     /** The storage engine to use for uploaded files. */

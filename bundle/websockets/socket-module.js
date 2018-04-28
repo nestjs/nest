@@ -50,7 +50,7 @@ class SocketModule {
     close() {
         return __awaiter(this, void 0, void 0, function* () {
             if (!this.applicationConfig) {
-                return void 0;
+                return undefined;
             }
             const adapter = this.applicationConfig.getIoAdapter();
             const servers = this.socketsContainer.getAllServers();

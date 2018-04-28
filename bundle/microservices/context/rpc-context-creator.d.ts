@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RpcProxy } from './rpc-proxy';
 import { ExceptionFiltersContext } from './exception-filters-context';
 import { Controller } from '@nestjs/common/interfaces';

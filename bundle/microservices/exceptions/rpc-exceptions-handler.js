@@ -4,8 +4,8 @@ const common_1 = require("@nestjs/common");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const invalid_exception_filter_exception_1 = require("@nestjs/core/errors/exceptions/invalid-exception-filter.exception");
 const constants_1 = require("@nestjs/core/constants");
+const rxjs_1 = require("rxjs");
 const rpc_exception_1 = require("./rpc-exception");
-const throw_1 = require("rxjs/observable/throw");
 class RpcExceptionsHandler {
     constructor() {
         this.filters = [];
@@ -24,11 +24,11 @@ class RpcExceptionsHandler {
                 : [exception];
             const logger = RpcExceptionsHandler.logger;
             logger.error.apply(logger, loggerArgs);
-            return throw_1._throw({ status, message: errorMessage });
+            return rxjs_1.throwError({ status, message: errorMessage });
         }
         const res = exception.getError();
         const message = shared_utils_1.isObject(res) ? res : { status, message: res };
-        return throw_1._throw(message);
+        return rxjs_1.throwError(message);
     }
     setCustomFilters(filters) {
         if (!Array.isArray(filters)) {

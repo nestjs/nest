@@ -8,3 +8,4 @@ __export(require("./route-params.decorator"));
 __export(require("./http-code.decorator"));
 __export(require("./create-route-param-metadata.decorator"));
 __export(require("./render.decorator"));
+__export(require("./header.decorator"));

@@ -23,6 +23,7 @@ export interface HttpServer {
     listen(port: number | string, hostname: string, callback?: () => void): any;
     reply(response: any, body: any, statusCode: number): any;
     render(response: any, view: string, options: any): any;
+    setHeader(response: any, name: string, value: string): any;
     setErrorHandler?(handler: Function): any;
     setNotFoundHandler?(handler: Function): any;
     useStaticAssets?(...args: any[]): this;

@@ -13,6 +13,7 @@
     "@nestjs/core": "^5.0.0",
     "@nestjs/mongoose": "^3.0.1",
     "mongoose": "^5.0.1",
+    "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0",
     "typescript": "^2.8.0"
   },

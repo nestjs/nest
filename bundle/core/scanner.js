@@ -20,8 +20,8 @@ class DependenciesScanner {
     }
     scanForModules(module, scope = []) {
         this.storeModule(module, scope);
-        const importedModules = this.reflectMetadata(module, constants_1.metadata.MODULES);
-        importedModules.map(innerModule => {
+        const modules = this.reflectMetadata(module, constants_1.metadata.MODULES);
+        modules.map(innerModule => {
             this.scanForModules(innerModule, [].concat(scope, module));
         });
     }
@@ -61,7 +61,7 @@ class DependenciesScanner {
         });
     }
     reflectComponentMetadata(component, token) {
-        this.reflectGatewaysMiddlewares(component, token);
+        this.reflectGatewaysMiddleware(component, token);
     }
     reflectControllers(module, token) {
         const routes = [
@@ -81,6 +81,7 @@ class DependenciesScanner {
         this.reflectInjectables(obj, token, constants_1.INTERCEPTORS_METADATA);
         this.reflectInjectables(obj, token, constants_1.EXCEPTION_FILTERS_METADATA);
         this.reflectInjectables(obj, token, constants_1.PIPES_METADATA);
+        this.reflectParamInjectables(obj, token, constants_1.ROUTE_ARGS_METADATA);
     }
     reflectExports(module, token) {
         const exports = [
@@ -89,19 +90,25 @@ class DependenciesScanner {
         ];
         exports.map(exportedComponent => this.storeExportedComponent(exportedComponent, token));
     }
-    reflectGatewaysMiddlewares(component, token) {
-        const middlewares = this.reflectMetadata(component, constants_1.GATEWAY_MIDDLEWARES);
-        middlewares.map(middleware => this.storeComponent(middleware, token));
+    reflectGatewaysMiddleware(component, token) {
+        const middleware = this.reflectMetadata(component, constants_1.GATEWAY_MIDDLEWARES);
+        middleware.map(ware => this.storeComponent(ware, token));
     }
     reflectInjectables(component, token, metadataKey) {
         const controllerInjectables = this.reflectMetadata(component, metadataKey);
         const methodsInjectables = this.metadataScanner.scanFromPrototype(null, component.prototype, this.reflectKeyMetadata.bind(this, component, metadataKey));
         const flattenMethodsInjectables = methodsInjectables.reduce((a, b) => a.concat(b), []);
-        const mergedInjectableConstructors = [
+        const mergedInjectables = [
             ...controllerInjectables,
             ...flattenMethodsInjectables,
         ].filter(shared_utils_1.isFunction);
-        mergedInjectableConstructors.map(injectable => this.storeInjectable(injectable, token));
+        mergedInjectables.map(injectable => this.storeInjectable(injectable, token));
+    }
+    reflectParamInjectables(component, token, metadataKey) {
+        const paramsMetadata = this.metadataScanner.scanFromPrototype(null, component.prototype, method => Reflect.getMetadata(metadataKey, component, method));
+        const flatten = arr => arr.reduce((a, b) => a.concat(b), []);
+        const paramsInjectables = flatten(paramsMetadata).map(param => flatten(Object.keys(param).map(k => param[k].pipes)).filter(shared_utils_1.isFunction));
+        flatten(paramsInjectables).map(injectable => this.storeInjectable(injectable, token));
     }
     reflectKeyMetadata(component, key, method) {
         const descriptor = Reflect.getOwnPropertyDescriptor(component.prototype, method);

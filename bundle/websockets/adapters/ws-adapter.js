@@ -11,10 +11,9 @@ var __rest = (this && this.__rest) || function (s, e) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("../constants");
 const common_1 = require("@nestjs/common");
+const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
-const fromEvent_1 = require("rxjs/observable/fromEvent");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const empty_1 = require("rxjs/observable/empty");
 const missing_dependency_exception_1 = require("@nestjs/core/errors/exceptions/missing-dependency.exception");
 let wsPackage = {};
 class WsAdapter {
@@ -44,7 +43,7 @@ class WsAdapter {
         client.on(constants_1.CLOSE_EVENT, callback);
     }
     bindMessageHandlers(client, handlers, process) {
-        fromEvent_1.fromEvent(client, 'message')
+        rxjs_1.fromEvent(client, 'message')
             .pipe(operators_1.mergeMap(data => this.bindMessageHandler(data, handlers, process)), operators_1.filter(result => !!result))
             .subscribe(response => client.send(JSON.stringify(response)));
     }
@@ -52,7 +51,7 @@ class WsAdapter {
         const message = JSON.parse(buffer.data);
         const messageHandler = handlers.find(handler => handler.message === message.event);
         if (!messageHandler) {
-            return empty_1.empty();
+            return rxjs_1.EMPTY;
         }
         const { callback } = messageHandler;
         return process(callback(message.data));

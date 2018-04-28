@@ -17,8 +17,8 @@ export declare class NestApplication extends NestApplicationContext implements I
     private readonly config;
     private readonly appOptions;
     private readonly logger;
-    private readonly middlewaresModule;
-    private readonly middlewaresContainer;
+    private readonly middlewareModule;
+    private readonly middlewareContainer;
     private readonly microservicesModule;
     private readonly socketModule;
     private readonly routesResolver;
@@ -32,7 +32,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     getUnderlyingHttpServer(): any;
     registerModules(): Promise<void>;
     init(): Promise<this>;
-    registerParserMiddlewares(): any;
+    registerParserMiddleware(): any;
     isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean;
     registerRouter(): Promise<void>;
     connectMicroservice(options: MicroserviceOptions): INestMicroservice;
@@ -63,7 +63,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     setBaseViewsDir(path: string): this;
     setViewEngine(engineOrOptions: any): this;
     private loadPackage(name, ctx);
-    private registerMiddlewares(instance);
+    private registerMiddleware(instance);
     private isExpress();
     private listenToPromise(microservice);
     private callDestroyHook();

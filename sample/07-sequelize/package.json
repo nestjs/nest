@@ -15,6 +15,7 @@
     "@nestjs/testing": "^5.0.0",
     "@nestjs/websockets": "^5.0.0",
     "mysql2": "^1.4.2",
+    "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0",
     "sequelize": "^4.28.0",
     "sequelize-typescript": "^0.6.1",

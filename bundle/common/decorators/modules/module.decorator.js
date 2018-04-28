@@ -29,17 +29,17 @@ const validateKeys = (keys) => {
  * - `providers` - the list of providers that belong to this module. They can be injected between themselves.
  * - `exports` - the set of components, which should be available for modules, which imports this module
  * - `components` - @deprecated the list of components that belong to this module. They can be injected between themselves.
- * @param obj {ModuleMetadata} Module metadata
+ * @param options {ModuleMetadata} Module metadata
  */
-function Module(obj) {
-    const propsKeys = Object.keys(obj);
+function Module(metadata) {
+    const propsKeys = Object.keys(metadata);
     validateKeys(propsKeys);
-    showDeprecatedWarnings(obj);
-    overrideModuleMetadata(obj);
+    showDeprecatedWarnings(metadata);
+    overrideModuleMetadata(metadata);
     return (target) => {
-        for (const property in obj) {
-            if (obj.hasOwnProperty(property)) {
-                Reflect.defineMetadata(property, obj[property], target);
+        for (const property in metadata) {
+            if (metadata.hasOwnProperty(property)) {
+                Reflect.defineMetadata(property, metadata[property], target);
             }
         }
     };

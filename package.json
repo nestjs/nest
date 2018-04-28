@@ -55,10 +55,9 @@
     "optional": "^0.1.4",
     "pump": "^3.0.0",
     "redis": "^2.7.1",
-    "reflect-metadata": "^0.1.10",
+    "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0",
     "rxjs-compat": "^6.0.0",
-    "rxjs-grpc": "^0.1.6",
     "socket.io": "^2.0.4",
     "trouter": "^1.0.0"
   },

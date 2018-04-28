@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 export interface WebSocketAdapter<T = any> {
     create(port: number, options?: T): any;
     bindClientConnect(server: any, callback: (...args) => void): any;

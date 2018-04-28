@@ -15,6 +15,7 @@
     "@nestjs/testing": "^5.0.0",
     "@nestjs/websockets": "^5.0.0",
     "mongoose": "^5.0.6",
+    "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0",
     "typescript": "^2.8.0"
   },

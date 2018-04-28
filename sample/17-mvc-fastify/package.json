@@ -15,6 +15,7 @@
     "fastify": "^1.1.0",
     "handlebars": "^4.0.11",
     "point-of-view": "^1.0.0",
+    "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0",
     "typescript": "^2.5.2"
   },

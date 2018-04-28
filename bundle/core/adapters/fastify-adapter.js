@@ -79,6 +79,9 @@ class FastifyAdapter {
             throw new missing_dependency_exception_1.MissingRequiredDependencyException('point-of-view', 'FastifyAdapter.setViewEngine()');
         }
     }
+    setHeader(response, name, value) {
+        return response.header(name, value);
+    }
     getRequestMethod(request) {
         return request.raw.method;
     }

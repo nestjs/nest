@@ -14,6 +14,7 @@
     "passport": "^0.4.0",
     "passport-http-bearer": "^1.0.1",
     "passport-jwt": "^4.0.0",
+    "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0",
     "typescript": "^2.8.1"
   },

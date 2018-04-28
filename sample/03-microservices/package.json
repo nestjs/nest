@@ -17,6 +17,7 @@
     "amqplib": "^0.5.1",
     "class-transformer": "^0.1.7",
     "class-validator": "^0.7.2",
+    "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0",
     "typescript": "^2.8.0"
   },

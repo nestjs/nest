@@ -12,7 +12,9 @@ require("reflect-metadata");
 const constants_1 = require("@nestjs/common/constants");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const route_paramtypes_enum_1 = require("@nestjs/common/enums/route-paramtypes.enum");
+const common_1 = require("@nestjs/common");
 const router_response_controller_1 = require("./router-response-controller");
+const constants_2 = require("../guards/constants");
 class RouterExecutionContext {
     constructor(paramsFactory, pipesContextCreator, pipesConsumer, guardsContextCreator, guardsConsumer, interceptorsContextCreator, interceptorsConsumer, applicationRef) {
         this.paramsFactory = paramsFactory;
@@ -59,7 +61,7 @@ class RouterExecutionContext {
         return keyPair[0];
     }
     reflectCallbackMetadata(instance, methodName) {
-        return Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, instance, methodName);
+        return Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, instance.constructor, methodName);
     }
     reflectCallbackParamtypes(instance, methodName) {
         return Reflect.getMetadata(constants_1.PARAMTYPES_METADATA, instance, methodName);
@@ -69,6 +71,9 @@ class RouterExecutionContext {
     }
     reflectRenderTemplate(callback) {
         return Reflect.getMetadata(constants_1.RENDER_METADATA, callback);
+    }
+    reflectResponseHeaders(callback) {
+        return Reflect.getMetadata(constants_1.HEADERS_METADATA, callback) || [];
     }
     getArgumentsLength(keys, metadata) {
         return Math.max(...keys.map(key => metadata[key].index)) + 1;
@@ -118,7 +123,7 @@ class RouterExecutionContext {
         const canActivateFn = (args) => __awaiter(this, void 0, void 0, function* () {
             const canActivate = yield this.guardsConsumer.tryActivate(guards, args, instance, callback);
             if (!canActivate) {
-                return false;
+                throw new common_1.HttpException(constants_2.FORBIDDEN_MESSAGE, common_1.HttpStatus.FORBIDDEN);
             }
         });
         return guards.length ? canActivateFn : null;
@@ -128,18 +133,23 @@ class RouterExecutionContext {
             yield Promise.all(paramsOptions.map((param) => __awaiter(this, void 0, void 0, function* () {
                 const { index, extractValue, type, data, metatype, pipes: paramPipes, } = param;
                 const value = extractValue(req, res, next);
-                args[index] = yield this.getParamValue(value, { metatype, type, data }, pipes.concat(this.pipesContextCreator.createConcreteContext(paramPipes)));
+                args[index] = yield this.getParamValue(value, { metatype, type, data }, pipes.concat(paramPipes));
             })));
         });
         return paramsOptions.length ? pipesFn : null;
     }
     createHandleResponseFn(callback, isResponseHandled, httpStatusCode) {
         const renderTemplate = this.reflectRenderTemplate(callback);
-        if (!!renderTemplate) {
-            return (result, res) => __awaiter(this, void 0, void 0, function* () { return yield this.responseController.render(result, res, renderTemplate); });
+        const responseHeaders = this.reflectResponseHeaders(callback);
+        if (renderTemplate) {
+            return (result, res) => __awaiter(this, void 0, void 0, function* () {
+                this.responseController.setHeaders(res, responseHeaders);
+                yield this.responseController.render(result, res, renderTemplate);
+            });
         }
         return (result, res) => __awaiter(this, void 0, void 0, function* () {
-            return !isResponseHandled &&
+            this.responseController.setHeaders(res, responseHeaders);
+            !isResponseHandled &&
                 (yield this.responseController.apply(result, res, httpStatusCode));
         });
     }

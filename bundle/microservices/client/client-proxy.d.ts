@@ -1,10 +1,9 @@
-import { Observable } from 'rxjs/Observable';
-import { Observer } from 'rxjs/Observer';
+import { Observable, Observer } from 'rxjs';
 import { ReadPacket, PacketId, WritePacket, ClientOptions } from './../interfaces';
 export declare abstract class ClientProxy {
     abstract close(): any;
     protected abstract publish(packet: ReadPacket, callback: (packet: WritePacket) => void): any;
-    send<T>(pattern: any, data: any): Observable<T>;
+    send<T = any>(pattern: any, data: any): Observable<T>;
     protected loadPackage(name: string, ctx: string): any;
     protected createObserver<T>(observer: Observer<T>): (packet: WritePacket) => void;
     protected assignPacketId(packet: ReadPacket): ReadPacket & PacketId;

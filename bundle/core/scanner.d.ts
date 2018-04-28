@@ -22,8 +22,9 @@ export declare class DependenciesScanner {
     reflectControllers(module: Type<any>, token: string): void;
     reflectDynamicMetadata(obj: Type<Injectable>, token: string): void;
     reflectExports(module: Type<any>, token: string): void;
-    reflectGatewaysMiddlewares(component: Type<Injectable>, token: string): void;
+    reflectGatewaysMiddleware(component: Type<Injectable>, token: string): void;
     reflectInjectables(component: Type<Injectable>, token: string, metadataKey: string): void;
+    reflectParamInjectables(component: Type<Injectable>, token: string, metadataKey: string): void;
     reflectKeyMetadata(component: Type<Injectable>, key: string, method: string): any;
     storeRelatedModule(related: any, token: string, context: string): void;
     storeComponent(component: any, token: string): string;
