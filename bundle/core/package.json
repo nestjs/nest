@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "5.0.0-beta.4",
+  "version": "5.0.0-beta.6",
   "description": "Nest - modern, fast, powerful node.js web framework (@core)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -12,7 +12,8 @@
     "optional": "0.1.4"
   },
   "peerDependencies": {
-    "@nestjs/common": "^5.*",
+    "@nestjs/common": "^5.0.0",
+    "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0"
   }
 }
