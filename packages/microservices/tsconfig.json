@@ -19,8 +19,7 @@
     "**/*.ts"
   ],
   "exclude": [
-    "node_modules/@types/reflect-metadata",
-    "node_modules/reflect-metadata",
+    "../node_modules",
     "./**/*.spec.ts"
   ]
 }

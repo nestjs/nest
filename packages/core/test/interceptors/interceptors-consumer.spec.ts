@@ -1,8 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { Observable } from 'rxjs/Observable';
+import { Observable, of } from 'rxjs';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import { of } from 'rxjs/observable/of';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 
 describe('InterceptorsConsumer', () => {

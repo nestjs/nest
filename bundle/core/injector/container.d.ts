@@ -7,22 +7,17 @@ import { ApplicationConfig } from './../application-config';
 export declare class NestContainer {
     private readonly _applicationConfig;
     private readonly globalModules;
+    private readonly moduleCompiler;
     private readonly modules;
     private readonly dynamicModulesMetadata;
-    private readonly moduleTokenFactory;
     private applicationRef;
     constructor(_applicationConfig?: ApplicationConfig);
     readonly applicationConfig: ApplicationConfig | undefined;
     setApplicationRef(applicationRef: any): void;
     getApplicationRef(): any;
     addModule(metatype: Type<any> | DynamicModule, scope: Type<any>[]): void;
-    extractMetadata(metatype: Type<any> | DynamicModule): {
-        type: Type<any>;
-        dynamicMetadata?: Partial<DynamicModule> | undefined;
-    };
-    isDynamicModule(module: Type<any> | DynamicModule): module is DynamicModule;
     addDynamicMetadata(token: string, dynamicModuleMetadata: Partial<DynamicModule>, scope: Type<any>[]): any;
-    addDynamicModules(modules: any[], scope: Type<any>[]): void;
+    addDynamicModules(modules: any[], scope: Type<any>[]): any;
     isGlobalModule(metatype: Type<any>): boolean;
     addGlobalModule(module: Module): void;
     getModules(): ModulesContainer;

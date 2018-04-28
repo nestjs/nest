@@ -70,7 +70,7 @@ export class SocketModule {
 
   public async close(): Promise<any> {
     if (!this.applicationConfig) {
-      return void 0;
+      return undefined;
     }
     const adapter = this.applicationConfig.getIoAdapter();
     const servers = this.socketsContainer.getAllServers();

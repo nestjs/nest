@@ -7,11 +7,9 @@ import {
   ERROR_EVENT,
 } from '../constants';
 import { WebSocketAdapter, Logger } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
+import { Observable, fromEvent, EMPTY as empty } from 'rxjs';
 import { mergeMap, filter, tap } from 'rxjs/operators';
-import { fromEvent } from 'rxjs/observable/fromEvent';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { empty } from 'rxjs/observable/empty';
 import { MissingRequiredDependencyException } from '@nestjs/core/errors/exceptions/missing-dependency.exception';
 
 let wsPackage: any = {};
@@ -80,7 +78,7 @@ export class WsAdapter implements WebSocketAdapter {
       handler => handler.message === message.event,
     );
     if (!messageHandler) {
-      return empty();
+      return empty;
     }
     const { callback } = messageHandler;
     return process(callback(message.data));

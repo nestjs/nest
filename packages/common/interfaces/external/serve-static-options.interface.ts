@@ -1,5 +1,6 @@
-/// Reference: https://www.npmjs.com/package/@types/serve-static
-
+/**
+ * @see https://www.npmjs.com/package/@types/serve-static
+ */
 export interface ServeStaticOptions {
   /**
    * Set how "dotfiles" are treated when encountered. A dotfile is a file or directory that begins with a dot (".").

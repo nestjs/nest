@@ -1,5 +1,5 @@
 import { Constructor } from './merge-with-values.util';
-import { NestMiddleware } from '../interfaces/middlewares/nest-middleware.interface';
+import { NestMiddleware } from '../interfaces/middleware/nest-middleware.interface';
 import { Injectable } from '../decorators/core/component.decorator';
 
 export const BindResolveMiddlewareValues = <

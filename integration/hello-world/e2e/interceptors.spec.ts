@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import { INestApplication, Injectable } from '@nestjs/common';
 import { ApplicationModule } from './../src/app.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { of } from 'rxjs/observable/of';
+import { of } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 const RETURN_VALUE = 'test';

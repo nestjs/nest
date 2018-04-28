@@ -1,11 +1,10 @@
-import { GrpcObject } from 'grpc';
 import { Server } from './server';
 import {
   MicroserviceOptions,
   GrpcOptions,
 } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy } from './../interfaces';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { GRPC_DEFAULT_URL } from './../constants';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
@@ -146,7 +145,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return pkg;
   }
 
-  public loadProto(): GrpcObject {
+  public loadProto(): any {
     try {
       const context = grpcPackage.load(
         this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),

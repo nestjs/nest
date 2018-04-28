@@ -1,11 +1,10 @@
-import { GrpcObject } from 'grpc';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { GrpcOptions } from './../interfaces';
 import { GRPC_DEFAULT_URL } from './../constants';
 import { ClientGrpc } from './../interfaces';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { InvalidGrpcServiceException } from '../exceptions/invalid-grpc-service.exception';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
@@ -98,7 +97,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     return grpcPkg;
   }
 
-  public loadProto(): GrpcObject {
+  public loadProto(): any {
     try {
       const context = grpcPackage.load(
         this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),

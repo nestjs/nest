@@ -1,9 +1,9 @@
 /// <reference types="node" />
-import { MqttClient } from 'mqtt';
 import { Server } from './server';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy, PacketId } from './../interfaces';
 import { ReadPacket } from '@nestjs/microservices';
+import { MqttClient } from '../external/mqtt-client.interface';
 export declare class ServerMqtt extends Server implements CustomTransportStrategy {
     private readonly options;
     private readonly url;

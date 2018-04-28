@@ -1,7 +1,7 @@
-import { Client } from 'nats';
 import { ClientProxy } from './client-proxy';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { WritePacket, ReadPacket, PacketId } from './../interfaces';
+import { Client } from '../external/nats-client.interface';
 export declare class ClientNats extends ClientProxy {
     private readonly options;
     private readonly logger;

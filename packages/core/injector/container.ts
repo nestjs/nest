@@ -12,15 +12,16 @@ import { DynamicModule } from '@nestjs/common';
 import { ModulesContainer } from './modules-container';
 import { NestApplicationContext } from './../nest-application-context';
 import { ApplicationConfig } from './../application-config';
+import { ModuleCompiler } from './compiler';
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
+  private readonly moduleCompiler = new ModuleCompiler();
   private readonly modules = new ModulesContainer();
   private readonly dynamicModulesMetadata = new Map<
     string,
     Partial<DynamicModule>
   >();
-  private readonly moduleTokenFactory = new ModuleTokenFactory();
   private applicationRef: any;
 
   constructor(
@@ -39,15 +40,14 @@ export class NestContainer {
     return this.applicationRef;
   }
 
-  public addModule(
-    metatype: Type<any> | DynamicModule,
-    scope: Type<any>[],
-  ) {
+  public addModule(metatype: Type<any> | DynamicModule, scope: Type<any>[]) {
     if (!metatype) {
       throw new InvalidModuleException(scope);
     }
-    const { type, dynamicMetadata } = this.extractMetadata(metatype);
-    const token = this.moduleTokenFactory.create(type, scope, dynamicMetadata);
+    const { type, dynamicMetadata, token } = this.moduleCompiler.compile(
+      metatype,
+      scope,
+    );
     if (this.modules.has(token)) {
       return;
     }
@@ -56,25 +56,6 @@ export class NestContainer {
 
     this.addDynamicMetadata(token, dynamicMetadata, [].concat(scope, type));
     this.isGlobalModule(type) && this.addGlobalModule(module);
-  }
-
-  public extractMetadata(
-    metatype: Type<any> | DynamicModule,
-  ): {
-    type: Type<any>;
-    dynamicMetadata?: Partial<DynamicModule> | undefined;
-  } {
-    if (!this.isDynamicModule(metatype)) {
-      return { type: metatype };
-    }
-    const { module: type, ...dynamicMetadata } = metatype;
-    return { type, dynamicMetadata };
-  }
-
-  public isDynamicModule(
-    module: Type<any> | DynamicModule,
-  ): module is DynamicModule {
-    return !!(module as DynamicModule).module;
   }
 
   public addDynamicMetadata(
@@ -94,7 +75,7 @@ export class NestContainer {
 
   public addDynamicModules(modules: any[], scope: Type<any>[]) {
     if (!modules) {
-      return;
+      return undefined;
     }
     modules.map(module => this.addModule(module, scope));
   }
@@ -120,12 +101,12 @@ export class NestContainer {
     const module = this.modules.get(token);
     const parent = module.metatype;
 
-    const { type, dynamicMetadata } = this.extractMetadata(relatedModule);
-    const relatedModuleToken = this.moduleTokenFactory.create(
+    const scope = [].concat(module.scope, parent);
+    const {
       type,
-      [].concat(module.scope, parent),
       dynamicMetadata,
-    );
+      token: relatedModuleToken,
+    } = this.moduleCompiler.compile(relatedModule, scope);
     const related = this.modules.get(relatedModuleToken);
     module.addRelatedModule(related);
   }
@@ -146,10 +127,7 @@ export class NestContainer {
     module.addInjectable(injectable);
   }
 
-  public addExportedComponent(
-    exportedComponent: Type<any>,
-    token: string,
-  ) {
+  public addExportedComponent(exportedComponent: Type<any>, token: string) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }

@@ -33,7 +33,7 @@ class ClientRedis extends client_proxy_1.ClientProxy {
             const responseCallback = (channel, buffer) => {
                 const { err, response, isDisposed, id } = JSON.parse(buffer);
                 if (id !== packet.id) {
-                    return void 0;
+                    return undefined;
                 }
                 if (isDisposed || err) {
                     callback({
@@ -55,7 +55,7 @@ class ClientRedis extends client_proxy_1.ClientProxy {
             yield new Promise(resolve => {
                 const handler = channel => {
                     if (channel && channel !== responseChannel) {
-                        return void 0;
+                        return undefined;
                     }
                     this.subClient.removeListener(constants_1.SUBSCRIBE, handler);
                     resolve();

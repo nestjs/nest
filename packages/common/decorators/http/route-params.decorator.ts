@@ -30,11 +30,12 @@ const assignMetadata = (
 
 const createRouteParamDecorator = (paramtype: RouteParamtypes) => {
   return (data?: ParamData): ParameterDecorator => (target, key, index) => {
-    const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, target, key) || {};
+    const args =
+      Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
       assignMetadata(args, paramtype, index, data),
-      target,
+      target.constructor,
       key,
     );
   };
@@ -44,7 +45,8 @@ const createPipesRouteParamDecorator = (paramtype: RouteParamtypes) => (
   data?,
   ...pipes: (Type<PipeTransform> | PipeTransform)[],
 ): ParameterDecorator => (target, key, index) => {
-  const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, target, key) || {};
+  const args =
+    Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
   const hasParamData = isNil(data) || isString(data);
   const paramData = hasParamData ? data : undefined;
   const paramPipes = hasParamData ? pipes : [data, ...pipes];
@@ -52,7 +54,7 @@ const createPipesRouteParamDecorator = (paramtype: RouteParamtypes) => (
   Reflect.defineMetadata(
     ROUTE_ARGS_METADATA,
     assignMetadata(args, paramtype, index, paramData, ...paramPipes),
-    target,
+    target.constructor,
     key,
   );
 };

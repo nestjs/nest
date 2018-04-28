@@ -2,7 +2,7 @@
 import { Server } from 'http';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
 import { WebSocketAdapter } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 export declare class WsAdapter implements WebSocketAdapter {
     private readonly httpServer;
     private readonly logger;

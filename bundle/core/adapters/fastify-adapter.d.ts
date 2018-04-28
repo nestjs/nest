@@ -36,6 +36,7 @@ export declare class FastifyAdapter {
         send?: any;
     }): any;
     setViewEngine(options: any): any;
+    setHeader(response: any, name: string, value: string): any;
     getRequestMethod(request: any): string;
     getRequestUrl(request: any): string;
 }

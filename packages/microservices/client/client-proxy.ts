@@ -1,9 +1,12 @@
-import { Observable } from 'rxjs/Observable';
-import { Observer } from 'rxjs/Observer';
+import { Observable, Observer, throwError as _throw } from 'rxjs';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import { InvalidMessageException } from '../exceptions/invalid-message.exception';
-import { _throw } from 'rxjs/observable/throw';
-import { ReadPacket, PacketId, WritePacket, ClientOptions } from './../interfaces';
+import {
+  ReadPacket,
+  PacketId,
+  WritePacket,
+  ClientOptions,
+} from './../interfaces';
 import { MissingRequiredDependencyException } from '@nestjs/core/errors/exceptions/missing-dependency.exception';
 
 export abstract class ClientProxy {
@@ -13,7 +16,7 @@ export abstract class ClientProxy {
     callback: (packet: WritePacket) => void,
   );
 
-  public send<T>(pattern, data): Observable<T> {
+  public send<T = any>(pattern, data): Observable<T> {
     if (isNil(pattern) || isNil(data)) {
       return _throw(new InvalidMessageException());
     }

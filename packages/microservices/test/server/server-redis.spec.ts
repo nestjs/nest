@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { NO_PATTERN_MESSAGE } from '../../constants';
 import { ServerRedis } from '../../server/server-redis';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 describe('ServerRedis', () => {
   let server: ServerRedis;

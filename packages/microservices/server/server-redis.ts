@@ -1,4 +1,3 @@
-import { RedisClient, ClientOpts, RetryStrategyOptions } from 'redis';
 import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
 import {
@@ -6,10 +5,8 @@ import {
   RedisOptions,
 } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy, PacketId } from './../interfaces';
-import { Observable } from 'rxjs/Observable';
-import { catchError } from 'rxjs/operators';
-import { empty } from 'rxjs/observable/empty';
-import { finalize } from 'rxjs/operators';
+import { Observable, EMPTY as empty } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 import {
   REDIS_DEFAULT_URL,
   CONNECT_EVENT,
@@ -17,6 +14,11 @@ import {
   ERROR_EVENT,
 } from './../constants';
 import { ReadPacket } from '@nestjs/microservices';
+import {
+  RedisClient,
+  ClientOpts,
+  RetryStrategyOptions,
+} from '../external/redis.interface';
 
 let redisPackage: any = {};
 
@@ -49,10 +51,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     this.subClient.on(CONNECT_EVENT, callback);
   }
 
-  public bindEvents(
-    subClient: RedisClient,
-    pubClient: RedisClient,
-  ) {
+  public bindEvents(subClient: RedisClient, pubClient: RedisClient) {
     subClient.on(MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
     const subscribePatterns = Object.keys(this.messageHandlers);
     subscribePatterns.forEach(pattern =>
@@ -78,11 +77,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
       await this.handleMessage(channel, buffer, pub);
   }
 
-  public async handleMessage(
-    channel,
-    buffer: string | any,
-    pub: RedisClient,
-  ) {
+  public async handleMessage(channel, buffer: string | any, pub: RedisClient) {
     const packet = this.deserialize(buffer);
     const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(pub, pattern, packet.id);

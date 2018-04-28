@@ -1,9 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { Server } from '../../server/server';
-import { Observable } from 'rxjs/Observable';
-import { _throw } from 'rxjs/observable/throw';
-import { of } from 'rxjs/observable/of';
+import { Observable, of, throwError as _throw } from 'rxjs';
 
 class TestServer extends Server {
   public listen(callback: () => void) {}

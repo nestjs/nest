@@ -8,9 +8,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { Controller } from '@nestjs/common/interfaces';
 import { HttpStatus, NestInterceptor } from '@nestjs/common';
-import { Observable } from 'rxjs/Observable';
-import { defer } from 'rxjs/observable/defer';
-import { fromPromise } from 'rxjs/observable/fromPromise';
+import { Observable, defer, from as fromPromise } from 'rxjs';
 import { take, switchMap } from 'rxjs/operators';
 import { ExecutionContextHost } from '../helpers/execution-context.host';
 

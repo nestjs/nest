@@ -7,6 +7,6 @@ import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interfa
  * - `providers` - the list of providers that belong to this module. They can be injected between themselves.
  * - `exports` - the set of components, which should be available for modules, which imports this module
  * - `components` - @deprecated the list of components that belong to this module. They can be injected between themselves.
- * @param obj {ModuleMetadata} Module metadata
+ * @param options {ModuleMetadata} Module metadata
  */
-export declare function Module(obj: ModuleMetadata): ClassDecorator;
+export declare function Module(metadata: ModuleMetadata): ClassDecorator;

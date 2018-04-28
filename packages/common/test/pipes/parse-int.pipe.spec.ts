@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ArgumentMetadata } from './../../interfaces';
+import { ArgumentMetadata } from '../../interfaces';
 import { ParseIntPipe } from './../../pipes/parse-int.pipe';
 
 describe('ParseIntPipe', () => {

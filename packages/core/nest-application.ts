@@ -30,11 +30,11 @@ import { ApplicationConfig } from './application-config';
 import { messages } from './constants';
 import { NestContainer } from './injector/container';
 import { Module } from './injector/module';
-import { MiddlewaresModule } from './middlewares/middlewares-module';
+import { MiddlewareModule } from './middleware/middleware-module';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
 import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
-import { MiddlewaresContainer } from './middlewares/container';
+import { MiddlewareContainer } from './middleware/container';
 import { NestApplicationContext } from './nest-application-context';
 import { HttpsOptions } from '@nestjs/common/interfaces/external/https-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
@@ -61,8 +61,8 @@ export class NestApplication extends NestApplicationContext
     INestExpressApplication,
     INestFastifyApplication {
   private readonly logger = new Logger(NestApplication.name, true);
-  private readonly middlewaresModule = new MiddlewaresModule();
-  private readonly middlewaresContainer = new MiddlewaresContainer();
+  private readonly middlewareModule = new MiddlewareModule();
+  private readonly middlewareContainer = new MiddlewareContainer();
   private readonly microservicesModule = MicroservicesModule
     ? new MicroservicesModule()
     : null;
@@ -136,8 +136,8 @@ export class NestApplication extends NestApplicationContext
       this.microservicesModule.register(this.container, this.config);
       this.microservicesModule.setupClients(this.container);
     }
-    await this.middlewaresModule.register(
-      this.middlewaresContainer,
+    await this.middlewareModule.register(
+      this.middlewareContainer,
       this.container,
       this.config,
     );
@@ -146,7 +146,7 @@ export class NestApplication extends NestApplicationContext
   public async init(): Promise<this> {
     const useBodyParser =
       this.appOptions && this.appOptions.bodyParser !== false;
-    useBodyParser && this.registerParserMiddlewares();
+    useBodyParser && this.registerParserMiddleware();
 
     await this.registerModules();
     await this.registerRouter();
@@ -157,22 +157,22 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public registerParserMiddlewares() {
+  public registerParserMiddleware() {
     if (this.httpAdapter instanceof FastifyAdapter) {
       return this.httpAdapter.register(
         this.loadPackage('fastify-formbody', 'FastifyAdapter'),
       );
     }
     if (!this.isExpress()) {
-      return void 0;
+      return undefined;
     }
-    const parserMiddlewares = {
+    const parserMiddleware = {
       jsonParser: bodyParser.json(),
       urlencodedParser: bodyParser.urlencoded({ extended: true }),
     };
-    Object.keys(parserMiddlewares)
+    Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(this.httpAdapter, parser))
-      .forEach(parserKey => this.httpAdapter.use(parserMiddlewares[parserKey]));
+      .forEach(parserKey => this.httpAdapter.use(parserMiddleware[parserKey]));
   }
 
   public isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean {
@@ -188,7 +188,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public async registerRouter() {
-    await this.registerMiddlewares(this.httpAdapter);
+    await this.registerMiddleware(this.httpAdapter);
     const prefix = this.config.getGlobalPrefix();
     const basePath = prefix ? validatePath(prefix) : '';
     this.routesResolver.resolve(this.httpAdapter, basePath);
@@ -376,9 +376,9 @@ export class NestApplication extends NestApplicationContext
     }
   }
 
-  private async registerMiddlewares(instance) {
-    await this.middlewaresModule.registerMiddlewares(
-      this.middlewaresContainer,
+  private async registerMiddleware(instance) {
+    await this.middlewareModule.registerMiddleware(
+      this.middlewareContainer,
       instance,
     );
   }

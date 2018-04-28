@@ -4,7 +4,7 @@ import { Module } from './module';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { MiddlewareWrapper } from '../middlewares/container';
+import { MiddlewareWrapper } from '../middleware/container';
 export declare class Injector {
     loadInstanceOfMiddleware(wrapper: MiddlewareWrapper, collection: Map<string, MiddlewareWrapper>, module: Module): Promise<void>;
     loadInstanceOfRoute(wrapper: InstanceWrapper<Controller>, module: Module): Promise<void>;

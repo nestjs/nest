@@ -1,4 +1,3 @@
-import { ClientOpts, RetryStrategyOptions, RedisClient } from 'redis';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
@@ -15,6 +14,11 @@ import {
   ReadPacket,
   PacketId,
 } from './../interfaces';
+import {
+  RedisClient,
+  ClientOpts,
+  RetryStrategyOptions,
+} from '../external/redis.interface';
 
 let redisPackage: any = {};
 
@@ -48,7 +52,7 @@ export class ClientRedis extends ClientProxy {
         buffer,
       ) as WritePacket & PacketId;
       if (id !== packet.id) {
-        return void 0;
+        return undefined;
       }
       if (isDisposed || err) {
         callback({
@@ -70,7 +74,7 @@ export class ClientRedis extends ClientProxy {
     await new Promise(resolve => {
       const handler = channel => {
         if (channel && channel !== responseChannel) {
-          return void 0;
+          return undefined;
         }
         this.subClient.removeListener(SUBSCRIBE, handler);
         resolve();

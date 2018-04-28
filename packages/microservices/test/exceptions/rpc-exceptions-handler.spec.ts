@@ -2,9 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RpcExceptionsHandler } from './../../exceptions/rpc-exceptions-handler';
 import { RpcException } from './../../exceptions/rpc-exception';
-import { Observable } from 'rxjs/Observable';
-import { of } from 'rxjs/observable/of';
-import { empty } from 'rxjs/observable/empty';
+import { Observable, of, EMPTY as empty } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 describe('RpcExceptionsHandler', () => {
@@ -25,7 +23,7 @@ describe('RpcExceptionsHandler', () => {
               message: 'Internal server error',
             });
             done();
-            return empty();
+            return empty;
           }),
         )
         .subscribe(() => ({}));
@@ -41,7 +39,7 @@ describe('RpcExceptionsHandler', () => {
             catchError(err => {
               expect(err).to.be.eql(message);
               done();
-              return empty();
+              return empty;
             }),
           )
           .subscribe(() => ({}));
@@ -55,7 +53,7 @@ describe('RpcExceptionsHandler', () => {
             catchError(err => {
               expect(err).to.be.eql({ message, status: 'error' });
               done();
-              return empty();
+              return empty;
             }),
           )
           .subscribe(() => ({}));

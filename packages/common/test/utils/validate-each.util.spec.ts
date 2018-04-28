@@ -8,7 +8,7 @@ describe('validateEach', () => {
       try {
         validateEach({} as any, ['test'], isFunction, '', '');
       }
-      catch(e) {
+      catch (e) {
         expect(e).to.be.instanceof(InvalidDecoratorItemException);
       }
     })

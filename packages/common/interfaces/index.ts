@@ -12,7 +12,7 @@ export * from './nest-application-context.interface';
 export * from './modules/on-init.interface';
 export * from './modules/on-destroy.interface';
 export * from './exceptions/exception-filter.interface';
-export * from './middlewares';
+export * from './middleware';
 export * from './websockets/web-socket-adapter.interface';
 export * from './features/pipe-transform.interface';
 export * from './features/paramtype.interface';

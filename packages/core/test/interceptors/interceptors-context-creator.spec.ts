@@ -1,7 +1,6 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { Observable } from 'rxjs/Observable';
-import { of } from 'rxjs/observable/of';
+import { Observable, of } from 'rxjs';
 import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
 
 class Interceptor {}

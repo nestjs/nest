@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 

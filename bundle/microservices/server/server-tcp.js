@@ -20,8 +20,7 @@ class ServerTCP extends server_1.Server {
         this.isExplicitlyTerminated = false;
         this.retryAttemptsCount = 0;
         this.port =
-            this.getOptionsProp(options, 'port') ||
-                constants_2.TCP_DEFAULT_PORT;
+            this.getOptionsProp(options, 'port') || constants_2.TCP_DEFAULT_PORT;
         this.init();
     }
     listen(callback) {

@@ -1,13 +1,13 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { MiddlewaresInjector } from '../middlewares-injector';
+import { MiddlewareInjector } from '../middleware-injector';
 import { UnknownModuleException } from '../../core/errors/exceptions/unknown-module.exception';
 import { WebSocketGateway, IoAdapter } from '../index';
 import { RuntimeException } from '../../core/errors/exceptions/runtime.exception';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 
-describe('MiddlewaresInjector', () => {
-  let injector: MiddlewaresInjector;
+describe('MiddlewareInjector', () => {
+  let injector: MiddlewareInjector;
   let container;
   let modules;
 
@@ -16,7 +16,7 @@ describe('MiddlewaresInjector', () => {
     container = {
       getModules: () => modules,
     };
-    injector = new MiddlewaresInjector(
+    injector = new MiddlewareInjector(
       container as any,
       new ApplicationConfig(new IoAdapter()),
     );
@@ -25,38 +25,38 @@ describe('MiddlewaresInjector', () => {
     const tokens = [1, 2, 3];
 
     beforeEach(() => {
-      sinon.stub(injector, 'reflectMiddlewaresTokens').returns(tokens);
+      sinon.stub(injector, 'reflectMiddlewareTokens').returns(tokens);
     });
     it('should throws exception when module is not known', () => {
       sinon.stub(modules, 'has').returns(false);
       expect(() => injector.inject(null, null, '')).to.throws(Error);
     });
-    it('should call "applyMiddlewares" with expected arguments', () => {
+    it('should call "applyMiddleware" with expected arguments', () => {
       const components = {};
 
       sinon.stub(modules, 'has').returns(true);
       sinon.stub(modules, 'get').returns({ components });
 
-      const stub: sinon.SinonStub = sinon.stub(injector, 'applyMiddlewares');
+      const stub: sinon.SinonStub = sinon.stub(injector, 'applyMiddleware');
       const server = {};
 
       injector.inject(server, null, '');
       expect(stub.calledWith(server, components, tokens)).to.be.true;
     });
   });
-  describe('reflectMiddlewaresTokens', () => {
-    const middlewares: any = [1, 2, 3];
+  describe('reflectMiddlewareTokens', () => {
+    const middleware: any = [1, 2, 3];
     @WebSocketGateway({
-      middlewares,
+      middleware,
     })
     class Test {}
-    it('should returns expected list of middlewares', () => {
-      expect(injector.reflectMiddlewaresTokens(new Test())).to.be.equal(
-        middlewares,
+    it('should returns expected list of middleware', () => {
+      expect(injector.reflectMiddlewareTokens(new Test())).to.be.equal(
+        middleware,
       );
     });
   });
-  describe('applyMiddlewares', () => {
+  describe('applyMiddleware', () => {
     let server: { use: sinon.SinonSpy };
     const setAsName = name => ({ name });
     const tokens = [1, null, 'test', undefined];
@@ -67,8 +67,8 @@ describe('MiddlewaresInjector', () => {
       };
       sinon.stub(injector, 'bindMiddleware').callsFake(a => a);
     });
-    it('should apply expected middlewares', () => {
-      injector.applyMiddlewares(server, null, tokens.map(setAsName) as any);
+    it('should apply expected middleware', () => {
+      injector.applyMiddleware(server, null, tokens.map(setAsName) as any);
       expect(server.use.callCount).to.be.eql(2);
       expect(server.use.calledWith(1)).to.be.true;
     });

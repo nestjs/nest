@@ -31,7 +31,7 @@ class ClientNats extends client_proxy_1.ClientProxy {
             const responseChannel = this.getResPatternName(pattern);
             const subscriptionHandler = (message) => {
                 if (message.id !== packet.id) {
-                    return void 0;
+                    return undefined;
                 }
                 const { err, response, isDisposed } = message;
                 if (isDisposed || err) {

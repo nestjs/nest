@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import iterate from 'iterare';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
 import {
   EXCEPTION_FILTERS_METADATA,

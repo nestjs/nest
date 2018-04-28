@@ -66,7 +66,7 @@ export class TestingModule extends NestApplicationContext {
   }
 
   private applyExpressAdapter(httpAdapter: HttpServer): HttpServer {
-    const isAdapter = !!httpAdapter.getHttpServer;
+    const isAdapter = httpAdapter.getHttpServer;
     if (isAdapter) {
       return httpAdapter;
     }

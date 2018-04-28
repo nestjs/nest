@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { PATTERN_METADATA } from '../../constants';
 import { MessagePattern } from '../../utils/pattern.decorator';

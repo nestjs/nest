@@ -3,12 +3,12 @@ const path = require('path');
 const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
-  entry: ['webpack/hot/poll?1000', './src/main.ts'],
+  entry: ['webpack/hot/poll?100', './src/main.ts'],
   watch: true,
   target: 'node',
   externals: [
     nodeExternals({
-      whitelist: ['webpack/hot/poll?1000'],
+      whitelist: ['webpack/hot/poll?100'],
     }),
   ],
   module: {

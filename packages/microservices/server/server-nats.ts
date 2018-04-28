@@ -1,4 +1,3 @@
-import { Client } from 'nats';
 import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
 import {
@@ -6,12 +5,11 @@ import {
   NatsOptions,
 } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy, PacketId } from './../interfaces';
-import { Observable } from 'rxjs/Observable';
-import { catchError } from 'rxjs/operators';
-import { empty } from 'rxjs/observable/empty';
-import { finalize } from 'rxjs/operators';
+import { Observable, EMPTY as empty } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 import { NATS_DEFAULT_URL, CONNECT_EVENT, ERROR_EVENT } from './../constants';
 import { ReadPacket } from './../interfaces/packet.interface';
+import { Client } from '../external/nats-client.interface';
 
 let natsPackage: any = {};
 

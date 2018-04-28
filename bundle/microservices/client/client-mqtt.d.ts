@@ -1,9 +1,9 @@
 /// <reference types="node" />
-import { MqttClient } from 'mqtt';
 import { ClientProxy } from './client-proxy';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { WritePacket } from './../interfaces';
 import { ReadPacket } from './../interfaces';
+import { MqttClient } from '../external/mqtt-client.interface';
 export declare class ClientMqtt extends ClientProxy {
     private readonly options;
     private readonly logger;

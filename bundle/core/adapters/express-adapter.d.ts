@@ -24,6 +24,7 @@ export declare class ExpressAdapter implements HttpServer {
     render(response: any, view: string, options: any): any;
     setErrorHandler(handler: Function): any;
     setNotFoundHandler(handler: Function): any;
+    setHeader(response: any, name: string, value: string): any;
     getHttpServer(): any;
     close(): any;
     set(...args: any[]): any;

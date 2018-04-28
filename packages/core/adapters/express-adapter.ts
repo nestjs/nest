@@ -82,6 +82,10 @@ export class ExpressAdapter implements HttpServer {
     return this.use(handler as any);
   }
 
+  setHeader(response, name: string, value: string) {
+    return response.set(name, value);
+  }
+
   getHttpServer() {
     return this.instance;
   }

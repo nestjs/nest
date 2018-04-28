@@ -1,13 +1,14 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { MessageHandlers } from '../interfaces/message-handlers.interface';
-import { Observable } from 'rxjs/Observable';
-import { Subscription } from 'rxjs/Subscription';
+import {
+  Observable,
+  Subscription,
+  EMPTY as empty,
+  of,
+  from as fromPromise,
+} from 'rxjs';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { catchError } from 'rxjs/operators';
-import { finalize } from 'rxjs/operators';
-import { empty } from 'rxjs/observable/empty';
-import { of } from 'rxjs/observable/of';
-import { fromPromise } from 'rxjs/observable/fromPromise';
+import { catchError, finalize } from 'rxjs/operators';
 import { WritePacket, MicroserviceOptions } from './../interfaces';
 import { MissingRequiredDependencyException } from '@nestjs/core/errors/exceptions/missing-dependency.exception';
 
@@ -37,7 +38,7 @@ export abstract class Server {
       .pipe(
         catchError(err => {
           respond({ err, response: null });
-          return empty();
+          return empty;
         }),
         finalize(() => respond({ isDisposed: true })),
       )

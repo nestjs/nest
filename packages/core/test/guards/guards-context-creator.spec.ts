@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 class Guard {}
 

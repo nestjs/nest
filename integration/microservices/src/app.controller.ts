@@ -6,9 +6,7 @@ import {
   Transport,
   ClientProxyFactory,
 } from '@nestjs/microservices';
-import { Observable } from 'rxjs/Observable';
-import { of } from 'rxjs/observable/of';
-import { from } from 'rxjs/observable/from';
+import { Observable, of, from } from 'rxjs';
 import { scan, tap } from 'rxjs/operators';
 
 @Controller()
@@ -25,10 +23,9 @@ export class AppController {
   @Post('stream')
   @HttpCode(200)
   stream(@Body() data: number[]): Observable<number> {
-    return this.client.send<number>({ cmd: 'streaming' }, data)
-      .pipe(
-        scan((a, b) => a + b),
-      );
+    return this.client
+      .send<number>({ cmd: 'streaming' }, data)
+      .pipe(scan((a, b) => a + b));
   }
 
   @Post('concurrent')
@@ -46,7 +43,7 @@ export class AppController {
       .map(async tab => await send(tab))
       .reduce(async (a, b) => (await a) && (await b));
   }
-  
+
   @MessagePattern({ cmd: 'sum' })
   sum(data: number[]): number {
     return (data || []).reduce((a, b) => a + b);

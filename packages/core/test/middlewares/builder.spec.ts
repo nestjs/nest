@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { MiddlewareBuilder } from '../../middlewares/builder';
+import { MiddlewareBuilder } from '../../middleware/builder';
 import { InvalidMiddlewareConfigurationException } from '../../errors/exceptions/invalid-middleware-configuration.exception';
-import { RoutesMapper } from '../../middlewares/routes-mapper';
+import { RoutesMapper } from '../../middleware/routes-mapper';
 import { Get, Controller } from '../../../common';
 import { NestContainer } from '../../injector/container';
 
@@ -36,7 +36,7 @@ describe('MiddlewareBuilder', () => {
 
           expect(builder.build()).to.deep.equal([
             {
-              middlewares: [],
+              middleware: [],
               forRoutes: [
                 route.path,
                 '/path/route',

@@ -5,6 +5,7 @@ import {
   HTTP_CODE_METADATA,
   CUSTOM_ROUTE_AGRS_METADATA,
   RENDER_METADATA,
+  HEADERS_METADATA,
 } from '@nestjs/common/constants';
 import {
   isUndefined,
@@ -27,9 +28,13 @@ import {
 } from '@nestjs/common';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { GuardsConsumer } from '../guards/guards-consumer';
-import { RouterResponseController } from './router-response-controller';
+import {
+  RouterResponseController,
+  CustomHeader,
+} from './router-response-controller';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
+import { FORBIDDEN_MESSAGE } from '../guards/constants';
 
 export interface ParamProperties {
   index: number;
@@ -119,7 +124,11 @@ export class RouterExecutionContext {
     instance: Controller,
     methodName: string,
   ): RouteParamsMetadata {
-    return Reflect.getMetadata(ROUTE_ARGS_METADATA, instance, methodName);
+    return Reflect.getMetadata(
+      ROUTE_ARGS_METADATA,
+      instance.constructor,
+      methodName,
+    );
   }
 
   public reflectCallbackParamtypes(
@@ -135,6 +144,10 @@ export class RouterExecutionContext {
 
   public reflectRenderTemplate(callback): string {
     return Reflect.getMetadata(RENDER_METADATA, callback);
+  }
+
+  public reflectResponseHeaders(callback): CustomHeader[] {
+    return Reflect.getMetadata(HEADERS_METADATA, callback) || [];
   }
 
   public getArgumentsLength(
@@ -225,7 +238,7 @@ export class RouterExecutionContext {
         callback,
       );
       if (!canActivate) {
-        return false;
+        throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
       }
     };
     return guards.length ? canActivateFn : null;
@@ -251,9 +264,7 @@ export class RouterExecutionContext {
           args[index] = await this.getParamValue(
             value,
             { metatype, type, data },
-            pipes.concat(
-              this.pipesContextCreator.createConcreteContext(paramPipes),
-            ),
+            pipes.concat(paramPipes),
           );
         }),
       );
@@ -267,12 +278,19 @@ export class RouterExecutionContext {
     httpStatusCode: number,
   ) {
     const renderTemplate = this.reflectRenderTemplate(callback);
-    if (!!renderTemplate) {
-      return async (result, res) =>
+    const responseHeaders = this.reflectResponseHeaders(callback);
+
+    if (renderTemplate) {
+      return async (result, res) => {
+        this.responseController.setHeaders(res, responseHeaders);
         await this.responseController.render(result, res, renderTemplate);
+      };
     }
-    return async (result, res) =>
+    return async (result, res) => {
+      this.responseController.setHeaders(res, responseHeaders);
+
       !isResponseHandled &&
-      (await this.responseController.apply(result, res, httpStatusCode));
+        (await this.responseController.apply(result, res, httpStatusCode));
+    };
   }
 }

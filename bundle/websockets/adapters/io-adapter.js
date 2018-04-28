@@ -11,8 +11,8 @@ var __rest = (this && this.__rest) || function (s, e) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const io = require("socket.io");
 const constants_1 = require("../constants");
+const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
-const fromEvent_1 = require("rxjs/observable/fromEvent");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 class IoAdapter {
     constructor(httpServer = null) {
@@ -42,7 +42,7 @@ class IoAdapter {
         client.on(constants_1.DISCONNECT_EVENT, callback);
     }
     bindMessageHandlers(client, handlers, process) {
-        handlers.forEach(({ message, callback }) => fromEvent_1.fromEvent(client, message)
+        handlers.forEach(({ message, callback }) => rxjs_1.fromEvent(client, message)
             .pipe(operators_1.mergeMap(data => process(callback(data))), operators_1.filter(result => !!result && result.event))
             .subscribe(({ event, data }) => client.emit(event, data)));
     }

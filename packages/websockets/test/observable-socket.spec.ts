@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { ObservableSocket } from '../observable-socket';
-import { ReplaySubject } from 'rxjs/ReplaySubject';
-import { Subject } from 'rxjs/Subject';
+import { ReplaySubject, Subject } from 'rxjs';
 
 describe('ObservableSocket', () => {
   describe('create', () => {

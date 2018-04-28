@@ -2,10 +2,9 @@ import { Logger } from '@nestjs/common';
 import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
 import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/invalid-exception-filter.exception';
 import { messages } from '@nestjs/core/constants';
-import { Observable } from 'rxjs/Observable';
+import { Observable, throwError as _throw } from 'rxjs';
 import { RpcException } from './rpc-exception';
 import { RpcExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
-import { _throw } from 'rxjs/observable/throw';
 import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
 
 export class RpcExceptionsHandler {
@@ -45,7 +44,10 @@ export class RpcExceptionsHandler {
     this.filters = filters;
   }
 
-  public invokeCustomFilters(exception, host: ArgumentsHost): Observable<any> | null {
+  public invokeCustomFilters(
+    exception,
+    host: ArgumentsHost,
+  ): Observable<any> | null {
     if (isEmpty(this.filters)) return null;
 
     const filter = this.filters.find(({ exceptionMetatypes, func }) => {

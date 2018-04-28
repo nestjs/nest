@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { WsProxy } from './ws-proxy';
 import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
 import { ExceptionFiltersContext } from './exception-filters-context';

@@ -7,26 +7,23 @@ import {
   GatewayMetadataExplorer,
   MessageMappingProperties,
 } from './gateway-metadata-explorer';
-import { Subject } from 'rxjs/Subject';
+import { Subject, Observable, from as fromPromise, of } from 'rxjs';
 import { SocketServerProvider } from './socket-server-provider';
 import { PORT_METADATA, GATEWAY_OPTIONS } from './constants';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { NestContainer } from '@nestjs/core/injector/container';
-import { MiddlewaresInjector } from './middlewares-injector';
+import { MiddlewareInjector } from './middleware-injector';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from './context/ws-context-creator';
-import { Observable } from 'rxjs/Observable';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { fromPromise } from 'rxjs/observable/fromPromise';
-import { of } from 'rxjs/observable/of';
 import { mergeMap } from 'rxjs/operators';
 
 export class WebSocketsController {
   private readonly metadataExplorer = new GatewayMetadataExplorer(
     new MetadataScanner(),
   );
-  private readonly middlewaresInjector: MiddlewaresInjector;
+  private readonly middlewareInjector: MiddlewareInjector;
 
   constructor(
     private readonly socketServerProvider: SocketServerProvider,
@@ -34,7 +31,7 @@ export class WebSocketsController {
     private readonly config: ApplicationConfig,
     private readonly contextCreator: WsContextCreator,
   ) {
-    this.middlewaresInjector = new MiddlewaresInjector(container, config);
+    this.middlewareInjector = new MiddlewareInjector(container, config);
   }
 
   public hookGatewayIntoServer(
@@ -68,13 +65,13 @@ export class WebSocketsController {
       options,
       port,
     );
-    this.injectMiddlewares(observableServer, instance, module);
+    this.injectMiddleware(observableServer, instance, module);
     this.hookServerToProperties(instance, observableServer.server);
     this.subscribeEvents(instance, messageHandlers, observableServer);
   }
 
-  public injectMiddlewares({ server }, instance: NestGateway, module: string) {
-    this.middlewaresInjector.inject(server, instance, module);
+  public injectMiddleware({ server }, instance: NestGateway, module: string) {
+    this.middlewareInjector.inject(server, instance, module);
   }
 
   public subscribeEvents(

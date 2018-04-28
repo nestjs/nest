@@ -8,9 +8,8 @@ import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from '../context/ws-context-creator';
-import { Observable } from 'rxjs/Observable';
 import { IoAdapter } from '../index';
-import { of } from 'rxjs/observable/of';
+import { Observable, of } from 'rxjs';
 import { PORT_METADATA } from '../constants';
 
 describe('WebSocketsController', () => {
@@ -97,7 +96,7 @@ describe('WebSocketsController', () => {
       (instance as any).hookServerToProperties = hookServerToProperties;
       (instance as any).subscribeEvents = subscribeEvents;
 
-      sinon.stub(instance, 'injectMiddlewares').returns(0);
+      sinon.stub(instance, 'injectMiddleware').returns(0);
     });
     it('should call "hookServerToProperties" with expected arguments', () => {
       instance.subscribeObservableServer(gateway, namespace, port, '');

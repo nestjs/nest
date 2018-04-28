@@ -122,40 +122,6 @@ describe('NestContainer', () => {
     });
   });
 
-  describe('extractMetadata', () => {
-    describe('when module is a dynamic module', () => {
-      it('should return object with "type" and "dynamicMetadata" property', () => {
-        const obj = { module: 'test', providers: [] };
-        const { module, ...dynamicMetadata } = obj;
-        expect(container.extractMetadata(obj as any)).to.be.deep.equal({
-          type: module,
-          dynamicMetadata,
-        });
-      });
-    });
-    describe('when module is a not dynamic module', () => {
-      it('should return object with "type" property', () => {
-        const type = 'test';
-        expect(container.extractMetadata(type as any)).to.be.deep.equal({
-          type,
-        });
-      });
-    });
-  });
-
-  describe('isDynamicModule', () => {
-    describe('when module is a dynamic module', () => {
-      it('should return true', () => {
-        expect(container.isDynamicModule({ module: true } as any)).to.be.true;
-      });
-    });
-    describe('when module is a dynamic module', () => {
-      it('should return false', () => {
-        expect(container.isDynamicModule({ x: true } as any)).to.be.false;
-      });
-    });
-  });
-
   describe('addDynamicMetadata', () => {
     let token: string;
     let collection: Map<string, any>;
