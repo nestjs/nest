@@ -1,4 +1,3 @@
-import { MqttClient } from 'mqtt';
 import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
 import {
@@ -15,6 +14,7 @@ import {
   ERROR_EVENT,
 } from './../constants';
 import { ReadPacket } from '@nestjs/microservices';
+import { MqttClient } from '../external/mqtt-client.interface';
 
 let mqttPackage: any = {};
 

@@ -1,4 +1,3 @@
-import { GrpcObject } from 'grpc';
 import { Server } from './server';
 import {
   MicroserviceOptions,
@@ -146,7 +145,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return pkg;
   }
 
-  public loadProto(): GrpcObject {
+  public loadProto(): any {
     try {
       const context = grpcPackage.load(
         this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),

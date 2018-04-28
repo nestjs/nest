@@ -1,4 +1,3 @@
-import { ClientOpts, RetryStrategyOptions, RedisClient } from 'redis';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
@@ -15,6 +14,11 @@ import {
   ReadPacket,
   PacketId,
 } from './../interfaces';
+import {
+  RedisClient,
+  ClientOpts,
+  RetryStrategyOptions,
+} from '../external/redis.interface';
 
 let redisPackage: any = {};
 

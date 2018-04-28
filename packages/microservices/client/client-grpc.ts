@@ -1,4 +1,3 @@
-import { GrpcObject } from 'grpc';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
@@ -98,7 +97,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     return grpcPkg;
   }
 
-  public loadProto(): GrpcObject {
+  public loadProto(): any {
     try {
       const context = grpcPackage.load(
         this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),

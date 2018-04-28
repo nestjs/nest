@@ -1,4 +1,3 @@
-import { RedisClient, ClientOpts, RetryStrategyOptions } from 'redis';
 import { Server } from './server';
 import { NO_PATTERN_MESSAGE } from '../constants';
 import {
@@ -15,6 +14,11 @@ import {
   ERROR_EVENT,
 } from './../constants';
 import { ReadPacket } from '@nestjs/microservices';
+import {
+  RedisClient,
+  ClientOpts,
+  RetryStrategyOptions,
+} from '../external/redis.interface';
 
 let redisPackage: any = {};
 

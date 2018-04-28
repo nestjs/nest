@@ -1,4 +1,3 @@
-import { Client } from 'nats';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
@@ -9,6 +8,7 @@ import {
   ReadPacket,
   PacketId,
 } from './../interfaces';
+import { Client } from '../external/nats-client.interface';
 
 let natsPackage: any = {};
 

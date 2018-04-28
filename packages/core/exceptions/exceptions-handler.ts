@@ -37,6 +37,7 @@ export class ExceptionsHandler {
           statusCode: exception.getStatus(),
           message: res,
         };
+
     this.applicationRef.reply(
       ctx.getArgByIndex(1),
       message,

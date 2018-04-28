@@ -1,4 +1,3 @@
-import { MqttClient } from 'mqtt';
 import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
@@ -11,6 +10,7 @@ import {
 } from './../constants';
 import { WritePacket, MqttOptions } from './../interfaces';
 import { ReadPacket, PacketId } from './../interfaces';
+import { MqttClient } from '../external/mqtt-client.interface';
 
 let mqttPackage: any = {};
 

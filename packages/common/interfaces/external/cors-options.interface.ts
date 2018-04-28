@@ -1,3 +1,6 @@
+/**
+ * @see https://github.com/expressjs/cors
+ */
 export type CustomOrigin = (
   requestOrigin: string,
   callback: (err: Error | null, allow?: boolean) => void,
