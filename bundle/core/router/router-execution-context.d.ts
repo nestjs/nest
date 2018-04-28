@@ -8,6 +8,7 @@ import { PipesConsumer } from './../pipes/pipes-consumer';
 import { ParamData, PipeTransform, RequestMethod, HttpServer } from '@nestjs/common';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { GuardsConsumer } from '../guards/guards-consumer';
+import { CustomHeader } from './router-response-controller';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 export interface ParamProperties {
@@ -34,6 +35,7 @@ export declare class RouterExecutionContext {
     reflectCallbackParamtypes(instance: Controller, methodName: string): any[];
     reflectHttpStatusCode(callback: (...args) => any): number;
     reflectRenderTemplate(callback: any): string;
+    reflectResponseHeaders(callback: any): CustomHeader[];
     getArgumentsLength(keys: string[], metadata: RouteParamsMetadata): number;
     createNullArray(length: number): any[];
     exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata, moduleContext: string): ParamProperties[];
@@ -46,9 +48,9 @@ export declare class RouterExecutionContext {
         type: any;
         data: any;
     }, transforms: Transform<any>[]): Promise<any>;
-    createGuardsFn(guards: any[], instance: Controller, callback: (...args) => any): (args: any[]) => Promise<boolean>;
+    createGuardsFn(guards: any[], instance: Controller, callback: (...args) => any): (args: any[]) => Promise<void>;
     createPipesFn(pipes: any[], paramsOptions: (ParamProperties & {
         metatype?: any;
     })[]): (args: any, req: any, res: any, next: any) => Promise<void>;
-    createHandleResponseFn(callback: any, isResponseHandled: boolean, httpStatusCode: number): (result: any, res: any) => Promise<any>;
+    createHandleResponseFn(callback: any, isResponseHandled: boolean, httpStatusCode: number): (result: any, res: any) => Promise<void>;
 }

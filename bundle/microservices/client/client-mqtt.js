@@ -23,7 +23,7 @@ class ClientMqtt extends client_proxy_1.ClientProxy {
         const responseCallback = (channel, buffer) => {
             const { err, response, isDisposed, id } = JSON.parse(buffer.toString());
             if (id !== packet.id) {
-                return void 0;
+                return undefined;
             }
             if (isDisposed || err) {
                 callback({

@@ -1,6 +1,6 @@
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { MulterOptions } from '../interfaces/external/multer-options.interface';
-import { ExecutionContext } from './../interfaces';
+import { ExecutionContext } from '../interfaces';
 export declare function FilesInterceptor(fieldName: string, maxCount?: number, options?: MulterOptions): {
     new (): {
         readonly upload: any;

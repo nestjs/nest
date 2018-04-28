@@ -13,7 +13,7 @@ function WebSocketGateway(portOrOptions, options) {
         Reflect.defineMetadata(constants_1.GATEWAY_METADATA, true, target);
         Reflect.defineMetadata(constants_1.PORT_METADATA, port, target);
         Reflect.defineMetadata(constants_1.GATEWAY_OPTIONS, opt, target);
-        Reflect.defineMetadata(constants_1.GATEWAY_MIDDLEWARES, opt.middlewares, target);
+        Reflect.defineMetadata(constants_1.GATEWAY_MIDDLEWARES, opt.middleware, target);
     };
 }
 exports.WebSocketGateway = WebSocketGateway;

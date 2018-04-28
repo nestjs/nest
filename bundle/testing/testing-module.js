@@ -23,7 +23,7 @@ class TestingModule extends core_1.NestApplicationContext {
         return new NestMicroservice(this.container, options, this.applicationConfig);
     }
     applyExpressAdapter(httpAdapter) {
-        const isAdapter = !!httpAdapter.getHttpServer;
+        const isAdapter = httpAdapter.getHttpServer;
         if (isAdapter) {
             return httpAdapter;
         }

@@ -1,5 +1,5 @@
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 export declare class HttpService {
     request<T = any>(config: AxiosRequestConfig): Observable<AxiosResponse<T>>;
     get<T = any>(url: string, config?: AxiosRequestConfig): Observable<AxiosResponse<T>>;

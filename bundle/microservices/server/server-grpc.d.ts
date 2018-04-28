@@ -1,4 +1,3 @@
-import { GrpcObject } from 'grpc';
 import { Server } from './server';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy } from './../interfaces';
@@ -20,5 +19,5 @@ export declare class ServerGrpc extends Server implements CustomTransportStrateg
     deserialize(obj: any): any;
     createClient(): any;
     lookupPackage(root: any, packageName: string): any;
-    loadProto(): GrpcObject;
+    loadProto(): any;
 }

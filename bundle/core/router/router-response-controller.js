@@ -45,5 +45,8 @@ class RouterResponseController {
                 return common_1.HttpStatus.OK;
         }
     }
+    setHeaders(response, headers) {
+        headers.forEach(({ name, value }) => this.applicationRef.setHeader(response, name, value));
+    }
 }
 exports.RouterResponseController = RouterResponseController;

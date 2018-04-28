@@ -49,6 +49,9 @@ class ExpressAdapter {
     setNotFoundHandler(handler) {
         return this.use(handler);
     }
+    setHeader(response, name, value) {
+        return response.set(name, value);
+    }
     getHttpServer() {
         return this.instance;
     }

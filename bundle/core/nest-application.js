@@ -18,10 +18,10 @@ const logger_service_1 = require("@nestjs/common/services/logger.service");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const application_config_1 = require("./application-config");
 const constants_1 = require("./constants");
-const middlewares_module_1 = require("./middlewares/middlewares-module");
+const middleware_module_1 = require("./middleware/middleware-module");
 const routes_resolver_1 = require("./router/routes-resolver");
 const microservices_package_not_found_exception_1 = require("./errors/exceptions/microservices-package-not-found.exception");
-const container_1 = require("./middlewares/container");
+const container_1 = require("./middleware/container");
 const nest_application_context_1 = require("./nest-application-context");
 const express_adapter_1 = require("./adapters/express-adapter");
 const fastify_adapter_1 = require("./adapters/fastify-adapter");
@@ -37,8 +37,8 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         this.config = config;
         this.appOptions = appOptions;
         this.logger = new logger_service_1.Logger(NestApplication.name, true);
-        this.middlewaresModule = new middlewares_module_1.MiddlewaresModule();
-        this.middlewaresContainer = new container_1.MiddlewaresContainer();
+        this.middlewareModule = new middleware_module_1.MiddlewareModule();
+        this.middlewareContainer = new container_1.MiddlewareContainer();
         this.microservicesModule = MicroservicesModule
             ? new MicroservicesModule()
             : null;
@@ -90,13 +90,13 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
                 this.microservicesModule.register(this.container, this.config);
                 this.microservicesModule.setupClients(this.container);
             }
-            yield this.middlewaresModule.register(this.middlewaresContainer, this.container, this.config);
+            yield this.middlewareModule.register(this.middlewareContainer, this.container, this.config);
         });
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
             const useBodyParser = this.appOptions && this.appOptions.bodyParser !== false;
-            useBodyParser && this.registerParserMiddlewares();
+            useBodyParser && this.registerParserMiddleware();
             yield this.registerModules();
             yield this.registerRouter();
             yield this.callInitHook();
@@ -105,20 +105,20 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
             return this;
         });
     }
-    registerParserMiddlewares() {
+    registerParserMiddleware() {
         if (this.httpAdapter instanceof fastify_adapter_1.FastifyAdapter) {
             return this.httpAdapter.register(this.loadPackage('fastify-formbody', 'FastifyAdapter'));
         }
         if (!this.isExpress()) {
-            return void 0;
+            return undefined;
         }
-        const parserMiddlewares = {
+        const parserMiddleware = {
             jsonParser: bodyParser.json(),
             urlencodedParser: bodyParser.urlencoded({ extended: true }),
         };
-        Object.keys(parserMiddlewares)
+        Object.keys(parserMiddleware)
             .filter(parser => !this.isMiddlewareApplied(this.httpAdapter, parser))
-            .forEach(parserKey => this.httpAdapter.use(parserMiddlewares[parserKey]));
+            .forEach(parserKey => this.httpAdapter.use(parserMiddleware[parserKey]));
     }
     isMiddlewareApplied(httpAdapter, name) {
         const app = this.httpAdapter.getHttpServer();
@@ -129,7 +129,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
     }
     registerRouter() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.registerMiddlewares(this.httpAdapter);
+            yield this.registerMiddleware(this.httpAdapter);
             const prefix = this.config.getGlobalPrefix();
             const basePath = prefix ? shared_utils_1.validatePath(prefix) : '';
             this.routesResolver.resolve(this.httpAdapter, basePath);
@@ -274,9 +274,9 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
             throw new missing_dependency_exception_1.MissingRequiredDependencyException(name, ctx);
         }
     }
-    registerMiddlewares(instance) {
+    registerMiddleware(instance) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.middlewaresModule.registerMiddlewares(this.middlewaresContainer, instance);
+            yield this.middlewareModule.registerMiddleware(this.middlewareContainer, instance);
         });
     }
     isExpress() {

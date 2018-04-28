@@ -43,7 +43,7 @@ class ClientTCP extends client_proxy_1.ClientProxy {
                 jsonSocket.sendMessage(packet);
                 const listener = (buffer) => {
                     if (buffer.id !== packet.id) {
-                        return void 0;
+                        return undefined;
                     }
                     this.handleResponse(jsonSocket, callback, buffer, listener);
                 };

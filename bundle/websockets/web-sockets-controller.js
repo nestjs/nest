@@ -11,12 +11,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const invalid_socket_port_exception_1 = require("./exceptions/invalid-socket-port.exception");
 const gateway_metadata_explorer_1 = require("./gateway-metadata-explorer");
+const rxjs_1 = require("rxjs");
 const constants_1 = require("./constants");
 const metadata_scanner_1 = require("@nestjs/core/metadata-scanner");
-const middlewares_injector_1 = require("./middlewares-injector");
+const middleware_injector_1 = require("./middleware-injector");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const fromPromise_1 = require("rxjs/observable/fromPromise");
-const of_1 = require("rxjs/observable/of");
 const operators_1 = require("rxjs/operators");
 class WebSocketsController {
     constructor(socketServerProvider, container, config, contextCreator) {
@@ -25,7 +24,7 @@ class WebSocketsController {
         this.config = config;
         this.contextCreator = contextCreator;
         this.metadataExplorer = new gateway_metadata_explorer_1.GatewayMetadataExplorer(new metadata_scanner_1.MetadataScanner());
-        this.middlewaresInjector = new middlewares_injector_1.MiddlewaresInjector(container, config);
+        this.middlewareInjector = new middleware_injector_1.MiddlewareInjector(container, config);
     }
     hookGatewayIntoServer(instance, metatype, module) {
         const options = Reflect.getMetadata(constants_1.GATEWAY_OPTIONS, metatype) || {};
@@ -42,12 +41,12 @@ class WebSocketsController {
             callback: this.contextCreator.create(instance, callback, module),
         }));
         const observableServer = this.socketServerProvider.scanForSocketServer(options, port);
-        this.injectMiddlewares(observableServer, instance, module);
+        this.injectMiddleware(observableServer, instance, module);
         this.hookServerToProperties(instance, observableServer.server);
         this.subscribeEvents(instance, messageHandlers, observableServer);
     }
-    injectMiddlewares({ server }, instance, module) {
-        this.middlewaresInjector.inject(server, instance, module);
+    injectMiddleware({ server }, instance, module) {
+        this.middlewareInjector.inject(server, instance, module);
     }
     subscribeEvents(instance, messageHandlers, observableServer) {
         const { init, disconnect, connection, server } = observableServer;
@@ -90,7 +89,7 @@ class WebSocketsController {
             message,
             callback: callback.bind(instance, client),
         }));
-        adapter.bindMessageHandlers(client, handlers, data => fromPromise_1.fromPromise(this.pickResult(data)).pipe(operators_1.mergeMap(stream => stream)));
+        adapter.bindMessageHandlers(client, handlers, data => rxjs_1.from(this.pickResult(data)).pipe(operators_1.mergeMap(stream => stream)));
     }
     pickResult(defferedResult) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -99,9 +98,9 @@ class WebSocketsController {
                 return result;
             }
             if (result instanceof Promise) {
-                return fromPromise_1.fromPromise(result);
+                return rxjs_1.from(result);
             }
-            return of_1.of(result);
+            return rxjs_1.of(result);
         });
     }
     hookServerToProperties(instance, server) {

@@ -1,8 +1,7 @@
-import { GrpcObject } from 'grpc';
 import { ClientProxy } from './client-proxy';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientGrpc } from './../interfaces';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 export declare class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     private readonly options;
     private readonly logger;
@@ -14,7 +13,7 @@ export declare class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     createStreamServiceMethod(client: any, methodName: string): (...args) => Observable<any>;
     createUnaryServiceMethod(client: any, methodName: string): (...args) => Observable<any>;
     createClient(): any;
-    loadProto(): GrpcObject;
+    loadProto(): any;
     lookupPackage(root: any, packageName: string): any;
     close(): void;
     protected publish(partialPacket: any, callback: (packet) => any): Promise<void>;

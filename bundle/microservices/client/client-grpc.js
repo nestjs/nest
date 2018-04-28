@@ -11,7 +11,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const client_proxy_1 = require("./client-proxy");
 const logger_service_1 = require("@nestjs/common/services/logger.service");
 const constants_1 = require("./../constants");
-const Observable_1 = require("rxjs/Observable");
+const rxjs_1 = require("rxjs");
 const invalid_grpc_service_exception_1 = require("../exceptions/invalid-grpc-service.exception");
 const invalid_grpc_package_exception_1 = require("../exceptions/invalid-grpc-package.exception");
 const invalid_proto_definition_exception_1 = require("../exceptions/invalid-proto-definition.exception");
@@ -47,7 +47,7 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     }
     createStreamServiceMethod(client, methodName) {
         return (...args) => {
-            return new Observable_1.Observable(observer => {
+            return new rxjs_1.Observable(observer => {
                 const call = client[methodName](...args);
                 call.on('data', (data) => observer.next(data));
                 call.on('error', (error) => observer.error(error));
@@ -57,7 +57,7 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     }
     createUnaryServiceMethod(client, methodName) {
         return (...args) => {
-            return new Observable_1.Observable(observer => {
+            return new rxjs_1.Observable(observer => {
                 client[methodName](...args, (error, data) => {
                     if (error) {
                         return observer.error(error);

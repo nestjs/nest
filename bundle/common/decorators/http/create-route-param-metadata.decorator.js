@@ -18,8 +18,8 @@ const randomString = () => Math.random()
 function createParamDecorator(factory) {
     const paramtype = randomString() + randomString();
     return (data, ...pipes) => (target, key, index) => {
-        const args = Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, target, key) || {};
-        Reflect.defineMetadata(constants_1.ROUTE_ARGS_METADATA, assignCustomMetadata(args, paramtype, index, factory, data, ...pipes), target, key);
+        const args = Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, target.constructor, key) || {};
+        Reflect.defineMetadata(constants_1.ROUTE_ARGS_METADATA, assignCustomMetadata(args, paramtype, index, factory, data, ...pipes), target.constructor, key);
     };
 }
 exports.createParamDecorator = createParamDecorator;

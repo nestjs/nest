@@ -11,16 +11,16 @@ const assignMetadata = (args, paramtype, index, data, ...pipes) => (Object.assig
     } }));
 const createRouteParamDecorator = (paramtype) => {
     return (data) => (target, key, index) => {
-        const args = Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, target, key) || {};
-        Reflect.defineMetadata(constants_1.ROUTE_ARGS_METADATA, assignMetadata(args, paramtype, index, data), target, key);
+        const args = Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, target.constructor, key) || {};
+        Reflect.defineMetadata(constants_1.ROUTE_ARGS_METADATA, assignMetadata(args, paramtype, index, data), target.constructor, key);
     };
 };
 const createPipesRouteParamDecorator = (paramtype) => (data, ...pipes) => (target, key, index) => {
-    const args = Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, target, key) || {};
+    const args = Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, target.constructor, key) || {};
     const hasParamData = shared_utils_1.isNil(data) || shared_utils_1.isString(data);
     const paramData = hasParamData ? data : undefined;
     const paramPipes = hasParamData ? pipes : [data, ...pipes];
-    Reflect.defineMetadata(constants_1.ROUTE_ARGS_METADATA, assignMetadata(args, paramtype, index, paramData, ...paramPipes), target, key);
+    Reflect.defineMetadata(constants_1.ROUTE_ARGS_METADATA, assignMetadata(args, paramtype, index, paramData, ...paramPipes), target.constructor, key);
 };
 exports.Request = createRouteParamDecorator(route_paramtypes_enum_1.RouteParamtypes.REQUEST);
 exports.Response = createRouteParamDecorator(route_paramtypes_enum_1.RouteParamtypes.RESPONSE);

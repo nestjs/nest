@@ -1,6 +1,6 @@
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 export declare class GatewayMetadataExplorer {
     private readonly metadataScanner;
     constructor(metadataScanner: MetadataScanner);
