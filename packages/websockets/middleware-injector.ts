@@ -17,7 +17,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 
-export class MiddlewaresInjector {
+export class MiddlewareInjector {
   constructor(
     private readonly container: NestContainer,
     private readonly config: ApplicationConfig,
@@ -28,23 +28,23 @@ export class MiddlewaresInjector {
     if (!adapter.bindMiddleware) {
       return;
     }
-    const opaqueTokens = this.reflectMiddlewaresTokens(instance);
+    const opaqueTokens = this.reflectMiddlewareTokens(instance);
     const modules = this.container.getModules();
     if (!modules.has(module)) {
       throw new UnknownModuleException();
     }
     const { components } = modules.get(module);
-    this.applyMiddlewares(server, components, opaqueTokens);
+    this.applyMiddleware(server, components, opaqueTokens);
   }
 
-  public reflectMiddlewaresTokens(instance: NestGateway): any[] {
+  public reflectMiddlewareTokens(instance: NestGateway): any[] {
     const prototype = Object.getPrototypeOf(instance);
     return (
       Reflect.getMetadata(GATEWAY_MIDDLEWARES, prototype.constructor) || []
     );
   }
 
-  public applyMiddlewares(
+  public applyMiddleware(
     server,
     components: Map<string, InstanceWrapper<Injectable>>,
     tokens: any[],

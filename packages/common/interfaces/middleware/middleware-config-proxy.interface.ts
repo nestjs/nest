@@ -1,4 +1,4 @@
-import { MiddlewaresConsumer } from './middlewares-consumer.interface';
+import { MiddlewareConsumer } from './middleware-consumer.interface';
 import { RequestMappingMetadata } from '../request-mapping-metadata.interface';
 import { Type } from '../type.interface';
 
@@ -16,7 +16,7 @@ export interface MiddlewareConfigProxy {
    * When you pass Controller class Nest will attach middleware to every path defined within this controller.
    *
    * @param  {} ...routes
-   * @returns {MiddlewaresConsumer}
+   * @returns {MiddlewareConsumer}
    */
-  forRoutes(...routes: (string | Type<any>)[]): MiddlewaresConsumer;
+  forRoutes(...routes: (string | Type<any>)[]): MiddlewareConsumer;
 }

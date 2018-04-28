@@ -3,7 +3,7 @@ import { NestInterceptor } from './../interfaces/features/nest-interceptor.inter
 import { Observable } from 'rxjs';
 import { MulterOptions } from '../interfaces/external/multer-options.interface';
 import { transformException } from './multer/multer.utils';
-import { ExecutionContext } from './../interfaces';
+import { ExecutionContext } from '../interfaces';
 
 export function FilesInterceptor(
   fieldName: string,

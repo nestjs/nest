@@ -1,23 +1,23 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import {
-  filterMiddlewares,
+  filterMiddleware,
   mapToClass,
   isClass,
   assignToken,
-} from '../../middlewares/utils';
+} from '../../middleware/utils';
 
 describe('middleware utils', () => {
   class Test {}
   function fnMiddleware(req, res, next) {}
 
-  describe('filterMiddlewares', () => {
-    let middlewares: any[];
+  describe('filterMiddleware', () => {
+    let middleware: any[];
     beforeEach(() => {
-      middlewares = [Test, fnMiddleware, undefined, null];
+      middleware = [Test, fnMiddleware, undefined, null];
     });
-    it('should returns filtered middlewares', () => {
-      expect(filterMiddlewares(middlewares)).to.have.length(2);
+    it('should returns filtered middleware', () => {
+      expect(filterMiddleware(middleware)).to.have.length(2);
     });
   });
   describe('mapToClass', () => {

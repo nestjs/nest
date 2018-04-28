@@ -1,4 +1,5 @@
-export type MiddlewareFunction = (req, res, next) => any | Promise<any>;
+import { MiddlewareFunction } from './middleware.interface';
+
 export interface NestMiddleware {
   resolve(...args): MiddlewareFunction | Promise<MiddlewareFunction>;
 }

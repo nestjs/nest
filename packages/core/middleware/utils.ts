@@ -1,11 +1,11 @@
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { Type } from '@nestjs/common/interfaces';
 
-export const filterMiddlewares = middlewares => {
+export const filterMiddleware = middleware => {
   return []
-    .concat(middlewares)
+    .concat(middleware)
     .filter(isFunction)
-    .map(middleware => mapToClass(middleware));
+    .map(ware => mapToClass(ware));
 };
 
 export const mapToClass = middleware => {

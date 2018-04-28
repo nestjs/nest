@@ -48,8 +48,8 @@ export class DependenciesScanner {
   ) {
     this.storeModule(module, scope);
 
-    const importedModules = this.reflectMetadata(module, metadata.MODULES);
-    importedModules.map(innerModule => {
+    const modules = this.reflectMetadata(module, metadata.MODULES);
+    modules.map(innerModule => {
       this.scanForModules(innerModule, [].concat(scope, module));
     });
   }
@@ -111,7 +111,7 @@ export class DependenciesScanner {
   }
 
   public reflectComponentMetadata(component: Type<Injectable>, token: string) {
-    this.reflectGatewaysMiddlewares(component, token);
+    this.reflectGatewaysMiddleware(component, token);
   }
 
   public reflectControllers(module: Type<any>, token: string) {
@@ -152,12 +152,9 @@ export class DependenciesScanner {
     );
   }
 
-  public reflectGatewaysMiddlewares(
-    component: Type<Injectable>,
-    token: string,
-  ) {
-    const middlewares = this.reflectMetadata(component, GATEWAY_MIDDLEWARES);
-    middlewares.map(middleware => this.storeComponent(middleware, token));
+  public reflectGatewaysMiddleware(component: Type<Injectable>, token: string) {
+    const middleware = this.reflectMetadata(component, GATEWAY_MIDDLEWARES);
+    middleware.map(ware => this.storeComponent(ware, token));
   }
 
   public reflectInjectables(

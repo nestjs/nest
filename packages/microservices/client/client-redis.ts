@@ -48,7 +48,7 @@ export class ClientRedis extends ClientProxy {
         buffer,
       ) as WritePacket & PacketId;
       if (id !== packet.id) {
-        return void 0;
+        return undefined;
       }
       if (isDisposed || err) {
         callback({
@@ -70,7 +70,7 @@ export class ClientRedis extends ClientProxy {
     await new Promise(resolve => {
       const handler = channel => {
         if (channel && channel !== responseChannel) {
-          return void 0;
+          return undefined;
         }
         this.subClient.removeListener(SUBSCRIBE, handler);
         resolve();

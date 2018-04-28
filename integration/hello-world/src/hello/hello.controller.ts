@@ -1,6 +1,7 @@
 import { HelloService } from './hello.service';
-import { Controller, Get, Post, Body, Header } from '@nestjs/common';
+import { Controller, Get, Post, Body, Header, Param } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
+import { UserByIdPipe } from './users/user-by-id.pipe';
 
 @Controller('hello')
 export class HelloController {
@@ -20,5 +21,13 @@ export class HelloController {
   @Get('stream')
   streamGreeting(): Observable<string> {
     return of(this.helloService.greeting());
+  }
+
+  @Get('local-pipe/:id')
+  localPipe(
+    @Param('id', UserByIdPipe)
+    user: any,
+  ): any {
+    return user;
   }
 }

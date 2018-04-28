@@ -1,6 +1,6 @@
 import {
   Module,
-  MiddlewaresConsumer,
+  MiddlewareConsumer,
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
@@ -20,7 +20,7 @@ export class ApplicationModule implements NestModule {
     private readonly graphQLFactory: GraphQLFactory,
   ) {}
 
-  configure(consumer: MiddlewaresConsumer) {
+  configure(consumer: MiddlewareConsumer) {
     const schema = this.createSchema();
     this.subscriptionsService.createSubscriptionServer(schema);
 

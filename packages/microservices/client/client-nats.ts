@@ -37,7 +37,7 @@ export class ClientNats extends ClientProxy {
 
     const subscriptionHandler = (message: WritePacket & PacketId) => {
       if (message.id !== packet.id) {
-        return void 0;
+        return undefined;
       }
       const { err, response, isDisposed } = message;
       if (isDisposed || err) {

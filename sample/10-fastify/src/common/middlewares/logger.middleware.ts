@@ -1,8 +1,8 @@
-import { Injectable, NestMiddleware, FunctionMiddleware } from '@nestjs/common';
+import { Injectable, NestMiddleware, MiddlewareFunction } from '@nestjs/common';
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
-  resolve(context: string): FunctionMiddleware {
+  resolve(context: string): MiddlewareFunction {
     return (req, res, next) => {
       console.log(`[${context}] Request...`);
       next();

@@ -130,7 +130,7 @@
       "packages/common/http/*.ts",
       "packages/microservices/exceptions/",
       "packages/microservices/microservices-module.ts",
-      "packages/core/middlewares/middlewares-module.ts",
+      "packages/core/middleware/middleware-module.ts",
       "packages/common/services/logger.service.ts"
     ],
     "extension": [

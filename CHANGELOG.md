@@ -174,10 +174,10 @@
 
 ## 4.3.0
 - **common**: `ValidationPipe` is now available out-of-the-box (`@nestjs/common`)
-- **core**: `json` and `urlencoded` (`body-parser`) middlewares are applied by default now, bugfix #252
+- **core**: `json` and `urlencoded` (`body-parser`) middleware are applied by default now, bugfix #252
 - **core** more informative error message (injector) #223
 example: `[ExceptionHandler] Nest can't resolve dependencies of the UsersService (+, +, ?, +, +, +). Please verify whether [2] argument is available in the current context.`
-- **core**: bugfix #240 - middlewares container state
+- **core**: bugfix #240 - middleware container state
 - **core**: bugifx #257 - `@Next()` issue
 - **testing**: testing module is now independent from `@nestjs/microservices`
 
@@ -227,7 +227,7 @@ example: `[ExceptionHandler] Nest can't resolve dependencies of the UsersService
 - `@Shared()` deprecated (modules are singletons by default) [read more](http://www.docs.nestjs.com/modules)
 - `@SingleScope()` decorator [read more](http://www.docs.nestjs.com/modules)
 - Modules re-exporting [read more](http://www.docs.nestjs.com/modules)
-- Deffered & functional middlewares [read more](http://www.docs.nestjs.com/middlewares)
+- Deffered & functional middleware [read more](http://www.docs.nestjs.com/middleware)
 - Guards feature [read more](http://www.docs.nestjs.com/guards)
 - Async components [read more](http://www.docs.nestjs.com/advanced/async-components)
 - Hierarchical injector improvements [read more](http://www.docs.nestjs.com/advanced/hierarchical-injector)
@@ -250,7 +250,7 @@ example: `[ExceptionHandler] Nest can't resolve dependencies of the UsersService
 ## 3.0.1 (24.06.2017)
 **@nestjs/core**
 - Hierarchical injector bugfix,
-- Middlewares `@UseFilters()` bugfix (#95).
+- Middleware `@UseFilters()` bugfix (#95).
 
 **@nestjs/microservices**
 - TCP server / client bugfix (#91)
@@ -315,12 +315,12 @@ example: `[ExceptionHandler] Nest can't resolve dependencies of the UsersService
 
 ## 1.0.0 (Final - 01.05.2017)
 
-- Added **Gateway Middlewares** support:
+- Added **Gateway Middleware** support:
 
 ```
 @WebSocketGateway({
     port: 2000,
-    middlewares: [ChatMiddleware],
+    middleware: [ChatMiddleware],
 })
 ```
 Gateway Middleware example:
@@ -363,7 +363,7 @@ Session: () => ParameterDecorator
 Headers: (property?: string) => ParameterDecorator
 ```
 
-- `MiddlewaresBuilder` -> `MiddlewaresConsumer`
+- `MiddlewareBuilder` -> `MiddlewareConsumer`
 - **Exception Filters** support
 
 ```

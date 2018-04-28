@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { RoutesMapper } from '../../middlewares/routes-mapper';
+import { RoutesMapper } from '../../middleware/routes-mapper';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
@@ -23,12 +23,12 @@ describe('RoutesMapper', () => {
 
   it('should map @Controller() to "ControllerMetadata" in forRoutes', () => {
     const config = {
-      middlewares: 'Test',
+      middleware: 'Test',
       forRoutes: [{ path: 'test', method: RequestMethod.GET }, TestRoute],
     };
 
     expect(mapper.mapRouteToRouteProps(config.forRoutes[0])).to.deep.equal([
-      '/test'
+      '/test',
     ]);
     expect(mapper.mapRouteToRouteProps(config.forRoutes[1])).to.deep.equal([
       '/test/test',
@@ -38,7 +38,7 @@ describe('RoutesMapper', () => {
 
   it('should throw exception when invalid object was passed as route', () => {
     const config = {
-      middlewares: 'Test',
+      middleware: 'Test',
       forRoutes: [{ method: RequestMethod.GET }],
     };
     expect(

@@ -42,7 +42,7 @@ export class ClientMqtt extends ClientProxy {
         buffer.toString(),
       ) as WritePacket & PacketId;
       if (id !== packet.id) {
-        return void 0;
+        return undefined;
       }
       if (isDisposed || err) {
         callback({

@@ -96,7 +96,7 @@ describe('WebSocketsController', () => {
       (instance as any).hookServerToProperties = hookServerToProperties;
       (instance as any).subscribeEvents = subscribeEvents;
 
-      sinon.stub(instance, 'injectMiddlewares').returns(0);
+      sinon.stub(instance, 'injectMiddleware').returns(0);
     });
     it('should call "hookServerToProperties" with expected arguments', () => {
       instance.subscribeObservableServer(gateway, namespace, port, '');

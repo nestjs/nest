@@ -29,6 +29,6 @@ export function WebSocketGateway(
     Reflect.defineMetadata(GATEWAY_METADATA, true, target);
     Reflect.defineMetadata(PORT_METADATA, port, target);
     Reflect.defineMetadata(GATEWAY_OPTIONS, opt, target);
-    Reflect.defineMetadata(GATEWAY_MIDDLEWARES, opt.middlewares, target);
+    Reflect.defineMetadata(GATEWAY_MIDDLEWARES, opt.middleware, target);
   };
 }

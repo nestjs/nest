@@ -1,30 +1,30 @@
-import { MiddlewaresContainer, MiddlewareWrapper } from './container';
+import { MiddlewareContainer, MiddlewareWrapper } from './container';
 import { Injector } from '../injector/injector';
 import { Module } from '../injector/module';
 
-export class MiddlewaresResolver {
+export class MiddlewareResolver {
   private readonly instanceLoader = new Injector();
 
-  constructor(private readonly middlewaresContainer: MiddlewaresContainer) {}
+  constructor(private readonly middlewareContainer: MiddlewareContainer) {}
 
   public async resolveInstances(module: Module, moduleName: string) {
-    const middlewares = this.middlewaresContainer.getMiddlewares(moduleName);
+    const middleware = this.middlewareContainer.getMiddleware(moduleName);
     await Promise.all(
-      [...middlewares.values()].map(
+      [...middleware.values()].map(
         async wrapper =>
-          await this.resolveMiddlewareInstance(wrapper, middlewares, module),
+          await this.resolveMiddlewareInstance(wrapper, middleware, module),
       ),
     );
   }
 
   private async resolveMiddlewareInstance(
     wrapper: MiddlewareWrapper,
-    middlewares: Map<string, MiddlewareWrapper>,
+    middleware: Map<string, MiddlewareWrapper>,
     module: Module,
   ) {
     await this.instanceLoader.loadInstanceOfMiddleware(
       wrapper,
-      middlewares,
+      middleware,
       module,
     );
   }

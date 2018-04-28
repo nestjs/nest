@@ -1,16 +1,16 @@
 import 'reflect-metadata';
 import * as deprecate from 'deprecate';
-import { metadata } from '../../constants';
+import { metadata as metadataConstants } from '../../constants';
 import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface';
 import { InvalidModuleConfigException } from './exceptions/invalid-module-config.exception';
 
 const metadataKeys = [
-  metadata.MODULES,
-  metadata.IMPORTS,
-  metadata.EXPORTS,
-  metadata.COMPONENTS,
-  metadata.CONTROLLERS,
-  metadata.PROVIDERS,
+  metadataConstants.MODULES,
+  metadataConstants.IMPORTS,
+  metadataConstants.EXPORTS,
+  metadataConstants.COMPONENTS,
+  metadataConstants.CONTROLLERS,
+  metadataConstants.PROVIDERS,
 ];
 
 const validateKeys = (keys: string[]) => {
@@ -31,19 +31,19 @@ const validateKeys = (keys: string[]) => {
  * - `providers` - the list of providers that belong to this module. They can be injected between themselves.
  * - `exports` - the set of components, which should be available for modules, which imports this module
  * - `components` - @deprecated the list of components that belong to this module. They can be injected between themselves.
- * @param obj {ModuleMetadata} Module metadata
+ * @param options {ModuleMetadata} Module metadata
  */
-export function Module(obj: ModuleMetadata): ClassDecorator {
-  const propsKeys = Object.keys(obj);
+export function Module(metadata: ModuleMetadata): ClassDecorator {
+  const propsKeys = Object.keys(metadata);
 
   validateKeys(propsKeys);
-  showDeprecatedWarnings(obj);
-  overrideModuleMetadata(obj);
+  showDeprecatedWarnings(metadata);
+  overrideModuleMetadata(metadata);
 
   return (target: object) => {
-    for (const property in obj) {
-      if (obj.hasOwnProperty(property)) {
-        Reflect.defineMetadata(property, obj[property], target);
+    for (const property in metadata) {
+      if (metadata.hasOwnProperty(property)) {
+        Reflect.defineMetadata(property, metadata[property], target);
       }
     }
   };

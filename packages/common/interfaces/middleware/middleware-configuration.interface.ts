@@ -1,6 +1,6 @@
-import { Type } from './../type.interface';
+import { Type } from '../type.interface';
 
 export interface MiddlewareConfiguration {
-  middlewares: any;
+  middleware: any;
   forRoutes: (Type<any> | string)[];
 }

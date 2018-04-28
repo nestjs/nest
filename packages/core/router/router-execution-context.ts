@@ -34,6 +34,7 @@ import {
 } from './router-response-controller';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
+import { FORBIDDEN_MESSAGE } from '../guards/constants';
 
 export interface ParamProperties {
   index: number;
@@ -237,7 +238,7 @@ export class RouterExecutionContext {
         callback,
       );
       if (!canActivate) {
-        return false;
+        throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
       }
     };
     return guards.length ? canActivateFn : null;
