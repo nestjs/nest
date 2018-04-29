@@ -16,6 +16,7 @@
     "member-access": [false],
     "no-empty-interface": false,
     "no-empty": false,
+    "ban-types": false,
     "arrow-parens": false,
     "object-literal-sort-keys": false,
     "no-unused-expression": false,
