@@ -1,18 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const logger_service_1 = require("../services/logger.service");
 const MissingRequiredDependency = (name, reason) => `The "${name}" package is missing. Please, make sure to install this library ($ npm install ${name}) to take advantage of ${reason}.`;
-class MissingRequiredDependencyException extends Error {
-    constructor(name, context) {
-        super(MissingRequiredDependency(name, context));
-    }
-}
-exports.MissingRequiredDependencyException = MissingRequiredDependencyException;
+const logger = new logger_service_1.Logger('PackageLoader');
 function loadPackage(packageName, context) {
     try {
         return require(packageName);
     }
     catch (e) {
-        throw new MissingRequiredDependencyException(packageName, context);
+        logger.error(MissingRequiredDependency(packageName, context));
+        process.exit(1);
     }
 }
 exports.loadPackage = loadPackage;

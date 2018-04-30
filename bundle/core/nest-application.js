@@ -20,7 +20,6 @@ const application_config_1 = require("./application-config");
 const constants_1 = require("./constants");
 const middleware_module_1 = require("./middleware/middleware-module");
 const routes_resolver_1 = require("./router/routes-resolver");
-const microservices_package_not_found_exception_1 = require("./errors/exceptions/microservices-package-not-found.exception");
 const container_1 = require("./middleware/container");
 const nest_application_context_1 = require("./nest-application-context");
 const express_adapter_1 = require("./adapters/express-adapter");
@@ -28,7 +27,6 @@ const fastify_adapter_1 = require("./adapters/fastify-adapter");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
 const { SocketModule } = optional('@nestjs/websockets/socket-module') || {};
 const { MicroservicesModule } = optional('@nestjs/microservices/microservices-module') || {};
-const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {};
 const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter') || {};
 class NestApplication extends nest_application_context_1.NestApplicationContext {
     constructor(container, httpAdapter, config, appOptions = {}) {
@@ -136,9 +134,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         });
     }
     connectMicroservice(options) {
-        if (!NestMicroservice) {
-            throw new microservices_package_not_found_exception_1.MicroservicesPackageNotFoundException();
-        }
+        const { NestMicroservice } = load_package_util_1.loadPackage('@nestjs/microservices', 'NestFactory');
         const applicationConfig = new application_config_1.ApplicationConfig();
         const instance = new NestMicroservice(this.container, options, applicationConfig);
         instance.registerListeners();
