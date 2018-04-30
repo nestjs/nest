@@ -25,7 +25,7 @@ const container_1 = require("./middleware/container");
 const nest_application_context_1 = require("./nest-application-context");
 const express_adapter_1 = require("./adapters/express-adapter");
 const fastify_adapter_1 = require("./adapters/fastify-adapter");
-const missing_dependency_exception_1 = require("./errors/exceptions/missing-dependency.exception");
+const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
 const { SocketModule } = optional('@nestjs/websockets/socket-module') || {};
 const { MicroservicesModule } = optional('@nestjs/microservices/microservices-module') || {};
 const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {};
@@ -267,12 +267,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         return this;
     }
     loadPackage(name, ctx) {
-        try {
-            return require(name);
-        }
-        catch (e) {
-            throw new missing_dependency_exception_1.MissingRequiredDependencyException(name, ctx);
-        }
+        return load_package_util_1.loadPackage(name, ctx);
     }
     registerMiddleware(instance) {
         return __awaiter(this, void 0, void 0, function* () {

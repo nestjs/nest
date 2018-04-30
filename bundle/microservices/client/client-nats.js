@@ -11,6 +11,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const client_proxy_1 = require("./client-proxy");
 const logger_service_1 = require("@nestjs/common/services/logger.service");
 const constants_1 = require("./../constants");
+const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
 let natsPackage = {};
 class ClientNats extends client_proxy_1.ClientProxy {
     constructor(options) {
@@ -19,7 +20,7 @@ class ClientNats extends client_proxy_1.ClientProxy {
         this.logger = new logger_service_1.Logger(client_proxy_1.ClientProxy.name);
         this.url =
             this.getOptionsProp(this.options, 'url') || constants_1.NATS_DEFAULT_URL;
-        natsPackage = this.loadPackage('nats', ClientNats.name);
+        natsPackage = load_package_util_1.loadPackage('nats', ClientNats.name);
     }
     publish(partialPacket, callback) {
         return __awaiter(this, void 0, void 0, function* () {

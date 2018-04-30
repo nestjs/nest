@@ -15,6 +15,7 @@ const rxjs_1 = require("rxjs");
 const invalid_grpc_service_exception_1 = require("../exceptions/invalid-grpc-service.exception");
 const invalid_grpc_package_exception_1 = require("../exceptions/invalid-grpc-package.exception");
 const invalid_proto_definition_exception_1 = require("../exceptions/invalid-proto-definition.exception");
+const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
 let grpcPackage = {};
 class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     constructor(options) {
@@ -23,7 +24,7 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
         this.logger = new logger_service_1.Logger(client_proxy_1.ClientProxy.name);
         this.url =
             this.getOptionsProp(options, 'url') || constants_1.GRPC_DEFAULT_URL;
-        grpcPackage = this.loadPackage('grpc', ClientGrpcProxy.name);
+        grpcPackage = load_package_util_1.loadPackage('grpc', ClientGrpcProxy.name);
         this.grpcClient = this.createClient();
     }
     getService(name) {

@@ -1,13 +1,16 @@
-import { validate, ValidatorOptions } from 'class-validator';
-import { classToPlain, plainToClass } from 'class-transformer';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { ArgumentMetadata, BadRequestException } from '../index';
 import { isNil } from '../utils/shared.utils';
 import { Injectable } from './../decorators/core/component.decorator';
+import { loadPackage } from '../utils/load-package.util';
+import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
 }
+
+let classValidator: any = {};
+let classTransformer: any = {};
 
 @Injectable()
 export class ValidationPipe implements PipeTransform<any> {
@@ -19,6 +22,10 @@ export class ValidationPipe implements PipeTransform<any> {
     const { transform, ...validatorOptions } = options;
     this.isTransformEnabled = !!transform;
     this.validatorOptions = validatorOptions;
+
+    const loadPkg = pkg => loadPackage(pkg, 'ValidationPipe');
+    classValidator = loadPkg('class-validator');
+    classTransformer = loadPkg('class-transformer');
   }
 
   public async transform(value, metadata: ArgumentMetadata) {
@@ -26,15 +33,15 @@ export class ValidationPipe implements PipeTransform<any> {
     if (!metatype || !this.toValidate(metadata)) {
       return value;
     }
-    const entity = plainToClass(metatype, value);
-    const errors = await validate(entity, this.validatorOptions);
+    const entity = classTransformer.plainToClass(metatype, value);
+    const errors = await classValidator.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
       throw new BadRequestException(errors);
     }
     return this.isTransformEnabled
       ? entity
       : Object.keys(this.validatorOptions).length > 0
-        ? classToPlain(entity)
+        ? classTransformer.classToPlain(entity)
         : value;
   }
 

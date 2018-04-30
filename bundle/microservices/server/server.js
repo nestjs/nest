@@ -4,7 +4,7 @@ const logger_service_1 = require("@nestjs/common/services/logger.service");
 const rxjs_1 = require("rxjs");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const operators_1 = require("rxjs/operators");
-const missing_dependency_exception_1 = require("@nestjs/core/errors/exceptions/missing-dependency.exception");
+const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
 class Server {
     constructor() {
         this.messageHandlers = {};
@@ -43,12 +43,7 @@ class Server {
         this.logger.error(error);
     }
     loadPackage(name, ctx) {
-        try {
-            return require(name);
-        }
-        catch (e) {
-            throw new missing_dependency_exception_1.MissingRequiredDependencyException(name, ctx);
-        }
+        return load_package_util_1.loadPackage(name, ctx);
     }
 }
 exports.Server = Server;

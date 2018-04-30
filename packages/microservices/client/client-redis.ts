@@ -19,6 +19,7 @@ import {
   ClientOpts,
   RetryStrategyOptions,
 } from '../external/redis.interface';
+import { loadPackage } from '@nestjs/common/utils/load-package.util';
 
 let redisPackage: any = {};
 
@@ -34,7 +35,7 @@ export class ClientRedis extends ClientProxy {
     this.url =
       this.getOptionsProp<RedisOptions>(options, 'url') || REDIS_DEFAULT_URL;
 
-    redisPackage = this.loadPackage('redis', ClientRedis.name);
+    redisPackage = loadPackage('redis', ClientRedis.name);
   }
 
   protected async publish(

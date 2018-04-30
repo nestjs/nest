@@ -11,6 +11,7 @@ import {
 import { WritePacket, MqttOptions } from './../interfaces';
 import { ReadPacket, PacketId } from './../interfaces';
 import { MqttClient } from '../external/mqtt-client.interface';
+import { loadPackage } from '@nestjs/common/utils/load-package.util';
 
 let mqttPackage: any = {};
 
@@ -24,7 +25,7 @@ export class ClientMqtt extends ClientProxy {
     this.url =
       this.getOptionsProp<MqttOptions>(this.options, 'url') || MQTT_DEFAULT_URL;
 
-    mqttPackage = this.loadPackage('mqtt', ClientMqtt.name);
+    mqttPackage = loadPackage('mqtt', ClientMqtt.name);
   }
 
   protected publish(

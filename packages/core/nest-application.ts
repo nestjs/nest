@@ -33,7 +33,6 @@ import { Module } from './injector/module';
 import { MiddlewareModule } from './middleware/middleware-module';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
-import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
 import { MiddlewareContainer } from './middleware/container';
 import { NestApplicationContext } from './nest-application-context';
 import { HttpsOptions } from '@nestjs/common/interfaces/external/https-options.interface';
@@ -45,14 +44,12 @@ import { FastifyAdapter } from './adapters/fastify-adapter';
 import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
 import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
-import { MissingRequiredDependencyException } from './errors/exceptions/missing-dependency.exception';
+import { loadPackage } from '@nestjs/common/utils/load-package.util';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
 const { MicroservicesModule } =
   optional('@nestjs/microservices/microservices-module') || ({} as any);
-const { NestMicroservice } =
-  optional('@nestjs/microservices/nest-microservice') || ({} as any);
 const { IoAdapter } =
   optional('@nestjs/websockets/adapters/io-adapter') || ({} as any);
 
@@ -195,9 +192,11 @@ export class NestApplication extends NestApplicationContext
   }
 
   public connectMicroservice(options: MicroserviceOptions): INestMicroservice {
-    if (!NestMicroservice) {
-      throw new MicroservicesPackageNotFoundException();
-    }
+    const { NestMicroservice } = loadPackage(
+      '@nestjs/microservices',
+      'NestFactory',
+    );
+
     const applicationConfig = new ApplicationConfig();
     const instance = new NestMicroservice(
       this.container as any,
@@ -369,11 +368,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   private loadPackage(name: string, ctx: string) {
-    try {
-      return require(name);
-    } catch (e) {
-      throw new MissingRequiredDependencyException(name, ctx);
-    }
+    return loadPackage(name, ctx);
   }
 
   private async registerMiddleware(instance) {

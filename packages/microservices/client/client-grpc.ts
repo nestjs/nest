@@ -8,6 +8,7 @@ import { Observable } from 'rxjs';
 import { InvalidGrpcServiceException } from '../exceptions/invalid-grpc-service.exception';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
+import { loadPackage } from '@nestjs/common/utils/load-package.util';
 
 let grpcPackage: any = {};
 
@@ -21,7 +22,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     this.url =
       this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
 
-    grpcPackage = this.loadPackage('grpc', ClientGrpcProxy.name);
+    grpcPackage = loadPackage('grpc', ClientGrpcProxy.name);
     this.grpcClient = this.createClient();
   }
 

@@ -10,7 +10,7 @@ import {
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { catchError, finalize } from 'rxjs/operators';
 import { WritePacket, MicroserviceOptions } from './../interfaces';
-import { MissingRequiredDependencyException } from '@nestjs/core/errors/exceptions/missing-dependency.exception';
+import { loadPackage } from '@nestjs/common/utils/load-package.util';
 
 export abstract class Server {
   protected readonly messageHandlers: MessageHandlers = {};
@@ -67,10 +67,6 @@ export abstract class Server {
   }
 
   protected loadPackage(name: string, ctx: string) {
-    try {
-      return require(name);
-    } catch (e) {
-      throw new MissingRequiredDependencyException(name, ctx);
-    }
+    return loadPackage(name, ctx);
   }
 }

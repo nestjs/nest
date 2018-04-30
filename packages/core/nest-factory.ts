@@ -1,4 +1,3 @@
-import * as optional from 'optional';
 import { DependenciesScanner } from './scanner';
 import { InstanceLoader } from './injector/instance-loader';
 import { NestContainer } from './injector/container';
@@ -16,7 +15,6 @@ import {
   HttpServer,
 } from '@nestjs/common';
 import { MetadataScanner } from './metadata-scanner';
-import { MicroservicesPackageNotFoundException } from './errors/exceptions/microservices-package-not-found.exception';
 import { NestApplicationContext } from './nest-application-context';
 import { HttpsOptions } from '@nestjs/common/interfaces/external/https-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
@@ -27,9 +25,7 @@ import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-
 import { FastifyAdapter } from './adapters/fastify-adapter';
 import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
-
-const { NestMicroservice } =
-  optional('@nestjs/microservices/nest-microservice') || ({} as any);
+import { loadPackage } from '@nestjs/common/utils/load-package.util';
 
 export class NestFactoryStatic {
   private readonly logger = new Logger('NestFactory', true);
@@ -94,9 +90,11 @@ export class NestFactoryStatic {
     module,
     options?: NestMicroserviceOptions & MicroserviceOptions,
   ): Promise<INestMicroservice> {
-    if (!NestMicroservice) {
-      throw new MicroservicesPackageNotFoundException();
-    }
+    const { NestMicroservice } = loadPackage(
+      '@nestjs/microservices',
+      'NestFactory',
+    );
+
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
 

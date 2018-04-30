@@ -1,6 +1,6 @@
-import { ValidatorOptions } from 'class-validator';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { ArgumentMetadata } from '../index';
+import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 export interface ValidationPipeOptions extends ValidatorOptions {
     transform?: boolean;
 }
