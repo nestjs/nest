@@ -10,18 +10,14 @@ import { WebSocketAdapter, Logger } from '@nestjs/common';
 import { Observable, fromEvent, EMPTY as empty } from 'rxjs';
 import { mergeMap, filter, tap } from 'rxjs/operators';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { MissingRequiredDependencyException } from '@nestjs/core/errors/exceptions/missing-dependency.exception';
+import { loadPackage } from '@nestjs/common/utils/load-package.util';
 
 let wsPackage: any = {};
 
 export class WsAdapter implements WebSocketAdapter {
   private readonly logger = new Logger(WsAdapter.name);
   constructor(private readonly httpServer: Server | null = null) {
-    try {
-      wsPackage = require('ws');
-    } catch (e) {
-      throw new MissingRequiredDependencyException('ws', 'WsAdapter');
-    }
+    wsPackage = loadPackage('ws', 'WsAdapter');
   }
 
   public create(

@@ -14,18 +14,13 @@ const common_1 = require("@nestjs/common");
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const missing_dependency_exception_1 = require("@nestjs/core/errors/exceptions/missing-dependency.exception");
+const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
 let wsPackage = {};
 class WsAdapter {
     constructor(httpServer = null) {
         this.httpServer = httpServer;
         this.logger = new common_1.Logger(WsAdapter.name);
-        try {
-            wsPackage = require('ws');
-        }
-        catch (e) {
-            throw new missing_dependency_exception_1.MissingRequiredDependencyException('ws', 'WsAdapter');
-        }
+        wsPackage = load_package_util_1.loadPackage('ws', 'WsAdapter');
     }
     create(port, options) {
         const { server } = options, wsOptions = __rest(options, ["server"]);

@@ -1,4 +1,3 @@
-import * as optional from 'optional';
 import {
   PipeTransform,
   WebSocketAdapter,

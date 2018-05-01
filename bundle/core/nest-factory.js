@@ -8,7 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const optional = require("optional");
 const scanner_1 = require("./scanner");
 const instance_loader_1 = require("./injector/instance-loader");
 const container_1 = require("./injector/container");
@@ -19,11 +18,10 @@ const nest_application_1 = require("./nest-application");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const express_factory_1 = require("./adapters/express-factory");
 const metadata_scanner_1 = require("./metadata-scanner");
-const microservices_package_not_found_exception_1 = require("./errors/exceptions/microservices-package-not-found.exception");
 const nest_application_context_1 = require("./nest-application-context");
 const application_config_1 = require("./application-config");
 const express_adapter_1 = require("./adapters/express-adapter");
-const { NestMicroservice } = optional('@nestjs/microservices/nest-microservice') || {};
+const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
 class NestFactoryStatic {
     constructor() {
         this.logger = new logger_service_1.Logger('NestFactory', true);
@@ -52,9 +50,7 @@ class NestFactoryStatic {
      */
     createMicroservice(module, options) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!NestMicroservice) {
-                throw new microservices_package_not_found_exception_1.MicroservicesPackageNotFoundException();
-            }
+            const { NestMicroservice } = load_package_util_1.loadPackage('@nestjs/microservices', 'NestFactory');
             const applicationConfig = new application_config_1.ApplicationConfig();
             const container = new container_1.NestContainer(applicationConfig);
             this.applyLogger(options);

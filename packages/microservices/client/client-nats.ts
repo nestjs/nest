@@ -9,6 +9,7 @@ import {
   PacketId,
 } from './../interfaces';
 import { Client } from '../external/nats-client.interface';
+import { loadPackage } from '@nestjs/common/utils/load-package.util';
 
 let natsPackage: any = {};
 
@@ -21,7 +22,7 @@ export class ClientNats extends ClientProxy {
     super();
     this.url =
       this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
-    natsPackage = this.loadPackage('nats', ClientNats.name);
+    natsPackage = loadPackage('nats', ClientNats.name);
   }
 
   protected async publish(

@@ -7,7 +7,6 @@ import {
   WritePacket,
   ClientOptions,
 } from './../interfaces';
-import { MissingRequiredDependencyException } from '@nestjs/core/errors/exceptions/missing-dependency.exception';
 
 export abstract class ClientProxy {
   public abstract close(): any;
@@ -16,21 +15,13 @@ export abstract class ClientProxy {
     callback: (packet: WritePacket) => void,
   );
 
-  public send<T = any>(pattern, data): Observable<T> {
+  public send<T = any>(pattern: any, data: any): Observable<T> {
     if (isNil(pattern) || isNil(data)) {
       return _throw(new InvalidMessageException());
     }
     return new Observable((observer: Observer<T>) => {
       this.publish({ pattern, data }, this.createObserver(observer));
     });
-  }
-
-  protected loadPackage(name: string, ctx: string) {
-    try {
-      return require(name);
-    } catch (e) {
-      throw new MissingRequiredDependencyException(name, ctx);
-    }
   }
 
   protected createObserver<T>(

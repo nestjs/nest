@@ -4,18 +4,14 @@ import {
   ErrorHandler,
 } from '@nestjs/common/interfaces';
 import { Logger } from '@nestjs/common';
-import { MissingRequiredDependencyException } from '../errors/exceptions/missing-dependency.exception';
+import { loadPackage } from '@nestjs/common/utils/load-package.util';
 
 export class FastifyAdapter {
   private readonly logger = new Logger(FastifyAdapter.name);
   protected readonly instance: any;
 
   constructor(options?: any) {
-    try {
-      this.instance = require('fastify')(options);
-    } catch (e) {
-      throw new MissingRequiredDependencyException('fastify', 'FastifyAdapter');
-    }
+    this.instance = loadPackage('fastify', 'FastifyAdapter')(options);
   }
 
   use(handler: RequestHandler | ErrorHandler);
@@ -110,25 +106,17 @@ export class FastifyAdapter {
     setHeaders?: Function;
     send?: any;
   }) {
-    try {
-      return this.register(require('fastify-static'), options);
-    } catch (e) {
-      throw new MissingRequiredDependencyException(
-        'fastify-static',
-        'FastifyAdapter.useStaticAssets()',
-      );
-    }
+    return this.register(
+      loadPackage('fastify-static', 'FastifyAdapter.useStaticAssets()'),
+      options,
+    );
   }
 
   setViewEngine(options: any) {
-    try {
-      return this.register(require('point-of-view'), options);
-    } catch (e) {
-      throw new MissingRequiredDependencyException(
-        'point-of-view',
-        'FastifyAdapter.setViewEngine()',
-      );
-    }
+    return this.register(
+      loadPackage('point-of-view', 'FastifyAdapter.setViewEngine()'),
+      options,
+    );
   }
 
   setHeader(response, name: string, value: string) {

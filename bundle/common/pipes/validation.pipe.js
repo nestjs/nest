@@ -26,17 +26,21 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const class_validator_1 = require("class-validator");
-const class_transformer_1 = require("class-transformer");
 const index_1 = require("../index");
 const shared_utils_1 = require("../utils/shared.utils");
 const component_decorator_1 = require("./../decorators/core/component.decorator");
+const load_package_util_1 = require("../utils/load-package.util");
+let classValidator = {};
+let classTransformer = {};
 let ValidationPipe = class ValidationPipe {
     constructor(options) {
         options = options || {};
         const { transform } = options, validatorOptions = __rest(options, ["transform"]);
         this.isTransformEnabled = !!transform;
         this.validatorOptions = validatorOptions;
+        const loadPkg = pkg => load_package_util_1.loadPackage(pkg, 'ValidationPipe');
+        classValidator = loadPkg('class-validator');
+        classTransformer = loadPkg('class-transformer');
     }
     transform(value, metadata) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -44,15 +48,15 @@ let ValidationPipe = class ValidationPipe {
             if (!metatype || !this.toValidate(metadata)) {
                 return value;
             }
-            const entity = class_transformer_1.plainToClass(metatype, value);
-            const errors = yield class_validator_1.validate(entity, this.validatorOptions);
+            const entity = classTransformer.plainToClass(metatype, value);
+            const errors = yield classValidator.validate(entity, this.validatorOptions);
             if (errors.length > 0) {
                 throw new index_1.BadRequestException(errors);
             }
             return this.isTransformEnabled
                 ? entity
                 : Object.keys(this.validatorOptions).length > 0
-                    ? class_transformer_1.classToPlain(entity)
+                    ? classTransformer.classToPlain(entity)
                     : value;
         });
     }
