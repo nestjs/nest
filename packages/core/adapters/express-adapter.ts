@@ -99,15 +99,15 @@ export class ExpressAdapter implements HttpServer {
   }
 
   enable(...args) {
-    return this.instance.set(...args);
+    return this.instance.enable(...args);
   }
 
   disable(...args) {
-    return this.instance.set(...args);
+    return this.instance.disable(...args);
   }
 
   engine(...args) {
-    return this.instance.set(...args);
+    return this.instance.engine(...args);
   }
 
   useStaticAssets(path: string, options: ServeStaticOptions) {
