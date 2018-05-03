@@ -6,7 +6,7 @@ import {
   GrpcRoute,
   ClientGrpc,
 } from '@nestjs/microservices';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { grpcClientOptions } from './../grpc-client.options';
 import { HeroById } from './interfaces/hero-by-id.interface';
 import { Hero } from './interfaces/hero.interface';

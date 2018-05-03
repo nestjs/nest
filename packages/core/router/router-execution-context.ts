@@ -95,21 +95,21 @@ export class RouterExecutionContext {
       isResponseHandled,
       httpStatusCode,
     );
+    const handler = (args, req, res, next) => async () => {
+      fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+      return callback.apply(instance, args);
+    };
 
     return async (req, res, next) => {
       const args = this.createNullArray(argsLength);
       fnCanActivate && (await fnCanActivate([req, res]));
 
-      const handler = async () => {
-        fnApplyPipes && (await fnApplyPipes(args, req, res, next));
-        return callback.apply(instance, args);
-      };
       const result = await this.interceptorsConsumer.intercept(
         interceptors,
         [req, res],
         instance,
         callback,
-        handler,
+        handler(args, req, res, next),
       );
       await fnHandleResponse(result, res);
     };

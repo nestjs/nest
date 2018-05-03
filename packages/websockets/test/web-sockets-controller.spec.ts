@@ -145,10 +145,6 @@ describe('WebSocketsController', () => {
       (instance as any).subscribeDisconnectEvent = subscribeDisconnectEvent;
     });
 
-    it('should call "next" method of server object with expected argument', () => {
-      instance.subscribeEvents(gateway, handlers, server as any);
-      expect(nextSpy.calledWith(server.server)).to.be.true;
-    });
     it('should call "subscribeConnectionEvent" with expected arguments', () => {
       instance.subscribeEvents(gateway, handlers, server as any);
       expect(subscribeConnectionEvent.calledWith(gateway, server.connection)).to
@@ -242,7 +238,7 @@ describe('WebSocketsController', () => {
 
     beforeEach(() => {
       subscribe = sinon.spy();
-      event = { subscribe };
+      event = { subscribe, pipe: sinon.stub().returnsThis() };
     });
     it('should not call subscribe method when "afterInit" method not exists', () => {
       instance.subscribeInitEvent(gateway, event);
@@ -260,7 +256,7 @@ describe('WebSocketsController', () => {
 
     beforeEach(() => {
       subscribe = sinon.spy();
-      event = { subscribe };
+      event = { subscribe, pipe: sinon.stub().returnsThis() };
     });
     it('should not call subscribe method when "handleConnection" method not exists', () => {
       instance.subscribeConnectionEvent(gateway, event);
@@ -278,7 +274,7 @@ describe('WebSocketsController', () => {
 
     beforeEach(() => {
       subscribe = sinon.spy();
-      event = { subscribe };
+      event = { subscribe, pipe: sinon.stub().returnsThis() };
     });
     it('should not call subscribe method when "handleDisconnect" method not exists', () => {
       instance.subscribeDisconnectEvent(gateway, event);

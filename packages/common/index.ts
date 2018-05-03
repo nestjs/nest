@@ -29,6 +29,8 @@ export {
   DynamicModule,
   INestApplicationContext,
   HttpServer,
+  Provider,
+  Type,
   HttpServerFactory,
   ArgumentsHost,
   INestExpressApplication,

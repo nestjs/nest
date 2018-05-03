@@ -8,13 +8,11 @@ export class RouterProxy {
     targetCallback: RouterProxyCallback,
     exceptionsHandler: ExceptionsHandler,
   ) {
-    return (req, res, next) => {
-      const host = new ExecutionContextHost([req, res]);
+    return async (req, res, next) => {
       try {
-        Promise.resolve(targetCallback(req, res, next)).catch(e => {
-          exceptionsHandler.next(e, host);
-        });
+        await targetCallback(req, res, next);
       } catch (e) {
+        const host = new ExecutionContextHost([req, res]);
         exceptionsHandler.next(e, host);
       }
     };
@@ -24,13 +22,11 @@ export class RouterProxy {
     targetCallback: (err, req, res, next) => void,
     exceptionsHandler: ExceptionsHandler,
   ) {
-    return (err, req, res, next) => {
-      const host = new ExecutionContextHost([req, res]);
+    return async (err, req, res, next) => {
       try {
-        Promise.resolve(targetCallback(err, req, res, next)).catch(e => {
-          exceptionsHandler.next(e, host);
-        });
+        await targetCallback(err, req, res, next);
       } catch (e) {
+        const host = new ExecutionContextHost([req, res]);
         exceptionsHandler.next(e, host);
       }
     };

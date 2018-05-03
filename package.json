@@ -21,7 +21,7 @@
     "publish:beta": "./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(release) publish %s\""
   },
   "engines": {
-    "node": ">=6.11.0"
+    "node": ">= 8.9.0"
   },
   "repository": {
     "type": "git",

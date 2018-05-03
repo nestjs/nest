@@ -17,7 +17,7 @@ import { MiddlewareInjector } from './middleware-injector';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { WsContextCreator } from './context/ws-context-creator';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { mergeMap } from 'rxjs/operators';
+import { mergeMap, distinctUntilChanged } from 'rxjs/operators';
 
 export class WebSocketsController {
   private readonly metadataExplorer = new GatewayMetadataExplorer(
@@ -85,7 +85,6 @@ export class WebSocketsController {
     this.subscribeInitEvent(instance, init);
     this.subscribeConnectionEvent(instance, connection);
     this.subscribeDisconnectEvent(instance, disconnect);
-    init.next(server);
 
     const handler = this.getConnectionHandler(
       this,
@@ -123,13 +122,17 @@ export class WebSocketsController {
 
   public subscribeConnectionEvent(instance: NestGateway, event: Subject<any>) {
     if (instance.handleConnection) {
-      event.subscribe(instance.handleConnection.bind(instance));
+      event
+        .pipe(distinctUntilChanged())
+        .subscribe(instance.handleConnection.bind(instance));
     }
   }
 
   public subscribeDisconnectEvent(instance: NestGateway, event: Subject<any>) {
     if (instance.handleDisconnect) {
-      event.subscribe(instance.handleDisconnect.bind(instance));
+      event
+        .pipe(distinctUntilChanged())
+        .subscribe(instance.handleDisconnect.bind(instance));
     }
   }
 

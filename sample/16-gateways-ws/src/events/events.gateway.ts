@@ -5,8 +5,7 @@ import {
   WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
-import { Observable } from 'rxjs/Observable';
-import { from } from 'rxjs/observable/from';
+import { Observable, from } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @WebSocketGateway(8080)

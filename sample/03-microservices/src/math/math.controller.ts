@@ -5,7 +5,7 @@ import {
   Transport,
   MessagePattern,
 } from '@nestjs/microservices';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 @Controller()
 export class MathController {

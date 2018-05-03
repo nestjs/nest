@@ -3,8 +3,11 @@ import { ObservableSocketServer } from './interfaces/observable-socket-server.in
 
 export class ObservableSocket {
   public static create(server): ObservableSocketServer {
+    const init = new ReplaySubject();
+    init.next(server);
+
     return {
-      init: new ReplaySubject(),
+      init,
       connection: new Subject(),
       disconnect: new Subject(),
       server,

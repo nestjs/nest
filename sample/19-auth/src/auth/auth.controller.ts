@@ -13,7 +13,7 @@ export class AuthController {
 
   @Get('data')
   @UseGuards(AuthGuard('jwt'))
-  getSensitiveData() {
+  findAll() {
     // this route is restricted
   }
 }
