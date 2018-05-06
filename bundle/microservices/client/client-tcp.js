@@ -1,12 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const net = require("net");
 const JsonSocket = require("json-socket");
@@ -36,26 +28,24 @@ class ClientTCP extends client_proxy_1.ClientProxy {
             this.socket.connect(this.port, this.host);
         });
     }
-    publish(partialPacket, callback) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const handleRequestResponse = (jsonSocket) => {
-                const packet = this.assignPacketId(partialPacket);
-                jsonSocket.sendMessage(packet);
-                const listener = (buffer) => {
-                    if (buffer.id !== packet.id) {
-                        return undefined;
-                    }
-                    this.handleResponse(jsonSocket, callback, buffer, listener);
-                };
-                jsonSocket.on(constants_1.MESSAGE_EVENT, listener);
+    async publish(partialPacket, callback) {
+        const handleRequestResponse = (jsonSocket) => {
+            const packet = this.assignPacketId(partialPacket);
+            jsonSocket.sendMessage(packet);
+            const listener = (buffer) => {
+                if (buffer.id !== packet.id) {
+                    return undefined;
+                }
+                this.handleResponse(jsonSocket, callback, buffer, listener);
             };
-            if (this.isConnected) {
-                return handleRequestResponse(this.socket);
-            }
-            const socket = yield this.init(callback);
-            handleRequestResponse(socket);
-            return;
-        });
+            jsonSocket.on(constants_1.MESSAGE_EVENT, listener);
+        };
+        if (this.isConnected) {
+            return handleRequestResponse(this.socket);
+        }
+        const socket = await this.init(callback);
+        handleRequestResponse(socket);
+        return;
     }
     handleResponse(socket, callback, buffer, context) {
         const { err, response, isDisposed } = buffer;

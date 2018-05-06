@@ -62,13 +62,13 @@ class ExpressAdapter {
         return this.instance.set(...args);
     }
     enable(...args) {
-        return this.instance.set(...args);
+        return this.instance.enable(...args);
     }
     disable(...args) {
-        return this.instance.set(...args);
+        return this.instance.disable(...args);
     }
     engine(...args) {
-        return this.instance.set(...args);
+        return this.instance.engine(...args);
     }
     useStaticAssets(path, options) {
         return this.use(express.static(path, options));

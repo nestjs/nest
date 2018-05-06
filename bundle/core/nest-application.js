@@ -1,12 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const cors = require("cors");
 const http = require("http");
@@ -80,28 +72,24 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
             ? this.httpServer
             : this.httpAdapter.getHttpServer();
     }
-    registerModules() {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.socketModule &&
-                this.socketModule.register(this.container, this.config);
-            if (this.microservicesModule) {
-                this.microservicesModule.register(this.container, this.config);
-                this.microservicesModule.setupClients(this.container);
-            }
-            yield this.middlewareModule.register(this.middlewareContainer, this.container, this.config);
-        });
+    async registerModules() {
+        this.socketModule &&
+            this.socketModule.register(this.container, this.config);
+        if (this.microservicesModule) {
+            this.microservicesModule.register(this.container, this.config);
+            this.microservicesModule.setupClients(this.container);
+        }
+        await this.middlewareModule.register(this.middlewareContainer, this.container, this.config);
     }
-    init() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const useBodyParser = this.appOptions && this.appOptions.bodyParser !== false;
-            useBodyParser && this.registerParserMiddleware();
-            yield this.registerModules();
-            yield this.registerRouter();
-            yield this.callInitHook();
-            this.isInitialized = true;
-            this.logger.log(constants_1.messages.APPLICATION_READY);
-            return this;
-        });
+    async init() {
+        const useBodyParser = this.appOptions && this.appOptions.bodyParser !== false;
+        useBodyParser && this.registerParserMiddleware();
+        await this.registerModules();
+        await this.registerRouter();
+        await this.callInitHook();
+        this.isInitialized = true;
+        this.logger.log(constants_1.messages.APPLICATION_READY);
+        return this;
     }
     registerParserMiddleware() {
         if (this.httpAdapter instanceof fastify_adapter_1.FastifyAdapter) {
@@ -125,13 +113,11 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
             shared_utils_1.isFunction(app._router.stack.filter) &&
             !!app._router.stack.filter(layer => layer && layer.handle && layer.handle.name === name).length);
     }
-    registerRouter() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.registerMiddleware(this.httpAdapter);
-            const prefix = this.config.getGlobalPrefix();
-            const basePath = prefix ? shared_utils_1.validatePath(prefix) : '';
-            this.routesResolver.resolve(this.httpAdapter, basePath);
-        });
+    async registerRouter() {
+        await this.registerMiddleware(this.httpAdapter);
+        const prefix = this.config.getGlobalPrefix();
+        const basePath = prefix ? shared_utils_1.validatePath(prefix) : '';
+        this.routesResolver.resolve(this.httpAdapter, basePath);
     }
     connectMicroservice(options) {
         const { NestMicroservice } = load_package_util_1.loadPackage('@nestjs/microservices', 'NestFactory');
@@ -201,28 +187,24 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         this.httpAdapter.use(cors(options));
         return this;
     }
-    listen(port, ...args) {
-        return __awaiter(this, void 0, void 0, function* () {
-            !this.isInitialized && (yield this.init());
-            this.httpServer.listen(port, ...args);
-            return this.httpServer;
-        });
+    async listen(port, ...args) {
+        !this.isInitialized && (await this.init());
+        this.httpServer.listen(port, ...args);
+        return this.httpServer;
     }
     listenAsync(port, hostname) {
         return new Promise(resolve => {
             const server = this.listen(port, hostname, () => resolve(server));
         });
     }
-    close() {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.socketModule && (yield this.socketModule.close());
-            this.httpServer && this.httpServer.close();
-            yield Promise.all(iterare_1.default(this.microservices).map((microservice) => __awaiter(this, void 0, void 0, function* () {
-                microservice.setIsTerminated(true);
-                yield microservice.close();
-            })));
-            yield this.callDestroyHook();
-        });
+    async close() {
+        this.socketModule && (await this.socketModule.close());
+        this.httpServer && this.httpServer.close();
+        await Promise.all(iterare_1.default(this.microservices).map(async (microservice) => {
+            microservice.setIsTerminated(true);
+            await microservice.close();
+        }));
+        await this.callDestroyHook();
     }
     setGlobalPrefix(prefix) {
         this.config.setGlobalPrefix(prefix);
@@ -265,10 +247,8 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
     loadPackage(name, ctx) {
         return load_package_util_1.loadPackage(name, ctx);
     }
-    registerMiddleware(instance) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.middlewareModule.registerMiddleware(this.middlewareContainer, instance);
-        });
+    async registerMiddleware(instance) {
+        await this.middlewareModule.registerMiddleware(this.middlewareContainer, instance);
     }
     isExpress() {
         const isExpress = !this.httpAdapter.getHttpServer;
@@ -278,25 +258,21 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         return this.httpAdapter instanceof express_adapter_1.ExpressAdapter;
     }
     listenToPromise(microservice) {
-        return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
-            yield microservice.listen(resolve);
-        }));
-    }
-    callDestroyHook() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const modules = this.container.getModules();
-            yield Promise.all(iterare_1.default(modules.values()).map((module) => __awaiter(this, void 0, void 0, function* () { return yield this.callModuleDestroyHook(module); })));
+        return new Promise(async (resolve, reject) => {
+            await microservice.listen(resolve);
         });
     }
-    callModuleDestroyHook(module) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const components = [...module.routes, ...module.components];
-            yield Promise.all(iterare_1.default(components)
-                .map(([key, { instance }]) => instance)
-                .filter(instance => !shared_utils_1.isNil(instance))
-                .filter(this.hasOnModuleDestroyHook)
-                .map((instance) => __awaiter(this, void 0, void 0, function* () { return yield instance.onModuleDestroy(); })));
-        });
+    async callDestroyHook() {
+        const modules = this.container.getModules();
+        await Promise.all(iterare_1.default(modules.values()).map(async (module) => await this.callModuleDestroyHook(module)));
+    }
+    async callModuleDestroyHook(module) {
+        const components = [...module.routes, ...module.components];
+        await Promise.all(iterare_1.default(components)
+            .map(([key, { instance }]) => instance)
+            .filter(instance => !shared_utils_1.isNil(instance))
+            .filter(this.hasOnModuleDestroyHook)
+            .map(async (instance) => await instance.onModuleDestroy()));
     }
     hasOnModuleDestroyHook(instance) {
         return !shared_utils_1.isUndefined(instance.onModuleDestroy);

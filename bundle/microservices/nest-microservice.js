@@ -1,12 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const optional = require("optional");
 const iterare_1 = require("iterare");
@@ -51,15 +43,13 @@ class NestMicroservice extends nest_application_context_1.NestApplicationContext
             throw e;
         }
     }
-    registerModules() {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.socketModule &&
-                this.socketModule.register(this.container, this.applicationConfig);
-            this.microservicesModule.setupClients(this.container);
-            this.registerListeners();
-            this.setIsInitialized(true);
-            !this.isInitHookCalled && (yield this.callInitHook());
-        });
+    async registerModules() {
+        this.socketModule &&
+            this.socketModule.register(this.container, this.applicationConfig);
+        this.microservicesModule.setupClients(this.container);
+        this.registerListeners();
+        this.setIsInitialized(true);
+        !this.isInitHookCalled && (await this.callInitHook());
     }
     registerListeners() {
         this.microservicesModule.setupListeners(this.container, this.server);
@@ -89,16 +79,12 @@ class NestMicroservice extends nest_application_context_1.NestApplicationContext
         this.logger.log(constants_1.messages.MICROSERVICE_READY);
         this.server.listen(callback);
     }
-    listenAsync() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield new Promise(resolve => this.listen(resolve));
-        });
+    async listenAsync() {
+        return await new Promise(resolve => this.listen(resolve));
     }
-    close() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.server.close();
-            !this.isTerminated && (yield this.closeApplication());
-        });
+    async close() {
+        await this.server.close();
+        !this.isTerminated && (await this.closeApplication());
     }
     setIsInitialized(isInitialized) {
         this.isInitialized = isInitialized;
@@ -109,48 +95,38 @@ class NestMicroservice extends nest_application_context_1.NestApplicationContext
     setIsInitHookCalled(isInitHookCalled) {
         this.isInitHookCalled = isInitHookCalled;
     }
-    closeApplication() {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.socketModule && (yield this.socketModule.close());
-            yield this.callDestroyHook();
-            this.setIsTerminated(true);
-        });
+    async closeApplication() {
+        this.socketModule && (await this.socketModule.close());
+        await this.callDestroyHook();
+        this.setIsTerminated(true);
     }
-    callInitHook() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const modules = this.container.getModules();
-            yield Promise.all(iterare_1.default(modules.values()).map((module) => __awaiter(this, void 0, void 0, function* () { return yield this.callModuleInitHook(module); })));
-            this.setIsInitHookCalled(true);
-        });
+    async callInitHook() {
+        const modules = this.container.getModules();
+        await Promise.all(iterare_1.default(modules.values()).map(async (module) => await this.callModuleInitHook(module)));
+        this.setIsInitHookCalled(true);
     }
-    callModuleInitHook(module) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const components = [...module.routes, ...module.components];
-            yield Promise.all(iterare_1.default(components)
-                .map(([key, { instance }]) => instance)
-                .filter(instance => !shared_utils_1.isNil(instance))
-                .filter(this.hasOnModuleInitHook)
-                .map((instance) => __awaiter(this, void 0, void 0, function* () { return yield instance.onModuleInit(); })));
-        });
+    async callModuleInitHook(module) {
+        const components = [...module.routes, ...module.components];
+        await Promise.all(iterare_1.default(components)
+            .map(([key, { instance }]) => instance)
+            .filter(instance => !shared_utils_1.isNil(instance))
+            .filter(this.hasOnModuleInitHook)
+            .map(async (instance) => await instance.onModuleInit()));
     }
     hasOnModuleInitHook(instance) {
         return !shared_utils_1.isUndefined(instance.onModuleInit);
     }
-    callDestroyHook() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const modules = this.container.getModules();
-            yield Promise.all(iterare_1.default(modules.values()).map((module) => __awaiter(this, void 0, void 0, function* () { return yield this.callModuleDestroyHook(module); })));
-        });
+    async callDestroyHook() {
+        const modules = this.container.getModules();
+        await Promise.all(iterare_1.default(modules.values()).map(async (module) => await this.callModuleDestroyHook(module)));
     }
-    callModuleDestroyHook(module) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const components = [...module.routes, ...module.components];
-            yield Promise.all(iterare_1.default(components)
-                .map(([key, { instance }]) => instance)
-                .filter(instance => !shared_utils_1.isNil(instance))
-                .filter(this.hasOnModuleDestroyHook)
-                .map((instance) => __awaiter(this, void 0, void 0, function* () { return yield instance.onModuleDestroy(); })));
-        });
+    async callModuleDestroyHook(module) {
+        const components = [...module.routes, ...module.components];
+        await Promise.all(iterare_1.default(components)
+            .map(([key, { instance }]) => instance)
+            .filter(instance => !shared_utils_1.isNil(instance))
+            .filter(this.hasOnModuleDestroyHook)
+            .map(async (instance) => await instance.onModuleDestroy()));
     }
     hasOnModuleDestroyHook(instance) {
         return !shared_utils_1.isUndefined(instance.onModuleDestroy);

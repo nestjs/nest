@@ -1,12 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const deprecate = require("deprecate");
 const instance_loader_1 = require("@nestjs/core/injector/instance-loader");
@@ -45,17 +37,15 @@ class TestingModuleBuilder {
     overrideProvider(typeOrToken) {
         return this.override(typeOrToken, true);
     }
-    compile() {
-        return __awaiter(this, void 0, void 0, function* () {
-            [...this.overloadsMap.entries()].map(([component, options]) => {
-                this.container.replace(component, options);
-            });
-            yield this.instanceLoader.createInstancesOfDependencies();
-            this.scanner.applyApplicationProviders();
-            const modules = this.container.getModules().values();
-            const root = modules.next().value;
-            return new testing_module_1.TestingModule(this.container, [], root, this.applicationConfig);
+    async compile() {
+        [...this.overloadsMap.entries()].map(([component, options]) => {
+            this.container.replace(component, options);
         });
+        await this.instanceLoader.createInstancesOfDependencies();
+        this.scanner.applyApplicationProviders();
+        const modules = this.container.getModules().values();
+        const root = modules.next().value;
+        return new testing_module_1.TestingModule(this.container, [], root, this.applicationConfig);
     }
     override(typeOrToken, isComponent) {
         const addOverload = options => {
