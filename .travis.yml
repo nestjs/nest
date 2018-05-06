@@ -2,13 +2,17 @@ language: node_js
 node_js:
       - "8"
       - "9"
+git:
+     depth: 5
 addons:
      firefox: "latest"
 before_script:
      - export DISPLAY=:99.0
      - sh -e /etc/init.d/xvfb start
+before_install:
+     - npm i -g npm@latest
 install:
-     - npm install
+     - npm ci
      - gulp build
 script:
       - npm test
