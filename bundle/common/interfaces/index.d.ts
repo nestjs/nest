@@ -28,3 +28,5 @@ export * from './http/http-server-factory.interface';
 export * from './features/arguments-host.interface';
 export * from './nest-express-application.interface';
 export * from './nest-fastify-application.interface';
+export * from './modules/provider.interface';
+export * from './type.interface';

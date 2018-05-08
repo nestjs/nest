@@ -1,12 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const server_1 = require("./server");
 const constants_1 = require("./../constants");
@@ -21,48 +13,40 @@ class ServerGrpc extends server_1.Server {
             this.getOptionsProp(options, 'url') || constants_1.GRPC_DEFAULT_URL;
         grpcPackage = this.loadPackage('grpc', ServerGrpc.name);
     }
-    listen(callback) {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.grpcClient = this.createClient();
-            yield this.start(callback);
-        });
+    async listen(callback) {
+        this.grpcClient = this.createClient();
+        await this.start(callback);
     }
-    start(callback) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.bindEvents();
-            this.grpcClient.start();
-            callback();
-        });
+    async start(callback) {
+        await this.bindEvents();
+        this.grpcClient.start();
+        callback();
     }
-    bindEvents() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const grpcContext = this.loadProto();
-            const packageName = this.getOptionsProp(this.options, 'package');
-            const grpcPkg = this.lookupPackage(grpcContext, packageName);
-            if (!grpcPkg) {
-                throw new invalid_grpc_package_exception_1.InvalidGrpcPackageException();
-            }
-            for (const name of this.getServiceNames(grpcPkg)) {
-                this.grpcClient.addService(grpcPkg[name].service, yield this.createService(grpcPkg[name], name));
-            }
-        });
+    async bindEvents() {
+        const grpcContext = this.loadProto();
+        const packageName = this.getOptionsProp(this.options, 'package');
+        const grpcPkg = this.lookupPackage(grpcContext, packageName);
+        if (!grpcPkg) {
+            throw new invalid_grpc_package_exception_1.InvalidGrpcPackageException();
+        }
+        for (const name of this.getServiceNames(grpcPkg)) {
+            this.grpcClient.addService(grpcPkg[name].service, await this.createService(grpcPkg[name], name));
+        }
     }
     getServiceNames(grpcPkg) {
         return Object.keys(grpcPkg).filter(name => grpcPkg[name].service);
     }
-    createService(grpcService, name) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const service = {};
-            // tslint:disable-next-line:forin
-            for (const methodName in grpcService.prototype) {
-                const methodHandler = this.messageHandlers[this.createPattern(name, methodName)];
-                if (!methodHandler) {
-                    continue;
-                }
-                service[methodName] = yield this.createServiceMethod(methodHandler, grpcService.prototype[methodName]);
+    async createService(grpcService, name) {
+        const service = {};
+        // tslint:disable-next-line:forin
+        for (const methodName in grpcService.prototype) {
+            const methodHandler = this.messageHandlers[this.createPattern(name, methodName)];
+            if (!methodHandler) {
+                continue;
             }
-            return service;
-        });
+            service[methodName] = await this.createServiceMethod(methodHandler, grpcService.prototype[methodName]);
+        }
+        return service;
     }
     createPattern(service, methodName) {
         return JSON.stringify({
@@ -76,18 +60,18 @@ class ServerGrpc extends server_1.Server {
             : this.createUnaryServiceMethod(methodHandler);
     }
     createUnaryServiceMethod(methodHandler) {
-        return (call, callback) => __awaiter(this, void 0, void 0, function* () {
+        return async (call, callback) => {
             const handler = methodHandler(call.request, call.metadata);
-            this.transformToObservable(yield handler).subscribe(data => callback(null, data), err => callback(err));
-        });
+            this.transformToObservable(await handler).subscribe(data => callback(null, data), err => callback(err));
+        };
     }
     createStreamServiceMethod(methodHandler) {
-        return (call, callback) => __awaiter(this, void 0, void 0, function* () {
+        return async (call, callback) => {
             const handler = methodHandler(call.request, call.metadata);
-            const result$ = this.transformToObservable(yield handler);
-            yield result$.forEach(data => call.write(data));
+            const result$ = this.transformToObservable(await handler);
+            await result$.forEach(data => call.write(data));
             call.end();
-        });
+        };
     }
     close() {
         this.grpcClient && this.grpcClient.forceShutdown();

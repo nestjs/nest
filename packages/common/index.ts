@@ -35,6 +35,7 @@ export {
   ArgumentsHost,
   INestExpressApplication,
   INestFastifyApplication,
+  ForwardReference,
 } from './interfaces';
 export * from './interceptors';
 export * from './services/logger.service';

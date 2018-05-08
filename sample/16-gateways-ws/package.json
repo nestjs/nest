@@ -19,7 +19,7 @@
     "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0",
     "typescript": "^2.8.0",
-    "ws": "^3.1.0"
+    "ws": "^5.1.1"
   },
   "devDependencies": {
     "@types/node": "^7.0.41",

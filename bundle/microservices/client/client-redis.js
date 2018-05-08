@@ -1,12 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_proxy_1 = require("./client-proxy");
 const logger_service_1 = require("@nestjs/common/services/logger.service");
@@ -23,49 +15,47 @@ class ClientRedis extends client_proxy_1.ClientProxy {
             this.getOptionsProp(options, 'url') || constants_1.REDIS_DEFAULT_URL;
         redisPackage = load_package_util_1.loadPackage('redis', ClientRedis.name);
     }
-    publish(partialPacket, callback) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!this.pubClient || !this.subClient) {
-                this.init(callback);
+    async publish(partialPacket, callback) {
+        if (!this.pubClient || !this.subClient) {
+            this.init(callback);
+        }
+        const packet = this.assignPacketId(partialPacket);
+        const pattern = JSON.stringify(partialPacket.pattern);
+        const responseChannel = this.getResPatternName(pattern);
+        const responseCallback = (channel, buffer) => {
+            const { err, response, isDisposed, id } = JSON.parse(buffer);
+            if (id !== packet.id) {
+                return undefined;
             }
-            const packet = this.assignPacketId(partialPacket);
-            const pattern = JSON.stringify(partialPacket.pattern);
-            const responseChannel = this.getResPatternName(pattern);
-            const responseCallback = (channel, buffer) => {
-                const { err, response, isDisposed, id } = JSON.parse(buffer);
-                if (id !== packet.id) {
-                    return undefined;
-                }
-                if (isDisposed || err) {
-                    callback({
-                        err,
-                        response: null,
-                        isDisposed: true,
-                    });
-                    this.subClient.unsubscribe(channel);
-                    this.subClient.removeListener(constants_1.MESSAGE_EVENT, responseCallback);
-                    return;
-                }
+            if (isDisposed || err) {
                 callback({
                     err,
-                    response,
+                    response: null,
+                    isDisposed: true,
                 });
-            };
-            this.subClient.on(constants_1.MESSAGE_EVENT, responseCallback);
-            this.subClient.subscribe(responseChannel);
-            yield new Promise(resolve => {
-                const handler = channel => {
-                    if (channel && channel !== responseChannel) {
-                        return undefined;
-                    }
-                    this.subClient.removeListener(constants_1.SUBSCRIBE, handler);
-                    resolve();
-                };
-                this.subClient.on(constants_1.SUBSCRIBE, handler);
+                this.subClient.unsubscribe(channel);
+                this.subClient.removeListener(constants_1.MESSAGE_EVENT, responseCallback);
+                return;
+            }
+            callback({
+                err,
+                response,
             });
-            this.pubClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
-            return responseCallback;
+        };
+        this.subClient.on(constants_1.MESSAGE_EVENT, responseCallback);
+        this.subClient.subscribe(responseChannel);
+        await new Promise(resolve => {
+            const handler = channel => {
+                if (channel && channel !== responseChannel) {
+                    return undefined;
+                }
+                this.subClient.removeListener(constants_1.SUBSCRIBE, handler);
+                resolve();
+            };
+            this.subClient.on(constants_1.SUBSCRIBE, handler);
         });
+        this.pubClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
+        return responseCallback;
     }
     getAckPatternName(pattern) {
         return `${pattern}_ack`;

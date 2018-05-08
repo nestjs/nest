@@ -1,12 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const iterare_1 = require("iterare");
 const module_token_factory_1 = require("./injector/module-token-factory");
@@ -45,27 +37,21 @@ class NestApplicationContext {
         this.initFlattenModule();
         return this.findInstanceByPrototypeOrToken(typeOrToken, this.contextModuleFixture);
     }
-    init() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.callInitHook();
-            return this;
-        });
+    async init() {
+        await this.callInitHook();
+        return this;
     }
-    callInitHook() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const modules = this.container.getModules();
-            yield Promise.all(iterare_1.default(modules.values()).map((module) => __awaiter(this, void 0, void 0, function* () { return yield this.callModuleInitHook(module); })));
-        });
+    async callInitHook() {
+        const modules = this.container.getModules();
+        await Promise.all(iterare_1.default(modules.values()).map(async (module) => await this.callModuleInitHook(module)));
     }
-    callModuleInitHook(module) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const components = [...module.routes, ...module.components];
-            yield Promise.all(iterare_1.default(components)
-                .map(([key, { instance }]) => instance)
-                .filter(instance => !shared_utils_1.isNil(instance))
-                .filter(this.hasOnModuleInitHook)
-                .map((instance) => __awaiter(this, void 0, void 0, function* () { return yield instance.onModuleInit(); })));
-        });
+    async callModuleInitHook(module) {
+        const components = [...module.routes, ...module.components];
+        await Promise.all(iterare_1.default(components)
+            .map(([key, { instance }]) => instance)
+            .filter(instance => !shared_utils_1.isNil(instance))
+            .filter(this.hasOnModuleInitHook)
+            .map(async (instance) => await instance.onModuleInit()));
     }
     hasOnModuleInitHook(instance) {
         return !shared_utils_1.isUndefined(instance.onModuleInit);
