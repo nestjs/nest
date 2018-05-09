@@ -65,11 +65,11 @@ describe('ValidationPipe', () => {
         it('should throw an error', () => {
           target = new ValidationPipe({ forbidNonWhitelisted: true });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
-          expect(target.transform(testObj, metadata)).to.be.rejected;
+          expect(target.transform(testObj, metadata)).to.eventually.throw;
         });
       });
     });
-    describe("when validation does't transform", () => {
+    describe("when validation doesn't transform", () => {
       describe('when validation strips', () => {
         it('should return a plain object without extra properties', async () => {
           target = new ValidationPipe({ transform: false, whitelist: true });
@@ -89,7 +89,7 @@ describe('ValidationPipe', () => {
             forbidNonWhitelisted: true,
           });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
-          expect(target.transform(testObj, metadata)).to.be.rejected;
+          expect(target.transform(testObj, metadata)).to.eventually.throw;
         });
       });
     });
