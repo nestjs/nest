@@ -76,9 +76,11 @@ describe('ServerMqtt', () => {
     });
     describe('handler', () => {
       it('should call "handleMessage"', async () => {
-        const spy = sinon.spy(server, 'handleMessage');
+        const handleMessageStub = sinon
+          .stub(server, 'handleMessage')
+          .callsFake(() => null);
         (await server.getMessageHandler((server as any).mqttClient))(null);
-        expect(spy.called).to.be.true;
+        expect(handleMessageStub.called).to.be.true;
       });
     });
   });
