@@ -18,7 +18,7 @@
     "class-validator": "^0.7.2",
     "grpc": "^1.10.0",
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
+    "rxjs": "^6.1.0",
     "typescript": "^2.8.0"
   },
   "devDependencies": {

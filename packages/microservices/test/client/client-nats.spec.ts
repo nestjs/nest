@@ -30,7 +30,7 @@ describe('ClientNats', () => {
       onSpy: sinon.SinonSpy,
       removeListenerSpy: sinon.SinonSpy,
       unsubscribeSpy: sinon.SinonSpy,
-      initSpy: sinon.SinonSpy,
+      connectSpy: sinon.SinonStub,
       natsClient,
       createClient: sinon.SinonStub;
 
@@ -51,23 +51,23 @@ describe('ClientNats', () => {
       };
       (client as any).natsClient = natsClient;
 
-      initSpy = sinon.stub(client, 'init').callsFake(() => {
+      connectSpy = sinon.stub(client, 'connect').callsFake(() => {
         (client as any).natsClient = natsClient;
       });
       createClient = sinon.stub(client, 'createClient').callsFake(() => client);
     });
     afterEach(() => {
-      initSpy.restore();
+      connectSpy.restore();
       createClient.restore();
     });
-    it('should not call "init()" when natsClient is not null', async () => {
+    it('should not call "connect()" when natsClient is not null', async () => {
       await client['publish'](msg, () => {});
-      expect(initSpy.called).to.be.false;
+      expect(connectSpy.called).to.be.false;
     });
-    it('should call "init()" when natsClient is null', async () => {
+    it('should call "connect()" when natsClient is null', async () => {
       (client as any).natsClient = null;
       await client['publish'](msg, () => {});
-      expect(initSpy.called).to.be.true;
+      expect(connectSpy.called).to.be.true;
     });
     it('should subscribe to response pattern name', async () => {
       await client['publish'](msg, () => {});
@@ -168,6 +168,17 @@ describe('ClientNats', () => {
         });
       });
     });
+    describe('when connect throws', () => {
+      it('should call callback with error', async () => {
+        const err = new Error();
+        connectSpy.throws(err);
+        const callbackSpy = sinon.spy();
+
+        (client as any).natsClient = null;
+        await client['publish'](msg, callbackSpy);
+        expect(callbackSpy.calledWith({ err })).to.be.true;
+      });
+    });
   });
   describe('close', () => {
     let natsClose: sinon.SinonSpy;
@@ -182,13 +193,16 @@ describe('ClientNats', () => {
       expect(natsClose.called).to.be.true;
     });
   });
-  describe('init', () => {
+  describe('connect', () => {
     let createClientSpy: sinon.SinonSpy;
     let handleErrorsSpy: sinon.SinonSpy;
+    let connect$Spy: sinon.SinonSpy;
 
     const natsClient = {
       addListener: sinon.spy(),
-      on: sinon.spy(),
+      on: (ev, fn) => ev === 'connect' ? fn() : null,
+      removeListener: sinon.spy(),
+      off: sinon.spy(),
     };
 
     beforeEach(async () => {
@@ -196,11 +210,14 @@ describe('ClientNats', () => {
         .stub(client, 'createClient')
         .callsFake(() => natsClient);
       handleErrorsSpy = sinon.spy(client, 'handleError');
-      await client.init(sinon.spy());
+      connect$Spy = sinon.spy(client, 'connect$');
+  
+      await client.connect();
     });
     afterEach(() => {
       createClientSpy.restore();
       handleErrorsSpy.restore();
+      connect$Spy.restore();
     });
     it('should call "createClient"', () => {
       expect(createClientSpy.called).to.be.true;
@@ -208,32 +225,18 @@ describe('ClientNats', () => {
     it('should call "handleError"', () => {
       expect(handleErrorsSpy.called).to.be.true;
     });
+    it('should call "connect$" once', () => {
+      expect(connect$Spy.called).to.be.true;
+    });
   });
   describe('handleError', () => {
-    it('should bind error event handler and call callback with error', () => {
-      const callback = sinon.spy();
-      const removeListenerSpy = sinon.spy();
-
-      const addListener = (name, fn) => {
-        const err = { code: 'ECONNREFUSED' };
-        fn(err);
-
-        expect(name).to.be.eql(ERROR_EVENT);
-        expect(callback.called).to.be.true;
-        expect(callback.calledWith(err, null)).to.be.true;
+    it('should bind error event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        addListener: callback,
       };
-      const onCallback = (name, fn) => {
-        fn();
-        expect(name).to.be.eql(CONNECT_EVENT);
-        expect(removeListenerSpy.called).to.be.true;
-      };
-
-      const stream = {
-        addListener,
-        on: onCallback,
-        removeListener: removeListenerSpy,
-      };
-      client.handleError(stream as any, callback);
+      client.handleError(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
     });
   });
 });

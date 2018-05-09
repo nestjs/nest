@@ -4,6 +4,7 @@ import { ClientProxy } from '../../client/client-proxy';
 import { Observable } from 'rxjs';
 
 class TestClientProxy extends ClientProxy {
+  public async connect() {}
   public publish(pattern, callback) {}
   public close() {}
 }

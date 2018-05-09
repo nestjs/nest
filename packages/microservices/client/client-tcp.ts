@@ -15,6 +15,8 @@ import {
   CLOSE_EVENT,
 } from './../constants';
 import { WritePacket, ReadPacket, PacketId } from './../interfaces';
+import { tap } from 'rxjs/operators';
+import { ECONNREFUSED } from './constants';
 
 export class ClientTCP extends ClientProxy {
   private readonly logger = new Logger(ClientTCP.name);
@@ -33,39 +35,16 @@ export class ClientTCP extends ClientProxy {
       TCP_DEFAULT_HOST;
   }
 
-  public init(callback: (...args) => any): Promise<JsonSocket> {
+  public connect(): Promise<any> {
     this.socket = this.createSocket();
-    return new Promise(resolve => {
-      this.bindEvents(this.socket, callback);
-      this.socket._socket.once(CONNECT_EVENT, () => {
-        this.isConnected = true;
-        resolve(this.socket);
-      });
+    return new Promise((resolve, reject) => {
+      this.bindEvents(this.socket);
+      this.connect$(this.socket._socket)
+        .pipe(tap(() => (this.isConnected = true)))
+        .subscribe(resolve, reject);
+
       this.socket.connect(this.port, this.host);
     });
-  }
-
-  protected async publish(
-    partialPacket: ReadPacket,
-    callback: (packet: WritePacket) => any,
-  ) {
-    const handleRequestResponse = (jsonSocket: JsonSocket) => {
-      const packet = this.assignPacketId(partialPacket);
-      jsonSocket.sendMessage(packet);
-      const listener = (buffer: WritePacket & PacketId) => {
-        if (buffer.id !== packet.id) {
-          return undefined;
-        }
-        this.handleResponse(jsonSocket, callback, buffer, listener);
-      };
-      jsonSocket.on(MESSAGE_EVENT, listener);
-    };
-    if (this.isConnected) {
-      return handleRequestResponse(this.socket);
-    }
-    const socket = await this.init(callback);
-    handleRequestResponse(socket);
-    return;
   }
 
   public handleResponse(
@@ -98,20 +77,45 @@ export class ClientTCP extends ClientProxy {
     this.handleClose();
   }
 
-  public bindEvents(socket: JsonSocket, callback: (...args) => any) {
-    socket.on(ERROR_EVENT, err => this.handleError(err, callback));
+  public bindEvents(socket: JsonSocket) {
+    socket.on(
+      ERROR_EVENT,
+      err => err.code !== ECONNREFUSED && this.handleError(err),
+    );
     socket.on(CLOSE_EVENT, () => this.handleClose());
   }
 
-  public handleError(err: any, callback: (...args) => any) {
-    if (err.code === 'ECONNREFUSED') {
-      callback(err, null);
-    }
+  public handleError(err: any) {
     this.logger.error(err);
   }
 
   public handleClose() {
     this.isConnected = false;
     this.socket = null;
+  }
+
+  protected async publish(
+    partialPacket: ReadPacket,
+    callback: (packet: WritePacket) => any,
+  ) {
+    try {
+      if (!this.isConnected) {
+        await this.connect();
+      }
+      const handleRequestResponse = (jsonSocket: JsonSocket) => {
+        const packet = this.assignPacketId(partialPacket);
+        jsonSocket.sendMessage(packet);
+        const listener = (buffer: WritePacket & PacketId) => {
+          if (buffer.id !== packet.id) {
+            return undefined;
+          }
+          this.handleResponse(jsonSocket, callback, buffer, listener);
+        };
+        jsonSocket.on(MESSAGE_EVENT, listener);
+      };
+      handleRequestResponse(this.socket);
+    } catch (err) {
+      callback({ err });
+    }
   }
 }

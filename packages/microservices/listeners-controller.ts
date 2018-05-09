@@ -30,7 +30,7 @@ export class ListenersController {
         targetCallback,
         module,
       );
-      server.add(pattern, proxy);
+      server.addHandler(pattern, proxy);
     });
   }
 

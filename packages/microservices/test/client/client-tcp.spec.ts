@@ -1,14 +1,15 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ClientTCP } from '../../client/client-tcp';
-import { MESSAGE_EVENT } from '../../constants';
+import { MESSAGE_EVENT, ERROR_EVENT } from '../../constants';
 
 describe('ClientTCP', () => {
   const client = new ClientTCP({});
   let socket: {
-    connect: sinon.SinonSpy;
+    connect: sinon.SinonStub;
     publish: sinon.SinonSpy;
     _socket: {
+      addListener: sinon.SinonStub,
       removeListener: sinon.SinonSpy;
       once: sinon.SinonStub;
     };
@@ -23,10 +24,11 @@ describe('ClientTCP', () => {
       event !== 'error' && event !== 'close' && callback({});
 
     socket = {
-      connect: sinon.spy(),
+      connect: sinon.stub(),
       publish: sinon.spy(),
       on: sinon.stub().callsFake(onFakeCallback),
       _socket: {
+        addListener: sinon.stub().callsFake(onFakeCallback),
         removeListener: sinon.spy(),
         once: sinon.stub().callsFake(onFakeCallback),
       },
@@ -119,6 +121,17 @@ describe('ClientTCP', () => {
         ).to.be.true;
       });
     });
+    describe('when connect throws', () => {
+      it('should call callback with error', async () => {
+        const err = new Error();
+        const connectStub = sinon.stub(client, 'connect').throws(err);
+        const callbackSpy = sinon.spy();
+
+        (client as any).isConnected = false;
+        await client['publish']({} as any, callbackSpy);
+        expect(callbackSpy.calledWith({ err })).to.be.true;
+      });
+    });
   });
   describe('close', () => {
     beforeEach(() => {
@@ -136,21 +149,14 @@ describe('ClientTCP', () => {
       expect((client as any).socket).to.be.null;
     });
   });
-  describe('handleError', () => {
-    it('should call callback with error', () => {
-      const callback = sinon.spy();
-      const err = { code: 'ECONNREFUSED' };
-      client.handleError(err, callback);
-
-      expect(callback.called).to.be.true;
-      expect(callback.calledWith(err, null)).to.be.true;
-    });
-    it('should not call callback with error', () => {
-      const callback = sinon.spy();
-      const err = {};
-      client.handleError(err, callback);
-
-      expect(callback.called).to.be.false;
+  describe('bindEvents', () => {
+    it('should bind error event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        on: callback,
+      };
+      client.bindEvents(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
     });
   });
 });

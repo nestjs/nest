@@ -4,8 +4,8 @@ import {
   MessagePattern,
   ClientProxy,
   Transport,
-  GrpcRoute,
   ClientGrpc,
+  GrpcMethod,
 } from '@nestjs/microservices';
 import { Observable, of } from 'rxjs';
 import { join } from 'path';
@@ -28,7 +28,7 @@ export class GrpcController {
     return svc.sum(data);
   }
 
-  @GrpcRoute('Math', 'Sum')
+  @GrpcMethod('Math')
   async sum({ data }: { data: number[] }): Promise<any> {
     return of({
       result: data.reduce((a, b) => a + b),

@@ -10,6 +10,7 @@ import {
 } from './../interfaces';
 import { Client } from '../external/nats-client.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { CONN_ERR } from './constants';
 
 let natsPackage: any = {};
 
@@ -25,43 +26,6 @@ export class ClientNats extends ClientProxy {
     natsPackage = loadPackage('nats', ClientNats.name);
   }
 
-  protected async publish(
-    partialPacket: ReadPacket,
-    callback: (packet: WritePacket) => any,
-  ) {
-    if (!this.natsClient) {
-      await this.init(callback);
-    }
-    const packet = this.assignPacketId(partialPacket);
-    const pattern = JSON.stringify(partialPacket.pattern);
-    const responseChannel = this.getResPatternName(pattern);
-
-    const subscriptionHandler = (message: WritePacket & PacketId) => {
-      if (message.id !== packet.id) {
-        return undefined;
-      }
-      const { err, response, isDisposed } = message;
-      if (isDisposed || err) {
-        callback({
-          err,
-          response: null,
-          isDisposed: true,
-        });
-        return this.natsClient.unsubscribe(subscriptionId);
-      }
-      callback({
-        err,
-        response,
-      });
-    };
-    const subscriptionId = this.natsClient.subscribe(
-      responseChannel,
-      subscriptionHandler,
-    );
-    this.natsClient.publish(this.getAckPatternName(pattern), packet as any);
-    return subscriptionHandler;
-  }
-
   public getAckPatternName(pattern: string): string {
     return `${pattern}_ack`;
   }
@@ -75,33 +39,69 @@ export class ClientNats extends ClientProxy {
     this.natsClient = null;
   }
 
-  public async init(callback: (...args) => any) {
+  public async connect(): Promise<any> {
     this.natsClient = await this.createClient();
-    this.handleError(this.natsClient, callback);
+    return new Promise((resolve, reject) => {
+      this.handleError(this.natsClient);
+      this.connect$(this.natsClient)
+        .subscribe(resolve, reject);
+    });
   }
 
   public createClient(): Promise<Client> {
-    const options = this.options.options || ({} as NatsOptions);
-    const client = natsPackage.connect({
-      ...(options as any),
+    const options: any = this.options.options || ({} as NatsOptions);
+    return natsPackage.connect({
+      ...options,
       url: this.url,
       json: true,
     });
-    return new Promise(resolve => client.on(CONNECT_EVENT, resolve));
   }
 
-  public handleError(client: Client, callback: (...args) => any) {
-    const errorCallback = err => {
-      if (err.code === 'ECONNREFUSED') {
-        callback(err, null);
-        this.natsClient = null;
+  public handleError(client: Client) {
+    client.addListener(
+      ERROR_EVENT,
+      err => err.code !== CONN_ERR && this.logger.error(err),
+    );
+  }
+
+  protected async publish(
+    partialPacket: ReadPacket,
+    callback: (packet: WritePacket) => any,
+  ): Promise<any> {
+    try {
+      if (!this.natsClient) {
+        await this.connect();
       }
-      this.logger.error(err);
-    };
-    client.addListener(ERROR_EVENT, errorCallback);
-    client.on(CONNECT_EVENT, () => {
-      client.removeListener(ERROR_EVENT, errorCallback);
-      client.addListener(ERROR_EVENT, err => this.logger.error(err));
-    });
+      const packet = this.assignPacketId(partialPacket);
+      const pattern = JSON.stringify(partialPacket.pattern);
+      const responseChannel = this.getResPatternName(pattern);
+
+      const subscriptionHandler = (message: WritePacket & PacketId) => {
+        if (message.id !== packet.id) {
+          return undefined;
+        }
+        const { err, response, isDisposed } = message;
+        if (isDisposed || err) {
+          callback({
+            err,
+            response: null,
+            isDisposed: true,
+          });
+          return this.natsClient.unsubscribe(subscriptionId);
+        }
+        callback({
+          err,
+          response,
+        });
+      };
+      const subscriptionId = this.natsClient.subscribe(
+        responseChannel,
+        subscriptionHandler,
+      );
+      this.natsClient.publish(this.getAckPatternName(pattern), packet as any);
+      return subscriptionHandler;
+    } catch (err) {
+      callback({ err });
+    }
   }
 }

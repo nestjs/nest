@@ -133,4 +133,10 @@ describe('ClientGrpcProxy', () => {
       expect(client['publish'](null, null)).to.eventually.throws(Error);
     });
   });
+
+  describe('connect', () => {
+    it('should throw exception', () => {
+      expect(client.connect()).to.eventually.throws(Error);
+    });
+  });
 });

@@ -1,10 +1,11 @@
-import { Controller, Get, OnModuleInit } from '@nestjs/common';
+import { Get, OnModuleInit } from '@nestjs/common';
 import {
   ClientProxy,
   Client,
   MessagePattern,
-  GrpcRoute,
+  GrpcMethod,
   ClientGrpc,
+  GrpcService,
 } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import { grpcClientOptions } from './../grpc-client.options';
@@ -15,7 +16,7 @@ interface HeroService {
   findOne(data: { id: number }): Observable<any>;
 }
 
-@Controller()
+@GrpcService()
 export class HeroController implements OnModuleInit {
   @Client(grpcClientOptions) private readonly client: ClientGrpc;
   private heroService: HeroService;
@@ -29,7 +30,7 @@ export class HeroController implements OnModuleInit {
     return this.heroService.findOne({ id: 1 });
   }
 
-  @GrpcRoute('HeroService', 'FindOne')
+  @GrpcMethod('HeroService')
   findOne(data: HeroById): Hero {
     const items: Hero[] = [{ id: 1, name: 'John' }, { id: 2, name: 'Doe' }];
     return items.find(({ id }) => id === data.id);

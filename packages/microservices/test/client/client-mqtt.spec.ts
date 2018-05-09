@@ -27,7 +27,7 @@ describe('ClientMqtt', () => {
       onSpy: sinon.SinonSpy,
       removeListenerSpy: sinon.SinonSpy,
       unsubscribeSpy: sinon.SinonSpy,
-      initSpy: sinon.SinonSpy,
+      connectSpy: sinon.SinonStub,
       mqttClient;
 
     beforeEach(() => {
@@ -46,22 +46,22 @@ describe('ClientMqtt', () => {
         addListener: () => ({}),
       };
       (client as any).mqttClient = mqttClient;
-      initSpy = sinon.spy(client, 'init');
+      connectSpy = sinon.stub(client, 'connect');
     });
     afterEach(() => {
-      initSpy.restore();
+      connectSpy.restore();
     });
-    it('should not call "init()" when mqtt client is not null', () => {
-      client['publish'](msg, () => {});
-      expect(initSpy.called).to.be.false;
+    it('should not call "connect()" when mqtt client is not null', async () => {
+      await client['publish'](msg, () => {});
+      expect(connectSpy.called).to.be.false;
     });
-    it('should call "init()" when mqtt client is null', () => {
+    it('should call "connect()" when mqtt client is null', async () => {
       (client as any).mqttClient = null;
-      client['publish'](msg, () => {});
-      expect(initSpy.called).to.be.true;
+      await client['publish'](msg, () => {});
+      expect(connectSpy.called).to.be.true;
     });
-    it('should subscribe to response pattern name', () => {
-      client['publish'](msg, () => {});
+    it('should subscribe to response pattern name', async () => {
+      await client['publish'](msg, () => {});
       expect(subscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;
     });
     it('should publish stringified message to acknowledge pattern name', async () => {
@@ -69,8 +69,8 @@ describe('ClientMqtt', () => {
       expect(publishSpy.calledWith(`"${pattern}"_ack`, JSON.stringify(msg))).to
         .be.true;
     });
-    it('should listen on messages', () => {
-      client['publish'](msg, () => {});
+    it('should listen on messages', async () => {
+      await client['publish'](msg, () => {});
       expect(onSpy.called).to.be.true;
     });
     describe('responseCallback', () => {
@@ -171,6 +171,17 @@ describe('ClientMqtt', () => {
         });
       });
     });
+    describe('when connect throws', () => {
+      it('should call callback with error', async () => {
+        const err = new Error();
+        connectSpy.throws(err);
+        const callbackSpy = sinon.spy();
+
+        (client as any).mqttClient = null;
+        await client['publish'](msg, callbackSpy);
+        expect(callbackSpy.calledWith({ err })).to.be.true;
+      });
+    });
   });
   describe('close', () => {
     let endSpy: sinon.SinonSpy;
@@ -188,18 +199,21 @@ describe('ClientMqtt', () => {
       expect(endSpy.called).to.be.false;
     });
   });
-  describe('init', () => {
+  describe('connect', () => {
     let createClientSpy: sinon.SinonSpy;
     let handleErrorsSpy: sinon.SinonSpy;
+    let connect$Spy: sinon.SinonSpy;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       createClientSpy = sinon.spy(client, 'createClient');
       handleErrorsSpy = sinon.spy(client, 'handleError');
-      client.init(sinon.spy());
+      connect$Spy = sinon.spy(client, 'connect$');
+      await client.connect();
     });
     afterEach(() => {
       createClientSpy.restore();
       handleErrorsSpy.restore();
+      connect$Spy.restore();
     });
     it('should call "createClient" once', () => {
       expect(createClientSpy.called).to.be.true;
@@ -207,32 +221,18 @@ describe('ClientMqtt', () => {
     it('should call "handleError" once', () => {
       expect(handleErrorsSpy.called).to.be.true;
     });
+    it('should call "connect$" once', () => {
+      expect(connect$Spy.called).to.be.true;
+    });
   });
   describe('handleError', () => {
-    it('should bind error event handler and call callback with error', () => {
-      const callback = sinon.spy();
-      const removeListenerSpy = sinon.spy();
-
-      const addListener = (name, fn) => {
-        const err = { code: 'ECONNREFUSED' };
-        fn(err);
-
-        expect(name).to.be.eql(ERROR_EVENT);
-        expect(callback.called).to.be.true;
-        expect(callback.calledWith(err, null)).to.be.true;
+    it('should bind error event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        addListener: callback,
       };
-      const onCallback = (name, fn) => {
-        fn();
-        expect(name).to.be.eql(CONNECT_EVENT);
-        expect(removeListenerSpy.called).to.be.true;
-      };
-
-      const stream = {
-        addListener,
-        on: onCallback,
-        removeListener: removeListenerSpy,
-      };
-      client.handleError(stream as any, callback);
+      client.handleError(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
     });
   });
 });

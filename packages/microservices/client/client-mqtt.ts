@@ -12,6 +12,7 @@ import { WritePacket, MqttOptions } from './../interfaces';
 import { ReadPacket, PacketId } from './../interfaces';
 import { MqttClient } from '../external/mqtt-client.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { ECONNREFUSED } from './constants';
 
 let mqttPackage: any = {};
 
@@ -27,48 +28,6 @@ export class ClientMqtt extends ClientProxy {
 
     mqttPackage = loadPackage('mqtt', ClientMqtt.name);
   }
-
-  protected publish(
-    partialPacket: ReadPacket,
-    callback: (packet: WritePacket) => any,
-  ) {
-    if (!this.mqttClient) {
-      this.init(callback);
-    }
-    const packet = this.assignPacketId(partialPacket);
-    const pattern = JSON.stringify(partialPacket.pattern);
-    const responseChannel = this.getResPatternName(pattern);
-    const responseCallback = (channel: string, buffer: Buffer) => {
-      const { err, response, isDisposed, id } = JSON.parse(
-        buffer.toString(),
-      ) as WritePacket & PacketId;
-      if (id !== packet.id) {
-        return undefined;
-      }
-      if (isDisposed || err) {
-        callback({
-          err,
-          response: null,
-          isDisposed: true,
-        });
-        this.mqttClient.unsubscribe(channel);
-        this.mqttClient.removeListener(MESSAGE_EVENT, responseCallback);
-        return;
-      }
-      callback({
-        err,
-        response,
-      });
-    };
-    this.mqttClient.on(MESSAGE_EVENT, responseCallback);
-    this.mqttClient.subscribe(responseChannel);
-    this.mqttClient.publish(
-      this.getAckPatternName(pattern),
-      JSON.stringify(packet),
-    );
-    return responseCallback;
-  }
-
   public getAckPatternName(pattern: string): string {
     return `${pattern}_ack`;
   }
@@ -82,27 +41,69 @@ export class ClientMqtt extends ClientProxy {
     this.mqttClient = null;
   }
 
-  public init(callback: (...args) => any) {
+  public connect(): Promise<any> {
     this.mqttClient = this.createClient();
-    this.handleError(this.mqttClient, callback);
+    return new Promise((resolve, reject) => {
+      this.handleError(this.mqttClient);
+      this.connect$(this.mqttClient)
+        .subscribe(resolve, reject);
+    });
   }
 
   public createClient(): MqttClient {
     return mqttPackage.connect(this.url, this.options.options as MqttOptions);
   }
 
-  public handleError(client: MqttClient, callback: (...args) => any) {
-    const errorCallback = err => {
-      if (err.code === 'ECONNREFUSED') {
-        callback(err, null);
-        this.mqttClient = null;
+  public handleError(client: MqttClient) {
+    client.addListener(
+      ERROR_EVENT,
+      err => err.code !== ECONNREFUSED && this.logger.error(err),
+    );
+  }
+
+  protected async publish(
+    partialPacket: ReadPacket,
+    callback: (packet: WritePacket) => any,
+  ): Promise<any> {
+    try {
+      if (!this.mqttClient) {
+        await this.connect();
       }
-      this.logger.error(err);
-    };
-    client.addListener(ERROR_EVENT, errorCallback);
-    client.on(CONNECT_EVENT, () => {
-      client.removeListener(ERROR_EVENT, errorCallback);
-      client.addListener(ERROR_EVENT, err => this.logger.error(err));
-    });
+      const packet = this.assignPacketId(partialPacket);
+      const pattern = JSON.stringify(partialPacket.pattern);
+      const responseChannel = this.getResPatternName(pattern);
+      const responseCallback = (channel: string, buffer: Buffer) => {
+        const { err, response, isDisposed, id } = JSON.parse(
+          buffer.toString(),
+        ) as WritePacket & PacketId;
+        if (id !== packet.id) {
+          return undefined;
+        }
+        if (isDisposed || err) {
+          callback({
+            err,
+            response: null,
+            isDisposed: true,
+          });
+          this.mqttClient.unsubscribe(channel);
+          this.mqttClient.removeListener(MESSAGE_EVENT, responseCallback);
+          return;
+        }
+        callback({
+          err,
+          response,
+        });
+      };
+      this.mqttClient.on(MESSAGE_EVENT, responseCallback);
+      this.mqttClient.subscribe(responseChannel);
+      this.mqttClient.publish(
+        this.getAckPatternName(pattern),
+        JSON.stringify(packet),
+      );
+      return responseCallback;
+    }
+    catch (err) {
+      callback({ err });
+    }
   }
 }
