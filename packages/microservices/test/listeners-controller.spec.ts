@@ -25,11 +25,11 @@ describe('ListenersController', () => {
     (instance as any).metadataExplorer = metadataExplorer;
     addSpy = sinon.spy();
     server = {
-      add: addSpy,
+      addHandler: addSpy,
     };
   });
   describe('bindPatternHandlers', () => {
-    it(`should call add method of server for each pattern handler`, () => {
+    it(`should call "addHandler" method of server for each pattern handler`, () => {
       const handlers = [
         { pattern: 'test', targetCallback: 'tt' },
         { pattern: 'test2', targetCallback: '2' },

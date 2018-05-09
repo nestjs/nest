@@ -15,7 +15,7 @@ describe('Server', () => {
 
   describe('add', () => {
     it(`should add handler as a stringified pattern key`, () => {
-      server.add(pattern, callback as any);
+      server.addHandler(pattern, callback as any);
 
       const handlers = server.getHandlers();
       expect(handlers[JSON.stringify(pattern)]).to.equal(callback);

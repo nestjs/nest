@@ -130,7 +130,10 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
   public createRetryStrategy(
     options: RetryStrategyOptions,
-  ): undefined | number {
+  ): undefined | number | void {
+    if (options.error && (options.error as any).code === 'ECONNREFUSED') {
+      return this.logger.error(`Error ECONNREFUSED: ${this.url}`);
+    }
     if (
       this.isExplicitlyTerminated ||
       !this.getOptionsProp<RedisOptions>(this.options, 'retryAttempts') ||

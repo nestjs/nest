@@ -7,22 +7,30 @@ import {
   WritePacket,
   ClientOptions,
 } from './../interfaces';
+import { fromEvent, merge } from 'rxjs';
+import { map, take, tap } from 'rxjs/operators';
+import { ERROR_EVENT, CONNECT_EVENT } from '../constants';
 
 export abstract class ClientProxy {
+  public abstract connect(): Promise<any>;
   public abstract close(): any;
+
+  public send<TResult = any, TInput = any>(
+    pattern: any,
+    data: TInput,
+  ): Observable<TResult> {
+    if (isNil(pattern) || isNil(data)) {
+      return _throw(new InvalidMessageException());
+    }
+    return new Observable((observer: Observer<TResult>) => {
+      this.publish({ pattern, data }, this.createObserver(observer));
+    });
+  }
+
   protected abstract publish(
     packet: ReadPacket,
     callback: (packet: WritePacket) => void,
   );
-
-  public send<T = any>(pattern: any, data: any): Observable<T> {
-    if (isNil(pattern) || isNil(data)) {
-      return _throw(new InvalidMessageException());
-    }
-    return new Observable((observer: Observer<T>) => {
-      this.publish({ pattern, data }, this.createObserver(observer));
-    });
-  }
 
   protected createObserver<T>(
     observer: Observer<T>,
@@ -43,6 +51,20 @@ export abstract class ClientProxy {
         .toString(36)
         .substr(2, 5) + Date.now();
     return Object.assign(packet, { id });
+  }
+
+  protected connect$(
+    instance: any,
+    errorEvent = ERROR_EVENT,
+    connectEvent = CONNECT_EVENT,
+  ): Observable<any> {
+    const error$ = fromEvent(instance, errorEvent).pipe(
+      map(err => {
+        throw err;
+      }),
+    );
+    const connect$ = fromEvent(instance, connectEvent);
+    return merge(error$, connect$).pipe(take(1));
   }
 
   protected getOptionsProp<T extends { options? }>(

@@ -123,6 +123,12 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     this.grpcClient = null;
   }
 
+  public async connect(): Promise<any> {
+    throw new Error(
+      'The "connect()" method is not supported in gRPC mode.',
+    );
+  }
+
   protected async publish(partialPacket, callback: (packet) => any) {
     throw new Error(
       'Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).',

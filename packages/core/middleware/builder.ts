@@ -59,7 +59,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     }
 
     public forRoutes(
-      ...routes: Array<Type<any> | RequestMappingMetadata | string>,
+      ...routes: Array<string | any>,
     ): MiddlewareConsumer {
       const {
         middlewareCollection,

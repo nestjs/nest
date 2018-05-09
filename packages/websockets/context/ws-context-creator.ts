@@ -43,6 +43,15 @@ export class WsContextCreator {
       callback,
       module,
     );
+    const handler = (args: any[]) => async () => {
+      const [client, data, ...params] = args;
+      const result = await this.pipesConsumer.applyPipes(
+        data,
+        { metatype },
+        pipes,
+      );
+      return callback.call(instance, client, result, ...params);
+    };
 
     return this.wsProxy.create(async (...args) => {
       const canActivate = await this.guardsConsumer.tryActivate(
@@ -54,21 +63,12 @@ export class WsContextCreator {
       if (!canActivate) {
         throw new WsException(FORBIDDEN_MESSAGE);
       }
-      const handler = async () => {
-        const [client, data, ...params] = args;
-        const result = await this.pipesConsumer.applyPipes(
-          data,
-          { metatype },
-          pipes,
-        );
-        return callback.call(instance, client, result, ...params);
-      };
       return await this.interceptorsConsumer.intercept(
         interceptors,
         args,
         instance,
         callback,
-        handler,
+        handler(args),
       );
     }, exceptionHandler);
   }
