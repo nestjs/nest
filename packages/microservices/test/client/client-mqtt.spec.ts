@@ -200,29 +200,34 @@ describe('ClientMqtt', () => {
     });
   });
   describe('connect', () => {
-    let createClientSpy: sinon.SinonSpy;
+    let createClientStub: sinon.SinonStub;
     let handleErrorsSpy: sinon.SinonSpy;
-    let connect$Spy: sinon.SinonSpy;
+    let connect$Stub: sinon.SinonStub;
 
     beforeEach(async () => {
-      createClientSpy = sinon.spy(client, 'createClient');
+      createClientStub = sinon.stub(client, 'createClient').callsFake(() => ({
+        addListener: () => ({}),
+        removeListener: () => ({}),
+      }));
       handleErrorsSpy = sinon.spy(client, 'handleError');
-      connect$Spy = sinon.spy(client, 'connect$');
+      connect$Stub = sinon.stub(client, 'connect$').callsFake(() => ({
+        subscribe: (resolve) => resolve(),
+      }));
       await client.connect();
     });
     afterEach(() => {
-      createClientSpy.restore();
+      createClientStub.restore();
       handleErrorsSpy.restore();
-      connect$Spy.restore();
+      connect$Stub.restore();
     });
     it('should call "createClient" once', () => {
-      expect(createClientSpy.called).to.be.true;
+      expect(createClientStub.called).to.be.true;
     });
     it('should call "handleError" once', () => {
       expect(handleErrorsSpy.called).to.be.true;
     });
     it('should call "connect$" once', () => {
-      expect(connect$Spy.called).to.be.true;
+      expect(connect$Stub.called).to.be.true;
     });
   });
   describe('handleError', () => {

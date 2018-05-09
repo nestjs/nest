@@ -211,10 +211,13 @@ describe('ClientRedis', () => {
     let createClientSpy: sinon.SinonSpy;
     let handleErrorsSpy: sinon.SinonSpy;
 
-    beforeEach(async () => {
-      createClientSpy = sinon.spy(client, 'createClient');
+    beforeEach(() => {
+      createClientSpy = sinon.stub(client, 'createClient').callsFake(() => ({
+        addListener: () => null,
+        removeListener: () => null,
+      }));
       handleErrorsSpy = sinon.spy(client, 'handleError');
-      await client.connect();
+      client.connect();
     });
     afterEach(() => {
       createClientSpy.restore();
