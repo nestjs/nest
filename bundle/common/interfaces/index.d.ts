@@ -30,3 +30,4 @@ export * from './nest-express-application.interface';
 export * from './nest-fastify-application.interface';
 export * from './modules/provider.interface';
 export * from './type.interface';
+export * from './modules/forward-reference.interface';
