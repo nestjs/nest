@@ -6,6 +6,7 @@ const constants_1 = require("./../constants");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
+const constants_2 = require("./constants");
 let redisPackage = {};
 class ClientRedis extends client_proxy_1.ClientProxy {
     constructor(options) {
@@ -55,7 +56,7 @@ class ClientRedis extends client_proxy_1.ClientProxy {
         };
     }
     createRetryStrategy(options, error$) {
-        if (options.error && options.error.code === 'ECONNREFUSED') {
+        if (options.error && options.error.code === constants_2.ECONNREFUSED) {
             error$.error(options.error);
             return options.error;
         }

@@ -15,10 +15,10 @@
     "prepublish:rc": "npm run build:lib",
     "prepublish:next": "npm run build:lib",
     "prepublish:beta": "npm run build:lib",
-    "publish": "./node_modules/.bin/lerna publish --exact -m \"chore(release) publish %s\"",
-    "publish:rc": "./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(release) publish %s\"",
-    "publish:next": "./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(release) publish %s\"",
-    "publish:beta": "./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(release) publish %s\""
+    "publish": "./node_modules/.bin/lerna publish --exact -m \"chore(@nestjs) publish %s release\"",
+    "publish:rc": "./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
+    "publish:next": "./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
+    "publish:beta": "./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\""
   },
   "engines": {
     "node": ">= 8.9.0"

@@ -66,7 +66,9 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
         const packageName = this.getOptionsProp(this.options, 'package');
         const grpcPkg = this.lookupPackage(grpcContext, packageName);
         if (!grpcPkg) {
-            throw new invalid_grpc_package_exception_1.InvalidGrpcPackageException();
+            const invalidPackageError = new invalid_grpc_package_exception_1.InvalidGrpcPackageException();
+            this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+            throw invalidPackageError;
         }
         return grpcPkg;
     }
@@ -76,7 +78,9 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
             return context;
         }
         catch (e) {
-            throw new invalid_proto_definition_exception_1.InvalidProtoDefinitionException();
+            const invalidProtoError = new invalid_proto_definition_exception_1.InvalidProtoDefinitionException();
+            this.logger.error(invalidProtoError.message, invalidProtoError.stack);
+            throw invalidProtoError;
         }
     }
     lookupPackage(root, packageName) {

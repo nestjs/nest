@@ -27,11 +27,8 @@ class ClientMqtt extends client_proxy_1.ClientProxy {
     }
     connect() {
         this.mqttClient = this.createClient();
-        return new Promise((resolve, reject) => {
-            this.handleError(this.mqttClient);
-            this.connect$(this.mqttClient)
-                .subscribe(resolve, reject);
-        });
+        this.handleError(this.mqttClient);
+        return this.connect$(this.mqttClient).toPromise();
     }
     createClient() {
         return mqttPackage.connect(this.url, this.options.options);
