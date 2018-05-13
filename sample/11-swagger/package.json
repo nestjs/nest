@@ -17,7 +17,7 @@
     "@nestjs/common": "^5.0.0",
     "@nestjs/core": "^5.0.0",
     "@nestjs/microservices": "^5.0.0",
-    "@nestjs/swagger": "^1.3.0",
+    "@nestjs/swagger": "^2.0.0",
     "@nestjs/testing": "^5.0.0",
     "@nestjs/websockets": "^5.0.0",
     "class-transformer": "^0.1.7",
