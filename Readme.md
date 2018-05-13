@@ -53,50 +53,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 ## Backers
 
-<a href="https://opencollective.com/nest/backer/0/website" target="_blank"><img src="https://opencollective.com/nest/backer/0/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/1/website" target="_blank"><img src="https://opencollective.com/nest/backer/1/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/2/website" target="_blank"><img src="https://opencollective.com/nest/backer/2/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/3/website" target="_blank"><img src="https://opencollective.com/nest/backer/3/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/4/website" target="_blank"><img src="https://opencollective.com/nest/backer/4/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/5/website" target="_blank"><img src="https://opencollective.com/nest/backer/5/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/6/website" target="_blank"><img src="https://opencollective.com/nest/backer/6/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/7/website" target="_blank"><img src="https://opencollective.com/nest/backer/7/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/8/website" target="_blank"><img src="https://opencollective.com/nest/backer/8/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/9/website" target="_blank"><img src="https://opencollective.com/nest/backer/9/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/10/website" target="_blank"><img src="https://opencollective.com/nest/backer/10/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/11/website" target="_blank"><img src="https://opencollective.com/nest/backer/11/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/12/website" target="_blank"><img src="https://opencollective.com/nest/backer/12/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/13/website" target="_blank"><img src="https://opencollective.com/nest/backer/13/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/14/website" target="_blank"><img src="https://opencollective.com/nest/backer/14/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/15/website" target="_blank"><img src="https://opencollective.com/nest/backer/15/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/16/website" target="_blank"><img src="https://opencollective.com/nest/backer/16/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/17/website" target="_blank"><img src="https://opencollective.com/nest/backer/17/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/18/website" target="_blank"><img src="https://opencollective.com/nest/backer/18/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/19/website" target="_blank"><img src="https://opencollective.com/nest/backer/19/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/20/website" target="_blank"><img src="https://opencollective.com/nest/backer/20/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/21/website" target="_blank"><img src="https://opencollective.com/nest/backer/21/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/22/website" target="_blank"><img src="https://opencollective.com/nest/backer/22/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/23/website" target="_blank"><img src="https://opencollective.com/nest/backer/23/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/24/website" target="_blank"><img src="https://opencollective.com/nest/backer/24/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/25/website" target="_blank"><img src="https://opencollective.com/nest/backer/25/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/26/website" target="_blank"><img src="https://opencollective.com/nest/backer/26/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/27/website" target="_blank"><img src="https://opencollective.com/nest/backer/27/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/28/website" target="_blank"><img src="https://opencollective.com/nest/backer/28/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/29/website" target="_blank"><img src="https://opencollective.com/nest/backer/29/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/30/website" target="_blank"><img src="https://opencollective.com/nest/backer/30/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/31/website" target="_blank"><img src="https://opencollective.com/nest/backer/31/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/32/website" target="_blank"><img src="https://opencollective.com/nest/backer/32/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/33/website" target="_blank"><img src="https://opencollective.com/nest/backer/33/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/34/website" target="_blank"><img src="https://opencollective.com/nest/backer/34/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/35/website" target="_blank"><img src="https://opencollective.com/nest/backer/35/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/36/website" target="_blank"><img src="https://opencollective.com/nest/backer/36/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/37/website" target="_blank"><img src="https://opencollective.com/nest/backer/37/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/38/website" target="_blank"><img src="https://opencollective.com/nest/backer/38/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/39/website" target="_blank"><img src="https://opencollective.com/nest/backer/39/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/40/website" target="_blank"><img src="https://opencollective.com/nest/backer/40/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/41/website" target="_blank"><img src="https://opencollective.com/nest/backer/41/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/42/website" target="_blank"><img src="https://opencollective.com/nest/backer/42/avatar.svg"></a>
-<a href="https://opencollective.com/nest/backer/43/website" target="_blank"><img src="https://opencollective.com/nest/backer/43/avatar.svg"></a>
+<a href="https://opencollective.com/nest"><img src="https://opencollective.com/nest/backers.svg?width=890"></a>
 
 ## Stay in touch
 
