@@ -93,7 +93,9 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     );
     const grpcPkg = this.lookupPackage(grpcContext, packageName);
     if (!grpcPkg) {
-      throw new InvalidGrpcPackageException();
+      const invalidPackageError = new InvalidGrpcPackageException();
+      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+      throw invalidPackageError;
     }
     return grpcPkg;
   }
@@ -105,7 +107,9 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       );
       return context;
     } catch (e) {
-      throw new InvalidProtoDefinitionException();
+      const invalidProtoError = new InvalidProtoDefinitionException();
+      this.logger.error(invalidProtoError.message, invalidProtoError.stack);
+      throw invalidProtoError;
     }
   }
 

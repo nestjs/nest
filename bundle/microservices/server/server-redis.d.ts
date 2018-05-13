@@ -23,5 +23,5 @@ export declare class ServerRedis extends Server implements CustomTransportStrate
     getResQueueName(pattern: string): string;
     handleError(stream: any): void;
     getClientOptions(): Partial<ClientOpts>;
-    createRetryStrategy(options: RetryStrategyOptions): undefined | number;
+    createRetryStrategy(options: RetryStrategyOptions): undefined | number | void;
 }

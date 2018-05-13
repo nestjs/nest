@@ -20,17 +20,17 @@ class RpcContextCreator {
         const guards = this.guardsContextCreator.create(instance, callback, module);
         const metatype = this.getDataMetatype(instance, callback);
         const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
-        return this.rpcProxy.create(async (...args) => {
+        const handler = (args) => async () => {
             const [data, ...params] = args;
+            const result = await this.pipesConsumer.applyPipes(data, { metatype }, pipes);
+            return callback.call(instance, result, ...params);
+        };
+        return this.rpcProxy.create(async (...args) => {
             const canActivate = await this.guardsConsumer.tryActivate(guards, args, instance, callback);
             if (!canActivate) {
                 throw new index_1.RpcException(constants_2.FORBIDDEN_MESSAGE);
             }
-            const handler = async () => {
-                const result = await this.pipesConsumer.applyPipes(data, { metatype }, pipes);
-                return callback.call(instance, result, ...params);
-            };
-            return await this.interceptorsConsumer.intercept(interceptors, args, instance, callback, handler);
+            return await this.interceptorsConsumer.intercept(interceptors, args, instance, callback, handler(args));
         }, exceptionHandler);
     }
     reflectCallbackParamtypes(instance, callback) {

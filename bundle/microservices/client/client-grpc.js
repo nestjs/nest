@@ -91,6 +91,9 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
         this.grpcClient && this.grpcClient.close();
         this.grpcClient = null;
     }
+    async connect() {
+        throw new Error('The "connect()" method is not supported in gRPC mode.');
+    }
     async publish(partialPacket, callback) {
         throw new Error('Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).');
     }

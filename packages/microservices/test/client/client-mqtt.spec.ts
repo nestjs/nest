@@ -212,6 +212,7 @@ describe('ClientMqtt', () => {
       handleErrorsSpy = sinon.spy(client, 'handleError');
       connect$Stub = sinon.stub(client, 'connect$').callsFake(() => ({
         subscribe: (resolve) => resolve(),
+        toPromise: () => this,
       }));
       await client.connect();
     });

@@ -16,7 +16,7 @@ class Server {
     getHandlerByPattern(pattern) {
         return this.messageHandlers[pattern] ? this.messageHandlers[pattern] : null;
     }
-    add(pattern, callback) {
+    addHandler(pattern, callback) {
         this.messageHandlers[JSON.stringify(pattern)] = callback;
     }
     send(stream$, respond) {

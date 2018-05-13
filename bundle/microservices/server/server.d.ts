@@ -7,7 +7,7 @@ export declare abstract class Server {
     protected readonly logger: Logger;
     getHandlers(): MessageHandlers;
     getHandlerByPattern(pattern: string): (data) => Promise<Observable<any>> | null;
-    add(pattern: any, callback: (data) => Promise<Observable<any>>): void;
+    addHandler(pattern: any, callback: (data) => Promise<Observable<any>>): void;
     send(stream$: Observable<any>, respond: (data: WritePacket) => void): Subscription;
     transformToObservable<T = any>(resultOrDeffered: any): Observable<T>;
     getOptionsProp<T extends {

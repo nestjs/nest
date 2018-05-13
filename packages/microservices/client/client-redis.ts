@@ -22,6 +22,7 @@ import {
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { Subject, fromEvent, merge, zip } from 'rxjs';
 import { take } from 'rxjs/operators';
+import { ECONNREFUSED } from './constants';
 
 let redisPackage: any = {};
 
@@ -94,7 +95,7 @@ export class ClientRedis extends ClientProxy {
     options: RetryStrategyOptions,
     error$: Subject<Error>,
   ): undefined | number | Error {
-    if (options.error && (options.error as any).code === 'ECONNREFUSED') {
+    if (options.error && (options.error as any).code === ECONNREFUSED) {
       error$.error(options.error);
       return options.error;
     }
