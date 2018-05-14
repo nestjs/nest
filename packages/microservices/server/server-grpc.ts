@@ -8,6 +8,7 @@ import { Observable } from 'rxjs';
 import { GRPC_DEFAULT_URL } from './../constants';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
+import { Logger } from '@nestjs/common';
 
 let grpcPackage: any = {};
 
@@ -42,7 +43,9 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     );
     const grpcPkg = this.lookupPackage(grpcContext, packageName);
     if (!grpcPkg) {
-      throw new InvalidGrpcPackageException();
+      const invalidPackageError = new InvalidGrpcPackageException();
+      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+      throw invalidPackageError;
     }
     for (const name of this.getServiceNames(grpcPkg)) {
       this.grpcClient.addService(
@@ -152,7 +155,9 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       );
       return context;
     } catch (e) {
-      throw new InvalidProtoDefinitionException();
+      const invalidProtoError = new InvalidProtoDefinitionException();
+      this.logger.error(invalidProtoError.message, invalidProtoError.stack);
+      throw invalidProtoError;
     }
   }
 }

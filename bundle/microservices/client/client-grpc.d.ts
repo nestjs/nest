@@ -16,5 +16,6 @@ export declare class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     loadProto(): any;
     lookupPackage(root: any, packageName: string): any;
     close(): void;
+    connect(): Promise<any>;
     protected publish(partialPacket: any, callback: (packet) => any): Promise<void>;
 }

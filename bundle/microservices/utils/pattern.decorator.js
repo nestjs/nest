@@ -12,7 +12,22 @@ exports.MessagePattern = (metadata) => {
         return descriptor;
     };
 };
-/**
- * Registers gRPC route handler for specified service.
- */
-exports.GrpcRoute = (service, rpc) => exports.MessagePattern({ service, rpc });
+function GrpcMethod(service, method) {
+    return (target, key, descriptor) => {
+        const metadata = createMethodMetadata(target, key, service, method);
+        return exports.MessagePattern(metadata)(target, key, descriptor);
+    };
+}
+exports.GrpcMethod = GrpcMethod;
+function createMethodMetadata(target, key, service, method) {
+    const capitalizeFirstLetter = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+    if (!service) {
+        const { name } = target.constructor;
+        return { service: name, rpc: capitalizeFirstLetter(key) };
+    }
+    if (service && !method) {
+        return { service, rpc: capitalizeFirstLetter(key) };
+    }
+    return { service, rpc: method };
+}
+exports.createMethodMetadata = createMethodMetadata;

@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { ClientProxy } from './client-proxy';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { WritePacket } from './../interfaces';
@@ -10,11 +9,11 @@ export declare class ClientMqtt extends ClientProxy {
     private readonly url;
     private mqttClient;
     constructor(options: ClientOptions);
-    protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): (channel: string, buffer: Buffer) => any;
     getAckPatternName(pattern: string): string;
     getResPatternName(pattern: string): string;
     close(): void;
-    init(callback: (...args) => any): void;
+    connect(): Promise<any>;
     createClient(): MqttClient;
-    handleError(client: MqttClient, callback: (...args) => any): void;
+    handleError(client: MqttClient): void;
+    protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): Promise<any>;
 }

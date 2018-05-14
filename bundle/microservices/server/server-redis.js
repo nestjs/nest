@@ -80,6 +80,9 @@ class ServerRedis extends server_1.Server {
         };
     }
     createRetryStrategy(options) {
+        if (options.error && options.error.code === 'ECONNREFUSED') {
+            return this.logger.error(`Error ECONNREFUSED: ${this.url}`);
+        }
         if (this.isExplicitlyTerminated ||
             !this.getOptionsProp(this.options, 'retryAttempts') ||
             options.attempt >

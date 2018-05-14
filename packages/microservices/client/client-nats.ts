@@ -41,11 +41,8 @@ export class ClientNats extends ClientProxy {
 
   public async connect(): Promise<any> {
     this.natsClient = await this.createClient();
-    return new Promise((resolve, reject) => {
-      this.handleError(this.natsClient);
-      this.connect$(this.natsClient)
-        .subscribe(resolve, reject);
-    });
+    this.handleError(this.natsClient);
+    return this.connect$(this.natsClient).toPromise();
   }
 
   public createClient(): Promise<Client> {

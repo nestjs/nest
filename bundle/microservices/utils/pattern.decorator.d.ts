@@ -5,6 +5,11 @@ import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
  */
 export declare const MessagePattern: <T = string | PatternMetadata>(metadata?: T) => MethodDecorator;
 /**
- * Registers gRPC route handler for specified service.
+ * Registers gRPC method handler for specified service.
  */
-export declare const GrpcRoute: (service: string, rpc: string) => MethodDecorator;
+export declare function GrpcMethod(service?: string): any;
+export declare function GrpcMethod(service: string, method?: string): any;
+export declare function createMethodMetadata(target: any, key: string, service: string | undefined, method: string | undefined): {
+    service: any;
+    rpc: string;
+};
