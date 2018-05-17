@@ -40,7 +40,7 @@ export class HttpService {
     data?,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<T>> {
-    return fromPromise(axios.post(url, data, config));
+    return fromPromise(axios.put(url, data, config));
   }
 
   patch<T = any>(
@@ -48,6 +48,6 @@ export class HttpService {
     data?,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<T>> {
-    return fromPromise(axios.post(url, data, config));
+    return fromPromise(axios.patch(url, data, config));
   }
 }
