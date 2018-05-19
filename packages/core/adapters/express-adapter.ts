@@ -90,6 +90,10 @@ export class ExpressAdapter implements HttpServer {
     return this.instance;
   }
 
+  getInstance() {
+    return this.instance;
+  }
+
   close() {
     return this.instance.close();
   }
