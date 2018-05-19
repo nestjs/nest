@@ -28,7 +28,7 @@
 ## 介绍
 
 <p>Nest是构建高效，可扩展的 <a href="http://nodejs.cn" target="blank">Node.js</a> Web 应用程序的框架。 它使用现代的 JavaScript 或 <a href="https://www.tslang.cn" target="_blank">TypeScript</a>（保留与纯 JavaScript 的兼容性），并结合 OOP（面向对象编程），FP（函数式编程）和FRP（函数响应式编程）的元素。</p>
-<p>在底层，Nest 使用了 <a href="http://www.expressjs.com.cn" target="_blank">Express</a>，可以方便地使用各种可用的第三方插件。</p>
+<p>在底层，Nest 使用了 <a href="http://www.expressjs.com.cn" target="_blank">Express</a>，但也提供了与其他各种库的兼容，例如<a href="https://github.com/fastify/fastify" target="blank">Fastify</a>，可以方便地使用各种可用的第三方插件。</p>
 
 ## 设计哲学
 
@@ -96,8 +96,9 @@ Nest是一个MIT许可的开源项目。它的发展得益于赞助商和支持�
 
 ## 相关人员
 
-- 作者 - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- 网站 - [https://nestjs.com](https://nestjs.com/)
+* 作者 - [Kamil Myśliwiec](https://kamilmysliwiec.com)
+* 网站 - [https://nestjs.com](https://nestjs.com/)
+* Twitter - [@nestframework](https://twitter.com/nestframework)
 
 ## License
 
