@@ -1,14 +1,11 @@
-import * as sinon from 'sinon';
+import * as chai from 'chai';
 import { expect } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+import * as sinon from 'sinon';
+import { Component } from '../../../common/decorators/core/component.decorator';
 import { InstanceWrapper, NestContainer } from '../../injector/container';
 import { Injector } from '../../injector/injector';
-import { Component } from '../../../common/decorators/core/component.decorator';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { Module } from '../../injector/module';
-import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-import { UndefinedDependencyException } from '../../errors/exceptions/undefined-dependency.exception';
 chai.use(chaiAsPromised);
 
 describe('Injector', () => {
@@ -279,7 +276,12 @@ describe('Injector', () => {
   describe('lookupComponent', () => {
     let lookupComponentInRelatedModules: sinon.SinonStub;
     const metatype = { name: 'test', metatype: { name: 'test' } };
-
+    const wrapper: any = {
+      name: 'Test',
+      metatype,
+      instance: null,
+      isResolved: false,
+    };
     beforeEach(() => {
       lookupComponentInRelatedModules = sinon.stub();
       (injector as any).lookupComponentInRelatedModules = lookupComponentInRelatedModules;
@@ -295,7 +297,7 @@ describe('Injector', () => {
         collection as any,
         null,
         { name: metatype.name, index: 0, length: 10 },
-        metatype,
+        wrapper,
       );
       expect(result).to.be.equal(instance);
     });
@@ -309,7 +311,7 @@ describe('Injector', () => {
         collection as any,
         null,
         { name: metatype.name, index: 0, length: 10 },
-        metatype,
+        wrapper,
       );
       expect(lookupComponentInRelatedModules.called).to.be.true;
     });
@@ -325,7 +327,7 @@ describe('Injector', () => {
           collection as any,
           module as any,
           { name: metatype.name, index: 0, length: 10 },
-          { metatype },
+          wrapper,
         ),
       ).to.eventually.be.rejected;
     });
@@ -341,7 +343,7 @@ describe('Injector', () => {
           collection as any,
           module as any,
           { name: metatype.name, index: 0, length: 10 },
-          metatype,
+          wrapper,
         ),
       ).to.eventually.be.not.rejected;
     });

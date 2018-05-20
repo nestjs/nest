@@ -1,22 +1,15 @@
-import 'reflect-metadata';
-import { InstanceWrapper } from './container';
-import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { Module } from './module';
-import { Type } from '@nestjs/common/interfaces/type.interface';
+import { PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
+import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import 'reflect-metadata';
+import { RuntimeException } from '../errors/exceptions/runtime.exception';
+import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
 import { MiddlewareWrapper } from '../middleware/container';
-import {
-  isUndefined,
-  isNil,
-  isFunction,
-} from '@nestjs/common/utils/shared.utils';
-import {
-  PARAMTYPES_METADATA,
-  SELF_DECLARED_DEPS_METADATA,
-} from '@nestjs/common/constants';
 import { UndefinedDependencyException } from './../errors/exceptions/undefined-dependency.exception';
+import { InstanceWrapper } from './container';
+import { Module } from './module';
 
 export class Injector {
   public async loadInstanceOfMiddleware(
@@ -219,34 +212,34 @@ export class Injector {
     return instanceWrapper;
   }
 
-  public async lookupComponent(
+  public async lookupComponent<T = any>(
     components: Map<string, any>,
     module: Module,
     { name, index, length }: { name: any; index: number; length: number },
-    { metatype },
+    wrapper: InstanceWrapper<T>,
   ) {
     const scanInExports = () =>
       this.lookupComponentInExports(
         components,
         { name, index, length },
         module,
-        metatype,
+        wrapper,
       );
     return components.has(name) ? components.get(name) : await scanInExports();
   }
 
-  public async lookupComponentInExports(
+  public async lookupComponentInExports<T = any>(
     components: Map<string, any>,
     { name, index, length }: { name: any; index: number; length: number },
     module: Module,
-    metatype,
+    wrapper: InstanceWrapper<T>,
   ) {
     const instanceWrapper = await this.lookupComponentInRelatedModules(
       module,
       name,
     );
     if (isNil(instanceWrapper)) {
-      throw new UnknownDependenciesException(metatype.name, index, length);
+      throw new UnknownDependenciesException(wrapper.name, index, length);
     }
     return instanceWrapper;
   }
