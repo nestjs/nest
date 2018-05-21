@@ -14,12 +14,19 @@ import { TestOptions } from './interfaces/test-options.interface';
 export class Test {
   private static readonly metadataScanner = new MetadataScanner();
 
-  public static createTestingModule(metadata: ModuleMetadata, testOptions: TestOptions) {
+  public static createTestingModule(metadata: ModuleMetadata, testOptions?: TestOptions) {
+    if (!testOptions) {
+      // Default Options
+      testOptions = {
+        logging: TestOptions.TEST,
+      };
+    }
+    
     this.init(testOptions);
     return new TestingModuleBuilder(this.metadataScanner, metadata);
   }
 
-  private static init(testOptions: TestOptions) {
+  private static init(testOptions?: TestOptions) {
     Logger.setMode(testOptions.logging);
   }
 }
