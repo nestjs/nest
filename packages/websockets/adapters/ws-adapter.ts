@@ -7,10 +7,11 @@ import {
   ERROR_EVENT,
 } from '../constants';
 import { WebSocketAdapter, Logger } from '@nestjs/common';
-import { Observable, fromEvent, EMPTY as empty } from 'rxjs';
-import { mergeMap, filter, tap } from 'rxjs/operators';
+import { Observable, fromEvent, EMPTY as empty, of } from 'rxjs';
+import { mergeMap, filter, tap, catchError } from 'rxjs/operators';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { WsException } from '../exceptions/ws-exception';
 
 let wsPackage: any = {};
 
@@ -60,6 +61,10 @@ export class WsAdapter implements WebSocketAdapter {
       .pipe(
         mergeMap(data => this.bindMessageHandler(data, handlers, process)),
         filter(result => !!result),
+        catchError(e => {
+          this.logger.error('Websocket handler error', e);
+          return of({error: 'Websocket handler error'});
+        }),
       )
       .subscribe(response => client.send(JSON.stringify(response)));
   }
