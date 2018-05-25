@@ -22,3 +22,12 @@ services:
       - "1883:1883"
       - "9001:9001"
     restart: always
+  mysql:
+    image: mysql:5.7.22
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test
+    ports:
+      - "3306:3306"
+    restart: always
