@@ -1,14 +1,13 @@
-import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
-import { GrpcOptions } from './../interfaces';
-import { GRPC_DEFAULT_URL } from './../constants';
-import { ClientGrpc } from './../interfaces';
-import { Observable } from 'rxjs';
-import { InvalidGrpcServiceException } from '../exceptions/invalid-grpc-service.exception';
-import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
-import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { Observable } from 'rxjs';
+import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
+import { InvalidGrpcServiceException } from '../exceptions/invalid-grpc-service.exception';
+import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
+import { ClientOptions } from '../interfaces/client-metadata.interface';
+import { GRPC_DEFAULT_URL } from './../constants';
+import { ClientGrpc, GrpcOptions } from './../interfaces';
+import { ClientProxy } from './client-proxy';
 
 let grpcPackage: any = {};
 
@@ -102,9 +101,11 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
   public loadProto(): any {
     try {
-      const context = grpcPackage.load(
-        this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),
-      );
+      const root = this.getOptionsProp<GrpcOptions>(this.options, 'root');
+      const file = this.getOptionsProp<GrpcOptions>(this.options, 'protoPath');
+      const options = root ? { root, file } : file;
+
+      const context = grpcPackage.load(options);
       return context;
     } catch (e) {
       const invalidProtoError = new InvalidProtoDefinitionException();

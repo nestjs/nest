@@ -1,28 +1,17 @@
-import { InstanceWrapper, NestContainer } from './container';
-import {
-  Injectable,
-  Controller,
-  NestModule,
-  DynamicModule,
-} from '@nestjs/common/interfaces';
-import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import { Controller, DynamicModule, Injectable, NestModule } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { ModuleRef } from './module-ref';
-import {
-  isFunction,
-  isNil,
-  isUndefined,
-  isString,
-  isSymbol,
-} from '@nestjs/common/utils/shared.utils';
+import { isFunction, isNil, isString, isSymbol, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { ExternalContextCreator } from './../helpers/external-context-creator';
-import { GuardsContextCreator } from './../guards/guards-context-creator';
-import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
-import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
-import { GuardsConsumer } from './../guards/guards-consumer';
-import { ModulesContainer } from './modules-container';
+import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { Reflector } from '../services/reflector.service';
+import { GuardsConsumer } from './../guards/guards-consumer';
+import { GuardsContextCreator } from './../guards/guards-context-creator';
+import { ExternalContextCreator } from './../helpers/external-context-creator';
+import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
+import { InstanceWrapper, NestContainer } from './container';
+import { ModuleRef } from './module-ref';
+import { ModulesContainer } from './modules-container';
 import { HTTP_SERVER_REF } from './tokens';
 
 export interface CustomComponent {

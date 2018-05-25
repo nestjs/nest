@@ -1,27 +1,12 @@
-import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
-import {
-  REDIS_DEFAULT_URL,
-  MESSAGE_EVENT,
-  ERROR_EVENT,
-  CONNECT_EVENT,
-  SUBSCRIBE,
-} from './../constants';
-import {
-  WritePacket,
-  RedisOptions,
-  ReadPacket,
-  PacketId,
-} from './../interfaces';
-import {
-  RedisClient,
-  ClientOpts,
-  RetryStrategyOptions,
-} from '../external/redis.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { Subject, fromEvent, merge, zip } from 'rxjs';
 import { take } from 'rxjs/operators';
+import { ClientOpts, RedisClient, RetryStrategyOptions } from '../external/redis.interface';
+import { ClientOptions } from '../interfaces/client-metadata.interface';
+import { CONNECT_EVENT, ERROR_EVENT, MESSAGE_EVENT, REDIS_DEFAULT_URL, SUBSCRIBE } from './../constants';
+import { PacketId, ReadPacket, RedisOptions, WritePacket } from './../interfaces';
+import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 
 let redisPackage: any = {};

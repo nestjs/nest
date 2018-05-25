@@ -1,10 +1,9 @@
-import { messages } from '../constants';
-import { Logger, HttpServer } from '@nestjs/common';
+import { HttpException, HttpServer, Logger } from '@nestjs/common';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
-import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
-import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
-import { HttpException } from '@nestjs/common';
 import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
+import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
+import { messages } from '../constants';
+import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
 
 export class ExceptionsHandler {
   private static readonly logger = new Logger(ExceptionsHandler.name);
@@ -20,8 +19,7 @@ export class ExceptionsHandler {
         statusCode: 500,
         message: messages.UNKNOWN_EXCEPTION_MESSAGE,
       };
-      const statusCode = 500;
-      this.applicationRef.reply(ctx.getArgByIndex(1), body, statusCode);
+      this.applicationRef.reply(ctx.getArgByIndex(1), body, body.statusCode);
       if (this.isExceptionObject(exception)) {
         return ExceptionsHandler.logger.error(
           exception.message,

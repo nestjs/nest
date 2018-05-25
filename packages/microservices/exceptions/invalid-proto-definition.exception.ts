@@ -2,6 +2,6 @@ import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.excepti
 
 export class InvalidProtoDefinitionException extends RuntimeException {
   constructor() {
-    super('Invalid .proto definition (file not found?)');
+    super('The invalid .proto definition (file not found)');
   }
 }
