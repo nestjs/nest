@@ -21,7 +21,7 @@ export const InvalidModuleMessage = (scope: string) =>
   `Nest cannot create the module instance. The frequent reason of this exception is the circular dependency between modules. Use forwardRef() to avoid it (read more https://docs.nestjs.com/advanced/circular-dependency). Scope [${scope}]`;
 
 export const UnknownExportMessage = (module: string) =>
-  `Nest cannot export component / module that is not a part of the currently proccessed module (${module}). Please verify whether each exported unit is available in this particular context.`;
+  `Nest cannot export component/module that is not a part of the currently proccessed module (${module}). Please verify whether each exported unit is available in this particular context.`;
 
 export const INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuration passed inside the module 'configure()' method.`;
 export const UNKNOWN_REQUEST_MAPPING = `Request mapping properties not defined in the @RequestMapping() annotation!`;

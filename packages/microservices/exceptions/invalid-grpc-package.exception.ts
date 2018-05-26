@@ -2,6 +2,6 @@ import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.excepti
 
 export class InvalidGrpcPackageException extends RuntimeException {
   constructor() {
-    super('Invalid gRPC package (not found)');
+    super('The invalid gRPC package (package not found)');
   }
 }

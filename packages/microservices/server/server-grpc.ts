@@ -1,14 +1,9 @@
-import { Server } from './server';
-import {
-  MicroserviceOptions,
-  GrpcOptions,
-} from '../interfaces/microservice-configuration.interface';
-import { CustomTransportStrategy } from './../interfaces';
-import { Observable } from 'rxjs';
-import { GRPC_DEFAULT_URL } from './../constants';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
-import { Logger } from '@nestjs/common';
+import { GrpcOptions, MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
+import { GRPC_DEFAULT_URL } from './../constants';
+import { CustomTransportStrategy } from './../interfaces';
+import { Server } from './server';
 
 let grpcPackage: any = {};
 
@@ -150,9 +145,11 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public loadProto(): any {
     try {
-      const context = grpcPackage.load(
-        this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),
-      );
+      const root = this.getOptionsProp<GrpcOptions>(this.options, 'root');
+      const file = this.getOptionsProp<GrpcOptions>(this.options, 'protoPath');
+      const options = root ? { root, file } : file;
+
+      const context = grpcPackage.load(options);
       return context;
     } catch (e) {
       const invalidProtoError = new InvalidProtoDefinitionException();

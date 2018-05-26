@@ -1,20 +1,19 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
 import { Component } from '../../../common/decorators/core/component.decorator';
-import { MiddlewareBuilder } from '../../middleware/builder';
-import { MiddlewareModule } from '../../middleware/middleware-module';
-import { InvalidMiddlewareException } from '../../errors/exceptions/invalid-middleware.exception';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
-import { RoutesMapper } from '../../middleware/routes-mapper';
-import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { ApplicationConfig } from '../../application-config';
-import { MiddlewareContainer } from '../../middleware/container';
+import { RequestMethod } from '../../../common/enums/request-method.enum';
+import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
 import { ExpressAdapter } from '../../adapters/express-adapter';
+import { ApplicationConfig } from '../../application-config';
+import { InvalidMiddlewareException } from '../../errors/exceptions/invalid-middleware.exception';
+import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { NestContainer } from '../../injector/container';
+import { MiddlewareBuilder } from '../../middleware/builder';
+import { MiddlewareContainer } from '../../middleware/container';
+import { MiddlewareModule } from '../../middleware/middleware-module';
+import { RouterExceptionFilters } from '../../router/router-exception-filters';
 
 describe('MiddlewareModule', () => {
   let middlewareModule: MiddlewareModule;
@@ -39,12 +38,14 @@ describe('MiddlewareModule', () => {
   }
 
   beforeEach(() => {
+    const appConfig = new ApplicationConfig();
     middlewareModule = new MiddlewareModule();
     (middlewareModule as any).routerExceptionFilter = new RouterExceptionFilters(
       new NestContainer(),
-      new ApplicationConfig(),
+      appConfig,
       new ExpressAdapter({}),
     );
+    (middlewareModule as any).config = appConfig;
   });
 
   describe('loadConfiguration', () => {

@@ -1,50 +1,46 @@
-import * as cors from 'cors';
-import * as http from 'http';
-import * as https from 'https';
-import * as optional from 'optional';
-import * as bodyParser from 'body-parser';
-import iterate from 'iterare';
 import {
   CanActivate,
   ExceptionFilter,
+  INestApplication,
+  INestMicroservice,
   NestInterceptor,
   OnModuleDestroy,
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
-import {
-  INestApplication,
-  INestMicroservice,
-  OnModuleInit,
-} from '@nestjs/common';
+import { HttpServer } from '@nestjs/common/interfaces';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
+import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
+import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
+import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
+import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import {
+  isFunction,
   isNil,
+  isObject,
   isUndefined,
   validatePath,
-  isFunction,
-  isObject,
 } from '@nestjs/common/utils/shared.utils';
-import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
+import * as bodyParser from 'body-parser';
+import * as cors from 'cors';
+import * as http from 'http';
+import * as https from 'https';
+import iterate from 'iterare';
+import * as optional from 'optional';
+import { ExpressAdapter } from './adapters/express-adapter';
+import { FastifyAdapter } from './adapters/fastify-adapter';
 import { ApplicationConfig } from './application-config';
 import { messages } from './constants';
 import { NestContainer } from './injector/container';
 import { Module } from './injector/module';
+import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
+import { NestApplicationContext } from './nest-application-context';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
-import { MiddlewareContainer } from './middleware/container';
-import { NestApplicationContext } from './nest-application-context';
-import { HttpsOptions } from '@nestjs/common/interfaces/external/https-options.interface';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
-import { HttpServer } from '@nestjs/common/interfaces';
-import { ExpressAdapter } from './adapters/express-adapter';
-import { FastifyAdapter } from './adapters/fastify-adapter';
-import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
-import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
-import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);

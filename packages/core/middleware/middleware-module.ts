@@ -1,23 +1,22 @@
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
+import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middleware.interface';
+import { NestModule } from '@nestjs/common/interfaces/modules/nest-module.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
+import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
+import { ApplicationConfig } from '../application-config';
+import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
+import { RuntimeException } from '../errors/exceptions/runtime.exception';
+import { ExceptionsHandler } from '../exceptions/exceptions-handler';
+import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { NestContainer } from '../injector/container';
+import { Module } from '../injector/module';
+import { RouterExceptionFilters } from '../router/router-exception-filters';
+import { RouterProxy } from '../router/router-proxy';
 import { MiddlewareBuilder } from './builder';
 import { MiddlewareContainer, MiddlewareWrapper } from './container';
 import { MiddlewareResolver } from './resolver';
-import { ControllerMetadata } from '@nestjs/common/interfaces/controllers/controller-metadata.interface';
-import { NestModule } from '@nestjs/common/interfaces/modules/nest-module.interface';
-import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
-import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { RoutesMapper } from './routes-mapper';
-import { RouterProxy } from '../router/router-proxy';
-import { ExceptionsHandler } from '../exceptions/exceptions-handler';
-import { Module } from '../injector/module';
-import { RouterMethodFactory } from '../helpers/router-method-factory';
-import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middleware.interface';
-import { Type } from '@nestjs/common/interfaces/type.interface';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { ApplicationConfig } from '../application-config';
-import { RouterExceptionFilters } from '../router/router-exception-filters';
 
 export class MiddlewareModule {
   private readonly routerProxy = new RouterProxy();
@@ -25,6 +24,7 @@ export class MiddlewareModule {
   private routerExceptionFilter: RouterExceptionFilters;
   private routesMapper: RoutesMapper;
   private resolver: MiddlewareResolver;
+  private config: ApplicationConfig;
 
   public async register(
     middlewareContainer: MiddlewareContainer,
@@ -39,6 +39,7 @@ export class MiddlewareModule {
     );
     this.routesMapper = new RoutesMapper(container);
     this.resolver = new MiddlewareResolver(middlewareContainer);
+    this.config = config;
 
     const modules = container.getModules();
     await this.resolveMiddleware(middlewareContainer, modules);
@@ -184,6 +185,8 @@ export class MiddlewareModule {
     path: string,
   ) {
     const proxy = this.routerProxy.createProxy(middleware, exceptionsHandler);
-    router(path, proxy);
+    const prefix = this.config.getGlobalPrefix();
+    const basePath = prefix ? validatePath(prefix) : '';
+    router(basePath + path, proxy);
   }
 }

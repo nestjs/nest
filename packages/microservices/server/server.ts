@@ -1,16 +1,10 @@
 import { Logger } from '@nestjs/common/services/logger.service';
-import { MessageHandlers } from '../interfaces/message-handlers.interface';
-import {
-  Observable,
-  Subscription,
-  EMPTY as empty,
-  of,
-  from as fromPromise,
-} from 'rxjs';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { catchError, finalize } from 'rxjs/operators';
-import { WritePacket, MicroserviceOptions } from './../interfaces';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { EMPTY as empty, Observable, Subscription, from as fromPromise, of } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
+import { MessageHandlers } from '../interfaces/message-handlers.interface';
+import { MicroserviceOptions, WritePacket } from './../interfaces';
 
 export abstract class Server {
   protected readonly messageHandlers: MessageHandlers = {};

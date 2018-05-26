@@ -1,9 +1,9 @@
-import * as express from 'express';
-import * as request from 'supertest';
-import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
+import { Test } from '@nestjs/testing';
+import * as express from 'express';
 import { join } from 'path';
+import * as request from 'supertest';
 import { GrpcController } from '../src/grpc/grpc.controller';
 
 describe('GRPC transport', () => {
@@ -21,7 +21,7 @@ describe('GRPC transport', () => {
       transport: Transport.GRPC,
       options: {
         package: 'math',
-        protoPath: join(__dirname, './../src/grpc/math.proto')
+        protoPath: join(__dirname, './../src/grpc/math.proto'),
       },
     });
     await app.startAllMicroservicesAsync();
