@@ -49,6 +49,9 @@ class FastifyAdapter {
     getHttpServer() {
         return this.instance.server;
     }
+    getInstance() {
+        return this.instance;
+    }
     register(...args) {
         return this.instance.register(...args);
     }

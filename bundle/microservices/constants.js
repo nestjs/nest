@@ -15,4 +15,4 @@ exports.PATTERN_METADATA = 'pattern';
 exports.CLIENT_CONFIGURATION_METADATA = 'client';
 exports.CLIENT_METADATA = '__isClient';
 exports.PATTERN_HANDLER_METADATA = '__isPattern';
-exports.NO_PATTERN_MESSAGE = `There's no equivalent message pattern.`;
+exports.NO_PATTERN_MESSAGE = `There is no equivalent message pattern defined in the remote service.`;

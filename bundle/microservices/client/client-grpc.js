@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_proxy_1 = require("./client-proxy");
 const logger_service_1 = require("@nestjs/common/services/logger.service");
-const constants_1 = require("./../constants");
-const rxjs_1 = require("rxjs");
-const invalid_grpc_service_exception_1 = require("../exceptions/invalid-grpc-service.exception");
-const invalid_grpc_package_exception_1 = require("../exceptions/invalid-grpc-package.exception");
-const invalid_proto_definition_exception_1 = require("../exceptions/invalid-proto-definition.exception");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const rxjs_1 = require("rxjs");
+const invalid_grpc_package_exception_1 = require("../exceptions/invalid-grpc-package.exception");
+const invalid_grpc_service_exception_1 = require("../exceptions/invalid-grpc-service.exception");
+const invalid_proto_definition_exception_1 = require("../exceptions/invalid-proto-definition.exception");
+const constants_1 = require("./../constants");
+const client_proxy_1 = require("./client-proxy");
 let grpcPackage = {};
 class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     constructor(options) {
@@ -74,7 +74,10 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     }
     loadProto() {
         try {
-            const context = grpcPackage.load(this.getOptionsProp(this.options, 'protoPath'));
+            const root = this.getOptionsProp(this.options, 'root');
+            const file = this.getOptionsProp(this.options, 'protoPath');
+            const options = root ? { root, file } : file;
+            const context = grpcPackage.load(options);
             return context;
         }
         catch (e) {

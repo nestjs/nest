@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const net = require("net");
 const JsonSocket = require("json-socket");
+const net = require("net");
 const constants_1 = require("../constants");
-const server_1 = require("./server");
 const constants_2 = require("./../constants");
+const server_1 = require("./server");
 class ServerTCP extends server_1.Server {
     constructor(options) {
         super();

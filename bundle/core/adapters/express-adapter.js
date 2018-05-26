@@ -55,6 +55,9 @@ class ExpressAdapter {
     getHttpServer() {
         return this.instance;
     }
+    getInstance() {
+        return this.instance;
+    }
     close() {
         return this.instance.close();
     }

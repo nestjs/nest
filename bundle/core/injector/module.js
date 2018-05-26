@@ -1,16 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const unknown_export_exception_1 = require("../errors/exceptions/unknown-export.exception");
-const module_ref_1 = require("./module-ref");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
-const external_context_creator_1 = require("./../helpers/external-context-creator");
-const guards_context_creator_1 = require("./../guards/guards-context-creator");
-const interceptors_context_creator_1 = require("./../interceptors/interceptors-context-creator");
-const interceptors_consumer_1 = require("./../interceptors/interceptors-consumer");
-const guards_consumer_1 = require("./../guards/guards-consumer");
-const modules_container_1 = require("./modules-container");
+const unknown_export_exception_1 = require("../errors/exceptions/unknown-export.exception");
 const reflector_service_1 = require("../services/reflector.service");
+const guards_consumer_1 = require("./../guards/guards-consumer");
+const guards_context_creator_1 = require("./../guards/guards-context-creator");
+const external_context_creator_1 = require("./../helpers/external-context-creator");
+const interceptors_consumer_1 = require("./../interceptors/interceptors-consumer");
+const interceptors_context_creator_1 = require("./../interceptors/interceptors-context-creator");
+const module_ref_1 = require("./module-ref");
+const modules_container_1 = require("./modules-container");
 const tokens_1 = require("./tokens");
 class Module {
     constructor(_metatype, _scope, container) {

@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const server_1 = require("./server");
-const constants_1 = require("./../constants");
 const invalid_grpc_package_exception_1 = require("../exceptions/invalid-grpc-package.exception");
 const invalid_proto_definition_exception_1 = require("../exceptions/invalid-proto-definition.exception");
+const constants_1 = require("./../constants");
+const server_1 = require("./server");
 let grpcPackage = {};
 class ServerGrpc extends server_1.Server {
     constructor(options) {
@@ -103,7 +103,10 @@ class ServerGrpc extends server_1.Server {
     }
     loadProto() {
         try {
-            const context = grpcPackage.load(this.getOptionsProp(this.options, 'protoPath'));
+            const root = this.getOptionsProp(this.options, 'root');
+            const file = this.getOptionsProp(this.options, 'protoPath');
+            const options = root ? { root, file } : file;
+            const context = grpcPackage.load(options);
             return context;
         }
         catch (e) {

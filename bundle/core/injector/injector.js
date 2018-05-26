@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-require("reflect-metadata");
-const unknown_dependencies_exception_1 = require("../errors/exceptions/unknown-dependencies.exception");
-const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
-const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const constants_1 = require("@nestjs/common/constants");
+const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+require("reflect-metadata");
+const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
+const unknown_dependencies_exception_1 = require("../errors/exceptions/unknown-dependencies.exception");
 const undefined_dependency_exception_1 = require("./../errors/exceptions/undefined-dependency.exception");
 class Injector {
     async loadInstanceOfMiddleware(wrapper, collection, module) {
@@ -119,14 +119,14 @@ class Injector {
         }
         return instanceWrapper;
     }
-    async lookupComponent(components, module, { name, index, length }, { metatype }) {
-        const scanInExports = () => this.lookupComponentInExports(components, { name, index, length }, module, metatype);
+    async lookupComponent(components, module, { name, index, length }, wrapper) {
+        const scanInExports = () => this.lookupComponentInExports(components, { name, index, length }, module, wrapper);
         return components.has(name) ? components.get(name) : await scanInExports();
     }
-    async lookupComponentInExports(components, { name, index, length }, module, metatype) {
+    async lookupComponentInExports(components, { name, index, length }, module, wrapper) {
         const instanceWrapper = await this.lookupComponentInRelatedModules(module, name);
         if (shared_utils_1.isNil(instanceWrapper)) {
-            throw new unknown_dependencies_exception_1.UnknownDependenciesException(metatype.name, index, length);
+            throw new unknown_dependencies_exception_1.UnknownDependenciesException(wrapper.name, index, length);
         }
         return instanceWrapper;
     }

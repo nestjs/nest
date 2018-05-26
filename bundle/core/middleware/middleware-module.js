@@ -1,15 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const request_method_enum_1 = require("@nestjs/common/enums/request-method.enum");
+const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const invalid_middleware_exception_1 = require("../errors/exceptions/invalid-middleware.exception");
+const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
+const router_method_factory_1 = require("../helpers/router-method-factory");
+const router_exception_filters_1 = require("../router/router-exception-filters");
+const router_proxy_1 = require("../router/router-proxy");
 const builder_1 = require("./builder");
 const resolver_1 = require("./resolver");
-const invalid_middleware_exception_1 = require("../errors/exceptions/invalid-middleware.exception");
-const request_method_enum_1 = require("@nestjs/common/enums/request-method.enum");
 const routes_mapper_1 = require("./routes-mapper");
-const router_proxy_1 = require("../router/router-proxy");
-const router_method_factory_1 = require("../helpers/router-method-factory");
-const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
-const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const router_exception_filters_1 = require("../router/router-exception-filters");
 class MiddlewareModule {
     constructor() {
         this.routerProxy = new router_proxy_1.RouterProxy();
@@ -20,6 +20,7 @@ class MiddlewareModule {
         this.routerExceptionFilter = new router_exception_filters_1.RouterExceptionFilters(container, config, appRef);
         this.routesMapper = new routes_mapper_1.RoutesMapper(container);
         this.resolver = new resolver_1.MiddlewareResolver(middlewareContainer);
+        this.config = config;
         const modules = container.getModules();
         await this.resolveMiddleware(middlewareContainer, modules);
     }
@@ -86,7 +87,9 @@ class MiddlewareModule {
     }
     bindHandlerWithProxy(exceptionsHandler, router, middleware, path) {
         const proxy = this.routerProxy.createProxy(middleware, exceptionsHandler);
-        router(path, proxy);
+        const prefix = this.config.getGlobalPrefix();
+        const basePath = prefix ? shared_utils_1.validatePath(prefix) : '';
+        router(basePath + path, proxy);
     }
 }
 exports.MiddlewareModule = MiddlewareModule;

@@ -1,7 +1,7 @@
-import { ClientProxy } from './client-proxy';
+import { Observable } from 'rxjs';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientGrpc } from './../interfaces';
-import { Observable } from 'rxjs';
+import { ClientProxy } from './client-proxy';
 export declare class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     private readonly options;
     private readonly logger;

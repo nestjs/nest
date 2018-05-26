@@ -1,8 +1,8 @@
-import { ClientProxy } from './client-proxy';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
-import { WritePacket, ReadPacket } from './../interfaces';
-import { RedisClient, ClientOpts, RetryStrategyOptions } from '../external/redis.interface';
 import { Subject } from 'rxjs';
+import { ClientOpts, RedisClient, RetryStrategyOptions } from '../external/redis.interface';
+import { ClientOptions } from '../interfaces/client-metadata.interface';
+import { ReadPacket, WritePacket } from './../interfaces';
+import { ClientProxy } from './client-proxy';
 export declare class ClientRedis extends ClientProxy {
     private readonly options;
     private readonly logger;

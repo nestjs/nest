@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("@nestjs/common/constants");
+const hash = require("object-hash");
 class ModuleTokenFactory {
     create(metatype, scope, dynamicModuleMetadata) {
         const reflectedScope = this.reflectScope(metatype);
@@ -10,7 +11,7 @@ class ModuleTokenFactory {
             dynamic: this.getDynamicMetadataToken(dynamicModuleMetadata),
             scope: isSingleScoped ? this.getScopeStack(scope) : reflectedScope,
         };
-        return JSON.stringify(opaqueToken);
+        return hash(opaqueToken);
     }
     getDynamicMetadataToken(dynamicModuleMetadata) {
         return dynamicModuleMetadata ? JSON.stringify(dynamicModuleMetadata) : '';

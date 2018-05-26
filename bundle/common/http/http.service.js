@@ -19,10 +19,10 @@ class HttpService {
         return rxjs_1.from(axios_1.default.post(url, data, config));
     }
     put(url, data, config) {
-        return rxjs_1.from(axios_1.default.post(url, data, config));
+        return rxjs_1.from(axios_1.default.put(url, data, config));
     }
     patch(url, data, config) {
-        return rxjs_1.from(axios_1.default.post(url, data, config));
+        return rxjs_1.from(axios_1.default.patch(url, data, config));
     }
 }
 exports.HttpService = HttpService;

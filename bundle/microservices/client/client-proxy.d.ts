@@ -1,5 +1,5 @@
 import { Observable, Observer } from 'rxjs';
-import { ReadPacket, PacketId, WritePacket, ClientOptions } from './../interfaces';
+import { ClientOptions, PacketId, ReadPacket, WritePacket } from './../interfaces';
 export declare abstract class ClientProxy {
     abstract connect(): Promise<any>;
     abstract close(): any;
