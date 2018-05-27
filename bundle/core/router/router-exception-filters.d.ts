@@ -1,11 +1,11 @@
-import 'reflect-metadata';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { ExceptionsHandler } from '../exceptions/exceptions-handler';
-import { RouterProxyCallback } from './../router/router-proxy';
-import { ApplicationConfig } from './../application-config';
-import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context';
 import { HttpServer } from '@nestjs/common';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import 'reflect-metadata';
+import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context';
+import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 import { NestContainer } from '../injector/container';
+import { ApplicationConfig } from './../application-config';
+import { RouterProxyCallback } from './../router/router-proxy';
 export declare class RouterExceptionFilters extends BaseExceptionFilterContext {
     private readonly config;
     private readonly applicationRef;

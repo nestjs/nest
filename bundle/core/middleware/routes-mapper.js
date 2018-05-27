@@ -1,18 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-require("reflect-metadata");
-const router_explorer_1 = require("../router/router-explorer");
-const unknown_request_mapping_exception_1 = require("../errors/exceptions/unknown-request-mapping.exception");
-const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const constants_1 = require("@nestjs/common/constants");
+const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+require("reflect-metadata");
+const unknown_request_mapping_exception_1 = require("../errors/exceptions/unknown-request-mapping.exception");
 const metadata_scanner_1 = require("../metadata-scanner");
+const router_explorer_1 = require("../router/router-explorer");
 class RoutesMapper {
     constructor(container) {
         this.routerExplorer = new router_explorer_1.RouterExplorer(new metadata_scanner_1.MetadataScanner(), container);
     }
     mapRouteToRouteProps(route) {
         if (shared_utils_1.isString(route)) {
-            return [route];
+            return [this.validateRoutePath(route)];
         }
         const routePath = Reflect.getMetadata(constants_1.PATH_METADATA, route);
         if (shared_utils_1.isUndefined(routePath)) {

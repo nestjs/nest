@@ -31,6 +31,7 @@ export interface HttpServer {
     setViewEngine?(engineOrOptions: any): this;
     getRequestMethod?(request: any): string;
     getRequestUrl?(request: any): string;
+    getInstance(): any;
     getHttpServer(): any;
     close(): any;
 }

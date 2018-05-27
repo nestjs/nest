@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const server_1 = require("./server");
 const constants_1 = require("../constants");
 const constants_2 = require("./../constants");
+const server_1 = require("./server");
 let redisPackage = {};
 class ServerRedis extends server_1.Server {
     constructor(options) {

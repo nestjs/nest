@@ -63,27 +63,25 @@ describe('WebSocketGateway (WsAdapter)', () => {
     ws = new WebSocket('ws://localhost:8080');
     ws2 = new WebSocket('ws://localhost:8090');
 
-    await new Promise(resolve => ws.on('open', resolve));
-    await new Promise(resolve => ws2.on('open', resolve));
-
-    ws.send(JSON.stringify({ event: 'push', data: {
-      test: 'test',
-    }}));
-    await new Promise(resolve =>
+    await new Promise(resolve => ws.on('open', () => {
       ws.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
         resolve();
-      }),
-    );
-    ws2.send(JSON.stringify({ event: 'push', data: {
-      test: 'test',
-    }}));
-    await new Promise(resolve =>
+      });
+      ws.send(JSON.stringify({ event: 'push', data: {
+        test: 'test',
+      }}));
+    }));
+
+    await new Promise(resolve => {
       ws2.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
         resolve();
-      }),
-    );
+      });
+      ws2.send(JSON.stringify({ event: 'push', data: {
+        test: 'test',
+      }}));
+    });
   });
 
   afterEach(() => app.close());

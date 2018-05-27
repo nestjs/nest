@@ -1,7 +1,7 @@
-import { Observable } from 'rxjs';
-import { RpcException } from './rpc-exception';
 import { RpcExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
 import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
+import { Observable } from 'rxjs';
+import { RpcException } from './rpc-exception';
 export declare class RpcExceptionsHandler {
     private static readonly logger;
     private filters;

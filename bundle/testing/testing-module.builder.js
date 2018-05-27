@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const deprecate = require("deprecate");
-const instance_loader_1 = require("@nestjs/core/injector/instance-loader");
-const container_1 = require("@nestjs/core/injector/container");
 const common_1 = require("@nestjs/common");
-const scanner_1 = require("@nestjs/core/scanner");
-const testing_module_1 = require("./testing-module");
 const application_config_1 = require("@nestjs/core/application-config");
+const container_1 = require("@nestjs/core/injector/container");
+const instance_loader_1 = require("@nestjs/core/injector/instance-loader");
+const scanner_1 = require("@nestjs/core/scanner");
+const deprecate = require("deprecate");
+const testing_logger_service_1 = require("./services/testing-logger.service");
+const testing_module_1 = require("./testing-module");
 class TestingModuleBuilder {
     constructor(metadataScanner, metadata) {
         this.applicationConfig = new application_config_1.ApplicationConfig();
@@ -38,6 +39,7 @@ class TestingModuleBuilder {
         return this.override(typeOrToken, true);
     }
     async compile() {
+        this.applyLogger();
         [...this.overloadsMap.entries()].map(([component, options]) => {
             this.container.replace(component, options);
         });
@@ -66,6 +68,9 @@ class TestingModuleBuilder {
         }
         common_1.Module(metadata)(TestModule);
         return TestModule;
+    }
+    applyLogger() {
+        common_1.Logger.overrideLogger(new testing_logger_service_1.TestingLogger());
     }
 }
 exports.TestingModuleBuilder = TestingModuleBuilder;

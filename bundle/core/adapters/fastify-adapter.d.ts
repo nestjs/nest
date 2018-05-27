@@ -26,6 +26,7 @@ export declare class FastifyAdapter {
     setErrorHandler(handler: Function): any;
     setNotFoundHandler(handler: Function): any;
     getHttpServer(): any;
+    getInstance(): any;
     register(...args: any[]): any;
     inject(...args: any[]): any;
     close(): any;

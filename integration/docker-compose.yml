@@ -31,3 +31,9 @@ services:
     ports:
       - "3306:3306"
     restart: always
+  mongodb:
+    image: mongo:latest
+    environment:
+      - MONGODB_DATABASE="test"
+    ports:
+      - 27017:27017

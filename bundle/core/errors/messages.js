@@ -11,7 +11,7 @@ exports.UnknownDependenciesMessage = (type, index, length) => {
 };
 exports.InvalidMiddlewareMessage = (name) => `The middleware doesn't provide the 'resolve' method (${name})`;
 exports.InvalidModuleMessage = (scope) => `Nest cannot create the module instance. The frequent reason of this exception is the circular dependency between modules. Use forwardRef() to avoid it (read more https://docs.nestjs.com/advanced/circular-dependency). Scope [${scope}]`;
-exports.UnknownExportMessage = (module) => `Nest cannot export component / module that is not a part of the currently proccessed module (${module}). Please verify whether each exported unit is available in this particular context.`;
+exports.UnknownExportMessage = (module) => `Nest cannot export component/module that is not a part of the currently proccessed module (${module}). Please verify whether each exported unit is available in this particular context.`;
 exports.INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuration passed inside the module 'configure()' method.`;
 exports.UNKNOWN_REQUEST_MAPPING = `Request mapping properties not defined in the @RequestMapping() annotation!`;
 exports.UNHANDLED_RUNTIME_EXCEPTION = `Unhandled Runtime Exception.`;

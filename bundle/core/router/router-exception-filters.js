@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-require("reflect-metadata");
-const exceptions_handler_1 = require("../exceptions/exceptions-handler");
 const constants_1 = require("@nestjs/common/constants");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+require("reflect-metadata");
 const base_exception_filter_context_1 = require("../exceptions/base-exception-filter-context");
+const exceptions_handler_1 = require("../exceptions/exceptions-handler");
 class RouterExceptionFilters extends base_exception_filter_context_1.BaseExceptionFilterContext {
     constructor(container, config, applicationRef) {
         super(container);
@@ -18,7 +18,7 @@ class RouterExceptionFilters extends base_exception_filter_context_1.BaseExcepti
         if (shared_utils_1.isEmpty(filters)) {
             return exceptionHandler;
         }
-        exceptionHandler.setCustomFilters(filters);
+        exceptionHandler.setCustomFilters(filters.reverse());
         return exceptionHandler;
     }
     getGlobalMetadata() {
