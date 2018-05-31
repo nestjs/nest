@@ -1,0 +1,9 @@
+version: "3"
+
+services:
+  mongodb:
+    image: cnadiminti/dynamodb-local:latest
+    ports:
+      - 8000:8000
+    volumes:
+      - ./:/dynamodb_local_db

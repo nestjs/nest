@@ -1,0 +1,29 @@
+{
+  "name": "nest-typescript-starter",
+  "version": "1.0.0",
+  "description": "Nest TypeScript starter repository",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node src/main",
+    "docker": "docker-compose --file docker-compose.yml up --build --detach",
+    "docker-down": "docker-compose --file docker-compose.yml down",
+    "list-tables": "aws dynamodb list-tables --region us-west-2 --endpoint-url http://0.0.0.0:8000 --output json",
+    "prestart:prod": "tsc",
+    "start:prod": "node dist/main.js"
+  },
+  "dependencies": {
+    "@aws/dynamodb-data-mapper": "^0.5.0",
+    "@aws/dynamodb-data-mapper-annotations": "^0.5.0",
+    "@nestjs/common": "^5.0.0",
+    "@nestjs/core": "^5.0.0",
+    "aws-sdk": "^2.249.1",
+    "reflect-metadata": "^0.1.12",
+    "rxjs": "^6.0.0",
+    "typescript": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^7.0.41",
+    "ts-node": "^6.0.0",
+    "tslint": "^5.9.1"
+  }
+}
