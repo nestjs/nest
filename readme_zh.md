@@ -32,7 +32,7 @@
 
 ## 设计哲学
 
-<p>近几年，由于 Node.js，JavaScript 已经成为 Web 前端和后端应用程序的「通用语言」，并且有了 <a href="https://angular.cn" target="_blank">Angular</a> ，cations, giving rise to awesome projects like <a href="https://angular.cn" target="_blank">Angular</a>,  和 <a href="https://github.com/vuejs/vue" target="_blank">Vue</a>  等令人耳目一新的项目，提高了开发人员的生产力，使得可以快速构建可测试的且可扩展的前端应用程序。 然而，在服务器端，虽然有很多优秀的库、helper 和 Node 工具，但是它们都没有有效地解决主要问题 - 架构。</p>
+<p>近几年，由于 Node.js，JavaScript 已经成为 Web 前端和后端应用程序的「通用语言」，从而产生了像<a href="https://angular.cn" target="_blank">Angular</a>、<a href="https://github.com/facebook/react">React</a>、<a href="https://github.com/vuejs/vue" target="_blank">Vue</a>等令人耳目一新的项目，这些项目提高了开发人员的生产力，使得可以快速构建可测试的且可扩展的前端应用程序。 然而，在服务器端，虽然有很多优秀的库、helper 和 Node 工具，但是它们都没有有效地解决主要问题 - 架构。</p>
 
 <p>Nest 旨在提供一个开箱即用的应用程序体系结构，允许轻松创建高度可测试，可扩展，松散耦合且易于维护的应用程序。</p>
 
