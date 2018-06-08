@@ -25,7 +25,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     this.grpcClient = this.createClient();
   }
 
-  public getService<T = any>(name: string): T {
+  public getService<T extends {}>(name: keyof T): T {
     const { options } = this.options as GrpcOptions;
     if (!this.grpcClient[name]) {
       throw new InvalidGrpcServiceException();
