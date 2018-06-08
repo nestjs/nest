@@ -149,12 +149,18 @@ describe('ServerGrpc', () => {
     });
     describe('on call', () => {
       it('should call native method', async () => {
-        const call = { write: sinon.spy(), end: sinon.spy() };
+        const call = {
+          write: sinon.spy(),
+          end: sinon.spy(),
+          addListener: sinon.spy(),
+          removeListener: sinon.spy(),
+        };
         const callback = sinon.spy();
         const native = sinon.spy();
 
         await server.createStreamServiceMethod(native)(call, callback);
         expect(native.called).to.be.true;
+        expect(call.addListener.calledWith('cancelled')).to.be.true;
       });
     });
   });
