@@ -4,6 +4,8 @@ import { GrpcOptions, MicroserviceOptions } from '../interfaces/microservice-con
 import { GRPC_DEFAULT_URL } from './../constants';
 import { CustomTransportStrategy } from './../interfaces';
 import { Server } from './server';
+import { fromEvent } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 let grpcPackage: any = {};
 
@@ -103,7 +105,9 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return async (call, callback) => {
       const handler = methodHandler(call.request, call.metadata);
       const result$ = this.transformToObservable(await handler);
-      await result$.forEach(data => call.write(data));
+      await result$.pipe(
+        takeUntil(fromEvent(call, 'cancelled')),
+      ).forEach(data => call.write(data));
       call.end();
     };
   }
