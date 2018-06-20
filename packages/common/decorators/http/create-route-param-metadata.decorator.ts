@@ -7,6 +7,7 @@ import { CustomParamFactory } from '../../interfaces/features/custom-route-param
 import { RouteParamsMetadata, ParamData } from './route-params.decorator';
 import { PipeTransform } from '../../index';
 import { isNil, isString } from '../../utils/shared.utils';
+import { Type } from '../../interfaces';
 
 const assignCustomMetadata = (
   args: RouteParamsMetadata,
@@ -14,7 +15,7 @@ const assignCustomMetadata = (
   index: number,
   factory: CustomParamFactory,
   data?: ParamData,
-  ...pipes: PipeTransform<any>[],
+  ...pipes: (Type<PipeTransform> | PipeTransform)[],
 ) => ({
   ...args,
   [`${paramtype}${CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
@@ -36,9 +37,9 @@ const randomString = () =>
  */
 export function createParamDecorator(
   factory: CustomParamFactory,
-): (data?: any, ...pipes: PipeTransform<any>[]) => ParameterDecorator {
+): (data?: any, ...pipes: (Type<PipeTransform> | PipeTransform)[]) => ParameterDecorator {
   const paramtype = randomString() + randomString();
-  return (data?, ...pipes: PipeTransform<any>[]): ParameterDecorator => (
+  return (data?, ...pipes: (Type<PipeTransform> | PipeTransform)[]): ParameterDecorator => (
     target,
     key,
     index,
@@ -61,7 +62,7 @@ export function createParamDecorator(
  */
 export function createRouteParamDecorator(
   factory: CustomParamFactory,
-): (data?: any, ...pipes: PipeTransform<any>[]) => ParameterDecorator {
+): (data?: any, ...pipes: (Type<PipeTransform> | PipeTransform)[]) => ParameterDecorator {
   deprecate(
     'The "createRouteParamDecorator" function is deprecated and will be removed within next major release. Use "createParamDecorator" instead.',
   );
