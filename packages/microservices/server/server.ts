@@ -1,7 +1,13 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { EMPTY as empty, Observable, Subscription, from as fromPromise, of } from 'rxjs';
+import {
+  EMPTY as empty,
+  Observable,
+  Subscription,
+  from as fromPromise,
+  of,
+} from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { MessageHandlers } from '../interfaces/message-handlers.interface';
 import { MicroserviceOptions, WritePacket } from './../interfaces';
@@ -24,7 +30,8 @@ export abstract class Server {
     pattern: any,
     callback: (data) => Promise<Observable<any>>,
   ) {
-    this.messageHandlers[JSON.stringify(pattern)] = callback;
+    const key = typeof pattern === 'string' ? pattern : JSON.stringify(pattern);
+    this.messageHandlers[key] = callback;
   }
 
   public send(
