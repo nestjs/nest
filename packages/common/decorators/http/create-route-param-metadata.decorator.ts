@@ -1,13 +1,9 @@
 import * as deprecate from 'deprecate';
-import {
-  ROUTE_ARGS_METADATA,
-  CUSTOM_ROUTE_AGRS_METADATA,
-} from '../../constants';
-import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface';
-import { RouteParamsMetadata, ParamData } from './route-params.decorator';
+import { CUSTOM_ROUTE_AGRS_METADATA, ROUTE_ARGS_METADATA } from '../../constants';
 import { PipeTransform } from '../../index';
-import { isNil, isString } from '../../utils/shared.utils';
 import { Type } from '../../interfaces';
+import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface';
+import { ParamData, RouteParamsMetadata } from './route-params.decorator';
 
 const assignCustomMetadata = (
   args: RouteParamsMetadata,
@@ -32,7 +28,7 @@ const randomString = () =>
     .substring(2, 15);
 
 /**
- * Creates HTTP route param decorator
+ * Defines HTTP route param decorator
  * @param factory
  */
 export function createParamDecorator(
@@ -56,7 +52,7 @@ export function createParamDecorator(
 }
 
 /**
- * Creates HTTP route param decorator
+ * Defines HTTP route param decorator
  * @deprecated
  * @param factory
  */
