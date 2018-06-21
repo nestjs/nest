@@ -1,13 +1,13 @@
-import * as express from 'express';
-import {
-  HttpServer,
-  RequestHandler,
-  ErrorHandler,
-} from '@nestjs/common/interfaces';
-import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
+import { RequestMethod } from '@nestjs/common';
+import { HttpServer, RequestHandler } from '@nestjs/common/interfaces';
 import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
+import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
+import * as express from 'express';
+import { RouterMethodFactory } from '../helpers/router-method-factory';
 
 export class ExpressAdapter implements HttpServer {
+  private readonly routerMethodFactory = new RouterMethodFactory();
+
   constructor(private readonly instance) {}
 
   use(...args: any[]) {
@@ -132,5 +132,13 @@ export class ExpressAdapter implements HttpServer {
 
   getRequestUrl(request): string {
     return request.url;
+  }
+
+  createMiddlewareFactory(
+    requestMethod: RequestMethod,
+  ): (path: string, callback: Function) => any {
+    return this.routerMethodFactory
+      .get(this.instance, requestMethod)
+      .bind(this.instance);
   }
 }
