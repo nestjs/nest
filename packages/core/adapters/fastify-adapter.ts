@@ -1,9 +1,5 @@
-import {
-  HttpServer,
-  RequestHandler,
-  ErrorHandler,
-} from '@nestjs/common/interfaces';
-import { Logger } from '@nestjs/common';
+import { Logger, RequestMethod } from '@nestjs/common';
+import { ErrorHandler, RequestHandler } from '@nestjs/common/interfaces';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 
 export class FastifyAdapter {
@@ -133,5 +129,17 @@ export class FastifyAdapter {
 
   getRequestUrl(request): string {
     return request.raw.url;
+  }
+
+  createMiddlewareFactory(
+    requestMethod: RequestMethod,
+  ): (path: string, callback: Function) => any {
+    return (path: string, callback: Function) =>
+      this.instance.use(path, (req, res, next) => {
+        if (req.method === RequestMethod[requestMethod]) {
+          return callback(req, res, next);
+        }
+        next();
+      });
   }
 }
