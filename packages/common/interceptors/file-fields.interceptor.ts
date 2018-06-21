@@ -1,13 +1,13 @@
 import * as multer from 'multer';
-import { NestInterceptor } from './../interfaces/features/nest-interceptor.interface';
 import { Observable } from 'rxjs';
-import { MulterOptions } from '../interfaces/external/multer-options.interface';
-import { transformException } from './multer/multer.utils';
 import { ExecutionContext } from '../interfaces';
+import { MulterField, MulterOptions } from '../interfaces/external/multer-options.interface';
+import { NestInterceptor } from './../interfaces/features/nest-interceptor.interface';
+import { transformException } from './multer/multer.utils';
 
 export function FileFieldsInterceptor(
-  uploadFields: multer.Field[],
-  options?: MulterOptions
+  uploadFields: MulterField[],
+  options?: MulterOptions,
 ) {
   const Interceptor = class implements NestInterceptor {
     readonly upload = multer(options);
