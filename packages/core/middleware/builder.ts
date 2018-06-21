@@ -42,6 +42,10 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
       this.includedRoutes = filterMiddleware(middleware);
     }
 
+    public getExcludedRoutes(): RouteInfo[] {
+      return this.excludedRoutes;
+    }
+
     public with(...args): MiddlewareConfigProxy {
       this.contextParameters = args;
       return this;
@@ -85,13 +89,13 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     }
 
     private isRouteExcluded(routeInfo: RouteInfo): boolean {
-      return this.excludedRoutes.some(excluded => {
-        const pathLastIndex = routeInfo.path.length - 1;
-        const validatedRoutePath =
-          routeInfo.path[pathLastIndex] === '/'
-            ? routeInfo.path.slice(0, pathLastIndex)
-            : routeInfo.path;
+      const pathLastIndex = routeInfo.path.length - 1;
+      const validatedRoutePath =
+        routeInfo.path[pathLastIndex] === '/'
+          ? routeInfo.path.slice(0, pathLastIndex)
+          : routeInfo.path;
 
+      return this.excludedRoutes.some(excluded => {
         const isPathEqual = validatedRoutePath === excluded.path;
         if (!isPathEqual) {
           return false;
