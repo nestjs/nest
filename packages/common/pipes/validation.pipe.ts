@@ -1,9 +1,9 @@
-import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { ArgumentMetadata, BadRequestException } from '../index';
+import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
+import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import { loadPackage } from '../utils/load-package.util';
 import { isNil } from '../utils/shared.utils';
 import { Injectable } from './../decorators/core/component.decorator';
-import { loadPackage } from '../utils/load-package.util';
-import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
@@ -33,7 +33,10 @@ export class ValidationPipe implements PipeTransform<any> {
     if (!metatype || !this.toValidate(metadata)) {
       return value;
     }
-    const entity = classTransformer.plainToClass(metatype, value);
+    const entity = classTransformer.plainToClass(
+      metatype,
+      this.toEmptyIfNil(value),
+    );
     const errors = await classValidator.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
       throw new BadRequestException(errors);
@@ -52,5 +55,9 @@ export class ValidationPipe implements PipeTransform<any> {
     }
     const types = [String, Boolean, Number, Array, Object];
     return !types.find(t => metatype === t) && !isNil(metatype);
+  }
+
+  toEmptyIfNil<T = any, R = any>(value: T): R | {} {
+    return isNil(value) ? {} : value;
   }
 }
