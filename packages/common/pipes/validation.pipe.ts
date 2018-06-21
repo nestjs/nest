@@ -7,6 +7,7 @@ import { Injectable } from './../decorators/core/component.decorator';
 
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
+  disableErrorMessages?: boolean;
 }
 
 let classValidator: any = {};
@@ -15,13 +16,15 @@ let classTransformer: any = {};
 @Injectable()
 export class ValidationPipe implements PipeTransform<any> {
   protected isTransformEnabled: boolean;
+  protected isDetailedOutputDisabled: boolean;
   protected validatorOptions: ValidatorOptions;
 
   constructor(options?: ValidationPipeOptions) {
     options = options || {};
-    const { transform, ...validatorOptions } = options;
+    const { transform, disableErrorMessages, ...validatorOptions } = options;
     this.isTransformEnabled = !!transform;
     this.validatorOptions = validatorOptions;
+    this.isDetailedOutputDisabled = disableErrorMessages;
 
     const loadPkg = pkg => loadPackage(pkg, 'ValidationPipe');
     classValidator = loadPkg('class-validator');
@@ -39,7 +42,9 @@ export class ValidationPipe implements PipeTransform<any> {
     );
     const errors = await classValidator.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
-      throw new BadRequestException(errors);
+      throw new BadRequestException(
+        this.isDetailedOutputDisabled ? undefined : errors,
+      );
     }
     return this.isTransformEnabled
       ? entity
