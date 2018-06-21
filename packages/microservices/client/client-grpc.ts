@@ -25,7 +25,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     this.grpcClient = this.createClient();
   }
 
-  public getService<T = any>(name: string): T {
+  public getService<T extends {}>(name: keyof T): T {
     const { options } = this.options as GrpcOptions;
     if (!this.grpcClient[name]) {
       throw new InvalidGrpcServiceException();
@@ -60,9 +60,27 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     return (...args) => {
       return new Observable(observer => {
         const call = client[methodName](...args);
+        let isClientCanceled = false;
         call.on('data', (data: any) => observer.next(data));
-        call.on('error', (error: any) => observer.error(error));
-        call.on('end', () => observer.complete());
+        call.on('error', (error: any) => {
+          if (error.details === 'Cancelled') {
+            call.destroy();
+            if ( isClientCanceled ) {
+              return; // do not error if cancel was inititiated by Client
+            }
+          }
+          observer.error(error);
+        });
+        call.on('end', () => {
+          call.removeAllListeners();
+          observer.complete();
+        });
+        return () => {
+          if (!call.finished) {
+            isClientCanceled = true;
+            call.cancel();
+          }
+        };
       });
     };
   }
