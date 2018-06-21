@@ -1,11 +1,11 @@
+import { fromEvent } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
 import { GrpcOptions, MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
-import { GRPC_DEFAULT_URL } from './../constants';
+import { CANCEL_EVENT, GRPC_DEFAULT_URL } from './../constants';
 import { CustomTransportStrategy } from './../interfaces';
 import { Server } from './server';
-import { fromEvent } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
 
 let grpcPackage: any = {};
 
@@ -106,7 +106,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(call.request, call.metadata);
       const result$ = this.transformToObservable(await handler);
       await result$.pipe(
-        takeUntil(fromEvent(call, 'cancelled')),
+        takeUntil(fromEvent(call, CANCEL_EVENT)),
       ).forEach(data => call.write(data));
       call.end();
     };

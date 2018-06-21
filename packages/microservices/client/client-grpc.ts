@@ -8,6 +8,7 @@ import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { GRPC_DEFAULT_URL } from './../constants';
 import { ClientGrpc, GrpcOptions } from './../interfaces';
 import { ClientProxy } from './client-proxy';
+import { GRPC_CANCELLED } from './constants';
 
 let grpcPackage: any = {};
 
@@ -25,7 +26,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     this.grpcClient = this.createClient();
   }
 
-  public getService<T extends {}>(name: keyof T): T {
+  public getService<T extends {}>(name: string): T {
     const { options } = this.options as GrpcOptions;
     if (!this.grpcClient[name]) {
       throw new InvalidGrpcServiceException();
@@ -59,14 +60,15 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   ): (...args) => Observable<any> {
     return (...args) => {
       return new Observable(observer => {
-        const call = client[methodName](...args);
         let isClientCanceled = false;
+        const call = client[methodName](...args);
+
         call.on('data', (data: any) => observer.next(data));
         call.on('error', (error: any) => {
-          if (error.details === 'Cancelled') {
+          if (error.details === GRPC_CANCELLED) {
             call.destroy();
-            if ( isClientCanceled ) {
-              return; // do not error if cancel was inititiated by Client
+            if (isClientCanceled) {
+              return;
             }
           }
           observer.error(error);
@@ -76,10 +78,11 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
           observer.complete();
         });
         return () => {
-          if (!call.finished) {
-            isClientCanceled = true;
-            call.cancel();
+          if (call.finished) {
+            return undefined;
           }
+          isClientCanceled = true;
+          call.cancel();
         };
       });
     };

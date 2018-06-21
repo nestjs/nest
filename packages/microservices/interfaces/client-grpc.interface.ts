@@ -1,3 +1,3 @@
 export interface ClientGrpc {
-  getService<T extends {}>(name: keyof T): T;
+  getService<T extends {}>(name: string): T;
 }
