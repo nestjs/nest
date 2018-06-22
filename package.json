@@ -59,6 +59,7 @@
     "object-hash": "^1.3.0",
     "opencollective": "^1.0.3",
     "optional": "^0.1.4",
+    "path-to-regexp": "^2.2.1",
     "pump": "^3.0.0",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.12",
