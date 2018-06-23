@@ -278,7 +278,7 @@ export class Injector {
       const { relatedModules, exports } = module;
       return this.flatMap(
         [...relatedModules.values()]
-          .filter(related => !!related)
+          .filter(related => related)
           .filter(related => {
             const { metatype } = related;
             return exports.has(metatype.name);

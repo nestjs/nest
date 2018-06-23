@@ -126,16 +126,16 @@ describe('MiddlewareModule', () => {
       ).to.be.rejectedWith(InvalidMiddlewareException);
     });
 
-    it('should store middleware when middleware is stored in container', () => {
+    it('should mount middleware when is stored in container', () => {
       const route = 'testPath';
       const configuration = {
         middleware: [TestMiddleware],
         forRoutes: ['test', AnotherRoute, TestRoute],
       };
 
-      const useSpy = sinon.spy();
+      const createMiddlewareFactorySpy = sinon.spy();
       const app = {
-        use: useSpy,
+        createMiddlewareFactory: createMiddlewareFactorySpy,
       };
       const container = new MiddlewareContainer();
       const moduleKey = 'Test' as any;
@@ -149,12 +149,12 @@ describe('MiddlewareModule', () => {
 
       middlewareModule.registerRouteMiddleware(
         container,
-        route,
+        { path: route, method: RequestMethod.ALL },
         configuration,
         moduleKey,
         app as any,
       );
-      expect(useSpy.calledOnce).to.be.true;
+      expect(createMiddlewareFactorySpy.calledOnce).to.be.true;
     });
   });
 });

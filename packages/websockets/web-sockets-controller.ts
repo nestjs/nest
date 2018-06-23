@@ -1,23 +1,22 @@
+import { Type } from '@nestjs/common/interfaces/type.interface';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import 'reflect-metadata';
-import { NestGateway } from './interfaces/nest-gateway.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
+import { from as fromPromise, Observable, of, Subject } from 'rxjs';
+import { distinctUntilChanged, mergeMap } from 'rxjs/operators';
+import { GATEWAY_OPTIONS, PORT_METADATA } from './constants';
+import { WsContextCreator } from './context/ws-context-creator';
 import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exception';
 import {
   GatewayMetadataExplorer,
   MessageMappingProperties,
 } from './gateway-metadata-explorer';
-import { Subject, Observable, from as fromPromise, of } from 'rxjs';
-import { SocketServerProvider } from './socket-server-provider';
-import { PORT_METADATA, GATEWAY_OPTIONS } from './constants';
-import { Type } from '@nestjs/common/interfaces/type.interface';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { NestContainer } from '@nestjs/core/injector/container';
+import { NestGateway } from './interfaces/nest-gateway.interface';
+import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
 import { MiddlewareInjector } from './middleware-injector';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { WsContextCreator } from './context/ws-context-creator';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { mergeMap, distinctUntilChanged } from 'rxjs/operators';
+import { SocketServerProvider } from './socket-server-provider';
 
 export class WebSocketsController {
   private readonly metadataExplorer = new GatewayMetadataExplorer(
@@ -110,7 +109,7 @@ export class WebSocketsController {
 
       const disconnectHook = adapter.bindClientDisconnect;
       disconnectHook &&
-        disconnectHook.call(adapter, client, socket => disconnect.next(client));
+        disconnectHook.call(adapter, client, _ => disconnect.next(client));
     };
   }
 

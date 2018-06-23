@@ -2,8 +2,8 @@ import 'reflect-metadata';
 import { ROUTE_ARGS_METADATA } from '../../constants';
 import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
 import { PipeTransform } from '../../index';
-import { isNil, isString } from '../../utils/shared.utils';
 import { Type } from '../../interfaces';
+import { isNil, isString } from '../../utils/shared.utils';
 
 export type ParamData = object | string | number;
 export interface RouteParamsMetadata {
@@ -71,7 +71,7 @@ export const Next: () => ParameterDecorator = createRouteParamDecorator(
 export const Session: () => ParameterDecorator = createRouteParamDecorator(
   RouteParamtypes.SESSION,
 );
-export const UploadedFile: () => ParameterDecorator = createRouteParamDecorator(
+export const UploadedFile: (fileKey?: string) => ParameterDecorator = createRouteParamDecorator(
   RouteParamtypes.FILE,
 );
 export const UploadedFiles: () => ParameterDecorator = createRouteParamDecorator(

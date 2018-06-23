@@ -1,18 +1,13 @@
-import 'reflect-metadata';
-import { Controller } from '@nestjs/common/interfaces';
+import { DynamicModule } from '@nestjs/common';
 import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { SHARED_MODULE_METADATA } from '@nestjs/common/constants';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { Module } from './module';
+import 'reflect-metadata';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
-import { ModuleTokenFactory } from './module-token-factory';
-import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
-import { DynamicModule } from '@nestjs/common';
-import { ModulesContainer } from './modules-container';
-import { NestApplicationContext } from './../nest-application-context';
 import { ApplicationConfig } from './../application-config';
+import { InvalidModuleException } from './../errors/exceptions/invalid-module.exception';
 import { ModuleCompiler } from './compiler';
+import { Module } from './module';
+import { ModulesContainer } from './modules-container';
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
@@ -103,8 +98,6 @@ export class NestContainer {
 
     const scope = [].concat(module.scope, parent);
     const {
-      type,
-      dynamicMetadata,
       token: relatedModuleToken,
     } = this.moduleCompiler.compile(relatedModule, scope);
     const related = this.modules.get(relatedModuleToken);
