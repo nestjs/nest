@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NestContainer } from '../../injector/container';
 import { Module } from '../../../common/decorators/modules/module.decorator';
-import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { Global } from '../../../common/index';
+import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
+import { NestContainer } from '../../injector/container';
 
 describe('NestContainer', () => {
   let container: NestContainer;
@@ -52,24 +52,24 @@ describe('NestContainer', () => {
   });
 
   describe('addModule', () => {
-    it('should not add module if already exists in collection', () => {
+    it('should not add module if already exists in collection', async () => {
       const modules = new Map();
       const setSpy = sinon.spy(modules, 'set');
       (container as any).modules = modules;
 
-      container.addModule(TestModule as any, []);
-      container.addModule(TestModule as any, []);
+      await container.addModule(TestModule as any, []);
+      await container.addModule(TestModule as any, []);
 
       expect(setSpy.calledOnce).to.be.true;
     });
 
     it('should throws an exception when metatype is not defined', () => {
-      expect(() => container.addModule(undefined, [])).to.throws();
+      expect(container.addModule(undefined, [])).to.eventually.throws();
     });
 
-    it('should add global module when module is global', () => {
+    it('should add global module when module is global', async () => {
       const addGlobalModuleSpy = sinon.spy(container, 'addGlobalModule');
-      container.addModule(GlobalTestModule as any, []);
+      await container.addModule(GlobalTestModule as any, []);
       expect(addGlobalModuleSpy.calledOnce).to.be.true;
     });
   });

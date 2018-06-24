@@ -35,11 +35,14 @@ export class NestContainer {
     return this.applicationRef;
   }
 
-  public addModule(metatype: Type<any> | DynamicModule, scope: Type<any>[]) {
+  public async addModule(
+    metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
+    scope: Type<any>[],
+  ) {
     if (!metatype) {
       throw new InvalidModuleException(scope);
     }
-    const { type, dynamicMetadata, token } = this.moduleCompiler.compile(
+    const { type, dynamicMetadata, token } = await this.moduleCompiler.compile(
       metatype,
       scope,
     );
@@ -87,7 +90,7 @@ export class NestContainer {
     return this.modules;
   }
 
-  public addRelatedModule(
+  public async addRelatedModule(
     relatedModule: Type<any> | DynamicModule,
     token: string,
   ) {
@@ -97,9 +100,10 @@ export class NestContainer {
     const parent = module.metatype;
 
     const scope = [].concat(module.scope, parent);
-    const {
-      token: relatedModuleToken,
-    } = this.moduleCompiler.compile(relatedModule, scope);
+    const { token: relatedModuleToken } = await this.moduleCompiler.compile(
+      relatedModule,
+      scope,
+    );
     const related = this.modules.get(relatedModuleToken);
     module.addRelatedModule(related);
   }
