@@ -1,27 +1,27 @@
-import 'reflect-metadata';
-import { NestContainer } from './injector/container';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { DynamicModule } from '@nestjs/common';
 import {
-  metadata,
-  GATEWAY_MIDDLEWARES,
   EXCEPTION_FILTERS_METADATA,
+  GATEWAY_MIDDLEWARES,
   GUARDS_METADATA,
   INTERCEPTORS_METADATA,
+  metadata,
   PIPES_METADATA,
   ROUTE_ARGS_METADATA,
 } from '@nestjs/common/constants';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { MetadataScanner } from '../core/metadata-scanner';
-import { DynamicModule } from '@nestjs/common';
-import { ApplicationConfig } from './application-config';
 import {
+  isFunction,
   isNil,
   isUndefined,
-  isFunction,
 } from '@nestjs/common/utils/shared.utils';
-import { APP_INTERCEPTOR, APP_PIPE, APP_GUARD, APP_FILTER } from './constants';
+import 'reflect-metadata';
+import { MetadataScanner } from '../core/metadata-scanner';
+import { ApplicationConfig } from './application-config';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
+import { NestContainer } from './injector/container';
 
 interface ApplicationProviderWrapper {
   moduleToken: string;
@@ -36,43 +36,43 @@ export class DependenciesScanner {
     private readonly applicationConfig = new ApplicationConfig(),
   ) {}
 
-  public scan(module: Type<any>) {
-    this.scanForModules(module);
-    this.scanModulesForDependencies();
+  public async scan(module: Type<any>) {
+    await this.scanForModules(module);
+    await this.scanModulesForDependencies();
     this.container.bindGlobalScope();
   }
 
-  public scanForModules(
+  public async scanForModules(
     module: Type<any> | DynamicModule,
     scope: Type<any>[] = [],
   ) {
-    this.storeModule(module, scope);
+    await this.storeModule(module, scope);
 
     const modules = this.reflectMetadata(module, metadata.MODULES);
-    modules.map(innerModule => {
-      this.scanForModules(innerModule, [].concat(scope, module));
-    });
-  }
-
-  public storeModule(module: any, scope: Type<any>[]) {
-    if (module && module.forwardRef) {
-      return this.container.addModule(module.forwardRef(), scope);
+    for (const innerModule of modules) {
+      await this.scanForModules(innerModule, [].concat(scope, module));
     }
-    this.container.addModule(module, scope);
   }
 
-  public scanModulesForDependencies() {
+  public async storeModule(module: any, scope: Type<any>[]) {
+    if (module && module.forwardRef) {
+      return await this.container.addModule(module.forwardRef(), scope);
+    }
+    await this.container.addModule(module, scope);
+  }
+
+  public async scanModulesForDependencies() {
     const modules = this.container.getModules();
 
-    modules.forEach(({ metatype }, token) => {
-      this.reflectRelatedModules(metatype, token, metatype.name);
+    for (const [token, { metatype }] of modules) {
+      await this.reflectRelatedModules(metatype, token, metatype.name);
       this.reflectComponents(metatype, token);
       this.reflectControllers(metatype, token);
       this.reflectExports(metatype, token);
-    });
+    }
   }
 
-  public reflectRelatedModules(
+  public async reflectRelatedModules(
     module: Type<any>,
     token: string,
     context: string,
@@ -88,7 +88,9 @@ export class DependenciesScanner {
         metadata.IMPORTS as 'imports',
       ),
     ];
-    modules.map(related => this.storeRelatedModule(related, token, context));
+    for (const related of modules) {
+      await this.storeRelatedModule(related, token, context);
+    }
   }
 
   public reflectComponents(module: Type<any>, token: string) {
@@ -214,14 +216,18 @@ export class DependenciesScanner {
     return descriptor ? Reflect.getMetadata(key, descriptor.value) : undefined;
   }
 
-  public storeRelatedModule(related: any, token: string, context: string) {
+  public async storeRelatedModule(
+    related: any,
+    token: string,
+    context: string,
+  ) {
     if (isUndefined(related)) {
       throw new CircularDependencyException(context);
     }
     if (related && related.forwardRef) {
-      return this.container.addRelatedModule(related.forwardRef(), token);
+      return await this.container.addRelatedModule(related.forwardRef(), token);
     }
-    this.container.addRelatedModule(related, token);
+    await this.container.addRelatedModule(related, token);
   }
 
   public storeComponent(component, token: string) {
