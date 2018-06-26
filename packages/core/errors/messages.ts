@@ -1,14 +1,14 @@
 export const UnknownDependenciesMessage = (
   type: string,
   index: number,
-  length: number,
+  args: any[],
 ) => {
   let message = `Nest can't resolve dependencies of the ${type}`;
   message += ` (`;
 
-  const args = new Array(length).fill('+');
-  args[index] = '?';
-  message += args.join(', ');
+  const dependencies = args.map(arg => arg.name);
+  dependencies[index] = '?';
+  message += dependencies.join(', ');
 
   message += `). Please verify whether [${index}] argument is available in the current context.`;
   return message;
