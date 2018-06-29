@@ -50,11 +50,11 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 #### Silver Sponsor
 
-<a href="https://neoteric.eu/"><img src="https://nestjs.com/img/neoteric-cut.png" width="130" /></a>
+<a href="https://neoteric.eu/"><img src="https://nestjs.com/img/neoteric-cut.png" width="130" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="160" /></a>
 
 #### Sponsors
 
-<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.svg" width="120" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="120" /></a> &nbsp; <a href="http://angularity.io"><img src="http://angularity.io/media/logo.svg" height="32" /></a> &nbsp; <a href="http://gojob.com"><img src="https://gojob.com/w/wp-content/uploads/2017/02/cropped-Logo-web-home.png" height="44" /> &nbsp; <a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="37" /></a> &nbsp; <a href="https://hostpresto.com"><img src="https://nestjs.com/img/hostpresto.png" height="32" /></a>
+<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.svg" width="120" /></a> &nbsp; <a href="http://angularity.io"><img src="http://angularity.io/media/logo.svg" height="32" /></a> &nbsp; <a href="http://gojob.com"><img src="https://gojob.com/w/wp-content/uploads/2017/02/cropped-Logo-web-home.png" height="44" /> &nbsp; <a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="37" /></a> &nbsp; <a href="https://hostpresto.com"><img src="https://nestjs.com/img/hostpresto.png" height="32" /></a>
 
 ## Backers
 
