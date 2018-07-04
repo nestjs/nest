@@ -52,6 +52,6 @@ export class HttpService {
   }
 
   get axiosRef() {
-    return axios;
+    return axios as any;
   }
 }
