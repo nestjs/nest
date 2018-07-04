@@ -47,7 +47,7 @@ export class WsAdapter implements WebSocketAdapter {
   }
 
   public bindMessageHandlers(
-    client: WebSocket,
+    client: any,
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {

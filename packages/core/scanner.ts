@@ -24,8 +24,9 @@ import { CircularDependencyException } from './errors/exceptions/circular-depend
 import { NestContainer } from './injector/container';
 
 interface ApplicationProviderWrapper {
-  moduleToken: string;
-  providerToken: string;
+  moduleKey: string;
+  providerKey: string;
+  type: string;
 }
 
 export class DependenciesScanner {
@@ -237,15 +238,26 @@ export class DependenciesScanner {
     }
     const applyProvidersMap = this.getApplyProvidersMap();
     const providersKeys = Object.keys(applyProvidersMap);
-    const providerToken = component.provide;
-    if (providersKeys.indexOf(providerToken) < 0) {
+    const type = component.provide;
+    if (providersKeys.indexOf(type) < 0) {
       return this.container.addComponent(component, token);
     }
+    const providerToken = Math.random()
+      .toString(36)
+      .substring(2, 32);
+
     this.applicationProvidersApplyMap.push({
-      moduleToken: token,
-      providerToken,
+      type,
+      moduleKey: token,
+      providerKey: providerToken,
     });
-    this.container.addComponent(component, token);
+    this.container.addComponent(
+      {
+        ...component,
+        provide: providerToken,
+      },
+      token,
+    );
   }
 
   public storeInjectable(component: Type<Injectable>, token: string) {
@@ -270,12 +282,12 @@ export class DependenciesScanner {
   public applyApplicationProviders() {
     const applyProvidersMap = this.getApplyProvidersMap();
     this.applicationProvidersApplyMap.forEach(
-      ({ moduleToken, providerToken }) => {
+      ({ moduleKey, providerKey, type }) => {
         const modules = this.container.getModules();
-        const { components } = modules.get(moduleToken);
-        const { instance } = components.get(providerToken);
+        const { components } = modules.get(moduleKey);
+        const { instance } = components.get(providerKey);
 
-        applyProvidersMap[providerToken](instance);
+        applyProvidersMap[type](instance);
       },
     );
   }
