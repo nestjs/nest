@@ -1,1 +1,1 @@
-export declare type CustomParamFactory = (data, req) => any;
+export declare type CustomParamFactory<TData = any, TRequest = any, TResult = any> = (data: TData, req: TRequest) => TResult;

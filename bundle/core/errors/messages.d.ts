@@ -6,4 +6,4 @@ export declare const INVALID_MIDDLEWARE_CONFIGURATION = "Invalid middleware conf
 export declare const UNKNOWN_REQUEST_MAPPING = "Request mapping properties not defined in the @RequestMapping() annotation!";
 export declare const UNHANDLED_RUNTIME_EXCEPTION = "Unhandled Runtime Exception.";
 export declare const INVALID_EXCEPTION_FILTER = "Invalid exception filters (@UseFilters()).";
-export declare const MICROSERVICES_PACKAGE_NOT_FOUND_EXCEPTION = "Unable to load @nestjs/microservices package (please, make sure whether it's installed already).";
+export declare const MICROSERVICES_PACKAGE_NOT_FOUND_EXCEPTION = "Unable to load @nestjs/microservices package. (Please make sure that it's already installed.)";

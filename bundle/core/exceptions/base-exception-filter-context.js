@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-require("reflect-metadata");
-const iterare_1 = require("iterare");
 const constants_1 = require("@nestjs/common/constants");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const iterare_1 = require("iterare");
+require("reflect-metadata");
 const context_creator_1 = require("./../helpers/context-creator");
 class BaseExceptionFilterContext extends context_creator_1.ContextCreator {
     constructor(container) {
@@ -24,7 +24,7 @@ class BaseExceptionFilterContext extends context_creator_1.ContextCreator {
             .toArray();
     }
     getFilterInstance(filter) {
-        const isObject = !!filter.catch;
+        const isObject = filter.catch;
         if (isObject) {
             return filter;
         }

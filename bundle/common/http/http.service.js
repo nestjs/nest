@@ -24,5 +24,8 @@ class HttpService {
     patch(url, data, config) {
         return rxjs_1.from(axios_1.default.patch(url, data, config));
     }
+    get axiosRef() {
+        return axios_1.default;
+    }
 }
 exports.HttpService = HttpService;

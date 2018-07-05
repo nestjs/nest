@@ -1,10 +1,11 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { ClientTCP } from '../../client/client-tcp';
-import { MESSAGE_EVENT, ERROR_EVENT } from '../../constants';
+import { ERROR_EVENT } from '../../constants';
+// tslint:disable:no-string-literal
 
 describe('ClientTCP', () => {
-  const client = new ClientTCP({});
+  let client: ClientTCP;
   let socket: {
     connect: sinon.SinonStub;
     publish: sinon.SinonSpy;
@@ -20,6 +21,7 @@ describe('ClientTCP', () => {
   let createSocketStub: sinon.SinonStub;
 
   beforeEach(() => {
+    client = new ClientTCP({});
     const onFakeCallback = (event, callback) =>
       event !== 'error' && event !== 'close' && callback({});
 
@@ -46,48 +48,40 @@ describe('ClientTCP', () => {
     let msg;
     beforeEach(() => {
       msg = { test: 3 };
+      client['isConnected'] = true;
+      client['socket'] = socket;
     });
-    it('should connect to server when is not connected', done => {
-      client['publish'](msg, () => ({})).then(() => {
-        expect(socket.connect.calledOnce).to.be.true;
-        done();
-      });
-    });
-    it('should not connect to server when is already connected', () => {
-      (client as any).isConnected = true;
+    it('should send message', () => {
       client['publish'](msg, () => ({}));
-      expect(socket.connect.called).to.be.false;
     });
-    describe('after connection', () => {
-      it('should send message', done => {
-        (client as any).isConnected = false;
-        client['publish'](msg, () => ({})).then(() => {
-          expect(socket.sendMessage.called).to.be.true;
-          expect(socket.sendMessage.calledWith(msg)).to.be.true;
-          done();
-        });
+    it('should listen on messages', () => {
+      client['publish'](msg, () => ({}));
+      expect(socket.on.called).to.be.true;
+    });
+    describe('on dispose', () => {
+      it('should remove listener', () => {
+        client['publish'](msg, () => ({}))();
+        expect(socket._socket.removeListener.called).to.be.true;
       });
-      it('should listen on messages', done => {
-        (client as any).isConnected = false;
-        client['publish'](msg, () => ({})).then(() => {
-          expect(socket.on.called).to.be.true;
-          done();
+    });
+    describe('on error', () => {
+      it('should call callback', () => {
+        const callback = sinon.spy();
+        sinon.stub(client, 'assignPacketId').callsFake(() => {
+          throw new Error();
         });
+        client['publish'](msg, callback);
+        expect(callback.called).to.be.true;
+        expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
       });
     });
   });
   describe('handleResponse', () => {
     let callback;
     describe('when disposed', () => {
-      const context = () => ({});
       beforeEach(() => {
         callback = sinon.spy();
-        client.handleResponse(socket, callback, { isDisposed: true }, context);
-      });
-      it('should remove listener', () => {
-        expect(socket._socket.removeListener.called).to.be.true;
-        expect(socket._socket.removeListener.calledWith(MESSAGE_EVENT, context))
-          .to.be.true;
+        client.handleResponse(callback, { isDisposed: true });
       });
       it('should emit disposed callback', () => {
         expect(callback.called).to.be.true;
@@ -102,11 +96,10 @@ describe('ClientTCP', () => {
     });
     describe('when not disposed', () => {
       let buffer;
-      const context = () => ({});
       beforeEach(() => {
         buffer = { err: null, response: 'res' };
         callback = sinon.spy();
-        client.handleResponse(socket, callback, buffer, context);
+        client.handleResponse(callback, buffer);
       });
       it('should not end server', () => {
         expect(socket.end.called).to.be.false;
@@ -121,15 +114,50 @@ describe('ClientTCP', () => {
         ).to.be.true;
       });
     });
-    describe('when connect throws', () => {
-      it('should call callback with error', async () => {
-        const err = new Error();
-        const connectStub = sinon.stub(client, 'connect').throws(err);
-        const callbackSpy = sinon.spy();
+  });
+  describe('connect', () => {
+    let bindEventsSpy: sinon.SinonSpy;
+    let connect$Stub: sinon.SinonStub;
 
-        (client as any).isConnected = false;
-        await client['publish']({} as any, callbackSpy);
-        expect(callbackSpy.calledWith({ err })).to.be.true;
+    beforeEach(async () => {
+      bindEventsSpy = sinon.spy(client, 'bindEvents');
+    });
+    afterEach(() => {
+      bindEventsSpy.restore();
+    });
+    describe('when is not connected', () => {
+      beforeEach(async () => {
+        client['isConnected'] = false;
+        const source = {
+          subscribe: resolve => resolve(),
+          toPromise: () => source,
+          pipe: () => source,
+        };
+        connect$Stub = sinon.stub(client, 'connect$').callsFake(() => source);
+        await client.connect();
+      });
+      afterEach(() => {
+        connect$Stub.restore();
+      });
+      it('should call "bindEvents" once', async () => {
+        expect(bindEventsSpy.called).to.be.true;
+      });
+      it('should call "createSocket" once', async () => {
+        expect(createSocketStub.called).to.be.true;
+      });
+      it('should call "connect$" once', async () => {
+        expect(connect$Stub.called).to.be.true;
+      });
+    });
+    describe('when is connected', () => {
+      beforeEach(() => {
+        client['isConnected'] = true;
+      });
+      it('should not call "createSocket"', () => {
+        expect(createSocketStub.called).to.be.false;
+      });
+      it('should not call "bindEvents"', () => {
+        expect(bindEventsSpy.called).to.be.false;
       });
     });
   });

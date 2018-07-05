@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-require("reflect-metadata");
 const constants_1 = require("@nestjs/common/constants");
-const application_config_1 = require("./application-config");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+require("reflect-metadata");
+const application_config_1 = require("./application-config");
 const constants_2 = require("./constants");
 const circular_dependency_exception_1 = require("./errors/exceptions/circular-dependency.exception");
 class DependenciesScanner {
@@ -13,40 +13,42 @@ class DependenciesScanner {
         this.applicationConfig = applicationConfig;
         this.applicationProvidersApplyMap = [];
     }
-    scan(module) {
-        this.scanForModules(module);
-        this.scanModulesForDependencies();
+    async scan(module) {
+        await this.scanForModules(module);
+        await this.scanModulesForDependencies();
         this.container.bindGlobalScope();
     }
-    scanForModules(module, scope = []) {
-        this.storeModule(module, scope);
+    async scanForModules(module, scope = []) {
+        await this.storeModule(module, scope);
         const modules = this.reflectMetadata(module, constants_1.metadata.MODULES);
-        modules.map(innerModule => {
-            this.scanForModules(innerModule, [].concat(scope, module));
-        });
-    }
-    storeModule(module, scope) {
-        if (module && module.forwardRef) {
-            return this.container.addModule(module.forwardRef(), scope);
+        for (const innerModule of modules) {
+            await this.scanForModules(innerModule, [].concat(scope, module));
         }
-        this.container.addModule(module, scope);
     }
-    scanModulesForDependencies() {
+    async storeModule(module, scope) {
+        if (module && module.forwardRef) {
+            return await this.container.addModule(module.forwardRef(), scope);
+        }
+        await this.container.addModule(module, scope);
+    }
+    async scanModulesForDependencies() {
         const modules = this.container.getModules();
-        modules.forEach(({ metatype }, token) => {
-            this.reflectRelatedModules(metatype, token, metatype.name);
+        for (const [token, { metatype }] of modules) {
+            await this.reflectRelatedModules(metatype, token, metatype.name);
             this.reflectComponents(metatype, token);
             this.reflectControllers(metatype, token);
             this.reflectExports(metatype, token);
-        });
+        }
     }
-    reflectRelatedModules(module, token, context) {
+    async reflectRelatedModules(module, token, context) {
         const modules = [
             ...this.reflectMetadata(module, constants_1.metadata.MODULES),
             ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.MODULES),
             ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.IMPORTS),
         ];
-        modules.map(related => this.storeRelatedModule(related, token, context));
+        for (const related of modules) {
+            await this.storeRelatedModule(related, token, context);
+        }
     }
     reflectComponents(module, token) {
         const components = [
@@ -114,14 +116,14 @@ class DependenciesScanner {
         const descriptor = Reflect.getOwnPropertyDescriptor(component.prototype, method);
         return descriptor ? Reflect.getMetadata(key, descriptor.value) : undefined;
     }
-    storeRelatedModule(related, token, context) {
+    async storeRelatedModule(related, token, context) {
         if (shared_utils_1.isUndefined(related)) {
             throw new circular_dependency_exception_1.CircularDependencyException(context);
         }
         if (related && related.forwardRef) {
-            return this.container.addRelatedModule(related.forwardRef(), token);
+            return await this.container.addRelatedModule(related.forwardRef(), token);
         }
-        this.container.addRelatedModule(related, token);
+        await this.container.addRelatedModule(related, token);
     }
     storeComponent(component, token) {
         const isCustomProvider = component && !shared_utils_1.isNil(component.provide);
@@ -130,15 +132,19 @@ class DependenciesScanner {
         }
         const applyProvidersMap = this.getApplyProvidersMap();
         const providersKeys = Object.keys(applyProvidersMap);
-        const providerToken = component.provide;
-        if (providersKeys.indexOf(providerToken) < 0) {
+        const type = component.provide;
+        if (providersKeys.indexOf(type) < 0) {
             return this.container.addComponent(component, token);
         }
+        const providerToken = Math.random()
+            .toString(36)
+            .substring(2, 32);
         this.applicationProvidersApplyMap.push({
-            moduleToken: token,
-            providerToken,
+            type,
+            moduleKey: token,
+            providerKey: providerToken,
         });
-        this.container.addComponent(component, token);
+        this.container.addComponent(Object.assign({}, component, { provide: providerToken }), token);
     }
     storeInjectable(component, token) {
         this.container.addInjectable(component, token);
@@ -154,11 +160,11 @@ class DependenciesScanner {
     }
     applyApplicationProviders() {
         const applyProvidersMap = this.getApplyProvidersMap();
-        this.applicationProvidersApplyMap.forEach(({ moduleToken, providerToken }) => {
+        this.applicationProvidersApplyMap.forEach(({ moduleKey, providerKey, type }) => {
             const modules = this.container.getModules();
-            const { components } = modules.get(moduleToken);
-            const { instance } = components.get(providerToken);
-            applyProvidersMap[providerToken](instance);
+            const { components } = modules.get(moduleKey);
+            const { instance } = components.get(providerKey);
+            applyProvidersMap[type](instance);
         });
     }
     getApplyProvidersMap() {

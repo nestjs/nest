@@ -1,7 +1,7 @@
-import { ClientProxy } from './client-proxy';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
-import { WritePacket, ReadPacket } from './../interfaces';
 import { Client } from '../external/nats-client.interface';
+import { ClientOptions } from '../interfaces/client-metadata.interface';
+import { PacketId, ReadPacket, WritePacket } from './../interfaces';
+import { ClientProxy } from './client-proxy';
 export declare class ClientNats extends ClientProxy {
     private readonly options;
     private readonly logger;
@@ -14,5 +14,6 @@ export declare class ClientNats extends ClientProxy {
     connect(): Promise<any>;
     createClient(): Promise<Client>;
     handleError(client: Client): void;
-    protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): Promise<any>;
+    createSubscriptionHandler(packet: ReadPacket & PacketId, callback: (packet: WritePacket) => any): Function;
+    protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): Function;
 }
