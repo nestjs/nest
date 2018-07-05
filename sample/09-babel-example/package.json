@@ -9,11 +9,11 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@nestjs/common": "^5.0.0",
-    "@nestjs/core": "^5.0.0",
-    "@nestjs/microservices": "^5.0.0",
-    "@nestjs/testing": "^5.0.0",
-    "@nestjs/websockets": "^5.0.0",
+    "@nestjs/common": "^5.1.0",
+    "@nestjs/core": "^5.1.0",
+    "@nestjs/microservices": "^5.1.0",
+    "@nestjs/testing": "^5.1.0",
+    "@nestjs/websockets": "^5.1.0",
     "babel-core": "^6.26.0",
     "babel-polyfill": "^6.26.0",
     "body-parser": "^1.17.2",

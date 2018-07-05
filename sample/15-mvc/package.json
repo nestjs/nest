@@ -10,8 +10,8 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "^5.0.0",
-    "@nestjs/core": "^5.0.0",
+    "@nestjs/common": "^5.1.0",
+    "@nestjs/core": "^5.1.0",
     "hbs": "^4.0.1",
     "pug": "^2.0.3",
     "reflect-metadata": "^0.1.12",
