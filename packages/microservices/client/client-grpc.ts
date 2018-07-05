@@ -128,9 +128,12 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
       const context = grpcPackage.load(options);
       return context;
-    } catch (e) {
+    } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException();
-      this.logger.error(invalidProtoError.message, invalidProtoError.stack);
+      const message =
+        err && err.message ? err.message : invalidProtoError.message;
+
+      this.logger.error(message, invalidProtoError.stack);
       throw invalidProtoError;
     }
   }
@@ -150,12 +153,19 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public async connect(): Promise<any> {
+    throw new Error('The "connect()" method is not supported in gRPC mode.');
+  }
+
+  public send<TResult = any, TInput = any>(
+    pattern: any,
+    data: TInput,
+  ): Observable<TResult> {
     throw new Error(
-      'The "connect()" method is not supported in gRPC mode.',
+      'Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).',
     );
   }
 
-  protected async publish(partialPacket, callback: (packet) => any) {
+  protected publish(partialPacket, callback: (packet) => any) {
     throw new Error(
       'Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).',
     );

@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const injector_1 = require("./injector");
 const common_1 = require("@nestjs/common");
 const messages_1 = require("../helpers/messages");
+const injector_1 = require("./injector");
 class InstanceLoader {
     constructor(container) {
         this.container = container;

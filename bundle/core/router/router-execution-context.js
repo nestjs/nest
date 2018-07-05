@@ -113,7 +113,7 @@ class RouterExecutionContext {
         const canActivateFn = async (args) => {
             const canActivate = await this.guardsConsumer.tryActivate(guards, args, instance, callback);
             if (!canActivate) {
-                throw new common_1.HttpException(constants_2.FORBIDDEN_MESSAGE, common_1.HttpStatus.FORBIDDEN);
+                throw new common_1.ForbiddenException(constants_2.FORBIDDEN_MESSAGE);
             }
         };
         return guards.length ? canActivateFn : null;

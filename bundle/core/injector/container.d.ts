@@ -1,9 +1,9 @@
-import 'reflect-metadata';
-import { Type } from '@nestjs/common/interfaces/type.interface';
-import { Module } from './module';
 import { DynamicModule } from '@nestjs/common';
-import { ModulesContainer } from './modules-container';
+import { Type } from '@nestjs/common/interfaces/type.interface';
+import 'reflect-metadata';
 import { ApplicationConfig } from './../application-config';
+import { Module } from './module';
+import { ModulesContainer } from './modules-container';
 export declare class NestContainer {
     private readonly _applicationConfig;
     private readonly globalModules;
@@ -15,13 +15,13 @@ export declare class NestContainer {
     readonly applicationConfig: ApplicationConfig | undefined;
     setApplicationRef(applicationRef: any): void;
     getApplicationRef(): any;
-    addModule(metatype: Type<any> | DynamicModule, scope: Type<any>[]): void;
+    addModule(metatype: Type<any> | DynamicModule | Promise<DynamicModule>, scope: Type<any>[]): Promise<void>;
     addDynamicMetadata(token: string, dynamicModuleMetadata: Partial<DynamicModule>, scope: Type<any>[]): any;
     addDynamicModules(modules: any[], scope: Type<any>[]): any;
     isGlobalModule(metatype: Type<any>): boolean;
     addGlobalModule(module: Module): void;
     getModules(): ModulesContainer;
-    addRelatedModule(relatedModule: Type<any> | DynamicModule, token: string): void;
+    addRelatedModule(relatedModule: Type<any> | DynamicModule, token: string): Promise<void>;
     addComponent(component: Type<any>, token: string): string;
     addInjectable(injectable: Type<any>, token: string): void;
     addExportedComponent(exportedComponent: Type<any>, token: string): void;

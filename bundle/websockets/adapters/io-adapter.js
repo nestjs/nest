@@ -43,7 +43,7 @@ class IoAdapter {
     }
     bindMessageHandlers(client, handlers, transform) {
         handlers.forEach(({ message, callback }) => rxjs_1.fromEvent(client, message)
-            .pipe(operators_1.mergeMap(data => transform(callback(data))), operators_1.filter(result => !!result && result.event))
+            .pipe(operators_1.mergeMap(data => transform(callback(data)).pipe(operators_1.filter((result) => result && result.event))))
             .subscribe(({ event, data }) => client.emit(event, data)));
     }
     bindMiddleware(server, middleware) {

@@ -1,10 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const express = require("express");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const express = require("express");
+const router_method_factory_1 = require("../helpers/router-method-factory");
 class ExpressAdapter {
     constructor(instance) {
         this.instance = instance;
+        this.routerMethodFactory = new router_method_factory_1.RouterMethodFactory();
     }
     use(...args) {
         return this.instance.use(...args);
@@ -87,6 +89,11 @@ class ExpressAdapter {
     }
     getRequestUrl(request) {
         return request.url;
+    }
+    createMiddlewareFactory(requestMethod) {
+        return this.routerMethodFactory
+            .get(this.instance, requestMethod)
+            .bind(this.instance);
     }
 }
 exports.ExpressAdapter = ExpressAdapter;

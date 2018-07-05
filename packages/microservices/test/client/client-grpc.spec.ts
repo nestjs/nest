@@ -1,10 +1,12 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ClientGrpcProxy } from '../../client/client-grpc';
 import { join } from 'path';
-import { InvalidGrpcServiceException } from '../../exceptions/invalid-grpc-service.exception';
 import { Observable } from 'rxjs';
+import * as sinon from 'sinon';
+import { ClientGrpcProxy } from '../../client/client-grpc';
 import { InvalidGrpcPackageException } from '../../exceptions/invalid-grpc-package.exception';
+import { InvalidGrpcServiceException } from '../../exceptions/invalid-grpc-service.exception';
+import { InvalidProtoDefinitionException } from '../../exceptions/invalid-proto-definition.exception';
+// tslint:disable:no-string-literal
 
 class GrpcService {
   test = null;
@@ -18,7 +20,7 @@ describe('ClientGrpcProxy', () => {
       options: {
         protoPath: join(__dirname, './test.proto'),
         package: 'test',
-      }
+      },
     });
   });
 
@@ -32,7 +34,7 @@ describe('ClientGrpcProxy', () => {
     describe('when "grpcClient[name]" is not nil', () => {
       it('should create grpcService', () => {
         (client as any).grpcClient = {
-          'test': GrpcService,
+          test: GrpcService,
         };
         expect(() => client.getService('test')).to.not.throw(InvalidGrpcServiceException);
       });
@@ -187,6 +189,16 @@ describe('ClientGrpcProxy', () => {
     });
   });
 
+  describe('loadProto', () => {
+    describe('when proto is invalid', () => {
+      it('should throw InvalidProtoDefinitionException', () => {
+        sinon.stub(client, 'getOptionsProp').callsFake(() => {
+          throw new Error();
+        });
+        expect(() => client.loadProto()).to.throws(InvalidProtoDefinitionException);
+      });
+    });
+  });
   describe('close', () => {
     it('should call "close" method', () => {
       const grpcClient = { close: sinon.spy() };
@@ -199,7 +211,13 @@ describe('ClientGrpcProxy', () => {
 
   describe('publish', () => {
     it('should throw exception', () => {
-      expect(client['publish'](null, null)).to.eventually.throws(Error);
+      expect(() => client['publish'](null, null)).to.throws(Error);
+    });
+  });
+
+  describe('send', () => {
+    it('should throw exception', () => {
+      expect(() => client.send(null, null)).to.throws(Error);
     });
   });
 

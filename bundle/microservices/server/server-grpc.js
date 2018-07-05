@@ -1,5 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const rxjs_1 = require("rxjs");
+const operators_1 = require("rxjs/operators");
 const invalid_grpc_package_exception_1 = require("../exceptions/invalid-grpc-package.exception");
 const invalid_proto_definition_exception_1 = require("../exceptions/invalid-proto-definition.exception");
 const constants_1 = require("./../constants");
@@ -71,7 +73,7 @@ class ServerGrpc extends server_1.Server {
         return async (call, callback) => {
             const handler = methodHandler(call.request, call.metadata);
             const result$ = this.transformToObservable(await handler);
-            await result$.forEach(data => call.write(data));
+            await result$.pipe(operators_1.takeUntil(rxjs_1.fromEvent(call, constants_1.CANCEL_EVENT))).forEach(data => call.write(data));
             call.end();
         };
     }
@@ -109,9 +111,10 @@ class ServerGrpc extends server_1.Server {
             const context = grpcPackage.load(options);
             return context;
         }
-        catch (e) {
+        catch (err) {
             const invalidProtoError = new invalid_proto_definition_exception_1.InvalidProtoDefinitionException();
-            this.logger.error(invalidProtoError.message, invalidProtoError.stack);
+            const message = err && err.message ? err.message : invalidProtoError.message;
+            this.logger.error(message, invalidProtoError.stack);
             throw invalidProtoError;
         }
     }

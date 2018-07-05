@@ -39,7 +39,7 @@ class WsAdapter {
     }
     bindMessageHandlers(client, handlers, transform) {
         rxjs_1.fromEvent(client, 'message')
-            .pipe(operators_1.mergeMap(data => this.bindMessageHandler(data, handlers, transform)), operators_1.filter(result => !!result))
+            .pipe(operators_1.mergeMap(data => this.bindMessageHandler(data, handlers, transform).pipe(operators_1.filter(result => result))))
             .subscribe(response => client.send(JSON.stringify(response)));
     }
     bindMessageHandler(buffer, handlers, transform) {

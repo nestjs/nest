@@ -48,8 +48,11 @@ export class IoAdapter implements WebSocketAdapter {
     handlers.forEach(({ message, callback }) =>
       fromEvent(client, message)
         .pipe(
-          mergeMap(data => transform(callback(data))),
-          filter(result => result && result.event),
+          mergeMap(data =>
+            transform(callback(data)).pipe(
+              filter((result: any) => result && result.event),
+            ),
+          ),
         )
         .subscribe(({ event, data }) => client.emit(event, data)),
     );

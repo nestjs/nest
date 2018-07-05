@@ -5,7 +5,7 @@ import { NestContainer } from '@nestjs/core/injector/container';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import 'reflect-metadata';
 import { from as fromPromise, Observable, of, Subject } from 'rxjs';
-import { distinctUntilChanged, mergeMap } from 'rxjs/operators';
+import { distinctUntilChanged, mergeAll } from 'rxjs/operators';
 import { GATEWAY_OPTIONS, PORT_METADATA } from './constants';
 import { WsContextCreator } from './context/ws-context-creator';
 import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exception';
@@ -146,7 +146,7 @@ export class WebSocketsController {
       callback: callback.bind(instance, client),
     }));
     adapter.bindMessageHandlers(client, handlers, data =>
-      fromPromise(this.pickResult(data)).pipe(mergeMap(stream => stream)),
+      fromPromise(this.pickResult(data)).pipe(mergeAll()),
     );
   }
 
