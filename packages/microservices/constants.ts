@@ -4,6 +4,8 @@ export const REDIS_DEFAULT_URL = 'redis://localhost:6379';
 export const NATS_DEFAULT_URL = 'nats://localhost:4222';
 export const MQTT_DEFAULT_URL = 'mqtt://localhost:1883';
 export const GRPC_DEFAULT_URL = 'localhost:5000';
+export const RQM_DEFAULT_URL = 'localhost';
+export const RQM_DEFAULT_QUEUE = 'default';
 
 export const CONNECT_EVENT = 'connect';
 export const MESSAGE_EVENT = 'message';

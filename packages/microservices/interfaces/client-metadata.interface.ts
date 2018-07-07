@@ -5,6 +5,7 @@ import {
   NatsOptions,
   MqttOptions,
   GrpcOptions,
+  RmqOptions,
 } from './microservice-configuration.interface';
 
 export type ClientOptions =
@@ -12,7 +13,8 @@ export type ClientOptions =
   | NatsOptions
   | MqttOptions
   | GrpcOptions
-  | TcpClientOptions;
+  | TcpClientOptions
+  | RmqOptions;
 
 export interface TcpClientOptions {
   transport: Transport.TCP;
