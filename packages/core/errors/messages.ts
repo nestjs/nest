@@ -1,3 +1,9 @@
+// Try to get the class name
+// otherwise the string value
+// if not known use +
+const getDependencyName =
+  arg => (arg && arg.name) || arg || '+';
+
 export const UnknownDependenciesMessage = (
   type: string,
   index: number,
@@ -6,7 +12,7 @@ export const UnknownDependenciesMessage = (
   let message = `Nest can't resolve dependencies of the ${type}`;
   message += ` (`;
 
-  const dependencies = args.map(arg => arg.name);
+  const dependencies = args.map(arg => getDependencyName(arg));
   dependencies[index] = '?';
   message += dependencies.join(', ');
 
