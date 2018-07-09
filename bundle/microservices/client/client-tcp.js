@@ -20,6 +20,9 @@ class ClientTCP extends client_proxy_1.ClientProxy {
                 constants_1.TCP_DEFAULT_HOST;
     }
     connect() {
+        if (this.isConnected) {
+            return Promise.resolve();
+        }
         this.socket = this.createSocket();
         return new Promise((resolve, reject) => {
             this.bindEvents(this.socket);
@@ -29,7 +32,7 @@ class ClientTCP extends client_proxy_1.ClientProxy {
             this.socket.connect(this.port, this.host);
         });
     }
-    handleResponse(socket, callback, buffer, context) {
+    handleResponse(callback, buffer) {
         const { err, response, isDisposed } = buffer;
         if (isDisposed || err) {
             callback({
@@ -37,7 +40,6 @@ class ClientTCP extends client_proxy_1.ClientProxy {
                 response: null,
                 isDisposed: true,
             });
-            return socket._socket.removeListener(constants_1.MESSAGE_EVENT, context);
         }
         callback({
             err,
@@ -62,23 +64,18 @@ class ClientTCP extends client_proxy_1.ClientProxy {
         this.isConnected = false;
         this.socket = null;
     }
-    async publish(partialPacket, callback) {
+    publish(partialPacket, callback) {
         try {
-            if (!this.isConnected) {
-                await this.connect();
-            }
-            const handleRequestResponse = (jsonSocket) => {
-                const packet = this.assignPacketId(partialPacket);
-                jsonSocket.sendMessage(packet);
-                const listener = (buffer) => {
-                    if (buffer.id !== packet.id) {
-                        return undefined;
-                    }
-                    this.handleResponse(jsonSocket, callback, buffer, listener);
-                };
-                jsonSocket.on(constants_1.MESSAGE_EVENT, listener);
+            const packet = this.assignPacketId(partialPacket);
+            const listener = (buffer) => {
+                if (buffer.id !== packet.id) {
+                    return undefined;
+                }
+                this.handleResponse(callback, buffer);
             };
-            handleRequestResponse(this.socket);
+            this.socket.on(constants_1.MESSAGE_EVENT, listener);
+            this.socket.sendMessage(packet);
+            return () => this.socket._socket.removeListener(constants_1.MESSAGE_EVENT, listener);
         }
         catch (err) {
             callback({ err });

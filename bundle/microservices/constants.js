@@ -11,6 +11,7 @@ exports.MESSAGE_EVENT = 'message';
 exports.ERROR_EVENT = 'error';
 exports.CLOSE_EVENT = 'close';
 exports.SUBSCRIBE = 'subscribe';
+exports.CANCEL_EVENT = 'cancelled';
 exports.PATTERN_METADATA = 'pattern';
 exports.CLIENT_CONFIGURATION_METADATA = 'client';
 exports.CLIENT_METADATA = '__isClient';

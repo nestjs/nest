@@ -33,13 +33,12 @@ gulp.task('copy:ts', function() {
 
 
 gulp.task('copy-docs', function() {
-  return gulp.src('Readme.md').pipe(
-    gulp.dest('bundle/common'),
-    gulp.dest('bundle/core'),
-    gulp.dest('bundle/microservices'),
-    gulp.dest('bundle/websockets'),
-    gulp.dest('bundle/testing'),
-  );
+  return gulp.src('Readme.md')
+    .pipe(gulp.dest('bundle/common'))
+    .pipe(gulp.dest('bundle/core'))
+    .pipe(gulp.dest('bundle/microservices'))
+    .pipe(gulp.dest('bundle/websockets'))
+    .pipe(gulp.dest('bundle/testing'));
 });
 
 gulp.task('clean:bundle', function() {

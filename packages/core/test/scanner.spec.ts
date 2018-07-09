@@ -52,7 +52,7 @@ describe('DependenciesScanner', () => {
     mockContainer.restore();
   });
 
-  it('should "storeModule" call twice (2 modules) container method "addModule"',  async () => {
+  it('should "storeModule" call twice (2 modules) container method "addModule"', async () => {
     const expectation = mockContainer.expects('addModule').twice();
     await scanner.scan(TestModule as any);
     expectation.verify();
@@ -155,7 +155,7 @@ describe('DependenciesScanner', () => {
   });
 
   describe('storeRelatedModule', () => {
-    it('should call forwardRef() when forwardRef property exists',  async () => {
+    it('should call forwardRef() when forwardRef property exists', async () => {
       const module = { forwardRef: sinon.stub().returns({}) };
 
       sinon.stub(container, 'addRelatedModule').returns({});
@@ -195,9 +195,7 @@ describe('DependenciesScanner', () => {
         };
 
         it('should call container "addComponent" with expected args', () => {
-          const expectation = mockContainer
-            .expects('addComponent')
-            .withArgs(component, token);
+          const expectation = mockContainer.expects('addComponent').atLeast(1);
 
           mockContainer.expects('addComponent').callsFake(() => false);
           scanner.storeComponent(component, token);
@@ -210,7 +208,7 @@ describe('DependenciesScanner', () => {
           const applyMap = (scanner as any).applicationProvidersApplyMap;
 
           expect(applyMap).to.have.length(1);
-          expect(applyMap[0].moduleToken).to.be.eql(token);
+          expect(applyMap[0].moduleKey).to.be.eql(token);
         });
       });
       describe('and is not global', () => {
@@ -245,8 +243,9 @@ describe('DependenciesScanner', () => {
   describe('applyApplicationProviders', () => {
     it('should apply each provider', () => {
       const provider = {
-        moduleToken: 'moduleToken',
-        providerToken: 'providerToken',
+        moduleKey: 'moduleToken',
+        providerKey: 'providerToken',
+        type: APP_GUARD,
       };
       (scanner as any).applicationProvidersApplyMap = [provider];
 
@@ -258,7 +257,7 @@ describe('DependenciesScanner', () => {
       }));
       const applySpy = sinon.spy();
       sinon.stub(scanner, 'getApplyProvidersMap').callsFake(() => ({
-        [provider.providerToken]: applySpy,
+        [provider.type]: applySpy,
       }));
       scanner.applyApplicationProviders();
       expect(applySpy.called).to.be.true;

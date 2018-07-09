@@ -16,7 +16,6 @@ class TestingModuleBuilder {
         this.instanceLoader = new instance_loader_1.InstanceLoader(this.container);
         this.scanner = new scanner_1.DependenciesScanner(this.container, metadataScanner, this.applicationConfig);
         this.module = this.createModule(metadata);
-        this.scanner.scan(this.module);
     }
     overridePipe(typeOrToken) {
         return this.override(typeOrToken, false);
@@ -40,6 +39,7 @@ class TestingModuleBuilder {
     }
     async compile() {
         this.applyLogger();
+        await this.scanner.scan(this.module);
         [...this.overloadsMap.entries()].map(([component, options]) => {
             this.container.replace(component, options);
         });

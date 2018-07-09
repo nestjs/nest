@@ -1,15 +1,10 @@
-import { ClientProxy } from './client-proxy';
 import { Logger } from '@nestjs/common/services/logger.service';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
-import { NATS_DEFAULT_URL, ERROR_EVENT, CONNECT_EVENT } from './../constants';
-import {
-  WritePacket,
-  NatsOptions,
-  ReadPacket,
-  PacketId,
-} from './../interfaces';
-import { Client } from '../external/nats-client.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { Client } from '../external/nats-client.interface';
+import { ClientOptions } from '../interfaces/client-metadata.interface';
+import { ERROR_EVENT, NATS_DEFAULT_URL } from './../constants';
+import { NatsOptions, PacketId, ReadPacket, WritePacket } from './../interfaces';
+import { ClientProxy } from './client-proxy';
 import { CONN_ERR } from './constants';
 
 let natsPackage: any = {};
@@ -40,6 +35,9 @@ export class ClientNats extends ClientProxy {
   }
 
   public async connect(): Promise<any> {
+    if (this.natsClient) {
+      return Promise.resolve();
+    }
     this.natsClient = await this.createClient();
     this.handleError(this.natsClient);
     return this.connect$(this.natsClient).toPromise();
@@ -61,42 +59,44 @@ export class ClientNats extends ClientProxy {
     );
   }
 
-  protected async publish(
+  public createSubscriptionHandler(
+    packet: ReadPacket & PacketId,
+    callback: (packet: WritePacket) => any,
+  ): Function {
+    return (message: WritePacket & PacketId) => {
+      if (message.id !== packet.id) {
+        return undefined;
+      }
+      const { err, response, isDisposed } = message;
+      if (isDisposed || err) {
+        return callback({
+          err,
+          response: null,
+          isDisposed: true,
+        });
+      }
+      callback({
+        err,
+        response,
+      });
+    };
+  }
+  protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Promise<any> {
+  ): Function {
     try {
-      if (!this.natsClient) {
-        await this.connect();
-      }
       const packet = this.assignPacketId(partialPacket);
       const pattern = JSON.stringify(partialPacket.pattern);
       const responseChannel = this.getResPatternName(pattern);
 
-      const subscriptionHandler = (message: WritePacket & PacketId) => {
-        if (message.id !== packet.id) {
-          return undefined;
-        }
-        const { err, response, isDisposed } = message;
-        if (isDisposed || err) {
-          callback({
-            err,
-            response: null,
-            isDisposed: true,
-          });
-          return this.natsClient.unsubscribe(subscriptionId);
-        }
-        callback({
-          err,
-          response,
-        });
-      };
+      const subscriptionHandler = this.createSubscriptionHandler(packet, callback);
       const subscriptionId = this.natsClient.subscribe(
         responseChannel,
         subscriptionHandler,
       );
       this.natsClient.publish(this.getAckPatternName(pattern), packet as any);
-      return subscriptionHandler;
+      return () => this.natsClient.unsubscribe(subscriptionId);
     } catch (err) {
       callback({ err });
     }

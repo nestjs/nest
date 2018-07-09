@@ -1,13 +1,13 @@
+import { Type } from '@nestjs/common/interfaces/type.interface';
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import { NestContainer } from '@nestjs/core/injector/container';
 import 'reflect-metadata';
+import { Observable, Subject } from 'rxjs';
+import { WsContextCreator } from './context/ws-context-creator';
+import { MessageMappingProperties } from './gateway-metadata-explorer';
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
-import { MessageMappingProperties } from './gateway-metadata-explorer';
-import { Subject, Observable } from 'rxjs';
 import { SocketServerProvider } from './socket-server-provider';
-import { Type } from '@nestjs/common/interfaces/type.interface';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { WsContextCreator } from './context/ws-context-creator';
 export declare class WebSocketsController {
     private readonly socketServerProvider;
     private readonly container;

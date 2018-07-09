@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { Observable, from as fromPromise } from 'rxjs';
+import { from as fromPromise, Observable } from 'rxjs';
 
 export class HttpService {
   request<T = any>(config: AxiosRequestConfig): Observable<AxiosResponse<T>> {
@@ -49,5 +49,9 @@ export class HttpService {
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<T>> {
     return fromPromise(axios.patch(url, data, config));
+  }
+
+  get axiosRef() {
+    return axios as any;
   }
 }

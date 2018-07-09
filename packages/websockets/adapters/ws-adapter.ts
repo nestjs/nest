@@ -47,14 +47,17 @@ export class WsAdapter implements WebSocketAdapter {
   }
 
   public bindMessageHandlers(
-    client: WebSocket,
+    client: any,
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {
     fromEvent(client, 'message')
       .pipe(
-        mergeMap(data => this.bindMessageHandler(data, handlers, transform)),
-        filter(result => result),
+        mergeMap(data =>
+          this.bindMessageHandler(data, handlers, transform).pipe(
+            filter(result => result),
+          ),
+        ),
       )
       .subscribe(response => client.send(JSON.stringify(response)));
   }
@@ -71,8 +74,7 @@ export class WsAdapter implements WebSocketAdapter {
       );
       const { callback } = messageHandler;
       return transform(callback(message.data));
-    }
-    catch {
+    } catch {
       return empty;
     }
   }
