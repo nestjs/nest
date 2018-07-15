@@ -128,16 +128,16 @@ export class Injector {
     callback: (args) => void,
   ) {
     let isResolved = true;
-    const args = isNil(inject)
+    const dependencies = isNil(inject)
       ? this.reflectConstructorParams(wrapper.metatype)
       : inject;
 
     const instances = await Promise.all(
-      args.map(async (param, index) => {
+      dependencies.map(async (param, index) => {
         const paramWrapper = await this.resolveSingleParam<T>(
           wrapper,
           param,
-          { index, args },
+          { index, dependencies },
           module,
         );
         if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
@@ -164,17 +164,17 @@ export class Injector {
   public async resolveSingleParam<T>(
     wrapper: InstanceWrapper<T>,
     param: Type<any> | string | symbol | any,
-    { index, args }: { index: number; args: any[] },
+    { index, dependencies }: { index: number; dependencies: any[] },
     module: Module,
   ) {
     if (isUndefined(param)) {
-      throw new UndefinedDependencyException(wrapper.name, index, args);
+      throw new UndefinedDependencyException(wrapper.name, index, dependencies);
     }
     const token = this.resolveParamToken(wrapper, param);
     return await this.resolveComponentInstance<T>(
       module,
       isFunction(token) ? (token as Type<any>).name : token,
-      { index, args },
+      { index, dependencies },
       wrapper,
     );
   }
@@ -193,14 +193,14 @@ export class Injector {
   public async resolveComponentInstance<T>(
     module: Module,
     name: any,
-    { index, args }: { index: number; args: any[] },
+    { index, dependencies }: { index: number; dependencies: any[] },
     wrapper: InstanceWrapper<T>,
   ) {
     const components = module.components;
     const instanceWrapper = await this.lookupComponent(
       components,
       module,
-      { name, index, args },
+      { name, index, dependencies },
       wrapper,
     );
     if (!instanceWrapper.isResolved && !instanceWrapper.forwardRef) {
@@ -215,13 +215,13 @@ export class Injector {
   public async lookupComponent<T = any>(
     components: Map<string, any>,
     module: Module,
-    { name, index, args }: { name: any; index: number; args: any[] },
+    { name, index, dependencies }: { name: any; index: number; dependencies: any[] },
     wrapper: InstanceWrapper<T>,
   ) {
     const scanInExports = () =>
       this.lookupComponentInExports(
         components,
-        { name, index, args },
+        { name, index, dependencies },
         module,
         wrapper,
       );
@@ -230,7 +230,7 @@ export class Injector {
 
   public async lookupComponentInExports<T = any>(
     components: Map<string, any>,
-    { name, index, args }: { name: any; index: number; args: any[] },
+    { name, index, dependencies }: { name: any; index: number; dependencies: any[] },
     module: Module,
     wrapper: InstanceWrapper<T>,
   ) {
@@ -239,7 +239,7 @@ export class Injector {
       name,
     );
     if (isNil(instanceWrapper)) {
-      throw new UnknownDependenciesException(wrapper.name, index, args);
+      throw new UnknownDependenciesException(wrapper.name, index, dependencies);
     }
     return instanceWrapper;
   }
