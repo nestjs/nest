@@ -1,14 +1,20 @@
-// Try to get the class name
-// otherwise the string value
-// if not known use +
-const getDependencyName =
-  dependency => (dependency && dependency.name) || dependency || '+';
+import { Type } from '@nestjs/common';
+import { InjectorDependencyContext, InjectorDependency } from '../injector/injector';
+
+/**
+ * Returns the name of the dependency
+ * Tries to get the class name, otherwise the string value
+ * (= injection token). As fallback it returns '+'
+ * @param dependency The dependency whichs name shoul get displayed
+ */
+const getDependencyName = (dependency: InjectorDependency) =>
+  (dependency && (dependency as Type<any>).name) || dependency || '+';
 
 export const UnknownDependenciesMessage = (
   type: string,
-  index: number,
-  dependencies: any[],
+  unknownDependencyContext: InjectorDependencyContext,
 ) => {
+  const { index, dependencies } = unknownDependencyContext;
   let message = `Nest can't resolve dependencies of the ${type}`;
   message += ` (`;
 
