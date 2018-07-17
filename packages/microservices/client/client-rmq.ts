@@ -33,7 +33,7 @@ export class ClientRMQ extends ClientProxy {
             this.channel.assertQueue('', { exclusive: true }).then(responseQ => {
                 messageObj.replyTo = responseQ.queue;
                 this.channel.consume(responseQ.queue, (message) => {
-                    this.handleMessage(message, this.client, callback)
+                    this.handleMessage(message, callback)
                 }, { noAck: true });
                 this.channel.sendToQueue(this.queue, Buffer.from(JSON.stringify(messageObj)));
             });
@@ -43,7 +43,7 @@ export class ClientRMQ extends ClientProxy {
         }
     }
 
-    private async handleMessage(message, server, callback): Promise<void> {
+    private async handleMessage(message, callback): Promise<void> {
         if(message) {
             const { content, fields } = message;
             const { err, response, isDisposed } = JSON.parse(content.toString());
