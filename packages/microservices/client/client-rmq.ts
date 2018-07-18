@@ -4,6 +4,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { ClientProxy } from './client-proxy';
 import { ClientOptions, RmqOptions } from '../interfaces';
+import { EventEmitter } from 'events';
 
 let rqmPackage: any = {};
 
@@ -13,6 +14,8 @@ export class ClientRMQ extends ClientProxy {
     private channel: Channel = null;
     private url: string;
     private queue: string;
+    private replyQueue: string;
+    private responseEmitter: EventEmitter;
     
     constructor(
         private readonly options: ClientOptions) {
@@ -30,12 +33,13 @@ export class ClientRMQ extends ClientProxy {
             if (!this.client) {
                 await this.connect();
             }
-            this.channel.assertQueue('', { exclusive: true }).then(responseQ => {
-                messageObj.replyTo = responseQ.queue;
-                this.channel.consume(responseQ.queue, (message) => {
-                    this.handleMessage(message, callback)
-                }, { noAck: true });
-                this.channel.sendToQueue(this.queue, Buffer.from(JSON.stringify(messageObj)));
+            let correlationId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            this.responseEmitter.once(correlationId, msg => {
+                this.handleMessage(msg, callback);
+            });
+            this.channel.sendToQueue(this.queue, Buffer.from(JSON.stringify(messageObj)), { 
+                replyTo: this.replyQueue,
+                correlationId: correlationId
             });
         } catch (err) {
             console.log(err);
@@ -45,20 +49,19 @@ export class ClientRMQ extends ClientProxy {
 
     private async handleMessage(message, callback): Promise<void> {
         if(message) {
-            const { content, fields } = message;
+            const { content } = message;
             const { err, response, isDisposed } = JSON.parse(content.toString());
             if (isDisposed || err) {
                 callback({
                     err,
                     response: null,
                     isDisposed: true,
-                  });
-                this.channel.deleteQueue(fields.routingKey);
+                });
             }
             callback({
                 err,
                 response,
-            });            
+            });         
         }
     }
 
@@ -71,11 +74,21 @@ export class ClientRMQ extends ClientProxy {
         client.addListener(ERROR_EVENT, err => this.logger.error(err));
     }
 
-    public async connect(): Promise<any> {
+    public listen() {
+        this.channel.consume(this.replyQueue, (msg) => {
+            this.responseEmitter.emit(msg.properties.correlationId, msg);
+        }, { noAck: true });
+    }
+
+    public async connect():Promise<any> {
         return new Promise(async (resolve, reject) => {
             this.client = await rqmPackage.connect(this.url);
             this.channel = await this.client.createChannel();
-            this.channel.assertQueue(this.queue, { durable: false });
+            await this.channel.assertQueue(this.queue, { durable: false });
+            this.replyQueue = (await this.channel.assertQueue('', { exclusive: true })).queue;
+            this.responseEmitter = new EventEmitter();
+            this.responseEmitter.setMaxListeners(0);
+            this.listen();
             resolve();
         });
     }

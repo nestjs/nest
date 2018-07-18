@@ -1,8 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ClientRMQ } from '../../client/client-rmq';
-import { ERROR_EVENT, CONNECT_EVENT, MESSAGE_EVENT } from '../../constants';
-import { Transport } from '../../enums/transport.enum';
+import { EventEmitter } from 'events';
 
 describe('ClientRQM', () => {
     const test = 'test';
@@ -10,7 +9,8 @@ describe('ClientRQM', () => {
 
     describe('connect', () => {
         let createChannelSpy: sinon.SinonSpy,
-            assertQueueSpy: sinon.SinonSpy;
+            assertQueueSpy: sinon.SinonSpy,
+            listenSpy: sinon.SinonSpy;
 
         beforeEach( async () => {
             (client as any).client = {
@@ -19,6 +19,7 @@ describe('ClientRQM', () => {
             (client as any).channel = {
                 assertQueue: assertQueueSpy
             };
+            (client as any).listen = listenSpy;
         });
 
         it('should create channel on connect()', () => {
@@ -27,9 +28,15 @@ describe('ClientRQM', () => {
             });
         });
 
-        it('should create assert queue on connect()', () => {
+        it('should create assert queues on connect()', () => {
             client['connect']().then(() => {
                 expect(assertQueueSpy.called).to.be.true;
+            });
+        });
+
+        it('should call listen() on connect()', () => {
+            client['connect']().then(() => {
+                expect(listenSpy.called).to.be.true;
             });
         });
     });
@@ -38,18 +45,19 @@ describe('ClientRQM', () => {
         const pattern = 'test';
         const msg = { pattern, data: 'data' };
         let connectSpy: sinon.SinonSpy,
-            assertQueueSpy: sinon.SinonSpy,
             sendToQueueSpy: sinon.SinonSpy,
-            consumeSpy: sinon.SinonSpy;
+            eventSpy: sinon.SinonSpy;
 
         beforeEach(() => {
+            connectSpy = sinon.spy(client, 'connect');
+            eventSpy = sinon.spy();
+
             (client as any).client = {};
             (client as any).channel = {
-                assertQueue: assertQueueSpy,
-                consume: consumeSpy,
                 sendToQueue: sendToQueueSpy
             };
-            connectSpy = sinon.spy(client, 'connect');
+            (client as any).responseEmitter = new EventEmitter();
+            (client as any).responseEmitter.on('test', eventSpy)
         });
 
         afterEach(() => {
@@ -67,16 +75,12 @@ describe('ClientRQM', () => {
             expect(connectSpy.called).to.be.true;
         });
 
-        it('should assert reply queue', () => {
+        it('should invoke callback on event', () => {
+            (client as any).client = null;
             client['publish'](msg, () => {
-                expect(assertQueueSpy.called).to.be.true;
+                (client as any).responseEmitter.emit('test');
             });
-        });
-
-        it('should consume reply queue', () => {
-            client['publish'](msg, () => {
-                expect(consumeSpy.called).to.be.true;
-            });
+            expect(eventSpy.called).to.be.true;
         });
 
         it('should send message', () => {
@@ -88,10 +92,7 @@ describe('ClientRQM', () => {
 
     describe('handleMessage', () => {
         const msg = {
-            content: null,
-            fields: {
-                routingKey: 'test'
-            } 
+            content: null
         };
         let callbackSpy: sinon.SinonSpy;
         let deleteQueueSpy: sinon.SinonSpy;
@@ -108,18 +109,6 @@ describe('ClientRQM', () => {
             msg.content = JSON.stringify({ err: null, response: 'test', isDisposed: false });
             client['handleMessage'](msg, callback);
             expect(callbackSpy.called).to.be.true;
-        });
-
-        it('should delete queue if isDisposed', () => {
-            msg.content = JSON.stringify({ err: null, response: 'test', isDisposed: true });
-            client['handleMessage'](msg, callback);
-            expect(deleteQueueSpy.called).to.be.true;
-        });
-
-        it('should delete queue if error', () => {
-            msg.content = JSON.stringify({ err: true, response: 'test', isDisposed: false });
-            client['handleMessage'](msg, callback);
-            expect(deleteQueueSpy.called).to.be.true;
         });
 
         it('should callback if error', () => {

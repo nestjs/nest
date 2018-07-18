@@ -35,7 +35,6 @@
     "@nestjs/microservices": "5.0.0",
     "@nestjs/testing": "5.0.0",
     "@nestjs/websockets": "5.0.0",
-    "@types/amqplib": "^0.5.7",
     "amqplib": "^0.5.2",
     "axios": "^0.17.1",
     "class-transformer": "^0.1.8",
@@ -68,6 +67,7 @@
     "trouter": "^1.0.0"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.5.7",
     "@types/chai": "^3.5.2",
     "@types/chai-as-promised": "0.0.31",
     "@types/cors": "^2.8.3",

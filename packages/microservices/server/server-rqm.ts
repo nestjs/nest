@@ -46,7 +46,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   }
 
   private async handleMessage(message): Promise<void> {
-    const { content } = message;
+    const { content, properties } = message;
     const messageObj = JSON.parse(content.toString());
     const handlers = this.getHandlers();
     const pattern = JSON.stringify(messageObj.pattern);
@@ -55,11 +55,11 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     }
     const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(await handler(messageObj.data)) as Observable<any>;
-    response$ && this.send(response$, (data) => this.sendMessage(data, messageObj.replyTo));
+    response$ && this.send(response$, (data) => this.sendMessage(data, properties.replyTo, properties.correlationId));
   }
 
-  private sendMessage(message, replyTo): void {
+  private sendMessage(message, replyTo, correlationId): void {
     const buffer = Buffer.from(JSON.stringify(message));
-    this.channel.sendToQueue(replyTo, buffer);
+    this.channel.sendToQueue(replyTo, buffer, {correlationId: correlationId});
   }
 }
