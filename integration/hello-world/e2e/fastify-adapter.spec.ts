@@ -1,18 +1,12 @@
-import { expect } from 'chai';
-import * as fastify from 'fastify';
-import * as request from 'supertest';
-import * as express from 'express';
-import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { ApplicationModule } from './../src/app.module';
-import { FastifyAdapter } from '@nestjs/core/adapters/fastify-adapter';
-import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
-import { HelloService } from '../src/hello/hello.service';
 import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
+import { FastifyAdapter } from '@nestjs/core/adapters/fastify-adapter';
+import { Test } from '@nestjs/testing';
+import { expect } from 'chai';
+import { ApplicationModule } from './../src/app.module';
 
 describe('Hello world (fastify adapter)', () => {
-  let server;
-  let app: INestApplication & INestFastifyApplication
+  let app: INestApplication & INestFastifyApplication;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({

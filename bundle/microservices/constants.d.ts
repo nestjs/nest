@@ -9,6 +9,7 @@ export declare const MESSAGE_EVENT = "message";
 export declare const ERROR_EVENT = "error";
 export declare const CLOSE_EVENT = "close";
 export declare const SUBSCRIBE = "subscribe";
+export declare const CANCEL_EVENT = "cancelled";
 export declare const PATTERN_METADATA = "pattern";
 export declare const CLIENT_CONFIGURATION_METADATA = "client";
 export declare const CLIENT_METADATA = "__isClient";

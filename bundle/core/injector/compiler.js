@@ -14,12 +14,13 @@ class ModuleCompiler {
     constructor() {
         this.moduleTokenFactory = new module_token_factory_1.ModuleTokenFactory();
     }
-    compile(metatype, scope) {
-        const { type, dynamicMetadata } = this.extractMetadata(metatype);
+    async compile(metatype, scope) {
+        const { type, dynamicMetadata } = await this.extractMetadata(metatype);
         const token = this.moduleTokenFactory.create(type, scope, dynamicMetadata);
         return { type, dynamicMetadata, token };
     }
-    extractMetadata(metatype) {
+    async extractMetadata(metatype) {
+        metatype = this.isDefferedModule(metatype) ? await metatype : metatype;
         if (!this.isDynamicModule(metatype)) {
             return { type: metatype };
         }
@@ -28,6 +29,9 @@ class ModuleCompiler {
     }
     isDynamicModule(module) {
         return !!module.module;
+    }
+    isDefferedModule(module) {
+        return module && module instanceof Promise;
     }
 }
 exports.ModuleCompiler = ModuleCompiler;

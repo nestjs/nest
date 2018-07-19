@@ -10,9 +10,10 @@ class ClientProxy {
         if (shared_utils_1.isNil(pattern) || shared_utils_1.isNil(data)) {
             return rxjs_1.throwError(new invalid_message_exception_1.InvalidMessageException());
         }
-        return new rxjs_1.Observable((observer) => {
-            this.publish({ pattern, data }, this.createObserver(observer));
-        });
+        return rxjs_1.defer(async () => await this.connect()).pipe(operators_1.mergeMap(() => new rxjs_1.Observable((observer) => {
+            const callback = this.createObserver(observer);
+            return this.publish({ pattern, data }, callback);
+        })));
     }
     createObserver(observer) {
         return ({ err, response, isDisposed }) => {

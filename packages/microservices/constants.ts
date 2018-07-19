@@ -12,6 +12,7 @@ export const MESSAGE_EVENT = 'message';
 export const ERROR_EVENT = 'error';
 export const CLOSE_EVENT = 'close';
 export const SUBSCRIBE = 'subscribe';
+export const CANCEL_EVENT = 'cancelled';
 
 export const PATTERN_METADATA = 'pattern';
 export const CLIENT_CONFIGURATION_METADATA = 'client';

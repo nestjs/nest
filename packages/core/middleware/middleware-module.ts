@@ -1,5 +1,6 @@
+import { HttpServer } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
-import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
+import { MiddlewareConfiguration, RouteInfo } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middleware.interface';
 import { NestModule } from '@nestjs/common/interfaces/modules/nest-module.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -8,7 +9,6 @@ import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { ExceptionsHandler } from '../exceptions/exceptions-handler';
-import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { NestContainer } from '../injector/container';
 import { Module } from '../injector/module';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
@@ -20,7 +20,6 @@ import { RoutesMapper } from './routes-mapper';
 
 export class MiddlewareModule {
   private readonly routerProxy = new RouterProxy();
-  private readonly routerMethodFactory = new RouterMethodFactory();
   private routerExceptionFilter: RouterExceptionFilters;
   private routesMapper: RoutesMapper;
   private resolver: MiddlewareResolver;
@@ -108,10 +107,10 @@ export class MiddlewareModule {
   ) {
     const { forRoutes } = config;
     await Promise.all(
-      forRoutes.map(async (routePath: string) => {
+      forRoutes.map(async (routeInfo: RouteInfo) => {
         await this.registerRouteMiddleware(
           middlewareContainer,
-          routePath,
+          routeInfo,
           config,
           module,
           applicationRef,
@@ -122,7 +121,7 @@ export class MiddlewareModule {
 
   public async registerRouteMiddleware(
     middlewareContainer: MiddlewareContainer,
-    routePath: string,
+    routeInfo: RouteInfo,
     config: MiddlewareConfiguration,
     module: string,
     applicationRef: any,
@@ -141,8 +140,8 @@ export class MiddlewareModule {
           instance,
           metatype,
           applicationRef,
-          RequestMethod.ALL,
-          routePath,
+          routeInfo.method,
+          routeInfo.path,
         );
       }),
     );
@@ -151,7 +150,7 @@ export class MiddlewareModule {
   private async bindHandler(
     instance: NestMiddleware,
     metatype: Type<NestMiddleware>,
-    applicationRef: any,
+    applicationRef: HttpServer,
     method: RequestMethod,
     path: string,
   ) {
@@ -163,13 +162,16 @@ export class MiddlewareModule {
       instance.resolve,
       undefined,
     );
-    const router = this.routerMethodFactory
-      .get(applicationRef, method)
-      .bind(applicationRef);
-
-    const bindWithProxy = obj =>
-      this.bindHandlerWithProxy(exceptionsHandler, router, obj, path);
+    const router = applicationRef.createMiddlewareFactory(method);
+    const bindWithProxy = middlewareInstance =>
+      this.bindHandlerWithProxy(
+        exceptionsHandler,
+        router,
+        middlewareInstance,
+        path,
+      );
     const resolve = instance.resolve();
+
     if (!(resolve instanceof Promise)) {
       bindWithProxy(resolve);
       return;

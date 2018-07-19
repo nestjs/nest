@@ -1,4 +1,4 @@
-import { Type, DynamicModule } from '@nestjs/common/interfaces';
+import { DynamicModule, Type } from '@nestjs/common/interfaces';
 export interface ModuleFactory {
     type: Type<any>;
     token: string;
@@ -6,10 +6,11 @@ export interface ModuleFactory {
 }
 export declare class ModuleCompiler {
     private readonly moduleTokenFactory;
-    compile(metatype: Type<any> | DynamicModule, scope: Type<any>[]): ModuleFactory;
-    extractMetadata(metatype: Type<any> | DynamicModule): {
+    compile(metatype: Type<any> | DynamicModule | Promise<DynamicModule>, scope: Type<any>[]): Promise<ModuleFactory>;
+    extractMetadata(metatype: Type<any> | DynamicModule | Promise<DynamicModule>): Promise<{
         type: Type<any>;
         dynamicMetadata?: Partial<DynamicModule> | undefined;
-    };
+    }>;
     isDynamicModule(module: Type<any> | DynamicModule): module is DynamicModule;
+    isDefferedModule(module: Type<any> | DynamicModule | Promise<DynamicModule>): module is Promise<DynamicModule>;
 }

@@ -18,7 +18,7 @@ class ExternalContextCreator {
         return async (...args) => {
             const canActivate = await this.guardsConsumer.tryActivate(guards, args, instance, callback);
             if (!canActivate) {
-                throw new common_1.HttpException(constants_1.FORBIDDEN_MESSAGE, common_1.HttpStatus.FORBIDDEN);
+                throw new common_1.ForbiddenException(constants_1.FORBIDDEN_MESSAGE);
             }
             const handler = () => callback.apply(instance, args);
             return await this.interceptorsConsumer.intercept(interceptors, args, instance, callback, handler);

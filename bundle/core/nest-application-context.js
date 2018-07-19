@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const iterare_1 = require("iterare");
-const module_token_factory_1 = require("./injector/module-token-factory");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const unknown_module_exception_1 = require("./errors/exceptions/unknown-module.exception");
+const iterare_1 = require("iterare");
 const unknown_element_exception_1 = require("./errors/exceptions/unknown-element.exception");
+const unknown_module_exception_1 = require("./errors/exceptions/unknown-module.exception");
+const module_token_factory_1 = require("./injector/module-token-factory");
 class NestApplicationContext {
     constructor(container, scope, contextModule) {
         this.container = container;

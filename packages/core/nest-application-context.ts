@@ -1,16 +1,16 @@
-import iterate from 'iterare';
-import { ModuleTokenFactory } from './injector/module-token-factory';
-import { NestContainer, InstanceWrapper } from './injector/container';
+import { INestApplicationContext, OnModuleInit } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import {
   isFunction,
   isNil,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import { INestApplicationContext, OnModuleInit } from '@nestjs/common';
-import { Module } from './injector/module';
-import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
+import iterate from 'iterare';
 import { UnknownElementException } from './errors/exceptions/unknown-element.exception';
+import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
+import { InstanceWrapper, NestContainer } from './injector/container';
+import { Module } from './injector/module';
+import { ModuleTokenFactory } from './injector/module-token-factory';
 
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
@@ -40,22 +40,24 @@ export class NestApplicationContext implements INestApplicationContext {
     return new NestApplicationContext(this.container, scope, selectedModule);
   }
 
-  public get<T>(
-    typeOrToken: Type<T> | string | symbol,
+  public get<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | string | symbol,
     options: { strict: boolean } = { strict: false },
-  ): T {
+  ): TResult {
     if (!(options && options.strict)) {
-      return this.find<T>(typeOrToken);
+      return this.find<TInput, TResult>(typeOrToken);
     }
-    return this.findInstanceByPrototypeOrToken<T>(
+    return this.findInstanceByPrototypeOrToken<TInput, TResult>(
       typeOrToken,
       this.contextModule,
     );
   }
 
-  public find<T>(typeOrToken: Type<T> | string | symbol): T {
+  public find<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | string | symbol,
+  ): TResult {
     this.initFlattenModule();
-    return this.findInstanceByPrototypeOrToken<T>(
+    return this.findInstanceByPrototypeOrToken<TInput, TResult>(
       typeOrToken,
       this.contextModuleFixture,
     );
@@ -90,10 +92,10 @@ export class NestApplicationContext implements INestApplicationContext {
     return !isUndefined((instance as OnModuleInit).onModuleInit);
   }
 
-  private findInstanceByPrototypeOrToken<T>(
-    metatypeOrToken: Type<T> | string | symbol,
+  private findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
+    metatypeOrToken: Type<TInput> | string | symbol,
     contextModule,
-  ): T {
+  ): TResult {
     const dependencies = new Map([
       ...contextModule.components,
       ...contextModule.routes,

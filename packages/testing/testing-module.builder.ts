@@ -25,7 +25,6 @@ export class TestingModuleBuilder {
       this.applicationConfig,
     );
     this.module = this.createModule(metadata);
-    this.scanner.scan(this.module);
   }
 
   public overridePipe(typeOrToken): OverrideBy {
@@ -58,6 +57,7 @@ export class TestingModuleBuilder {
 
   public async compile(): Promise<TestingModule> {
     this.applyLogger();
+    await this.scanner.scan(this.module);
 
     [...this.overloadsMap.entries()].map(([component, options]) => {
       this.container.replace(component, options);

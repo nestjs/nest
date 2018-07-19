@@ -8,4 +8,5 @@ export declare class HttpService {
     post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Observable<AxiosResponse<T>>;
     put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Observable<AxiosResponse<T>>;
     patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Observable<AxiosResponse<T>>;
+    readonly axiosRef: any;
 }

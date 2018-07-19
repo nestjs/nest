@@ -21,7 +21,7 @@ class RouteParamsFactory {
             case route_paramtypes_enum_1.RouteParamtypes.SESSION:
                 return req.session;
             case route_paramtypes_enum_1.RouteParamtypes.FILE:
-                return req.file;
+                return req[data || 'file'];
             case route_paramtypes_enum_1.RouteParamtypes.FILES:
                 return req.files;
             default:

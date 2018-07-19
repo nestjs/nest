@@ -31,6 +31,16 @@ gulp.task('copy:ts', function() {
   return gulp.packages(['packages/**/*.ts']).pipe(gulp.dest('./bundle'));
 });
 
+
+gulp.task('copy-docs', function() {
+  return gulp.src('Readme.md')
+    .pipe(gulp.dest('bundle/common'))
+    .pipe(gulp.dest('bundle/core'))
+    .pipe(gulp.dest('bundle/microservices'))
+    .pipe(gulp.dest('bundle/websockets'))
+    .pipe(gulp.dest('bundle/testing'));
+});
+
 gulp.task('clean:bundle', function() {
   return gulp
     .packages(['bundle/**/*.js.map', 'bundle/**/*.ts', '!bundle/**/*.d.ts'], { read: false })

@@ -35,6 +35,9 @@ export class ClientMqtt extends ClientProxy {
   }
 
   public connect(): Promise<any> {
+    if (this.mqttClient) {
+      return Promise.resolve();
+    }
     this.mqttClient = this.createClient();
     this.handleError(this.mqttClient);
     return this.connect$(this.mqttClient).toPromise();
@@ -51,48 +54,52 @@ export class ClientMqtt extends ClientProxy {
     );
   }
 
-  protected async publish(
+  public createResponseCallback(
+    packet: ReadPacket & PacketId,
+    callback: (packet: WritePacket) => any,
+  ): (channel: string, buffer) => any {
+    return (channel: string, buffer: Buffer) => {
+      const { err, response, isDisposed, id } = JSON.parse(
+        buffer.toString(),
+      ) as WritePacket & PacketId;
+      if (id !== packet.id) {
+        return undefined;
+      }
+      if (isDisposed || err) {
+        return callback({
+          err,
+          response: null,
+          isDisposed: true,
+        });
+      }
+      callback({
+        err,
+        response,
+      });
+    };
+  }
+
+  protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Promise<any> {
+  ): Function {
     try {
-      if (!this.mqttClient) {
-        await this.connect();
-      }
       const packet = this.assignPacketId(partialPacket);
       const pattern = JSON.stringify(partialPacket.pattern);
       const responseChannel = this.getResPatternName(pattern);
-      const responseCallback = (channel: string, buffer: Buffer) => {
-        const { err, response, isDisposed, id } = JSON.parse(
-          buffer.toString(),
-        ) as WritePacket & PacketId;
-        if (id !== packet.id) {
-          return undefined;
-        }
-        if (isDisposed || err) {
-          callback({
-            err,
-            response: null,
-            isDisposed: true,
-          });
-          this.mqttClient.unsubscribe(channel);
-          this.mqttClient.removeListener(MESSAGE_EVENT, responseCallback);
-          return;
-        }
-        callback({
-          err,
-          response,
-        });
-      };
+      const responseCallback = this.createResponseCallback(packet, callback);
+
       this.mqttClient.on(MESSAGE_EVENT, responseCallback);
       this.mqttClient.subscribe(responseChannel);
       this.mqttClient.publish(
         this.getAckPatternName(pattern),
         JSON.stringify(packet),
       );
-      return responseCallback;
-    }
-    catch (err) {
+      return () => {
+        this.mqttClient.unsubscribe(responseChannel);
+        this.mqttClient.removeListener(MESSAGE_EVENT, responseCallback);
+      };
+    } catch (err) {
       callback({ err });
     }
   }

@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { EMPTY as empty, Observable, Subscription, from as fromPromise, of } from 'rxjs';
+import { isFunction, isString } from '@nestjs/common/utils/shared.utils';
+import { EMPTY as empty, from as fromPromise, Observable, of, Subscription } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { MessageHandlers } from '../interfaces/message-handlers.interface';
 import { MicroserviceOptions, WritePacket } from './../interfaces';
@@ -9,6 +9,14 @@ import { MicroserviceOptions, WritePacket } from './../interfaces';
 export abstract class Server {
   protected readonly messageHandlers: MessageHandlers = {};
   protected readonly logger = new Logger(Server.name);
+
+  public addHandler(
+    pattern: any,
+    callback: (data) => Promise<Observable<any>>,
+  ) {
+    const key = isString(pattern) ? pattern : JSON.stringify(pattern);
+    this.messageHandlers[key] = callback;
+  }
 
   public getHandlers(): MessageHandlers {
     return this.messageHandlers;
@@ -18,13 +26,6 @@ export abstract class Server {
     pattern: string,
   ): (data) => Promise<Observable<any>> | null {
     return this.messageHandlers[pattern] ? this.messageHandlers[pattern] : null;
-  }
-
-  public addHandler(
-    pattern: any,
-    callback: (data) => Promise<Observable<any>>,
-  ) {
-    this.messageHandlers[JSON.stringify(pattern)] = callback;
   }
 
   public send(

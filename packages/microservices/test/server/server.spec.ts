@@ -11,7 +11,7 @@ class TestServer extends Server {
 describe('Server', () => {
   const server = new TestServer();
   const callback = () => {},
-    pattern = { test: 'test' };
+    pattern = { test: 'test pattern' };
 
   describe('add', () => {
     it(`should add handler as a stringified pattern key`, () => {
@@ -19,6 +19,12 @@ describe('Server', () => {
 
       const handlers = server.getHandlers();
       expect(handlers[JSON.stringify(pattern)]).to.equal(callback);
+    });
+
+    it(`should add handler as string pattern key`, () => {
+      server.addHandler(pattern.test, callback as any);
+      const handlers = server.getHandlers();
+      expect(handlers[pattern.test]).to.equal(callback);
     });
   });
   describe('send', () => {
@@ -73,9 +79,7 @@ describe('Server', () => {
         it('should returns Observable', async () => {
           const value = 100;
           expect(
-            await server
-              .transformToObservable(of(value))
-              .toPromise(),
+            await server.transformToObservable(of(value)).toPromise(),
           ).to.be.eq(100);
         });
       });

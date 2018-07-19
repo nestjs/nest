@@ -30,6 +30,9 @@ class ClientRedis extends client_proxy_1.ClientProxy {
         this.pubClient = this.subClient = null;
     }
     connect() {
+        if (this.pubClient && this.subClient) {
+            return Promise.resolve();
+        }
         return new Promise((resolve, reject) => {
             const error$ = new rxjs_1.Subject();
             this.pubClient = this.createClient(error$);
@@ -68,48 +71,45 @@ class ClientRedis extends client_proxy_1.ClientProxy {
         }
         return this.getOptionsProp(this.options, 'retryDelay') || 0;
     }
-    async publish(partialPacket, callback) {
-        try {
-            if (!this.pubClient || !this.subClient) {
-                await this.connect();
+    createResponseCallback(packet, callback) {
+        return (channel, buffer) => {
+            const { err, response, isDisposed, id } = JSON.parse(buffer);
+            if (id !== packet.id) {
+                return undefined;
             }
+            if (isDisposed || err) {
+                return callback({
+                    err,
+                    response: null,
+                    isDisposed: true,
+                });
+            }
+            callback({
+                err,
+                response,
+            });
+        };
+    }
+    publish(partialPacket, callback) {
+        try {
             const packet = this.assignPacketId(partialPacket);
             const pattern = JSON.stringify(partialPacket.pattern);
             const responseChannel = this.getResPatternName(pattern);
-            const responseCallback = (channel, buffer) => {
-                const { err, response, isDisposed, id } = JSON.parse(buffer);
-                if (id !== packet.id) {
-                    return undefined;
-                }
-                if (isDisposed || err) {
-                    callback({
-                        err,
-                        response: null,
-                        isDisposed: true,
-                    });
-                    this.subClient.unsubscribe(channel);
-                    this.subClient.removeListener(constants_1.MESSAGE_EVENT, responseCallback);
-                    return;
-                }
-                callback({
-                    err,
-                    response,
-                });
-            };
+            const responseCallback = this.createResponseCallback(packet, callback);
             this.subClient.on(constants_1.MESSAGE_EVENT, responseCallback);
             this.subClient.subscribe(responseChannel);
-            await new Promise(resolve => {
-                const handler = channel => {
-                    if (channel && channel !== responseChannel) {
-                        return undefined;
-                    }
-                    this.subClient.removeListener(constants_1.SUBSCRIBE, handler);
-                    resolve();
-                };
-                this.subClient.on(constants_1.SUBSCRIBE, handler);
-            });
+            const handler = channel => {
+                if (channel && channel !== responseChannel) {
+                    return undefined;
+                }
+                this.subClient.removeListener(constants_1.SUBSCRIBE, handler);
+            };
+            this.subClient.on(constants_1.SUBSCRIBE, handler);
             this.pubClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
-            return responseCallback;
+            return () => {
+                this.subClient.unsubscribe(responseChannel);
+                this.subClient.removeListener(constants_1.MESSAGE_EVENT, responseCallback);
+            };
         }
         catch (err) {
             callback({ err });

@@ -1,11 +1,11 @@
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import { INestApplication, INestMicroservice, INestApplicationContext, HttpServer } from '@nestjs/common';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
-import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
-import { FastifyAdapter } from './adapters/fastify-adapter';
-import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
+import { HttpServer, INestApplication, INestApplicationContext, INestMicroservice } from '@nestjs/common';
 import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
+import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
+import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
+import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
+import { FastifyAdapter } from './adapters/fastify-adapter';
 export declare class NestFactoryStatic {
     private readonly logger;
     /**

@@ -8,6 +8,7 @@ const invalid_grpc_service_exception_1 = require("../exceptions/invalid-grpc-ser
 const invalid_proto_definition_exception_1 = require("../exceptions/invalid-proto-definition.exception");
 const constants_1 = require("./../constants");
 const client_proxy_1 = require("./client-proxy");
+const constants_2 = require("./constants");
 let grpcPackage = {};
 class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     constructor(options) {
@@ -41,10 +42,29 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     createStreamServiceMethod(client, methodName) {
         return (...args) => {
             return new rxjs_1.Observable(observer => {
+                let isClientCanceled = false;
                 const call = client[methodName](...args);
                 call.on('data', (data) => observer.next(data));
-                call.on('error', (error) => observer.error(error));
-                call.on('end', () => observer.complete());
+                call.on('error', (error) => {
+                    if (error.details === constants_2.GRPC_CANCELLED) {
+                        call.destroy();
+                        if (isClientCanceled) {
+                            return;
+                        }
+                    }
+                    observer.error(error);
+                });
+                call.on('end', () => {
+                    call.removeAllListeners();
+                    observer.complete();
+                });
+                return () => {
+                    if (call.finished) {
+                        return undefined;
+                    }
+                    isClientCanceled = true;
+                    call.cancel();
+                };
             });
         };
     }
@@ -80,9 +100,10 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
             const context = grpcPackage.load(options);
             return context;
         }
-        catch (e) {
+        catch (err) {
             const invalidProtoError = new invalid_proto_definition_exception_1.InvalidProtoDefinitionException();
-            this.logger.error(invalidProtoError.message, invalidProtoError.stack);
+            const message = err && err.message ? err.message : invalidProtoError.message;
+            this.logger.error(message, invalidProtoError.stack);
             throw invalidProtoError;
         }
     }
@@ -101,7 +122,10 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     async connect() {
         throw new Error('The "connect()" method is not supported in gRPC mode.');
     }
-    async publish(partialPacket, callback) {
+    send(pattern, data) {
+        throw new Error('Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).');
+    }
+    publish(partialPacket, callback) {
         throw new Error('Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).');
     }
 }

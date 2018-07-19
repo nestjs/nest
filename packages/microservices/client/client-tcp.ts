@@ -26,6 +26,9 @@ export class ClientTCP extends ClientProxy {
   }
 
   public connect(): Promise<any> {
+    if (this.isConnected) {
+      return Promise.resolve();
+    }
     this.socket = this.createSocket();
     return new Promise((resolve, reject) => {
       this.bindEvents(this.socket);
@@ -38,10 +41,8 @@ export class ClientTCP extends ClientProxy {
   }
 
   public handleResponse(
-    socket: JsonSocket,
     callback: (packet: WritePacket) => any,
     buffer: WritePacket,
-    context: Function,
   ) {
     const { err, response, isDisposed } = buffer;
     if (isDisposed || err) {
@@ -50,7 +51,6 @@ export class ClientTCP extends ClientProxy {
         response: null,
         isDisposed: true,
       });
-      return socket._socket.removeListener(MESSAGE_EVENT, context);
     }
     callback({
       err,
@@ -84,26 +84,22 @@ export class ClientTCP extends ClientProxy {
     this.socket = null;
   }
 
-  protected async publish(
+  protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ) {
+  ): Function {
     try {
-      if (!this.isConnected) {
-        await this.connect();
-      }
-      const handleRequestResponse = (jsonSocket: JsonSocket) => {
-        const packet = this.assignPacketId(partialPacket);
-        jsonSocket.sendMessage(packet);
-        const listener = (buffer: WritePacket & PacketId) => {
-          if (buffer.id !== packet.id) {
-            return undefined;
-          }
-          this.handleResponse(jsonSocket, callback, buffer, listener);
-        };
-        jsonSocket.on(MESSAGE_EVENT, listener);
+      const packet = this.assignPacketId(partialPacket);
+      const listener = (buffer: WritePacket & PacketId) => {
+        if (buffer.id !== packet.id) {
+          return undefined;
+        }
+        this.handleResponse(callback, buffer);
       };
-      handleRequestResponse(this.socket);
+      this.socket.on(MESSAGE_EVENT, listener);
+      this.socket.sendMessage(packet);
+
+      return () => this.socket._socket.removeListener(MESSAGE_EVENT, listener);
     } catch (err) {
       callback({ err });
     }
