@@ -1,7 +1,7 @@
 import { WebSocketAdapter } from '@nestjs/common';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { Server } from 'http';
-import { Observable, fromEvent } from 'rxjs';
+import { fromEvent, Observable } from 'rxjs';
 import { filter, mergeMap } from 'rxjs/operators';
 import * as io from 'socket.io';
 import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
@@ -48,8 +48,11 @@ export class IoAdapter implements WebSocketAdapter {
     handlers.forEach(({ message, callback }) =>
       fromEvent(client, message)
         .pipe(
-          mergeMap(data => transform(callback(data))),
-          filter(result => !!result && result.event),
+          mergeMap(data =>
+            transform(callback(data)).pipe(
+              filter((result: any) => result && result.event),
+            ),
+          ),
         )
         .subscribe(({ event, data }) => client.emit(event, data)),
     );

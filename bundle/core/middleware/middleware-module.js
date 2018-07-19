@@ -1,10 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const request_method_enum_1 = require("@nestjs/common/enums/request-method.enum");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const invalid_middleware_exception_1 = require("../errors/exceptions/invalid-middleware.exception");
 const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
-const router_method_factory_1 = require("../helpers/router-method-factory");
 const router_exception_filters_1 = require("../router/router-exception-filters");
 const router_proxy_1 = require("../router/router-proxy");
 const builder_1 = require("./builder");
@@ -13,7 +11,6 @@ const routes_mapper_1 = require("./routes-mapper");
 class MiddlewareModule {
     constructor() {
         this.routerProxy = new router_proxy_1.RouterProxy();
-        this.routerMethodFactory = new router_method_factory_1.RouterMethodFactory();
     }
     async register(middlewareContainer, container, config) {
         const appRef = container.getApplicationRef();
@@ -52,11 +49,11 @@ class MiddlewareModule {
     }
     async registerMiddlewareConfig(middlewareContainer, config, module, applicationRef) {
         const { forRoutes } = config;
-        await Promise.all(forRoutes.map(async (routePath) => {
-            await this.registerRouteMiddleware(middlewareContainer, routePath, config, module, applicationRef);
+        await Promise.all(forRoutes.map(async (routeInfo) => {
+            await this.registerRouteMiddleware(middlewareContainer, routeInfo, config, module, applicationRef);
         }));
     }
-    async registerRouteMiddleware(middlewareContainer, routePath, config, module, applicationRef) {
+    async registerRouteMiddleware(middlewareContainer, routeInfo, config, module, applicationRef) {
         const middlewareCollection = [].concat(config.middleware);
         await Promise.all(middlewareCollection.map(async (metatype) => {
             const collection = middlewareContainer.getMiddleware(module);
@@ -65,7 +62,7 @@ class MiddlewareModule {
                 throw new runtime_exception_1.RuntimeException();
             }
             const { instance } = middleware;
-            await this.bindHandler(instance, metatype, applicationRef, request_method_enum_1.RequestMethod.ALL, routePath);
+            await this.bindHandler(instance, metatype, applicationRef, routeInfo.method, routeInfo.path);
         }));
     }
     async bindHandler(instance, metatype, applicationRef, method, path) {
@@ -73,10 +70,8 @@ class MiddlewareModule {
             throw new invalid_middleware_exception_1.InvalidMiddlewareException(metatype.name);
         }
         const exceptionsHandler = this.routerExceptionFilter.create(instance, instance.resolve, undefined);
-        const router = this.routerMethodFactory
-            .get(applicationRef, method)
-            .bind(applicationRef);
-        const bindWithProxy = obj => this.bindHandlerWithProxy(exceptionsHandler, router, obj, path);
+        const router = applicationRef.createMiddlewareFactory(method);
+        const bindWithProxy = middlewareInstance => this.bindHandlerWithProxy(exceptionsHandler, router, middlewareInstance, path);
         const resolve = instance.resolve();
         if (!(resolve instanceof Promise)) {
             bindWithProxy(resolve);

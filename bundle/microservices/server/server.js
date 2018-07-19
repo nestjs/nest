@@ -10,14 +10,15 @@ class Server {
         this.messageHandlers = {};
         this.logger = new logger_service_1.Logger(Server.name);
     }
+    addHandler(pattern, callback) {
+        const key = shared_utils_1.isString(pattern) ? pattern : JSON.stringify(pattern);
+        this.messageHandlers[key] = callback;
+    }
     getHandlers() {
         return this.messageHandlers;
     }
     getHandlerByPattern(pattern) {
         return this.messageHandlers[pattern] ? this.messageHandlers[pattern] : null;
-    }
-    addHandler(pattern, callback) {
-        this.messageHandlers[JSON.stringify(pattern)] = callback;
     }
     send(stream$, respond) {
         return stream$

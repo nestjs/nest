@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@nestjs/common");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const pathToRegexp = require("path-to-regexp");
 class FastifyAdapter {
     constructor(options) {
         this.logger = new common_1.Logger(FastifyAdapter.name);
@@ -75,6 +76,21 @@ class FastifyAdapter {
     }
     getRequestUrl(request) {
         return request.raw.url;
+    }
+    createMiddlewareFactory(requestMethod) {
+        return (path, callback) => {
+            const re = pathToRegexp(path);
+            this.instance.use(path, (req, res, next) => {
+                if (!re.exec(req.originalUrl + '/')) {
+                    return next();
+                }
+                if (requestMethod === common_1.RequestMethod.ALL ||
+                    req.method === common_1.RequestMethod[requestMethod]) {
+                    return callback(req, res, next);
+                }
+                next();
+            });
+        };
     }
 }
 exports.FastifyAdapter = FastifyAdapter;

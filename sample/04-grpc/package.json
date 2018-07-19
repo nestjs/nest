@@ -9,11 +9,11 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "^5.0.0",
-    "@nestjs/core": "^5.0.0",
-    "@nestjs/microservices": "^5.0.0",
-    "@nestjs/testing": "^5.0.0",
-    "@nestjs/websockets": "^5.0.0",
+    "@nestjs/common": "^5.1.0",
+    "@nestjs/core": "^5.1.0",
+    "@nestjs/microservices": "^5.1.0",
+    "@nestjs/testing": "^5.1.0",
+    "@nestjs/websockets": "^5.1.0",
     "class-transformer": "^0.1.7",
     "class-validator": "^0.7.2",
     "grpc": "^1.10.0",

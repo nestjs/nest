@@ -1,6 +1,6 @@
 import { isNil } from '@nestjs/common/utils/shared.utils';
-import { Observable, Observer, fromEvent, merge, throwError as _throw } from 'rxjs';
-import { map, take } from 'rxjs/operators';
+import { defer, fromEvent, merge, Observable, Observer, throwError as _throw } from 'rxjs';
+import { map, mergeMap, take } from 'rxjs/operators';
 import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
 import { InvalidMessageException } from '../exceptions/invalid-message.exception';
 import { ClientOptions, PacketId, ReadPacket, WritePacket } from './../interfaces';
@@ -16,15 +16,21 @@ export abstract class ClientProxy {
     if (isNil(pattern) || isNil(data)) {
       return _throw(new InvalidMessageException());
     }
-    return new Observable((observer: Observer<TResult>) => {
-      this.publish({ pattern, data }, this.createObserver(observer));
-    });
+    return defer(async () => await this.connect()).pipe(
+      mergeMap(
+        () =>
+          new Observable((observer: Observer<TResult>) => {
+            const callback = this.createObserver(observer);
+            return this.publish({ pattern, data }, callback);
+          }),
+      ),
+    );
   }
 
   protected abstract publish(
     packet: ReadPacket,
     callback: (packet: WritePacket) => void,
-  );
+  ): Function | void;
 
   protected createObserver<T>(
     observer: Observer<T>,

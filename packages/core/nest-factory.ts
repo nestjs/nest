@@ -1,31 +1,30 @@
-import { DependenciesScanner } from './scanner';
-import { InstanceLoader } from './injector/instance-loader';
-import { NestContainer } from './injector/container';
-import { ExceptionsZone } from './errors/exceptions-zone';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import { messages } from './constants';
-import { NestApplication } from './nest-application';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { ExpressFactory } from './adapters/express-factory';
 import {
-  INestApplication,
-  INestMicroservice,
-  INestApplicationContext,
   HttpServer,
+  INestApplication,
+  INestApplicationContext,
+  INestMicroservice,
 } from '@nestjs/common';
-import { MetadataScanner } from './metadata-scanner';
-import { NestApplicationContext } from './nest-application-context';
-import { HttpsOptions } from '@nestjs/common/interfaces/external/https-options.interface';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
-import { ApplicationConfig } from './application-config';
-import { ExpressAdapter } from './adapters/express-adapter';
-import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
-import { FastifyAdapter } from './adapters/fastify-adapter';
-import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
+import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
+import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
+import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
+import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { ExpressAdapter } from './adapters/express-adapter';
+import { ExpressFactory } from './adapters/express-factory';
+import { FastifyAdapter } from './adapters/fastify-adapter';
+import { ApplicationConfig } from './application-config';
+import { messages } from './constants';
+import { ExceptionsZone } from './errors/exceptions-zone';
+import { NestContainer } from './injector/container';
+import { InstanceLoader } from './injector/instance-loader';
+import { MetadataScanner } from './metadata-scanner';
+import { NestApplication } from './nest-application';
+import { NestApplicationContext } from './nest-application-context';
+import { DependenciesScanner } from './scanner';
 
 export class NestFactoryStatic {
   private readonly logger = new Logger('NestFactory', true);
@@ -149,7 +148,7 @@ export class NestFactoryStatic {
     try {
       this.logger.log(messages.APPLICATION_START);
       await ExceptionsZone.asyncRun(async () => {
-        dependenciesScanner.scan(module);
+        await dependenciesScanner.scan(module);
         await instanceLoader.createInstancesOfDependencies();
         dependenciesScanner.applyApplicationProviders();
       });

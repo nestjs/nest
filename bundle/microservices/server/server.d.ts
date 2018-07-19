@@ -5,9 +5,9 @@ import { MicroserviceOptions, WritePacket } from './../interfaces';
 export declare abstract class Server {
     protected readonly messageHandlers: MessageHandlers;
     protected readonly logger: Logger;
+    addHandler(pattern: any, callback: (data) => Promise<Observable<any>>): void;
     getHandlers(): MessageHandlers;
     getHandlerByPattern(pattern: string): (data) => Promise<Observable<any>> | null;
-    addHandler(pattern: any, callback: (data) => Promise<Observable<any>>): void;
     send(stream$: Observable<any>, respond: (data: WritePacket) => void): Subscription;
     transformToObservable<T = any>(resultOrDeffered: any): Observable<T>;
     getOptionsProp<T extends {

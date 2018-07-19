@@ -2,7 +2,7 @@ import { Logger, WebSocketAdapter } from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { Server } from 'http';
-import { EMPTY as empty, Observable, fromEvent } from 'rxjs';
+import { EMPTY as empty, fromEvent, Observable } from 'rxjs';
 import { filter, mergeMap } from 'rxjs/operators';
 import { CLOSE_EVENT, CONNECTION_EVENT, ERROR_EVENT } from '../constants';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
@@ -47,14 +47,17 @@ export class WsAdapter implements WebSocketAdapter {
   }
 
   public bindMessageHandlers(
-    client: WebSocket,
+    client: any,
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {
     fromEvent(client, 'message')
       .pipe(
-        mergeMap(data => this.bindMessageHandler(data, handlers, transform)),
-        filter(result => !!result),
+        mergeMap(data =>
+          this.bindMessageHandler(data, handlers, transform).pipe(
+            filter(result => result),
+          ),
+        ),
       )
       .subscribe(response => client.send(JSON.stringify(response)));
   }
@@ -71,8 +74,7 @@ export class WsAdapter implements WebSocketAdapter {
       );
       const { callback } = messageHandler;
       return transform(callback(message.data));
-    }
-    catch {
+    } catch {
       return empty;
     }
   }

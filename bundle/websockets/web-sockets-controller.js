@@ -1,14 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const metadata_scanner_1 = require("@nestjs/core/metadata-scanner");
 require("reflect-metadata");
+const rxjs_1 = require("rxjs");
+const operators_1 = require("rxjs/operators");
+const constants_1 = require("./constants");
 const invalid_socket_port_exception_1 = require("./exceptions/invalid-socket-port.exception");
 const gateway_metadata_explorer_1 = require("./gateway-metadata-explorer");
-const rxjs_1 = require("rxjs");
-const constants_1 = require("./constants");
-const metadata_scanner_1 = require("@nestjs/core/metadata-scanner");
 const middleware_injector_1 = require("./middleware-injector");
-const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const operators_1 = require("rxjs/operators");
 class WebSocketsController {
     constructor(socketServerProvider, container, config, contextCreator) {
         this.socketServerProvider = socketServerProvider;
@@ -56,7 +56,7 @@ class WebSocketsController {
             context.subscribeMessages(messageHandlers, client, instance);
             const disconnectHook = adapter.bindClientDisconnect;
             disconnectHook &&
-                disconnectHook.call(adapter, client, socket => disconnect.next(client));
+                disconnectHook.call(adapter, client, _ => disconnect.next(client));
         };
     }
     subscribeInitEvent(instance, event) {
@@ -84,7 +84,7 @@ class WebSocketsController {
             message,
             callback: callback.bind(instance, client),
         }));
-        adapter.bindMessageHandlers(client, handlers, data => rxjs_1.from(this.pickResult(data)).pipe(operators_1.mergeMap(stream => stream)));
+        adapter.bindMessageHandlers(client, handlers, data => rxjs_1.from(this.pickResult(data)).pipe(operators_1.mergeAll()));
     }
     async pickResult(defferedResult) {
         const result = await defferedResult;

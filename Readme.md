@@ -37,7 +37,8 @@
 
 ## Getting started
 
-To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
+* To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
+* 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
 
 ## Support
 
@@ -47,9 +48,13 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="300" /></a>
 
+#### Silver Sponsors
+
+<a href="https://neoteric.eu/"><img src="https://nestjs.com/img/neoteric-cut.png" width="130" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="160" /></a>
+
 #### Sponsors
 
-<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.svg" width="120" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="120" /></a> &nbsp; <a href="http://angularity.io"><img src="http://angularity.io/media/logo.svg" height="32" /></a> &nbsp; <a href="http://gojob.com"><img src="https://gojob.com/w/wp-content/uploads/2017/02/cropped-Logo-web-home.png" height="44" /> &nbsp; <a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="37" /></a> &nbsp; <a href="https://hostpresto.com"><img src="https://nestjs.com/img/hostpresto.png" height="32" /></a>
+<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.svg" width="120" /></a> &nbsp; <a href="http://angularity.io"><img src="http://angularity.io/media/logo.svg" height="32" /></a> &nbsp; <a href="http://gojob.com"><img src="https://gojob.com/w/wp-content/uploads/2017/02/cropped-Logo-web-home.png" height="44" /> &nbsp; <a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="37" /></a> &nbsp; <a href="https://hostpresto.com"><img src="https://nestjs.com/img/hostpresto.png" height="32" /></a>
 
 ## Backers
 
@@ -64,5 +69,3 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](LICENSE).
-
-<h4 align="center"> <a href="readme_zh.md">中文说明</a></h4>

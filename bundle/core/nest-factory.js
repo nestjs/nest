@@ -1,19 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const scanner_1 = require("./scanner");
-const instance_loader_1 = require("./injector/instance-loader");
-const container_1 = require("./injector/container");
-const exceptions_zone_1 = require("./errors/exceptions-zone");
 const logger_service_1 = require("@nestjs/common/services/logger.service");
-const constants_1 = require("./constants");
-const nest_application_1 = require("./nest-application");
-const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const express_factory_1 = require("./adapters/express-factory");
-const metadata_scanner_1 = require("./metadata-scanner");
-const nest_application_context_1 = require("./nest-application-context");
-const application_config_1 = require("./application-config");
-const express_adapter_1 = require("./adapters/express-adapter");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const express_adapter_1 = require("./adapters/express-adapter");
+const express_factory_1 = require("./adapters/express-factory");
+const application_config_1 = require("./application-config");
+const constants_1 = require("./constants");
+const exceptions_zone_1 = require("./errors/exceptions-zone");
+const container_1 = require("./injector/container");
+const instance_loader_1 = require("./injector/instance-loader");
+const metadata_scanner_1 = require("./metadata-scanner");
+const nest_application_1 = require("./nest-application");
+const nest_application_context_1 = require("./nest-application-context");
+const scanner_1 = require("./scanner");
 class NestFactoryStatic {
     constructor() {
         this.logger = new logger_service_1.Logger('NestFactory', true);
@@ -72,7 +72,7 @@ class NestFactoryStatic {
         try {
             this.logger.log(constants_1.messages.APPLICATION_START);
             await exceptions_zone_1.ExceptionsZone.asyncRun(async () => {
-                dependenciesScanner.scan(module);
+                await dependenciesScanner.scan(module);
                 await instanceLoader.createInstancesOfDependencies();
                 dependenciesScanner.applyApplicationProviders();
             });
