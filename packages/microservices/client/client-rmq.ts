@@ -1,5 +1,5 @@
-import { Channel, Connection } from 'amqplib';
-import { CONNECT_EVENT, ERROR_EVENT, MESSAGE_EVENT, RQM_DEFAULT_URL, SUBSCRIBE, RQM_DEFAULT_QUEUE } from './../constants';
+import { Channel, Connection, Options } from 'amqplib';
+import { ERROR_EVENT, RQM_DEFAULT_URL, RQM_DEFAULT_QUEUE, RQM_DEFAULT_PREFETCH_COUNT, RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT, RQM_DEFAULT_QUEUE_OPTIONS } from './../constants';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { ClientProxy } from './client-proxy';
@@ -14,9 +14,12 @@ export class ClientRMQ extends ClientProxy {
     private channel: Channel = null;
     private url: string;
     private queue: string;
+    private prefetchCount: number;
+    private isGlobalPrefetchCount: boolean;
+    private queueOptions: Options.AssertQueue
     private replyQueue: string;
     private responseEmitter: EventEmitter;
-    
+
     constructor(
         private readonly options: ClientOptions) {
         super();
@@ -24,20 +27,23 @@ export class ClientRMQ extends ClientProxy {
             this.getOptionsProp<RmqOptions>(this.options, 'url') || RQM_DEFAULT_URL;
         this.queue =
             this.getOptionsProp<RmqOptions>(this.options, 'queue') || RQM_DEFAULT_QUEUE;
+        this.prefetchCount =
+            this.getOptionsProp<RmqOptions>(this.options, 'prefetchCount') || RQM_DEFAULT_PREFETCH_COUNT;
+        this.isGlobalPrefetchCount =
+            this.getOptionsProp<RmqOptions>(this.options, 'isGlobalPrefetchCount') || RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
+        this.queueOptions =
+            this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') || RQM_DEFAULT_QUEUE_OPTIONS;
         rqmPackage = loadPackage('amqplib', ClientRMQ.name);
         this.connect();
     }
 
-    protected async publish(messageObj, callback: (err, result, disposed?: boolean) => void) {
+    protected publish(messageObj, callback: (err, result, disposed?: boolean) => void) {
         try {
-            if (!this.client) {
-                await this.connect();
-            }
             let correlationId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             this.responseEmitter.once(correlationId, msg => {
                 this.handleMessage(msg, callback);
             });
-            this.channel.sendToQueue(this.queue, Buffer.from(JSON.stringify(messageObj)), { 
+            this.channel.sendToQueue(this.queue, Buffer.from(JSON.stringify(messageObj)), {
                 replyTo: this.replyQueue,
                 correlationId: correlationId
             });
@@ -48,7 +54,7 @@ export class ClientRMQ extends ClientProxy {
     }
 
     private async handleMessage(message, callback): Promise<void> {
-        if(message) {
+        if (message) {
             const { content } = message;
             const { err, response, isDisposed } = JSON.parse(content.toString());
             if (isDisposed || err) {
@@ -61,7 +67,7 @@ export class ClientRMQ extends ClientProxy {
             callback({
                 err,
                 response,
-            });         
+            });
         }
     }
 
@@ -80,11 +86,15 @@ export class ClientRMQ extends ClientProxy {
         }, { noAck: true });
     }
 
-    public async connect():Promise<any> {
+    public async connect(): Promise<any> {
+        if (this.client && this.channel) {
+            return Promise.resolve();
+        }
         return new Promise(async (resolve, reject) => {
             this.client = await rqmPackage.connect(this.url);
             this.channel = await this.client.createChannel();
-            await this.channel.assertQueue(this.queue, { durable: false });
+            await this.channel.assertQueue(this.queue, this.queueOptions);
+            await this.channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
             this.replyQueue = (await this.channel.assertQueue('', { exclusive: true })).queue;
             this.responseEmitter = new EventEmitter();
             this.responseEmitter.setMaxListeners(0);
