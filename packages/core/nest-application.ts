@@ -4,7 +4,6 @@ import {
   INestApplication,
   INestMicroservice,
   NestInterceptor,
-  OnModuleDestroy,
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
@@ -19,9 +18,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import {
   isFunction,
-  isNil,
   isObject,
-  isUndefined,
   validatePath,
 } from '@nestjs/common/utils/shared.utils';
 import * as bodyParser from 'body-parser';
@@ -35,7 +32,6 @@ import { FastifyAdapter } from './adapters/fastify-adapter';
 import { ApplicationConfig } from './application-config';
 import { messages } from './constants';
 import { NestContainer } from './injector/container';
-import { Module } from './injector/module';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
@@ -308,7 +304,7 @@ export class NestApplication extends NestApplicationContext
         await microservice.close();
       }),
     );
-    await this.callDestroyHook();
+    await super.close();
   }
 
   public setGlobalPrefix(prefix: string): this {
@@ -386,32 +382,5 @@ export class NestApplication extends NestApplicationContext
     return new Promise(async (resolve, reject) => {
       await microservice.listen(resolve);
     });
-  }
-
-  private async callDestroyHook(): Promise<any> {
-    const modules = this.container.getModules();
-    await Promise.all(
-      iterate(modules.values()).map(
-        async module => await this.callModuleDestroyHook(module),
-      ),
-    );
-  }
-
-  private async callModuleDestroyHook(module: Module): Promise<any> {
-    const components = [...module.routes, ...module.components];
-    await Promise.all(
-      iterate(components)
-        .map(([key, { instance }]) => instance)
-        .filter(instance => !isNil(instance))
-        .filter(this.hasOnModuleDestroyHook)
-        .map(
-          async instance =>
-            await (instance as OnModuleDestroy).onModuleDestroy(),
-        ),
-    );
-  }
-
-  private hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
-    return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
   }
 }

@@ -1,17 +1,12 @@
-import 'reflect-metadata';
-import iterate from 'iterare';
-import { Controller } from '@nestjs/common/interfaces';
-import { GUARDS_METADATA } from '@nestjs/common/constants';
-import {
-  isUndefined,
-  isFunction,
-  isNil,
-  isEmpty,
-} from '@nestjs/common/utils/shared.utils';
-import { ContextCreator } from './../helpers/context-creator';
-import { NestContainer } from '../injector/container';
 import { CanActivate } from '@nestjs/common';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { Controller } from '@nestjs/common/interfaces';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
+import { isEmpty, isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+import iterate from 'iterare';
+import 'reflect-metadata';
+import { ContextCreator } from '../helpers/context-creator';
+import { NestContainer } from '../injector/container';
 
 export class GuardsContextCreator extends ContextCreator {
   private moduleContext: string;

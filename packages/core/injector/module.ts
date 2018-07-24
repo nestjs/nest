@@ -3,12 +3,12 @@ import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isFunction, isNil, isString, isSymbol, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import { GuardsConsumer } from '../guards/guards-consumer';
+import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { ExternalContextCreator } from '../helpers/external-context-creator';
+import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { Reflector } from '../services/reflector.service';
-import { GuardsConsumer } from './../guards/guards-consumer';
-import { GuardsContextCreator } from './../guards/guards-context-creator';
-import { ExternalContextCreator } from './../helpers/external-context-creator';
-import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from './../interceptors/interceptors-context-creator';
 import { InstanceWrapper, NestContainer } from './container';
 import { ModuleRef } from './module-ref';
 import { ModulesContainer } from './modules-container';
@@ -41,7 +41,7 @@ export class Module {
   constructor(
     private readonly _metatype: Type<any>,
     private readonly _scope: Type<any>[],
-    container: NestContainer,
+    private readonly container: NestContainer,
   ) {
     this.addCoreInjectables(container);
   }
@@ -92,7 +92,7 @@ export class Module {
   }
 
   public addModuleRef() {
-    const moduleRef = this.createModuleRefMetatype(this._components);
+    const moduleRef = this.createModuleRefMetatype();
     this._components.set(ModuleRef.name, {
       name: ModuleRef.name,
       metatype: ModuleRef as any,
@@ -324,15 +324,24 @@ export class Module {
     });
   }
 
-  public createModuleRefMetatype(components) {
-    return class {
-      public readonly components = components;
+  public createModuleRefMetatype(): any {
+    const self = this;
+    return class extends ModuleRef {
+      constructor() {
+        super(self.container);
+      }
 
-      public get<T>(type: OpaqueToken): T {
-        const name = isFunction(type) ? (type as Type<any>).name : type;
-        const exists = this.components.has(name);
-
-        return exists ? (this.components.get(name).instance as T) : null;
+      public get<TInput = any, TResult = TInput>(
+        typeOrToken: Type<TInput> | string | symbol,
+        options: { strict: boolean } = { strict: true },
+      ): TResult {
+        if (!(options && options.strict)) {
+          return this.find<TInput, TResult>(typeOrToken);
+        }
+        return this.findInstanceByPrototypeOrToken<TInput, TResult>(
+          typeOrToken,
+          self,
+        );
       }
     };
   }
