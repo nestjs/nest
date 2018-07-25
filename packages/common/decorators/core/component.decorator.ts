@@ -64,10 +64,10 @@ export function Interceptor(): ClassDecorator {
   return (target: object) => {};
 }
 
+let offset = Math.random() * 100;
 export function mixin(mixinClass) {
-  this.offset = this.offset ? ++this.offset : Math.random() * 100;
   Object.defineProperty(mixinClass, 'name', {
-    value: JSON.stringify(this.offset),
+    value: JSON.stringify(offset++),
   });
   Injectable()(mixinClass);
   return mixinClass;
