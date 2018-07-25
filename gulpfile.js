@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const gulp = require('gulp');
 const ts = require('gulp-typescript');
-const gulpSequence = require('gulp-sequence');
 const sourcemaps = require('gulp-sourcemaps');
 const clean = require('gulp-clean');
 
@@ -70,20 +69,19 @@ modules.forEach(module => {
   });
 });
 
-gulp.task('build', function(cb) {
-  gulpSequence('common', modules.filter(module => module !== 'common'), cb);
-});
+gulp.task('common', gulp.series(modules
+  .filter(module => module !== 'common'))
+);
 
-gulp.task('build:dev', function(cb) {
-  gulpSequence(
-    'common:dev',
-    modules
-      .filter(module => module !== 'common')
-      .map(module => module + ':dev'),
-    'copy:ts',
-    cb
-  );
-});
+gulp.task('common:dev', gulp.series(modules
+  .filter(module => module !== 'common')
+  .map(module => module + ':dev'),
+  'copy:ts'
+));
+
+gulp.task('build', gulp.series('common'));
+
+gulp.task('build:dev', gulp.series('common:dev'));
 
 function getFolders(dir) {
   return fs.readdirSync(dir).filter(function(file) {
