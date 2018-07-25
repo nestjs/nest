@@ -28,7 +28,7 @@ const randomString = () =>
     .toString(36)
     .substring(2, 15);
 
-/*
+/**
  * Defines HTTP route param decorator
  * @param factory
  */
