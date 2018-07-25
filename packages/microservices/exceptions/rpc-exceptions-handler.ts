@@ -1,14 +1,12 @@
-import { Logger } from '@nestjs/common';
 import { RpcExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
 import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
-import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
-import { messages } from '@nestjs/core/constants';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/invalid-exception-filter.exception';
-import { Observable, throwError as _throw } from 'rxjs';
+import { Observable } from 'rxjs';
+import { BaseRpcExceptionFilter } from './base-rpc-exception-filter';
 import { RpcException } from './rpc-exception';
 
-export class RpcExceptionsHandler {
-  private static readonly logger = new Logger(RpcExceptionsHandler.name);
+export class RpcExceptionsHandler extends BaseRpcExceptionFilter {
   private filters: RpcExceptionFilterMetadata[] = [];
 
   public handle(
@@ -19,22 +17,7 @@ export class RpcExceptionsHandler {
     if (filterResult$) {
       return filterResult$;
     }
-    const status = 'error';
-    if (!(exception instanceof RpcException)) {
-      const errorMessage = messages.UNKNOWN_EXCEPTION_MESSAGE;
-
-      const isError = isObject(exception) && (exception as Error).message;
-      const loggerArgs = isError
-        ? [(exception as Error).message, (exception as Error).stack]
-        : [exception];
-      const logger = RpcExceptionsHandler.logger;
-      logger.error.apply(logger, loggerArgs);
-
-      return _throw({ status, message: errorMessage });
-    }
-    const res = exception.getError();
-    const message = isObject(res) ? res : { status, message: res };
-    return _throw(message);
+    return super.catch(exception, host);
   }
 
   public setCustomFilters(filters: RpcExceptionFilterMetadata[]) {

@@ -3,8 +3,8 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isString } from '@nestjs/common/utils/shared.utils';
 import { EMPTY as empty, from as fromPromise, Observable, of, Subscription } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
+import { MicroserviceOptions, WritePacket } from '../interfaces';
 import { MessageHandlers } from '../interfaces/message-handlers.interface';
-import { MicroserviceOptions, WritePacket } from './../interfaces';
 
 export abstract class Server {
   protected readonly messageHandlers: MessageHandlers = {};

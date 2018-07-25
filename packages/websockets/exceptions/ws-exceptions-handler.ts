@@ -1,31 +1,19 @@
-import { messages } from '@nestjs/core/constants';
-import { Logger } from '@nestjs/common';
+import { ArgumentsHost } from '@nestjs/common';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
-import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/invalid-exception-filter.exception';
 import { WsException } from '../exceptions/ws-exception';
-import { ArgumentsHost } from '@nestjs/common';
+import { BaseWsExceptionFilter } from './base-ws-exception-filter';
 
-export class WsExceptionsHandler {
+export class WsExceptionsHandler extends BaseWsExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];
 
-  public handle(exception: Error | WsException | any, args: ArgumentsHost) {
-    const client = args.switchToWs().getClient();
-    if (this.invokeCustomFilters(exception, args) || !client.emit) return;
-
-    const status = 'error';
-    if (!(exception instanceof WsException)) {
-      const errorMessage = messages.UNKNOWN_EXCEPTION_MESSAGE;
-      return client.emit('exception', { status, message: errorMessage });
+  public handle(exception: Error | WsException | any, host: ArgumentsHost) {
+    const client = host.switchToWs().getClient();
+    if (this.invokeCustomFilters(exception, host) || !client.emit) {
+      return void 0;
     }
-    const result = exception.getError();
-    const message = isObject(result)
-      ? result
-      : {
-          status,
-          message: result,
-        };
-    client.emit('exception', message);
+    super.catch(exception, host);
   }
 
   public setCustomFilters(filters: ExceptionFilterMetadata[]) {

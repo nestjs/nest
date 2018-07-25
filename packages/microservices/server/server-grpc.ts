@@ -1,10 +1,10 @@
 import { fromEvent } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
-import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
+import { CANCEL_EVENT, GRPC_DEFAULT_URL } from '../constants';
+import { InvalidGrpcPackageException } from '../exceptions/errors/invalid-grpc-package.exception';
+import { InvalidProtoDefinitionException } from '../exceptions/errors/invalid-proto-definition.exception';
+import { CustomTransportStrategy } from '../interfaces';
 import { GrpcOptions, MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
-import { CANCEL_EVENT, GRPC_DEFAULT_URL } from './../constants';
-import { CustomTransportStrategy } from './../interfaces';
 import { Server } from './server';
 
 let grpcPackage: any = {};
