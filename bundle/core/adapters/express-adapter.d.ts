@@ -1,7 +1,9 @@
+import { RequestMethod } from '@nestjs/common';
 import { HttpServer, RequestHandler } from '@nestjs/common/interfaces';
 import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
 export declare class ExpressAdapter implements HttpServer {
     private readonly instance;
+    private readonly routerMethodFactory;
     constructor(instance: any);
     use(...args: any[]): any;
     get(handler: RequestHandler): any;
@@ -26,6 +28,7 @@ export declare class ExpressAdapter implements HttpServer {
     setNotFoundHandler(handler: Function): any;
     setHeader(response: any, name: string, value: string): any;
     getHttpServer(): any;
+    getInstance(): any;
     close(): any;
     set(...args: any[]): any;
     enable(...args: any[]): any;
@@ -36,4 +39,5 @@ export declare class ExpressAdapter implements HttpServer {
     setViewEngine(engine: string): any;
     getRequestMethod(request: any): string;
     getRequestUrl(request: any): string;
+    createMiddlewareFactory(requestMethod: RequestMethod): (path: string, callback: Function) => any;
 }

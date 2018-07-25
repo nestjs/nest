@@ -183,10 +183,10 @@ Footer should contain a [closing reference to an issue](https://help.github.com/
 Samples: (even more [samples](https://github.com/nestjs/nest/commits/master))
 
 ```
-docs(changelog): update change log to beta.5
+docs(changelog) update change log to beta.5
 ```
 ```
-fix(release): need to depend on latest rxjs and zone.js
+bugfix(@nestjs/core) need to depend on latest rxjs and zone.js
 
 The version in our package.json gets copied to the one we publish, and users need the latest of these.
 ```
@@ -200,8 +200,8 @@ Must be one of the following:
 * **build**: Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)
 * **ci**: Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)
 * **docs**: Documentation only changes
-* **feat**: A new feature
-* **fix**: A bug fix
+* **feature**: A new feature
+* **bugfix**: A bug fix
 * **perf**: A code change that improves performance
 * **refactor**: A code change that neither fixes a bug nor adds a feature
 * **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
@@ -214,7 +214,7 @@ The following is the list of supported scopes:
 
 * **common**
 * **core**
-* **examples**
+* **sample**
 * **microservices**
 * **testing**
 * **websockets**
@@ -223,7 +223,7 @@ There are currently a few exceptions to the "use package name" rule:
 
 * **packaging**: used for changes that change the npm package layout in all of our packages, e.g. public path changes, package.json changes done to all packages, d.ts file/format changes, changes to bundles, etc.
 * **changelog**: used for updating the release notes in CHANGELOG.md
-* **examples/#**: for the example apps directory, replacing # with the example app number
+* **sample/#**: for the example apps directory, replacing # with the example app number
 <!-- * **aio**: used for docs-app (angular.io) related changes within the /aio directory of the repo -->
 * none/empty string: useful for `style`, `test` and `refactor` changes that are done across all packages (e.g. `style: add missing semicolons`)
 

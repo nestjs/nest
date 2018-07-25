@@ -62,9 +62,9 @@ export class MicroservicesModule {
     server: Server & CustomTransportStrategy,
     module: string,
   ) {
-    controllers.forEach(({ instance }) => {
-      this.listenersController.bindPatternHandlers(instance, server, module);
-    });
+    controllers.forEach(({ instance }) =>
+      this.listenersController.bindPatternHandlers(instance, server, module),
+    );
   }
 
   public bindClients(controllers: Map<string, InstanceWrapper<Controller>>) {

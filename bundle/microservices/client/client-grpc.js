@@ -1,21 +1,14 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_proxy_1 = require("./client-proxy");
 const logger_service_1 = require("@nestjs/common/services/logger.service");
-const constants_1 = require("./../constants");
-const rxjs_1 = require("rxjs");
-const invalid_grpc_service_exception_1 = require("../exceptions/invalid-grpc-service.exception");
-const invalid_grpc_package_exception_1 = require("../exceptions/invalid-grpc-package.exception");
-const invalid_proto_definition_exception_1 = require("../exceptions/invalid-proto-definition.exception");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const rxjs_1 = require("rxjs");
+const invalid_grpc_package_exception_1 = require("../exceptions/invalid-grpc-package.exception");
+const invalid_grpc_service_exception_1 = require("../exceptions/invalid-grpc-service.exception");
+const invalid_proto_definition_exception_1 = require("../exceptions/invalid-proto-definition.exception");
+const constants_1 = require("./../constants");
+const client_proxy_1 = require("./client-proxy");
+const constants_2 = require("./constants");
 let grpcPackage = {};
 class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     constructor(options) {
@@ -49,10 +42,29 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     createStreamServiceMethod(client, methodName) {
         return (...args) => {
             return new rxjs_1.Observable(observer => {
+                let isClientCanceled = false;
                 const call = client[methodName](...args);
                 call.on('data', (data) => observer.next(data));
-                call.on('error', (error) => observer.error(error));
-                call.on('end', () => observer.complete());
+                call.on('error', (error) => {
+                    if (error.details === constants_2.GRPC_CANCELLED) {
+                        call.destroy();
+                        if (isClientCanceled) {
+                            return;
+                        }
+                    }
+                    observer.error(error);
+                });
+                call.on('end', () => {
+                    call.removeAllListeners();
+                    observer.complete();
+                });
+                return () => {
+                    if (call.finished) {
+                        return undefined;
+                    }
+                    isClientCanceled = true;
+                    call.cancel();
+                };
             });
         };
     }
@@ -74,17 +86,25 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
         const packageName = this.getOptionsProp(this.options, 'package');
         const grpcPkg = this.lookupPackage(grpcContext, packageName);
         if (!grpcPkg) {
-            throw new invalid_grpc_package_exception_1.InvalidGrpcPackageException();
+            const invalidPackageError = new invalid_grpc_package_exception_1.InvalidGrpcPackageException();
+            this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+            throw invalidPackageError;
         }
         return grpcPkg;
     }
     loadProto() {
         try {
-            const context = grpcPackage.load(this.getOptionsProp(this.options, 'protoPath'));
+            const root = this.getOptionsProp(this.options, 'root');
+            const file = this.getOptionsProp(this.options, 'protoPath');
+            const options = root ? { root, file } : file;
+            const context = grpcPackage.load(options);
             return context;
         }
-        catch (e) {
-            throw new invalid_proto_definition_exception_1.InvalidProtoDefinitionException();
+        catch (err) {
+            const invalidProtoError = new invalid_proto_definition_exception_1.InvalidProtoDefinitionException();
+            const message = err && err.message ? err.message : invalidProtoError.message;
+            this.logger.error(message, invalidProtoError.stack);
+            throw invalidProtoError;
         }
     }
     lookupPackage(root, packageName) {
@@ -99,10 +119,14 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
         this.grpcClient && this.grpcClient.close();
         this.grpcClient = null;
     }
+    async connect() {
+        throw new Error('The "connect()" method is not supported in gRPC mode.');
+    }
+    send(pattern, data) {
+        throw new Error('Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).');
+    }
     publish(partialPacket, callback) {
-        return __awaiter(this, void 0, void 0, function* () {
-            throw new Error('Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).');
-        });
+        throw new Error('Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).');
     }
 }
 exports.ClientGrpcProxy = ClientGrpcProxy;

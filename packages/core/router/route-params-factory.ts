@@ -4,7 +4,7 @@ import { IRouteParamsFactory } from './interfaces/route-params-factory.interface
 export class RouteParamsFactory implements IRouteParamsFactory {
   public exchangeKeyForValue(
     key: RouteParamtypes | string,
-    data,
+    data: string | object | any,
     { req, res, next },
   ) {
     switch (key) {
@@ -25,7 +25,7 @@ export class RouteParamsFactory implements IRouteParamsFactory {
       case RouteParamtypes.SESSION:
         return req.session;
       case RouteParamtypes.FILE:
-        return req.file;
+        return req[data || 'file'];
       case RouteParamtypes.FILES:
         return req.files;
       default:

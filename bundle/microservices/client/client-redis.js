@@ -1,17 +1,12 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_proxy_1 = require("./client-proxy");
 const logger_service_1 = require("@nestjs/common/services/logger.service");
-const constants_1 = require("./../constants");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const rxjs_1 = require("rxjs");
+const operators_1 = require("rxjs/operators");
+const constants_1 = require("./../constants");
+const client_proxy_1 = require("./client-proxy");
+const constants_2 = require("./constants");
 let redisPackage = {};
 class ClientRedis extends client_proxy_1.ClientProxy {
     constructor(options) {
@@ -22,50 +17,6 @@ class ClientRedis extends client_proxy_1.ClientProxy {
         this.url =
             this.getOptionsProp(options, 'url') || constants_1.REDIS_DEFAULT_URL;
         redisPackage = load_package_util_1.loadPackage('redis', ClientRedis.name);
-    }
-    publish(partialPacket, callback) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!this.pubClient || !this.subClient) {
-                this.init(callback);
-            }
-            const packet = this.assignPacketId(partialPacket);
-            const pattern = JSON.stringify(partialPacket.pattern);
-            const responseChannel = this.getResPatternName(pattern);
-            const responseCallback = (channel, buffer) => {
-                const { err, response, isDisposed, id } = JSON.parse(buffer);
-                if (id !== packet.id) {
-                    return undefined;
-                }
-                if (isDisposed || err) {
-                    callback({
-                        err,
-                        response: null,
-                        isDisposed: true,
-                    });
-                    this.subClient.unsubscribe(channel);
-                    this.subClient.removeListener(constants_1.MESSAGE_EVENT, responseCallback);
-                    return;
-                }
-                callback({
-                    err,
-                    response,
-                });
-            };
-            this.subClient.on(constants_1.MESSAGE_EVENT, responseCallback);
-            this.subClient.subscribe(responseChannel);
-            yield new Promise(resolve => {
-                const handler = channel => {
-                    if (channel && channel !== responseChannel) {
-                        return undefined;
-                    }
-                    this.subClient.removeListener(constants_1.SUBSCRIBE, handler);
-                    resolve();
-                };
-                this.subClient.on(constants_1.SUBSCRIBE, handler);
-            });
-            this.pubClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
-            return responseCallback;
-        });
     }
     getAckPatternName(pattern) {
         return `${pattern}_ack`;
@@ -78,36 +29,40 @@ class ClientRedis extends client_proxy_1.ClientProxy {
         this.subClient && this.subClient.quit();
         this.pubClient = this.subClient = null;
     }
-    init(callback) {
-        this.pubClient = this.createClient();
-        this.subClient = this.createClient();
-        this.handleError(this.pubClient, callback);
-        this.handleError(this.subClient, callback);
-    }
-    createClient() {
-        return redisPackage.createClient(Object.assign({}, this.getClientOptions(), { url: this.url }));
-    }
-    handleError(client, callback) {
-        const errorCallback = err => {
-            if (err.code === 'ECONNREFUSED') {
-                callback(err, null);
-                this.pubClient = this.subClient = null;
-            }
-            this.logger.error(err);
-        };
-        client.addListener(constants_1.ERROR_EVENT, errorCallback);
-        client.on(constants_1.CONNECT_EVENT, () => {
-            client.removeListener(constants_1.ERROR_EVENT, errorCallback);
-            client.addListener(constants_1.ERROR_EVENT, err => this.logger.error(err));
+    connect() {
+        if (this.pubClient && this.subClient) {
+            return Promise.resolve();
+        }
+        return new Promise((resolve, reject) => {
+            const error$ = new rxjs_1.Subject();
+            this.pubClient = this.createClient(error$);
+            this.subClient = this.createClient(error$);
+            this.handleError(this.pubClient);
+            this.handleError(this.subClient);
+            const pubConnect$ = rxjs_1.fromEvent(this.pubClient, constants_1.CONNECT_EVENT);
+            const subClient$ = rxjs_1.fromEvent(this.subClient, constants_1.CONNECT_EVENT);
+            rxjs_1.merge(error$, rxjs_1.zip(pubConnect$, subClient$))
+                .pipe(operators_1.take(1))
+                .subscribe(resolve, reject);
         });
     }
-    getClientOptions() {
-        const retry_strategy = options => this.createRetryStrategy(options);
+    createClient(error$) {
+        return redisPackage.createClient(Object.assign({}, this.getClientOptions(error$), { url: this.url }));
+    }
+    handleError(client) {
+        client.addListener(constants_1.ERROR_EVENT, err => this.logger.error(err));
+    }
+    getClientOptions(error$) {
+        const retry_strategy = options => this.createRetryStrategy(options, error$);
         return {
             retry_strategy,
         };
     }
-    createRetryStrategy(options) {
+    createRetryStrategy(options, error$) {
+        if (options.error && options.error.code === constants_2.ECONNREFUSED) {
+            error$.error(options.error);
+            return options.error;
+        }
         if (this.isExplicitlyTerminated ||
             !this.getOptionsProp(this.options, 'retryAttempts') ||
             options.attempt >
@@ -115,6 +70,50 @@ class ClientRedis extends client_proxy_1.ClientProxy {
             return undefined;
         }
         return this.getOptionsProp(this.options, 'retryDelay') || 0;
+    }
+    createResponseCallback(packet, callback) {
+        return (channel, buffer) => {
+            const { err, response, isDisposed, id } = JSON.parse(buffer);
+            if (id !== packet.id) {
+                return undefined;
+            }
+            if (isDisposed || err) {
+                return callback({
+                    err,
+                    response: null,
+                    isDisposed: true,
+                });
+            }
+            callback({
+                err,
+                response,
+            });
+        };
+    }
+    publish(partialPacket, callback) {
+        try {
+            const packet = this.assignPacketId(partialPacket);
+            const pattern = JSON.stringify(partialPacket.pattern);
+            const responseChannel = this.getResPatternName(pattern);
+            const responseCallback = this.createResponseCallback(packet, callback);
+            this.subClient.on(constants_1.MESSAGE_EVENT, responseCallback);
+            this.subClient.subscribe(responseChannel);
+            const handler = channel => {
+                if (channel && channel !== responseChannel) {
+                    return undefined;
+                }
+                this.subClient.removeListener(constants_1.SUBSCRIBE, handler);
+            };
+            this.subClient.on(constants_1.SUBSCRIBE, handler);
+            this.pubClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
+            return () => {
+                this.subClient.unsubscribe(responseChannel);
+                this.subClient.removeListener(constants_1.MESSAGE_EVENT, responseCallback);
+            };
+        }
+        catch (err) {
+            callback({ err });
+        }
     }
 }
 exports.ClientRedis = ClientRedis;

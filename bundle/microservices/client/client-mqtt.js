@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_proxy_1 = require("./client-proxy");
 const logger_service_1 = require("@nestjs/common/services/logger.service");
-const constants_1 = require("./../constants");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const constants_1 = require("./../constants");
+const client_proxy_1 = require("./client-proxy");
+const constants_2 = require("./constants");
 let mqttPackage = {};
 class ClientMqtt extends client_proxy_1.ClientProxy {
     constructor(options) {
@@ -13,38 +14,6 @@ class ClientMqtt extends client_proxy_1.ClientProxy {
         this.url =
             this.getOptionsProp(this.options, 'url') || constants_1.MQTT_DEFAULT_URL;
         mqttPackage = load_package_util_1.loadPackage('mqtt', ClientMqtt.name);
-    }
-    publish(partialPacket, callback) {
-        if (!this.mqttClient) {
-            this.init(callback);
-        }
-        const packet = this.assignPacketId(partialPacket);
-        const pattern = JSON.stringify(partialPacket.pattern);
-        const responseChannel = this.getResPatternName(pattern);
-        const responseCallback = (channel, buffer) => {
-            const { err, response, isDisposed, id } = JSON.parse(buffer.toString());
-            if (id !== packet.id) {
-                return undefined;
-            }
-            if (isDisposed || err) {
-                callback({
-                    err,
-                    response: null,
-                    isDisposed: true,
-                });
-                this.mqttClient.unsubscribe(channel);
-                this.mqttClient.removeListener(constants_1.MESSAGE_EVENT, responseCallback);
-                return;
-            }
-            callback({
-                err,
-                response,
-            });
-        };
-        this.mqttClient.on(constants_1.MESSAGE_EVENT, responseCallback);
-        this.mqttClient.subscribe(responseChannel);
-        this.mqttClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
-        return responseCallback;
     }
     getAckPatternName(pattern) {
         return `${pattern}_ack`;
@@ -56,26 +25,56 @@ class ClientMqtt extends client_proxy_1.ClientProxy {
         this.mqttClient && this.mqttClient.end();
         this.mqttClient = null;
     }
-    init(callback) {
+    connect() {
+        if (this.mqttClient) {
+            return Promise.resolve();
+        }
         this.mqttClient = this.createClient();
-        this.handleError(this.mqttClient, callback);
+        this.handleError(this.mqttClient);
+        return this.connect$(this.mqttClient).toPromise();
     }
     createClient() {
         return mqttPackage.connect(this.url, this.options.options);
     }
-    handleError(client, callback) {
-        const errorCallback = err => {
-            if (err.code === 'ECONNREFUSED') {
-                callback(err, null);
-                this.mqttClient = null;
+    handleError(client) {
+        client.addListener(constants_1.ERROR_EVENT, err => err.code !== constants_2.ECONNREFUSED && this.logger.error(err));
+    }
+    createResponseCallback(packet, callback) {
+        return (channel, buffer) => {
+            const { err, response, isDisposed, id } = JSON.parse(buffer.toString());
+            if (id !== packet.id) {
+                return undefined;
             }
-            this.logger.error(err);
+            if (isDisposed || err) {
+                return callback({
+                    err,
+                    response: null,
+                    isDisposed: true,
+                });
+            }
+            callback({
+                err,
+                response,
+            });
         };
-        client.addListener(constants_1.ERROR_EVENT, errorCallback);
-        client.on(constants_1.CONNECT_EVENT, () => {
-            client.removeListener(constants_1.ERROR_EVENT, errorCallback);
-            client.addListener(constants_1.ERROR_EVENT, err => this.logger.error(err));
-        });
+    }
+    publish(partialPacket, callback) {
+        try {
+            const packet = this.assignPacketId(partialPacket);
+            const pattern = JSON.stringify(partialPacket.pattern);
+            const responseChannel = this.getResPatternName(pattern);
+            const responseCallback = this.createResponseCallback(packet, callback);
+            this.mqttClient.on(constants_1.MESSAGE_EVENT, responseCallback);
+            this.mqttClient.subscribe(responseChannel);
+            this.mqttClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
+            return () => {
+                this.mqttClient.unsubscribe(responseChannel);
+                this.mqttClient.removeListener(constants_1.MESSAGE_EVENT, responseCallback);
+            };
+        }
+        catch (err) {
+            callback({ err });
+        }
     }
 }
 exports.ClientMqtt = ClientMqtt;

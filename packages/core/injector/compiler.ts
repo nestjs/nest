@@ -1,4 +1,4 @@
-import { Type, DynamicModule } from '@nestjs/common/interfaces';
+import { DynamicModule, Type } from '@nestjs/common/interfaces';
 import { ModuleTokenFactory } from './module-token-factory';
 
 export interface ModuleFactory {
@@ -10,21 +10,22 @@ export interface ModuleFactory {
 export class ModuleCompiler {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
 
-  public compile(
-    metatype: Type<any> | DynamicModule,
+  public async compile(
+    metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
     scope: Type<any>[],
-  ): ModuleFactory {
-    const { type, dynamicMetadata } = this.extractMetadata(metatype);
+  ): Promise<ModuleFactory> {
+    const { type, dynamicMetadata } = await this.extractMetadata(metatype);
     const token = this.moduleTokenFactory.create(type, scope, dynamicMetadata);
     return { type, dynamicMetadata, token };
   }
 
-  public extractMetadata(
-    metatype: Type<any> | DynamicModule,
-  ): {
+  public async extractMetadata(
+    metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
+  ): Promise<{
     type: Type<any>;
     dynamicMetadata?: Partial<DynamicModule> | undefined;
-  } {
+  }> {
+    metatype = this.isDefferedModule(metatype) ? await metatype : metatype;
     if (!this.isDynamicModule(metatype)) {
       return { type: metatype };
     }
@@ -36,5 +37,11 @@ export class ModuleCompiler {
     module: Type<any> | DynamicModule,
   ): module is DynamicModule {
     return !!(module as DynamicModule).module;
+  }
+
+  public isDefferedModule(
+    module: Type<any> | DynamicModule | Promise<DynamicModule>,
+  ): module is Promise<DynamicModule> {
+    return module && module instanceof Promise;
   }
 }

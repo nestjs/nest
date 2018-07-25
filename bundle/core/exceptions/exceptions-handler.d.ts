@@ -1,6 +1,5 @@
-import { HttpServer } from '@nestjs/common';
+import { HttpException, HttpServer } from '@nestjs/common';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
-import { HttpException } from '@nestjs/common';
 import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
 export declare class ExceptionsHandler {
     private readonly applicationRef;

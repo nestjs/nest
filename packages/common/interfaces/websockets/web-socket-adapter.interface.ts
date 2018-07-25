@@ -2,15 +2,15 @@ import { Observable } from 'rxjs';
 
 export interface WebSocketAdapter<T = any> {
   create(port: number, options?: T);
-  bindClientConnect(server, callback: (...args) => void);
-  bindClientDisconnect?(client, callback: (...args) => void);
+  bindClientConnect(server: any, callback: (...args) => void);
+  bindClientDisconnect?(client: any, callback: (...args) => void);
   bindMessageHandlers(
-    client,
-    handler: {
+    client: any,
+    handlers: Array<{
       message: any;
-      callback: (...args) => Observable<any> | Promise<any> | any;
-    }[],
-    process: (data) => Observable<any>,
+      callback: (...args: any[]) => Observable<any> | Promise<any> | any;
+    }>,
+    transform: (data: any) => Observable<any>,
   );
-  close(server);
+  close(server: any);
 }

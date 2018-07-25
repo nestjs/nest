@@ -1,21 +1,12 @@
-import 'reflect-metadata';
-import iterate from 'iterare';
+import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
+import { NestContainer } from '@nestjs/core/injector/container';
+import 'reflect-metadata';
 import { Observable } from 'rxjs';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
-import {
-  EXCEPTION_FILTERS_METADATA,
-  FILTER_CATCH_EXCEPTIONS,
-} from '@nestjs/common/constants';
-import {
-  isEmpty,
-  isUndefined,
-  isFunction,
-} from '@nestjs/common/utils/shared.utils';
-import { RpcExceptionFilter } from '@nestjs/common/interfaces/exceptions';
-import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { NestContainer } from '@nestjs/core/injector/container';
 
 export class ExceptionFiltersContext extends BaseExceptionFilterContext {
   constructor(
@@ -41,7 +32,7 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
     if (isEmpty(filters)) {
       return exceptionHandler;
     }
-    exceptionHandler.setCustomFilters(filters);
+    exceptionHandler.setCustomFilters(filters.reverse());
     return exceptionHandler;
   }
 

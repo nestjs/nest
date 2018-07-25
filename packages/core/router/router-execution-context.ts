@@ -21,9 +21,8 @@ import { PipesConsumer } from './../pipes/pipes-consumer';
 import {
   ParamData,
   PipeTransform,
-  HttpStatus,
   RequestMethod,
-  HttpException,
+  ForbiddenException,
   HttpServer,
 } from '@nestjs/common';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
@@ -238,7 +237,7 @@ export class RouterExecutionContext {
         callback,
       );
       if (!canActivate) {
-        throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
+        throw new ForbiddenException(FORBIDDEN_MESSAGE);
       }
     };
     return guards.length ? canActivateFn : null;

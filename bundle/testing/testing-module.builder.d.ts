@@ -1,6 +1,6 @@
-import { OverrideBy } from './interfaces';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { ModuleMetadata } from '@nestjs/common/interfaces';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { OverrideBy } from './interfaces';
 import { TestingModule } from './testing-module';
 export declare class TestingModuleBuilder {
     private readonly applicationConfig;
@@ -21,4 +21,5 @@ export declare class TestingModuleBuilder {
     private override(typeOrToken, isComponent);
     private createOverrideByBuilder(add);
     private createModule(metadata);
+    private applyLogger();
 }

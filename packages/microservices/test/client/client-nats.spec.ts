@@ -1,7 +1,8 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { ClientNats } from '../../client/client-nats';
-import { ERROR_EVENT, CONNECT_EVENT, MESSAGE_EVENT } from '../../constants';
+import { ERROR_EVENT } from '../../constants';
+// tslint:disable:no-string-literal
 
 describe('ClientNats', () => {
   const test = 'test';
@@ -30,7 +31,7 @@ describe('ClientNats', () => {
       onSpy: sinon.SinonSpy,
       removeListenerSpy: sinon.SinonSpy,
       unsubscribeSpy: sinon.SinonSpy,
-      initSpy: sinon.SinonSpy,
+      connectSpy: sinon.SinonStub,
       natsClient,
       createClient: sinon.SinonStub;
 
@@ -51,23 +52,14 @@ describe('ClientNats', () => {
       };
       (client as any).natsClient = natsClient;
 
-      initSpy = sinon.stub(client, 'init').callsFake(() => {
+      connectSpy = sinon.stub(client, 'connect').callsFake(() => {
         (client as any).natsClient = natsClient;
       });
       createClient = sinon.stub(client, 'createClient').callsFake(() => client);
     });
     afterEach(() => {
-      initSpy.restore();
+      connectSpy.restore();
       createClient.restore();
-    });
-    it('should not call "init()" when natsClient is not null', async () => {
-      await client['publish'](msg, () => {});
-      expect(initSpy.called).to.be.false;
-    });
-    it('should call "init()" when natsClient is null', async () => {
-      (client as any).natsClient = null;
-      await client['publish'](msg, () => {});
-      expect(initSpy.called).to.be.true;
     });
     it('should subscribe to response pattern name', async () => {
       await client['publish'](msg, () => {});
@@ -75,97 +67,111 @@ describe('ClientNats', () => {
     });
     it('should publish stringified message to acknowledge pattern name', async () => {
       await client['publish'](msg, () => {});
-      // expect(publishSpy.getCall(0).args).to.be.true;
       expect(publishSpy.getCall(0).args[0]).to.be.eql(`"${pattern}"_ack`);
     });
-    describe('responseCallback', () => {
-      let callback: sinon.SinonSpy, subscription, assignStub: sinon.SinonStub;
-      const responseMessage = {
-        err: null,
-        response: 'test',
-        id: '1',
-      };
-
-      describe('not disposed', () => {
-        beforeEach(async () => {
-          callback = sinon.spy();
-          assignStub = sinon
-            .stub(client, 'assignPacketId')
-            .callsFake(packet =>
-              Object.assign(packet, { id: responseMessage.id }),
-            );
-          subscription = await client['publish'](msg, callback);
-          subscription(responseMessage);
-        });
-        afterEach(() => {
-          assignStub.restore();
-        });
-        it('should call callback with expected arguments', () => {
-          expect(
-            callback.calledWith({
-              err: null,
-              response: responseMessage.response,
-            }),
-          ).to.be.true;
-        });
-        it('should not unsubscribe to response pattern name', () => {
-          expect(unsubscribeSpy.calledWith(`"${pattern}"_res`)).to.be.false;
+    describe('on error', () => {
+      let assignPacketIdStub: sinon.SinonStub;
+      beforeEach(() => {
+        assignPacketIdStub = sinon.stub(client, 'assignPacketId').callsFake(() => {
+          throw new Error();
         });
       });
-      describe('disposed and "id" is correct', () => {
-        let assignStub: sinon.SinonStub;
+      afterEach(() => {
+        assignPacketIdStub.restore();
+      });
 
-        const channel = 'channel';
-        const id = '1';
+      it('should call callback', () => {
+        const callback = sinon.spy();
+        client['publish'](msg, callback);
 
-        beforeEach(async () => {
-          callback = sinon.spy();
-          assignStub = sinon
-            .stub(client, 'assignPacketId')
-            .callsFake(packet => Object.assign(packet, { id }));
-          subscription = await client['publish'](msg, callback);
-          subscription({ isDisposed: true, id });
-        });
+        expect(callback.called).to.be.true;
+        expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
+      });
+    });
+    describe('dispose callback', () => {
+      let assignStub: sinon.SinonStub;
+      let callback: sinon.SinonSpy, subscription;
 
-        afterEach(() => assignStub.restore());
+      beforeEach(async () => {
+        callback = sinon.spy();
+        assignStub = sinon
+          .stub(client, 'assignPacketId')
+          .callsFake(packet => Object.assign(packet, { id }));
 
-        it('should call callback with dispose param', () => {
-          expect(callback.called).to.be.true;
-          expect(
-            callback.calledWith({
-              isDisposed: true,
-              response: null,
-              err: undefined,
-            }),
-          ).to.be.true;
-        });
-        it('should unsubscribe to response pattern name', () => {
-          expect(unsubscribeSpy.calledWith(subscriptionId)).to.be.true;
+        subscription = await client['publish'](msg, callback);
+        subscription();
+      });
+      afterEach(() => {
+        assignStub.restore();
+      });
+
+      it('should unsubscribe', () => {
+        expect(unsubscribeSpy.calledWith(subscriptionId)).to.be.true;
+      });
+    });
+  });
+  describe('createSubscriptionHandler', () => {
+    const pattern = 'test';
+    const msg = { pattern, data: 'data', id: '1' };
+    let callback: sinon.SinonSpy, subscription;
+    const responseMessage = {
+      err: null,
+      response: 'test',
+      id: '1',
+    };
+
+    describe('not completed', () => {
+      beforeEach(async () => {
+        callback = sinon.spy();
+
+        subscription = client.createSubscriptionHandler(msg, callback);
+        subscription(responseMessage);
+      });
+      it('should call callback with expected arguments', () => {
+        expect(
+          callback.calledWith({
+            err: null,
+            response: responseMessage.response,
+          }),
+        ).to.be.true;
+      });
+    });
+    describe('disposed and "id" is correct', () => {
+      beforeEach(async () => {
+        callback = sinon.spy();
+        subscription = client.createSubscriptionHandler(msg, callback);
+        subscription({
+          ...responseMessage,
+          isDisposed: true,
         });
       });
-      describe('disposed and "id" is incorrect', () => {
-        let assignStub: sinon.SinonStub;
 
-        const channel = 'channel';
-        const id = '1';
+      it('should call callback with dispose param', () => {
+        expect(callback.called).to.be.true;
+        expect(
+          callback.calledWith({
+            isDisposed: true,
+            response: null,
+            err: null,
+          }),
+        ).to.be.true;
+      });
+    });
+    describe('disposed and "id" is incorrect', () => {
+      beforeEach(async () => {
+        callback = sinon.spy();
+        subscription = client.createSubscriptionHandler(
+          {
+            ...msg,
+            id: '2',
+          },
+          callback,
+        );
+        subscription(responseMessage);
+      });
 
-        beforeEach(async () => {
-          callback = sinon.spy();
-          assignStub = sinon
-            .stub(client, 'assignPacketId')
-            .callsFake(packet => Object.assign(packet, { id }));
-          subscription = await client['publish'](msg, callback);
-          subscription({ isDisposed: true });
-        });
-
-        afterEach(() => assignStub.restore());
-
-        it('should not call callback', () => {
-          expect(callback.called).to.be.false;
-        });
-        it('should not unsubscribe to response pattern name', () => {
-          expect(unsubscribeSpy.called).to.be.false;
-        });
+      it('should not call callback', () => {
+        expect(callback.called).to.be.false;
       });
     });
   });
@@ -182,13 +188,16 @@ describe('ClientNats', () => {
       expect(natsClose.called).to.be.true;
     });
   });
-  describe('init', () => {
+  describe('connect', () => {
     let createClientSpy: sinon.SinonSpy;
     let handleErrorsSpy: sinon.SinonSpy;
+    let connect$Spy: sinon.SinonSpy;
 
     const natsClient = {
       addListener: sinon.spy(),
-      on: sinon.spy(),
+      on: (ev, fn) => (ev === 'connect' ? fn() : null),
+      removeListener: sinon.spy(),
+      off: sinon.spy(),
     };
 
     beforeEach(async () => {
@@ -196,44 +205,53 @@ describe('ClientNats', () => {
         .stub(client, 'createClient')
         .callsFake(() => natsClient);
       handleErrorsSpy = sinon.spy(client, 'handleError');
-      await client.init(sinon.spy());
+      connect$Spy = sinon.spy(client, 'connect$');
+
+      await client.connect();
     });
     afterEach(() => {
       createClientSpy.restore();
       handleErrorsSpy.restore();
+      connect$Spy.restore();
     });
-    it('should call "createClient"', () => {
-      expect(createClientSpy.called).to.be.true;
+    describe('when is not connected', () => {
+      beforeEach(async () => {
+        client['natsClient'] = null;
+        await client.connect();
+      });
+      it('should call "handleError" once', async () => {
+        expect(handleErrorsSpy.called).to.be.true;
+      });
+      it('should call "createClient" once', async () => {
+        expect(createClientSpy.called).to.be.true;
+      });
+      it('should call "connect$" once', async () => {
+        expect(connect$Spy.called).to.be.true;
+      });
     });
-    it('should call "handleError"', () => {
-      expect(handleErrorsSpy.called).to.be.true;
+    describe('when is connected', () => {
+      beforeEach(() => {
+        client['natsClient'] = { test: true } as any;
+      });
+      it('should not call "createClient"', () => {
+        expect(createClientSpy.called).to.be.false;
+      });
+      it('should not call "handleError"', () => {
+        expect(handleErrorsSpy.called).to.be.false;
+      });
+      it('should not call "connect$"', () => {
+        expect(connect$Spy.called).to.be.false;
+      });
     });
   });
   describe('handleError', () => {
-    it('should bind error event handler and call callback with error', () => {
-      const callback = sinon.spy();
-      const removeListenerSpy = sinon.spy();
-
-      const addListener = (name, fn) => {
-        const err = { code: 'ECONNREFUSED' };
-        fn(err);
-
-        expect(name).to.be.eql(ERROR_EVENT);
-        expect(callback.called).to.be.true;
-        expect(callback.calledWith(err, null)).to.be.true;
+    it('should bind error event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        addListener: callback,
       };
-      const onCallback = (name, fn) => {
-        fn();
-        expect(name).to.be.eql(CONNECT_EVENT);
-        expect(removeListenerSpy.called).to.be.true;
-      };
-
-      const stream = {
-        addListener,
-        on: onCallback,
-        removeListener: removeListenerSpy,
-      };
-      client.handleError(stream as any, callback);
+      client.handleError(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
     });
   });
 });

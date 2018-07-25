@@ -1,4 +1,3 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ModuleCompiler } from '../../injector/compiler';
 
@@ -10,19 +9,19 @@ describe('ModuleCompiler', () => {
 
   describe('extractMetadata', () => {
     describe('when module is a dynamic module', () => {
-      it('should return object with "type" and "dynamicMetadata" property', () => {
+      it('should return object with "type" and "dynamicMetadata" property', async () => {
         const obj = { module: 'test', providers: [] };
         const { module, ...dynamicMetadata } = obj;
-        expect(compiler.extractMetadata(obj as any)).to.be.deep.equal({
+        expect(await compiler.extractMetadata(obj as any)).to.be.deep.equal({
           type: module,
           dynamicMetadata,
         });
       });
     });
     describe('when module is a not dynamic module', () => {
-      it('should return object with "type" property', () => {
+      it('should return object with "type" property', async  () => {
         const type = 'test';
-        expect(compiler.extractMetadata(type as any)).to.be.deep.equal({
+        expect(await compiler.extractMetadata(type as any)).to.be.deep.equal({
           type,
         });
       });

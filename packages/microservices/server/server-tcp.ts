@@ -1,17 +1,12 @@
-import * as net from 'net';
 import * as JsonSocket from 'json-socket';
+import * as net from 'net';
 import { Server as NetSocket } from 'net';
-import { NO_PATTERN_MESSAGE, CLOSE_EVENT } from '../constants';
+import { Observable } from 'rxjs';
+import { CLOSE_EVENT, NO_PATTERN_MESSAGE } from '../constants';
+import { MicroserviceOptions, TcpOptions } from '../interfaces/microservice-configuration.interface';
+import { ERROR_EVENT, MESSAGE_EVENT, TCP_DEFAULT_PORT } from './../constants';
+import { CustomTransportStrategy, PacketId, ReadPacket } from './../interfaces';
 import { Server } from './server';
-import { CustomTransportStrategy, ReadPacket } from './../interfaces';
-import { Observable, EMPTY as empty } from 'rxjs';
-import { catchError, finalize } from 'rxjs/operators';
-import { TCP_DEFAULT_PORT, MESSAGE_EVENT, ERROR_EVENT } from './../constants';
-import {
-  MicroserviceOptions,
-  TcpOptions,
-} from '../interfaces/microservice-configuration.interface';
-import { PacketId } from './../interfaces';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
   private readonly port: number;

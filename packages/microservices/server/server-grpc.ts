@@ -1,13 +1,11 @@
-import { Server } from './server';
-import {
-  MicroserviceOptions,
-  GrpcOptions,
-} from '../interfaces/microservice-configuration.interface';
-import { CustomTransportStrategy } from './../interfaces';
-import { Observable } from 'rxjs';
-import { GRPC_DEFAULT_URL } from './../constants';
+import { fromEvent } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
+import { GrpcOptions, MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
+import { CANCEL_EVENT, GRPC_DEFAULT_URL } from './../constants';
+import { CustomTransportStrategy } from './../interfaces';
+import { Server } from './server';
 
 let grpcPackage: any = {};
 
@@ -42,7 +40,9 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     );
     const grpcPkg = this.lookupPackage(grpcContext, packageName);
     if (!grpcPkg) {
-      throw new InvalidGrpcPackageException();
+      const invalidPackageError = new InvalidGrpcPackageException();
+      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+      throw invalidPackageError;
     }
     for (const name of this.getServiceNames(grpcPkg)) {
       this.grpcClient.addService(
@@ -105,7 +105,9 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return async (call, callback) => {
       const handler = methodHandler(call.request, call.metadata);
       const result$ = this.transformToObservable(await handler);
-      await result$.forEach(data => call.write(data));
+      await result$.pipe(
+        takeUntil(fromEvent(call, CANCEL_EVENT)),
+      ).forEach(data => call.write(data));
       call.end();
     };
   }
@@ -147,12 +149,18 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public loadProto(): any {
     try {
-      const context = grpcPackage.load(
-        this.getOptionsProp<GrpcOptions>(this.options, 'protoPath'),
-      );
+      const root = this.getOptionsProp<GrpcOptions>(this.options, 'root');
+      const file = this.getOptionsProp<GrpcOptions>(this.options, 'protoPath');
+      const options = root ? { root, file } : file;
+
+      const context = grpcPackage.load(options);
       return context;
-    } catch (e) {
-      throw new InvalidProtoDefinitionException();
+    } catch (err) {
+      const invalidProtoError = new InvalidProtoDefinitionException();
+      const message = err && err.message ? err.message : invalidProtoError.message;
+
+      this.logger.error(message, invalidProtoError.stack);
+      throw invalidProtoError;
     }
   }
 }

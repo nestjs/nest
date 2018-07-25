@@ -1,20 +1,19 @@
-/// <reference types="node" />
-import { ClientProxy } from './client-proxy';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
-import { WritePacket } from './../interfaces';
-import { ReadPacket } from './../interfaces';
 import { MqttClient } from '../external/mqtt-client.interface';
+import { ClientOptions } from '../interfaces/client-metadata.interface';
+import { PacketId, ReadPacket, WritePacket } from './../interfaces';
+import { ClientProxy } from './client-proxy';
 export declare class ClientMqtt extends ClientProxy {
     private readonly options;
     private readonly logger;
     private readonly url;
     private mqttClient;
     constructor(options: ClientOptions);
-    protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): (channel: string, buffer: Buffer) => any;
     getAckPatternName(pattern: string): string;
     getResPatternName(pattern: string): string;
     close(): void;
-    init(callback: (...args) => any): void;
+    connect(): Promise<any>;
     createClient(): MqttClient;
-    handleError(client: MqttClient, callback: (...args) => any): void;
+    handleError(client: MqttClient): void;
+    createResponseCallback(packet: ReadPacket & PacketId, callback: (packet: WritePacket) => any): (channel: string, buffer) => any;
+    protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): Function;
 }

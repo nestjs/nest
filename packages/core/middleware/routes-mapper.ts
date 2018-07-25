@@ -1,16 +1,11 @@
-import 'reflect-metadata';
-import { RouterExplorer } from '../router/router-explorer';
-import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
-import {
-  isUndefined,
-  validatePath,
-  isString,
-} from '@nestjs/common/utils/shared.utils';
+import { RequestMethod } from '@nestjs/common';
 import { PATH_METADATA } from '@nestjs/common/constants';
-import { MetadataScanner } from '../metadata-scanner';
+import { RouteInfo, Type } from '@nestjs/common/interfaces';
+import { isString, isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
+import 'reflect-metadata';
 import { NestContainer } from '../injector/container';
-import { Type } from '@nestjs/common/interfaces';
+import { MetadataScanner } from '../metadata-scanner';
+import { RouterExplorer } from '../router/router-explorer';
 
 export class RoutesMapper {
   private readonly routerExplorer: RouterExplorer;
@@ -19,37 +14,42 @@ export class RoutesMapper {
     this.routerExplorer = new RouterExplorer(new MetadataScanner(), container);
   }
 
-  public mapRouteToRouteProps(route: Type<any> | any | string): string[] {
+  public mapRouteToRouteInfo(
+    route: Type<any> | RouteInfo | string,
+  ): RouteInfo[] {
     if (isString(route)) {
-      return [route];
+      return [
+        {
+          path: this.validateRoutePath(route),
+          method: RequestMethod.ALL,
+        },
+      ];
     }
     const routePath: string = Reflect.getMetadata(PATH_METADATA, route);
-    if (isUndefined(routePath)) {
-      return [this.mapObjectToPath(route)];
+    if (this.isRouteInfo(routePath, route)) {
+      return [
+        {
+          path: this.validateRoutePath(route.path),
+          method: route.method,
+        },
+      ];
     }
     const paths = this.routerExplorer.scanForPaths(
       Object.create(route),
       route.prototype,
     );
-    const uniquePathsSet = new Set(
-      paths.map(
-        item =>
-          this.validateGlobalPath(routePath) +
-          this.validateRoutePath(item.path),
-      ),
-    );
-    return [...uniquePathsSet.values()];
+    return paths.map(item => ({
+      path:
+        this.validateGlobalPath(routePath) + this.validateRoutePath(item.path),
+      method: item.requestMethod,
+    }));
   }
 
-  private mapObjectToPath(routeOrPath): string {
-    if (isString(routeOrPath)) {
-      return this.validateRoutePath(routeOrPath);
-    }
-    const { path } = routeOrPath;
-    if (isUndefined(path)) {
-      throw new UnknownRequestMappingException();
-    }
-    return this.validateRoutePath(path);
+  private isRouteInfo(
+    path: string | undefined,
+    objectOrClass: Function | RouteInfo,
+  ): objectOrClass is RouteInfo {
+    return isUndefined(path);
   }
 
   private validateGlobalPath(path: string): string {

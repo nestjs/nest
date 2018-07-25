@@ -38,9 +38,7 @@ class MicroservicesModule {
         });
     }
     bindListeners(controllers, server, module) {
-        controllers.forEach(({ instance }) => {
-            this.listenersController.bindPatternHandlers(instance, server, module);
-        });
+        controllers.forEach(({ instance }) => this.listenersController.bindPatternHandlers(instance, server, module));
     }
     bindClients(controllers) {
         controllers.forEach(({ instance, isNotMetatype }) => {

@@ -14,7 +14,7 @@ class ListenersController {
         const patternHandlers = this.metadataExplorer.explore(instance);
         patternHandlers.forEach(({ pattern, targetCallback }) => {
             const proxy = this.contextCreator.create(instance, targetCallback, module);
-            server.add(pattern, proxy);
+            server.addHandler(pattern, proxy);
         });
     }
     bindClientsToProperties(instance) {

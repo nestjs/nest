@@ -15,7 +15,7 @@ export class NestDynamicModule {
       module: NestDynamicModule,
       providers: [dynamicProvider],
       exports: [dynamicProvider],
-    }
+    };
   }
 
   static byName(): DynamicModule {
@@ -23,6 +23,6 @@ export class NestDynamicModule {
       module: NestDynamicModule,
       providers: [dynamicProvider],
       exports: [DYNAMIC_TOKEN],
-    }
+    };
   }
 }

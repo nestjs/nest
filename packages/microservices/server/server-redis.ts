@@ -1,24 +1,11 @@
-import { Server } from './server';
-import { NO_PATTERN_MESSAGE } from '../constants';
-import {
-  MicroserviceOptions,
-  RedisOptions,
-} from '../interfaces/microservice-configuration.interface';
-import { CustomTransportStrategy, PacketId } from './../interfaces';
-import { Observable, EMPTY as empty } from 'rxjs';
-import { catchError, finalize } from 'rxjs/operators';
-import {
-  REDIS_DEFAULT_URL,
-  CONNECT_EVENT,
-  MESSAGE_EVENT,
-  ERROR_EVENT,
-} from './../constants';
 import { ReadPacket } from '@nestjs/microservices';
-import {
-  RedisClient,
-  ClientOpts,
-  RetryStrategyOptions,
-} from '../external/redis.interface';
+import { Observable } from 'rxjs';
+import { NO_PATTERN_MESSAGE } from '../constants';
+import { ClientOpts, RedisClient, RetryStrategyOptions } from '../external/redis.interface';
+import { MicroserviceOptions, RedisOptions } from '../interfaces/microservice-configuration.interface';
+import { CONNECT_EVENT, ERROR_EVENT, MESSAGE_EVENT, REDIS_DEFAULT_URL } from './../constants';
+import { CustomTransportStrategy, PacketId } from './../interfaces';
+import { Server } from './server';
 
 let redisPackage: any = {};
 
@@ -130,7 +117,10 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
   public createRetryStrategy(
     options: RetryStrategyOptions,
-  ): undefined | number {
+  ): undefined | number | void {
+    if (options.error && (options.error as any).code === 'ECONNREFUSED') {
+      return this.logger.error(`Error ECONNREFUSED: ${this.url}`);
+    }
     if (
       this.isExplicitlyTerminated ||
       !this.getOptionsProp<RedisOptions>(this.options, 'retryAttempts') ||

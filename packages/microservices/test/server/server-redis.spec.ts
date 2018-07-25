@@ -195,6 +195,15 @@ describe('ServerRedis', () => {
         expect(result).to.be.undefined;
       });
     });
+    describe('when ECONNREFUSED', () => {
+      it('should call logger', () => {
+        const loggerErrorSpy = sinon.spy((server as any).logger, 'error');
+        const result = server.createRetryStrategy(
+          { error: { code: 'ECONNREFUSED' } } as any,
+        );
+        expect(loggerErrorSpy.called).to.be.true;
+      });
+    });
     describe('otherwise', () => {
       it('should return delay (ms)', () => {
         (server as any).options.options = {};

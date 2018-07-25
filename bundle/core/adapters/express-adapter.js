@@ -1,10 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const express = require("express");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const express = require("express");
+const router_method_factory_1 = require("../helpers/router-method-factory");
 class ExpressAdapter {
     constructor(instance) {
         this.instance = instance;
+        this.routerMethodFactory = new router_method_factory_1.RouterMethodFactory();
     }
     use(...args) {
         return this.instance.use(...args);
@@ -55,6 +57,9 @@ class ExpressAdapter {
     getHttpServer() {
         return this.instance;
     }
+    getInstance() {
+        return this.instance;
+    }
     close() {
         return this.instance.close();
     }
@@ -62,13 +67,13 @@ class ExpressAdapter {
         return this.instance.set(...args);
     }
     enable(...args) {
-        return this.instance.set(...args);
+        return this.instance.enable(...args);
     }
     disable(...args) {
-        return this.instance.set(...args);
+        return this.instance.disable(...args);
     }
     engine(...args) {
-        return this.instance.set(...args);
+        return this.instance.engine(...args);
     }
     useStaticAssets(path, options) {
         return this.use(express.static(path, options));
@@ -84,6 +89,11 @@ class ExpressAdapter {
     }
     getRequestUrl(request) {
         return request.url;
+    }
+    createMiddlewareFactory(requestMethod) {
+        return this.routerMethodFactory
+            .get(this.instance, requestMethod)
+            .bind(this.instance);
     }
 }
 exports.ExpressAdapter = ExpressAdapter;

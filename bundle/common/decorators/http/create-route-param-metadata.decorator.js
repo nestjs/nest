@@ -12,7 +12,7 @@ const randomString = () => Math.random()
     .toString(36)
     .substring(2, 15);
 /**
- * Creates HTTP route param decorator
+ * Defines HTTP route param decorator
  * @param factory
  */
 function createParamDecorator(factory) {
@@ -24,7 +24,7 @@ function createParamDecorator(factory) {
 }
 exports.createParamDecorator = createParamDecorator;
 /**
- * Creates HTTP route param decorator
+ * Defines HTTP route param decorator
  * @deprecated
  * @param factory
  */

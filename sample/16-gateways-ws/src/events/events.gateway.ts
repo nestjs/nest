@@ -1,10 +1,4 @@
-import {
-  WebSocketGateway,
-  SubscribeMessage,
-  WsResponse,
-  WebSocketServer,
-  WsException,
-} from '@nestjs/websockets';
+import { SubscribeMessage, WebSocketGateway, WebSocketServer, WsResponse } from '@nestjs/websockets';
 import { Observable, from } from 'rxjs';
 import { map } from 'rxjs/operators';
 

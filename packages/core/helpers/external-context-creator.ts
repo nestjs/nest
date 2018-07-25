@@ -5,7 +5,7 @@ import { InterceptorsContextCreator } from './../interceptors/interceptors-conte
 import { InterceptorsConsumer } from './../interceptors/interceptors-consumer';
 import { Controller } from '@nestjs/common/interfaces';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
-import { HttpStatus, HttpException } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import { Module } from './../injector/module';
 import { ModulesContainer } from './../injector/modules-container';
 
@@ -38,7 +38,7 @@ export class ExternalContextCreator {
         callback,
       );
       if (!canActivate) {
-        throw new HttpException(FORBIDDEN_MESSAGE, HttpStatus.FORBIDDEN);
+        throw new ForbiddenException(FORBIDDEN_MESSAGE);
       }
       const handler = () => callback.apply(instance, args);
       return await this.interceptorsConsumer.intercept(

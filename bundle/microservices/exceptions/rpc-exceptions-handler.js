@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@nestjs/common");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const invalid_exception_filter_exception_1 = require("@nestjs/core/errors/exceptions/invalid-exception-filter.exception");
 const constants_1 = require("@nestjs/core/constants");
+const invalid_exception_filter_exception_1 = require("@nestjs/core/errors/exceptions/invalid-exception-filter.exception");
 const rxjs_1 = require("rxjs");
 const rpc_exception_1 = require("./rpc-exception");
 class RpcExceptionsHandler {
