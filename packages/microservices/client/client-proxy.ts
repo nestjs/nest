@@ -1,28 +1,36 @@
-import { Observable, Observer, throwError as _throw } from 'rxjs';
 import { isNil } from '@nestjs/common/utils/shared.utils';
+import { defer, fromEvent, merge, Observable, Observer, throwError as _throw } from 'rxjs';
+import { map, mergeMap, take } from 'rxjs/operators';
+import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
 import { InvalidMessageException } from '../exceptions/invalid-message.exception';
-import {
-  ReadPacket,
-  PacketId,
-  WritePacket,
-  ClientOptions,
-} from './../interfaces';
+import { ClientOptions, PacketId, ReadPacket, WritePacket } from './../interfaces';
 
 export abstract class ClientProxy {
+  public abstract connect(): Promise<any>;
   public abstract close(): any;
-  protected abstract publish(
-    packet: ReadPacket,
-    callback: (packet: WritePacket) => void,
-  );
 
-  public send<T = any>(pattern: any, data: any): Observable<T> {
+  public send<TResult = any, TInput = any>(
+    pattern: any,
+    data: TInput,
+  ): Observable<TResult> {
     if (isNil(pattern) || isNil(data)) {
       return _throw(new InvalidMessageException());
     }
-    return new Observable((observer: Observer<T>) => {
-      this.publish({ pattern, data }, this.createObserver(observer));
-    });
+    return defer(async () => await this.connect()).pipe(
+      mergeMap(
+        () =>
+          new Observable((observer: Observer<TResult>) => {
+            const callback = this.createObserver(observer);
+            return this.publish({ pattern, data }, callback);
+          }),
+      ),
+    );
   }
+
+  protected abstract publish(
+    packet: ReadPacket,
+    callback: (packet: WritePacket) => void,
+  ): Function | void;
 
   protected createObserver<T>(
     observer: Observer<T>,
@@ -43,6 +51,20 @@ export abstract class ClientProxy {
         .toString(36)
         .substr(2, 5) + Date.now();
     return Object.assign(packet, { id });
+  }
+
+  protected connect$(
+    instance: any,
+    errorEvent = ERROR_EVENT,
+    connectEvent = CONNECT_EVENT,
+  ): Observable<any> {
+    const error$ = fromEvent(instance, errorEvent).pipe(
+      map(err => {
+        throw err;
+      }),
+    );
+    const connect$ = fromEvent(instance, connectEvent);
+    return merge(error$, connect$).pipe(take(1));
   }
 
   protected getOptionsProp<T extends { options? }>(

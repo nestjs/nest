@@ -1,8 +1,7 @@
 /// <reference types="node" />
-import { Server } from './server';
-import { CustomTransportStrategy, ReadPacket } from './../interfaces';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
-import { PacketId } from './../interfaces';
+import { CustomTransportStrategy, PacketId, ReadPacket } from './../interfaces';
+import { Server } from './server';
 export declare class ServerTCP extends Server implements CustomTransportStrategy {
     private readonly options;
     private readonly port;

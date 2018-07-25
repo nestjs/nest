@@ -57,7 +57,7 @@ describe('ExternalContextCreator', () => {
         describe('when can not activate', () => {
           it('should throw exception when "tryActivate" returns false', () => {
             sinon.stub(guardsConsumer, 'tryActivate', () => false);
-            expect(proxyContext(1, 2, 3)).to.eventually.throw();
+            expect(proxyContext(1, 2, 3)).to.eventually.throw;
           });
         });
         describe('when can activate', () => {
@@ -86,7 +86,7 @@ describe('ExternalContextCreator', () => {
 
         modules.set(moduleKey, {});
         (contextCreator as any).modulesContainer = modules;
-        sinon.stub(contextCreator, 'findComponentByClassName', () => true);
+        sinon.stub(contextCreator, 'findComponentByClassName').callsFake(() => true);
 
         expect(
           contextCreator.findContextModuleName({ name: componentKey } as any),
@@ -95,7 +95,7 @@ describe('ExternalContextCreator', () => {
     });
     describe('when component does not exists', () => {
       it('should return empty string', () => {
-        sinon.stub(contextCreator, 'findComponentByClassName', () => false);
+        sinon.stub(contextCreator, 'findComponentByClassName').callsFake(() => false);
         expect(contextCreator.findContextModuleName({} as any)).to.be.eql('');
       });
     });

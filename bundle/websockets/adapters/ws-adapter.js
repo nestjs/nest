@@ -9,12 +9,12 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const constants_1 = require("../constants");
 const common_1 = require("@nestjs/common");
+const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
-const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const constants_1 = require("../constants");
 let wsPackage = {};
 class WsAdapter {
     constructor(httpServer = null) {
@@ -37,19 +37,21 @@ class WsAdapter {
     bindClientDisconnect(client, callback) {
         client.on(constants_1.CLOSE_EVENT, callback);
     }
-    bindMessageHandlers(client, handlers, process) {
+    bindMessageHandlers(client, handlers, transform) {
         rxjs_1.fromEvent(client, 'message')
-            .pipe(operators_1.mergeMap(data => this.bindMessageHandler(data, handlers, process)), operators_1.filter(result => !!result))
+            .pipe(operators_1.mergeMap(data => this.bindMessageHandler(data, handlers, transform).pipe(operators_1.filter(result => result))))
             .subscribe(response => client.send(JSON.stringify(response)));
     }
-    bindMessageHandler(buffer, handlers, process) {
-        const message = JSON.parse(buffer.data);
-        const messageHandler = handlers.find(handler => handler.message === message.event);
-        if (!messageHandler) {
+    bindMessageHandler(buffer, handlers, transform) {
+        try {
+            const message = JSON.parse(buffer.data);
+            const messageHandler = handlers.find(handler => handler.message === message.event);
+            const { callback } = messageHandler;
+            return transform(callback(message.data));
+        }
+        catch (_a) {
             return rxjs_1.EMPTY;
         }
-        const { callback } = messageHandler;
-        return process(callback(message.data));
     }
     close(server) {
         shared_utils_1.isFunction(server.close) && server.close();

@@ -1,12 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const constants_1 = require("@nestjs/common/constants");
@@ -45,16 +37,16 @@ class RouterExecutionContext {
         const fnCanActivate = this.createGuardsFn(guards, instance, callback);
         const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
         const fnHandleResponse = this.createHandleResponseFn(callback, isResponseHandled, httpStatusCode);
-        return (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+        const handler = (args, req, res, next) => async () => {
+            fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+            return callback.apply(instance, args);
+        };
+        return async (req, res, next) => {
             const args = this.createNullArray(argsLength);
-            fnCanActivate && (yield fnCanActivate([req, res]));
-            const handler = () => __awaiter(this, void 0, void 0, function* () {
-                fnApplyPipes && (yield fnApplyPipes(args, req, res, next));
-                return callback.apply(instance, args);
-            });
-            const result = yield this.interceptorsConsumer.intercept(interceptors, [req, res], instance, callback, handler);
-            yield fnHandleResponse(result, res);
-        });
+            fnCanActivate && (await fnCanActivate([req, res]));
+            const result = await this.interceptorsConsumer.intercept(interceptors, [req, res], instance, callback, handler(args, req, res, next));
+            await fnHandleResponse(result, res);
+        };
     }
     mapParamType(key) {
         const keyPair = key.split(':');
@@ -108,50 +100,48 @@ class RouterExecutionContext {
         }
         return paramsProperties.map(param => (Object.assign({}, param, { metatype: paramtypes[param.index] })));
     }
-    getParamValue(value, { metatype, type, data }, transforms) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (type === route_paramtypes_enum_1.RouteParamtypes.BODY ||
-                type === route_paramtypes_enum_1.RouteParamtypes.QUERY ||
-                type === route_paramtypes_enum_1.RouteParamtypes.PARAM ||
-                shared_utils_1.isString(type)) {
-                return yield this.pipesConsumer.apply(value, { metatype, type, data }, transforms);
-            }
-            return Promise.resolve(value);
-        });
+    async getParamValue(value, { metatype, type, data }, transforms) {
+        if (type === route_paramtypes_enum_1.RouteParamtypes.BODY ||
+            type === route_paramtypes_enum_1.RouteParamtypes.QUERY ||
+            type === route_paramtypes_enum_1.RouteParamtypes.PARAM ||
+            shared_utils_1.isString(type)) {
+            return await this.pipesConsumer.apply(value, { metatype, type, data }, transforms);
+        }
+        return Promise.resolve(value);
     }
     createGuardsFn(guards, instance, callback) {
-        const canActivateFn = (args) => __awaiter(this, void 0, void 0, function* () {
-            const canActivate = yield this.guardsConsumer.tryActivate(guards, args, instance, callback);
+        const canActivateFn = async (args) => {
+            const canActivate = await this.guardsConsumer.tryActivate(guards, args, instance, callback);
             if (!canActivate) {
-                throw new common_1.HttpException(constants_2.FORBIDDEN_MESSAGE, common_1.HttpStatus.FORBIDDEN);
+                throw new common_1.ForbiddenException(constants_2.FORBIDDEN_MESSAGE);
             }
-        });
+        };
         return guards.length ? canActivateFn : null;
     }
     createPipesFn(pipes, paramsOptions) {
-        const pipesFn = (args, req, res, next) => __awaiter(this, void 0, void 0, function* () {
-            yield Promise.all(paramsOptions.map((param) => __awaiter(this, void 0, void 0, function* () {
+        const pipesFn = async (args, req, res, next) => {
+            await Promise.all(paramsOptions.map(async (param) => {
                 const { index, extractValue, type, data, metatype, pipes: paramPipes, } = param;
                 const value = extractValue(req, res, next);
-                args[index] = yield this.getParamValue(value, { metatype, type, data }, pipes.concat(paramPipes));
-            })));
-        });
+                args[index] = await this.getParamValue(value, { metatype, type, data }, pipes.concat(paramPipes));
+            }));
+        };
         return paramsOptions.length ? pipesFn : null;
     }
     createHandleResponseFn(callback, isResponseHandled, httpStatusCode) {
         const renderTemplate = this.reflectRenderTemplate(callback);
         const responseHeaders = this.reflectResponseHeaders(callback);
         if (renderTemplate) {
-            return (result, res) => __awaiter(this, void 0, void 0, function* () {
+            return async (result, res) => {
                 this.responseController.setHeaders(res, responseHeaders);
-                yield this.responseController.render(result, res, renderTemplate);
-            });
+                await this.responseController.render(result, res, renderTemplate);
+            };
         }
-        return (result, res) => __awaiter(this, void 0, void 0, function* () {
+        return async (result, res) => {
             this.responseController.setHeaders(res, responseHeaders);
             !isResponseHandled &&
-                (yield this.responseController.apply(result, res, httpStatusCode));
-        });
+                (await this.responseController.apply(result, res, httpStatusCode));
+        };
     }
 }
 exports.RouterExecutionContext = RouterExecutionContext;

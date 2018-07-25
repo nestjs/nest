@@ -1,12 +1,17 @@
 import { IncomingMessage, ServerResponse } from 'http';
+import { RequestMethod } from '../../enums';
 
 export type ErrorHandler = (
-    error: any,
-    req: Partial<IncomingMessage>,
-    res: ServerResponse | any,
-    next?: Function,
-  ) => any;
-export type RequestHandler = (req: Partial<IncomingMessage>, res: ServerResponse | any, next?: Function) => any;
+  error: any,
+  req: Partial<IncomingMessage>,
+  res: ServerResponse | any,
+  next?: Function,
+) => any;
+export type RequestHandler = (
+  req: Partial<IncomingMessage>,
+  res: ServerResponse | any,
+  next?: Function,
+) => any;
 
 export interface HttpServer {
   use(handler: RequestHandler | ErrorHandler): any;
@@ -35,8 +40,12 @@ export interface HttpServer {
   useStaticAssets?(...args: any[]): this;
   setBaseViewsDir?(path: string): this;
   setViewEngine?(engineOrOptions: any): this;
+  createMiddlewareFactory(
+    method: RequestMethod,
+  ): (path: string, callback: Function) => any;
   getRequestMethod?(request): string;
   getRequestUrl?(request): string;
+  getInstance(): any;
   getHttpServer(): any;
   close();
 }

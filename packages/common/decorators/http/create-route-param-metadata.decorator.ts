@@ -1,12 +1,9 @@
 import * as deprecate from 'deprecate';
-import {
-  ROUTE_ARGS_METADATA,
-  CUSTOM_ROUTE_AGRS_METADATA,
-} from '../../constants';
-import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface';
-import { RouteParamsMetadata, ParamData } from './route-params.decorator';
+import { CUSTOM_ROUTE_AGRS_METADATA, ROUTE_ARGS_METADATA } from '../../constants';
 import { PipeTransform } from '../../index';
-import { isNil, isString } from '../../utils/shared.utils';
+import { Type } from '../../interfaces';
+import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface';
+import { ParamData, RouteParamsMetadata } from './route-params.decorator';
 
 const assignCustomMetadata = (
   args: RouteParamsMetadata,
@@ -14,7 +11,7 @@ const assignCustomMetadata = (
   index: number,
   factory: CustomParamFactory,
   data?: ParamData,
-  ...pipes: PipeTransform<any>[],
+  ...pipes: (Type<PipeTransform> | PipeTransform)[],
 ) => ({
   ...args,
   [`${paramtype}${CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
@@ -31,14 +28,14 @@ const randomString = () =>
     .substring(2, 15);
 
 /**
- * Creates HTTP route param decorator
+ * Defines HTTP route param decorator
  * @param factory
  */
 export function createParamDecorator(
   factory: CustomParamFactory,
-): (data?: any, ...pipes: PipeTransform<any>[]) => ParameterDecorator {
+): (data?: any, ...pipes: (Type<PipeTransform> | PipeTransform)[]) => ParameterDecorator {
   const paramtype = randomString() + randomString();
-  return (data?, ...pipes: PipeTransform<any>[]): ParameterDecorator => (
+  return (data?, ...pipes: (Type<PipeTransform> | PipeTransform)[]): ParameterDecorator => (
     target,
     key,
     index,
@@ -55,13 +52,13 @@ export function createParamDecorator(
 }
 
 /**
- * Creates HTTP route param decorator
+ * Defines HTTP route param decorator
  * @deprecated
  * @param factory
  */
 export function createRouteParamDecorator(
   factory: CustomParamFactory,
-): (data?: any, ...pipes: PipeTransform<any>[]) => ParameterDecorator {
+): (data?: any, ...pipes: (Type<PipeTransform> | PipeTransform)[]) => ParameterDecorator {
   deprecate(
     'The "createRouteParamDecorator" function is deprecated and will be removed within next major release. Use "createParamDecorator" instead.',
   );

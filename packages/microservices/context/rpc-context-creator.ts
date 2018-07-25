@@ -43,9 +43,17 @@ export class RpcContextCreator {
       callback,
       module,
     );
+    const handler = (args: any[]) => async () => {
+      const [data, ...params] = args;
+      const result = await this.pipesConsumer.applyPipes(
+        data,
+        { metatype },
+        pipes,
+      );
+      return callback.call(instance, result, ...params);
+    };
 
     return this.rpcProxy.create(async (...args) => {
-      const [data, ...params] = args;
       const canActivate = await this.guardsConsumer.tryActivate(
         guards,
         args,
@@ -55,21 +63,12 @@ export class RpcContextCreator {
       if (!canActivate) {
         throw new RpcException(FORBIDDEN_MESSAGE);
       }
-      const handler = async () => {
-        const result = await this.pipesConsumer.applyPipes(
-          data,
-          { metatype },
-          pipes,
-        );
-        return callback.call(instance, result, ...params);
-      };
-
       return await this.interceptorsConsumer.intercept(
         interceptors,
         args,
         instance,
         callback,
-        handler,
+        handler(args),
       );
     }, exceptionHandler);
   }

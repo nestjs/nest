@@ -12,7 +12,7 @@ export declare const Request: () => ParameterDecorator;
 export declare const Response: () => ParameterDecorator;
 export declare const Next: () => ParameterDecorator;
 export declare const Session: () => ParameterDecorator;
-export declare const UploadedFile: () => ParameterDecorator;
+export declare const UploadedFile: (fileKey?: string) => ParameterDecorator;
 export declare const UploadedFiles: () => ParameterDecorator;
 export declare const Headers: (property?: string) => ParameterDecorator;
 export declare function Query(): any;

@@ -1,10 +1,10 @@
-import 'reflect-metadata';
-import { InstanceWrapper } from './container';
-import { Module } from './module';
-import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
+import 'reflect-metadata';
 import { MiddlewareWrapper } from '../middleware/container';
+import { InstanceWrapper } from './container';
+import { Module } from './module';
 export declare class Injector {
     loadInstanceOfMiddleware(wrapper: MiddlewareWrapper, collection: Map<string, MiddlewareWrapper>, module: Module): Promise<void>;
     loadInstanceOfRoute(wrapper: InstanceWrapper<Controller>, module: Module): Promise<void>;
@@ -25,18 +25,16 @@ export declare class Injector {
         index: number;
         length: number;
     }, wrapper: InstanceWrapper<T>): Promise<any>;
-    lookupComponent(components: Map<string, any>, module: Module, {name, index, length}: {
+    lookupComponent<T = any>(components: Map<string, any>, module: Module, {name, index, length}: {
         name: any;
         index: number;
         length: number;
-    }, {metatype}: {
-        metatype: any;
-    }): Promise<any>;
-    lookupComponentInExports(components: Map<string, any>, {name, index, length}: {
+    }, wrapper: InstanceWrapper<T>): Promise<any>;
+    lookupComponentInExports<T = any>(components: Map<string, any>, {name, index, length}: {
         name: any;
         index: number;
         length: number;
-    }, module: Module, metatype: any): Promise<any>;
+    }, module: Module, wrapper: InstanceWrapper<T>): Promise<any>;
     lookupComponentInRelatedModules(module: Module, name: any): Promise<any>;
     resolveFactoryInstance(factoryResult: any): Promise<any>;
     flatMap(modules: Module[]): Module[];

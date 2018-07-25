@@ -1,7 +1,7 @@
 import * as JsonSocket from 'json-socket';
-import { ClientProxy } from './client-proxy';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
-import { WritePacket, ReadPacket } from './../interfaces';
+import { ReadPacket, WritePacket } from './../interfaces';
+import { ClientProxy } from './client-proxy';
 export declare class ClientTCP extends ClientProxy {
     private readonly logger;
     private readonly port;
@@ -9,12 +9,12 @@ export declare class ClientTCP extends ClientProxy {
     private isConnected;
     private socket;
     constructor(options: ClientOptions);
-    init(callback: (...args) => any): Promise<JsonSocket>;
-    protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): Promise<void>;
-    handleResponse(socket: JsonSocket, callback: (packet: WritePacket) => any, buffer: WritePacket, context: Function): any;
+    connect(): Promise<any>;
+    handleResponse(callback: (packet: WritePacket) => any, buffer: WritePacket): void;
     createSocket(): JsonSocket;
     close(): void;
-    bindEvents(socket: JsonSocket, callback: (...args) => any): void;
-    handleError(err: any, callback: (...args) => any): void;
+    bindEvents(socket: JsonSocket): void;
+    handleError(err: any): void;
     handleClose(): void;
+    protected publish(partialPacket: ReadPacket, callback: (packet: WritePacket) => any): Function;
 }

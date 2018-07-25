@@ -1,6 +1,6 @@
-import { InstanceWrapper, NestContainer } from './container';
-import { Injectable, Controller, NestModule, DynamicModule } from '@nestjs/common/interfaces';
+import { Controller, DynamicModule, Injectable, NestModule } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { InstanceWrapper, NestContainer } from './container';
 export interface CustomComponent {
     provide: any;
     name: string;

@@ -1,11 +1,11 @@
+import { RouteInfo, Type } from '@nestjs/common/interfaces';
 import 'reflect-metadata';
 import { NestContainer } from '../injector/container';
-import { Type } from '@nestjs/common/interfaces';
 export declare class RoutesMapper {
     private readonly routerExplorer;
     constructor(container: NestContainer);
-    mapRouteToRouteProps(route: Type<any> | any | string): string[];
-    private mapObjectToPath(routeOrPath);
+    mapRouteToRouteInfo(route: Type<any> | RouteInfo | string): RouteInfo[];
+    private isRouteInfo(path, objectOrClass);
     private validateGlobalPath(path);
     private validateRoutePath(path);
 }

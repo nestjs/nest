@@ -1,10 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const constants_1 = require("../constants");
 const common_1 = require("@nestjs/common");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const constants_1 = require("../constants");
 const invalid_exception_filter_exception_1 = require("../errors/exceptions/invalid-exception-filter.exception");
-const common_2 = require("@nestjs/common");
 class ExceptionsHandler {
     constructor(applicationRef) {
         this.applicationRef = applicationRef;
@@ -13,13 +12,12 @@ class ExceptionsHandler {
     next(exception, ctx) {
         if (this.invokeCustomFilters(exception, ctx))
             return;
-        if (!(exception instanceof common_2.HttpException)) {
+        if (!(exception instanceof common_1.HttpException)) {
             const body = {
                 statusCode: 500,
                 message: constants_1.messages.UNKNOWN_EXCEPTION_MESSAGE,
             };
-            const statusCode = 500;
-            this.applicationRef.reply(ctx.getArgByIndex(1), body, statusCode);
+            this.applicationRef.reply(ctx.getArgByIndex(1), body, body.statusCode);
             if (this.isExceptionObject(exception)) {
                 return ExceptionsHandler.logger.error(exception.message, exception.stack);
             }

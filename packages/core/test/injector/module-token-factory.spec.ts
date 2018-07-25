@@ -1,7 +1,7 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ModuleTokenFactory } from '../../injector/module-token-factory';
+import * as hash from 'object-hash';
 import { SingleScope } from '../../../common';
+import { ModuleTokenFactory } from '../../injector/module-token-factory';
 
 describe('ModuleTokenFactory', () => {
   let factory: ModuleTokenFactory;
@@ -14,7 +14,7 @@ describe('ModuleTokenFactory', () => {
       const scope = 'global';
       const token = factory.create(Module as any, [Module as any], undefined);
       expect(token).to.be.deep.eq(
-        JSON.stringify({
+        hash({
           module: Module.name,
           dynamic: '',
           scope,
@@ -28,7 +28,7 @@ describe('ModuleTokenFactory', () => {
         undefined,
       );
       expect(token).to.be.deep.eq(
-        JSON.stringify({
+        hash({
           module: Module.name,
           dynamic: '',
           scope: [Module.name],
@@ -44,7 +44,7 @@ describe('ModuleTokenFactory', () => {
         } as any,
       );
       expect(token).to.be.deep.eq(
-        JSON.stringify({
+        hash({
           module: Module.name,
           dynamic: JSON.stringify({
             components: [{}],

@@ -3,5 +3,4 @@ import { TestingModuleBuilder } from './testing-module.builder';
 export declare class Test {
     private static readonly metadataScanner;
     static createTestingModule(metadata: ModuleMetadata): TestingModuleBuilder;
-    private static init();
 }

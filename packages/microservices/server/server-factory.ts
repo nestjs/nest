@@ -1,15 +1,11 @@
-import { ServerTCP } from './server-tcp';
-import { ServerRedis } from './server-redis';
-import {
-  MicroserviceOptions,
-  CustomTransportStrategy,
-} from '../interfaces';
-import { Server } from './server';
 import { Transport } from '../enums/transport.enum';
-import { race } from 'rxjs/operators';
-import { ServerNats } from './server-nats';
-import { ServerMqtt } from './server-mqtt';
+import { CustomTransportStrategy, MicroserviceOptions } from '../interfaces';
+import { Server } from './server';
 import { ServerGrpc } from './server-grpc';
+import { ServerMqtt } from './server-mqtt';
+import { ServerNats } from './server-nats';
+import { ServerRedis } from './server-redis';
+import { ServerTCP } from './server-tcp';
 
 export class ServerFactory {
   public static create(

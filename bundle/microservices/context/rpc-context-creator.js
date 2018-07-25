@@ -1,12 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("@nestjs/common/constants");
 const constants_2 = require("@nestjs/core/guards/constants");
@@ -28,18 +20,18 @@ class RpcContextCreator {
         const guards = this.guardsContextCreator.create(instance, callback, module);
         const metatype = this.getDataMetatype(instance, callback);
         const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
-        return this.rpcProxy.create((...args) => __awaiter(this, void 0, void 0, function* () {
+        const handler = (args) => async () => {
             const [data, ...params] = args;
-            const canActivate = yield this.guardsConsumer.tryActivate(guards, args, instance, callback);
+            const result = await this.pipesConsumer.applyPipes(data, { metatype }, pipes);
+            return callback.call(instance, result, ...params);
+        };
+        return this.rpcProxy.create(async (...args) => {
+            const canActivate = await this.guardsConsumer.tryActivate(guards, args, instance, callback);
             if (!canActivate) {
                 throw new index_1.RpcException(constants_2.FORBIDDEN_MESSAGE);
             }
-            const handler = () => __awaiter(this, void 0, void 0, function* () {
-                const result = yield this.pipesConsumer.applyPipes(data, { metatype }, pipes);
-                return callback.call(instance, result, ...params);
-            });
-            return yield this.interceptorsConsumer.intercept(interceptors, args, instance, callback, handler);
-        }), exceptionHandler);
+            return await this.interceptorsConsumer.intercept(interceptors, args, instance, callback, handler(args));
+        }, exceptionHandler);
     }
     reflectCallbackParamtypes(instance, callback) {
         return Reflect.getMetadata(constants_1.PARAMTYPES_METADATA, instance, callback.name);

@@ -1,8 +1,8 @@
-import { Server } from './server';
+import { ReadPacket } from '@nestjs/microservices';
+import { ClientOpts, RedisClient, RetryStrategyOptions } from '../external/redis.interface';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy, PacketId } from './../interfaces';
-import { ReadPacket } from '@nestjs/microservices';
-import { RedisClient, ClientOpts, RetryStrategyOptions } from '../external/redis.interface';
+import { Server } from './server';
 export declare class ServerRedis extends Server implements CustomTransportStrategy {
     private readonly options;
     private readonly url;
@@ -23,5 +23,5 @@ export declare class ServerRedis extends Server implements CustomTransportStrate
     getResQueueName(pattern: string): string;
     handleError(stream: any): void;
     getClientOptions(): Partial<ClientOpts>;
-    createRetryStrategy(options: RetryStrategyOptions): undefined | number;
+    createRetryStrategy(options: RetryStrategyOptions): undefined | number | void;
 }

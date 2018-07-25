@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-require("reflect-metadata");
 const constants_1 = require("@nestjs/common/constants");
-const module_1 = require("./module");
+require("reflect-metadata");
 const unknown_module_exception_1 = require("../errors/exceptions/unknown-module.exception");
 const invalid_module_exception_1 = require("./../errors/exceptions/invalid-module.exception");
-const modules_container_1 = require("./modules-container");
 const compiler_1 = require("./compiler");
+const module_1 = require("./module");
+const modules_container_1 = require("./modules-container");
 class NestContainer {
     constructor(_applicationConfig = void 0) {
         this._applicationConfig = _applicationConfig;
@@ -24,11 +24,11 @@ class NestContainer {
     getApplicationRef() {
         return this.applicationRef;
     }
-    addModule(metatype, scope) {
+    async addModule(metatype, scope) {
         if (!metatype) {
             throw new invalid_module_exception_1.InvalidModuleException(scope);
         }
-        const { type, dynamicMetadata, token } = this.moduleCompiler.compile(metatype, scope);
+        const { type, dynamicMetadata, token } = await this.moduleCompiler.compile(metatype, scope);
         if (this.modules.has(token)) {
             return;
         }
@@ -61,13 +61,13 @@ class NestContainer {
     getModules() {
         return this.modules;
     }
-    addRelatedModule(relatedModule, token) {
+    async addRelatedModule(relatedModule, token) {
         if (!this.modules.has(token))
             return;
         const module = this.modules.get(token);
         const parent = module.metatype;
         const scope = [].concat(module.scope, parent);
-        const { type, dynamicMetadata, token: relatedModuleToken, } = this.moduleCompiler.compile(relatedModule, scope);
+        const { token: relatedModuleToken } = await this.moduleCompiler.compile(relatedModule, scope);
         const related = this.modules.get(relatedModuleToken);
         module.addRelatedModule(related);
     }

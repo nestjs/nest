@@ -1,19 +1,18 @@
-import { NestFactory } from '@nestjs/core';
-import { ApplicationModule } from './app.module';
-import { FastifyAdapter } from '@nestjs/core/adapters/fastify-adapter';
+import { FastifyAdapter, NestFactory } from '@nestjs/core';
 import { join } from 'path';
+import { ApplicationModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(ApplicationModule, new FastifyAdapter());
   app.useStaticAssets({
-    root: join(__dirname, 'public'),
+    root: join(__dirname, './../public'),
     prefix: '/public/',
   });
   app.setViewEngine({
     engine: {
       handlebars: require('handlebars'),
     },
-    templates: join(__dirname, 'views'),
+    templates: join(__dirname, './../views'),
   });
   await app.listen(3000);
 }

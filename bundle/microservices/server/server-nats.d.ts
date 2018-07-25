@@ -1,8 +1,8 @@
-import { Server } from './server';
+import { Client } from '../external/nats-client.interface';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { CustomTransportStrategy, PacketId } from './../interfaces';
 import { ReadPacket } from './../interfaces/packet.interface';
-import { Client } from '../external/nats-client.interface';
+import { Server } from './server';
 export declare class ServerNats extends Server implements CustomTransportStrategy {
     private readonly options;
     private readonly url;

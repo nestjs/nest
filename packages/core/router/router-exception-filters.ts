@@ -1,24 +1,13 @@
-import 'reflect-metadata';
-import iterate from 'iterare';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { ExceptionsHandler } from '../exceptions/exceptions-handler';
-import {
-  EXCEPTION_FILTERS_METADATA,
-  FILTER_CATCH_EXCEPTIONS,
-} from '@nestjs/common/constants';
-import {
-  isEmpty,
-  isFunction,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils';
-import { Type } from '@nestjs/common/interfaces/index';
-import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
-import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';
-import { RouterProxyCallback } from './../router/router-proxy';
-import { ApplicationConfig } from './../application-config';
-import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context';
 import { HttpServer } from '@nestjs/common';
+import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import 'reflect-metadata';
+import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context';
+import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 import { NestContainer } from '../injector/container';
+import { ApplicationConfig } from './../application-config';
+import { RouterProxyCallback } from './../router/router-proxy';
 
 export class RouterExceptionFilters extends BaseExceptionFilterContext {
   constructor(
@@ -45,7 +34,7 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
     if (isEmpty(filters)) {
       return exceptionHandler;
     }
-    exceptionHandler.setCustomFilters(filters);
+    exceptionHandler.setCustomFilters(filters.reverse());
     return exceptionHandler;
   }
 

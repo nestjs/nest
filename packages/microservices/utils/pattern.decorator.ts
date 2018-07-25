@@ -16,7 +16,32 @@ export const MessagePattern = <T = PatternMetadata | string>(
 };
 
 /**
- * Registers gRPC route handler for specified service.
+ * Registers gRPC method handler for specified service.
  */
-export const GrpcRoute = (service: string, rpc: string) =>
-  MessagePattern({ service, rpc });
+export function GrpcMethod(service?: string);
+export function GrpcMethod(service: string, method?: string);
+export function GrpcMethod(service: string, method?: string) {
+  return (target, key, descriptor: PropertyDescriptor) => {
+    const metadata = createMethodMetadata(target, key, service, method);
+    return MessagePattern(metadata)(target, key, descriptor);
+  };
+}
+
+export function createMethodMetadata(
+  target: any,
+  key: string,
+  service: string | undefined,
+  method: string | undefined,
+) {
+  const capitalizeFirstLetter = (str: string) =>
+    str.charAt(0).toUpperCase() + str.slice(1);
+
+  if (!service) {
+    const { name } = target.constructor;
+    return { service: name, rpc: capitalizeFirstLetter(key) };
+  }
+  if (service && !method) {
+    return { service, rpc: capitalizeFirstLetter(key) };
+  }
+  return { service, rpc: method };
+}

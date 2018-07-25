@@ -1,16 +1,8 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const server_1 = require("./server");
 const constants_1 = require("../constants");
 const constants_2 = require("./../constants");
+const server_1 = require("./server");
 let natsPackage = {};
 class ServerNats extends server_1.Server {
     constructor(options) {
@@ -45,20 +37,18 @@ class ServerNats extends server_1.Server {
         return natsPackage.connect(Object.assign({}, options, { url: this.url, json: true }));
     }
     getMessageHandler(channel, client) {
-        return (buffer) => __awaiter(this, void 0, void 0, function* () { return yield this.handleMessage(channel, buffer, client); });
+        return async (buffer) => await this.handleMessage(channel, buffer, client);
     }
-    handleMessage(channel, message, client) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const pattern = channel.replace(/_ack$/, '');
-            const publish = this.getPublisher(client, pattern, message.id);
-            const status = 'error';
-            if (!this.messageHandlers[pattern]) {
-                return publish({ id: message.id, status, err: constants_1.NO_PATTERN_MESSAGE });
-            }
-            const handler = this.messageHandlers[pattern];
-            const response$ = this.transformToObservable(yield handler(message.data));
-            response$ && this.send(response$, publish);
-        });
+    async handleMessage(channel, message, client) {
+        const pattern = channel.replace(/_ack$/, '');
+        const publish = this.getPublisher(client, pattern, message.id);
+        const status = 'error';
+        if (!this.messageHandlers[pattern]) {
+            return publish({ id: message.id, status, err: constants_1.NO_PATTERN_MESSAGE });
+        }
+        const handler = this.messageHandlers[pattern];
+        const response$ = this.transformToObservable(await handler(message.data));
+        response$ && this.send(response$, publish);
     }
     getPublisher(publisher, pattern, id) {
         return response => publisher.publish(this.getResQueueName(pattern), Object.assign(response, {

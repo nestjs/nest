@@ -1,11 +1,11 @@
-import * as io from 'socket.io';
-import { Server } from 'http';
-import { MessageMappingProperties } from '../gateway-metadata-explorer';
-import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
 import { WebSocketAdapter } from '@nestjs/common';
-import { Observable, fromEvent } from 'rxjs';
-import { filter, tap, mergeMap } from 'rxjs/operators';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { Server } from 'http';
+import { fromEvent, Observable } from 'rxjs';
+import { filter, mergeMap } from 'rxjs/operators';
+import * as io from 'socket.io';
+import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
+import { MessageMappingProperties } from '../gateway-metadata-explorer';
 
 export class IoAdapter implements WebSocketAdapter {
   constructor(private readonly httpServer: Server | null = null) {}
@@ -32,24 +32,27 @@ export class IoAdapter implements WebSocketAdapter {
     return io(port, options);
   }
 
-  public bindClientConnect(server, callback: (...args) => void) {
+  public bindClientConnect(server: any, callback: (...args) => void) {
     server.on(CONNECTION_EVENT, callback);
   }
 
-  public bindClientDisconnect(client, callback: (...args) => void) {
+  public bindClientDisconnect(client: any, callback: (...args) => void) {
     client.on(DISCONNECT_EVENT, callback);
   }
 
   public bindMessageHandlers(
-    client,
+    client: any,
     handlers: MessageMappingProperties[],
-    process: (data: any) => Observable<any>,
+    transform: (data: any) => Observable<any>,
   ) {
     handlers.forEach(({ message, callback }) =>
       fromEvent(client, message)
         .pipe(
-          mergeMap(data => process(callback(data))),
-          filter(result => !!result && result.event),
+          mergeMap(data =>
+            transform(callback(data)).pipe(
+              filter((result: any) => result && result.event),
+            ),
+          ),
         )
         .subscribe(({ event, data }) => client.emit(event, data)),
     );
@@ -59,7 +62,7 @@ export class IoAdapter implements WebSocketAdapter {
     server.use(middleware);
   }
 
-  public close(server) {
+  public close(server: any) {
     isFunction(server.close) && server.close();
   }
 }

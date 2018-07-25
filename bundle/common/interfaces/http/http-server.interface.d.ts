@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { IncomingMessage, ServerResponse } from 'http';
+import { RequestMethod } from '../../enums';
 export declare type ErrorHandler = (error: any, req: Partial<IncomingMessage>, res: ServerResponse | any, next?: Function) => any;
 export declare type RequestHandler = (req: Partial<IncomingMessage>, res: ServerResponse | any, next?: Function) => any;
 export interface HttpServer {
@@ -29,8 +30,10 @@ export interface HttpServer {
     useStaticAssets?(...args: any[]): this;
     setBaseViewsDir?(path: string): this;
     setViewEngine?(engineOrOptions: any): this;
+    createMiddlewareFactory(method: RequestMethod): (path: string, callback: Function) => any;
     getRequestMethod?(request: any): string;
     getRequestUrl?(request: any): string;
+    getInstance(): any;
     getHttpServer(): any;
     close(): any;
 }

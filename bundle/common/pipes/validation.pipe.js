@@ -8,14 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __rest = (this && this.__rest) || function (s, e) {
     var t = {};
     for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
@@ -27,38 +19,37 @@ var __rest = (this && this.__rest) || function (s, e) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = require("../index");
+const load_package_util_1 = require("../utils/load-package.util");
 const shared_utils_1 = require("../utils/shared.utils");
 const component_decorator_1 = require("./../decorators/core/component.decorator");
-const load_package_util_1 = require("../utils/load-package.util");
 let classValidator = {};
 let classTransformer = {};
 let ValidationPipe = class ValidationPipe {
     constructor(options) {
         options = options || {};
-        const { transform } = options, validatorOptions = __rest(options, ["transform"]);
+        const { transform, disableErrorMessages } = options, validatorOptions = __rest(options, ["transform", "disableErrorMessages"]);
         this.isTransformEnabled = !!transform;
         this.validatorOptions = validatorOptions;
+        this.isDetailedOutputDisabled = disableErrorMessages;
         const loadPkg = pkg => load_package_util_1.loadPackage(pkg, 'ValidationPipe');
         classValidator = loadPkg('class-validator');
         classTransformer = loadPkg('class-transformer');
     }
-    transform(value, metadata) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { metatype } = metadata;
-            if (!metatype || !this.toValidate(metadata)) {
-                return value;
-            }
-            const entity = classTransformer.plainToClass(metatype, value);
-            const errors = yield classValidator.validate(entity, this.validatorOptions);
-            if (errors.length > 0) {
-                throw new index_1.BadRequestException(errors);
-            }
-            return this.isTransformEnabled
-                ? entity
-                : Object.keys(this.validatorOptions).length > 0
-                    ? classTransformer.classToPlain(entity)
-                    : value;
-        });
+    async transform(value, metadata) {
+        const { metatype } = metadata;
+        if (!metatype || !this.toValidate(metadata)) {
+            return value;
+        }
+        const entity = classTransformer.plainToClass(metatype, this.toEmptyIfNil(value));
+        const errors = await classValidator.validate(entity, this.validatorOptions);
+        if (errors.length > 0) {
+            throw new index_1.BadRequestException(this.isDetailedOutputDisabled ? undefined : errors);
+        }
+        return this.isTransformEnabled
+            ? entity
+            : Object.keys(this.validatorOptions).length > 0
+                ? classTransformer.classToPlain(entity)
+                : value;
     }
     toValidate(metadata) {
         const { metatype, type } = metadata;
@@ -67,6 +58,9 @@ let ValidationPipe = class ValidationPipe {
         }
         const types = [String, Boolean, Number, Array, Object];
         return !types.find(t => metatype === t) && !shared_utils_1.isNil(metatype);
+    }
+    toEmptyIfNil(value) {
+        return shared_utils_1.isNil(value) ? {} : value;
     }
 };
 ValidationPipe = __decorate([

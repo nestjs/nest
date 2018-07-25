@@ -1,17 +1,16 @@
 /// <reference types="node" />
-import * as http from 'http';
-import { CanActivate, ExceptionFilter, NestInterceptor, PipeTransform, WebSocketAdapter } from '@nestjs/common';
-import { INestApplication, INestMicroservice } from '@nestjs/common';
+import { CanActivate, ExceptionFilter, INestApplication, INestMicroservice, NestInterceptor, PipeTransform, WebSocketAdapter } from '@nestjs/common';
+import { HttpServer } from '@nestjs/common/interfaces';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
 import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
+import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
+import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
+import * as http from 'http';
 import { ApplicationConfig } from './application-config';
 import { NestContainer } from './injector/container';
 import { NestApplicationContext } from './nest-application-context';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
-import { HttpServer } from '@nestjs/common/interfaces';
-import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
-import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
-import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
 export declare class NestApplication extends NestApplicationContext implements INestApplication, INestExpressApplication, INestFastifyApplication {
     private readonly httpAdapter;
     private readonly config;

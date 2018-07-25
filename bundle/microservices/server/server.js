@@ -1,23 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const logger_service_1 = require("@nestjs/common/services/logger.service");
-const rxjs_1 = require("rxjs");
-const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const operators_1 = require("rxjs/operators");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const rxjs_1 = require("rxjs");
+const operators_1 = require("rxjs/operators");
 class Server {
     constructor() {
         this.messageHandlers = {};
         this.logger = new logger_service_1.Logger(Server.name);
+    }
+    addHandler(pattern, callback) {
+        const key = shared_utils_1.isString(pattern) ? pattern : JSON.stringify(pattern);
+        this.messageHandlers[key] = callback;
     }
     getHandlers() {
         return this.messageHandlers;
     }
     getHandlerByPattern(pattern) {
         return this.messageHandlers[pattern] ? this.messageHandlers[pattern] : null;
-    }
-    add(pattern, callback) {
-        this.messageHandlers[JSON.stringify(pattern)] = callback;
     }
     send(stream$, respond) {
         return stream$

@@ -7,7 +7,7 @@
             console.log('Connected');
             socket.send(JSON.stringify({
                 event: 'events',
-                message: 'test',
+                data: 'test',
             }));
             socket.onmessage = function (data) {
                 console.log(data);

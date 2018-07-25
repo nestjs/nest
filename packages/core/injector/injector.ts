@@ -1,22 +1,15 @@
-import 'reflect-metadata';
-import { InstanceWrapper } from './container';
-import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { Module } from './module';
-import { Type } from '@nestjs/common/interfaces/type.interface';
+import { PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { Type } from '@nestjs/common/interfaces/type.interface';
+import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import 'reflect-metadata';
+import { RuntimeException } from '../errors/exceptions/runtime.exception';
+import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
 import { MiddlewareWrapper } from '../middleware/container';
-import {
-  isUndefined,
-  isNil,
-  isFunction,
-} from '@nestjs/common/utils/shared.utils';
-import {
-  PARAMTYPES_METADATA,
-  SELF_DECLARED_DEPS_METADATA,
-} from '@nestjs/common/constants';
 import { UndefinedDependencyException } from './../errors/exceptions/undefined-dependency.exception';
+import { InstanceWrapper } from './container';
+import { Module } from './module';
 
 export class Injector {
   public async loadInstanceOfMiddleware(
@@ -131,20 +124,20 @@ export class Injector {
   public async resolveConstructorParams<T>(
     wrapper: InstanceWrapper<T>,
     module: Module,
-    inject: any[],
+    inject: InjectorDependency[],
     callback: (args) => void,
   ) {
     let isResolved = true;
-    const args = isNil(inject)
+    const dependencies = isNil(inject)
       ? this.reflectConstructorParams(wrapper.metatype)
       : inject;
 
     const instances = await Promise.all(
-      args.map(async (param, index) => {
+      dependencies.map(async (param, index) => {
         const paramWrapper = await this.resolveSingleParam<T>(
           wrapper,
           param,
-          { index, length: args.length },
+          { index, dependencies },
           module,
         );
         if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
@@ -171,17 +164,17 @@ export class Injector {
   public async resolveSingleParam<T>(
     wrapper: InstanceWrapper<T>,
     param: Type<any> | string | symbol | any,
-    { index, length }: { index: number; length: number },
+    dependencyContext: InjectorDependencyContext,
     module: Module,
   ) {
     if (isUndefined(param)) {
-      throw new UndefinedDependencyException(wrapper.name, index, length);
+      throw new UndefinedDependencyException(wrapper.name, dependencyContext);
     }
     const token = this.resolveParamToken(wrapper, param);
     return await this.resolveComponentInstance<T>(
       module,
       isFunction(token) ? (token as Type<any>).name : token,
-      { index, length },
+      dependencyContext,
       wrapper,
     );
   }
@@ -200,14 +193,14 @@ export class Injector {
   public async resolveComponentInstance<T>(
     module: Module,
     name: any,
-    { index, length }: { index: number; length: number },
+    dependencyContext: InjectorDependencyContext,
     wrapper: InstanceWrapper<T>,
   ) {
     const components = module.components;
     const instanceWrapper = await this.lookupComponent(
       components,
       module,
-      { name, index, length },
+      { name, ...dependencyContext },
       wrapper,
     );
     if (!instanceWrapper.isResolved && !instanceWrapper.forwardRef) {
@@ -219,34 +212,35 @@ export class Injector {
     return instanceWrapper;
   }
 
-  public async lookupComponent(
+  public async lookupComponent<T = any>(
     components: Map<string, any>,
     module: Module,
-    { name, index, length }: { name: any; index: number; length: number },
-    { metatype },
+    dependencyContext: InjectorDependencyContext,
+    wrapper: InstanceWrapper<T>,
   ) {
+    const { name } = dependencyContext;
     const scanInExports = () =>
       this.lookupComponentInExports(
         components,
-        { name, index, length },
+        dependencyContext,
         module,
-        metatype,
+        wrapper,
       );
     return components.has(name) ? components.get(name) : await scanInExports();
   }
 
-  public async lookupComponentInExports(
+  public async lookupComponentInExports<T = any>(
     components: Map<string, any>,
-    { name, index, length }: { name: any; index: number; length: number },
+    dependencyContext: InjectorDependencyContext,
     module: Module,
-    metatype,
+    wrapper: InstanceWrapper<T>,
   ) {
     const instanceWrapper = await this.lookupComponentInRelatedModules(
       module,
-      name,
+      dependencyContext.name,
     );
     if (isNil(instanceWrapper)) {
-      throw new UnknownDependenciesException(metatype.name, index, length);
+      throw new UnknownDependenciesException(wrapper.name, dependencyContext);
     }
     return instanceWrapper;
   }
@@ -285,7 +279,7 @@ export class Injector {
       const { relatedModules, exports } = module;
       return this.flatMap(
         [...relatedModules.values()]
-          .filter(related => !!related)
+          .filter(related => related)
           .filter(related => {
             const { metatype } = related;
             return exports.has(metatype.name);
@@ -294,4 +288,29 @@ export class Injector {
     };
     return modules.concat.apply(modules, modules.map(flatten));
   }
+}
+
+/**
+ * The type of an injectable dependency
+ */
+export type InjectorDependency = Type<any> | Function | string;
+
+/**
+ * Context of a dependency which gets injected by
+ * the injector
+ */
+export interface InjectorDependencyContext {
+  /**
+   * The name of the function or injection token
+   */
+  name?: string;
+  /**
+   * The index of the dependency which gets injected
+   * from the dependencies array
+   */
+  index: number;
+  /**
+   * The dependency array which gets injected
+   */
+  dependencies: InjectorDependency[];
 }

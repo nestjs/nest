@@ -1,14 +1,11 @@
-import * as sinon from 'sinon';
+import * as chai from 'chai';
 import { expect } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+import * as sinon from 'sinon';
+import { Component } from '../../../common/decorators/core/component.decorator';
 import { InstanceWrapper, NestContainer } from '../../injector/container';
 import { Injector } from '../../injector/injector';
-import { Component } from '../../../common/decorators/core/component.decorator';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { Module } from '../../injector/module';
-import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-import { UndefinedDependencyException } from '../../errors/exceptions/undefined-dependency.exception';
 chai.use(chaiAsPromised);
 
 describe('Injector', () => {
@@ -177,7 +174,7 @@ describe('Injector', () => {
         injector.resolveSingleParam(
           null,
           undefined,
-          { index: 0, length: 5 },
+          { index: 0, dependencies: [] },
           null,
         ),
       ).to.eventually.be.rejected;
@@ -279,7 +276,12 @@ describe('Injector', () => {
   describe('lookupComponent', () => {
     let lookupComponentInRelatedModules: sinon.SinonStub;
     const metatype = { name: 'test', metatype: { name: 'test' } };
-
+    const wrapper: any = {
+      name: 'Test',
+      metatype,
+      instance: null,
+      isResolved: false,
+    };
     beforeEach(() => {
       lookupComponentInRelatedModules = sinon.stub();
       (injector as any).lookupComponentInRelatedModules = lookupComponentInRelatedModules;
@@ -294,8 +296,8 @@ describe('Injector', () => {
       const result = await injector.lookupComponent(
         collection as any,
         null,
-        { name: metatype.name, index: 0, length: 10 },
-        metatype,
+        { name: metatype.name, index: 0, dependencies: [] },
+        wrapper,
       );
       expect(result).to.be.equal(instance);
     });
@@ -308,8 +310,8 @@ describe('Injector', () => {
       await injector.lookupComponent(
         collection as any,
         null,
-        { name: metatype.name, index: 0, length: 10 },
-        metatype,
+        { name: metatype.name, index: 0, dependencies: [] },
+        wrapper,
       );
       expect(lookupComponentInRelatedModules.called).to.be.true;
     });
@@ -324,8 +326,8 @@ describe('Injector', () => {
         injector.lookupComponent(
           collection as any,
           module as any,
-          { name: metatype.name, index: 0, length: 10 },
-          { metatype },
+          { name: metatype.name, index: 0, dependencies: [] },
+          wrapper,
         ),
       ).to.eventually.be.rejected;
     });
@@ -340,8 +342,8 @@ describe('Injector', () => {
         injector.lookupComponent(
           collection as any,
           module as any,
-          { name: metatype.name, index: 0, length: 10 },
-          metatype,
+          { name: metatype.name, index: 0, dependencies: [] },
+          wrapper,
         ),
       ).to.eventually.be.not.rejected;
     });
@@ -414,7 +416,7 @@ describe('Injector', () => {
     });
 
     it('should call "loadInstanceOfComponent" when component is not resolved', async () => {
-      let module = {
+      const module = {
         relatedModules: new Map([
           [
             'key',
@@ -441,7 +443,7 @@ describe('Injector', () => {
     });
 
     it('should not call "loadInstanceOfComponent" when component is resolved', async () => {
-      let module = {
+      const module = {
         relatedModules: new Map([
           [
             'key',
@@ -525,7 +527,7 @@ describe('Injector', () => {
         await injector.resolveComponentInstance(
           module,
           '',
-          { index: 0, length: 10 },
+          { index: 0, dependencies: [] },
           {} as any,
         );
         expect(loadStub.called).to.be.true;
@@ -539,7 +541,7 @@ describe('Injector', () => {
         await injector.resolveComponentInstance(
           module,
           '',
-          { index: 0, length: 10 },
+          { index: 0, dependencies: [] },
           {} as any,
         );
         expect(loadStub.called).to.be.false;
@@ -555,7 +557,7 @@ describe('Injector', () => {
         await injector.resolveComponentInstance(
           module,
           '',
-          { index: 0, length: 10 },
+          { index: 0, dependencies: [] },
           {} as any,
         );
         expect(loadStub.called).to.be.false;
@@ -578,7 +580,7 @@ describe('Injector', () => {
         const result = await injector.resolveComponentInstance(
           module,
           '',
-          { index: 0, length: 10 },
+          { index: 0, dependencies: [] },
           {} as any,
         );
         expect(result.instance).to.be.true;

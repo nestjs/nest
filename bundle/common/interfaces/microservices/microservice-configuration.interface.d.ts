@@ -1,6 +1,6 @@
 import { Transport } from '../../enums/transport.enum';
-import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
+import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 export declare type MicroserviceOptions = GrpcOptions | TcpOptions | RedisOptions | NatsOptions | MqttOptions | CustomStrategy;
 export interface CustomStrategy {
     strategy?: CustomTransportStrategy;
@@ -12,6 +12,7 @@ export interface GrpcOptions {
         url?: string;
         credentials?: any;
         protoPath: string;
+        root?: string;
         package: string;
     };
 }

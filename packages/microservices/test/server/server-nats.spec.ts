@@ -73,10 +73,12 @@ describe('ServerNats', () => {
     });
     describe('handler', () => {
       it('should call "handleMessage"', async () => {
-        const spy = sinon.spy(server, 'handleMessage');
-        (await server.getMessageHandler(null, (server as any).natsClient))(null);
-        expect(spy.called).to.be.true;
-      })
+        const handleMessageStub = sinon
+          .stub(server, 'handleMessage')
+          .callsFake(() => null);
+        (await server.getMessageHandler('', (server as any).natsClient))('');
+        expect(handleMessageStub.called).to.be.true;
+      });
     });
   });
   describe('handleMessage', () => {
@@ -130,12 +132,8 @@ describe('ServerNats', () => {
     it(`should call "publish" with expected arguments`, () => {
       const respond = 'test';
       publisher({ respond, id });
-      expect(
-        publisherSpy.calledWith(
-          `${pattern}_res`,
-          { respond, id },
-        ),
-      ).to.be.true;
+      expect(publisherSpy.calledWith(`${pattern}_res`, { respond, id })).to.be
+        .true;
     });
   });
   describe('getAckPatternName', () => {
