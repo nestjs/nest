@@ -28,15 +28,7 @@ const randomString = () =>
     .toString(36)
     .substring(2, 15);
 
-export type DataCustomParamDecorator = (
-  data?: string,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[],
-) => ParameterDecorator;
-export type OmitDataCustomParamDecorator = (
-  ...pipes: (Type<PipeTransform> | PipeTransform)[],
-) => ParameterDecorator;
-
-/**
+/*
  * Defines HTTP route param decorator
  * @param factory
  */
