@@ -34,10 +34,7 @@ export class NestFactoryStatic {
    */
   public async create(
     module: any,
-  ): Promise<INestApplication & INestExpressApplication>;
-  public async create(
-    module: any,
-    options: NestApplicationOptions,
+    options?: NestApplicationOptions,
   ): Promise<INestApplication & INestExpressApplication>;
   public async create(
     module: any,
@@ -46,12 +43,7 @@ export class NestFactoryStatic {
   ): Promise<INestApplication & INestFastifyApplication>;
   public async create(
     module: any,
-    httpServer: HttpServer,
-    options?: NestApplicationOptions,
-  ): Promise<INestApplication & INestExpressApplication>;
-  public async create(
-    module: any,
-    httpServer: any,
+    httpServer: HttpServer | any,
     options?: NestApplicationOptions,
   ): Promise<INestApplication & INestExpressApplication>;
   public async create(
