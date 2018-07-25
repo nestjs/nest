@@ -210,11 +210,20 @@ export class DependenciesScanner {
     key: string,
     method: string,
   ) {
-    const descriptor = Reflect.getOwnPropertyDescriptor(
-      component.prototype,
-      method,
+    let prototype = component.prototype;
+    do {
+      const descriptor = Reflect.getOwnPropertyDescriptor(prototype, method);
+      if (!descriptor) {
+        continue;
+      }
+      return Reflect.getMetadata(key, descriptor.value);
+    } while (
+      // tslint:disable-next-line:no-conditional-assignment
+      (prototype = Reflect.getPrototypeOf(prototype)) &&
+      prototype !== Object.prototype &&
+      prototype
     );
-    return descriptor ? Reflect.getMetadata(key, descriptor.value) : undefined;
+    return undefined;
   }
 
   public async storeRelatedModule(
