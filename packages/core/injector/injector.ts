@@ -124,20 +124,20 @@ export class Injector {
   public async resolveConstructorParams<T>(
     wrapper: InstanceWrapper<T>,
     module: Module,
-    inject: any[],
+    inject: InjectorDependency[],
     callback: (args) => void,
   ) {
     let isResolved = true;
-    const args = isNil(inject)
+    const dependencies = isNil(inject)
       ? this.reflectConstructorParams(wrapper.metatype)
       : inject;
 
     const instances = await Promise.all(
-      args.map(async (param, index) => {
+      dependencies.map(async (param, index) => {
         const paramWrapper = await this.resolveSingleParam<T>(
           wrapper,
           param,
-          { index, length: args.length },
+          { index, dependencies },
           module,
         );
         if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
@@ -164,17 +164,17 @@ export class Injector {
   public async resolveSingleParam<T>(
     wrapper: InstanceWrapper<T>,
     param: Type<any> | string | symbol | any,
-    { index, length }: { index: number; length: number },
+    dependencyContext: InjectorDependencyContext,
     module: Module,
   ) {
     if (isUndefined(param)) {
-      throw new UndefinedDependencyException(wrapper.name, index, length);
+      throw new UndefinedDependencyException(wrapper.name, dependencyContext);
     }
     const token = this.resolveParamToken(wrapper, param);
     return await this.resolveComponentInstance<T>(
       module,
       isFunction(token) ? (token as Type<any>).name : token,
-      { index, length },
+      dependencyContext,
       wrapper,
     );
   }
@@ -193,14 +193,14 @@ export class Injector {
   public async resolveComponentInstance<T>(
     module: Module,
     name: any,
-    { index, length }: { index: number; length: number },
+    dependencyContext: InjectorDependencyContext,
     wrapper: InstanceWrapper<T>,
   ) {
     const components = module.components;
     const instanceWrapper = await this.lookupComponent(
       components,
       module,
-      { name, index, length },
+      { name, ...dependencyContext },
       wrapper,
     );
     if (!instanceWrapper.isResolved && !instanceWrapper.forwardRef) {
@@ -215,13 +215,14 @@ export class Injector {
   public async lookupComponent<T = any>(
     components: Map<string, any>,
     module: Module,
-    { name, index, length }: { name: any; index: number; length: number },
+    dependencyContext: InjectorDependencyContext,
     wrapper: InstanceWrapper<T>,
   ) {
+    const { name } = dependencyContext;
     const scanInExports = () =>
       this.lookupComponentInExports(
         components,
-        { name, index, length },
+        dependencyContext,
         module,
         wrapper,
       );
@@ -230,16 +231,16 @@ export class Injector {
 
   public async lookupComponentInExports<T = any>(
     components: Map<string, any>,
-    { name, index, length }: { name: any; index: number; length: number },
+    dependencyContext: InjectorDependencyContext,
     module: Module,
     wrapper: InstanceWrapper<T>,
   ) {
     const instanceWrapper = await this.lookupComponentInRelatedModules(
       module,
-      name,
+      dependencyContext.name,
     );
     if (isNil(instanceWrapper)) {
-      throw new UnknownDependenciesException(wrapper.name, index, length);
+      throw new UnknownDependenciesException(wrapper.name, dependencyContext);
     }
     return instanceWrapper;
   }
@@ -287,4 +288,29 @@ export class Injector {
     };
     return modules.concat.apply(modules, modules.map(flatten));
   }
+}
+
+/**
+ * The type of an injectable dependency
+ */
+export type InjectorDependency = Type<any> | Function | string;
+
+/**
+ * Context of a dependency which gets injected by
+ * the injector
+ */
+export interface InjectorDependencyContext {
+  /**
+   * The name of the function or injection token
+   */
+  name?: string;
+  /**
+   * The index of the dependency which gets injected
+   * from the dependencies array
+   */
+  index: number;
+  /**
+   * The dependency array which gets injected
+   */
+  dependencies: InjectorDependency[];
 }

@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UnknownDependenciesMessage = (type, index, length) => {
+// Try to get the class name
+// otherwise the string value
+// if not known use +
+const getDependencyName = arg => (arg && arg.name) || arg || '+';
+exports.UnknownDependenciesMessage = (type, index, args) => {
     let message = `Nest can't resolve dependencies of the ${type}`;
     message += ` (`;
     const args = new Array(length).fill('+');
