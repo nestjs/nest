@@ -1,6 +1,6 @@
 import { Server } from './server';
 import { Channel, Connection, Options } from 'amqplib';
-import { RQM_DEFAULT_URL, RQM_DEFAULT_QUEUE, RQM_DEFAULT_PREFETCH_COUNT, RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT, RQM_DEFAULT_QUEUE_OPTIONS } from './../constants';
+import { CONNECT_EVENT, RQM_DEFAULT_URL, RQM_DEFAULT_QUEUE, RQM_DEFAULT_PREFETCH_COUNT, RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT, RQM_DEFAULT_QUEUE_OPTIONS } from './../constants';
 import { CustomTransportStrategy, RmqOptions } from './../interfaces';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -45,6 +45,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
             this.channel = await this.server.createChannel();
             this.channel.assertQueue(this.queue, this.queueOptions);
             await this.channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
+            callback();
         } catch (err) {
             this.logger.error(err);
         }

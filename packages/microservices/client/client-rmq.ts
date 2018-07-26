@@ -86,7 +86,7 @@ export class ClientRMQ extends ClientProxy {
         }, { noAck: true });
     }
 
-    public async connect(): Promise<any> {
+    public connect(): Promise<any> {
         if (this.client && this.channel) {
             return Promise.resolve();
         }
