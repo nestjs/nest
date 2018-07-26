@@ -1,21 +1,14 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  UseGuards,
-  UseInterceptors,
-  Param,
-} from '@nestjs/common';
-import { CreateCatDto } from './dto/create-cat.dto';
-import { CatsService } from './cats.service';
-import { Cat } from './interfaces/cat.interface';
-import { RolesGuard } from '../common/guards/roles.guard';
+import { Body, Catch, Controller, Get, Param, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Roles } from '../common/decorators/roles.decorator';
+import { RolesGuard } from '../common/guards/roles.guard';
 import { LoggingInterceptor } from '../common/interceptors/logging.interceptor';
 import { TransformInterceptor } from '../common/interceptors/transform.interceptor';
 import { ParseIntPipe } from '../common/pipes/parse-int.pipe';
+import { CatsService } from './cats.service';
+import { CreateCatDto } from './dto/create-cat.dto';
+import { Cat } from './interfaces/cat.interface';
 
+@Catch(null)
 @Controller('cats')
 @UseGuards(RolesGuard)
 @UseInterceptors(LoggingInterceptor, TransformInterceptor)
