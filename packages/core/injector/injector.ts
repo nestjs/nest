@@ -5,9 +5,9 @@ import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import 'reflect-metadata';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
+import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
 import { MiddlewareWrapper } from '../middleware/container';
-import { UndefinedDependencyException } from './../errors/exceptions/undefined-dependency.exception';
 import { InstanceWrapper } from './container';
 import { Module } from './module';
 

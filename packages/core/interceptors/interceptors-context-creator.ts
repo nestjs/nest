@@ -1,16 +1,11 @@
-import 'reflect-metadata';
-import iterate from 'iterare';
-import { Controller, NestInterceptor } from '@nestjs/common/interfaces';
 import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
-import {
-  isUndefined,
-  isFunction,
-  isNil,
-  isEmpty,
-} from '@nestjs/common/utils/shared.utils';
-import { ContextCreator } from './../helpers/context-creator';
-import { NestContainer } from '../injector/container';
+import { Controller, NestInterceptor } from '@nestjs/common/interfaces';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
+import { isEmpty, isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+import iterate from 'iterare';
+import 'reflect-metadata';
+import { ContextCreator } from '../helpers/context-creator';
+import { NestContainer } from '../injector/container';
 
 export class InterceptorsContextCreator extends ContextCreator {
   private moduleContext: string;

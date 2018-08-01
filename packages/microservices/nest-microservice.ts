@@ -1,28 +1,23 @@
-import * as optional from 'optional';
-import iterate from 'iterare';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { MicroservicesModule } from './microservices-module';
-import { messages } from '@nestjs/core/constants';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { Server } from './server/server';
-import { MicroserviceOptions } from './interfaces/microservice-configuration.interface';
-import { ServerFactory } from './server/server-factory';
-import { Transport } from './enums/transport.enum';
 import {
-  INestMicroservice,
-  WebSocketAdapter,
   CanActivate,
-  PipeTransform,
-  NestInterceptor,
   ExceptionFilter,
-  OnModuleInit,
+  INestMicroservice,
+  NestInterceptor,
+  PipeTransform,
+  WebSocketAdapter,
 } from '@nestjs/common';
+import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { CustomTransportStrategy } from '@nestjs/microservices';
-import { Module } from '@nestjs/core/injector/module';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { OnModuleDestroy } from '@nestjs/common/interfaces';
+import { messages } from '@nestjs/core/constants';
+import { NestContainer } from '@nestjs/core/injector/container';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
+import { CustomTransportStrategy } from '@nestjs/microservices';
+import * as optional from 'optional';
+import { Transport } from './enums/transport.enum';
+import { MicroserviceOptions } from './interfaces/microservice-configuration.interface';
+import { MicroservicesModule } from './microservices-module';
+import { Server } from './server/server';
+import { ServerFactory } from './server/server-factory';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
@@ -144,59 +139,7 @@ export class NestMicroservice extends NestApplicationContext
 
   protected async closeApplication(): Promise<any> {
     this.socketModule && (await this.socketModule.close());
-    await this.callDestroyHook();
+    await super.close();
     this.setIsTerminated(true);
-  }
-
-  protected async callInitHook(): Promise<any> {
-    const modules = this.container.getModules();
-    await Promise.all(
-      iterate(modules.values()).map(
-        async module => await this.callModuleInitHook(module),
-      ),
-    );
-    this.setIsInitHookCalled(true);
-  }
-
-  protected async callModuleInitHook(module: Module): Promise<any> {
-    const components = [...module.routes, ...module.components];
-    await Promise.all(
-      iterate(components)
-        .map(([key, { instance }]) => instance)
-        .filter(instance => !isNil(instance))
-        .filter(this.hasOnModuleInitHook)
-        .map(async instance => await (instance as OnModuleInit).onModuleInit()),
-    );
-  }
-
-  protected hasOnModuleInitHook(instance: any): instance is OnModuleInit {
-    return !isUndefined((instance as OnModuleInit).onModuleInit);
-  }
-
-  private async callDestroyHook(): Promise<any> {
-    const modules = this.container.getModules();
-    await Promise.all(
-      iterate(modules.values()).map(
-        async module => await this.callModuleDestroyHook(module),
-      ),
-    );
-  }
-
-  private async callModuleDestroyHook(module: Module): Promise<any> {
-    const components = [...module.routes, ...module.components];
-    await Promise.all(
-      iterate(components)
-        .map(([key, { instance }]) => instance)
-        .filter(instance => !isNil(instance))
-        .filter(this.hasOnModuleDestroyHook)
-        .map(
-          async instance =>
-            await (instance as OnModuleDestroy).onModuleDestroy(),
-        ),
-    );
-  }
-
-  private hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
-    return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
   }
 }

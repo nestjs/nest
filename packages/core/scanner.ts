@@ -17,11 +17,11 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import 'reflect-metadata';
-import { MetadataScanner } from '../core/metadata-scanner';
 import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
 import { NestContainer } from './injector/container';
+import { MetadataScanner } from './metadata-scanner';
 
 interface ApplicationProviderWrapper {
   moduleKey: string;
