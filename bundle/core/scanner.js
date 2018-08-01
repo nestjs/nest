@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("@nestjs/common/constants");
+const random_string_generator_util_1 = require("@nestjs/common/utils/random-string-generator.util");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 require("reflect-metadata");
 const application_config_1 = require("./application-config");
@@ -20,7 +21,12 @@ class DependenciesScanner {
     }
     async scanForModules(module, scope = []) {
         await this.storeModule(module, scope);
-        const modules = this.reflectMetadata(module, constants_1.metadata.MODULES);
+        const modules = !this.isDynamicModule(module)
+            ? this.reflectMetadata(module, constants_1.metadata.MODULES)
+            : [
+                ...this.reflectMetadata(module.module, constants_1.metadata.MODULES),
+                ...(module.imports || []),
+            ];
         for (const innerModule of modules) {
             await this.scanForModules(innerModule, [].concat(scope, module));
         }
@@ -136,9 +142,7 @@ class DependenciesScanner {
         if (providersKeys.indexOf(type) < 0) {
             return this.container.addComponent(component, token);
         }
-        const providerToken = Math.random()
-            .toString(36)
-            .substring(2, 32);
+        const providerToken = random_string_generator_util_1.randomStringGenerator();
         this.applicationProvidersApplyMap.push({
             type,
             moduleKey: token,
@@ -174,6 +178,9 @@ class DependenciesScanner {
             [constants_2.APP_GUARD]: guard => this.applicationConfig.addGlobalGuard(guard),
             [constants_2.APP_FILTER]: filter => this.applicationConfig.addGlobalFilter(filter),
         };
+    }
+    isDynamicModule(module) {
+        return module && !!module.module;
     }
 }
 exports.DependenciesScanner = DependenciesScanner;

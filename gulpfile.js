@@ -27,7 +27,7 @@ gulp.task('default', function() {
 });
 
 gulp.task('copy:ts', function() {
-  return gulp.packages(['packages/**/*.ts']).pipe(gulp.dest('./bundle'));
+  return gulp.src(['packages/**/*.ts']).pipe(gulp.dest('./bundle'));
 });
 
 
@@ -42,7 +42,7 @@ gulp.task('copy-docs', function() {
 
 gulp.task('clean:bundle', function() {
   return gulp
-    .packages(['bundle/**/*.js.map', 'bundle/**/*.ts', '!bundle/**/*.d.ts'], { read: false })
+    .src(['bundle/**/*.js.map', 'bundle/**/*.ts', '!bundle/**/*.d.ts'], { read: false })
     .pipe(clean());
 });
 
@@ -102,4 +102,5 @@ gulp.task('move', function() {
   directories.forEach((dir) => {
     stream = stream.pipe(gulp.dest(dir + '/node_modules/@nestjs'));
   });
+  return stream;
 });

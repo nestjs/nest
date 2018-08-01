@@ -36,4 +36,5 @@ export declare class DependenciesScanner {
     getApplyProvidersMap(): {
         [type: string]: Function;
     };
+    isDynamicModule(module: Type<any> | DynamicModule): module is DynamicModule;
 }

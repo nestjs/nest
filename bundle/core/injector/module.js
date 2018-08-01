@@ -214,12 +214,13 @@ class Module {
         if (this._components.has(token)) {
             return token;
         }
-        const relatedModules = [...this._relatedModules.values()];
-        const modulesTokens = relatedModules
+        const importedArray = [...this._relatedModules.values()];
+        const importedRefNames = importedArray
+            .filter(item => item)
             .map(({ metatype }) => metatype)
             .filter(metatype => metatype)
             .map(({ name }) => name);
-        if (modulesTokens.indexOf(token) < 0) {
+        if (importedRefNames.indexOf(token) < 0) {
             const { name } = this.metatype;
             throw new unknown_export_exception_1.UnknownExportException(name);
         }

@@ -1,15 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// Try to get the class name
-// otherwise the string value
-// if not known use +
-const getDependencyName = arg => (arg && arg.name) || arg || '+';
-exports.UnknownDependenciesMessage = (type, index, args) => {
+/**
+ * Returns the name of the dependency
+ * Tries to get the class name, otherwise the string value
+ * (= injection token). As fallback it returns '+'
+ * @param dependency The dependency whichs name shoul get displayed
+ */
+const getDependencyName = (dependency) => (dependency && dependency.name) || dependency || '+';
+exports.UnknownDependenciesMessage = (type, unknownDependencyContext) => {
+    const { index, dependencies } = unknownDependencyContext;
     let message = `Nest can't resolve dependencies of the ${type}`;
     message += ` (`;
-    const args = new Array(length).fill('+');
-    args[index] = '?';
-    message += args.join(', ');
+    const dependenciesName = dependencies.map(getDependencyName);
+    dependenciesName[index] = '?';
+    message += dependenciesName.join(', ');
     message += `). Please make sure that the argument at index [${index}] is available in the current context.`;
     return message;
 };
