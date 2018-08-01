@@ -1,6 +1,6 @@
 import { MqttClientOptions } from '@nestjs/common/interfaces/external/mqtt-options.interface';
 import { Transport } from '../enums/transport.enum';
-import { Server } from './../server/server';
+import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 
 export type MicroserviceOptions =

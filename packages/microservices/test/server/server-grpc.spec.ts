@@ -1,9 +1,9 @@
-import { ServerGrpc } from '../../server/server-grpc';
 import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { of } from 'rxjs';
 import { join } from 'path';
-import { InvalidGrpcPackageException } from '../../exceptions/invalid-grpc-package.exception';
+import { of } from 'rxjs';
+import * as sinon from 'sinon';
+import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
+import { ServerGrpc } from '../../server/server-grpc';
 
 describe('ServerGrpc', () => {
   let server: ServerGrpc;

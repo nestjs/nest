@@ -5,9 +5,9 @@
  * MIT Licensed
  */
 
-export * from './adapters/ws-adapter';
 export * from './adapters/io-adapter';
-export * from './interfaces';
-export * from './exceptions/ws-exception';
-export * from './utils';
+export * from './adapters/ws-adapter';
+export * from './exceptions';
 export { MessageMappingProperties } from './gateway-metadata-explorer';
+export * from './interfaces';
+export * from './utils';
