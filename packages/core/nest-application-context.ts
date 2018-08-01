@@ -1,5 +1,7 @@
 import {
   INestApplicationContext,
+  Logger,
+  LoggerService,
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
@@ -62,6 +64,10 @@ export class NestApplicationContext extends ModuleRef
 
   public async close(): Promise<void> {
     await this.callDestroyHook();
+  }
+
+  public useLogger(logger: LoggerService) {
+    Logger.overrideLogger(logger);
   }
 
   protected async callInitHook(): Promise<any> {
