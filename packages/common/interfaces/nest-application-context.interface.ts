@@ -1,3 +1,4 @@
+import { LoggerService } from './../services/logger.service';
 import { Type } from './type.interface';
 
 export interface INestApplicationContext {
@@ -18,8 +19,13 @@ export interface INestApplicationContext {
 
   /**
    * Terminates the application
-   *
    * @returns {Promise<void>}
    */
   close(): Promise<void>;
+
+  /**
+   * Sets custom logger service
+   * @returns {void}
+   */
+  useLogger(logger: LoggerService);
 }

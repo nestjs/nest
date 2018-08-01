@@ -175,7 +175,7 @@ export class NestFactoryStatic {
   }
 
   private applyLogger(options: NestApplicationContextOptions | undefined) {
-    if (!options || !options.logger) {
+    if (!options) {
       return;
     }
     Logger.overrideLogger(options.logger);
