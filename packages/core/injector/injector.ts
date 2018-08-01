@@ -1,4 +1,4 @@
-import { PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
+import { OPTIONAL_DEPS_METADATA, PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -99,7 +99,7 @@ export class Injector {
     await this.loadInstance<Injectable>(wrapper, components, module);
   }
 
-  public applyDoneSubject<T>(wrapper: InstanceWrapper<T>): () => void {
+  public applyDoneHook<T>(wrapper: InstanceWrapper<T>): () => void {
     let done: () => void;
     wrapper.done$ = new Promise<void>((resolve, reject) => {
       done = resolve;
@@ -116,13 +116,15 @@ export class Injector {
     if (wrapper.isPending) {
       return await wrapper.done$;
     }
-    const done = this.applyDoneSubject(wrapper);
+    const done = this.applyDoneHook(wrapper);
     const { metatype, name, inject } = wrapper;
     const currentMetatype = collection.get(name);
     if (isUndefined(currentMetatype)) {
       throw new RuntimeException();
     }
-    if (currentMetatype.isResolved) return null;
+    if (currentMetatype.isResolved) {
+      return void 0;
+    }
 
     await this.resolveConstructorParams<T>(
       wrapper,
@@ -153,22 +155,34 @@ export class Injector {
     callback: (args) => void,
   ) {
     let isResolved = true;
+
     const dependencies = isNil(inject)
       ? this.reflectConstructorParams(wrapper.metatype)
       : inject;
+    const optionalDependenciesIds = isNil(inject)
+      ? this.reflectOptionalParams(wrapper.metatype)
+      : [];
 
     const instances = await Promise.all(
       dependencies.map(async (param, index) => {
-        const paramWrapper = await this.resolveSingleParam<T>(
-          wrapper,
-          param,
-          { index, dependencies },
-          module,
-        );
-        if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
-          isResolved = false;
+        try {
+          const paramWrapper = await this.resolveSingleParam<T>(
+            wrapper,
+            param,
+            { index, dependencies },
+            module,
+          );
+          if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
+            isResolved = false;
+          }
+          return paramWrapper.instance;
+        } catch (err) {
+          const isOptional = optionalDependenciesIds.includes(index);
+          if (!isOptional) {
+            throw err;
+          }
+          return null;
         }
-        return paramWrapper.instance;
       }),
     );
     isResolved && (await callback(instances));
@@ -180,6 +194,10 @@ export class Injector {
 
     selfParams.forEach(({ index, param }) => (paramtypes[index] = param));
     return paramtypes;
+  }
+
+  public reflectOptionalParams<T>(type: Type<T>): any[] {
+    return Reflect.getMetadata(OPTIONAL_DEPS_METADATA, type) || [];
   }
 
   public reflectSelfParams<T>(type: Type<T>): any[] {

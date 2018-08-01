@@ -101,7 +101,7 @@ describe('Injector', () => {
       expect(result).to.be.eql(value);
     });
 
-    it('should return null when metatype is resolved', async () => {
+    it('should return undefined when metatype is resolved', async () => {
       const value = 'test';
       const result = await injector.loadInstance(
         {
@@ -113,7 +113,7 @@ describe('Injector', () => {
         moduleDeps.components,
         moduleDeps,
       );
-      expect(result).to.be.null;
+      expect(result).to.be.undefined;
     });
   });
 
