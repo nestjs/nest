@@ -2,10 +2,9 @@ import * as JsonSocket from 'json-socket';
 import * as net from 'net';
 import { Server as NetSocket } from 'net';
 import { Observable } from 'rxjs';
-import { CLOSE_EVENT, NO_PATTERN_MESSAGE } from '../constants';
+import { CLOSE_EVENT, ERROR_EVENT, MESSAGE_EVENT, NO_PATTERN_MESSAGE, TCP_DEFAULT_PORT } from '../constants';
+import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
 import { MicroserviceOptions, TcpOptions } from '../interfaces/microservice-configuration.interface';
-import { ERROR_EVENT, MESSAGE_EVENT, TCP_DEFAULT_PORT } from './../constants';
-import { CustomTransportStrategy, PacketId, ReadPacket } from './../interfaces';
 import { Server } from './server';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {

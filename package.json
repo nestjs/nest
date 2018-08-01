@@ -136,6 +136,7 @@
       "packages/microservices/exceptions/",
       "packages/microservices/microservices-module.ts",
       "packages/core/middleware/middleware-module.ts",
+      "packages/core/injector/module-ref.ts",
       "packages/common/services/logger.service.ts"
     ],
     "extension": [

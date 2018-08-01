@@ -1,11 +1,5 @@
-import { Transport } from './../enums/transport.enum';
-import {
-  TcpOptions,
-  RedisOptions,
-  NatsOptions,
-  MqttOptions,
-  GrpcOptions,
-} from './microservice-configuration.interface';
+import { Transport } from '../enums/transport.enum';
+import { GrpcOptions, MqttOptions, NatsOptions, RedisOptions } from './microservice-configuration.interface';
 
 export type ClientOptions =
   | RedisOptions

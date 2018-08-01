@@ -2,10 +2,10 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { fromEvent, merge, Subject, zip } from 'rxjs';
 import { take } from 'rxjs/operators';
+import { CONNECT_EVENT, ERROR_EVENT, MESSAGE_EVENT, REDIS_DEFAULT_URL, SUBSCRIBE } from '../constants';
 import { ClientOpts, RedisClient, RetryStrategyOptions } from '../external/redis.interface';
+import { PacketId, ReadPacket, RedisOptions, WritePacket } from '../interfaces';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
-import { CONNECT_EVENT, ERROR_EVENT, MESSAGE_EVENT, REDIS_DEFAULT_URL, SUBSCRIBE } from './../constants';
-import { PacketId, ReadPacket, RedisOptions, WritePacket } from './../interfaces';
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 
