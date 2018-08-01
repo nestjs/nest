@@ -21,7 +21,7 @@ gulp.task('default', function() {
   modules.forEach(module => {
     gulp.watch(
       [`${source}/${module}/**/*.ts`, `${source}/${module}/*.ts`],
-      [module]
+      [module],
     );
   });
 });
@@ -30,9 +30,9 @@ gulp.task('copy:ts', function() {
   return gulp.src(['packages/**/*.ts']).pipe(gulp.dest('./bundle'));
 });
 
-
 gulp.task('copy-docs', function() {
-  return gulp.src('Readme.md')
+  return gulp
+    .src('Readme.md')
     .pipe(gulp.dest('bundle/common'))
     .pipe(gulp.dest('bundle/core'))
     .pipe(gulp.dest('bundle/microservices'))
@@ -42,7 +42,9 @@ gulp.task('copy-docs', function() {
 
 gulp.task('clean:bundle', function() {
   return gulp
-    .src(['bundle/**/*.js.map', 'bundle/**/*.ts', '!bundle/**/*.d.ts'], { read: false })
+    .src(['bundle/**/*.js.map', 'bundle/**/*.ts', '!bundle/**/*.d.ts'], {
+      read: false,
+    })
     .pipe(clean());
 });
 
@@ -62,22 +64,19 @@ modules.forEach(module => {
       .pipe(sourcemaps.init())
       .pipe(packages[module]())
       .pipe(
-        sourcemaps.mapSources(sourcePath => './' + sourcePath.split('/').pop())
+        sourcemaps.mapSources(sourcePath => './' + sourcePath.split('/').pop()),
       )
       .pipe(sourcemaps.write('.'))
       .pipe(gulp.dest(`${dist}/${module}`));
   });
 });
 
-gulp.task('common', gulp.series(modules
-  .filter(module => module !== 'common'))
-);
+gulp.task('common', gulp.series(modules));
 
-gulp.task('common:dev', gulp.series(modules
-  .filter(module => module !== 'common')
-  .map(module => module + ':dev'),
-  'copy:ts'
-));
+gulp.task(
+  'common:dev',
+  gulp.series(modules.map(module => module + ':dev'), 'copy:ts'),
+);
 
 gulp.task('build', gulp.series('common'));
 
@@ -89,17 +88,15 @@ function getFolders(dir) {
   });
 }
 gulp.task('move', function() {
-  const getDirs = (base) => getFolders(base)
-    .map((path) => `${base}/${path}`);
+  const getDirs = base => getFolders(base).map(path => `${base}/${path}`);
 
   const examplesDirs = getDirs('sample');
   const integrationDirs = getDirs('integration');
   const directories = examplesDirs.concat(integrationDirs);
 
-  let stream = gulp
-    .src(['node_modules/@nestjs/**/*']);
+  let stream = gulp.src(['node_modules/@nestjs/**/*']);
 
-  directories.forEach((dir) => {
+  directories.forEach(dir => {
     stream = stream.pipe(gulp.dest(dir + '/node_modules/@nestjs'));
   });
   return stream;
