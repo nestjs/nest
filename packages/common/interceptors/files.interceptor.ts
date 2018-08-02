@@ -1,16 +1,17 @@
 import * as multer from 'multer';
-import { NestInterceptor } from './../interfaces/features/nest-interceptor.interface';
 import { Observable } from 'rxjs';
-import { MulterOptions } from '../interfaces/external/multer-options.interface';
-import { transformException } from './multer/multer.utils';
+import { mixin } from '../decorators/core/component.decorator';
 import { ExecutionContext } from '../interfaces';
+import { MulterOptions } from '../interfaces/external/multer-options.interface';
+import { NestInterceptor } from './../interfaces/features/nest-interceptor.interface';
+import { transformException } from './multer/multer.utils';
 
 export function FilesInterceptor(
   fieldName: string,
   maxCount?: number,
   options?: MulterOptions,
 ) {
-  const Interceptor = class implements NestInterceptor {
+  const Interceptor = mixin(class implements NestInterceptor {
     readonly upload = multer(options);
 
     async intercept(
@@ -34,6 +35,6 @@ export function FilesInterceptor(
       );
       return call$;
     }
-  };
+  });
   return Interceptor;
 }
