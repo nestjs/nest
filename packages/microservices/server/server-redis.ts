@@ -1,10 +1,9 @@
 import { ReadPacket } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
-import { NO_PATTERN_MESSAGE } from '../constants';
+import { CONNECT_EVENT, ERROR_EVENT, MESSAGE_EVENT, NO_PATTERN_MESSAGE, REDIS_DEFAULT_URL } from '../constants';
 import { ClientOpts, RedisClient, RetryStrategyOptions } from '../external/redis.interface';
+import { CustomTransportStrategy, PacketId } from '../interfaces';
 import { MicroserviceOptions, RedisOptions } from '../interfaces/microservice-configuration.interface';
-import { CONNECT_EVENT, ERROR_EVENT, MESSAGE_EVENT, REDIS_DEFAULT_URL } from './../constants';
-import { CustomTransportStrategy, PacketId } from './../interfaces';
 import { Server } from './server';
 
 let redisPackage: any = {};

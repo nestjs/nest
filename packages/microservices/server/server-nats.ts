@@ -1,10 +1,9 @@
 import { Observable } from 'rxjs';
-import { NO_PATTERN_MESSAGE } from '../constants';
+import { CONNECT_EVENT, ERROR_EVENT, NATS_DEFAULT_URL, NO_PATTERN_MESSAGE } from '../constants';
 import { Client } from '../external/nats-client.interface';
+import { CustomTransportStrategy, PacketId } from '../interfaces';
 import { MicroserviceOptions, NatsOptions } from '../interfaces/microservice-configuration.interface';
-import { CONNECT_EVENT, ERROR_EVENT, NATS_DEFAULT_URL } from './../constants';
-import { CustomTransportStrategy, PacketId } from './../interfaces';
-import { ReadPacket } from './../interfaces/packet.interface';
+import { ReadPacket } from '../interfaces/packet.interface';
 import { Server } from './server';
 
 let natsPackage: any = {};

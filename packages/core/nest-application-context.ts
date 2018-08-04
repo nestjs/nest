@@ -1,26 +1,28 @@
-import { INestApplicationContext, OnModuleInit } from '@nestjs/common';
-import { Type } from '@nestjs/common/interfaces/type.interface';
 import {
-  isFunction,
-  isNil,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+  INestApplicationContext,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
+import { Type } from '@nestjs/common/interfaces/type.interface';
+import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
-import { UnknownElementException } from './errors/exceptions/unknown-element.exception';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
-import { InstanceWrapper, NestContainer } from './injector/container';
+import { NestContainer } from './injector/container';
 import { Module } from './injector/module';
+import { ModuleRef } from './injector/module-ref';
 import { ModuleTokenFactory } from './injector/module-token-factory';
 
-export class NestApplicationContext implements INestApplicationContext {
+export class NestApplicationContext extends ModuleRef
+  implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
-  private contextModuleFixture: Partial<Module>;
 
   constructor(
-    protected readonly container: NestContainer,
+    container: NestContainer,
     private readonly scope: Type<any>[],
     protected contextModule: Module,
-  ) {}
+  ) {
+    super(container);
+  }
 
   public selectContextModule() {
     const modules = this.container.getModules().values();
@@ -53,19 +55,13 @@ export class NestApplicationContext implements INestApplicationContext {
     );
   }
 
-  public find<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | string | symbol,
-  ): TResult {
-    this.initFlattenModule();
-    return this.findInstanceByPrototypeOrToken<TInput, TResult>(
-      typeOrToken,
-      this.contextModuleFixture,
-    );
-  }
-
   public async init(): Promise<this> {
     await this.callInitHook();
     return this;
+  }
+
+  public async close(): Promise<void> {
+    await this.callDestroyHook();
   }
 
   protected async callInitHook(): Promise<any> {
@@ -92,42 +88,30 @@ export class NestApplicationContext implements INestApplicationContext {
     return !isUndefined((instance as OnModuleInit).onModuleInit);
   }
 
-  private findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
-    metatypeOrToken: Type<TInput> | string | symbol,
-    contextModule,
-  ): TResult {
-    const dependencies = new Map([
-      ...contextModule.components,
-      ...contextModule.routes,
-      ...contextModule.injectables,
-    ]);
-    const name = isFunction(metatypeOrToken)
-      ? (metatypeOrToken as any).name
-      : metatypeOrToken;
-    const instanceWrapper = dependencies.get(name);
-    if (!instanceWrapper) {
-      throw new UnknownElementException();
-    }
-    return (instanceWrapper as InstanceWrapper<any>).instance;
+  protected async callDestroyHook(): Promise<any> {
+    const modules = this.container.getModules();
+    await Promise.all(
+      iterate(modules.values()).map(
+        async module => await this.callModuleDestroyHook(module),
+      ),
+    );
   }
 
-  private initFlattenModule() {
-    if (this.contextModuleFixture) {
-      return undefined;
-    }
-    const modules = this.container.getModules();
-    const initialValue = {
-      components: [],
-      routes: [],
-      injectables: [],
-    };
-    this.contextModuleFixture = [...modules.values()].reduce(
-      (flatten, curr) => ({
-        components: [...flatten.components, ...curr.components],
-        routes: [...flatten.routes, ...curr.routes],
-        injectables: [...flatten.injectables, ...curr.injectables],
-      }),
-      initialValue,
-    ) as any;
+  protected async callModuleDestroyHook(module: Module): Promise<any> {
+    const components = [...module.routes, ...module.components];
+    await Promise.all(
+      iterate(components)
+        .map(([key, { instance }]) => instance)
+        .filter(instance => !isNil(instance))
+        .filter(this.hasOnModuleDestroyHook)
+        .map(
+          async instance =>
+            await (instance as OnModuleDestroy).onModuleDestroy(),
+        ),
+    );
+  }
+
+  protected hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
+    return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
   }
 }

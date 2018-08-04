@@ -1,14 +1,16 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator';
-import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception';
-import { Module } from '../../injector/module';
 import { Component } from '../../../common/decorators/core/component.decorator';
+import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
+import { UnknownElementException } from '../../errors/exceptions/unknown-element.exception';
+import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception';
 import { NestContainer } from '../../injector/container';
+import { Module } from '../../injector/module';
 
 describe('Module', () => {
   let module: Module;
+  let container: NestContainer;
 
   @ModuleDecorator({})
   class TestModule {}
@@ -16,7 +18,8 @@ describe('Module', () => {
   class TestComponent {}
 
   beforeEach(() => {
-    module = new Module(TestModule as any, [], new NestContainer());
+    container = new NestContainer();
+    module = new Module(TestModule as any, [], container);
   });
 
   it('should add route', () => {
@@ -287,13 +290,12 @@ describe('Module', () => {
   });
 
   describe('createModuleRefMetatype', () => {
-    let components: Map<string, any>;
     let moduleRef;
 
-    beforeEach(() => {
-      components = new Map();
+    class SimpleClass {}
 
-      const Class = module.createModuleRefMetatype(components);
+    beforeEach(() => {
+      const Class = module.createModuleRefMetatype();
       moduleRef = new Class();
     });
 
@@ -301,13 +303,8 @@ describe('Module', () => {
       expect(!!moduleRef.get).to.be.true;
     });
     describe('get', () => {
-      it('should return component if exists', () => {
-        const comp = { instance: [] };
-        components.set('comp', comp);
-        expect(moduleRef.get('comp')).to.be.eql(comp.instance);
-      });
-      it('should return null if not exists', () => {
-        expect(moduleRef.get('fail')).to.be.null;
+      it('should throw exception if not exists', () => {
+        expect(() => moduleRef.get('fail')).to.throws(UnknownElementException);
       });
     });
   });
