@@ -1,7 +1,10 @@
 import { RequestMethod } from '@nestjs/common';
 import { flatten } from '@nestjs/common/decorators/core/dependencies.decorator';
 import { MiddlewareConsumer, Type } from '@nestjs/common/interfaces';
-import { MiddlewareConfigProxy, RouteInfo } from '@nestjs/common/interfaces/middleware';
+import {
+  MiddlewareConfigProxy,
+  RouteInfo,
+} from '@nestjs/common/interfaces/middleware';
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { BindResolveMiddlewareValues } from '@nestjs/common/utils/bind-resolve-values.util';
 import { isNil } from '@nestjs/common/utils/shared.utils';
@@ -13,7 +16,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
   constructor(private readonly routesMapper: RoutesMapper) {}
 
   public apply(
-    ...middleware: Array<Type<any> | Function | any>,
+    ...middleware: Array<Type<any> | Function | any>
   ): MiddlewareConfigProxy {
     return new MiddlewareBuilder.ConfigProxy(this, flatten(middleware));
   }
@@ -52,7 +55,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     }
 
     public exclude(
-      ...routes: Array<string | RouteInfo>,
+      ...routes: Array<string | RouteInfo>
     ): MiddlewareConfigProxy {
       const { routesMapper } = this.builder;
       this.excludedRoutes = this.mapRoutesToFlatList(
@@ -62,7 +65,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     }
 
     public forRoutes(
-      ...routes: Array<string | Type<any> | RouteInfo>,
+      ...routes: Array<string | Type<any> | RouteInfo>
     ): MiddlewareConsumer {
       const {
         middlewareCollection,
