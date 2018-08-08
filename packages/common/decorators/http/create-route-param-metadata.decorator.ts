@@ -11,7 +11,7 @@ const assignCustomMetadata = (
   index: number,
   factory: CustomParamFactory,
   data?: ParamData,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[],
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ) => ({
   ...args,
   [`${paramtype}${CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
