@@ -3,11 +3,12 @@
   "compilerOptions": {
     "baseUrl": "./packages"
   },
-  "include": [
-    "*.ts",
-    "**/*.ts"
-  ],
+  "include": ["*.ts", "**/*.ts"],
   "exclude": [
-    "./**/*.spec.ts"
+    "./**/*.spec.ts",
+    "sample",
+    "bundle",
+    "integration",
+    "node_modules"
   ]
 }

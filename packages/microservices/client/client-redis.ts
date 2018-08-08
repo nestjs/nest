@@ -101,7 +101,7 @@ export class ClientRedis extends ClientProxy {
   public createResponseCallback(
     packet: ReadPacket & PacketId,
     callback: (packet: WritePacket) => any,
-  ): Function {
+  ) {
     return (channel: string, buffer: string) => {
       const { err, response, isDisposed, id } = JSON.parse(
         buffer,
@@ -126,7 +126,7 @@ export class ClientRedis extends ClientProxy {
   protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Function {
+  ) {
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = JSON.stringify(partialPacket.pattern);
