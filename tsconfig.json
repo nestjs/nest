@@ -1,24 +1,13 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": false,
-    "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "removeComments": true,
-    "noLib": false,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "target": "es6",
-    "sourceMap": true,
-    "allowJs": true,
-    "outDir": "dist"
+    "baseUrl": "./packages"
   },
   "include": [
-    "packages/**/*",
-    "integration/**/*"
+    "*.ts",
+    "**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "**/*.spec.ts"
+    "./**/*.spec.ts"
   ]
 }

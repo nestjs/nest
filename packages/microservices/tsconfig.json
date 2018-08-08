@@ -1,25 +1,3 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "removeComments": false,
-    "noLib": false,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "target": "es2017",
-    "sourceMap": false,
-    "allowJs": false,
-    "baseUrl": "./../../",
-    "outDir": "../../node_modules/@nestjs/microservices"
-  },
-  "include": [
-    "*.ts",
-    "**/*.ts"
-  ],
-  "exclude": [
-    "../node_modules",
-    "./**/*.spec.ts"
-  ]
+  "extends": "../../tsconfig.json"
 }
