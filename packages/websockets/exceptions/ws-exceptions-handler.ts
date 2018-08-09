@@ -29,7 +29,7 @@ export class WsExceptionsHandler extends BaseWsExceptionFilter {
     const filter = this.filters.find(({ exceptionMetatypes, func }) => {
       const hasMetatype =
         !exceptionMetatypes.length ||
-        !!exceptionMetatypes.find(
+        exceptionMetatypes.some(
           ExceptionMetatype => exception instanceof ExceptionMetatype,
         );
       return hasMetatype;
