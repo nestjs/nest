@@ -21,6 +21,9 @@ import { Observable, of } from 'rxjs';
 import { WsException } from '../../index';
 import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
 
 @Guard()
 class TestGuard {

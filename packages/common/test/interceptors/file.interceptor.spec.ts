@@ -3,6 +3,9 @@ import { expect } from 'chai';
 import { FileInterceptor } from './../../interceptors/file.interceptor';
 import { Observable, of } from 'rxjs';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
 
 describe('FileInterceptor', () => {
   it('should return metatype with expected structure', async () => {
@@ -36,10 +39,7 @@ describe('FileInterceptor', () => {
       (target as any).upload = {
         single: () => callback,
       };
-      const result = target.intercept(new ExecutionContextHost([]), stream$);
-      result.then(done => {
-        expect(done).to.throw();
-      })
+      expect(target.intercept(new ExecutionContextHost([]), stream$)).to.eventually.throw();
     });
   });
 });

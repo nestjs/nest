@@ -4,6 +4,7 @@ import { Module } from '../../../common/decorators/modules/module.decorator';
 import { Global } from '../../../common/index';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { NestContainer } from '../../injector/container';
+import { async } from 'rxjs/internal/scheduler/async';
 
 describe('NestContainer', () => {
   let container: NestContainer;
