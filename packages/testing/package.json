@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/testing",
-  "version": "5.0.0",
+  "version": "5.2.0",
   "description": "Nest - modern, fast, powerful node.js web framework (@common)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -8,11 +8,11 @@
     "prepare": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@nestjs/common": "^5.0.0",
-    "@nestjs/core": "^5.0.0",
-    "socket.io": "^2.1.1",
+    "@nestjs/common": "^5.2.0",
+    "@nestjs/core": "^5.2.0",
+    "deprecate": "^1.0.0",
     "optional": "^0.1.4",
-    "deprecate": "^1.0.0"
+    "socket.io": "^2.1.1"
   },
   "devDependencies": {
     "@types/socket.io": "^1.4.36"
