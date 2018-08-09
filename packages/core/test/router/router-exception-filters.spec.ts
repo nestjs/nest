@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
-import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { ApplicationConfig } from '../../application-config';
 import { ExpressAdapter } from '../../adapters/express-adapter';
 import { NestContainer } from '../../injector/container';
@@ -68,7 +67,7 @@ describe('RouterExceptionFilters', () => {
 
     beforeEach(() => {
       sinon
-        .stub(exceptionFilter, 'findExceptionsFilterInstance')
+        .stub(exceptionFilter, 'createConcreteContext')
         .onFirstCall()
         .returns({
           catch: () => ({}),

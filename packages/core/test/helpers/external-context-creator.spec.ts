@@ -56,14 +56,14 @@ describe('ExternalContextCreator', () => {
       describe('when proxy function called', () => {
         describe('when can not activate', () => {
           it('should throw exception when "tryActivate" returns false', () => {
-            sinon.stub(guardsConsumer, 'tryActivate', () => false);
+            sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
             expect(proxyContext(1, 2, 3)).to.eventually.throw;
           });
         });
         describe('when can activate', () => {
           it('should apply context and args', async () => {
             const args = [1, 2, 3];
-            sinon.stub(guardsConsumer, 'tryActivate', () => true);
+            sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => true);
 
             await proxyContext(...args);
             expect(applySpy.calledWith(instance, args)).to.be.true;

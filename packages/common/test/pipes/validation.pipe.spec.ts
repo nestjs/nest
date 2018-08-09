@@ -3,6 +3,9 @@ import { expect } from 'chai';
 import { ArgumentMetadata } from '../../interfaces';
 import { IsString } from 'class-validator';
 import { ValidationPipe } from './../../pipes/validation.pipe';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
 
 class TestModel {
   constructor() {}
