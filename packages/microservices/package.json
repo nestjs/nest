@@ -5,13 +5,18 @@
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "scripts": {
-    "prepare": "tsc -p tsconfig.json"
+    "prepare": "tsc -p tsconfig.json",
+    "test": "mocha --require ts-node/register test/**/*.spec.ts --reporter spec"
   },
   "dependencies": {
     "@nestjs/common": "^5.0.0",
     "@nestjs/core": "^5.0.0",
     "json-socket": "^0.3.0",
     "iterare": "^0.0.8",
-    "optional": "^0.1.4"
+    "optional": "^0.1.4",
+    "mqtt": "^2.18.3",
+    "nats": "^1.0.1",
+    "redis": "^2.8.0",
+    "grpc": "^1.13.1"
   }
 }

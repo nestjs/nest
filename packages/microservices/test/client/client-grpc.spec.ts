@@ -6,6 +6,9 @@ import { ClientGrpcProxy } from '../../client/client-grpc';
 import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../../exceptions/errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../../exceptions/errors/invalid-proto-definition.exception';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
 // tslint:disable:no-string-literal
 
 class GrpcService {
@@ -105,9 +108,9 @@ describe('ClientGrpcProxy', () => {
       let stream$: Observable<any>;
 
       beforeEach(() => {
-        dataSpy.reset();
-        errorSpy.reset();
-        completeSpy.reset();
+        dataSpy.resetHistory();
+        errorSpy.resetHistory();
+        completeSpy.resetHistory();
         eventCallbacks = {};
         callMock = {
           on: (type, fn) => eventCallbacks[type] = fn,
@@ -192,7 +195,7 @@ describe('ClientGrpcProxy', () => {
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {
-        sinon.stub(client, 'getOptionsProp').callsFake(() => {
+        sinon.stub(client, 'loadProto').callsFake(() => {
           throw new Error();
         });
         expect(() => client.loadProto()).to.throws(InvalidProtoDefinitionException);

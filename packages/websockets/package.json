@@ -5,7 +5,8 @@
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "scripts": {
-    "prepare": "tsc -p tsconfig.json"
+    "prepare": "tsc -p tsconfig.json",
+    "test": "mocha --require ts-node/register test/**/*.spec.ts --reporter spec"
   },
   "dependencies": {
     "@nestjs/common": "^5.0.0",

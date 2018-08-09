@@ -54,7 +54,7 @@ describe('FileFieldsInterceptor', () => {
       (target as any).fields = {
         array: () => callback,
       };
-      expect(target.intercept(new ExecutionContextHost([]), stream$)).to.eventually.throw();
+      expect(target.intercept(new ExecutionContextHost([]), stream$)).to.eventually.rejected;
     });
   });
 });
