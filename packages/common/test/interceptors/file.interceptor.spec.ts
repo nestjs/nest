@@ -36,7 +36,10 @@ describe('FileInterceptor', () => {
       (target as any).upload = {
         single: () => callback,
       };
-      expect(target.intercept(new ExecutionContextHost([]), stream$)).to.eventually.throw();
+      const result = target.intercept(new ExecutionContextHost([]), stream$);
+      result.then(done => {
+        expect(done).to.throw();
+      })
     });
   });
 });
