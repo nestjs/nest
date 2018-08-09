@@ -3,9 +3,6 @@
   "packages": [
     "packages/*"
   ],
-  "bootstrap": {
-    "ignore": "sample/*"
-  },
   "useWorkspaces": true,
   "version": "5.1.0"
 }
