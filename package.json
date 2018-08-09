@@ -21,13 +21,21 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^10.5.7",
-    "@types/mocha": "^2.2.38",
+    "@types/mocha": "^5.2.0",
+    "@types/chai": "^4.1.2",
+    "@types/sinon": "^5.0.1",
+    "@types/sinon-chai": "^3.2.0",
+    "@types/chai-as-promised": "^7.1.0",
     "lerna": "^2.9.0",
     "rimraf": "^2.6.2",
     "prettier": "^1.9.2",
     "typescript": "^3.0.0",
-    "mocha": "^3.2.0",
-    "ts-node": "^6.0.0"
+    "mocha": "^5.2.0",
+    "ts-node": "^7.0.0",
+    "chai": "^4.1.2",
+    "sinon": "^6.1.4",
+    "sinon-chai": "^3.2.0",
+    "chai-as-promised": "^7.1.1"
   },
   "collective": {
     "type": "opencollective",

@@ -5,23 +5,24 @@
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "scripts": {
-    "prepare": "tsc -p tsconfig.json"
+    "prepare": "tsc -p tsconfig.json",
+    "test": "mocha --require ts-node/register test/**/*.spec.ts --reporter spec"
   },
   "dependencies": {
     "reflect-metadata": "^0.1.12",
-    "express": "^4.16.2",
-    "axios": "0.17.1",
-    "cli-color": "1.2.0",
-    "deprecate": "1.0.0",
+    "express": "^4.16.3",
+    "axios": "^0.18.0",
+    "cli-color": "^1.2.0",
+    "deprecate": "^1.0.0",
     "rxjs": "^6.0.0",
-    "iterare": "0.0.8",
+    "iterare": "^0.0.8",
     "object-hash": "^1.3.0",
     "cors": "^2.8.4",
     "optional": "^0.1.4",
-    "multer": "1.3.0"
+    "multer": "^1.3.0",
+    "class-transformer": "^0.1.9"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.3",
-    "@types/reflect-metadata": "0.0.5"
+    "@types/cors": "^2.8.4"
   }
 }

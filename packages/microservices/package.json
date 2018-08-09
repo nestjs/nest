@@ -10,8 +10,8 @@
   "dependencies": {
     "@nestjs/common": "^5.0.0",
     "@nestjs/core": "^5.0.0",
-    "iterare": "0.0.8",
-    "optional": "^0.1.4",
-    "json-socket": "^0.2.1"
+    "json-socket": "^0.3.0",
+    "iterare": "^0.0.8",
+    "optional": "^0.1.4"
   }
 }
