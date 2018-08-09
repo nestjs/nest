@@ -21,10 +21,13 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^10.5.7",
+    "@types/mocha": "^2.2.38",
     "lerna": "^2.9.0",
     "rimraf": "^2.6.2",
     "prettier": "^1.9.2",
-    "typescript": "^3.0.0"
+    "typescript": "^3.0.0",
+    "mocha": "^3.2.0",
+    "ts-node": "^6.0.0"
   },
   "collective": {
     "type": "opencollective",
