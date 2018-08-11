@@ -26,7 +26,6 @@ describe('RabbimMQ transport', () => {
     });
     await app.startAllMicroservicesAsync();
     await app.init();
-    console.log('Inited');
 });
 
   it(`/POST`, () => {

@@ -4,6 +4,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { ClientProxy } from './client-proxy';
 import { ClientOptions, RmqOptions } from '../interfaces';
+import { PacketId, ReadPacket, WritePacket } from './../interfaces';
 import { EventEmitter } from 'events';
 
 let rqmPackage: any = {};
@@ -37,11 +38,12 @@ export class ClientRMQ extends ClientProxy {
         this.connect();
     }
 
-    protected publish(messageObj, callback: (err, result, disposed?: boolean) => void) {
+    protected publish(messageObj, callback: (packet: WritePacket) => any,) {
         try {
             let correlationId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-            this.responseEmitter.once(correlationId, msg => {
-                this.handleMessage(msg, callback);
+            this.responseEmitter.on(correlationId, msg => {
+                const { content } = msg;
+                this.handleMessage(content, callback);
             });
             this.channel.sendToQueue(this.queue, Buffer.from(JSON.stringify(messageObj)), {
                 replyTo: this.replyQueue,
@@ -49,27 +51,27 @@ export class ClientRMQ extends ClientProxy {
             });
         } catch (err) {
             console.log(err);
-            callback(err, null);
+            callback({ err });
         }
     }
 
-    private async handleMessage(message, callback): Promise<void> {
-        if (message) {
-            const { content } = message;
-            const { err, response, isDisposed } = JSON.parse(content.toString());
-            if (isDisposed || err) {
-                callback({
-                    err,
-                    response: null,
-                    isDisposed: true,
-                });
-            }
-            callback({
-                err,
-                response,
-            });
+    public handleMessage(
+        msg: WritePacket,
+        callback: (packet: WritePacket) => any,
+      ) {
+        const { err, response, isDisposed } = JSON.parse(msg.toString());
+        if (isDisposed || err) {
+          callback({
+            err,
+            response: null,
+            isDisposed: true,
+          });
         }
-    }
+        callback({
+          err,
+          response,
+        });
+      }
 
     public close(): void {
         this.channel && this.channel.close();
