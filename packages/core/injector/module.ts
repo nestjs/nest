@@ -1,6 +1,17 @@
-import { Controller, DynamicModule, Injectable, NestModule } from '@nestjs/common/interfaces';
+import {
+  Controller,
+  DynamicModule,
+  Injectable,
+  NestModule,
+} from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { isFunction, isNil, isString, isSymbol, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isFunction,
+  isNil,
+  isString,
+  isSymbol,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';
@@ -83,8 +94,8 @@ export class Module {
   }
 
   public addCoreInjectables(container: NestContainer) {
-    this.addModuleRef();
     this.addModuleAsComponent();
+    this.addModuleRef();
     this.addReflector();
     this.addApplicationRef(container.getApplicationRef());
     this.addExternalContextCreator(container);
