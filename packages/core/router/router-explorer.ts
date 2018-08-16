@@ -22,6 +22,13 @@ import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
 
+export interface RoutePathProperties {
+  path: string;
+  requestMethod: RequestMethod;
+  targetCallback: RouterProxyCallback;
+  methodName: string;
+}
+
 export class RouterExplorer {
   private readonly executionContextCreator: RouterExecutionContext;
   private readonly routerMethodFactory = new RouterMethodFactory();
@@ -179,11 +186,4 @@ export class RouterExplorer {
     );
     return this.routerProxy.createProxy(executionContext, exceptionFilter);
   }
-}
-
-export interface RoutePathProperties {
-  path: string;
-  requestMethod: RequestMethod;
-  targetCallback: RouterProxyCallback;
-  methodName: string;
 }
