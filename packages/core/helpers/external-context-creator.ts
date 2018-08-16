@@ -66,9 +66,9 @@ export class ExternalContextCreator {
 
   public findComponentByClassName(module: Module, className: string): boolean {
     const { components } = module;
-    const hasComponent = [...components.keys()].find(
+    const hasComponent = [...components.keys()].some(
       component => component === className,
     );
-    return !!hasComponent;
+    return hasComponent;
   }
 }
