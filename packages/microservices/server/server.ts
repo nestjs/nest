@@ -1,7 +1,13 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isString } from '@nestjs/common/utils/shared.utils';
-import { EMPTY as empty, from as fromPromise, Observable, of, Subscription } from 'rxjs';
+import {
+  EMPTY as empty,
+  from as fromPromise,
+  Observable,
+  of,
+  Subscription,
+} from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { MicroserviceOptions, WritePacket } from '../interfaces';
 import { MessageHandlers } from '../interfaces/message-handlers.interface';

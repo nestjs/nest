@@ -85,7 +85,7 @@ export class ClientMqtt extends ClientProxy {
   ): Function {
     try {
       const packet = this.assignPacketId(partialPacket);
-      const pattern = JSON.stringify(partialPacket.pattern);
+      const pattern = this.normalizePattern(partialPacket.pattern);
       const responseChannel = this.getResPatternName(pattern);
       const responseCallback = this.createResponseCallback(packet, callback);
 

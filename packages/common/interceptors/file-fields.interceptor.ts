@@ -1,5 +1,6 @@
 import * as multer from 'multer';
 import { Observable } from 'rxjs';
+import { mixin } from '../decorators/core/component.decorator';
 import { ExecutionContext } from '../interfaces';
 import { MulterField, MulterOptions } from '../interfaces/external/multer-options.interface';
 import { NestInterceptor } from './../interfaces/features/nest-interceptor.interface';
@@ -9,7 +10,7 @@ export function FileFieldsInterceptor(
   uploadFields: MulterField[],
   options?: MulterOptions,
 ) {
-  const Interceptor = class implements NestInterceptor {
+  const Interceptor = mixin(class implements NestInterceptor {
     readonly upload = multer(options);
 
     async intercept(
@@ -33,6 +34,6 @@ export function FileFieldsInterceptor(
       );
       return call$;
     }
-  };
+  });
   return Interceptor;
 }

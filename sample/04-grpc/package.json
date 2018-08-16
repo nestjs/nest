@@ -9,6 +9,7 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
+    "@grpc/proto-loader": "^0.3.0",
     "@nestjs/common": "^5.1.0",
     "@nestjs/core": "^5.1.0",
     "@nestjs/microservices": "^5.1.0",

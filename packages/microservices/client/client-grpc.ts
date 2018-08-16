@@ -11,6 +11,7 @@ import { ClientProxy } from './client-proxy';
 import { GRPC_CANCELLED } from './constants';
 
 let grpcPackage: any = {};
+let grpcProtoLoaderPackage: any = {};
 
 export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   private readonly logger = new Logger(ClientProxy.name);
@@ -23,6 +24,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
 
     grpcPackage = loadPackage('grpc', ClientGrpcProxy.name);
+    grpcProtoLoaderPackage = loadPackage('@grpc/proto-loader', ClientGrpcProxy.name);
     this.grpcClient = this.createClient();
   }
 
@@ -122,12 +124,12 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
   public loadProto(): any {
     try {
-      const root = this.getOptionsProp<GrpcOptions>(this.options, 'root');
       const file = this.getOptionsProp<GrpcOptions>(this.options, 'protoPath');
-      const options = root ? { root, file } : file;
+      const loader = this.getOptionsProp<GrpcOptions>(this.options, 'loader');
 
-      const context = grpcPackage.load(options);
-      return context;
+      const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
+      const packageObject = grpcPackage.loadPackageDefinition(packageDefinition);
+      return packageObject;
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException();
       const message =
