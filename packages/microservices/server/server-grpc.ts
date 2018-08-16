@@ -8,6 +8,7 @@ import { GrpcOptions, MicroserviceOptions } from '../interfaces/microservice-con
 import { Server } from './server';
 
 let grpcPackage: any = {};
+let grpcProtoLoaderPackage: any = {};
 
 export class ServerGrpc extends Server implements CustomTransportStrategy {
   private readonly url: string;
@@ -19,6 +20,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
 
     grpcPackage = this.loadPackage('grpc', ServerGrpc.name);
+    grpcProtoLoaderPackage = this.loadPackage('@grpc/proto-loader', ServerGrpc.name);
   }
 
   public async listen(callback: () => void) {
@@ -149,12 +151,12 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public loadProto(): any {
     try {
-      const root = this.getOptionsProp<GrpcOptions>(this.options, 'root');
       const file = this.getOptionsProp<GrpcOptions>(this.options, 'protoPath');
-      const options = root ? { root, file } : file;
+      const loader = this.getOptionsProp<GrpcOptions>(this.options, 'loader');
 
-      const context = grpcPackage.load(options);
-      return context;
+      const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
+      const packageObject = grpcPackage.loadPackageDefinition(packageDefinition);
+      return packageObject;
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException();
       const message = err && err.message ? err.message : invalidProtoError.message;
