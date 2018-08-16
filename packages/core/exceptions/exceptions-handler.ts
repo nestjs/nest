@@ -1,46 +1,22 @@
-import { HttpException, HttpServer, Logger } from '@nestjs/common';
+import { HttpException, HttpServer } from '@nestjs/common';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
 import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
-import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
-import { messages } from '../constants';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
+import { BaseExceptionFilter } from './base-exception-filter';
 
-export class ExceptionsHandler {
-  private static readonly logger = new Logger(ExceptionsHandler.name);
+export class ExceptionsHandler extends BaseExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];
 
-  constructor(private readonly applicationRef: HttpServer) {}
+  constructor(applicationRef: HttpServer) {
+    super(applicationRef);
+  }
 
   public next(exception: Error | HttpException | any, ctx: ArgumentsHost) {
-    if (this.invokeCustomFilters(exception, ctx)) return;
-
-    if (!(exception instanceof HttpException)) {
-      const body = {
-        statusCode: 500,
-        message: messages.UNKNOWN_EXCEPTION_MESSAGE,
-      };
-      this.applicationRef.reply(ctx.getArgByIndex(1), body, body.statusCode);
-      if (this.isExceptionObject(exception)) {
-        return ExceptionsHandler.logger.error(
-          exception.message,
-          exception.stack,
-        );
-      }
-      return ExceptionsHandler.logger.error(exception);
+    if (this.invokeCustomFilters(exception, ctx)) {
+      return void 0;
     }
-    const res = exception.getResponse();
-    const message = isObject(res)
-      ? res
-      : {
-          statusCode: exception.getStatus(),
-          message: res,
-        };
-
-    this.applicationRef.reply(
-      ctx.getArgByIndex(1),
-      message,
-      exception.getStatus(),
-    );
+    super.catch(exception, ctx);
   }
 
   public setCustomFilters(filters: ExceptionFilterMetadata[]) {
@@ -56,16 +32,12 @@ export class ExceptionsHandler {
     const filter = this.filters.find(({ exceptionMetatypes, func }) => {
       const hasMetatype =
         !exceptionMetatypes.length ||
-        !!exceptionMetatypes.find(
+        exceptionMetatypes.some(
           ExceptionMetatype => exception instanceof ExceptionMetatype,
         );
       return hasMetatype;
     });
     filter && filter.func(exception, response);
     return !!filter;
-  }
-
-  public isExceptionObject(err): err is Error {
-    return isObject(err) && !!(err as Error).message;
   }
 }

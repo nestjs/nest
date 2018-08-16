@@ -1,12 +1,12 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { Observable } from 'rxjs';
-import { InvalidGrpcPackageException } from '../exceptions/invalid-grpc-package.exception';
-import { InvalidGrpcServiceException } from '../exceptions/invalid-grpc-service.exception';
-import { InvalidProtoDefinitionException } from '../exceptions/invalid-proto-definition.exception';
+import { GRPC_DEFAULT_URL } from '../constants';
+import { InvalidGrpcPackageException } from '../exceptions/errors/invalid-grpc-package.exception';
+import { InvalidGrpcServiceException } from '../exceptions/errors/invalid-grpc-service.exception';
+import { InvalidProtoDefinitionException } from '../exceptions/errors/invalid-proto-definition.exception';
+import { ClientGrpc, GrpcOptions } from '../interfaces';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
-import { GRPC_DEFAULT_URL } from './../constants';
-import { ClientGrpc, GrpcOptions } from './../interfaces';
 import { ClientProxy } from './client-proxy';
 import { GRPC_CANCELLED } from './constants';
 

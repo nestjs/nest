@@ -17,11 +17,11 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import 'reflect-metadata';
-import { MetadataScanner } from '../core/metadata-scanner';
 import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
 import { NestContainer } from './injector/container';
+import { MetadataScanner } from './metadata-scanner';
 
 interface ApplicationProviderWrapper {
   moduleKey: string;
@@ -210,11 +210,20 @@ export class DependenciesScanner {
     key: string,
     method: string,
   ) {
-    const descriptor = Reflect.getOwnPropertyDescriptor(
-      component.prototype,
-      method,
+    let prototype = component.prototype;
+    do {
+      const descriptor = Reflect.getOwnPropertyDescriptor(prototype, method);
+      if (!descriptor) {
+        continue;
+      }
+      return Reflect.getMetadata(key, descriptor.value);
+    } while (
+      // tslint:disable-next-line:no-conditional-assignment
+      (prototype = Reflect.getPrototypeOf(prototype)) &&
+      prototype !== Object.prototype &&
+      prototype
     );
-    return descriptor ? Reflect.getMetadata(key, descriptor.value) : undefined;
+    return undefined;
   }
 
   public async storeRelatedModule(

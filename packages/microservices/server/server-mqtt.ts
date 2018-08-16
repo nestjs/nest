@@ -1,20 +1,10 @@
-import { Server } from './server';
-import { NO_PATTERN_MESSAGE } from '../constants';
-import {
-  MicroserviceOptions,
-  MqttOptions,
-} from '../interfaces/microservice-configuration.interface';
-import { CustomTransportStrategy, PacketId } from './../interfaces';
-import { Observable, EMPTY as empty } from 'rxjs';
-import { catchError, finalize } from 'rxjs/operators';
-import {
-  MQTT_DEFAULT_URL,
-  CONNECT_EVENT,
-  MESSAGE_EVENT,
-  ERROR_EVENT,
-} from './../constants';
 import { ReadPacket } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
+import { CONNECT_EVENT, ERROR_EVENT, MESSAGE_EVENT, MQTT_DEFAULT_URL, NO_PATTERN_MESSAGE } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
+import { CustomTransportStrategy, PacketId } from '../interfaces';
+import { MicroserviceOptions, MqttOptions } from '../interfaces/microservice-configuration.interface';
+import { Server } from './server';
 
 let mqttPackage: any = {};
 
