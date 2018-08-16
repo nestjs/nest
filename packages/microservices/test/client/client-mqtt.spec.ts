@@ -54,12 +54,12 @@ describe('ClientMqtt', () => {
     });
     it('should subscribe to response pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;
+      expect(subscribeSpy.calledWith(`${pattern}_res`)).to.be.true;
     });
     it('should publish stringified message to acknowledge pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(publishSpy.calledWith(`"${pattern}"_ack`, JSON.stringify(msg))).to
-        .be.true;
+      expect(publishSpy.calledWith(`${pattern}_ack`, JSON.stringify(msg))).to.be
+        .true;
     });
     it('should listen on messages', async () => {
       await client['publish'](msg, () => {});
@@ -68,9 +68,11 @@ describe('ClientMqtt', () => {
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;
       beforeEach(() => {
-        assignPacketIdStub = sinon.stub(client, 'assignPacketId').callsFake(() => {
-          throw new Error();
-        });
+        assignPacketIdStub = sinon
+          .stub(client, 'assignPacketId')
+          .callsFake(() => {
+            throw new Error();
+          });
       });
       afterEach(() => {
         assignPacketIdStub.restore();
@@ -146,10 +148,15 @@ describe('ClientMqtt', () => {
       beforeEach(async () => {
         callback = sinon.spy();
         subscription = client.createResponseCallback(msg, callback);
-        subscription('channel', new Buffer(JSON.stringify({
-          ...responseMessage,
-          isDisposed: true,
-        })));
+        subscription(
+          'channel',
+          new Buffer(
+            JSON.stringify({
+              ...responseMessage,
+              isDisposed: true,
+            }),
+          ),
+        );
       });
 
       it('should call callback with dispose param', () => {
@@ -166,10 +173,13 @@ describe('ClientMqtt', () => {
     describe('disposed and "id" is incorrect', () => {
       beforeEach(async () => {
         callback = sinon.spy();
-        subscription = client.createResponseCallback({
-          ...msg,
-          id: '2',
-        }, callback);
+        subscription = client.createResponseCallback(
+          {
+            ...msg,
+            id: '2',
+          },
+          callback,
+        );
         subscription('channel', new Buffer(JSON.stringify(responseMessage)));
       });
 
