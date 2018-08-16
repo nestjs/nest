@@ -1,8 +1,8 @@
-import * as express from 'express';
-import * as request from 'supertest';
-import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
+import { Test } from '@nestjs/testing';
+import * as express from 'express';
+import * as request from 'supertest';
 import { NatsController } from '../src/nats/nats.controller';
 
 describe('NATS transport', () => {
@@ -19,7 +19,7 @@ describe('NATS transport', () => {
     app.connectMicroservice({
       transport: Transport.NATS,
       options: {
-        url: 'nats://localhost:4222'
+        url: 'nats://localhost:4222',
       },
     });
     await app.startAllMicroservicesAsync();
@@ -28,14 +28,14 @@ describe('NATS transport', () => {
 
   it(`/POST`, () => {
     return request(server)
-      .post('/?command=sum')
+      .post('/?command=math.sum')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
   });
 
   it(`/POST (Promise/async)`, () => {
     return request(server)
-      .post('/?command=asyncSum')
+      .post('/?command=async.sum')
       .send([1, 2, 3, 4, 5])
       .expect(200)
       .expect(200, '15');
@@ -43,7 +43,7 @@ describe('NATS transport', () => {
 
   it(`/POST (Observable stream)`, () => {
     return request(server)
-      .post('/?command=streamSum')
+      .post('/?command=stream.sum')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
   });

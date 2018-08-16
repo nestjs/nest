@@ -2,8 +2,18 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { fromEvent, merge, Subject, zip } from 'rxjs';
 import { take } from 'rxjs/operators';
-import { CONNECT_EVENT, ERROR_EVENT, MESSAGE_EVENT, REDIS_DEFAULT_URL, SUBSCRIBE } from '../constants';
-import { ClientOpts, RedisClient, RetryStrategyOptions } from '../external/redis.interface';
+import {
+  CONNECT_EVENT,
+  ERROR_EVENT,
+  MESSAGE_EVENT,
+  REDIS_DEFAULT_URL,
+  SUBSCRIBE,
+} from '../constants';
+import {
+  ClientOpts,
+  RedisClient,
+  RetryStrategyOptions,
+} from '../external/redis.interface';
 import { PacketId, ReadPacket, RedisOptions, WritePacket } from '../interfaces';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
@@ -129,7 +139,7 @@ export class ClientRedis extends ClientProxy {
   ): Function {
     try {
       const packet = this.assignPacketId(partialPacket);
-      const pattern = JSON.stringify(partialPacket.pattern);
+      const pattern = this.normalizePattern(partialPacket.pattern);
       const responseChannel = this.getResPatternName(pattern);
       const responseCallback = this.createResponseCallback(packet, callback);
 
@@ -152,8 +162,7 @@ export class ClientRedis extends ClientProxy {
         this.subClient.unsubscribe(responseChannel);
         this.subClient.removeListener(MESSAGE_EVENT, responseCallback);
       };
-    }
-    catch (err) {
+    } catch (err) {
       callback({ err });
     }
   }
