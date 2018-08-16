@@ -21,14 +21,6 @@ export class ClientNats extends ClientProxy {
     natsPackage = loadPackage('nats', ClientNats.name);
   }
 
-  public getAckPatternName(pattern: string): string {
-    return `${pattern}_ack`;
-  }
-
-  public getResPatternName(pattern: string): string {
-    return `${pattern}_res`;
-  }
-
   public close() {
     this.natsClient && this.natsClient.close();
     this.natsClient = null;
@@ -81,21 +73,24 @@ export class ClientNats extends ClientProxy {
       });
     };
   }
+
   protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ): Function {
     try {
       const packet = this.assignPacketId(partialPacket);
-      const pattern = JSON.stringify(partialPacket.pattern);
-      const responseChannel = this.getResPatternName(pattern);
+      const channel = this.normalizePattern(partialPacket.pattern);
 
-      const subscriptionHandler = this.createSubscriptionHandler(packet, callback);
-      const subscriptionId = this.natsClient.subscribe(
-        responseChannel,
+      const subscriptionHandler = this.createSubscriptionHandler(
+        packet,
+        callback,
+      );
+      const subscriptionId = this.natsClient.request(
+        channel,
+        packet as any,
         subscriptionHandler,
       );
-      this.natsClient.publish(this.getAckPatternName(pattern), packet as any);
       return () => this.natsClient.unsubscribe(subscriptionId);
     } catch (err) {
       callback({ err });
