@@ -16,7 +16,6 @@ import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
 import { ExpressFactory } from '@nestjs/core/adapters/express-factory';
 import { FastifyAdapter } from '@nestjs/core/adapters/fastify-adapter';
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { MicroservicesPackageNotFoundException } from '@nestjs/core/errors/exceptions/microservices-package-not-found.exception';
 import { NestContainer } from '@nestjs/core/injector/container';
 import * as optional from 'optional';
 
@@ -65,9 +64,6 @@ export class TestingModule extends NestApplicationContext {
   public createNestMicroservice(
     options: NestMicroserviceOptions & MicroserviceOptions,
   ): INestMicroservice {
-    if (!NestMicroservice) {
-      throw new MicroservicesPackageNotFoundException();
-    }
     this.applyLogger(options);
     return new NestMicroservice(
       this.container,

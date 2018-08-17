@@ -67,7 +67,7 @@ describe('ClientTCP', () => {
     describe('on error', () => {
       it('should call callback', () => {
         const callback = sinon.spy();
-        sinon.stub(client, 'assignPacketId').callsFake(() => {
+        sinon.stub(client, 'connect').callsFake(() => {
           throw new Error();
         });
         client['publish'](msg, callback);
@@ -133,7 +133,7 @@ describe('ClientTCP', () => {
           toPromise: () => source,
           pipe: () => source,
         };
-        connect$Stub = sinon.stub(client, 'connect$').callsFake(() => source);
+        connect$Stub = sinon.stub(client, 'connect').callsFake(() => source);
         await client.connect();
       });
       afterEach(() => {

@@ -1,7 +1,9 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ArgumentMetadata } from '../../interfaces';
 import { ParseIntPipe } from './../../pipes/parse-int.pipe';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
 
 describe('ParseIntPipe', () => {
   let target: ParseIntPipe;

@@ -27,3 +27,6 @@ yarn-error.log
 /coverage
 /.nyc_output
 build/config\.gypi
+
+# ignore build lib
+lib/

@@ -3,6 +3,9 @@ import { expect } from 'chai';
 import { FileFieldsInterceptor } from './../../interceptors/file-fields.interceptor';
 import { Observable, of } from 'rxjs';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
 
 describe('FileFieldsInterceptor', () => {
   it('should return metatype with expected structure', async () => {
@@ -51,7 +54,7 @@ describe('FileFieldsInterceptor', () => {
       (target as any).fields = {
         array: () => callback,
       };
-      expect(target.intercept(new ExecutionContextHost([]), stream$)).to.eventually.throw();
+      expect(target.intercept(new ExecutionContextHost([]), stream$)).to.eventually.rejected;
     });
   });
 });

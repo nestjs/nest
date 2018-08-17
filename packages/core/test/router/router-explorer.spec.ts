@@ -22,7 +22,10 @@ describe('RouterExplorer', () => {
 
   let routerBuilder: RouterExplorer;
   beforeEach(() => {
-    routerBuilder = new RouterExplorer(new MetadataScanner(), new NestContainer());
+    routerBuilder = new RouterExplorer(
+      new MetadataScanner(),
+      new NestContainer(),
+    );
   });
   describe('scanForPaths', () => {
     it('should method return expected list of route paths', () => {
@@ -56,7 +59,11 @@ describe('RouterExplorer', () => {
   });
   describe('applyPathsToRouterProxy', () => {
     it('should method return expected object which represent single route', () => {
-      const bindStub = sinon.stub(routerBuilder, 'applyCallbackToRouter');
+      // `applyCallbackToRouter` is private, must attach `as any` to prevent typescript error
+      const bindStub = sinon.stub(
+        routerBuilder as any,
+        'applyCallbackToRouter',
+      );
       const paths = [
         { path: '', requestMethod: RequestMethod.GET },
         { path: 'test', requestMethod: RequestMethod.GET },
@@ -64,7 +71,7 @@ describe('RouterExplorer', () => {
 
       routerBuilder.applyPathsToRouterProxy(null, paths as any, null, '', '');
 
-      expect(bindStub.calledWith(null, paths[0], null)).to.be.true;
+      expect(bindStub.calledWith(null, paths[0], null, '', '')).to.be.true;
       expect(bindStub.callCount).to.be.eql(paths.length);
     });
   });
