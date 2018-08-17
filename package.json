@@ -8,7 +8,8 @@
     "test": "lerna run test",
     "prepare": "lerna run prepare",
     "clean": "rimraf packages/**/lib",
-    "format": "prettier **/**/*.ts --ignore-path ./.prettierignore --write"
+    "format": "prettier **/**/*.ts --ignore-path ./.prettierignore --write",
+    "pub": "lerna publish"
   },
   "engines": {
     "node": ">= 8.9.0"
