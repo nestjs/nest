@@ -46,7 +46,8 @@ const { IoAdapter } =
   optional('@nestjs/websockets/adapters/io-adapter') || ({} as any);
 
 export class NestApplication extends NestApplicationContext
-  implements INestApplication,
+  implements
+    INestApplication,
     INestExpressApplication,
     INestFastifyApplication {
   private readonly logger = new Logger(NestApplication.name, true);

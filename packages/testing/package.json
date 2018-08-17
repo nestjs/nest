@@ -4,6 +4,8 @@
   "description": "Nest - modern, fast, powerful node.js web framework (@common)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "main": "lib/index.js",
+  "types": "lib/index.d.js",
   "scripts": {
     "prepare": "tsc -p tsconfig.json"
   },
