@@ -23,6 +23,8 @@ export interface GrpcOptions {
     credentials?: any;
     protoPath: string;
     package: string;
+    /** @deprecated */
+    root?: string;
     loader?: {
       keepCase?: boolean;
       alternateCommentMode?: boolean;
