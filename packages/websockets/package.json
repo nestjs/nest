@@ -1,7 +1,7 @@
 {
   "name": "@nestjs/websockets",
-  "version": "5.2.0",
-  "description": "Nest - modern, fast, powerful node.js web framework (@common)",
+  "version": "5.3.0",
+  "description": "Nest - modern, fast, powerful node.js web framework (@websockets)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "main": "lib/index.js",
@@ -11,8 +11,8 @@
     "test": "mocha --require ts-node/register test/**/*.spec.ts --reporter spec"
   },
   "dependencies": {
-    "@nestjs/common": "^5.2.0",
-    "@nestjs/core": "^5.2.0",
+    "@nestjs/common": "^5.3.0",
+    "@nestjs/core": "^5.3.0",
     "iterare": "^0.0.8",
     "rxjs": "^6.0.0",
     "socket.io": "^2.1.1"
