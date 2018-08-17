@@ -134,6 +134,9 @@ describe('MiddlewareModule', () => {
       };
 
       const createMiddlewareFactorySpy = sinon.spy();
+      // FIXME: app has a fake `createMiddlewareFactory` method which will result in
+      // `middleware-module.ts` line 165 `router` undefined
+      // run `../../node_modules/mocha/bin/mocha --require ts-node/register test/**/*.spec.ts --inspect-brk` to debug
       const app = {
         createMiddlewareFactory: createMiddlewareFactorySpy,
       };
