@@ -1,20 +1,19 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
+import * as sinon from 'sinon';
+import { RouteParamsMetadata } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
-import { createRouteParamDecorator } from '../../../common/decorators/http/create-route-param-metadata.decorator';
-import { RouterExecutionContext } from '../../router/router-execution-context';
-import { RouteParamsMetadata, Request, Body } from '../../../common';
-import { RouteParamsFactory } from '../../router/route-params-factory';
-import { PipesContextCreator } from '../../pipes/pipes-context-creator';
-import { PipesConsumer } from '../../pipes/pipes-consumer';
+import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
+import { ExpressAdapter } from '../../adapters/express-adapter';
 import { ApplicationConfig } from '../../application-config';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { NestContainer } from '../../injector/container';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import { ExpressAdapter } from '../../adapters/express-adapter';
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
+import { PipesConsumer } from '../../pipes/pipes-consumer';
+import { PipesContextCreator } from '../../pipes/pipes-context-creator';
+import { RouteParamsFactory } from '../../router/route-params-factory';
+import { RouterExecutionContext } from '../../router/router-execution-context';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;
@@ -60,8 +59,15 @@ describe('RouterExecutionContext', () => {
             data: 'test',
           },
         };
-        sinon.stub(contextCreator, 'reflectCallbackMetadata').returns(metadata);
-        sinon.stub(contextCreator, 'reflectCallbackParamtypes').returns([]);
+        sinon
+          .stub((contextCreator as any).contextUtils, 'reflectCallbackMetadata')
+          .returns(metadata);
+        sinon
+          .stub(
+            (contextCreator as any).contextUtils,
+            'reflectCallbackParamtypes',
+          )
+          .returns([]);
         exchangeKeysForValuesSpy = sinon.spy(
           contextCreator,
           'exchangeKeysForValues',
@@ -124,79 +130,7 @@ describe('RouterExecutionContext', () => {
       });
     });
   });
-  describe('reflectCallbackMetadata', () => {
-    const CustomDecorator = createRouteParamDecorator(() => {});
-    class TestController {
-      public callback(
-        @Request() req,
-        @Body() body,
-        @CustomDecorator() custom,
-      ) {}
-    }
-    it('should returns ROUTE_ARGS_METADATA callback metadata', () => {
-      const instance = new TestController();
-      const metadata = contextCreator.reflectCallbackMetadata(
-        instance,
-        'callback',
-      );
 
-      const expectedMetadata = {
-        [`${RouteParamtypes.REQUEST}:0`]: {
-          index: 0,
-          data: undefined,
-          pipes: [],
-        },
-        [`${RouteParamtypes.BODY}:1`]: {
-          index: 1,
-          data: undefined,
-          pipes: [],
-        },
-        [`custom${CUSTOM_ROUTE_AGRS_METADATA}:2`]: {
-          index: 2,
-          factory: () => {},
-          data: undefined,
-        },
-      };
-      expect(metadata[`${RouteParamtypes.REQUEST}:0`]).to.deep.equal(
-        expectedMetadata[`${RouteParamtypes.REQUEST}:0`],
-      );
-      expect(metadata[`${RouteParamtypes.REQUEST}:1`]).to.deep.equal(
-        expectedMetadata[`${RouteParamtypes.REQUEST}:1`],
-      );
-
-      const keys = Object.keys(metadata);
-      const custom = keys.find(key => key.includes(CUSTOM_ROUTE_AGRS_METADATA));
-
-      expect(metadata[custom]).to.be.an('object');
-      expect(metadata[custom].index).to.be.eq(2);
-      expect(metadata[custom].data).to.be.eq(undefined);
-      expect(metadata[custom].factory).to.be.a('function');
-    });
-  });
-  describe('getArgumentsLength', () => {
-    it('should returns maximum index + 1 (length) placed in array', () => {
-      const max = 4;
-      const metadata = {
-        [RouteParamtypes.REQUEST]: { index: 0 },
-        [RouteParamtypes.BODY]: {
-          index: max,
-        },
-      };
-      expect(
-        contextCreator.getArgumentsLength(Object.keys(metadata), metadata),
-      ).to.be.eq(max + 1);
-    });
-  });
-  describe('createNullArray', () => {
-    it('should create N size array filled with null', () => {
-      const size = 3;
-      expect(contextCreator.createNullArray(size)).to.be.deep.eq([
-        null,
-        null,
-        null,
-      ]);
-    });
-  });
   describe('exchangeKeysForValues', () => {
     const res = { body: 'res' };
     const req = { body: { test: 'req' } };
@@ -245,14 +179,7 @@ describe('RouterExecutionContext', () => {
       });
     });
   });
-  describe('mergeParamsMetatypes', () => {
-    it('should return "paramsProperties" when paramtypes array doesnt exists', () => {
-      const paramsProperties = ['1'];
-      expect(
-        contextCreator.mergeParamsMetatypes(paramsProperties as any, null),
-      ).to.be.eql(paramsProperties);
-    });
-  });
+
   describe('getParamValue', () => {
     let consumerApplySpy: sinon.SinonSpy;
     const value = 3,
@@ -353,7 +280,7 @@ describe('RouterExecutionContext', () => {
 
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
-        
+
         const handler = contextCreator.createHandleResponseFn(null, true, 100);
         handler(result, response);
 

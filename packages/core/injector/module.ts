@@ -19,6 +19,8 @@ import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
+import { PipesConsumer } from '../pipes/pipes-consumer';
+import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { Reflector } from '../services/reflector.service';
 import { InstanceWrapper, NestContainer } from './container';
 import { ModuleRef } from './module-ref';
@@ -150,6 +152,8 @@ export class Module {
         new InterceptorsContextCreator(container, container.applicationConfig),
         new InterceptorsConsumer(),
         container.getModules(),
+        new PipesContextCreator(container, container.applicationConfig),
+        new PipesConsumer(),
       ),
     });
   }

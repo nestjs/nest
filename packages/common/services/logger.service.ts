@@ -19,7 +19,7 @@ export class Logger implements LoggerService {
   private static readonly yellow = clc.xterm(3);
 
   constructor(
-    @Optional() private readonly context: string,
+    @Optional() private readonly context?: string,
     @Optional() private readonly isTimeDiffEnabled = false,
   ) {}
 
