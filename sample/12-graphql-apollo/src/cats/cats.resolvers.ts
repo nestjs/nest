@@ -1,16 +1,9 @@
-import { Injectable, UseGuards } from '@nestjs/common';
-import {
-  Query,
-  Mutation,
-  Resolver,
-  DelegateProperty,
-  Subscription,
-} from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
+import { Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
-
-import { Cat } from './interfaces/cat.interface';
-import { CatsService } from './cats.service';
 import { CatsGuard } from './cats.guard';
+import { CatsService } from './cats.service';
+import { Cat } from './interfaces/cat.interface';
 
 const pubSub = new PubSub();
 
