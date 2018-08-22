@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-require("reflect-metadata");
-const iterare_1 = require("iterare");
 const constants_1 = require("@nestjs/common/constants");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const context_creator_1 = require("./../helpers/context-creator");
+const iterare_1 = require("iterare");
+require("reflect-metadata");
+const context_creator_1 = require("../helpers/context-creator");
 class PipesContextCreator extends context_creator_1.ContextCreator {
     constructor(container, config) {
         super();

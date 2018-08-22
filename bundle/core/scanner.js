@@ -119,8 +119,19 @@ class DependenciesScanner {
         flatten(paramsInjectables).map(injectable => this.storeInjectable(injectable, token));
     }
     reflectKeyMetadata(component, key, method) {
-        const descriptor = Reflect.getOwnPropertyDescriptor(component.prototype, method);
-        return descriptor ? Reflect.getMetadata(key, descriptor.value) : undefined;
+        let prototype = component.prototype;
+        do {
+            const descriptor = Reflect.getOwnPropertyDescriptor(prototype, method);
+            if (!descriptor) {
+                continue;
+            }
+            return Reflect.getMetadata(key, descriptor.value);
+        } while (
+        // tslint:disable-next-line:no-conditional-assignment
+        (prototype = Reflect.getPrototypeOf(prototype)) &&
+            prototype !== Object.prototype &&
+            prototype);
+        return undefined;
     }
     async storeRelatedModule(related, token, context) {
         if (shared_utils_1.isUndefined(related)) {

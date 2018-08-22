@@ -4,7 +4,7 @@ const common_1 = require("@nestjs/common");
 const JsonSocket = require("json-socket");
 const net = require("net");
 const operators_1 = require("rxjs/operators");
-const constants_1 = require("./../constants");
+const constants_1 = require("../constants");
 const client_proxy_1 = require("./client-proxy");
 const constants_2 = require("./constants");
 class ClientTCP extends client_proxy_1.ClientProxy {

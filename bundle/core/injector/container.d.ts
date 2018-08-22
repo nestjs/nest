@@ -1,7 +1,7 @@
 import { DynamicModule } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import 'reflect-metadata';
-import { ApplicationConfig } from './../application-config';
+import { ApplicationConfig } from '../application-config';
 import { Module } from './module';
 import { ModulesContainer } from './modules-container';
 export declare class NestContainer {

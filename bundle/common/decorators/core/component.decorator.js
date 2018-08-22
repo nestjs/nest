@@ -55,10 +55,10 @@ function Interceptor() {
     return (target) => { };
 }
 exports.Interceptor = Interceptor;
+let offset = Math.random() * 100;
 function mixin(mixinClass) {
-    this.offset = this.offset ? ++this.offset : Math.random() * 100;
     Object.defineProperty(mixinClass, 'name', {
-        value: JSON.stringify(this.offset),
+        value: JSON.stringify(offset++),
     });
     Injectable()(mixinClass);
     return mixinClass;

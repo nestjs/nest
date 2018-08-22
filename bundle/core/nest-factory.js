@@ -105,7 +105,7 @@ class NestFactoryStatic {
         };
     }
     applyLogger(options) {
-        if (!options || !options.logger) {
+        if (!options) {
             return;
         }
         logger_service_1.Logger.overrideLogger(options.logger);

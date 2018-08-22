@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const params_token_factory_1 = require("./../pipes/params-token-factory");
+const params_token_factory_1 = require("./params-token-factory");
 class PipesConsumer {
     constructor() {
         this.paramsTokenFactory = new params_token_factory_1.ParamsTokenFactory();

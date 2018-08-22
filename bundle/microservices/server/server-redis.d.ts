@@ -1,7 +1,7 @@
 import { ReadPacket } from '@nestjs/microservices';
 import { ClientOpts, RedisClient, RetryStrategyOptions } from '../external/redis.interface';
+import { CustomTransportStrategy, PacketId } from '../interfaces';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
-import { CustomTransportStrategy, PacketId } from './../interfaces';
 import { Server } from './server';
 export declare class ServerRedis extends Server implements CustomTransportStrategy {
     private readonly options;

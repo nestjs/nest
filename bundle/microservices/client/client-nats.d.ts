@@ -1,6 +1,6 @@
 import { Client } from '../external/nats-client.interface';
+import { PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
-import { PacketId, ReadPacket, WritePacket } from './../interfaces';
 import { ClientProxy } from './client-proxy';
 export declare class ClientNats extends ClientProxy {
     private readonly options;
@@ -8,8 +8,6 @@ export declare class ClientNats extends ClientProxy {
     private readonly url;
     private natsClient;
     constructor(options: ClientOptions);
-    getAckPatternName(pattern: string): string;
-    getResPatternName(pattern: string): string;
     close(): void;
     connect(): Promise<any>;
     createClient(): Promise<Client>;

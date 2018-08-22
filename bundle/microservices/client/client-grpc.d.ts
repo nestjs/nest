@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
+import { ClientGrpc } from '../interfaces';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
-import { ClientGrpc } from './../interfaces';
 import { ClientProxy } from './client-proxy';
 export declare class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     private readonly options;

@@ -1,14 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const optional = require("optional");
-const iterare_1 = require("iterare");
-const microservices_module_1 = require("./microservices-module");
-const constants_1 = require("@nestjs/core/constants");
 const logger_service_1 = require("@nestjs/common/services/logger.service");
-const server_factory_1 = require("./server/server-factory");
-const transport_enum_1 = require("./enums/transport.enum");
-const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const constants_1 = require("@nestjs/core/constants");
 const nest_application_context_1 = require("@nestjs/core/nest-application-context");
+const optional = require("optional");
+const transport_enum_1 = require("./enums/transport.enum");
+const microservices_module_1 = require("./microservices-module");
+const server_factory_1 = require("./server/server-factory");
 const { SocketModule } = optional('@nestjs/websockets/socket-module') || {};
 const { IoAdapter } = optional('@nestjs/websockets/adapters/io-adapter') || {};
 class NestMicroservice extends nest_application_context_1.NestApplicationContext {
@@ -97,39 +95,8 @@ class NestMicroservice extends nest_application_context_1.NestApplicationContext
     }
     async closeApplication() {
         this.socketModule && (await this.socketModule.close());
-        await this.callDestroyHook();
+        await super.close();
         this.setIsTerminated(true);
-    }
-    async callInitHook() {
-        const modules = this.container.getModules();
-        await Promise.all(iterare_1.default(modules.values()).map(async (module) => await this.callModuleInitHook(module)));
-        this.setIsInitHookCalled(true);
-    }
-    async callModuleInitHook(module) {
-        const components = [...module.routes, ...module.components];
-        await Promise.all(iterare_1.default(components)
-            .map(([key, { instance }]) => instance)
-            .filter(instance => !shared_utils_1.isNil(instance))
-            .filter(this.hasOnModuleInitHook)
-            .map(async (instance) => await instance.onModuleInit()));
-    }
-    hasOnModuleInitHook(instance) {
-        return !shared_utils_1.isUndefined(instance.onModuleInit);
-    }
-    async callDestroyHook() {
-        const modules = this.container.getModules();
-        await Promise.all(iterare_1.default(modules.values()).map(async (module) => await this.callModuleDestroyHook(module)));
-    }
-    async callModuleDestroyHook(module) {
-        const components = [...module.routes, ...module.components];
-        await Promise.all(iterare_1.default(components)
-            .map(([key, { instance }]) => instance)
-            .filter(instance => !shared_utils_1.isNil(instance))
-            .filter(this.hasOnModuleDestroyHook)
-            .map(async (instance) => await instance.onModuleDestroy()));
-    }
-    hasOnModuleDestroyHook(instance) {
-        return !shared_utils_1.isUndefined(instance.onModuleDestroy);
     }
 }
 exports.NestMicroservice = NestMicroservice;

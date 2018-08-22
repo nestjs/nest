@@ -6,14 +6,29 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const axios_1 = require("axios");
 const module_decorator_1 = require("../decorators/modules/module.decorator");
+const http_constants_1 = require("./http.constants");
 const http_service_1 = require("./http.service");
-let HttpModule = class HttpModule {
+let HttpModule = HttpModule_1 = class HttpModule {
+    static register(config) {
+        return {
+            module: HttpModule_1,
+            providers: [{
+                    provide: http_constants_1.AXIOS_INSTANCE_TOKEN,
+                    useValue: axios_1.default.create(config),
+                }],
+        };
+    }
 };
-HttpModule = __decorate([
+HttpModule = HttpModule_1 = __decorate([
     module_decorator_1.Module({
-        providers: [http_service_1.HttpService],
+        providers: [http_service_1.HttpService, {
+                provide: http_constants_1.AXIOS_INSTANCE_TOKEN,
+                useValue: axios_1.default,
+            }],
         exports: [http_service_1.HttpService],
     })
 ], HttpModule);
 exports.HttpModule = HttpModule;
+var HttpModule_1;

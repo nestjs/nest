@@ -1,5 +1,5 @@
 import { Observable, Observer } from 'rxjs';
-import { ClientOptions, PacketId, ReadPacket, WritePacket } from './../interfaces';
+import { ClientOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
 export declare abstract class ClientProxy {
     abstract connect(): Promise<any>;
     abstract close(): any;
@@ -11,4 +11,5 @@ export declare abstract class ClientProxy {
     protected getOptionsProp<T extends {
         options?;
     }>(obj: ClientOptions, prop: keyof T['options'], defaultValue?: any): any;
+    protected normalizePattern<T = any>(pattern: T): string;
 }

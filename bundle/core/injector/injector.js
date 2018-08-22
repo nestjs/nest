@@ -4,8 +4,8 @@ const constants_1 = require("@nestjs/common/constants");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 require("reflect-metadata");
 const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
+const undefined_dependency_exception_1 = require("../errors/exceptions/undefined-dependency.exception");
 const unknown_dependencies_exception_1 = require("../errors/exceptions/unknown-dependencies.exception");
-const undefined_dependency_exception_1 = require("./../errors/exceptions/undefined-dependency.exception");
 class Injector {
     async loadInstanceOfMiddleware(wrapper, collection, module) {
         const { metatype } = wrapper;
@@ -39,7 +39,7 @@ class Injector {
         const components = module.components;
         await this.loadInstance(wrapper, components, module);
     }
-    applyDoneSubject(wrapper) {
+    applyDoneHook(wrapper) {
         let done;
         wrapper.done$ = new Promise((resolve, reject) => {
             done = resolve;
@@ -51,14 +51,15 @@ class Injector {
         if (wrapper.isPending) {
             return await wrapper.done$;
         }
-        const done = this.applyDoneSubject(wrapper);
+        const done = this.applyDoneHook(wrapper);
         const { metatype, name, inject } = wrapper;
         const currentMetatype = collection.get(name);
         if (shared_utils_1.isUndefined(currentMetatype)) {
             throw new runtime_exception_1.RuntimeException();
         }
-        if (currentMetatype.isResolved)
-            return null;
+        if (currentMetatype.isResolved) {
+            return void 0;
+        }
         await this.resolveConstructorParams(wrapper, module, inject, async (instances) => {
             if (shared_utils_1.isNil(inject)) {
                 currentMetatype.instance = Object.assign(currentMetatype.instance, new metatype(...instances));
@@ -76,12 +77,24 @@ class Injector {
         const dependencies = shared_utils_1.isNil(inject)
             ? this.reflectConstructorParams(wrapper.metatype)
             : inject;
+        const optionalDependenciesIds = shared_utils_1.isNil(inject)
+            ? this.reflectOptionalParams(wrapper.metatype)
+            : [];
         const instances = await Promise.all(dependencies.map(async (param, index) => {
-            const paramWrapper = await this.resolveSingleParam(wrapper, param, { index, dependencies }, module);
-            if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
-                isResolved = false;
+            try {
+                const paramWrapper = await this.resolveSingleParam(wrapper, param, { index, dependencies }, module);
+                if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
+                    isResolved = false;
+                }
+                return paramWrapper.instance;
             }
-            return paramWrapper.instance;
+            catch (err) {
+                const isOptional = optionalDependenciesIds.includes(index);
+                if (!isOptional) {
+                    throw err;
+                }
+                return null;
+            }
         }));
         isResolved && (await callback(instances));
     }
@@ -90,6 +103,9 @@ class Injector {
         const selfParams = this.reflectSelfParams(type);
         selfParams.forEach(({ index, param }) => (paramtypes[index] = param));
         return paramtypes;
+    }
+    reflectOptionalParams(type) {
+        return Reflect.getMetadata(constants_1.OPTIONAL_DEPS_METADATA, type) || [];
     }
     reflectSelfParams(type) {
         return Reflect.getMetadata(constants_1.SELF_DECLARED_DEPS_METADATA, type) || [];

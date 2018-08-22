@@ -1,4 +1,4 @@
-import { ClientProxy } from './index';
+import { ClientProxy } from '.';
 import { Closeable } from './interfaces/closeable.interface';
 export declare type CloseableClient = Closeable & ClientProxy;
 export declare class ClientsContainer {

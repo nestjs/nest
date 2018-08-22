@@ -1,8 +1,8 @@
+import { Type } from '@nestjs/common/interfaces';
 import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';
-import { Type } from '@nestjs/common/interfaces/index';
 import 'reflect-metadata';
+import { ContextCreator } from '../helpers/context-creator';
 import { NestContainer } from '../injector/container';
-import { ContextCreator } from './../helpers/context-creator';
 export declare class BaseExceptionFilterContext extends ContextCreator {
     private readonly container;
     protected moduleContext: string;

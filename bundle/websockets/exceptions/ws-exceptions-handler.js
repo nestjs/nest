@@ -1,30 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const constants_1 = require("@nestjs/core/constants");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const invalid_exception_filter_exception_1 = require("@nestjs/core/errors/exceptions/invalid-exception-filter.exception");
-const ws_exception_1 = require("../exceptions/ws-exception");
-class WsExceptionsHandler {
+const base_ws_exception_filter_1 = require("./base-ws-exception-filter");
+class WsExceptionsHandler extends base_ws_exception_filter_1.BaseWsExceptionFilter {
     constructor() {
+        super(...arguments);
         this.filters = [];
     }
-    handle(exception, args) {
-        const client = args.switchToWs().getClient();
-        if (this.invokeCustomFilters(exception, args) || !client.emit)
-            return;
-        const status = 'error';
-        if (!(exception instanceof ws_exception_1.WsException)) {
-            const errorMessage = constants_1.messages.UNKNOWN_EXCEPTION_MESSAGE;
-            return client.emit('exception', { status, message: errorMessage });
+    handle(exception, host) {
+        const client = host.switchToWs().getClient();
+        if (this.invokeCustomFilters(exception, host) || !client.emit) {
+            return void 0;
         }
-        const result = exception.getError();
-        const message = shared_utils_1.isObject(result)
-            ? result
-            : {
-                status,
-                message: result,
-            };
-        client.emit('exception', message);
+        super.catch(exception, host);
     }
     setCustomFilters(filters) {
         if (!Array.isArray(filters)) {

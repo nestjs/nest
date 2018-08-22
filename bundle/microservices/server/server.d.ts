@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { Observable, Subscription } from 'rxjs';
+import { MicroserviceOptions, WritePacket } from '../interfaces';
 import { MessageHandlers } from '../interfaces/message-handlers.interface';
-import { MicroserviceOptions, WritePacket } from './../interfaces';
 export declare abstract class Server {
     protected readonly messageHandlers: MessageHandlers;
     protected readonly logger: Logger;

@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const JsonSocket = require("json-socket");
 const net = require("net");
 const constants_1 = require("../constants");
-const constants_2 = require("./../constants");
 const server_1 = require("./server");
 class ServerTCP extends server_1.Server {
     constructor(options) {
@@ -12,7 +11,7 @@ class ServerTCP extends server_1.Server {
         this.isExplicitlyTerminated = false;
         this.retryAttemptsCount = 0;
         this.port =
-            this.getOptionsProp(options, 'port') || constants_2.TCP_DEFAULT_PORT;
+            this.getOptionsProp(options, 'port') || constants_1.TCP_DEFAULT_PORT;
         this.init();
     }
     listen(callback) {
@@ -24,7 +23,7 @@ class ServerTCP extends server_1.Server {
     }
     bindHandler(socket) {
         const readSocket = this.getSocketInstance(socket);
-        readSocket.on(constants_2.MESSAGE_EVENT, async (msg) => await this.handleMessage(readSocket, msg));
+        readSocket.on(constants_1.MESSAGE_EVENT, async (msg) => await this.handleMessage(readSocket, msg));
     }
     async handleMessage(socket, packet) {
         const pattern = JSON.stringify(packet.pattern);
@@ -53,7 +52,7 @@ class ServerTCP extends server_1.Server {
     }
     init() {
         this.server = net.createServer(this.bindHandler.bind(this));
-        this.server.on(constants_2.ERROR_EVENT, this.handleError.bind(this));
+        this.server.on(constants_1.ERROR_EVENT, this.handleError.bind(this));
         this.server.on(constants_1.CLOSE_EVENT, this.handleClose.bind(this));
     }
     getSocketInstance(socket) {

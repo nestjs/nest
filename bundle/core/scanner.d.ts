@@ -3,9 +3,9 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import 'reflect-metadata';
-import { MetadataScanner } from '../core/metadata-scanner';
 import { ApplicationConfig } from './application-config';
 import { NestContainer } from './injector/container';
+import { MetadataScanner } from './metadata-scanner';
 export declare class DependenciesScanner {
     private readonly container;
     private readonly metadataScanner;
