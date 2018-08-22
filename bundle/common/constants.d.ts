@@ -11,6 +11,7 @@ export declare const GLOBAL_MODULE_METADATA = "__globalModule__";
 export declare const PATH_METADATA = "path";
 export declare const PARAMTYPES_METADATA = "design:paramtypes";
 export declare const SELF_DECLARED_DEPS_METADATA = "self:paramtypes";
+export declare const OPTIONAL_DEPS_METADATA = "optional:paramtypes";
 export declare const METHOD_METADATA = "method";
 export declare const ROUTE_ARGS_METADATA = "__routeArguments__";
 export declare const CUSTOM_ROUTE_AGRS_METADATA = "__customRouteArgs__";

@@ -1,16 +1,9 @@
-import { Injectable, UseGuards } from '@nestjs/common';
-import {
-  Query,
-  Mutation,
-  Resolver,
-  DelegateProperty,
-  Subscription,
-} from '@nestjs/graphql';
+import { ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
-
-import { Cat } from './interfaces/cat.interface';
-import { CatsService } from './cats.service';
 import { CatsGuard } from './cats.guard';
+import { CatsService } from './cats.service';
+import { Cat } from './interfaces/cat.interface';
 
 const pubSub = new PubSub();
 
@@ -25,13 +18,15 @@ export class CatsResolvers {
   }
 
   @Query('cat')
-  async findOneById(obj, args, context, info): Promise<Cat> {
-    const { id } = args;
-    return await this.catsService.findOneById(+id);
+  async findOneById(
+    @Args('id', ParseIntPipe)
+    id: number,
+  ): Promise<Cat> {
+    return await this.catsService.findOneById(id);
   }
 
   @Mutation('createCat')
-  async create(obj, args: Cat, context, info): Promise<Cat> {
+  async create(@Args() args: Cat): Promise<Cat> {
     const createdCat = await this.catsService.create(args);
     pubSub.publish('catCreated', { catCreated: createdCat });
     return createdCat;

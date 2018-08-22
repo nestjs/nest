@@ -80,7 +80,8 @@ class FastifyAdapter {
     createMiddlewareFactory(requestMethod) {
         return (path, callback) => {
             const re = pathToRegexp(path);
-            this.instance.use(path, (req, res, next) => {
+            const normalizedPath = path === '/*' ? '' : path;
+            this.instance.use(normalizedPath, (req, res, next) => {
                 if (!re.exec(req.originalUrl + '/')) {
                     return next();
                 }

@@ -1,9 +1,9 @@
-import 'reflect-metadata';
-import { Controller } from '@nestjs/common/interfaces';
-import { ContextCreator } from './../helpers/context-creator';
-import { NestContainer } from '../injector/container';
 import { CanActivate } from '@nestjs/common';
+import { Controller } from '@nestjs/common/interfaces';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
+import 'reflect-metadata';
+import { ContextCreator } from '../helpers/context-creator';
+import { NestContainer } from '../injector/container';
 export declare class GuardsContextCreator extends ContextCreator {
     private readonly container;
     private readonly config;

@@ -5,21 +5,29 @@
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "precommit": "lint-staged",
-    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
-    "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
-    "lint": "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
-    "format": "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
+    "test":
+      "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
+    "integration-test":
+      "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
+    "lint":
+      "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
+    "format":
+      "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist bundle",
     "copy-docs": "gulp copy-docs",
-    "prepublish": "npm run build:lib && npm run copy-docs",
-    "prepublish:rc": "npm run build:lib && npm run copy-docs",
-    "prepublish:next": "npm run build:lib && npm run copy-docs",
-    "prepublish:beta": "npm run build:lib && npm run copy-docs",
-    "publish": "./node_modules/.bin/lerna publish --exact -m \"chore(@nestjs) publish %s release\"",
-    "publish:rc": "./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
-    "publish:next": "./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
-    "publish:beta": "./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\""
+    "prepare": "npm run build:lib && npm run copy-docs",
+    "prepare:rc": "npm run build:lib && npm run copy-docs",
+    "prepare:next": "npm run build:lib && npm run copy-docs",
+    "prepare:beta": "npm run build:lib && npm run copy-docs",
+    "publish":
+      "npm run prepare && ./node_modules/.bin/lerna publish --exact -m \"chore(@nestjs) publish %s release\"",
+    "publish:rc":
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
+    "publish:next":
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
+    "publish:beta":
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\""
   },
   "engines": {
     "node": ">= 8.9.0"
@@ -31,11 +39,12 @@
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "dependencies": {
-    "@nestjs/common": "5.0.0",
-    "@nestjs/core": "5.0.0",
-    "@nestjs/microservices": "5.0.0",
-    "@nestjs/testing": "5.0.0",
-    "@nestjs/websockets": "5.0.0",
+    "@grpc/proto-loader": "^0.3.0",
+    "@nestjs/common": "5.1.0",
+    "@nestjs/core": "5.1.0",
+    "@nestjs/microservices": "5.1.0",
+    "@nestjs/testing": "5.1.0",
+    "@nestjs/websockets": "5.1.0",
     "axios": "^0.17.1",
     "class-transformer": "^0.1.8",
     "class-validator": "^0.8.1",
@@ -91,10 +100,9 @@
     "core-js": "^2.4.1",
     "coveralls": "^2.11.16",
     "fastify-static": "^0.8.0",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.0",
     "gulp-clang-format": "^1.0.23",
     "gulp-clean": "^0.4.0",
-    "gulp-sequence": "^0.4.6",
     "gulp-sourcemaps": "^2.6.4",
     "gulp-typescript": "^3.1.6",
     "gulp-watch": "^4.3.11",
@@ -122,9 +130,7 @@
     "logo": "https://opencollective.com/opencollective/logo.txt"
   },
   "nyc": {
-    "include": [
-      "packages/**/*.ts"
-    ],
+    "include": ["packages/**/*.ts"],
     "exclude": [
       "node_modules/",
       "packages/**/*.spec.ts",
@@ -140,23 +146,13 @@
       "packages/core/injector/module-ref.ts",
       "packages/common/services/logger.service.ts"
     ],
-    "extension": [
-      ".ts"
-    ],
-    "require": [
-      "ts-node/register"
-    ],
-    "reporter": [
-      "text-summary",
-      "html"
-    ],
+    "extension": [".ts"],
+    "require": ["ts-node/register"],
+    "reporter": ["text-summary", "html"],
     "sourceMap": true,
     "instrument": true
   },
   "lint-staged": {
-    "packages/**/*.{ts,json}": [
-      "npm run format",
-      "git add"
-    ]
+    "packages/**/*.{ts,json}": ["npm run format", "git add"]
   }
 }

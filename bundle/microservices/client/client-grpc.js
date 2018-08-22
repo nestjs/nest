@@ -3,13 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const logger_service_1 = require("@nestjs/common/services/logger.service");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
 const rxjs_1 = require("rxjs");
-const invalid_grpc_package_exception_1 = require("../exceptions/invalid-grpc-package.exception");
-const invalid_grpc_service_exception_1 = require("../exceptions/invalid-grpc-service.exception");
-const invalid_proto_definition_exception_1 = require("../exceptions/invalid-proto-definition.exception");
-const constants_1 = require("./../constants");
+const constants_1 = require("../constants");
+const invalid_grpc_package_exception_1 = require("../exceptions/errors/invalid-grpc-package.exception");
+const invalid_grpc_service_exception_1 = require("../exceptions/errors/invalid-grpc-service.exception");
+const invalid_proto_definition_exception_1 = require("../exceptions/errors/invalid-proto-definition.exception");
 const client_proxy_1 = require("./client-proxy");
 const constants_2 = require("./constants");
 let grpcPackage = {};
+let grpcProtoLoaderPackage = {};
 class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     constructor(options) {
         super();
@@ -18,6 +19,7 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
         this.url =
             this.getOptionsProp(options, 'url') || constants_1.GRPC_DEFAULT_URL;
         grpcPackage = load_package_util_1.loadPackage('grpc', ClientGrpcProxy.name);
+        grpcProtoLoaderPackage = load_package_util_1.loadPackage('@grpc/proto-loader', ClientGrpcProxy.name);
         this.grpcClient = this.createClient();
     }
     getService(name) {
@@ -94,11 +96,11 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
     }
     loadProto() {
         try {
-            const root = this.getOptionsProp(this.options, 'root');
             const file = this.getOptionsProp(this.options, 'protoPath');
-            const options = root ? { root, file } : file;
-            const context = grpcPackage.load(options);
-            return context;
+            const loader = this.getOptionsProp(this.options, 'loader');
+            const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
+            const packageObject = grpcPackage.loadPackageDefinition(packageDefinition);
+            return packageObject;
         }
         catch (err) {
             const invalidProtoError = new invalid_proto_definition_exception_1.InvalidProtoDefinitionException();

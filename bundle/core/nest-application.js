@@ -204,7 +204,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
             microservice.setIsTerminated(true);
             await microservice.close();
         }));
-        await this.callDestroyHook();
+        await super.close();
     }
     setGlobalPrefix(prefix) {
         this.config.setGlobalPrefix(prefix);
@@ -261,21 +261,6 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         return new Promise(async (resolve, reject) => {
             await microservice.listen(resolve);
         });
-    }
-    async callDestroyHook() {
-        const modules = this.container.getModules();
-        await Promise.all(iterare_1.default(modules.values()).map(async (module) => await this.callModuleDestroyHook(module)));
-    }
-    async callModuleDestroyHook(module) {
-        const components = [...module.routes, ...module.components];
-        await Promise.all(iterare_1.default(components)
-            .map(([key, { instance }]) => instance)
-            .filter(instance => !shared_utils_1.isNil(instance))
-            .filter(this.hasOnModuleDestroyHook)
-            .map(async (instance) => await instance.onModuleDestroy()));
-    }
-    hasOnModuleDestroyHook(instance) {
-        return !shared_utils_1.isUndefined(instance.onModuleDestroy);
     }
 }
 exports.NestApplication = NestApplication;

@@ -4,7 +4,7 @@ const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const constants_1 = require("../constants");
-const invalid_message_exception_1 = require("../exceptions/invalid-message.exception");
+const invalid_message_exception_1 = require("../exceptions/errors/invalid-message.exception");
 class ClientProxy {
     send(pattern, data) {
         if (shared_utils_1.isNil(pattern) || shared_utils_1.isNil(data)) {
@@ -41,6 +41,9 @@ class ClientProxy {
     }
     getOptionsProp(obj, prop, defaultValue = undefined) {
         return obj && obj.options ? obj.options[prop] : defaultValue;
+    }
+    normalizePattern(pattern) {
+        return pattern && shared_utils_1.isString(pattern) ? pattern : JSON.stringify(pattern);
     }
 }
 exports.ClientProxy = ClientProxy;

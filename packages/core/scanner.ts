@@ -11,6 +11,7 @@ import {
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import {
   isFunction,
   isNil,
@@ -49,7 +50,13 @@ export class DependenciesScanner {
   ) {
     await this.storeModule(module, scope);
 
-    const modules = this.reflectMetadata(module, metadata.MODULES);
+    const modules = !this.isDynamicModule(module)
+      ? this.reflectMetadata(module, metadata.MODULES)
+      : [
+          ...this.reflectMetadata(module.module, metadata.MODULES),
+          ...(module.imports || []),
+        ];
+
     for (const innerModule of modules) {
       await this.scanForModules(innerModule, [].concat(scope, module));
     }
@@ -248,13 +255,11 @@ export class DependenciesScanner {
     const applyProvidersMap = this.getApplyProvidersMap();
     const providersKeys = Object.keys(applyProvidersMap);
     const type = component.provide;
+
     if (providersKeys.indexOf(type) < 0) {
       return this.container.addComponent(component, token);
     }
-    const providerToken = Math.random()
-      .toString(36)
-      .substring(2, 32);
-
+    const providerToken = randomStringGenerator();
     this.applicationProvidersApplyMap.push({
       type,
       moduleKey: token,
@@ -309,5 +314,11 @@ export class DependenciesScanner {
       [APP_GUARD]: guard => this.applicationConfig.addGlobalGuard(guard),
       [APP_FILTER]: filter => this.applicationConfig.addGlobalFilter(filter),
     };
+  }
+
+  public isDynamicModule(
+    module: Type<any> | DynamicModule,
+  ): module is DynamicModule {
+    return module && !!(module as DynamicModule).module;
   }
 }

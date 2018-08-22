@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("@nestjs/common/constants");
 require("reflect-metadata");
+const invalid_module_exception_1 = require("../errors/exceptions/invalid-module.exception");
 const unknown_module_exception_1 = require("../errors/exceptions/unknown-module.exception");
-const invalid_module_exception_1 = require("./../errors/exceptions/invalid-module.exception");
 const compiler_1 = require("./compiler");
 const module_1 = require("./module");
 const modules_container_1 = require("./modules-container");

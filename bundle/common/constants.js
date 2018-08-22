@@ -13,6 +13,7 @@ exports.GLOBAL_MODULE_METADATA = '__globalModule__';
 exports.PATH_METADATA = 'path';
 exports.PARAMTYPES_METADATA = 'design:paramtypes';
 exports.SELF_DECLARED_DEPS_METADATA = 'self:paramtypes';
+exports.OPTIONAL_DEPS_METADATA = 'optional:paramtypes';
 exports.METHOD_METADATA = 'method';
 exports.ROUTE_ARGS_METADATA = '__routeArguments__';
 exports.CUSTOM_ROUTE_AGRS_METADATA = '__customRouteArgs__';

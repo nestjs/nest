@@ -65,7 +65,4 @@ export declare class NestApplication extends NestApplicationContext implements I
     private registerMiddleware(instance);
     private isExpress();
     private listenToPromise(microservice);
-    private callDestroyHook();
-    private callModuleDestroyHook(module);
-    private hasOnModuleDestroyHook(instance);
 }

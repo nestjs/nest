@@ -1,6 +1,17 @@
-import { Controller, DynamicModule, Injectable, NestModule } from '@nestjs/common/interfaces';
+import {
+  Controller,
+  DynamicModule,
+  Injectable,
+  NestModule,
+} from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { isFunction, isNil, isString, isSymbol, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isFunction,
+  isNil,
+  isString,
+  isSymbol,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';
@@ -8,6 +19,8 @@ import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
+import { PipesConsumer } from '../pipes/pipes-consumer';
+import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { Reflector } from '../services/reflector.service';
 import { InstanceWrapper, NestContainer } from './container';
 import { ModuleRef } from './module-ref';
@@ -83,8 +96,8 @@ export class Module {
   }
 
   public addCoreInjectables(container: NestContainer) {
-    this.addModuleRef();
     this.addModuleAsComponent();
+    this.addModuleRef();
     this.addReflector();
     this.addApplicationRef(container.getApplicationRef());
     this.addExternalContextCreator(container);
@@ -139,6 +152,8 @@ export class Module {
         new InterceptorsContextCreator(container, container.applicationConfig),
         new InterceptorsConsumer(),
         container.getModules(),
+        new PipesContextCreator(container, container.applicationConfig),
+        new PipesConsumer(),
       ),
     });
   }

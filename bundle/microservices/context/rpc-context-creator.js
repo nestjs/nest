@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("@nestjs/common/constants");
 const constants_2 = require("@nestjs/core/guards/constants");
-const index_1 = require("../index");
+const __1 = require("..");
 class RpcContextCreator {
     constructor(rpcProxy, exceptionFiltersContext, pipesCreator, pipesConsumer, guardsContextCreator, guardsConsumer, interceptorsContextCreator, interceptorsConsumer) {
         this.rpcProxy = rpcProxy;
@@ -28,7 +28,7 @@ class RpcContextCreator {
         return this.rpcProxy.create(async (...args) => {
             const canActivate = await this.guardsConsumer.tryActivate(guards, args, instance, callback);
             if (!canActivate) {
-                throw new index_1.RpcException(constants_2.FORBIDDEN_MESSAGE);
+                throw new __1.RpcException(constants_2.FORBIDDEN_MESSAGE);
             }
             return await this.interceptorsConsumer.intercept(interceptors, args, instance, callback, handler(args));
         }, exceptionHandler);

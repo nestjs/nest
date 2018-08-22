@@ -1,8 +1,8 @@
-import { NestContainer, InstanceWrapper } from '../injector/container';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Resolver } from './interfaces/resolver.interface';
-import { ApplicationConfig } from './../application-config';
 import { HttpServer } from '@nestjs/common/interfaces';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { ApplicationConfig } from '../application-config';
+import { InstanceWrapper, NestContainer } from '../injector/container';
+import { Resolver } from './interfaces/resolver.interface';
 export declare class RoutesResolver implements Resolver {
     private readonly container;
     private readonly config;

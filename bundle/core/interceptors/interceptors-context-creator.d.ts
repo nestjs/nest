@@ -1,8 +1,8 @@
-import 'reflect-metadata';
 import { Controller, NestInterceptor } from '@nestjs/common/interfaces';
-import { ContextCreator } from './../helpers/context-creator';
-import { NestContainer } from '../injector/container';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
+import 'reflect-metadata';
+import { ContextCreator } from '../helpers/context-creator';
+import { NestContainer } from '../injector/container';
 export declare class InterceptorsContextCreator extends ContextCreator {
     private readonly container;
     private readonly config;

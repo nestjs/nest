@@ -1,5 +1,5 @@
+import { CustomTransportStrategy } from '../interfaces';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
-import { CustomTransportStrategy } from './../interfaces';
 import { Server } from './server';
 export declare class ServerGrpc extends Server implements CustomTransportStrategy {
     private readonly options;

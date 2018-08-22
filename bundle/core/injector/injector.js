@@ -4,8 +4,8 @@ const constants_1 = require("@nestjs/common/constants");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 require("reflect-metadata");
 const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
+const undefined_dependency_exception_1 = require("../errors/exceptions/undefined-dependency.exception");
 const unknown_dependencies_exception_1 = require("../errors/exceptions/unknown-dependencies.exception");
-const undefined_dependency_exception_1 = require("./../errors/exceptions/undefined-dependency.exception");
 class Injector {
     async loadInstanceOfMiddleware(wrapper, collection, module) {
         const { metatype } = wrapper;
@@ -39,7 +39,7 @@ class Injector {
         const components = module.components;
         await this.loadInstance(wrapper, components, module);
     }
-    applyDoneSubject(wrapper) {
+    applyDoneHook(wrapper) {
         let done;
         wrapper.done$ = new Promise((resolve, reject) => {
             done = resolve;
@@ -51,14 +51,15 @@ class Injector {
         if (wrapper.isPending) {
             return await wrapper.done$;
         }
-        const done = this.applyDoneSubject(wrapper);
+        const done = this.applyDoneHook(wrapper);
         const { metatype, name, inject } = wrapper;
         const currentMetatype = collection.get(name);
         if (shared_utils_1.isUndefined(currentMetatype)) {
             throw new runtime_exception_1.RuntimeException();
         }
-        if (currentMetatype.isResolved)
-            return null;
+        if (currentMetatype.isResolved) {
+            return void 0;
+        }
         await this.resolveConstructorParams(wrapper, module, inject, async (instances) => {
             if (shared_utils_1.isNil(inject)) {
                 currentMetatype.instance = Object.assign(currentMetatype.instance, new metatype(...instances));
@@ -73,15 +74,27 @@ class Injector {
     }
     async resolveConstructorParams(wrapper, module, inject, callback) {
         let isResolved = true;
-        const args = shared_utils_1.isNil(inject)
+        const dependencies = shared_utils_1.isNil(inject)
             ? this.reflectConstructorParams(wrapper.metatype)
             : inject;
-        const instances = await Promise.all(args.map(async (param, index) => {
-            const paramWrapper = await this.resolveSingleParam(wrapper, param, { index, length: args.length }, module);
-            if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
-                isResolved = false;
+        const optionalDependenciesIds = shared_utils_1.isNil(inject)
+            ? this.reflectOptionalParams(wrapper.metatype)
+            : [];
+        const instances = await Promise.all(dependencies.map(async (param, index) => {
+            try {
+                const paramWrapper = await this.resolveSingleParam(wrapper, param, { index, dependencies }, module);
+                if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
+                    isResolved = false;
+                }
+                return paramWrapper.instance;
             }
-            return paramWrapper.instance;
+            catch (err) {
+                const isOptional = optionalDependenciesIds.includes(index);
+                if (!isOptional) {
+                    throw err;
+                }
+                return null;
+            }
         }));
         isResolved && (await callback(instances));
     }
@@ -91,15 +104,18 @@ class Injector {
         selfParams.forEach(({ index, param }) => (paramtypes[index] = param));
         return paramtypes;
     }
+    reflectOptionalParams(type) {
+        return Reflect.getMetadata(constants_1.OPTIONAL_DEPS_METADATA, type) || [];
+    }
     reflectSelfParams(type) {
         return Reflect.getMetadata(constants_1.SELF_DECLARED_DEPS_METADATA, type) || [];
     }
-    async resolveSingleParam(wrapper, param, { index, length }, module) {
+    async resolveSingleParam(wrapper, param, dependencyContext, module) {
         if (shared_utils_1.isUndefined(param)) {
-            throw new undefined_dependency_exception_1.UndefinedDependencyException(wrapper.name, index, length);
+            throw new undefined_dependency_exception_1.UndefinedDependencyException(wrapper.name, dependencyContext);
         }
         const token = this.resolveParamToken(wrapper, param);
-        return await this.resolveComponentInstance(module, shared_utils_1.isFunction(token) ? token.name : token, { index, length }, wrapper);
+        return await this.resolveComponentInstance(module, shared_utils_1.isFunction(token) ? token.name : token, dependencyContext, wrapper);
     }
     resolveParamToken(wrapper, param) {
         if (!param.forwardRef) {
@@ -108,9 +124,9 @@ class Injector {
         wrapper.forwardRef = true;
         return param.forwardRef();
     }
-    async resolveComponentInstance(module, name, { index, length }, wrapper) {
+    async resolveComponentInstance(module, name, dependencyContext, wrapper) {
         const components = module.components;
-        const instanceWrapper = await this.lookupComponent(components, module, { name, index, length }, wrapper);
+        const instanceWrapper = await this.lookupComponent(components, module, Object.assign({ name }, dependencyContext), wrapper);
         if (!instanceWrapper.isResolved && !instanceWrapper.forwardRef) {
             await this.loadInstanceOfComponent(instanceWrapper, module);
         }
@@ -119,14 +135,15 @@ class Injector {
         }
         return instanceWrapper;
     }
-    async lookupComponent(components, module, { name, index, length }, wrapper) {
-        const scanInExports = () => this.lookupComponentInExports(components, { name, index, length }, module, wrapper);
+    async lookupComponent(components, module, dependencyContext, wrapper) {
+        const { name } = dependencyContext;
+        const scanInExports = () => this.lookupComponentInExports(components, dependencyContext, module, wrapper);
         return components.has(name) ? components.get(name) : await scanInExports();
     }
-    async lookupComponentInExports(components, { name, index, length }, module, wrapper) {
-        const instanceWrapper = await this.lookupComponentInRelatedModules(module, name);
+    async lookupComponentInExports(components, dependencyContext, module, wrapper) {
+        const instanceWrapper = await this.lookupComponentInRelatedModules(module, dependencyContext.name);
         if (shared_utils_1.isNil(instanceWrapper)) {
-            throw new unknown_dependencies_exception_1.UnknownDependenciesException(wrapper.name, index, length);
+            throw new unknown_dependencies_exception_1.UnknownDependenciesException(wrapper.name, dependencyContext);
         }
         return instanceWrapper;
     }

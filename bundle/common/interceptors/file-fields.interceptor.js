@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const multer = require("multer");
+const component_decorator_1 = require("../decorators/core/component.decorator");
 const multer_utils_1 = require("./multer/multer.utils");
 function FileFieldsInterceptor(uploadFields, options) {
-    const Interceptor = class {
+    const Interceptor = component_decorator_1.mixin(class {
         constructor() {
             this.upload = multer(options);
         }
@@ -18,7 +19,7 @@ function FileFieldsInterceptor(uploadFields, options) {
             }));
             return call$;
         }
-    };
+    });
     return Interceptor;
 }
 exports.FileFieldsInterceptor = FileFieldsInterceptor;

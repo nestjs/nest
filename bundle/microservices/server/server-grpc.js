@@ -2,11 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
-const invalid_grpc_package_exception_1 = require("../exceptions/invalid-grpc-package.exception");
-const invalid_proto_definition_exception_1 = require("../exceptions/invalid-proto-definition.exception");
-const constants_1 = require("./../constants");
+const constants_1 = require("../constants");
+const invalid_grpc_package_exception_1 = require("../exceptions/errors/invalid-grpc-package.exception");
+const invalid_proto_definition_exception_1 = require("../exceptions/errors/invalid-proto-definition.exception");
 const server_1 = require("./server");
 let grpcPackage = {};
+let grpcProtoLoaderPackage = {};
 class ServerGrpc extends server_1.Server {
     constructor(options) {
         super();
@@ -14,6 +15,7 @@ class ServerGrpc extends server_1.Server {
         this.url =
             this.getOptionsProp(options, 'url') || constants_1.GRPC_DEFAULT_URL;
         grpcPackage = this.loadPackage('grpc', ServerGrpc.name);
+        grpcProtoLoaderPackage = this.loadPackage('@grpc/proto-loader', ServerGrpc.name);
     }
     async listen(callback) {
         this.grpcClient = this.createClient();
@@ -105,11 +107,11 @@ class ServerGrpc extends server_1.Server {
     }
     loadProto() {
         try {
-            const root = this.getOptionsProp(this.options, 'root');
             const file = this.getOptionsProp(this.options, 'protoPath');
-            const options = root ? { root, file } : file;
-            const context = grpcPackage.load(options);
-            return context;
+            const loader = this.getOptionsProp(this.options, 'loader');
+            const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
+            const packageObject = grpcPackage.loadPackageDefinition(packageDefinition);
+            return packageObject;
         }
         catch (err) {
             const invalidProtoError = new invalid_proto_definition_exception_1.InvalidProtoDefinitionException();

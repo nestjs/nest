@@ -1,3 +1,4 @@
+import { Optional } from '../decorators';
 import { ArgumentMetadata, BadRequestException } from '../index';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
@@ -19,7 +20,7 @@ export class ValidationPipe implements PipeTransform<any> {
   protected isDetailedOutputDisabled: boolean;
   protected validatorOptions: ValidatorOptions;
 
-  constructor(options?: ValidationPipeOptions) {
+  constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
     const { transform, disableErrorMessages, ...validatorOptions } = options;
     this.isTransformEnabled = !!transform;

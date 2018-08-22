@@ -1,7 +1,6 @@
 type Query {
   getCats: [Cat]
   cat(id: ID!): Cat
-  catByHumanId(id: ID!): Cat
 }
 
 type Mutation {
@@ -16,5 +15,4 @@ type Cat {
   id: Int
   name: String
   age: Int
-  humanId: Int
 }
