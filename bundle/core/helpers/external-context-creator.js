@@ -64,8 +64,8 @@ class ExternalContextCreator {
     }
     findComponentByClassName(module, className) {
         const { components } = module;
-        const hasComponent = [...components.keys()].find(component => component === className);
-        return !!hasComponent;
+        const hasComponent = [...components.keys()].some(component => component === className);
+        return hasComponent;
     }
     exchangeKeysForValues(keys, metadata, moduleContext, paramsFactory) {
         this.pipesContextCreator.setModuleContext(moduleContext);

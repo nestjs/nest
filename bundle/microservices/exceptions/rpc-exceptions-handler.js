@@ -26,7 +26,7 @@ class RpcExceptionsHandler extends base_rpc_exception_filter_1.BaseRpcExceptionF
             return null;
         const filter = this.filters.find(({ exceptionMetatypes, func }) => {
             const hasMetatype = !exceptionMetatypes.length ||
-                !!exceptionMetatypes.find(ExceptionMetatype => exception instanceof ExceptionMetatype);
+                exceptionMetatypes.some(ExceptionMetatype => exception instanceof ExceptionMetatype);
             return hasMetatype;
         });
         return filter ? filter.func(exception, host) : null;

@@ -27,17 +27,16 @@ let Logger = Logger_1 = class Logger {
             Logger_1.log(message, context || this.context, this.isTimeDiffEnabled);
             return;
         }
-        logger &&
-            logger.log.call(logger, message, context || this.context, this.isTimeDiffEnabled);
+        logger && logger.log.call(logger, message, context || this.context);
     }
     error(message, trace = '', context) {
         const { logger } = Logger_1;
         if (logger === this) {
-            Logger_1.error(message, trace, context || this.context, this.isTimeDiffEnabled);
+            Logger_1.error(message, trace, context || this.context);
             return;
         }
         logger &&
-            logger.error.call(logger, message, trace, context || this.context, this.isTimeDiffEnabled);
+            logger.error.call(logger, message, trace, context || this.context);
     }
     warn(message, context) {
         const { logger } = Logger_1;
@@ -45,8 +44,7 @@ let Logger = Logger_1 = class Logger {
             Logger_1.warn(message, context || this.context, this.isTimeDiffEnabled);
             return;
         }
-        logger &&
-            logger.warn.call(logger, message, context || this.context, this.isTimeDiffEnabled);
+        logger && logger.warn.call(logger, message, context || this.context);
     }
     static overrideLogger(logger) {
         this.logger = logger ? logger : null;

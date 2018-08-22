@@ -25,7 +25,7 @@ class ExceptionsHandler extends base_exception_filter_1.BaseExceptionFilter {
             return false;
         const filter = this.filters.find(({ exceptionMetatypes, func }) => {
             const hasMetatype = !exceptionMetatypes.length ||
-                !!exceptionMetatypes.find(ExceptionMetatype => exception instanceof ExceptionMetatype);
+                exceptionMetatypes.some(ExceptionMetatype => exception instanceof ExceptionMetatype);
             return hasMetatype;
         });
         filter && filter.func(exception, response);
