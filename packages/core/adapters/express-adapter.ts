@@ -115,6 +115,9 @@ export class ExpressAdapter implements HttpServer {
   }
 
   useStaticAssets(path: string, options: ServeStaticOptions) {
+    if (options && options.prefix) {
+      return this.use(options.prefix, express.static(path, options));
+    }
     return this.use(express.static(path, options));
   }
 

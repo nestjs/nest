@@ -1,5 +1,8 @@
 import * as deprecate from 'deprecate';
-import { CUSTOM_ROUTE_AGRS_METADATA, ROUTE_ARGS_METADATA } from '../../constants';
+import {
+  CUSTOM_ROUTE_AGRS_METADATA,
+  ROUTE_ARGS_METADATA,
+} from '../../constants';
 import { PipeTransform } from '../../index';
 import { Type } from '../../interfaces';
 import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface';
@@ -37,7 +40,9 @@ export type ParamDecoratorEnhancer = ParameterDecorator;
 export function createParamDecorator(
   factory: CustomParamFactory,
   enhancers: ParamDecoratorEnhancer[] = [],
-): (...dataOrPipes: (Type<PipeTransform> | PipeTransform | string)[]) => ParameterDecorator {
+): (
+  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | any)[],
+) => ParameterDecorator {
   const paramtype = randomString() + randomString();
   return (
     data?,
@@ -58,7 +63,7 @@ export function createParamDecorator(
         index,
         factory,
         paramData,
-        ...paramPipes as any as PipeTransform[],
+        ...((paramPipes as any) as PipeTransform[]),
       ),
       target.constructor,
       key,
