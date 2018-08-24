@@ -20,7 +20,9 @@ function createParamDecorator(factory, enhancers = []) {
     const paramtype = randomString() + randomString();
     return (data, ...pipes) => (target, key, index) => {
         const args = Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, target.constructor, key) || {};
-        const hasParamData = shared_utils_1.isNil(data) || shared_utils_1.isString(data);
+        const isPipe = pipe => pipe &&
+            ((shared_utils_1.isFunction(pipe) && pipe.prototype) || shared_utils_1.isFunction(pipe.transform));
+        const hasParamData = shared_utils_1.isNil(data) || !isPipe(data);
         const paramData = hasParamData ? data : undefined;
         const paramPipes = hasParamData ? pipes : [data, ...pipes];
         Reflect.defineMetadata(constants_1.ROUTE_ARGS_METADATA, assignCustomMetadata(args, paramtype, index, factory, paramData, ...paramPipes), target.constructor, key);

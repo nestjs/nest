@@ -76,6 +76,9 @@ class ExpressAdapter {
         return this.instance.engine(...args);
     }
     useStaticAssets(path, options) {
+        if (options && options.prefix) {
+            return this.use(options.prefix, express.static(path, options));
+        }
         return this.use(express.static(path, options));
     }
     setBaseViewsDir(path) {
