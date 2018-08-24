@@ -18,7 +18,7 @@ describe('createRouteParamDecorator', () => {
     const Decorator = createRouteParamDecorator(factoryFn);
 
     describe('when 0 pipes have been passed', () => {
-      const data = 'test';
+      const data = { data: 'test' };
       class Test {
         public test(@Decorator(data) param) {}
       }
@@ -26,7 +26,7 @@ describe('createRouteParamDecorator', () => {
         const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
         const key = Object.keys(metadata)[0];
         expect(metadata[key]).to.be.eql({
-          data: 'test',
+          data,
           factory: factoryFn,
           index: 0,
           pipes: [],
@@ -44,6 +44,8 @@ describe('createRouteParamDecorator', () => {
         ) {}
 
         public testNoData(@Decorator(pipe) param) {}
+
+        public testNoDataClass(@Decorator(ParseIntPipe) param) {}
       }
       it('should enhance param with "data" and ParseIntPipe', () => {
         const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
@@ -68,6 +70,21 @@ describe('createRouteParamDecorator', () => {
           factory: factoryFn,
           index: 0,
           pipes: [pipe],
+        });
+      });
+
+      it('should enhance param with ParseIntPipe metatype', () => {
+        const metadata = Reflect.getMetadata(
+          ROUTE_ARGS_METADATA,
+          Test,
+          'testNoDataClass',
+        );
+        const key = Object.keys(metadata)[0];
+        expect(metadata[key]).to.be.eql({
+          data: undefined,
+          factory: factoryFn,
+          index: 0,
+          pipes: [ParseIntPipe],
         });
       });
     });
