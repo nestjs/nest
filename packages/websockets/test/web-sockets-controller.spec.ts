@@ -222,7 +222,7 @@ describe('WebSocketsController', () => {
       ).to.be.a('function');
     });
     it('should call "next" method of connection object with expected argument', () => {
-      expect(nextSpy.calledWith(client)).to.be.true;
+      expect(nextSpy.calledWith([client])).to.be.true;
     });
     it('should call "subscribeMessages" with expected arguments', () => {
       expect(subscribeMessages.calledWith(handlers, client, gateway)).to.be

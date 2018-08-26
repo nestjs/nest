@@ -103,8 +103,11 @@ export class WebSocketsController {
     connection: Subject<any>,
   ) {
     const adapter = this.config.getIoAdapter();
-    return client => {
-      connection.next(client);
+    return (client, ...rest) => {
+      // here different websocket implements may have different args
+      // `ws` will have two args applied to this callback
+      connection.next([client, ...rest]);
+
       context.subscribeMessages(messageHandlers, client, instance);
 
       const disconnectHook = adapter.bindClientDisconnect;
@@ -121,9 +124,9 @@ export class WebSocketsController {
 
   public subscribeConnectionEvent(instance: NestGateway, event: Subject<any>) {
     if (instance.handleConnection) {
-      event
-        .pipe(distinctUntilChanged())
-        .subscribe(instance.handleConnection.bind(instance));
+      event.pipe(distinctUntilChanged()).subscribe((args: any[]) => {
+        instance.handleConnection.bind(instance)(...args);
+      });
     }
   }
 
