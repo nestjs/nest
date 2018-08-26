@@ -76,6 +76,10 @@ export class NestApplication extends NestApplicationContext
     this.routesResolver = new RoutesResolver(this.container, this.config);
   }
 
+  public getHttpAdapter(): HttpServer {
+    return this.httpAdapter;
+  }
+
   public registerHttpServer() {
     this.httpServer = this.createServer();
 

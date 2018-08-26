@@ -1,9 +1,14 @@
-import { Logger, WebSocketAdapter } from '@nestjs/common';
+import {
+  INestApplicationContext,
+  Logger,
+  WebSocketAdapter,
+} from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { NestApplication } from '@nestjs/core';
 import { Server } from 'http';
 import { EMPTY as empty, fromEvent, Observable } from 'rxjs';
-import { filter, mergeMap } from 'rxjs/operators';
+import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
 import { CLOSE_EVENT, CONNECTION_EVENT, ERROR_EVENT } from '../constants';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
 
@@ -11,8 +16,15 @@ let wsPackage: any = {};
 
 export class WsAdapter implements WebSocketAdapter {
   private readonly logger = new Logger(WsAdapter.name);
-  constructor(private readonly httpServer: Server | null = null) {
+  private readonly httpServer: Server;
+
+  constructor(appOrHttpServer?: INestApplicationContext | Server) {
     wsPackage = loadPackage('ws', 'WsAdapter');
+    if (appOrHttpServer && appOrHttpServer instanceof NestApplication) {
+      this.httpServer = appOrHttpServer.getHttpServer();
+    } else {
+      this.httpServer = appOrHttpServer as Server;
+    }
   }
 
   public create(
@@ -51,15 +63,16 @@ export class WsAdapter implements WebSocketAdapter {
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {
-    fromEvent(client, 'message')
-      .pipe(
-        mergeMap(data =>
-          this.bindMessageHandler(data, handlers, transform).pipe(
-            filter(result => result),
-          ),
+    const close$ = fromEvent(client, 'close').pipe(share(), first());
+    const source$ = fromEvent(client, 'message').pipe(
+      mergeMap(data =>
+        this.bindMessageHandler(data, handlers, transform).pipe(
+          filter(result => result),
         ),
-      )
-      .subscribe(response => client.send(JSON.stringify(response)));
+      ),
+      takeUntil(close$),
+    );
+    source$.subscribe(response => client.send(JSON.stringify(response)));
   }
 
   public bindMessageHandler(
