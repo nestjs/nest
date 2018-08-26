@@ -8,8 +8,8 @@
 export * from './decorators';
 export * from './enums';
 export * from './exceptions';
+export * from './files';
 export * from './http';
-export * from './interceptors';
 export {
   ArgumentMetadata,
   ArgumentsHost,
