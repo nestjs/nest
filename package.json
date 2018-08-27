@@ -5,14 +5,10 @@
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "precommit": "lint-staged",
-    "test":
-      "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
-    "integration-test":
-      "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
-    "lint":
-      "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
-    "format":
-      "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
+    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
+    "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
+    "lint": "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
+    "format": "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist bundle",
     "copy-docs": "gulp copy-docs",
@@ -20,14 +16,10 @@
     "prepare:rc": "npm run build:lib && npm run copy-docs",
     "prepare:next": "npm run build:lib && npm run copy-docs",
     "prepare:beta": "npm run build:lib && npm run copy-docs",
-    "publish":
-      "npm run prepare && ./node_modules/.bin/lerna publish --exact -m \"chore(@nestjs) publish %s release\"",
-    "publish:rc":
-      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
-    "publish:next":
-      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
-    "publish:beta":
-      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\""
+    "publish": "npm run prepare && ./node_modules/.bin/lerna publish --exact -m \"chore(@nestjs) publish %s release\"",
+    "publish:rc": "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
+    "publish:next": "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
+    "publish:beta": "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\""
   },
   "engines": {
     "node": ">= 8.9.0"
@@ -46,6 +38,7 @@
     "@nestjs/testing": "5.1.0",
     "@nestjs/websockets": "5.1.0",
     "axios": "^0.17.1",
+    "cache-manager": "^2.9.0",
     "class-transformer": "^0.1.8",
     "class-validator": "^0.8.1",
     "cli-color": "^1.1.0",
@@ -59,7 +52,7 @@
     "fastify": "^1.1.1",
     "fastify-formbody": "^2.0.0",
     "fastify-multipart": "^0.4.1",
-    "grpc": "^1.11.3",
+    "grpc": "^1.14.1",
     "iterare": "0.0.8",
     "json-socket": "^0.2.1",
     "mqtt": "^2.16.0",
@@ -74,10 +67,11 @@
     "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0",
     "rxjs-compat": "^6.0.0",
-    "socket.io": "^2.0.4",
+    "socket.io": "^2.1.1",
     "trouter": "^1.0.0"
   },
   "devDependencies": {
+    "@types/cache-manager": "^1.2.6",
     "@types/chai": "^3.5.2",
     "@types/chai-as-promised": "0.0.31",
     "@types/cors": "^2.8.3",
@@ -91,7 +85,7 @@
     "@types/socket.io": "^1.4.32",
     "@types/ws": "^4.0.1",
     "awesome-typescript-loader": "^3.0.0-beta.18",
-    "body-parser": "^1.17.2",
+    "body-parser": "^1.18.3",
     "chai": "^3.5.0",
     "chai-as-promised": "^7.1.1",
     "clang-format": "^1.1.0",
@@ -111,9 +105,9 @@
     "istanbul": "^0.4.5",
     "json-loader": "^0.5.4",
     "lerna": "^2.5.1",
-    "lint-staged": "^7.0.0",
+    "lint-staged": "^7.2.2",
     "mocha": "^3.2.0",
-    "nodemon": "^1.11.0",
+    "nodemon": "^1.18.3",
     "nyc": "^10.1.2",
     "prettier": "^1.9.2",
     "sinon": "^2.1.0",
@@ -130,7 +124,9 @@
     "logo": "https://opencollective.com/opencollective/logo.txt"
   },
   "nyc": {
-    "include": ["packages/**/*.ts"],
+    "include": [
+      "packages/**/*.ts"
+    ],
     "exclude": [
       "node_modules/",
       "packages/**/*.spec.ts",
@@ -147,13 +143,23 @@
       "packages/core/injector/module-ref.ts",
       "packages/common/services/logger.service.ts"
     ],
-    "extension": [".ts"],
-    "require": ["ts-node/register"],
-    "reporter": ["text-summary", "html"],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
     "sourceMap": true,
     "instrument": true
   },
   "lint-staged": {
-    "packages/**/*.{ts,json}": ["npm run format", "git add"]
+    "packages/**/*.{ts,json}": [
+      "npm run format",
+      "git add"
+    ]
   }
 }
