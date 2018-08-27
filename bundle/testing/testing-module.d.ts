@@ -12,8 +12,8 @@ import { NestContainer } from '@nestjs/core/injector/container';
 export declare class TestingModule extends NestApplicationContext {
     private readonly applicationConfig;
     constructor(container: NestContainer, scope: Type<any>[], contextModule: any, applicationConfig: ApplicationConfig);
-    createNestApplication(httpServer?: FastifyAdapter, options?: NestApplicationOptions): INestApplication & INestFastifyApplication;
     createNestApplication(httpServer?: HttpServer, options?: NestApplicationOptions): INestApplication & INestExpressApplication;
+    createNestApplication(httpServer?: FastifyAdapter, options?: NestApplicationOptions): INestApplication & INestFastifyApplication;
     createNestApplication(httpServer?: any, options?: NestApplicationOptions): INestApplication & INestExpressApplication;
     createNestMicroservice(options: NestMicroserviceOptions & MicroserviceOptions): INestMicroservice;
     private applyExpressAdapter(httpAdapter);

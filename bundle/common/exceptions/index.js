@@ -21,3 +21,4 @@ __export(require("./not-implemented.exception"));
 __export(require("./bad-gateway.exception"));
 __export(require("./service-unavailable.exception"));
 __export(require("./gateway-timeout.exception"));
+__export(require("./im-a-teapot.exception"));

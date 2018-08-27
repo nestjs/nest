@@ -40,6 +40,9 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         this.registerHttpServer();
         this.routesResolver = new routes_resolver_1.RoutesResolver(this.container, this.config);
     }
+    getHttpAdapter() {
+        return this.httpAdapter;
+    }
     registerHttpServer() {
         this.httpServer = this.createServer();
         const server = this.getUnderlyingHttpServer();

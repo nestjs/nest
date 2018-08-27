@@ -51,8 +51,9 @@ class WebSocketsController {
     }
     getConnectionHandler(context, instance, messageHandlers, disconnect, connection) {
         const adapter = this.config.getIoAdapter();
-        return client => {
-            connection.next(client);
+        return (...args) => {
+            const [client] = args;
+            connection.next(args);
             context.subscribeMessages(messageHandlers, client, instance);
             const disconnectHook = adapter.bindClientDisconnect;
             disconnectHook &&
@@ -68,7 +69,7 @@ class WebSocketsController {
         if (instance.handleConnection) {
             event
                 .pipe(operators_1.distinctUntilChanged())
-                .subscribe(instance.handleConnection.bind(instance));
+                .subscribe((args) => instance.handleConnection(...args));
         }
     }
     subscribeDisconnectEvent(instance, event) {

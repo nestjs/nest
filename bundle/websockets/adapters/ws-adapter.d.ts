@@ -1,12 +1,12 @@
 /// <reference types="node" />
-import { WebSocketAdapter } from '@nestjs/common';
+import { INestApplicationContext, WebSocketAdapter } from '@nestjs/common';
 import { Server } from 'http';
 import { Observable } from 'rxjs';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
 export declare class WsAdapter implements WebSocketAdapter {
-    private readonly httpServer;
     private readonly logger;
-    constructor(httpServer?: Server | null);
+    private readonly httpServer;
+    constructor(appOrHttpServer?: INestApplicationContext | Server);
     create(port: number, options?: any & {
         namespace?: string;
         server?: any;
