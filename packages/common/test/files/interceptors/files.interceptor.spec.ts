@@ -1,8 +1,8 @@
-import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { FilesInterceptor } from './../../interceptors/files.interceptor';
-import { Observable, of } from 'rxjs';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
+import { expect } from 'chai';
+import { of } from 'rxjs';
+import * as sinon from 'sinon';
+import { FilesInterceptor } from './../../../files/interceptors/files.interceptor';
 
 describe('FilesInterceptor', () => {
   it('should return metatype with expected structure', async () => {
@@ -31,14 +31,16 @@ describe('FilesInterceptor', () => {
     });
     it('should transform exception', async () => {
       const fieldName = 'file';
-      const target = new (FilesInterceptor(fieldName));
+      const target = new (FilesInterceptor(fieldName))();
       const err = {};
       const callback = (req, res, next) => next(err);
 
       (target as any).upload = {
         array: () => callback,
       };
-      expect(target.intercept(new ExecutionContextHost([]), stream$)).to.eventually.throw();
+      expect(
+        target.intercept(new ExecutionContextHost([]), stream$),
+      ).to.eventually.throw();
     });
   });
 });

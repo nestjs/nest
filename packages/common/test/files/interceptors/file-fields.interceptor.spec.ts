@@ -1,12 +1,15 @@
-import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { FileFieldsInterceptor } from './../../interceptors/file-fields.interceptor';
-import { Observable, of } from 'rxjs';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
+import { expect } from 'chai';
+import { of } from 'rxjs';
+import * as sinon from 'sinon';
+import { FileFieldsInterceptor } from './../../../files/interceptors/file-fields.interceptor';
 
 describe('FileFieldsInterceptor', () => {
   it('should return metatype with expected structure', async () => {
-    const targetClass = FileFieldsInterceptor([{name: 'file', maxCount: 1}, {name: 'anotherFile', maxCount: 1}]);
+    const targetClass = FileFieldsInterceptor([
+      { name: 'file', maxCount: 1 },
+      { name: 'anotherFile', maxCount: 1 },
+    ]);
     expect(targetClass.prototype.intercept).to.not.be.undefined;
   });
   describe('intercept', () => {
@@ -20,9 +23,9 @@ describe('FileFieldsInterceptor', () => {
       const fieldName2 = 'anotherFile';
       const maxCount2 = 2;
       const argument = [
-        {name: fieldName1, maxCount: maxCount1},
-        {name: fieldName2, maxCount: maxCount2}
-      ]
+        { name: fieldName1, maxCount: maxCount1 },
+        { name: fieldName2, maxCount: maxCount2 },
+      ];
       const target = new (FileFieldsInterceptor(argument))();
 
       const callback = (req, res, next) => next();
@@ -41,17 +44,19 @@ describe('FileFieldsInterceptor', () => {
       const fieldName2 = 'anotherFile';
       const maxCount2 = 2;
       const argument = [
-        {name: fieldName1, maxCount: maxCount1},
-        {name: fieldName2, maxCount: maxCount2}
-      ]
-      const target = new (FileFieldsInterceptor(argument));
+        { name: fieldName1, maxCount: maxCount1 },
+        { name: fieldName2, maxCount: maxCount2 },
+      ];
+      const target = new (FileFieldsInterceptor(argument))();
       const err = {};
       const callback = (req, res, next) => next(err);
 
       (target as any).fields = {
         array: () => callback,
       };
-      expect(target.intercept(new ExecutionContextHost([]), stream$)).to.eventually.throw();
+      expect(
+        target.intercept(new ExecutionContextHost([]), stream$),
+      ).to.eventually.throw();
     });
   });
 });
