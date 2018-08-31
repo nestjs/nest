@@ -9,11 +9,11 @@ import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
 
 export class IoAdapter implements WebSocketAdapter {
-  private readonly httpServer: Server;
+  protected readonly httpServer: Server;
 
   constructor(appOrHttpServer?: INestApplicationContext | Server) {
     if (appOrHttpServer && appOrHttpServer instanceof NestApplication) {
-      this.httpServer = appOrHttpServer.getHttpServer();
+      this.httpServer = appOrHttpServer.getUnderlyingHttpServer();
     } else {
       this.httpServer = appOrHttpServer as Server;
     }
@@ -82,8 +82,9 @@ export class IoAdapter implements WebSocketAdapter {
     const lastElement = payload[payload.length - 1];
     const isAck = isFunction(lastElement);
     if (isAck) {
+      const size = payload.length - 1;
       return {
-        data: payload.slice(0, payload.length - 1),
+        data: size === 1 ? payload[0] : payload.slice(0, size),
         ack: lastElement,
       };
     }

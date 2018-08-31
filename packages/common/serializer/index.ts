@@ -1,2 +1,2 @@
-export * from './class-serializer.interceptors';
+export * from './class-serializer.interceptor';
 export * from './decorators';

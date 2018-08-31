@@ -15,13 +15,13 @@ import { MessageMappingProperties } from '../gateway-metadata-explorer';
 let wsPackage: any = {};
 
 export class WsAdapter implements WebSocketAdapter {
-  private readonly logger = new Logger(WsAdapter.name);
-  private readonly httpServer: Server;
+  protected readonly logger = new Logger(WsAdapter.name);
+  protected readonly httpServer: Server;
 
   constructor(appOrHttpServer?: INestApplicationContext | Server) {
     wsPackage = loadPackage('ws', 'WsAdapter');
     if (appOrHttpServer && appOrHttpServer instanceof NestApplication) {
-      this.httpServer = appOrHttpServer.getHttpServer();
+      this.httpServer = appOrHttpServer.getUnderlyingHttpServer();
     } else {
       this.httpServer = appOrHttpServer as Server;
     }
