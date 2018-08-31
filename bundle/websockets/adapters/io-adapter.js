@@ -18,7 +18,7 @@ const constants_1 = require("../constants");
 class IoAdapter {
     constructor(appOrHttpServer) {
         if (appOrHttpServer && appOrHttpServer instanceof core_1.NestApplication) {
-            this.httpServer = appOrHttpServer.getHttpServer();
+            this.httpServer = appOrHttpServer.getUnderlyingHttpServer();
         }
         else {
             this.httpServer = appOrHttpServer;
@@ -69,8 +69,9 @@ class IoAdapter {
         const lastElement = payload[payload.length - 1];
         const isAck = shared_utils_1.isFunction(lastElement);
         if (isAck) {
+            const size = payload.length - 1;
             return {
-                data: payload.slice(0, payload.length - 1),
+                data: size === 1 ? payload[0] : payload.slice(0, size),
                 ack: lastElement,
             };
         }

@@ -4,7 +4,7 @@ import { Server } from 'http';
 import { Observable } from 'rxjs';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
 export declare class IoAdapter implements WebSocketAdapter {
-    private readonly httpServer;
+    protected readonly httpServer: Server;
     constructor(appOrHttpServer?: INestApplicationContext | Server);
     create(port: number, options?: any & {
         namespace?: string;

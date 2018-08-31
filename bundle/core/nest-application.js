@@ -63,10 +63,14 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         const isHttpsEnabled = this.appOptions && this.appOptions.httpsOptions;
         const isExpress = this.isExpress();
         if (isHttpsEnabled && isExpress) {
-            return https.createServer(this.appOptions.httpsOptions, this.httpAdapter.getHttpServer());
+            const server = https.createServer(this.appOptions.httpsOptions, this.httpAdapter.getInstance());
+            this.httpAdapter.setHttpServer(server);
+            return server;
         }
         if (isExpress) {
-            return http.createServer(this.httpAdapter.getHttpServer());
+            const server = http.createServer(this.httpAdapter.getInstance());
+            this.httpAdapter.setHttpServer(server);
+            return server;
         }
         return this.httpAdapter;
     }
@@ -110,7 +114,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
             .forEach(parserKey => this.httpAdapter.use(parserMiddleware[parserKey]));
     }
     isMiddlewareApplied(httpAdapter, name) {
-        const app = this.httpAdapter.getHttpServer();
+        const app = this.httpAdapter.getInstance();
         return (!!app._router &&
             !!app._router.stack &&
             shared_utils_1.isFunction(app._router.stack.filter) &&

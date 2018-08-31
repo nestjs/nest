@@ -16,5 +16,6 @@ __export(require("./exceptions"));
 __export(require("./files"));
 __export(require("./http"));
 __export(require("./pipes"));
+__export(require("./serializer"));
 __export(require("./services/logger.service"));
 __export(require("./utils"));

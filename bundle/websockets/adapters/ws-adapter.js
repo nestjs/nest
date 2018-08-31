@@ -22,7 +22,7 @@ class WsAdapter {
         this.logger = new common_1.Logger(WsAdapter.name);
         wsPackage = load_package_util_1.loadPackage('ws', 'WsAdapter');
         if (appOrHttpServer && appOrHttpServer instanceof core_1.NestApplication) {
-            this.httpServer = appOrHttpServer.getHttpServer();
+            this.httpServer = appOrHttpServer.getUnderlyingHttpServer();
         }
         else {
             this.httpServer = appOrHttpServer;
