@@ -5,6 +5,7 @@ import {
   NestModule,
 } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import {
   isFunction,
   isNil,
@@ -45,6 +46,7 @@ export type ComponentMetatype =
   | CustomClass;
 
 export class Module {
+  private readonly _id: string;
   private _relatedModules = new Set<Module>();
   private _components = new Map<any, InstanceWrapper<Injectable>>();
   private _injectables = new Map<any, InstanceWrapper<Injectable>>();
@@ -57,6 +59,11 @@ export class Module {
     private readonly container: NestContainer,
   ) {
     this.addCoreInjectables(container);
+    this._id = randomStringGenerator();
+  }
+
+  get id(): string {
+    return this._id;
   }
 
   get scope(): Type<any>[] {

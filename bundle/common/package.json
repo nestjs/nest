@@ -8,6 +8,7 @@
     "axios": "0.17.1",
     "cli-color": "1.2.0",
     "deprecate": "1.0.0",
+    "generate-safe-id": "1.0.2",
     "multer": "1.3.0"
   },
   "peerDependencies": {

@@ -16,6 +16,7 @@ import {
   ReadPacket,
   WritePacket,
 } from '../interfaces';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 
 export abstract class ClientProxy {
   public abstract connect(): Promise<any>;
@@ -58,10 +59,7 @@ export abstract class ClientProxy {
   }
 
   protected assignPacketId(packet: ReadPacket): ReadPacket & PacketId {
-    const id =
-      Math.random()
-        .toString(36)
-        .substr(2, 5) + Date.now();
+    const id = randomStringGenerator();
     return Object.assign(packet, { id });
   }
 
