@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { CatsService } from './cats.service';
 import { CatsResolvers } from './cats.resolvers';
+import { CatsService } from './cats.service';
 
 @Module({
   providers: [CatsService, CatsResolvers],
