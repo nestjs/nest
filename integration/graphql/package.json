@@ -11,7 +11,7 @@
   "dependencies": {
     "@nestjs/common": "^5.1.0",
     "@nestjs/core": "^5.1.0",
-    "@nestjs/graphql": "^3.0.0",
+    "@nestjs/graphql": "^5.0.0",
     "apollo-server-express": "^2.0.4",
     "graphql": "^0.13.2",
     "graphql-tools": "^2.11.0",
