@@ -15,11 +15,11 @@
     "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "^5.1.0",
-    "@nestjs/core": "^5.1.0",
-    "@nestjs/microservices": "^5.1.0",
-    "@nestjs/testing": "^5.1.0",
-    "@nestjs/websockets": "^5.1.0",
+    "@nestjs/common": "^5.3.0",
+    "@nestjs/core": "^5.3.0",
+    "@nestjs/microservices": "^5.3.0",
+    "@nestjs/testing": "^5.3.0",
+    "@nestjs/websockets": "^5.3.0",
     "class-transformer": "^0.1.7",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0",
