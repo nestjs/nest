@@ -5,10 +5,14 @@
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "precommit": "lint-staged",
-    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
-    "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
-    "lint": "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
-    "format": "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
+    "test":
+      "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec",
+    "integration-test":
+      "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register",
+    "lint":
+      "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
+    "format":
+      "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist bundle",
     "copy-docs": "gulp copy-docs",
@@ -16,10 +20,14 @@
     "prepare:rc": "npm run build:lib && npm run copy-docs",
     "prepare:next": "npm run build:lib && npm run copy-docs",
     "prepare:beta": "npm run build:lib && npm run copy-docs",
-    "publish": "npm run prepare && ./node_modules/.bin/lerna publish --exact -m \"chore(@nestjs) publish %s release\"",
-    "publish:rc": "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
-    "publish:next": "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
-    "publish:beta": "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\""
+    "publish":
+      "npm run prepare && ./node_modules/.bin/lerna publish --exact -m \"chore(@nestjs) publish %s release\"",
+    "publish:rc":
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
+    "publish:next":
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
+    "publish:beta":
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\""
   },
   "engines": {
     "node": ">= 8.9.0"
@@ -125,9 +133,7 @@
     "logo": "https://opencollective.com/opencollective/logo.txt"
   },
   "nyc": {
-    "include": [
-      "packages/**/*.ts"
-    ],
+    "include": ["packages/**/*.ts"],
     "exclude": [
       "node_modules/",
       "packages/**/*.spec.ts",
@@ -143,25 +149,16 @@
       "packages/core/middleware/middleware-module.ts",
       "packages/core/injector/module-ref.ts",
       "packages/common/cache/**/*",
+      "packages/common/serializer/**/*",
       "packages/common/services/logger.service.ts"
     ],
-    "extension": [
-      ".ts"
-    ],
-    "require": [
-      "ts-node/register"
-    ],
-    "reporter": [
-      "text-summary",
-      "html"
-    ],
+    "extension": [".ts"],
+    "require": ["ts-node/register"],
+    "reporter": ["text-summary", "html"],
     "sourceMap": true,
     "instrument": true
   },
   "lint-staged": {
-    "packages/**/*.{ts,json}": [
-      "npm run format",
-      "git add"
-    ]
+    "packages/**/*.{ts,json}": ["npm run format", "git add"]
   }
 }
