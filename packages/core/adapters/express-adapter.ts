@@ -7,6 +7,7 @@ import { RouterMethodFactory } from '../helpers/router-method-factory';
 
 export class ExpressAdapter implements HttpServer {
   private readonly routerMethodFactory = new RouterMethodFactory();
+  private httpServer = null;
 
   constructor(private readonly instance) {}
 
@@ -87,7 +88,11 @@ export class ExpressAdapter implements HttpServer {
   }
 
   getHttpServer() {
-    return this.instance;
+    return this.httpServer;
+  }
+
+  setHttpServer(httpServer) {
+    this.httpServer = httpServer;
   }
 
   getInstance() {

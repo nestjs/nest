@@ -5,6 +5,7 @@ const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const constants_1 = require("../constants");
 const invalid_message_exception_1 = require("../exceptions/errors/invalid-message.exception");
+const random_string_generator_util_1 = require("@nestjs/common/utils/random-string-generator.util");
 class ClientProxy {
     send(pattern, data) {
         if (shared_utils_1.isNil(pattern) || shared_utils_1.isNil(data)) {
@@ -27,9 +28,7 @@ class ClientProxy {
         };
     }
     assignPacketId(packet) {
-        const id = Math.random()
-            .toString(36)
-            .substr(2, 5) + Date.now();
+        const id = random_string_generator_util_1.randomStringGenerator();
         return Object.assign(packet, { id });
     }
     connect$(instance, errorEvent = constants_1.ERROR_EVENT, connectEvent = constants_1.CONNECT_EVENT) {

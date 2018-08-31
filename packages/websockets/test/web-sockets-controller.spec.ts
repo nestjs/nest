@@ -1,16 +1,16 @@
-import * as sinon from 'sinon';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 import { expect } from 'chai';
-import { SocketServerProvider } from '../socket-server-provider';
-import { WebSocketsController } from '../web-sockets-controller';
-import { WebSocketGateway } from '../utils/socket-gateway.decorator';
+import { of } from 'rxjs';
+import * as sinon from 'sinon';
+import { MetadataScanner } from '../../core/metadata-scanner';
+import { PORT_METADATA } from '../constants';
+import { WsContextCreator } from '../context/ws-context-creator';
 import { InvalidSocketPortException } from '../exceptions/invalid-socket-port.exception';
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
-import { MetadataScanner } from '../../core/metadata-scanner';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { WsContextCreator } from '../context/ws-context-creator';
 import { IoAdapter } from '../index';
-import { Observable, of } from 'rxjs';
-import { PORT_METADATA } from '../constants';
+import { SocketServerProvider } from '../socket-server-provider';
+import { WebSocketGateway } from '../utils/socket-gateway.decorator';
+import { WebSocketsController } from '../web-sockets-controller';
 
 describe('WebSocketsController', () => {
   let instance: WebSocketsController;
@@ -60,13 +60,15 @@ describe('WebSocketsController', () => {
     it('should call "subscribeObservableServer" with default values when metadata is empty', () => {
       const gateway = new DefaultGateway();
       instance.hookGatewayIntoServer(gateway, DefaultGateway, '');
-      expect(subscribeObservableServer.calledWith(gateway, {}, 0, '')).to.be.true;
+      expect(subscribeObservableServer.calledWith(gateway, {}, 0, '')).to.be
+        .true;
     });
     it('should call "subscribeObservableServer" when metadata is valid', () => {
       const gateway = new Test();
       instance.hookGatewayIntoServer(gateway, Test, '');
-      expect(subscribeObservableServer.calledWith(gateway, { namespace }, port, '')).to
-        .be.true;
+      expect(
+        subscribeObservableServer.calledWith(gateway, { namespace }, port, ''),
+      ).to.be.true;
     });
   });
   describe('subscribeObservableServer', () => {
@@ -222,7 +224,7 @@ describe('WebSocketsController', () => {
       ).to.be.a('function');
     });
     it('should call "next" method of connection object with expected argument', () => {
-      expect(nextSpy.calledWith(client)).to.be.true;
+      expect(nextSpy.calledWith([client])).to.be.true;
     });
     it('should call "subscribeMessages" with expected arguments', () => {
       expect(subscribeMessages.calledWith(handlers, client, gateway)).to.be
@@ -302,7 +304,7 @@ describe('WebSocketsController', () => {
     });
     it('should bind each handler to client', () => {
       instance.subscribeMessages(handlers, client, gateway);
-      expect(onSpy.calledTwice).to.be.true;
+      expect(onSpy.calledThrice).to.be.true;
     });
   });
   describe('pickResult', () => {

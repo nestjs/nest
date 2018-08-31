@@ -4,6 +4,7 @@ import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-sta
 export declare class ExpressAdapter implements HttpServer {
     private readonly instance;
     private readonly routerMethodFactory;
+    private httpServer;
     constructor(instance: any);
     use(...args: any[]): any;
     get(handler: RequestHandler): any;
@@ -28,6 +29,7 @@ export declare class ExpressAdapter implements HttpServer {
     setNotFoundHandler(handler: Function): any;
     setHeader(response: any, name: string, value: string): any;
     getHttpServer(): any;
+    setHttpServer(httpServer: any): void;
     getInstance(): any;
     close(): any;
     set(...args: any[]): any;

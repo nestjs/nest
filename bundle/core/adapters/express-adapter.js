@@ -7,6 +7,7 @@ class ExpressAdapter {
     constructor(instance) {
         this.instance = instance;
         this.routerMethodFactory = new router_method_factory_1.RouterMethodFactory();
+        this.httpServer = null;
     }
     use(...args) {
         return this.instance.use(...args);
@@ -55,7 +56,10 @@ class ExpressAdapter {
         return response.set(name, value);
     }
     getHttpServer() {
-        return this.instance;
+        return this.httpServer;
+    }
+    setHttpServer(httpServer) {
+        this.httpServer = httpServer;
     }
     getInstance() {
         return this.instance;

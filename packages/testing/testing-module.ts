@@ -34,13 +34,13 @@ export class TestingModule extends NestApplicationContext {
   }
 
   public createNestApplication(
-    httpServer?: FastifyAdapter,
-    options?: NestApplicationOptions,
-  ): INestApplication & INestFastifyApplication;
-  public createNestApplication(
     httpServer?: HttpServer,
     options?: NestApplicationOptions,
   ): INestApplication & INestExpressApplication;
+  public createNestApplication(
+    httpServer?: FastifyAdapter,
+    options?: NestApplicationOptions,
+  ): INestApplication & INestFastifyApplication;
   public createNestApplication(
     httpServer?: any,
     options?: NestApplicationOptions,

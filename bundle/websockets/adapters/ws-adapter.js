@@ -12,15 +12,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@nestjs/common");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
+const core_1 = require("@nestjs/core");
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const constants_1 = require("../constants");
 let wsPackage = {};
 class WsAdapter {
-    constructor(httpServer = null) {
-        this.httpServer = httpServer;
+    constructor(appOrHttpServer) {
         this.logger = new common_1.Logger(WsAdapter.name);
         wsPackage = load_package_util_1.loadPackage('ws', 'WsAdapter');
+        if (appOrHttpServer && appOrHttpServer instanceof core_1.NestApplication) {
+            this.httpServer = appOrHttpServer.getUnderlyingHttpServer();
+        }
+        else {
+            this.httpServer = appOrHttpServer;
+        }
     }
     create(port, options) {
         const { server } = options, wsOptions = __rest(options, ["server"]);
@@ -38,9 +44,9 @@ class WsAdapter {
         client.on(constants_1.CLOSE_EVENT, callback);
     }
     bindMessageHandlers(client, handlers, transform) {
-        rxjs_1.fromEvent(client, 'message')
-            .pipe(operators_1.mergeMap(data => this.bindMessageHandler(data, handlers, transform).pipe(operators_1.filter(result => result))))
-            .subscribe(response => client.send(JSON.stringify(response)));
+        const close$ = rxjs_1.fromEvent(client, 'close').pipe(operators_1.share(), operators_1.first());
+        const source$ = rxjs_1.fromEvent(client, 'message').pipe(operators_1.mergeMap(data => this.bindMessageHandler(data, handlers, transform).pipe(operators_1.filter(result => result))), operators_1.takeUntil(close$));
+        source$.subscribe(response => client.send(JSON.stringify(response)));
     }
     bindMessageHandler(buffer, handlers, transform) {
         try {

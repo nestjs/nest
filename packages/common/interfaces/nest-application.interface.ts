@@ -1,10 +1,11 @@
-import { INestMicroservice, ExceptionFilter, PipeTransform } from './index';
-import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
+import { CorsOptions } from './external/cors-options.interface';
 import { CanActivate } from './features/can-activate.interface';
 import { NestInterceptor } from './features/nest-interceptor.interface';
-import { INestApplicationContext } from './nest-application-context.interface';
-import { CorsOptions } from './external/cors-options.interface';
+import { HttpServer } from './http/http-server.interface';
+import { ExceptionFilter, INestMicroservice, PipeTransform } from './index';
 import { MicroserviceOptions } from './microservices/microservice-configuration.interface';
+import { INestApplicationContext } from './nest-application-context.interface';
+import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 
 export interface INestApplication extends INestApplicationContext {
   /**
@@ -91,6 +92,13 @@ export interface INestApplication extends INestApplicationContext {
    * @returns {http.Server}
    */
   getHttpServer(): any;
+
+  /**
+   * Returns an underlying HTTP adapter.
+   *
+   * @returns {HttpServer}
+   */
+  getHttpAdapter(): HttpServer;
 
   /**
    * Starts all connected microservices asynchronously

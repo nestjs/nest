@@ -1,4 +1,5 @@
 import * as deprecate from 'deprecate';
+import * as generateSafeId from 'generate-safe-id';
 import {
   CUSTOM_ROUTE_AGRS_METADATA,
   ROUTE_ARGS_METADATA,
@@ -26,11 +27,6 @@ const assignCustomMetadata = (
   },
 });
 
-const randomString = () =>
-  Math.random()
-    .toString(36)
-    .substring(2, 15);
-
 export type ParamDecoratorEnhancer = ParameterDecorator;
 
 /**
@@ -43,7 +39,7 @@ export function createParamDecorator(
 ): (
   ...dataOrPipes: (Type<PipeTransform> | PipeTransform | any)[],
 ) => ParameterDecorator {
-  const paramtype = randomString() + randomString();
+  const paramtype = generateSafeId();
   return (
     data?,
     ...pipes: (Type<PipeTransform> | PipeTransform)[],

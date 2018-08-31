@@ -11,6 +11,14 @@ class InterceptorsConsumer {
         }
         const context = this.createContext(args, instance, callback);
         const start$ = rxjs_1.defer(() => this.transformDeffered(next));
+        /***
+          const nextFn =  (i: number) => async () => {
+          if (i <= interceptors.length) {
+            return start$;
+          }
+          return await interceptors[i].intercept(context, nextFn(i + 1) as any);
+        };
+        */
         const result$ = await interceptors.reduce(async (stream$, interceptor) => await interceptor.intercept(context, await stream$), Promise.resolve(start$));
         return await result$.toPromise();
     }

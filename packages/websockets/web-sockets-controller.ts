@@ -103,8 +103,9 @@ export class WebSocketsController {
     connection: Subject<any>,
   ) {
     const adapter = this.config.getIoAdapter();
-    return client => {
-      connection.next(client);
+    return (...args: any[]) => {
+      const [client] = args;
+      connection.next(args);
       context.subscribeMessages(messageHandlers, client, instance);
 
       const disconnectHook = adapter.bindClientDisconnect;
@@ -123,7 +124,7 @@ export class WebSocketsController {
     if (instance.handleConnection) {
       event
         .pipe(distinctUntilChanged())
-        .subscribe(instance.handleConnection.bind(instance));
+        .subscribe((args: any[]) => instance.handleConnection(...args));
     }
   }
 

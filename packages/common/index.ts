@@ -5,11 +5,12 @@
  * MIT Licensed
  */
 
+export * from './cache';
 export * from './decorators';
 export * from './enums';
 export * from './exceptions';
+export * from './files';
 export * from './http';
-export * from './interceptors';
 export {
   ArgumentMetadata,
   ArgumentsHost,
@@ -41,5 +42,6 @@ export {
   WsExceptionFilter,
 } from './interfaces';
 export * from './pipes';
+export * from './serializer';
 export * from './services/logger.service';
 export * from './utils';

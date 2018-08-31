@@ -76,6 +76,10 @@ export class NestApplication extends NestApplicationContext
     this.routesResolver = new RoutesResolver(this.container, this.config);
   }
 
+  public getHttpAdapter(): HttpServer {
+    return this.httpAdapter;
+  }
+
   public registerHttpServer() {
     this.httpServer = this.createServer();
 
@@ -100,13 +104,17 @@ export class NestApplication extends NestApplicationContext
     const isExpress = this.isExpress();
 
     if (isHttpsEnabled && isExpress) {
-      return https.createServer(
+      const server = https.createServer(
         this.appOptions.httpsOptions,
-        this.httpAdapter.getHttpServer(),
+        this.httpAdapter.getInstance(),
       );
+      (this.httpAdapter as ExpressAdapter).setHttpServer(server);
+      return server;
     }
     if (isExpress) {
-      return http.createServer(this.httpAdapter.getHttpServer());
+      const server = http.createServer(this.httpAdapter.getInstance());
+      (this.httpAdapter as ExpressAdapter).setHttpServer(server);
+      return server;
     }
     return this.httpAdapter;
   }
@@ -165,7 +173,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean {
-    const app = this.httpAdapter.getHttpServer();
+    const app = this.httpAdapter.getInstance();
     return (
       !!app._router &&
       !!app._router.stack &&

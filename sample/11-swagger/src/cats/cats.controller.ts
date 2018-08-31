@@ -1,13 +1,13 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
-import { CreateCatDto } from './dto/create-cat.dto';
-import { CatsService } from './cats.service';
-import { Cat } from './interfaces/cat.interface';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import {
-  ApiUseTags,
   ApiBearerAuth,
-  ApiResponse,
   ApiOperation,
+  ApiResponse,
+  ApiUseTags,
 } from '@nestjs/swagger';
+import { CatsService } from './cats.service';
+import { CreateCatDto } from './dto/create-cat.dto';
+import { Cat } from './interfaces/cat.interface';
 
 @ApiBearerAuth()
 @ApiUseTags('cats')

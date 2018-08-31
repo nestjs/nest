@@ -9,8 +9,7 @@
     "start:prod": "node dist/main.js",
     "test": "jest --config=jest.json",
     "test:watch": "jest --watch --config=jest.json",
-    "test:coverage":
-      "jest --config=jest.json --coverage --coverageDirectory=coverage",
+    "test:coverage": "jest --config=jest.json --coverage --coverageDirectory=coverage",
     "e2e": "jest --config=e2e/jest-e2e.json --forceExit",
     "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
   },
@@ -18,7 +17,7 @@
     "@nestjs/common": "^5.1.0",
     "@nestjs/core": "^5.1.0",
     "@nestjs/microservices": "^5.1.0",
-    "@nestjs/swagger": "^2.4.2",
+    "@nestjs/swagger": "^2.4.4",
     "@nestjs/testing": "^5.1.0",
     "@nestjs/websockets": "^5.1.0",
     "class-transformer": "^0.1.7",

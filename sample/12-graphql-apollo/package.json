@@ -16,6 +16,7 @@
     "graphql": "^0.13.2",
     "graphql-subscriptions": "^0.5.6",
     "graphql-tools": "^2.11.0",
+    "graphql-type-json": "^0.2.1",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0",
     "subscriptions-transport-ws": "^0.9.5",

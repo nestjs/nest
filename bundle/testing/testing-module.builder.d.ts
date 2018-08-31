@@ -20,6 +20,8 @@ export declare class TestingModuleBuilder {
     compile(): Promise<TestingModule>;
     private override(typeOrToken, isComponent);
     private createOverrideByBuilder(add);
+    private applyOverloadsMap();
+    private getRootModule();
     private createModule(metadata);
     private applyLogger();
 }

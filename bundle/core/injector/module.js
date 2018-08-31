@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const random_string_generator_util_1 = require("@nestjs/common/utils/random-string-generator.util");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
 const unknown_export_exception_1 = require("../errors/exceptions/unknown-export.exception");
@@ -25,6 +26,10 @@ class Module {
         this._routes = new Map();
         this._exports = new Set();
         this.addCoreInjectables(container);
+        this._id = random_string_generator_util_1.randomStringGenerator();
+    }
+    get id() {
+        return this._id;
     }
     get scope() {
         return this._scope;
