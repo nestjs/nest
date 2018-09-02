@@ -51,9 +51,6 @@ export class GuardsConsumer {
     if (result instanceof Observable) {
       return await result.toPromise();
     }
-    if (result instanceof Promise) {
-      return await result;
-    }
     return result;
   }
 }
