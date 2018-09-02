@@ -1,16 +1,16 @@
-import { ClientTCP } from './client-tcp';
-import { ClientRedis } from './client-redis';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { Transport } from '../enums/transport.enum';
-import { ClientProxy } from './client-proxy';
+import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { Closeable } from '../interfaces/closeable.interface';
-import { ClientNats } from './client-nats';
-import { ClientMqtt } from './client-mqtt';
 import { ClientGrpcProxy } from './client-grpc';
+import { ClientMqtt } from './client-mqtt';
+import { ClientNats } from './client-nats';
+import { ClientProxy } from './client-proxy';
+import { ClientRedis } from './client-redis';
+import { ClientTCP } from './client-tcp';
 
 export class ClientProxyFactory {
-  public static create(options: ClientOptions): ClientProxy & Closeable {
-    const { transport } = options;
+  public static create(clientOptions: ClientOptions): ClientProxy & Closeable {
+    const { transport, options } = clientOptions;
     switch (transport) {
       case Transport.REDIS:
         return new ClientRedis(options);

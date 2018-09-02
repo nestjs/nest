@@ -1,3 +1,4 @@
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isNil, isString } from '@nestjs/common/utils/shared.utils';
 import {
   defer,
@@ -16,7 +17,6 @@ import {
   ReadPacket,
   WritePacket,
 } from '../interfaces';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 
 export abstract class ClientProxy {
   public abstract connect(): Promise<any>;
@@ -78,11 +78,11 @@ export abstract class ClientProxy {
   }
 
   protected getOptionsProp<T extends { options? }>(
-    obj: ClientOptions,
+    obj: ClientOptions['options'],
     prop: keyof T['options'],
     defaultValue = undefined,
   ) {
-    return obj && obj.options ? obj.options[prop as any] : defaultValue;
+    return obj ? obj[prop as any] : defaultValue;
   }
 
   protected normalizePattern<T = any>(pattern: T): string {

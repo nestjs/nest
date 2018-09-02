@@ -14,7 +14,7 @@ export class ClientMqtt extends ClientProxy {
   private readonly url: string;
   private mqttClient: MqttClient;
 
-  constructor(private readonly options: ClientOptions) {
+  constructor(private readonly options: ClientOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<MqttOptions>(this.options, 'url') || MQTT_DEFAULT_URL;
@@ -44,7 +44,7 @@ export class ClientMqtt extends ClientProxy {
   }
 
   public createClient(): MqttClient {
-    return mqttPackage.connect(this.url, this.options.options as MqttOptions);
+    return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 
   public handleError(client: MqttClient) {

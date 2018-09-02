@@ -28,7 +28,7 @@ export class ClientRedis extends ClientProxy {
   private subClient: RedisClient;
   private isExplicitlyTerminated = false;
 
-  constructor(private readonly options: ClientOptions) {
+  constructor(private readonly options: ClientOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<RedisOptions>(options, 'url') || REDIS_DEFAULT_URL;

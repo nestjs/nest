@@ -1,9 +1,18 @@
 import { ReadPacket } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
-import { CONNECT_EVENT, ERROR_EVENT, MESSAGE_EVENT, MQTT_DEFAULT_URL, NO_PATTERN_MESSAGE } from '../constants';
+import {
+  CONNECT_EVENT,
+  ERROR_EVENT,
+  MESSAGE_EVENT,
+  MQTT_DEFAULT_URL,
+  NO_PATTERN_MESSAGE,
+} from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
 import { CustomTransportStrategy, PacketId } from '../interfaces';
-import { MicroserviceOptions, MqttOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  MicroserviceOptions,
+  MqttOptions,
+} from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 let mqttPackage: any = {};
@@ -12,7 +21,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private mqttClient: MqttClient;
 
-  constructor(private readonly options: MicroserviceOptions) {
+  constructor(private readonly options: MicroserviceOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<MqttOptions>(options, 'url') || MQTT_DEFAULT_URL;
@@ -45,7 +54,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public createMqttClient(): MqttClient {
-    return mqttPackage.connect(this.url, this.options.options as MqttOptions);
+    return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 
   public getMessageHandler(pub: MqttClient): any {

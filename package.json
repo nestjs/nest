@@ -15,6 +15,7 @@
       "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
     "build:lib": "gulp build --dist bundle",
+    "postinstall": "opencollective postinstall",
     "copy-docs": "gulp copy-docs",
     "prepare": "npm run build:lib && npm run copy-docs",
     "prepare:rc": "npm run build:lib && npm run copy-docs",
@@ -129,8 +130,7 @@
   },
   "collective": {
     "type": "opencollective",
-    "url": "https://opencollective.com/nest",
-    "logo": "https://opencollective.com/opencollective/logo.txt"
+    "url": "https://opencollective.com/nest"
   },
   "nyc": {
     "include": ["packages/**/*.ts"],

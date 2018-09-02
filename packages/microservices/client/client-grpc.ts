@@ -18,18 +18,21 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   private readonly url: string;
   private grpcClient: any;
 
-  constructor(private readonly options: ClientOptions) {
+  constructor(private readonly options: ClientOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
 
     grpcPackage = loadPackage('grpc', ClientGrpcProxy.name);
-    grpcProtoLoaderPackage = loadPackage('@grpc/proto-loader', ClientGrpcProxy.name);
+    grpcProtoLoaderPackage = loadPackage(
+      '@grpc/proto-loader',
+      ClientGrpcProxy.name,
+    );
     this.grpcClient = this.createClient();
   }
 
   public getService<T extends {}>(name: string): T {
-    const { options } = this.options as GrpcOptions;
+    const options = this.options as any;
     if (!this.grpcClient[name]) {
       throw new InvalidGrpcServiceException();
     }
@@ -128,7 +131,9 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       const loader = this.getOptionsProp<GrpcOptions>(this.options, 'loader');
 
       const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
-      const packageObject = grpcPackage.loadPackageDefinition(packageDefinition);
+      const packageObject = grpcPackage.loadPackageDefinition(
+        packageDefinition,
+      );
       return packageObject;
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException();

@@ -59,11 +59,11 @@ export abstract class Server {
   }
 
   public getOptionsProp<T extends { options? }>(
-    obj: MicroserviceOptions,
+    obj: MicroserviceOptions['options'],
     prop: keyof T['options'],
     defaultValue = undefined,
   ) {
-    return obj && obj.options ? obj.options[prop as any] : defaultValue;
+    return obj ? obj[prop as any] : defaultValue;
   }
 
   protected handleError(error: string) {

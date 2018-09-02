@@ -4,6 +4,10 @@
   "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nestjs/nest"
+  },
   "dependencies": {
     "deprecate": "1.0.0",
     "optional": "0.1.4"

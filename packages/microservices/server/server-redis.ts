@@ -1,9 +1,22 @@
 import { ReadPacket } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
-import { CONNECT_EVENT, ERROR_EVENT, MESSAGE_EVENT, NO_PATTERN_MESSAGE, REDIS_DEFAULT_URL } from '../constants';
-import { ClientOpts, RedisClient, RetryStrategyOptions } from '../external/redis.interface';
+import {
+  CONNECT_EVENT,
+  ERROR_EVENT,
+  MESSAGE_EVENT,
+  NO_PATTERN_MESSAGE,
+  REDIS_DEFAULT_URL,
+} from '../constants';
+import {
+  ClientOpts,
+  RedisClient,
+  RetryStrategyOptions,
+} from '../external/redis.interface';
 import { CustomTransportStrategy, PacketId } from '../interfaces';
-import { MicroserviceOptions, RedisOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  MicroserviceOptions,
+  RedisOptions,
+} from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 let redisPackage: any = {};
@@ -14,7 +27,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   private pubClient: RedisClient;
   private isExplicitlyTerminated = false;
 
-  constructor(private readonly options: MicroserviceOptions) {
+  constructor(private readonly options: MicroserviceOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<RedisOptions>(this.options, 'url') ||

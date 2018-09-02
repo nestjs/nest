@@ -14,7 +14,7 @@ export class ClientNats extends ClientProxy {
   private readonly url: string;
   private natsClient: Client;
 
-  constructor(private readonly options: ClientOptions) {
+  constructor(private readonly options: ClientOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
@@ -36,7 +36,7 @@ export class ClientNats extends ClientProxy {
   }
 
   public createClient(): Promise<Client> {
-    const options: any = this.options.options || ({} as NatsOptions);
+    const options: any = this.options || ({} as NatsOptions);
     return natsPackage.connect({
       ...options,
       url: this.url,

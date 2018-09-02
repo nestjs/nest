@@ -4,7 +4,10 @@ import { CANCEL_EVENT, GRPC_DEFAULT_URL } from '../constants';
 import { InvalidGrpcPackageException } from '../exceptions/errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/errors/invalid-proto-definition.exception';
 import { CustomTransportStrategy } from '../interfaces';
-import { GrpcOptions, MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  GrpcOptions,
+  MicroserviceOptions,
+} from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 let grpcPackage: any = {};
@@ -14,13 +17,16 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private grpcClient: any;
 
-  constructor(private readonly options: MicroserviceOptions) {
+  constructor(private readonly options: MicroserviceOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
 
     grpcPackage = this.loadPackage('grpc', ServerGrpc.name);
-    grpcProtoLoaderPackage = this.loadPackage('@grpc/proto-loader', ServerGrpc.name);
+    grpcProtoLoaderPackage = this.loadPackage(
+      '@grpc/proto-loader',
+      ServerGrpc.name,
+    );
   }
 
   public async listen(callback: () => void) {
@@ -107,9 +113,9 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return async (call, callback) => {
       const handler = methodHandler(call.request, call.metadata);
       const result$ = this.transformToObservable(await handler);
-      await result$.pipe(
-        takeUntil(fromEvent(call, CANCEL_EVENT)),
-      ).forEach(data => call.write(data));
+      await result$
+        .pipe(takeUntil(fromEvent(call, CANCEL_EVENT)))
+        .forEach(data => call.write(data));
       call.end();
     };
   }
@@ -155,11 +161,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const loader = this.getOptionsProp<GrpcOptions>(this.options, 'loader');
 
       const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
-      const packageObject = grpcPackage.loadPackageDefinition(packageDefinition);
+      const packageObject = grpcPackage.loadPackageDefinition(
+        packageDefinition,
+      );
       return packageObject;
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException();
-      const message = err && err.message ? err.message : invalidProtoError.message;
+      const message =
+        err && err.message ? err.message : invalidProtoError.message;
 
       this.logger.error(message, invalidProtoError.stack);
       throw invalidProtoError;

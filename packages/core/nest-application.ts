@@ -173,7 +173,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean {
-    const app = this.httpAdapter.getInstance();
+    const app = httpAdapter.getInstance();
     return (
       !!app._router &&
       !!app._router.stack &&
