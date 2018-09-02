@@ -114,7 +114,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
             .forEach(parserKey => this.httpAdapter.use(parserMiddleware[parserKey]));
     }
     isMiddlewareApplied(httpAdapter, name) {
-        const app = this.httpAdapter.getInstance();
+        const app = httpAdapter.getInstance();
         return (!!app._router &&
             !!app._router.stack &&
             shared_utils_1.isFunction(app._router.stack.filter) &&

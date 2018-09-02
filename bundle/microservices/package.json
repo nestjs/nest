@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/microservices",
-  "version": "5.3.0",
+  "version": "5.3.1-oc3",
   "description": "Nest - modern, fast, powerful node.js web framework (@microservices)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",

@@ -1,14 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_tcp_1 = require("./client-tcp");
-const client_redis_1 = require("./client-redis");
 const transport_enum_1 = require("../enums/transport.enum");
-const client_nats_1 = require("./client-nats");
-const client_mqtt_1 = require("./client-mqtt");
 const client_grpc_1 = require("./client-grpc");
+const client_mqtt_1 = require("./client-mqtt");
+const client_nats_1 = require("./client-nats");
+const client_redis_1 = require("./client-redis");
+const client_tcp_1 = require("./client-tcp");
 class ClientProxyFactory {
-    static create(options) {
-        const { transport } = options;
+    static create(clientOptions) {
+        const { transport, options } = clientOptions;
         switch (transport) {
             case transport_enum_1.Transport.REDIS:
                 return new client_redis_1.ClientRedis(options);

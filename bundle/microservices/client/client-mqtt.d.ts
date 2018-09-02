@@ -7,7 +7,7 @@ export declare class ClientMqtt extends ClientProxy {
     private readonly logger;
     private readonly url;
     private mqttClient;
-    constructor(options: ClientOptions);
+    constructor(options: ClientOptions['options']);
     getAckPatternName(pattern: string): string;
     getResPatternName(pattern: string): string;
     close(): void;

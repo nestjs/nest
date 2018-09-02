@@ -10,7 +10,7 @@ export declare class ClientRedis extends ClientProxy {
     private pubClient;
     private subClient;
     private isExplicitlyTerminated;
-    constructor(options: ClientOptions);
+    constructor(options: ClientOptions['options']);
     getAckPatternName(pattern: string): string;
     getResPatternName(pattern: string): string;
     close(): void;

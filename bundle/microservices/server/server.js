@@ -38,7 +38,7 @@ class Server {
         return resultOrDeffered;
     }
     getOptionsProp(obj, prop, defaultValue = undefined) {
-        return obj && obj.options ? obj.options[prop] : defaultValue;
+        return obj ? obj[prop] : defaultValue;
     }
     handleError(error) {
         this.logger.error(error);

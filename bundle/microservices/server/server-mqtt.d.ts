@@ -8,7 +8,7 @@ export declare class ServerMqtt extends Server implements CustomTransportStrateg
     private readonly options;
     private readonly url;
     private mqttClient;
-    constructor(options: MicroserviceOptions);
+    constructor(options: MicroserviceOptions['options']);
     listen(callback: () => void): Promise<void>;
     start(callback?: () => void): void;
     bindEvents(mqttClient: MqttClient): void;

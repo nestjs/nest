@@ -9,7 +9,7 @@ export declare class ServerRedis extends Server implements CustomTransportStrate
     private subClient;
     private pubClient;
     private isExplicitlyTerminated;
-    constructor(options: MicroserviceOptions);
+    constructor(options: MicroserviceOptions['options']);
     listen(callback: () => void): void;
     start(callback?: () => void): void;
     bindEvents(subClient: RedisClient, pubClient: RedisClient): void;

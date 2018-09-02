@@ -7,7 +7,7 @@ export declare class ClientNats extends ClientProxy {
     private readonly logger;
     private readonly url;
     private natsClient;
-    constructor(options: ClientOptions);
+    constructor(options: ClientOptions['options']);
     close(): void;
     connect(): Promise<any>;
     createClient(): Promise<Client>;

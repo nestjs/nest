@@ -7,7 +7,7 @@ export declare class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     private readonly logger;
     private readonly url;
     private grpcClient;
-    constructor(options: ClientOptions);
+    constructor(options: ClientOptions['options']);
     getService<T extends {}>(name: string): T;
     createServiceMethod(client: any, methodName: string): (...args) => Observable<any>;
     createStreamServiceMethod(client: any, methodName: string): (...args) => Observable<any>;

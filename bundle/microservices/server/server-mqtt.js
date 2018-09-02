@@ -29,7 +29,7 @@ class ServerMqtt extends server_1.Server {
         this.mqttClient && this.mqttClient.end();
     }
     createMqttClient() {
-        return mqttPackage.connect(this.url, this.options.options);
+        return mqttPackage.connect(this.url, this.options);
     }
     getMessageHandler(pub) {
         return async (channel, buffer) => await this.handleMessage(channel, buffer, pub);

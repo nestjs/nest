@@ -23,7 +23,7 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
         this.grpcClient = this.createClient();
     }
     getService(name) {
-        const { options } = this.options;
+        const options = this.options;
         if (!this.grpcClient[name]) {
             throw new invalid_grpc_service_exception_1.InvalidGrpcServiceException();
         }

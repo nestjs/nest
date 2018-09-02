@@ -28,7 +28,7 @@ class ClientNats extends client_proxy_1.ClientProxy {
         return this.connect$(this.natsClient).toPromise();
     }
     createClient() {
-        const options = this.options.options || {};
+        const options = this.options || {};
         return natsPackage.connect(Object.assign({}, options, { url: this.url, json: true }));
     }
     handleError(client) {

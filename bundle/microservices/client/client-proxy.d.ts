@@ -10,6 +10,6 @@ export declare abstract class ClientProxy {
     protected connect$(instance: any, errorEvent?: string, connectEvent?: string): Observable<any>;
     protected getOptionsProp<T extends {
         options?;
-    }>(obj: ClientOptions, prop: keyof T['options'], defaultValue?: any): any;
+    }>(obj: ClientOptions['options'], prop: keyof T['options'], defaultValue?: any): any;
     protected normalizePattern<T = any>(pattern: T): string;
 }
