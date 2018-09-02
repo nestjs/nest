@@ -9,10 +9,8 @@ describe('ServerGrpc', () => {
   let server: ServerGrpc;
   beforeEach(() => {
     server = new ServerGrpc({
-      options: {
-        protoPath: join(__dirname, './test.proto'),
-        package: 'test',
-      },
+      protoPath: join(__dirname, './test.proto'),
+      package: 'test',
     } as any);
   });
 
@@ -167,14 +165,19 @@ describe('ServerGrpc', () => {
       it(`should close the result observable when receiving an 'cancelled' event from the client`, async () => {
         let cancelCb: () => void;
         const call = {
-          write: sinon.stub().onSecondCall().callsFake(() => cancelCb()),
+          write: sinon
+            .stub()
+            .onSecondCall()
+            .callsFake(() => cancelCb()),
           end: sinon.spy(),
-          addListener: (name, cb) => cancelCb = cb,
+          addListener: (name, cb) => (cancelCb = cb),
           removeListener: sinon.spy(),
         };
         const result$ = of(1, 2, 3);
         const callback = sinon.spy();
-        const native = sinon.stub().returns(new Promise((resolve, reject) => resolve(result$)));
+        const native = sinon
+          .stub()
+          .returns(new Promise((resolve, reject) => resolve(result$)));
 
         await server.createStreamServiceMethod(native)(call, callback);
         expect(call.write.calledTwice).to.be.true;
