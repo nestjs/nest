@@ -36,6 +36,7 @@ class NestApplicationContext extends module_ref_1.ModuleRef {
     }
     async init() {
         await this.callInitHook();
+        await this.callBootstrapHook();
         return this;
     }
     async close() {
@@ -92,6 +93,28 @@ class NestApplicationContext extends module_ref_1.ModuleRef {
     }
     hasOnModuleDestroyHook(instance) {
         return !shared_utils_1.isUndefined(instance.onModuleDestroy);
+    }
+    async callBootstrapHook() {
+        const modulesContainer = this.container.getModules();
+        for (const module of [...modulesContainer.values()].reverse()) {
+            await this.callModuleBootstrapHook(module);
+        }
+    }
+    async callModuleBootstrapHook(module) {
+        const components = [...module.components];
+        const [_, { instance: moduleClassInstance }] = components.shift();
+        const instances = [...module.routes, ...components];
+        await Promise.all(iterare_1.default(instances)
+            .map(([key, { instance }]) => instance)
+            .filter(instance => !shared_utils_1.isNil(instance))
+            .filter(this.hasOnModuleInitHook)
+            .map(async (instance) => await instance.onApplicationBootstrap()));
+        if (moduleClassInstance && this.hasOnAppBotstrapHook(moduleClassInstance)) {
+            await moduleClassInstance.onApplicationBootstrap();
+        }
+    }
+    hasOnAppBotstrapHook(instance) {
+        return !shared_utils_1.isUndefined(instance.onApplicationBootstrap);
     }
 }
 exports.NestApplicationContext = NestApplicationContext;

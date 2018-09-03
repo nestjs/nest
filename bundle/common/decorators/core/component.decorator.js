@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const deprecate = require("deprecate");
-const generateSafeId = require("generate-safe-id");
+const uuid = require("uuid/v4");
 /**
  * Defines the injectable class. This class can inject dependencies through constructor.
  * Those dependencies have to belong to the same module.
@@ -58,7 +58,7 @@ function Interceptor() {
 exports.Interceptor = Interceptor;
 function mixin(mixinClass) {
     Object.defineProperty(mixinClass, 'name', {
-        value: generateSafeId(),
+        value: uuid(),
     });
     Injectable()(mixinClass);
     return mixinClass;

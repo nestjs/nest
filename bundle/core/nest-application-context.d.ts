@@ -1,4 +1,4 @@
-import { INestApplicationContext, LoggerService, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { INestApplicationContext, LoggerService, OnApplicationBootstrap, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { NestContainer } from './injector/container';
 import { Module } from './injector/module';
@@ -22,4 +22,7 @@ export declare class NestApplicationContext extends ModuleRef implements INestAp
     protected callDestroyHook(): Promise<any>;
     protected callModuleDestroyHook(module: Module): Promise<any>;
     protected hasOnModuleDestroyHook(instance: any): instance is OnModuleDestroy;
+    protected callBootstrapHook(): Promise<any>;
+    protected callModuleBootstrapHook(module: Module): Promise<any>;
+    protected hasOnAppBotstrapHook(instance: any): instance is OnApplicationBootstrap;
 }

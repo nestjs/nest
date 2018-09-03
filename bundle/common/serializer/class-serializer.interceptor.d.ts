@@ -5,7 +5,7 @@ export interface PlainLiteralObject {
     [key: string]: any;
 }
 export declare class ClassSerializerInterceptor implements NestInterceptor {
-    private readonly reflector;
+    protected readonly reflector: any;
     constructor(reflector: any);
     intercept(context: ExecutionContext, call$: Observable<any>): Observable<any>;
     serialize(response: PlainLiteralObject | Array<PlainLiteralObject>, options: ClassTransformOptions): PlainLiteralObject | PlainLiteralObject[];

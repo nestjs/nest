@@ -2,6 +2,7 @@ import {
   INestApplicationContext,
   Logger,
   LoggerService,
+  OnApplicationBootstrap,
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
@@ -59,6 +60,7 @@ export class NestApplicationContext extends ModuleRef
 
   public async init(): Promise<this> {
     await this.callInitHook();
+    await this.callBootstrapHook();
     return this;
   }
 
@@ -134,5 +136,40 @@ export class NestApplicationContext extends ModuleRef
 
   protected hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
     return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
+  }
+
+  protected async callBootstrapHook(): Promise<any> {
+    const modulesContainer = this.container.getModules();
+    for (const module of [...modulesContainer.values()].reverse()) {
+      await this.callModuleBootstrapHook(module);
+    }
+  }
+
+  protected async callModuleBootstrapHook(module: Module): Promise<any> {
+    const components = [...module.components];
+    const [_, { instance: moduleClassInstance }] = components.shift();
+    const instances = [...module.routes, ...components];
+
+    await Promise.all(
+      iterate(instances)
+        .map(([key, { instance }]) => instance)
+        .filter(instance => !isNil(instance))
+        .filter(this.hasOnModuleInitHook)
+        .map(
+          async instance =>
+            await (instance as OnApplicationBootstrap).onApplicationBootstrap(),
+        ),
+    );
+    if (moduleClassInstance && this.hasOnAppBotstrapHook(moduleClassInstance)) {
+      await (moduleClassInstance as OnApplicationBootstrap).onApplicationBootstrap();
+    }
+  }
+
+  protected hasOnAppBotstrapHook(
+    instance: any,
+  ): instance is OnApplicationBootstrap {
+    return !isUndefined(
+      (instance as OnApplicationBootstrap).onApplicationBootstrap,
+    );
   }
 }

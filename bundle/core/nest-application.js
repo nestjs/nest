@@ -94,6 +94,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         await this.registerModules();
         await this.registerRouter();
         await this.callInitHook();
+        await this.callBootstrapHook();
         this.isInitialized = true;
         this.logger.log(constants_1.messages.APPLICATION_READY);
         return this;

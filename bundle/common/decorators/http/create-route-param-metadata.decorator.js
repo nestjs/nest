@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const deprecate = require("deprecate");
-const generateSafeId = require("generate-safe-id");
+const uuid = require("uuid/v4");
 const constants_1 = require("../../constants");
 const shared_utils_1 = require("../../utils/shared.utils");
 const assignCustomMetadata = (args, paramtype, index, factory, data, ...pipes) => (Object.assign({}, args, { [`${paramtype}${constants_1.CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
@@ -15,7 +15,7 @@ const assignCustomMetadata = (args, paramtype, index, factory, data, ...pipes) =
  * @param factory
  */
 function createParamDecorator(factory, enhancers = []) {
-    const paramtype = generateSafeId();
+    const paramtype = uuid();
     return (data, ...pipes) => (target, key, index) => {
         const args = Reflect.getMetadata(constants_1.ROUTE_ARGS_METADATA, target.constructor, key) || {};
         const isPipe = pipe => pipe &&

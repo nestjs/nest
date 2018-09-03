@@ -47,7 +47,10 @@ class NestMicroservice extends nest_application_context_1.NestApplicationContext
         this.microservicesModule.setupClients(this.container);
         this.registerListeners();
         this.setIsInitialized(true);
-        !this.isInitHookCalled && (await this.callInitHook());
+        if (!this.isInitHookCalled) {
+            await this.callInitHook();
+            await this.callBootstrapHook();
+        }
     }
     registerListeners() {
         this.microservicesModule.setupListeners(this.container, this.server);

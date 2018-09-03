@@ -1,4 +1,4 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const generateSafeId = require("generate-safe-id");
-exports.randomStringGenerator = () => generateSafeId();
+const uuid = require("uuid/v4");
+exports.randomStringGenerator = () => uuid();
