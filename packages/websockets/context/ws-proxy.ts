@@ -1,4 +1,4 @@
-import { WsExceptionsHandler } from './../exceptions/ws-exceptions-handler';
+import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 
 export class WsProxy {

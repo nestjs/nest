@@ -6,11 +6,11 @@ import {
   UseGuards,
   Component,
   UsePipes,
-} from './../../../common';
-import { WsProxy } from './../../context/ws-proxy';
-import { WsContextCreator } from './../../context/ws-context-creator';
+} from '../../../common';
+import { WsProxy } from '../../context/ws-proxy';
+import { WsContextCreator } from '../../context/ws-context-creator';
 import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
-import { ExceptionFiltersContext } from './../../context/exception-filters-context';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context';
 import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
 import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
 import { PARAMTYPES_METADATA } from '../../../common/constants';

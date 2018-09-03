@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RpcProxy } from './../../context/rpc-proxy';
-import { RpcExceptionsHandler } from './../../exceptions/rpc-exceptions-handler';
+import { RpcProxy } from '../../context/rpc-proxy';
+import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler';
 import { RpcException } from '../../exceptions/rpc-exception';
 import { Observable, of } from 'rxjs';
 

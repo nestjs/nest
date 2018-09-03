@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { RouterResponseController } from '../../router/router-response-controller';
-import { RequestMethod } from './../../../common';
+import { RequestMethod } from '../../../common';
 import { Observable, of } from 'rxjs';
 import { ExpressAdapter } from '../../adapters/express-adapter';
 

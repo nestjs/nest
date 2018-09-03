@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { PipesContextCreator } from './../../pipes/pipes-context-creator';
+import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { NestContainer } from '../../injector/container';
 
 class Pipe {}

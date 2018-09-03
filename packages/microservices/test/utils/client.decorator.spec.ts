@@ -5,7 +5,7 @@ import {
   CLIENT_METADATA,
   CLIENT_CONFIGURATION_METADATA,
 } from '../../constants';
-import { Client } from './../../utils/client.decorator';
+import { Client } from '../../utils/client.decorator';
 
 describe('@Client', () => {
   const pattern = { role: 'test' };

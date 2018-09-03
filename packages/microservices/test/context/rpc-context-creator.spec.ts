@@ -6,11 +6,11 @@ import {
   UseGuards,
   Component,
   UsePipes,
-} from './../../../common';
-import { RpcProxy } from './../../context/rpc-proxy';
-import { RpcContextCreator } from './../../context/rpc-context-creator';
+} from '../../../common';
+import { RpcProxy } from '../../context/rpc-proxy';
+import { RpcContextCreator } from '../../context/rpc-context-creator';
 import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler';
-import { ExceptionFiltersContext } from './../../context/exception-filters-context';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context';
 import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
 import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
 import { PARAMTYPES_METADATA } from '../../../common/constants';

@@ -1,4 +1,4 @@
-import { Transport } from './../../enums/transport.enum';
+import { Transport } from '../../enums/transport.enum';
 import {
   TcpOptions,
   RedisOptions,

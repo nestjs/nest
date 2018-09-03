@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { MULTER_MODULE_OPTIONS } from '../../files/files.constants';
-import { MulterModule } from './../../files/multer.module';
+import { MulterModule } from '../../files/multer.module';
 
 describe('MulterModule', () => {
   describe('register', () => {
