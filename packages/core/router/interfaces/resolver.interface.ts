@@ -1,3 +1,7 @@
+import { HttpServer } from '@nestjs/common';
+
 export interface Resolver {
-  resolve(instance, basePath: string);
+  resolve(instance: HttpServer, basePath: string);
+  registerNotFoundHandler();
+  registerExceptionHandler();
 }

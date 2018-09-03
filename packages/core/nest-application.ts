@@ -7,7 +7,7 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { HttpServer } from '@nestjs/common/interfaces';
+import { HttpServer, RouteInfo } from '@nestjs/common/interfaces';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
 import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
@@ -148,6 +148,7 @@ export class NestApplication extends NestApplicationContext
     await this.registerModules();
     await this.registerRouter();
     await this.callInitHook();
+    await this.registerRouterHooks();
     await this.callBootstrapHook();
 
     this.isInitialized = true;
@@ -190,6 +191,11 @@ export class NestApplication extends NestApplicationContext
     const prefix = this.config.getGlobalPrefix();
     const basePath = prefix ? validatePath(prefix) : '';
     this.routesResolver.resolve(this.httpAdapter, basePath);
+  }
+
+  public async registerRouterHooks() {
+    this.routesResolver.registerNotFoundHandler();
+    this.routesResolver.registerExceptionHandler();
   }
 
   public connectMicroservice(options: MicroserviceOptions): INestMicroservice {
@@ -316,8 +322,9 @@ export class NestApplication extends NestApplicationContext
     await super.close();
   }
 
-  public setGlobalPrefix(prefix: string): this {
+  public setGlobalPrefix(prefix: string, excludes: RouteInfo[] = []): this {
     this.config.setGlobalPrefix(prefix);
+    this.config.setGlobalPrefixExcludedRoutes(excludes);
     return this;
   }
 

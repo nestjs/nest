@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { CanActivate, ExceptionFilter, INestApplication, INestMicroservice, NestInterceptor, PipeTransform, WebSocketAdapter } from '@nestjs/common';
-import { HttpServer } from '@nestjs/common/interfaces';
+import { HttpServer, RouteInfo } from '@nestjs/common/interfaces';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
 import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
@@ -35,6 +35,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     registerParserMiddleware(): any;
     isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean;
     registerRouter(): Promise<void>;
+    registerRouterHooks(): Promise<void>;
     connectMicroservice(options: MicroserviceOptions): INestMicroservice;
     getMicroservices(): INestMicroservice[];
     getHttpServer(): http.Server;
@@ -52,7 +53,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     listen(port: number | string, hostname: string, callback?: () => void): any;
     listenAsync(port: number | string, hostname?: string): Promise<any>;
     close(): Promise<any>;
-    setGlobalPrefix(prefix: string): this;
+    setGlobalPrefix(prefix: string, excludes?: RouteInfo[]): this;
     useWebSocketAdapter(adapter: WebSocketAdapter): this;
     useGlobalFilters(...filters: ExceptionFilter[]): this;
     useGlobalPipes(...pipes: PipeTransform<any>[]): this;

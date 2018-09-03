@@ -11,7 +11,7 @@ export declare class RoutesResolver implements Resolver {
     private readonly routerExceptionsFilter;
     private readonly routerBuilder;
     constructor(container: NestContainer, config: ApplicationConfig);
-    resolve(appInstance: any, basePath: string): void;
+    resolve(appInstance: HttpServer, basePath: string): void;
     registerRouters(routes: Map<string, InstanceWrapper<Controller>>, moduleName: string, basePath: string, appInstance: HttpServer): void;
     registerNotFoundHandler(): void;
     registerExceptionHandler(): void;

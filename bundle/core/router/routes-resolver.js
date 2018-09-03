@@ -19,15 +19,16 @@ class RoutesResolver {
     }
     resolve(appInstance, basePath) {
         const modules = this.container.getModules();
+        const excludePaths = this.config.getGlobalPrefixExcludedRoutes().map(x => x.path);
         modules.forEach(({ routes, metatype }, moduleName) => {
             let path = metatype
                 ? Reflect.getMetadata(constants_1.MODULE_PATH, metatype)
                 : undefined;
-            path = path ? path + basePath : basePath;
+            if (!excludePaths.includes(path)) {
+                path = path ? path + basePath : basePath;
+            }
             this.registerRouters(routes, moduleName, path, appInstance);
         });
-        this.registerNotFoundHandler();
-        this.registerExceptionHandler();
     }
     registerRouters(routes, moduleName, basePath, appInstance) {
         routes.forEach(({ instance, metatype }) => {

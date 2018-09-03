@@ -8,12 +8,19 @@ class ApplicationConfig {
         this.globalInterceptors = [];
         this.globalGuards = [];
         this.globalPrefix = '';
+        this.globalPrefixExcludedRoutes = [];
     }
     setGlobalPrefix(prefix) {
         this.globalPrefix = prefix;
     }
     getGlobalPrefix() {
         return this.globalPrefix;
+    }
+    setGlobalPrefixExcludedRoutes(routes) {
+        this.globalPrefixExcludedRoutes = routes;
+    }
+    getGlobalPrefixExcludedRoutes() {
+        return this.globalPrefixExcludedRoutes;
     }
     setIoAdapter(ioAdapter) {
         this.ioAdapter = ioAdapter;

@@ -1,5 +1,6 @@
 import { PipeTransform, WebSocketAdapter, ExceptionFilter, NestInterceptor, CanActivate } from '@nestjs/common';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
+import { RouteInfo } from '@nestjs/common/interfaces';
 export declare class ApplicationConfig implements ConfigurationProvider {
     private ioAdapter;
     private globalPipes;
@@ -7,9 +8,12 @@ export declare class ApplicationConfig implements ConfigurationProvider {
     private globalInterceptors;
     private globalGuards;
     private globalPrefix;
+    private globalPrefixExcludedRoutes;
     constructor(ioAdapter?: WebSocketAdapter | null);
     setGlobalPrefix(prefix: string): void;
     getGlobalPrefix(): string;
+    setGlobalPrefixExcludedRoutes(routes: RouteInfo[]): void;
+    getGlobalPrefixExcludedRoutes(): RouteInfo[];
     setIoAdapter(ioAdapter: WebSocketAdapter): void;
     getIoAdapter(): WebSocketAdapter;
     addGlobalPipe(pipe: PipeTransform<any>): void;
