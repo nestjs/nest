@@ -1,3 +1,3 @@
-import * as generateSafeId from 'generate-safe-id';
+import * as uuid from 'uuid/v4';
 
-export const randomStringGenerator = () => generateSafeId();
+export const randomStringGenerator = () => uuid();

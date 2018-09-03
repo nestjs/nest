@@ -16,14 +16,14 @@ const REFLECTOR = 'Reflector';
 
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
-  private readonly isHttpApp: boolean;
+  protected readonly isHttpApp: boolean;
 
   constructor(
     @Optional()
     @Inject(HTTP_SERVER_REF)
-    private readonly httpServer: HttpServer,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: any,
-    @Inject(REFLECTOR) private readonly reflector,
+    protected readonly httpServer: HttpServer,
+    @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
+    @Inject(REFLECTOR) protected readonly reflector,
   ) {
     this.isHttpApp = httpServer && !!httpServer.getRequestMethod;
   }

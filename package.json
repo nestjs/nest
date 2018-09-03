@@ -54,7 +54,6 @@
     "fastify": "^1.1.1",
     "fastify-formbody": "^2.0.0",
     "fastify-multipart": "^0.4.1",
-    "generate-safe-id": "^1.0.2",
     "grpc": "^1.14.1",
     "iterare": "0.0.8",
     "json-socket": "^0.2.1",
@@ -70,7 +69,8 @@
     "rxjs": "^6.0.0",
     "rxjs-compat": "^6.0.0",
     "socket.io": "^2.1.1",
-    "trouter": "^1.0.0"
+    "trouter": "^1.0.0",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "@types/cache-manager": "^1.2.6",

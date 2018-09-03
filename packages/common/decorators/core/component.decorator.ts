@@ -1,5 +1,5 @@
 import * as deprecate from 'deprecate';
-import * as generateSafeId from 'generate-safe-id';
+import * as uuid from 'uuid/v4';
 
 /**
  * Defines the injectable class. This class can inject dependencies through constructor.
@@ -67,7 +67,7 @@ export function Interceptor(): ClassDecorator {
 
 export function mixin(mixinClass) {
   Object.defineProperty(mixinClass, 'name', {
-    value: generateSafeId(),
+    value: uuid(),
   });
   Injectable()(mixinClass);
   return mixinClass;

@@ -1,5 +1,5 @@
 import * as deprecate from 'deprecate';
-import * as generateSafeId from 'generate-safe-id';
+import * as uuid from 'uuid/v4';
 import {
   CUSTOM_ROUTE_AGRS_METADATA,
   ROUTE_ARGS_METADATA,
@@ -39,7 +39,7 @@ export function createParamDecorator(
 ): (
   ...dataOrPipes: (Type<PipeTransform> | PipeTransform | any)[],
 ) => ParameterDecorator {
-  const paramtype = generateSafeId();
+  const paramtype = uuid();
   return (
     data?,
     ...pipes: (Type<PipeTransform> | PipeTransform)[],
