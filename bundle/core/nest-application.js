@@ -94,6 +94,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         await this.registerModules();
         await this.registerRouter();
         await this.callInitHook();
+        await this.registerRouterHooks();
         await this.callBootstrapHook();
         this.isInitialized = true;
         this.logger.log(constants_1.messages.APPLICATION_READY);
@@ -126,6 +127,10 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         const prefix = this.config.getGlobalPrefix();
         const basePath = prefix ? shared_utils_1.validatePath(prefix) : '';
         this.routesResolver.resolve(this.httpAdapter, basePath);
+    }
+    async registerRouterHooks() {
+        this.routesResolver.registerNotFoundHandler();
+        this.routesResolver.registerExceptionHandler();
     }
     connectMicroservice(options) {
         const { NestMicroservice } = load_package_util_1.loadPackage('@nestjs/microservices', 'NestFactory');

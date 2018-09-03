@@ -35,6 +35,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     registerParserMiddleware(): any;
     isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean;
     registerRouter(): Promise<void>;
+    registerRouterHooks(): Promise<void>;
     connectMicroservice(options: MicroserviceOptions): INestMicroservice;
     getMicroservices(): INestMicroservice[];
     getHttpServer(): http.Server;
