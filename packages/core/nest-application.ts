@@ -7,7 +7,7 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { HttpServer } from '@nestjs/common/interfaces';
+import { HttpServer, RouteInfo } from '@nestjs/common/interfaces';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
 import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
@@ -322,8 +322,9 @@ export class NestApplication extends NestApplicationContext
     await super.close();
   }
 
-  public setGlobalPrefix(prefix: string): this {
+  public setGlobalPrefix(prefix: string, excludes: RouteInfo[] = []): this {
     this.config.setGlobalPrefix(prefix);
+    this.config.setGlobalPrefixExcludedRoutes(excludes);
     return this;
   }
 

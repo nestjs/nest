@@ -1,5 +1,7 @@
+import { RouteInfo } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { expect } from 'chai';
 import { ApplicationConfig } from '../application-config';
+import { RequestMethod } from '@nestjs/common';
 
 describe('ApplicationConfig', () => {
   let appConfig: ApplicationConfig;
@@ -16,6 +18,24 @@ describe('ApplicationConfig', () => {
     });
     it('should has empty string as a global path by default', () => {
       expect(appConfig.getGlobalPrefix()).to.be.eql('');
+    });
+  });
+  describe('globalPathExcludeRoutes', () => {
+    it('should set global path excluded routes', () => {
+      const excludedPaths: RouteInfo[] = [
+        {
+          path: '/test',
+          method: RequestMethod.GET,
+        },
+      ];
+      appConfig.setGlobalPrefixExcludedRoutes(excludedPaths);
+
+      expect(appConfig.getGlobalPrefixExcludedRoutes()).to.be.eql(
+        excludedPaths,
+      );
+    });
+    it('should has be empty array as a global path excludes by default', () => {
+      expect(appConfig.getGlobalPrefixExcludedRoutes()).to.be.eql([]);
     });
   });
   describe('IOAdapter', () => {
