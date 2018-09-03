@@ -258,21 +258,6 @@ describe('Injector', () => {
     });
   });
 
-  describe('resolveFactoryInstance', () => {
-    it('should resolve deffered value', async () => {
-      const wrapper = { test: 'test' };
-      const result = await injector.resolveFactoryInstance(
-        Promise.resolve(wrapper),
-      );
-      expect(result).to.be.eql(wrapper);
-    });
-    it('should return exact same value', async () => {
-      const wrapper = { test: 'test' };
-      const result = await injector.resolveFactoryInstance(wrapper);
-      expect(result).to.be.eql(wrapper);
-    });
-  });
-
   describe('lookupComponent', () => {
     let lookupComponentInRelatedModules: sinon.SinonStub;
     const metatype = { name: 'test', metatype: { name: 'test' } };
