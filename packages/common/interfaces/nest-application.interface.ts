@@ -6,6 +6,7 @@ import { ExceptionFilter, INestMicroservice, PipeTransform } from './index';
 import { MicroserviceOptions } from './microservices/microservice-configuration.interface';
 import { INestApplicationContext } from './nest-application-context.interface';
 import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
+import { RouteInfo } from '@nestjs/common/interfaces';
 
 export interface INestApplication extends INestApplicationContext {
   /**
@@ -60,7 +61,7 @@ export interface INestApplication extends INestApplicationContext {
    * @param  {string} prefix The prefix for the every HTTP route path (for example `/v1/api`)
    * @returns {void}
    */
-  setGlobalPrefix(prefix: string): this;
+  setGlobalPrefix(prefix: string, globalPrefixConfig: { exclude: Array<string | RouteInfo> }): this;
 
   /**
    * Setup Ws Adapter which will be used inside Gateways.

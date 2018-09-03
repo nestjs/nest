@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { ApplicationConfig } from '../application-config';
+import { ApplicationConfig, GlobalPrefixConfig } from '../application-config';
+import { RequestMethod } from '@nestjs/common';
 
 describe('ApplicationConfig', () => {
   let appConfig: ApplicationConfig;
@@ -7,15 +8,32 @@ describe('ApplicationConfig', () => {
   beforeEach(() => {
     appConfig = new ApplicationConfig();
   });
-  describe('globalPath', () => {
-    it('should set global path', () => {
+  describe('globalPrefix', () => {
+    it('should set global prefix', () => {
       const path = 'test';
       appConfig.setGlobalPrefix(path);
 
       expect(appConfig.getGlobalPrefix()).to.be.eql(path);
     });
-    it('should has empty string as a global path by default', () => {
+    it('should has empty string as a global prefix by default', () => {
       expect(appConfig.getGlobalPrefix()).to.be.eql('');
+    });
+  });
+  describe('globalPrefixConfig', () => {
+    it('should set global prefix config', () => {
+      const globalPrefixConfig: GlobalPrefixConfig = {
+        exclude: [
+          {
+            path: '/health',
+            method: RequestMethod.GET,
+          },
+        ],
+      };
+      appConfig.setGlobalPrefixConfig(globalPrefixConfig);
+      expect(appConfig.getGlobalPrefixConfig()).to.be.eql(globalPrefixConfig);
+    });
+    it('should has be empty array as a global prefix exclude by default', () => {
+      expect(appConfig.getGlobalPrefixConfig()).to.be.eql({ exclude: [] });
     });
   });
   describe('IOAdapter', () => {

@@ -7,7 +7,7 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { HttpServer } from '@nestjs/common/interfaces';
+import { HttpServer, RouteInfo } from '@nestjs/common/interfaces';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
 import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
@@ -29,7 +29,7 @@ import iterate from 'iterare';
 import * as optional from 'optional';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { FastifyAdapter } from './adapters/fastify-adapter';
-import { ApplicationConfig } from './application-config';
+import { ApplicationConfig, GlobalPrefixConfig } from './application-config';
 import { messages } from './constants';
 import { NestContainer } from './injector/container';
 import { MiddlewareContainer } from './middleware/container';
@@ -37,6 +37,7 @@ import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
+import { RoutesMapper } from './middleware/routes-mapper';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
@@ -57,6 +58,7 @@ export class NestApplication extends NestApplicationContext
     : null;
   private readonly socketModule = SocketModule ? new SocketModule() : null;
   private readonly routesResolver: Resolver;
+  private readonly routesMapper: RoutesMapper;
   private readonly microservices = [];
   private httpServer: http.Server;
   private isInitialized = false;
@@ -72,7 +74,7 @@ export class NestApplication extends NestApplicationContext
     this.applyOptions();
     this.selectContextModule();
     this.registerHttpServer();
-
+    this.routesMapper = new RoutesMapper(this.container);
     this.routesResolver = new RoutesResolver(this.container, this.config);
   }
 
@@ -322,8 +324,15 @@ export class NestApplication extends NestApplicationContext
     await super.close();
   }
 
-  public setGlobalPrefix(prefix: string): this {
+  public setGlobalPrefix(prefix: string, globalPrefixConfig?: { exclude: Array<string | RouteInfo> }): this {
     this.config.setGlobalPrefix(prefix);
+    if (globalPrefixConfig) {
+      const routeInfos = globalPrefixConfig.exclude.map(route =>
+        this.routesMapper.mapRouteToRouteInfo(route),
+      );
+      const excludedRoutes = routeInfos.reduce((a, b) => a.concat(b));
+      this.config.setGlobalPrefixConfig({exclude: excludedRoutes});
+    }
     return this;
   }
 

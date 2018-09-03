@@ -21,6 +21,7 @@ import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
 import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
+import { RouteInfo } from '@nestjs/common/interfaces';
 
 export interface RoutePathProperties {
   path: string;
@@ -60,7 +61,9 @@ export class RouterExplorer {
     appInstance,
     basePath: string,
   ) {
-    const routerPaths = this.scanForPaths(instance);
+    const {exclude: excludedRoutes} = this.config.getGlobalPrefixConfig();
+    const routerPaths = this.scanForPaths(instance)
+      .filter(({ path, requestMethod: method }) => !this.isRouteExcluded(excludedRoutes, {path, method}));
     this.applyPathsToRouterProxy(
       appInstance,
       routerPaths,
@@ -68,6 +71,25 @@ export class RouterExplorer {
       module,
       basePath,
     );
+  }
+
+  private isRouteExcluded(excludedRoutes: RouteInfo[], routeInfo: RouteInfo): boolean {
+    const pathLastIndex = routeInfo.path.length - 1;
+    const validatedRoutePath =
+      routeInfo.path[pathLastIndex] === '/'
+        ? routeInfo.path.slice(0, pathLastIndex)
+        : routeInfo.path;
+
+    return excludedRoutes.some(excluded => {
+      const isPathEqual = validatedRoutePath === excluded.path;
+      if (!isPathEqual) {
+        return false;
+      }
+      return (
+        routeInfo.method === excluded.method ||
+        excluded.method === RequestMethod.ALL
+      );
+    });
   }
 
   public extractRouterPath(

@@ -6,6 +6,11 @@ import {
   CanActivate,
 } from '@nestjs/common';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
+import { RouteInfo } from '@nestjs/common/interfaces';
+
+export interface GlobalPrefixConfig {
+  readonly exclude: Array<RouteInfo>;
+}
 
 export class ApplicationConfig implements ConfigurationProvider {
   private globalPipes: PipeTransform<any>[] = [];
@@ -13,6 +18,7 @@ export class ApplicationConfig implements ConfigurationProvider {
   private globalInterceptors: NestInterceptor[] = [];
   private globalGuards: CanActivate[] = [];
   private globalPrefix = '';
+  private globalPrefixConfig: GlobalPrefixConfig = { exclude: [] };
 
   constructor(private ioAdapter: WebSocketAdapter | null = null) {}
 
@@ -22,6 +28,14 @@ export class ApplicationConfig implements ConfigurationProvider {
 
   public getGlobalPrefix() {
     return this.globalPrefix;
+  }
+
+  public setGlobalPrefixConfig(globalPrefixConfig: GlobalPrefixConfig) {
+    this.globalPrefixConfig = globalPrefixConfig;
+  }
+
+  public getGlobalPrefixConfig() {
+    return this.globalPrefixConfig;
   }
 
   public setIoAdapter(ioAdapter: WebSocketAdapter) {
