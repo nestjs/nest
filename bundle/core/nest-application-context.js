@@ -107,7 +107,7 @@ class NestApplicationContext extends module_ref_1.ModuleRef {
         await Promise.all(iterare_1.default(instances)
             .map(([key, { instance }]) => instance)
             .filter(instance => !shared_utils_1.isNil(instance))
-            .filter(this.hasOnModuleInitHook)
+            .filter(this.hasOnAppBotstrapHook)
             .map(async (instance) => await instance.onApplicationBootstrap()));
         if (moduleClassInstance && this.hasOnAppBotstrapHook(moduleClassInstance)) {
             await moduleClassInstance.onApplicationBootstrap();
