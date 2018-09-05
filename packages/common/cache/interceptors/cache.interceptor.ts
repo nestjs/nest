@@ -52,13 +52,9 @@ export class CacheInterceptor implements NestInterceptor {
       return this.reflector.get(CACHE_KEY_METADATA, context.getHandler());
     }
     const request = context.getArgByIndex(0);
-    const excludePaths = [];
-    if (
-      this.httpServer.getRequestMethod(request) !== 'GET' ||
-      excludePaths.includes(this.httpServer.getRequestUrl)
-    ) {
+    if (this.httpServer.getRequestMethod(request) !== 'GET') {
       return undefined;
     }
-    return this.httpServer.getRequestUrl(context.getArgByIndex(0));
+    return this.httpServer.getRequestUrl(request);
   }
 }

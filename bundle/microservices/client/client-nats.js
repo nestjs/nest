@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const logger_service_1 = require("@nestjs/common/services/logger.service");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const operators_1 = require("rxjs/operators");
 const constants_1 = require("../constants");
 const client_proxy_1 = require("./client-proxy");
 const constants_2 = require("./constants");
@@ -18,14 +19,18 @@ class ClientNats extends client_proxy_1.ClientProxy {
     close() {
         this.natsClient && this.natsClient.close();
         this.natsClient = null;
+        this.connection = null;
     }
     async connect() {
         if (this.natsClient) {
-            return Promise.resolve();
+            return this.connection;
         }
-        this.natsClient = await this.createClient();
+        this.natsClient = this.createClient();
         this.handleError(this.natsClient);
-        return this.connect$(this.natsClient).toPromise();
+        this.connection = await this.connect$(this.natsClient)
+            .pipe(operators_1.share())
+            .toPromise();
+        return this.connection;
     }
     createClient() {
         const options = this.options || {};
