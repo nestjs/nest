@@ -4,10 +4,11 @@ import { CacheInterceptor, ExecutionContext, Injectable } from '@nestjs/common';
 class HttpCacheInterceptor extends CacheInterceptor {
   trackBy(context: ExecutionContext): string | undefined {
     const request = context.switchToHttp().getRequest();
+    const isGetRequest = this.httpServer.getRequestMethod(request) === 'GET';
     const excludePaths = [];
     if (
-      this.httpServer.getRequestMethod(request) !== 'GET' ||
-      excludePaths.includes(this.httpServer.getRequestUrl)
+      !isGetRequest ||
+      (isGetRequest && excludePaths.includes(this.httpServer.getRequestUrl))
     ) {
       return undefined;
     }
