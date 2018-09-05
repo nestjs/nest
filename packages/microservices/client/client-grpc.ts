@@ -14,11 +14,11 @@ let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
 
 export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
-  private readonly logger = new Logger(ClientProxy.name);
-  private readonly url: string;
-  private grpcClient: any;
+  protected readonly logger = new Logger(ClientProxy.name);
+  protected readonly url: string;
+  protected grpcClient: any;
 
-  constructor(private readonly options: ClientOptions['options']) {
+  constructor(protected readonly options: ClientOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;

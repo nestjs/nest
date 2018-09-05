@@ -22,13 +22,13 @@ import { ECONNREFUSED } from './constants';
 let redisPackage: any = {};
 
 export class ClientRedis extends ClientProxy {
-  private readonly logger = new Logger(ClientProxy.name);
-  private readonly url: string;
-  private pubClient: RedisClient;
-  private subClient: RedisClient;
+  protected readonly logger = new Logger(ClientProxy.name);
+  protected readonly url: string;
+  protected pubClient: RedisClient;
+  protected subClient: RedisClient;
   private isExplicitlyTerminated = false;
 
-  constructor(private readonly options: ClientOptions['options']) {
+  constructor(protected readonly options: ClientOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<RedisOptions>(options, 'url') || REDIS_DEFAULT_URL;

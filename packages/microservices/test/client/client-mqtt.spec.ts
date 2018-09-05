@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { empty } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientMqtt } from '../../client/client-mqtt';
 import { ERROR_EVENT } from '../../constants';
@@ -208,6 +209,7 @@ describe('ClientMqtt', () => {
     let createClientStub: sinon.SinonStub;
     let handleErrorsSpy: sinon.SinonSpy;
     let connect$Stub: sinon.SinonStub;
+    let mergeCloseEvent: sinon.SinonStub;
 
     beforeEach(async () => {
       createClientStub = sinon.stub(client, 'createClient').callsFake(() => ({
@@ -217,13 +219,22 @@ describe('ClientMqtt', () => {
       handleErrorsSpy = sinon.spy(client, 'handleError');
       connect$Stub = sinon.stub(client, 'connect$').callsFake(() => ({
         subscribe: resolve => resolve(),
-        toPromise: () => this,
+        toPromise() {
+          return this;
+        },
+        pipe() {
+          return this;
+        },
       }));
+      mergeCloseEvent = sinon
+        .stub(client, 'mergeCloseEvent')
+        .callsFake((_, source) => source);
     });
     afterEach(() => {
       createClientStub.restore();
       handleErrorsSpy.restore();
       connect$Stub.restore();
+      mergeCloseEvent.restore();
     });
     describe('when is not connected', () => {
       beforeEach(async () => {
@@ -253,6 +264,18 @@ describe('ClientMqtt', () => {
       it('should not call "connect$"', () => {
         expect(connect$Stub.called).to.be.false;
       });
+    });
+  });
+  describe('mergeCloseEvent', () => {
+    it('should merge close event', () => {
+      const error = new Error();
+      const instance: any = {
+        on: (ev, callback) => callback(error),
+        off: () => ({}),
+      };
+      client
+        .mergeCloseEvent(instance as any, empty())
+        .subscribe(null, err => expect(err).to.be.eql(error));
     });
   });
   describe('handleError', () => {

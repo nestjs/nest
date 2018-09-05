@@ -1,6 +1,13 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { ERROR_EVENT, MESSAGE_EVENT, MQTT_DEFAULT_URL } from '../constants';
+import { fromEvent, merge, Observable } from 'rxjs';
+import { first, map, share } from 'rxjs/operators';
+import {
+  CLOSE_EVENT,
+  ERROR_EVENT,
+  MESSAGE_EVENT,
+  MQTT_DEFAULT_URL,
+} from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
 import { MqttOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
@@ -10,11 +17,12 @@ import { ECONNREFUSED } from './constants';
 let mqttPackage: any = {};
 
 export class ClientMqtt extends ClientProxy {
-  private readonly logger = new Logger(ClientProxy.name);
-  private readonly url: string;
-  private mqttClient: MqttClient;
+  protected readonly logger = new Logger(ClientProxy.name);
+  protected readonly url: string;
+  protected mqttClient: MqttClient;
+  protected connection: Promise<any>;
 
-  constructor(private readonly options: ClientOptions['options']) {
+  constructor(protected readonly options: ClientOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<MqttOptions>(this.options, 'url') || MQTT_DEFAULT_URL;
@@ -32,15 +40,33 @@ export class ClientMqtt extends ClientProxy {
   public close() {
     this.mqttClient && this.mqttClient.end();
     this.mqttClient = null;
+    this.connection = null;
   }
 
   public connect(): Promise<any> {
     if (this.mqttClient) {
-      return Promise.resolve();
+      return this.connection;
     }
     this.mqttClient = this.createClient();
     this.handleError(this.mqttClient);
-    return this.connect$(this.mqttClient).toPromise();
+
+    const connect$ = this.connect$(this.mqttClient);
+    this.connection = this.mergeCloseEvent(this.mqttClient, connect$)
+      .pipe(share())
+      .toPromise();
+    return this.connection;
+  }
+
+  public mergeCloseEvent<T = any>(
+    instance: MqttClient,
+    source$: Observable<T>,
+  ): Observable<T> {
+    const close$ = fromEvent(instance, CLOSE_EVENT).pipe(
+      map(err => {
+        throw err;
+      }),
+    );
+    return merge(source$, close$).pipe(first());
   }
 
   public createClient(): MqttClient {

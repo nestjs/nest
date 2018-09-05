@@ -20,7 +20,11 @@ export class NatsController {
 
   @Post()
   @HttpCode(200)
-  call(@Query('command') cmd, @Body() data: number[]): Observable<number> {
+  async call(
+    @Query('command') cmd,
+    @Body() data: number[],
+  ): Promise<Observable<number>> {
+    await this.client.connect();
     return this.client.send<number>(cmd, data);
   }
 
