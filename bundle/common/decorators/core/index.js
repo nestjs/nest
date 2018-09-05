@@ -7,6 +7,7 @@ __export(require("./bind.decorator"));
 __export(require("./catch.decorator"));
 __export(require("./component.decorator"));
 __export(require("./controller.decorator"));
+__export(require("./router.decorator"));
 __export(require("./dependencies.decorator"));
 __export(require("./exception-filters.decorator"));
 __export(require("./inject.decorator"));
