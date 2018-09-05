@@ -49,12 +49,10 @@ let CacheInterceptor = class CacheInterceptor {
             return this.reflector.get(cache_constants_1.CACHE_KEY_METADATA, context.getHandler());
         }
         const request = context.getArgByIndex(0);
-        const excludePaths = [];
-        if (this.httpServer.getRequestMethod(request) !== 'GET' ||
-            excludePaths.includes(this.httpServer.getRequestUrl)) {
+        if (this.httpServer.getRequestMethod(request) !== 'GET') {
             return undefined;
         }
-        return this.httpServer.getRequestUrl(context.getArgByIndex(0));
+        return this.httpServer.getRequestUrl(request);
     }
 };
 CacheInterceptor = __decorate([
