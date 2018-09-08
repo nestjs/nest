@@ -33,7 +33,7 @@ export class MqttController {
 
   @Post('concurrent')
   @HttpCode(200)
-  concurrent(@Body() data: number[][]): Promise<boolean> {
+  async concurrent(@Body() data: number[][]): Promise<boolean> {
     const send = async (tab: number[]) => {
       const expected = tab.reduce((a, b) => a + b);
       const result = await this.client
@@ -42,7 +42,7 @@ export class MqttController {
 
       return result === expected;
     };
-    return data
+    return await data
       .map(async tab => await send(tab))
       .reduce(async (a, b) => (await a) && (await b));
   }

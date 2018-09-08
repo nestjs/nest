@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { fromEvent, merge, Observable } from 'rxjs';
-import { first, map, share } from 'rxjs/operators';
+import { first, map, share, tap } from 'rxjs/operators';
 import {
   CLOSE_EVENT,
   ERROR_EVENT,
@@ -52,7 +52,12 @@ export class ClientMqtt extends ClientProxy {
 
     const connect$ = this.connect$(this.mqttClient);
     this.connection = this.mergeCloseEvent(this.mqttClient, connect$)
-      .pipe(share())
+      .pipe(
+        tap(() =>
+          this.mqttClient.on(MESSAGE_EVENT, this.createResponseCallback()),
+        ),
+        share(),
+      )
       .toPromise();
     return this.connection;
   }
@@ -80,15 +85,14 @@ export class ClientMqtt extends ClientProxy {
     );
   }
 
-  public createResponseCallback(
-    packet: ReadPacket & PacketId,
-    callback: (packet: WritePacket) => any,
-  ): (channel: string, buffer) => any {
+  public createResponseCallback(): (channel: string, buffer) => any {
     return (channel: string, buffer: Buffer) => {
       const { err, response, isDisposed, id } = JSON.parse(
         buffer.toString(),
       ) as WritePacket & PacketId;
-      if (id !== packet.id) {
+
+      const callback = this.routingMap.get(id);
+      if (!callback) {
         return undefined;
       }
       if (isDisposed || err) {
@@ -113,17 +117,20 @@ export class ClientMqtt extends ClientProxy {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
       const responseChannel = this.getResPatternName(pattern);
-      const responseCallback = this.createResponseCallback(packet, callback);
 
-      this.mqttClient.on(MESSAGE_EVENT, responseCallback);
-      this.mqttClient.subscribe(responseChannel);
-      this.mqttClient.publish(
-        this.getAckPatternName(pattern),
-        JSON.stringify(packet),
-      );
+      this.mqttClient.subscribe(responseChannel, err => {
+        if (err) {
+          return;
+        }
+        this.routingMap.set(packet.id, callback);
+        this.mqttClient.publish(
+          this.getAckPatternName(pattern),
+          JSON.stringify(packet),
+        );
+      });
       return () => {
         this.mqttClient.unsubscribe(responseChannel);
-        this.mqttClient.removeListener(MESSAGE_EVENT, responseCallback);
+        this.routingMap.delete(packet.id);
       };
     } catch (err) {
       callback({ err });

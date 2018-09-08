@@ -15,13 +15,8 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
-import { GuardsConsumer } from '../guards/guards-consumer';
-import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { ApplicationReferenceHost } from '../helpers/application-ref-host';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
-import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../pipes/pipes-consumer';
-import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { Reflector } from '../services/reflector.service';
 import { InstanceWrapper, NestContainer } from './container';
 import { ModuleRef } from './module-ref';
@@ -105,10 +100,11 @@ export class Module {
   public addCoreInjectables(container: NestContainer) {
     this.addModuleAsComponent();
     this.addModuleRef();
-    this.addReflector();
+    this.addReflector(container.getReflector());
     this.addApplicationRef(container.getApplicationRef());
-    this.addExternalContextCreator(container);
-    this.addModulesContainer(container);
+    this.addExternalContextCreator(container.getExternalContextCreator());
+    this.addModulesContainer(container.getModulesContainer());
+    this.addApplicationRefHost(container.getApplicationRefHost());
   }
 
   public addModuleRef() {
@@ -130,12 +126,12 @@ export class Module {
     });
   }
 
-  public addReflector() {
+  public addReflector(reflector: Reflector) {
     this._components.set(Reflector.name, {
       name: Reflector.name,
       metatype: Reflector,
-      isResolved: false,
-      instance: null,
+      isResolved: true,
+      instance: reflector,
     });
   }
 
@@ -148,29 +144,32 @@ export class Module {
     });
   }
 
-  public addExternalContextCreator(container: NestContainer) {
+  public addExternalContextCreator(
+    externalContextCreator: ExternalContextCreator,
+  ) {
     this._components.set(ExternalContextCreator.name, {
       name: ExternalContextCreator.name,
       metatype: ExternalContextCreator,
       isResolved: true,
-      instance: new ExternalContextCreator(
-        new GuardsContextCreator(container, container.applicationConfig),
-        new GuardsConsumer(),
-        new InterceptorsContextCreator(container, container.applicationConfig),
-        new InterceptorsConsumer(),
-        container.getModules(),
-        new PipesContextCreator(container, container.applicationConfig),
-        new PipesConsumer(),
-      ),
+      instance: externalContextCreator,
     });
   }
 
-  public addModulesContainer(container: NestContainer) {
+  public addModulesContainer(modulesContainer: ModulesContainer) {
     this._components.set(ModulesContainer.name, {
       name: ModulesContainer.name,
       metatype: ModulesContainer,
       isResolved: true,
-      instance: container.getModules(),
+      instance: modulesContainer,
+    });
+  }
+
+  public addApplicationRefHost(applicationRefHost: ApplicationReferenceHost) {
+    this._components.set(ApplicationReferenceHost.name, {
+      name: ApplicationReferenceHost.name,
+      metatype: ApplicationReferenceHost,
+      isResolved: true,
+      instance: applicationRefHost,
     });
   }
 

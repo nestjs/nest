@@ -5,6 +5,9 @@ import 'reflect-metadata';
 import { ApplicationConfig } from '../application-config';
 import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
+import { ApplicationReferenceHost } from '../helpers/application-ref-host';
+import { ExternalContextCreator } from '../helpers/external-context-creator';
+import { Reflector } from '../services';
 import { ModuleCompiler } from './compiler';
 import { Module } from './module';
 import { ModulesContainer } from './modules-container';
@@ -17,6 +20,10 @@ export class NestContainer {
     string,
     Partial<DynamicModule>
   >();
+  private readonly reflector = new Reflector();
+  private readonly applicationRefHost = new ApplicationReferenceHost();
+  private externalContextCreator: ExternalContextCreator;
+  private modulesContainer: ModulesContainer;
   private applicationRef: any;
 
   constructor(
@@ -29,6 +36,11 @@ export class NestContainer {
 
   public setApplicationRef(applicationRef: any) {
     this.applicationRef = applicationRef;
+
+    if (!this.applicationRefHost) {
+      return;
+    }
+    this.applicationRefHost.applicationRef = applicationRef;
   }
 
   public getApplicationRef() {
@@ -176,6 +188,28 @@ export class NestContainer {
       return metadata[metadataKey] as any[];
     }
     return [];
+  }
+
+  public getReflector(): Reflector {
+    return this.reflector;
+  }
+
+  public getExternalContextCreator(): ExternalContextCreator {
+    if (!this.externalContextCreator) {
+      this.externalContextCreator = ExternalContextCreator.fromContainer(this);
+    }
+    return this.externalContextCreator;
+  }
+
+  public getApplicationRefHost(): ApplicationReferenceHost {
+    return this.applicationRefHost;
+  }
+
+  public getModulesContainer(): ModulesContainer {
+    if (!this.modulesContainer) {
+      this.modulesContainer = this.getModules();
+    }
+    return this.modulesContainer;
   }
 }
 

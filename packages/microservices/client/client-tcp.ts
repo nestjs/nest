@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import * as JsonSocket from 'json-socket';
 import * as net from 'net';
-import { tap } from 'rxjs/operators';
+import { share, tap } from 'rxjs/operators';
 import {
   CLOSE_EVENT,
   ERROR_EVENT,
@@ -18,6 +18,7 @@ import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 
 export class ClientTCP extends ClientProxy {
+  protected connection: Promise<any>;
   private readonly logger = new Logger(ClientTCP.name);
   private readonly port: number;
   private readonly host: string;
@@ -35,25 +36,33 @@ export class ClientTCP extends ClientProxy {
   }
 
   public connect(): Promise<any> {
-    if (this.isConnected) {
-      return Promise.resolve();
+    if (this.isConnected && this.connection) {
+      return this.connection;
     }
     this.socket = this.createSocket();
-    return new Promise((resolve, reject) => {
-      this.bindEvents(this.socket);
-      this.connect$(this.socket._socket)
-        .pipe(tap(() => (this.isConnected = true)))
-        .subscribe(resolve, reject);
+    this.bindEvents(this.socket);
 
-      this.socket.connect(this.port, this.host);
-    });
+    const source$ = this.connect$(this.socket._socket).pipe(
+      tap(() => {
+        this.isConnected = true;
+        this.socket.on(MESSAGE_EVENT, (buffer: WritePacket & PacketId) =>
+          this.handleResponse(buffer),
+        );
+      }),
+      share(),
+    );
+
+    this.socket.connect(this.port, this.host);
+    this.connection = source$.toPromise();
+    return this.connection;
   }
 
-  public handleResponse(
-    callback: (packet: WritePacket) => any,
-    buffer: WritePacket,
-  ) {
-    const { err, response, isDisposed } = buffer;
+  public handleResponse(buffer: WritePacket & PacketId) {
+    const { err, response, isDisposed, id } = buffer;
+    const callback = this.routingMap.get(id);
+    if (!callback) {
+      return undefined;
+    }
     if (isDisposed || err) {
       callback({
         err,
@@ -99,16 +108,11 @@ export class ClientTCP extends ClientProxy {
   ): Function {
     try {
       const packet = this.assignPacketId(partialPacket);
-      const listener = (buffer: WritePacket & PacketId) => {
-        if (buffer.id !== packet.id) {
-          return undefined;
-        }
-        this.handleResponse(callback, buffer);
-      };
-      this.socket.on(MESSAGE_EVENT, listener);
+
+      this.routingMap.set(packet.id, callback);
       this.socket.sendMessage(packet);
 
-      return () => this.socket._socket.removeListener(MESSAGE_EVENT, listener);
+      return () => this.routingMap.delete(packet.id);
     } catch (err) {
       callback({ err });
     }

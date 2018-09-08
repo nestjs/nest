@@ -21,6 +21,7 @@ import {
 export abstract class ClientProxy {
   public abstract connect(): Promise<any>;
   public abstract close(): any;
+  protected routingMap = new Map<string, Function>();
 
   public send<TResult = any, TInput = any>(
     pattern: any,

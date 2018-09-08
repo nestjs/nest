@@ -10,7 +10,7 @@ describe('ClientTCP', () => {
     connect: sinon.SinonStub;
     publish: sinon.SinonSpy;
     _socket: {
-      addListener: sinon.SinonStub,
+      addListener: sinon.SinonStub;
       removeListener: sinon.SinonSpy;
       once: sinon.SinonStub;
     };
@@ -54,14 +54,11 @@ describe('ClientTCP', () => {
     it('should send message', () => {
       client['publish'](msg, () => ({}));
     });
-    it('should listen on messages', () => {
-      client['publish'](msg, () => ({}));
-      expect(socket.on.called).to.be.true;
-    });
     describe('on dispose', () => {
-      it('should remove listener', () => {
+      it('should remove listener from routing map', () => {
         client['publish'](msg, () => ({}))();
-        expect(socket._socket.removeListener.called).to.be.true;
+
+        expect(client['routingMap'].size).to.be.eq(0);
       });
     });
     describe('on error', () => {
@@ -78,10 +75,13 @@ describe('ClientTCP', () => {
   });
   describe('handleResponse', () => {
     let callback;
+    const id = '1';
+
     describe('when disposed', () => {
       beforeEach(() => {
         callback = sinon.spy();
-        client.handleResponse(callback, { isDisposed: true });
+        client['routingMap'].set(id, callback);
+        client.handleResponse({ id, isDisposed: true });
       });
       it('should emit disposed callback', () => {
         expect(callback.called).to.be.true;
@@ -97,9 +97,10 @@ describe('ClientTCP', () => {
     describe('when not disposed', () => {
       let buffer;
       beforeEach(() => {
-        buffer = { err: null, response: 'res' };
+        buffer = { id, err: null, response: 'res' };
         callback = sinon.spy();
-        client.handleResponse(callback, buffer);
+        client['routingMap'].set(id, callback);
+        client.handleResponse(buffer);
       });
       it('should not end server', () => {
         expect(socket.end.called).to.be.false;
@@ -147,6 +148,9 @@ describe('ClientTCP', () => {
       });
       it('should call "connect$" once', async () => {
         expect(connect$Stub.called).to.be.true;
+      });
+      it('should listen on messages', () => {
+        expect(socket.on.called).to.be.true;
       });
     });
     describe('when is connected', () => {
