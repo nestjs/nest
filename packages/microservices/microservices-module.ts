@@ -1,19 +1,19 @@
-import { InstanceWrapper } from '@nestjs/core/injector/container';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { ListenersController } from './listeners-controller';
-import { CustomTransportStrategy } from './interfaces';
-import { Server } from './server/server';
-import { ClientsContainer } from './container';
-import { RpcContextCreator } from './context/rpc-context-creator';
-import { RpcProxy } from './context/rpc-proxy';
-import { ExceptionFiltersContext } from './context/exception-filters-context';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
 import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+import { InstanceWrapper } from '@nestjs/core/injector/container';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
+import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import { ClientsContainer } from './container';
+import { ExceptionFiltersContext } from './context/exception-filters-context';
+import { RpcContextCreator } from './context/rpc-context-creator';
+import { RpcProxy } from './context/rpc-proxy';
+import { CustomTransportStrategy } from './interfaces';
+import { ListenersController } from './listeners-controller';
+import { Server } from './server/server';
 
 export class MicroservicesModule {
   private readonly clientsContainer = new ClientsContainer();
@@ -67,8 +67,8 @@ export class MicroservicesModule {
     );
   }
 
-  public bindClients(controllers: Map<string, InstanceWrapper<Controller>>) {
-    controllers.forEach(({ instance, isNotMetatype }) => {
+  public bindClients(items: Map<string, InstanceWrapper<Controller>>) {
+    items.forEach(({ instance, isNotMetatype }) => {
       !isNotMetatype &&
         this.listenersController.bindClientsToProperties(instance);
     });

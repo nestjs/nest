@@ -13,7 +13,7 @@ export class InterceptorsConsumer {
     callback: (...args) => any,
     next: () => Promise<any>,
   ): Promise<any> {
-    if (!interceptors || isEmpty(interceptors)) {
+    if (isEmpty(interceptors)) {
       return await await next();
     }
     const context = this.createContext(args, instance, callback);
