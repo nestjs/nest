@@ -77,7 +77,10 @@ export class NestMicroservice extends NestApplicationContext
     this.registerListeners();
     this.setIsInitialized(true);
 
-    !this.isInitHookCalled && (await this.callInitHook());
+    if (!this.isInitHookCalled) {
+      await this.callInitHook();
+      await this.callBootstrapHook();
+    }
   }
 
   public registerListeners() {

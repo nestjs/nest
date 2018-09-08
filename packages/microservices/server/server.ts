@@ -1,7 +1,13 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isString } from '@nestjs/common/utils/shared.utils';
-import { EMPTY as empty, from as fromPromise, Observable, of, Subscription } from 'rxjs';
+import {
+  EMPTY as empty,
+  from as fromPromise,
+  Observable,
+  of,
+  Subscription,
+} from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { MicroserviceOptions, WritePacket } from '../interfaces';
 import { MessageHandlers } from '../interfaces/message-handlers.interface';
@@ -53,11 +59,11 @@ export abstract class Server {
   }
 
   public getOptionsProp<T extends { options? }>(
-    obj: MicroserviceOptions,
+    obj: MicroserviceOptions['options'],
     prop: keyof T['options'],
     defaultValue = undefined,
   ) {
-    return obj && obj.options ? obj.options[prop as any] : defaultValue;
+    return obj ? obj[prop as any] : defaultValue;
   }
 
   protected handleError(error: string) {

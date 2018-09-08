@@ -10,9 +10,9 @@ import { ServerRMQ } from './server-rqm';
 
 export class ServerFactory {
   public static create(
-    options: MicroserviceOptions,
+    microserviceOptions: MicroserviceOptions,
   ): Server & CustomTransportStrategy {
-    const { transport } = options as any;
+    const { transport, options } = microserviceOptions as any;
     switch (transport) {
       case Transport.REDIS:
         return new ServerRedis(options);

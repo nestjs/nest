@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Body, Query, HttpCode } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
-  MessagePattern,
   ClientProxy,
+  MessagePattern,
   Transport,
 } from '@nestjs/microservices';
-import { Observable, of, from } from 'rxjs';
+import { from, Observable, of } from 'rxjs';
 import { scan } from 'rxjs/operators';
 
 @Controller()
@@ -15,7 +15,11 @@ export class MqttController {
 
   @Post()
   @HttpCode(200)
-  call(@Query('command') cmd, @Body() data: number[]): Observable<number> {
+  async call(
+    @Query('command') cmd,
+    @Body() data: number[],
+  ): Promise<Observable<number>> {
+    await this.client.connect();
     return this.client.send<number>({ cmd }, data);
   }
 

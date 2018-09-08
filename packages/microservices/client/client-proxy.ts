@@ -1,9 +1,22 @@
-import { isNil } from '@nestjs/common/utils/shared.utils';
-import { defer, fromEvent, merge, Observable, Observer, throwError as _throw } from 'rxjs';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import { isNil, isString } from '@nestjs/common/utils/shared.utils';
+import {
+  defer,
+  fromEvent,
+  merge,
+  Observable,
+  Observer,
+  throwError as _throw,
+} from 'rxjs';
 import { map, mergeMap, take } from 'rxjs/operators';
 import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
 import { InvalidMessageException } from '../exceptions/errors/invalid-message.exception';
-import { ClientOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
+import {
+  ClientOptions,
+  PacketId,
+  ReadPacket,
+  WritePacket,
+} from '../interfaces';
 
 export abstract class ClientProxy {
   public abstract connect(): Promise<any>;
@@ -46,10 +59,7 @@ export abstract class ClientProxy {
   }
 
   protected assignPacketId(packet: ReadPacket): ReadPacket & PacketId {
-    const id =
-      Math.random()
-        .toString(36)
-        .substr(2, 5) + Date.now();
+    const id = randomStringGenerator();
     return Object.assign(packet, { id });
   }
 
@@ -68,10 +78,14 @@ export abstract class ClientProxy {
   }
 
   protected getOptionsProp<T extends { options? }>(
-    obj: ClientOptions,
+    obj: ClientOptions['options'],
     prop: keyof T['options'],
     defaultValue = undefined,
   ) {
-    return obj && obj.options ? obj.options[prop as any] : defaultValue;
+    return obj ? obj[prop as any] : defaultValue;
+  }
+
+  protected normalizePattern<T = any>(pattern: T): string {
+    return pattern && isString(pattern) ? pattern : JSON.stringify(pattern);
   }
 }

@@ -40,6 +40,9 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         this.registerHttpServer();
         this.routesResolver = new routes_resolver_1.RoutesResolver(this.container, this.config);
     }
+    getHttpAdapter() {
+        return this.httpAdapter;
+    }
     registerHttpServer() {
         this.httpServer = this.createServer();
         const server = this.getUnderlyingHttpServer();
@@ -60,10 +63,14 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         const isHttpsEnabled = this.appOptions && this.appOptions.httpsOptions;
         const isExpress = this.isExpress();
         if (isHttpsEnabled && isExpress) {
-            return https.createServer(this.appOptions.httpsOptions, this.httpAdapter.getHttpServer());
+            const server = https.createServer(this.appOptions.httpsOptions, this.httpAdapter.getInstance());
+            this.httpAdapter.setHttpServer(server);
+            return server;
         }
         if (isExpress) {
-            return http.createServer(this.httpAdapter.getHttpServer());
+            const server = http.createServer(this.httpAdapter.getInstance());
+            this.httpAdapter.setHttpServer(server);
+            return server;
         }
         return this.httpAdapter;
     }
@@ -87,6 +94,8 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         await this.registerModules();
         await this.registerRouter();
         await this.callInitHook();
+        await this.registerRouterHooks();
+        await this.callBootstrapHook();
         this.isInitialized = true;
         this.logger.log(constants_1.messages.APPLICATION_READY);
         return this;
@@ -107,7 +116,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
             .forEach(parserKey => this.httpAdapter.use(parserMiddleware[parserKey]));
     }
     isMiddlewareApplied(httpAdapter, name) {
-        const app = this.httpAdapter.getHttpServer();
+        const app = httpAdapter.getInstance();
         return (!!app._router &&
             !!app._router.stack &&
             shared_utils_1.isFunction(app._router.stack.filter) &&
@@ -118,6 +127,10 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         const prefix = this.config.getGlobalPrefix();
         const basePath = prefix ? shared_utils_1.validatePath(prefix) : '';
         this.routesResolver.resolve(this.httpAdapter, basePath);
+    }
+    async registerRouterHooks() {
+        this.routesResolver.registerNotFoundHandler();
+        this.routesResolver.registerExceptionHandler();
     }
     connectMicroservice(options) {
         const { NestMicroservice } = load_package_util_1.loadPackage('@nestjs/microservices', 'NestFactory');
@@ -204,7 +217,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
             microservice.setIsTerminated(true);
             await microservice.close();
         }));
-        await this.callDestroyHook();
+        await super.close();
     }
     setGlobalPrefix(prefix) {
         this.config.setGlobalPrefix(prefix);
@@ -261,21 +274,6 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         return new Promise(async (resolve, reject) => {
             await microservice.listen(resolve);
         });
-    }
-    async callDestroyHook() {
-        const modules = this.container.getModules();
-        await Promise.all(iterare_1.default(modules.values()).map(async (module) => await this.callModuleDestroyHook(module)));
-    }
-    async callModuleDestroyHook(module) {
-        const components = [...module.routes, ...module.components];
-        await Promise.all(iterare_1.default(components)
-            .map(([key, { instance }]) => instance)
-            .filter(instance => !shared_utils_1.isNil(instance))
-            .filter(this.hasOnModuleDestroyHook)
-            .map(async (instance) => await instance.onModuleDestroy()));
-    }
-    hasOnModuleDestroyHook(instance) {
-        return !shared_utils_1.isUndefined(instance.onModuleDestroy);
     }
 }
 exports.NestApplication = NestApplication;

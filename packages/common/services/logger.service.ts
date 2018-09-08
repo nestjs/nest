@@ -1,49 +1,54 @@
 import * as clc from 'cli-color';
+import { Injectable, Optional } from '../decorators';
 import { NestEnvironment } from '../enums/nest-environment.enum';
-import { Constructor } from '../utils/merge-with-values.util';
+import { isObject } from '../utils/shared.utils';
 
 declare const process;
 
 export interface LoggerService {
-  log(message: string);
-  error(message: string, trace: string);
-  warn(message: string);
+  log(message: any, context?: string);
+  error(message: any, trace?: string, context?: string);
+  warn(message: any, context?: string);
 }
 
+@Injectable()
 export class Logger implements LoggerService {
   private static prevTimestamp = null;
-  private static contextEnv = NestEnvironment.RUN;
+  private static contextEnvironment = NestEnvironment.RUN;
   private static logger: typeof Logger | LoggerService = Logger;
-
   private static readonly yellow = clc.xterm(3);
 
   constructor(
-    private readonly context: string,
-    private readonly isTimeDiffEnabled = false,
+    @Optional() private readonly context?: string,
+    @Optional() private readonly isTimeDiffEnabled = false,
   ) {}
 
-  log(message: string) {
+  log(message: any, context?: string) {
     const { logger } = Logger;
-    logger &&
-      logger.log.call(logger, message, this.context, this.isTimeDiffEnabled);
+    if (logger === this) {
+      Logger.log(message, context || this.context, this.isTimeDiffEnabled);
+      return;
+    }
+    logger && logger.log.call(logger, message, context || this.context);
   }
 
-  error(message: string, trace = '') {
+  error(message: any, trace = '', context?: string) {
     const { logger } = Logger;
+    if (logger === this) {
+      Logger.error(message, trace, context || this.context);
+      return;
+    }
     logger &&
-      logger.error.call(
-        logger,
-        message,
-        trace,
-        this.context,
-        this.isTimeDiffEnabled,
-      );
+      logger.error.call(logger, message, trace, context || this.context);
   }
 
-  warn(message: string) {
+  warn(message: any, context?: string) {
     const { logger } = Logger;
-    logger &&
-      logger.warn.call(logger, message, this.context, this.isTimeDiffEnabled);
+    if (logger === this) {
+      Logger.warn(message, context || this.context, this.isTimeDiffEnabled);
+      return;
+    }
+    logger && logger.warn.call(logger, message, context || this.context);
   }
 
   static overrideLogger(logger: LoggerService | boolean) {
@@ -51,15 +56,15 @@ export class Logger implements LoggerService {
   }
 
   static setMode(mode: NestEnvironment) {
-    this.contextEnv = mode;
+    this.contextEnvironment = mode;
   }
 
-  static log(message: string, context = '', isTimeDiffEnabled = true) {
+  static log(message: any, context = '', isTimeDiffEnabled = true) {
     this.printMessage(message, clc.green, context, isTimeDiffEnabled);
   }
 
   static error(
-    message: string,
+    message: any,
     trace = '',
     context = '',
     isTimeDiffEnabled = true,
@@ -68,22 +73,26 @@ export class Logger implements LoggerService {
     this.printStackTrace(trace);
   }
 
-  static warn(message: string, context = '', isTimeDiffEnabled = true) {
+  static warn(message: any, context = '', isTimeDiffEnabled = true) {
     this.printMessage(message, clc.yellow, context, isTimeDiffEnabled);
   }
 
   private static printMessage(
-    message: string,
-    color: (msg: string) => string,
+    message: any,
+    color: (message: string) => string,
     context: string = '',
     isTimeDiffEnabled?: boolean,
   ) {
-    if (Logger.contextEnv === NestEnvironment.TEST) return;
-
+    if (Logger.contextEnvironment === NestEnvironment.TEST) {
+      return void 0;
+    }
+    const output =
+      message && isObject(message) ? JSON.stringify(message, null, 2) : message;
     process.stdout.write(color(`[Nest] ${process.pid}   - `));
     process.stdout.write(`${new Date(Date.now()).toLocaleString()}   `);
-    process.stdout.write(this.yellow(`[${context}] `));
-    process.stdout.write(color(message));
+
+    context && process.stdout.write(this.yellow(`[${context}] `));
+    process.stdout.write(color(output));
 
     this.printTimestamp(isTimeDiffEnabled);
     process.stdout.write(`\n`);
@@ -100,8 +109,9 @@ export class Logger implements LoggerService {
   }
 
   private static printStackTrace(trace: string) {
-    if (this.contextEnv === NestEnvironment.TEST || !trace) return;
-
+    if (this.contextEnvironment === NestEnvironment.TEST || !trace) {
+      return void 0;
+    }
     process.stdout.write(trace);
     process.stdout.write(`\n`);
   }

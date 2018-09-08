@@ -1,5 +1,8 @@
 import {
   INestApplicationContext,
+  Logger,
+  LoggerService,
+  OnApplicationBootstrap,
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
@@ -57,6 +60,7 @@ export class NestApplicationContext extends ModuleRef
 
   public async init(): Promise<this> {
     await this.callInitHook();
+    await this.callBootstrapHook();
     return this;
   }
 
@@ -64,24 +68,34 @@ export class NestApplicationContext extends ModuleRef
     await this.callDestroyHook();
   }
 
+  public useLogger(logger: LoggerService) {
+    Logger.overrideLogger(logger);
+  }
+
   protected async callInitHook(): Promise<any> {
-    const modules = this.container.getModules();
-    await Promise.all(
-      iterate(modules.values()).map(
-        async module => await this.callModuleInitHook(module),
-      ),
-    );
+    const modulesContainer = this.container.getModules();
+    for (const module of [...modulesContainer.values()].reverse()) {
+      await this.callModuleInitHook(module);
+    }
   }
 
   protected async callModuleInitHook(module: Module): Promise<any> {
-    const components = [...module.routes, ...module.components];
+    const components = [...module.components];
+    // The Module (class) instance is the first element of the components array
+    // Lifecycle hook has to be called once all classes are properly initialized
+    const [_, { instance: moduleClassInstance }] = components.shift();
+    const instances = [...module.routes, ...components];
+
     await Promise.all(
-      iterate(components)
+      iterate(instances)
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
         .filter(this.hasOnModuleInitHook)
         .map(async instance => await (instance as OnModuleInit).onModuleInit()),
     );
+    if (moduleClassInstance && this.hasOnModuleInitHook(moduleClassInstance)) {
+      await (moduleClassInstance as OnModuleInit).onModuleInit();
+    }
   }
 
   protected hasOnModuleInitHook(instance: any): instance is OnModuleInit {
@@ -89,18 +103,21 @@ export class NestApplicationContext extends ModuleRef
   }
 
   protected async callDestroyHook(): Promise<any> {
-    const modules = this.container.getModules();
-    await Promise.all(
-      iterate(modules.values()).map(
-        async module => await this.callModuleDestroyHook(module),
-      ),
-    );
+    const modulesContainer = this.container.getModules();
+    for (const module of modulesContainer.values()) {
+      await this.callModuleDestroyHook(module);
+    }
   }
 
   protected async callModuleDestroyHook(module: Module): Promise<any> {
-    const components = [...module.routes, ...module.components];
+    const components = [...module.components];
+    // The Module (class) instance is the first element of the components array
+    // Lifecycle hook has to be called once all classes are properly destroyed
+    const [_, { instance: moduleClassInstance }] = components.shift();
+    const instances = [...module.routes, ...components];
+
     await Promise.all(
-      iterate(components)
+      iterate(instances)
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
         .filter(this.hasOnModuleDestroyHook)
@@ -109,9 +126,50 @@ export class NestApplicationContext extends ModuleRef
             await (instance as OnModuleDestroy).onModuleDestroy(),
         ),
     );
+    if (
+      moduleClassInstance &&
+      this.hasOnModuleDestroyHook(moduleClassInstance)
+    ) {
+      await (moduleClassInstance as OnModuleDestroy).onModuleDestroy();
+    }
   }
 
   protected hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
     return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
+  }
+
+  protected async callBootstrapHook(): Promise<any> {
+    const modulesContainer = this.container.getModules();
+    for (const module of [...modulesContainer.values()].reverse()) {
+      await this.callModuleBootstrapHook(module);
+    }
+  }
+
+  protected async callModuleBootstrapHook(module: Module): Promise<any> {
+    const components = [...module.components];
+    const [_, { instance: moduleClassInstance }] = components.shift();
+    const instances = [...module.routes, ...components];
+
+    await Promise.all(
+      iterate(instances)
+        .map(([key, { instance }]) => instance)
+        .filter(instance => !isNil(instance))
+        .filter(this.hasOnAppBotstrapHook)
+        .map(
+          async instance =>
+            await (instance as OnApplicationBootstrap).onApplicationBootstrap(),
+        ),
+    );
+    if (moduleClassInstance && this.hasOnAppBotstrapHook(moduleClassInstance)) {
+      await (moduleClassInstance as OnApplicationBootstrap).onApplicationBootstrap();
+    }
+  }
+
+  protected hasOnAppBotstrapHook(
+    instance: any,
+  ): instance is OnApplicationBootstrap {
+    return !isUndefined(
+      (instance as OnApplicationBootstrap).onApplicationBootstrap,
+    );
   }
 }

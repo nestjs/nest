@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { empty } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientMqtt } from '../../client/client-mqtt';
 import { ERROR_EVENT } from '../../constants';
@@ -54,12 +55,12 @@ describe('ClientMqtt', () => {
     });
     it('should subscribe to response pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;
+      expect(subscribeSpy.calledWith(`${pattern}_res`)).to.be.true;
     });
     it('should publish stringified message to acknowledge pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(publishSpy.calledWith(`"${pattern}"_ack`, JSON.stringify(msg))).to
-        .be.true;
+      expect(publishSpy.calledWith(`${pattern}_ack`, JSON.stringify(msg))).to.be
+        .true;
     });
     it('should listen on messages', async () => {
       await client['publish'](msg, () => {});
@@ -68,9 +69,11 @@ describe('ClientMqtt', () => {
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;
       beforeEach(() => {
-        assignPacketIdStub = sinon.stub(client, 'assignPacketId').callsFake(() => {
-          throw new Error();
-        });
+        assignPacketIdStub = sinon
+          .stub(client, 'assignPacketId')
+          .callsFake(() => {
+            throw new Error();
+          });
       });
       afterEach(() => {
         assignPacketIdStub.restore();
@@ -146,10 +149,15 @@ describe('ClientMqtt', () => {
       beforeEach(async () => {
         callback = sinon.spy();
         subscription = client.createResponseCallback(msg, callback);
-        subscription('channel', new Buffer(JSON.stringify({
-          ...responseMessage,
-          isDisposed: true,
-        })));
+        subscription(
+          'channel',
+          new Buffer(
+            JSON.stringify({
+              ...responseMessage,
+              isDisposed: true,
+            }),
+          ),
+        );
       });
 
       it('should call callback with dispose param', () => {
@@ -166,10 +174,13 @@ describe('ClientMqtt', () => {
     describe('disposed and "id" is incorrect', () => {
       beforeEach(async () => {
         callback = sinon.spy();
-        subscription = client.createResponseCallback({
-          ...msg,
-          id: '2',
-        }, callback);
+        subscription = client.createResponseCallback(
+          {
+            ...msg,
+            id: '2',
+          },
+          callback,
+        );
         subscription('channel', new Buffer(JSON.stringify(responseMessage)));
       });
 
@@ -198,6 +209,7 @@ describe('ClientMqtt', () => {
     let createClientStub: sinon.SinonStub;
     let handleErrorsSpy: sinon.SinonSpy;
     let connect$Stub: sinon.SinonStub;
+    let mergeCloseEvent: sinon.SinonStub;
 
     beforeEach(async () => {
       createClientStub = sinon.stub(client, 'createClient').callsFake(() => ({
@@ -207,13 +219,22 @@ describe('ClientMqtt', () => {
       handleErrorsSpy = sinon.spy(client, 'handleError');
       connect$Stub = sinon.stub(client, 'connect$').callsFake(() => ({
         subscribe: resolve => resolve(),
-        toPromise: () => this,
+        toPromise() {
+          return this;
+        },
+        pipe() {
+          return this;
+        },
       }));
+      mergeCloseEvent = sinon
+        .stub(client, 'mergeCloseEvent')
+        .callsFake((_, source) => source);
     });
     afterEach(() => {
       createClientStub.restore();
       handleErrorsSpy.restore();
       connect$Stub.restore();
+      mergeCloseEvent.restore();
     });
     describe('when is not connected', () => {
       beforeEach(async () => {
@@ -243,6 +264,18 @@ describe('ClientMqtt', () => {
       it('should not call "connect$"', () => {
         expect(connect$Stub.called).to.be.false;
       });
+    });
+  });
+  describe('mergeCloseEvent', () => {
+    it('should merge close event', () => {
+      const error = new Error();
+      const instance: any = {
+        on: (ev, callback) => callback(error),
+        off: () => ({}),
+      };
+      client
+        .mergeCloseEvent(instance as any, empty())
+        .subscribe(null, err => expect(err).to.be.eql(error));
     });
   });
   describe('handleError', () => {

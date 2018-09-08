@@ -1,12 +1,18 @@
-import * as sinon from 'sinon';
+import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { expect } from 'chai';
+import { of } from 'rxjs';
+import * as sinon from 'sinon';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
-import { ModulesContainer } from '../../injector/modules-container';
-import { NestContainer } from '../../injector/container';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
-import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 import { ExternalContextCreator } from '../../helpers/external-context-creator';
+import { NestContainer } from '../../injector/container';
+import { ModulesContainer } from '../../injector/modules-container';
+import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
+import { PipesConsumer } from '../../pipes/pipes-consumer';
+import { PipesContextCreator } from '../../pipes/pipes-context-creator';
+import { RouteParamsFactory } from '../../router/route-params-factory';
 
 describe('ExternalContextCreator', () => {
   let contextCreator: ExternalContextCreator;
@@ -14,6 +20,7 @@ describe('ExternalContextCreator', () => {
   let applySpy: sinon.SinonSpy;
   let bindSpy: sinon.SinonSpy;
   let guardsConsumer: GuardsConsumer;
+  let consumer: PipesConsumer;
 
   beforeEach(() => {
     callback = {
@@ -24,12 +31,15 @@ describe('ExternalContextCreator', () => {
     applySpy = sinon.spy(callback, 'apply');
 
     guardsConsumer = new GuardsConsumer();
+    consumer = new PipesConsumer();
     contextCreator = new ExternalContextCreator(
       new GuardsContextCreator(new NestContainer()),
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
       new InterceptorsConsumer(),
       new ModulesContainer(),
+      new PipesContextCreator(new NestContainer()),
+      consumer,
     );
   });
   describe('create', () => {
@@ -38,7 +48,7 @@ describe('ExternalContextCreator', () => {
         contextCreator,
         'findContextModuleName',
       );
-      contextCreator.create({ foo: 'bar' }, callback as any, '');
+      contextCreator.create({ foo: 'bar' }, callback as any, '', '', null);
       expect(findContextModuleNameSpy.called).to.be.true;
       done();
     });
@@ -48,7 +58,13 @@ describe('ExternalContextCreator', () => {
 
       beforeEach(() => {
         instance = { foo: 'bar' };
-        proxyContext = contextCreator.create(instance, callback as any, '');
+        proxyContext = contextCreator.create(
+          instance,
+          callback as any,
+          '',
+          '',
+          null,
+        );
       });
       it('should be a function', () => {
         expect(proxyContext).to.be.a('function');
@@ -66,7 +82,7 @@ describe('ExternalContextCreator', () => {
             sinon.stub(guardsConsumer, 'tryActivate', () => true);
 
             await proxyContext(...args);
-            expect(applySpy.calledWith(instance, args)).to.be.true;
+            expect(applySpy.called).to.be.true;
           });
         });
       });
@@ -86,7 +102,9 @@ describe('ExternalContextCreator', () => {
 
         modules.set(moduleKey, {});
         (contextCreator as any).modulesContainer = modules;
-        sinon.stub(contextCreator, 'findComponentByClassName').callsFake(() => true);
+        sinon
+          .stub(contextCreator, 'findComponentByClassName')
+          .callsFake(() => true);
 
         expect(
           contextCreator.findContextModuleName({ name: componentKey } as any),
@@ -95,7 +113,9 @@ describe('ExternalContextCreator', () => {
     });
     describe('when component does not exists', () => {
       it('should return empty string', () => {
-        sinon.stub(contextCreator, 'findComponentByClassName').callsFake(() => false);
+        sinon
+          .stub(contextCreator, 'findComponentByClassName')
+          .callsFake(() => false);
         expect(contextCreator.findContextModuleName({} as any)).to.be.eql('');
       });
     });
@@ -129,6 +149,132 @@ describe('ExternalContextCreator', () => {
             key,
           ),
         ).to.be.false;
+      });
+    });
+  });
+  describe('exchangeKeysForValues', () => {
+    const res = { body: 'res' };
+    const req = { body: { test: 'req' } };
+    const next = () => {};
+
+    it('should exchange arguments keys for appropriate values', () => {
+      const metadata = {
+        [RouteParamtypes.REQUEST]: { index: 0, data: 'test', pipes: [] },
+        [RouteParamtypes.BODY]: { index: 2, data: 'test', pipes: [] },
+        [`key${CUSTOM_ROUTE_AGRS_METADATA}`]: {
+          index: 3,
+          data: 'custom',
+          pipes: [],
+        },
+      };
+      const keys = Object.keys(metadata);
+      const values = contextCreator.exchangeKeysForValues(
+        keys,
+        metadata,
+        '',
+        new RouteParamsFactory(),
+      );
+      const expectedValues = [
+        { index: 0, type: RouteParamtypes.REQUEST, data: 'test' },
+        { index: 2, type: RouteParamtypes.BODY, data: 'test' },
+        { index: 3, type: `key${CUSTOM_ROUTE_AGRS_METADATA}`, data: 'custom' },
+      ];
+      expect(values[0]).to.deep.include(expectedValues[0]);
+      expect(values[1]).to.deep.include(expectedValues[1]);
+    });
+  });
+  describe('getCustomFactory', () => {
+    describe('when factory is function', () => {
+      it('should return curried factory', () => {
+        const data = 3;
+        const result = 10;
+        const customFactory = (_, req) => result;
+
+        expect(
+          contextCreator.getCustomFactory(customFactory, data)(),
+        ).to.be.eql(result);
+      });
+    });
+    describe('when factory is undefined / is not a function', () => {
+      it('should return curried null identity', () => {
+        const result = 10;
+        const customFactory = undefined;
+        expect(
+          contextCreator.getCustomFactory(customFactory, undefined)(),
+        ).to.be.eql(null);
+      });
+    });
+  });
+  describe('getParamValue', () => {
+    let consumerApplySpy: sinon.SinonSpy;
+    const value = 3,
+      metatype = null,
+      transforms = [];
+
+    beforeEach(() => {
+      consumerApplySpy = sinon.spy(consumer, 'apply');
+    });
+    it('should call "consumer.apply"', () => {
+      contextCreator.getParamValue(
+        value,
+        { metatype, type: RouteParamtypes.NEXT, data: null },
+        transforms,
+      );
+      expect(consumerApplySpy.called).to.be.true;
+    });
+  });
+  describe('createPipesFn', () => {
+    describe('when "paramsOptions" is empty', () => {
+      it('returns null', async () => {
+        const pipesFn = contextCreator.createPipesFn([], []);
+        expect(pipesFn).to.be.null;
+      });
+    });
+    describe('when "paramsOptions" is not empty', () => {
+      it('returns function', async () => {
+        const pipesFn = contextCreator.createPipesFn(
+          [],
+          [
+            {
+              index: 1,
+              type: 'test',
+              data: null,
+              pipes: [],
+              extractValue: () => null,
+            },
+          ],
+        );
+        await pipesFn([]);
+        expect(pipesFn).to.be.a('function');
+      });
+    });
+  });
+
+  describe('transformToResult', () => {
+    describe('when resultOrDeffered', () => {
+      describe('is Promise', () => {
+        it('should returns Promise', async () => {
+          const value = 100;
+          expect(
+            await contextCreator.transformToResult(Promise.resolve(value)),
+          ).to.be.eq(100);
+        });
+      });
+
+      describe('is Observable', () => {
+        it('should returns Promise', async () => {
+          const value = 100;
+          expect(await contextCreator.transformToResult(of(value))).to.be.eq(
+            100,
+          );
+        });
+      });
+
+      describe('is value', () => {
+        it('should returns Promise', async () => {
+          const value = 100;
+          expect(await contextCreator.transformToResult(value)).to.be.eq(100);
+        });
       });
     });
   });

@@ -1,4 +1,4 @@
-import { DynamicModule } from '@nestjs/common';
+import { DynamicModule, ForwardReference } from '@nestjs/common';
 import {
   EXCEPTION_FILTERS_METADATA,
   GATEWAY_MIDDLEWARES,
@@ -11,6 +11,7 @@ import {
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import {
   isFunction,
   isNil,
@@ -44,14 +45,35 @@ export class DependenciesScanner {
   }
 
   public async scanForModules(
-    module: Type<any> | DynamicModule,
+    module: ForwardReference | Type<any> | DynamicModule,
     scope: Type<any>[] = [],
+    ctxRegistry: (ForwardReference | DynamicModule | Type<any>)[] = [],
   ) {
     await this.storeModule(module, scope);
+    ctxRegistry.push(module);
 
-    const modules = this.reflectMetadata(module, metadata.MODULES);
+    if (this.isForwardReference(module)) {
+      module = (module as ForwardReference).forwardRef();
+    }
+    const modules = !this.isDynamicModule(module as Type<any> | DynamicModule)
+      ? this.reflectMetadata(module, metadata.MODULES)
+      : [
+          ...this.reflectMetadata(
+            (module as DynamicModule).module,
+            metadata.MODULES,
+          ),
+          ...((module as DynamicModule).imports || []),
+        ];
+
     for (const innerModule of modules) {
-      await this.scanForModules(innerModule, [].concat(scope, module));
+      if (ctxRegistry.includes(innerModule)) {
+        continue;
+      }
+      await this.scanForModules(
+        innerModule,
+        [].concat(scope, module),
+        ctxRegistry,
+      );
     }
   }
 
@@ -248,13 +270,11 @@ export class DependenciesScanner {
     const applyProvidersMap = this.getApplyProvidersMap();
     const providersKeys = Object.keys(applyProvidersMap);
     const type = component.provide;
+
     if (providersKeys.indexOf(type) < 0) {
       return this.container.addComponent(component, token);
     }
-    const providerToken = Math.random()
-      .toString(36)
-      .substring(2, 32);
-
+    const providerToken = randomStringGenerator();
     this.applicationProvidersApplyMap.push({
       type,
       moduleKey: token,
@@ -309,5 +329,17 @@ export class DependenciesScanner {
       [APP_GUARD]: guard => this.applicationConfig.addGlobalGuard(guard),
       [APP_FILTER]: filter => this.applicationConfig.addGlobalFilter(filter),
     };
+  }
+
+  public isDynamicModule(
+    module: Type<any> | DynamicModule,
+  ): module is DynamicModule {
+    return module && !!(module as DynamicModule).module;
+  }
+
+  public isForwardReference(
+    module: Type<any> | DynamicModule | ForwardReference,
+  ): module is ForwardReference {
+    return module && !!(module as ForwardReference).forwardRef;
   }
 }

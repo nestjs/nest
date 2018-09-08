@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { share } from 'rxjs/operators';
 import { ERROR_EVENT, NATS_DEFAULT_URL } from '../constants';
 import { Client } from '../external/nats-client.interface';
 import { NatsOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
@@ -10,41 +11,39 @@ import { CONN_ERR } from './constants';
 let natsPackage: any = {};
 
 export class ClientNats extends ClientProxy {
-  private readonly logger = new Logger(ClientProxy.name);
-  private readonly url: string;
-  private natsClient: Client;
+  protected readonly logger = new Logger(ClientProxy.name);
+  protected readonly url: string;
+  protected natsClient: Client;
+  protected connection: Promise<any>;
 
-  constructor(private readonly options: ClientOptions) {
+  constructor(protected readonly options: ClientOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
     natsPackage = loadPackage('nats', ClientNats.name);
   }
 
-  public getAckPatternName(pattern: string): string {
-    return `${pattern}_ack`;
-  }
-
-  public getResPatternName(pattern: string): string {
-    return `${pattern}_res`;
-  }
-
   public close() {
     this.natsClient && this.natsClient.close();
     this.natsClient = null;
+    this.connection = null;
   }
 
   public async connect(): Promise<any> {
     if (this.natsClient) {
-      return Promise.resolve();
+      return this.connection;
     }
-    this.natsClient = await this.createClient();
+    this.natsClient = this.createClient();
     this.handleError(this.natsClient);
-    return this.connect$(this.natsClient).toPromise();
+
+    this.connection = await this.connect$(this.natsClient)
+      .pipe(share())
+      .toPromise();
+    return this.connection;
   }
 
-  public createClient(): Promise<Client> {
-    const options: any = this.options.options || ({} as NatsOptions);
+  public createClient(): Client {
+    const options: any = this.options || ({} as NatsOptions);
     return natsPackage.connect({
       ...options,
       url: this.url,
@@ -81,21 +80,24 @@ export class ClientNats extends ClientProxy {
       });
     };
   }
+
   protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ): Function {
     try {
       const packet = this.assignPacketId(partialPacket);
-      const pattern = JSON.stringify(partialPacket.pattern);
-      const responseChannel = this.getResPatternName(pattern);
+      const channel = this.normalizePattern(partialPacket.pattern);
 
-      const subscriptionHandler = this.createSubscriptionHandler(packet, callback);
-      const subscriptionId = this.natsClient.subscribe(
-        responseChannel,
+      const subscriptionHandler = this.createSubscriptionHandler(
+        packet,
+        callback,
+      );
+      const subscriptionId = this.natsClient.request(
+        channel,
+        packet as any,
         subscriptionHandler,
       );
-      this.natsClient.publish(this.getAckPatternName(pattern), packet as any);
       return () => this.natsClient.unsubscribe(subscriptionId);
     } catch (err) {
       callback({ err });

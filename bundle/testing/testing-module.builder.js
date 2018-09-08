@@ -11,7 +11,7 @@ const testing_module_1 = require("./testing-module");
 class TestingModuleBuilder {
     constructor(metadataScanner, metadata) {
         this.applicationConfig = new application_config_1.ApplicationConfig();
-        this.container = new container_1.NestContainer();
+        this.container = new container_1.NestContainer(this.applicationConfig);
         this.overloadsMap = new Map();
         this.instanceLoader = new instance_loader_1.InstanceLoader(this.container);
         this.scanner = new scanner_1.DependenciesScanner(this.container, metadataScanner, this.applicationConfig);
@@ -40,13 +40,10 @@ class TestingModuleBuilder {
     async compile() {
         this.applyLogger();
         await this.scanner.scan(this.module);
-        [...this.overloadsMap.entries()].map(([component, options]) => {
-            this.container.replace(component, options);
-        });
+        this.applyOverloadsMap();
         await this.instanceLoader.createInstancesOfDependencies();
         this.scanner.applyApplicationProviders();
-        const modules = this.container.getModules().values();
-        const root = modules.next().value;
+        const root = this.getRootModule();
         return new testing_module_1.TestingModule(this.container, [], root, this.applicationConfig);
     }
     override(typeOrToken, isComponent) {
@@ -62,6 +59,15 @@ class TestingModuleBuilder {
             useFactory: (options) => add(Object.assign({}, options, { useFactory: options.factory })),
             useClass: metatype => add({ useClass: metatype }),
         };
+    }
+    applyOverloadsMap() {
+        [...this.overloadsMap.entries()].map(([component, options]) => {
+            this.container.replace(component, options);
+        });
+    }
+    getRootModule() {
+        const modules = this.container.getModules().values();
+        return modules.next().value;
     }
     createModule(metadata) {
         class TestModule {

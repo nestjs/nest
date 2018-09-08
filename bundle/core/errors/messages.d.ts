@@ -1,4 +1,5 @@
-export declare const UnknownDependenciesMessage: (type: string, index: number, length: number) => string;
+import { InjectorDependencyContext } from '../injector/injector';
+export declare const UnknownDependenciesMessage: (type: string, unknownDependencyContext: InjectorDependencyContext) => string;
 export declare const InvalidMiddlewareMessage: (name: string) => string;
 export declare const InvalidModuleMessage: (scope: string) => string;
 export declare const UnknownExportMessage: (module: string) => string;

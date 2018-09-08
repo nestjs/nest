@@ -186,7 +186,7 @@ Samples: (even more [samples](https://github.com/nestjs/nest/commits/master))
 docs(changelog) update change log to beta.5
 ```
 ```
-bugfix(@nestjs/core) need to depend on latest rxjs and zone.js
+bugfix(core) need to depend on latest rxjs and zone.js
 
 The version in our package.json gets copied to the one we publish, and users need the latest of these.
 ```

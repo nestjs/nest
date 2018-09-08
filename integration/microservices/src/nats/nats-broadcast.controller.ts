@@ -1,8 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import {
   Client,
-  MessagePattern,
   ClientProxy,
+  MessagePattern,
   Transport,
 } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
@@ -16,11 +16,11 @@ export class NatsBroadcastController {
   @Get('broadcast')
   multicats() {
     return this.client
-      .send<number>({ cmd: 'broadcast' }, {})
+      .send<number>('broadcast.test', {})
       .pipe(scan((a, b) => a + b), take(2));
   }
 
-  @MessagePattern({ cmd: 'broadcast' })
+  @MessagePattern('broadcast.*')
   replyBroadcast(): Observable<number> {
     return new Observable(observer => observer.next(1));
   }

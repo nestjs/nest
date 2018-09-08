@@ -25,6 +25,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     private httpServer;
     private isInitialized;
     constructor(container: NestContainer, httpAdapter: HttpServer, config: ApplicationConfig, appOptions?: NestApplicationOptions);
+    getHttpAdapter(): HttpServer;
     registerHttpServer(): void;
     applyOptions(): this;
     createServer(): any;
@@ -34,6 +35,7 @@ export declare class NestApplication extends NestApplicationContext implements I
     registerParserMiddleware(): any;
     isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean;
     registerRouter(): Promise<void>;
+    registerRouterHooks(): Promise<void>;
     connectMicroservice(options: MicroserviceOptions): INestMicroservice;
     getMicroservices(): INestMicroservice[];
     getHttpServer(): http.Server;
@@ -65,7 +67,4 @@ export declare class NestApplication extends NestApplicationContext implements I
     private registerMiddleware(instance);
     private isExpress();
     private listenToPromise(microservice);
-    private callDestroyHook();
-    private callModuleDestroyHook(module);
-    private hasOnModuleDestroyHook(instance);
 }

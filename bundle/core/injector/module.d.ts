@@ -20,12 +20,15 @@ export declare type ComponentMetatype = Type<Injectable> | CustomFactory | Custo
 export declare class Module {
     private readonly _metatype;
     private readonly _scope;
+    private readonly container;
+    private readonly _id;
     private _relatedModules;
     private _components;
     private _injectables;
     private _routes;
     private _exports;
     constructor(_metatype: Type<any>, _scope: Type<any>[], container: NestContainer);
+    readonly id: string;
     readonly scope: Type<any>[];
     readonly relatedModules: Set<Module>;
     readonly components: Map<string, InstanceWrapper<Injectable>>;
@@ -58,10 +61,5 @@ export declare class Module {
     addRoute(route: Type<Controller>): void;
     addRelatedModule(relatedModule: any): void;
     replace(toReplace: any, options: any): string;
-    createModuleRefMetatype(components: any): {
-        new (): {
-            readonly components: any;
-            get<T>(type: OpaqueToken): T;
-        };
-    };
+    createModuleRefMetatype(): any;
 }

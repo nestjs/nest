@@ -1,14 +1,14 @@
 /// <reference types="node" />
-import { Server } from './server';
-import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
-import { CustomTransportStrategy, PacketId } from './../interfaces';
 import { ReadPacket } from '@nestjs/microservices';
 import { MqttClient } from '../external/mqtt-client.interface';
+import { CustomTransportStrategy, PacketId } from '../interfaces';
+import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
+import { Server } from './server';
 export declare class ServerMqtt extends Server implements CustomTransportStrategy {
     private readonly options;
     private readonly url;
     private mqttClient;
-    constructor(options: MicroserviceOptions);
+    constructor(options: MicroserviceOptions['options']);
     listen(callback: () => void): Promise<void>;
     start(callback?: () => void): void;
     bindEvents(mqttClient: MqttClient): void;

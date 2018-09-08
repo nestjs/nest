@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("../constants");
-const constants_2 = require("./../constants");
 const server_1 = require("./server");
 let redisPackage = {};
 class ServerRedis extends server_1.Server {
@@ -11,7 +10,7 @@ class ServerRedis extends server_1.Server {
         this.isExplicitlyTerminated = false;
         this.url =
             this.getOptionsProp(this.options, 'url') ||
-                constants_2.REDIS_DEFAULT_URL;
+                constants_1.REDIS_DEFAULT_URL;
         redisPackage = this.loadPackage('redis', ServerRedis.name);
     }
     listen(callback) {
@@ -23,10 +22,10 @@ class ServerRedis extends server_1.Server {
     }
     start(callback) {
         this.bindEvents(this.subClient, this.pubClient);
-        this.subClient.on(constants_2.CONNECT_EVENT, callback);
+        this.subClient.on(constants_1.CONNECT_EVENT, callback);
     }
     bindEvents(subClient, pubClient) {
-        subClient.on(constants_2.MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
+        subClient.on(constants_1.MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
         const subscribePatterns = Object.keys(this.messageHandlers);
         subscribePatterns.forEach(pattern => subClient.subscribe(this.getAckQueueName(pattern)));
     }
@@ -71,7 +70,7 @@ class ServerRedis extends server_1.Server {
         return `${pattern}_res`;
     }
     handleError(stream) {
-        stream.on(constants_2.ERROR_EVENT, err => this.logger.error(err));
+        stream.on(constants_1.ERROR_EVENT, err => this.logger.error(err));
     }
     getClientOptions() {
         const retry_strategy = options => this.createRetryStrategy(options);

@@ -1,9 +1,8 @@
-import { NestContainer } from '@nestjs/core/injector/container';
-import { MicroserviceOptions } from './interfaces/microservice-configuration.interface';
-import { INestMicroservice, WebSocketAdapter, CanActivate, PipeTransform, NestInterceptor, ExceptionFilter, OnModuleInit } from '@nestjs/common';
+import { CanActivate, ExceptionFilter, INestMicroservice, NestInterceptor, PipeTransform, WebSocketAdapter } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { Module } from '@nestjs/core/injector/module';
+import { NestContainer } from '@nestjs/core/injector/container';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
+import { MicroserviceOptions } from './interfaces/microservice-configuration.interface';
 export declare class NestMicroservice extends NestApplicationContext implements INestMicroservice {
     private readonly applicationConfig;
     private readonly logger;
@@ -31,10 +30,4 @@ export declare class NestMicroservice extends NestApplicationContext implements 
     setIsTerminated(isTerminaed: boolean): void;
     setIsInitHookCalled(isInitHookCalled: boolean): void;
     protected closeApplication(): Promise<any>;
-    protected callInitHook(): Promise<any>;
-    protected callModuleInitHook(module: Module): Promise<any>;
-    protected hasOnModuleInitHook(instance: any): instance is OnModuleInit;
-    private callDestroyHook();
-    private callModuleDestroyHook(module);
-    private hasOnModuleDestroyHook(instance);
 }

@@ -15,10 +15,7 @@ class RouterResponseController {
         this.applicationRef.render(response, template, result);
     }
     async transformToResult(resultOrDeffered) {
-        if (resultOrDeffered instanceof Promise) {
-            return await resultOrDeffered;
-        }
-        else if (resultOrDeffered && shared_utils_1.isFunction(resultOrDeffered.subscribe)) {
+        if (resultOrDeffered && shared_utils_1.isFunction(resultOrDeffered.subscribe)) {
             return await resultOrDeffered.toPromise();
         }
         return resultOrDeffered;

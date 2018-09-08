@@ -12,7 +12,7 @@ import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-
 import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { ExpressFactory } from './adapters/express-factory';
 import { FastifyAdapter } from './adapters/fastify-adapter';
@@ -34,10 +34,7 @@ export class NestFactoryStatic {
    */
   public async create(
     module: any,
-  ): Promise<INestApplication & INestExpressApplication>;
-  public async create(
-    module: any,
-    options: NestApplicationOptions,
+    options?: NestApplicationOptions,
   ): Promise<INestApplication & INestExpressApplication>;
   public async create(
     module: any,
@@ -46,12 +43,7 @@ export class NestFactoryStatic {
   ): Promise<INestApplication & INestFastifyApplication>;
   public async create(
     module: any,
-    httpServer: HttpServer,
-    options?: NestApplicationOptions,
-  ): Promise<INestApplication & INestExpressApplication>;
-  public async create(
-    module: any,
-    httpServer: any,
+    httpServer: HttpServer | any,
     options?: NestApplicationOptions,
   ): Promise<INestApplication & INestExpressApplication>;
   public async create(
@@ -183,10 +175,10 @@ export class NestFactoryStatic {
   }
 
   private applyLogger(options: NestApplicationContextOptions | undefined) {
-    if (!options || !options.logger) {
+    if (!options) {
       return;
     }
-    Logger.overrideLogger(options.logger);
+    !isNil(options.logger) && Logger.overrideLogger(options.logger);
   }
 
   private applyExpressAdapter(httpAdapter: HttpServer): HttpServer {

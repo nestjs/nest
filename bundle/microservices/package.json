@@ -1,9 +1,13 @@
 {
   "name": "@nestjs/microservices",
-  "version": "5.1.0",
+  "version": "5.3.5",
   "description": "Nest - modern, fast, powerful node.js web framework (@microservices)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nestjs/nest"
+  },
   "dependencies": {
     "iterare": "0.0.8",
     "json-socket": "^0.2.1",

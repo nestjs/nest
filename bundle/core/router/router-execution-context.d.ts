@@ -1,16 +1,16 @@
-import 'reflect-metadata';
+import { HttpServer, ParamData, PipeTransform, RequestMethod } from '@nestjs/common';
+import { RouteParamsMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { Controller, Transform } from '@nestjs/common/interfaces';
-import { RouteParamsMetadata } from '@nestjs/common/decorators';
-import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
-import { PipesContextCreator } from './../pipes/pipes-context-creator';
-import { PipesConsumer } from './../pipes/pipes-consumer';
-import { ParamData, PipeTransform, RequestMethod, HttpServer } from '@nestjs/common';
-import { GuardsContextCreator } from '../guards/guards-context-creator';
+import 'reflect-metadata';
 import { GuardsConsumer } from '../guards/guards-consumer';
-import { CustomHeader } from './router-response-controller';
-import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
+import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
+import { PipesConsumer } from '../pipes/pipes-consumer';
+import { PipesContextCreator } from '../pipes/pipes-context-creator';
+import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
+import { CustomHeader } from './router-response-controller';
 export interface ParamProperties {
     index: number;
     type: RouteParamtypes | string;
@@ -27,22 +27,15 @@ export declare class RouterExecutionContext {
     private readonly interceptorsContextCreator;
     private readonly interceptorsConsumer;
     private readonly applicationRef;
+    private readonly contextUtils;
     private readonly responseController;
     constructor(paramsFactory: IRouteParamsFactory, pipesContextCreator: PipesContextCreator, pipesConsumer: PipesConsumer, guardsContextCreator: GuardsContextCreator, guardsConsumer: GuardsConsumer, interceptorsContextCreator: InterceptorsContextCreator, interceptorsConsumer: InterceptorsConsumer, applicationRef: HttpServer);
     create(instance: Controller, callback: (...args) => any, methodName: string, module: string, requestMethod: RequestMethod): (req: any, res: any, next: any) => Promise<void>;
-    mapParamType(key: string): string;
-    reflectCallbackMetadata(instance: Controller, methodName: string): RouteParamsMetadata;
-    reflectCallbackParamtypes(instance: Controller, methodName: string): any[];
     reflectHttpStatusCode(callback: (...args) => any): number;
     reflectRenderTemplate(callback: any): string;
     reflectResponseHeaders(callback: any): CustomHeader[];
-    getArgumentsLength(keys: string[], metadata: RouteParamsMetadata): number;
-    createNullArray(length: number): any[];
     exchangeKeysForValues(keys: string[], metadata: RouteParamsMetadata, moduleContext: string): ParamProperties[];
     getCustomFactory(factory: (...args) => void, data: any): (...args) => any;
-    mergeParamsMetatypes(paramsProperties: ParamProperties[], paramtypes: any[]): (ParamProperties & {
-        metatype?: any;
-    })[];
     getParamValue<T>(value: T, {metatype, type, data}: {
         metatype: any;
         type: any;

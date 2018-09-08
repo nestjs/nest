@@ -1,17 +1,21 @@
+import { Logger } from '@nestjs/common/services/logger.service';
+import { Observable } from 'rxjs';
 import { MqttClient } from '../external/mqtt-client.interface';
+import { PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
-import { PacketId, ReadPacket, WritePacket } from './../interfaces';
 import { ClientProxy } from './client-proxy';
 export declare class ClientMqtt extends ClientProxy {
-    private readonly options;
-    private readonly logger;
-    private readonly url;
-    private mqttClient;
-    constructor(options: ClientOptions);
+    protected readonly options: ClientOptions['options'];
+    protected readonly logger: Logger;
+    protected readonly url: string;
+    protected mqttClient: MqttClient;
+    protected connection: Promise<any>;
+    constructor(options: ClientOptions['options']);
     getAckPatternName(pattern: string): string;
     getResPatternName(pattern: string): string;
     close(): void;
     connect(): Promise<any>;
+    mergeCloseEvent<T = any>(instance: MqttClient, source$: Observable<T>): Observable<T>;
     createClient(): MqttClient;
     handleError(client: MqttClient): void;
     createResponseCallback(packet: ReadPacket & PacketId, callback: (packet: WritePacket) => any): (channel: string, buffer) => any;

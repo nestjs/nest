@@ -2,9 +2,18 @@ import * as JsonSocket from 'json-socket';
 import * as net from 'net';
 import { Server as NetSocket } from 'net';
 import { Observable } from 'rxjs';
-import { CLOSE_EVENT, ERROR_EVENT, MESSAGE_EVENT, NO_PATTERN_MESSAGE, TCP_DEFAULT_PORT } from '../constants';
+import {
+  CLOSE_EVENT,
+  ERROR_EVENT,
+  MESSAGE_EVENT,
+  NO_PATTERN_MESSAGE,
+  TCP_DEFAULT_PORT,
+} from '../constants';
 import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
-import { MicroserviceOptions, TcpOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  MicroserviceOptions,
+  TcpOptions,
+} from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
@@ -13,7 +22,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   private isExplicitlyTerminated = false;
   private retryAttemptsCount = 0;
 
-  constructor(private readonly options: MicroserviceOptions) {
+  constructor(private readonly options: MicroserviceOptions['options']) {
     super();
     this.port =
       this.getOptionsProp<TcpOptions>(options, 'port') || TCP_DEFAULT_PORT;

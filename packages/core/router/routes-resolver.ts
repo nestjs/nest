@@ -45,8 +45,6 @@ export class RoutesResolver implements Resolver {
       path = path ? path + basePath : basePath;
       this.registerRouters(routes, moduleName, path, appInstance);
     });
-    this.registerNotFoundHandler();
-    this.registerExceptionHandler();
   }
 
   public registerRouters(

@@ -1,15 +1,8 @@
-import iterate from 'iterare';
-import { GUARDS_METADATA } from '@nestjs/common/constants';
-import {
-  isUndefined,
-  isFunction,
-  isNil,
-  isEmpty,
-} from '@nestjs/common/utils/shared.utils';
+import { NestInterceptor } from '@nestjs/common';
 import { Controller } from '@nestjs/common/interfaces';
-import { HttpStatus, NestInterceptor } from '@nestjs/common';
-import { Observable, defer, from as fromPromise } from 'rxjs';
-import { take, switchMap } from 'rxjs/operators';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { defer, from as fromPromise, Observable } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { ExecutionContextHost } from '../helpers/execution-context.host';
 
 export class InterceptorsConsumer {
@@ -25,6 +18,14 @@ export class InterceptorsConsumer {
     }
     const context = this.createContext(args, instance, callback);
     const start$ = defer(() => this.transformDeffered(next));
+    /***
+      const nextFn =  (i: number) => async () => {
+      if (i <= interceptors.length) {
+        return start$;
+      }
+      return await interceptors[i].intercept(context, nextFn(i + 1) as any);
+    };
+    */
     const result$ = await interceptors.reduce(
       async (stream$, interceptor) =>
         await interceptor.intercept(context, await stream$),
