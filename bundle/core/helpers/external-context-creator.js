@@ -5,6 +5,12 @@ const constants_1 = require("@nestjs/common/constants");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 require("reflect-metadata");
 const constants_2 = require("../guards/constants");
+const guards_consumer_1 = require("../guards/guards-consumer");
+const guards_context_creator_1 = require("../guards/guards-context-creator");
+const interceptors_consumer_1 = require("../interceptors/interceptors-consumer");
+const interceptors_context_creator_1 = require("../interceptors/interceptors-context-creator");
+const pipes_consumer_1 = require("../pipes/pipes-consumer");
+const pipes_context_creator_1 = require("../pipes/pipes-context-creator");
 const context_utils_1 = require("./context-utils");
 class ExternalContextCreator {
     constructor(guardsContextCreator, guardsConsumer, interceptorsContextCreator, interceptorsConsumer, modulesContainer, pipesContextCreator, pipesConsumer) {
@@ -16,6 +22,9 @@ class ExternalContextCreator {
         this.pipesContextCreator = pipesContextCreator;
         this.pipesConsumer = pipesConsumer;
         this.contextUtils = new context_utils_1.ContextUtils();
+    }
+    static fromContainer(container) {
+        return new ExternalContextCreator(new guards_context_creator_1.GuardsContextCreator(container, container.applicationConfig), new guards_consumer_1.GuardsConsumer(), new interceptors_context_creator_1.InterceptorsContextCreator(container, container.applicationConfig), new interceptors_consumer_1.InterceptorsConsumer(), container.getModules(), new pipes_context_creator_1.PipesContextCreator(container, container.applicationConfig), new pipes_consumer_1.PipesConsumer());
     }
     create(instance, callback, methodName, metadataKey, paramsFactory) {
         const module = this.findContextModuleName(instance.constructor);

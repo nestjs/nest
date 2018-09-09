@@ -4,13 +4,8 @@ const random_string_generator_util_1 = require("@nestjs/common/utils/random-stri
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
 const unknown_export_exception_1 = require("../errors/exceptions/unknown-export.exception");
-const guards_consumer_1 = require("../guards/guards-consumer");
-const guards_context_creator_1 = require("../guards/guards-context-creator");
+const application_ref_host_1 = require("../helpers/application-ref-host");
 const external_context_creator_1 = require("../helpers/external-context-creator");
-const interceptors_consumer_1 = require("../interceptors/interceptors-consumer");
-const interceptors_context_creator_1 = require("../interceptors/interceptors-context-creator");
-const pipes_consumer_1 = require("../pipes/pipes-consumer");
-const pipes_context_creator_1 = require("../pipes/pipes-context-creator");
 const reflector_service_1 = require("../services/reflector.service");
 const module_ref_1 = require("./module-ref");
 const modules_container_1 = require("./modules-container");
@@ -62,10 +57,11 @@ class Module {
     addCoreInjectables(container) {
         this.addModuleAsComponent();
         this.addModuleRef();
-        this.addReflector();
+        this.addReflector(container.getReflector());
         this.addApplicationRef(container.getApplicationRef());
-        this.addExternalContextCreator(container);
-        this.addModulesContainer(container);
+        this.addExternalContextCreator(container.getExternalContextCreator());
+        this.addModulesContainer(container.getModulesContainer());
+        this.addApplicationRefHost(container.getApplicationRefHost());
     }
     addModuleRef() {
         const moduleRef = this.createModuleRefMetatype();
@@ -84,12 +80,12 @@ class Module {
             instance: null,
         });
     }
-    addReflector() {
+    addReflector(reflector) {
         this._components.set(reflector_service_1.Reflector.name, {
             name: reflector_service_1.Reflector.name,
             metatype: reflector_service_1.Reflector,
-            isResolved: false,
-            instance: null,
+            isResolved: true,
+            instance: reflector,
         });
     }
     addApplicationRef(applicationRef) {
@@ -100,20 +96,28 @@ class Module {
             instance: applicationRef || {},
         });
     }
-    addExternalContextCreator(container) {
+    addExternalContextCreator(externalContextCreator) {
         this._components.set(external_context_creator_1.ExternalContextCreator.name, {
             name: external_context_creator_1.ExternalContextCreator.name,
             metatype: external_context_creator_1.ExternalContextCreator,
             isResolved: true,
-            instance: new external_context_creator_1.ExternalContextCreator(new guards_context_creator_1.GuardsContextCreator(container, container.applicationConfig), new guards_consumer_1.GuardsConsumer(), new interceptors_context_creator_1.InterceptorsContextCreator(container, container.applicationConfig), new interceptors_consumer_1.InterceptorsConsumer(), container.getModules(), new pipes_context_creator_1.PipesContextCreator(container, container.applicationConfig), new pipes_consumer_1.PipesConsumer()),
+            instance: externalContextCreator,
         });
     }
-    addModulesContainer(container) {
+    addModulesContainer(modulesContainer) {
         this._components.set(modules_container_1.ModulesContainer.name, {
             name: modules_container_1.ModulesContainer.name,
             metatype: modules_container_1.ModulesContainer,
             isResolved: true,
-            instance: container.getModules(),
+            instance: modulesContainer,
+        });
+    }
+    addApplicationRefHost(applicationRefHost) {
+        this._components.set(application_ref_host_1.ApplicationReferenceHost.name, {
+            name: application_ref_host_1.ApplicationReferenceHost.name,
+            metatype: application_ref_host_1.ApplicationReferenceHost,
+            isResolved: true,
+            instance: applicationRefHost,
         });
     }
     addInjectable(injectable) {

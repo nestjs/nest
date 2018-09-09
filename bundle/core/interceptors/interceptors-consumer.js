@@ -6,7 +6,7 @@ const operators_1 = require("rxjs/operators");
 const execution_context_host_1 = require("../helpers/execution-context.host");
 class InterceptorsConsumer {
     async intercept(interceptors, args, instance, callback, next) {
-        if (!interceptors || shared_utils_1.isEmpty(interceptors)) {
+        if (shared_utils_1.isEmpty(interceptors)) {
             return await await next();
         }
         const context = this.createContext(args, instance, callback);

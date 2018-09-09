@@ -36,7 +36,7 @@ class ClientMqtt extends client_proxy_1.ClientProxy {
         this.handleError(this.mqttClient);
         const connect$ = this.connect$(this.mqttClient);
         this.connection = this.mergeCloseEvent(this.mqttClient, connect$)
-            .pipe(operators_1.share())
+            .pipe(operators_1.tap(() => this.mqttClient.on(constants_1.MESSAGE_EVENT, this.createResponseCallback())), operators_1.share())
             .toPromise();
         return this.connection;
     }
@@ -52,10 +52,11 @@ class ClientMqtt extends client_proxy_1.ClientProxy {
     handleError(client) {
         client.addListener(constants_1.ERROR_EVENT, err => err.code !== constants_2.ECONNREFUSED && this.logger.error(err));
     }
-    createResponseCallback(packet, callback) {
+    createResponseCallback() {
         return (channel, buffer) => {
             const { err, response, isDisposed, id } = JSON.parse(buffer.toString());
-            if (id !== packet.id) {
+            const callback = this.routingMap.get(id);
+            if (!callback) {
                 return undefined;
             }
             if (isDisposed || err) {
@@ -76,13 +77,16 @@ class ClientMqtt extends client_proxy_1.ClientProxy {
             const packet = this.assignPacketId(partialPacket);
             const pattern = this.normalizePattern(partialPacket.pattern);
             const responseChannel = this.getResPatternName(pattern);
-            const responseCallback = this.createResponseCallback(packet, callback);
-            this.mqttClient.on(constants_1.MESSAGE_EVENT, responseCallback);
-            this.mqttClient.subscribe(responseChannel);
-            this.mqttClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
+            this.mqttClient.subscribe(responseChannel, err => {
+                if (err) {
+                    return;
+                }
+                this.routingMap.set(packet.id, callback);
+                this.mqttClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
+            });
             return () => {
                 this.mqttClient.unsubscribe(responseChannel);
-                this.mqttClient.removeListener(constants_1.MESSAGE_EVENT, responseCallback);
+                this.routingMap.delete(packet.id);
             };
         }
         catch (err) {

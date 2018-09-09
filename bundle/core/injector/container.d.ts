@@ -2,6 +2,9 @@ import { DynamicModule } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import 'reflect-metadata';
 import { ApplicationConfig } from '../application-config';
+import { ApplicationReferenceHost } from '../helpers/application-ref-host';
+import { ExternalContextCreator } from '../helpers/external-context-creator';
+import { Reflector } from '../services';
 import { Module } from './module';
 import { ModulesContainer } from './modules-container';
 export declare class NestContainer {
@@ -10,6 +13,10 @@ export declare class NestContainer {
     private readonly moduleCompiler;
     private readonly modules;
     private readonly dynamicModulesMetadata;
+    private readonly reflector;
+    private readonly applicationRefHost;
+    private externalContextCreator;
+    private modulesContainer;
     private applicationRef;
     constructor(_applicationConfig?: ApplicationConfig);
     readonly applicationConfig: ApplicationConfig | undefined;
@@ -34,6 +41,10 @@ export declare class NestContainer {
     bindGlobalsToRelatedModules(module: Module): void;
     bindGlobalModuleToModule(module: Module, globalModule: Module): any;
     getDynamicMetadataByToken(token: string, metadataKey: keyof DynamicModule): any[];
+    getReflector(): Reflector;
+    getExternalContextCreator(): ExternalContextCreator;
+    getApplicationRefHost(): ApplicationReferenceHost;
+    getModulesContainer(): ModulesContainer;
 }
 export interface InstanceWrapper<T> {
     name: any;

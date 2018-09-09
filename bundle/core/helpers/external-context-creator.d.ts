@@ -3,6 +3,7 @@ import { Controller, Transform } from '@nestjs/common/interfaces';
 import 'reflect-metadata';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { NestContainer } from '../injector/container';
 import { Module } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
@@ -29,6 +30,7 @@ export declare class ExternalContextCreator {
     private readonly pipesConsumer;
     private readonly contextUtils;
     constructor(guardsContextCreator: GuardsContextCreator, guardsConsumer: GuardsConsumer, interceptorsContextCreator: InterceptorsContextCreator, interceptorsConsumer: InterceptorsConsumer, modulesContainer: ModulesContainer, pipesContextCreator: PipesContextCreator, pipesConsumer: PipesConsumer);
+    static fromContainer(container: NestContainer): ExternalContextCreator;
     create<T extends ParamsMetadata = ParamsMetadata>(instance: Controller, callback: (...args) => any, methodName: string, metadataKey?: string, paramsFactory?: ParamsFactory): (...args: any[]) => Promise<any>;
     findContextModuleName(constructor: Function): string;
     findComponentByClassName(module: Module, className: string): boolean;

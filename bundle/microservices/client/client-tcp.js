@@ -20,20 +20,25 @@ class ClientTCP extends client_proxy_1.ClientProxy {
                 constants_1.TCP_DEFAULT_HOST;
     }
     connect() {
-        if (this.isConnected) {
-            return Promise.resolve();
+        if (this.isConnected && this.connection) {
+            return this.connection;
         }
         this.socket = this.createSocket();
-        return new Promise((resolve, reject) => {
-            this.bindEvents(this.socket);
-            this.connect$(this.socket._socket)
-                .pipe(operators_1.tap(() => (this.isConnected = true)))
-                .subscribe(resolve, reject);
-            this.socket.connect(this.port, this.host);
-        });
+        this.bindEvents(this.socket);
+        const source$ = this.connect$(this.socket._socket).pipe(operators_1.tap(() => {
+            this.isConnected = true;
+            this.socket.on(constants_1.MESSAGE_EVENT, (buffer) => this.handleResponse(buffer));
+        }), operators_1.share());
+        this.socket.connect(this.port, this.host);
+        this.connection = source$.toPromise();
+        return this.connection;
     }
-    handleResponse(callback, buffer) {
-        const { err, response, isDisposed } = buffer;
+    handleResponse(buffer) {
+        const { err, response, isDisposed, id } = buffer;
+        const callback = this.routingMap.get(id);
+        if (!callback) {
+            return undefined;
+        }
         if (isDisposed || err) {
             callback({
                 err,
@@ -67,15 +72,9 @@ class ClientTCP extends client_proxy_1.ClientProxy {
     publish(partialPacket, callback) {
         try {
             const packet = this.assignPacketId(partialPacket);
-            const listener = (buffer) => {
-                if (buffer.id !== packet.id) {
-                    return undefined;
-                }
-                this.handleResponse(callback, buffer);
-            };
-            this.socket.on(constants_1.MESSAGE_EVENT, listener);
+            this.routingMap.set(packet.id, callback);
             this.socket.sendMessage(packet);
-            return () => this.socket._socket.removeListener(constants_1.MESSAGE_EVENT, listener);
+            return () => this.routingMap.delete(packet.id);
         }
         catch (err) {
             callback({ err });

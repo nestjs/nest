@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
+import { join } from 'path';
 import { CatsModule } from './cats/cats.module';
 
 @Module({
@@ -8,10 +9,10 @@ import { CatsModule } from './cats/cats.module';
     GraphQLModule.forRoot({
       typePaths: ['./**/*.graphql'],
       installSubscriptionHandlers: true,
-      /*definitions: {
+      definitions: {
         path: join(process.cwd(), 'src/graphql.schema.d.ts'),
         outputAs: 'class',
-      },*/
+      },
     }),
   ],
 })
