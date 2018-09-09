@@ -1,26 +1,27 @@
 import { Server } from './server';
-import { Channel, Connection, Options } from 'amqplib';
-import { CONNECT_EVENT, RQM_DEFAULT_URL, RQM_DEFAULT_QUEUE, RQM_DEFAULT_PREFETCH_COUNT, RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT, RQM_DEFAULT_QUEUE_OPTIONS } from './../constants';
+import { Options } from 'amqplib';
+import { DISCONNECTED_RMQ_MESSAGE, DISCONNECT_EVENT, RQM_DEFAULT_URL, RQM_DEFAULT_QUEUE, RQM_DEFAULT_PREFETCH_COUNT, RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT, RQM_DEFAULT_QUEUE_OPTIONS, CONNECT_EVENT } from './../constants';
 import { CustomTransportStrategy, RmqOptions } from './../interfaces';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { Observable } from 'rxjs';
+import * as amqp from 'amqp-connection-manager';
 
 let rqmPackage: any = {};
 
 export class ServerRMQ extends Server implements CustomTransportStrategy {
-    private server: Connection = null;
-    private channel: Channel = null;
-    private url: string;
+    private server: any = null;
+    private channel: any = null;
+    private urls: string[];
     private queue: string;
     private prefetchCount: number;
-    private queueOptions: Options.AssertQueue
+    private queueOptions: Options.AssertQueue;
     private isGlobalPrefetchCount: boolean;
 
     constructor(private readonly options: MicroserviceOptions) {
         super();
-        this.url =
-            this.getOptionsProp<RmqOptions>(this.options, 'url') || RQM_DEFAULT_URL;
+        this.urls =
+            this.getOptionsProp<RmqOptions>(this.options, 'urls') || [RQM_DEFAULT_URL];
         this.queue =
             this.getOptionsProp<RmqOptions>(this.options, 'queue') || RQM_DEFAULT_QUEUE;
         this.prefetchCount =
@@ -34,26 +35,30 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
     public async listen(callback: () => void): Promise<void> {
         await this.start(callback);
-        this.channel.consume(this.queue, (msg) => this.handleMessage(msg), {
-            noAck: true,
-        });
-    }
-
-    private async start(callback?: () => void) {
-        try {
-            this.server = await rqmPackage.connect(this.url);
-            this.channel = await this.server.createChannel();
-            this.channel.assertQueue(this.queue, this.queueOptions);
-            await this.channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
-            callback();
-        } catch (err) {
-            this.logger.error(err);
-        }
     }
 
     public close(): void {
         this.channel && this.channel.close();
         this.server && this.server.close();
+    }
+
+    private async start(callback?: () => void) {
+        this.server = amqp.connect(this.urls);
+        this.server.on(CONNECT_EVENT, x => {
+            this.channel = this.server.createChannel({
+                json: false,
+                setup: async (channel) => {
+                    await channel.assertQueue(this.queue, this.queueOptions);
+                    await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
+                    channel.consume(this.queue, (msg) => this.handleMessage(msg), { noAck: true });
+                    callback();
+                },
+            });
+        });
+
+        this.server.on(DISCONNECT_EVENT, err => {
+            this.logger.error(DISCONNECTED_RMQ_MESSAGE);
+        });
     }
 
     private async handleMessage(message): Promise<void> {
@@ -71,6 +76,6 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
     private sendMessage(message, replyTo, correlationId): void {
         const buffer = Buffer.from(JSON.stringify(message));
-        this.channel.sendToQueue(replyTo, buffer, { correlationId: correlationId });
+        this.channel.sendToQueue(replyTo, buffer, { correlationId });
     }
 }

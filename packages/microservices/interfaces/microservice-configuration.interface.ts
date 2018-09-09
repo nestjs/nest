@@ -85,7 +85,7 @@ export interface NatsOptions {
 export interface RmqOptions {
   transport?: Transport.RMQ;
   options?: {
-    url?: string;
+    urls?: string[];
     queue?: string;
     prefetchCount?: number;
     isGlobalPrefetchCount?: boolean;

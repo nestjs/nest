@@ -19,10 +19,10 @@ describe('RabbimMQ transport', () => {
     app.connectMicroservice({
         transport: Transport.RMQ,
         options: {
-          url: `amqp://admin:admin@localhost`,
+          urls: [`amqp://admin:admin@localhost`],
           queue: 'test',
-          queueOptions: { durable: false }
-        }
+          queueOptions: { durable: false },
+        },
     });
     await app.startAllMicroservicesAsync();
     await app.init();

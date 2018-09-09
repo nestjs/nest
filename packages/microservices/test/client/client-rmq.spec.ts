@@ -91,9 +91,7 @@ describe('ClientRQM', () => {
     });
 
     describe('handleMessage', () => {
-        const msg = {
-            content: null
-        };
+        const msg = {};
         let callbackSpy: sinon.SinonSpy;
         let deleteQueueSpy: sinon.SinonSpy;
         let callback = (data) => {};
