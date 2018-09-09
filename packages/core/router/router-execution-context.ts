@@ -16,6 +16,7 @@ import { RouteParamsMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { Controller, Transform } from '@nestjs/common/interfaces';
 import {
+  isEmpty,
   isFunction,
   isString,
   isUndefined,
@@ -248,15 +249,18 @@ export class RouterExecutionContext {
   ) {
     const renderTemplate = this.reflectRenderTemplate(callback);
     const responseHeaders = this.reflectResponseHeaders(callback);
+    const hasCustomHeaders = !isEmpty(responseHeaders);
 
     if (renderTemplate) {
       return async (result, res) => {
-        this.responseController.setHeaders(res, responseHeaders);
+        hasCustomHeaders &&
+          this.responseController.setHeaders(res, responseHeaders);
         await this.responseController.render(result, res, renderTemplate);
       };
     }
     return async (result, res) => {
-      this.responseController.setHeaders(res, responseHeaders);
+      hasCustomHeaders &&
+        this.responseController.setHeaders(res, responseHeaders);
 
       !isResponseHandled &&
         (await this.responseController.apply(result, res, httpStatusCode));
