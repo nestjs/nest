@@ -1,27 +1,25 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import { of } from 'rxjs';
+import * as sinon from 'sinon';
+import { ApplicationConfig } from '../../../core/application-config';
+import { GuardsConsumer } from '../../../core/guards/guards-consumer';
+import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
+import { NestContainer } from '../../../core/injector/container';
+import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
+import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
+import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
+import { RpcException } from '../../index';
 import {
+  Component,
   Guard,
   Injectable,
   UseGuards,
-  Component,
   UsePipes,
 } from './../../../common';
-import { RpcProxy } from './../../context/rpc-proxy';
-import { RpcContextCreator } from './../../context/rpc-context-creator';
-import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler';
 import { ExceptionFiltersContext } from './../../context/exception-filters-context';
-import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
-import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
-import { PARAMTYPES_METADATA } from '../../../common/constants';
-import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
-import { GuardsConsumer } from '../../../core/guards/guards-consumer';
-import { NestContainer } from '../../../core/injector/container';
-import { Observable, of } from 'rxjs';
-import { RpcException } from '../../index';
-import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
-import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
-import { ApplicationConfig } from '../../../core/application-config';
+import { RpcContextCreator } from './../../context/rpc-context-creator';
+import { RpcProxy } from './../../context/rpc-proxy';
 
 @Guard()
 class TestGuard {
@@ -102,6 +100,9 @@ describe('RpcContextCreator', () => {
     describe('when proxy called', () => {
       it('should call guards consumer `tryActivate`', async () => {
         const tryActivateSpy = sinon.spy(guardsConsumer, 'tryActivate');
+        sinon
+          .stub(guardsContextCreator, 'create')
+          .callsFake(() => [{ canActivate: () => true }]);
         const proxy = await contextCreator.create(
           instance,
           instance.test,
@@ -166,6 +167,13 @@ describe('RpcContextCreator', () => {
         const type = contextCreator.getDataMetatype(instance, () => ({}));
         expect(type).to.be.null;
       });
+    });
+  });
+  describe('createGuardsFn', () => {
+    it('should throw exception when "tryActivate" returns false', () => {
+      const guardsFn = contextCreator.createGuardsFn([null], null, null);
+      sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
+      expect(guardsFn([])).to.eventually.throw();
     });
   });
 });

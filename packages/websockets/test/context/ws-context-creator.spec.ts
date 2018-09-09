@@ -1,26 +1,24 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import { of } from 'rxjs';
+import * as sinon from 'sinon';
+import { GuardsConsumer } from '../../../core/guards/guards-consumer';
+import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
+import { NestContainer } from '../../../core/injector/container';
+import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
+import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
+import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
+import { WsException } from '../../index';
 import {
+  Component,
   Guard,
   Injectable,
   UseGuards,
-  Component,
   UsePipes,
 } from './../../../common';
-import { WsProxy } from './../../context/ws-proxy';
-import { WsContextCreator } from './../../context/ws-context-creator';
-import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
 import { ExceptionFiltersContext } from './../../context/exception-filters-context';
-import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
-import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
-import { PARAMTYPES_METADATA } from '../../../common/constants';
-import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
-import { GuardsConsumer } from '../../../core/guards/guards-consumer';
-import { NestContainer } from '../../../core/injector/container';
-import { Observable, of } from 'rxjs';
-import { WsException } from '../../index';
-import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
-import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
+import { WsContextCreator } from './../../context/ws-context-creator';
+import { WsProxy } from './../../context/ws-proxy';
 
 @Guard()
 class TestGuard {
@@ -99,6 +97,9 @@ describe('WsContextCreator', () => {
     describe('when proxy called', () => {
       it('should call guards consumer `tryActivate`', async () => {
         const tryActivateSpy = sinon.spy(guardsConsumer, 'tryActivate');
+        sinon
+          .stub(guardsContextCreator, 'create')
+          .callsFake(() => [{ canActivate: () => true }]);
         const proxy = await contextCreator.create(
           instance,
           instance.test,
@@ -163,6 +164,13 @@ describe('WsContextCreator', () => {
         const type = contextCreator.getDataMetatype(instance, () => ({}));
         expect(type).to.be.null;
       });
+    });
+  });
+  describe('createGuardsFn', () => {
+    it('should throw exception when "tryActivate" returns false', () => {
+      const guardsFn = contextCreator.createGuardsFn([null], null, null);
+      sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
+      expect(guardsFn([])).to.eventually.throw();
     });
   });
 });
