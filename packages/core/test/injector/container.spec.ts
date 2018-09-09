@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Module } from '../../../common/decorators/modules/module.decorator';
 import { Global } from '../../../common/index';
+import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { NestContainer } from '../../injector/container';
 
@@ -20,8 +21,14 @@ describe('NestContainer', () => {
   });
 
   it('should "addComponent" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addComponent(null, 'TestModule')).throw(
+    expect(() => container.addComponent({} as any, 'TestModule')).throw(
       UnknownModuleException,
+    );
+  });
+
+  it('should "addComponent" throw "CircularDependencyException" when component is nil', () => {
+    expect(() => container.addComponent(null, 'TestModule')).throw(
+      CircularDependencyException,
     );
   });
 
