@@ -17,10 +17,8 @@ describe('ClientGrpcProxy', () => {
 
   beforeEach(() => {
     client = new ClientGrpcProxy({
-      options: {
-        protoPath: join(__dirname, './test.proto'),
-        package: 'test',
-      },
+      protoPath: join(__dirname, './test.proto'),
+      package: 'test',
     });
   });
 
@@ -28,7 +26,9 @@ describe('ClientGrpcProxy', () => {
     describe('when "grpcClient[name]" is nil', () => {
       it('should throw "InvalidGrpcServiceException"', () => {
         (client as any).grpcClient = {};
-        expect(() => client.getService('test')).to.throw(InvalidGrpcServiceException);
+        expect(() => client.getService('test')).to.throw(
+          InvalidGrpcServiceException,
+        );
       });
     });
     describe('when "grpcClient[name]" is not nil', () => {
@@ -36,7 +36,9 @@ describe('ClientGrpcProxy', () => {
         (client as any).grpcClient = {
           test: GrpcService,
         };
-        expect(() => client.getService('test')).to.not.throw(InvalidGrpcServiceException);
+        expect(() => client.getService('test')).to.not.throw(
+          InvalidGrpcServiceException,
+        );
       });
     });
   });
@@ -90,11 +92,11 @@ describe('ClientGrpcProxy', () => {
       const methodName = 'm';
       type EvtCallback = (...args: any[]) => void;
       let callMock: {
-        on: (type: string, fn: EvtCallback) => void,
-        cancel: sinon.SinonSpy,
-        finished: boolean,
-        destroy: sinon.SinonSpy,
-        removeAllListeners: sinon.SinonSpy,
+        on: (type: string, fn: EvtCallback) => void;
+        cancel: sinon.SinonSpy;
+        finished: boolean;
+        destroy: sinon.SinonSpy;
+        removeAllListeners: sinon.SinonSpy;
       };
       let eventCallbacks: { [type: string]: EvtCallback };
       let obj;
@@ -110,7 +112,7 @@ describe('ClientGrpcProxy', () => {
         completeSpy.reset();
         eventCallbacks = {};
         callMock = {
-          on: (type, fn) => eventCallbacks[type] = fn,
+          on: (type, fn) => (eventCallbacks[type] = fn),
           cancel: sinon.spy(),
           finished: false,
           destroy: sinon.spy(),
@@ -149,9 +151,11 @@ describe('ClientGrpcProxy', () => {
         eventCallbacks.data('c');
 
         expect(callMock.cancel.called, 'should call call.cancel()').to.be.true;
-        expect(callMock.destroy.called, 'should call call.destroy()').to.be.true;
+        expect(callMock.destroy.called, 'should call call.destroy()').to.be
+          .true;
         expect(dataSpy.args).to.eql([['a'], ['b']]);
-        expect(errorSpy.called, 'should not error if client canceled').to.be.false;
+        expect(errorSpy.called, 'should not error if client canceled').to.be
+          .false;
       });
     });
   });
@@ -163,7 +167,7 @@ describe('ClientGrpcProxy', () => {
     });
     describe('on subscribe', () => {
       const methodName = 'm';
-      const obj = { [methodName]: (callback) => callback(null, {}) };
+      const obj = { [methodName]: callback => callback(null, {}) };
 
       let stream$: Observable<any>;
 
@@ -184,7 +188,9 @@ describe('ClientGrpcProxy', () => {
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', () => {
         sinon.stub(client, 'lookupPackage').callsFake(() => null);
-        expect(() => client.createClient()).to.throw(InvalidGrpcPackageException);
+        expect(() => client.createClient()).to.throw(
+          InvalidGrpcPackageException,
+        );
       });
     });
   });
@@ -195,7 +201,9 @@ describe('ClientGrpcProxy', () => {
         sinon.stub(client, 'getOptionsProp').callsFake(() => {
           throw new Error();
         });
-        expect(() => client.loadProto()).to.throws(InvalidProtoDefinitionException);
+        expect(() => client.loadProto()).to.throws(
+          InvalidProtoDefinitionException,
+        );
       });
     });
   });

@@ -19,8 +19,12 @@ class DependenciesScanner {
         await this.scanModulesForDependencies();
         this.container.bindGlobalScope();
     }
-    async scanForModules(module, scope = []) {
+    async scanForModules(module, scope = [], ctxRegistry = []) {
         await this.storeModule(module, scope);
+        ctxRegistry.push(module);
+        if (this.isForwardReference(module)) {
+            module = module.forwardRef();
+        }
         const modules = !this.isDynamicModule(module)
             ? this.reflectMetadata(module, constants_1.metadata.MODULES)
             : [
@@ -28,7 +32,10 @@ class DependenciesScanner {
                 ...(module.imports || []),
             ];
         for (const innerModule of modules) {
-            await this.scanForModules(innerModule, [].concat(scope, module));
+            if (ctxRegistry.includes(innerModule)) {
+                continue;
+            }
+            await this.scanForModules(innerModule, [].concat(scope, module), ctxRegistry);
         }
     }
     async storeModule(module, scope) {
@@ -192,6 +199,9 @@ class DependenciesScanner {
     }
     isDynamicModule(module) {
         return module && !!module.module;
+    }
+    isForwardReference(module) {
+        return module && !!module.forwardRef;
     }
 }
 exports.DependenciesScanner = DependenciesScanner;

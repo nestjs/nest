@@ -20,9 +20,7 @@ export class RouterResponseController {
   }
 
   public async transformToResult(resultOrDeffered) {
-    if (resultOrDeffered instanceof Promise) {
-      return await resultOrDeffered;
-    } else if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
+    if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
       return await resultOrDeffered.toPromise();
     }
     return resultOrDeffered;

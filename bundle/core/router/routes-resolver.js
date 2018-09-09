@@ -26,8 +26,6 @@ class RoutesResolver {
             path = path ? path + basePath : basePath;
             this.registerRouters(routes, moduleName, path, appInstance);
         });
-        this.registerNotFoundHandler();
-        this.registerExceptionHandler();
     }
     registerRouters(routes, moduleName, basePath, appInstance) {
         routes.forEach(({ instance, metatype }) => {

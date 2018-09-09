@@ -75,7 +75,9 @@ class ServerGrpc extends server_1.Server {
         return async (call, callback) => {
             const handler = methodHandler(call.request, call.metadata);
             const result$ = this.transformToObservable(await handler);
-            await result$.pipe(operators_1.takeUntil(rxjs_1.fromEvent(call, constants_1.CANCEL_EVENT))).forEach(data => call.write(data));
+            await result$
+                .pipe(operators_1.takeUntil(rxjs_1.fromEvent(call, constants_1.CANCEL_EVENT)))
+                .forEach(data => call.write(data));
             call.end();
         };
     }

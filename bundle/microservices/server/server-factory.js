@@ -7,8 +7,8 @@ const server_nats_1 = require("./server-nats");
 const server_redis_1 = require("./server-redis");
 const server_tcp_1 = require("./server-tcp");
 class ServerFactory {
-    static create(options) {
-        const { transport } = options;
+    static create(microserviceOptions) {
+        const { transport, options } = microserviceOptions;
         switch (transport) {
             case transport_enum_1.Transport.REDIS:
                 return new server_redis_1.ServerRedis(options);

@@ -29,34 +29,17 @@ export class Logger implements LoggerService {
       Logger.log(message, context || this.context, this.isTimeDiffEnabled);
       return;
     }
-    logger &&
-      logger.log.call(
-        logger,
-        message,
-        context || this.context,
-        this.isTimeDiffEnabled,
-      );
+    logger && logger.log.call(logger, message, context || this.context);
   }
 
   error(message: any, trace = '', context?: string) {
     const { logger } = Logger;
     if (logger === this) {
-      Logger.error(
-        message,
-        trace,
-        context || this.context,
-        this.isTimeDiffEnabled,
-      );
+      Logger.error(message, trace, context || this.context);
       return;
     }
     logger &&
-      logger.error.call(
-        logger,
-        message,
-        trace,
-        context || this.context,
-        this.isTimeDiffEnabled,
-      );
+      logger.error.call(logger, message, trace, context || this.context);
   }
 
   warn(message: any, context?: string) {
@@ -65,13 +48,7 @@ export class Logger implements LoggerService {
       Logger.warn(message, context || this.context, this.isTimeDiffEnabled);
       return;
     }
-    logger &&
-      logger.warn.call(
-        logger,
-        message,
-        context || this.context,
-        this.isTimeDiffEnabled,
-      );
+    logger && logger.warn.call(logger, message, context || this.context);
   }
 
   static overrideLogger(logger: LoggerService | boolean) {

@@ -1,11 +1,10 @@
 import {
-  WebSocketGateway,
   SubscribeMessage,
-  WsResponse,
+  WebSocketGateway,
   WebSocketServer,
-  WsException,
+  WsResponse,
 } from '@nestjs/websockets';
-import { Observable, from } from 'rxjs';
+import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @WebSocketGateway()
@@ -13,10 +12,12 @@ export class EventsGateway {
   @WebSocketServer() server;
 
   @SubscribeMessage('events')
-  onEvent(client, data): Observable<WsResponse<number>> {
-    const event = 'events';
-    const response = [1, 2, 3];
+  findAll(client, data): Observable<WsResponse<number>> {
+    return from([1, 2, 3]).pipe(map(item => ({ event: 'events', data: item })));
+  }
 
-    return from(response).pipe(map(res => ({ event, data: res })));
+  @SubscribeMessage('identity')
+  async identity(client, data: number): Promise<number> {
+    return data;
   }
 }

@@ -8,7 +8,7 @@ export declare class ServerTCP extends Server implements CustomTransportStrategy
     private server;
     private isExplicitlyTerminated;
     private retryAttemptsCount;
-    constructor(options: MicroserviceOptions);
+    constructor(options: MicroserviceOptions['options']);
     listen(callback: () => void): void;
     close(): void;
     bindHandler(socket: any): void;

@@ -6,12 +6,13 @@ import { ServerMqtt } from './server-mqtt';
 import { ServerNats } from './server-nats';
 import { ServerRedis } from './server-redis';
 import { ServerTCP } from './server-tcp';
+import { ServerRMQ } from './server-rqm';
 
 export class ServerFactory {
   public static create(
-    options: MicroserviceOptions,
+    microserviceOptions: MicroserviceOptions,
   ): Server & CustomTransportStrategy {
-    const { transport } = options as any;
+    const { transport, options } = microserviceOptions as any;
     switch (transport) {
       case Transport.REDIS:
         return new ServerRedis(options);
@@ -21,6 +22,8 @@ export class ServerFactory {
         return new ServerMqtt(options);
       case Transport.GRPC:
         return new ServerGrpc(options);
+      case Transport.RMQ:
+        return new ServerRMQ(options);
       default:
         return new ServerTCP(options);
     }

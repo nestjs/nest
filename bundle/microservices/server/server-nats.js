@@ -31,7 +31,7 @@ class ServerNats extends server_1.Server {
         this.natsClient = null;
     }
     createNatsClient() {
-        const options = this.options.options || {};
+        const options = this.options || {};
         return natsPackage.connect(Object.assign({}, options, { url: this.url, json: true }));
     }
     getMessageHandler(channel, client) {

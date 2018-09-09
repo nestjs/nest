@@ -8,7 +8,7 @@ export declare class ClientTCP extends ClientProxy {
     private readonly host;
     private isConnected;
     private socket;
-    constructor(options: ClientOptions);
+    constructor(options: ClientOptions['options']);
     connect(): Promise<any>;
     handleResponse(callback: (packet: WritePacket) => any, buffer: WritePacket): void;
     createSocket(): JsonSocket;

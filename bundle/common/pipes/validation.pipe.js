@@ -61,7 +61,7 @@ let ValidationPipe = class ValidationPipe {
             return false;
         }
         const types = [String, Boolean, Number, Array, Object];
-        return !types.find(t => metatype === t) && !shared_utils_1.isNil(metatype);
+        return !types.some(t => metatype === t) && !shared_utils_1.isNil(metatype);
     }
     toEmptyIfNil(value) {
         return shared_utils_1.isNil(value) ? {} : value;

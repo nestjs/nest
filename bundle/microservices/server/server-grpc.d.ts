@@ -5,7 +5,7 @@ export declare class ServerGrpc extends Server implements CustomTransportStrateg
     private readonly options;
     private readonly url;
     private grpcClient;
-    constructor(options: MicroserviceOptions);
+    constructor(options: MicroserviceOptions['options']);
     listen(callback: () => void): Promise<void>;
     start(callback?: () => void): Promise<void>;
     bindEvents(): Promise<void>;

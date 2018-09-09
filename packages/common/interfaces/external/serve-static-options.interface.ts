@@ -66,4 +66,9 @@ export interface ServeStaticOptions {
    * stat the stat object of the file that is being sent
    */
   setHeaders?: (res, path: string, stat: any) => any;
+
+  /**
+   * Creates a virtual path prefix
+   */
+  prefix?: string;
 }

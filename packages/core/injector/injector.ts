@@ -1,8 +1,16 @@
-import { OPTIONAL_DEPS_METADATA, PARAMTYPES_METADATA, SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
+import {
+  OPTIONAL_DEPS_METADATA,
+  PARAMTYPES_METADATA,
+  SELF_DECLARED_DEPS_METADATA,
+} from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { isFunction, isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isFunction,
+  isNil,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import 'reflect-metadata';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
@@ -288,22 +296,39 @@ export class Injector {
     return instanceWrapper;
   }
 
-  public async lookupComponentInRelatedModules(module: Module, name: any) {
-    let component = null;
-    const relatedModules = module.relatedModules || [];
+  public async lookupComponentInRelatedModules(
+    module: Module,
+    name: any,
+    moduleRegistry = [],
+  ) {
+    let componentRef = null;
 
-    for (const relatedModule of this.flatMap([...relatedModules.values()])) {
-      const { components, exports } = relatedModule;
-      if (!exports.has(name) || !components.has(name)) {
+    const relatedModules: Set<Module> = module.relatedModules || new Set();
+    const children = [...relatedModules.values()].filter(item => item);
+    for (const relatedModule of children) {
+      if (moduleRegistry.includes(relatedModule.id)) {
         continue;
       }
-      component = components.get(name);
-      if (!component.isResolved && !component.forwardRef) {
-        await this.loadInstanceOfComponent(component, relatedModule);
+      moduleRegistry.push(relatedModule.id);
+      const { components, exports } = relatedModule;
+      if (!exports.has(name) || !components.has(name)) {
+        const instanceRef = await this.lookupComponentInRelatedModules(
+          relatedModule,
+          name,
+          moduleRegistry,
+        );
+        if (instanceRef) {
+          return instanceRef;
+        }
+        continue;
+      }
+      componentRef = components.get(name);
+      if (!componentRef.isResolved && !componentRef.forwardRef) {
+        await this.loadInstanceOfComponent(componentRef, relatedModule);
         break;
       }
     }
-    return component;
+    return componentRef;
   }
 
   public async resolveFactoryInstance(factoryResult): Promise<any> {
@@ -312,23 +337,5 @@ export class Injector {
     }
     const result = await factoryResult;
     return result;
-  }
-
-  public flatMap(modules: Module[]): Module[] {
-    if (!modules) {
-      return [];
-    }
-    const flatten = (module: Module) => {
-      const { relatedModules, exports } = module;
-      return this.flatMap(
-        [...relatedModules.values()]
-          .filter(related => related)
-          .filter(related => {
-            const { metatype } = related;
-            return exports.has(metatype.name);
-          }),
-      );
-    };
-    return modules.concat.apply(modules, modules.map(flatten));
   }
 }

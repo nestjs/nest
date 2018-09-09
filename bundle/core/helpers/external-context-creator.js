@@ -64,8 +64,8 @@ class ExternalContextCreator {
     }
     findComponentByClassName(module, className) {
         const { components } = module;
-        const hasComponent = [...components.keys()].find(component => component === className);
-        return !!hasComponent;
+        const hasComponent = [...components.keys()].some(component => component === className);
+        return hasComponent;
     }
     exchangeKeysForValues(keys, metadata, moduleContext, paramsFactory) {
         this.pipesContextCreator.setModuleContext(moduleContext);
@@ -102,10 +102,7 @@ class ExternalContextCreator {
         return await this.pipesConsumer.apply(value, { metatype, type, data }, transforms);
     }
     async transformToResult(resultOrDeffered) {
-        if (resultOrDeffered instanceof Promise) {
-            return await resultOrDeffered;
-        }
-        else if (resultOrDeffered && shared_utils_1.isFunction(resultOrDeffered.subscribe)) {
+        if (resultOrDeffered && shared_utils_1.isFunction(resultOrDeffered.subscribe)) {
             return await resultOrDeffered.toPromise();
         }
         return resultOrDeffered;

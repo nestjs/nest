@@ -1,3 +1,5 @@
 export interface Resolver {
-  resolve(instance, basePath: string);
+  resolve(instance: any, basePath: string);
+  registerNotFoundHandler();
+  registerExceptionHandler();
 }

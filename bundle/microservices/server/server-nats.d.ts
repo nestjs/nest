@@ -7,7 +7,7 @@ export declare class ServerNats extends Server implements CustomTransportStrateg
     private readonly options;
     private readonly url;
     private natsClient;
-    constructor(options: MicroserviceOptions);
+    constructor(options: MicroserviceOptions['options']);
     listen(callback: () => void): void;
     start(callback?: () => void): void;
     bindEvents(client: Client): void;

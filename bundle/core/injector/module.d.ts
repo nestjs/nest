@@ -21,12 +21,14 @@ export declare class Module {
     private readonly _metatype;
     private readonly _scope;
     private readonly container;
+    private readonly _id;
     private _relatedModules;
     private _components;
     private _injectables;
     private _routes;
     private _exports;
     constructor(_metatype: Type<any>, _scope: Type<any>[], container: NestContainer);
+    readonly id: string;
     readonly scope: Type<any>[];
     readonly relatedModules: Set<Module>;
     readonly components: Map<string, InstanceWrapper<Injectable>>;

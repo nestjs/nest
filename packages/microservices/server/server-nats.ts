@@ -20,7 +20,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private natsClient: Client;
 
-  constructor(private readonly options: MicroserviceOptions) {
+  constructor(private readonly options: MicroserviceOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
@@ -55,7 +55,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public createNatsClient(): Client {
-    const options = this.options.options || ({} as NatsOptions);
+    const options = this.options || ({} as NatsOptions);
     return natsPackage.connect({
       ...(options as any),
       url: this.url,

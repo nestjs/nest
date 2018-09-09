@@ -1,4 +1,4 @@
-import { DynamicModule } from '@nestjs/common';
+import { DynamicModule, ForwardReference } from '@nestjs/common';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -13,7 +13,7 @@ export declare class DependenciesScanner {
     private readonly applicationProvidersApplyMap;
     constructor(container: NestContainer, metadataScanner: MetadataScanner, applicationConfig?: ApplicationConfig);
     scan(module: Type<any>): Promise<void>;
-    scanForModules(module: Type<any> | DynamicModule, scope?: Type<any>[]): Promise<void>;
+    scanForModules(module: ForwardReference | Type<any> | DynamicModule, scope?: Type<any>[], ctxRegistry?: (ForwardReference | DynamicModule | Type<any>)[]): Promise<void>;
     storeModule(module: any, scope: Type<any>[]): Promise<void>;
     scanModulesForDependencies(): Promise<void>;
     reflectRelatedModules(module: Type<any>, token: string, context: string): Promise<void>;
@@ -37,4 +37,5 @@ export declare class DependenciesScanner {
         [type: string]: Function;
     };
     isDynamicModule(module: Type<any> | DynamicModule): module is DynamicModule;
+    isForwardReference(module: Type<any> | DynamicModule | ForwardReference): module is ForwardReference;
 }

@@ -2,9 +2,18 @@ import { Logger } from '@nestjs/common';
 import * as JsonSocket from 'json-socket';
 import * as net from 'net';
 import { tap } from 'rxjs/operators';
-import { CLOSE_EVENT, ERROR_EVENT, MESSAGE_EVENT, TCP_DEFAULT_HOST, TCP_DEFAULT_PORT } from '../constants';
+import {
+  CLOSE_EVENT,
+  ERROR_EVENT,
+  MESSAGE_EVENT,
+  TCP_DEFAULT_HOST,
+  TCP_DEFAULT_PORT,
+} from '../constants';
 import { PacketId, ReadPacket, WritePacket } from '../interfaces';
-import { ClientOptions, TcpClientOptions } from '../interfaces/client-metadata.interface';
+import {
+  ClientOptions,
+  TcpClientOptions,
+} from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 
@@ -15,7 +24,7 @@ export class ClientTCP extends ClientProxy {
   private isConnected = false;
   private socket: JsonSocket;
 
-  constructor(options: ClientOptions) {
+  constructor(options: ClientOptions['options']) {
     super();
     this.port =
       this.getOptionsProp<TcpClientOptions>(options, 'port') ||

@@ -12,7 +12,7 @@ import { TestingModule } from './testing-module';
 
 export class TestingModuleBuilder {
   private readonly applicationConfig = new ApplicationConfig();
-  private readonly container = new NestContainer();
+  private readonly container = new NestContainer(this.applicationConfig);
   private readonly overloadsMap = new Map();
   private readonly scanner: DependenciesScanner;
   private readonly instanceLoader = new InstanceLoader(this.container);
@@ -59,14 +59,11 @@ export class TestingModuleBuilder {
     this.applyLogger();
     await this.scanner.scan(this.module);
 
-    [...this.overloadsMap.entries()].map(([component, options]) => {
-      this.container.replace(component, options);
-    });
+    this.applyOverloadsMap();
     await this.instanceLoader.createInstancesOfDependencies();
     this.scanner.applyApplicationProviders();
 
-    const modules = this.container.getModules().values();
-    const root = modules.next().value;
+    const root = this.getRootModule();
     return new TestingModule(this.container, [], root, this.applicationConfig);
   }
 
@@ -90,6 +87,17 @@ export class TestingModuleBuilder {
         add({ ...options, useFactory: options.factory }),
       useClass: metatype => add({ useClass: metatype }),
     };
+  }
+
+  private applyOverloadsMap() {
+    [...this.overloadsMap.entries()].map(([component, options]) => {
+      this.container.replace(component, options);
+    });
+  }
+
+  private getRootModule() {
+    const modules = this.container.getModules().values();
+    return modules.next().value;
   }
 
   private createModule(metadata) {

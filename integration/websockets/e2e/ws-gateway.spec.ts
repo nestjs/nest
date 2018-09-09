@@ -12,7 +12,7 @@ async function createNestApp(...gateways): Promise<INestApplication> {
     providers: gateways,
   }).compile();
   const app = await testingModule.createNestApplication();
-  app.useWebSocketAdapter(new WsAdapter(app.getHttpServer()));
+  app.useWebSocketAdapter(new WsAdapter(app));
   return app;
 }
 
@@ -27,9 +27,14 @@ describe('WebSocketGateway (WsAdapter)', () => {
     ws = new WebSocket('ws://localhost:8080');
     await new Promise(resolve => ws.on('open', resolve));
 
-    ws.send(JSON.stringify({ event: 'push', data: {
-      test: 'test',
-    }}));
+    ws.send(
+      JSON.stringify({
+        event: 'push',
+        data: {
+          test: 'test',
+        },
+      }),
+    );
     await new Promise(resolve =>
       ws.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
@@ -45,9 +50,14 @@ describe('WebSocketGateway (WsAdapter)', () => {
     ws = new WebSocket('ws://localhost:3000');
     await new Promise(resolve => ws.on('open', resolve));
 
-    ws.send(JSON.stringify({ event: 'push', data: {
-      test: 'test',
-    }}));
+    ws.send(
+      JSON.stringify({
+        event: 'push',
+        data: {
+          test: 'test',
+        },
+      }),
+    );
     await new Promise(resolve =>
       ws.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
@@ -63,24 +73,36 @@ describe('WebSocketGateway (WsAdapter)', () => {
     ws = new WebSocket('ws://localhost:8080');
     ws2 = new WebSocket('ws://localhost:8090');
 
-    await new Promise(resolve => ws.on('open', () => {
-      ws.on('message', data => {
-        expect(JSON.parse(data).data.test).to.be.eql('test');
-        resolve();
-      });
-      ws.send(JSON.stringify({ event: 'push', data: {
-        test: 'test',
-      }}));
-    }));
+    await new Promise(resolve =>
+      ws.on('open', () => {
+        ws.on('message', data => {
+          expect(JSON.parse(data).data.test).to.be.eql('test');
+          resolve();
+        });
+        ws.send(
+          JSON.stringify({
+            event: 'push',
+            data: {
+              test: 'test',
+            },
+          }),
+        );
+      }),
+    );
 
     await new Promise(resolve => {
       ws2.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
         resolve();
       });
-      ws2.send(JSON.stringify({ event: 'push', data: {
-        test: 'test',
-      }}));
+      ws2.send(
+        JSON.stringify({
+          event: 'push',
+          data: {
+            test: 'test',
+          },
+        }),
+      );
     });
   });
 

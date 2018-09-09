@@ -301,15 +301,15 @@ describe('ClientRedis', () => {
     });
     describe('otherwise', () => {
       it('should return delay (ms)', () => {
-        (client as any).options.options = {};
+        (client as any).options = {};
         (client as any).isExplicitlyTerminated = false;
-        (client as any).options.options.retryAttempts = 3;
-        (client as any).options.options.retryDelay = 3;
+        (client as any).options.retryAttempts = 3;
+        (client as any).options.retryDelay = 3;
         const result = client.createRetryStrategy(
           { attempt: 2 } as any,
           subject,
         );
-        expect(result).to.be.eql((client as any).options.options.retryDelay);
+        expect(result).to.be.eql((client as any).options.retryDelay);
       });
     });
   });

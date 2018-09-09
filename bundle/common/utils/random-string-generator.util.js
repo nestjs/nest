@@ -1,5 +1,4 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.randomStringGenerator = () => Math.random()
-    .toString(36)
-    .substring(2, 32);
+const uuid = require("uuid/v4");
+exports.randomStringGenerator = () => uuid();

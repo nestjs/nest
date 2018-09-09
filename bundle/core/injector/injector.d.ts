@@ -45,7 +45,6 @@ export declare class Injector {
     resolveComponentInstance<T>(module: Module, name: any, dependencyContext: InjectorDependencyContext, wrapper: InstanceWrapper<T>): Promise<any>;
     lookupComponent<T = any>(components: Map<string, any>, module: Module, dependencyContext: InjectorDependencyContext, wrapper: InstanceWrapper<T>): Promise<any>;
     lookupComponentInExports<T = any>(components: Map<string, any>, dependencyContext: InjectorDependencyContext, module: Module, wrapper: InstanceWrapper<T>): Promise<any>;
-    lookupComponentInRelatedModules(module: Module, name: any): Promise<any>;
+    lookupComponentInRelatedModules(module: Module, name: any, moduleRegistry?: any[]): any;
     resolveFactoryInstance(factoryResult: any): Promise<any>;
-    flatMap(modules: Module[]): Module[];
 }

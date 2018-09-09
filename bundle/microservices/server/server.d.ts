@@ -12,7 +12,7 @@ export declare abstract class Server {
     transformToObservable<T = any>(resultOrDeffered: any): Observable<T>;
     getOptionsProp<T extends {
         options?;
-    }>(obj: MicroserviceOptions, prop: keyof T['options'], defaultValue?: any): any;
+    }>(obj: MicroserviceOptions['options'], prop: keyof T['options'], defaultValue?: any): any;
     protected handleError(error: string): void;
     protected loadPackage(name: string, ctx: string): any;
 }

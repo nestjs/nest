@@ -1,4 +1,3 @@
-export const randomStringGenerator = () =>
-  Math.random()
-    .toString(36)
-    .substring(2, 32);
+import * as uuid from 'uuid/v4';
+
+export const randomStringGenerator = () => uuid();

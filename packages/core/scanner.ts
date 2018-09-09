@@ -1,4 +1,4 @@
-import { DynamicModule } from '@nestjs/common';
+import { DynamicModule, ForwardReference } from '@nestjs/common';
 import {
   EXCEPTION_FILTERS_METADATA,
   GATEWAY_MIDDLEWARES,
@@ -45,20 +45,35 @@ export class DependenciesScanner {
   }
 
   public async scanForModules(
-    module: Type<any> | DynamicModule,
+    module: ForwardReference | Type<any> | DynamicModule,
     scope: Type<any>[] = [],
+    ctxRegistry: (ForwardReference | DynamicModule | Type<any>)[] = [],
   ) {
     await this.storeModule(module, scope);
+    ctxRegistry.push(module);
 
-    const modules = !this.isDynamicModule(module)
+    if (this.isForwardReference(module)) {
+      module = (module as ForwardReference).forwardRef();
+    }
+    const modules = !this.isDynamicModule(module as Type<any> | DynamicModule)
       ? this.reflectMetadata(module, metadata.MODULES)
       : [
-          ...this.reflectMetadata(module.module, metadata.MODULES),
-          ...(module.imports || []),
+          ...this.reflectMetadata(
+            (module as DynamicModule).module,
+            metadata.MODULES,
+          ),
+          ...((module as DynamicModule).imports || []),
         ];
 
     for (const innerModule of modules) {
-      await this.scanForModules(innerModule, [].concat(scope, module));
+      if (ctxRegistry.includes(innerModule)) {
+        continue;
+      }
+      await this.scanForModules(
+        innerModule,
+        [].concat(scope, module),
+        ctxRegistry,
+      );
     }
   }
 
@@ -320,5 +335,11 @@ export class DependenciesScanner {
     module: Type<any> | DynamicModule,
   ): module is DynamicModule {
     return module && !!(module as DynamicModule).module;
+  }
+
+  public isForwardReference(
+    module: Type<any> | DynamicModule | ForwardReference,
+  ): module is ForwardReference {
+    return module && !!(module as ForwardReference).forwardRef;
   }
 }

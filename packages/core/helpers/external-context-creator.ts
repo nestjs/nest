@@ -120,10 +120,10 @@ export class ExternalContextCreator {
 
   public findComponentByClassName(module: Module, className: string): boolean {
     const { components } = module;
-    const hasComponent = [...components.keys()].find(
+    const hasComponent = [...components.keys()].some(
       component => component === className,
     );
-    return !!hasComponent;
+    return hasComponent;
   }
 
   public exchangeKeysForValues<TMetadata = any>(
@@ -200,9 +200,7 @@ export class ExternalContextCreator {
   }
 
   public async transformToResult(resultOrDeffered) {
-    if (resultOrDeffered instanceof Promise) {
-      return await resultOrDeffered;
-    } else if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
+    if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
       return await resultOrDeffered.toPromise();
     }
     return resultOrDeffered;

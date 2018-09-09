@@ -1,9 +1,13 @@
 import * as deprecate from 'deprecate';
-import { CUSTOM_ROUTE_AGRS_METADATA, ROUTE_ARGS_METADATA } from '../../constants';
+import * as uuid from 'uuid/v4';
+import {
+  CUSTOM_ROUTE_AGRS_METADATA,
+  ROUTE_ARGS_METADATA,
+} from '../../constants';
 import { PipeTransform } from '../../index';
 import { Type } from '../../interfaces';
 import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface';
-import { isNil, isString } from '../../utils/shared.utils';
+import { isFunction, isNil } from '../../utils/shared.utils';
 import { ParamData, RouteParamsMetadata } from './route-params.decorator';
 
 const assignCustomMetadata = (
@@ -23,11 +27,6 @@ const assignCustomMetadata = (
   },
 });
 
-const randomString = () =>
-  Math.random()
-    .toString(36)
-    .substring(2, 15);
-
 export type ParamDecoratorEnhancer = ParameterDecorator;
 
 /**
@@ -37,8 +36,10 @@ export type ParamDecoratorEnhancer = ParameterDecorator;
 export function createParamDecorator(
   factory: CustomParamFactory,
   enhancers: ParamDecoratorEnhancer[] = [],
-): (...dataOrPipes: (Type<PipeTransform> | PipeTransform | string)[]) => ParameterDecorator {
-  const paramtype = randomString() + randomString();
+): (
+  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | any)[],
+) => ParameterDecorator {
+  const paramtype = uuid();
   return (
     data?,
     ...pipes: (Type<PipeTransform> | PipeTransform)[],
@@ -46,7 +47,11 @@ export function createParamDecorator(
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
 
-    const hasParamData = isNil(data) || isString(data);
+    const isPipe = pipe =>
+      pipe &&
+      ((isFunction(pipe) && pipe.prototype) || isFunction(pipe.transform));
+
+    const hasParamData = isNil(data) || !isPipe(data);
     const paramData = hasParamData ? data : undefined;
     const paramPipes = hasParamData ? pipes : [data, ...pipes];
 
@@ -58,7 +63,7 @@ export function createParamDecorator(
         index,
         factory,
         paramData,
-        ...paramPipes as any as PipeTransform[],
+        ...((paramPipes as any) as PipeTransform[]),
       ),
       target.constructor,
       key,
