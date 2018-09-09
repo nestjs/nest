@@ -1,17 +1,15 @@
-import { Observable } from 'rxjs';
-import { WsProxy } from './ws-proxy';
-import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
-import { ExceptionFiltersContext } from './exception-filters-context';
-import { Controller } from '@nestjs/common/interfaces';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { Controller } from '@nestjs/common/interfaces';
 import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards/constants';
-import { WsException } from '../exceptions/ws-exception';
+import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
+import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import { WsException } from '../exceptions/ws-exception';
+import { ExceptionFiltersContext } from './exception-filters-context';
+import { WsProxy } from './ws-proxy';
 
 export class WsContextCreator {
   constructor(
@@ -43,6 +41,7 @@ export class WsContextCreator {
       callback,
       module,
     );
+    const fnCanActivate = this.createGuardsFn(guards, instance, callback);
     const handler = (args: any[]) => async () => {
       const [client, data, ...params] = args;
       const result = await this.pipesConsumer.applyPipes(
@@ -54,15 +53,8 @@ export class WsContextCreator {
     };
 
     return this.wsProxy.create(async (...args) => {
-      const canActivate = await this.guardsConsumer.tryActivate(
-        guards,
-        args,
-        instance,
-        callback,
-      );
-      if (!canActivate) {
-        throw new WsException(FORBIDDEN_MESSAGE);
-      }
+      fnCanActivate && (await fnCanActivate(args));
+
       return await this.interceptorsConsumer.intercept(
         interceptors,
         args,
@@ -83,5 +75,24 @@ export class WsContextCreator {
   public getDataMetatype(instance, callback) {
     const paramtypes = this.reflectCallbackParamtypes(instance, callback);
     return paramtypes && paramtypes.length ? paramtypes[1] : null;
+  }
+
+  public createGuardsFn(
+    guards: any[],
+    instance: Controller,
+    callback: (...args) => any,
+  ): Function | null {
+    const canActivateFn = async (args: any[]) => {
+      const canActivate = await this.guardsConsumer.tryActivate(
+        guards,
+        args,
+        instance,
+        callback,
+      );
+      if (!canActivate) {
+        throw new WsException(FORBIDDEN_MESSAGE);
+      }
+    };
+    return guards.length ? canActivateFn : null;
   }
 }

@@ -199,7 +199,7 @@ export class RouterExecutionContext {
     guards: any[],
     instance: Controller,
     callback: (...args) => any,
-  ) {
+  ): Function | null {
     const canActivateFn = async (args: any[]) => {
       const canActivate = await this.guardsConsumer.tryActivate(
         guards,
