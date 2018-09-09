@@ -3,6 +3,7 @@ import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import 'reflect-metadata';
 import { ApplicationConfig } from '../application-config';
+import { CircularDependencyException } from '../errors/exceptions/circular-dependency.exception';
 import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ApplicationReferenceHost } from '../helpers/application-ref-host';
@@ -121,6 +122,9 @@ export class NestContainer {
   }
 
   public addComponent(component: Type<any>, token: string): string {
+    if (!component) {
+      throw new CircularDependencyException();
+    }
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
