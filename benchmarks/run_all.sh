@@ -5,9 +5,9 @@
 lib=(express fastify nest nest-fastify)
 for item in ${lib[*]}
 do
-  echo '.......................' >> all_output.txt
+  echo '-----------------------' >> all_output.txt
   echo $item >> all_output.txt
-  echo '.......................' >> all_output.txt
+  echo '-----------------------' >> all_output.txt
 
   node $item &
   pid=$!
