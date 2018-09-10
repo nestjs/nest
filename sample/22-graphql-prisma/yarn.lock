@@ -63,9 +63,9 @@
     path-to-regexp "2.2.1"
     uuid "3.3.2"
 
-"@nestjs/graphql@5.2.1":
-  version "5.2.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-5.2.1.tgz#9ccb2c0b979ea57afc60da1be709f037b70b77d4"
+"@nestjs/graphql@5.2.2":
+  version "5.2.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-5.2.2.tgz#08de664d969bd92acbc8ac62c8add9f20ec7492e"
   dependencies:
     glob "^7.1.2"
     graphql-tools "^3.1.1"
