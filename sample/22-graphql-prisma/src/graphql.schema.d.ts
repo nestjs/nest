@@ -1,9 +1,3 @@
-export enum Episode {
-    NEWHOPE = "NEWHOPE",
-    EMPIRE = "EMPIRE",
-    JEDI = "JEDI"
-}
-
 export enum MutationType {
     CREATED = "CREATED",
     UPDATED = "UPDATED",
@@ -23,10 +17,6 @@ export enum PostOrderByInput {
     updatedAt_DESC = "updatedAt_DESC",
     createdAt_ASC = "createdAt_ASC",
     createdAt_DESC = "createdAt_DESC"
-}
-
-export class CreateCatInput {
-    name?: Date;
 }
 
 export class PostCreateInput {
@@ -106,16 +96,6 @@ export class PostWhereUniqueInput {
     id?: string;
 }
 
-export interface Character {
-    id: string;
-    name: string;
-}
-
-export interface ICat {
-    id?: number;
-    name?: string;
-}
-
 export interface Node {
     id: string;
 }
@@ -128,26 +108,7 @@ export class BatchPayload {
     count: Long;
 }
 
-export class Cat implements ICat {
-    id?: number;
-    name?: string;
-    age?: number;
-}
-
-export class Droid implements Character {
-    id: string;
-    name: string;
-    primaryFunction?: string;
-}
-
-export class Human implements Character {
-    id: string;
-    name: string;
-    totalCredits?: number;
-}
-
 export class IMutation {
-    createCat(cat?: CreateCatInput): Cat | Promise<Cat>;
     createPost(data: PostCreateInput): Post | Promise<Post>;
     updatePost(data: PostUpdateInput, where: PostWhereUniqueInput): Post | Promise<Post>;
     deletePost(where: PostWhereUniqueInput): Post | Promise<Post>;
@@ -196,8 +157,6 @@ export class PostSubscriptionPayload {
 }
 
 export class IQuery {
-    getCats(): Cat[] | Promise<Cat[]>;
-    cat(id: string): Cat | Promise<Cat>;
     posts(where?: PostWhereInput, orderBy?: PostOrderByInput, skip?: number, after?: string, before?: string, first?: number, last?: number): Post[] | Promise<Post[]>;
     post(where: PostWhereUniqueInput): Post | Promise<Post>;
     postsConnection(where?: PostWhereInput, orderBy?: PostOrderByInput, skip?: number, after?: string, before?: string, first?: number, last?: number): PostConnection | Promise<PostConnection>;
@@ -205,7 +164,6 @@ export class IQuery {
 }
 
 export class ISubscription {
-    catCreated(): Cat | Promise<Cat>;
     post(where?: PostSubscriptionWhereInput): PostSubscriptionPayload | Promise<PostSubscriptionPayload>;
 }
 
@@ -214,6 +172,4 @@ export class User {
     name: string;
 }
 
-export type Date = any;
 export type Long = any;
-export type SearchResult = Droid | Human;
