@@ -30,18 +30,5 @@
     "ts-node": "7.0.1",
     "tsconfig-paths": "3.5.0",
     "tslint": "5.11.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".spec.ts$",
-    "transform": {
-      ".+\\.(t|j)s$": "ts-jest"
-    },
-    "coverageDirectory": "../coverage"
   }
 }
