@@ -6,6 +6,7 @@ import 'reflect-metadata';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { NestContainer } from '../injector/container';
 import { Module } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
@@ -37,6 +38,18 @@ export class ExternalContextCreator {
     private readonly pipesContextCreator: PipesContextCreator,
     private readonly pipesConsumer: PipesConsumer,
   ) {}
+
+  static fromContainer(container: NestContainer): ExternalContextCreator {
+    return new ExternalContextCreator(
+      new GuardsContextCreator(container, container.applicationConfig),
+      new GuardsConsumer(),
+      new InterceptorsContextCreator(container, container.applicationConfig),
+      new InterceptorsConsumer(),
+      container.getModules(),
+      new PipesContextCreator(container, container.applicationConfig),
+      new PipesConsumer(),
+    );
+  }
 
   public create<T extends ParamsMetadata = ParamsMetadata>(
     instance: Controller,

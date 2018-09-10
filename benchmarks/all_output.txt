@@ -1,0 +1,48 @@
+-----------------------
+express
+-----------------------
+Running 10s test @ http://localhost:3000
+  8 threads and 1024 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    47.78ms   19.09ms 212.47ms   66.94%
+    Req/Sec     1.31k   268.90     2.07k    72.38%
+  104687 requests in 10.02s, 21.47MB read
+  Socket errors: connect 0, read 877, write 0, timeout 0
+Requests/sec:  10444.24
+Transfer/sec:      2.14MB
+-----------------------
+fastify
+-----------------------
+Running 10s test @ http://localhost:3000
+  8 threads and 1024 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    21.80ms    8.73ms  78.12ms   55.78%
+    Req/Sec     2.99k     0.92k    5.67k    68.88%
+  238550 requests in 10.02s, 31.17MB read
+  Socket errors: connect 0, read 862, write 0, timeout 0
+Requests/sec:  23795.79
+Transfer/sec:      3.11MB
+-----------------------
+nest
+-----------------------
+Running 10s test @ http://localhost:3000
+  8 threads and 1024 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    54.00ms   22.33ms 200.25ms   62.23%
+    Req/Sec     1.15k   338.60     1.88k    66.12%
+  91348 requests in 10.05s, 18.82MB read
+  Socket errors: connect 0, read 983, write 0, timeout 0
+Requests/sec:   9093.64
+Transfer/sec:      1.87MB
+-----------------------
+nest-fastify
+-----------------------
+Running 10s test @ http://localhost:3000
+  8 threads and 1024 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    29.31ms   11.71ms 101.96ms   70.03%
+    Req/Sec     2.17k     0.93k    4.12k    63.13%
+  173241 requests in 10.05s, 22.80MB read
+  Socket errors: connect 0, read 934, write 0, timeout 0
+Requests/sec:  17233.87
+Transfer/sec:      2.27MB

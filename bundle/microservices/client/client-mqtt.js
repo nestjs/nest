@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const logger_service_1 = require("@nestjs/common/services/logger.service");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const rxjs_1 = require("rxjs");
+const operators_1 = require("rxjs/operators");
 const constants_1 = require("../constants");
 const client_proxy_1 = require("./client-proxy");
 const constants_2 = require("./constants");
@@ -24,14 +26,25 @@ class ClientMqtt extends client_proxy_1.ClientProxy {
     close() {
         this.mqttClient && this.mqttClient.end();
         this.mqttClient = null;
+        this.connection = null;
     }
     connect() {
         if (this.mqttClient) {
-            return Promise.resolve();
+            return this.connection;
         }
         this.mqttClient = this.createClient();
         this.handleError(this.mqttClient);
-        return this.connect$(this.mqttClient).toPromise();
+        const connect$ = this.connect$(this.mqttClient);
+        this.connection = this.mergeCloseEvent(this.mqttClient, connect$)
+            .pipe(operators_1.tap(() => this.mqttClient.on(constants_1.MESSAGE_EVENT, this.createResponseCallback())), operators_1.share())
+            .toPromise();
+        return this.connection;
+    }
+    mergeCloseEvent(instance, source$) {
+        const close$ = rxjs_1.fromEvent(instance, constants_1.CLOSE_EVENT).pipe(operators_1.map(err => {
+            throw err;
+        }));
+        return rxjs_1.merge(source$, close$).pipe(operators_1.first());
     }
     createClient() {
         return mqttPackage.connect(this.url, this.options);
@@ -39,10 +52,11 @@ class ClientMqtt extends client_proxy_1.ClientProxy {
     handleError(client) {
         client.addListener(constants_1.ERROR_EVENT, err => err.code !== constants_2.ECONNREFUSED && this.logger.error(err));
     }
-    createResponseCallback(packet, callback) {
+    createResponseCallback() {
         return (channel, buffer) => {
             const { err, response, isDisposed, id } = JSON.parse(buffer.toString());
-            if (id !== packet.id) {
+            const callback = this.routingMap.get(id);
+            if (!callback) {
                 return undefined;
             }
             if (isDisposed || err) {
@@ -63,13 +77,16 @@ class ClientMqtt extends client_proxy_1.ClientProxy {
             const packet = this.assignPacketId(partialPacket);
             const pattern = this.normalizePattern(partialPacket.pattern);
             const responseChannel = this.getResPatternName(pattern);
-            const responseCallback = this.createResponseCallback(packet, callback);
-            this.mqttClient.on(constants_1.MESSAGE_EVENT, responseCallback);
-            this.mqttClient.subscribe(responseChannel);
-            this.mqttClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
+            this.mqttClient.subscribe(responseChannel, err => {
+                if (err) {
+                    return;
+                }
+                this.routingMap.set(packet.id, callback);
+                this.mqttClient.publish(this.getAckPatternName(pattern), JSON.stringify(packet));
+            });
             return () => {
                 this.mqttClient.unsubscribe(responseChannel);
-                this.mqttClient.removeListener(constants_1.MESSAGE_EVENT, responseCallback);
+                this.routingMap.delete(packet.id);
             };
         }
         catch (err) {

@@ -1,17 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const listeners_controller_1 = require("./listeners-controller");
-const container_1 = require("./container");
-const rpc_context_creator_1 = require("./context/rpc-context-creator");
-const rpc_proxy_1 = require("./context/rpc-proxy");
-const exception_filters_context_1 = require("./context/exception-filters-context");
-const pipes_context_creator_1 = require("@nestjs/core/pipes/pipes-context-creator");
-const pipes_consumer_1 = require("@nestjs/core/pipes/pipes-consumer");
-const guards_context_creator_1 = require("@nestjs/core/guards/guards-context-creator");
 const runtime_exception_1 = require("@nestjs/core/errors/exceptions/runtime.exception");
 const guards_consumer_1 = require("@nestjs/core/guards/guards-consumer");
-const interceptors_context_creator_1 = require("@nestjs/core/interceptors/interceptors-context-creator");
+const guards_context_creator_1 = require("@nestjs/core/guards/guards-context-creator");
 const interceptors_consumer_1 = require("@nestjs/core/interceptors/interceptors-consumer");
+const interceptors_context_creator_1 = require("@nestjs/core/interceptors/interceptors-context-creator");
+const pipes_consumer_1 = require("@nestjs/core/pipes/pipes-consumer");
+const pipes_context_creator_1 = require("@nestjs/core/pipes/pipes-context-creator");
+const container_1 = require("./container");
+const exception_filters_context_1 = require("./context/exception-filters-context");
+const rpc_context_creator_1 = require("./context/rpc-context-creator");
+const rpc_proxy_1 = require("./context/rpc-proxy");
+const listeners_controller_1 = require("./listeners-controller");
 class MicroservicesModule {
     constructor() {
         this.clientsContainer = new container_1.ClientsContainer();
@@ -40,8 +40,8 @@ class MicroservicesModule {
     bindListeners(controllers, server, module) {
         controllers.forEach(({ instance }) => this.listenersController.bindPatternHandlers(instance, server, module));
     }
-    bindClients(controllers) {
-        controllers.forEach(({ instance, isNotMetatype }) => {
+    bindClients(items) {
+        items.forEach(({ instance, isNotMetatype }) => {
             !isNotMetatype &&
                 this.listenersController.bindClientsToProperties(instance);
         });

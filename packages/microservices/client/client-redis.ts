@@ -1,13 +1,12 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { fromEvent, merge, Subject, zip } from 'rxjs';
-import { take } from 'rxjs/operators';
+import { share, take, tap } from 'rxjs/operators';
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
   REDIS_DEFAULT_URL,
-  SUBSCRIBE,
 } from '../constants';
 import {
   ClientOpts,
@@ -22,13 +21,14 @@ import { ECONNREFUSED } from './constants';
 let redisPackage: any = {};
 
 export class ClientRedis extends ClientProxy {
-  private readonly logger = new Logger(ClientProxy.name);
-  private readonly url: string;
-  private pubClient: RedisClient;
-  private subClient: RedisClient;
+  protected readonly logger = new Logger(ClientProxy.name);
+  protected readonly url: string;
+  protected pubClient: RedisClient;
+  protected subClient: RedisClient;
+  protected connection: Promise<any>;
   private isExplicitlyTerminated = false;
 
-  constructor(private readonly options: ClientOptions['options']) {
+  constructor(protected readonly options: ClientOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<RedisOptions>(options, 'url') || REDIS_DEFAULT_URL;
@@ -52,23 +52,28 @@ export class ClientRedis extends ClientProxy {
 
   public connect(): Promise<any> {
     if (this.pubClient && this.subClient) {
-      return Promise.resolve();
+      return this.connection;
     }
-    return new Promise((resolve, reject) => {
-      const error$ = new Subject<Error>();
+    const error$ = new Subject<Error>();
 
-      this.pubClient = this.createClient(error$);
-      this.subClient = this.createClient(error$);
-      this.handleError(this.pubClient);
-      this.handleError(this.subClient);
+    this.pubClient = this.createClient(error$);
+    this.subClient = this.createClient(error$);
+    this.handleError(this.pubClient);
+    this.handleError(this.subClient);
 
-      const pubConnect$ = fromEvent(this.pubClient, CONNECT_EVENT);
-      const subClient$ = fromEvent(this.subClient, CONNECT_EVENT);
+    const pubConnect$ = fromEvent(this.pubClient, CONNECT_EVENT);
+    const subClient$ = fromEvent(this.subClient, CONNECT_EVENT);
 
-      merge(error$, zip(pubConnect$, subClient$))
-        .pipe(take(1))
-        .subscribe(resolve, reject);
-    });
+    this.connection = merge(error$, zip(pubConnect$, subClient$))
+      .pipe(
+        take(1),
+        tap(() =>
+          this.subClient.on(MESSAGE_EVENT, this.createResponseCallback()),
+        ),
+        share(),
+      )
+      .toPromise();
+    return this.connection;
   }
 
   public createClient(error$: Subject<Error>): RedisClient {
@@ -108,16 +113,15 @@ export class ClientRedis extends ClientProxy {
     return this.getOptionsProp(this.options, 'retryDelay') || 0;
   }
 
-  public createResponseCallback(
-    packet: ReadPacket & PacketId,
-    callback: (packet: WritePacket) => any,
-  ): Function {
+  public createResponseCallback(): Function {
     return (channel: string, buffer: string) => {
       const { err, response, isDisposed, id } = JSON.parse(
         buffer,
       ) as WritePacket & PacketId;
-      if (id !== packet.id) {
-        return undefined;
+
+      const callback = this.routingMap.get(id);
+      if (!callback) {
+        return;
       }
       if (isDisposed || err) {
         return callback({
@@ -141,26 +145,21 @@ export class ClientRedis extends ClientProxy {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
       const responseChannel = this.getResPatternName(pattern);
-      const responseCallback = this.createResponseCallback(packet, callback);
 
-      this.subClient.on(MESSAGE_EVENT, responseCallback);
-      this.subClient.subscribe(responseChannel);
-
-      const handler = channel => {
-        if (channel && channel !== responseChannel) {
-          return undefined;
+      this.routingMap.set(packet.id, callback);
+      this.subClient.subscribe(responseChannel, err => {
+        if (err) {
+          return;
         }
-        this.subClient.removeListener(SUBSCRIBE, handler);
-      };
-      this.subClient.on(SUBSCRIBE, handler);
+        this.pubClient.publish(
+          this.getAckPatternName(pattern),
+          JSON.stringify(packet),
+        );
+      });
 
-      this.pubClient.publish(
-        this.getAckPatternName(pattern),
-        JSON.stringify(packet),
-      );
       return () => {
         this.subClient.unsubscribe(responseChannel);
-        this.subClient.removeListener(MESSAGE_EVENT, responseCallback);
+        this.routingMap.delete(packet.id);
       };
     } catch (err) {
       callback({ err });

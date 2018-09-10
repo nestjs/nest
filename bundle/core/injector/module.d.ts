@@ -1,6 +1,10 @@
 import { Controller, DynamicModule, Injectable, NestModule } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { ApplicationReferenceHost } from '../helpers/application-ref-host';
+import { ExternalContextCreator } from '../helpers/external-context-creator';
+import { Reflector } from '../services/reflector.service';
 import { InstanceWrapper, NestContainer } from './container';
+import { ModulesContainer } from './modules-container';
 export interface CustomComponent {
     provide: any;
     name: string;
@@ -40,10 +44,11 @@ export declare class Module {
     addCoreInjectables(container: NestContainer): void;
     addModuleRef(): void;
     addModuleAsComponent(): void;
-    addReflector(): void;
+    addReflector(reflector: Reflector): void;
     addApplicationRef(applicationRef: any): void;
-    addExternalContextCreator(container: NestContainer): void;
-    addModulesContainer(container: NestContainer): void;
+    addExternalContextCreator(externalContextCreator: ExternalContextCreator): void;
+    addModulesContainer(modulesContainer: ModulesContainer): void;
+    addApplicationRefHost(applicationRefHost: ApplicationReferenceHost): void;
     addInjectable(injectable: Type<Injectable>): string;
     addComponent(component: ComponentMetatype): string;
     isCustomProvider(component: ComponentMetatype): component is CustomClass | CustomFactory | CustomValue;

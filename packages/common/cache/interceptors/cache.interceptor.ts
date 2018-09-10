@@ -32,7 +32,7 @@ export class CacheInterceptor implements NestInterceptor {
     context: ExecutionContext,
     call$: Observable<any>,
   ): Promise<Observable<any>> {
-    const key = this.getCacheKey(context);
+    const key = this.trackBy(context);
     if (!key) {
       return call$;
     }
@@ -47,7 +47,7 @@ export class CacheInterceptor implements NestInterceptor {
     }
   }
 
-  getCacheKey(context: ExecutionContext): string | undefined {
+  trackBy(context: ExecutionContext): string | undefined {
     if (!this.isHttpApp) {
       return this.reflector.get(CACHE_KEY_METADATA, context.getHandler());
     }
@@ -55,6 +55,6 @@ export class CacheInterceptor implements NestInterceptor {
     if (this.httpServer.getRequestMethod(request) !== 'GET') {
       return undefined;
     }
-    return this.httpServer.getRequestUrl(context.getArgByIndex(0));
+    return this.httpServer.getRequestUrl(request);
   }
 }

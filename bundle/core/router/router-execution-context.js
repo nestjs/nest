@@ -115,14 +115,17 @@ class RouterExecutionContext {
     createHandleResponseFn(callback, isResponseHandled, httpStatusCode) {
         const renderTemplate = this.reflectRenderTemplate(callback);
         const responseHeaders = this.reflectResponseHeaders(callback);
+        const hasCustomHeaders = !shared_utils_1.isEmpty(responseHeaders);
         if (renderTemplate) {
             return async (result, res) => {
-                this.responseController.setHeaders(res, responseHeaders);
+                hasCustomHeaders &&
+                    this.responseController.setHeaders(res, responseHeaders);
                 await this.responseController.render(result, res, renderTemplate);
             };
         }
         return async (result, res) => {
-            this.responseController.setHeaders(res, responseHeaders);
+            hasCustomHeaders &&
+                this.responseController.setHeaders(res, responseHeaders);
             !isResponseHandled &&
                 (await this.responseController.apply(result, res, httpStatusCode));
         };

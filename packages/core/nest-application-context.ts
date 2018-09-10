@@ -154,7 +154,7 @@ export class NestApplicationContext extends ModuleRef
       iterate(instances)
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
-        .filter(this.hasOnModuleInitHook)
+        .filter(this.hasOnAppBotstrapHook)
         .map(
           async instance =>
             await (instance as OnApplicationBootstrap).onApplicationBootstrap(),

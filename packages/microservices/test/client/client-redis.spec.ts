@@ -34,7 +34,7 @@ describe('ClientRedis', () => {
       pub;
 
     beforeEach(() => {
-      subscribeSpy = sinon.spy();
+      subscribeSpy = sinon.spy((name, fn) => fn());
       publishSpy = sinon.spy();
       onSpy = sinon.spy();
       removeListenerSpy = sinon.spy();
@@ -63,10 +63,6 @@ describe('ClientRedis', () => {
       await client['publish'](msg, () => {});
       expect(publishSpy.calledWith(`${pattern}_ack`, JSON.stringify(msg))).to.be
         .true;
-    });
-    it('should listen on messages', () => {
-      client['publish'](msg, () => {});
-      expect(onSpy.called).to.be.true;
     });
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;
@@ -116,8 +112,8 @@ describe('ClientRedis', () => {
       it('should unsubscribe to response pattern name', () => {
         expect(unsubscribeSpy.calledWith(channel)).to.be.true;
       });
-      it('should remove listener', () => {
-        expect(removeListenerSpy.called).to.be.true;
+      it('should clean routingMap', () => {
+        expect(client['routingMap'].has(id)).to.be.false;
       });
     });
   });
@@ -135,7 +131,8 @@ describe('ClientRedis', () => {
       beforeEach(async () => {
         callback = sinon.spy();
 
-        subscription = client.createResponseCallback(msg, callback);
+        subscription = client.createResponseCallback();
+        client['routingMap'].set(responseMessage.id, callback);
         subscription('channel', new Buffer(JSON.stringify(responseMessage)));
       });
       it('should call callback with expected arguments', () => {
@@ -150,7 +147,8 @@ describe('ClientRedis', () => {
     describe('disposed and "id" is correct', () => {
       beforeEach(async () => {
         callback = sinon.spy();
-        subscription = client.createResponseCallback(msg, callback);
+        subscription = client.createResponseCallback();
+        client['routingMap'].set(responseMessage.id, callback);
         subscription(
           'channel',
           new Buffer(
@@ -176,13 +174,7 @@ describe('ClientRedis', () => {
     describe('disposed and "id" is incorrect', () => {
       beforeEach(async () => {
         callback = sinon.spy();
-        subscription = client.createResponseCallback(
-          {
-            ...msg,
-            id: '2',
-          },
-          callback,
-        );
+        subscription = client.createResponseCallback();
         subscription('channel', new Buffer(JSON.stringify(responseMessage)));
       });
 
@@ -232,6 +224,7 @@ describe('ClientRedis', () => {
         removeListener: () => null,
       }));
       handleErrorsSpy = sinon.spy(client, 'handleError');
+
       client.connect();
       client['pubClient'] = null;
     });

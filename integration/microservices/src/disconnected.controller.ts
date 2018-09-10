@@ -1,13 +1,13 @@
 import {
-  Controller,
-  Post,
   Body,
-  RequestTimeoutException,
+  Controller,
   InternalServerErrorException,
+  Post,
+  RequestTimeoutException,
 } from '@nestjs/common';
-import { Observable, throwError } from 'rxjs';
 import { ClientProxyFactory } from '@nestjs/microservices';
-import { tap, catchError } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 
 @Controller()
 export class DisconnectedClientController {

@@ -29,7 +29,7 @@ let CacheInterceptor = class CacheInterceptor {
         this.isHttpApp = httpServer && !!httpServer.getRequestMethod;
     }
     async intercept(context, call$) {
-        const key = this.getCacheKey(context);
+        const key = this.trackBy(context);
         if (!key) {
             return call$;
         }
@@ -44,7 +44,7 @@ let CacheInterceptor = class CacheInterceptor {
             return call$;
         }
     }
-    getCacheKey(context) {
+    trackBy(context) {
         if (!this.isHttpApp) {
             return this.reflector.get(cache_constants_1.CACHE_KEY_METADATA, context.getHandler());
         }
@@ -52,7 +52,7 @@ let CacheInterceptor = class CacheInterceptor {
         if (this.httpServer.getRequestMethod(request) !== 'GET') {
             return undefined;
         }
-        return this.httpServer.getRequestUrl(context.getArgByIndex(0));
+        return this.httpServer.getRequestUrl(request);
     }
 };
 CacheInterceptor = __decorate([

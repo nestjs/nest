@@ -3,6 +3,7 @@ import { ClientOptions, PacketId, ReadPacket, WritePacket } from '../interfaces'
 export declare abstract class ClientProxy {
     abstract connect(): Promise<any>;
     abstract close(): any;
+    protected routingMap: Map<string, Function>;
     send<TResult = any, TInput = any>(pattern: any, data: TInput): Observable<TResult>;
     protected abstract publish(packet: ReadPacket, callback: (packet: WritePacket) => void): Function | void;
     protected createObserver<T>(observer: Observer<T>): (packet: WritePacket) => void;

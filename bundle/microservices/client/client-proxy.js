@@ -7,6 +7,9 @@ const operators_1 = require("rxjs/operators");
 const constants_1 = require("../constants");
 const invalid_message_exception_1 = require("../exceptions/errors/invalid-message.exception");
 class ClientProxy {
+    constructor() {
+        this.routingMap = new Map();
+    }
     send(pattern, data) {
         if (shared_utils_1.isNil(pattern) || shared_utils_1.isNil(data)) {
             return rxjs_1.throwError(new invalid_message_exception_1.InvalidMessageException());

@@ -1,5 +1,5 @@
-import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
+import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
 
 export class WsProxy {
   public create(
@@ -7,10 +7,10 @@ export class WsProxy {
     exceptionsHandler: WsExceptionsHandler,
   ): (...args) => Promise<void> {
     return async (...args) => {
-      const host = new ExecutionContextHost(args);
       try {
         return await targetCallback(...args);
       } catch (e) {
+        const host = new ExecutionContextHost(args);
         exceptionsHandler.handle(e, host);
       }
     };
