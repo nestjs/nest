@@ -1,4 +1,4 @@
-import { LoggerService } from './../services/logger.service';
+import { LoggerService } from '../services/logger.service';
 import { Type } from './type.interface';
 
 export interface INestApplicationContext {

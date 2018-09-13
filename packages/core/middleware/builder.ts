@@ -36,7 +36,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
   private static ConfigProxy = class implements MiddlewareConfigProxy {
     private contextParameters = null;
     private excludedRoutes: RouteInfo[] = [];
-    private includedRoutes: any[];
+    private readonly includedRoutes: any[];
 
     constructor(private readonly builder: MiddlewareBuilder, middleware) {
       this.includedRoutes = filterMiddleware(middleware);

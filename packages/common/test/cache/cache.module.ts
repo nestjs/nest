@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { CACHE_MODULE_OPTIONS } from '../../cache/cache.constants';
-import { CacheModule } from './../../cache/cache.module';
+import { CacheModule } from '../../cache/cache.module';
 
 describe('CacheModule', () => {
   describe('register', () => {

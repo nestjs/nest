@@ -16,10 +16,10 @@ import {
   Injectable,
   UseGuards,
   UsePipes,
-} from './../../../common';
-import { ExceptionFiltersContext } from './../../context/exception-filters-context';
-import { RpcContextCreator } from './../../context/rpc-context-creator';
-import { RpcProxy } from './../../context/rpc-proxy';
+} from '../../../common';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context';
+import { RpcContextCreator } from '../../context/rpc-context-creator';
+import { RpcProxy } from '../../context/rpc-proxy';
 
 @Guard()
 class TestGuard {

@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RpcExceptionsHandler } from './../../exceptions/rpc-exceptions-handler';
-import { RpcException } from './../../exceptions/rpc-exception';
+import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler';
+import { RpcException } from '../../exceptions/rpc-exception';
 import { Observable, of, EMPTY as empty } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
