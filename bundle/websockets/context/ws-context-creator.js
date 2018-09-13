@@ -20,16 +20,14 @@ class WsContextCreator {
         const guards = this.guardsContextCreator.create(instance, callback, module);
         const metatype = this.getDataMetatype(instance, callback);
         const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
+        const fnCanActivate = this.createGuardsFn(guards, instance, callback);
         const handler = (args) => async () => {
             const [client, data, ...params] = args;
             const result = await this.pipesConsumer.applyPipes(data, { metatype }, pipes);
             return callback.call(instance, client, result, ...params);
         };
         return this.wsProxy.create(async (...args) => {
-            const canActivate = await this.guardsConsumer.tryActivate(guards, args, instance, callback);
-            if (!canActivate) {
-                throw new ws_exception_1.WsException(constants_2.FORBIDDEN_MESSAGE);
-            }
+            fnCanActivate && (await fnCanActivate(args));
             return await this.interceptorsConsumer.intercept(interceptors, args, instance, callback, handler(args));
         }, exceptionHandler);
     }
@@ -39,6 +37,15 @@ class WsContextCreator {
     getDataMetatype(instance, callback) {
         const paramtypes = this.reflectCallbackParamtypes(instance, callback);
         return paramtypes && paramtypes.length ? paramtypes[1] : null;
+    }
+    createGuardsFn(guards, instance, callback) {
+        const canActivateFn = async (args) => {
+            const canActivate = await this.guardsConsumer.tryActivate(guards, args, instance, callback);
+            if (!canActivate) {
+                throw new ws_exception_1.WsException(constants_2.FORBIDDEN_MESSAGE);
+            }
+        };
+        return guards.length ? canActivateFn : null;
     }
 }
 exports.WsContextCreator = WsContextCreator;

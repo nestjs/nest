@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("@nestjs/common/constants");
 require("reflect-metadata");
+const circular_dependency_exception_1 = require("../errors/exceptions/circular-dependency.exception");
 const invalid_module_exception_1 = require("../errors/exceptions/invalid-module.exception");
 const unknown_module_exception_1 = require("../errors/exceptions/unknown-module.exception");
 const application_ref_host_1 = require("../helpers/application-ref-host");
@@ -81,6 +82,9 @@ class NestContainer {
         module.addRelatedModule(related);
     }
     addComponent(component, token) {
+        if (!component) {
+            throw new circular_dependency_exception_1.CircularDependencyException();
+        }
         if (!this.modules.has(token)) {
             throw new unknown_module_exception_1.UnknownModuleException();
         }

@@ -41,7 +41,7 @@ export declare class RouterExecutionContext {
         type: any;
         data: any;
     }, transforms: Transform<any>[]): Promise<any>;
-    createGuardsFn(guards: any[], instance: Controller, callback: (...args) => any): (args: any[]) => Promise<void>;
+    createGuardsFn(guards: any[], instance: Controller, callback: (...args) => any): Function | null;
     createPipesFn(pipes: any[], paramsOptions: (ParamProperties & {
         metatype?: any;
     })[]): (args: any, req: any, res: any, next: any) => Promise<void>;

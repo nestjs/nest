@@ -21,4 +21,5 @@ export declare class RpcContextCreator {
     create(instance: Controller, callback: (data) => Observable<any>, module: any): (...args) => Promise<Observable<any>>;
     reflectCallbackParamtypes(instance: Controller, callback: (...args) => any): any[];
     getDataMetatype(instance: any, callback: any): any;
+    createGuardsFn(guards: any[], instance: Controller, callback: (...args) => any): Function | null;
 }

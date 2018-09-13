@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const logger_service_1 = require("@nestjs/common/services/logger.service");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
+const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const rxjs_1 = require("rxjs");
 const constants_1 = require("../constants");
 const invalid_grpc_package_exception_1 = require("../exceptions/errors/invalid-grpc-package.exception");
@@ -23,7 +24,8 @@ class ClientGrpcProxy extends client_proxy_1.ClientProxy {
         this.grpcClient = this.createClient();
     }
     getService(name) {
-        const options = this.options;
+        const options = shared_utils_1.isObject(this.options)
+            ? Object.assign({}, this.options, { loader: '' }) : {};
         if (!this.grpcClient[name]) {
             throw new invalid_grpc_service_exception_1.InvalidGrpcServiceException();
         }

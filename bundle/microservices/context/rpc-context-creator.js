@@ -20,16 +20,14 @@ class RpcContextCreator {
         const guards = this.guardsContextCreator.create(instance, callback, module);
         const metatype = this.getDataMetatype(instance, callback);
         const interceptors = this.interceptorsContextCreator.create(instance, callback, module);
+        const fnCanActivate = this.createGuardsFn(guards, instance, callback);
         const handler = (args) => async () => {
             const [data, ...params] = args;
             const result = await this.pipesConsumer.applyPipes(data, { metatype }, pipes);
             return callback.call(instance, result, ...params);
         };
         return this.rpcProxy.create(async (...args) => {
-            const canActivate = await this.guardsConsumer.tryActivate(guards, args, instance, callback);
-            if (!canActivate) {
-                throw new __1.RpcException(constants_2.FORBIDDEN_MESSAGE);
-            }
+            fnCanActivate && (await fnCanActivate(args));
             return await this.interceptorsConsumer.intercept(interceptors, args, instance, callback, handler(args));
         }, exceptionHandler);
     }
@@ -39,6 +37,15 @@ class RpcContextCreator {
     getDataMetatype(instance, callback) {
         const paramtypes = this.reflectCallbackParamtypes(instance, callback);
         return paramtypes && paramtypes.length ? paramtypes[0] : null;
+    }
+    createGuardsFn(guards, instance, callback) {
+        const canActivateFn = async (args) => {
+            const canActivate = await this.guardsConsumer.tryActivate(guards, args, instance, callback);
+            if (!canActivate) {
+                throw new __1.RpcException(constants_2.FORBIDDEN_MESSAGE);
+            }
+        };
+        return guards.length ? canActivateFn : null;
     }
 }
 exports.RpcContextCreator = RpcContextCreator;
