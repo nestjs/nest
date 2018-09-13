@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, PayloadTooLargeException } from './../../exceptions';
+import { BadRequestException, HttpException, PayloadTooLargeException } from '../../exceptions';
 import { multerExceptions } from './multer.constants';
 
 export function transformException(error: Error | undefined) {

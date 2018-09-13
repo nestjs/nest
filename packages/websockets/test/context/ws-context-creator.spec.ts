@@ -15,10 +15,10 @@ import {
   Injectable,
   UseGuards,
   UsePipes,
-} from './../../../common';
-import { ExceptionFiltersContext } from './../../context/exception-filters-context';
-import { WsContextCreator } from './../../context/ws-context-creator';
-import { WsProxy } from './../../context/ws-proxy';
+} from '../../../common';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context';
+import { WsContextCreator } from '../../context/ws-context-creator';
+import { WsProxy } from '../../context/ws-proxy';
 
 @Guard()
 class TestGuard {

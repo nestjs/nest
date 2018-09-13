@@ -2,8 +2,8 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
-import { ExceptionFiltersContext } from './../../context/exception-filters-context';
-import { ApplicationConfig } from './../../../core/application-config';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context';
+import { ApplicationConfig } from '../../../core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
 
 describe('ExceptionFiltersContext', () => {

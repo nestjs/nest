@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { WsExceptionsHandler } from './../../exceptions/ws-exceptions-handler';
-import { WsException } from './../../exceptions/ws-exception';
+import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
+import { WsException } from '../../exceptions/ws-exception';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 
 describe('WsExceptionsHandler', () => {

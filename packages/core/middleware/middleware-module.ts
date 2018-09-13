@@ -172,10 +172,6 @@ export class MiddlewareModule {
       );
     const resolve = instance.resolve();
 
-    if (!(resolve instanceof Promise)) {
-      bindWithProxy(resolve);
-      return;
-    }
     const middleware = await resolve;
     bindWithProxy(middleware);
   }

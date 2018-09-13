@@ -7,10 +7,10 @@ import {
   MulterField,
   MulterOptions,
 } from '../../interfaces/external/multer-options.interface';
-import { NestInterceptor } from './../../interfaces/features/nest-interceptor.interface';
-import { MULTER_MODULE_OPTIONS } from './../files.constants';
-import { MulterModuleOptions } from './../interfaces';
-import { transformException } from './../multer/multer.utils';
+import { NestInterceptor } from '../../interfaces/features/nest-interceptor.interface';
+import { MULTER_MODULE_OPTIONS } from '../files.constants';
+import { MulterModuleOptions } from '../interfaces';
+import { transformException } from '../multer/multer.utils';
 
 type MulterInstance = any;
 

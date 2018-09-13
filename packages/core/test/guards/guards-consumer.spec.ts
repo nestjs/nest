@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { GuardsConsumer } from './../../guards/guards-consumer';
+import { GuardsConsumer } from '../../guards/guards-consumer';
 import { Observable, of } from 'rxjs';
 
 describe('GuardsConsumer', () => {

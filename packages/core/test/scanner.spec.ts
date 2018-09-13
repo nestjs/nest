@@ -8,8 +8,8 @@ import { Module } from '../../common/decorators/modules/module.decorator';
 import { ApplicationConfig } from '../application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '../constants';
 import { MetadataScanner } from '../metadata-scanner';
-import { NestContainer } from './../injector/container';
-import { DependenciesScanner } from './../scanner';
+import { NestContainer } from '../injector/container';
+import { DependenciesScanner } from '../scanner';
 
 class Guard {}
 
