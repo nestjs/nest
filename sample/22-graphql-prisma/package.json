@@ -1,0 +1,34 @@
+{
+  "name": "primsa-nestjs",
+  "version": "0.0.0",
+  "description": "description",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "format": "prettier --write \"**/*.ts\"",
+    "start": "ts-node -r tsconfig-paths/register src/main.ts",
+    "start:dev": "nodemon",
+    "prestart:prod": "rm -rf dist && tsc",
+    "start:prod": "node dist/main.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "5.3.6",
+    "@nestjs/core": "5.3.6",
+    "@nestjs/graphql": "5.2.2",
+    "apollo-server-express": "2.0.6",
+    "graphql": "0.13.2",
+    "graphql-tools": "3.1.1",
+    "prisma": "1.15.3",
+    "prisma-binding": "2.1.5",
+    "reflect-metadata": "0.1.12",
+    "rxjs": "6.3.2",
+    "typescript": "3.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "1.18.4",
+    "prettier": "1.14.2",
+    "ts-node": "7.0.1",
+    "tsconfig-paths": "3.5.0",
+    "tslint": "5.11.0"
+  }
+}
