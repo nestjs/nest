@@ -22,7 +22,7 @@ export class ModuleTokenFactory {
   public getDynamicMetadataToken(
     dynamicModuleMetadata: Partial<DynamicModule> | undefined,
   ): string {
-    return dynamicModuleMetadata ? JSON.stringify(dynamicModuleMetadata) : '';
+    return dynamicModuleMetadata ? hash(dynamicModuleMetadata) : '';
   }
 
   public getModuleName(metatype: Type<any>): string {
