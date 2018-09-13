@@ -11,11 +11,12 @@
   "dependencies": {
     "@nestjs/common": "^5.3.6",
     "@nestjs/core": "^5.3.6",
-    "@nestjs/graphql": "^5.2.0",
+    "@nestjs/graphql": "^5.3.0",
     "apollo-server-express": "2.0.4",
+    "class-transformer": "^0.1.9",
+    "class-validator": "^0.9.1",
     "graphql": "0.13.2",
     "graphql-subscriptions": "0.5.8",
-    "graphql-type-json": "0.2.1",
     "reflect-metadata": "0.1.12",
     "rxjs": "6.3.1",
     "typescript": "3.0.3"

@@ -4,7 +4,7 @@ type Query {
 }
 
 type Mutation {
-  createCat(name: String): Cat
+  createCat(createCatInput: CreateCatInput): Cat
 }
 
 type Subscription {
@@ -13,6 +13,11 @@ type Subscription {
 
 type Cat {
   id: Int
+  name: String
+  age: Int
+}
+
+input CreateCatInput {
   name: String
   age: Int
 }
