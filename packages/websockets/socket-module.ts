@@ -58,7 +58,7 @@ export class SocketModule {
       return;
     }
     const metadataKeys = Reflect.getMetadataKeys(metatype);
-    if (metadataKeys.indexOf(GATEWAY_METADATA) < 0) {
+    if (!metadataKeys.includes(GATEWAY_METADATA)) {
       return;
     }
     this.webSocketsController.hookGatewayIntoServer(

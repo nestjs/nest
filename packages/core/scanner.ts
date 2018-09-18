@@ -271,7 +271,7 @@ export class DependenciesScanner {
     const providersKeys = Object.keys(applyProvidersMap);
     const type = component.provide;
 
-    if (providersKeys.indexOf(type) < 0) {
+    if (!providersKeys.includes(type)) {
       return this.container.addComponent(component, token);
     }
     const providerToken = randomStringGenerator();

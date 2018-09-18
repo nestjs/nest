@@ -315,7 +315,7 @@ export class Module {
       .filter(metatype => metatype)
       .map(({ name }) => name);
 
-    if (importedRefNames.indexOf(token) < 0) {
+    if (!importedRefNames.includes(token)) {
       const { name } = this.metatype;
       throw new UnknownExportException(name);
     }
