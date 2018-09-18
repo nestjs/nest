@@ -1,4 +1,3 @@
-import * as express from 'express';
 import { ServeStaticOptions } from './external/serve-static-options.interface';
 
 export interface INestExpressApplication {

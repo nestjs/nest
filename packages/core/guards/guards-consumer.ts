@@ -1,15 +1,7 @@
-import iterate from 'iterare';
-import { GUARDS_METADATA } from '@nestjs/common/constants';
-import {
-  isUndefined,
-  isFunction,
-  isNil,
-  isEmpty,
-} from '@nestjs/common/utils/shared.utils';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { Controller } from '@nestjs/common/interfaces';
-import { CanActivate, HttpStatus } from '@nestjs/common';
+import { CanActivate } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { FORBIDDEN_MESSAGE } from './constants';
 import { ExecutionContextHost } from '../helpers/execution-context.host';
 
 export class GuardsConsumer {
@@ -49,7 +41,7 @@ export class GuardsConsumer {
     result: boolean | Promise<boolean> | Observable<boolean>,
   ): Promise<boolean> {
     if (result instanceof Observable) {
-      return await result.toPromise();
+      return result.toPromise();
     }
     return result;
   }
