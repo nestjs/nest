@@ -1,13 +1,12 @@
-import { Controller, Get, Post, Body, Query, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, Query, HttpCode } from '@nestjs/common';
 import {
   Client,
   MessagePattern,
   ClientProxy,
   Transport,
-  ClientProxyFactory,
 } from '@nestjs/microservices';
 import { Observable, of, from } from 'rxjs';
-import { scan, tap } from 'rxjs/operators';
+import { scan } from 'rxjs/operators';
 
 @Controller()
 export class AppController {

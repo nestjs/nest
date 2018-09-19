@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, Query, HttpCode } from '@nestjs/common';
 import {
   Client,
   MessagePattern,
