@@ -27,6 +27,7 @@ import * as http from 'http';
 import * as https from 'https';
 import iterate from 'iterare';
 import * as optional from 'optional';
+import { RequestHandler } from '../common/interfaces';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { FastifyAdapter } from './adapters/fastify-adapter';
 import { ApplicationConfig } from './application-config';
@@ -286,7 +287,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public enableCors(options?: CorsOptions): this {
-    this.httpAdapter.use(cors(options));
+    this.httpAdapter.use(cors(options) as RequestHandler);
     return this;
   }
 

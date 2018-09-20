@@ -12,6 +12,8 @@
     "sourceMap": false,
     "allowJs": false,
     "rootDir": "./",
+    "strict": true,
+    "strictNullChecks": false,
     "outDir": "../../node_modules/@nestjs/common"
   },
   "include": [

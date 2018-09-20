@@ -17,7 +17,7 @@ let classTransformer: any = {};
 @Injectable()
 export class ValidationPipe implements PipeTransform<any> {
   protected isTransformEnabled: boolean;
-  protected isDetailedOutputDisabled: boolean;
+  protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
 
   constructor(@Optional() options?: ValidationPipeOptions) {

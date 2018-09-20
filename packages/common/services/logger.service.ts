@@ -13,9 +13,9 @@ export interface LoggerService {
 
 @Injectable()
 export class Logger implements LoggerService {
-  private static prevTimestamp = null;
+  private static prevTimestamp?: number;
   private static contextEnvironment = NestEnvironment.RUN;
-  private static logger: typeof Logger | LoggerService = Logger;
+  private static logger?: typeof Logger | LoggerService = Logger;
   private static readonly yellow = clc.xterm(3);
 
   constructor(
@@ -52,7 +52,7 @@ export class Logger implements LoggerService {
   }
 
   static overrideLogger(logger: LoggerService | boolean) {
-    this.logger = logger ? (logger as LoggerService) : null;
+    this.logger = logger ? (logger as LoggerService) : undefined;
   }
 
   static setMode(mode: NestEnvironment) {
