@@ -241,7 +241,7 @@ export class Module {
   }
 
   public addCustomClass(component: CustomClass, collection: Map<string, any>) {
-    const { provide, name, useClass } = component;
+    const { name, useClass } = component;
     collection.set(name, {
       name,
       metatype: useClass,
@@ -251,7 +251,7 @@ export class Module {
   }
 
   public addCustomValue(component: CustomValue, collection: Map<string, any>) {
-    const { provide, name, useValue: value } = component;
+    const { name, useValue: value } = component;
     collection.set(name, {
       name,
       metatype: null,
@@ -266,7 +266,7 @@ export class Module {
     component: CustomFactory,
     collection: Map<string, any>,
   ) {
-    const { provide, name, useFactory: factory, inject } = component;
+    const { name, useFactory: factory, inject } = component;
     collection.set(name, {
       name,
       metatype: factory as any,
