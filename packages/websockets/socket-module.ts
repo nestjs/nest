@@ -1,9 +1,6 @@
 import 'reflect-metadata';
 import iterate from 'iterare';
-import {
-  NestContainer,
-  InstanceWrapper,
-} from '@nestjs/core/injector/container';
+import { InstanceWrapper } from '@nestjs/core/injector/container';
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { SocketsContainer } from './container';
 import { WebSocketsController } from './web-sockets-controller';
@@ -58,7 +55,7 @@ export class SocketModule {
       return;
     }
     const metadataKeys = Reflect.getMetadataKeys(metatype);
-    if (metadataKeys.indexOf(GATEWAY_METADATA) < 0) {
+    if (!metadataKeys.includes(GATEWAY_METADATA)) {
       return;
     }
     this.webSocketsController.hookGatewayIntoServer(

@@ -1,5 +1,5 @@
 import { RequestMethod, HttpStatus, HttpServer } from '@nestjs/common';
-import { isNil, isObject, isFunction } from '@nestjs/common/utils/shared.utils';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 
 export interface CustomHeader {
   name: string;

@@ -1,6 +1,5 @@
 import { Transport } from '../../enums/transport.enum';
 import {
-  TcpOptions,
   RedisOptions,
   NatsOptions,
   MqttOptions,

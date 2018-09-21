@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { PATH_METADATA, SHARED_MODULE_METADATA } from '../../constants';
+import { SHARED_MODULE_METADATA } from '../../constants';
 /**
  * Makes the module single-scoped (not singleton).
  * In this case, Nest will always create a new instance of this particular module when it's imported by another one.

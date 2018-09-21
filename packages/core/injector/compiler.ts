@@ -25,7 +25,7 @@ export class ModuleCompiler {
     type: Type<any>;
     dynamicMetadata?: Partial<DynamicModule> | undefined;
   }> {
-    metatype = this.isDefferedModule(metatype) ? await metatype : metatype;
+    metatype = await metatype;
     if (!this.isDynamicModule(metatype)) {
       return { type: metatype };
     }
@@ -39,9 +39,4 @@ export class ModuleCompiler {
     return !!(module as DynamicModule).module;
   }
 
-  public isDefferedModule(
-    module: Type<any> | DynamicModule | Promise<DynamicModule>,
-  ): module is Promise<DynamicModule> {
-    return module && module instanceof Promise;
-  }
 }

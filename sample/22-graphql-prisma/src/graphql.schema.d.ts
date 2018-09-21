@@ -108,13 +108,13 @@ export class BatchPayload {
     count: Long;
 }
 
-export class IMutation {
-    createPost(data: PostCreateInput): Post | Promise<Post>;
-    updatePost(data: PostUpdateInput, where: PostWhereUniqueInput): Post | Promise<Post>;
-    deletePost(where: PostWhereUniqueInput): Post | Promise<Post>;
-    upsertPost(where: PostWhereUniqueInput, create: PostCreateInput, update: PostUpdateInput): Post | Promise<Post>;
-    updateManyPosts(data: PostUpdateInput, where?: PostWhereInput): BatchPayload | Promise<BatchPayload>;
-    deleteManyPosts(where?: PostWhereInput): BatchPayload | Promise<BatchPayload>;
+export abstract class IMutation {
+    abstract createPost(data: PostCreateInput): Post | Promise<Post>;
+    abstract updatePost(data: PostUpdateInput, where: PostWhereUniqueInput): Post | Promise<Post>;
+    abstract deletePost(where: PostWhereUniqueInput): Post | Promise<Post>;
+    abstract upsertPost(where: PostWhereUniqueInput, create: PostCreateInput, update: PostUpdateInput): Post | Promise<Post>;
+    abstract updateManyPosts(data: PostUpdateInput, where?: PostWhereInput): BatchPayload | Promise<BatchPayload>;
+    abstract deleteManyPosts(where?: PostWhereInput): BatchPayload | Promise<BatchPayload>;
 }
 
 export class PageInfo {
@@ -156,15 +156,16 @@ export class PostSubscriptionPayload {
     previousValues?: PostPreviousValues;
 }
 
-export class IQuery {
-    posts(where?: PostWhereInput, orderBy?: PostOrderByInput, skip?: number, after?: string, before?: string, first?: number, last?: number): Post[] | Promise<Post[]>;
-    post(where: PostWhereUniqueInput): Post | Promise<Post>;
-    postsConnection(where?: PostWhereInput, orderBy?: PostOrderByInput, skip?: number, after?: string, before?: string, first?: number, last?: number): PostConnection | Promise<PostConnection>;
-    node(id: string): Node | Promise<Node>;
+export abstract class IQuery {
+    abstract posts(where?: PostWhereInput, orderBy?: PostOrderByInput, skip?: number, after?: string, before?: string, first?: number, last?: number): Post[] | Promise<Post[]>;
+    abstract post(where: PostWhereUniqueInput): Post | Promise<Post>;
+    abstract postsConnection(where?: PostWhereInput, orderBy?: PostOrderByInput, skip?: number, after?: string, before?: string, first?: number, last?: number): PostConnection | Promise<PostConnection>;
+    abstract node(id: string): Node | Promise<Node>;
+    abstract temp__(): boolean | Promise<boolean>;
 }
 
-export class ISubscription {
-    post(where?: PostSubscriptionWhereInput): PostSubscriptionPayload | Promise<PostSubscriptionPayload>;
+export abstract class ISubscription {
+    abstract post(where?: PostSubscriptionWhereInput): PostSubscriptionPayload | Promise<PostSubscriptionPayload>;
 }
 
 export class User {

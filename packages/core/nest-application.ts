@@ -180,9 +180,9 @@ export class NestApplication extends NestApplicationContext
       !!app._router &&
       !!app._router.stack &&
       isFunction(app._router.stack.filter) &&
-      !!app._router.stack.filter(
+      app._router.stack.some(
         layer => layer && layer.handle && layer.handle.name === name,
-      ).length
+      )
     );
   }
 
