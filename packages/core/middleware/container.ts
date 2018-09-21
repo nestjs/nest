@@ -25,7 +25,7 @@ export class MiddlewareContainer {
     const currentConfig = this.getCurrentConfig(module);
 
     const configurations = configList || [];
-    configurations.map(config => {
+    configurations.forEach(config => {
       [].concat(config.middleware).map(metatype => {
         const token = metatype.name;
         middleware.set(token, {

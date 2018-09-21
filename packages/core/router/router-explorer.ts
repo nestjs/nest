@@ -127,7 +127,7 @@ export class RouterExplorer {
     module: string,
     basePath: string,
   ) {
-    (routePaths || []).map(pathProperties => {
+    (routePaths || []).forEach(pathProperties => {
       const { path, requestMethod } = pathProperties;
       this.applyCallbackToRouter(
         router,

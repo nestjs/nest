@@ -128,7 +128,7 @@ export class DependenciesScanner {
         metadata.PROVIDERS as 'providers',
       ),
     ];
-    components.map(component => {
+    components.forEach(component => {
       this.storeComponent(component, token);
       this.reflectComponentMetadata(component, token);
       this.reflectDynamicMetadata(component, token);
@@ -147,7 +147,7 @@ export class DependenciesScanner {
         metadata.CONTROLLERS as 'controllers',
       ),
     ];
-    routes.map(route => {
+    routes.forEach(route => {
       this.storeRoute(route, token);
       this.reflectDynamicMetadata(route, token);
     });
@@ -172,14 +172,14 @@ export class DependenciesScanner {
         metadata.EXPORTS as 'exports',
       ),
     ];
-    exports.map(exportedComponent =>
+    exports.forEach(exportedComponent =>
       this.storeExportedComponent(exportedComponent, token),
     );
   }
 
   public reflectGatewaysMiddleware(component: Type<Injectable>, token: string) {
     const middleware = this.reflectMetadata(component, GATEWAY_MIDDLEWARES);
-    middleware.map(ware => this.storeComponent(ware, token));
+    middleware.forEach(ware => this.storeComponent(ware, token));
   }
 
   public reflectInjectables(
@@ -202,7 +202,7 @@ export class DependenciesScanner {
       ...flattenMethodsInjectables,
     ].filter(isFunction);
 
-    mergedInjectables.map(injectable =>
+    mergedInjectables.forEach(injectable =>
       this.storeInjectable(injectable, token),
     );
   }
