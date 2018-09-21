@@ -1,7 +1,10 @@
 import { RequestMethod } from '@nestjs/common';
 import { flatten } from '@nestjs/common/decorators/core/dependencies.decorator';
 import { MiddlewareConsumer, Type } from '@nestjs/common/interfaces';
-import { MiddlewareConfigProxy, RouteInfo } from '@nestjs/common/interfaces/middleware';
+import {
+  MiddlewareConfigProxy,
+  RouteInfo,
+} from '@nestjs/common/interfaces/middleware';
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { BindResolveMiddlewareValues } from '@nestjs/common/utils/bind-resolve-values.util';
 import { isNil } from '@nestjs/common/utils/shared.utils';
@@ -10,6 +13,7 @@ import { filterMiddleware } from './utils';
 
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();
+
   constructor(private readonly routesMapper: RoutesMapper) {}
 
   public apply(

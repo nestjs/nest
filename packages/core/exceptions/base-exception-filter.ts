@@ -1,6 +1,13 @@
-import { ArgumentsHost, ExceptionFilter, HttpException, HttpServer, HttpStatus, Logger } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  ExceptionFilter,
+  HttpException,
+  HttpServer,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
 import { isObject } from '@nestjs/common/utils/shared.utils';
-import { messages } from '../constants';
+import { MESSAGES } from '../constants';
 
 export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
   private static readonly logger = new Logger('ExceptionsHandler');
@@ -11,7 +18,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     if (!(exception instanceof HttpException)) {
       const body = {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: messages.UNKNOWN_EXCEPTION_MESSAGE,
+        message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
       };
       this.applicationRef.reply(host.getArgByIndex(1), body, body.statusCode);
       if (this.isExceptionObject(exception)) {

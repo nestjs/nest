@@ -17,7 +17,7 @@ import { ExpressAdapter } from './adapters/express-adapter';
 import { ExpressFactory } from './adapters/express-factory';
 import { FastifyAdapter } from './adapters/fastify-adapter';
 import { ApplicationConfig } from './application-config';
-import { messages } from './constants';
+import { MESSAGES } from './constants';
 import { ExceptionsZone } from './errors/exceptions-zone';
 import { NestContainer } from './injector/container';
 import { InstanceLoader } from './injector/instance-loader';
@@ -138,7 +138,7 @@ export class NestFactoryStatic {
     );
     container.setApplicationRef(httpServer);
     try {
-      this.logger.log(messages.APPLICATION_START);
+      this.logger.log(MESSAGES.APPLICATION_START);
       await ExceptionsZone.asyncRun(async () => {
         await dependenciesScanner.scan(module);
         await instanceLoader.createInstancesOfDependencies();

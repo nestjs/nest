@@ -5,12 +5,7 @@ import { ClientOptions } from '../interfaces/client-metadata.interface';
 /**
  * Attaches the `ClientProxy` instance to the given property
  *
- * @param  {ClientOptions} metadata Optional client metadata
- * ```
- * transport?: Transport;
- * url?: string;
- * port?: number;
- * host?: string;
+ * @param  {ClientOptions} metadata optional client metadata
  */
 export const Client = (metadata?: ClientOptions) => {
   return (target: object, propertyKey: string | symbol): void => {

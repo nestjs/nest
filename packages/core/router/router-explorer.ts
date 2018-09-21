@@ -9,7 +9,7 @@ import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
-import { routeMappedMessage } from '../helpers/messages';
+import { ROUTE_MAPPED_MESSAGE } from '../helpers/messages';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { NestContainer } from '../injector/container';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
@@ -136,7 +136,7 @@ export class RouterExplorer {
         module,
         basePath,
       );
-      this.logger.log(routeMappedMessage(path, requestMethod));
+      this.logger.log(ROUTE_MAPPED_MESSAGE(path, requestMethod));
     });
   }
 

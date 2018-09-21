@@ -54,7 +54,11 @@ export class IoAdapter implements WebSocketAdapter {
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {
-    const disconnect$ = fromEvent(client, 'disconnect').pipe(share(), first());
+    const disconnect$ = fromEvent(client, DISCONNECT_EVENT).pipe(
+      share(),
+      first(),
+    );
+
     handlers.forEach(({ message, callback }) => {
       const source$ = fromEvent(client, message).pipe(
         mergeMap((payload: any) => {

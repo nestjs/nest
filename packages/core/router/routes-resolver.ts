@@ -4,7 +4,7 @@ import { HttpServer } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '../application-config';
-import { controllerMappingMessage } from '../helpers/messages';
+import { CONTROLLER_MAPPING_MESSAGE } from '../helpers/messages';
 import { InstanceWrapper, NestContainer } from '../injector/container';
 import { MetadataScanner } from '../metadata-scanner';
 import { Resolver } from './interfaces/resolver.interface';
@@ -57,7 +57,7 @@ export class RoutesResolver implements Resolver {
       const path = this.routerBuilder.extractRouterPath(metatype, basePath);
       const controllerName = metatype.name;
 
-      this.logger.log(controllerMappingMessage(controllerName, path));
+      this.logger.log(CONTROLLER_MAPPING_MESSAGE(controllerName, path));
       this.routerBuilder.explore(
         instance,
         metatype,

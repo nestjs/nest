@@ -88,7 +88,7 @@ export class NestContainer {
     if (!modules) {
       return undefined;
     }
-    modules.map(module => this.addModule(module, scope));
+    modules.forEach(module => this.addModule(module, scope));
   }
 
   public isGlobalModule(metatype: Type<any>): boolean {

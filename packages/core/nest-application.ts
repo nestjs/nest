@@ -27,11 +27,10 @@ import * as http from 'http';
 import * as https from 'https';
 import iterate from 'iterare';
 import * as optional from 'optional';
-import { RequestHandler } from '../common/interfaces';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { FastifyAdapter } from './adapters/fastify-adapter';
 import { ApplicationConfig } from './application-config';
-import { messages } from './constants';
+import { MESSAGES } from './constants';
 import { NestContainer } from './injector/container';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
@@ -153,7 +152,7 @@ export class NestApplication extends NestApplicationContext
     await this.callBootstrapHook();
 
     this.isInitialized = true;
-    this.logger.log(messages.APPLICATION_READY);
+    this.logger.log(MESSAGES.APPLICATION_READY);
     return this;
   }
 
@@ -287,7 +286,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public enableCors(options?: CorsOptions): this {
-    this.httpAdapter.use(cors(options) as RequestHandler);
+    this.httpAdapter.use(cors(options) as any);
     return this;
   }
 

@@ -1,4 +1,4 @@
-export const metadata = {
+export const METADATA = {
   MODULES: 'modules',
   IMPORTS: 'imports',
   COMPONENTS: 'components',

@@ -1,5 +1,8 @@
 import { Type } from '@nestjs/common';
-import { InjectorDependencyContext, InjectorDependency } from '../injector/injector';
+import {
+  InjectorDependency,
+  InjectorDependencyContext,
+} from '../injector/injector';
 
 /**
  * Returns the name of the dependency
@@ -10,7 +13,7 @@ import { InjectorDependencyContext, InjectorDependency } from '../injector/injec
 const getDependencyName = (dependency: InjectorDependency) =>
   (dependency && (dependency as Type<any>).name) || dependency || '+';
 
-export const UnknownDependenciesMessage = (
+export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   type: string,
   unknownDependencyContext: InjectorDependencyContext,
 ) => {
@@ -26,13 +29,13 @@ export const UnknownDependenciesMessage = (
   return message;
 };
 
-export const InvalidMiddlewareMessage = (name: string) =>
+export const INVALID_MIDDLEWARE_MESSAGE = (text, name: string) =>
   `The middleware doesn't provide the 'resolve' method (${name})`;
 
-export const InvalidModuleMessage = (scope: string) =>
+export const INVALID_MODULE_MESSAGE = (text, scope: string) =>
   `Nest cannot create the module instance. Often, this is because of a circular dependency between modules. Use forwardRef() to avoid it. (Read more https://docs.nestjs.com/advanced/circular-dependency.) Scope [${scope}]`;
 
-export const UnknownExportMessage = (module: string) =>
+export const UNKNOWN_EXPORT_MESSAGE = (text, module: string) =>
   `Nest cannot export a component/module that is not a part of the currently processed module (${module}). Please verify whether each exported unit is available in this particular context.`;
 
 export const INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuration passed inside the module 'configure()' method.`;
