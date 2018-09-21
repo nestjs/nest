@@ -107,10 +107,10 @@ export class MiddlewareModule {
   ) {
     const { forRoutes } = config;
     await Promise.all(
-      forRoutes.map(async (routeInfo: RouteInfo) => {
+      forRoutes.map(async (routeInfo: Type<any> | string | RouteInfo) => {
         await this.registerRouteMiddleware(
           middlewareContainer,
-          routeInfo,
+          routeInfo as RouteInfo,
           config,
           module,
           applicationRef,
