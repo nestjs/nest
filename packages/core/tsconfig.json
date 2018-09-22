@@ -12,7 +12,10 @@
     "sourceMap": false,
     "allowJs": false,
     "rootDir": "./",
-    "baseUrl": "./../../",
+    "baseUrl": "../../",
+    "strict": true,
+    "strictNullChecks": false,
+    "noImplicitThis": false,
     "outDir": "../../node_modules/@nestjs/core"
   },
   "include": [

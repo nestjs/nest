@@ -1,7 +1,9 @@
-import 'reflect-metadata';
+import { Param } from '@nestjs/common';
 import { expect } from 'chai';
+import 'reflect-metadata';
+import { Body, Query } from '../../decorators';
 import { RequestMethod } from '../../enums/request-method.enum';
-import { Get, Post, Delete, All, Put, Patch } from '../../index';
+import { All, Delete, Get, Patch, Post, Put } from '../../index';
 
 describe('@Get', () => {
   const requestPath = 'test';
@@ -13,7 +15,7 @@ describe('@Get', () => {
   it('should enhance class with expected request metadata', () => {
     class Test {
       @Get(requestPath)
-      public static test() {}
+      public static test(@Param('id') params) {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -56,7 +58,7 @@ describe('@Post', () => {
   it('should set path on "/" by default', () => {
     class Test {
       @Post()
-      public static test() {}
+      public static test(@Query() query) {}
     }
     const path = Reflect.getMetadata('path', Test.test);
     expect(path).to.be.eql('/');
@@ -73,7 +75,7 @@ describe('@Delete', () => {
   it('should enhance class with expected request metadata', () => {
     class Test {
       @Delete(requestPath)
-      public static test() {}
+      public static test(@Body() body) {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);

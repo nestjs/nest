@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const router_proxy_1 = require("./router-proxy");
-const logger_service_1 = require("@nestjs/common/services/logger.service");
-const messages_1 = require("../helpers/messages");
-const router_exception_filters_1 = require("./router-exception-filters");
-const metadata_scanner_1 = require("../metadata-scanner");
-const router_explorer_1 = require("./router-explorer");
 const common_1 = require("@nestjs/common");
 const constants_1 = require("@nestjs/common/constants");
+const logger_service_1 = require("@nestjs/common/services/logger.service");
+const messages_1 = require("../helpers/messages");
+const metadata_scanner_1 = require("../metadata-scanner");
+const router_exception_filters_1 = require("./router-exception-filters");
+const router_explorer_1 = require("./router-explorer");
+const router_proxy_1 = require("./router-proxy");
 class RoutesResolver {
     constructor(container, config) {
         this.container = container;
@@ -26,8 +26,6 @@ class RoutesResolver {
             path = path ? path + basePath : basePath;
             this.registerRouters(routes, moduleName, path, appInstance);
         });
-        this.registerNotFoundHandler();
-        this.registerExceptionHandler();
     }
     registerRouters(routes, moduleName, basePath, appInstance) {
         routes.forEach(({ instance, metatype }) => {

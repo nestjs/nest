@@ -105,10 +105,10 @@ class NestFactoryStatic {
         };
     }
     applyLogger(options) {
-        if (!options || !options.logger) {
+        if (!options) {
             return;
         }
-        logger_service_1.Logger.overrideLogger(options.logger);
+        !shared_utils_1.isNil(options.logger) && logger_service_1.Logger.overrideLogger(options.logger);
     }
     applyExpressAdapter(httpAdapter) {
         const isAdapter = httpAdapter.getHttpServer;

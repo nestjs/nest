@@ -1,13 +1,11 @@
 import { HttpException, HttpServer } from '@nestjs/common';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
 import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
-export declare class ExceptionsHandler {
-    private readonly applicationRef;
-    private static readonly logger;
+import { BaseExceptionFilter } from './base-exception-filter';
+export declare class ExceptionsHandler extends BaseExceptionFilter {
     private filters;
     constructor(applicationRef: HttpServer);
-    next(exception: Error | HttpException | any, ctx: ArgumentsHost): void;
+    next(exception: Error | HttpException | any, ctx: ArgumentsHost): any;
     setCustomFilters(filters: ExceptionFilterMetadata[]): void;
     invokeCustomFilters(exception: any, response: any): boolean;
-    isExceptionObject(err: any): err is Error;
 }

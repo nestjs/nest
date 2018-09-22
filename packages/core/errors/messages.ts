@@ -1,26 +1,41 @@
-export const UnknownDependenciesMessage = (
+import { Type } from '@nestjs/common';
+import {
+  InjectorDependency,
+  InjectorDependencyContext,
+} from '../injector/injector';
+
+/**
+ * Returns the name of the dependency
+ * Tries to get the class name, otherwise the string value
+ * (= injection token). As fallback it returns '+'
+ * @param dependency The dependency whichs name shoul get displayed
+ */
+const getDependencyName = (dependency: InjectorDependency) =>
+  (dependency && (dependency as Type<any>).name) || dependency || '+';
+
+export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   type: string,
-  index: number,
-  length: number,
+  unknownDependencyContext: InjectorDependencyContext,
 ) => {
+  const { index, dependencies } = unknownDependencyContext;
   let message = `Nest can't resolve dependencies of the ${type}`;
   message += ` (`;
 
-  const args = new Array(length).fill('+');
-  args[index] = '?';
-  message += args.join(', ');
+  const dependenciesName = dependencies.map(getDependencyName);
+  dependenciesName[index] = '?';
+  message += dependenciesName.join(', ');
 
   message += `). Please make sure that the argument at index [${index}] is available in the current context.`;
   return message;
 };
 
-export const InvalidMiddlewareMessage = (name: string) =>
+export const INVALID_MIDDLEWARE_MESSAGE = (text, name: string) =>
   `The middleware doesn't provide the 'resolve' method (${name})`;
 
-export const InvalidModuleMessage = (scope: string) =>
+export const INVALID_MODULE_MESSAGE = (text, scope: string) =>
   `Nest cannot create the module instance. Often, this is because of a circular dependency between modules. Use forwardRef() to avoid it. (Read more https://docs.nestjs.com/advanced/circular-dependency.) Scope [${scope}]`;
 
-export const UnknownExportMessage = (module: string) =>
+export const UNKNOWN_EXPORT_MESSAGE = (text, module: string) =>
   `Nest cannot export a component/module that is not a part of the currently processed module (${module}). Please verify whether each exported unit is available in this particular context.`;
 
 export const INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuration passed inside the module 'configure()' method.`;

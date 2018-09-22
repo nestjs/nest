@@ -1,36 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const common_1 = require("@nestjs/common");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
-const constants_1 = require("../constants");
 const invalid_exception_filter_exception_1 = require("../errors/exceptions/invalid-exception-filter.exception");
-class ExceptionsHandler {
+const base_exception_filter_1 = require("./base-exception-filter");
+class ExceptionsHandler extends base_exception_filter_1.BaseExceptionFilter {
     constructor(applicationRef) {
-        this.applicationRef = applicationRef;
+        super(applicationRef);
         this.filters = [];
     }
     next(exception, ctx) {
-        if (this.invokeCustomFilters(exception, ctx))
-            return;
-        if (!(exception instanceof common_1.HttpException)) {
-            const body = {
-                statusCode: 500,
-                message: constants_1.messages.UNKNOWN_EXCEPTION_MESSAGE,
-            };
-            this.applicationRef.reply(ctx.getArgByIndex(1), body, body.statusCode);
-            if (this.isExceptionObject(exception)) {
-                return ExceptionsHandler.logger.error(exception.message, exception.stack);
-            }
-            return ExceptionsHandler.logger.error(exception);
+        if (this.invokeCustomFilters(exception, ctx)) {
+            return void 0;
         }
-        const res = exception.getResponse();
-        const message = shared_utils_1.isObject(res)
-            ? res
-            : {
-                statusCode: exception.getStatus(),
-                message: res,
-            };
-        this.applicationRef.reply(ctx.getArgByIndex(1), message, exception.getStatus());
+        super.catch(exception, ctx);
     }
     setCustomFilters(filters) {
         if (!Array.isArray(filters)) {
@@ -43,15 +25,11 @@ class ExceptionsHandler {
             return false;
         const filter = this.filters.find(({ exceptionMetatypes, func }) => {
             const hasMetatype = !exceptionMetatypes.length ||
-                !!exceptionMetatypes.find(ExceptionMetatype => exception instanceof ExceptionMetatype);
+                exceptionMetatypes.some(ExceptionMetatype => exception instanceof ExceptionMetatype);
             return hasMetatype;
         });
         filter && filter.func(exception, response);
         return !!filter;
     }
-    isExceptionObject(err) {
-        return shared_utils_1.isObject(err) && !!err.message;
-    }
 }
-ExceptionsHandler.logger = new common_1.Logger(ExceptionsHandler.name);
 exports.ExceptionsHandler = ExceptionsHandler;

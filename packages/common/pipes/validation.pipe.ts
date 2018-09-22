@@ -1,9 +1,10 @@
+import { Optional } from '../decorators';
 import { ArgumentMetadata, BadRequestException } from '../index';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { loadPackage } from '../utils/load-package.util';
 import { isNil } from '../utils/shared.utils';
-import { Injectable } from './../decorators/core/component.decorator';
+import { Injectable } from '../decorators/core/component.decorator';
 
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
@@ -16,10 +17,10 @@ let classTransformer: any = {};
 @Injectable()
 export class ValidationPipe implements PipeTransform<any> {
   protected isTransformEnabled: boolean;
-  protected isDetailedOutputDisabled: boolean;
+  protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
 
-  constructor(options?: ValidationPipeOptions) {
+  constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
     const { transform, disableErrorMessages, ...validatorOptions } = options;
     this.isTransformEnabled = !!transform;

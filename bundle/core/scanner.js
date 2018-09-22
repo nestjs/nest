@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("@nestjs/common/constants");
+const random_string_generator_util_1 = require("@nestjs/common/utils/random-string-generator.util");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 require("reflect-metadata");
 const application_config_1 = require("./application-config");
@@ -18,11 +19,23 @@ class DependenciesScanner {
         await this.scanModulesForDependencies();
         this.container.bindGlobalScope();
     }
-    async scanForModules(module, scope = []) {
+    async scanForModules(module, scope = [], ctxRegistry = []) {
         await this.storeModule(module, scope);
-        const modules = this.reflectMetadata(module, constants_1.metadata.MODULES);
+        ctxRegistry.push(module);
+        if (this.isForwardReference(module)) {
+            module = module.forwardRef();
+        }
+        const modules = !this.isDynamicModule(module)
+            ? this.reflectMetadata(module, constants_1.metadata.MODULES)
+            : [
+                ...this.reflectMetadata(module.module, constants_1.metadata.MODULES),
+                ...(module.imports || []),
+            ];
         for (const innerModule of modules) {
-            await this.scanForModules(innerModule, [].concat(scope, module));
+            if (ctxRegistry.includes(innerModule)) {
+                continue;
+            }
+            await this.scanForModules(innerModule, [].concat(scope, module), ctxRegistry);
         }
     }
     async storeModule(module, scope) {
@@ -113,8 +126,19 @@ class DependenciesScanner {
         flatten(paramsInjectables).map(injectable => this.storeInjectable(injectable, token));
     }
     reflectKeyMetadata(component, key, method) {
-        const descriptor = Reflect.getOwnPropertyDescriptor(component.prototype, method);
-        return descriptor ? Reflect.getMetadata(key, descriptor.value) : undefined;
+        let prototype = component.prototype;
+        do {
+            const descriptor = Reflect.getOwnPropertyDescriptor(prototype, method);
+            if (!descriptor) {
+                continue;
+            }
+            return Reflect.getMetadata(key, descriptor.value);
+        } while (
+        // tslint:disable-next-line:no-conditional-assignment
+        (prototype = Reflect.getPrototypeOf(prototype)) &&
+            prototype !== Object.prototype &&
+            prototype);
+        return undefined;
     }
     async storeRelatedModule(related, token, context) {
         if (shared_utils_1.isUndefined(related)) {
@@ -136,9 +160,7 @@ class DependenciesScanner {
         if (providersKeys.indexOf(type) < 0) {
             return this.container.addComponent(component, token);
         }
-        const providerToken = Math.random()
-            .toString(36)
-            .substring(2, 32);
+        const providerToken = random_string_generator_util_1.randomStringGenerator();
         this.applicationProvidersApplyMap.push({
             type,
             moduleKey: token,
@@ -174,6 +196,12 @@ class DependenciesScanner {
             [constants_2.APP_GUARD]: guard => this.applicationConfig.addGlobalGuard(guard),
             [constants_2.APP_FILTER]: filter => this.applicationConfig.addGlobalFilter(filter),
         };
+    }
+    isDynamicModule(module) {
+        return module && !!module.module;
+    }
+    isForwardReference(module) {
+        return module && !!module.forwardRef;
     }
 }
 exports.DependenciesScanner = DependenciesScanner;

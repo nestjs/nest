@@ -1,5 +1,5 @@
 import { RequestMethod, HttpStatus, HttpServer } from '@nestjs/common';
-import { isNil, isObject, isFunction } from '@nestjs/common/utils/shared.utils';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 
 export interface CustomHeader {
   name: string;
@@ -20,9 +20,7 @@ export class RouterResponseController {
   }
 
   public async transformToResult(resultOrDeffered) {
-    if (resultOrDeffered instanceof Promise) {
-      return await resultOrDeffered;
-    } else if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
+    if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
       return await resultOrDeffered.toPromise();
     }
     return resultOrDeffered;

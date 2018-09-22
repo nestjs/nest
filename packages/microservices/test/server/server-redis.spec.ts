@@ -1,8 +1,7 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { NO_PATTERN_MESSAGE } from '../../constants';
 import { ServerRedis } from '../../server/server-redis';
-import { Observable } from 'rxjs';
 
 describe('ServerRedis', () => {
   let server: ServerRedis;
@@ -23,7 +22,7 @@ describe('ServerRedis', () => {
         .stub(server, 'createRedisClient')
         .callsFake(() => client);
 
-        server.listen(null);
+      server.listen(null);
     });
     it('should bind "error" event to handler', () => {
       expect(onSpy.getCall(0).args[0]).to.be.equal('error');
@@ -116,7 +115,7 @@ describe('ServerRedis', () => {
   describe('getPublisher', () => {
     let publisherSpy: sinon.SinonSpy;
     let pub, publisher;
-  
+
     const id = '1';
     const pattern = 'test';
 
@@ -133,8 +132,12 @@ describe('ServerRedis', () => {
     it(`should call "publish" with expected arguments`, () => {
       const respond = 'test';
       publisher({ respond, id });
-      expect(publisherSpy.calledWith(`${pattern}_res`, JSON.stringify({ respond, id })))
-        .to.be.true;
+      expect(
+        publisherSpy.calledWith(
+          `${pattern}_res`,
+          JSON.stringify({ respond, id }),
+        ),
+      ).to.be.true;
     });
   });
   describe('deserialize', () => {
@@ -198,21 +201,21 @@ describe('ServerRedis', () => {
     describe('when ECONNREFUSED', () => {
       it('should call logger', () => {
         const loggerErrorSpy = sinon.spy((server as any).logger, 'error');
-        const result = server.createRetryStrategy(
-          { error: { code: 'ECONNREFUSED' } } as any,
-        );
+        const result = server.createRetryStrategy({
+          error: { code: 'ECONNREFUSED' },
+        } as any);
         expect(loggerErrorSpy.called).to.be.true;
       });
     });
     describe('otherwise', () => {
       it('should return delay (ms)', () => {
-        (server as any).options.options = {};
+        (server as any).options = {};
         (server as any).isExplicitlyTerminated = false;
-        (server as any).options.options.retryAttempts = 3;
-        (server as any).options.options.retryDelay = 3;
+        (server as any).options.retryAttempts = 3;
+        (server as any).options.retryDelay = 3;
         const result = server.createRetryStrategy({ attempt: 2 } as any);
-        expect(result).to.be.eql((server as any).options.options.retryDelay);
+        expect(result).to.be.eql((server as any).options.retryDelay);
       });
-    })
+    });
   });
 });

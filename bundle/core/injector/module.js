@@ -1,14 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const random_string_generator_util_1 = require("@nestjs/common/utils/random-string-generator.util");
 const shared_utils_1 = require("@nestjs/common/utils/shared.utils");
 const runtime_exception_1 = require("../errors/exceptions/runtime.exception");
 const unknown_export_exception_1 = require("../errors/exceptions/unknown-export.exception");
+const application_ref_host_1 = require("../helpers/application-ref-host");
+const external_context_creator_1 = require("../helpers/external-context-creator");
 const reflector_service_1 = require("../services/reflector.service");
-const guards_consumer_1 = require("./../guards/guards-consumer");
-const guards_context_creator_1 = require("./../guards/guards-context-creator");
-const external_context_creator_1 = require("./../helpers/external-context-creator");
-const interceptors_consumer_1 = require("./../interceptors/interceptors-consumer");
-const interceptors_context_creator_1 = require("./../interceptors/interceptors-context-creator");
 const module_ref_1 = require("./module-ref");
 const modules_container_1 = require("./modules-container");
 const tokens_1 = require("./tokens");
@@ -16,12 +14,17 @@ class Module {
     constructor(_metatype, _scope, container) {
         this._metatype = _metatype;
         this._scope = _scope;
+        this.container = container;
         this._relatedModules = new Set();
         this._components = new Map();
         this._injectables = new Map();
         this._routes = new Map();
         this._exports = new Set();
         this.addCoreInjectables(container);
+        this._id = random_string_generator_util_1.randomStringGenerator();
+    }
+    get id() {
+        return this._id;
     }
     get scope() {
         return this._scope;
@@ -52,15 +55,16 @@ class Module {
         return this._metatype;
     }
     addCoreInjectables(container) {
-        this.addModuleRef();
         this.addModuleAsComponent();
-        this.addReflector();
+        this.addModuleRef();
+        this.addReflector(container.getReflector());
         this.addApplicationRef(container.getApplicationRef());
-        this.addExternalContextCreator(container);
-        this.addModulesContainer(container);
+        this.addExternalContextCreator(container.getExternalContextCreator());
+        this.addModulesContainer(container.getModulesContainer());
+        this.addApplicationRefHost(container.getApplicationRefHost());
     }
     addModuleRef() {
-        const moduleRef = this.createModuleRefMetatype(this._components);
+        const moduleRef = this.createModuleRefMetatype();
         this._components.set(module_ref_1.ModuleRef.name, {
             name: module_ref_1.ModuleRef.name,
             metatype: module_ref_1.ModuleRef,
@@ -76,12 +80,12 @@ class Module {
             instance: null,
         });
     }
-    addReflector() {
+    addReflector(reflector) {
         this._components.set(reflector_service_1.Reflector.name, {
             name: reflector_service_1.Reflector.name,
             metatype: reflector_service_1.Reflector,
-            isResolved: false,
-            instance: null,
+            isResolved: true,
+            instance: reflector,
         });
     }
     addApplicationRef(applicationRef) {
@@ -92,20 +96,28 @@ class Module {
             instance: applicationRef || {},
         });
     }
-    addExternalContextCreator(container) {
+    addExternalContextCreator(externalContextCreator) {
         this._components.set(external_context_creator_1.ExternalContextCreator.name, {
             name: external_context_creator_1.ExternalContextCreator.name,
             metatype: external_context_creator_1.ExternalContextCreator,
             isResolved: true,
-            instance: new external_context_creator_1.ExternalContextCreator(new guards_context_creator_1.GuardsContextCreator(container, container.applicationConfig), new guards_consumer_1.GuardsConsumer(), new interceptors_context_creator_1.InterceptorsContextCreator(container, container.applicationConfig), new interceptors_consumer_1.InterceptorsConsumer(), container.getModules()),
+            instance: externalContextCreator,
         });
     }
-    addModulesContainer(container) {
+    addModulesContainer(modulesContainer) {
         this._components.set(modules_container_1.ModulesContainer.name, {
             name: modules_container_1.ModulesContainer.name,
             metatype: modules_container_1.ModulesContainer,
             isResolved: true,
-            instance: container.getModules(),
+            instance: modulesContainer,
+        });
+    }
+    addApplicationRefHost(applicationRefHost) {
+        this._components.set(application_ref_host_1.ApplicationReferenceHost.name, {
+            name: application_ref_host_1.ApplicationReferenceHost.name,
+            metatype: application_ref_host_1.ApplicationReferenceHost,
+            isResolved: true,
+            instance: applicationRefHost,
         });
     }
     addInjectable(injectable) {
@@ -214,12 +226,13 @@ class Module {
         if (this._components.has(token)) {
             return token;
         }
-        const relatedModules = [...this._relatedModules.values()];
-        const modulesTokens = relatedModules
+        const importedArray = [...this._relatedModules.values()];
+        const importedRefNames = importedArray
+            .filter(item => item)
             .map(({ metatype }) => metatype)
             .filter(metatype => metatype)
             .map(({ name }) => name);
-        if (modulesTokens.indexOf(token) < 0) {
+        if (importedRefNames.indexOf(token) < 0) {
             const { name } = this.metatype;
             throw new unknown_export_exception_1.UnknownExportException(name);
         }
@@ -242,15 +255,17 @@ class Module {
         }
         this.addInjectable(Object.assign({ provide: toReplace }, options));
     }
-    createModuleRefMetatype(components) {
-        return class {
+    createModuleRefMetatype() {
+        const self = this;
+        return class extends module_ref_1.ModuleRef {
             constructor() {
-                this.components = components;
+                super(self.container);
             }
-            get(type) {
-                const name = shared_utils_1.isFunction(type) ? type.name : type;
-                const exists = this.components.has(name);
-                return exists ? this.components.get(name).instance : null;
+            get(typeOrToken, options = { strict: true }) {
+                if (!(options && options.strict)) {
+                    return this.find(typeOrToken);
+                }
+                return this.findInstanceByPrototypeOrToken(typeOrToken, self);
             }
         };
     }

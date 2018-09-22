@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { PipesConsumer } from './../../pipes/pipes-consumer';
-import { RouteParamtypes } from './../../../common/enums/route-paramtypes.enum';
+import { PipesConsumer } from '../../pipes/pipes-consumer';
+import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 
 describe('PipesConsumer', () => {
   let consumer: PipesConsumer;

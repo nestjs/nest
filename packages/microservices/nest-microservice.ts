@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { messages } from '@nestjs/core/constants';
+import { MESSAGES } from '@nestjs/core/constants';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
 import { CustomTransportStrategy } from '@nestjs/microservices';
@@ -77,7 +77,10 @@ export class NestMicroservice extends NestApplicationContext
     this.registerListeners();
     this.setIsInitialized(true);
 
-    !this.isInitHookCalled && (await this.callInitHook());
+    if (!this.isInitHookCalled) {
+      await this.callInitHook();
+      await this.callBootstrapHook();
+    }
   }
 
   public registerListeners() {
@@ -112,7 +115,7 @@ export class NestMicroservice extends NestApplicationContext
   public listen(callback: () => void) {
     !this.isInitialized && this.registerModules();
 
-    this.logger.log(messages.MICROSERVICE_READY);
+    this.logger.log(MESSAGES.MICROSERVICE_READY);
     this.server.listen(callback);
   }
 

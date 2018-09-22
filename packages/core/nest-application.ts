@@ -30,7 +30,7 @@ import * as optional from 'optional';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { FastifyAdapter } from './adapters/fastify-adapter';
 import { ApplicationConfig } from './application-config';
-import { messages } from './constants';
+import { MESSAGES } from './constants';
 import { NestContainer } from './injector/container';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
@@ -76,6 +76,10 @@ export class NestApplication extends NestApplicationContext
     this.routesResolver = new RoutesResolver(this.container, this.config);
   }
 
+  public getHttpAdapter(): HttpServer {
+    return this.httpAdapter;
+  }
+
   public registerHttpServer() {
     this.httpServer = this.createServer();
 
@@ -100,13 +104,17 @@ export class NestApplication extends NestApplicationContext
     const isExpress = this.isExpress();
 
     if (isHttpsEnabled && isExpress) {
-      return https.createServer(
+      const server = https.createServer(
         this.appOptions.httpsOptions,
-        this.httpAdapter.getHttpServer(),
+        this.httpAdapter.getInstance(),
       );
+      (this.httpAdapter as ExpressAdapter).setHttpServer(server);
+      return server;
     }
     if (isExpress) {
-      return http.createServer(this.httpAdapter.getHttpServer());
+      const server = http.createServer(this.httpAdapter.getInstance());
+      (this.httpAdapter as ExpressAdapter).setHttpServer(server);
+      return server;
     }
     return this.httpAdapter;
   }
@@ -140,9 +148,11 @@ export class NestApplication extends NestApplicationContext
     await this.registerModules();
     await this.registerRouter();
     await this.callInitHook();
+    await this.registerRouterHooks();
+    await this.callBootstrapHook();
 
     this.isInitialized = true;
-    this.logger.log(messages.APPLICATION_READY);
+    this.logger.log(MESSAGES.APPLICATION_READY);
     return this;
   }
 
@@ -165,14 +175,14 @@ export class NestApplication extends NestApplicationContext
   }
 
   public isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean {
-    const app = this.httpAdapter.getHttpServer();
+    const app = httpAdapter.getInstance();
     return (
       !!app._router &&
       !!app._router.stack &&
       isFunction(app._router.stack.filter) &&
-      !!app._router.stack.filter(
+      app._router.stack.some(
         layer => layer && layer.handle && layer.handle.name === name,
-      ).length
+      )
     );
   }
 
@@ -181,6 +191,11 @@ export class NestApplication extends NestApplicationContext
     const prefix = this.config.getGlobalPrefix();
     const basePath = prefix ? validatePath(prefix) : '';
     this.routesResolver.resolve(this.httpAdapter, basePath);
+  }
+
+  public async registerRouterHooks() {
+    this.routesResolver.registerNotFoundHandler();
+    this.routesResolver.registerExceptionHandler();
   }
 
   public connectMicroservice(options: MicroserviceOptions): INestMicroservice {
@@ -271,7 +286,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public enableCors(options?: CorsOptions): this {
-    this.httpAdapter.use(cors(options));
+    this.httpAdapter.use(cors(options) as any);
     return this;
   }
 

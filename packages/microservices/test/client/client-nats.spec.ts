@@ -5,21 +5,8 @@ import { ERROR_EVENT } from '../../constants';
 // tslint:disable:no-string-literal
 
 describe('ClientNats', () => {
-  const test = 'test';
   const client = new ClientNats({});
 
-  describe('getAckPatternName', () => {
-    it(`should append _ack to string`, () => {
-      const expectedResult = test + '_ack';
-      expect(client.getAckPatternName(test)).to.equal(expectedResult);
-    });
-  });
-  describe('getResPatternName', () => {
-    it(`should append _res to string`, () => {
-      const expectedResult = test + '_res';
-      expect(client.getResPatternName(test)).to.equal(expectedResult);
-    });
-  });
   describe('publish', () => {
     const pattern = 'test';
     const msg = { pattern, data: 'data' };
@@ -30,6 +17,7 @@ describe('ClientNats', () => {
       publishSpy: sinon.SinonSpy,
       onSpy: sinon.SinonSpy,
       removeListenerSpy: sinon.SinonSpy,
+      requestSpy: sinon.SinonSpy,
       unsubscribeSpy: sinon.SinonSpy,
       connectSpy: sinon.SinonStub,
       natsClient,
@@ -41,6 +29,7 @@ describe('ClientNats', () => {
       onSpy = sinon.spy();
       removeListenerSpy = sinon.spy();
       unsubscribeSpy = sinon.spy();
+      requestSpy = sinon.spy(() => subscriptionId);
 
       natsClient = {
         subscribe: subscribeSpy,
@@ -49,6 +38,7 @@ describe('ClientNats', () => {
         unsubscribe: unsubscribeSpy,
         addListener: () => ({}),
         publish: publishSpy,
+        request: requestSpy,
       };
       (client as any).natsClient = natsClient;
 
@@ -61,20 +51,18 @@ describe('ClientNats', () => {
       connectSpy.restore();
       createClient.restore();
     });
-    it('should subscribe to response pattern name', async () => {
+    it('should publish stringified message to pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;
-    });
-    it('should publish stringified message to acknowledge pattern name', async () => {
-      await client['publish'](msg, () => {});
-      expect(publishSpy.getCall(0).args[0]).to.be.eql(`"${pattern}"_ack`);
+      expect(requestSpy.getCall(0).args[0]).to.be.eql(pattern);
     });
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;
       beforeEach(() => {
-        assignPacketIdStub = sinon.stub(client, 'assignPacketId').callsFake(() => {
-          throw new Error();
-        });
+        assignPacketIdStub = sinon
+          .stub(client, 'assignPacketId')
+          .callsFake(() => {
+            throw new Error();
+          });
       });
       afterEach(() => {
         assignPacketIdStub.restore();

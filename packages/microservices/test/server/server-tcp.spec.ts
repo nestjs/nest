@@ -1,7 +1,7 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ServerTCP } from '../../server/server-tcp';
+import * as sinon from 'sinon';
 import { NO_PATTERN_MESSAGE } from '../../constants';
+import { ServerTCP } from '../../server/server-tcp';
 
 describe('ServerTCP', () => {
   let server: ServerTCP;
@@ -100,14 +100,14 @@ describe('ServerTCP', () => {
     });
     describe('otherwise', () => {
       it('should return delay (ms)', () => {
-        (server as any).options.options = {};
+        (server as any).options = {};
         (server as any).isExplicitlyTerminated = false;
-        (server as any).options.options.retryAttempts = 3;
+        (server as any).options.retryAttempts = 3;
         (server as any).retryAttemptsCount = 2;
-        (server as any).options.options.retryDelay = 3;
+        (server as any).options.retryDelay = 3;
         const result = server.handleClose();
         expect(result).to.be.not.undefined;
       });
-    })
+    });
   });
 });

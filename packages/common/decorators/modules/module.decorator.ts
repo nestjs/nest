@@ -1,6 +1,6 @@
-import 'reflect-metadata';
 import * as deprecate from 'deprecate';
-import { metadata as metadataConstants } from '../../constants';
+import 'reflect-metadata';
+import { METADATA as metadataConstants } from '../../constants';
 import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface';
 import { InvalidModuleConfigException } from './exceptions/invalid-module-config.exception';
 
@@ -60,11 +60,11 @@ function overrideModuleMetadata(moduleMetadata: ModuleMetadata) {
 }
 
 function showDeprecatedWarnings(moduleMetadata: ModuleMetadata) {
-  const modulesDeprecatedWarning =
+  const MODULES_DEPRECATED_WARNING =
     'The "modules" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "imports" key instead.';
-  const componentsDeprecatetWarning =
+  const COMPONENTS_DEPRECATED_WARNING =
     'The "components" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "providers" key instead.';
 
-  moduleMetadata.modules && deprecate(modulesDeprecatedWarning);
-  moduleMetadata.components && deprecate(componentsDeprecatetWarning);
+  moduleMetadata.modules && deprecate(MODULES_DEPRECATED_WARNING);
+  moduleMetadata.components && deprecate(COMPONENTS_DEPRECATED_WARNING);
 }

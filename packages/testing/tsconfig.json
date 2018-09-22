@@ -11,7 +11,8 @@
     "target": "es2017",
     "sourceMap": false,
     "allowJs": false,
-    "baseUrl": "./../../",
+    "baseUrl": "../../",
+    "strict": true,
     "outDir": "../../node_modules/@nestjs/testing"
   },
   "include": [

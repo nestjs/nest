@@ -1,8 +1,9 @@
 import { Observable, Observer } from 'rxjs';
-import { ClientOptions, PacketId, ReadPacket, WritePacket } from './../interfaces';
+import { ClientOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
 export declare abstract class ClientProxy {
     abstract connect(): Promise<any>;
     abstract close(): any;
+    protected routingMap: Map<string, Function>;
     send<TResult = any, TInput = any>(pattern: any, data: TInput): Observable<TResult>;
     protected abstract publish(packet: ReadPacket, callback: (packet: WritePacket) => void): Function | void;
     protected createObserver<T>(observer: Observer<T>): (packet: WritePacket) => void;
@@ -10,5 +11,6 @@ export declare abstract class ClientProxy {
     protected connect$(instance: any, errorEvent?: string, connectEvent?: string): Observable<any>;
     protected getOptionsProp<T extends {
         options?;
-    }>(obj: ClientOptions, prop: keyof T['options'], defaultValue?: any): any;
+    }>(obj: ClientOptions['options'], prop: keyof T['options'], defaultValue?: any): any;
+    protected normalizePattern<T = any>(pattern: T): string;
 }

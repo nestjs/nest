@@ -2,7 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const logger_service_1 = require("@nestjs/common/services/logger.service");
 const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
-const constants_1 = require("./../constants");
+const operators_1 = require("rxjs/operators");
+const constants_1 = require("../constants");
 const client_proxy_1 = require("./client-proxy");
 const constants_2 = require("./constants");
 let natsPackage = {};
@@ -15,26 +16,24 @@ class ClientNats extends client_proxy_1.ClientProxy {
             this.getOptionsProp(this.options, 'url') || constants_1.NATS_DEFAULT_URL;
         natsPackage = load_package_util_1.loadPackage('nats', ClientNats.name);
     }
-    getAckPatternName(pattern) {
-        return `${pattern}_ack`;
-    }
-    getResPatternName(pattern) {
-        return `${pattern}_res`;
-    }
     close() {
         this.natsClient && this.natsClient.close();
         this.natsClient = null;
+        this.connection = null;
     }
     async connect() {
         if (this.natsClient) {
-            return Promise.resolve();
+            return this.connection;
         }
-        this.natsClient = await this.createClient();
+        this.natsClient = this.createClient();
         this.handleError(this.natsClient);
-        return this.connect$(this.natsClient).toPromise();
+        this.connection = await this.connect$(this.natsClient)
+            .pipe(operators_1.share())
+            .toPromise();
+        return this.connection;
     }
     createClient() {
-        const options = this.options.options || {};
+        const options = this.options || {};
         return natsPackage.connect(Object.assign({}, options, { url: this.url, json: true }));
     }
     handleError(client) {
@@ -62,11 +61,9 @@ class ClientNats extends client_proxy_1.ClientProxy {
     publish(partialPacket, callback) {
         try {
             const packet = this.assignPacketId(partialPacket);
-            const pattern = JSON.stringify(partialPacket.pattern);
-            const responseChannel = this.getResPatternName(pattern);
+            const channel = this.normalizePattern(partialPacket.pattern);
             const subscriptionHandler = this.createSubscriptionHandler(packet, callback);
-            const subscriptionId = this.natsClient.subscribe(responseChannel, subscriptionHandler);
-            this.natsClient.publish(this.getAckPatternName(pattern), packet);
+            const subscriptionId = this.natsClient.request(channel, packet, subscriptionHandler);
             return () => this.natsClient.unsubscribe(subscriptionId);
         }
         catch (err) {

@@ -1,4 +1,5 @@
 import * as deprecate from 'deprecate';
+import * as uuid from 'uuid/v4';
 
 /**
  * Defines the injectable class. This class can inject dependencies through constructor.
@@ -65,9 +66,8 @@ export function Interceptor(): ClassDecorator {
 }
 
 export function mixin(mixinClass) {
-  this.offset = this.offset ? ++this.offset : Math.random() * 100;
   Object.defineProperty(mixinClass, 'name', {
-    value: JSON.stringify(this.offset),
+    value: uuid(),
   });
   Injectable()(mixinClass);
   return mixinClass;

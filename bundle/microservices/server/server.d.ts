@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { Observable, Subscription } from 'rxjs';
+import { MicroserviceOptions, WritePacket } from '../interfaces';
 import { MessageHandlers } from '../interfaces/message-handlers.interface';
-import { MicroserviceOptions, WritePacket } from './../interfaces';
 export declare abstract class Server {
     protected readonly messageHandlers: MessageHandlers;
     protected readonly logger: Logger;
@@ -12,7 +12,7 @@ export declare abstract class Server {
     transformToObservable<T = any>(resultOrDeffered: any): Observable<T>;
     getOptionsProp<T extends {
         options?;
-    }>(obj: MicroserviceOptions, prop: keyof T['options'], defaultValue?: any): any;
+    }>(obj: MicroserviceOptions['options'], prop: keyof T['options'], defaultValue?: any): any;
     protected handleError(error: string): void;
     protected loadPackage(name: string, ctx: string): any;
 }

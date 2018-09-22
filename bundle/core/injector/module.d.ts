@@ -1,6 +1,10 @@
 import { Controller, DynamicModule, Injectable, NestModule } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { ApplicationReferenceHost } from '../helpers/application-ref-host';
+import { ExternalContextCreator } from '../helpers/external-context-creator';
+import { Reflector } from '../services/reflector.service';
 import { InstanceWrapper, NestContainer } from './container';
+import { ModulesContainer } from './modules-container';
 export interface CustomComponent {
     provide: any;
     name: string;
@@ -20,12 +24,15 @@ export declare type ComponentMetatype = Type<Injectable> | CustomFactory | Custo
 export declare class Module {
     private readonly _metatype;
     private readonly _scope;
+    private readonly container;
+    private readonly _id;
     private _relatedModules;
     private _components;
     private _injectables;
     private _routes;
     private _exports;
     constructor(_metatype: Type<any>, _scope: Type<any>[], container: NestContainer);
+    readonly id: string;
     readonly scope: Type<any>[];
     readonly relatedModules: Set<Module>;
     readonly components: Map<string, InstanceWrapper<Injectable>>;
@@ -37,10 +44,11 @@ export declare class Module {
     addCoreInjectables(container: NestContainer): void;
     addModuleRef(): void;
     addModuleAsComponent(): void;
-    addReflector(): void;
+    addReflector(reflector: Reflector): void;
     addApplicationRef(applicationRef: any): void;
-    addExternalContextCreator(container: NestContainer): void;
-    addModulesContainer(container: NestContainer): void;
+    addExternalContextCreator(externalContextCreator: ExternalContextCreator): void;
+    addModulesContainer(modulesContainer: ModulesContainer): void;
+    addApplicationRefHost(applicationRefHost: ApplicationReferenceHost): void;
     addInjectable(injectable: Type<Injectable>): string;
     addComponent(component: ComponentMetatype): string;
     isCustomProvider(component: ComponentMetatype): component is CustomClass | CustomFactory | CustomValue;
@@ -58,10 +66,5 @@ export declare class Module {
     addRoute(route: Type<Controller>): void;
     addRelatedModule(relatedModule: any): void;
     replace(toReplace: any, options: any): string;
-    createModuleRefMetatype(components: any): {
-        new (): {
-            readonly components: any;
-            get<T>(type: OpaqueToken): T;
-        };
-    };
+    createModuleRefMetatype(): any;
 }

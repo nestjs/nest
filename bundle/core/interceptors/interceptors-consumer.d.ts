@@ -1,5 +1,5 @@
-import { Controller } from '@nestjs/common/interfaces';
 import { NestInterceptor } from '@nestjs/common';
+import { Controller } from '@nestjs/common/interfaces';
 import { Observable } from 'rxjs';
 import { ExecutionContextHost } from '../helpers/execution-context.host';
 export declare class InterceptorsConsumer {

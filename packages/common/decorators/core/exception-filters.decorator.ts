@@ -1,6 +1,5 @@
 import 'reflect-metadata';
 import { EXCEPTION_FILTERS_METADATA } from '../../constants';
-import { Logger } from '@nestjs/common';
 import { ExceptionFilter } from '../../index';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';
 import { isFunction } from '../../utils/shared.utils';

@@ -2,8 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("@nestjs/common/constants");
 require("reflect-metadata");
+const circular_dependency_exception_1 = require("../errors/exceptions/circular-dependency.exception");
+const invalid_module_exception_1 = require("../errors/exceptions/invalid-module.exception");
 const unknown_module_exception_1 = require("../errors/exceptions/unknown-module.exception");
-const invalid_module_exception_1 = require("./../errors/exceptions/invalid-module.exception");
+const application_ref_host_1 = require("../helpers/application-ref-host");
+const external_context_creator_1 = require("../helpers/external-context-creator");
+const services_1 = require("../services");
 const compiler_1 = require("./compiler");
 const module_1 = require("./module");
 const modules_container_1 = require("./modules-container");
@@ -14,12 +18,18 @@ class NestContainer {
         this.moduleCompiler = new compiler_1.ModuleCompiler();
         this.modules = new modules_container_1.ModulesContainer();
         this.dynamicModulesMetadata = new Map();
+        this.reflector = new services_1.Reflector();
+        this.applicationRefHost = new application_ref_host_1.ApplicationReferenceHost();
     }
     get applicationConfig() {
         return this._applicationConfig;
     }
     setApplicationRef(applicationRef) {
         this.applicationRef = applicationRef;
+        if (!this.applicationRefHost) {
+            return;
+        }
+        this.applicationRefHost.applicationRef = applicationRef;
     }
     getApplicationRef() {
         return this.applicationRef;
@@ -72,6 +82,9 @@ class NestContainer {
         module.addRelatedModule(related);
     }
     addComponent(component, token) {
+        if (!component) {
+            throw new circular_dependency_exception_1.CircularDependencyException();
+        }
         if (!this.modules.has(token)) {
             throw new unknown_module_exception_1.UnknownModuleException();
         }
@@ -125,6 +138,24 @@ class NestContainer {
             return metadata[metadataKey];
         }
         return [];
+    }
+    getReflector() {
+        return this.reflector;
+    }
+    getExternalContextCreator() {
+        if (!this.externalContextCreator) {
+            this.externalContextCreator = external_context_creator_1.ExternalContextCreator.fromContainer(this);
+        }
+        return this.externalContextCreator;
+    }
+    getApplicationRefHost() {
+        return this.applicationRefHost;
+    }
+    getModulesContainer() {
+        if (!this.modulesContainer) {
+            this.modulesContainer = this.getModules();
+        }
+        return this.modulesContainer;
     }
 }
 exports.NestContainer = NestContainer;

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Cat } from './interfaces/cat.interface';
+import { Cat } from '../graphql.schema';
 
 @Injectable()
 export class CatsService {

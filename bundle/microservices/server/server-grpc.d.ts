@@ -1,11 +1,11 @@
+import { CustomTransportStrategy } from '../interfaces';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
-import { CustomTransportStrategy } from './../interfaces';
 import { Server } from './server';
 export declare class ServerGrpc extends Server implements CustomTransportStrategy {
     private readonly options;
     private readonly url;
     private grpcClient;
-    constructor(options: MicroserviceOptions);
+    constructor(options: MicroserviceOptions['options']);
     listen(callback: () => void): Promise<void>;
     start(callback?: () => void): Promise<void>;
     bindEvents(): Promise<void>;

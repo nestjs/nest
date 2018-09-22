@@ -22,8 +22,22 @@ export interface GrpcOptions {
     url?: string;
     credentials?: any;
     protoPath: string;
-    root?: string;
     package: string;
+    /** @deprecated */
+    root?: string;
+    loader?: {
+      keepCase?: boolean;
+      alternateCommentMode?: boolean;
+      longs?: Function;
+      enums?: Function;
+      bytes?: Function;
+      defaults?: boolean;
+      arrays?: boolean;
+      objects?: boolean;
+      oneofs?: boolean;
+      json?: boolean;
+      includeDirs?: string[];
+    }
   };
 }
 

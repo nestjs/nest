@@ -1,5 +1,5 @@
-import 'reflect-metadata';
 import { Controller } from '@nestjs/common/interfaces';
+import 'reflect-metadata';
 export declare abstract class ContextCreator {
     abstract createConcreteContext<T extends any[], R extends any[]>(metadata: T): R;
     getGlobalMetadata?<T extends any[]>(): T;

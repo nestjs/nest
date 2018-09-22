@@ -5,7 +5,7 @@ import { Logger } from '../../../common/services/logger.service';
 import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
 import { HttpException } from '@nestjs/common';
-import { ExpressAdapter } from './../../adapters/express-adapter';
+import { ExpressAdapter } from '../../adapters/express-adapter';
 import { ExecutionContextHost } from '../../helpers/execution-context.host';
 
 describe('ExceptionsHandler', () => {

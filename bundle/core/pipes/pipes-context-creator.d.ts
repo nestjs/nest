@@ -1,7 +1,7 @@
-import 'reflect-metadata';
 import { Controller, PipeTransform, Transform } from '@nestjs/common/interfaces';
-import { ApplicationConfig } from './../application-config';
-import { ContextCreator } from './../helpers/context-creator';
+import 'reflect-metadata';
+import { ApplicationConfig } from '../application-config';
+import { ContextCreator } from '../helpers/context-creator';
 import { NestContainer } from '../injector/container';
 export declare class PipesContextCreator extends ContextCreator {
     private readonly container;

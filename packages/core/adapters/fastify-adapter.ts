@@ -1,10 +1,9 @@
-import { Logger, RequestMethod } from '@nestjs/common';
+import { RequestMethod } from '@nestjs/common';
 import { ErrorHandler, RequestHandler } from '@nestjs/common/interfaces';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import * as pathToRegexp from 'path-to-regexp';
 
 export class FastifyAdapter {
-  private readonly logger = new Logger(FastifyAdapter.name);
   protected readonly instance: any;
 
   constructor(options?: any) {
@@ -137,7 +136,9 @@ export class FastifyAdapter {
   ): (path: string, callback: Function) => any {
     return (path: string, callback: Function) => {
       const re = pathToRegexp(path);
-      this.instance.use(path, (req, res, next) => {
+      const normalizedPath = path === '/*' ? '' : path;
+
+      this.instance.use(normalizedPath, (req, res, next) => {
         if (!re.exec(req.originalUrl + '/')) {
           return next();
         }

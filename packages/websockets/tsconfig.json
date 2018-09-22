@@ -11,7 +11,9 @@
     "target": "es2017",
     "sourceMap": false,
     "allowJs": false,
-    "baseUrl": "./../../",
+    "baseUrl": "../../",
+    "strict": true,
+    "strictNullChecks": false,
     "outDir": "../../node_modules/@nestjs/websockets"
   },
   "include": [

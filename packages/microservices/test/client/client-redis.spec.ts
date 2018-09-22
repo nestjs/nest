@@ -34,7 +34,7 @@ describe('ClientRedis', () => {
       pub;
 
     beforeEach(() => {
-      subscribeSpy = sinon.spy();
+      subscribeSpy = sinon.spy((name, fn) => fn());
       publishSpy = sinon.spy();
       onSpy = sinon.spy();
       removeListenerSpy = sinon.spy();
@@ -57,23 +57,21 @@ describe('ClientRedis', () => {
     });
     it('should subscribe to response pattern name', () => {
       client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;
+      expect(subscribeSpy.calledWith(`${pattern}_res`)).to.be.true;
     });
     it('should publish stringified message to acknowledge pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(publishSpy.calledWith(`"${pattern}"_ack`, JSON.stringify(msg))).to
-        .be.true;
-    });
-    it('should listen on messages', () => {
-      client['publish'](msg, () => {});
-      expect(onSpy.called).to.be.true;
+      expect(publishSpy.calledWith(`${pattern}_ack`, JSON.stringify(msg))).to.be
+        .true;
     });
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;
       beforeEach(() => {
-        assignPacketIdStub = sinon.stub(client, 'assignPacketId').callsFake(() => {
-          throw new Error();
-        });
+        assignPacketIdStub = sinon
+          .stub(client, 'assignPacketId')
+          .callsFake(() => {
+            throw new Error();
+          });
       });
       afterEach(() => {
         assignPacketIdStub.restore();
@@ -114,8 +112,8 @@ describe('ClientRedis', () => {
       it('should unsubscribe to response pattern name', () => {
         expect(unsubscribeSpy.calledWith(channel)).to.be.true;
       });
-      it('should remove listener', () => {
-        expect(removeListenerSpy.called).to.be.true;
+      it('should clean routingMap', () => {
+        expect(client['routingMap'].has(id)).to.be.false;
       });
     });
   });
@@ -133,7 +131,8 @@ describe('ClientRedis', () => {
       beforeEach(async () => {
         callback = sinon.spy();
 
-        subscription = client.createResponseCallback(msg, callback);
+        subscription = client.createResponseCallback();
+        client['routingMap'].set(responseMessage.id, callback);
         subscription('channel', new Buffer(JSON.stringify(responseMessage)));
       });
       it('should call callback with expected arguments', () => {
@@ -148,7 +147,8 @@ describe('ClientRedis', () => {
     describe('disposed and "id" is correct', () => {
       beforeEach(async () => {
         callback = sinon.spy();
-        subscription = client.createResponseCallback(msg, callback);
+        subscription = client.createResponseCallback();
+        client['routingMap'].set(responseMessage.id, callback);
         subscription(
           'channel',
           new Buffer(
@@ -174,13 +174,7 @@ describe('ClientRedis', () => {
     describe('disposed and "id" is incorrect', () => {
       beforeEach(async () => {
         callback = sinon.spy();
-        subscription = client.createResponseCallback(
-          {
-            ...msg,
-            id: '2',
-          },
-          callback,
-        );
+        subscription = client.createResponseCallback();
         subscription('channel', new Buffer(JSON.stringify(responseMessage)));
       });
 
@@ -230,6 +224,7 @@ describe('ClientRedis', () => {
         removeListener: () => null,
       }));
       handleErrorsSpy = sinon.spy(client, 'handleError');
+
       client.connect();
       client['pubClient'] = null;
     });
@@ -299,15 +294,15 @@ describe('ClientRedis', () => {
     });
     describe('otherwise', () => {
       it('should return delay (ms)', () => {
-        (client as any).options.options = {};
+        (client as any).options = {};
         (client as any).isExplicitlyTerminated = false;
-        (client as any).options.options.retryAttempts = 3;
-        (client as any).options.options.retryDelay = 3;
+        (client as any).options.retryAttempts = 3;
+        (client as any).options.retryDelay = 3;
         const result = client.createRetryStrategy(
           { attempt: 2 } as any,
           subject,
         );
-        expect(result).to.be.eql((client as any).options.options.retryDelay);
+        expect(result).to.be.eql((client as any).options.retryDelay);
       });
     });
   });

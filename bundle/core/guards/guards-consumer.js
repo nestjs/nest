@@ -25,9 +25,6 @@ class GuardsConsumer {
         if (result instanceof rxjs_1.Observable) {
             return await result.toPromise();
         }
-        if (result instanceof Promise) {
-            return await result;
-        }
         return result;
     }
 }

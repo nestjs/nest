@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { empty } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientMqtt } from '../../client/client-mqtt';
 import { ERROR_EVENT } from '../../constants';
@@ -29,10 +30,12 @@ describe('ClientMqtt', () => {
       removeListenerSpy: sinon.SinonSpy,
       unsubscribeSpy: sinon.SinonSpy,
       connectSpy: sinon.SinonStub,
+      assignStub: sinon.SinonStub,
       mqttClient;
 
+    const id = '1';
     beforeEach(() => {
-      subscribeSpy = sinon.spy();
+      subscribeSpy = sinon.spy((name, fn) => fn());
       publishSpy = sinon.spy();
       onSpy = sinon.spy();
       removeListenerSpy = sinon.spy();
@@ -48,32 +51,32 @@ describe('ClientMqtt', () => {
       };
       (client as any).mqttClient = mqttClient;
       connectSpy = sinon.stub(client, 'connect');
+      assignStub = sinon
+        .stub(client, 'assignPacketId')
+        .callsFake(packet => Object.assign(packet, { id }));
     });
     afterEach(() => {
       connectSpy.restore();
+      assignStub.restore();
     });
     it('should subscribe to response pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`"${pattern}"_res`)).to.be.true;
+      expect(subscribeSpy.calledWith(`${pattern}_res`)).to.be.true;
     });
     it('should publish stringified message to acknowledge pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(publishSpy.calledWith(`"${pattern}"_ack`, JSON.stringify(msg))).to
-        .be.true;
+      expect(publishSpy.calledWith(`${pattern}_ack`, JSON.stringify(msg))).to.be
+        .true;
     });
-    it('should listen on messages', async () => {
+    it('should add callback to routing map', async () => {
       await client['publish'](msg, () => {});
-      expect(onSpy.called).to.be.true;
+      expect(client['routingMap'].has(id)).to.be.true;
     });
     describe('on error', () => {
-      let assignPacketIdStub: sinon.SinonStub;
       beforeEach(() => {
-        assignPacketIdStub = sinon.stub(client, 'assignPacketId').callsFake(() => {
+        assignStub.callsFake(() => {
           throw new Error();
         });
-      });
-      afterEach(() => {
-        assignPacketIdStub.restore();
       });
 
       it('should call callback', () => {
@@ -85,17 +88,13 @@ describe('ClientMqtt', () => {
       });
     });
     describe('dispose callback', () => {
-      let assignStub: sinon.SinonStub, getResPatternStub: sinon.SinonStub;
+      let getResPatternStub: sinon.SinonStub;
       let callback: sinon.SinonSpy, subscription;
 
       const channel = 'channel';
-      const id = '1';
 
       beforeEach(async () => {
         callback = sinon.spy();
-        assignStub = sinon
-          .stub(client, 'assignPacketId')
-          .callsFake(packet => Object.assign(packet, { id }));
 
         getResPatternStub = sinon
           .stub(client, 'getResPatternName')
@@ -104,15 +103,14 @@ describe('ClientMqtt', () => {
         subscription(channel, JSON.stringify({ isDisposed: true, id }));
       });
       afterEach(() => {
-        assignStub.restore();
         getResPatternStub.restore();
       });
 
       it('should unsubscribe to response pattern name', () => {
         expect(unsubscribeSpy.calledWith(channel)).to.be.true;
       });
-      it('should remove listener', () => {
-        expect(removeListenerSpy.called).to.be.true;
+      it('should remove callback from routin map', () => {
+        expect(client['routingMap'].has(id)).to.be.false;
       });
     });
   });
@@ -129,8 +127,9 @@ describe('ClientMqtt', () => {
     describe('not completed', () => {
       beforeEach(async () => {
         callback = sinon.spy();
+        subscription = client.createResponseCallback();
 
-        subscription = client.createResponseCallback(msg, callback);
+        client['routingMap'].set(responseMessage.id, callback);
         subscription('channel', new Buffer(JSON.stringify(responseMessage)));
       });
       it('should call callback with expected arguments', () => {
@@ -145,11 +144,18 @@ describe('ClientMqtt', () => {
     describe('disposed and "id" is correct', () => {
       beforeEach(async () => {
         callback = sinon.spy();
-        subscription = client.createResponseCallback(msg, callback);
-        subscription('channel', new Buffer(JSON.stringify({
-          ...responseMessage,
-          isDisposed: true,
-        })));
+        subscription = client.createResponseCallback();
+
+        client['routingMap'].set(responseMessage.id, callback);
+        subscription(
+          'channel',
+          new Buffer(
+            JSON.stringify({
+              ...responseMessage,
+              isDisposed: true,
+            }),
+          ),
+        );
       });
 
       it('should call callback with dispose param', () => {
@@ -166,10 +172,9 @@ describe('ClientMqtt', () => {
     describe('disposed and "id" is incorrect', () => {
       beforeEach(async () => {
         callback = sinon.spy();
-        subscription = client.createResponseCallback({
-          ...msg,
-          id: '2',
-        }, callback);
+        subscription = client.createResponseCallback();
+
+        client['routingMap'].set('3', callback);
         subscription('channel', new Buffer(JSON.stringify(responseMessage)));
       });
 
@@ -198,6 +203,7 @@ describe('ClientMqtt', () => {
     let createClientStub: sinon.SinonStub;
     let handleErrorsSpy: sinon.SinonSpy;
     let connect$Stub: sinon.SinonStub;
+    let mergeCloseEvent: sinon.SinonStub;
 
     beforeEach(async () => {
       createClientStub = sinon.stub(client, 'createClient').callsFake(() => ({
@@ -207,13 +213,22 @@ describe('ClientMqtt', () => {
       handleErrorsSpy = sinon.spy(client, 'handleError');
       connect$Stub = sinon.stub(client, 'connect$').callsFake(() => ({
         subscribe: resolve => resolve(),
-        toPromise: () => this,
+        toPromise() {
+          return this;
+        },
+        pipe() {
+          return this;
+        },
       }));
+      mergeCloseEvent = sinon
+        .stub(client, 'mergeCloseEvent')
+        .callsFake((_, source) => source);
     });
     afterEach(() => {
       createClientStub.restore();
       handleErrorsSpy.restore();
       connect$Stub.restore();
+      mergeCloseEvent.restore();
     });
     describe('when is not connected', () => {
       beforeEach(async () => {
@@ -243,6 +258,18 @@ describe('ClientMqtt', () => {
       it('should not call "connect$"', () => {
         expect(connect$Stub.called).to.be.false;
       });
+    });
+  });
+  describe('mergeCloseEvent', () => {
+    it('should merge close event', () => {
+      const error = new Error();
+      const instance: any = {
+        on: (ev, callback) => callback(error),
+        off: () => ({}),
+      };
+      client
+        .mergeCloseEvent(instance as any, empty())
+        .subscribe(null, err => expect(err).to.be.eql(error));
     });
   });
   describe('handleError', () => {

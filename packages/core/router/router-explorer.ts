@@ -9,7 +9,7 @@ import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
-import { routeMappedMessage } from '../helpers/messages';
+import { ROUTE_MAPPED_MESSAGE } from '../helpers/messages';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { NestContainer } from '../injector/container';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
@@ -21,6 +21,13 @@ import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
 import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
+
+export interface RoutePathProperties {
+  path: string;
+  requestMethod: RequestMethod;
+  targetCallback: RouterProxyCallback;
+  methodName: string;
+}
 
 export class RouterExplorer {
   private readonly executionContextCreator: RouterExecutionContext;
@@ -120,7 +127,7 @@ export class RouterExplorer {
     module: string,
     basePath: string,
   ) {
-    (routePaths || []).map(pathProperties => {
+    (routePaths || []).forEach(pathProperties => {
       const { path, requestMethod } = pathProperties;
       this.applyCallbackToRouter(
         router,
@@ -129,7 +136,7 @@ export class RouterExplorer {
         module,
         basePath,
       );
-      this.logger.log(routeMappedMessage(path, requestMethod));
+      this.logger.log(ROUTE_MAPPED_MESSAGE(path, requestMethod));
     });
   }
 
@@ -179,11 +186,4 @@ export class RouterExplorer {
     );
     return this.routerProxy.createProxy(executionContext, exceptionFilter);
   }
-}
-
-export interface RoutePathProperties {
-  path: string;
-  requestMethod: RequestMethod;
-  targetCallback: RouterProxyCallback;
-  methodName: string;
 }

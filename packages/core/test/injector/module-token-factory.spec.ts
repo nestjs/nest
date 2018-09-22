@@ -62,7 +62,7 @@ describe('ModuleTokenFactory', () => {
   });
   describe('getDynamicMetadataToken', () => {
     describe('when metadata exists', () => {
-      it('should return stringified metadata', () => {
+      it('should return hash', () => {
         const metadata = { components: ['', {}] };
         expect(factory.getDynamicMetadataToken(metadata as any)).to.be.eql(
           JSON.stringify(metadata),

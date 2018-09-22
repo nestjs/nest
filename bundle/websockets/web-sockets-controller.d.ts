@@ -22,7 +22,7 @@ export declare class WebSocketsController {
         server: any;
     }, instance: NestGateway, module: string): void;
     subscribeEvents(instance: NestGateway, messageHandlers: MessageMappingProperties[], observableServer: ObservableSocketServer): void;
-    getConnectionHandler(context: WebSocketsController, instance: NestGateway, messageHandlers: MessageMappingProperties[], disconnect: Subject<any>, connection: Subject<any>): (client: any) => void;
+    getConnectionHandler(context: WebSocketsController, instance: NestGateway, messageHandlers: MessageMappingProperties[], disconnect: Subject<any>, connection: Subject<any>): (...args: any[]) => void;
     subscribeInitEvent(instance: NestGateway, event: Subject<any>): void;
     subscribeConnectionEvent(instance: NestGateway, event: Subject<any>): void;
     subscribeDisconnectEvent(instance: NestGateway, event: Subject<any>): void;

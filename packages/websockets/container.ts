@@ -1,4 +1,4 @@
-import { WebSocketServerData, ObservableSocketServer } from './interfaces';
+import { ObservableSocketServer } from './interfaces';
 
 export class SocketsContainer {
   private readonly observableServers = new Map<

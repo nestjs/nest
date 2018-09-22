@@ -1,4 +1,5 @@
 import { RuntimeException } from './runtime.exception';
+import { InjectorDependencyContext } from '../../injector/injector';
 export declare class UnknownDependenciesException extends RuntimeException {
-    constructor(type: string, index: number, length: number);
+    constructor(type: string, unknownDependencyContext: InjectorDependencyContext);
 }

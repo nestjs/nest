@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const params_token_factory_1 = require("./../pipes/params-token-factory");
+const params_token_factory_1 = require("./params-token-factory");
 class PipesConsumer {
     constructor() {
         this.paramsTokenFactory = new params_token_factory_1.ParamsTokenFactory();
@@ -13,10 +13,7 @@ class PipesConsumer {
         return await transforms.reduce(async (defferedValue, fn) => {
             const val = await defferedValue;
             const result = fn(val, { metatype, type, data });
-            if (result instanceof Promise) {
-                return result;
-            }
-            return Promise.resolve(result);
+            return result;
         }, Promise.resolve(value));
     }
 }

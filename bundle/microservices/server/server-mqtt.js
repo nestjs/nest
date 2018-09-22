@@ -1,15 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const server_1 = require("./server");
 const constants_1 = require("../constants");
-const constants_2 = require("./../constants");
+const server_1 = require("./server");
 let mqttPackage = {};
 class ServerMqtt extends server_1.Server {
     constructor(options) {
         super();
         this.options = options;
         this.url =
-            this.getOptionsProp(options, 'url') || constants_2.MQTT_DEFAULT_URL;
+            this.getOptionsProp(options, 'url') || constants_1.MQTT_DEFAULT_URL;
         mqttPackage = this.loadPackage('mqtt', ServerMqtt.name);
     }
     async listen(callback) {
@@ -19,10 +18,10 @@ class ServerMqtt extends server_1.Server {
     start(callback) {
         this.handleError(this.mqttClient);
         this.bindEvents(this.mqttClient);
-        this.mqttClient.on(constants_2.CONNECT_EVENT, callback);
+        this.mqttClient.on(constants_1.CONNECT_EVENT, callback);
     }
     bindEvents(mqttClient) {
-        mqttClient.on(constants_2.MESSAGE_EVENT, this.getMessageHandler(mqttClient).bind(this));
+        mqttClient.on(constants_1.MESSAGE_EVENT, this.getMessageHandler(mqttClient).bind(this));
         const registeredPatterns = Object.keys(this.messageHandlers);
         registeredPatterns.forEach(pattern => mqttClient.subscribe(this.getAckQueueName(pattern)));
     }
@@ -30,7 +29,7 @@ class ServerMqtt extends server_1.Server {
         this.mqttClient && this.mqttClient.end();
     }
     createMqttClient() {
-        return mqttPackage.connect(this.url, this.options.options);
+        return mqttPackage.connect(this.url, this.options);
     }
     getMessageHandler(pub) {
         return async (channel, buffer) => await this.handleMessage(channel, buffer, pub);
@@ -65,7 +64,7 @@ class ServerMqtt extends server_1.Server {
         return `${pattern}_res`;
     }
     handleError(stream) {
-        stream.on(constants_2.ERROR_EVENT, err => this.logger.error(err));
+        stream.on(constants_1.ERROR_EVENT, err => this.logger.error(err));
     }
 }
 exports.ServerMqtt = ServerMqtt;
