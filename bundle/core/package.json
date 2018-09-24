@@ -9,7 +9,7 @@
     "url": "https://github.com/nestjs/nest"
   },
   "scripts": {
-    "postinstall": "opencollective"
+    "postinstall": "opencollective | exit 0"
   },
   "collective": {
     "type": "opencollective",

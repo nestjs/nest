@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "5.3.6",
+  "version": "5.3.8",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
@@ -28,7 +28,9 @@
     "publish:next":
       "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
     "publish:beta":
-      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\""
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\"",
+    "publish:test":
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\""
   },
   "engines": {
     "node": ">= 8.9.0"
@@ -42,7 +44,7 @@
   "dependencies": {
     "@grpc/proto-loader": "^0.3.0",
     "@nestjs/common": "5.1.0",
-    "@nestjs/core": "^5.3.7",
+    "@nestjs/core": "^5.3.8",
     "@nestjs/microservices": "5.1.0",
     "@nestjs/testing": "5.1.0",
     "@nestjs/websockets": "5.1.0",
