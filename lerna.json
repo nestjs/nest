@@ -3,5 +3,5 @@
   "packages": [
     "bundle/*"
   ],
-  "version": "5.3.7-postinstall-next"
+  "version": "5.3.8"
 }
