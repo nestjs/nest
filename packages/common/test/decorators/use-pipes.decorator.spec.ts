@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { UsePipes } from '../../decorators/core/use-pipes.decorator';
-import { PIPES_METADATA } from '../../constants';
-import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
+import { UsePipes } from '@nestjs/common/decorators/core/use-pipes.decorator';
+import { PIPES_METADATA } from '@nestjs/common/constants';
+import { InvalidDecoratorItemException } from '@nestjs/common/utils/validate-each.util';
 
 class Pipe {
   transform() {}
@@ -32,8 +32,7 @@ describe('@UsePipes', () => {
   it('when object is invalid should throw exception', () => {
     try {
       UsePipes('test' as any)({});
-    }
-    catch (e) {
+    } catch (e) {
       expect(e).to.be.instanceof(InvalidDecoratorItemException);
     }
   });

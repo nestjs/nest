@@ -3,9 +3,9 @@ import {
   BadRequestException,
   HttpException,
   PayloadTooLargeException,
-} from '../../../exceptions';
-import { multerExceptions } from '../../../files/multer/multer.constants';
-import { transformException } from '../../../files/multer/multer.utils';
+} from '@nestjs/common/../exceptions';
+import { multerExceptions } from '@nestjs/common/../files/multer/multer.constants';
+import { transformException } from '@nestjs/common/../files/multer/multer.utils';
 
 describe('transformException', () => {
   describe('if error does not exist', () => {

@@ -8,7 +8,7 @@ import {
   validatePath,
   isNil,
   isEmpty,
-} from '../../utils/shared.utils';
+} from '@nestjs/common/utils/shared.utils';
 
 describe('Shared utils', () => {
   describe('isUndefined', () => {

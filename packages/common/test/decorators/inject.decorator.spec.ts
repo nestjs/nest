@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { SELF_DECLARED_DEPS_METADATA } from '../../constants';
-import { Inject } from '../../index';
+import { SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
+import { Inject } from '@nestjs/common/index';
 
 describe('@Inject', () => {
   const opaqueToken = () => ({});

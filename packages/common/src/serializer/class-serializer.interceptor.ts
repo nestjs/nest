@@ -1,4 +1,4 @@
-import { ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { ExecutionContext, Injectable, NestInterceptor } from '../index';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Inject } from '../decorators/core';

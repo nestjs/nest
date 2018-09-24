@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { UseGuards } from '../../decorators/core/use-guards.decorator';
-import { GUARDS_METADATA } from '../../constants';
-import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
+import { UseGuards } from '@nestjs/common/decorators/core/use-guards.decorator';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { InvalidDecoratorItemException } from '@nestjs/common/utils/validate-each.util';
 
 class Guard {}
 

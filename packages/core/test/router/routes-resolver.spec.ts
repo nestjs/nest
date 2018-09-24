@@ -1,12 +1,12 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RoutesResolver } from '../../router/routes-resolver';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { Get } from '../../../common/decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { ApplicationConfig } from '../../application-config';
+import { RoutesResolver } from '@nestjs/core/router/routes-resolver';
+import { Controller } from '@nestjs/common/decorators/core/controller.decorator';
+import { Get } from '@nestjs/common/decorators/http/request-mapping.decorator';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 import { BadRequestException, Post } from '@nestjs/common';
-import { ExpressAdapter } from '../../adapters/express-adapter';
+import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
 
 describe('RoutesResolver', () => {
   @Controller('global')
@@ -28,8 +28,8 @@ describe('RoutesResolver', () => {
     container = {
       getModules: () => modules,
       getApplicationRef: () => ({
-        use: () => ({})
-      })
+        use: () => ({}),
+      }),
     };
     router = {
       get() {},
@@ -38,10 +38,7 @@ describe('RoutesResolver', () => {
   });
 
   beforeEach(() => {
-    routesResolver = new RoutesResolver(
-      container,
-      new ApplicationConfig(),
-    );
+    routesResolver = new RoutesResolver(container, new ApplicationConfig());
   });
 
   describe('registerRouters', () => {
@@ -54,20 +51,27 @@ describe('RoutesResolver', () => {
       routes.set('TestRoute', routeWrapper);
 
       const appInstance = new ExpressAdapter(router);
-      const exploreSpy = sinon.spy((routesResolver as any).routerBuilder, 'explore');
+      const exploreSpy = sinon.spy(
+        (routesResolver as any).routerBuilder,
+        'explore',
+      );
       const moduleName = '';
 
-      sinon.stub((routesResolver as any).routerBuilder, 'extractRouterPath').callsFake(() => '');
+      sinon
+        .stub((routesResolver as any).routerBuilder, 'extractRouterPath')
+        .callsFake(() => '');
       routesResolver.registerRouters(routes, moduleName, '', appInstance);
 
       expect(exploreSpy.called).to.be.true;
-      expect(exploreSpy.calledWith(
-        routeWrapper.instance,
-        routeWrapper.metatype,
-        moduleName,
-        appInstance,
-        '',
-      )).to.be.true;
+      expect(
+        exploreSpy.calledWith(
+          routeWrapper.instance,
+          routeWrapper.metatype,
+          moduleName,
+          appInstance,
+          '',
+        ),
+      ).to.be.true;
     });
   });
 

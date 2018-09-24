@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ExceptionsZone } from '../../../errors/exceptions-zone';
-import { UNHANDLED_RUNTIME_EXCEPTION } from '../../../errors/messages';
+import { ExceptionsZone } from '@nestjs/core/../errors/exceptions-zone';
+import { UNHANDLED_RUNTIME_EXCEPTION } from '@nestjs/core/../errors/messages';
 
 describe('ExceptionsZone', () => {
   describe('run', () => {

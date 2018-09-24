@@ -1,9 +1,9 @@
 import { RequestMethod } from '@nestjs/common';
 import { expect } from 'chai';
-import { Controller, Get } from '../../../common';
-import { NestContainer } from '../../injector/container';
-import { MiddlewareBuilder } from '../../middleware/builder';
-import { RoutesMapper } from '../../middleware/routes-mapper';
+import { Controller, Get } from '@nestjs/common';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { MiddlewareBuilder } from '@nestjs/core/middleware/builder';
+import { RoutesMapper } from '@nestjs/core/middleware/routes-mapper';
 
 describe('MiddlewareBuilder', () => {
   let builder: MiddlewareBuilder;
@@ -100,10 +100,12 @@ describe('MiddlewareBuilder', () => {
             method: RequestMethod.POST,
           });
 
-          expect(proxy.isRouteExcluded({
-            ...routeInfo,
-            path: '/test/',
-          })).to.be.true;
+          expect(
+            proxy.isRouteExcluded({
+              ...routeInfo,
+              path: '/test/',
+            }),
+          ).to.be.true;
         });
       });
       describe('when method is not equal', () => {

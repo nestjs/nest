@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
-import { RouteParamsFactory } from '../../router/route-params-factory';
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+import { RouteParamsFactory } from '@nestjs/core/router/route-params-factory';
 
 describe('RouteParamsFactory', () => {
   let factory: RouteParamsFactory;

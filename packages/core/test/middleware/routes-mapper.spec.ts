@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { NestContainer } from '../../injector/container';
-import { RoutesMapper } from '../../middleware/routes-mapper';
+import { Controller } from '@nestjs/common/decorators/core/controller.decorator';
+import { RequestMapping } from '@nestjs/common/decorators/http/request-mapping.decorator';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { RoutesMapper } from '@nestjs/core/middleware/routes-mapper';
 
 describe('RoutesMapper', () => {
   @Controller('test')

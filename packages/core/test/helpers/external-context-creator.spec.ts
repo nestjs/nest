@@ -3,16 +3,16 @@ import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { GuardsConsumer } from '../../guards/guards-consumer';
-import { GuardsContextCreator } from '../../guards/guards-context-creator';
-import { ExternalContextCreator } from '../../helpers/external-context-creator';
-import { NestContainer } from '../../injector/container';
-import { ModulesContainer } from '../../injector/modules-container';
-import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../../pipes/pipes-consumer';
-import { PipesContextCreator } from '../../pipes/pipes-context-creator';
-import { RouteParamsFactory } from '../../router/route-params-factory';
+import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+import { ExternalContextCreator } from '@nestjs/core/helpers/external-context-creator';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { ModulesContainer } from '@nestjs/core/injector/modules-container';
+import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
+import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import { RouteParamsFactory } from '@nestjs/core/router/route-params-factory';
 
 describe('ExternalContextCreator', () => {
   let contextCreator: ExternalContextCreator;
@@ -72,14 +72,14 @@ describe('ExternalContextCreator', () => {
       describe('when proxy function called', () => {
         describe('when can not activate', () => {
           it('should throw exception when "tryActivate" returns false', () => {
-            sinon.stub(guardsConsumer, 'tryActivate', () => false);
+            sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
             expect(proxyContext(1, 2, 3)).to.eventually.throw;
           });
         });
         describe('when can activate', () => {
           it('should apply context and args', async () => {
             const args = [1, 2, 3];
-            sinon.stub(guardsConsumer, 'tryActivate', () => true);
+            sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => true);
 
             await proxyContext(...args);
             expect(applySpy.called).to.be.true;

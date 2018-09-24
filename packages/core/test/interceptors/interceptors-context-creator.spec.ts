@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { Observable, of } from 'rxjs';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 
 class Interceptor {}
 

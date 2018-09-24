@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { BaseExceptionFilterContext } from '../../exceptions/base-exception-filter-context';
-import { NestContainer } from '../../injector/container';
+import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
+import { NestContainer } from '@nestjs/core/injector/container';
 
 export class Filter {}
 

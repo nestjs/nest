@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as hash from 'object-hash';
-import { SingleScope } from '../../../common';
-import { ModuleTokenFactory } from '../../injector/module-token-factory';
+import { SingleScope } from '@nestjs/common';
+import { ModuleTokenFactory } from '@nestjs/core/injector/module-token-factory';
 
 describe('ModuleTokenFactory', () => {
   let factory: ModuleTokenFactory;

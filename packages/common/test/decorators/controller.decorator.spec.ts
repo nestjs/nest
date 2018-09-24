@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { Controller } from '../../decorators/core/controller.decorator';
+import { Controller } from '@nestjs/common/decorators/core/controller.decorator';
 
 describe('@Controller', () => {
   const reflectedPath = 'test';

@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ArgumentMetadata } from '../../interfaces';
-import { ParseIntPipe } from '../../pipes/parse-int.pipe';
+import { ArgumentMetadata } from '@nestjs/common/interfaces';
+import { ParseIntPipe } from '@nestjs/common/pipes/parse-int.pipe';
 
 describe('ParseIntPipe', () => {
   let target: ParseIntPipe;

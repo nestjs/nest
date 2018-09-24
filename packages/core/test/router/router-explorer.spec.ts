@@ -1,11 +1,11 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterExplorer } from '../../router/router-explorer';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { MetadataScanner } from '../../metadata-scanner';
-import { NestContainer } from '../../injector/container';
+import { RouterExplorer } from '@nestjs/core/router/router-explorer';
+import { Controller } from '@nestjs/common/decorators/core/controller.decorator';
+import { RequestMapping } from '@nestjs/common/decorators/http/request-mapping.decorator';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { NestContainer } from '@nestjs/core/injector/container';
 
 describe('RouterExplorer', () => {
   @Controller('global')
@@ -22,7 +22,10 @@ describe('RouterExplorer', () => {
 
   let routerBuilder: RouterExplorer;
   beforeEach(() => {
-    routerBuilder = new RouterExplorer(new MetadataScanner(), new NestContainer());
+    routerBuilder = new RouterExplorer(
+      new MetadataScanner(),
+      new NestContainer(),
+    );
   });
   describe('scanForPaths', () => {
     it('should method return expected list of route paths', () => {
@@ -56,7 +59,7 @@ describe('RouterExplorer', () => {
   });
   describe('applyPathsToRouterProxy', () => {
     it('should method return expected object which represent single route', () => {
-      const bindStub = sinon.stub(routerBuilder, 'applyCallbackToRouter');
+      const bindStub = sinon.stub(routerBuilder, 'applyPathsToRouterProxy');
       const paths = [
         { path: '', requestMethod: RequestMethod.GET },
         { path: 'test', requestMethod: RequestMethod.GET },

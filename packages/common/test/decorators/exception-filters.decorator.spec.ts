@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { EXCEPTION_FILTERS_METADATA } from '../../constants';
-import { UseFilters } from '../../decorators/core/exception-filters.decorator';
-import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
+import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
+import { UseFilters } from '@nestjs/common/decorators/core/exception-filters.decorator';
+import { InvalidDecoratorItemException } from '@nestjs/common/utils/validate-each.util';
 
 class Filter {
   catch() {}
@@ -35,8 +35,7 @@ describe('@UseFilters', () => {
   it('when object is invalid should throw exception', () => {
     try {
       UseFilters('test' as any)({});
-    }
-    catch (e) {
+    } catch (e) {
       expect(e).to.be.instanceof(InvalidDecoratorItemException);
     }
   });

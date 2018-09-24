@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception';
+import { UnknownDependenciesException } from '@nestjs/core/../errors/exceptions/unknown-dependencies.exception';
 
 describe('UnknownDependenciesMessage', () => {
   const index = 0;

@@ -2,10 +2,13 @@ import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as sinon from 'sinon';
-import { Component } from '../../../common/decorators/core/component.decorator';
-import { InstanceWrapper, NestContainer } from '../../injector/container';
-import { Injector } from '../../injector/injector';
-import { Module } from '../../injector/module';
+import { Component } from '@nestjs/common/decorators/core/component.decorator';
+import {
+  InstanceWrapper,
+  NestContainer,
+} from '@nestjs/core/injector/container';
+import { Injector } from '@nestjs/core/injector/injector';
+import { Module } from '@nestjs/core/injector/module';
 chai.use(chaiAsPromised);
 
 describe('Injector', () => {

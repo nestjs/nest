@@ -14,7 +14,7 @@ export interface CacheModuleAsyncOptions
   useExisting?: Type<CacheOptionsFactory>;
   useClass?: Type<CacheOptionsFactory>;
   useFactory?: (
-    ...args: any[],
+    ...args: any[]
   ) => Promise<CacheModuleOptions> | CacheModuleOptions;
   inject?: any[];
 }
