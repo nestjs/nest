@@ -1,4 +1,4 @@
-import { ReadPacket } from '@nestjs/microservices';
+import { ReadPacket } from '../index';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,

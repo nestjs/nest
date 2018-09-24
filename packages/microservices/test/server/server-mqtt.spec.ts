@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { NO_PATTERN_MESSAGE } from '../../constants';
-import { ServerMqtt } from '../../server/server-mqtt';
+import { NO_PATTERN_MESSAGE } from '@nestjs/microservices/constants';
+import { ServerMqtt } from '@nestjs/microservices/server/server-mqtt';
 import { Observable } from 'rxjs';
 
 describe('ServerMqtt', () => {

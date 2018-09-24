@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
-import { ClientProxy } from '../../client/client-proxy';
+import { ClientProxy } from '@nestjs/microservices/client/client-proxy';
 // tslint:disable:no-string-literal
 
 class TestClientProxy extends ClientProxy {

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_PATTERN_MESSAGE } from '../../constants';
-import { ServerTCP } from '../../server/server-tcp';
+import { NO_PATTERN_MESSAGE } from '@nestjs/microservices/constants';
+import { ServerTCP } from '@nestjs/microservices/server/server-tcp';
 
 describe('ServerTCP', () => {
   let server: ServerTCP;
@@ -14,7 +14,7 @@ describe('ServerTCP', () => {
     const socket = { on: sinon.spy() };
     beforeEach(() => {
       getSocketInstance = sinon
-        .stub(server, 'getSocketInstance')
+        .stub(server, 'bindHandler')
         .callsFake(() => socket);
     });
     it('should bind message event to handler', () => {

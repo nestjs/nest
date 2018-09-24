@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { ClientProxyFactory } from '../../client/client-proxy-factory';
-import { ClientTCP } from '../../client/client-tcp';
-import { Transport } from '../../enums/transport.enum';
-import { ClientRedis } from '../../client/client-redis';
-import { ClientNats } from '../../client/client-nats';
-import { ClientMqtt } from '../../client/client-mqtt';
-import { ClientGrpcProxy } from '../../client/client-grpc';
+import { ClientProxyFactory } from '@nestjs/microservices/client/client-proxy-factory';
+import { ClientTCP } from '@nestjs/microservices/client/client-tcp';
+import { Transport } from '@nestjs/microservices/enums/transport.enum';
+import { ClientRedis } from '@nestjs/microservices/client/client-redis';
+import { ClientNats } from '@nestjs/microservices/client/client-nats';
+import { ClientMqtt } from '@nestjs/microservices/client/client-mqtt';
+import { ClientGrpcProxy } from '@nestjs/microservices/client/client-grpc';
 import { join } from 'path';
 
 describe('ClientProxyFactory', () => {

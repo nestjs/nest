@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { join } from 'path';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
-import { ServerGrpc } from '../../server/server-grpc';
+import { InvalidGrpcPackageException } from '@nestjs/microservices/exceptions/errors/invalid-grpc-package.exception';
+import { ServerGrpc } from '@nestjs/microservices/server/server-grpc';
 
 describe('ServerGrpc', () => {
   let server: ServerGrpc;

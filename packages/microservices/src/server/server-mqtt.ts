@@ -1,4 +1,4 @@
-import { ReadPacket } from '@nestjs/microservices';
+import { ReadPacket } from '../index';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
@@ -54,7 +54,10 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public createMqttClient(): MqttClient {
-    return mqttPackage.connect(this.url, this.options as MqttOptions);
+    return mqttPackage.connect(
+      this.url,
+      this.options as MqttOptions,
+    );
   }
 
   public getMessageHandler(pub: MqttClient): any {

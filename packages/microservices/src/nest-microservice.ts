@@ -11,7 +11,7 @@ import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MESSAGES } from '@nestjs/core/constants';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
-import { CustomTransportStrategy } from '@nestjs/microservices';
+import { CustomTransportStrategy } from './index';
 import * as optional from 'optional';
 import { Transport } from './enums/transport.enum';
 import { MicroserviceOptions } from './interfaces/microservice-configuration.interface';

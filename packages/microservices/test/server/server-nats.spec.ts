@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_PATTERN_MESSAGE } from '../../constants';
-import { ServerNats } from '../../server/server-nats';
+import { NO_PATTERN_MESSAGE } from '@nestjs/microservices/constants';
+import { ServerNats } from '@nestjs/microservices/server/server-nats';
 
 describe('ServerNats', () => {
   let server: ServerNats;

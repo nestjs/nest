@@ -1,25 +1,25 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { ApplicationConfig } from '../../../core/application-config';
-import { GuardsConsumer } from '../../../core/guards/guards-consumer';
-import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
-import { NestContainer } from '../../../core/injector/container';
-import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
-import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
-import { RpcException } from '../../index';
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
+import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import { RpcException } from '@nestjs/microservices/index';
 import {
   Component,
   Guard,
   Injectable,
   UseGuards,
   UsePipes,
-} from '../../../common';
-import { ExceptionFiltersContext } from '../../context/exception-filters-context';
-import { RpcContextCreator } from '../../context/rpc-context-creator';
-import { RpcProxy } from '../../context/rpc-proxy';
+} from '@nestjs/common';
+import { ExceptionFiltersContext } from '@nestjs/microservices/context/exception-filters-context';
+import { RpcContextCreator } from '@nestjs/microservices/context/rpc-context-creator';
+import { RpcProxy } from '@nestjs/microservices/context/rpc-proxy';
 
 @Guard()
 class TestGuard {
