@@ -1,4 +1,4 @@
-export declare const metadata: {
+export declare const METADATA: {
     MODULES: string;
     IMPORTS: string;
     COMPONENTS: string;

@@ -35,8 +35,7 @@ export interface INestExpressApplication {
      * @returns {this}
      */
     useStaticAssets(options: any): this;
-    useStaticAssets(path: string, options?: ServeStaticOptions): any;
-    useStaticAssets(pathOrOptions: any, options?: ServeStaticOptions): this;
+    useStaticAssets(path: string, options?: ServeStaticOptions): this;
     /**
      * Sets a base directory for templates (views).
      * Example `app.setBaseViewsDir('views')`

@@ -1,4 +1,4 @@
-import { Type } from './../type.interface';
+import { Type } from '../type.interface';
 export declare type Provider = Type<any> | ClassProvider | ValueProvider | FactoryProvider;
 export interface ClassProvider {
     provide: any;

@@ -20,7 +20,7 @@ class ModuleCompiler {
         return { type, dynamicMetadata, token };
     }
     async extractMetadata(metatype) {
-        metatype = this.isDefferedModule(metatype) ? await metatype : metatype;
+        metatype = await metatype;
         if (!this.isDynamicModule(metatype)) {
             return { type: metatype };
         }
@@ -29,9 +29,6 @@ class ModuleCompiler {
     }
     isDynamicModule(module) {
         return !!module.module;
-    }
-    isDefferedModule(module) {
-        return module && module instanceof Promise;
     }
 }
 exports.ModuleCompiler = ModuleCompiler;

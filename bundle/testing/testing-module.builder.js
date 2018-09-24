@@ -61,7 +61,7 @@ class TestingModuleBuilder {
         };
     }
     applyOverloadsMap() {
-        [...this.overloadsMap.entries()].map(([component, options]) => {
+        [...this.overloadsMap.entries()].forEach(([component, options]) => {
             this.container.replace(component, options);
         });
     }

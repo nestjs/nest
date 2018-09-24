@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.messages = {
+exports.MESSAGES = {
     APPLICATION_START: `Starting Nest application...`,
     APPLICATION_READY: `Nest application successfully started`,
     MICROSERVICE_READY: `Nest microservice successfully started`,

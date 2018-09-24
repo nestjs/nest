@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const exceptions_1 = require("./../../exceptions");
+const exceptions_1 = require("../../exceptions");
 const multer_constants_1 = require("./multer.constants");
 function transformException(error) {
     if (!error || error instanceof exceptions_1.HttpException) {

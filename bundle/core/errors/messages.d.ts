@@ -1,8 +1,8 @@
 import { InjectorDependencyContext } from '../injector/injector';
-export declare const UnknownDependenciesMessage: (type: string, unknownDependencyContext: InjectorDependencyContext) => string;
-export declare const InvalidMiddlewareMessage: (name: string) => string;
-export declare const InvalidModuleMessage: (scope: string) => string;
-export declare const UnknownExportMessage: (module: string) => string;
+export declare const UNKNOWN_DEPENDENCIES_MESSAGE: (type: string, unknownDependencyContext: InjectorDependencyContext) => string;
+export declare const INVALID_MIDDLEWARE_MESSAGE: (text: any, name: string) => string;
+export declare const INVALID_MODULE_MESSAGE: (text: any, scope: string) => string;
+export declare const UNKNOWN_EXPORT_MESSAGE: (text: any, module: string) => string;
 export declare const INVALID_MIDDLEWARE_CONFIGURATION = "Invalid middleware configuration passed inside the module 'configure()' method.";
 export declare const UNKNOWN_REQUEST_MAPPING = "Request mapping properties not defined in the @RequestMapping() annotation!";
 export declare const UNHANDLED_RUNTIME_EXCEPTION = "Unhandled Runtime Exception.";

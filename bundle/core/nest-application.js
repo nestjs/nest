@@ -97,7 +97,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         await this.registerRouterHooks();
         await this.callBootstrapHook();
         this.isInitialized = true;
-        this.logger.log(constants_1.messages.APPLICATION_READY);
+        this.logger.log(constants_1.MESSAGES.APPLICATION_READY);
         return this;
     }
     registerParserMiddleware() {
@@ -120,7 +120,7 @@ class NestApplication extends nest_application_context_1.NestApplicationContext 
         return (!!app._router &&
             !!app._router.stack &&
             shared_utils_1.isFunction(app._router.stack.filter) &&
-            !!app._router.stack.filter(layer => layer && layer.handle && layer.handle.name === name).length);
+            app._router.stack.some(layer => layer && layer.handle && layer.handle.name === name));
     }
     async registerRouter() {
         await this.registerMiddleware(this.httpAdapter);

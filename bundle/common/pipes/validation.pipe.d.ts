@@ -7,7 +7,7 @@ export interface ValidationPipeOptions extends ValidatorOptions {
 }
 export declare class ValidationPipe implements PipeTransform<any> {
     protected isTransformEnabled: boolean;
-    protected isDetailedOutputDisabled: boolean;
+    protected isDetailedOutputDisabled?: boolean;
     protected validatorOptions: ValidatorOptions;
     constructor(options?: ValidationPipeOptions);
     transform(value: any, metadata: ArgumentMetadata): Promise<any>;

@@ -77,7 +77,7 @@ class NestMicroservice extends nest_application_context_1.NestApplicationContext
     }
     listen(callback) {
         !this.isInitialized && this.registerModules();
-        this.logger.log(constants_1.messages.MICROSERVICE_READY);
+        this.logger.log(constants_1.MESSAGES.MICROSERVICE_READY);
         this.server.listen(callback);
     }
     async listenAsync() {

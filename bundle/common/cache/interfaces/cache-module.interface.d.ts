@@ -1,4 +1,4 @@
-import { ModuleMetadata, Type } from './../../interfaces';
+import { ModuleMetadata, Type } from '../../interfaces';
 import { CacheManagerOptions } from './cache-manager.interface';
 export interface CacheModuleOptions extends CacheManagerOptions {
     [key: string]: any;

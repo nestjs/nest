@@ -47,7 +47,7 @@ let Logger = Logger_1 = class Logger {
         logger && logger.warn.call(logger, message, context || this.context);
     }
     static overrideLogger(logger) {
-        this.logger = logger ? logger : null;
+        this.logger = logger ? logger : undefined;
     }
     static setMode(mode) {
         this.contextEnvironment = mode;
@@ -89,7 +89,6 @@ let Logger = Logger_1 = class Logger {
         process.stdout.write(`\n`);
     }
 };
-Logger.prevTimestamp = null;
 Logger.contextEnvironment = nest_environment_enum_1.NestEnvironment.RUN;
 Logger.logger = Logger_1;
 Logger.yellow = clc.xterm(3);

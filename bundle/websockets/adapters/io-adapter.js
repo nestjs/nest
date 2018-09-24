@@ -48,7 +48,7 @@ class IoAdapter {
         client.on(constants_1.DISCONNECT_EVENT, callback);
     }
     bindMessageHandlers(client, handlers, transform) {
-        const disconnect$ = rxjs_1.fromEvent(client, 'disconnect').pipe(operators_1.share(), operators_1.first());
+        const disconnect$ = rxjs_1.fromEvent(client, constants_1.DISCONNECT_EVENT).pipe(operators_1.share(), operators_1.first());
         handlers.forEach(({ message, callback }) => {
             const source$ = rxjs_1.fromEvent(client, message).pipe(operators_1.mergeMap((payload) => {
                 const { data, ack } = this.mapPayload(payload);

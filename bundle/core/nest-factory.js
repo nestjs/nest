@@ -70,7 +70,7 @@ class NestFactoryStatic {
         const dependenciesScanner = new scanner_1.DependenciesScanner(container, new metadata_scanner_1.MetadataScanner(), config);
         container.setApplicationRef(httpServer);
         try {
-            this.logger.log(constants_1.messages.APPLICATION_START);
+            this.logger.log(constants_1.MESSAGES.APPLICATION_START);
             await exceptions_zone_1.ExceptionsZone.asyncRun(async () => {
                 await dependenciesScanner.scan(module);
                 await instanceLoader.createInstancesOfDependencies();

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.metadata = {
+exports.METADATA = {
     MODULES: 'modules',
     IMPORTS: 'imports',
     COMPONENTS: 'components',

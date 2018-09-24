@@ -1,4 +1,4 @@
-export declare const messages: {
+export declare const MESSAGES: {
     APPLICATION_START: string;
     APPLICATION_READY: string;
     MICROSERVICE_READY: string;

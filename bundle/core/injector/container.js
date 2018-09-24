@@ -60,7 +60,7 @@ class NestContainer {
         if (!modules) {
             return undefined;
         }
-        modules.map(module => this.addModule(module, scope));
+        modules.forEach(module => this.addModule(module, scope));
     }
     isGlobalModule(metatype) {
         return !!Reflect.getMetadata(constants_1.GLOBAL_MODULE_METADATA, metatype);
