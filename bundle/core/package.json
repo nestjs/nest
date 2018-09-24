@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "5.3.9",
+  "version": "5.3.10",
   "description": "Nest - modern, fast, powerful node.js web framework (@core)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -9,7 +9,7 @@
     "url": "https://github.com/nestjs/nest"
   },
   "scripts": {
-    "postinstall": "opencollective | exit 0"
+    "postinstall": "opencollective || exit 0"
   },
   "collective": {
     "type": "opencollective",
