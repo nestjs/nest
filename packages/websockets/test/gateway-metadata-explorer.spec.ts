@@ -4,7 +4,7 @@ import { WebSocketGateway } from '../utils/socket-gateway.decorator';
 import { WebSocketServer } from '../utils/gateway-server.decorator';
 import { SubscribeMessage } from '../utils/subscribe-message.decorator';
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
-import { MetadataScanner } from '../../core/metadata-scanner';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 
 describe('GatewayMetadataExplorer', () => {
   const message = 'test';
@@ -12,8 +12,10 @@ describe('GatewayMetadataExplorer', () => {
 
   @WebSocketGateway()
   class Test {
-    @WebSocketServer() public server;
-    @WebSocketServer() public anotherServer;
+    @WebSocketServer()
+    public server;
+    @WebSocketServer()
+    public anotherServer;
 
     get testGet() {
       return 0;

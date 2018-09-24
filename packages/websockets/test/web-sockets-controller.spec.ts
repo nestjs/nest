@@ -2,7 +2,7 @@ import { ApplicationConfig } from '@nestjs/core/application-config';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { MetadataScanner } from '../../core/metadata-scanner';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { PORT_METADATA } from '../constants';
 import { WsContextCreator } from '../context/ws-context-creator';
 import { InvalidSocketPortException } from '../exceptions/invalid-socket-port.exception';

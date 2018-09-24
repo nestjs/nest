@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
-import { WsException } from '../../exceptions/ws-exception';
+import { WsExceptionsHandler } from '@nestjs/websockets/exceptions/ws-exceptions-handler';
+import { WsException } from '@nestjs/websockets/exceptions/ws-exception';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 
 describe('WsExceptionsHandler', () => {
@@ -20,7 +20,7 @@ describe('WsExceptionsHandler', () => {
 
   describe('handle', () => {
     it('should method emit expected status code message when exception is unknown', () => {
-      handler.handle(new Error(), new ExecutionContextHost([client]),);
+      handler.handle(new Error(), new ExecutionContextHost([client]));
       expect(
         emitStub.calledWith('exception', {
           status: 'error',
@@ -42,7 +42,10 @@ describe('WsExceptionsHandler', () => {
       it('should method emit expected status and transform message to json', () => {
         const message = 'Unauthorized';
 
-        handler.handle(new WsException(message), new ExecutionContextHost([client]));
+        handler.handle(
+          new WsException(message),
+          new ExecutionContextHost([client]),
+        );
         expect(emitStub.calledWith('exception', { message, status: 'error' }))
           .to.be.true;
       });

@@ -36,7 +36,8 @@
     "chai": "^4.1.2",
     "sinon": "^6.1.4",
     "sinon-chai": "^3.2.0",
-    "chai-as-promised": "^7.1.1"
+    "chai-as-promised": "^7.1.1",
+    "tsconfig-paths": "^3.6.0"
   },
   "collective": {
     "type": "opencollective",

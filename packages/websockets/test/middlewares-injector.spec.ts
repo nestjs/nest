@@ -1,9 +1,9 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { MiddlewareInjector } from '../middleware-injector';
-import { UnknownModuleException } from '../../core/errors/exceptions/unknown-module.exception';
-import { WebSocketGateway, IoAdapter } from '../index';
-import { RuntimeException } from '../../core/errors/exceptions/runtime.exception';
+import { MiddlewareInjector } from '@nestjs/websockets/middleware-injector';
+import { UnknownModuleException } from '@nestjs/core/errors/exceptions/unknown-module.exception';
+import { WebSocketGateway, IoAdapter } from '@nestjs/websockets/index';
+import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 
 describe('MiddlewareInjector', () => {

@@ -1,24 +1,24 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { GuardsConsumer } from '../../../core/guards/guards-consumer';
-import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
-import { NestContainer } from '../../../core/injector/container';
-import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
-import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
-import { WsException } from '../../index';
+import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
+import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import { WsException } from '@nestjs/websockets/index';
 import {
   Component,
   Guard,
   Injectable,
   UseGuards,
   UsePipes,
-} from '../../../common';
-import { ExceptionFiltersContext } from '../../context/exception-filters-context';
-import { WsContextCreator } from '../../context/ws-context-creator';
-import { WsProxy } from '../../context/ws-proxy';
+} from '@nestjs/common';
+import { ExceptionFiltersContext } from '@nestjs/websockets/context/exception-filters-context';
+import { WsContextCreator } from '@nestjs/websockets/context/ws-context-creator';
+import { WsProxy } from '@nestjs/websockets/context/ws-proxy';
 
 @Guard()
 class TestGuard {

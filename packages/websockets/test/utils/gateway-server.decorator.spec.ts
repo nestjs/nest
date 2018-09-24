@@ -1,11 +1,12 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { WebSocketServer } from '../../utils/gateway-server.decorator';
-import { GATEWAY_SERVER_METADATA } from '../../constants';
+import { WebSocketServer } from '@nestjs/websockets/utils/gateway-server.decorator';
+import { GATEWAY_SERVER_METADATA } from '@nestjs/websockets/constants';
 
 describe('@WebSocketServer', () => {
   class TestGateway {
-    @WebSocketServer() static server;
+    @WebSocketServer()
+    static server;
   }
 
   it('should decorate server property with expected metadata', () => {
