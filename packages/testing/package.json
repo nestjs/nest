@@ -1,0 +1,22 @@
+{
+  "name": "@nestjs/testing",
+  "version": "5.4.0",
+  "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
+  "author": "Kamil Mysliwiec",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "prepare": "tsc -b"
+  },
+  "dependencies": {
+    "@nestjs/common": "^5.4.0",
+    "@nestjs/core": "^5.4.0",
+    "deprecate": "1.0.0",
+    "optional": "^0.1.4",
+    "socket.io": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/socket.io": "^1.4.36"
+  }
+}
