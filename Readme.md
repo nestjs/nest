@@ -58,7 +58,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 #### Sponsors
 
-<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.svg" width="110" /></a> &nbsp; <a href="http://angularity.io"><img src="http://angularity.io/media/logo.svg" height="30" /></a> &nbsp; <a href="http://gojob.com"><img src="https://gojob.com/w/wp-content/uploads/2017/02/cropped-Logo-web-home.png" height="40" /> &nbsp; <!--<a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="30" /></a> &nbsp;--> <a href="https://hostpresto.com"><img src="https://nestjs.com/img/hostpresto.png" height="30" /></a> &nbsp; <a href="https://genuinebee.com/"><img src="https://nestjs.com/img/genuinebee.svg" height="34" /></a>
+<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.svg" width="110" /></a> &nbsp; <a href="http://angularity.io"><img src="http://angularity.io/media/logo.svg" height="30" /></a> &nbsp; <a href="http://gojob.com"><img src="https://gojob.com/w/wp-content/uploads/2017/02/cropped-Logo-web-home.png" height="40" /> &nbsp; <!--<a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="30" /></a> &nbsp;--> <a href="https://hostpresto.com"><img src="https://nestjs.com/img/hostpresto.png" height="30" /></a> &nbsp; <a href="https://genuinebee.com/"><img src="https://nestjs.com/img/genuinebee.svg" height="34" /></a> &nbsp; <a href="http://architectnow.net/"><img src="https://nestjs.com/img/architectnow.png" height="34" /></a>
 
 
 ## Backers
