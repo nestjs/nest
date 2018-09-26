@@ -1,27 +1,13 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "removeComments": false,
-    "noLib": false,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "target": "es2017",
-    "sourceMap": false,
-    "allowJs": false,
-    "rootDir": "./",
-    "strict": true,
-    "strictNullChecks": false,
-    "outDir": "../../node_modules/@nestjs/common"
+    "rootDir": "src",
+    "outDir": "lib"
   },
   "include": [
-    "*.ts",
-    "**/*.ts"
+    "src"
   ],
   "exclude": [
-    "../../node_modules",
-    "./**/*.spec.ts"
+    "lib"
   ]
 }

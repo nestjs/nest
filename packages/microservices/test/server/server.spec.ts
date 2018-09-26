@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { Server } from '../../server/server';
+import { Server } from '@nestjs/microservices/server/server';
 import { Observable, of, throwError as _throw } from 'rxjs';
 
 class TestServer extends Server {

@@ -2,10 +2,10 @@ import { expect } from 'chai';
 import { join } from 'path';
 import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
-import { ClientGrpcProxy } from '../../client/client-grpc';
-import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
-import { InvalidGrpcServiceException } from '../../exceptions/errors/invalid-grpc-service.exception';
-import { InvalidProtoDefinitionException } from '../../exceptions/errors/invalid-proto-definition.exception';
+import { ClientGrpcProxy } from '@nestjs/microservices/client/client-grpc';
+import { InvalidGrpcPackageException } from '@nestjs/microservices/exceptions/errors/invalid-grpc-package.exception';
+import { InvalidGrpcServiceException } from '@nestjs/microservices/exceptions/errors/invalid-grpc-service.exception';
+import { InvalidProtoDefinitionException } from '@nestjs/microservices/exceptions/errors/invalid-proto-definition.exception';
 // tslint:disable:no-string-literal
 
 class GrpcService {
@@ -107,9 +107,9 @@ describe('ClientGrpcProxy', () => {
       let stream$: Observable<any>;
 
       beforeEach(() => {
-        dataSpy.reset();
-        errorSpy.reset();
-        completeSpy.reset();
+        dataSpy.resetHistory();
+        errorSpy.resetHistory();
+        completeSpy.resetHistory();
         eventCallbacks = {};
         callMock = {
           on: (type, fn) => (eventCallbacks[type] = fn),
@@ -198,7 +198,7 @@ describe('ClientGrpcProxy', () => {
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {
-        sinon.stub(client, 'getOptionsProp').callsFake(() => {
+        sinon.stub(client, 'loadProto').callsFake(() => {
           throw new Error();
         });
         expect(() => client.loadProto()).to.throws(

@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { GLOBAL_MODULE_METADATA } from '../../constants';
-import { Global } from '../../index';
+import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
+import { Global } from '@nestjs/common/index';
 
 describe('Global', () => {
   @Global()

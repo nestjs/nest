@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { Dependencies } from '../../decorators/core/dependencies.decorator';
-import { PARAMTYPES_METADATA } from '../../constants';
+import { Dependencies } from '@nestjs/common/decorators/core/dependencies.decorator';
+import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
 
 describe('@Dependencies', () => {
   const dep = 'test',

@@ -1,16 +1,18 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterResponseController } from '../../router/router-response-controller';
-import { RequestMethod } from '../../../common';
+import { RouterResponseController } from '@nestjs/core/router/router-response-controller';
+import { RequestMethod } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
-import { ExpressAdapter } from '../../adapters/express-adapter';
+import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
 
 describe('RouterResponseController', () => {
   let routerResponseController: RouterResponseController;
   let handlerMock: sinon.SinonMock;
 
   beforeEach(() => {
-    routerResponseController = new RouterResponseController(new ExpressAdapter({}));
+    routerResponseController = new RouterResponseController(
+      new ExpressAdapter({}),
+    );
   });
 
   describe('apply', () => {
@@ -67,9 +69,7 @@ describe('RouterResponseController', () => {
         it('should returns Promise', async () => {
           const value = 100;
           expect(
-            await routerResponseController.transformToResult(
-              of(value),
-            ),
+            await routerResponseController.transformToResult(of(value)),
           ).to.be.eq(100);
         });
       });

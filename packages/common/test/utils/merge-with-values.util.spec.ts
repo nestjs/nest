@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { MergeWithValues } from '../../utils/merge-with-values.util';
+import { MergeWithValues } from '@nestjs/common/utils/merge-with-values.util';
 
 describe('MergeWithValues', () => {
   let type;

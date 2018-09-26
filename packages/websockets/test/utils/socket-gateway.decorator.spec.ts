@@ -1,7 +1,10 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { WebSocketGateway } from '../../utils/socket-gateway.decorator';
-import { GATEWAY_METADATA, GATEWAY_OPTIONS } from '../../constants';
+import { WebSocketGateway } from '@nestjs/websockets/utils/socket-gateway.decorator';
+import {
+  GATEWAY_METADATA,
+  GATEWAY_OPTIONS,
+} from '@nestjs/websockets/constants';
 
 describe('@WebSocketGateway', () => {
   @WebSocketGateway(80, { namespace: '/' })

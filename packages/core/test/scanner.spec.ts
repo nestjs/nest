@@ -1,15 +1,20 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { GUARDS_METADATA } from '../../common/constants';
-import { Component } from '../../common/decorators/core/component.decorator';
-import { Controller } from '../../common/decorators/core/controller.decorator';
-import { UseGuards } from '../../common/decorators/core/use-guards.decorator';
-import { Module } from '../../common/decorators/modules/module.decorator';
-import { ApplicationConfig } from '../application-config';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '../constants';
-import { MetadataScanner } from '../metadata-scanner';
-import { NestContainer } from '../injector/container';
-import { DependenciesScanner } from '../scanner';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { Component } from '@nestjs/common/decorators/core/component.decorator';
+import { Controller } from '@nestjs/common/decorators/core/controller.decorator';
+import { UseGuards } from '@nestjs/common/decorators/core/use-guards.decorator';
+import { Module } from '@nestjs/common/decorators/modules/module.decorator';
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import {
+  APP_FILTER,
+  APP_GUARD,
+  APP_INTERCEPTOR,
+  APP_PIPE,
+} from '@nestjs/core/constants';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { DependenciesScanner } from '@nestjs/core/scanner';
 
 class Guard {}
 

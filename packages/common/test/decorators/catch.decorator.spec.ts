@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import 'reflect-metadata';
-import { FILTER_CATCH_EXCEPTIONS } from '../../constants';
-import { Catch } from '../../decorators/core/catch.decorator';
+import { FILTER_CATCH_EXCEPTIONS } from '@nestjs/common/constants';
+import { Catch } from '@nestjs/common/decorators/core/catch.decorator';
 
 describe('@Catch', () => {
   const exceptions: any = ['exception', 'exception2'];

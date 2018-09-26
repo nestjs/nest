@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { SubscribeMessage } from '../../utils/subscribe-message.decorator';
+import { SubscribeMessage } from '@nestjs/websockets/utils/subscribe-message.decorator';
 
 describe('@SubscribeMessage', () => {
   class TestGateway {

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { MULTER_MODULE_OPTIONS } from '../../files/files.constants';
-import { MulterModule } from '../../files/multer.module';
+import { MULTER_MODULE_OPTIONS } from '@nestjs/common/files/files.constants';
+import { MulterModule } from '@nestjs/common/files/multer.module';
 
 describe('MulterModule', () => {
   describe('register', () => {

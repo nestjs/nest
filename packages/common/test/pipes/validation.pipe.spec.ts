@@ -1,14 +1,16 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ArgumentMetadata } from '../../interfaces';
+import { ArgumentMetadata } from '@nestjs/common/interfaces';
 import { IsString } from 'class-validator';
-import { ValidationPipe } from '../../pipes/validation.pipe';
+import { ValidationPipe } from '@nestjs/common/pipes/validation.pipe';
 
 class TestModel {
   constructor() {}
-  @IsString() public prop1: string;
+  @IsString()
+  public prop1: string;
 
-  @IsString() public prop2: string;
+  @IsString()
+  public prop2: string;
 }
 
 describe('ValidationPipe', () => {

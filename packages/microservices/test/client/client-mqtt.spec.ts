@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { empty } from 'rxjs';
 import * as sinon from 'sinon';
-import { ClientMqtt } from '../../client/client-mqtt';
-import { ERROR_EVENT } from '../../constants';
+import { ClientMqtt } from '@nestjs/microservices/client/client-mqtt';
+import { ERROR_EVENT } from '@nestjs/microservices/constants';
 // tslint:disable:no-string-literal
 
 describe('ClientMqtt', () => {
@@ -52,7 +52,7 @@ describe('ClientMqtt', () => {
       (client as any).mqttClient = mqttClient;
       connectSpy = sinon.stub(client, 'connect');
       assignStub = sinon
-        .stub(client, 'assignPacketId')
+        .stub(client, 'connect')
         .callsFake(packet => Object.assign(packet, { id }));
     });
     afterEach(() => {
@@ -211,7 +211,7 @@ describe('ClientMqtt', () => {
         removeListener: () => ({}),
       }));
       handleErrorsSpy = sinon.spy(client, 'handleError');
-      connect$Stub = sinon.stub(client, 'connect$').callsFake(() => ({
+      connect$Stub = sinon.stub(client, 'connect').callsFake(() => ({
         subscribe: resolve => resolve(),
         toPromise() {
           return this;

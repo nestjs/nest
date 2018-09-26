@@ -5,7 +5,7 @@ import {
   mapToClass,
   isClass,
   assignToken,
-} from '../../middleware/utils';
+} from '@nestjs/core/middleware/utils';
 
 describe('middleware utils', () => {
   class Test {}

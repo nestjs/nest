@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { PATTERN_METADATA } from '../../constants';
+import { PATTERN_METADATA } from '@nestjs/microservices/constants';
 import {
   MessagePattern,
   GrpcMethod,
   createMethodMetadata,
-} from '../../utils/pattern.decorator';
+} from '@nestjs/microservices/utils/pattern.decorator';
 
 describe('@MessagePattern', () => {
   const pattern = { role: 'test' };

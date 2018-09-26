@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { CACHE_MODULE_OPTIONS } from '../../cache/cache.constants';
-import { CacheModule } from '../../cache/cache.module';
+import { CACHE_MODULE_OPTIONS } from '@nestjs/common/cache/cache.constants';
+import { CacheModule } from '@nestjs/common/cache/cache.module';
 
 describe('CacheModule', () => {
   describe('register', () => {

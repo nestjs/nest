@@ -1,0 +1,25 @@
+{
+  "name": "@nestjs/microservices",
+  "version": "5.4.0",
+  "description": "Nest - modern, fast, powerful node.js web framework (@microservices)",
+  "author": "Kamil Mysliwiec",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "prepare": "tsc -b",
+    "test": "mocha --require ts-node/register --project=test/tsconfig.json -r tsconfig-paths/register test/**/*.spec.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^5.4.0",
+    "@nestjs/core": "^5.4.0",
+    "grpc": "^1.13.1",
+    "@grpc/proto-loader": "^0.3.0",
+    "iterare": "^0.0.8",
+    "json-socket": "^0.3.0",
+    "mqtt": "^2.18.3",
+    "nats": "^1.0.1",
+    "optional": "^0.1.4",
+    "redis": "^2.8.0"
+  }
+}

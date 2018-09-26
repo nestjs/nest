@@ -1,9 +1,9 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterProxy } from '../../router/router-proxy';
-import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
-import { HttpException } from '../../../common/exceptions/http.exception';
-import { ExpressAdapter } from '../../adapters/express-adapter';
+import { RouterProxy } from '@nestjs/core/router/router-proxy';
+import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
+import { HttpException } from '@nestjs/common/exceptions/http.exception';
+import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
 
 describe('RouterProxy', () => {
   let routerProxy: RouterProxy;

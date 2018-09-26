@@ -1,19 +1,19 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { RouteParamsMetadata } from '../../../common';
-import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
-import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
-import { ExpressAdapter } from '../../adapters/express-adapter';
-import { ApplicationConfig } from '../../application-config';
-import { GuardsConsumer } from '../../guards/guards-consumer';
-import { GuardsContextCreator } from '../../guards/guards-context-creator';
-import { NestContainer } from '../../injector/container';
-import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../../pipes/pipes-consumer';
-import { PipesContextCreator } from '../../pipes/pipes-context-creator';
-import { RouteParamsFactory } from '../../router/route-params-factory';
-import { RouterExecutionContext } from '../../router/router-execution-context';
+import { RouteParamsMetadata } from '@nestjs/core/../common';
+import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
+import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
+import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import { RouteParamsFactory } from '@nestjs/core/router/route-params-factory';
+import { RouterExecutionContext } from '@nestjs/core/router/router-execution-context';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;

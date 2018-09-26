@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RpcException } from '../../exceptions/rpc-exception';
+import { RpcException } from '@nestjs/microservices/exceptions/rpc-exception';
 
 describe('RpcException', () => {
   let instance: RpcException;

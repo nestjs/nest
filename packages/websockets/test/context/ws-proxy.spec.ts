@@ -1,8 +1,8 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { WsProxy } from '../../context/ws-proxy';
-import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
-import { WsException } from '../../exceptions/ws-exception';
+import { WsProxy } from '@nestjs/websockets/context/ws-proxy';
+import { WsExceptionsHandler } from '@nestjs/websockets/exceptions/ws-exceptions-handler';
+import { WsException } from '@nestjs/websockets/exceptions/ws-exception';
 
 describe('WsProxy', () => {
   let routerProxy: WsProxy;

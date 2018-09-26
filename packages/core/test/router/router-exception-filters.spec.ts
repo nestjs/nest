@@ -1,12 +1,12 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
-import { Catch } from '../../../common/decorators/core/catch.decorator';
-import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
-import { ApplicationConfig } from '../../application-config';
-import { ExpressAdapter } from '../../adapters/express-adapter';
-import { NestContainer } from '../../injector/container';
+import { RouterExceptionFilters } from '@nestjs/core/router/router-exception-filters';
+import { UseFilters } from '@nestjs/common/decorators/core/exception-filters.decorator';
+import { Catch } from '@nestjs/common/decorators/core/catch.decorator';
+import { UnknownModuleException } from '@nestjs/core/errors/exceptions/unknown-module.exception';
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
+import { NestContainer } from '@nestjs/core/injector/container';
 
 describe('RouterExceptionFilters', () => {
   let moduleName: string;
@@ -68,7 +68,7 @@ describe('RouterExceptionFilters', () => {
 
     beforeEach(() => {
       sinon
-        .stub(exceptionFilter, 'findExceptionsFilterInstance')
+        .stub(exceptionFilter, 'createConcreteContext')
         .onFirstCall()
         .returns({
           catch: () => ({}),

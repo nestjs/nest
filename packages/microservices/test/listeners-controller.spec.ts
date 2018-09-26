@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ListenersController } from '../listeners-controller';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
-import { MetadataScanner } from '../../core/metadata-scanner';
+import { MetadataScanner } from '@nestjs/microservices/core/metadata-scanner';
 import { ClientsContainer } from '../container';
 import { RpcContextCreator } from '../context/rpc-context-creator';
 

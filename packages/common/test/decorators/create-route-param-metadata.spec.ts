@@ -1,7 +1,7 @@
-import { ParseIntPipe } from '@nestjs/common';
+import { ParseIntPipe } from '@nestjs/common/pipes/parse-int.pipe';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import { expect } from 'chai';
-import { createRouteParamDecorator } from '../../decorators/http/create-route-param-metadata.decorator';
+import { createRouteParamDecorator } from '@nestjs/common/decorators/http/create-route-param-metadata.decorator';
 
 describe('createRouteParamDecorator', () => {
   let result;
@@ -38,10 +38,7 @@ describe('createRouteParamDecorator', () => {
       const data = 'test';
       const pipe = new ParseIntPipe();
       class Test {
-        public test(
-          @Decorator(data, pipe)
-          param,
-        ) {}
+        public test(@Decorator(data, pipe) param) {}
 
         public testNoData(@Decorator(pipe) param) {}
 

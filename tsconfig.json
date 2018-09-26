@@ -1,27 +1,26 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "declaration": false,
+    "declaration": true,
     "noImplicitAny": false,
     "noUnusedLocals": false,
-    "removeComments": true,
+    "removeComments": false,
     "noLib": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "target": "es6",
+    "lib": ["es7"],
     "sourceMap": true,
-    "allowJs": true,
-    "outDir": "dist",
-    "lib": [
-      "es7"
-    ]
-  },
-  "include": [
-    "packages/**/*",
-    "integration/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.spec.ts"
-  ]
+    "allowJs": false,
+    "skipLibCheck": true,
+    "composite": true,
+    "baseUrl": "./packages",
+    "paths": {
+      "@nestjs/common/*": ["common/src/*"],
+      "@nestjs/core/*": ["core/src/*"],
+      "@nestjs/testing/*": ["testing/src/*"],
+      "@nestjs/microservices/*": ["microservices/src/*"],
+      "@nestjs/websockets/*": ["websockets/src/*"]
+    }
+  }
 }

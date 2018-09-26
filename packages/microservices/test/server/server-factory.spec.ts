@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { ServerFactory } from '../../server/server-factory';
-import { ServerTCP } from '../../server/server-tcp';
-import { ServerRedis } from '../../server/server-redis';
-import { Transport } from '../../enums/transport.enum';
-import { ServerMqtt } from '../../server/server-mqtt';
-import { ServerNats } from '../../server/server-nats';
-import { ServerGrpc } from '../../server/server-grpc';
+import { ServerFactory } from '@nestjs/microservices/server/server-factory';
+import { ServerTCP } from '@nestjs/microservices/server/server-tcp';
+import { ServerRedis } from '@nestjs/microservices/server/server-redis';
+import { Transport } from '@nestjs/microservices/enums/transport.enum';
+import { ServerMqtt } from '@nestjs/microservices/server/server-mqtt';
+import { ServerNats } from '@nestjs/microservices/server/server-nats';
+import { ServerGrpc } from '@nestjs/microservices/server/server-grpc';
 
 describe('ServerFactory', () => {
   describe('create', () => {

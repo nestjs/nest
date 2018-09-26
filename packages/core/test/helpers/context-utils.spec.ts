@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { expect } from 'chai';
-import { ROUTE_ARGS_METADATA } from '../../../common/constants';
-import { ContextUtils } from '../../helpers/context-utils';
+import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { ContextUtils } from '@nestjs/core/helpers/context-utils';
 
 describe('ContextUtils', () => {
   let contextUtils: ContextUtils;

@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Module } from '../../../common/decorators/modules/module.decorator';
-import { Global } from '../../../common/index';
-import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception';
-import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
-import { NestContainer } from '../../injector/container';
+import { Module } from '@nestjs/common/decorators/modules/module.decorator';
+import { Global } from '@nestjs/common/index';
+import { CircularDependencyException } from '@nestjs/core/errors/exceptions/circular-dependency.exception';
+import { UnknownModuleException } from '@nestjs/core/errors/exceptions/unknown-module.exception';
+import { NestContainer } from '@nestjs/core/injector/container';
 
 describe('NestContainer', () => {
   let container: NestContainer;

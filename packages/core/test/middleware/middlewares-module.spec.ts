@@ -1,19 +1,19 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Component } from '../../../common/decorators/core/component.decorator';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
-import { ExpressAdapter } from '../../adapters/express-adapter';
-import { ApplicationConfig } from '../../application-config';
-import { InvalidMiddlewareException } from '../../errors/exceptions/invalid-middleware.exception';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
-import { NestContainer } from '../../injector/container';
-import { MiddlewareBuilder } from '../../middleware/builder';
-import { MiddlewareContainer } from '../../middleware/container';
-import { MiddlewareModule } from '../../middleware/middleware-module';
-import { RouterExceptionFilters } from '../../router/router-exception-filters';
+import { Component } from '@nestjs/common/decorators/core/component.decorator';
+import { Controller } from '@nestjs/common/decorators/core/controller.decorator';
+import { RequestMapping } from '@nestjs/common/decorators/http/request-mapping.decorator';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middleware.interface';
+import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import { InvalidMiddlewareException } from '@nestjs/core/errors/exceptions/invalid-middleware.exception';
+import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { MiddlewareBuilder } from '@nestjs/core/middleware/builder';
+import { MiddlewareContainer } from '@nestjs/core/middleware/container';
+import { MiddlewareModule } from '@nestjs/core/middleware/middleware-module';
+import { RouterExceptionFilters } from '@nestjs/core/router/router-exception-filters';
 
 describe('MiddlewareModule', () => {
   let middlewareModule: MiddlewareModule;

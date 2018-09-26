@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { PipesContextCreator } from '../../pipes/pipes-context-creator';
-import { NestContainer } from '../../injector/container';
+import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import { NestContainer } from '@nestjs/core/injector/container';
 
 class Pipe {}
 

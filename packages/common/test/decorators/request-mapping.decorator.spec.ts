@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { RequestMapping } from '../../decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../enums/request-method.enum';
+import { RequestMapping } from '@nestjs/common/decorators/http/request-mapping.decorator';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 
 describe('@RequestMapping', () => {
   const requestProps = {

@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Component } from '../../../common/decorators/core/component.decorator';
-import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
-import { UnknownElementException } from '../../errors/exceptions/unknown-element.exception';
-import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception';
-import { NestContainer } from '../../injector/container';
-import { Module } from '../../injector/module';
+import { Component } from '@nestjs/common/decorators/core/component.decorator';
+import { Module as ModuleDecorator } from '@nestjs/common/decorators/modules/module.decorator';
+import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
+import { UnknownElementException } from '@nestjs/core/errors/exceptions/unknown-element.exception';
+import { UnknownExportException } from '@nestjs/core/errors/exceptions/unknown-export.exception';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { Module } from '@nestjs/core/injector/module';
 
 describe('Module', () => {
   let module: Module;

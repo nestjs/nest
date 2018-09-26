@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import {
   CACHE_MANAGER,
   CACHE_MODULE_OPTIONS,
-} from '../../cache/cache.constants';
-import { createCacheManager } from '../../cache/cache.providers';
+} from '@nestjs/common/cache/cache.constants';
+import { createCacheManager } from '@nestjs/common/cache/cache.providers';
 
 describe('createCacheManager', () => {
   it('should create provider', () => {

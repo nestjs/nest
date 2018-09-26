@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ClientNats } from '../../client/client-nats';
-import { ERROR_EVENT } from '../../constants';
+import { ClientNats } from '@nestjs/microservices/client/client-nats';
+import { ERROR_EVENT } from '@nestjs/microservices/constants';
 // tslint:disable:no-string-literal
 
 describe('ClientNats', () => {
@@ -58,11 +58,9 @@ describe('ClientNats', () => {
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;
       beforeEach(() => {
-        assignPacketIdStub = sinon
-          .stub(client, 'assignPacketId')
-          .callsFake(() => {
-            throw new Error();
-          });
+        assignPacketIdStub = sinon.stub(client, 'connect').callsFake(() => {
+          throw new Error();
+        });
       });
       afterEach(() => {
         assignPacketIdStub.restore();
@@ -83,7 +81,7 @@ describe('ClientNats', () => {
       beforeEach(async () => {
         callback = sinon.spy();
         assignStub = sinon
-          .stub(client, 'assignPacketId')
+          .stub(client, 'connect')
           .callsFake(packet => Object.assign(packet, { id }));
 
         subscription = await client['publish'](msg, callback);
@@ -193,7 +191,7 @@ describe('ClientNats', () => {
         .stub(client, 'createClient')
         .callsFake(() => natsClient);
       handleErrorsSpy = sinon.spy(client, 'handleError');
-      connect$Spy = sinon.spy(client, 'connect$');
+      connect$Spy = sinon.spy(client, 'connect');
 
       await client.connect();
     });

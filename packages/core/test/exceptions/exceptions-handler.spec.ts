@@ -1,12 +1,12 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
-import { Logger } from '../../../common/services/logger.service';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
-import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
+import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
+import { Logger } from '@nestjs/common/services/logger.service';
+import { NestEnvironment } from '@nestjs/common/enums/nest-environment.enum';
+import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/invalid-exception-filter.exception';
 import { HttpException } from '@nestjs/common';
-import { ExpressAdapter } from '../../adapters/express-adapter';
-import { ExecutionContextHost } from '../../helpers/execution-context.host';
+import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 
 describe('ExceptionsHandler', () => {
   let handler: ExceptionsHandler;

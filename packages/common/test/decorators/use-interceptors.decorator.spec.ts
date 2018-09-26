@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { UseInterceptors } from '../../decorators/core/use-interceptors.decorator';
-import { INTERCEPTORS_METADATA } from '../../constants';
-import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
+import { UseInterceptors } from '@nestjs/common/decorators/core/use-interceptors.decorator';
+import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
+import { InvalidDecoratorItemException } from '@nestjs/common/utils/validate-each.util';
 
 class Interceptor {}
 

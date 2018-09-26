@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Reflector } from '../../services/reflector.service';
+import { Reflector } from '@nestjs/core/services/reflector.service';
 
 describe('Reflector', () => {
   let reflector: Reflector;

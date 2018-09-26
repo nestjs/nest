@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { ModuleCompiler } from '../../injector/compiler';
+import { ModuleCompiler } from '@nestjs/core/injector/compiler';
 
 describe('ModuleCompiler', () => {
   let compiler: ModuleCompiler;
@@ -19,7 +19,7 @@ describe('ModuleCompiler', () => {
       });
     });
     describe('when module is a not dynamic module', () => {
-      it('should return object with "type" property', async  () => {
+      it('should return object with "type" property', async () => {
         const type = 'test';
         expect(await compiler.extractMetadata(type as any)).to.be.deep.equal({
           type,

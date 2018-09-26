@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { ReflectMetadata } from '../../decorators/core/reflect-metadata.decorator';
+import { ReflectMetadata } from '@nestjs/common/decorators/core/reflect-metadata.decorator';
 
 describe('@ReflectMetadata', () => {
   const key = 'key',
