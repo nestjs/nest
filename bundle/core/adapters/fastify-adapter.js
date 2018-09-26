@@ -5,7 +5,6 @@ const load_package_util_1 = require("@nestjs/common/utils/load-package.util");
 const pathToRegexp = require("path-to-regexp");
 class FastifyAdapter {
     constructor(options) {
-        this.logger = new common_1.Logger(FastifyAdapter.name);
         this.instance = load_package_util_1.loadPackage('fastify', 'FastifyAdapter')(options);
     }
     use(...args) {

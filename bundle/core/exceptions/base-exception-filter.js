@@ -11,7 +11,7 @@ class BaseExceptionFilter {
         if (!(exception instanceof common_1.HttpException)) {
             const body = {
                 statusCode: common_1.HttpStatus.INTERNAL_SERVER_ERROR,
-                message: constants_1.messages.UNKNOWN_EXCEPTION_MESSAGE,
+                message: constants_1.MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
             };
             this.applicationRef.reply(host.getArgByIndex(1), body, body.statusCode);
             if (this.isExceptionObject(exception)) {

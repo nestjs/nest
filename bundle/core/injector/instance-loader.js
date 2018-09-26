@@ -27,7 +27,7 @@ class InstanceLoader {
             await this.createInstancesOfInjectables(module);
             await this.createInstancesOfRoutes(module);
             const { name } = module.metatype;
-            this.logger.log(messages_1.moduleInitMessage(name));
+            this.logger.log(messages_1.MODULE_INIT_MESSAGE `${name}`);
         }));
     }
     createPrototypesOfComponents(module) {

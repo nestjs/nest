@@ -73,10 +73,6 @@ class MiddlewareModule {
         const router = applicationRef.createMiddlewareFactory(method);
         const bindWithProxy = middlewareInstance => this.bindHandlerWithProxy(exceptionsHandler, router, middlewareInstance, path);
         const resolve = instance.resolve();
-        if (!(resolve instanceof Promise)) {
-            bindWithProxy(resolve);
-            return;
-        }
         const middleware = await resolve;
         bindWithProxy(middleware);
     }

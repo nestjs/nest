@@ -1,16 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-require("reflect-metadata");
 const deprecate = require("deprecate");
+require("reflect-metadata");
 const constants_1 = require("../../constants");
 const invalid_module_config_exception_1 = require("./exceptions/invalid-module-config.exception");
 const metadataKeys = [
-    constants_1.metadata.MODULES,
-    constants_1.metadata.IMPORTS,
-    constants_1.metadata.EXPORTS,
-    constants_1.metadata.COMPONENTS,
-    constants_1.metadata.CONTROLLERS,
-    constants_1.metadata.PROVIDERS,
+    constants_1.METADATA.MODULES,
+    constants_1.METADATA.IMPORTS,
+    constants_1.METADATA.EXPORTS,
+    constants_1.METADATA.COMPONENTS,
+    constants_1.METADATA.CONTROLLERS,
+    constants_1.METADATA.PROVIDERS,
 ];
 const validateKeys = (keys) => {
     const isKeyInvalid = key => metadataKeys.findIndex(k => k === key) < 0;
@@ -54,8 +54,8 @@ function overrideModuleMetadata(moduleMetadata) {
         : moduleMetadata.components;
 }
 function showDeprecatedWarnings(moduleMetadata) {
-    const modulesDeprecatedWarning = 'The "modules" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "imports" key instead.';
-    const componentsDeprecatetWarning = 'The "components" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "providers" key instead.';
-    moduleMetadata.modules && deprecate(modulesDeprecatedWarning);
-    moduleMetadata.components && deprecate(componentsDeprecatetWarning);
+    const MODULES_DEPRECATED_WARNING = 'The "modules" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "imports" key instead.';
+    const COMPONENTS_DEPRECATED_WARNING = 'The "components" key in the @Module() decorator is deprecated and will be removed within next major release. Use the "providers" key instead.';
+    moduleMetadata.modules && deprecate(MODULES_DEPRECATED_WARNING);
+    moduleMetadata.components && deprecate(COMPONENTS_DEPRECATED_WARNING);
 }

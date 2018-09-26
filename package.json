@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "5.3.6",
+  "version": "5.3.8",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
@@ -20,7 +20,8 @@
     "publish": "npm run prepare && ./node_modules/.bin/lerna publish --exact -m \"chore(@nestjs) publish %s release\"",
     "publish:rc": "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
     "publish:next": "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
-    "publish:beta": "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\""
+    "publish:beta": "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\"",
+    "publish:test": "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\""
   },
   "engines": {
     "node": ">= 8.9.0"
@@ -34,7 +35,7 @@
   "dependencies": {
     "@grpc/proto-loader": "^0.3.0",
     "@nestjs/common": "5.1.0",
-    "@nestjs/core": "^5.1.0",
+    "@nestjs/core": "^5.3.10",
     "@nestjs/microservices": "5.1.0",
     "@nestjs/testing": "5.1.0",
     "@nestjs/websockets": "5.1.0",
@@ -110,7 +111,7 @@
     "lerna": "^2.5.1",
     "lint-staged": "^7.2.2",
     "mocha": "^3.2.0",
-    "nodemon": "^1.18.3",
+    "nodemon": "^1.18.4",
     "nyc": "^10.1.2",
     "prettier": "^1.9.2",
     "sinon": "^2.1.0",

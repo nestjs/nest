@@ -31,7 +31,7 @@ class RoutesResolver {
         routes.forEach(({ instance, metatype }) => {
             const path = this.routerBuilder.extractRouterPath(metatype, basePath);
             const controllerName = metatype.name;
-            this.logger.log(messages_1.controllerMappingMessage(controllerName, path));
+            this.logger.log(messages_1.CONTROLLER_MAPPING_MESSAGE(controllerName, path));
             this.routerBuilder.explore(instance, metatype, moduleName, appInstance, path);
         });
     }

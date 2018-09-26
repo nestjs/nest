@@ -1,7 +1,6 @@
 import { RequestMethod } from '@nestjs/common';
 import { ErrorHandler, RequestHandler } from '@nestjs/common/interfaces';
 export declare class FastifyAdapter {
-    private readonly logger;
     protected readonly instance: any;
     constructor(options?: any);
     use(handler: RequestHandler | ErrorHandler): any;

@@ -62,10 +62,10 @@ class RouterExplorer {
         };
     }
     applyPathsToRouterProxy(router, routePaths, instance, module, basePath) {
-        (routePaths || []).map(pathProperties => {
+        (routePaths || []).forEach(pathProperties => {
             const { path, requestMethod } = pathProperties;
             this.applyCallbackToRouter(router, pathProperties, instance, module, basePath);
-            this.logger.log(messages_1.routeMappedMessage(path, requestMethod));
+            this.logger.log(messages_1.ROUTE_MAPPED_MESSAGE(path, requestMethod));
         });
     }
     applyCallbackToRouter(router, pathProperties, instance, module, basePath) {

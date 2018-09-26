@@ -8,7 +8,7 @@ class BaseWsExceptionFilter {
         const client = host.switchToWs().getClient();
         const status = 'error';
         if (!(exception instanceof ws_exception_1.WsException)) {
-            const errorMessage = constants_1.messages.UNKNOWN_EXCEPTION_MESSAGE;
+            const errorMessage = constants_1.MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
             return client.emit('exception', { status, message: errorMessage });
         }
         const result = exception.getError();

@@ -26,9 +26,9 @@ class DependenciesScanner {
             module = module.forwardRef();
         }
         const modules = !this.isDynamicModule(module)
-            ? this.reflectMetadata(module, constants_1.metadata.MODULES)
+            ? this.reflectMetadata(module, constants_1.METADATA.MODULES)
             : [
-                ...this.reflectMetadata(module.module, constants_1.metadata.MODULES),
+                ...this.reflectMetadata(module.module, constants_1.METADATA.MODULES),
                 ...(module.imports || []),
             ];
         for (const innerModule of modules) {
@@ -55,9 +55,9 @@ class DependenciesScanner {
     }
     async reflectRelatedModules(module, token, context) {
         const modules = [
-            ...this.reflectMetadata(module, constants_1.metadata.MODULES),
-            ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.MODULES),
-            ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.IMPORTS),
+            ...this.reflectMetadata(module, constants_1.METADATA.MODULES),
+            ...this.container.getDynamicMetadataByToken(token, constants_1.METADATA.MODULES),
+            ...this.container.getDynamicMetadataByToken(token, constants_1.METADATA.IMPORTS),
         ];
         for (const related of modules) {
             await this.storeRelatedModule(related, token, context);
@@ -65,11 +65,11 @@ class DependenciesScanner {
     }
     reflectComponents(module, token) {
         const components = [
-            ...this.reflectMetadata(module, constants_1.metadata.COMPONENTS),
-            ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.COMPONENTS),
-            ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.PROVIDERS),
+            ...this.reflectMetadata(module, constants_1.METADATA.COMPONENTS),
+            ...this.container.getDynamicMetadataByToken(token, constants_1.METADATA.COMPONENTS),
+            ...this.container.getDynamicMetadataByToken(token, constants_1.METADATA.PROVIDERS),
         ];
-        components.map(component => {
+        components.forEach(component => {
             this.storeComponent(component, token);
             this.reflectComponentMetadata(component, token);
             this.reflectDynamicMetadata(component, token);
@@ -80,10 +80,10 @@ class DependenciesScanner {
     }
     reflectControllers(module, token) {
         const routes = [
-            ...this.reflectMetadata(module, constants_1.metadata.CONTROLLERS),
-            ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.CONTROLLERS),
+            ...this.reflectMetadata(module, constants_1.METADATA.CONTROLLERS),
+            ...this.container.getDynamicMetadataByToken(token, constants_1.METADATA.CONTROLLERS),
         ];
-        routes.map(route => {
+        routes.forEach(route => {
             this.storeRoute(route, token);
             this.reflectDynamicMetadata(route, token);
         });
@@ -100,14 +100,14 @@ class DependenciesScanner {
     }
     reflectExports(module, token) {
         const exports = [
-            ...this.reflectMetadata(module, constants_1.metadata.EXPORTS),
-            ...this.container.getDynamicMetadataByToken(token, constants_1.metadata.EXPORTS),
+            ...this.reflectMetadata(module, constants_1.METADATA.EXPORTS),
+            ...this.container.getDynamicMetadataByToken(token, constants_1.METADATA.EXPORTS),
         ];
-        exports.map(exportedComponent => this.storeExportedComponent(exportedComponent, token));
+        exports.forEach(exportedComponent => this.storeExportedComponent(exportedComponent, token));
     }
     reflectGatewaysMiddleware(component, token) {
         const middleware = this.reflectMetadata(component, constants_1.GATEWAY_MIDDLEWARES);
-        middleware.map(ware => this.storeComponent(ware, token));
+        middleware.forEach(ware => this.storeComponent(ware, token));
     }
     reflectInjectables(component, token, metadataKey) {
         const controllerInjectables = this.reflectMetadata(component, metadataKey);
@@ -117,13 +117,13 @@ class DependenciesScanner {
             ...controllerInjectables,
             ...flattenMethodsInjectables,
         ].filter(shared_utils_1.isFunction);
-        mergedInjectables.map(injectable => this.storeInjectable(injectable, token));
+        mergedInjectables.forEach(injectable => this.storeInjectable(injectable, token));
     }
     reflectParamInjectables(component, token, metadataKey) {
         const paramsMetadata = this.metadataScanner.scanFromPrototype(null, component.prototype, method => Reflect.getMetadata(metadataKey, component, method));
         const flatten = arr => arr.reduce((a, b) => a.concat(b), []);
         const paramsInjectables = flatten(paramsMetadata).map(param => flatten(Object.keys(param).map(k => param[k].pipes)).filter(shared_utils_1.isFunction));
-        flatten(paramsInjectables).map(injectable => this.storeInjectable(injectable, token));
+        flatten(paramsInjectables).forEach(injectable => this.storeInjectable(injectable, token));
     }
     reflectKeyMetadata(component, key, method) {
         let prototype = component.prototype;
@@ -157,7 +157,7 @@ class DependenciesScanner {
         const applyProvidersMap = this.getApplyProvidersMap();
         const providersKeys = Object.keys(applyProvidersMap);
         const type = component.provide;
-        if (providersKeys.indexOf(type) < 0) {
+        if (!providersKeys.includes(type)) {
             return this.container.addComponent(component, token);
         }
         const providerToken = random_string_generator_util_1.randomStringGenerator();

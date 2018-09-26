@@ -23,7 +23,7 @@ class GuardsConsumer {
     }
     async pickResult(result) {
         if (result instanceof rxjs_1.Observable) {
-            return await result.toPromise();
+            return result.toPromise();
         }
         return result;
     }

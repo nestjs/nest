@@ -5,12 +5,7 @@ const constants_1 = require("../constants");
 /**
  * Attaches the `ClientProxy` instance to the given property
  *
- * @param  {ClientOptions} metadata Optional client metadata
- * ```
- * transport?: Transport;
- * url?: string;
- * port?: number;
- * host?: string;
+ * @param  {ClientOptions} metadata optional client metadata
  */
 exports.Client = (metadata) => {
     return (target, propertyKey) => {

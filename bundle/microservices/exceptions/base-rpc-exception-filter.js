@@ -9,7 +9,7 @@ class BaseRpcExceptionFilter {
     catch(exception, host) {
         const status = 'error';
         if (!(exception instanceof rpc_exception_1.RpcException)) {
-            const errorMessage = constants_1.messages.UNKNOWN_EXCEPTION_MESSAGE;
+            const errorMessage = constants_1.MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
             const isError = shared_utils_1.isObject(exception) && exception.message;
             const loggerArgs = isError
                 ? [

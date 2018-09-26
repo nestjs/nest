@@ -1,5 +1,5 @@
 import { ModuleMetadata, Type } from '@nestjs/common/interfaces';
-import { MulterOptions } from './../../interfaces/external/multer-options.interface';
+import { MulterOptions } from '../../interfaces/external/multer-options.interface';
 export interface MulterModuleOptions extends MulterOptions {
 }
 export interface MulterOptionsFactory {

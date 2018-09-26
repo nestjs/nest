@@ -7,9 +7,9 @@ export interface LoggerService {
 export declare class Logger implements LoggerService {
     private readonly context;
     private readonly isTimeDiffEnabled;
-    private static prevTimestamp;
+    private static prevTimestamp?;
     private static contextEnvironment;
-    private static logger;
+    private static logger?;
     private static readonly yellow;
     constructor(context?: string, isTimeDiffEnabled?: boolean);
     log(message: any, context?: string): void;

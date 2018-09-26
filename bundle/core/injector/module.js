@@ -171,7 +171,7 @@ class Module {
         return exported && exported.module;
     }
     addCustomClass(component, collection) {
-        const { provide, name, useClass } = component;
+        const { name, useClass } = component;
         collection.set(name, {
             name,
             metatype: useClass,
@@ -180,7 +180,7 @@ class Module {
         });
     }
     addCustomValue(component, collection) {
-        const { provide, name, useValue: value } = component;
+        const { name, useValue: value } = component;
         collection.set(name, {
             name,
             metatype: null,
@@ -191,7 +191,7 @@ class Module {
         });
     }
     addCustomFactory(component, collection) {
-        const { provide, name, useFactory: factory, inject } = component;
+        const { name, useFactory: factory, inject } = component;
         collection.set(name, {
             name,
             metatype: factory,
@@ -232,7 +232,7 @@ class Module {
             .map(({ metatype }) => metatype)
             .filter(metatype => metatype)
             .map(({ name }) => name);
-        if (importedRefNames.indexOf(token) < 0) {
+        if (!importedRefNames.includes(token)) {
             const { name } = this.metatype;
             throw new unknown_export_exception_1.UnknownExportException(name);
         }

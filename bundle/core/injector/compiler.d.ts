@@ -12,5 +12,4 @@ export declare class ModuleCompiler {
         dynamicMetadata?: Partial<DynamicModule> | undefined;
     }>;
     isDynamicModule(module: Type<any> | DynamicModule): module is DynamicModule;
-    isDefferedModule(module: Type<any> | DynamicModule | Promise<DynamicModule>): module is Promise<DynamicModule>;
 }

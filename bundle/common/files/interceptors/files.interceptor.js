@@ -15,8 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const multer = require("multer");
 const decorators_1 = require("../../decorators");
 const component_decorator_1 = require("../../decorators/core/component.decorator");
-const files_constants_1 = require("./../files.constants");
-const multer_utils_1 = require("./../multer/multer.utils");
+const files_constants_1 = require("../files.constants");
+const multer_utils_1 = require("../multer/multer.utils");
 function FilesInterceptor(fieldName, maxCount, localOptions) {
     let MixinInterceptor = class MixinInterceptor {
         constructor(options = {}) {

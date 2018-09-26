@@ -44,7 +44,7 @@ class WsAdapter {
         client.on(constants_1.CLOSE_EVENT, callback);
     }
     bindMessageHandlers(client, handlers, transform) {
-        const close$ = rxjs_1.fromEvent(client, 'close').pipe(operators_1.share(), operators_1.first());
+        const close$ = rxjs_1.fromEvent(client, constants_1.CLOSE_EVENT).pipe(operators_1.share(), operators_1.first());
         const source$ = rxjs_1.fromEvent(client, 'message').pipe(operators_1.mergeMap(data => this.bindMessageHandler(data, handlers, transform).pipe(operators_1.filter(result => result))), operators_1.takeUntil(close$));
         source$.subscribe(response => client.send(JSON.stringify(response)));
     }

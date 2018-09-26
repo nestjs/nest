@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const chai_1 = require("chai");
 const cache_constants_1 = require("../../cache/cache.constants");
-const cache_module_1 = require("./../../cache/cache.module");
+const cache_module_1 = require("../../cache/cache.module");
 describe('CacheModule', () => {
     describe('register', () => {
         it('should provide an options', () => {
