@@ -1,0 +1,25 @@
+{
+  "name": "@nest/ipfs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "keywords": [],
+  "author": "Marcus S. Abildskov",
+  "license": "MIT",
+  "dependencies": {
+    "@nest/core": "*",
+    "class-transformer": "^0.1.9",
+    "class-transformer-validator": "^0.6.0",
+    "class-validator": "^0.9.1",
+    "ipfs": "^0.31.7",
+    "ipfs-repo": "^0.23.1",
+    "param-case": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^5.0.4"
+  }
+}

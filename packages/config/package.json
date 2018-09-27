@@ -1,0 +1,25 @@
+{
+  "name": "@nest/config",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "keywords": [],
+  "author": "Marcus S. Abildskov",
+  "license": "MIT",
+  "dependencies": {
+    "@nest/core": "*",
+    "fs-extra": "^7.0.0",
+    "glob": "^7.1.3",
+    "lodash.get": "^4.4.2",
+    "lodash.set": "^4.3.2",
+    "yaml": "^1.0.0-rc.8"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^5.0.4",
+    "@types/glob": "^5.0.35"
+  }
+}

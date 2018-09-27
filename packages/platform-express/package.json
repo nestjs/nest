@@ -1,0 +1,21 @@
+{
+  "name": "@nest/platform-express",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "keywords": [],
+  "author": "Marcus S. Abildskov",
+  "license": "MIT",
+  "dependencies": {
+    "@nest/core": "*",
+    "@nest/server": "*",
+    "express": "*"
+  },
+  "devDependencies": {
+    "@types/express": "*"
+  }
+}

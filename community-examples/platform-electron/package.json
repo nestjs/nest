@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "electron-webpack",
+    "dev": "electron-webpack dev"
+  },
+  "devDependencies": {
+    "electron-webpack": "^2.2.1",
+    "electron-webpack-ts": "^2.1.1",
+    "tsconfig-paths-webpack-plugin": "^3.2.0",
+    "typescript": "*",
+    "webpack": "^4.17.0"
+  },
+  "dependencies": {
+    "electron": "*"
+  },
+  "electronWebpack": {
+    "main": {
+      "webpackConfig": "webpack.tsconfig-paths.js"
+    },
+    "renderer": {
+      "webpackConfig": "webpack.tsconfig-paths.js"
+    }
+  }
+}

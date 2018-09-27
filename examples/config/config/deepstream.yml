@@ -1,0 +1,5 @@
+client:
+  url: 'wss://example.com:8031'
+  credentials:
+    username: 'marcus-sa'
+    password: 'password goes here'
