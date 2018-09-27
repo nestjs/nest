@@ -1,23 +1,15 @@
 language: node_js
+sudo: required
 node_js:
-  - "8"
-  - "9"
-  - "10"
-cache:
-  directories:
-    - "node_modules"
+  - '10'
 git:
   depth: 5
-addons:
-  firefox: "latest"
-before_script:
-  - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
+cache:
+  yarn: true
 before_install:
-  - npm i -g npm@latest
-install:
-  - npm ci
-  - gulp build
+  - sudo apt-key adv --fetch-keys http://dl.yarnpkg.com/debian/pubkey.gpg
+  - echo "deb http://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+  - sudo apt-get update -qq
+  - sudo apt-get install -y -qq yarn
 script:
-  - npm test
-after_success: npm run coverage
+  - yarn test
