@@ -1,27 +1,12 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": false,
-    "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "removeComments": true,
-    "noLib": false,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "target": "es6",
-    "sourceMap": true,
-    "allowJs": true,
-    "outDir": "dist",
-    "lib": [
-      "es7"
-    ]
+    "baseUrl": "./packages",
+    "paths": {
+      "@nest/server/*": ["./server/src/*"],
+      "@nest/core/*": ["./core/src/*"],
+      "@nest/*": ["./*/src"]
+    }
   },
-  "include": [
-    "packages/**/*",
-    "integration/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.spec.ts"
-  ]
+  "exclude": ["node_modules", "examples"]
 }

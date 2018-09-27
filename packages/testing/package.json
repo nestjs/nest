@@ -1,0 +1,16 @@
+{
+  "name": "@nest/testing",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "keywords": [],
+  "author": "Marcus S. Abildskov",
+  "license": "MIT",
+  "dependencies": {
+    "@nest/core": "*"
+  }
+}

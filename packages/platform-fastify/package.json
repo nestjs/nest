@@ -1,0 +1,18 @@
+{
+  "name": "@nest/platform-fastify",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "keywords": [],
+  "author": "Marcus S. Abildskov",
+  "license": "MIT",
+  "dependencies": {
+    "@nest/core": "*",
+    "@nest/server": "*",
+    "fastify": "^1.12.0",
+    "fastify-formbody": "^2.0.1"
+  }
+}

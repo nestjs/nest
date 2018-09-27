@@ -1,0 +1,44 @@
+{
+  "name": "@nest/server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "Marcus S. Abildskov",
+  "license": "MIT",
+  "dependencies": {
+    "@nest/core": "*"
+  },
+  "peerDependencies": {
+    "@nest/platform-express": "*",
+    "@nest/platform-fastify": "*"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "@nest/core/(.*)": "<rootDir>/../core/src/$1",
+      "@nest/server/(.*)": "<rootDir>/src/$1",
+      "@nest/(.*)": "<rootDir>/../$1/src"
+    },
+    "moduleFileExtensions": [
+      "js",
+      "ts",
+      "json"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "globals": {
+      "ts-jest": {
+        "tsConfigFile": "tsconfig.json"
+      }
+    },
+    "testMatch": [
+      "<rootDir>/__tests__/**/*.(spec|test).+(ts|tsx)"
+    ]
+  }
+}

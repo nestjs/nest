@@ -1,0 +1,42 @@
+{
+  "name": "@nest/core",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "Marcus S. Abildskov",
+  "license": "MIT",
+  "dependencies": {
+    "inversify": "^4.13.0",
+    "inversify-inject-decorators": "^3.1.0",
+    "object-hash": "^1.3.0",
+    "reflect-metadata": "^0.1.12",
+    "rxjs": "^6.2.2"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "@nest/core/(.*)": "<rootDir>/src/$1",
+      "@nest/(.*)": "<rootDir>/../$1/src"
+    },
+    "moduleFileExtensions": [
+      "js",
+      "ts",
+      "json"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "globals": {
+      "ts-jest": {
+        "tsConfigFile": "tsconfig.json"
+      }
+    },
+    "testMatch": [
+      "<rootDir>/__tests__/**/*.(spec|test).+(ts|tsx)"
+    ]
+  }
+}
