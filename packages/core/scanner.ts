@@ -79,7 +79,7 @@ export class DependenciesScanner {
 
   public async storeModule(module: any, scope: Type<any>[]) {
     if (module && module.forwardRef) {
-      return await this.container.addModule(module.forwardRef(), scope);
+      return this.container.addModule(module.forwardRef(), scope);
     }
     await this.container.addModule(module, scope);
   }
@@ -256,7 +256,7 @@ export class DependenciesScanner {
       throw new CircularDependencyException(context);
     }
     if (related && related.forwardRef) {
-      return await this.container.addRelatedModule(related.forwardRef(), token);
+      return this.container.addRelatedModule(related.forwardRef(), token);
     }
     await this.container.addRelatedModule(related, token);
   }

@@ -91,7 +91,7 @@ export class NestApplicationContext extends ModuleRef
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
         .filter(this.hasOnModuleInitHook)
-        .map(async instance => await (instance as OnModuleInit).onModuleInit()),
+        .map(async instance => (instance as OnModuleInit).onModuleInit()),
     );
     if (moduleClassInstance && this.hasOnModuleInitHook(moduleClassInstance)) {
       await (moduleClassInstance as OnModuleInit).onModuleInit();
@@ -121,10 +121,7 @@ export class NestApplicationContext extends ModuleRef
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
         .filter(this.hasOnModuleDestroyHook)
-        .map(
-          async instance =>
-            await (instance as OnModuleDestroy).onModuleDestroy(),
-        ),
+        .map(async instance => (instance as OnModuleDestroy).onModuleDestroy()),
     );
     if (
       moduleClassInstance &&
@@ -155,9 +152,8 @@ export class NestApplicationContext extends ModuleRef
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
         .filter(this.hasOnAppBotstrapHook)
-        .map(
-          async instance =>
-            await (instance as OnApplicationBootstrap).onApplicationBootstrap(),
+        .map(async instance =>
+          (instance as OnApplicationBootstrap).onApplicationBootstrap(),
         ),
     );
     if (moduleClassInstance && this.hasOnAppBotstrapHook(moduleClassInstance)) {
