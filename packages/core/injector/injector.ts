@@ -122,7 +122,7 @@ export class Injector {
     module: Module,
   ) {
     if (wrapper.isPending) {
-      return await wrapper.done$;
+      return wrapper.done$;
     }
     const done = this.applyDoneHook(wrapper);
     const { metatype, name, inject } = wrapper;
@@ -220,7 +220,7 @@ export class Injector {
       throw new UndefinedDependencyException(wrapper.name, dependencyContext);
     }
     const token = this.resolveParamToken(wrapper, param);
-    return await this.resolveComponentInstance<T>(
+    return this.resolveComponentInstance<T>(
       module,
       isFunction(token) ? (token as Type<any>).name : token,
       dependencyContext,
@@ -275,7 +275,7 @@ export class Injector {
         module,
         wrapper,
       );
-    return components.has(name) ? components.get(name) : await scanInExports();
+    return components.has(name) ? components.get(name) : scanInExports();
   }
 
   public async lookupComponentInExports<T = any>(

@@ -55,8 +55,7 @@ export class CacheModule {
     }
     return {
       provide: CACHE_MODULE_OPTIONS,
-      useFactory: async (optionsFactory: CacheOptionsFactory) =>
-        await optionsFactory.createCacheOptions(),
+      useFactory: async (optionsFactory: CacheOptionsFactory) => optionsFactory.createCacheOptions(),
       inject: [options.useExisting || options.useClass],
     };
   }

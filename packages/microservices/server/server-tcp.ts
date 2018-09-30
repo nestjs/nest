@@ -42,7 +42,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     const readSocket = this.getSocketInstance(socket);
     readSocket.on(
       MESSAGE_EVENT,
-      async msg => await this.handleMessage(readSocket, msg),
+      async msg => this.handleMessage(readSocket, msg),
     );
   }
 

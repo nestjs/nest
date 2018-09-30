@@ -64,8 +64,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(channel: string, client: Client) {
-    return async (buffer, replyTo: string) =>
-      await this.handleMessage(channel, buffer, client, replyTo);
+    return async (buffer, replyTo: string) => this.handleMessage(channel, buffer, client, replyTo);
   }
 
   public async handleMessage(
