@@ -3,7 +3,7 @@ import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-
 import { FastifyAdapter } from '@nestjs/core/adapters/fastify-adapter';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { ApplicationModule } from './../src/app.module';
+import { ApplicationModule } from '../src/app.module';
 
 describe('Hello world (fastify adapter)', () => {
   let app: INestApplication & INestFastifyApplication;
