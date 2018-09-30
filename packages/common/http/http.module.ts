@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import Axios, { AxiosRequestConfig } from 'axios';
 import { Module } from '../decorators/modules/module.decorator';
 import { DynamicModule } from '../interfaces';
 import { randomStringGenerator } from '../utils/random-string-generator.util';
@@ -10,7 +10,7 @@ import { HttpService } from './http.service';
     HttpService,
     {
       provide: AXIOS_INSTANCE_TOKEN,
-      useValue: axios,
+      useValue: Axios,
     },
   ],
   exports: [HttpService],
@@ -22,7 +22,7 @@ export class HttpModule {
       providers: [
         {
           provide: AXIOS_INSTANCE_TOKEN,
-          useValue: axios.create(config),
+          useValue: Axios.create(config),
         },
         {
           provide: HTTP_MODULE_ID,
