@@ -9,7 +9,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "axios": "0.17.1",
+    "axios": "0.18.0",
     "cli-color": "1.2.0",
     "deprecate": "1.0.0",
     "multer": "1.3.0",
