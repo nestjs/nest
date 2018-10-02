@@ -26,7 +26,7 @@ export class ClientRedis extends ClientProxy {
   protected pubClient: RedisClient;
   protected subClient: RedisClient;
   protected connection: Promise<any>;
-  private readonly isExplicitlyTerminated = false;
+  protected isExplicitlyTerminated = false;
 
   constructor(protected readonly options: ClientOptions['options']) {
     super();
@@ -48,6 +48,7 @@ export class ClientRedis extends ClientProxy {
     this.pubClient && this.pubClient.quit();
     this.subClient && this.subClient.quit();
     this.pubClient = this.subClient = null;
+    this.isExplicitlyTerminated = true;
   }
 
   public connect(): Promise<any> {
