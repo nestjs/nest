@@ -42,11 +42,11 @@ export type ComponentMetatype =
 
 export class Module {
   private readonly _id: string;
-  private _relatedModules = new Set<Module>();
-  private _components = new Map<any, InstanceWrapper<Injectable>>();
-  private _injectables = new Map<any, InstanceWrapper<Injectable>>();
-  private _routes = new Map<string, InstanceWrapper<Controller>>();
-  private _exports = new Set<string>();
+  private readonly _relatedModules = new Set<Module>();
+  private readonly _components = new Map<any, InstanceWrapper<Injectable>>();
+  private readonly _injectables = new Map<any, InstanceWrapper<Injectable>>();
+  private readonly _routes = new Map<string, InstanceWrapper<Controller>>();
+  private readonly _exports = new Set<string>();
 
   constructor(
     private readonly _metatype: Type<any>,

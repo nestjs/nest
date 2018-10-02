@@ -117,7 +117,7 @@ export class NestFactoryStatic {
     const context = this.createNestInstance<NestApplicationContext>(
       new NestApplicationContext(container, [], root),
     );
-    return await context.init();
+    return context.init();
   }
 
   private createNestInstance<T>(instance: T): T {

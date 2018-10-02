@@ -50,7 +50,10 @@
         ],
         "one-variable-per-declaration": [
             false
-        ]
+        ],
+        "no-return-await": true,
+        "match-default-export-name": true,
+        "prefer-readonly": true
     },
     "rulesDirectory": []
 }

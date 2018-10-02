@@ -37,7 +37,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     return [].concat(middleware).map(bindArgs);
   }
 
-  private static ConfigProxy = class implements MiddlewareConfigProxy {
+  private static readonly ConfigProxy = class implements MiddlewareConfigProxy {
     private contextParameters = null;
     private excludedRoutes: RouteInfo[] = [];
     private readonly includedRoutes: any[];

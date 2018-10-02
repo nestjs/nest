@@ -30,7 +30,7 @@ export abstract class ClientProxy {
     if (isNil(pattern) || isNil(data)) {
       return _throw(new InvalidMessageException());
     }
-    return defer(async () => await this.connect()).pipe(
+    return defer(async () => this.connect()).pipe(
       mergeMap(
         () =>
           new Observable((observer: Observer<TResult>) => {

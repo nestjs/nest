@@ -5,7 +5,7 @@ export const filterMiddleware = middleware => {
   return []
     .concat(middleware)
     .filter(isFunction)
-    .map(ware => mapToClass(ware));
+    .map(mapToClass);
 };
 
 export const mapToClass = middleware => {

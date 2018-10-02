@@ -114,7 +114,7 @@ export class ExternalContextCreator {
         callback,
         handler(initialArgs, ...args),
       );
-      return await this.transformToResult(result);
+      return this.transformToResult(result);
     };
   }
 
@@ -205,7 +205,7 @@ export class ExternalContextCreator {
     { metatype, type, data },
     transforms: Transform<any>[],
   ): Promise<any> {
-    return await this.pipesConsumer.apply(
+    return this.pipesConsumer.apply(
       value,
       { metatype, type, data },
       transforms,
@@ -214,7 +214,7 @@ export class ExternalContextCreator {
 
   public async transformToResult(resultOrDeffered) {
     if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
-      return await resultOrDeffered.toPromise();
+      return resultOrDeffered.toPromise();
     }
     return resultOrDeffered;
   }

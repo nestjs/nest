@@ -186,7 +186,7 @@ export class RouterExecutionContext {
       type === RouteParamtypes.PARAM ||
       isString(type)
     ) {
-      return await this.pipesConsumer.apply(
+      return this.pipesConsumer.apply(
         value,
         { metatype, type, data },
         transforms,

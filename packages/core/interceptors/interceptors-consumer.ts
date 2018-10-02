@@ -14,7 +14,7 @@ export class InterceptorsConsumer {
     next: () => Promise<any>,
   ): Promise<any> {
     if (isEmpty(interceptors)) {
-      return await await next();
+      return next();
     }
     const context = this.createContext(args, instance, callback);
     const start$ = defer(() => this.transformDeffered(next));
@@ -27,11 +27,10 @@ export class InterceptorsConsumer {
     };
     */
     const result$ = await interceptors.reduce(
-      async (stream$, interceptor) =>
-        await interceptor.intercept(context, await stream$),
+      async (stream$, interceptor) => interceptor.intercept(context, await stream$),
       Promise.resolve(start$),
     );
-    return await result$.toPromise();
+    return result$.toPromise();
   }
 
   public createContext(

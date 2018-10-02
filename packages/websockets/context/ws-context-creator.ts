@@ -55,7 +55,7 @@ export class WsContextCreator {
     return this.wsProxy.create(async (...args) => {
       fnCanActivate && (await fnCanActivate(args));
 
-      return await this.interceptorsConsumer.intercept(
+      return this.interceptorsConsumer.intercept(
         interceptors,
         args,
         instance,
