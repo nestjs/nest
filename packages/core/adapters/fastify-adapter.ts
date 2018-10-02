@@ -80,12 +80,12 @@ export class FastifyAdapter {
     return this.instance.setNotFoundHandler(handler);
   }
 
-  getHttpServer() {
-    return this.instance.server;
+  getHttpServer<T = any>(): T {
+    return this.instance.server as any as T;
   }
 
-  getInstance() {
-    return this.instance;
+  getInstance<T = any>(): T {
+    return this.instance as any as T;
   }
 
   register(...args) {
