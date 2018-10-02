@@ -168,9 +168,4 @@ export abstract class ISubscription {
     abstract post(where?: PostSubscriptionWhereInput): PostSubscriptionPayload | Promise<PostSubscriptionPayload>;
 }
 
-export class User {
-    id: string;
-    name: string;
-}
-
 export type Long = any;
