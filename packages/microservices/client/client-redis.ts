@@ -26,7 +26,7 @@ export class ClientRedis extends ClientProxy {
   protected pubClient: RedisClient;
   protected subClient: RedisClient;
   protected connection: Promise<any>;
-  private isExplicitlyTerminated = false;
+  private readonly isExplicitlyTerminated = false;
 
   constructor(protected readonly options: ClientOptions['options']) {
     super();
