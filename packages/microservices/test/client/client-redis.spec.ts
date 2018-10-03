@@ -55,14 +55,27 @@ describe('ClientRedis', () => {
     afterEach(() => {
       connectSpy.restore();
     });
-    it('should subscribe to response pattern name', () => {
-      client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`${pattern}_res`)).to.be.true;
-    });
-    it('should publish stringified message to acknowledge pattern name', async () => {
-      await client['publish'](msg, () => {});
-      expect(publishSpy.calledWith(`${pattern}_ack`, JSON.stringify(msg))).to.be
-        .true;
+
+    describe('on success', () => {
+      let assignStub: sinon.SinonStub;
+      beforeEach(() => {
+        assignStub = sinon
+          .stub(client, 'assignPacketId')
+          .callsFake(packet => packet);
+      });
+      afterEach(() => {
+        assignStub.restore();
+      });
+
+      it('should subscribe to response pattern name', () => {
+        client['publish'](msg, () => {});
+        expect(subscribeSpy.calledWith(`${pattern}_res`)).to.be.true;
+      });
+      it('should publish stringified message to acknowledge pattern name', async () => {
+        await client['publish'](msg, () => {});
+        expect(publishSpy.calledWith(`${pattern}_ack`, JSON.stringify(msg))).to.be
+          .true;
+      });
     });
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;

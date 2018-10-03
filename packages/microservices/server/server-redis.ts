@@ -95,7 +95,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     return response =>
       pub.publish(
         this.getResQueueName(pattern),
-        JSON.stringify(Object.assign(response, { id })),
+        JSON.stringify({ ...response, id }),
       );
   }
 

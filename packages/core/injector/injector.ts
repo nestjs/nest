@@ -140,6 +140,7 @@ export class Injector {
       inject,
       async instances => {
         if (isNil(inject)) {
+          // tslint:disable-next-line:prefer-object-spread
           currentMetatype.instance = Object.assign(
             currentMetatype.instance,
             new metatype(...instances),

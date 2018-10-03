@@ -88,9 +88,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
   public getPublisher(publisher: Client, replyTo: string, id: string) {
     return response =>
-      publisher.publish(replyTo, Object.assign(response, {
-        id,
-      }) as any);
+      publisher.publish(replyTo, { ...response, id });
   }
 
   public handleError(stream) {

@@ -53,7 +53,8 @@
         ],
         "no-return-await": true,
         "match-default-export-name": true,
-        "prefer-readonly": true
+        "prefer-readonly": true,
+        "prefer-object-spread": true
     },
     "rulesDirectory": []
 }
