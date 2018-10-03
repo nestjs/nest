@@ -1,6 +1,7 @@
 import { Transport } from '../../enums/transport.enum';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
+import { Options } from 'amqplib';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -8,6 +9,7 @@ export type MicroserviceOptions =
   | RedisOptions
   | NatsOptions
   | MqttOptions
+  | RmqOptions
   | CustomStrategy;
 
 export interface CustomStrategy {
@@ -76,5 +78,16 @@ export interface NatsOptions {
     reconnectTimeWait?: number;
     servers?: string[];
     tls?: any;
+  };
+}
+
+export interface RmqOptions {
+  transport?: Transport.RMQ;
+  options?: {
+    urls?: string[];
+    queue?: string;
+    prefetchCount?: number;
+    isGlobalPrefetchCount?: boolean;
+    queueOptions?: Options.AssertQueue;
   };
 }

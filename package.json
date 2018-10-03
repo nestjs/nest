@@ -40,6 +40,8 @@
     "@nestjs/testing": "5.1.0",
     "@nestjs/websockets": "5.1.0",
     "@nuxtjs/opencollective": "^0.1.0",
+    "amqp-connection-manager": "^2.1.1",
+    "amqplib": "^0.5.2",
     "axios": "^0.17.1",
     "cache-manager": "^2.9.0",
     "class-transformer": "^0.1.8",
@@ -75,6 +77,7 @@
     "uuid": "^3.3.2"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.5.7",
     "@types/cache-manager": "^1.2.6",
     "@types/chai": "^3.5.2",
     "@types/chai-as-promised": "0.0.31",

@@ -1,6 +1,7 @@
 import { MqttClientOptions } from '@nestjs/common/interfaces/external/mqtt-options.interface';
 import { Transport } from '../enums/transport.enum';
-import { Server } from '../server/server';
+import { Server } from './../server/server';
+import { Options } from 'amqplib';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 
 export type MicroserviceOptions =
@@ -9,6 +10,7 @@ export type MicroserviceOptions =
   | RedisOptions
   | NatsOptions
   | MqttOptions
+  | RmqOptions
   | CustomStrategy;
 
 export interface CustomStrategy {
@@ -77,5 +79,16 @@ export interface NatsOptions {
     reconnectTimeWait?: number;
     servers?: string[];
     tls?: any;
+  };
+}
+
+export interface RmqOptions {
+  transport?: Transport.RMQ;
+  options?: {
+    urls?: string[];
+    queue?: string;
+    prefetchCount?: number;
+    isGlobalPrefetchCount?: boolean;
+    queueOptions?: Options.AssertQueue;
   };
 }
