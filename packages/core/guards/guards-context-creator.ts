@@ -60,7 +60,7 @@ export class GuardsContextCreator extends ContextCreator {
     if (!module) {
       return undefined;
     }
-    return module.injectables.get((guard as any).name);
+    return module.injectables.get(guard.name);
   }
 
   public getGlobalMetadata<T extends any[]>(): T {

@@ -77,7 +77,7 @@ export class RoutesResolver implements Resolver {
     };
     const handler = this.routerExceptionsFilter.create(
       {},
-      callback as any,
+      callback,
       undefined,
     );
     const proxy = this.routerProxy.createProxy(callback, handler);
