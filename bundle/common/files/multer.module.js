@@ -46,7 +46,7 @@ let MulterModule = MulterModule_1 = class MulterModule {
         }
         return {
             provide: files_constants_1.MULTER_MODULE_OPTIONS,
-            useFactory: async (optionsFactory) => await optionsFactory.createMulterOptions(),
+            useFactory: async (optionsFactory) => optionsFactory.createMulterOptions(),
             inject: [options.useExisting || options.useClass],
         };
     }

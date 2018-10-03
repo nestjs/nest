@@ -52,8 +52,9 @@ export class Injector {
   ) {
     const { metatype } = wrapper;
     const currentMetatype = collection.get(metatype.name);
-    if (currentMetatype.instance !== null) return;
-
+    if (currentMetatype.instance !== null) {
+      return;
+    }
     await this.resolveConstructorParams(
       wrapper as any,
       module,
@@ -87,12 +88,13 @@ export class Injector {
     { metatype, name }: InstanceWrapper<T>,
     collection: Map<string, InstanceWrapper<T>>,
   ) {
-    if (!collection) return null;
-
-    const target = collection.get(name);
-    if (target.isResolved || !isNil(target.inject) || !metatype.prototype)
+    if (!collection) {
       return null;
-
+    }
+    const target = collection.get(name);
+    if (target.isResolved || !isNil(target.inject) || !metatype.prototype) {
+      return null;
+    }
     collection.set(name, {
       ...collection.get(name),
       instance: Object.create(metatype.prototype),
@@ -125,32 +127,21 @@ export class Injector {
       return wrapper.done$;
     }
     const done = this.applyDoneHook(wrapper);
-    const { metatype, name, inject } = wrapper;
-    const currentMetatype = collection.get(name);
-    if (isUndefined(currentMetatype)) {
+    const { name, inject } = wrapper;
+
+    const targetMetatype = collection.get(name);
+    if (isUndefined(targetMetatype)) {
       throw new RuntimeException();
     }
-    if (currentMetatype.isResolved) {
+    if (targetMetatype.isResolved) {
       return void 0;
     }
-
     await this.resolveConstructorParams<T>(
       wrapper,
       module,
       inject,
-      async instances => {
-        if (isNil(inject)) {
-          currentMetatype.instance = Object.assign(
-            currentMetatype.instance,
-            new metatype(...instances),
-          );
-        } else {
-          const factoryResult = currentMetatype.metatype(...instances);
-          currentMetatype.instance = await factoryResult;
-        }
-        currentMetatype.isResolved = true;
-        done();
-      },
+      async instances =>
+        this.instantiateClass(instances, wrapper, targetMetatype, done),
     );
   }
 
@@ -269,17 +260,11 @@ export class Injector {
   ) {
     const { name } = dependencyContext;
     const scanInExports = () =>
-      this.lookupComponentInExports(
-        components,
-        dependencyContext,
-        module,
-        wrapper,
-      );
+      this.lookupComponentInExports(dependencyContext, module, wrapper);
     return components.has(name) ? components.get(name) : scanInExports();
   }
 
   public async lookupComponentInExports<T = any>(
-    components: Map<string, any>,
     dependencyContext: InjectorDependencyContext,
     module: Module,
     wrapper: InstanceWrapper<T>,
@@ -327,5 +312,27 @@ export class Injector {
       }
     }
     return componentRef;
+  }
+
+  public async instantiateClass(
+    instances: any[],
+    wrapper: InstanceWrapper<any>,
+    targetMetatype: InstanceWrapper<any>,
+    done: Function,
+  ) {
+    const { metatype, inject } = wrapper;
+    if (isNil(inject)) {
+      targetMetatype.instance = Object.assign(
+        targetMetatype.instance,
+        new metatype(...instances),
+      );
+    } else {
+      const factoryResult = ((targetMetatype.metatype as any) as Function)(
+        ...instances,
+      );
+      targetMetatype.instance = await factoryResult;
+    }
+    targetMetatype.isResolved = true;
+    done();
   }
 }

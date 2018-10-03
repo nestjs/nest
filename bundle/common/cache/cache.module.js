@@ -45,7 +45,7 @@ let CacheModule = CacheModule_1 = class CacheModule {
         }
         return {
             provide: cache_constants_1.CACHE_MODULE_OPTIONS,
-            useFactory: async (optionsFactory) => await optionsFactory.createCacheOptions(),
+            useFactory: async (optionsFactory) => optionsFactory.createCacheOptions(),
             inject: [options.useExisting || options.useClass],
         };
     }
