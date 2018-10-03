@@ -1,14 +1,24 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import {
-  PATTERN_METADATA,
-  PATTERN_HANDLER_METADATA,
   CLIENT_CONFIGURATION_METADATA,
   CLIENT_METADATA,
+  PATTERN_HANDLER_METADATA,
+  PATTERN_METADATA,
 } from './constants';
-import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 import { ClientOptions } from './interfaces/client-metadata.interface';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { PatternMetadata } from './interfaces/pattern-metadata.interface';
+
+export interface ClientProperties {
+  property: string;
+  metadata: ClientOptions;
+}
+
+export interface PatternProperties {
+  pattern: PatternMetadata;
+  targetCallback: (...args) => any;
+}
 
 export class ListenerMetadataExplorer {
   constructor(private readonly metadataScanner: MetadataScanner) {}
@@ -62,14 +72,4 @@ export class ListenerMetadataExplorer {
       yield { property, metadata };
     }
   }
-}
-
-export interface ClientProperties {
-  property: string;
-  metadata: ClientOptions;
-}
-
-export interface PatternProperties {
-  pattern: PatternMetadata;
-  targetCallback: (...args) => any;
 }

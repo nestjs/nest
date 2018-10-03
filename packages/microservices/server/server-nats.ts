@@ -40,7 +40,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public bindEvents(client: Client) {
-    const registeredPatterns = Object.keys(this.messageHandlers);
+    const registeredPatterns = [...this.messageHandlers.keys()];
     registeredPatterns.forEach(channel => {
       client.subscribe(
         channel,
@@ -63,8 +63,9 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     });
   }
 
-  public getMessageHandler(channel: string, client: Client) {
-    return async (buffer, replyTo: string) => this.handleMessage(channel, buffer, client, replyTo);
+  public getMessageHandler(channel: string, client: Client): Function {
+    return async (buffer, replyTo: string) =>
+      this.handleMessage(channel, buffer, client, replyTo);
   }
 
   public async handleMessage(
@@ -74,12 +75,11 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     replyTo: string,
   ) {
     const publish = this.getPublisher(client, replyTo, message.id);
-    const status = 'error';
-
-    if (!this.messageHandlers[channel]) {
+    const handler = this.getHandlerByPattern(channel);
+    if (!handler) {
+      const status = 'error';
       return publish({ id: message.id, status, err: NO_PATTERN_MESSAGE });
     }
-    const handler = this.messageHandlers[channel];
     const response$ = this.transformToObservable(
       await handler(message.data),
     ) as Observable<any>;

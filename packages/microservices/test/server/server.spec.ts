@@ -1,7 +1,7 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { Server } from '../../server/server';
 import { Observable, of, throwError as _throw } from 'rxjs';
+import * as sinon from 'sinon';
+import { Server } from '../../server/server';
 
 class TestServer extends Server {
   public listen(callback: () => void) {}
@@ -18,13 +18,13 @@ describe('Server', () => {
       server.addHandler(pattern, callback as any);
 
       const handlers = server.getHandlers();
-      expect(handlers[JSON.stringify(pattern)]).to.equal(callback);
+      expect(handlers.get(JSON.stringify(pattern))).to.equal(callback);
     });
 
     it(`should add handler as string pattern key`, () => {
       server.addHandler(pattern.test, callback as any);
       const handlers = server.getHandlers();
-      expect(handlers[pattern.test]).to.equal(callback);
+      expect(handlers.get(pattern.test)).to.equal(callback);
     });
   });
   describe('send', () => {
@@ -96,17 +96,17 @@ describe('Server', () => {
   describe('getHandlerByPattern', () => {
     describe('when handler exists', () => {
       it('should return expected handler', () => {
-        const pattern = 'pattern';
+        const channel = 'pattern';
         const expectedResult = {};
-        (server as any).messageHandlers[pattern] = expectedResult;
-        expect(server.getHandlerByPattern(pattern)).to.be.eql(expectedResult);
+        const handlers = new Map([[channel, expectedResult]]);
+        (server as any).messageHandlers = handlers;
+        expect(server.getHandlerByPattern(channel)).to.be.eql(expectedResult);
       });
     });
     describe('when handler does not exists', () => {
       it('should return null', () => {
-        const pattern = 'test';
-        const expectedResult = null;
-        expect(server.getHandlerByPattern(pattern)).to.be.eql(null);
+        const channel = 'test';
+        expect(server.getHandlerByPattern(channel)).to.be.eql(null);
       });
     });
   });

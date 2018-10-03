@@ -69,9 +69,9 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
     // tslint:disable-next-line:forin
     for (const methodName in grpcService.prototype) {
-      const methodHandler = this.messageHandlers[
-        this.createPattern(name, methodName)
-      ];
+      const methodHandler = this.getHandlerByPattern(
+        this.createPattern(name, methodName),
+      );
       if (!methodHandler) {
         continue;
       }
