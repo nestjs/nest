@@ -61,7 +61,7 @@ export abstract class ClientProxy {
 
   protected assignPacketId(packet: ReadPacket): ReadPacket & PacketId {
     const id = randomStringGenerator();
-    return Object.assign(packet, { id });
+    return { ...packet, id };
   }
 
   protected connect$(

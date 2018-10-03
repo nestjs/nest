@@ -63,7 +63,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     ) as Observable<any>;
     response$ &&
       this.send(response$, data =>
-        socket.sendMessage(Object.assign(data, { id: packet.id })),
+        socket.sendMessage({ ...data, id: packet.id }),
       );
   }
 
