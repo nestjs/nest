@@ -2,6 +2,7 @@ import { DynamicModule } from '@nestjs/common';
 import { SHARED_MODULE_METADATA } from '@nestjs/common/constants';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import * as hash from 'object-hash';
+import safeStringify from 'fast-safe-stringify';
 
 export class ModuleTokenFactory {
   public create(
@@ -22,7 +23,9 @@ export class ModuleTokenFactory {
   public getDynamicMetadataToken(
     dynamicModuleMetadata: Partial<DynamicModule> | undefined,
   ): string {
-    return dynamicModuleMetadata ? JSON.stringify(dynamicModuleMetadata) : '';
+    // Uses safeStringify instead of JSON.stringify
+    // to support circular dynamic modules
+    return dynamicModuleMetadata ? safeStringify(dynamicModuleMetadata) : '';
   }
 
   public getModuleName(metatype: Type<any>): string {
