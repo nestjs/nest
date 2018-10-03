@@ -6,7 +6,7 @@ export declare class Error {
 }
 
 export class RuntimeException extends Error {
-  constructor(private msg = ``) {
+  constructor(private readonly msg = ``) {
     super(msg);
   }
 

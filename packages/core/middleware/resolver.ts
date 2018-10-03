@@ -11,8 +11,7 @@ export class MiddlewareResolver {
     const middleware = this.middlewareContainer.getMiddleware(moduleName);
     await Promise.all(
       [...middleware.values()].map(
-        async wrapper =>
-          await this.resolveMiddlewareInstance(wrapper, middleware, module),
+        async wrapper => this.resolveMiddlewareInstance(wrapper, middleware, module),
       ),
     );
   }

@@ -21,7 +21,7 @@ describe('GRPC transport', () => {
       transport: Transport.GRPC,
       options: {
         package: 'math',
-        protoPath: join(__dirname, './../src/grpc/math.proto'),
+        protoPath: join(__dirname, '../src/grpc/math.proto'),
       },
     });
     await app.startAllMicroservicesAsync();

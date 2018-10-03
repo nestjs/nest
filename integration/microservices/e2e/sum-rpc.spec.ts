@@ -3,7 +3,7 @@ import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import * as express from 'express';
 import * as request from 'supertest';
-import { ApplicationModule } from './../src/app.module';
+import { ApplicationModule } from '../src/app.module';
 
 describe('RPC transport', () => {
   let server;

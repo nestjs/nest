@@ -58,8 +58,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(pub: MqttClient): any {
-    return async (channel, buffer) =>
-      await this.handleMessage(channel, buffer, pub);
+    return async (channel, buffer) => this.handleMessage(channel, buffer, pub);
   }
 
   public async handleMessage(
