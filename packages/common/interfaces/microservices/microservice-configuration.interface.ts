@@ -1,7 +1,6 @@
 import { Transport } from '../../enums/transport.enum';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
-import { Options } from 'amqplib';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -38,7 +37,7 @@ export interface GrpcOptions {
       oneofs?: boolean;
       json?: boolean;
       includeDirs?: string[];
-    }
+    };
   };
 }
 
@@ -88,6 +87,6 @@ export interface RmqOptions {
     queue?: string;
     prefetchCount?: number;
     isGlobalPrefetchCount?: boolean;
-    queueOptions?: Options.AssertQueue;
+    queueOptions?: any;
   };
 }

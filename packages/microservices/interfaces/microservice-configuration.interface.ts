@@ -1,7 +1,6 @@
 import { MqttClientOptions } from '@nestjs/common/interfaces/external/mqtt-options.interface';
 import { Transport } from '../enums/transport.enum';
 import { Server } from './../server/server';
-import { Options } from 'amqplib';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 
 export type MicroserviceOptions =
@@ -39,7 +38,7 @@ export interface GrpcOptions {
       oneofs?: boolean;
       json?: boolean;
       includeDirs?: string[];
-    }
+    };
   };
 }
 
@@ -89,6 +88,6 @@ export interface RmqOptions {
     queue?: string;
     prefetchCount?: number;
     isGlobalPrefetchCount?: boolean;
-    queueOptions?: Options.AssertQueue;
+    queueOptions?: any;
   };
 }
