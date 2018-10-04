@@ -8,6 +8,7 @@ today! As a contributor, here are the guidelines we would like you to follow:
  - [Issues and Bugs](#issue)
  - [Feature Requests](#feature)
  - [Submission Guidelines](#submit)
+ - [Development Setup](#development)
  - [Coding Rules](#rules)
  - [Commit Message Guidelines](#commit)
  <!-- - [Signing the CLA](#cla) -->
@@ -143,6 +144,41 @@ from the main (upstream) repository:
     ```shell
     git pull --ff upstream master
     ```
+    
+## <a name="development"></a> Development Setup
+
+You will need Node.js version 8.9.0+.
+
+1. After cloning the repo, run:
+```bash
+$ npm i # (or yarn install)
+```
+
+2. In order to prepare your environment run `prepare.sh` shell script:
+```bash
+$ sh scripts/prepare.sh
+```
+
+That will compile fresh packages and afterward, move them to all `sample` directories as well as integration tests.
+
+### Commonly used NPM scripts
+
+```bash
+# build all packages and move to "sample" and "integration" directories
+# if cross-packages breaking changes were performed you may face irrelevant errors
+# in order to verify the build, you can run this command again then
+$ npm run build
+
+# run the full unit tests suite
+$ npm run test
+
+# run integration tests
+# docker is required(!)
+$ sh scripts/run-integration.sh
+
+# run linter
+$ npm run lint
+```
 
 ## <a name="rules"></a> Coding Rules
 To ensure consistency throughout the source code, keep these rules in mind as you are working:
@@ -184,11 +220,7 @@ Samples: (even more [samples](https://github.com/nestjs/nest/commits/master))
 
 ```
 docs(changelog) update change log to beta.5
-```
-```
 bugfix(core) need to depend on latest rxjs and zone.js
-
-The version in our package.json gets copied to the one we publish, and users need the latest of these.
 ```
 
 ### Revert

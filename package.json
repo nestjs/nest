@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "5.3.8",
+  "version": "5.3.10",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
@@ -13,7 +13,7 @@
     "build:lib": "gulp build --dist bundle",
     "postinstall": "opencollective",
     "copy-docs": "gulp copy-docs",
-    "prepare": "npm run build:lib && npm run copy-docs",
+    "prepare:npm": "npm run build:lib && npm run copy-docs",
     "prepare:rc": "npm run build:lib && npm run copy-docs",
     "prepare:next": "npm run build:lib && npm run copy-docs",
     "prepare:beta": "npm run build:lib && npm run copy-docs",
