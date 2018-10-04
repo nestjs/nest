@@ -120,7 +120,7 @@ export class Injector {
 
   public async loadInstance<T>(
     wrapper: InstanceWrapper<T>,
-    collection,
+    collection: Map<string, InstanceWrapper<any>>,
     module: Module,
   ) {
     if (wrapper.isPending) {
@@ -129,19 +129,19 @@ export class Injector {
     const done = this.applyDoneHook(wrapper);
     const { name, inject } = wrapper;
 
-    const targetMetatype = collection.get(name);
-    if (isUndefined(targetMetatype)) {
+    const targetWrapper = collection.get(name);
+    if (isUndefined(targetWrapper)) {
       throw new RuntimeException();
     }
-    if (targetMetatype.isResolved) {
-      return void 0;
+    if (targetWrapper.isResolved) {
+      return undefined;
     }
     await this.resolveConstructorParams<T>(
       wrapper,
       module,
       inject,
       async instances =>
-        this.instantiateClass(instances, wrapper, targetMetatype, done),
+        this.instantiateClass(instances, wrapper, targetWrapper, done),
     );
   }
 
