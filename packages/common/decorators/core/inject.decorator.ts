@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { SELF_DECLARED_DEPS_METADATA } from '../../constants';
 import { isFunction } from '../../utils/shared.utils';
 

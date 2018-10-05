@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { Render } from '../../decorators/http/render.decorator';
 import { RENDER_METADATA } from '../../constants';

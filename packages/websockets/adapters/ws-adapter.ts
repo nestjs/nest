@@ -97,6 +97,7 @@ export class WsAdapter implements WebSocketAdapter {
   }
 
   public bindErrorHandler(server) {
+    server.on(CONNECTION_EVENT, ws => ws.on(ERROR_EVENT, err => this.logger.error(err)));
     server.on(ERROR_EVENT, err => this.logger.error(err));
     return server;
   }

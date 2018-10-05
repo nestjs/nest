@@ -178,7 +178,7 @@ export class Injector {
           if (!isOptional) {
             throw err;
           }
-          return null;
+          return undefined;
         }
       }),
     );
