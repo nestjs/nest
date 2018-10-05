@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { HEADERS_METADATA } from '../../constants';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';
 

@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { UsePipes } from '../../decorators/core/use-pipes.decorator';
 import { PIPES_METADATA } from '../../constants';

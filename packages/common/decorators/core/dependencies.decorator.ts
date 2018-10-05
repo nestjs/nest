@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { PARAMTYPES_METADATA } from '../../constants';
 
 export function flatten(arr: any[]) {

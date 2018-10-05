@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import 'reflect-metadata';
 import { FILTER_CATCH_EXCEPTIONS } from '../../constants';
 import { Catch } from '../../decorators/core/catch.decorator';
 
