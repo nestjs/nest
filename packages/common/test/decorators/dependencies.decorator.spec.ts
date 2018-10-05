@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { Dependencies } from '../../decorators/core/dependencies.decorator';
 import { PARAMTYPES_METADATA } from '../../constants';

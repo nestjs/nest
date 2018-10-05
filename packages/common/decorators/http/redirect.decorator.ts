@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { REDIRECT_METADATA } from '../../constants';
 
 /**

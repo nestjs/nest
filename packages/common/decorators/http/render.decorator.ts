@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { RENDER_METADATA } from '../../constants';
 
 /**

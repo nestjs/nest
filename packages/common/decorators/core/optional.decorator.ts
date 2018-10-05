@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { OPTIONAL_DEPS_METADATA } from '../../constants';
 
 /**
