@@ -1,5 +1,4 @@
 import { Controller } from '@nestjs/common/interfaces';
-import 'reflect-metadata';
 
 export abstract class ContextCreator {
   public abstract createConcreteContext<T extends any[], R extends any[]>(

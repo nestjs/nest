@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { GatewayMetadata } from '../interfaces';
 import {
   PORT_METADATA,

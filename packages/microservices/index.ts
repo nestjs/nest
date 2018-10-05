@@ -4,6 +4,7 @@
  * https://nestjs.com
  * MIT Licensed
  */
+import 'reflect-metadata';
 
 export * from './utils';
 export * from './interfaces';
