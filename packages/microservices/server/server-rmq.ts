@@ -1,7 +1,6 @@
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import * as amqp from 'amqp-connection-manager';
 import { Observable } from 'rxjs';
-import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import {
   CONNECT_EVENT,
   DISCONNECTED_RMQ_MESSAGE,
@@ -12,8 +11,9 @@ import {
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
-} from './../constants';
-import { CustomTransportStrategy, RmqOptions } from './../interfaces';
+} from '../constants';
+import { CustomTransportStrategy, RmqOptions } from '../interfaces';
+import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 let rqmPackage: any = {};
@@ -57,31 +57,33 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     this.server && this.server.close();
   }
 
-  private async start(callback?: () => void) {
-    this.server = amqp.connect(this.urls);
+  public async start(callback?: () => void) {
+    this.server = this.createClient();
     this.server.on(CONNECT_EVENT, _ => {
       this.channel = this.server.createChannel({
         json: false,
-        setup: async channel => {
-          await channel.assertQueue(this.queue, this.queueOptions);
-          await channel.prefetch(
-            this.prefetchCount,
-            this.isGlobalPrefetchCount,
-          );
-          channel.consume(this.queue, msg => this.handleMessage(msg), {
-            noAck: true,
-          });
-          callback();
-        },
+        setup: channel => this.setupChannel(channel, callback),
       });
     });
-
     this.server.on(DISCONNECT_EVENT, err => {
       this.logger.error(DISCONNECTED_RMQ_MESSAGE);
     });
   }
 
-  private async handleMessage(message: any): Promise<void> {
+  public createClient<T = any>(): T {
+    return amqp.connect(this.urls);
+  }
+
+  public async setupChannel(channel: any, callback: Function) {
+    await channel.assertQueue(this.queue, this.queueOptions);
+    await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
+    channel.consume(this.queue, msg => this.handleMessage(msg), {
+      noAck: true,
+    });
+    callback();
+  }
+
+  public async handleMessage(message: any): Promise<void> {
     const { content, properties } = message;
     const packet = JSON.parse(content.toString());
     const pattern = JSON.stringify(packet.pattern);
@@ -98,13 +100,14 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     const response$ = this.transformToObservable(
       await handler(packet.data),
     ) as Observable<any>;
-    response$ &&
-      this.send(response$, data =>
-        this.sendMessage(data, properties.replyTo, properties.correlationId),
-      );
+
+    const publish = data =>
+      this.sendMessage(data, properties.replyTo, properties.correlationId);
+
+    response$ && this.send(response$, publish);
   }
 
-  private sendMessage<T = any>(
+  public sendMessage<T = any>(
     message: T,
     replyTo: any,
     correlationId: string,

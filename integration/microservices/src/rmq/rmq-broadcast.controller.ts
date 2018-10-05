@@ -1,10 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
 import {
-  Client,
-  MessagePattern,
   ClientProxy,
-  Transport,
   ClientProxyFactory,
+  MessagePattern,
+  Transport,
 } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import { scan, take } from 'rxjs/operators';
@@ -15,13 +14,13 @@ export class RMQBroadcastController {
 
   constructor() {
     this.client = ClientProxyFactory.create({
-        transport: Transport.RMQ,
-        options: {
-          urls: [`amqp://admin:admin@localhost`],
-          queue: 'test',
-          queueOptions: { durable: false },
-        },
-      });
+      transport: Transport.RMQ,
+      options: {
+        urls: [`amqp://localhost:5672`],
+        queue: 'test_broadcast',
+        queueOptions: { durable: false },
+      },
+    });
   }
 
   @Get('broadcast')

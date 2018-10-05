@@ -1,12 +1,11 @@
-import { Controller, Get, Post, Body, Query, HttpCode } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
 import {
-  Client,
-  MessagePattern,
   ClientProxy,
-  Transport,
   ClientProxyFactory,
+  MessagePattern,
+  Transport,
 } from '@nestjs/microservices';
-import { Observable, of, from } from 'rxjs';
+import { from, Observable, of } from 'rxjs';
 import { scan } from 'rxjs/operators';
 
 @Controller()
@@ -15,13 +14,13 @@ export class RMQController {
 
   constructor() {
     this.client = ClientProxyFactory.create({
-        transport: Transport.RMQ,
-        options: {
-          urls: [`amqp://admin:admin@localhost`],
-          queue: 'test',
-          queueOptions: { durable: false },
-        },
-      });
+      transport: Transport.RMQ,
+      options: {
+        urls: [`amqp://localhost:5672`],
+        queue: 'test',
+        queueOptions: { durable: false },
+      },
+    });
   }
 
   @Post()

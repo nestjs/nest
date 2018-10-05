@@ -1,8 +1,8 @@
-import * as express from 'express';
-import * as request from 'supertest';
-import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
+import { Test } from '@nestjs/testing';
+import * as express from 'express';
+import * as request from 'supertest';
 import { RMQController } from '../src/rmq/rmq.controller';
 
 describe('RabbimMQ transport', () => {
@@ -17,16 +17,16 @@ describe('RabbimMQ transport', () => {
     server = express();
     app = module.createNestApplication(server);
     app.connectMicroservice({
-        transport: Transport.RMQ,
-        options: {
-          urls: [`amqp://admin:admin@localhost`],
-          queue: 'test',
-          queueOptions: { durable: false },
-        },
+      transport: Transport.RMQ,
+      options: {
+        urls: [`amqp://localhost:5672`],
+        queue: 'test',
+        queueOptions: { durable: false },
+      },
     });
     await app.startAllMicroservicesAsync();
     await app.init();
-});
+  });
 
   it(`/POST`, () => {
     return request(server)
@@ -54,11 +54,16 @@ describe('RabbimMQ transport', () => {
     return request(server)
       .post('/concurrent')
       .send([
-        [1, 2, 3, 4, 5],
-        [6, 7, 8, 9, 10],
-        [11, 12, 13, 14, 15],
-        [16, 17, 18, 19, 20],
-        [21, 22, 23, 24, 25],
+        Array.from({ length: 10 }, (v, k) => k + 1),
+        Array.from({ length: 10 }, (v, k) => k + 11),
+        Array.from({ length: 10 }, (v, k) => k + 21),
+        Array.from({ length: 10 }, (v, k) => k + 31),
+        Array.from({ length: 10 }, (v, k) => k + 41),
+        Array.from({ length: 10 }, (v, k) => k + 51),
+        Array.from({ length: 10 }, (v, k) => k + 61),
+        Array.from({ length: 10 }, (v, k) => k + 71),
+        Array.from({ length: 10 }, (v, k) => k + 81),
+        Array.from({ length: 10 }, (v, k) => k + 91),
       ])
       .expect(200, 'true');
   });

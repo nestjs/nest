@@ -6,7 +6,7 @@ import { ServerMqtt } from './server-mqtt';
 import { ServerNats } from './server-nats';
 import { ServerRedis } from './server-redis';
 import { ServerTCP } from './server-tcp';
-import { ServerRMQ } from './server-rqm';
+import { ServerRMQ } from './server-rmq';
 
 export class ServerFactory {
   public static create(

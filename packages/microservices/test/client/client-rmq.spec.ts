@@ -41,7 +41,7 @@ describe('ClientRQM', () => {
     });
     describe('when is not connected', () => {
       beforeEach(async () => {
-        client['mqttClient'] = null;
+        client['client'] = null;
         await client.connect();
       });
       it('should call "handleError" once', async () => {
@@ -57,6 +57,7 @@ describe('ClientRQM', () => {
     describe('when is connected', () => {
       beforeEach(() => {
         client['client'] = { test: true } as any;
+        client['channel'] = { test: true };
       });
       it('should not call "createClient"', () => {
         expect(createClientStub.called).to.be.false;
@@ -67,6 +68,99 @@ describe('ClientRQM', () => {
       it('should not call "connect$"', () => {
         expect(connect$Stub.called).to.be.false;
       });
+    });
+  });
+
+  describe('createChannel', () => {
+    let createChannelStub: sinon.SinonStub;
+    let setupChannelStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      setupChannelStub = sinon
+        .stub(client, 'setupChannel')
+        .callsFake((_, done) => done());
+      createChannelStub = sinon.stub().callsFake(({ setup }) => setup());
+      client['client'] = { createChannel: createChannelStub };
+    });
+    afterEach(() => {
+      setupChannelStub.restore();
+    });
+    it('should call "createChannel" method of the client instance', async () => {
+      await client.createChannel();
+      expect(createChannelStub.called).to.be.true;
+    });
+    it('should call "setupChannel" method of the client instance', async () => {
+      await client.createChannel();
+      expect(setupChannelStub.called).to.be.true;
+    });
+  });
+
+  describe('consumeChannel', () => {
+    let addSetupStub: sinon.SinonStub;
+    let consumeStub: sinon.SinonStub;
+    const channel: any = {};
+
+    beforeEach(() => {
+      client['responseEmitter'] = new EventEmitter();
+      consumeStub = sinon
+        .stub()
+        .callsFake((_, done) => done({ properties: { correlationId: 1 } }));
+      addSetupStub = sinon.stub().callsFake(fn => fn(channel));
+
+      channel.consume = consumeStub;
+      client['channel'] = { addSetup: addSetupStub };
+    });
+    it('should call "addSetup" method of the channel instance', async () => {
+      await client.consumeChannel();
+      expect(addSetupStub.called).to.be.true;
+    });
+    it('should call "consume" method of the channel instance', async () => {
+      await client.consumeChannel();
+      expect(consumeStub.called).to.be.true;
+    });
+  });
+
+  describe('setupChannel', () => {
+    const queue = 'test';
+    const queueOptions = {};
+    const isGlobalPrefetchCount = true;
+    const prefetchCount = 10;
+
+    let consumeStub: sinon.SinonStub;
+    let channel: any = {};
+
+    beforeEach(() => {
+      client['queue'] = queue;
+      client['queueOptions'] = queueOptions;
+      client['isGlobalPrefetchCount'] = isGlobalPrefetchCount;
+      client['prefetchCount'] = prefetchCount;
+
+      channel = {
+        assertQueue: sinon.spy(() => ({})),
+        prefetch: sinon.spy(),
+      };
+      consumeStub = sinon.stub(client, 'consumeChannel').callsFake(() => null);
+    });
+    afterEach(() => {
+      consumeStub.restore();
+    });
+    it('should call "assertQueue" with queue and queue options', async () => {
+      await client.setupChannel(channel, () => null);
+      expect(channel.assertQueue.calledWith(queue, queueOptions)).to.be.true;
+    });
+    it('should call "prefetch" with prefetchCount and "isGlobalPrefetchCount"', async () => {
+      await client.setupChannel(channel, () => null);
+      expect(channel.prefetch.calledWith(prefetchCount, isGlobalPrefetchCount))
+        .to.be.true;
+    });
+    it('should call "consumeChannel" method', async () => {
+      await client.setupChannel(channel, () => null);
+      expect(consumeStub.called).to.be.true;
+    });
+    it('should call "resolve" function', async () => {
+      const resolve = sinon.spy();
+      await client.setupChannel(channel, resolve);
+      expect(resolve.called).to.be.true;
     });
   });
 
@@ -95,66 +189,116 @@ describe('ClientRQM', () => {
       eventSpy = sinon.spy();
       sendToQueueSpy = sinon.spy();
 
-      (client as any).client = {};
-      (client as any).channel = {
+      client['channel'] = {
         sendToQueue: sendToQueueSpy,
       };
-      (client as any).responseEmitter = new EventEmitter();
-      (client as any).responseEmitter.on('test', eventSpy);
+      client['responseEmitter'] = new EventEmitter();
+      client['responseEmitter'].on(pattern, eventSpy);
     });
 
     afterEach(() => {
       connectSpy.restore();
     });
 
-    it('should send message', () => {
+    it('should send message to a proper queue', () => {
       client['publish'](msg, () => {
         expect(sendToQueueSpy.called).to.be.true;
+        expect(sendToQueueSpy.getCall(0).args[0]).to.be.eql(client['queue']);
+      });
+    });
+
+    it('should send buffer from stringified message', () => {
+      client['publish'](msg, () => {
+        expect(sendToQueueSpy.called).to.be.true;
+        expect(sendToQueueSpy.getCall(1).args[1]).to.be.eql(
+          Buffer.from(JSON.stringify(msg)),
+        );
+      });
+    });
+
+    describe('dispose callback', () => {
+      let unsubscribeSpy: sinon.SinonSpy, subscription;
+
+      beforeEach(async () => {
+        unsubscribeSpy = sinon.spy();
+        client['responseEmitter'] = ({
+          removeListener: unsubscribeSpy,
+          on: sinon.spy(),
+        } as any) as EventEmitter;
+
+        subscription = await client['publish'](msg, sinon.spy());
+        subscription();
+      });
+      it('should unsubscribe', () => {
+        expect(unsubscribeSpy.called).to.be.true;
       });
     });
   });
 
   describe('handleMessage', () => {
-    const msg: any = {};
-    let callbackSpy: sinon.SinonSpy;
-    let deleteQueueSpy: sinon.SinonSpy;
-    let callback = data => {};
+    describe('when error', () => {
+      let callback: sinon.SinonSpy;
 
-    beforeEach(() => {
-      callbackSpy = sinon.spy();
-      deleteQueueSpy = sinon.spy();
-      (client as any).channel = { deleteQueue: deleteQueueSpy };
-      callback = callbackSpy;
+      beforeEach(() => {
+        callback = sinon.spy();
+      });
+      it('should call callback with correct object', () => {
+        const packet = {
+          err: true,
+          response: 'test',
+          isDisposed: false,
+        };
+        client.handleMessage(packet, callback);
+        expect(
+          callback.calledWith({
+            err: packet.err,
+            response: null,
+            isDisposed: true,
+          }),
+        ).to.be.true;
+      });
+    });
+    describe('when disposed', () => {
+      let callback: sinon.SinonSpy;
+
+      beforeEach(() => {
+        callback = sinon.spy();
+      });
+      it('should call callback with correct object', () => {
+        const packet = {
+          response: 'test',
+          isDisposed: true,
+        };
+        client.handleMessage(packet, callback);
+        expect(
+          callback.calledWith({
+            err: undefined,
+            response: null,
+            isDisposed: true,
+          }),
+        ).to.be.true;
+      });
     });
 
-    it('should callback if no error or isDisposed', () => {
-      msg.content = JSON.stringify({
-        err: null,
-        response: 'test',
-        isDisposed: false,
-      });
-      client.handleMessage(msg, callback);
-      expect(callbackSpy.called).to.be.true;
-    });
+    describe('when response', () => {
+      let callback: sinon.SinonSpy;
 
-    it('should callback if error', () => {
-      msg.content = JSON.stringify({
-        err: true,
-        response: 'test',
-        isDisposed: false,
+      beforeEach(() => {
+        callback = sinon.spy();
       });
-      client.handleMessage(msg, callback);
-      expect(callbackSpy.called).to.be.true;
-    });
-
-    it('should callback if isDisposed', () => {
-      msg.content = JSON.stringify({
-        err: null,
-        response: 'test',
-        isDisposed: true,
+      it('should call callback with correct object', () => {
+        const packet = {
+          response: 'test',
+          isDisposed: false,
+        };
+        client.handleMessage(packet, callback);
+        expect(
+          callback.calledWith({
+            err: undefined,
+            response: packet.response,
+          }),
+        ).to.be.true;
       });
-      client.handleMessage(msg, callback);
-      expect(callbackSpy.called).to.be.true;
     });
   });
 

@@ -59,20 +59,18 @@ export class ClientRMQ extends ClientProxy {
     this.client && this.client.close();
   }
 
-  public listen() {
+  public consumeChannel() {
     this.channel.addSetup(channel =>
       channel.consume(
         this.replyQueue,
-        msg => {
-          this.responseEmitter.emit(msg.properties.correlationId, msg);
-        },
+        msg => this.responseEmitter.emit(msg.properties.correlationId, msg),
         { noAck: true },
       ),
     );
   }
 
   public connect(): Promise<any> {
-    if (this.client && this.channel) {
+    if (this.client) {
       return this.connection;
     }
     this.client = this.createClient();
@@ -80,19 +78,18 @@ export class ClientRMQ extends ClientProxy {
 
     const connect$ = this.connect$(this.client);
     this.connection = this.mergeDisconnectEvent(this.client, connect$)
-      .pipe(
-        switchMap(() => {
-          return new Promise(resolve =>
-            this.client.createChannel({
-              json: false,
-              setup: async channel => this.setupChannel(channel, resolve),
-            }),
-          );
-        }),
-        share(),
-      )
+      .pipe(switchMap(() => this.createChannel()), share())
       .toPromise();
     return this.connection;
+  }
+
+  public createChannel(): Promise<void> {
+    return new Promise(resolve => {
+      this.channel = this.client.createChannel({
+        json: false,
+        setup: channel => this.setupChannel(channel, resolve),
+      });
+    });
   }
 
   public createClient<T = any>(): T {
@@ -114,13 +111,14 @@ export class ClientRMQ extends ClientProxy {
   public async setupChannel(channel: any, resolve: Function) {
     await channel.assertQueue(this.queue, this.queueOptions);
     await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
+
     this.replyQueue = (await channel.assertQueue('', {
       exclusive: true,
     })).queue;
 
     this.responseEmitter = new EventEmitter();
     this.responseEmitter.setMaxListeners(0);
-    this.listen();
+    this.consumeChannel();
 
     resolve();
   }
@@ -131,10 +129,9 @@ export class ClientRMQ extends ClientProxy {
   ): Function {
     try {
       const correlationId = randomStringGenerator();
-      const listener = msg => {
-        const { content } = msg;
-        this.handleMessage(content, callback);
-      };
+      const listener = ({ content }) =>
+        this.handleMessage(JSON.parse(content.toString()), callback);
+
       this.responseEmitter.on(correlationId, listener);
       this.channel.sendToQueue(
         this.queue,
