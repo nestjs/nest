@@ -5,7 +5,7 @@ import * as express from 'express';
 import * as request from 'supertest';
 import { RMQController } from '../src/rmq/rmq.controller';
 
-describe('RabbimMQ transport', () => {
+describe('RabbitMQ transport', () => {
   let server;
   let app: INestApplication;
 
