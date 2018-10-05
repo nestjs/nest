@@ -29,7 +29,6 @@ describe('WebSocketsController', () => {
     mockProvider = sinon.mock(provider);
     instance = new WebSocketsController(
       provider,
-      null,
       config,
       sinon.createStubInstance(WsContextCreator),
     );

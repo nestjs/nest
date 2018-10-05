@@ -1,9 +1,9 @@
-import { Subject, ReplaySubject } from 'rxjs';
+import { ReplaySubject, Subject } from 'rxjs';
 import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
 
 export class ObservableSocket {
-  public static create(server): ObservableSocketServer {
-    const init = new ReplaySubject();
+  public static create<T = any>(server: T): ObservableSocketServer<T> {
+    const init = new ReplaySubject<T>();
     init.next(server);
 
     return {

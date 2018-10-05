@@ -1,22 +1,22 @@
-import 'reflect-metadata';
-import iterate from 'iterare';
-import { InstanceWrapper } from '@nestjs/core/injector/container';
-import { NestGateway } from './interfaces/nest-gateway.interface';
-import { SocketsContainer } from './container';
-import { WebSocketsController } from './web-sockets-controller';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { SocketServerProvider } from './socket-server-provider';
-import { GATEWAY_METADATA } from './constants';
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { WsContextCreator } from './context/ws-context-creator';
-import { WsProxy } from './context/ws-proxy';
-import { ExceptionFiltersContext } from './context/exception-filters-context';
+import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
+import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+import { InstanceWrapper } from '@nestjs/core/injector/container';
+import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
-import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
+import iterate from 'iterare';
+import 'reflect-metadata';
+import { GATEWAY_METADATA } from './constants';
+import { SocketsContainer } from './container';
+import { ExceptionFiltersContext } from './context/exception-filters-context';
+import { WsContextCreator } from './context/ws-context-creator';
+import { WsProxy } from './context/ws-proxy';
+import { NestGateway } from './interfaces/nest-gateway.interface';
+import { SocketServerProvider } from './socket-server-provider';
+import { WebSocketsController } from './web-sockets-controller';
 
 export class SocketModule {
   private readonly socketsContainer = new SocketsContainer();
@@ -27,7 +27,6 @@ export class SocketModule {
     this.applicationConfig = config;
     this.webSocketsController = new WebSocketsController(
       new SocketServerProvider(this.socketsContainer, config),
-      container,
       config,
       this.getContextCreator(container),
     );
