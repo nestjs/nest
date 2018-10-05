@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as hash from 'object-hash';
 import { SingleScope } from '../../../common';
 import { ModuleTokenFactory } from '../../injector/module-token-factory';
+import safeStringify from 'fast-safe-stringify';
 
 describe('ModuleTokenFactory', () => {
   let factory: ModuleTokenFactory;
@@ -46,7 +47,7 @@ describe('ModuleTokenFactory', () => {
       expect(token).to.be.deep.eq(
         hash({
           module: Module.name,
-          dynamic: JSON.stringify({
+          dynamic: safeStringify({
             components: [{}],
           }),
           scope: [Module.name],
