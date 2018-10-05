@@ -8,7 +8,7 @@ describe('CacheModule', () => {
       const options = {
         test: 'test',
       };
-      const dynamicModule = CacheModule.register(options as any);
+      const dynamicModule = CacheModule.register(options);
 
       expect(dynamicModule.providers).to.have.length(1);
       expect(dynamicModule.imports).to.be.empty;

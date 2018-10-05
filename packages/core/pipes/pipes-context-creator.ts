@@ -60,7 +60,7 @@ export class PipesContextCreator extends ContextCreator {
     if (!module) {
       return undefined;
     }
-    return module.injectables.get((metatype as any).name);
+    return module.injectables.get(metatype.name);
   }
 
   public getGlobalMetadata<T extends any[]>(): T {

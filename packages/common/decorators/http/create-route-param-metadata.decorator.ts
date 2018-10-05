@@ -63,7 +63,7 @@ export function createParamDecorator(
         index,
         factory,
         paramData,
-        ...((paramPipes as any) as PipeTransform[]),
+        ...(paramPipes as PipeTransform[]),
       ),
       target.constructor,
       key,
