@@ -13,5 +13,6 @@ describe('Injector', () => {
     const dependency = app.get(DependencyService);
 
     expect(app.get(PropertiesService).service).to.be.eql(dependency);
+    expect(app.get(PropertiesService).token).to.be.true;
   });
 });

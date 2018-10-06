@@ -3,5 +3,6 @@ import { DependencyService } from './dependency.service';
 
 @Injectable()
 export class PropertiesService {
-  @Inject(DependencyService) service: DependencyService;
+  @Inject() service: DependencyService;
+  @Inject('token') token: boolean;
 }

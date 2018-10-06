@@ -3,6 +3,13 @@ import { DependencyService } from './dependency.service';
 import { PropertiesService } from './properties.service';
 
 @Module({
-  providers: [DependencyService, PropertiesService],
+  providers: [
+    DependencyService,
+    PropertiesService,
+    {
+      provide: 'token',
+      useValue: true,
+    },
+  ],
 })
 export class PropertiesModule {}
