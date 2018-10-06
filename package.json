@@ -14,7 +14,7 @@
     "format":
       "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
     "build": "gulp build && gulp move",
-    "build:lib": "gulp build --dist bundle",
+    "build:lib": "gulp clean:bundle && gulp build --dist packages",
     "postinstall": "opencollective",
     "copy-docs": "gulp copy-docs",
     "prepare:npm": "npm run build:lib && npm run copy-docs",

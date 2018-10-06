@@ -26,23 +26,19 @@ gulp.task('default', function() {
   });
 });
 
-gulp.task('copy:ts', function() {
-  return gulp.src(['packages/**/*.ts']).pipe(gulp.dest('./bundle'));
-});
-
 gulp.task('copy-docs', function() {
   return gulp
     .src('Readme.md')
-    .pipe(gulp.dest('bundle/common'))
-    .pipe(gulp.dest('bundle/core'))
-    .pipe(gulp.dest('bundle/microservices'))
-    .pipe(gulp.dest('bundle/websockets'))
-    .pipe(gulp.dest('bundle/testing'));
+    .pipe(gulp.dest('packages/common'))
+    .pipe(gulp.dest('packages/core'))
+    .pipe(gulp.dest('packages/microservices'))
+    .pipe(gulp.dest('packages/websockets'))
+    .pipe(gulp.dest('packages/testing'));
 });
 
 gulp.task('clean:bundle', function() {
   return gulp
-    .src(['bundle/**/*.js.map', 'bundle/**/*.ts', '!bundle/**/*.d.ts'], {
+    .src(['packages/**/*.js.map'], {
       read: false,
     })
     .pipe(clean());
@@ -73,10 +69,7 @@ modules.forEach(module => {
 
 gulp.task('common', gulp.series(modules));
 
-gulp.task(
-  'common:dev',
-  gulp.series(modules.map(module => module + ':dev'), 'copy:ts'),
-);
+gulp.task('common:dev', gulp.series(modules.map(module => module + ':dev')));
 
 gulp.task('build', gulp.series('common'));
 
