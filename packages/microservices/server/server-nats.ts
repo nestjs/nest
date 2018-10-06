@@ -40,13 +40,22 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public bindEvents(client: Client) {
-    const registeredPatterns = Object.keys(this.messageHandlers);
-    registeredPatterns.forEach(channel => {
+    const queue = this.getOptionsProp<NatsOptions>(this.options, 'queue');
+    const subscribe = (channel: string) => {
+      if (queue) {
+        return client.subscribe(
+          channel,
+          { queue },
+          this.getMessageHandler(channel, client).bind(this),
+        );
+      }
       client.subscribe(
         channel,
         this.getMessageHandler(channel, client).bind(this),
       );
-    });
+    };
+    const registeredPatterns = Object.keys(this.messageHandlers);
+    registeredPatterns.forEach(channel => subscribe(channel));
   }
 
   public close() {
@@ -64,7 +73,8 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(channel: string, client: Client) {
-    return async (buffer, replyTo: string) => this.handleMessage(channel, buffer, client, replyTo);
+    return async (buffer, replyTo: string) =>
+      this.handleMessage(channel, buffer, client, replyTo);
   }
 
   public async handleMessage(
@@ -88,9 +98,12 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
   public getPublisher(publisher: Client, replyTo: string, id: string) {
     return response =>
-      publisher.publish(replyTo, Object.assign(response, {
-        id,
-      }) as any);
+      publisher.publish(
+        replyTo,
+        Object.assign(response, {
+          id,
+        }),
+      );
   }
 
   public handleError(stream) {

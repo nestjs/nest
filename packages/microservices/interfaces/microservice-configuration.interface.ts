@@ -37,7 +37,7 @@ export interface GrpcOptions {
       oneofs?: boolean;
       json?: boolean;
       includeDirs?: string[];
-    }
+    };
   };
 }
 
@@ -76,6 +76,9 @@ export interface NatsOptions {
     maxReconnectAttempts?: number;
     reconnectTimeWait?: number;
     servers?: string[];
+    reconnect?: boolean;
+    pedantic?: boolean;
     tls?: any;
+    queue?: string;
   };
 }
