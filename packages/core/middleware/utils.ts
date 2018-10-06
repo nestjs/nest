@@ -1,5 +1,6 @@
 import { Type } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
+import * as uuid from 'uuid/v4';
 
 export const filterMiddleware = middleware => {
   return []
@@ -23,8 +24,7 @@ export function isClass(middleware: any) {
   return middleware.toString().substring(0, 5) === 'class';
 }
 
-export function assignToken(this: any, metatype): Type<any> {
-  this.id = this.id || 1;
-  Object.defineProperty(metatype, 'name', { value: ++this.id });
+export function assignToken(metatype): Type<any> {
+  Object.defineProperty(metatype, 'name', { value: uuid() });
   return metatype;
 }
