@@ -4,7 +4,7 @@ import {
   MessagePattern,
   GrpcMethod,
   createMethodMetadata,
-} from '../../utils/pattern.decorator';
+} from '../../decorators/pattern.decorator';
 
 describe('@MessagePattern', () => {
   const pattern = { role: 'test' };
