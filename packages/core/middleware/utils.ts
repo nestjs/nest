@@ -1,5 +1,5 @@
-import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { Type } from '@nestjs/common/interfaces';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 
 export const filterMiddleware = middleware => {
   return []
@@ -9,7 +9,7 @@ export const filterMiddleware = middleware => {
 };
 
 export const mapToClass = middleware => {
-  if (this.isClass(middleware)) {
+  if (isClass(middleware)) {
     return middleware;
   }
   return assignToken(
@@ -19,12 +19,12 @@ export const mapToClass = middleware => {
   );
 };
 
-export const isClass = middleware => {
+export function isClass(middleware: any) {
   return middleware.toString().substring(0, 5) === 'class';
-};
+}
 
-export const assignToken = (metatype): Type<any> => {
+export function assignToken(this: any, metatype): Type<any> {
   this.id = this.id || 1;
   Object.defineProperty(metatype, 'name', { value: ++this.id });
   return metatype;
-};
+}

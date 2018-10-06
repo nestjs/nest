@@ -1,28 +1,8 @@
 {
+  "extends": "./../tsconfig.base.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "removeComments": false,
-    "noLib": false,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "target": "es2017",
-    "sourceMap": false,
-    "allowJs": false,
-    "baseUrl": "../../",
-    "strict": true,
-    "strictNullChecks": false,
-    "outDir": "../../node_modules/@nestjs/websockets"
+    "rootDir": "./",
+    "baseUrl": "./"
   },
-  "include": [
-    "*.ts",
-    "**/*.ts"
-  ],
-  "exclude": [
-    "node_modules/@types/reflect-metadata",
-    "node_modules/reflect-metadata",
-    "./**/*.spec.ts"
-  ]
+  "include": ["*.ts", "**/*.ts"]
 }

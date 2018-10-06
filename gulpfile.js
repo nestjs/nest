@@ -4,6 +4,7 @@ const gulp = require('gulp');
 const ts = require('gulp-typescript');
 const sourcemaps = require('gulp-sourcemaps');
 const clean = require('gulp-clean');
+const deleteEmpty = require('delete-empty');
 
 const packages = {
   common: ts.createProject('packages/common/tsconfig.json'),
@@ -26,9 +27,9 @@ gulp.task('default', function() {
   });
 });
 
-gulp.task('copy-docs', function() {
+gulp.task('copy-misc', function() {
   return gulp
-    .src('Readme.md')
+    .src(['Readme.md', 'LICENSE', '.npmignore'])
     .pipe(gulp.dest('packages/common'))
     .pipe(gulp.dest('packages/core'))
     .pipe(gulp.dest('packages/microservices'))
@@ -36,13 +37,20 @@ gulp.task('copy-docs', function() {
     .pipe(gulp.dest('packages/testing'));
 });
 
-gulp.task('clean:bundle', function() {
+gulp.task('clean:output', function() {
   return gulp
-    .src(['packages/**/*.js.map'], {
+    .src(['packages/**/*.js', 'packages/**/*.d.ts'], {
       read: false,
     })
     .pipe(clean());
 });
+
+gulp.task('clean:dirs', function(done) {
+  deleteEmpty.sync('packages/');
+  done();
+});
+
+gulp.task('clean:bundle', gulp.series('clean:output', 'clean:dirs'));
 
 modules.forEach(module => {
   gulp.task(module, () => {
@@ -67,12 +75,8 @@ modules.forEach(module => {
   });
 });
 
-gulp.task('common', gulp.series(modules));
-
 gulp.task('common:dev', gulp.series(modules.map(module => module + ':dev')));
-
-gulp.task('build', gulp.series('common'));
-
+gulp.task('build', gulp.series(modules));
 gulp.task('build:dev', gulp.series('common:dev'));
 
 function getFolders(dir) {
