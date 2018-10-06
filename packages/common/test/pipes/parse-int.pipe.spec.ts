@@ -12,14 +12,14 @@ describe('ParseIntPipe', () => {
     describe('when validation passes', () => {
       it('should return number', async () => {
         const num = '3';
-        expect(await target.transform(num, {} as any)).to.equal(
+        expect(await target.transform(num, {} as ArgumentMetadata)).to.equal(
           parseInt(num, 10),
         );
       });
     });
     describe('when validation fails', () => {
       it('should throw an error', async () => {
-        return expect(target.transform('123abc', {} as any)).to.be.rejected;
+        return expect(target.transform('123abc', {} as ArgumentMetadata)).to.be.rejected;
       });
     });
   });

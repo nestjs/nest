@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { ROUTE_ARGS_METADATA } from '../../constants';
 import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
 import { PipeTransform } from '../../index';

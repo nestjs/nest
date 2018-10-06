@@ -206,8 +206,8 @@ export class NestApplication extends NestApplicationContext
 
     const applicationConfig = new ApplicationConfig();
     const instance = new NestMicroservice(
-      this.container as any,
-      options as any,
+      this.container,
+      options,
       applicationConfig,
     );
     instance.registerListeners();
