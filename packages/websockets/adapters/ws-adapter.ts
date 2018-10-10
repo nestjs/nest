@@ -14,6 +14,13 @@ import { MessageMappingProperties } from '../gateway-metadata-explorer';
 
 let wsPackage: any = {};
 
+enum READY_STATE {
+    CONNECTING_STATE = 0,
+    OPEN_STATE = 1,
+    CLOSING_STATE = 2,
+    CLOSED_STATE = 3,
+}
+
 export class WsAdapter implements WebSocketAdapter {
   protected readonly logger = new Logger(WsAdapter.name);
   protected readonly httpServer: Server;
@@ -72,7 +79,11 @@ export class WsAdapter implements WebSocketAdapter {
       ),
       takeUntil(close$),
     );
-    source$.subscribe(response => client.send(JSON.stringify(response)));
+    source$.subscribe(response => {
+      if (client.readyState === READY_STATE.OPEN_STATE) {
+          client.send(JSON.stringify(response));
+      }
+    });
   }
 
   public bindMessageHandler(
