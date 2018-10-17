@@ -16,9 +16,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
 
   constructor(private readonly routesMapper: RoutesMapper) {}
 
-  public apply(
-    ...middleware: Array<Type<any> | Function | any>,
-  ): MiddlewareConfigProxy {
+  public apply(...middleware: Array<Type<any> | Function | any>): MiddlewareConfigProxy {
     return new MiddlewareBuilder.ConfigProxy(this, flatten(middleware));
   }
 
@@ -55,9 +53,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
       return this;
     }
 
-    public exclude(
-      ...routes: Array<string | RouteInfo>,
-    ): MiddlewareConfigProxy {
+    public exclude(...routes: Array<string | RouteInfo>): MiddlewareConfigProxy {
       const { routesMapper } = this.builder;
       this.excludedRoutes = this.mapRoutesToFlatList(
         routes.map(route => routesMapper.mapRouteToRouteInfo(route)),
@@ -65,9 +61,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
       return this;
     }
 
-    public forRoutes(
-      ...routes: Array<string | Type<any> | RouteInfo>,
-    ): MiddlewareConsumer {
+    public forRoutes(...routes: Array<string | Type<any> | RouteInfo>): MiddlewareConsumer {
       const {
         middlewareCollection,
         bindValuesToResolve,
