@@ -116,7 +116,7 @@ describe('RouterExecutionContext', () => {
           });
           it('should apply expected context and arguments to callback', done => {
             proxyContext(request, response, next).then(() => {
-              const args = [next, null, request.body.test];
+              const args = [next, undefined, request.body.test];
               expect(applySpy.called).to.be.true;
               expect(applySpy.calledWith(instance, args)).to.be.true;
               done();
