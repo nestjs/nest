@@ -16,7 +16,7 @@ const packages = {
 const modules = Object.keys(packages);
 const source = 'packages';
 const distId = process.argv.indexOf('--dist');
-const dist = distId < 0 ? 'node_modules/@nestjs' : process.argv[distId + 1];
+const dist = distId < 0 ? source : process.argv[distId + 1];
 
 gulp.task('default', function() {
   modules.forEach(module => {
@@ -30,23 +30,23 @@ gulp.task('default', function() {
 gulp.task('copy-misc', function() {
   return gulp
     .src(['Readme.md', 'LICENSE', '.npmignore'])
-    .pipe(gulp.dest('packages/common'))
-    .pipe(gulp.dest('packages/core'))
-    .pipe(gulp.dest('packages/microservices'))
-    .pipe(gulp.dest('packages/websockets'))
-    .pipe(gulp.dest('packages/testing'));
+    .pipe(gulp.dest(`${source}/common`))
+    .pipe(gulp.dest(`${source}/core`))
+    .pipe(gulp.dest(`${source}/microservices`))
+    .pipe(gulp.dest(`${source}/websockets`))
+    .pipe(gulp.dest(`${source}/testing`));
 });
 
 gulp.task('clean:output', function() {
   return gulp
-    .src(['packages/**/*.js', 'packages/**/*.d.ts'], {
+    .src([`${source}/**/*.js`, `${source}/**/*.d.ts`], {
       read: false,
     })
     .pipe(clean());
 });
 
 gulp.task('clean:dirs', function(done) {
-  deleteEmpty.sync('packages/');
+  deleteEmpty.sync(`${source}/`);
   done();
 });
 
