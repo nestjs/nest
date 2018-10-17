@@ -17,7 +17,7 @@ before_install:
   - npm i -g npm@latest
 install:
   - npm ci
-  - gulp build
+  - npm run build:dev
 script:
   - npm run lint
   - npm test
