@@ -13,6 +13,7 @@ export interface ModuleMetadata {
     | DynamicModule
     | Promise<DynamicModule>
     | string
+    | symbol
     | Provider
     | ForwardReference
   >;
