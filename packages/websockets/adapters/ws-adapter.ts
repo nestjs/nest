@@ -105,11 +105,11 @@ export class WsAdapter implements WebSocketAdapter {
     }
   }
 
-  public close(server) {
-    isFunction(server.close) && server.close();
+  public close(server: any) {
+    server && isFunction(server.close) && server.close();
   }
 
-  public bindErrorHandler(server) {
+  public bindErrorHandler(server: any) {
     server.on(CONNECTION_EVENT, ws =>
       ws.on(ERROR_EVENT, err => this.logger.error(err)),
     );
