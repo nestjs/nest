@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { PATTERN_METADATA, PATTERN_HANDLER_METADATA } from '../constants';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 

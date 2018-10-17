@@ -11,7 +11,6 @@ import {
   isNil,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';

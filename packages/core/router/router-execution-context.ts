@@ -21,7 +21,6 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';

@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { CLIENT_CONFIGURATION_METADATA, CLIENT_METADATA } from '../constants';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
 

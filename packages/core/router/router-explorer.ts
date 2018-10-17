@@ -4,7 +4,6 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';
