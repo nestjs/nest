@@ -133,7 +133,7 @@ export class Injector {
       throw new RuntimeException();
     }
     if (targetMetatype.isResolved) {
-      return void 0;
+      return;
     }
     await this.resolveConstructorParams<T>(
       wrapper,
