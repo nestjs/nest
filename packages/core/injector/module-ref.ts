@@ -45,7 +45,7 @@ export abstract class ModuleRef {
 
   private initFlattenModule() {
     if (this.flattenModuleFixture) {
-      return void 0;
+      return;
     }
     const modules = this.container.getModules();
     const initialValue = {
