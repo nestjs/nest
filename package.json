@@ -13,21 +13,22 @@
       "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
     "format":
       "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
-    "build": "gulp build && gulp move",
-    "build:lib": "gulp build --dist bundle",
+    "clean": "gulp clean:bundle",
+    "build": "npm run clean && gulp build",
+    "build:dev": "gulp build --dist node_modules/@nestjs && gulp move",
     "postinstall": "opencollective",
-    "copy-docs": "gulp copy-docs",
-    "prepare:npm": "npm run build:lib && npm run copy-docs",
+    "copy-misc": "gulp copy-misc",
+    "prepare": "npm run build:dev && npm run copy-misc",
     "publish":
-      "npm run prepare:npm && ./node_modules/.bin/lerna publish --exact -m \"chore(@nestjs) publish %s release\"",
+      "npm run prepare && ./node_modules/.bin/lerna publish --exact -m \"chore(@nestjs) publish %s release\"",
     "publish:rc":
-      "npm run prepare:npm && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
     "publish:next":
-      "npm run prepare:npm && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
     "publish:beta":
-      "npm run prepare:npm && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\"",
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\"",
     "publish:test":
-      "npm run prepare:npm && ./node_modules/.bin/lerna publish --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\""
+      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\""
   },
   "engines": {
     "node": ">= 8.9.0"
@@ -103,6 +104,7 @@
     "conventional-changelog": "^1.1.15",
     "core-js": "^2.4.1",
     "coveralls": "^2.11.16",
+    "delete-empty": "^2.0.0",
     "fastify-static": "^0.8.0",
     "gulp": "^4.0.0",
     "gulp-clang-format": "^1.0.23",

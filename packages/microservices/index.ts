@@ -5,10 +5,10 @@
  * MIT Licensed
  */
 
-export * from './utils';
-export * from './interfaces';
 export * from './client';
+export * from './decorators';
 export * from './enums';
-export * from './server';
 export * from './exceptions';
+export * from './interfaces';
 export * from './nest-microservice';
+export * from './server';

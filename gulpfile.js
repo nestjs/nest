@@ -4,6 +4,7 @@ const gulp = require('gulp');
 const ts = require('gulp-typescript');
 const sourcemaps = require('gulp-sourcemaps');
 const clean = require('gulp-clean');
+const deleteEmpty = require('delete-empty');
 
 const packages = {
   common: ts.createProject('packages/common/tsconfig.json'),
@@ -15,7 +16,7 @@ const packages = {
 const modules = Object.keys(packages);
 const source = 'packages';
 const distId = process.argv.indexOf('--dist');
-const dist = distId < 0 ? 'node_modules/@nestjs' : process.argv[distId + 1];
+const dist = distId < 0 ? source : process.argv[distId + 1];
 
 gulp.task('default', function() {
   modules.forEach(module => {
@@ -26,27 +27,30 @@ gulp.task('default', function() {
   });
 });
 
-gulp.task('copy:ts', function() {
-  return gulp.src(['packages/**/*.ts']).pipe(gulp.dest('./bundle'));
+gulp.task('copy-misc', function() {
+  return gulp
+    .src(['Readme.md', 'LICENSE', '.npmignore'])
+    .pipe(gulp.dest(`${source}/common`))
+    .pipe(gulp.dest(`${source}/core`))
+    .pipe(gulp.dest(`${source}/microservices`))
+    .pipe(gulp.dest(`${source}/websockets`))
+    .pipe(gulp.dest(`${source}/testing`));
 });
 
-gulp.task('copy-docs', function() {
+gulp.task('clean:output', function() {
   return gulp
-    .src('Readme.md')
-    .pipe(gulp.dest('bundle/common'))
-    .pipe(gulp.dest('bundle/core'))
-    .pipe(gulp.dest('bundle/microservices'))
-    .pipe(gulp.dest('bundle/websockets'))
-    .pipe(gulp.dest('bundle/testing'));
-});
-
-gulp.task('clean:bundle', function() {
-  return gulp
-    .src(['bundle/**/*.js.map', 'bundle/**/*.ts', '!bundle/**/*.d.ts'], {
+    .src([`${source}/**/*.js`, `${source}/**/*.d.ts`], {
       read: false,
     })
     .pipe(clean());
 });
+
+gulp.task('clean:dirs', function(done) {
+  deleteEmpty.sync(`${source}/`);
+  done();
+});
+
+gulp.task('clean:bundle', gulp.series('clean:output', 'clean:dirs'));
 
 modules.forEach(module => {
   gulp.task(module, () => {
@@ -71,15 +75,8 @@ modules.forEach(module => {
   });
 });
 
-gulp.task('common', gulp.series(modules));
-
-gulp.task(
-  'common:dev',
-  gulp.series(modules.map(module => module + ':dev'), 'copy:ts'),
-);
-
-gulp.task('build', gulp.series('common'));
-
+gulp.task('common:dev', gulp.series(modules.map(module => module + ':dev')));
+gulp.task('build', gulp.series(modules));
 gulp.task('build:dev', gulp.series('common:dev'));
 
 function getFolders(dir) {
