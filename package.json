@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "5.3.10",
+  "version": "5.3.13",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
@@ -20,15 +20,15 @@
     "copy-misc": "gulp copy-misc",
     "prepare": "npm run build:dev && npm run copy-misc",
     "publish":
-      "npm run prepare && ./node_modules/.bin/lerna publish --exact -m \"chore(@nestjs) publish %s release\"",
+      "npm run build && ./node_modules/.bin/lerna publish --force-publish --exact -m \"chore(@nestjs) publish %s release\"",
     "publish:rc":
-      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
+      "npm run build && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
     "publish:next":
-      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
+      "npm run build && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
     "publish:beta":
-      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\"",
+      "npm run build && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\"",
     "publish:test":
-      "npm run prepare && ./node_modules/.bin/lerna publish --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\""
+      "npm run build && ./node_modules/.bin/lerna publish --force-publish --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\""
   },
   "engines": {
     "node": ">= 8.9.0"
