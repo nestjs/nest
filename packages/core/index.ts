@@ -4,6 +4,7 @@
  * https://nestjs.com
  * MIT Licensed
  */
+import 'reflect-metadata';
 
 export * from './adapters';
 export { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';

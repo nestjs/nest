@@ -3,7 +3,6 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
 import { NestContainer } from '@nestjs/core/injector/container';
-import 'reflect-metadata';
 import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
 
 export class ExceptionFiltersContext extends BaseExceptionFilterContext {

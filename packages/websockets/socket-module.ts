@@ -8,7 +8,6 @@ import { InterceptorsContextCreator } from '@nestjs/core/interceptors/intercepto
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
 import iterate from 'iterare';
-import 'reflect-metadata';
 import { GATEWAY_METADATA } from './constants';
 import { SocketsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';

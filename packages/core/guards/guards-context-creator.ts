@@ -4,7 +4,6 @@ import { Controller } from '@nestjs/common/interfaces';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
 import { isEmpty, isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
-import 'reflect-metadata';
 import { ContextCreator } from '../helpers/context-creator';
 import { NestContainer } from '../injector/container';
 
