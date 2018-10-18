@@ -44,6 +44,8 @@ describe('Shared utils', () => {
     });
     it('should returns false when object is not string', () => {
       expect(isString(false)).to.be.false;
+      expect(isString(null)).to.be.false;
+      expect(isString(undefined)).to.be.false;
     });
   });
   describe('isConstructor', () => {
