@@ -166,7 +166,7 @@ export class ExternalContextCreator {
   }
 
   public getCustomFactory(factory: (...args) => void, data): (...args) => any {
-    return !isUndefined(factory) && isFunction(factory)
+    return isFunction(factory)
       ? (...args) => factory(data, args)
       : () => null;
   }
