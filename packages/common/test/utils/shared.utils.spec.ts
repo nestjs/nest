@@ -59,6 +59,11 @@ describe('Shared utils', () => {
     it('should returns same path', () => {
       expect(validatePath('/nope')).to.be.eql('/nope');
     });
+    it('should returns empty path', () => {
+      expect(validatePath('')).to.be.eql('');
+      expect(validatePath(null)).to.be.eql('');
+      expect(validatePath(undefined)).to.be.eql('');
+    });
   });
   describe('isNil', () => {
     it('should returns true when obj is undefined or null', () => {
