@@ -72,6 +72,7 @@ describe('Shared utils', () => {
     it('should returns true when array is empty or not exists', () => {
       expect(isEmpty([])).to.be.true;
       expect(isEmpty(null)).to.be.true;
+      expect(isEmpty(undefined)).to.be.true;
     });
     it('should returns false when array is not empty', () => {
       expect(isEmpty([1, 2])).to.be.false;

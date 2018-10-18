@@ -29,7 +29,7 @@ export class GuardsContextCreator extends ContextCreator {
   public createConcreteContext<T extends any[], R extends any[]>(
     metadata: T,
   ): R {
-    if (isUndefined(metadata) || isEmpty(metadata)) {
+    if (isEmpty(metadata)) {
       return [] as R;
     }
     return iterate(metadata)
