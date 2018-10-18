@@ -2,7 +2,6 @@ import { RequestMethod } from '@nestjs/common';
 import { PATH_METADATA } from '@nestjs/common/constants';
 import { RouteInfo, Type } from '@nestjs/common/interfaces';
 import { isString, isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { NestContainer } from '../injector/container';
 import { MetadataScanner } from '../metadata-scanner';
 import { RouterExplorer } from '../router/router-explorer';

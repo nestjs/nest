@@ -83,9 +83,9 @@ describe('ContextUtils', () => {
     it('should create N size array filled with null', () => {
       const size = 3;
       expect(contextUtils.createNullArray(size)).to.be.deep.eq([
-        null,
-        null,
-        null,
+        undefined,
+        undefined,
+        undefined,
       ]);
     });
   });
