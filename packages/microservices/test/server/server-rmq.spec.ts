@@ -109,10 +109,10 @@ describe('ServerRMQ', () => {
     let channel: any = {};
 
     beforeEach(() => {
-      server['queue'] = queue;
-      server['queueOptions'] = queueOptions;
-      server['isGlobalPrefetchCount'] = isGlobalPrefetchCount;
-      server['prefetchCount'] = prefetchCount;
+      (server as any)['queue'] = queue;
+      (server as any)['queueOptions'] = queueOptions;
+      (server as any)['isGlobalPrefetchCount'] = isGlobalPrefetchCount;
+      (server as any)['prefetchCount'] = prefetchCount;
 
       channel = {
         assertQueue: sinon.spy(() => ({})),
