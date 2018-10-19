@@ -63,9 +63,9 @@ export class SocketModule {
     );
   }
 
-  public async close(): Promise<any> {
+  public async close(): Promise<void> {
     if (!this.applicationConfig) {
-      return undefined;
+      return;
     }
     const adapter = this.applicationConfig.getIoAdapter();
     const servers = this.socketsContainer.getAllServers();

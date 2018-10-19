@@ -88,15 +88,14 @@ export class NestApplication extends NestApplicationContext
     this.config.setIoAdapter(ioAdapter);
   }
 
-  public applyOptions() {
+  public applyOptions(): void {
     if (!this.appOptions || !this.appOptions.cors) {
-      return undefined;
+      return;
     }
     const isCorsOptionsObj = isObject(this.appOptions.cors);
-    if (!isCorsOptionsObj) {
-      return this.enableCors();
-    }
-    this.enableCors(this.appOptions.cors as CorsOptions);
+    this.enableCors(
+      isCorsOptionsObj ? (this.appOptions.cors as CorsOptions) : {},
+    );
   }
 
   public createServer(): any {
@@ -156,14 +155,14 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public registerParserMiddleware() {
+  public registerParserMiddleware(): void {
     if (this.httpAdapter instanceof FastifyAdapter) {
       return this.httpAdapter.register(
         this.loadPackage('fastify-formbody', 'FastifyAdapter'),
       );
     }
     if (!this.isExpress()) {
-      return undefined;
+      return;
     }
     const parserMiddleware = {
       jsonParser: bodyParser.json(),

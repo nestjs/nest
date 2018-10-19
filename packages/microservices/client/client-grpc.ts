@@ -86,9 +86,9 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
           call.removeAllListeners();
           observer.complete();
         });
-        return () => {
+        return (): void => {
           if (call.finished) {
-            return undefined;
+            return;
           }
           isClientCanceled = true;
           call.cancel();

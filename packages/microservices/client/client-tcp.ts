@@ -57,11 +57,11 @@ export class ClientTCP extends ClientProxy {
     return this.connection;
   }
 
-  public handleResponse(buffer: WritePacket & PacketId) {
+  public handleResponse(buffer: WritePacket & PacketId): void {
     const { err, response, isDisposed, id } = buffer;
     const callback = this.routingMap.get(id);
     if (!callback) {
-      return undefined;
+      return;
     }
     if (isDisposed || err) {
       callback({

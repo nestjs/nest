@@ -44,13 +44,13 @@ export class GuardsContextCreator extends ContextCreator {
     if (isObject) {
       return guard;
     }
-    const instanceWrapper = this.getInstanceByMetatype(guard);
+    const instanceWrapper = this.getInstanceByMetatype(guard as Function);
     return instanceWrapper && instanceWrapper.instance
       ? instanceWrapper.instance
       : null;
   }
 
-  public getInstanceByMetatype(guard): { instance: any } | undefined {
+  public getInstanceByMetatype(guard: Function): { instance: any } | undefined {
     if (!this.moduleContext) {
       return undefined;
     }

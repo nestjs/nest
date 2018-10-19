@@ -62,9 +62,9 @@ export class ClientNats extends ClientProxy {
     packet: ReadPacket & PacketId,
     callback: (packet: WritePacket) => any,
   ): Function {
-    return (message: WritePacket & PacketId) => {
+    return (message: WritePacket & PacketId): void => {
       if (message.id !== packet.id) {
-        return undefined;
+        return;
       }
       const { err, response, isDisposed } = message;
       if (isDisposed || err) {

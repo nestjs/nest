@@ -229,7 +229,7 @@ export class DependenciesScanner {
     component: Type<Injectable>,
     key: string,
     method: string,
-  ) {
+  ): void {
     let prototype = component.prototype;
     do {
       const descriptor = Reflect.getOwnPropertyDescriptor(prototype, method);
@@ -243,7 +243,6 @@ export class DependenciesScanner {
       prototype !== Object.prototype &&
       prototype
     );
-    return undefined;
   }
 
   public async storeRelatedModule(
