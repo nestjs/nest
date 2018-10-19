@@ -13,6 +13,7 @@ import {
   isSymbol,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { ApplicationReferenceHost } from '../helpers/application-ref-host';
@@ -363,6 +364,13 @@ export class Module {
           typeOrToken,
           self,
         );
+      }
+
+      public async create<T = any>(type: Type<T>): Promise<T> {
+        if (!(type && isFunction(type) && type.prototype)) {
+          throw new InvalidClassException(type);
+        }
+        return this.instantiateClass<T>(type, self);
       }
     };
   }

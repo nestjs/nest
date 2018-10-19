@@ -43,6 +43,9 @@ export const INVALID_MODULE_MESSAGE = (text, scope: string) =>
 export const UNKNOWN_EXPORT_MESSAGE = (text, module: string) =>
   `Nest cannot export a component/module that is not a part of the currently processed module (${module}). Please verify whether each exported unit is available in this particular context.`;
 
+export const INVALID_CLASS_MESSAGE = (text, value: any) =>
+  `ModuleRef cannot instantiate class (${value} is not constructable).`;
+
 export const INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuration passed inside the module 'configure()' method.`;
 export const UNKNOWN_REQUEST_MAPPING = `Request mapping properties not defined in the @RequestMapping() annotation!`;
 export const UNHANDLED_RUNTIME_EXCEPTION = `Unhandled Runtime Exception.`;
