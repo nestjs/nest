@@ -50,6 +50,7 @@ export class ClientRMQ extends ClientProxy {
       this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
 
+    loadPackage('amqplib', ClientRMQ.name);
     rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name);
   }
 

@@ -44,6 +44,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
 
+    loadPackage('amqplib', ServerRMQ.name);
     rqmPackage = loadPackage('amqp-connection-manager', ServerRMQ.name);
   }
 
