@@ -13,6 +13,9 @@ export const PATH_METADATA = 'path';
 export const PARAMTYPES_METADATA = 'design:paramtypes';
 export const SELF_DECLARED_DEPS_METADATA = 'self:paramtypes';
 export const OPTIONAL_DEPS_METADATA = 'optional:paramtypes';
+export const PROPERTY_DEPS_METADATA = 'self:properties_metadata';
+export const OPTIONAL_PROPERTY_DEPS_METADATA = 'optional:properties_metadata';
+
 export const METHOD_METADATA = 'method';
 export const ROUTE_ARGS_METADATA = '__routeArguments__';
 export const CUSTOM_ROUTE_AGRS_METADATA = '__customRouteArgs__';
