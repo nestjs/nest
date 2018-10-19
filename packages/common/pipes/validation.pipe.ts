@@ -1,5 +1,5 @@
 import { Optional } from '../decorators';
-import { ArgumentMetadata, BadRequestException } from '../index';
+import { ArgumentMetadata, BadRequestException, Type } from '../index';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { loadPackage } from '../utils/load-package.util';
@@ -16,13 +16,12 @@ let classTransformer: any = {};
 
 @Injectable()
 export class ValidationPipe implements PipeTransform<any> {
-  protected isTransformEnabled: boolean;
-  protected isDetailedOutputDisabled?: boolean;
-  protected validatorOptions: ValidatorOptions;
+  protected readonly isTransformEnabled: boolean;
+  protected readonly isDetailedOutputDisabled?: boolean;
+  protected readonly validatorOptions: ValidatorOptions;
 
   constructor(@Optional() options?: ValidationPipeOptions) {
-    options = options || {};
-    const { transform, disableErrorMessages, ...validatorOptions } = options;
+    const { transform, disableErrorMessages, ...validatorOptions }: ValidationPipeOptions  = options || {};
     this.isTransformEnabled = !!transform;
     this.validatorOptions = validatorOptions;
     this.isDetailedOutputDisabled = disableErrorMessages;
@@ -32,7 +31,7 @@ export class ValidationPipe implements PipeTransform<any> {
     classTransformer = loadPkg('class-transformer');
   }
 
-  public async transform(value, metadata: ArgumentMetadata) {
+  public async transform(value: any, metadata: ArgumentMetadata): Promise<any> {
     const { metatype } = metadata;
     if (!metatype || !this.toValidate(metadata)) {
       return value;
@@ -59,11 +58,11 @@ export class ValidationPipe implements PipeTransform<any> {
     if (type === 'custom') {
       return false;
     }
-    const types = [String, Boolean, Number, Array, Object];
-    return !types.some(t => metatype === t) && !isNil(metatype);
+    const types = [String, Boolean, Number, Array, Object] as ReadonlyArray<Type<any>>;
+    return !types.some((t: Type<any>) => metatype === t);
   }
 
-  toEmptyIfNil<T = any, R = any>(value: T): R | {} {
+  private toEmptyIfNil<T = any, R = any>(value: T): R | {} {
     return isNil(value) ? {} : value;
   }
 }
