@@ -1,7 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import * as amqp from 'amqp-connection-manager';
 import { EventEmitter } from 'events';
 import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
@@ -51,7 +50,7 @@ export class ClientRMQ extends ClientProxy {
       this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
 
-    rqmPackage = loadPackage('amqplib', ClientRMQ.name);
+    rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name);
   }
 
   public close(): void {
@@ -93,7 +92,7 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public createClient<T = any>(): T {
-    return amqp.connect(this.urls) as T;
+    return rqmPackage.connect(this.urls) as T;
   }
 
   public mergeDisconnectEvent<T = any>(

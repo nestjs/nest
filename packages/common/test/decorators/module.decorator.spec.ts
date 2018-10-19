@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { Module } from '../../decorators/modules/module.decorator';
 import { InvalidModuleConfigException } from '../../decorators/modules/exceptions/invalid-module-config.exception';

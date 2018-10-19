@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { EXCEPTION_FILTERS_METADATA } from '../../constants';
 import { ExceptionFilter } from '../../index';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';

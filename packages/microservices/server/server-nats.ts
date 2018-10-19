@@ -57,7 +57,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   public createNatsClient(): Client {
     const options = this.options || ({} as NatsOptions);
     return natsPackage.connect({
-      ...(options as any),
+      ...options,
       url: this.url,
       json: true,
     });

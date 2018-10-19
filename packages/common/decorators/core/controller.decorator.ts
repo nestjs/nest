@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { isUndefined } from '../../utils/shared.utils';
 import { PATH_METADATA } from '../../constants';
 

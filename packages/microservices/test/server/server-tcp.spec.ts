@@ -69,7 +69,7 @@ describe('ServerTCP', () => {
     it('should call handler if exists in handlers object', () => {
       const handler = sinon.spy();
       (server as any).messageHandlers = {
-        [JSON.stringify(msg.pattern)]: handler as any,
+        [msg.pattern]: handler as any,
       };
       server.handleMessage(socket, msg);
       expect(handler.calledOnce).to.be.true;

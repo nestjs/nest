@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { SELF_DECLARED_DEPS_METADATA } from '../../constants';
 import { Inject } from '../../index';

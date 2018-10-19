@@ -1,5 +1,4 @@
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import * as amqp from 'amqp-connection-manager';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
@@ -45,7 +44,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
 
-    rqmPackage = loadPackage('amqplib', ServerRMQ.name);
+    rqmPackage = loadPackage('amqp-connection-manager', ServerRMQ.name);
   }
 
   public async listen(callback: () => void): Promise<void> {
@@ -71,7 +70,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   }
 
   public createClient<T = any>(): T {
-    return amqp.connect(this.urls);
+    return rqmPackage.connect(this.urls);
   }
 
   public async setupChannel(channel: any, callback: Function) {

@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { MergeWithValues } from '../../utils/merge-with-values.util';
 

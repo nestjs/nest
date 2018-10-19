@@ -14,7 +14,7 @@ export class ExceptionsHandler extends BaseExceptionFilter {
 
   public next(exception: Error | HttpException | any, ctx: ArgumentsHost) {
     if (this.invokeCustomFilters(exception, ctx)) {
-      return void 0;
+      return;
     }
     super.catch(exception, ctx);
   }
@@ -29,7 +29,7 @@ export class ExceptionsHandler extends BaseExceptionFilter {
   public invokeCustomFilters(exception, response): boolean {
     if (isEmpty(this.filters)) return false;
 
-    const filter = this.filters.find(({ exceptionMetatypes, func }) => {
+    const filter = this.filters.find(({ exceptionMetatypes }) => {
       const hasMetatype =
         !exceptionMetatypes.length ||
         exceptionMetatypes.some(

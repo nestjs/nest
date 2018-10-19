@@ -11,7 +11,6 @@ import {
   isNil,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
@@ -134,7 +133,7 @@ export class Injector {
       throw new RuntimeException();
     }
     if (targetMetatype.isResolved) {
-      return void 0;
+      return;
     }
     await this.resolveConstructorParams<T>(
       wrapper,
@@ -178,7 +177,7 @@ export class Injector {
           if (!isOptional) {
             throw err;
           }
-          return null;
+          return undefined;
         }
       }),
     );
