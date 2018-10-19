@@ -1,4 +1,5 @@
 import { Type } from '@nestjs/common';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import {
   InjectorDependency,
   InjectorDependencyContext,
@@ -32,14 +33,18 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   unknownDependencyContext: InjectorDependencyContext,
   module: Module,
 ) => {
-  const { index, dependencies } = unknownDependencyContext;
+  const { index, dependencies, key } = unknownDependencyContext;
   let message = `Nest can't resolve dependencies of the ${type}`;
-  message += ` (`;
 
-  const dependenciesName = dependencies.map(getDependencyName);
+  if (isNil(index)) {
+    message += `. Please make sure that the "${key}" property is available in the current context.`;
+    return message;
+  }
+  const dependenciesName = (dependencies || []).map(getDependencyName);
   dependenciesName[index] = '?';
-  message += dependenciesName.join(', ');
 
+  message += ` (`;
+  message += dependenciesName.join(', ');
   message += `). Please make sure that the argument at index [${index}] is available in the ${getModuleName(module)} context.`;
   return message;
 };
@@ -52,6 +57,9 @@ export const INVALID_MODULE_MESSAGE = (text, scope: string) =>
 
 export const UNKNOWN_EXPORT_MESSAGE = (text, module: string) =>
   `Nest cannot export a component/module that is not a part of the currently processed module (${module}). Please verify whether each exported unit is available in this particular context.`;
+
+export const INVALID_CLASS_MESSAGE = (text, value: any) =>
+  `ModuleRef cannot instantiate class (${value} is not constructable).`;
 
 export const INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuration passed inside the module 'configure()' method.`;
 export const UNKNOWN_REQUEST_MAPPING = `Request mapping properties not defined in the @RequestMapping() annotation!`;
