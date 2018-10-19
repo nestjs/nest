@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "5.3.14",
+  "version": "5.3.15",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
@@ -18,8 +18,7 @@
     "prebuild:dev": "rm -rf node_modules/@nestjs",
     "build:dev": "gulp build --dist node_modules/@nestjs && gulp move",
     "postinstall": "opencollective",
-    "prepare": "npm run build:dev && gulp copy-misc",
-    "prerelease": "gulp copy-misc && npm run build:dev",
+    "prerelease": "gulp copy-misc && gulp build --dist node_modules/@nestjs",
     "publish":
       "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --force-publish --exact -m \"chore(@nestjs) publish %s release\"",
     "publish:rc":
