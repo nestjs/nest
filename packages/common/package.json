@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/common",
-  "version": "5.3.14",
+  "version": "5.3.15",
   "description": "Nest - modern, fast, powerful node.js web framework (@common)",
   "author": "Kamil Mysliwiec",
   "repository": {

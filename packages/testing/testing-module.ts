@@ -11,17 +11,13 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
 import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { NestApplication, NestApplicationContext } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
 import { ExpressFactory } from '@nestjs/core/adapters/express-factory';
 import { FastifyAdapter } from '@nestjs/core/adapters/fastify-adapter';
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { MicroservicesPackageNotFoundException } from '@nestjs/core/errors/exceptions/microservices-package-not-found.exception';
 import { NestContainer } from '@nestjs/core/injector/container';
-import * as optional from 'optional';
-
-const { NestMicroservice } =
-  optional('@nestjs/microservices/nest-microservice') || ({} as any);
 
 export class TestingModule extends NestApplicationContext {
   constructor(
@@ -65,9 +61,10 @@ export class TestingModule extends NestApplicationContext {
   public createNestMicroservice(
     options: NestMicroserviceOptions & MicroserviceOptions,
   ): INestMicroservice {
-    if (!NestMicroservice) {
-      throw new MicroservicesPackageNotFoundException();
-    }
+    const { NestMicroservice } = loadPackage(
+      '@nestjs/microservices',
+      'TestingModule',
+    );
     this.applyLogger(options);
     return new NestMicroservice(
       this.container,
