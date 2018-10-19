@@ -336,7 +336,7 @@ export class Injector {
   public async resolveProperties<T>(
     wrapper: InstanceWrapper<T>,
     module: Module,
-    inject: InjectorDependency[],
+    inject?: InjectorDependency[],
   ): Promise<PropertyDependency[]> {
     if (!isNil(inject)) {
       return [];

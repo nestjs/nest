@@ -37,11 +37,20 @@ export abstract class ModuleRef {
     };
     return new Promise<T>(async (resolve, reject) => {
       try {
+        const callback = async instances => {
+          const properties = await this.injector.resolveProperties(
+            wrapper,
+            module,
+          );
+          const instance = new type(...instances);
+          this.injector.applyProperties(instance, properties);
+          resolve(instance);
+        };
         await this.injector.resolveConstructorParams<T>(
           wrapper,
           module,
           undefined,
-          async instances => resolve(new type(...instances)),
+          callback,
         );
       } catch (err) {
         reject(err);
