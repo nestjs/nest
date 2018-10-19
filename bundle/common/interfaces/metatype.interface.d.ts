@@ -1,3 +1,0 @@
-export interface Metatype<T> {
-    new (...args: any[]): T;
-}

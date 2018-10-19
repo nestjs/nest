@@ -11,7 +11,7 @@ export class WsExceptionsHandler extends BaseWsExceptionFilter {
   public handle(exception: Error | WsException | any, host: ArgumentsHost) {
     const client = host.switchToWs().getClient();
     if (this.invokeCustomFilters(exception, host) || !client.emit) {
-      return void 0;
+      return;
     }
     super.catch(exception, host);
   }
@@ -26,7 +26,7 @@ export class WsExceptionsHandler extends BaseWsExceptionFilter {
   public invokeCustomFilters(exception, args: ArgumentsHost): boolean {
     if (isEmpty(this.filters)) return false;
 
-    const filter = this.filters.find(({ exceptionMetatypes, func }) => {
+    const filter = this.filters.find(({ exceptionMetatypes }) => {
       const hasMetatype =
         !exceptionMetatypes.length ||
         exceptionMetatypes.some(

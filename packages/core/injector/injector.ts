@@ -14,7 +14,6 @@ import {
   isObject,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
@@ -151,7 +150,7 @@ export class Injector {
       throw new RuntimeException();
     }
     if (targetWrapper.isResolved) {
-      return undefined;
+      return;
     }
     const callback = async instances => {
       const properties = await this.resolveProperties(wrapper, module, inject);

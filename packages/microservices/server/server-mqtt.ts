@@ -1,4 +1,3 @@
-import { ReadPacket } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
@@ -8,7 +7,7 @@ import {
   NO_PATTERN_MESSAGE,
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
-import { CustomTransportStrategy, PacketId } from '../interfaces';
+import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
 import {
   MicroserviceOptions,
   MqttOptions,
