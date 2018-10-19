@@ -227,7 +227,7 @@ export class Injector {
     module: Module,
   ) {
     if (isUndefined(param)) {
-      throw new UndefinedDependencyException(wrapper.name, dependencyContext);
+      throw new UndefinedDependencyException(wrapper.name, dependencyContext, module);
     }
     const token = this.resolveParamToken(wrapper, param);
     return this.resolveComponentInstance<T>(
@@ -293,7 +293,7 @@ export class Injector {
       dependencyContext.name,
     );
     if (isNil(instanceWrapper)) {
-      throw new UnknownDependenciesException(wrapper.name, dependencyContext);
+      throw new UnknownDependenciesException(wrapper.name, dependencyContext, module);
     }
     return instanceWrapper;
   }

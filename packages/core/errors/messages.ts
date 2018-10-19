@@ -4,19 +4,34 @@ import {
   InjectorDependency,
   InjectorDependencyContext,
 } from '../injector/injector';
+import { Module } from '../injector/module';
+
+// TODO: Replace `any` with `unknown` type when TS 3.0.0 is supported
+/**
+ * Returns the name of an instance
+ * @param instance The instance which should get the name from
+ */
+const getInstanceName = (instance: any) =>
+  (instance && (instance as Type<any>).name);
 
 /**
  * Returns the name of the dependency
  * Tries to get the class name, otherwise the string value
  * (= injection token). As fallback it returns '+'
- * @param dependency The dependency whichs name shoul get displayed
+ * @param dependency The dependency whichs name should get displayed
  */
-const getDependencyName = (dependency: InjectorDependency) =>
-  (dependency && (dependency as Type<any>).name) || dependency || '+';
+const getDependencyName = (dependency: InjectorDependency) => getInstanceName(dependency) || dependency || '+';
+/**
+ * Returns the name of the module
+ * Tries to get the class name. As fallback it returns 'current'.
+ * @param module The module which should get displayed
+ */
+const getModuleName = (module: Module) => (module && getInstanceName(module.metatype)) || 'current';
 
 export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   type: string,
   unknownDependencyContext: InjectorDependencyContext,
+  module: Module,
 ) => {
   const { index, dependencies, key } = unknownDependencyContext;
   let message = `Nest can't resolve dependencies of the ${type}`;
@@ -30,7 +45,7 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
 
   message += ` (`;
   message += dependenciesName.join(', ');
-  message += `). Please make sure that the argument at index [${index}] is available in the current context.`;
+  message += `). Please make sure that the argument at index [${index}] is available in the ${getModuleName(module)} context.`;
   return message;
 };
 

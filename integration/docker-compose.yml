@@ -37,3 +37,10 @@ services:
       - MONGODB_DATABASE="test"
     ports:
       - 27017:27017
+  rabbit:
+    hostname: rabbit
+    image: "rabbitmq:management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    tty: true
