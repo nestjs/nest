@@ -1,3 +1,4 @@
+export * from './abstract.interface';
 export * from './controllers/controller-metadata.interface';
 export * from './controllers/controller.interface';
 export * from './exceptions/exception-filter.interface';
