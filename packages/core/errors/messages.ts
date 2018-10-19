@@ -1,4 +1,5 @@
 import { Type } from '@nestjs/common';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import {
   InjectorDependency,
   InjectorDependencyContext,
@@ -17,14 +18,18 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   type: string,
   unknownDependencyContext: InjectorDependencyContext,
 ) => {
-  const { index, dependencies } = unknownDependencyContext;
+  const { index, dependencies, key } = unknownDependencyContext;
   let message = `Nest can't resolve dependencies of the ${type}`;
-  message += ` (`;
 
-  const dependenciesName = dependencies.map(getDependencyName);
+  if (isNil(index)) {
+    message += `. Please make sure that the "${key}" property is available in the current context.`;
+    return message;
+  }
+  const dependenciesName = (dependencies || []).map(getDependencyName);
   dependenciesName[index] = '?';
-  message += dependenciesName.join(', ');
 
+  message += ` (`;
+  message += dependenciesName.join(', ');
   message += `). Please make sure that the argument at index [${index}] is available in the current context.`;
   return message;
 };

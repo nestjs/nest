@@ -52,7 +52,7 @@ export class BaseExceptionFilterContext extends ContextCreator {
     if (!module) {
       return undefined;
     }
-    return module.injectables.get((filter as any).name);
+    return module.injectables.get(filter.name);
   }
 
   public reflectCatchExceptions(instance: ExceptionFilter): Type<any>[] {

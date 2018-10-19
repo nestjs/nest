@@ -1,6 +1,5 @@
 import { Param } from '@nestjs/common';
 import { expect } from 'chai';
-import 'reflect-metadata';
 import { Body, Query } from '../../decorators';
 import { RequestMethod } from '../../enums/request-method.enum';
 import { All, Delete, Get, Patch, Post, Put } from '../../index';

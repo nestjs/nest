@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { SHARED_MODULE_METADATA } from '../../constants';
 /**
  * Makes the module single-scoped (not singleton).

@@ -1,5 +1,4 @@
 import * as deprecate from 'deprecate';
-import 'reflect-metadata';
 import { METADATA as metadataConstants } from '../../constants';
 import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface';
 import { InvalidModuleConfigException } from './exceptions/invalid-module-config.exception';

@@ -37,7 +37,7 @@ export class NestApplicationContext implements INestApplicationContext {
     const moduleMetatype = this.contextModule.metatype;
     const scope = this.scope.concat(moduleMetatype);
 
-    const token = this.moduleTokenFactory.create(module as any, scope);
+    const token = this.moduleTokenFactory.create(module, scope);
     const selectedModule = modules.get(token);
     if (!selectedModule) {
       throw new UnknownModuleException();

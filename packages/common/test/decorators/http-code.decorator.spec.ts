@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { HttpCode } from '../../decorators/http/http-code.decorator';
 import { HTTP_CODE_METADATA } from '../../constants';
