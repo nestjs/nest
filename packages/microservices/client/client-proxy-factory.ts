@@ -7,6 +7,7 @@ import { ClientNats } from './client-nats';
 import { ClientProxy } from './client-proxy';
 import { ClientRedis } from './client-redis';
 import { ClientTCP } from './client-tcp';
+import { ClientRMQ } from './client-rmq';
 
 export class ClientProxyFactory {
   public static create(clientOptions: ClientOptions): ClientProxy & Closeable {
@@ -20,6 +21,8 @@ export class ClientProxyFactory {
         return new ClientMqtt(options);
       case Transport.GRPC:
         return new ClientGrpcProxy(options);
+      case Transport.RMQ:
+        return new ClientRMQ(options);
       default:
         return new ClientTCP(options);
     }
