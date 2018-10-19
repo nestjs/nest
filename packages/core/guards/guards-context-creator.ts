@@ -50,7 +50,7 @@ export class GuardsContextCreator extends ContextCreator {
       : null;
   }
 
-  public getInstanceByMetatype(guard: Function): { instance: any } | undefined {
+  public getInstanceByMetatype(guard): { instance: any } | undefined {
     if (!this.moduleContext) {
       return undefined;
     }
