@@ -20,11 +20,11 @@ let rqmPackage: any = {};
 export class ServerRMQ extends Server implements CustomTransportStrategy {
   private server: any = null;
   private channel: any = null;
-  private urls: string[];
-  private queue: string;
-  private prefetchCount: number;
-  private queueOptions: any;
-  private isGlobalPrefetchCount: boolean;
+  private readonly urls: string[];
+  private readonly queue: string;
+  private readonly prefetchCount: number;
+  private readonly queueOptions: any;
+  private readonly isGlobalPrefetchCount: boolean;
 
   constructor(private readonly options: MicroserviceOptions) {
     super();
