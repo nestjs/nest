@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/common",
-  "version": "5.3.14",
+  "version": "5.4.0",
   "description": "Nest - modern, fast, powerful node.js web framework (@common)",
   "author": "Kamil Mysliwiec",
   "repository": {
@@ -9,7 +9,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "axios": "0.17.1",
+    "axios": "0.18.0",
     "cli-color": "1.2.0",
     "deprecate": "1.0.0",
     "multer": "1.3.0",

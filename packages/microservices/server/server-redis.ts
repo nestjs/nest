@@ -1,4 +1,3 @@
-import { ReadPacket } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
@@ -12,7 +11,7 @@ import {
   RedisClient,
   RetryStrategyOptions,
 } from '../external/redis.interface';
-import { CustomTransportStrategy, PacketId } from '../interfaces';
+import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
 import {
   MicroserviceOptions,
   RedisOptions,

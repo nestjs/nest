@@ -1,4 +1,4 @@
-import { ModuleMetadata, Type } from '@nestjs/common/interfaces';
+import { ModuleMetadata, Type } from '../../interfaces';
 import { MulterOptions } from '../../interfaces/external/multer-options.interface';
 
 export interface MulterModuleOptions extends MulterOptions {}
@@ -12,7 +12,7 @@ export interface MulterModuleAsyncOptions
   useExisting?: Type<MulterOptionsFactory>;
   useClass?: Type<MulterOptionsFactory>;
   useFactory?: (
-    ...args: any[],
+    ...args: any[]
   ) => Promise<MulterModuleOptions> | MulterModuleOptions;
   inject?: any[];
 }

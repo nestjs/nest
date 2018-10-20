@@ -3,8 +3,9 @@ import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as sinon from 'sinon';
 import { Component } from '../../../common/decorators/core/component.decorator';
+import { Inject } from '../../../common/decorators/core/inject.decorator';
 import { InstanceWrapper, NestContainer } from '../../injector/container';
-import { Injector } from '../../injector/injector';
+import { Injector, PropertyDependency } from '../../injector/injector';
 import { Module } from '../../injector/module';
 chai.use(chaiAsPromised);
 
@@ -24,6 +25,8 @@ describe('Injector', () => {
 
     @Component()
     class MainTest {
+      @Inject() property: DependencyOne;
+
       constructor(public depOne: DependencyOne, public depTwo: DependencyTwo) {}
     }
 
@@ -569,6 +572,29 @@ describe('Injector', () => {
           {} as any,
         );
         expect(result.instance).to.be.true;
+      });
+    });
+  });
+  describe('applyProperties', () => {
+    describe('when instance is not an object', () => {
+      it('should return undefined', () => {
+        expect(injector.applyProperties('test', [])).to.be.undefined;
+      });
+    });
+
+    describe('when instance is an object', () => {
+      it('should apply each not nil property', () => {
+        const properties = [
+          { key: 'one', instance: {} },
+          { key: 'two', instance: null },
+          { key: 'three', instance: true },
+        ];
+        const obj: Record<any, any> = {};
+        injector.applyProperties(obj, properties as PropertyDependency[]);
+
+        expect(obj.one).to.be.eql(properties[0].instance);
+        expect(obj.two).to.be.undefined;
+        expect(obj.three).to.be.eql(properties[2].instance);
       });
     });
   });

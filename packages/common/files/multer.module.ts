@@ -1,4 +1,5 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
+import { Module } from './../decorators';
+import { DynamicModule, Provider } from './../interfaces';
 import { MULTER_MODULE_OPTIONS } from './files.constants';
 import {
   MulterModuleAsyncOptions,
@@ -52,7 +53,8 @@ export class MulterModule {
     }
     return {
       provide: MULTER_MODULE_OPTIONS,
-      useFactory: async (optionsFactory: MulterOptionsFactory) => optionsFactory.createMulterOptions(),
+      useFactory: async (optionsFactory: MulterOptionsFactory) =>
+        optionsFactory.createMulterOptions(),
       inject: [options.useExisting || options.useClass],
     };
   }
