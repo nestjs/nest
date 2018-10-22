@@ -1,65 +1,70 @@
 import { Type } from '@nestjs/common';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
-import { InstanceWrapper, NestContainer } from './container';
+import { NestContainer } from './container';
+import { ContainerScanner } from './container-scanner';
+import { Injector } from './injector';
 import { Module } from './module';
 
 export abstract class ModuleRef {
-  private flattenModuleFixture: Partial<Module>;
+  private readonly injector = new Injector();
+  private readonly containerScanner: ContainerScanner;
 
-  constructor(protected readonly container: NestContainer) {}
+  constructor(protected readonly container: NestContainer) {
+    this.containerScanner = new ContainerScanner(container);
+  }
 
   public abstract get<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | string | symbol,
     options?: { strict: boolean },
   ): TResult;
 
+  public abstract create<T = any>(type: Type<T>): Promise<T>;
+
   protected find<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | string | symbol,
   ): TResult {
-    this.initFlattenModule();
-    return this.findInstanceByPrototypeOrToken<TInput, TResult>(
-      typeOrToken,
-      this.flattenModuleFixture,
-    );
+    return this.containerScanner.find<TInput, TResult>(typeOrToken);
+  }
+
+  protected async instantiateClass<T = any>(
+    type: Type<T>,
+    module: Module,
+  ): Promise<T> {
+    const wrapper = {
+      name: type.name,
+      metatype: type,
+      instance: undefined,
+      isResolved: false,
+    };
+    return new Promise<T>(async (resolve, reject) => {
+      try {
+        const callback = async instances => {
+          const properties = await this.injector.resolveProperties(
+            wrapper,
+            module,
+          );
+          const instance = new type(...instances);
+          this.injector.applyProperties(instance, properties);
+          resolve(instance);
+        };
+        await this.injector.resolveConstructorParams<T>(
+          wrapper,
+          module,
+          undefined,
+          callback,
+        );
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
   protected findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
     metatypeOrToken: Type<TInput> | string | symbol,
     contextModule: Partial<Module>,
   ): TResult {
-    const dependencies = new Map([
-      ...contextModule.components,
-      ...contextModule.routes,
-      ...contextModule.injectables,
-    ]);
-    const name = isFunction(metatypeOrToken)
-      ? (metatypeOrToken as any).name
-      : metatypeOrToken;
-    const instanceWrapper = dependencies.get(name);
-    if (!instanceWrapper) {
-      throw new UnknownElementException();
-    }
-    return (instanceWrapper as InstanceWrapper<any>).instance;
-  }
-
-  private initFlattenModule() {
-    if (this.flattenModuleFixture) {
-      return;
-    }
-    const modules = this.container.getModules();
-    const initialValue = {
-      components: [],
-      routes: [],
-      injectables: [],
-    };
-    this.flattenModuleFixture = [...modules.values()].reduce(
-      (flatten, curr) => ({
-        components: [...flatten.components, ...curr.components],
-        routes: [...flatten.routes, ...curr.routes],
-        injectables: [...flatten.injectables, ...curr.injectables],
-      }),
-      initialValue,
-    ) as any;
+    return this.containerScanner.findInstanceByPrototypeOrToken<
+      TInput,
+      TResult
+    >(metatypeOrToken, contextModule);
   }
 }

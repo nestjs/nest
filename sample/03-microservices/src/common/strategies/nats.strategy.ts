@@ -18,7 +18,7 @@ export class NatsStrategy extends ServerNats {
     handlers.forEach(({ key, value }) =>
       client.subscribe(
         value.pattern,
-        value.queue,
+        { queue: value.queue },
         this.getMessageHandler(key, client).bind(this),
       ),
     );
