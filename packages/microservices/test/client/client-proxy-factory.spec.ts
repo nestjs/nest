@@ -6,6 +6,7 @@ import { ClientRedis } from '../../client/client-redis';
 import { ClientNats } from '../../client/client-nats';
 import { ClientMqtt } from '../../client/client-mqtt';
 import { ClientGrpcProxy } from '../../client/client-grpc';
+import { ClientRMQ } from '../../client/client-rmq';
 import { join } from 'path';
 
 describe('ClientProxyFactory', () => {
@@ -39,6 +40,11 @@ describe('ClientProxyFactory', () => {
         },
       });
       expect(proxy instanceof ClientGrpcProxy).to.be.true;
+    });
+
+    it(`should create rmq client`, () => {
+      const proxy = ClientProxyFactory.create({ transport: Transport.RMQ });
+      expect(proxy instanceof ClientRMQ).to.be.true;
     });
   });
 });
