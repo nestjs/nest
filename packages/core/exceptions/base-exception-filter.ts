@@ -27,7 +27,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
           exception.stack,
         );
       }
-      return BaseExceptionFilter.logger.error(exception);
+      return BaseExceptionFilter.logger.error(exception.toString());
     }
     const res = exception.getResponse();
     const message = isObject(res)

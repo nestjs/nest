@@ -1,5 +1,5 @@
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { isNil, isString } from '@nestjs/common/utils/shared.utils';
+import { randomStringGenerator } from '../../common/utils/random-string-generator.util';
+import { isNil, isString } from '../../common/utils/shared.utils';
 import {
   defer,
   fromEvent,

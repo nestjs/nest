@@ -7,11 +7,11 @@ import {
   METADATA,
   PIPES_METADATA,
   ROUTE_ARGS_METADATA,
-} from '@nestjs/common/constants';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { Type } from '@nestjs/common/interfaces/type.interface';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+} from '../common/constants';
+import { Controller } from '../common/interfaces/controllers/controller.interface';
+import { Injectable } from '../common/interfaces/injectable.interface';
+import { Type } from '../common/interfaces/type.interface';
+import { randomStringGenerator } from '../common/utils/random-string-generator.util';
 import {
   isFunction,
   isNil,

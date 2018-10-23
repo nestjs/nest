@@ -1,6 +1,6 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import { Logger } from '../../common/services/logger.service';
+import { loadPackage } from '../../common/utils/load-package.util';
+import { randomStringGenerator } from '../../common/utils/random-string-generator.util';
 import { EventEmitter } from 'events';
 import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
