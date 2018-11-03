@@ -54,7 +54,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 #### Silver Sponsors
 <a href="https://neoteric.eu/"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" /></a> &nbsp;
-  <a href="http://gojob.com"><img src="http://nestjs.com/img/gojob-logo.png" height="95" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="150" /> </a>
+  <a href="http://gojob.com"><img src="http://nestjs.com/img/gojob-logo.png" valign="bottom" height="95" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="150" /> </a>
 
 #### Sponsors
 
