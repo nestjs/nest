@@ -24,7 +24,7 @@ export interface GrpcOptions {
     credentials?: any;
     protoPath: string;
     package: string;
-    protoLoader: string;
+    protoLoader?: string;
     /** @deprecated */
     root?: string;
     loader?: {
