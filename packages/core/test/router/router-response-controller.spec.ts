@@ -1,16 +1,17 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterResponseController } from '../../router/router-response-controller';
+import { of } from 'rxjs';
+import * as sinon from 'sinon';
 import { RequestMethod } from '../../../common';
-import { Observable, of } from 'rxjs';
 import { ExpressAdapter } from '../../adapters/express-adapter';
+import { RouterResponseController } from '../../router/router-response-controller';
 
 describe('RouterResponseController', () => {
+  let adapter: ExpressAdapter;
   let routerResponseController: RouterResponseController;
-  let handlerMock: sinon.SinonMock;
 
   beforeEach(() => {
-    routerResponseController = new RouterResponseController(new ExpressAdapter({}));
+    adapter = new ExpressAdapter({});
+    routerResponseController = new RouterResponseController(adapter);
   });
 
   describe('apply', () => {
@@ -67,9 +68,7 @@ describe('RouterResponseController', () => {
         it('should returns Promise', async () => {
           const value = 100;
           expect(
-            await routerResponseController.transformToResult(
-              of(value),
-            ),
+            await routerResponseController.transformToResult(of(value)),
           ).to.be.eq(100);
         });
       });
@@ -111,6 +110,24 @@ describe('RouterResponseController', () => {
 
       await routerResponseController.render(result, response, template);
       expect(response.render.calledWith(template, value)).to.be.true;
+    });
+  });
+
+  describe('setHeaders', () => {
+    let setHeaderStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      setHeaderStub = sinon.stub(adapter, 'setHeader').callsFake(() => ({}));
+    });
+
+    it('should set all custom headers', () => {
+      const response = {};
+      const headers = [{ name: 'test', value: 'test_value' }];
+
+      routerResponseController.setHeaders(response, headers);
+      expect(
+        setHeaderStub.calledWith(response, headers[0].name, headers[0].value),
+      ).to.be.true;
     });
   });
 });
