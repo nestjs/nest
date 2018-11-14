@@ -111,12 +111,31 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public createStreamServiceMethod(methodHandler): Function {
     return async (call, callback) => {
-      const handler = methodHandler(call.request, call.metadata);
-      const result$ = this.transformToObservable(await handler);
-      await result$
-        .pipe(takeUntil(fromEvent(call, CANCEL_EVENT)))
-        .forEach(data => call.write(data));
-      call.end();
+      // Define handler container which will be defined by exact flow on return
+      let handler = null;
+      // Check if call request is socket stream, for socket stream we should pass
+      // only socket stream for next execution
+      if (typeof call.request === 'undefined') {
+        handler = methodHandler(call, call.metadata);
+      }
+      // Otherwise call would go in the way of Unary->Stream output
+      else {
+        handler = methodHandler(call.request, call.metadata);
+      }
+      // Receive control from handler
+      const control = await handler;
+      // If control defined as null-reference or some type of non-observable
+      // function, we should not continue on transforming it to the stream.
+      // If control is not an Observable — current flow is considered as
+      // custom flow for GRPC socket connection, and would be maintained accordingly
+      if (control !== null) {
+        // Turns Promise or Observable into Subscribable object
+        const result$ = this.transformToObservable(control);
+        await result$
+          .pipe(takeUntil(fromEvent(call, CANCEL_EVENT)))
+          .forEach(data => call.write(data));
+        call.end();
+      }
     };
   }
 
