@@ -41,6 +41,10 @@
 * 要查看 [指南](https://docs.nestjs.cn), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
 * 要查看 [English指南](https://docs.nestjs.com), 请访问 [docs.nestjs.com](https://docs.nestjs.com). :books:
 
+### 国内交流群
+
+QQ群：489719517
+
 ## 赞助商
 
 Nest是一个MIT许可的开源项目。它的发展得益于赞助商和支持者的支持。如果你想加入他们，请[查看更多](https://opencollective.com/nest)。谢谢！ :heart_eyes:
