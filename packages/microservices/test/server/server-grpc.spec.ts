@@ -1,9 +1,14 @@
+import * as chai from 'chai';
 import { expect } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
 import { join } from 'path';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
 import { ServerGrpc } from '../../server/server-grpc';
+
+// For Eventually to be available for Chai expectations
+chai.use(chaiAsPromised);
 
 describe('ServerGrpc', () => {
   let server: ServerGrpc;
@@ -44,8 +49,8 @@ describe('ServerGrpc', () => {
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', () => {
         sinon.stub(server, 'lookupPackage').callsFake(() => null);
-        expect(server.bindEvents()).to.eventually.throws(
-          InvalidGrpcPackageException,
+        expect(server.bindEvents()).to.eventually.be.rejectedWith(
+          InvalidGrpcPackageException
         );
       });
     });
@@ -143,7 +148,8 @@ describe('ServerGrpc', () => {
   describe('createStreamServiceMethod', () => {
     it('should return function', () => {
       const fn = server.createStreamServiceMethod(sinon.spy());
-      expect(fn).to.be.a('function');
+      // Expect async function (typeof [function] for JS, and [asyncfunction] for chai)
+      expect(fn).to.be.a('asyncfunction');
     });
     describe('on call', () => {
       it('should call native method', async () => {
@@ -189,7 +195,8 @@ describe('ServerGrpc', () => {
   describe('createUnaryServiceMethod', () => {
     it('should return observable', () => {
       const fn = server.createUnaryServiceMethod(sinon.spy());
-      expect(fn).to.be.a('function');
+      // Expect async function (typeof [function] for JS, and [asyncfunction] for chai)
+      expect(fn).to.be.a('asyncfunction');
     });
     describe('on call', () => {
       it('should call native & callback methods', async () => {
