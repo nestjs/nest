@@ -148,8 +148,7 @@ describe('ServerGrpc', () => {
   describe('createStreamServiceMethod', () => {
     it('should return function', () => {
       const fn = server.createStreamServiceMethod(sinon.spy());
-      // Expect async function (typeof [function] for JS, and [asyncfunction] for chai)
-      expect(fn).to.be.a('asyncfunction');
+      expect(fn).to.be.a('function');
     });
     describe('on call', () => {
       it('should call native method', async () => {
@@ -195,8 +194,7 @@ describe('ServerGrpc', () => {
   describe('createUnaryServiceMethod', () => {
     it('should return observable', () => {
       const fn = server.createUnaryServiceMethod(sinon.spy());
-      // Expect async function (typeof [function] for JS, and [asyncfunction] for chai)
-      expect(fn).to.be.a('asyncfunction');
+      expect(fn).to.be.a('function');
     });
     describe('on call', () => {
       it('should call native & callback methods', async () => {
