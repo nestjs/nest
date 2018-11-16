@@ -1,6 +1,8 @@
 import { expect } from 'chai';
-import { MULTER_MODULE_OPTIONS } from '../../files/files.constants';
-import { MulterModule } from '../../files/multer.module';
+import { MULTER_MODULE_OPTIONS } from '../../../files/files.constants';
+import { MulterModule } from '../../../files/multer.module';
+import { Provider, FactoryProvider } from '../../../interfaces';
+import * as sinon from 'sinon';
 
 describe('MulterModule', () => {
   describe('register', () => {
@@ -63,6 +65,19 @@ describe('MulterModule', () => {
         expect(dynamicModule.providers).to.have.length(2);
         expect(dynamicModule.imports).to.be.empty;
         expect(dynamicModule.exports).to.contain(MULTER_MODULE_OPTIONS);
+      });
+      it('provider should call "createMulterOptions"', async () => {
+        const asyncOptions = {
+          useClass: Object,
+        };
+        const dynamicModule = MulterModule.registerAsync(asyncOptions as any);
+        const optionsFactory = {
+          createMulterOptions: sinon.spy(),
+        };
+        await ((dynamicModule.providers[0] as any).useFactory as any)(
+          optionsFactory,
+        );
+        expect(optionsFactory.createMulterOptions.called).to.be.true;
       });
     });
   });
