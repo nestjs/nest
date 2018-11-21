@@ -41,9 +41,12 @@
 * 要查看 [指南](https://docs.nestjs.cn), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
 * 要查看 [English指南](https://docs.nestjs.com), 请访问 [docs.nestjs.com](https://docs.nestjs.com). :books:
 
-### 国内交流群
+### 国内开发者交流群
 
 QQ群：489719517
+
+> 注意：这个交流群不是 NestJS 官方支持和维护的，只是为了方便国内开发者交流而建立的。  
+> （Note: This channel is not officially supported and maintained by the NestJS org members.）
 
 ## 赞助商
 
