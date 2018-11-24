@@ -39,7 +39,7 @@ export function FileInterceptor(
         this.upload.single(fieldName)(
           ctx.getRequest(),
           ctx.getResponse(),
-          err => {
+          (err: any) => {
             if (err) {
               const error = transformException(err);
               return reject(error);

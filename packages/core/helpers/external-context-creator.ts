@@ -52,7 +52,7 @@ export class ExternalContextCreator {
 
   public create<T extends ParamsMetadata = ParamsMetadata>(
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
     methodName: string,
     metadataKey?: string,
     paramsFactory?: ParamsFactory,
@@ -95,7 +95,7 @@ export class ExternalContextCreator {
       return callback.apply(instance, args);
     };
 
-    return async (...args) => {
+    return async (...args: any[]) => {
       const initialArgs = this.contextUtils.createNullArray(argsLength);
       const canActivate = await this.guardsConsumer.tryActivate(
         guards,
@@ -165,9 +165,12 @@ export class ExternalContextCreator {
     });
   }
 
-  public getCustomFactory(factory: (...args) => void, data): (...args) => any {
+  public getCustomFactory(
+    factory: (...args: any[]) => void,
+    data,
+  ): (...args: any[]) => any {
     return !isUndefined(factory) && isFunction(factory)
-      ? (...args) => factory(data, args)
+      ? (...args: any[]) => factory(data, args)
       : () => null;
   }
 

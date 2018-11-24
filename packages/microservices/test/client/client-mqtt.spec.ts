@@ -269,7 +269,7 @@ describe('ClientMqtt', () => {
       };
       client
         .mergeCloseEvent(instance as any, empty())
-        .subscribe(null, err => expect(err).to.be.eql(error));
+        .subscribe(null, (err: any) => expect(err).to.be.eql(error));
     });
   });
   describe('handleError', () => {

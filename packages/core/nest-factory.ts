@@ -162,7 +162,7 @@ export class NestFactoryStatic {
       if (!(prop in receiver)) return;
 
       if (isFunction(receiver[prop])) {
-        return (...args) => {
+        return (...args: any[]) => {
           let result;
           ExceptionsZone.run(() => {
             result = receiver[prop](...args);

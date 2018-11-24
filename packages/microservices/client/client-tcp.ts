@@ -88,7 +88,7 @@ export class ClientTCP extends ClientProxy {
   public bindEvents(socket: JsonSocket) {
     socket.on(
       ERROR_EVENT,
-      err => err.code !== ECONNREFUSED && this.handleError(err),
+      (err: any) => err.code !== ECONNREFUSED && this.handleError(err),
     );
     socket.on(CLOSE_EVENT, () => this.handleClose());
   }

@@ -43,11 +43,11 @@ export class IoAdapter implements WebSocketAdapter {
     return io(port, options);
   }
 
-  public bindClientConnect(server: any, callback: (...args) => void) {
+  public bindClientConnect(server: any, callback: (...args: any[]) => void) {
     server.on(CONNECTION_EVENT, callback);
   }
 
-  public bindClientDisconnect(client: any, callback: (...args) => void) {
+  public bindClientDisconnect(client: any, callback: (...args: any[]) => void) {
     client.on(DISCONNECT_EVENT, callback);
   }
 
@@ -66,8 +66,8 @@ export class IoAdapter implements WebSocketAdapter {
         mergeMap((payload: any) => {
           const { data, ack } = this.mapPayload(payload);
           return transform(callback(data)).pipe(
-            filter(response => !isNil(response)),
-            map(response => [response, ack]),
+            filter((response: any) => !isNil(response)),
+            map((response: any) => [response, ack]),
           );
         }),
         takeUntil(disconnect$),
@@ -78,7 +78,8 @@ export class IoAdapter implements WebSocketAdapter {
         }
         isFunction(ack) && ack(response);
       };
-      const onError = err => this.baseExceptionFilter.handleError(client, err);
+      const onError = (err: any) =>
+        this.baseExceptionFilter.handleError(client, err);
       source$.subscribe(onMessage as any, onError);
     });
   }

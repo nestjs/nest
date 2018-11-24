@@ -54,7 +54,7 @@ export class ClientNats extends ClientProxy {
   public handleError(client: Client) {
     client.addListener(
       ERROR_EVENT,
-      err => err.code !== CONN_ERR && this.logger.error(err),
+      (err: any) => err.code !== CONN_ERR && this.logger.error(err),
     );
   }
 

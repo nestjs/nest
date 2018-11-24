@@ -59,11 +59,11 @@ export class WsAdapter implements WebSocketAdapter {
         );
   }
 
-  public bindClientConnect(server, callback: (...args) => void) {
+  public bindClientConnect(server, callback: (...args: any[]) => void) {
     server.on(CONNECTION_EVENT, callback);
   }
 
-  public bindClientDisconnect(client, callback: (...args) => void) {
+  public bindClientDisconnect(client, callback: (...args: any[]) => void) {
     client.on(CLOSE_EVENT, callback);
   }
 
@@ -81,13 +81,14 @@ export class WsAdapter implements WebSocketAdapter {
       ),
       takeUntil(close$),
     );
-    const onMessage = response => {
+    const onMessage = (response: any) => {
       if (client.readyState !== READY_STATE.OPEN_STATE) {
         return;
       }
       client.send(JSON.stringify(response));
     };
-    const onError = err => this.baseExceptionFilter.handleError(client, err);
+    const onError = (err: any) =>
+      this.baseExceptionFilter.handleError(client, err);
     source$.subscribe(onMessage, onError);
   }
 
@@ -114,9 +115,9 @@ export class WsAdapter implements WebSocketAdapter {
 
   public bindErrorHandler(server: any) {
     server.on(CONNECTION_EVENT, ws =>
-      ws.on(ERROR_EVENT, err => this.logger.error(err)),
+      ws.on(ERROR_EVENT, (err: any) => this.logger.error(err)),
     );
-    server.on(ERROR_EVENT, err => this.logger.error(err));
+    server.on(ERROR_EVENT, (err: any) => this.logger.error(err));
     return server;
   }
 }

@@ -70,7 +70,7 @@ export abstract class ClientProxy {
     connectEvent = CONNECT_EVENT,
   ): Observable<any> {
     const error$ = fromEvent(instance, errorEvent).pipe(
-      map(err => {
+      map((err: any) => {
         throw err;
       }),
     );

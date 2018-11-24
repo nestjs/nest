@@ -31,7 +31,7 @@ export interface CustomProvider {
 export type OpaqueToken = string | symbol | object | Type<any>;
 export type CustomClass = CustomProvider & { useClass: Type<any> };
 export type CustomFactory = CustomProvider & {
-  useFactory: (...args) => any;
+  useFactory: (...args: any[]) => any;
   inject?: OpaqueToken[];
 };
 export type CustomValue = CustomProvider & { useValue: any };

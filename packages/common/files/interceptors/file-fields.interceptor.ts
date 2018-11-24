@@ -42,7 +42,7 @@ export function FileFieldsInterceptor(
         this.upload.fields(uploadFields)(
           ctx.getRequest(),
           ctx.getResponse(),
-          err => {
+          (err: any) => {
             if (err) {
               const error = transformException(err);
               return reject(error);

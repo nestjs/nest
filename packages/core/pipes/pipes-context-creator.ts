@@ -1,6 +1,14 @@
 import { PIPES_METADATA } from '@nestjs/common/constants';
-import { Controller, PipeTransform, Transform } from '@nestjs/common/interfaces';
-import { isEmpty, isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  Controller,
+  PipeTransform,
+  Transform,
+} from '@nestjs/common/interfaces';
+import {
+  isEmpty,
+  isFunction,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { ApplicationConfig } from '../application-config';
 import { ContextCreator } from '../helpers/context-creator';
@@ -18,7 +26,7 @@ export class PipesContextCreator extends ContextCreator {
 
   public create(
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
     module: string,
   ): Transform<any>[] {
     this.moduleContext = module;

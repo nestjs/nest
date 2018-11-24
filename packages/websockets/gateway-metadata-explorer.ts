@@ -10,7 +10,7 @@ import { NestGateway } from './interfaces/nest-gateway.interface';
 
 export interface MessageMappingProperties {
   message: any;
-  callback: (...args) => Observable<any> | Promise<any> | any;
+  callback: (...args: any[]) => Observable<any> | Promise<any> | any;
 }
 
 export class GatewayMetadataExplorer {
@@ -27,7 +27,7 @@ export class GatewayMetadataExplorer {
   }
 
   public exploreMethodMetadata(
-    instancePrototype,
+    instancePrototype: any,
     methodName: string,
   ): MessageMappingProperties {
     const callback = instancePrototype[methodName];

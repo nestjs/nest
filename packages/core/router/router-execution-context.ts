@@ -62,7 +62,7 @@ export class RouterExecutionContext {
 
   public create(
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
     methodName: string,
     module: string,
     requestMethod: RequestMethod,
@@ -127,7 +127,7 @@ export class RouterExecutionContext {
     };
   }
 
-  public reflectHttpStatusCode(callback: (...args) => any): number {
+  public reflectHttpStatusCode(callback: (...args: any[]) => any): number {
     return Reflect.getMetadata(HTTP_CODE_METADATA, callback);
   }
 
@@ -168,7 +168,10 @@ export class RouterExecutionContext {
     });
   }
 
-  public getCustomFactory(factory: (...args) => void, data): (...args) => any {
+  public getCustomFactory(
+    factory: (...args: any[]) => void,
+    data,
+  ): (...args: any[]) => any {
     return !isUndefined(factory) && isFunction(factory)
       ? (req, res, next) => factory(data, req)
       : () => null;
@@ -197,7 +200,7 @@ export class RouterExecutionContext {
   public createGuardsFn(
     guards: any[],
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
   ): Function | null {
     const canActivateFn = async (args: any[]) => {
       const canActivate = await this.guardsConsumer.tryActivate(

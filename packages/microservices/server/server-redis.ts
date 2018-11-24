@@ -91,7 +91,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getPublisher(pub: RedisClient, pattern: any, id: string) {
-    return response =>
+    return (response: any) =>
       pub.publish(
         this.getResQueueName(pattern),
         JSON.stringify(Object.assign(response, { id })),
@@ -115,7 +115,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public handleError(stream) {
-    stream.on(ERROR_EVENT, err => this.logger.error(err));
+    stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 
   public getClientOptions(): Partial<ClientOpts> {

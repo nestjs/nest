@@ -65,7 +65,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
         setup: channel => this.setupChannel(channel, callback),
       });
     });
-    this.server.on(DISCONNECT_EVENT, err => {
+    this.server.on(DISCONNECT_EVENT, (err: any) => {
       this.logger.error(DISCONNECTED_RMQ_MESSAGE);
     });
   }

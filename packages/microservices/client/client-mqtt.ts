@@ -67,7 +67,7 @@ export class ClientMqtt extends ClientProxy {
     source$: Observable<T>,
   ): Observable<T> {
     const close$ = fromEvent(instance, CLOSE_EVENT).pipe(
-      map(err => {
+      map((err: any) => {
         throw err;
       }),
     );
@@ -81,7 +81,7 @@ export class ClientMqtt extends ClientProxy {
   public handleError(client: MqttClient) {
     client.addListener(
       ERROR_EVENT,
-      err => err.code !== ECONNREFUSED && this.logger.error(err),
+      (err: any) => err.code !== ECONNREFUSED && this.logger.error(err),
     );
   }
 
@@ -118,7 +118,7 @@ export class ClientMqtt extends ClientProxy {
       const pattern = this.normalizePattern(partialPacket.pattern);
       const responseChannel = this.getResPatternName(pattern);
 
-      this.mqttClient.subscribe(responseChannel, err => {
+      this.mqttClient.subscribe(responseChannel, (err: any) => {
         if (err) {
           return;
         }

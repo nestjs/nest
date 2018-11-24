@@ -57,7 +57,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   public createServiceMethod(
     client: any,
     methodName: string,
-  ): (...args) => Observable<any> {
+  ): (...args: any[]) => Observable<any> {
     return client[methodName].responseStream
       ? this.createStreamServiceMethod(client, methodName)
       : this.createUnaryServiceMethod(client, methodName);
@@ -66,8 +66,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   public createStreamServiceMethod(
     client: any,
     methodName: string,
-  ): (...args) => Observable<any> {
-    return (...args) => {
+  ): (...args: any[]) => Observable<any> {
+    return (...args: any[]) => {
       return new Observable(observer => {
         let isClientCanceled = false;
         const call = client[methodName](...args);
@@ -100,8 +100,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   public createUnaryServiceMethod(
     client: any,
     methodName: string,
-  ): (...args) => Observable<any> {
-    return (...args) => {
+  ): (...args: any[]) => Observable<any> {
+    return (...args: any[]) => {
       return new Observable(observer => {
         client[methodName](...args, (error: any, data: any) => {
           if (error) {

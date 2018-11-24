@@ -63,7 +63,8 @@ export class ClientRMQ extends ClientProxy {
     this.channel.addSetup(channel =>
       channel.consume(
         this.replyQueue,
-        msg => this.responseEmitter.emit(msg.properties.correlationId, msg),
+        (msg: any) =>
+          this.responseEmitter.emit(msg.properties.correlationId, msg),
         { noAck: true },
       ),
     );
@@ -101,7 +102,7 @@ export class ClientRMQ extends ClientProxy {
     source$: Observable<T>,
   ): Observable<T> {
     const close$ = fromEvent(instance, DISCONNECT_EVENT).pipe(
-      map(err => {
+      map((err: any) => {
         throw err;
       }),
     );
@@ -166,6 +167,6 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public handleError(client: any): void {
-    client.addListener(ERROR_EVENT, err => this.logger.error(err));
+    client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 }

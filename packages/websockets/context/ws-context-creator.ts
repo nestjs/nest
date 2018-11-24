@@ -25,9 +25,9 @@ export class WsContextCreator {
 
   public create(
     instance: Controller,
-    callback: (...args) => void,
-    module,
-  ): (...args) => Promise<void> {
+    callback: (...args: any[]) => void,
+    module: string,
+  ): (...args: any[]) => Promise<void> {
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
       callback,
@@ -52,7 +52,7 @@ export class WsContextCreator {
       return callback.call(instance, client, result, ...params);
     };
 
-    return this.wsProxy.create(async (...args) => {
+    return this.wsProxy.create(async (...args: any[]) => {
       fnCanActivate && (await fnCanActivate(args));
 
       return this.interceptorsConsumer.intercept(
@@ -67,12 +67,15 @@ export class WsContextCreator {
 
   public reflectCallbackParamtypes(
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
   ): any[] {
     return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
   }
 
-  public getDataMetatype(instance, callback) {
+  public getDataMetatype(
+    instance: Controller,
+    callback: (...args: any[]) => any,
+  ) {
     const paramtypes = this.reflectCallbackParamtypes(instance, callback);
     return paramtypes && paramtypes.length ? paramtypes[1] : null;
   }
@@ -80,7 +83,7 @@ export class WsContextCreator {
   public createGuardsFn(
     guards: any[],
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
   ): Function | null {
     const canActivateFn = async (args: any[]) => {
       const canActivate = await this.guardsConsumer.tryActivate(

@@ -1,24 +1,23 @@
-import { Transform } from '@nestjs/common/interfaces';
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+import { ArgumentMetadata, Transform } from '@nestjs/common/interfaces';
 import { ParamsTokenFactory } from './params-token-factory';
 
 export class PipesConsumer {
   private readonly paramsTokenFactory = new ParamsTokenFactory();
 
-  public async apply(
-    value,
-    { metatype, type, data },
+  public async apply<TInput = any>(
+    value: TInput,
+    { metatype, type, data }: ArgumentMetadata,
     transforms: Transform<any>[],
   ) {
-    const token = this.paramsTokenFactory.exchangeEnumForString(type);
-    return this.applyPipes(
-      value,
-      { metatype, type: token, data },
-      transforms,
+    const token = this.paramsTokenFactory.exchangeEnumForString(
+      (type as any) as RouteParamtypes,
     );
+    return this.applyPipes(value, { metatype, type: token, data }, transforms);
   }
 
-  public async applyPipes(
-    value,
+  public async applyPipes<TInput = any>(
+    value: TInput,
     { metatype, type, data }: { metatype; type?; data? },
     transforms: Transform<any>[],
   ) {

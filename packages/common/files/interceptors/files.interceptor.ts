@@ -40,7 +40,7 @@ export function FilesInterceptor(
         this.upload.array(fieldName, maxCount)(
           ctx.getRequest(),
           ctx.getResponse(),
-          err => {
+          (err: any) => {
             if (err) {
               const error = transformException(err);
               return reject(error);

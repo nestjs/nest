@@ -23,7 +23,7 @@ export class CacheInterceptor implements NestInterceptor {
     @Inject(HTTP_SERVER_REF)
     protected readonly httpServer: HttpServer,
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
-    @Inject(REFLECTOR) protected readonly reflector,
+    @Inject(REFLECTOR) protected readonly reflector: any,
   ) {
     this.isHttpApp = httpServer && !!httpServer.getRequestMethod;
   }
@@ -41,7 +41,9 @@ export class CacheInterceptor implements NestInterceptor {
       if (value) {
         return of(value);
       }
-      return call$.pipe(tap(response => this.cacheManager.set(key, response)));
+      return call$.pipe(
+        tap((response: any) => this.cacheManager.set(key, response)),
+      );
     } catch {
       return call$;
     }

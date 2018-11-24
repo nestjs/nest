@@ -40,13 +40,13 @@ export abstract class Server {
   ): Subscription {
     return stream$
       .pipe(
-        catchError(err => {
+        catchError((err: any) => {
           respond({ err, response: null });
           return empty;
         }),
         finalize(() => respond({ isDisposed: true })),
       )
-      .subscribe(response => respond({ err: null, response }));
+      .subscribe((response: any) => respond({ err: null, response }));
   }
 
   public transformToObservable<T = any>(resultOrDeffered): Observable<T> {
