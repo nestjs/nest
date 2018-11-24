@@ -21,18 +21,18 @@ export class InstanceLoader {
 
   private createPrototypes(modules: Map<string, Module>) {
     modules.forEach(module => {
-      this.createPrototypesOfComponents(module);
+      this.createPrototypesOfProviders(module);
       this.createPrototypesOfInjectables(module);
-      this.createPrototypesOfRoutes(module);
+      this.createPrototypesOfControllers(module);
     });
   }
 
   private async createInstances(modules: Map<string, Module>) {
     await Promise.all(
       [...modules.values()].map(async module => {
-        await this.createInstancesOfComponents(module);
+        await this.createInstancesOfProviders(module);
         await this.createInstancesOfInjectables(module);
-        await this.createInstancesOfRoutes(module);
+        await this.createInstancesOfControllers(module);
 
         const { name } = module.metatype;
         this.logger.log(MODULE_INIT_MESSAGE`${name}`);
@@ -40,33 +40,36 @@ export class InstanceLoader {
     );
   }
 
-  private createPrototypesOfComponents(module: Module) {
-    module.components.forEach(wrapper => {
+  private createPrototypesOfProviders(module: Module) {
+    module.providers.forEach(wrapper => {
       this.injector.loadPrototypeOfInstance<Injectable>(
         wrapper,
-        module.components,
+        module.providers,
       );
     });
   }
 
-  private async createInstancesOfComponents(module: Module) {
+  private async createInstancesOfProviders(module: Module) {
     await Promise.all(
-      [...module.components.values()].map(
-        async wrapper => this.injector.loadInstanceOfComponent(wrapper, module),
+      [...module.providers.values()].map(async wrapper =>
+        this.injector.loadInstanceOfComponent(wrapper, module),
       ),
     );
   }
 
-  private createPrototypesOfRoutes(module: Module) {
-    module.routes.forEach(wrapper => {
-      this.injector.loadPrototypeOfInstance<Controller>(wrapper, module.routes);
+  private createPrototypesOfControllers(module: Module) {
+    module.controllers.forEach(wrapper => {
+      this.injector.loadPrototypeOfInstance<Controller>(
+        wrapper,
+        module.controllers,
+      );
     });
   }
 
-  private async createInstancesOfRoutes(module: Module) {
+  private async createInstancesOfControllers(module: Module) {
     await Promise.all(
-      [...module.routes.values()].map(
-        async wrapper => this.injector.loadInstanceOfRoute(wrapper, module),
+      [...module.controllers.values()].map(async wrapper =>
+        this.injector.loadInstanceOfController(wrapper, module),
       ),
     );
   }
@@ -82,8 +85,8 @@ export class InstanceLoader {
 
   private async createInstancesOfInjectables(module: Module) {
     await Promise.all(
-      [...module.injectables.values()].map(
-        async wrapper => this.injector.loadInstanceOfInjectable(wrapper, module),
+      [...module.injectables.values()].map(async wrapper =>
+        this.injector.loadInstanceOfInjectable(wrapper, module),
       ),
     );
   }

@@ -22,7 +22,7 @@ export class SocketModule {
   private applicationConfig: ApplicationConfig;
   private webSocketsController: WebSocketsController;
 
-  public register(container, config) {
+  public register<TContainer, TConfig>(container: any, config: any) {
     this.applicationConfig = config;
     this.webSocketsController = new WebSocketsController(
       new SocketServerProvider(this.socketsContainer, config),
@@ -30,16 +30,16 @@ export class SocketModule {
       this.getContextCreator(container),
     );
     const modules = container.getModules();
-    modules.forEach(({ components }, moduleName) =>
-      this.hookGatewaysIntoServers(components, moduleName),
+    modules.forEach(({ providers }, moduleName) =>
+      this.hookGatewaysIntoServers(providers, moduleName),
     );
   }
 
   public hookGatewaysIntoServers(
-    components: Map<string, InstanceWrapper<Injectable>>,
+    providers: Map<string, InstanceWrapper<Injectable>>,
     moduleName: string,
   ) {
-    components.forEach(wrapper =>
+    providers.forEach(wrapper =>
       this.hookGatewayIntoServer(wrapper, moduleName),
     );
   }

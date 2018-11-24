@@ -1,6 +1,6 @@
+import { Injectable } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Component } from '../../../common/decorators/core/component.decorator';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
@@ -30,7 +30,7 @@ describe('MiddlewareModule', () => {
     public getAnother() {}
   }
 
-  @Component()
+  @Injectable()
   class TestMiddleware implements NestMiddleware {
     public resolve() {
       return (req, res, next) => {};
@@ -93,7 +93,7 @@ describe('MiddlewareModule', () => {
     });
 
     it('should throw "InvalidMiddlewareException" exception when middleware does not have "resolve" method', () => {
-      @Component()
+      @Injectable()
       class InvalidMiddleware {}
 
       const route = { path: 'Test' };

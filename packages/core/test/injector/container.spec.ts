@@ -20,14 +20,14 @@ describe('NestContainer', () => {
     container = new NestContainer();
   });
 
-  it('should "addComponent" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addComponent({} as any, 'TestModule')).throw(
+  it('should "addProvider" throw "UnknownModuleException" when module is not stored in collection', () => {
+    expect(() => container.addProvider({} as any, 'TestModule')).throw(
       UnknownModuleException,
     );
   });
 
-  it('should "addComponent" throw "CircularDependencyException" when component is nil', () => {
-    expect(() => container.addComponent(null, 'TestModule')).throw(
+  it('should "addProvider" throw "CircularDependencyException" when provider is nil', () => {
+    expect(() => container.addProvider(null, 'TestModule')).throw(
       CircularDependencyException,
     );
   });
@@ -38,8 +38,8 @@ describe('NestContainer', () => {
     );
   });
 
-  it('should "addExportedComponent" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addExportedComponent(null, 'TestModule')).throw(
+  it('should "addExportedProvider" throw "UnknownModuleException" when module is not stored in collection', () => {
+    expect(() => container.addExportedProvider(null, 'TestModule')).throw(
       UnknownModuleException,
     );
   });

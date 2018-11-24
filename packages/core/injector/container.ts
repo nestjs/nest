@@ -27,7 +27,7 @@ export class NestContainer {
   private applicationRef: any;
 
   constructor(
-    private readonly _applicationConfig: ApplicationConfig = void 0,
+    private readonly _applicationConfig: ApplicationConfig = undefined,
   ) {}
 
   get applicationConfig(): ApplicationConfig | undefined {
@@ -120,15 +120,15 @@ export class NestContainer {
     module.addRelatedModule(related);
   }
 
-  public addComponent(component: Type<any>, token: string): string {
-    if (!component) {
+  public addProvider(provider: Type<any>, token: string): string {
+    if (!provider) {
       throw new CircularDependencyException();
     }
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
     const module = this.modules.get(token);
-    return module.addComponent(component);
+    return module.addProvider(provider);
   }
 
   public addInjectable(injectable: Type<any>, token: string) {
@@ -139,12 +139,12 @@ export class NestContainer {
     module.addInjectable(injectable);
   }
 
-  public addExportedComponent(exportedComponent: Type<any>, token: string) {
+  public addExportedProvider(provider: Type<any>, token: string) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
     const module = this.modules.get(token);
-    module.addExportedComponent(exportedComponent);
+    module.addExportedProvider(provider);
   }
 
   public addController(controller: Type<any>, token: string) {
@@ -152,7 +152,7 @@ export class NestContainer {
       throw new UnknownModuleException();
     }
     const module = this.modules.get(token);
-    module.addRoute(controller);
+    module.addController(controller);
   }
 
   public clear() {

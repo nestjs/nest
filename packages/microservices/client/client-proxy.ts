@@ -10,7 +10,7 @@ import {
 } from 'rxjs';
 import { map, mergeMap, take } from 'rxjs/operators';
 import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
-import { InvalidMessageException } from '../exceptions/errors/invalid-message.exception';
+import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
   ClientOptions,
   PacketId,

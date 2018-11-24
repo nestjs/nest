@@ -7,8 +7,10 @@ import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
 import * as io from 'socket.io';
 import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
+import { BaseWsExceptionFilter } from './../exceptions/base-ws-exception-filter';
 
 export class IoAdapter implements WebSocketAdapter {
+  protected readonly baseExceptionFilter = new BaseWsExceptionFilter();
   protected readonly httpServer: Server;
 
   constructor(appOrHttpServer?: INestApplicationContext | Server) {
@@ -70,12 +72,14 @@ export class IoAdapter implements WebSocketAdapter {
         }),
         takeUntil(disconnect$),
       );
-      source$.subscribe(([response, ack]) => {
+      const onMessage = ([response, ack]) => {
         if (response.event) {
           return client.emit(response.event, response.data);
         }
         isFunction(ack) && ack(response);
-      });
+      };
+      const onError = err => this.baseExceptionFilter.handleError(client, err);
+      source$.subscribe(onMessage as any, onError);
     });
   }
 

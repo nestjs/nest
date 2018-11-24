@@ -11,6 +11,7 @@ import { EMPTY as empty, fromEvent, Observable } from 'rxjs';
 import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
 import { CLOSE_EVENT, CONNECTION_EVENT, ERROR_EVENT } from '../constants';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
+import { BaseWsExceptionFilter } from './../exceptions/base-ws-exception-filter';
 
 let wsPackage: any = {};
 
@@ -22,6 +23,7 @@ enum READY_STATE {
 }
 
 export class WsAdapter implements WebSocketAdapter {
+  protected readonly baseExceptionFilter = new BaseWsExceptionFilter();
   protected readonly logger = new Logger(WsAdapter.name);
   protected readonly httpServer: Server;
 
@@ -79,13 +81,14 @@ export class WsAdapter implements WebSocketAdapter {
       ),
       takeUntil(close$),
     );
-    const handleMessage = response => {
+    const onMessage = response => {
       if (client.readyState !== READY_STATE.OPEN_STATE) {
         return;
       }
       client.send(JSON.stringify(response));
     };
-    source$.subscribe(handleMessage);
+    const onError = err => this.baseExceptionFilter.handleError(client, err);
+    source$.subscribe(onMessage, onError);
   }
 
   public bindMessageHandler(

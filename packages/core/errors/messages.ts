@@ -12,7 +12,7 @@ import { Module } from '../injector/module';
  * @param instance The instance which should get the name from
  */
 const getInstanceName = (instance: any) =>
-  (instance && (instance as Type<any>).name);
+  instance && (instance as Type<any>).name;
 
 /**
  * Returns the name of the dependency
@@ -20,13 +20,15 @@ const getInstanceName = (instance: any) =>
  * (= injection token). As fallback it returns '+'
  * @param dependency The dependency whichs name should get displayed
  */
-const getDependencyName = (dependency: InjectorDependency) => getInstanceName(dependency) || dependency || '+';
+const getDependencyName = (dependency: InjectorDependency) =>
+  getInstanceName(dependency) || dependency || '+';
 /**
  * Returns the name of the module
  * Tries to get the class name. As fallback it returns 'current'.
  * @param module The module which should get displayed
  */
-const getModuleName = (module: Module) => (module && getInstanceName(module.metatype)) || 'current';
+const getModuleName = (module: Module) =>
+  (module && getInstanceName(module.metatype)) || 'current';
 
 export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   type: string,
@@ -45,7 +47,9 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
 
   message += ` (`;
   message += dependenciesName.join(', ');
-  message += `). Please make sure that the argument at index [${index}] is available in the ${getModuleName(module)} context.`;
+  message += `). Please make sure that the argument at index [${index}] is available in the ${getModuleName(
+    module,
+  )} context.`;
   return message;
 };
 
@@ -56,7 +60,7 @@ export const INVALID_MODULE_MESSAGE = (text, scope: string) =>
   `Nest cannot create the module instance. Often, this is because of a circular dependency between modules. Use forwardRef() to avoid it. (Read more https://docs.nestjs.com/advanced/circular-dependency.) Scope [${scope}]`;
 
 export const UNKNOWN_EXPORT_MESSAGE = (text, module: string) =>
-  `Nest cannot export a component/module that is not a part of the currently processed module (${module}). Please verify whether each exported unit is available in this particular context.`;
+  `Nest cannot export a provider/module that is not a part of the currently processed module (${module}). Please verify whether each exported unit is available in this particular context.`;
 
 export const INVALID_CLASS_MESSAGE = (text, value: any) =>
   `ModuleRef cannot instantiate class (${value} is not constructable).`;

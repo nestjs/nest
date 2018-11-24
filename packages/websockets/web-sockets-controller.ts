@@ -6,7 +6,7 @@ import { from as fromPromise, Observable, of, Subject } from 'rxjs';
 import { distinctUntilChanged, mergeAll } from 'rxjs/operators';
 import { GATEWAY_OPTIONS, PORT_METADATA } from './constants';
 import { WsContextCreator } from './context/ws-context-creator';
-import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exception';
+import { InvalidSocketPortException } from './errors/invalid-socket-port.exception';
 import {
   GatewayMetadataExplorer,
   MessageMappingProperties,

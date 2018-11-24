@@ -1,10 +1,10 @@
 import { Optional } from '../decorators';
+import { Injectable } from '../decorators/core';
 import { ArgumentMetadata, BadRequestException } from '../index';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { loadPackage } from '../utils/load-package.util';
 import { isNil } from '../utils/shared.utils';
-import { Injectable } from '../decorators/core/component.decorator';
 
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;

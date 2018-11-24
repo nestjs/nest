@@ -1,6 +1,9 @@
 import { HttpServer } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
-import { MiddlewareConfiguration, RouteInfo } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
+import {
+  MiddlewareConfiguration,
+  RouteInfo,
+} from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middleware.interface';
 import { NestModule } from '@nestjs/common/interfaces/modules/nest-module.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -63,13 +66,15 @@ export class MiddlewareModule {
     instance: NestModule,
     module: string,
   ) {
-    if (!instance.configure) return;
-
+    if (!instance.configure) {
+      return;
+    }
     const middlewareBuilder = new MiddlewareBuilder(this.routesMapper);
     instance.configure(middlewareBuilder);
 
-    if (!(middlewareBuilder instanceof MiddlewareBuilder)) return;
-
+    if (!(middlewareBuilder instanceof MiddlewareBuilder)) {
+      return;
+    }
     const config = middlewareBuilder.build();
     middlewareContainer.addConfig(config, module);
   }

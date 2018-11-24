@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { MiddlewareContainer } from '../../middleware/container';
-import { MiddlewareConfiguration } from '../../../common/interfaces/middleware/middleware-configuration.interface';
-import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
-import { Component } from '../../../common/decorators/core/component.decorator';
+import { Injectable } from '../../../common';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
+import { MiddlewareConfiguration } from '../../../common/interfaces/middleware/middleware-configuration.interface';
+import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
+import { MiddlewareContainer } from '../../middleware/container';
 
 describe('MiddlewareContainer', () => {
   @Controller('test')
@@ -17,7 +17,7 @@ describe('MiddlewareContainer', () => {
     public getAnother() {}
   }
 
-  @Component()
+  @Injectable()
   class TestMiddleware implements NestMiddleware {
     public resolve() {
       return (req, res, next) => {};

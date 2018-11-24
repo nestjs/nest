@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { PORT_METADATA } from '../constants';
 import { WsContextCreator } from '../context/ws-context-creator';
-import { InvalidSocketPortException } from '../exceptions/invalid-socket-port.exception';
+import { InvalidSocketPortException } from '../errors/invalid-socket-port.exception';
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
 import { IoAdapter } from '../index';
 import { SocketServerProvider } from '../socket-server-provider';

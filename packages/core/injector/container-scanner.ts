@@ -24,8 +24,8 @@ export class ContainerScanner {
     contextModule: Partial<Module>,
   ): TResult {
     const dependencies = new Map([
-      ...contextModule.components,
-      ...contextModule.routes,
+      ...contextModule.providers,
+      ...contextModule.controllers,
       ...contextModule.injectables,
     ]);
     const name = isFunction(metatypeOrToken)
@@ -44,8 +44,8 @@ export class ContainerScanner {
     }
     const modules = this.container.getModules();
     const initialValue = {
-      components: [],
-      routes: [],
+      providers: [],
+      controllers: [],
       injectables: [],
     };
     const merge = <T = any>(
@@ -55,8 +55,8 @@ export class ContainerScanner {
 
     this.flatContainer = ([...modules.values()].reduce(
       (current, next) => ({
-        components: merge(current.components, next.components),
-        routes: merge(current.routes, next.routes),
+        providers: merge(current.providers, next.providers),
+        controllers: merge(current.controllers, next.controllers),
         injectables: merge(current.injectables, next.injectables),
       }),
       initialValue,

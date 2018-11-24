@@ -67,11 +67,11 @@ export class TestingModuleBuilder {
     return new TestingModule(this.container, [], root, this.applicationConfig);
   }
 
-  private override(typeOrToken, isComponent: boolean): OverrideBy {
+  private override(typeOrToken, isProvider: boolean): OverrideBy {
     const addOverload = options => {
       this.overloadsMap.set(typeOrToken, {
         ...options,
-        isComponent,
+        isProvider,
       });
       return this;
     };

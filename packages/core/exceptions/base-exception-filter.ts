@@ -44,7 +44,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     );
   }
 
-  public isExceptionObject(err): err is Error {
+  public isExceptionObject(err: any): err is Error {
     return isObject(err) && !!(err as Error).message;
   }
 }

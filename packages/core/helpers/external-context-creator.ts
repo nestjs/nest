@@ -123,19 +123,19 @@ export class ExternalContextCreator {
       return '';
     }
     for (const [key, module] of [...this.modulesContainer.entries()]) {
-      if (this.findComponentByClassName(module, className)) {
+      if (this.findProviderByClassName(module, className)) {
         return key;
       }
     }
     return '';
   }
 
-  public findComponentByClassName(module: Module, className: string): boolean {
-    const { components } = module;
-    const hasComponent = [...components.keys()].some(
-      component => component === className,
+  public findProviderByClassName(module: Module, className: string): boolean {
+    const { providers } = module;
+    const hasProvider = [...providers.keys()].some(
+      provider => provider === className,
     );
-    return hasComponent;
+    return hasProvider;
   }
 
   public exchangeKeysForValues<TMetadata = any>(
@@ -211,7 +211,7 @@ export class ExternalContextCreator {
     );
   }
 
-  public async transformToResult(resultOrDeffered) {
+  public async transformToResult(resultOrDeffered: any) {
     if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
       return resultOrDeffered.toPromise();
     }

@@ -1,8 +1,8 @@
 import { fromEvent } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CANCEL_EVENT, GRPC_DEFAULT_URL } from '../constants';
-import { InvalidGrpcPackageException } from '../exceptions/errors/invalid-grpc-package.exception';
-import { InvalidProtoDefinitionException } from '../exceptions/errors/invalid-proto-definition.exception';
+import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
+import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { CustomTransportStrategy } from '../interfaces';
 import {
   GrpcOptions,
