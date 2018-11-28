@@ -1,21 +1,21 @@
 import { ParseIntPipe } from '@nestjs/common';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import { expect } from 'chai';
-import { createRouteParamDecorator } from '../../decorators/http/create-route-param-metadata.decorator';
+import { createParamDecorator } from '../../decorators/http/create-route-param-metadata.decorator';
 
-describe('createRouteParamDecorator', () => {
+describe('createParamDecorator', () => {
   let result;
 
   beforeEach(() => {
     const fn = (data, req) => true;
-    result = createRouteParamDecorator(fn);
+    result = createParamDecorator(fn);
   });
   it('should return a function as a first element', () => {
     expect(result).to.be.a('function');
   });
   describe('returned decorator', () => {
     const factoryFn = (data, req) => true;
-    const Decorator = createRouteParamDecorator(factoryFn);
+    const Decorator = createParamDecorator(factoryFn);
 
     describe('when 0 pipes have been passed', () => {
       const data = { data: 'test' };

@@ -5,7 +5,6 @@ import { NestContainer } from '@nestjs/core/injector/container';
 import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
-import * as deprecate from 'deprecate';
 import { OverrideBy, OverrideByFactoryOptions } from './interfaces';
 import { TestingLogger } from './services/testing-logger.service';
 import { TestingModule } from './testing-module';
@@ -41,14 +40,6 @@ export class TestingModuleBuilder {
 
   public overrideInterceptor<T = any>(typeOrToken: T): OverrideBy {
     return this.override(typeOrToken, false);
-  }
-
-  /** @deprecated */
-  public overrideComponent<T = any>(typeOrToken: T): OverrideBy {
-    deprecate(
-      'The "overrideComponent()" method is deprecated and will be removed within next major release. Use "overrideProvider()" instead.',
-    );
-    return this.override(typeOrToken, true);
   }
 
   public overrideProvider<T = any>(typeOrToken: T): OverrideBy {

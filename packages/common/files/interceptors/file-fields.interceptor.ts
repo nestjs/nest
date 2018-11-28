@@ -1,7 +1,7 @@
 import * as multer from 'multer';
 import { Observable } from 'rxjs';
 import { Inject, Optional } from '../../decorators';
-import { mixin } from '../../decorators/core/component.decorator';
+import { mixin } from '../../decorators/core/injectable.decorator';
 import { ExecutionContext, Type } from '../../interfaces';
 import {
   MulterField,

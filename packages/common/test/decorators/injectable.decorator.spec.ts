@@ -1,22 +1,5 @@
 import { expect } from 'chai';
-import { Component, Injectable, Interceptor, mixin } from '../../index';
-
-describe('@Component', () => {
-  @Component()
-  class TestComponent {
-    constructor(param: number, test: string) {}
-  }
-
-  it('should enhance component with "design:paramtypes" metadata', () => {
-    const constructorParams = Reflect.getMetadata(
-      'design:paramtypes',
-      TestComponent,
-    );
-
-    expect(constructorParams[0]).to.be.eql(Number);
-    expect(constructorParams[1]).to.be.eql(String);
-  });
-});
+import { Injectable, mixin } from '../../index';
 
 describe('@Injectable', () => {
   @Injectable()
@@ -35,25 +18,8 @@ describe('@Injectable', () => {
   });
 });
 
-describe('@Interceptor', () => {
-  @Interceptor()
-  class TestInterceptor {
-    constructor(param: number, test: string) {}
-  }
-
-  it('should enhance component with "design:paramtypes" metadata', () => {
-    const constructorParams = Reflect.getMetadata(
-      'design:paramtypes',
-      TestInterceptor,
-    );
-
-    expect(constructorParams[0]).to.be.eql(Number);
-    expect(constructorParams[1]).to.be.eql(String);
-  });
-});
-
 describe('mixin', () => {
-  @Interceptor()
+  @Injectable()
   class Test {
     constructor(param: number, test: string) {}
   }

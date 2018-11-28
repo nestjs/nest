@@ -8,23 +8,25 @@ import {
 } from '../../interfaces';
 import { CACHE_KEY_METADATA, CACHE_MANAGER } from '../cache.constants';
 
-// NOTE (external)
-// We need to deduplicate them here due to the circular dependency
-// between core and common packages
-const HTTP_SERVER_REF = 'HTTP_SERVER_REF';
+const APPLICATION_REF = 'ApplicationReferenceHost';
 const REFLECTOR = 'Reflector';
 
+export interface ApplicationHost<T extends HttpServer = any> {
+  applicationRef: T;
+}
+
 @Injectable()
-export class CacheInterceptor implements NestInterceptor {
+export class CacheInterceptor<TManager = any> implements NestInterceptor {
   protected readonly isHttpApp: boolean;
 
   constructor(
     @Optional()
-    @Inject(HTTP_SERVER_REF)
-    protected readonly httpServer: HttpServer,
-    @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
+    @Inject(APPLICATION_REF)
+    protected readonly applicationHost: ApplicationHost,
+    @Inject(CACHE_MANAGER) protected readonly cacheManager: TManager,
     @Inject(REFLECTOR) protected readonly reflector: any,
   ) {
+    const httpServer = applicationHost.applicationRef;
     this.isHttpApp = httpServer && !!httpServer.getRequestMethod;
   }
 
@@ -54,9 +56,10 @@ export class CacheInterceptor implements NestInterceptor {
       return this.reflector.get(CACHE_KEY_METADATA, context.getHandler());
     }
     const request = context.getArgByIndex(0);
-    if (this.httpServer.getRequestMethod(request) !== 'GET') {
+    const httpServer = this.applicationHost.applicationRef;
+    if (httpServer.getRequestMethod(request) !== 'GET') {
       return undefined;
     }
-    return this.httpServer.getRequestUrl(request);
+    return httpServer.getRequestUrl(request);
   }
 }

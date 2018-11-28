@@ -1,4 +1,3 @@
-import * as deprecate from 'deprecate';
 import * as uuid from 'uuid/v4';
 import {
   CUSTOM_ROUTE_AGRS_METADATA,
@@ -70,21 +69,4 @@ export function createParamDecorator(
     );
     enhancers.forEach(fn => fn(target, key, index));
   };
-}
-
-/**
- * Defines HTTP route param decorator
- * @deprecated
- * @param factory
- */
-export function createRouteParamDecorator(
-  factory: CustomParamFactory,
-): (
-  data?: any,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
-) => ParameterDecorator {
-  deprecate(
-    'The "createRouteParamDecorator" function is deprecated and will be removed within next major release. Use "createParamDecorator" instead.',
-  );
-  return createParamDecorator(factory);
 }

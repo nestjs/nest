@@ -48,8 +48,8 @@ export class MicroservicesModule {
       throw new RuntimeException();
     }
     const modules = container.getModules();
-    modules.forEach(({ routes }, module) =>
-      this.bindListeners(routes, server, module),
+    modules.forEach(({ controllers }, module) =>
+      this.bindListeners(controllers, server, module),
     );
   }
 
@@ -58,9 +58,9 @@ export class MicroservicesModule {
       throw new RuntimeException();
     }
     const modules = container.getModules();
-    modules.forEach(({ routes, components }) => {
-      this.bindClients(routes);
-      this.bindClients(components);
+    modules.forEach(({ controllers, providers }) => {
+      this.bindClients(controllers);
+      this.bindClients(providers);
     });
   }
 

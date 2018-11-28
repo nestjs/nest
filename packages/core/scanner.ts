@@ -59,11 +59,11 @@ export class DependenciesScanner {
       module = (module as ForwardReference).forwardRef();
     }
     const modules = !this.isDynamicModule(module as Type<any> | DynamicModule)
-      ? this.reflectMetadata(module as Type<any>, METADATA.MODULES)
+      ? this.reflectMetadata(module as Type<any>, METADATA.IMPORTS)
       : [
           ...this.reflectMetadata(
             (module as DynamicModule).module,
-            METADATA.MODULES,
+            METADATA.IMPORTS,
           ),
           ...((module as DynamicModule).imports || []),
         ];
@@ -104,11 +104,7 @@ export class DependenciesScanner {
     context: string,
   ) {
     const modules = [
-      ...this.reflectMetadata(module, METADATA.MODULES),
-      ...this.container.getDynamicMetadataByToken(
-        token,
-        METADATA.MODULES as 'modules',
-      ),
+      ...this.reflectMetadata(module, METADATA.IMPORTS),
       ...this.container.getDynamicMetadataByToken(
         token,
         METADATA.IMPORTS as 'imports',
@@ -121,11 +117,7 @@ export class DependenciesScanner {
 
   public reflectProviders(module: Type<any>, token: string) {
     const providers = [
-      ...this.reflectMetadata(module, METADATA.COMPONENTS),
-      ...this.container.getDynamicMetadataByToken(
-        token,
-        METADATA.COMPONENTS as 'components',
-      ),
+      ...this.reflectMetadata(module, METADATA.PROVIDERS),
       ...this.container.getDynamicMetadataByToken(
         token,
         METADATA.PROVIDERS as 'providers',
@@ -138,16 +130,16 @@ export class DependenciesScanner {
   }
 
   public reflectControllers(module: Type<any>, token: string) {
-    const routes = [
+    const controllers = [
       ...this.reflectMetadata(module, METADATA.CONTROLLERS),
       ...this.container.getDynamicMetadataByToken(
         token,
         METADATA.CONTROLLERS as 'controllers',
       ),
     ];
-    routes.forEach(route => {
-      this.insertController(route, token);
-      this.reflectDynamicMetadata(route, token);
+    controllers.forEach(item => {
+      this.insertController(item, token);
+      this.reflectDynamicMetadata(item, token);
     });
   }
 
