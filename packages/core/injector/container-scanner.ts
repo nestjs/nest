@@ -38,12 +38,12 @@ export class ContainerScanner {
     return (instanceWrapper as InstanceWrapper<any>).instance;
   }
 
-  private initFlatContainer() {
+  private initFlatContainer(): void {
     if (this.flatContainer) {
-      return undefined;
+      return;
     }
     const modules = this.container.getModules();
-    const initialValue = {
+    const initialValue: any = {
       providers: [],
       controllers: [],
       injectables: [],

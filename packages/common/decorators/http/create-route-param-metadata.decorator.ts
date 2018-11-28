@@ -16,7 +16,7 @@ const assignCustomMetadata = (
   index: number,
   factory: CustomParamFactory,
   data?: ParamData,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[],
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ) => ({
   ...args,
   [`${paramtype}${CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
@@ -37,17 +37,17 @@ export function createParamDecorator(
   factory: CustomParamFactory,
   enhancers: ParamDecoratorEnhancer[] = [],
 ): (
-  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | any)[],
+  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | any)[]
 ) => ParameterDecorator {
   const paramtype = uuid();
   return (
     data?,
-    ...pipes: (Type<PipeTransform> | PipeTransform)[],
+    ...pipes: (Type<PipeTransform> | PipeTransform)[]
   ): ParameterDecorator => (target, key, index) => {
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
 
-    const isPipe = pipe =>
+    const isPipe = (pipe: any) =>
       pipe &&
       ((isFunction(pipe) && pipe.prototype) || isFunction(pipe.transform));
 
@@ -81,7 +81,7 @@ export function createRouteParamDecorator(
   factory: CustomParamFactory,
 ): (
   data?: any,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[],
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ) => ParameterDecorator {
   deprecate(
     'The "createRouteParamDecorator" function is deprecated and will be removed within next major release. Use "createParamDecorator" instead.',

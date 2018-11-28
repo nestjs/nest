@@ -72,9 +72,9 @@ export class NestContainer {
     token: string,
     dynamicModuleMetadata: Partial<DynamicModule>,
     scope: Type<any>[],
-  ) {
+  ): void {
     if (!dynamicModuleMetadata) {
-      return undefined;
+      return;
     }
     this.dynamicModulesMetadata.set(token, dynamicModuleMetadata);
 
@@ -85,7 +85,7 @@ export class NestContainer {
 
   public addDynamicModules(modules: any[], scope: Type<any>[]) {
     if (!modules) {
-      return undefined;
+      return;
     }
     modules.forEach(module => this.addModule(module, scope));
   }
@@ -159,7 +159,7 @@ export class NestContainer {
     this.modules.clear();
   }
 
-  public replace(toReplace, options: any & { scope: any[] | null }) {
+  public replace(toReplace: any, options: any & { scope: any[] | null }) {
     [...this.modules.values()].forEach(module => {
       module.replace(toReplace, options);
     });
@@ -177,7 +177,7 @@ export class NestContainer {
 
   public bindGlobalModuleToModule(module: Module, globalModule: Module) {
     if (module === globalModule) {
-      return undefined;
+      return;
     }
     module.addRelatedModule(globalModule);
   }

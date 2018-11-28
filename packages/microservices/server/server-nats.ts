@@ -106,7 +106,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
       );
   }
 
-  public handleError(stream) {
+  public handleError(stream: any) {
     stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 }

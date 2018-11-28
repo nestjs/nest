@@ -7,9 +7,9 @@ import { RouterMethodFactory } from '../helpers/router-method-factory';
 
 export class ExpressAdapter implements HttpServer {
   private readonly routerMethodFactory = new RouterMethodFactory();
-  private httpServer = null;
+  private httpServer: any = null;
 
-  constructor(private readonly instance) {}
+  constructor(private readonly instance: any) {}
 
   use(...args: any[]) {
     return this.instance.use(...args);
@@ -103,19 +103,19 @@ export class ExpressAdapter implements HttpServer {
     return this.instance.close();
   }
 
-  set(...args) {
+  set(...args: any[]) {
     return this.instance.set(...args);
   }
 
-  enable(...args) {
+  enable(...args: any[]) {
     return this.instance.enable(...args);
   }
 
-  disable(...args) {
+  disable(...args: any[]) {
     return this.instance.disable(...args);
   }
 
-  engine(...args) {
+  engine(...args: any[]) {
     return this.instance.engine(...args);
   }
 

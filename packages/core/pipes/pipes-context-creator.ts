@@ -52,13 +52,15 @@ export class PipesContextCreator extends ContextCreator {
     if (isObject) {
       return pipe;
     }
-    const instanceWrapper = this.getInstanceByMetatype(pipe);
+    const instanceWrapper = this.getInstanceByMetatype(pipe as Function);
     return instanceWrapper && instanceWrapper.instance
       ? instanceWrapper.instance
       : null;
   }
 
-  public getInstanceByMetatype(metatype): { instance: any } | undefined {
+  public getInstanceByMetatype<T extends { name: string } = any>(
+    metatype: T,
+  ): { instance: any } | undefined {
     if (!this.moduleContext) {
       return undefined;
     }

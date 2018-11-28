@@ -2,7 +2,7 @@ import * as multer from 'multer';
 import { Observable } from 'rxjs';
 import { Inject, Optional } from '../../decorators';
 import { mixin } from '../../decorators/core/component.decorator';
-import { ExecutionContext } from '../../interfaces';
+import { ExecutionContext, Type } from '../../interfaces';
 import { MulterOptions } from '../../interfaces/external/multer-options.interface';
 import { NestInterceptor } from '../../interfaces/features/nest-interceptor.interface';
 import { MULTER_MODULE_OPTIONS } from '../files.constants';
@@ -15,7 +15,7 @@ export function FilesInterceptor(
   fieldName: string,
   maxCount?: number,
   localOptions?: MulterOptions,
-) {
+): Type<NestInterceptor> {
   class MixinInterceptor implements NestInterceptor {
     readonly upload: MulterInstance;
 
@@ -53,5 +53,5 @@ export function FilesInterceptor(
     }
   }
   const Interceptor = mixin(MixinInterceptor);
-  return Interceptor;
+  return Interceptor as Type<NestInterceptor>;
 }

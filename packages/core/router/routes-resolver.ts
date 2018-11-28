@@ -36,7 +36,10 @@ export class RoutesResolver implements Resolver {
     );
   }
 
-  public resolve(appInstance, basePath: string) {
+  public resolve<TApplication extends HttpServer>(
+    appInstance: TApplication,
+    basePath: string,
+  ) {
     const modules = this.container.getModules();
     modules.forEach(({ controllers, metatype }, moduleName) => {
       let path = metatype
@@ -70,7 +73,7 @@ export class RoutesResolver implements Resolver {
 
   public registerNotFoundHandler() {
     const applicationRef = this.container.getApplicationRef();
-    const callback = (req, res) => {
+    const callback = <TRequest, TResponse>(req: TRequest, res: TResponse) => {
       const method = applicationRef.getRequestMethod(req);
       const url = applicationRef.getRequestUrl(req);
       throw new NotFoundException(`Cannot ${method} ${url}`);
@@ -82,7 +85,12 @@ export class RoutesResolver implements Resolver {
   }
 
   public registerExceptionHandler() {
-    const callback = (err, req, res, next) => {
+    const callback = <TError, TRequest, TResponse>(
+      err: TError,
+      req: TRequest,
+      res: TResponse,
+      next: Function,
+    ) => {
       throw this.mapExternalException(err);
     };
     const handler = this.routerExceptionsFilter.create(

@@ -1,8 +1,8 @@
 import { INTERCEPTORS_METADATA } from '../../constants';
+import { NestInterceptor } from '../../interfaces';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';
 import { isFunction } from '../../utils/shared.utils';
 import { validateEach } from '../../utils/validate-each.util';
-import { NestInterceptor } from '../../interfaces';
 
 /**
  * Binds interceptors to the particular context.
@@ -10,17 +10,20 @@ import { NestInterceptor } from '../../interfaces';
  * - Interceptor will be register to each handler (every method)
  *
  * When the `@UseInterceptors()` is used on the handle level:
- * - Interceptor will be registered only to specified method
+ * - Interceptor will be registered only to the specified method
  *
  * @param  {} ...interceptors
  */
 export function UseInterceptors(
-  ...interceptors: (NestInterceptor | Function)[],
+  ...interceptors: (NestInterceptor | Function)[]
 ) {
-  return (target: any, key?, descriptor?) => {
-    const isValidInterceptor = interceptor =>
+  return (target: any, key?: string, descriptor?: any) => {
+    const isValidInterceptor = <T extends Function | Record<string, any>>(
+      interceptor: T,
+    ) =>
       interceptor &&
-      (isFunction(interceptor) || isFunction(interceptor.intercept));
+      (isFunction(interceptor) ||
+        isFunction((interceptor as Record<string, any>).intercept));
 
     if (descriptor) {
       validateEach(

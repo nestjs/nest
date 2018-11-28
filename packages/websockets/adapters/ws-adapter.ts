@@ -93,7 +93,7 @@ export class WsAdapter implements WebSocketAdapter {
   }
 
   public bindMessageHandler(
-    buffer,
+    buffer: any,
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ): Observable<any> {

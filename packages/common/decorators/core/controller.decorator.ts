@@ -1,8 +1,8 @@
-import { isUndefined } from '../../utils/shared.utils';
 import { PATH_METADATA } from '../../constants';
+import { isUndefined } from '../../utils/shared.utils';
 
 /**
- * Defines the Controller. The controller can inject dependencies through constructor.
+ * Defines the controller. Controller can inject dependencies through constructor.
  * Those dependencies have to belong to the same module.
  */
 export function Controller(prefix?: string): ClassDecorator {

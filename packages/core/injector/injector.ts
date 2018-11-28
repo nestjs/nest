@@ -103,7 +103,7 @@ export class Injector {
   public loadPrototypeOfInstance<T>(
     { metatype, name }: InstanceWrapper<T>,
     collection: Map<string, InstanceWrapper<T>>,
-  ) {
+  ): void {
     if (!collection) {
       return null;
     }
@@ -152,7 +152,7 @@ export class Injector {
     if (targetWrapper.isResolved) {
       return;
     }
-    const callback = async instances => {
+    const callback = async (instances: any[]) => {
       const properties = await this.resolveProperties(wrapper, module, inject);
       const instance = await this.instantiateClass(
         instances,
@@ -169,7 +169,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     module: Module,
     inject: InjectorDependency[],
-    callback: (args) => void,
+    callback: (args: any[]) => void,
   ) {
     const dependencies = isNil(inject)
       ? this.reflectConstructorParams(wrapper.metatype)
@@ -309,8 +309,8 @@ export class Injector {
   public async lookupComponentInRelatedModules(
     module: Module,
     name: any,
-    moduleRegistry = [],
-  ) {
+    moduleRegistry: any[] = [],
+  ): Promise<any> {
     let componentRef = null;
 
     const relatedModules: Set<Module> = module.relatedModules || new Set();
@@ -383,7 +383,7 @@ export class Injector {
     const optionalKeys: string[] =
       Reflect.getMetadata(OPTIONAL_PROPERTY_DEPS_METADATA, type) || [];
 
-    return properties.map(item => ({
+    return properties.map((item: any) => ({
       ...item,
       name: item.type,
       isOptional: optionalKeys.includes(item.key),
@@ -393,7 +393,7 @@ export class Injector {
   public applyProperties<T = any>(
     instance: T,
     properties: PropertyDependency[],
-  ) {
+  ): void {
     if (!isObject(instance)) {
       return undefined;
     }

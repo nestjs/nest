@@ -131,7 +131,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     this.grpcClient = null;
   }
 
-  public deserialize(obj): any {
+  public deserialize(obj: any): any {
     try {
       return JSON.parse(obj);
     } catch (e) {

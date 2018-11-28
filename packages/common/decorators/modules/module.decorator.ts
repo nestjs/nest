@@ -13,8 +13,10 @@ const metadataKeys = [
 ];
 
 const validateKeys = (keys: string[]) => {
-  const isKeyInvalid = key => metadataKeys.findIndex(k => k === key) < 0;
-  const validateKey = key => {
+  const isKeyInvalid = (key: string) =>
+    metadataKeys.findIndex(k => k === key) < 0;
+
+  const validateKey = (key: string) => {
     if (!isKeyInvalid(key)) {
       return;
     }
@@ -42,7 +44,7 @@ export function Module(metadata: ModuleMetadata): ClassDecorator {
   return (target: object) => {
     for (const property in metadata) {
       if (metadata.hasOwnProperty(property)) {
-        Reflect.defineMetadata(property, metadata[property], target);
+        Reflect.defineMetadata(property, (metadata as any)[property], target);
       }
     }
   };

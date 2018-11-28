@@ -210,11 +210,13 @@ export class DependenciesScanner {
       component.prototype,
       method => Reflect.getMetadata(metadataKey, component, method),
     );
-    const flatten = arr => arr.reduce((a, b) => a.concat(b), []);
-    const paramsInjectables = flatten(paramsMetadata).map(param =>
-      flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
+    const flatten = (arr: any[]) =>
+      arr.reduce((a: any[], b: any[]) => a.concat(b), []);
+    const paramsInjectables = flatten(paramsMetadata).map(
+      (param: Record<string, any>) =>
+        flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
     );
-    flatten(paramsInjectables).forEach(injectable =>
+    flatten(paramsInjectables).forEach((injectable: Type<Injectable>) =>
       this.insertInjectable(injectable, token),
     );
   }
@@ -288,8 +290,8 @@ export class DependenciesScanner {
     );
   }
 
-  public insertInjectable(component: Type<Injectable>, token: string) {
-    this.container.addInjectable(component, token);
+  public insertInjectable(injectable: Type<Injectable>, token: string) {
+    this.container.addInjectable(injectable, token);
   }
 
   public insertExportedProvider(
@@ -322,11 +324,12 @@ export class DependenciesScanner {
 
   public getApplyProvidersMap(): { [type: string]: Function } {
     return {
-      [APP_INTERCEPTOR]: interceptor =>
+      [APP_INTERCEPTOR]: (interceptor: any) =>
         this.applicationConfig.addGlobalInterceptor(interceptor),
-      [APP_PIPE]: pipe => this.applicationConfig.addGlobalPipe(pipe),
-      [APP_GUARD]: guard => this.applicationConfig.addGlobalGuard(guard),
-      [APP_FILTER]: filter => this.applicationConfig.addGlobalFilter(filter),
+      [APP_PIPE]: (pipe: any) => this.applicationConfig.addGlobalPipe(pipe),
+      [APP_GUARD]: (guard: any) => this.applicationConfig.addGlobalGuard(guard),
+      [APP_FILTER]: (filter: any) =>
+        this.applicationConfig.addGlobalFilter(filter),
     };
   }
 

@@ -27,12 +27,12 @@ export class ValidationPipe implements PipeTransform<any> {
     this.validatorOptions = validatorOptions;
     this.isDetailedOutputDisabled = disableErrorMessages;
 
-    const loadPkg = pkg => loadPackage(pkg, 'ValidationPipe');
+    const loadPkg = (pkg: any) => loadPackage(pkg, 'ValidationPipe');
     classValidator = loadPkg('class-validator');
     classTransformer = loadPkg('class-transformer');
   }
 
-  public async transform(value, metadata: ArgumentMetadata) {
+  public async transform(value: any, metadata: ArgumentMetadata) {
     const { metatype } = metadata;
     if (!metatype || !this.toValidate(metadata)) {
       return value;

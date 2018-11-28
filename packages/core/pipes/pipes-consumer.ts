@@ -18,7 +18,7 @@ export class PipesConsumer {
 
   public async applyPipes<TInput = any>(
     value: TInput,
-    { metatype, type, data }: { metatype; type?; data? },
+    { metatype, type, data }: { metatype: any; type?: any; data?: any },
     transforms: Transform<any>[],
   ) {
     return transforms.reduce(async (defferedValue, fn) => {

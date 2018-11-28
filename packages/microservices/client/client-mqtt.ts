@@ -85,7 +85,7 @@ export class ClientMqtt extends ClientProxy {
     );
   }
 
-  public createResponseCallback(): (channel: string, buffer) => any {
+  public createResponseCallback(): (channel: string, buffer: Buffer) => any {
     return (channel: string, buffer: Buffer) => {
       const { err, response, isDisposed, id } = JSON.parse(
         buffer.toString(),

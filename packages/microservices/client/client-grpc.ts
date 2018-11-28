@@ -86,7 +86,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
           call.removeAllListeners();
           observer.complete();
         });
-        return () => {
+        return (): any => {
           if (call.finished) {
             return undefined;
           }
@@ -176,7 +176,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     );
   }
 
-  protected publish(partialPacket, callback: (packet) => any) {
+  protected publish(partialPacket: any, callback: (packet: any) => any) {
     throw new Error(
       'Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).',
     );

@@ -1,5 +1,5 @@
 /**
- * Binds parameters decorators to the particular method
+ * Binds parameter decorators to the method
  * Useful when the language doesn't provide a 'Parameter Decorators' feature (vanilla JavaScript)
  * @param  {} ...decorators
  */

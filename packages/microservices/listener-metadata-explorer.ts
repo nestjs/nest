@@ -24,8 +24,8 @@ export class ListenerMetadataExplorer {
   }
 
   public exploreMethodMetadata(
-    instance,
-    instancePrototype,
+    instance: object,
+    instancePrototype: any,
     methodName: string,
   ): PatternProperties {
     const targetCallback = instancePrototype[methodName];

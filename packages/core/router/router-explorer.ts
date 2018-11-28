@@ -1,3 +1,4 @@
+import { HttpServer } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
@@ -56,7 +57,7 @@ export class RouterExplorer {
     instance: Controller,
     metatype: Type<Controller>,
     module: string,
-    appInstance,
+    appInstance: any,
     basePath: string,
   ) {
     const routerPaths = this.scanForPaths(instance);
@@ -85,7 +86,10 @@ export class RouterExplorer {
     return validatePath(path);
   }
 
-  public scanForPaths(instance: Controller, prototype?): RoutePathProperties[] {
+  public scanForPaths(
+    instance: Controller,
+    prototype?: any,
+  ): RoutePathProperties[] {
     const instancePrototype = isUndefined(prototype)
       ? Object.getPrototypeOf(instance)
       : prototype;
@@ -99,7 +103,7 @@ export class RouterExplorer {
 
   public exploreMethodMetadata(
     instance: Controller,
-    instancePrototype,
+    instancePrototype: any,
     methodName: string,
   ): RoutePathProperties {
     const targetCallback = instancePrototype[methodName];
@@ -119,8 +123,8 @@ export class RouterExplorer {
     };
   }
 
-  public applyPathsToRouterProxy(
-    router,
+  public applyPathsToRouterProxy<T extends HttpServer>(
+    router: T,
     routePaths: RoutePathProperties[],
     instance: Controller,
     module: string,
@@ -139,8 +143,8 @@ export class RouterExplorer {
     });
   }
 
-  private applyCallbackToRouter(
-    router,
+  private applyCallbackToRouter<T extends HttpServer>(
+    router: T,
     pathProperties: RoutePathProperties,
     instance: Controller,
     module: string,
@@ -158,7 +162,7 @@ export class RouterExplorer {
       module,
       requestMethod,
     );
-    const stripSlash = str =>
+    const stripSlash = (str: string) =>
       str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
     const fullPath = stripSlash(basePath) + path;
     routerMethod(stripSlash(fullPath) || '/', proxy);
@@ -169,7 +173,7 @@ export class RouterExplorer {
     callback: RouterProxyCallback,
     methodName: string,
     module: string,
-    requestMethod,
+    requestMethod: RequestMethod,
   ) {
     const executionContext = this.executionContextCreator.create(
       instance,

@@ -27,5 +27,5 @@ export interface INestApplicationContext {
    * Sets custom logger service
    * @returns {void}
    */
-  useLogger(logger: LoggerService);
+  useLogger(logger: LoggerService): void;
 }

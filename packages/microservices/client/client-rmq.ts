@@ -60,7 +60,7 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public consumeChannel() {
-    this.channel.addSetup(channel =>
+    this.channel.addSetup((channel: any) =>
       channel.consume(
         this.replyQueue,
         (msg: any) =>
@@ -88,7 +88,7 @@ export class ClientRMQ extends ClientProxy {
     return new Promise(resolve => {
       this.channel = this.client.createChannel({
         json: false,
-        setup: channel => this.setupChannel(channel, resolve),
+        setup: (channel: any) => this.setupChannel(channel, resolve),
       });
     });
   }
@@ -130,7 +130,7 @@ export class ClientRMQ extends ClientProxy {
   ): Function {
     try {
       const correlationId = randomStringGenerator();
-      const listener = ({ content }) =>
+      const listener = ({ content }: { content: any }) =>
         this.handleMessage(JSON.parse(content.toString()), callback);
 
       this.responseEmitter.on(correlationId, listener);

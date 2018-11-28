@@ -59,7 +59,9 @@ export class InterceptorsContextCreator extends ContextCreator {
       : null;
   }
 
-  public getInstanceByMetatype(metatype): { instance: any } | undefined {
+  public getInstanceByMetatype<T extends Record<string, any> = any>(
+    metatype: T,
+  ): { instance: any } | undefined {
     if (!this.moduleContext) {
       return undefined;
     }

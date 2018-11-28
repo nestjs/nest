@@ -54,7 +54,9 @@ export class GuardsContextCreator extends ContextCreator {
       : null;
   }
 
-  public getInstanceByMetatype(guard): { instance: any } | undefined {
+  public getInstanceByMetatype<T extends Record<string, any>>(
+    guard: T,
+  ): { instance: any } | undefined {
     if (!this.moduleContext) {
       return undefined;
     }

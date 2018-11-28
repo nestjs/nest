@@ -98,7 +98,9 @@ export class WebSocketsController {
 
       const disconnectHook = adapter.bindClientDisconnect;
       disconnectHook &&
-        disconnectHook.call(adapter, client, _ => disconnect.next(client));
+        disconnectHook.call(adapter, client, (_: any) =>
+          disconnect.next(client),
+        );
     };
   }
 
@@ -152,7 +154,7 @@ export class WebSocketsController {
     return of(result);
   }
 
-  private hookServerToProperties(instance: NestGateway, server) {
+  private hookServerToProperties<T = any>(instance: NestGateway, server: any) {
     for (const propertyKey of this.metadataExplorer.scanForServerHooks(
       instance,
     )) {

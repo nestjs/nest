@@ -168,7 +168,13 @@ export class MiddlewareModule {
       undefined,
     );
     const router = applicationRef.createMiddlewareFactory(method);
-    const bindWithProxy = middlewareInstance =>
+    const bindWithProxy = (
+      middlewareInstance: <TRequest, TResponse>(
+        req: TRequest,
+        res: TResponse,
+        next: Function,
+      ) => void,
+    ) =>
       this.bindHandlerWithProxy(
         exceptionsHandler,
         router,
@@ -176,15 +182,18 @@ export class MiddlewareModule {
         path,
       );
     const resolve = instance.resolve();
-
     const middleware = await resolve;
     bindWithProxy(middleware);
   }
 
   private bindHandlerWithProxy(
     exceptionsHandler: ExceptionsHandler,
-    router: (...args) => void,
-    middleware: (req, res, next) => void,
+    router: (...args: any[]) => void,
+    middleware: <TRequest, TResponse>(
+      req: TRequest,
+      res: TResponse,
+      next: Function,
+    ) => void,
     path: string,
   ) {
     const proxy = this.routerProxy.createProxy(middleware, exceptionsHandler);

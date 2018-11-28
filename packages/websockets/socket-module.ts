@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
-import { InstanceWrapper } from '@nestjs/core/injector/container';
+import {
+  InstanceWrapper,
+  NestContainer,
+} from '@nestjs/core/injector/container';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
@@ -22,7 +25,7 @@ export class SocketModule {
   private applicationConfig: ApplicationConfig;
   private webSocketsController: WebSocketsController;
 
-  public register<TContainer, TConfig>(container: any, config: any) {
+  public register(container: NestContainer, config: ApplicationConfig) {
     this.applicationConfig = config;
     this.webSocketsController = new WebSocketsController(
       new SocketServerProvider(this.socketsContainer, config),
@@ -30,7 +33,7 @@ export class SocketModule {
       this.getContextCreator(container),
     );
     const modules = container.getModules();
-    modules.forEach(({ providers }, moduleName) =>
+    modules.forEach(({ providers }, moduleName: string) =>
       this.hookGatewaysIntoServers(providers, moduleName),
     );
   }
@@ -77,7 +80,7 @@ export class SocketModule {
     this.socketsContainer.clear();
   }
 
-  private getContextCreator(container): WsContextCreator {
+  private getContextCreator(container: NestContainer): WsContextCreator {
     return new WsContextCreator(
       new WsProxy(),
       new ExceptionFiltersContext(container),

@@ -87,7 +87,7 @@ export class ExternalContextCreator {
       : [];
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
 
-    const handler = (initialArgs, ...args) => async () => {
+    const handler = (initialArgs: any[], ...args: any[]) => async () => {
       if (fnApplyPipes) {
         await fnApplyPipes(initialArgs, ...args);
         return callback.apply(instance, initialArgs);
@@ -158,7 +158,7 @@ export class ExternalContextCreator {
         return { index, extractValue: customExtractValue, type, data, pipes };
       }
       const numericType = Number(type);
-      const extractValue = (...args) =>
+      const extractValue = (...args: any[]) =>
         paramsFactory.exchangeKeyForValue(numericType, data, args);
 
       return { index, extractValue, type: numericType, data, pipes };
@@ -167,7 +167,7 @@ export class ExternalContextCreator {
 
   public getCustomFactory(
     factory: (...args: any[]) => void,
-    data,
+    data: any,
   ): (...args: any[]) => any {
     return !isUndefined(factory) && isFunction(factory)
       ? (...args: any[]) => factory(data, args)
@@ -178,7 +178,7 @@ export class ExternalContextCreator {
     pipes: any[],
     paramsOptions: (ParamProperties & { metatype?: any })[],
   ) {
-    const pipesFn = async (args, ...gqlArgs) => {
+    const pipesFn = async (args: any[], ...params: any[]) => {
       await Promise.all(
         paramsOptions.map(async param => {
           const {
@@ -189,7 +189,7 @@ export class ExternalContextCreator {
             metatype,
             pipes: paramPipes,
           } = param;
-          const value = extractValue(...gqlArgs);
+          const value = extractValue(...params);
 
           args[index] = await this.getParamValue(
             value,
@@ -204,7 +204,7 @@ export class ExternalContextCreator {
 
   public async getParamValue<T>(
     value: T,
-    { metatype, type, data },
+    { metatype, type, data }: { metatype: any; type: any; data: any },
     transforms: Transform<any>[],
   ): Promise<any> {
     return this.pipesConsumer.apply(

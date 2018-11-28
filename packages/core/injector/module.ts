@@ -242,19 +242,19 @@ export class Module {
     return name;
   }
 
-  public isCustomClass(provider): provider is CustomClass {
+  public isCustomClass(provider: any): provider is CustomClass {
     return !isUndefined((provider as CustomClass).useClass);
   }
 
-  public isCustomValue(provider): provider is CustomValue {
+  public isCustomValue(provider: any): provider is CustomValue {
     return !isUndefined((provider as CustomValue).useValue);
   }
 
-  public isCustomFactory(provider): provider is CustomFactory {
+  public isCustomFactory(provider: any): provider is CustomFactory {
     return !isUndefined((provider as CustomFactory).useFactory);
   }
 
-  public isDynamicModule(exported): exported is DynamicModule {
+  public isDynamicModule(exported: any): exported is DynamicModule {
     return exported && exported.module;
   }
 

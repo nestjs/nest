@@ -36,7 +36,7 @@ describe('WebSocketsController', () => {
   describe('hookGatewayIntoServer', () => {
     let subscribeObservableServer: sinon.SinonSpy;
 
-    @WebSocketGateway('test')
+    @WebSocketGateway('test' as any)
     class InvalidGateway {}
 
     @WebSocketGateway()

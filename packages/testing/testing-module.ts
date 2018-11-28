@@ -82,7 +82,9 @@ export class TestingModule extends NestApplicationContext {
     return new ExpressAdapter(httpAdapter);
   }
 
-  private applyLogger(options: NestApplicationContextOptions | undefined) {
+  private applyLogger(
+    options: NestApplicationContextOptions | undefined,
+  ): void {
     if (!options || !options.logger) {
       return undefined;
     }

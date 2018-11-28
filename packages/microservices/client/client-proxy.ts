@@ -78,10 +78,10 @@ export abstract class ClientProxy {
     return merge(error$, connect$).pipe(take(1));
   }
 
-  protected getOptionsProp<T extends { options? }>(
+  protected getOptionsProp<T extends { options?: any }>(
     obj: ClientOptions['options'],
     prop: keyof T['options'],
-    defaultValue = undefined,
+    defaultValue: any = undefined,
   ) {
     return obj ? obj[prop as string] : defaultValue;
   }

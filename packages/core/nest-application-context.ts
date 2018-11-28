@@ -131,7 +131,7 @@ export class NestApplicationContext implements INestApplicationContext {
     }
   }
 
-  protected hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
+  protected hasOnModuleDestroyHook(instance: any): instance is OnModuleDestroy {
     return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
   }
 

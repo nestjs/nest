@@ -89,7 +89,8 @@ export class ClientRedis extends ClientProxy {
   }
 
   public getClientOptions(error$: Subject<Error>): Partial<ClientOpts> {
-    const retry_strategy = options => this.createRetryStrategy(options, error$);
+    const retry_strategy = (options: RetryStrategyOptions) =>
+      this.createRetryStrategy(options, error$);
     return {
       retry_strategy,
     };

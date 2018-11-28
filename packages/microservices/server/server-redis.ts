@@ -71,10 +71,15 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(pub: RedisClient) {
-    return async (channel, buffer) => this.handleMessage(channel, buffer, pub);
+    return async (channel: string, buffer: string | any) =>
+      this.handleMessage(channel, buffer, pub);
   }
 
-  public async handleMessage(channel, buffer: string | any, pub: RedisClient) {
+  public async handleMessage(
+    channel: string,
+    buffer: string | any,
+    pub: RedisClient,
+  ) {
     const packet = this.deserialize(buffer);
     const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(pub, pattern, packet.id);
@@ -98,7 +103,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
       );
   }
 
-  public deserialize(content): ReadPacket & PacketId {
+  public deserialize(content: any): ReadPacket & PacketId {
     try {
       return JSON.parse(content);
     } catch (e) {
@@ -114,12 +119,13 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     return `${pattern}_res`;
   }
 
-  public handleError(stream) {
+  public handleError(stream: any) {
     stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 
   public getClientOptions(): Partial<ClientOpts> {
-    const retry_strategy = options => this.createRetryStrategy(options);
+    const retry_strategy = (options: RetryStrategyOptions) =>
+      this.createRetryStrategy(options);
     return {
       retry_strategy,
     };
