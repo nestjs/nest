@@ -36,17 +36,14 @@ export class RoutesResolver implements Resolver {
     );
   }
 
-  public resolve<TApplication extends HttpServer>(
-    appInstance: TApplication,
-    basePath: string,
-  ) {
+  public resolve<T extends HttpServer>(applicationRef: T, basePath: string) {
     const modules = this.container.getModules();
     modules.forEach(({ controllers, metatype }, moduleName) => {
       let path = metatype
         ? Reflect.getMetadata(MODULE_PATH, metatype)
         : undefined;
       path = path ? path + basePath : basePath;
-      this.registerRouters(controllers, moduleName, path, appInstance);
+      this.registerRouters(controllers, moduleName, path, applicationRef);
     });
   }
 
@@ -54,7 +51,7 @@ export class RoutesResolver implements Resolver {
     routes: Map<string, InstanceWrapper<Controller>>,
     moduleName: string,
     basePath: string,
-    appInstance: HttpServer,
+    applicationRef: HttpServer,
   ) {
     routes.forEach(({ instance, metatype }) => {
       const path = this.routerBuilder.extractRouterPath(metatype, basePath);
@@ -65,7 +62,7 @@ export class RoutesResolver implements Resolver {
         instance,
         metatype,
         moduleName,
-        appInstance,
+        applicationRef,
         path,
       );
     });

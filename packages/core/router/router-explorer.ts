@@ -53,16 +53,16 @@ export class RouterExplorer {
     );
   }
 
-  public explore(
+  public explore<T extends HttpServer = any>(
     instance: Controller,
     metatype: Type<Controller>,
     module: string,
-    appInstance: any,
+    applicationRef: T,
     basePath: string,
   ) {
     const routerPaths = this.scanForPaths(instance);
     this.applyPathsToRouterProxy(
-      appInstance,
+      applicationRef,
       routerPaths,
       instance,
       module,
