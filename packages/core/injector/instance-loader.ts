@@ -51,8 +51,8 @@ export class InstanceLoader {
 
   private async createInstancesOfComponents(module: Module) {
     await Promise.all(
-      [...module.components.values()].map(
-        async wrapper => this.injector.loadInstanceOfComponent(wrapper, module),
+      [...module.components.values()].map(async wrapper =>
+        this.injector.loadInstanceOfComponent(wrapper, module),
       ),
     );
   }
@@ -65,8 +65,8 @@ export class InstanceLoader {
 
   private async createInstancesOfRoutes(module: Module) {
     await Promise.all(
-      [...module.routes.values()].map(
-        async wrapper => this.injector.loadInstanceOfRoute(wrapper, module),
+      [...module.routes.values()].map(async wrapper =>
+        this.injector.loadInstanceOfRoute(wrapper, module),
       ),
     );
   }
@@ -82,8 +82,8 @@ export class InstanceLoader {
 
   private async createInstancesOfInjectables(module: Module) {
     await Promise.all(
-      [...module.injectables.values()].map(
-        async wrapper => this.injector.loadInstanceOfInjectable(wrapper, module),
+      [...module.injectables.values()].map(async wrapper =>
+        this.injector.loadInstanceOfInjectable(wrapper, module),
       ),
     );
   }
