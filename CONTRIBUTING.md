@@ -3,7 +3,7 @@
 We would love for you to contribute to Nest and help make it even better than it is
 today! As a contributor, here are the guidelines we would like you to follow:
 
-* [Code of Conduct](#coc)
+<!--* [Code of Conduct](#coc)-->
 * [Question or Problem?](#question)
 * [Issues and Bugs](#issue)
 * [Feature Requests](#feature)
@@ -76,10 +76,15 @@ You can file new issues by filling out our [new issue form](https://github.com/n
 
 Before you submit your Pull Request (PR) consider the following guidelines:
 
+<!--
+To the first point
+
+1. Please sign our [Contributor License Agreement (CLA)](#cla) before sending PRs.
+We cannot accept code without this.
+-->
+
 1. Search [GitHub](https://github.com/nestjs/nest/pulls) for an open or closed PR
    that relates to your submission. You don't want to duplicate effort.
-   <!-- 1. Please sign our [Contributor License Agreement (CLA)](#cla) before sending PRs.
-  We cannot accept code without this. -->
 1. Fork the nestjs/nest repo.
 1. Make your changes in a new git branch:
 
@@ -195,10 +200,11 @@ $ npm run lint
 
 To ensure consistency throughout the source code, keep these rules in mind as you are working:
 
-* All features or bug fixes **must be tested** by one or more specs (unit-tests).
-  <!--
+<!--
 // We're working on auto-documentation.
 * All public API methods **must be documented**. (Details TBC). -->
+
+* All features or bug fixes **must be tested** by one or more specs (unit-tests).
 * We follow [Google's JavaScript Style Guide][js-style-guide], but wrap all code at
   **100 characters**. An automated formatter is available, see
   [DEVELOPER.md](docs/DEVELOPER.md#clang-format).
@@ -272,8 +278,8 @@ There are currently a few exceptions to the "use package name" rule:
 * **packaging**: used for changes that change the npm package layout in all of our packages, e.g. public path changes, package.json changes done to all packages, d.ts file/format changes, changes to bundles, etc.
 * **changelog**: used for updating the release notes in CHANGELOG.md
 * **sample/#**: for the example apps directory, replacing # with the example app number
-  <!-- * **aio**: used for docs-app (angular.io) related changes within the /aio directory of the repo -->
 * none/empty string: useful for `style`, `test` and `refactor` changes that are done across all packages (e.g. `style: add missing semicolons`)
+<!-- * **aio**: used for docs-app (angular.io) related changes within the /aio directory of the repo -->
 
 ### Subject
 
