@@ -7,7 +7,10 @@ import {
   MulterField,
   MulterOptions,
 } from '../../interfaces/external/multer-options.interface';
-import { NestInterceptor } from '../../interfaces/features/nest-interceptor.interface';
+import {
+  CallHandler,
+  NestInterceptor,
+} from '../../interfaces/features/nest-interceptor.interface';
 import { MULTER_MODULE_OPTIONS } from '../files.constants';
 import { MulterModuleOptions } from '../interfaces';
 import { transformException } from '../multer/multer.utils';
@@ -34,7 +37,7 @@ export function FileFieldsInterceptor(
 
     async intercept(
       context: ExecutionContext,
-      call$: Observable<any>,
+      next: CallHandler,
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
 
@@ -51,7 +54,7 @@ export function FileFieldsInterceptor(
           },
         ),
       );
-      return call$;
+      return next.handle();
     }
   }
   const Interceptor = mixin(MixinInterceptor);

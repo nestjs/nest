@@ -2,6 +2,7 @@ import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Inject, Injectable, Optional } from '../../decorators';
 import {
+  CallHandler,
   ExecutionContext,
   HttpServer,
   NestInterceptor,
@@ -30,20 +31,22 @@ export class CacheInterceptor implements NestInterceptor {
 
   async intercept(
     context: ExecutionContext,
-    call$: Observable<any>,
+    next: CallHandler,
   ): Promise<Observable<any>> {
     const key = this.trackBy(context);
     if (!key) {
-      return call$;
+      return next.handle();
     }
     try {
       const value = await this.cacheManager.get(key);
       if (value) {
         return of(value);
       }
-      return call$.pipe(tap(response => this.cacheManager.set(key, response)));
+      return next
+        .handle()
+        .pipe(tap(response => this.cacheManager.set(key, response)));
     } catch {
-      return call$;
+      return next.handle();
     }
   }
 

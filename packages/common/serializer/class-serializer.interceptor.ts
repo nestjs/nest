@@ -4,7 +4,11 @@ import { Inject, Injectable } from '../decorators/core';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
 import { loadPackage } from '../utils/load-package.util';
 import { isObject } from '../utils/shared.utils';
-import { ExecutionContext, NestInterceptor } from './../interfaces';
+import {
+  CallHandler,
+  ExecutionContext,
+  NestInterceptor,
+} from './../interfaces';
 import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants';
 
 let classTransformer: any = {};
@@ -25,16 +29,15 @@ export class ClassSerializerInterceptor implements NestInterceptor {
     classTransformer = loadPkg('class-transformer');
   }
 
-  intercept(
-    context: ExecutionContext,
-    call$: Observable<any>,
-  ): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const options = this.getContextOptions(context);
-    return call$.pipe(
-      map((res: PlainLiteralObject | Array<PlainLiteralObject>) =>
-        this.serialize(res, options),
-      ),
-    );
+    return next
+      .handle()
+      .pipe(
+        map((res: PlainLiteralObject | Array<PlainLiteralObject>) =>
+          this.serialize(res, options),
+        ),
+      );
   }
 
   serialize(

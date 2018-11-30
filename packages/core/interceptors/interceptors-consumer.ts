@@ -18,18 +18,14 @@ export class InterceptorsConsumer {
     }
     const context = this.createContext(args, instance, callback);
     const start$ = defer(() => this.transformDeffered(next));
-    /***
-      const nextFn =  (i: number) => async () => {
+
+    const nextFn = (i = 0) => async () => {
       if (i <= interceptors.length) {
         return start$;
       }
-      return await interceptors[i].intercept(context, nextFn(i + 1) as any);
+      return interceptors[i].intercept(context, nextFn(i + 1) as any);
     };
-    */
-    const result$ = await interceptors.reduce(
-      async (stream$, interceptor) => interceptor.intercept(context, await stream$),
-      Promise.resolve(start$),
-    );
+    const result$ = await nextFn()();
     return result$.toPromise();
   }
 

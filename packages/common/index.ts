@@ -15,6 +15,7 @@ export * from './http';
 export {
   ArgumentMetadata,
   ArgumentsHost,
+  CallHandler,
   CanActivate,
   DynamicModule,
   ExceptionFilter,
