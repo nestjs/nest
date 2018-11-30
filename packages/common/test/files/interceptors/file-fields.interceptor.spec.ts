@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { FileFieldsInterceptor } from '../../../files/interceptors/file-fields.interceptor';
+import { CallHandler } from '../../../interfaces/features/nest-interceptor.interface';
 
 describe('FileFieldsInterceptor', () => {
   it('should return metatype with expected structure', async () => {
@@ -13,9 +14,11 @@ describe('FileFieldsInterceptor', () => {
     expect(targetClass.prototype.intercept).to.not.be.undefined;
   });
   describe('intercept', () => {
-    let stream$;
+    let handler: CallHandler;
     beforeEach(() => {
-      stream$ = of('test');
+      handler = {
+        handle: () => of('test'),
+      };
     });
     it('should call object with expected params', async () => {
       const fieldName1 = 'file';
@@ -33,7 +36,7 @@ describe('FileFieldsInterceptor', () => {
         .stub((target as any).upload, 'fields')
         .returns(callback);
 
-      await target.intercept(new ExecutionContextHost([]), stream$);
+      await target.intercept(new ExecutionContextHost([]), handler);
 
       expect(fieldsSpy.called).to.be.true;
       expect(fieldsSpy.calledWith(argument)).to.be.true;
@@ -55,7 +58,7 @@ describe('FileFieldsInterceptor', () => {
         array: () => callback,
       };
       expect(
-        target.intercept(new ExecutionContextHost([]), stream$),
+        target.intercept(new ExecutionContextHost([]), handler),
       ).to.eventually.throw();
     });
   });
