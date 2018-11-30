@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
+import { Guard, Injectable, UseGuards, UsePipes } from '../../../common';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
 import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
 import { NestContainer } from '../../../core/injector/container';
@@ -8,17 +9,10 @@ import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-co
 import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
 import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
-import { WsException } from '../../index';
-import {
-  Component,
-  Guard,
-  Injectable,
-  UseGuards,
-  UsePipes,
-} from '../../../common';
 import { ExceptionFiltersContext } from '../../context/exception-filters-context';
 import { WsContextCreator } from '../../context/ws-context-creator';
 import { WsProxy } from '../../context/ws-proxy';
+import { WsException } from '../../index';
 
 @Guard()
 class TestGuard {
@@ -44,7 +38,7 @@ describe('WsContextCreator', () => {
   let module: string;
 
   @UseGuards(TestGuard)
-  @Component()
+  @Injectable()
   class Test {
     @UsePipes(new TestPipe())
     test(client: string, data: number) {

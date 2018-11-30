@@ -2,7 +2,11 @@ import { CanActivate } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
-import { isEmpty, isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isEmpty,
+  isFunction,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { ContextCreator } from '../helpers/context-creator';
 import { NestContainer } from '../injector/container';
@@ -19,7 +23,7 @@ export class GuardsContextCreator extends ContextCreator {
 
   public create(
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
     module: string,
   ): CanActivate[] {
     this.moduleContext = module;
@@ -50,7 +54,9 @@ export class GuardsContextCreator extends ContextCreator {
       : null;
   }
 
-  public getInstanceByMetatype(guard): { instance: any } | undefined {
+  public getInstanceByMetatype<T extends Record<string, any>>(
+    guard: T,
+  ): { instance: any } | undefined {
     if (!this.moduleContext) {
       return undefined;
     }

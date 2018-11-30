@@ -1,7 +1,11 @@
 import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
 import { Controller, NestInterceptor } from '@nestjs/common/interfaces';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
-import { isEmpty, isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isEmpty,
+  isFunction,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { ContextCreator } from '../helpers/context-creator';
 import { NestContainer } from '../injector/container';
@@ -18,7 +22,7 @@ export class InterceptorsContextCreator extends ContextCreator {
 
   public create(
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
     module: string,
   ): NestInterceptor[] {
     this.moduleContext = module;
@@ -55,7 +59,9 @@ export class InterceptorsContextCreator extends ContextCreator {
       : null;
   }
 
-  public getInstanceByMetatype(metatype): { instance: any } | undefined {
+  public getInstanceByMetatype<T extends Record<string, any> = any>(
+    metatype: T,
+  ): { instance: any } | undefined {
     if (!this.moduleContext) {
       return undefined;
     }

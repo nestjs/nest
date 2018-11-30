@@ -1,5 +1,8 @@
 export class Reflector {
-  public get<T>(metadataKey, target): T {
-    return Reflect.getMetadata(metadataKey, target) as T;
+  public get<TResult = any, TKey = any, TInput = any>(
+    metadataKey: TKey,
+    target: TInput,
+  ): TResult {
+    return Reflect.getMetadata(metadataKey, target) as TResult;
   }
 }

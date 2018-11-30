@@ -1,10 +1,11 @@
 import { expect } from 'chai';
-import { RouterMethodFactory } from '../../helpers/router-method-factory';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
+import { RouterMethodFactory } from '../../helpers/router-method-factory';
 
 describe('RouterMethodFactory', () => {
   let factory: RouterMethodFactory;
-  const target = {
+
+  const target: any = {
     get: () => {},
     post: () => {},
     use: () => {},

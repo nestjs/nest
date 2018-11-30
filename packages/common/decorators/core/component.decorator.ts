@@ -1,5 +1,6 @@
 import * as deprecate from 'deprecate';
 import * as uuid from 'uuid/v4';
+import { Type } from './../../interfaces/type.interface';
 
 /**
  * Defines the injectable class. This class can inject dependencies through constructor.
@@ -65,7 +66,7 @@ export function Interceptor(): ClassDecorator {
   return (target: object) => {};
 }
 
-export function mixin(mixinClass) {
+export function mixin(mixinClass: Type<any>) {
   Object.defineProperty(mixinClass, 'name', {
     value: uuid(),
   });

@@ -28,7 +28,7 @@ export interface MulterOptions {
     preservePath?: boolean;
   };
   fileFilter?(
-    req,
+    req: any,
     file: {
       /** Field name specified in the form */
       fieldname: string;

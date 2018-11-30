@@ -10,7 +10,7 @@ import {
 } from 'rxjs';
 import { map, mergeMap, take } from 'rxjs/operators';
 import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
-import { InvalidMessageException } from '../exceptions/errors/invalid-message.exception';
+import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
   ClientOptions,
   PacketId,
@@ -70,7 +70,7 @@ export abstract class ClientProxy {
     connectEvent = CONNECT_EVENT,
   ): Observable<any> {
     const error$ = fromEvent(instance, errorEvent).pipe(
-      map(err => {
+      map((err: any) => {
         throw err;
       }),
     );
@@ -78,10 +78,10 @@ export abstract class ClientProxy {
     return merge(error$, connect$).pipe(take(1));
   }
 
-  protected getOptionsProp<T extends { options? }>(
+  protected getOptionsProp<T extends { options?: any }>(
     obj: ClientOptions['options'],
     prop: keyof T['options'],
-    defaultValue = undefined,
+    defaultValue: any = undefined,
   ) {
     return obj ? obj[prop as string] : defaultValue;
   }

@@ -47,7 +47,7 @@ export function createParamDecorator(
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
 
-    const isPipe = pipe =>
+    const isPipe = (pipe: any) =>
       pipe &&
       ((isFunction(pipe) && pipe.prototype) || isFunction(pipe.transform));
 

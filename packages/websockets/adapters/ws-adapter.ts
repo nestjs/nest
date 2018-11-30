@@ -11,6 +11,7 @@ import { EMPTY as empty, fromEvent, Observable } from 'rxjs';
 import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
 import { CLOSE_EVENT, CONNECTION_EVENT, ERROR_EVENT } from '../constants';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
+import { BaseWsExceptionFilter } from './../exceptions/base-ws-exception-filter';
 
 let wsPackage: any = {};
 
@@ -22,6 +23,7 @@ enum READY_STATE {
 }
 
 export class WsAdapter implements WebSocketAdapter {
+  protected readonly baseExceptionFilter = new BaseWsExceptionFilter();
   protected readonly logger = new Logger(WsAdapter.name);
   protected readonly httpServer: Server;
 
@@ -57,11 +59,11 @@ export class WsAdapter implements WebSocketAdapter {
         );
   }
 
-  public bindClientConnect(server, callback: (...args) => void) {
+  public bindClientConnect(server, callback: (...args: any[]) => void) {
     server.on(CONNECTION_EVENT, callback);
   }
 
-  public bindClientDisconnect(client, callback: (...args) => void) {
+  public bindClientDisconnect(client, callback: (...args: any[]) => void) {
     client.on(CLOSE_EVENT, callback);
   }
 
@@ -79,17 +81,19 @@ export class WsAdapter implements WebSocketAdapter {
       ),
       takeUntil(close$),
     );
-    const handleMessage = response => {
+    const onMessage = (response: any) => {
       if (client.readyState !== READY_STATE.OPEN_STATE) {
         return;
       }
       client.send(JSON.stringify(response));
     };
-    source$.subscribe(handleMessage);
+    const onError = (err: any) =>
+      this.baseExceptionFilter.handleError(client, err);
+    source$.subscribe(onMessage, onError);
   }
 
   public bindMessageHandler(
-    buffer,
+    buffer: any,
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ): Observable<any> {
@@ -111,9 +115,9 @@ export class WsAdapter implements WebSocketAdapter {
 
   public bindErrorHandler(server: any) {
     server.on(CONNECTION_EVENT, ws =>
-      ws.on(ERROR_EVENT, err => this.logger.error(err)),
+      ws.on(ERROR_EVENT, (err: any) => this.logger.error(err)),
     );
-    server.on(ERROR_EVENT, err => this.logger.error(err));
+    server.on(ERROR_EVENT, (err: any) => this.logger.error(err));
     return server;
   }
 }

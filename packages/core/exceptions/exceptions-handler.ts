@@ -22,7 +22,10 @@ export class ExceptionsHandler extends BaseExceptionFilter {
     this.filters = filters;
   }
 
-  public invokeCustomFilters(exception, response): boolean {
+  public invokeCustomFilters<T = any>(
+    exception: T,
+    ctx: ArgumentsHost,
+  ): boolean {
     if (isEmpty(this.filters)) return false;
 
     const filter = this.filters.find(({ exceptionMetatypes }) => {
@@ -33,7 +36,7 @@ export class ExceptionsHandler extends BaseExceptionFilter {
         );
       return hasMetatype;
     });
-    filter && filter.func(exception, response);
+    filter && filter.func(exception, ctx);
     return !!filter;
   }
 }

@@ -1,8 +1,8 @@
 import { fromEvent } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CANCEL_EVENT, GRPC_DEFAULT_URL } from '../constants';
-import { InvalidGrpcPackageException } from '../exceptions/errors/invalid-grpc-package.exception';
-import { InvalidProtoDefinitionException } from '../exceptions/errors/invalid-proto-definition.exception';
+import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
+import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { CustomTransportStrategy } from '../interfaces';
 import {
   GrpcOptions,
@@ -13,6 +13,12 @@ import { Server } from './server';
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
 
+interface GrpcCall<TRequest = any, TMetadata = any> {
+  request: TRequest;
+  metadata: TMetadata;
+  end: Function;
+  write: Function;
+}
 export class ServerGrpc extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private grpcClient: any;
@@ -99,22 +105,22 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       : this.createUnaryServiceMethod(methodHandler);
   }
 
-  public createUnaryServiceMethod(methodHandler): Function {
-    return async (call, callback) => {
+  public createUnaryServiceMethod(methodHandler: Function): Function {
+    return async (call: GrpcCall, callback: Function) => {
       const handler = methodHandler(call.request, call.metadata);
       this.transformToObservable(await handler).subscribe(
         data => callback(null, data),
-        err => callback(err),
+        (err: any) => callback(err),
       );
     };
   }
 
-  public createStreamServiceMethod(methodHandler): Function {
-    return async (call, callback) => {
+  public createStreamServiceMethod(methodHandler: Function): Function {
+    return async (call: GrpcCall, callback: Function) => {
       const handler = methodHandler(call.request, call.metadata);
       const result$ = this.transformToObservable(await handler);
       await result$
-        .pipe(takeUntil(fromEvent(call, CANCEL_EVENT)))
+        .pipe(takeUntil(fromEvent(call as any, CANCEL_EVENT)))
         .forEach(data => call.write(data));
       call.end();
     };
@@ -125,7 +131,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     this.grpcClient = null;
   }
 
-  public deserialize(obj): any {
+  public deserialize(obj: any): any {
     try {
       return JSON.parse(obj);
     } catch (e) {

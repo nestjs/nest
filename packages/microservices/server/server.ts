@@ -18,7 +18,7 @@ export abstract class Server {
 
   public addHandler(
     pattern: any,
-    callback: (data) => Promise<Observable<any>>,
+    callback: <T>(data: T) => Promise<Observable<any>>,
   ) {
     const key = isString(pattern) ? pattern : JSON.stringify(pattern);
     this.messageHandlers[key] = callback;
@@ -30,7 +30,7 @@ export abstract class Server {
 
   public getHandlerByPattern(
     pattern: string,
-  ): (data) => Promise<Observable<any>> | null {
+  ): <T>(data: T) => Promise<Observable<any>> | null {
     return this.messageHandlers[pattern] ? this.messageHandlers[pattern] : null;
   }
 
@@ -40,16 +40,16 @@ export abstract class Server {
   ): Subscription {
     return stream$
       .pipe(
-        catchError(err => {
+        catchError((err: any) => {
           respond({ err, response: null });
           return empty;
         }),
         finalize(() => respond({ isDisposed: true })),
       )
-      .subscribe(response => respond({ err: null, response }));
+      .subscribe((response: any) => respond({ err: null, response }));
   }
 
-  public transformToObservable<T = any>(resultOrDeffered): Observable<T> {
+  public transformToObservable<T = any>(resultOrDeffered: any): Observable<T> {
     if (resultOrDeffered instanceof Promise) {
       return fromPromise(resultOrDeffered);
     } else if (!(resultOrDeffered && isFunction(resultOrDeffered.subscribe))) {
@@ -58,10 +58,10 @@ export abstract class Server {
     return resultOrDeffered;
   }
 
-  public getOptionsProp<T extends { options? }>(
+  public getOptionsProp<T extends { options?: any }>(
     obj: MicroserviceOptions['options'],
     prop: keyof T['options'],
-    defaultValue = undefined,
+    defaultValue: any = undefined,
   ) {
     return obj ? obj[prop as string] : defaultValue;
   }

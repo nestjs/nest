@@ -15,7 +15,7 @@ export class CacheInterceptor implements NestInterceptor {
 
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
-    @Inject(REFLECTOR) protected readonly reflector,
+    @Inject(REFLECTOR) protected readonly reflector: any,
   ) {}
 
   async intercept(
@@ -31,7 +31,9 @@ export class CacheInterceptor implements NestInterceptor {
       if (value) {
         return of(value);
       }
-      return call$.pipe(tap(response => this.cacheManager.set(key, response)));
+      return call$.pipe(
+        tap((response: any) => this.cacheManager.set(key, response)),
+      );
     } catch {
       return call$;
     }

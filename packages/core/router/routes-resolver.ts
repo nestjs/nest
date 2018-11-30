@@ -36,14 +36,14 @@ export class RoutesResolver implements Resolver {
     );
   }
 
-  public resolve(appInstance, basePath: string) {
+  public resolve<T extends HttpServer>(applicationRef: T, basePath: string) {
     const modules = this.container.getModules();
-    modules.forEach(({ routes, metatype }, moduleName) => {
+    modules.forEach(({ controllers, metatype }, moduleName) => {
       let path = metatype
         ? Reflect.getMetadata(MODULE_PATH, metatype)
         : undefined;
       path = path ? path + basePath : basePath;
-      this.registerRouters(routes, moduleName, path, appInstance);
+      this.registerRouters(controllers, moduleName, path, applicationRef);
     });
   }
 
@@ -51,7 +51,7 @@ export class RoutesResolver implements Resolver {
     routes: Map<string, InstanceWrapper<Controller>>,
     moduleName: string,
     basePath: string,
-    appInstance: HttpServer,
+    applicationRef: HttpServer,
   ) {
     routes.forEach(({ instance, metatype }) => {
       const path = this.routerBuilder.extractRouterPath(metatype, basePath);
@@ -62,7 +62,7 @@ export class RoutesResolver implements Resolver {
         instance,
         metatype,
         moduleName,
-        appInstance,
+        applicationRef,
         path,
       );
     });
@@ -70,23 +70,24 @@ export class RoutesResolver implements Resolver {
 
   public registerNotFoundHandler() {
     const applicationRef = this.container.getApplicationRef();
-    const callback = (req, res) => {
+    const callback = <TRequest, TResponse>(req: TRequest, res: TResponse) => {
       const method = applicationRef.getRequestMethod(req);
       const url = applicationRef.getRequestUrl(req);
       throw new NotFoundException(`Cannot ${method} ${url}`);
     };
-    const handler = this.routerExceptionsFilter.create(
-      {},
-      callback,
-      undefined,
-    );
+    const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);
     applicationRef.setNotFoundHandler &&
       applicationRef.setNotFoundHandler(proxy);
   }
 
   public registerExceptionHandler() {
-    const callback = (err, req, res, next) => {
+    const callback = <TError, TRequest, TResponse>(
+      err: TError,
+      req: TRequest,
+      res: TResponse,
+      next: Function,
+    ) => {
       throw this.mapExternalException(err);
     };
     const handler = this.routerExceptionsFilter.create(

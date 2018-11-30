@@ -10,7 +10,7 @@ export class InterceptorsConsumer {
     interceptors: NestInterceptor[],
     args: any[],
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
     next: () => Promise<any>,
   ): Promise<any> {
     if (isEmpty(interceptors)) {
@@ -27,7 +27,8 @@ export class InterceptorsConsumer {
     };
     */
     const result$ = await interceptors.reduce(
-      async (stream$, interceptor) => interceptor.intercept(context, await stream$),
+      async (stream$, interceptor) =>
+        interceptor.intercept(context, await stream$),
       Promise.resolve(start$),
     );
     return result$.toPromise();
@@ -36,7 +37,7 @@ export class InterceptorsConsumer {
   public createContext(
     args: any[],
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
   ): ExecutionContextHost {
     return new ExecutionContextHost(
       args,

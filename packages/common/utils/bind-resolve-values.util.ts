@@ -1,6 +1,6 @@
-import { Constructor } from './merge-with-values.util';
+import { Injectable } from '../decorators/core';
 import { NestMiddleware } from '../interfaces/middleware/nest-middleware.interface';
-import { Injectable } from '../decorators/core/component.decorator';
+import { Constructor } from './merge-with-values.util';
 
 export const BindResolveMiddlewareValues = <
   T extends Constructor<NestMiddleware>

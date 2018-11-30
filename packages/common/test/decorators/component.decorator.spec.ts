@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Component, MiddlewareFunction, Interceptor, mixin, Injectable } from '../../index';
+import { Component, Injectable, Interceptor, mixin } from '../../index';
 
 describe('@Component', () => {
   @Component()

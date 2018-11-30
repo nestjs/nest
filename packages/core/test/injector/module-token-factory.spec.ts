@@ -1,8 +1,8 @@
 import { expect } from 'chai';
+import safeStringify from 'fast-safe-stringify';
 import * as hash from 'object-hash';
 import { SingleScope } from '../../../common';
 import { ModuleTokenFactory } from '../../injector/module-token-factory';
-import safeStringify from 'fast-safe-stringify';
 
 describe('ModuleTokenFactory', () => {
   let factory: ModuleTokenFactory;
@@ -37,18 +37,14 @@ describe('ModuleTokenFactory', () => {
       );
     });
     it('should include dynamic metadata', () => {
-      const token = factory.create(
-        SingleScope()(Module) as any,
-        [Module],
-        {
-          components: [{}],
-        } as any,
-      );
+      const token = factory.create(SingleScope()(Module) as any, [Module], {
+        providers: [{}],
+      } as any);
       expect(token).to.be.deep.eq(
         hash({
           module: Module.name,
           dynamic: safeStringify({
-            components: [{}],
+            providers: [{}],
           }),
           scope: [Module.name],
         }),
@@ -64,7 +60,7 @@ describe('ModuleTokenFactory', () => {
   describe('getDynamicMetadataToken', () => {
     describe('when metadata exists', () => {
       it('should return hash', () => {
-        const metadata = { components: ['', {}] };
+        const metadata = { providers: ['', {}] };
         expect(factory.getDynamicMetadataToken(metadata as any)).to.be.eql(
           JSON.stringify(metadata),
         );

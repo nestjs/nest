@@ -85,11 +85,12 @@ export class ClientRedis extends ClientProxy {
   }
 
   public handleError(client: RedisClient) {
-    client.addListener(ERROR_EVENT, err => this.logger.error(err));
+    client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 
   public getClientOptions(error$: Subject<Error>): Partial<ClientOpts> {
-    const retry_strategy = options => this.createRetryStrategy(options, error$);
+    const retry_strategy = (options: RetryStrategyOptions) =>
+      this.createRetryStrategy(options, error$);
     return {
       retry_strategy,
     };
@@ -148,7 +149,7 @@ export class ClientRedis extends ClientProxy {
       const responseChannel = this.getResPatternName(pattern);
 
       this.routingMap.set(packet.id, callback);
-      this.subClient.subscribe(responseChannel, err => {
+      this.subClient.subscribe(responseChannel, (err: any) => {
         if (err) {
           return;
         }

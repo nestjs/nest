@@ -1,10 +1,11 @@
-import * as sinon from 'sinon';
+import { Type } from '@nestjs/common';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import {
-  filterMiddleware,
-  mapToClass,
-  isClass,
   assignToken,
+  filterMiddleware,
+  isClass,
+  mapToClass,
 } from '../../middleware/utils';
 
 describe('middleware utils', () => {
@@ -33,12 +34,12 @@ describe('middleware utils', () => {
         expect(metatype).to.not.eql(fnMiddleware);
       });
       it('should define `resolve` method', () => {
-        const metatype = mapToClass(fnMiddleware);
+        const metatype = mapToClass(fnMiddleware) as Type<any>;
         expect(new metatype().resolve).to.exist;
       });
       it('should encapsulate function', () => {
         const spy = sinon.spy();
-        const metatype = mapToClass(spy);
+        const metatype = mapToClass(spy) as Type<any>;
         new metatype().resolve()();
         expect(spy.called).to.be.true;
       });

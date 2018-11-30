@@ -1,8 +1,12 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { ApplicationConfig } from '@nestjs/core/application-config';
 import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
-import { InstanceWrapper } from '@nestjs/core/injector/container';
+import {
+  InstanceWrapper,
+  NestContainer,
+} from '@nestjs/core/injector/container';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
@@ -19,7 +23,7 @@ export class MicroservicesModule {
   private readonly clientsContainer = new ClientsContainer();
   private listenersController: ListenersController;
 
-  public register(container, config) {
+  public register(container: NestContainer, config: ApplicationConfig) {
     const contextCreator = new RpcContextCreator(
       new RpcProxy(),
       new ExceptionFiltersContext(container, config),
@@ -36,7 +40,10 @@ export class MicroservicesModule {
     );
   }
 
-  public setupListeners(container, server: Server & CustomTransportStrategy) {
+  public setupListeners(
+    container: NestContainer,
+    server: Server & CustomTransportStrategy,
+  ) {
     if (!this.listenersController) {
       throw new RuntimeException();
     }
@@ -46,7 +53,7 @@ export class MicroservicesModule {
     );
   }
 
-  public setupClients(container) {
+  public setupClients(container: NestContainer) {
     if (!this.listenersController) {
       throw new RuntimeException();
     }

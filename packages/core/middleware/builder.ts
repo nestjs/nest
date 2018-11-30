@@ -38,11 +38,14 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
   }
 
   private static readonly ConfigProxy = class implements MiddlewareConfigProxy {
-    private contextParameters = null;
+    private contextParameters: any = null;
     private excludedRoutes: RouteInfo[] = [];
     private readonly includedRoutes: any[];
 
-    constructor(private readonly builder: MiddlewareBuilder, middleware) {
+    constructor(
+      private readonly builder: MiddlewareBuilder,
+      middleware: any[],
+    ) {
       this.includedRoutes = filterMiddleware(middleware);
     }
 
@@ -50,7 +53,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
       return this.excludedRoutes;
     }
 
-    public with(...args): MiddlewareConfigProxy {
+    public with(...args: any[]): MiddlewareConfigProxy {
       this.contextParameters = args;
       return this;
     }
@@ -88,7 +91,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
       return this.builder;
     }
 
-    private mapRoutesToFlatList(forRoutes): RouteInfo[] {
+    private mapRoutesToFlatList(forRoutes: RouteInfo[][]): RouteInfo[] {
       return forRoutes.reduce((a, b) => a.concat(b));
     }
 

@@ -1,10 +1,10 @@
 import { Optional } from '../decorators';
+import { Injectable } from '../decorators/core';
 import { ArgumentMetadata, BadRequestException } from '../index';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { loadPackage } from '../utils/load-package.util';
 import { isNil } from '../utils/shared.utils';
-import { Injectable } from '../decorators/core/component.decorator';
 
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
@@ -27,12 +27,12 @@ export class ValidationPipe implements PipeTransform<any> {
     this.validatorOptions = validatorOptions;
     this.isDetailedOutputDisabled = disableErrorMessages;
 
-    const loadPkg = pkg => loadPackage(pkg, 'ValidationPipe');
+    const loadPkg = (pkg: any) => loadPackage(pkg, 'ValidationPipe');
     classValidator = loadPkg('class-validator');
     classTransformer = loadPkg('class-transformer');
   }
 
-  public async transform(value, metadata: ArgumentMetadata) {
+  public async transform(value: any, metadata: ArgumentMetadata) {
     const { metatype } = metadata;
     if (!metatype || !this.toValidate(metadata)) {
       return value;

@@ -3,9 +3,9 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import { GRPC_DEFAULT_URL } from '../constants';
-import { InvalidGrpcPackageException } from '../exceptions/errors/invalid-grpc-package.exception';
-import { InvalidGrpcServiceException } from '../exceptions/errors/invalid-grpc-service.exception';
-import { InvalidProtoDefinitionException } from '../exceptions/errors/invalid-proto-definition.exception';
+import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
+import { InvalidGrpcServiceException } from '../errors/invalid-grpc-service.exception';
+import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { ClientGrpc, GrpcOptions } from '../interfaces';
 import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
@@ -57,7 +57,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   public createServiceMethod(
     client: any,
     methodName: string,
-  ): (...args) => Observable<any> {
+  ): (...args: any[]) => Observable<any> {
     return client[methodName].responseStream
       ? this.createStreamServiceMethod(client, methodName)
       : this.createUnaryServiceMethod(client, methodName);
@@ -66,8 +66,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   public createStreamServiceMethod(
     client: any,
     methodName: string,
-  ): (...args) => Observable<any> {
-    return (...args) => {
+  ): (...args: any[]) => Observable<any> {
+    return (...args: any[]) => {
       return new Observable(observer => {
         let isClientCanceled = false;
         const call = client[methodName](...args);
@@ -86,7 +86,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
           call.removeAllListeners();
           observer.complete();
         });
-        return () => {
+        return (): any => {
           if (call.finished) {
             return undefined;
           }
@@ -100,8 +100,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   public createUnaryServiceMethod(
     client: any,
     methodName: string,
-  ): (...args) => Observable<any> {
-    return (...args) => {
+  ): (...args: any[]) => Observable<any> {
+    return (...args: any[]) => {
       return new Observable(observer => {
         client[methodName](...args, (error: any, data: any) => {
           if (error) {
@@ -176,7 +176,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     );
   }
 
-  protected publish(partialPacket, callback: (packet) => any) {
+  protected publish(partialPacket: any, callback: (packet: any) => any) {
     throw new Error(
       'Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).',
     );
