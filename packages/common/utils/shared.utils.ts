@@ -8,4 +8,4 @@ export const validatePath = (path: string): string =>
   path.charAt(0) !== '/' ? '/' + path : path;
 export const isNil = (obj: any): boolean => isUndefined(obj) || obj === null;
 export const isEmpty = (array: any): boolean => !(array && array.length > 0);
-export const isSymbol = (fn: any): boolean => typeof fn === 'symbol';
+export const isSymbol = (fn: any): fn is symbol => typeof fn === 'symbol';

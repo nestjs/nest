@@ -1,4 +1,4 @@
-import { HttpException, HttpServer } from '@nestjs/common';
+import { HttpException } from '@nestjs/common';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
 import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
@@ -7,10 +7,6 @@ import { BaseExceptionFilter } from './base-exception-filter';
 
 export class ExceptionsHandler extends BaseExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];
-
-  constructor(applicationRef: HttpServer) {
-    super(applicationRef);
-  }
 
   public next(exception: Error | HttpException | any, ctx: ArgumentsHost) {
     if (this.invokeCustomFilters(exception, ctx)) {
