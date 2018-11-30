@@ -23,8 +23,6 @@ export {
   HttpServer,
   INestApplication,
   INestApplicationContext,
-  INestExpressApplication,
-  INestFastifyApplication,
   INestMicroservice,
   MiddlewareConsumer,
   MiddlewareFunction,

@@ -9,26 +9,16 @@ import {
 } from '@nestjs/common';
 import { HttpServer } from '@nestjs/common/interfaces';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
-import { ServeStaticOptions } from '@nestjs/common/interfaces/external/serve-static-options.interface';
 import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
-import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import {
-  isFunction,
-  isObject,
-  validatePath,
-} from '@nestjs/common/utils/shared.utils';
-import * as bodyParser from 'body-parser';
+import { isObject, validatePath } from '@nestjs/common/utils/shared.utils';
 import * as cors from 'cors';
-import * as http from 'http';
-import * as https from 'https';
+import { Server } from 'http';
+import { Server as HttpsServer } from 'https';
 import iterate from 'iterare';
 import * as optional from 'optional';
-import { ExpressAdapter } from './adapters/express-adapter';
-import { FastifyAdapter } from './adapters/fastify-adapter';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { NestContainer } from './injector/container';
@@ -46,9 +36,7 @@ const { IoAdapter } =
   optional('@nestjs/websockets/adapters/io-adapter') || ({} as any);
 
 export class NestApplication extends NestApplicationContext
-  implements INestApplication,
-    INestExpressApplication,
-    INestFastifyApplication {
+  implements INestApplication {
   private readonly logger = new Logger(NestApplication.name, true);
   private readonly middlewareModule = new MiddlewareModule();
   private readonly middlewareContainer = new MiddlewareContainer();
@@ -58,7 +46,7 @@ export class NestApplication extends NestApplicationContext
   private readonly socketModule = SocketModule ? new SocketModule() : null;
   private readonly routesResolver: Resolver;
   private readonly microservices: any[] = [];
-  private httpServer: http.Server;
+  private httpServer: Server | HttpsServer;
   private isInitialized = false;
 
   constructor(
@@ -83,9 +71,12 @@ export class NestApplication extends NestApplicationContext
   public registerHttpServer() {
     this.httpServer = this.createServer();
 
-    const server = this.getUnderlyingHttpServer();
-    const ioAdapter = IoAdapter ? new IoAdapter(server) : null;
+    const ioAdapter = IoAdapter ? new IoAdapter(this.httpServer) : null;
     this.config.setIoAdapter(ioAdapter);
+  }
+
+  public getUnderlyingHttpServer<T>(): T {
+    return this.httpAdapter.getHttpServer();
   }
 
   public applyOptions() {
@@ -100,29 +91,8 @@ export class NestApplication extends NestApplicationContext
   }
 
   public createServer(): any {
-    const isHttpsEnabled = this.appOptions && this.appOptions.httpsOptions;
-    const isExpress = this.isExpress();
-
-    if (isHttpsEnabled && isExpress) {
-      const server = https.createServer(
-        this.appOptions.httpsOptions,
-        this.httpAdapter.getInstance(),
-      );
-      (this.httpAdapter as ExpressAdapter).setHttpServer(server);
-      return server;
-    }
-    if (isExpress) {
-      const server = http.createServer(this.httpAdapter.getInstance());
-      (this.httpAdapter as ExpressAdapter).setHttpServer(server);
-      return server;
-    }
-    return this.httpAdapter;
-  }
-
-  public getUnderlyingHttpServer(): any {
-    return this.isExpress()
-      ? this.httpServer
-      : this.httpAdapter.getHttpServer();
+    this.httpAdapter.initHttpServer(this.appOptions);
+    return this.httpAdapter.getHttpServer();
   }
 
   public async registerModules() {
@@ -157,37 +127,12 @@ export class NestApplication extends NestApplicationContext
   }
 
   public registerParserMiddleware() {
-    if (this.httpAdapter instanceof FastifyAdapter) {
-      return this.httpAdapter.register(
-        this.loadPackage('fastify-formbody', 'FastifyAdapter'),
-      );
-    }
-    if (!this.isExpress()) {
-      return undefined;
-    }
-    const parserMiddleware = {
-      jsonParser: bodyParser.json(),
-      urlencodedParser: bodyParser.urlencoded({ extended: true }),
-    };
-    Object.keys(parserMiddleware)
-      .filter(parser => !this.isMiddlewareApplied(this.httpAdapter, parser))
-      .forEach(parserKey => this.httpAdapter.use(parserMiddleware[parserKey]));
-  }
-
-  public isMiddlewareApplied(httpAdapter: HttpServer, name: string): boolean {
-    const app = httpAdapter.getInstance();
-    return (
-      !!app._router &&
-      !!app._router.stack &&
-      isFunction(app._router.stack.filter) &&
-      app._router.stack.some(
-        (layer: any) => layer && layer.handle && layer.handle.name === name,
-      )
-    );
+    this.httpAdapter.registerParserMiddleware();
   }
 
   public async registerRouter() {
     await this.registerMiddleware(this.httpAdapter);
+
     const prefix = this.config.getGlobalPrefix();
     const basePath = prefix ? validatePath(prefix) : '';
     this.routesResolver.resolve(this.httpAdapter, basePath);
@@ -199,7 +144,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public connectMicroservice(options: MicroserviceOptions): INestMicroservice {
-    const { NestMicroservice } = loadPackage(
+    const { NestMicroservice } = this.loadPackage(
       '@nestjs/microservices',
       'NestFactory',
     );
@@ -237,52 +182,9 @@ export class NestApplication extends NestApplicationContext
     return new Promise(resolve => this.startAllMicroservices(resolve));
   }
 
-  public use(...args: any[]): this {
-    (this.httpAdapter as any).use(...args);
+  public use(...args: [any, any?]): this {
+    this.httpAdapter.use(...args);
     return this;
-  }
-
-  public engine(...args: any[]): this {
-    if (!this.isExpress()) {
-      return this;
-    }
-    (this.httpAdapter as ExpressAdapter).engine(...args);
-    return this;
-  }
-
-  public set(...args: any[]): this {
-    if (!this.isExpress()) {
-      return this;
-    }
-    (this.httpAdapter as ExpressAdapter).set(...args);
-    return this;
-  }
-
-  public disable(...args: any[]): this {
-    if (!this.isExpress()) {
-      return this;
-    }
-    (this.httpAdapter as ExpressAdapter).disable(...args);
-    return this;
-  }
-
-  public enable(...args: any[]): this {
-    if (!this.isExpress()) {
-      return this;
-    }
-    (this.httpAdapter as ExpressAdapter).enable(...args);
-    return this;
-  }
-
-  public register(...args: any[]): this {
-    const adapter = this.httpAdapter as FastifyAdapter;
-    adapter.register && adapter.register(...args);
-    return this;
-  }
-
-  public inject(...args: any[]) {
-    const adapter = this.httpAdapter as FastifyAdapter;
-    return adapter.inject && adapter.inject(...args);
   }
 
   public enableCors(options?: CorsOptions): this {
@@ -356,11 +258,8 @@ export class NestApplication extends NestApplicationContext
   }
 
   public useStaticAssets(options: any): this;
-  public useStaticAssets(path: string, options?: ServeStaticOptions): this;
-  public useStaticAssets(
-    pathOrOptions: any,
-    options?: ServeStaticOptions,
-  ): this {
+  public useStaticAssets(path: string, options?: any): this;
+  public useStaticAssets(pathOrOptions: any, options?: any): this {
     this.httpAdapter.useStaticAssets &&
       this.httpAdapter.useStaticAssets(pathOrOptions, options);
     return this;
@@ -386,14 +285,6 @@ export class NestApplication extends NestApplicationContext
       this.middlewareContainer,
       instance,
     );
-  }
-
-  private isExpress(): boolean {
-    const isExpress = !this.httpAdapter.getHttpServer;
-    if (isExpress) {
-      return isExpress;
-    }
-    return this.httpAdapter instanceof ExpressAdapter;
   }
 
   private listenToPromise(microservice: INestMicroservice) {

@@ -23,8 +23,6 @@ export * from './modules/on-init.interface';
 export * from './modules/provider.interface';
 export * from './nest-application-context.interface';
 export * from './nest-application.interface';
-export * from './nest-express-application.interface';
-export * from './nest-fastify-application.interface';
 export * from './nest-microservice.interface';
 export * from './on-application-bootstrap.interface';
 export * from './request-mapping-metadata.interface';

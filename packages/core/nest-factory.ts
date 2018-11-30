@@ -8,14 +8,9 @@ import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/mic
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
-import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
-import { ExpressAdapter } from './adapters/express-adapter';
-import { ExpressFactory } from './adapters/express-factory';
-import { FastifyAdapter } from './adapters/fastify-adapter';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { ExceptionsZone } from './errors/exceptions-zone';
@@ -32,42 +27,39 @@ export class NestFactoryStatic {
    * Creates an instance of the NestApplication
    * @returns {Promise}
    */
-  public async create(
+  public async create<T extends INestApplication = INestApplication>(
     module: any,
     options?: NestApplicationOptions,
-  ): Promise<INestApplication & INestExpressApplication>;
-  public async create(
+  ): Promise<T>;
+  public async create<T extends INestApplication = INestApplication>(
     module: any,
-    httpServer: FastifyAdapter,
+    httpServer: HttpServer,
     options?: NestApplicationOptions,
-  ): Promise<INestApplication & INestFastifyApplication>;
-  public async create(
+  ): Promise<T>;
+  public async create<T extends INestApplication = INestApplication>(
     module: any,
-    httpServer: HttpServer | any,
+    serverOrOptions?: HttpServer | NestApplicationOptions,
     options?: NestApplicationOptions,
-  ): Promise<INestApplication & INestExpressApplication>;
-  public async create(
-    module: any,
-    serverOrOptions?: any,
-    options?: NestApplicationOptions,
-  ): Promise<
-    INestApplication & (INestExpressApplication | INestFastifyApplication)
-  > {
-    const isHttpServer = serverOrOptions && serverOrOptions.patch;
+  ): Promise<T> {
     // tslint:disable-next-line:prefer-const
-    let [httpServer, appOptions] = isHttpServer
+    let [httpServer, appOptions] = this.isHttpServer(serverOrOptions)
       ? [serverOrOptions, options]
-      : [ExpressFactory.create(), serverOrOptions];
+      : [this.createHttpAdapter(), serverOrOptions];
 
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
-    httpServer = this.applyExpressAdapter(httpServer);
 
     this.applyLogger(appOptions);
     await this.initialize(module, container, applicationConfig, httpServer);
-    return this.createNestInstance<NestApplication>(
-      new NestApplication(container, httpServer, applicationConfig, appOptions),
+
+    const instance = new NestApplication(
+      container,
+      httpServer,
+      applicationConfig,
+      appOptions,
     );
+    const target = this.createAdapterProxy<T>(instance, httpServer);
+    return this.createNestInstance<T>(target);
   }
 
   /**
@@ -159,8 +151,9 @@ export class NestFactoryStatic {
 
   private createExceptionProxy() {
     return (receiver: Record<string, any>, prop: string) => {
-      if (!(prop in receiver)) return;
-
+      if (!(prop in receiver)) {
+        return;
+      }
       if (isFunction(receiver[prop])) {
         return (...args: any[]) => {
           let result;
@@ -181,12 +174,29 @@ export class NestFactoryStatic {
     !isNil(options.logger) && Logger.overrideLogger(options.logger);
   }
 
-  private applyExpressAdapter(httpAdapter: HttpServer): HttpServer {
-    const isAdapter = httpAdapter.getHttpServer;
-    if (isAdapter) {
-      return httpAdapter;
-    }
-    return new ExpressAdapter(httpAdapter);
+  private createHttpAdapter<T = any>(httpServer?: T): HttpServer {
+    const { ExpressAdapter } = loadPackage(
+      '@nestjs/platform-express',
+      'NestFactory',
+    );
+    return new ExpressAdapter(httpServer);
+  }
+
+  private isHttpServer(
+    serverOrOptions: HttpServer | NestApplicationOptions,
+  ): serverOrOptions is HttpServer {
+    return !!(serverOrOptions && (serverOrOptions as HttpServer).patch);
+  }
+
+  private createAdapterProxy<T>(app: NestApplication, adapter: HttpServer): T {
+    return (new Proxy(app, {
+      get: (receiver: Record<string, any>, prop: string) => {
+        if (!(prop in receiver) && prop in adapter) {
+          return adapter[prop];
+        }
+        return receiver[prop];
+      },
+    }) as any) as T;
   }
 }
 

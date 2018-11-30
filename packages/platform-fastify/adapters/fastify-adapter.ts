@@ -1,13 +1,16 @@
 import { RequestMethod } from '@nestjs/common';
 import { ErrorHandler, RequestHandler } from '@nestjs/common/interfaces';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import * as pathToRegexp from 'path-to-regexp';
 
-export class FastifyAdapter {
-  protected readonly instance: any;
-
+export class FastifyAdapter extends AbstractHttpAdapter {
+  setBaseViewsDir(path: string) {}
+  registerParserMiddleware() {
+    this.register(loadPackage('fastify-formbody', 'FastifyAdapter'));
+  }
   constructor(options?: any) {
-    this.instance = loadPackage('fastify', 'FastifyAdapter')(options);
+    super(loadPackage('fastify', 'FastifyAdapter')(options));
   }
 
   use(handler: RequestHandler | ErrorHandler);
