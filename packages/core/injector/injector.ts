@@ -409,10 +409,9 @@ export class Injector {
   ): Promise<T> {
     const { metatype, inject } = wrapper;
     if (isNil(inject)) {
-      targetMetatype.instance = Object.assign(
-        targetMetatype.instance,
-        new metatype(...instances),
-      );
+      targetMetatype.instance = wrapper.forwardRef
+        ? Object.assign(targetMetatype.instance, new metatype(...instances))
+        : new metatype(...instances);
     } else {
       const factoryResult = ((targetMetatype.metatype as any) as Function)(
         ...instances,

@@ -50,7 +50,7 @@ export class Module {
     string,
     InstanceWrapper<Controller>
   >();
-  private readonly _exports = new Set<string>();
+  private readonly _exports = new Set<string | symbol>();
 
   constructor(
     private readonly _metatype: Type<any>,
@@ -99,7 +99,7 @@ export class Module {
     return this._controllers;
   }
 
-  get exports(): Set<string> {
+  get exports(): Set<string | symbol> {
     return this._exports;
   }
 
@@ -296,14 +296,14 @@ export class Module {
   }
 
   public addExportedProvider(
-    provider: ProviderMetatype | string | DynamicModule,
+    provider: ProviderMetatype | string | symbol | DynamicModule,
   ) {
-    const addExportedUnit = (token: string) =>
+    const addExportedUnit = (token: string | symbol) =>
       this._exports.add(this.validateExportedProvider(token));
 
     if (this.isCustomProvider(provider as any)) {
       return this.addCustomExportedProvider(provider as any);
-    } else if (isString(provider)) {
+    } else if (isString(provider) || isSymbol(provider)) {
       return addExportedUnit(provider);
     } else if (this.isDynamicModule(provider)) {
       const { module } = provider;
@@ -322,7 +322,7 @@ export class Module {
     this._exports.add(this.validateExportedProvider(provide.name));
   }
 
-  public validateExportedProvider(token: string) {
+  public validateExportedProvider(token: string | symbol) {
     if (this._providers.has(token)) {
       return token;
     }
@@ -333,7 +333,7 @@ export class Module {
       .filter(metatype => metatype)
       .map(({ name }) => name);
 
-    if (!importedRefNames.includes(token)) {
+    if (!importedRefNames.includes(token as any)) {
       const { name } = this.metatype;
       throw new UnknownExportException(name);
     }

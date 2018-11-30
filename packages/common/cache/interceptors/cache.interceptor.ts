@@ -8,7 +8,7 @@ import {
 } from '../../interfaces';
 import { CACHE_KEY_METADATA, CACHE_MANAGER } from '../cache.constants';
 
-const APPLICATION_REF = 'ApplicationReferenceHost';
+const APPLICATION_REFERENCE_HOST = 'ApplicationReferenceHost';
 const REFLECTOR = 'Reflector';
 
 export interface ApplicationHost<T extends HttpServer = any> {
@@ -16,19 +16,15 @@ export interface ApplicationHost<T extends HttpServer = any> {
 }
 
 @Injectable()
-export class CacheInterceptor<TManager = any> implements NestInterceptor {
-  protected readonly isHttpApp: boolean;
+export class CacheInterceptor implements NestInterceptor {
+  @Optional()
+  @Inject(APPLICATION_REFERENCE_HOST)
+  protected readonly applicationRefHost: ApplicationHost;
 
   constructor(
-    @Optional()
-    @Inject(APPLICATION_REF)
-    protected readonly applicationHost: ApplicationHost,
-    @Inject(CACHE_MANAGER) protected readonly cacheManager: TManager,
+    @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
     @Inject(REFLECTOR) protected readonly reflector: any,
-  ) {
-    const httpServer = applicationHost.applicationRef;
-    this.isHttpApp = httpServer && !!httpServer.getRequestMethod;
-  }
+  ) {}
 
   async intercept(
     context: ExecutionContext,
@@ -52,11 +48,13 @@ export class CacheInterceptor<TManager = any> implements NestInterceptor {
   }
 
   trackBy(context: ExecutionContext): string | undefined {
-    if (!this.isHttpApp) {
+    const httpServer = this.applicationRefHost.applicationRef;
+    const isHttpApp = httpServer && !!httpServer.getRequestMethod;
+
+    if (!isHttpApp) {
       return this.reflector.get(CACHE_KEY_METADATA, context.getHandler());
     }
     const request = context.getArgByIndex(0);
-    const httpServer = this.applicationHost.applicationRef;
     if (httpServer.getRequestMethod(request) !== 'GET') {
       return undefined;
     }
