@@ -227,7 +227,11 @@ export class Injector {
     module: Module,
   ) {
     if (isUndefined(param)) {
-      throw new UndefinedDependencyException(wrapper.name, dependencyContext, module);
+      throw new UndefinedDependencyException(
+        wrapper.name,
+        dependencyContext,
+        module,
+      );
     }
     const token = this.resolveParamToken(wrapper, param);
     return this.resolveComponentInstance<T>(
@@ -293,7 +297,11 @@ export class Injector {
       dependencyContext.name,
     );
     if (isNil(instanceWrapper)) {
-      throw new UnknownDependenciesException(wrapper.name, dependencyContext, module);
+      throw new UnknownDependenciesException(
+        wrapper.name,
+        dependencyContext,
+        module,
+      );
     }
     return instanceWrapper;
   }
@@ -401,10 +409,9 @@ export class Injector {
   ): Promise<T> {
     const { metatype, inject } = wrapper;
     if (isNil(inject)) {
-      targetMetatype.instance = Object.assign(
-        targetMetatype.instance,
-        new metatype(...instances),
-      );
+      targetMetatype.instance = wrapper.forwardRef
+        ? Object.assign(targetMetatype.instance, new metatype(...instances))
+        : new metatype(...instances);
     } else {
       const factoryResult = ((targetMetatype.metatype as any) as Function)(
         ...instances,
