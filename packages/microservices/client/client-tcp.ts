@@ -57,7 +57,7 @@ export class ClientTCP extends ClientProxy {
     return this.connection;
   }
 
-  public handleResponse(buffer: WritePacket & PacketId) {
+  public handleResponse(buffer: WritePacket & PacketId): void {
     const { err, response, isDisposed, id } = buffer;
     const callback = this.routingMap.get(id);
     if (!callback) {
@@ -88,7 +88,7 @@ export class ClientTCP extends ClientProxy {
   public bindEvents(socket: JsonSocket) {
     socket.on(
       ERROR_EVENT,
-      err => err.code !== ECONNREFUSED && this.handleError(err),
+      (err: any) => err.code !== ECONNREFUSED && this.handleError(err),
     );
     socket.on(CLOSE_EVENT, () => this.handleClose());
   }

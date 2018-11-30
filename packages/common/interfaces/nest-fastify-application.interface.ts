@@ -5,7 +5,7 @@ export interface INestFastifyApplication {
    *
    * @returns {this}
    */
-  register(...args): this;
+  register(...args: any[]): this;
 
   /**
    * Sets a base directory for public assets.

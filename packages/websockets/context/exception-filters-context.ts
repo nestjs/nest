@@ -12,7 +12,7 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
 
   public create(
     instance: Controller,
-    callback: (client, data) => any,
+    callback: <TClient>(client: TClient, data: any) => any,
     module: string,
   ): WsExceptionsHandler {
     this.moduleContext = module;

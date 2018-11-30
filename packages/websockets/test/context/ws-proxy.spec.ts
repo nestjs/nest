@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { WsProxy } from '../../context/ws-proxy';
 import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
-import { WsException } from '../../exceptions/ws-exception';
+import { WsException } from '../../errors/ws-exception';
 
 describe('WsProxy', () => {
   let routerProxy: WsProxy;

@@ -1,5 +1,5 @@
 import { Type } from '@nestjs/common';
-import { NestContainer } from './container';
+import { InstanceWrapper, NestContainer } from './container';
 import { ContainerScanner } from './container-scanner';
 import { Injector } from './injector';
 import { Module } from './module';
@@ -29,7 +29,7 @@ export abstract class ModuleRef {
     type: Type<T>,
     module: Module,
   ): Promise<T> {
-    const wrapper = {
+    const wrapper: InstanceWrapper<any> = {
       name: type.name,
       metatype: type,
       instance: undefined,
@@ -37,7 +37,7 @@ export abstract class ModuleRef {
     };
     return new Promise<T>(async (resolve, reject) => {
       try {
-        const callback = async instances => {
+        const callback = async (instances: any[]) => {
           const properties = await this.injector.resolveProperties(
             wrapper,
             module,

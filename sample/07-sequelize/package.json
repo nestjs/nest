@@ -19,7 +19,7 @@
     "rxjs": "^6.0.0",
     "sequelize": "^4.28.0",
     "sequelize-typescript": "^0.6.1",
-    "typescript": "^2.6.2"
+    "typescript": "^3.1.0"
   },
   "devDependencies": {
     "@types/node": "^7.0.41",

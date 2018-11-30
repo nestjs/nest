@@ -1,8 +1,8 @@
 import * as multer from 'multer';
 import { Observable } from 'rxjs';
 import { Inject, Optional } from '../../decorators';
-import { mixin } from '../../decorators/core/component.decorator';
-import { ExecutionContext } from '../../interfaces';
+import { mixin } from '../../decorators/core/injectable.decorator';
+import { ExecutionContext, Type } from '../../interfaces';
 import { MulterOptions } from '../../interfaces/external/multer-options.interface';
 import {
   CallHandler,
@@ -17,16 +17,16 @@ type MulterInstance = any;
 export function FileInterceptor(
   fieldName: string,
   localOptions?: MulterOptions,
-) {
+): Type<NestInterceptor> {
   class MixinInterceptor implements NestInterceptor {
-    readonly upload: MulterInstance;
+    protected multer: MulterInstance;
 
     constructor(
       @Optional()
       @Inject(MULTER_MODULE_OPTIONS)
       options: MulterModuleOptions = {},
     ) {
-      this.upload = multer({
+      this.multer = multer({
         ...options,
         ...localOptions,
       });
@@ -39,10 +39,10 @@ export function FileInterceptor(
       const ctx = context.switchToHttp();
 
       await new Promise((resolve, reject) =>
-        this.upload.single(fieldName)(
+        this.multer.single(fieldName)(
           ctx.getRequest(),
           ctx.getResponse(),
-          err => {
+          (err: any) => {
             if (err) {
               const error = transformException(err);
               return reject(error);
@@ -55,5 +55,5 @@ export function FileInterceptor(
     }
   }
   const Interceptor = mixin(MixinInterceptor);
-  return Interceptor;
+  return Interceptor as Type<NestInterceptor>;
 }

@@ -24,7 +24,7 @@ describe('FilesInterceptor', () => {
 
       const callback = (req, res, next) => next();
       const arraySpy = sinon
-        .stub((target as any).upload, 'array')
+        .stub((target as any).multer, 'array')
         .returns(callback);
 
       await target.intercept(new ExecutionContextHost([]), handler);
@@ -38,7 +38,7 @@ describe('FilesInterceptor', () => {
       const err = {};
       const callback = (req, res, next) => next(err);
 
-      (target as any).upload = {
+      (target as any).multer = {
         array: () => callback,
       };
       expect(

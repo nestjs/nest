@@ -60,10 +60,11 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public consumeChannel() {
-    this.channel.addSetup(channel =>
+    this.channel.addSetup((channel: any) =>
       channel.consume(
         this.replyQueue,
-        msg => this.responseEmitter.emit(msg.properties.correlationId, msg),
+        (msg: any) =>
+          this.responseEmitter.emit(msg.properties.correlationId, msg),
         { noAck: true },
       ),
     );
@@ -87,7 +88,7 @@ export class ClientRMQ extends ClientProxy {
     return new Promise(resolve => {
       this.channel = this.client.createChannel({
         json: false,
-        setup: channel => this.setupChannel(channel, resolve),
+        setup: (channel: any) => this.setupChannel(channel, resolve),
       });
     });
   }
@@ -101,7 +102,7 @@ export class ClientRMQ extends ClientProxy {
     source$: Observable<T>,
   ): Observable<T> {
     const close$ = fromEvent(instance, DISCONNECT_EVENT).pipe(
-      map(err => {
+      map((err: any) => {
         throw err;
       }),
     );
@@ -129,7 +130,7 @@ export class ClientRMQ extends ClientProxy {
   ): Function {
     try {
       const correlationId = randomStringGenerator();
-      const listener = ({ content }) =>
+      const listener = ({ content }: { content: any }) =>
         this.handleMessage(JSON.parse(content.toString()), callback);
 
       this.responseEmitter.on(correlationId, listener);
@@ -166,6 +167,6 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public handleError(client: any): void {
-    client.addListener(ERROR_EVENT, err => this.logger.error(err));
+    client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 }

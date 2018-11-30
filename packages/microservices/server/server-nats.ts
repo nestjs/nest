@@ -73,7 +73,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(channel: string, client: Client) {
-    return async (buffer, replyTo: string) =>
+    return async (buffer: ReadPacket & PacketId, replyTo: string) =>
       this.handleMessage(channel, buffer, client, replyTo);
   }
 
@@ -97,7 +97,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public getPublisher(publisher: Client, replyTo: string, id: string) {
-    return response =>
+    return (response: any) =>
       publisher.publish(
         replyTo,
         Object.assign(response, {
@@ -106,7 +106,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
       );
   }
 
-  public handleError(stream) {
-    stream.on(ERROR_EVENT, err => this.logger.error(err));
+  public handleError(stream: any) {
+    stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 }

@@ -1,2 +1,4 @@
-export const InvalidModuleConfigMessage = (property: string) =>
-  `Invalid property '${property}' in @Module() decorator.`;
+export const INVALID_MODULE_CONFIG_MESSAGE = (
+  text: TemplateStringsArray,
+  property: string,
+) => `Invalid property '${property}' in the @Module() decorator.`;

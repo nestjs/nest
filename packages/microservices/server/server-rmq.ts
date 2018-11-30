@@ -59,13 +59,13 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   public async start(callback?: () => void) {
     this.server = this.createClient();
-    this.server.on(CONNECT_EVENT, _ => {
+    this.server.on(CONNECT_EVENT, (_: any) => {
       this.channel = this.server.createChannel({
         json: false,
-        setup: channel => this.setupChannel(channel, callback),
+        setup: (channel: any) => this.setupChannel(channel, callback),
       });
     });
-    this.server.on(DISCONNECT_EVENT, err => {
+    this.server.on(DISCONNECT_EVENT, (err: any) => {
       this.logger.error(DISCONNECTED_RMQ_MESSAGE);
     });
   }
@@ -77,7 +77,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   public async setupChannel(channel: any, callback: Function) {
     await channel.assertQueue(this.queue, this.queueOptions);
     await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
-    channel.consume(this.queue, msg => this.handleMessage(msg), {
+    channel.consume(this.queue, (msg: any) => this.handleMessage(msg), {
       noAck: true,
     });
     callback();
@@ -101,7 +101,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       await handler(packet.data),
     ) as Observable<any>;
 
-    const publish = data =>
+    const publish = <T>(data: T) =>
       this.sendMessage(data, properties.replyTo, properties.correlationId);
 
     response$ && this.send(response$, publish);

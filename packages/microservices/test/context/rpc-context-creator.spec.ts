@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
+import { Injectable, UseGuards, UsePipes } from '../../../common';
 import { ApplicationConfig } from '../../../core/application-config';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
 import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
@@ -9,19 +10,12 @@ import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-co
 import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
 import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
-import { RpcException } from '../../index';
-import {
-  Component,
-  Guard,
-  Injectable,
-  UseGuards,
-  UsePipes,
-} from '../../../common';
 import { ExceptionFiltersContext } from '../../context/exception-filters-context';
 import { RpcContextCreator } from '../../context/rpc-context-creator';
 import { RpcProxy } from '../../context/rpc-proxy';
+import { RpcException } from '../../index';
 
-@Guard()
+@Injectable()
 class TestGuard {
   canActivate: () => true;
 }
@@ -45,7 +39,7 @@ describe('RpcContextCreator', () => {
   let module: string;
 
   @UseGuards(TestGuard)
-  @Component()
+  @Injectable()
   class Test {
     @UsePipes(new TestPipe())
     test(data: string) {

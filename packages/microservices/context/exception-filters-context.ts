@@ -17,7 +17,7 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
 
   public create(
     instance: Controller,
-    callback: (data) => Observable<any>,
+    callback: <T = any>(data: T) => Observable<any>,
     module: string,
   ): RpcExceptionsHandler {
     this.moduleContext = module;

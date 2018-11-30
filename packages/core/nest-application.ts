@@ -57,7 +57,7 @@ export class NestApplication extends NestApplicationContext
     : null;
   private readonly socketModule = SocketModule ? new SocketModule() : null;
   private readonly routesResolver: Resolver;
-  private readonly microservices = [];
+  private readonly microservices: any[] = [];
   private httpServer: http.Server;
   private isInitialized = false;
 
@@ -181,7 +181,7 @@ export class NestApplication extends NestApplicationContext
       !!app._router.stack &&
       isFunction(app._router.stack.filter) &&
       app._router.stack.some(
-        layer => layer && layer.handle && layer.handle.name === name,
+        (layer: any) => layer && layer.handle && layer.handle.name === name,
       )
     );
   }
@@ -242,7 +242,7 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public engine(...args): this {
+  public engine(...args: any[]): this {
     if (!this.isExpress()) {
       return this;
     }
@@ -250,7 +250,7 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public set(...args): this {
+  public set(...args: any[]): this {
     if (!this.isExpress()) {
       return this;
     }
@@ -258,7 +258,7 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public disable(...args): this {
+  public disable(...args: any[]): this {
     if (!this.isExpress()) {
       return this;
     }
@@ -266,7 +266,7 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public enable(...args): this {
+  public enable(...args: any[]): this {
     if (!this.isExpress()) {
       return this;
     }
@@ -274,13 +274,13 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public register(...args): this {
+  public register(...args: any[]): this {
     const adapter = this.httpAdapter as FastifyAdapter;
     adapter.register && adapter.register(...args);
     return this;
   }
 
-  public inject(...args) {
+  public inject(...args: any[]) {
     const adapter = this.httpAdapter as FastifyAdapter;
     return adapter.inject && adapter.inject(...args);
   }
@@ -290,13 +290,16 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public async listen(port: number | string, callback?: () => void);
+  public async listen(
+    port: number | string,
+    callback?: () => void,
+  ): Promise<any>;
   public async listen(
     port: number | string,
     hostname: string,
     callback?: () => void,
-  );
-  public async listen(port: number | string, ...args) {
+  ): Promise<any>;
+  public async listen(port: number | string, ...args: any[]): Promise<any> {
     !this.isInitialized && (await this.init());
 
     this.httpServer.listen(port, ...args);
@@ -305,7 +308,7 @@ export class NestApplication extends NestApplicationContext
 
   public listenAsync(port: number | string, hostname?: string): Promise<any> {
     return new Promise(resolve => {
-      const server = this.listen(port, hostname, () => resolve(server));
+      const server: any = this.listen(port, hostname, () => resolve(server));
     });
   }
 
@@ -353,7 +356,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public useStaticAssets(options: any): this;
-  public useStaticAssets(path: string, options?: ServeStaticOptions);
+  public useStaticAssets(path: string, options?: ServeStaticOptions): this;
   public useStaticAssets(
     pathOrOptions: any,
     options?: ServeStaticOptions,
@@ -378,7 +381,7 @@ export class NestApplication extends NestApplicationContext
     return loadPackage(name, ctx);
   }
 
-  private async registerMiddleware(instance) {
+  private async registerMiddleware(instance: any) {
     await this.middlewareModule.registerMiddleware(
       this.middlewareContainer,
       instance,

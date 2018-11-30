@@ -6,7 +6,7 @@ import { isFunction, isUndefined } from '../../utils/shared.utils';
 
 /**
  * Injects provider which has to be available in the current injector (module) scope.
- * Providers are recognized by types or tokens.
+ * Providers are recognized by either types or tokens.
  */
 export function Inject<T = any>(token?: T) {
   return (target: Object, key: string | symbol, index?: number) => {

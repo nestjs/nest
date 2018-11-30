@@ -22,7 +22,7 @@ describe('FileInterceptor', () => {
       const target = new (FileInterceptor(fieldName))();
       const callback = (req, res, next) => next();
       const singleSpy = sinon
-        .stub((target as any).upload, 'single')
+        .stub((target as any).multer, 'single')
         .returns(callback);
 
       await target.intercept(new ExecutionContextHost([]), handler);
@@ -36,7 +36,7 @@ describe('FileInterceptor', () => {
       const err = {};
       const callback = (req, res, next) => next(err);
 
-      (target as any).upload = {
+      (target as any).multer = {
         single: () => callback,
       };
       expect(

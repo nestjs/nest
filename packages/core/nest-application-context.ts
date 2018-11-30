@@ -80,11 +80,11 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   protected async callModuleInitHook(module: Module): Promise<any> {
-    const components = [...module.components];
-    // The Module (class) instance is the first element of the components array
+    const providers = [...module.providers];
+    // Module (class) instance is the first element of the providers array
     // Lifecycle hook has to be called once all classes are properly initialized
-    const [_, { instance: moduleClassInstance }] = components.shift();
-    const instances = [...module.routes, ...components];
+    const [_, { instance: moduleClassInstance }] = providers.shift();
+    const instances = [...module.controllers, ...providers];
 
     await Promise.all(
       iterate(instances)
@@ -110,11 +110,11 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   protected async callModuleDestroyHook(module: Module): Promise<any> {
-    const components = [...module.components];
-    // The Module (class) instance is the first element of the components array
+    const providers = [...module.providers];
+    // Module (class) instance is the first element of the providers array
     // Lifecycle hook has to be called once all classes are properly destroyed
-    const [_, { instance: moduleClassInstance }] = components.shift();
-    const instances = [...module.routes, ...components];
+    const [_, { instance: moduleClassInstance }] = providers.shift();
+    const instances = [...module.controllers, ...providers];
 
     await Promise.all(
       iterate(instances)
@@ -131,7 +131,7 @@ export class NestApplicationContext implements INestApplicationContext {
     }
   }
 
-  protected hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
+  protected hasOnModuleDestroyHook(instance: any): instance is OnModuleDestroy {
     return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
   }
 
@@ -143,9 +143,9 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   protected async callModuleBootstrapHook(module: Module): Promise<any> {
-    const components = [...module.components];
-    const [_, { instance: moduleClassInstance }] = components.shift();
-    const instances = [...module.routes, ...components];
+    const providers = [...module.providers];
+    const [_, { instance: moduleClassInstance }] = providers.shift();
+    const instances = [...module.controllers, ...providers];
 
     await Promise.all(
       iterate(instances)

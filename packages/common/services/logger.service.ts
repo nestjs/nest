@@ -3,12 +3,12 @@ import { Injectable, Optional } from '../decorators';
 import { NestEnvironment } from '../enums/nest-environment.enum';
 import { isObject } from '../utils/shared.utils';
 
-declare const process;
+declare const process: any;
 
 export interface LoggerService {
-  log(message: any, context?: string);
-  error(message: any, trace?: string, context?: string);
-  warn(message: any, context?: string);
+  log(message: any, context?: string): any;
+  error(message: any, trace?: string, context?: string): any;
+  warn(message: any, context?: string): any;
 }
 
 @Injectable()

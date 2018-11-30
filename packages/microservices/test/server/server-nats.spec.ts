@@ -74,7 +74,7 @@ describe('ServerNats', () => {
           .stub(server, 'handleMessage')
           .callsFake(() => null);
         (await server.getMessageHandler('', (server as any).natsClient))(
-          '',
+          '' as any,
           '',
         );
         expect(handleMessageStub.called).to.be.true;

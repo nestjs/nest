@@ -10,7 +10,7 @@ export class InterceptorsConsumer {
     interceptors: NestInterceptor[],
     args: any[],
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
     next: () => Promise<any>,
   ): Promise<any> {
     if (isEmpty(interceptors)) {
@@ -34,7 +34,7 @@ export class InterceptorsConsumer {
   public createContext(
     args: any[],
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
   ): ExecutionContextHost {
     return new ExecutionContextHost(
       args,

@@ -3,9 +3,9 @@ import { join } from 'path';
 import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientGrpcProxy } from '../../client/client-grpc';
-import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
-import { InvalidGrpcServiceException } from '../../exceptions/errors/invalid-grpc-service.exception';
-import { InvalidProtoDefinitionException } from '../../exceptions/errors/invalid-proto-definition.exception';
+import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
+import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception';
+import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
 // tslint:disable:no-string-literal
 
 class GrpcService {
