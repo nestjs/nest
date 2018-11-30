@@ -1,32 +1,22 @@
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Inject, Injectable, Optional } from '../../decorators';
-import {
-  ExecutionContext,
-  HttpServer,
-  NestInterceptor,
-} from '../../interfaces';
+import { ExecutionContext, NestInterceptor } from '../../interfaces';
 import { CACHE_KEY_METADATA, CACHE_MANAGER } from '../cache.constants';
 
-// NOTE (external)
-// We need to deduplicate them here due to the circular dependency
-// between core and common packages
-const HTTP_SERVER_REF = 'HTTP_SERVER_REF';
+const APPLICATION_REFERENCE_HOST = 'ApplicationReferenceHost';
 const REFLECTOR = 'Reflector';
 
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
-  protected readonly isHttpApp: boolean;
+  @Optional()
+  @Inject(APPLICATION_REFERENCE_HOST)
+  protected readonly applicationRefHost: any;
 
   constructor(
-    @Optional()
-    @Inject(HTTP_SERVER_REF)
-    protected readonly httpServer: HttpServer,
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
     @Inject(REFLECTOR) protected readonly reflector,
-  ) {
-    this.isHttpApp = httpServer && !!httpServer.getRequestMethod;
-  }
+  ) {}
 
   async intercept(
     context: ExecutionContext,
@@ -48,13 +38,16 @@ export class CacheInterceptor implements NestInterceptor {
   }
 
   trackBy(context: ExecutionContext): string | undefined {
-    if (!this.isHttpApp) {
+    const httpServer = this.applicationRefHost.applicationRef;
+    const isHttpApp = httpServer && !!httpServer.getRequestMethod;
+
+    if (!isHttpApp) {
       return this.reflector.get(CACHE_KEY_METADATA, context.getHandler());
     }
     const request = context.getArgByIndex(0);
-    if (this.httpServer.getRequestMethod(request) !== 'GET') {
+    if (httpServer.getRequestMethod(request) !== 'GET') {
       return undefined;
     }
-    return this.httpServer.getRequestUrl(request);
+    return httpServer.getRequestUrl(request);
   }
 }
