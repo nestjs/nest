@@ -26,7 +26,7 @@ export class RpcContextCreator {
 
   public create(
     instance: Controller,
-    callback: (data: any) => Observable<any>,
+    callback: (data: any, ...args: any[]) => Observable<any>,
     module: string,
   ): (...args: any[]) => Promise<Observable<any>> {
     const exceptionHandler = this.exceptionFiltersContext.create(
