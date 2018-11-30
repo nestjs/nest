@@ -5,30 +5,21 @@
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "precommit": "lint-staged",
-    "test":
-      "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --require 'node_modules/reflect-metadata/Reflect.js'",
-    "integration-test":
-      "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js'",
-    "lint":
-      "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
-    "format":
-      "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
+    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --require 'node_modules/reflect-metadata/Reflect.js'",
+    "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js'",
+    "lint": "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
+    "format": "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
     "clean": "gulp clean:bundle",
     "build": "npm run clean && gulp build",
     "prebuild:dev": "rm -rf node_modules/@nestjs",
     "build:dev": "gulp build --dist node_modules/@nestjs && gulp move",
     "postinstall": "opencollective",
     "prerelease": "gulp copy-misc && gulp build --dist node_modules/@nestjs",
-    "publish":
-      "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --force-publish --exact -m \"chore(@nestjs) publish %s release\"",
-    "publish:rc":
-      "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
-    "publish:next":
-      "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
-    "publish:beta":
-      "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\"",
-    "publish:test":
-      "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --force-publish --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\""
+    "publish": "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --force-publish --exact -m \"chore(@nestjs) publish %s release\"",
+    "publish:rc": "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
+    "publish:next": "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
+    "publish:beta": "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\"",
+    "publish:test": "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --force-publish --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\""
   },
   "engines": {
     "node": ">= 8.9.0"
@@ -141,7 +132,9 @@
     }
   },
   "nyc": {
-    "include": ["packages/**/*.ts"],
+    "include": [
+      "packages/**/*.ts"
+    ],
     "exclude": [
       "node_modules/",
       "packages/**/*.spec.ts",
@@ -161,13 +154,23 @@
       "packages/common/serializer/**/*",
       "packages/common/services/logger.service.ts"
     ],
-    "extension": [".ts"],
-    "require": ["ts-node/register"],
-    "reporter": ["text-summary", "html"],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
     "sourceMap": true,
     "instrument": true
   },
   "lint-staged": {
-    "packages/**/*.{ts,json}": ["npm run format", "git add"]
+    "packages/**/*.{ts,json}": [
+      "npm run format",
+      "git add"
+    ]
   }
 }
