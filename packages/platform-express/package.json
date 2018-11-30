@@ -1,0 +1,18 @@
+{
+  "name": "@nestjs/testing",
+  "version": "5.4.1",
+  "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
+  "author": "Kamil Mysliwiec",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nestjs/nest"
+  },
+  "dependencies": {
+    "optional": "0.1.4"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "5.*",
+    "@nestjs/core": "^5.0.0"
+  }
+}
