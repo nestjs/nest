@@ -9,7 +9,6 @@
     "url": "https://github.com/nestjs/nest"
   },
   "dependencies": {
-    "deprecate": "1.0.0",
     "optional": "0.1.4"
   },
   "peerDependencies": {

@@ -78,8 +78,7 @@ export class NestContainer {
     }
     this.dynamicModulesMetadata.set(token, dynamicModuleMetadata);
 
-    const { modules, imports } = dynamicModuleMetadata;
-    this.addDynamicModules(modules, scope);
+    const { imports } = dynamicModuleMetadata;
     this.addDynamicModules(imports, scope);
   }
 

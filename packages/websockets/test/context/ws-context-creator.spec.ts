@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { Guard, Injectable, UseGuards, UsePipes } from '../../../common';
+import { Injectable, UseGuards, UsePipes } from '../../../common';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
 import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
 import { NestContainer } from '../../../core/injector/container';
@@ -14,7 +14,7 @@ import { WsContextCreator } from '../../context/ws-context-creator';
 import { WsProxy } from '../../context/ws-proxy';
 import { WsException } from '../../index';
 
-@Guard()
+@Injectable()
 class TestGuard {
   canActivate: () => true;
 }
