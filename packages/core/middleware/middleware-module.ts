@@ -184,7 +184,7 @@ export class MiddlewareModule {
   ) {
     const proxy = this.routerProxy.createProxy(middleware, exceptionsHandler);
     const prefix = this.config.getGlobalPrefix();
-    const basePath = prefix ? validatePath(prefix) : '';
+    const basePath = validatePath(prefix);
     router(basePath + path, proxy);
   }
 }

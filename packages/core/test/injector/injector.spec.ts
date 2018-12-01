@@ -69,7 +69,7 @@ describe('Injector', () => {
       ) as InstanceWrapper<MainTest>;
 
       expect(instance.depOne).instanceof(DependencyOne);
-      expect(instance.depTwo).instanceof(DependencyOne);
+      expect(instance.depTwo).instanceof(DependencyTwo);
       expect(instance).instanceof(MainTest);
     });
 
