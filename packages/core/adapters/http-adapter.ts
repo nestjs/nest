@@ -1,5 +1,6 @@
 import { HttpServer, RequestMethod } from '@nestjs/common';
 import { RequestHandler } from '@nestjs/common/interfaces';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 
 export abstract class AbstractHttpAdapter<T = any> implements HttpServer {
@@ -73,8 +74,7 @@ export abstract class AbstractHttpAdapter<T = any> implements HttpServer {
 
   abstract close();
   abstract initHttpServer(options: NestApplicationOptions);
-  abstract useStaticAssets(path: string, options: any);
-  abstract setBaseViewsDir(path: string);
+  abstract useStaticAssets(...args: any[]);
   abstract setViewEngine(engine: string);
   abstract getRequestMethod(request);
   abstract getRequestUrl(request);
@@ -84,6 +84,7 @@ export abstract class AbstractHttpAdapter<T = any> implements HttpServer {
   abstract setNotFoundHandler(handler: Function);
   abstract setHeader(response, name: string, value: string);
   abstract registerParserMiddleware();
+  abstract enableCors(options: CorsOptions);
   abstract createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): (path: string, callback: Function) => any;

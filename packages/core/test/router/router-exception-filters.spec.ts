@@ -1,12 +1,11 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
+import * as sinon from 'sinon';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
-import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
+import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
 import { ApplicationConfig } from '../../application-config';
-import { ExpressAdapter } from '../../adapters/express-adapter';
 import { NestContainer } from '../../injector/container';
+import { RouterExceptionFilters } from '../../router/router-exception-filters';
+import { NoopHttpAdapter } from '../utils/noop-adapter';
 
 describe('RouterExceptionFilters', () => {
   let moduleName: string;
@@ -23,7 +22,7 @@ describe('RouterExceptionFilters', () => {
     exceptionFilter = new RouterExceptionFilters(
       new NestContainer(),
       new ApplicationConfig(),
-      new ExpressAdapter({}),
+      new NoopHttpAdapter({}),
     );
   });
   describe('create', () => {

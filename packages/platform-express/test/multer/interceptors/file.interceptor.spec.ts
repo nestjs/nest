@@ -2,7 +2,7 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.hos
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { FileInterceptor } from '../../../files/interceptors/file.interceptor';
+import { FileInterceptor } from '../../../multer/interceptors/file.interceptor';
 
 describe('FileInterceptor', () => {
   it('should return metatype with expected structure', async () => {

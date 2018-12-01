@@ -40,7 +40,7 @@ export class NestMicroservice extends NestApplicationContext
     config: MicroserviceOptions = {},
     private readonly applicationConfig: ApplicationConfig,
   ) {
-    super(container, [], null);
+    super(container);
 
     this.registerWsAdapter();
     this.microservicesModule.register(container, this.applicationConfig);

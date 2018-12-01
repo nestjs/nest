@@ -1,4 +1,7 @@
-export interface INestFastifyApplication {
+import { INestApplication } from '@nestjs/common';
+import { HTTPInjectOptions, HTTPInjectResponse } from 'fastify';
+
+export interface INestFastifyApplication extends INestApplication {
   /**
    * A wrapper function around native `fastify.register()` method.
    * Example `app.register(require('fastify-formbody'))`
@@ -32,46 +35,4 @@ export interface INestFastifyApplication {
    * @returns {void}
    */
   inject(opts: HTTPInjectOptions | string): Promise<HTTPInjectResponse>;
-}
-
-/** Reference: https://github.com/fastify/fastify */
-export type HTTPMethod =
-  | 'DELETE'
-  | 'GET'
-  | 'HEAD'
-  | 'PATCH'
-  | 'POST'
-  | 'PUT'
-  | 'OPTIONS';
-
-/**
- * Fake http inject options
- */
-export interface HTTPInjectOptions {
-  url: string;
-  method?: HTTPMethod;
-  authority?: string;
-  headers?: object;
-  remoteAddress?: string;
-  payload?: string | object | Buffer | any;
-  simulate?: {
-    end?: boolean;
-    split?: boolean;
-    error?: boolean;
-    close?: boolean;
-  };
-  validate?: boolean;
-}
-
-/**
- * Fake http inject response
- */
-export interface HTTPInjectResponse {
-  raw: any;
-  headers: object;
-  statusCode: number;
-  statusMessage: string;
-  payload: string;
-  rawPayload: Buffer;
-  trailers: object;
 }

@@ -1,9 +1,11 @@
 import { RequestMethod } from '@nestjs/common';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { isFunction, isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
 import * as bodyParser from 'body-parser';
+import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
@@ -79,6 +81,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return request.url;
   }
 
+  public enableCors(options: CorsOptions) {
+    this.use(cors(options));
+  }
+
   public createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): (path: string, callback: Function) => any {
@@ -109,7 +115,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       .forEach(parserKey => this.use(parserMiddleware[parserKey]));
   }
 
-  private isMiddlewareApplied(name: string); : boolean; {
+  private isMiddlewareApplied(name: string): boolean {
     const app = this.getInstance();
     return (
       !!app._router &&

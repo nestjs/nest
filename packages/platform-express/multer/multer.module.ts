@@ -1,5 +1,4 @@
-import { Module } from './../decorators';
-import { DynamicModule, Provider } from './../interfaces';
+import { DynamicModule, Module, Provider } from '@nestjs/common';
 import { MULTER_MODULE_OPTIONS } from './files.constants';
 import {
   MulterModuleAsyncOptions,

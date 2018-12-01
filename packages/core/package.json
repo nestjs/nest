@@ -20,12 +20,10 @@
   },
   "dependencies": {
     "@nuxtjs/opencollective": "0.1.0",
-    "cors": "2.8.4",
     "fast-safe-stringify": "1.2.0",
     "iterare": "0.0.8",
     "object-hash": "1.3.0",
     "optional": "0.1.4",
-    "path-to-regexp": "2.2.1",
     "uuid": "3.3.2"
   },
   "peerDependencies": {

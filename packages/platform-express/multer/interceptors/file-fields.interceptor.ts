@@ -1,18 +1,25 @@
+import {
+  ExecutionContext,
+  Inject,
+  mixin,
+  NestInterceptor,
+  Optional,
+  Type,
+} from '@nestjs/common';
 import * as multer from 'multer';
 import { Observable } from 'rxjs';
-import { Inject, Optional } from '../../decorators';
-import { mixin } from '../../decorators/core/injectable.decorator';
-import { ExecutionContext, Type } from '../../interfaces';
-import { MulterOptions } from '../../interfaces/external/multer-options.interface';
-import { NestInterceptor } from '../../interfaces/features/nest-interceptor.interface';
 import { MULTER_MODULE_OPTIONS } from '../files.constants';
 import { MulterModuleOptions } from '../interfaces';
+import {
+  MulterField,
+  MulterOptions,
+} from '../interfaces/multer-options.interface';
 import { transformException } from '../multer/multer.utils';
 
 type MulterInstance = any;
 
-export function FileInterceptor(
-  fieldName: string,
+export function FileFieldsInterceptor(
+  uploadFields: MulterField[],
   localOptions?: MulterOptions,
 ): Type<NestInterceptor> {
   class MixinInterceptor implements NestInterceptor {
@@ -23,7 +30,7 @@ export function FileInterceptor(
       @Inject(MULTER_MODULE_OPTIONS)
       options: MulterModuleOptions = {},
     ) {
-      this.multer = multer({
+      this.multer = (multer as any)({
         ...options,
         ...localOptions,
       });
@@ -36,7 +43,7 @@ export function FileInterceptor(
       const ctx = context.switchToHttp();
 
       await new Promise((resolve, reject) =>
-        this.multer.single(fieldName)(
+        this.multer.fields(uploadFields)(
           ctx.getRequest(),
           ctx.getResponse(),
           (err: any) => {

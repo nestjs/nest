@@ -1,109 +1,114 @@
 import { RequestMethod } from '@nestjs/common';
 import { ErrorHandler, RequestHandler } from '@nestjs/common/interfaces';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
+import * as fastify from 'fastify';
+import * as cors from 'fastify-cors';
+import * as formBody from 'fastify-formbody';
 import * as pathToRegexp from 'path-to-regexp';
 
 export class FastifyAdapter extends AbstractHttpAdapter {
-  setBaseViewsDir(path: string) {}
-  registerParserMiddleware() {
-    this.register(loadPackage('fastify-formbody', 'FastifyAdapter'));
-  }
-  constructor(options?: any) {
-    super(loadPackage('fastify', 'FastifyAdapter')(options));
+  constructor(options?: fastify.ServerOptions) {
+    super(fastify(options));
   }
 
-  use(handler: RequestHandler | ErrorHandler);
-  use(path: any, handler: RequestHandler | ErrorHandler);
-  use(...args: any[]) {
+  public use(handler: RequestHandler | ErrorHandler);
+  public use(path: any, handler: RequestHandler | ErrorHandler);
+  public use(...args: any[]) {
     return this.instance.use(...args);
   }
 
-  get(handler: RequestHandler);
-  get(path: any, handler: RequestHandler);
-  get(...args: any[]) {
+  public get(handler: RequestHandler);
+  public get(path: any, handler: RequestHandler);
+  public get(...args: any[]) {
     return this.instance.get(...args);
   }
 
-  post(handler: RequestHandler);
-  post(path: any, handler: RequestHandler);
-  post(...args: any[]) {
+  public post(handler: RequestHandler);
+  public post(path: any, handler: RequestHandler);
+  public post(...args: any[]) {
     return this.instance.post(...args);
   }
 
-  head(handler: RequestHandler);
-  head(path: any, handler: RequestHandler);
-  head(...args: any[]) {
+  public head(handler: RequestHandler);
+  public head(path: any, handler: RequestHandler);
+  public head(...args: any[]) {
     return this.instance.head(...args);
   }
 
-  delete(handler: RequestHandler);
-  delete(path: any, handler: RequestHandler);
-  delete(...args: any[]) {
+  public delete(handler: RequestHandler);
+  public delete(path: any, handler: RequestHandler);
+  public delete(...args: any[]) {
     return this.instance.delete(...args);
   }
 
-  put(handler: RequestHandler);
-  put(path: any, handler: RequestHandler);
-  put(...args: any[]) {
+  public put(handler: RequestHandler);
+  public put(path: any, handler: RequestHandler);
+  public put(...args: any[]) {
     return this.instance.put(...args);
   }
 
-  patch(handler: RequestHandler);
-  patch(path: any, handler: RequestHandler);
-  patch(...args: any[]) {
+  public patch(handler: RequestHandler);
+  public patch(path: any, handler: RequestHandler);
+  public patch(...args: any[]) {
     return this.instance.patch(...args);
   }
 
-  options(handler: RequestHandler);
-  options(path: any, handler: RequestHandler);
-  options(...args: any[]) {
+  public options(handler: RequestHandler);
+  public options(path: any, handler: RequestHandler);
+  public options(...args: any[]) {
     return this.instance.options(...args);
   }
 
-  listen(port: string | number, callback?: () => void);
-  listen(port: string | number, hostname: string, callback?: () => void);
-  listen(port: any, hostname?: any, callback?: any) {
+  public listen(port: string | number, callback?: () => void);
+  public listen(port: string | number, hostname: string, callback?: () => void);
+  public listen(port: any, hostname?: any, callback?: any) {
     return this.instance.listen(port, hostname, callback);
   }
 
-  reply(response, body: any, statusCode: number) {
+  public reply(response, body: any, statusCode: number) {
     return response.code(statusCode).send(body);
   }
 
-  render(response, view: string, options: any) {
+  public render(response, view: string, options: any) {
     return response.view(view, options);
   }
 
-  setErrorHandler(handler: Function) {
+  public setErrorHandler(handler: Function) {
     return this.instance.setErrorHandler(handler);
   }
 
-  setNotFoundHandler(handler: Function) {
+  public setNotFoundHandler(handler: Function) {
     return this.instance.setNotFoundHandler(handler);
   }
 
-  getHttpServer<T = any>(): T {
+  public getHttpServer<T = any>(): T {
     return this.instance.server as T;
   }
 
-  getInstance<T = any>(): T {
+  public getInstance<T = any>(): T {
     return this.instance as T;
   }
 
-  register(...args: any[]) {
+  public register(...args: any[]) {
     return this.instance.register(...args);
   }
 
-  inject(...args: any[]) {
+  public inject(...args: any[]) {
     return this.instance.inject(...args);
   }
 
-  close() {
+  public close() {
     return this.instance.close();
   }
 
-  useStaticAssets(options: {
+  public initHttpServer(options: NestApplicationOptions) {
+    this.httpServer = this.instance.server;
+  }
+
+  public useStaticAssets(options: {
     root: string;
     prefix?: string;
     setHeaders?: Function;
@@ -122,19 +127,27 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     );
   }
 
-  setHeader(response, name: string, value: string) {
+  public setHeader(response, name: string, value: string) {
     return response.header(name, value);
   }
 
-  getRequestMethod(request): string {
+  public getRequestMethod(request): string {
     return request.raw.method;
   }
 
-  getRequestUrl(request): string {
+  public getRequestUrl(request): string {
     return request.raw.url;
   }
 
-  createMiddlewareFactory(
+  public enableCors(options: CorsOptions) {
+    this.register(cors(options));
+  }
+
+  public registerParserMiddleware() {
+    this.register(formBody);
+  }
+
+  public createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): (path: string, callback: Function) => any {
     return (path: string, callback: Function) => {

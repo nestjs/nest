@@ -12,6 +12,12 @@ const packages = {
   microservices: ts.createProject('packages/microservices/tsconfig.json'),
   websockets: ts.createProject('packages/websockets/tsconfig.json'),
   testing: ts.createProject('packages/testing/tsconfig.json'),
+  'platform-express': ts.createProject(
+    'packages/platform-express/tsconfig.json',
+  ),
+  'platform-fastify': ts.createProject(
+    'packages/platform-fastify/tsconfig.json',
+  ),
 };
 const modules = Object.keys(packages);
 const source = 'packages';
@@ -34,7 +40,9 @@ gulp.task('copy-misc', function() {
     .pipe(gulp.dest(`${source}/core`))
     .pipe(gulp.dest(`${source}/microservices`))
     .pipe(gulp.dest(`${source}/websockets`))
-    .pipe(gulp.dest(`${source}/testing`));
+    .pipe(gulp.dest(`${source}/testing`))
+    .pipe(gulp.dest(`${source}/platform-fastify`))
+    .pipe(gulp.dest(`${source}/platform-express`));
 });
 
 gulp.task('clean:output', function() {

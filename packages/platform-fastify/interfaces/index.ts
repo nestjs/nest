@@ -1,1 +1,1 @@
-export * from './nest-express-application.interface';
+export * from './nest-fastify-application.interface';

@@ -14,7 +14,6 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject, validatePath } from '@nestjs/common/utils/shared.utils';
-import * as cors from 'cors';
 import { Server } from 'http';
 import { Server as HttpsServer } from 'https';
 import iterate from 'iterare';
@@ -55,7 +54,7 @@ export class NestApplication extends NestApplicationContext
     private readonly config: ApplicationConfig,
     private readonly appOptions: NestApplicationOptions = {},
   ) {
-    super(container, [], null);
+    super(container);
 
     this.applyOptions();
     this.selectContextModule();
@@ -90,9 +89,9 @@ export class NestApplication extends NestApplicationContext
     this.enableCors(this.appOptions.cors as CorsOptions);
   }
 
-  public createServer(): any {
+  public createServer<T = any>(): T {
     this.httpAdapter.initHttpServer(this.appOptions);
-    return this.httpAdapter.getHttpServer();
+    return this.httpAdapter.getHttpServer() as T;
   }
 
   public async registerModules() {
@@ -188,7 +187,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public enableCors(options?: CorsOptions): this {
-    this.httpAdapter.use(cors(options) as any);
+    this.httpAdapter.enableCors(options);
     return this;
   }
 
@@ -276,8 +275,8 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  private loadPackage(name: string, ctx: string) {
-    return loadPackage(name, ctx);
+  private loadPackage<T = any>(name: string, ctx: string): T {
+    return loadPackage(name, ctx) as T;
   }
 
   private async registerMiddleware(instance: any) {

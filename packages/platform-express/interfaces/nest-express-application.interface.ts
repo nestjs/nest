@@ -1,6 +1,7 @@
+import { INestApplication } from '@nestjs/common';
 import { ServeStaticOptions } from './serve-static-options.interface';
 
-export interface INestExpressApplication {
+export interface INestExpressApplication extends INestApplication {
   /**
    * A wrapper function around native `express.set()` method.
    * Example `app.set('trust proxy', 'loopback')`

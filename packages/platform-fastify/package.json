@@ -10,9 +10,10 @@
     "url": "https://github.com/nestjs/nest"
   },
   "dependencies": {
-    "@types/express": "^4.0.39",
-    "body-parser": "1.18.3",
-    "express": "4.16.3"
+    "fastify": "^1.13.1",
+    "fastify-cors": "^0.2.0",
+    "fastify-formbody": "2.0.3",
+    "path-to-regexp": "2.2.1"
   },
   "peerDependencies": {}
 }
