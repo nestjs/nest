@@ -1,4 +1,4 @@
-import { Get, BadRequestException, Controller } from '@nestjs/common';
+import { BadRequestException, Controller, Get } from '@nestjs/common';
 
 @Controller()
 export class ErrorsController {
@@ -13,6 +13,10 @@ export class ErrorsController {
   }
 
   throwError() {
-    throw new BadRequestException('Integration test');
+    throw new BadRequestException({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: 'Integration test',
+    });
   }
 }

@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import * as express from 'express';
 import * as request from 'supertest';
 import { RMQController } from '../src/rmq/rmq.controller';
 
@@ -14,8 +13,9 @@ describe('RabbitMQ transport', () => {
       controllers: [RMQController],
     }).compile();
 
-    server = express();
-    app = module.createNestApplication(server);
+    app = module.createNestApplication();
+    server = app.getHttpAdapter().getInstance();
+
     app.connectMicroservice({
       transport: Transport.RMQ,
       options: {

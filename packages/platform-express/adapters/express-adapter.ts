@@ -14,6 +14,10 @@ import { ServeStaticOptions } from './../interfaces/serve-static-options.interfa
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
 
+  constructor(instance?: any) {
+    super(instance || express());
+  }
+
   public reply(response, body: any, statusCode: number) {
     const res = response.status(statusCode);
     if (isNil(body)) {

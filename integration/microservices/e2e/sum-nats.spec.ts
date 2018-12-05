@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import * as express from 'express';
 import * as request from 'supertest';
 import { NatsController } from '../src/nats/nats.controller';
 
@@ -14,8 +13,9 @@ describe('NATS transport', () => {
       controllers: [NatsController],
     }).compile();
 
-    server = express();
-    app = module.createNestApplication(server);
+    app = module.createNestApplication();
+    server = app.getHttpAdapter().getInstance();
+
     app.connectMicroservice({
       transport: Transport.NATS,
       options: {

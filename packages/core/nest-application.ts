@@ -14,8 +14,6 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject, validatePath } from '@nestjs/common/utils/shared.utils';
-import { Server } from 'http';
-import { Server as HttpsServer } from 'https';
 import iterate from 'iterare';
 import * as optional from 'optional';
 import { ApplicationConfig } from './application-config';
@@ -45,7 +43,7 @@ export class NestApplication extends NestApplicationContext
   private readonly socketModule = SocketModule ? new SocketModule() : null;
   private readonly routesResolver: Resolver;
   private readonly microservices: any[] = [];
-  private httpServer: Server | HttpsServer;
+  private httpServer: any;
   private isInitialized = false;
 
   constructor(

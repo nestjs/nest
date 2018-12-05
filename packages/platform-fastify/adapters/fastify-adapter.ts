@@ -10,8 +10,18 @@ import * as formBody from 'fastify-formbody';
 import * as pathToRegexp from 'path-to-regexp';
 
 export class FastifyAdapter extends AbstractHttpAdapter {
-  constructor(options?: fastify.ServerOptions) {
-    super(fastify(options));
+  constructor(
+    instanceOrOptions:
+      | fastify.FastifyInstance<any, any, any>
+      | fastify.ServerOptions = fastify(),
+  ) {
+    const instance =
+      instanceOrOptions &&
+      (instanceOrOptions as fastify.FastifyInstance<any, any, any>).server
+        ? instanceOrOptions
+        : fastify(instanceOrOptions as fastify.ServerOptions);
+
+    super(instance);
   }
 
   public use(handler: RequestHandler | ErrorHandler);
