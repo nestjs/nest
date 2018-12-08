@@ -10,8 +10,7 @@ describe('Error messages', () => {
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       controllers: [ErrorsController],
-    })
-      .compile();
+    }).compile();
 
     app = module.createNestApplication();
     server = app.getHttpServer();
@@ -25,7 +24,7 @@ describe('Error messages', () => {
       .expect({
         statusCode: 400,
         error: 'Bad Request',
-        message: 'Integration test'
+        message: 'Integration test',
       });
   });
 
@@ -36,7 +35,7 @@ describe('Error messages', () => {
       .expect({
         statusCode: 400,
         error: 'Bad Request',
-        message: 'Integration test'
+        message: 'Integration test',
       });
   });
 

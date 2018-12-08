@@ -1,4 +1,3 @@
-
 export interface HttpArgumentsHost {
   getRequest<T = any>(): T;
   getResponse<T = any>(): T;

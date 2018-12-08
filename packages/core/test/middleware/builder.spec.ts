@@ -100,10 +100,12 @@ describe('MiddlewareBuilder', () => {
             method: RequestMethod.POST,
           });
 
-          expect(proxy.isRouteExcluded({
-            ...routeInfo,
-            path: '/test/',
-          })).to.be.true;
+          expect(
+            proxy.isRouteExcluded({
+              ...routeInfo,
+              path: '/test/',
+            }),
+          ).to.be.true;
         });
       });
       describe('when method is not equal', () => {

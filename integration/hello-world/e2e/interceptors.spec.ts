@@ -41,7 +41,7 @@ describe('Interceptors', () => {
     app = (await createTestModule(
       new OverrideInterceptor(),
     )).createNestApplication();
-  
+
     await app.init();
     return request(app.getHttpServer())
       .get('/hello')
@@ -52,7 +52,7 @@ describe('Interceptors', () => {
     app = (await createTestModule(
       new TransformInterceptor(),
     )).createNestApplication();
-  
+
     await app.init();
     return request(app.getHttpServer())
       .get('/hello')
@@ -63,7 +63,7 @@ describe('Interceptors', () => {
     app = (await createTestModule(
       new TransformInterceptor(),
     )).createNestApplication();
-  
+
     await app.init();
     return request(app.getHttpServer())
       .get('/hello/stream')
@@ -74,7 +74,7 @@ describe('Interceptors', () => {
     app = (await createTestModule(
       new TransformInterceptor(),
     )).createNestApplication();
-  
+
     await app.init();
     return request(app.getHttpServer())
       .get('/hello/async')

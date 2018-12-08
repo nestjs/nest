@@ -30,14 +30,14 @@ export interface ValidatorOptions {
    * ValidationError special options.
    */
   validationError?: {
-      /**
-       * Indicates if target should be exposed in ValidationError.
-       */
-      target?: boolean;
-      /**
-       * Indicates if validated value should be exposed in ValidationError.
-       */
-      value?: boolean;
+    /**
+     * Indicates if target should be exposed in ValidationError.
+     */
+    target?: boolean;
+    /**
+     * Indicates if validated value should be exposed in ValidationError.
+     */
+    value?: boolean;
   };
   /**
    * Setting true will cause fail validation of unknown objects.

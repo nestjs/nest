@@ -45,5 +45,5 @@ describe('SocketsContainer', () => {
       instance.clear();
       expect(collection.clear.called).to.be.true;
     });
-  })
+  });
 });

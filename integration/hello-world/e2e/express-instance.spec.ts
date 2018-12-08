@@ -11,8 +11,7 @@ describe('Hello world (express instance)', () => {
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       imports: [ApplicationModule],
-    })
-      .compile();
+    }).compile();
 
     app = module.createNestApplication(express());
     server = app.getHttpServer();

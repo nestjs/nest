@@ -22,7 +22,10 @@ describe('RouterExplorer', () => {
 
   let routerBuilder: RouterExplorer;
   beforeEach(() => {
-    routerBuilder = new RouterExplorer(new MetadataScanner(), new NestContainer());
+    routerBuilder = new RouterExplorer(
+      new MetadataScanner(),
+      new NestContainer(),
+    );
   });
   describe('scanForPaths', () => {
     it('should method return expected list of route paths', () => {

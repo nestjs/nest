@@ -82,12 +82,7 @@ export interface RedisClient extends NodeJS.EventEmitter {
   // Strings (http://redis.io/commands#strings)
   append(key: string, value: string, callback?: any): boolean;
   bitcount(key: string, callback?: any): boolean;
-  bitcount(
-    key: string,
-    start: number,
-    end: number,
-    callback?: any,
-  ): boolean;
+  bitcount(key: string, start: number, end: number, callback?: any): boolean;
   set(key: string, value: string, callback?: any): boolean;
   get(key: string, callback?: any): boolean;
   exists(key: string, value: string, callback?: any): boolean;

@@ -5,6 +5,5 @@ export class TestDto {
   @IsNotEmpty()
   string: string;
 
-  @IsNumber()
-  number: number;
+  @IsNumber() number: number;
 }

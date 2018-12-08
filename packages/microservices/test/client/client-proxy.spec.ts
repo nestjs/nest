@@ -31,11 +31,16 @@ describe('ClientProxy', () => {
     });
     describe('when "connect" throws', () => {
       it('should return Observable with error', () => {
-        sinon.stub(client, 'connect').callsFake(() => { throw new Error(); });
-        const stream$ = client.send({ test: 3 }, 'test');
-        stream$.subscribe(() => {}, (err) => {
-          expect(err).to.be.instanceof(Error);
+        sinon.stub(client, 'connect').callsFake(() => {
+          throw new Error();
         });
+        const stream$ = client.send({ test: 3 }, 'test');
+        stream$.subscribe(
+          () => {},
+          err => {
+            expect(err).to.be.instanceof(Error);
+          },
+        );
       });
     });
     describe('when is connected', () => {
@@ -49,9 +54,9 @@ describe('ClientProxy', () => {
         const stream$ = client.send(pattern, data);
         client.publish = publishSpy;
 
-        stream$.subscribe((() => {
+        stream$.subscribe(() => {
           expect(publishSpy.calledOnce).to.be.true;
-        }));
+        });
       });
     });
     it('should return Observable with error', () => {
