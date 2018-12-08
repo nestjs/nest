@@ -1,6 +1,9 @@
 import { HttpServer } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
-import { MiddlewareConfiguration, RouteInfo } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
+import {
+  MiddlewareConfiguration,
+  RouteInfo,
+} from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middleware.interface';
 import { NestModule } from '@nestjs/common/interfaces/modules/nest-module.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -107,10 +110,10 @@ export class MiddlewareModule {
   ) {
     const { forRoutes } = config;
     await Promise.all(
-      forRoutes.map(async (routeInfo: RouteInfo) => {
+      forRoutes.map(async (routeInfo: Type<any> | string | RouteInfo) => {
         await this.registerRouteMiddleware(
           middlewareContainer,
-          routeInfo,
+          routeInfo as RouteInfo,
           config,
           module,
           applicationRef,
@@ -172,10 +175,6 @@ export class MiddlewareModule {
       );
     const resolve = instance.resolve();
 
-    if (!(resolve instanceof Promise)) {
-      bindWithProxy(resolve);
-      return;
-    }
     const middleware = await resolve;
     bindWithProxy(middleware);
   }
@@ -188,7 +187,7 @@ export class MiddlewareModule {
   ) {
     const proxy = this.routerProxy.createProxy(middleware, exceptionsHandler);
     const prefix = this.config.getGlobalPrefix();
-    const basePath = prefix ? validatePath(prefix) : '';
+    const basePath = validatePath(prefix);
     router(basePath + path, proxy);
   }
 }

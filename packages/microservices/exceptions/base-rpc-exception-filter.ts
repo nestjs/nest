@@ -1,6 +1,6 @@
 import { ArgumentsHost, Logger, RpcExceptionFilter } from '@nestjs/common';
 import { isObject } from '@nestjs/common/utils/shared.utils';
-import { messages } from '@nestjs/core/constants';
+import { MESSAGES } from '@nestjs/core/constants';
 import { Observable, throwError as _throw } from 'rxjs';
 import { RpcException } from './rpc-exception';
 
@@ -11,7 +11,7 @@ export class BaseRpcExceptionFilter<T = any, R = any>
   catch(exception: T, host: ArgumentsHost): Observable<R> {
     const status = 'error';
     if (!(exception instanceof RpcException)) {
-      const errorMessage = messages.UNKNOWN_EXCEPTION_MESSAGE;
+      const errorMessage = MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
 
       const isError = isObject(exception) && (exception as Error).message;
       const loggerArgs = isError

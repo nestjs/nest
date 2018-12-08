@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { GatewayMetadata } from '../interfaces';
 import {
   PORT_METADATA,
@@ -13,16 +12,17 @@ import {
  */
 export function WebSocketGateway(port?: number);
 export function WebSocketGateway(options?: GatewayMetadata | any);
-export function WebSocketGateway(port?: number, options?: GatewayMetadata | any);
+export function WebSocketGateway(
+  port?: number,
+  options?: GatewayMetadata | any,
+);
 export function WebSocketGateway(
   portOrOptions?: number | GatewayMetadata | any,
   options?: GatewayMetadata | any,
 ): ClassDecorator {
   const isPortInt = Number.isInteger(portOrOptions as number);
   // tslint:disable-next-line:prefer-const
-  let [port, opt] = isPortInt
-    ? [portOrOptions, options]
-    : [0, portOrOptions];
+  let [port, opt] = isPortInt ? [portOrOptions, options] : [0, portOrOptions];
 
   opt = opt || {};
   return (target: object) => {

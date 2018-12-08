@@ -2,7 +2,7 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.hos
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { FileFieldsInterceptor } from './../../../files/interceptors/file-fields.interceptor';
+import { FileFieldsInterceptor } from '../../../files/interceptors/file-fields.interceptor';
 
 describe('FileFieldsInterceptor', () => {
   it('should return metatype with expected structure', async () => {
@@ -30,7 +30,7 @@ describe('FileFieldsInterceptor', () => {
 
       const callback = (req, res, next) => next();
       const fieldsSpy = sinon
-        .stub((target as any).upload, 'fields')
+        .stub((target as any).multer, 'fields')
         .returns(callback);
 
       await target.intercept(new ExecutionContextHost([]), stream$);

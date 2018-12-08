@@ -1,12 +1,11 @@
-import * as sinon from 'sinon';
+import { BadRequestException, Post } from '@nestjs/common';
 import { expect } from 'chai';
-import { RoutesResolver } from '../../router/routes-resolver';
+import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { Get } from '../../../common/decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { ApplicationConfig } from '../../application-config';
-import { BadRequestException, Post } from '@nestjs/common';
 import { ExpressAdapter } from '../../adapters/express-adapter';
+import { ApplicationConfig } from '../../application-config';
+import { RoutesResolver } from '../../router/routes-resolver';
 
 describe('RoutesResolver', () => {
   @Controller('global')
@@ -22,14 +21,18 @@ describe('RoutesResolver', () => {
   let routesResolver: RoutesResolver;
   let container;
   let modules: Map<string, any>;
+  let applicationRef;
 
   before(() => {
     modules = new Map();
+    applicationRef = {
+      use: () => ({}),
+      setNotFoundHandler: sinon.spy(),
+      setErrorHandler: sinon.spy(),
+    };
     container = {
       getModules: () => modules,
-      getApplicationRef: () => ({
-        use: () => ({})
-      })
+      getApplicationRef: () => applicationRef,
     };
     router = {
       get() {},
@@ -38,10 +41,7 @@ describe('RoutesResolver', () => {
   });
 
   beforeEach(() => {
-    routesResolver = new RoutesResolver(
-      container,
-      new ApplicationConfig(),
-    );
+    routesResolver = new RoutesResolver(container, new ApplicationConfig());
   });
 
   describe('registerRouters', () => {
@@ -54,20 +54,27 @@ describe('RoutesResolver', () => {
       routes.set('TestRoute', routeWrapper);
 
       const appInstance = new ExpressAdapter(router);
-      const exploreSpy = sinon.spy((routesResolver as any).routerBuilder, 'explore');
+      const exploreSpy = sinon.spy(
+        (routesResolver as any).routerBuilder,
+        'explore',
+      );
       const moduleName = '';
 
-      sinon.stub((routesResolver as any).routerBuilder, 'extractRouterPath').callsFake(() => '');
+      sinon
+        .stub((routesResolver as any).routerBuilder, 'extractRouterPath')
+        .callsFake(() => '');
       routesResolver.registerRouters(routes, moduleName, '', appInstance);
 
       expect(exploreSpy.called).to.be.true;
-      expect(exploreSpy.calledWith(
-        routeWrapper.instance,
-        routeWrapper.metatype,
-        moduleName,
-        appInstance,
-        '',
-      )).to.be.true;
+      expect(
+        exploreSpy.calledWith(
+          routeWrapper.instance,
+          routeWrapper.metatype,
+          moduleName,
+          appInstance,
+          '',
+        ),
+      ).to.be.true;
     });
   });
 
@@ -108,6 +115,23 @@ describe('RoutesResolver', () => {
           expect(outputErr).to.be.eql(err);
         });
       });
+    });
+  });
+
+  describe('registerNotFoundHandler', () => {
+    it('should register not found handler', () => {
+      routesResolver.registerNotFoundHandler();
+
+      expect(applicationRef.setNotFoundHandler.called).to.be.true;
+    });
+  });
+
+  describe('registerExceptionHandler', () => {
+    it('should register exception handler', () => {
+      const ref = container.getApplicationRef();
+      routesResolver.registerExceptionHandler();
+
+      expect(applicationRef.setErrorHandler.called).to.be.true;
     });
   });
 });

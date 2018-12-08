@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { Module } from '../../decorators/modules/module.decorator';
 import { InvalidModuleConfigException } from '../../decorators/modules/exceptions/invalid-module-config.exception';
@@ -49,7 +48,7 @@ describe('@Module', () => {
     });
 
     @Module({
-      ...moduleProps as any,
+      ...(moduleProps as any),
       imports: null,
     } as any)
     class TestModule3 {}
@@ -71,7 +70,7 @@ describe('@Module', () => {
     });
 
     @Module({
-      ...moduleProps as any,
+      ...(moduleProps as any),
       providers: null,
     } as any)
     class TestModule3 {}

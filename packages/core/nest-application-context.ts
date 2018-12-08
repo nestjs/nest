@@ -11,20 +11,20 @@ import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
 import { NestContainer } from './injector/container';
+import { ContainerScanner } from './injector/container-scanner';
 import { Module } from './injector/module';
-import { ModuleRef } from './injector/module-ref';
 import { ModuleTokenFactory } from './injector/module-token-factory';
 
-export class NestApplicationContext extends ModuleRef
-  implements INestApplicationContext {
+export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
+  private readonly containerScanner: ContainerScanner;
 
   constructor(
-    container: NestContainer,
+    protected readonly container: NestContainer,
     private readonly scope: Type<any>[],
-    protected contextModule: Module,
+    private contextModule: Module,
   ) {
-    super(container);
+    this.containerScanner = new ContainerScanner(container);
   }
 
   public selectContextModule() {
@@ -37,7 +37,7 @@ export class NestApplicationContext extends ModuleRef
     const moduleMetatype = this.contextModule.metatype;
     const scope = this.scope.concat(moduleMetatype);
 
-    const token = this.moduleTokenFactory.create(module as any, scope);
+    const token = this.moduleTokenFactory.create(module, scope);
     const selectedModule = modules.get(token);
     if (!selectedModule) {
       throw new UnknownModuleException();
@@ -91,7 +91,7 @@ export class NestApplicationContext extends ModuleRef
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
         .filter(this.hasOnModuleInitHook)
-        .map(async instance => await (instance as OnModuleInit).onModuleInit()),
+        .map(async instance => (instance as OnModuleInit).onModuleInit()),
     );
     if (moduleClassInstance && this.hasOnModuleInitHook(moduleClassInstance)) {
       await (moduleClassInstance as OnModuleInit).onModuleInit();
@@ -121,10 +121,7 @@ export class NestApplicationContext extends ModuleRef
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
         .filter(this.hasOnModuleDestroyHook)
-        .map(
-          async instance =>
-            await (instance as OnModuleDestroy).onModuleDestroy(),
-        ),
+        .map(async instance => (instance as OnModuleDestroy).onModuleDestroy()),
     );
     if (
       moduleClassInstance &&
@@ -154,10 +151,9 @@ export class NestApplicationContext extends ModuleRef
       iterate(instances)
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
-        .filter(this.hasOnModuleInitHook)
-        .map(
-          async instance =>
-            await (instance as OnApplicationBootstrap).onApplicationBootstrap(),
+        .filter(this.hasOnAppBotstrapHook)
+        .map(async instance =>
+          (instance as OnApplicationBootstrap).onApplicationBootstrap(),
         ),
     );
     if (moduleClassInstance && this.hasOnAppBotstrapHook(moduleClassInstance)) {
@@ -171,5 +167,21 @@ export class NestApplicationContext extends ModuleRef
     return !isUndefined(
       (instance as OnApplicationBootstrap).onApplicationBootstrap,
     );
+  }
+
+  protected find<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | string | symbol,
+  ): TResult {
+    return this.containerScanner.find<TInput, TResult>(typeOrToken);
+  }
+
+  protected findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
+    metatypeOrToken: Type<TInput> | string | symbol,
+    contextModule: Partial<Module>,
+  ): TResult {
+    return this.containerScanner.findInstanceByPrototypeOrToken<
+      TInput,
+      TResult
+    >(metatypeOrToken, contextModule);
   }
 }

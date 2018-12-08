@@ -1,4 +1,3 @@
-import { ReadPacket } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
@@ -12,7 +11,7 @@ import {
   RedisClient,
   RetryStrategyOptions,
 } from '../external/redis.interface';
-import { CustomTransportStrategy, PacketId } from '../interfaces';
+import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
 import {
   MicroserviceOptions,
   RedisOptions,
@@ -72,8 +71,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(pub: RedisClient) {
-    return async (channel, buffer) =>
-      await this.handleMessage(channel, buffer, pub);
+    return async (channel, buffer) => this.handleMessage(channel, buffer, pub);
   }
 
   public async handleMessage(channel, buffer: string | any, pub: RedisClient) {
@@ -141,6 +139,6 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     ) {
       return undefined;
     }
-    return this.getOptionsProp(this.options, 'retryDelay') || 0;
+    return this.getOptionsProp<RedisOptions>(this.options, 'retryDelay') || 0;
   }
 }

@@ -16,11 +16,11 @@ import { RouteParamsMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { Controller, Transform } from '@nestjs/common/interfaces';
 import {
+  isEmpty,
   isFunction,
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
@@ -169,7 +169,7 @@ export class RouterExecutionContext {
   }
 
   public getCustomFactory(factory: (...args) => void, data): (...args) => any {
-    return !isUndefined(factory) && isFunction(factory)
+    return isFunction(factory)
       ? (req, res, next) => factory(data, req)
       : () => null;
   }
@@ -185,7 +185,7 @@ export class RouterExecutionContext {
       type === RouteParamtypes.PARAM ||
       isString(type)
     ) {
-      return await this.pipesConsumer.apply(
+      return this.pipesConsumer.apply(
         value,
         { metatype, type, data },
         transforms,
@@ -198,7 +198,7 @@ export class RouterExecutionContext {
     guards: any[],
     instance: Controller,
     callback: (...args) => any,
-  ) {
+  ): Function | null {
     const canActivateFn = async (args: any[]) => {
       const canActivate = await this.guardsConsumer.tryActivate(
         guards,
@@ -248,15 +248,18 @@ export class RouterExecutionContext {
   ) {
     const renderTemplate = this.reflectRenderTemplate(callback);
     const responseHeaders = this.reflectResponseHeaders(callback);
+    const hasCustomHeaders = !isEmpty(responseHeaders);
 
     if (renderTemplate) {
       return async (result, res) => {
-        this.responseController.setHeaders(res, responseHeaders);
+        hasCustomHeaders &&
+          this.responseController.setHeaders(res, responseHeaders);
         await this.responseController.render(result, res, renderTemplate);
       };
     }
     return async (result, res) => {
-      this.responseController.setHeaders(res, responseHeaders);
+      hasCustomHeaders &&
+        this.responseController.setHeaders(res, responseHeaders);
 
       !isResponseHandled &&
         (await this.responseController.apply(result, res, httpStatusCode));

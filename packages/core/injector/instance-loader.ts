@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { moduleInitMessage } from '../helpers/messages';
+import { MODULE_INIT_MESSAGE } from '../helpers/messages';
 import { NestContainer } from './container';
 import { Injector } from './injector';
 import { Module } from './module';
@@ -35,7 +35,7 @@ export class InstanceLoader {
         await this.createInstancesOfRoutes(module);
 
         const { name } = module.metatype;
-        this.logger.log(moduleInitMessage(name));
+        this.logger.log(MODULE_INIT_MESSAGE`${name}`);
       }),
     );
   }
@@ -51,9 +51,8 @@ export class InstanceLoader {
 
   private async createInstancesOfComponents(module: Module) {
     await Promise.all(
-      [...module.components.values()].map(
-        async wrapper =>
-          await this.injector.loadInstanceOfComponent(wrapper, module),
+      [...module.components.values()].map(async wrapper =>
+        this.injector.loadInstanceOfComponent(wrapper, module),
       ),
     );
   }
@@ -66,9 +65,8 @@ export class InstanceLoader {
 
   private async createInstancesOfRoutes(module: Module) {
     await Promise.all(
-      [...module.routes.values()].map(
-        async wrapper =>
-          await this.injector.loadInstanceOfRoute(wrapper, module),
+      [...module.routes.values()].map(async wrapper =>
+        this.injector.loadInstanceOfRoute(wrapper, module),
       ),
     );
   }
@@ -84,9 +82,8 @@ export class InstanceLoader {
 
   private async createInstancesOfInjectables(module: Module) {
     await Promise.all(
-      [...module.injectables.values()].map(
-        async wrapper =>
-          await this.injector.loadInstanceOfInjectable(wrapper, module),
+      [...module.injectables.values()].map(async wrapper =>
+        this.injector.loadInstanceOfInjectable(wrapper, module),
       ),
     );
   }

@@ -1,13 +1,17 @@
 import { INestApplication } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
-import { ApplicationModule } from './../src/app.module';
+import { ApplicationModule } from '../src/app.module';
 
 describe('GraphQL', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    app = await NestFactory.create(ApplicationModule, { logger: false });
+    const module = await Test.createTestingModule({
+      imports: [ApplicationModule],
+    }).compile();
+
+    app = module.createNestApplication();
     await app.init();
   });
 

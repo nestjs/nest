@@ -1,8 +1,8 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
-import { MessagePattern } from '../utils/pattern.decorator';
-import { Client } from '../utils/client.decorator';
+import { MessagePattern } from '../decorators/pattern.decorator';
+import { Client } from '../decorators/client.decorator';
 import { Transport } from '../enums/transport.enum';
 import { MetadataScanner } from '../../core/metadata-scanner';
 
@@ -13,8 +13,10 @@ describe('ListenerMetadataExplorer', () => {
   const clientSecMetadata = { transport: Transport.REDIS };
 
   class Test {
-    @Client(clientMetadata as any) public client;
-    @Client(clientSecMetadata as any) public redisClient;
+    @Client(clientMetadata as any)
+    public client;
+    @Client(clientSecMetadata as any)
+    public redisClient;
 
     get testGet() {
       return 0;

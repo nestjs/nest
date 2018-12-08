@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { RequestMappingMetadata } from '../../interfaces/request-mapping-metadata.interface';
 import { RequestMethod } from '../../enums/request-method.enum';
 import { PATH_METADATA, METHOD_METADATA } from '../../constants';

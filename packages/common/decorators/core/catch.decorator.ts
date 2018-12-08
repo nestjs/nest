@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { FILTER_CATCH_EXCEPTIONS } from '../../constants';
 import { Type } from '../../interfaces';
 

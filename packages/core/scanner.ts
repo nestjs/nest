@@ -4,7 +4,7 @@ import {
   GATEWAY_MIDDLEWARES,
   GUARDS_METADATA,
   INTERCEPTORS_METADATA,
-  metadata,
+  METADATA,
   PIPES_METADATA,
   ROUTE_ARGS_METADATA,
 } from '@nestjs/common/constants';
@@ -17,7 +17,6 @@ import {
   isNil,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
@@ -56,11 +55,11 @@ export class DependenciesScanner {
       module = (module as ForwardReference).forwardRef();
     }
     const modules = !this.isDynamicModule(module as Type<any> | DynamicModule)
-      ? this.reflectMetadata(module, metadata.MODULES)
+      ? this.reflectMetadata(module, METADATA.MODULES)
       : [
           ...this.reflectMetadata(
             (module as DynamicModule).module,
-            metadata.MODULES,
+            METADATA.MODULES,
           ),
           ...((module as DynamicModule).imports || []),
         ];
@@ -79,7 +78,7 @@ export class DependenciesScanner {
 
   public async storeModule(module: any, scope: Type<any>[]) {
     if (module && module.forwardRef) {
-      return await this.container.addModule(module.forwardRef(), scope);
+      return this.container.addModule(module.forwardRef(), scope);
     }
     await this.container.addModule(module, scope);
   }
@@ -101,14 +100,14 @@ export class DependenciesScanner {
     context: string,
   ) {
     const modules = [
-      ...this.reflectMetadata(module, metadata.MODULES),
+      ...this.reflectMetadata(module, METADATA.MODULES),
       ...this.container.getDynamicMetadataByToken(
         token,
-        metadata.MODULES as 'modules',
+        METADATA.MODULES as 'modules',
       ),
       ...this.container.getDynamicMetadataByToken(
         token,
-        metadata.IMPORTS as 'imports',
+        METADATA.IMPORTS as 'imports',
       ),
     ];
     for (const related of modules) {
@@ -118,17 +117,17 @@ export class DependenciesScanner {
 
   public reflectComponents(module: Type<any>, token: string) {
     const components = [
-      ...this.reflectMetadata(module, metadata.COMPONENTS),
+      ...this.reflectMetadata(module, METADATA.COMPONENTS),
       ...this.container.getDynamicMetadataByToken(
         token,
-        metadata.COMPONENTS as 'components',
+        METADATA.COMPONENTS as 'components',
       ),
       ...this.container.getDynamicMetadataByToken(
         token,
-        metadata.PROVIDERS as 'providers',
+        METADATA.PROVIDERS as 'providers',
       ),
     ];
-    components.map(component => {
+    components.forEach(component => {
       this.storeComponent(component, token);
       this.reflectComponentMetadata(component, token);
       this.reflectDynamicMetadata(component, token);
@@ -141,13 +140,13 @@ export class DependenciesScanner {
 
   public reflectControllers(module: Type<any>, token: string) {
     const routes = [
-      ...this.reflectMetadata(module, metadata.CONTROLLERS),
+      ...this.reflectMetadata(module, METADATA.CONTROLLERS),
       ...this.container.getDynamicMetadataByToken(
         token,
-        metadata.CONTROLLERS as 'controllers',
+        METADATA.CONTROLLERS as 'controllers',
       ),
     ];
-    routes.map(route => {
+    routes.forEach(route => {
       this.storeRoute(route, token);
       this.reflectDynamicMetadata(route, token);
     });
@@ -166,20 +165,20 @@ export class DependenciesScanner {
 
   public reflectExports(module: Type<any>, token: string) {
     const exports = [
-      ...this.reflectMetadata(module, metadata.EXPORTS),
+      ...this.reflectMetadata(module, METADATA.EXPORTS),
       ...this.container.getDynamicMetadataByToken(
         token,
-        metadata.EXPORTS as 'exports',
+        METADATA.EXPORTS as 'exports',
       ),
     ];
-    exports.map(exportedComponent =>
+    exports.forEach(exportedComponent =>
       this.storeExportedComponent(exportedComponent, token),
     );
   }
 
   public reflectGatewaysMiddleware(component: Type<Injectable>, token: string) {
     const middleware = this.reflectMetadata(component, GATEWAY_MIDDLEWARES);
-    middleware.map(ware => this.storeComponent(ware, token));
+    middleware.forEach(ware => this.storeComponent(ware, token));
   }
 
   public reflectInjectables(
@@ -202,7 +201,7 @@ export class DependenciesScanner {
       ...flattenMethodsInjectables,
     ].filter(isFunction);
 
-    mergedInjectables.map(injectable =>
+    mergedInjectables.forEach(injectable =>
       this.storeInjectable(injectable, token),
     );
   }
@@ -221,8 +220,7 @@ export class DependenciesScanner {
     const paramsInjectables = flatten(paramsMetadata).map(param =>
       flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
     );
-
-    flatten(paramsInjectables).map(injectable =>
+    flatten(paramsInjectables).forEach(injectable =>
       this.storeInjectable(injectable, token),
     );
   }
@@ -257,7 +255,7 @@ export class DependenciesScanner {
       throw new CircularDependencyException(context);
     }
     if (related && related.forwardRef) {
-      return await this.container.addRelatedModule(related.forwardRef(), token);
+      return this.container.addRelatedModule(related.forwardRef(), token);
     }
     await this.container.addRelatedModule(related, token);
   }
@@ -271,7 +269,7 @@ export class DependenciesScanner {
     const providersKeys = Object.keys(applyProvidersMap);
     const type = component.provide;
 
-    if (providersKeys.indexOf(type) < 0) {
+    if (!providersKeys.includes(type)) {
       return this.container.addComponent(component, token);
     }
     const providerToken = randomStringGenerator();

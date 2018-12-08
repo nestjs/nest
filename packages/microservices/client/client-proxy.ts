@@ -21,6 +21,7 @@ import {
 export abstract class ClientProxy {
   public abstract connect(): Promise<any>;
   public abstract close(): any;
+  protected routingMap = new Map<string, Function>();
 
   public send<TResult = any, TInput = any>(
     pattern: any,
@@ -29,7 +30,7 @@ export abstract class ClientProxy {
     if (isNil(pattern) || isNil(data)) {
       return _throw(new InvalidMessageException());
     }
-    return defer(async () => await this.connect()).pipe(
+    return defer(async () => this.connect()).pipe(
       mergeMap(
         () =>
           new Observable((observer: Observer<TResult>) => {
@@ -82,10 +83,10 @@ export abstract class ClientProxy {
     prop: keyof T['options'],
     defaultValue = undefined,
   ) {
-    return obj ? obj[prop as any] : defaultValue;
+    return obj ? obj[prop as string] : defaultValue;
   }
 
   protected normalizePattern<T = any>(pattern: T): string {
-    return pattern && isString(pattern) ? pattern : JSON.stringify(pattern);
+    return isString(pattern) ? pattern : JSON.stringify(pattern);
   }
 }

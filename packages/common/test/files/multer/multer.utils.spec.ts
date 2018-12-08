@@ -5,7 +5,7 @@ import {
   PayloadTooLargeException,
 } from '../../../exceptions';
 import { multerExceptions } from '../../../files/multer/multer.constants';
-import { transformException } from './../../../files/multer/multer.utils';
+import { transformException } from '../../../files/multer/multer.utils';
 
 describe('transformException', () => {
   describe('if error does not exist', () => {

@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { EXCEPTION_FILTERS_METADATA } from '../../constants';
 import { UseFilters } from '../../decorators/core/exception-filters.decorator';
@@ -35,8 +34,7 @@ describe('@UseFilters', () => {
   it('when object is invalid should throw exception', () => {
     try {
       UseFilters('test' as any)({});
-    }
-    catch (e) {
+    } catch (e) {
       expect(e).to.be.instanceof(InvalidDecoratorItemException);
     }
   });

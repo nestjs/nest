@@ -1,3 +1,4 @@
+import { Abstract } from '../abstract.interface';
 import { Type } from '../type.interface';
 import { DynamicModule } from './dynamic-module.interface';
 import { ForwardReference } from './forward-reference.interface';
@@ -13,8 +14,10 @@ export interface ModuleMetadata {
     | DynamicModule
     | Promise<DynamicModule>
     | string
+    | symbol
     | Provider
     | ForwardReference
+    | Abstract<any>
   >;
   /** @deprecated */
   modules?: Array<

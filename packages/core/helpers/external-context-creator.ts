@@ -2,10 +2,10 @@ import { ForbiddenException, ParamData } from '@nestjs/common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
 import { Controller, Transform } from '@nestjs/common/interfaces';
 import { isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { NestContainer } from '../injector/container';
 import { Module } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
@@ -37,6 +37,18 @@ export class ExternalContextCreator {
     private readonly pipesContextCreator: PipesContextCreator,
     private readonly pipesConsumer: PipesConsumer,
   ) {}
+
+  static fromContainer(container: NestContainer): ExternalContextCreator {
+    return new ExternalContextCreator(
+      new GuardsContextCreator(container, container.applicationConfig),
+      new GuardsConsumer(),
+      new InterceptorsContextCreator(container, container.applicationConfig),
+      new InterceptorsConsumer(),
+      container.getModules(),
+      new PipesContextCreator(container, container.applicationConfig),
+      new PipesConsumer(),
+    );
+  }
 
   public create<T extends ParamsMetadata = ParamsMetadata>(
     instance: Controller,
@@ -101,7 +113,7 @@ export class ExternalContextCreator {
         callback,
         handler(initialArgs, ...args),
       );
-      return await this.transformToResult(result);
+      return this.transformToResult(result);
     };
   }
 
@@ -154,9 +166,7 @@ export class ExternalContextCreator {
   }
 
   public getCustomFactory(factory: (...args) => void, data): (...args) => any {
-    return !isUndefined(factory) && isFunction(factory)
-      ? (...args) => factory(data, args)
-      : () => null;
+    return isFunction(factory) ? (...args) => factory(data, args) : () => null;
   }
 
   public createPipesFn(
@@ -192,7 +202,7 @@ export class ExternalContextCreator {
     { metatype, type, data },
     transforms: Transform<any>[],
   ): Promise<any> {
-    return await this.pipesConsumer.apply(
+    return this.pipesConsumer.apply(
       value,
       { metatype, type, data },
       transforms,
@@ -201,7 +211,7 @@ export class ExternalContextCreator {
 
   public async transformToResult(resultOrDeffered) {
     if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
-      return await resultOrDeffered.toPromise();
+      return resultOrDeffered.toPromise();
     }
     return resultOrDeffered;
   }

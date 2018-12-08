@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import Axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { defer, Observable } from 'rxjs';
 import { Inject } from '../decorators';
 import { AXIOS_INSTANCE_TOKEN } from './http.constants';
@@ -6,7 +6,7 @@ import { AXIOS_INSTANCE_TOKEN } from './http.constants';
 export class HttpService {
   constructor(
     @Inject(AXIOS_INSTANCE_TOKEN)
-    private readonly instance: AxiosInstance = axios,
+    private readonly instance: AxiosInstance = Axios,
   ) {}
 
   request<T = any>(config: AxiosRequestConfig): Observable<AxiosResponse<T>> {

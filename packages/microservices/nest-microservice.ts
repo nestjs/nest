@@ -8,12 +8,12 @@ import {
 } from '@nestjs/common';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { messages } from '@nestjs/core/constants';
+import { MESSAGES } from '@nestjs/core/constants';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
-import { CustomTransportStrategy } from '@nestjs/microservices';
 import * as optional from 'optional';
 import { Transport } from './enums/transport.enum';
+import { CustomTransportStrategy } from './interfaces/custom-transport-strategy.interface';
 import { MicroserviceOptions } from './interfaces/microservice-configuration.interface';
 import { MicroservicesModule } from './microservices-module';
 import { Server } from './server/server';
@@ -115,12 +115,12 @@ export class NestMicroservice extends NestApplicationContext
   public listen(callback: () => void) {
     !this.isInitialized && this.registerModules();
 
-    this.logger.log(messages.MICROSERVICE_READY);
+    this.logger.log(MESSAGES.MICROSERVICE_READY);
     this.server.listen(callback);
   }
 
   public async listenAsync(): Promise<any> {
-    return await new Promise(resolve => this.listen(resolve));
+    return new Promise(resolve => this.listen(resolve));
   }
 
   public async close(): Promise<any> {

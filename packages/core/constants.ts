@@ -1,4 +1,4 @@
-export const messages = {
+export const MESSAGES = {
   APPLICATION_START: `Starting Nest application...`,
   APPLICATION_READY: `Nest application successfully started`,
   MICROSERVICE_READY: `Nest microservice successfully started`,

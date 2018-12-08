@@ -4,7 +4,7 @@ import { ValidatorOptions } from '../interfaces/external/validator-options.inter
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { loadPackage } from '../utils/load-package.util';
 import { isNil } from '../utils/shared.utils';
-import { Injectable } from './../decorators/core/component.decorator';
+import { Injectable } from '../decorators/core/component.decorator';
 
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
@@ -17,7 +17,7 @@ let classTransformer: any = {};
 @Injectable()
 export class ValidationPipe implements PipeTransform<any> {
   protected isTransformEnabled: boolean;
-  protected isDetailedOutputDisabled: boolean;
+  protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
 
   constructor(@Optional() options?: ValidationPipeOptions) {

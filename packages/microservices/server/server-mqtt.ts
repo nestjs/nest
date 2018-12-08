@@ -1,4 +1,3 @@
-import { ReadPacket } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
@@ -8,7 +7,7 @@ import {
   NO_PATTERN_MESSAGE,
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
-import { CustomTransportStrategy, PacketId } from '../interfaces';
+import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
 import {
   MicroserviceOptions,
   MqttOptions,
@@ -58,8 +57,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(pub: MqttClient): any {
-    return async (channel, buffer) =>
-      await this.handleMessage(channel, buffer, pub);
+    return async (channel, buffer) => this.handleMessage(channel, buffer, pub);
   }
 
   public async handleMessage(

@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { UseInterceptors } from '../../decorators/core/use-interceptors.decorator';
 import { INTERCEPTORS_METADATA } from '../../constants';

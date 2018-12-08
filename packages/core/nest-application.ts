@@ -30,7 +30,7 @@ import * as optional from 'optional';
 import { ExpressAdapter } from './adapters/express-adapter';
 import { FastifyAdapter } from './adapters/fastify-adapter';
 import { ApplicationConfig } from './application-config';
-import { messages } from './constants';
+import { MESSAGES } from './constants';
 import { NestContainer } from './injector/container';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
@@ -152,7 +152,7 @@ export class NestApplication extends NestApplicationContext
     await this.callBootstrapHook();
 
     this.isInitialized = true;
-    this.logger.log(messages.APPLICATION_READY);
+    this.logger.log(MESSAGES.APPLICATION_READY);
     return this;
   }
 
@@ -180,16 +180,16 @@ export class NestApplication extends NestApplicationContext
       !!app._router &&
       !!app._router.stack &&
       isFunction(app._router.stack.filter) &&
-      !!app._router.stack.filter(
+      app._router.stack.some(
         layer => layer && layer.handle && layer.handle.name === name,
-      ).length
+      )
     );
   }
 
   public async registerRouter() {
     await this.registerMiddleware(this.httpAdapter);
     const prefix = this.config.getGlobalPrefix();
-    const basePath = prefix ? validatePath(prefix) : '';
+    const basePath = validatePath(prefix);
     this.routesResolver.resolve(this.httpAdapter, basePath);
   }
 
@@ -206,8 +206,8 @@ export class NestApplication extends NestApplicationContext
 
     const applicationConfig = new ApplicationConfig();
     const instance = new NestMicroservice(
-      this.container as any,
-      options as any,
+      this.container,
+      options,
       applicationConfig,
     );
     instance.registerListeners();
@@ -286,7 +286,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public enableCors(options?: CorsOptions): this {
-    this.httpAdapter.use(cors(options));
+    this.httpAdapter.use(cors(options) as any);
     return this;
   }
 

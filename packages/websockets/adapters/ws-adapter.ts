@@ -14,6 +14,13 @@ import { MessageMappingProperties } from '../gateway-metadata-explorer';
 
 let wsPackage: any = {};
 
+enum READY_STATE {
+  CONNECTING_STATE = 0,
+  OPEN_STATE = 1,
+  CLOSING_STATE = 2,
+  CLOSED_STATE = 3,
+}
+
 export class WsAdapter implements WebSocketAdapter {
   protected readonly logger = new Logger(WsAdapter.name);
   protected readonly httpServer: Server;
@@ -63,7 +70,7 @@ export class WsAdapter implements WebSocketAdapter {
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {
-    const close$ = fromEvent(client, 'close').pipe(share(), first());
+    const close$ = fromEvent(client, CLOSE_EVENT).pipe(share(), first());
     const source$ = fromEvent(client, 'message').pipe(
       mergeMap(data =>
         this.bindMessageHandler(data, handlers, transform).pipe(
@@ -72,7 +79,13 @@ export class WsAdapter implements WebSocketAdapter {
       ),
       takeUntil(close$),
     );
-    source$.subscribe(response => client.send(JSON.stringify(response)));
+    const handleMessage = response => {
+      if (client.readyState !== READY_STATE.OPEN_STATE) {
+        return;
+      }
+      client.send(JSON.stringify(response));
+    };
+    source$.subscribe(handleMessage);
   }
 
   public bindMessageHandler(
@@ -92,11 +105,14 @@ export class WsAdapter implements WebSocketAdapter {
     }
   }
 
-  public close(server) {
-    isFunction(server.close) && server.close();
+  public close(server: any) {
+    server && isFunction(server.close) && server.close();
   }
 
-  public bindErrorHandler(server) {
+  public bindErrorHandler(server: any) {
+    server.on(CONNECTION_EVENT, ws =>
+      ws.on(ERROR_EVENT, err => this.logger.error(err)),
+    );
     server.on(ERROR_EVENT, err => this.logger.error(err));
     return server;
   }

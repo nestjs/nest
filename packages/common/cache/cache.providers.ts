@@ -11,7 +11,7 @@ export function createCacheManager(): Provider {
       const cacheManager = loadPackage('cache-manager', 'CacheModule');
       const memoryCache = cacheManager.caching({
         ...defaultCacheOptions,
-        ...((options || {}) as any),
+        ...(options || {}),
       });
       return memoryCache;
     },

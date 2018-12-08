@@ -1,7 +1,7 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RpcProxy } from './../../context/rpc-proxy';
-import { RpcExceptionsHandler } from './../../exceptions/rpc-exceptions-handler';
+import { RpcProxy } from '../../context/rpc-proxy';
+import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler';
 import { RpcException } from '../../exceptions/rpc-exception';
 import { Observable, of } from 'rxjs';
 
@@ -18,10 +18,7 @@ describe('RpcProxy', () => {
 
   describe('create', () => {
     it('should method return thunk', async () => {
-      const proxy = await routerProxy.create(
-        async data => of(true),
-        handler,
-      );
+      const proxy = await routerProxy.create(async data => of(true), handler);
       expect(typeof proxy === 'function').to.be.true;
     });
 

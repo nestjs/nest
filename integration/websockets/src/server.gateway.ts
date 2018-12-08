@@ -1,4 +1,4 @@
-import { WebSocketGateway, SubscribeMessage, WsResponse } from '@nestjs/websockets';
+import { WebSocketGateway, SubscribeMessage } from '@nestjs/websockets';
 
 @WebSocketGateway()
 export class ServerGateway {

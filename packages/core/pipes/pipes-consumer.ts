@@ -10,11 +10,7 @@ export class PipesConsumer {
     transforms: Transform<any>[],
   ) {
     const token = this.paramsTokenFactory.exchangeEnumForString(type);
-    return await this.applyPipes(
-      value,
-      { metatype, type: token, data },
-      transforms,
-    );
+    return this.applyPipes(value, { metatype, type: token, data }, transforms);
   }
 
   public async applyPipes(
@@ -22,7 +18,7 @@ export class PipesConsumer {
     { metatype, type, data }: { metatype; type?; data? },
     transforms: Transform<any>[],
   ) {
-    return await transforms.reduce(async (defferedValue, fn) => {
+    return transforms.reduce(async (defferedValue, fn) => {
       const val = await defferedValue;
       const result = fn(val, { metatype, type, data });
       return result;

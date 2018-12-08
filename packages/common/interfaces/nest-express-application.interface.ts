@@ -1,4 +1,3 @@
-import * as express from 'express';
 import { ServeStaticOptions } from './external/serve-static-options.interface';
 
 export interface INestExpressApplication {
@@ -41,9 +40,7 @@ export interface INestExpressApplication {
    * @returns {this}
    */
   useStaticAssets(options: any): this;
-  useStaticAssets(path: string, options?: ServeStaticOptions);
-  // tslint:disable-next-line:unified-signatures
-  useStaticAssets(pathOrOptions: any, options?: ServeStaticOptions): this;
+  useStaticAssets(path: string, options?: ServeStaticOptions): this;
 
   /**
    * Sets a base directory for templates (views).

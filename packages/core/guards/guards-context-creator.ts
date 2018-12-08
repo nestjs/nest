@@ -2,9 +2,12 @@ import { CanActivate } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
-import { isEmpty, isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isEmpty,
+  isFunction,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
-import 'reflect-metadata';
 import { ContextCreator } from '../helpers/context-creator';
 import { NestContainer } from '../injector/container';
 
@@ -30,7 +33,7 @@ export class GuardsContextCreator extends ContextCreator {
   public createConcreteContext<T extends any[], R extends any[]>(
     metadata: T,
   ): R {
-    if (isUndefined(metadata) || isEmpty(metadata)) {
+    if (isEmpty(metadata)) {
       return [] as R;
     }
     return iterate(metadata)
@@ -60,7 +63,7 @@ export class GuardsContextCreator extends ContextCreator {
     if (!module) {
       return undefined;
     }
-    return module.injectables.get((guard as any).name);
+    return module.injectables.get(guard.name);
   }
 
   public getGlobalMetadata<T extends any[]>(): T {

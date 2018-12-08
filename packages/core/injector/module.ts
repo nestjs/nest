@@ -13,15 +13,11 @@ import {
   isSymbol,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
-import { GuardsConsumer } from '../guards/guards-consumer';
-import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { ApplicationReferenceHost } from '../helpers/application-ref-host';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
-import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../pipes/pipes-consumer';
-import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { Reflector } from '../services/reflector.service';
 import { InstanceWrapper, NestContainer } from './container';
 import { ModuleRef } from './module-ref';
@@ -47,11 +43,11 @@ export type ComponentMetatype =
 
 export class Module {
   private readonly _id: string;
-  private _relatedModules = new Set<Module>();
-  private _components = new Map<any, InstanceWrapper<Injectable>>();
-  private _injectables = new Map<any, InstanceWrapper<Injectable>>();
-  private _routes = new Map<string, InstanceWrapper<Controller>>();
-  private _exports = new Set<string>();
+  private readonly _relatedModules = new Set<Module>();
+  private readonly _components = new Map<any, InstanceWrapper<Injectable>>();
+  private readonly _injectables = new Map<any, InstanceWrapper<Injectable>>();
+  private readonly _routes = new Map<string, InstanceWrapper<Controller>>();
+  private readonly _exports = new Set<string | symbol>();
 
   constructor(
     private readonly _metatype: Type<any>,
@@ -86,7 +82,7 @@ export class Module {
     return this._routes;
   }
 
-  get exports(): Set<string> {
+  get exports(): Set<string | symbol> {
     return this._exports;
   }
 
@@ -105,10 +101,11 @@ export class Module {
   public addCoreInjectables(container: NestContainer) {
     this.addModuleAsComponent();
     this.addModuleRef();
-    this.addReflector();
+    this.addReflector(container.getReflector());
     this.addApplicationRef(container.getApplicationRef());
-    this.addExternalContextCreator(container);
-    this.addModulesContainer(container);
+    this.addExternalContextCreator(container.getExternalContextCreator());
+    this.addModulesContainer(container.getModulesContainer());
+    this.addApplicationRefHost(container.getApplicationRefHost());
   }
 
   public addModuleRef() {
@@ -130,12 +127,12 @@ export class Module {
     });
   }
 
-  public addReflector() {
+  public addReflector(reflector: Reflector) {
     this._components.set(Reflector.name, {
       name: Reflector.name,
       metatype: Reflector,
-      isResolved: false,
-      instance: null,
+      isResolved: true,
+      instance: reflector,
     });
   }
 
@@ -148,29 +145,32 @@ export class Module {
     });
   }
 
-  public addExternalContextCreator(container: NestContainer) {
+  public addExternalContextCreator(
+    externalContextCreator: ExternalContextCreator,
+  ) {
     this._components.set(ExternalContextCreator.name, {
       name: ExternalContextCreator.name,
       metatype: ExternalContextCreator,
       isResolved: true,
-      instance: new ExternalContextCreator(
-        new GuardsContextCreator(container, container.applicationConfig),
-        new GuardsConsumer(),
-        new InterceptorsContextCreator(container, container.applicationConfig),
-        new InterceptorsConsumer(),
-        container.getModules(),
-        new PipesContextCreator(container, container.applicationConfig),
-        new PipesConsumer(),
-      ),
+      instance: externalContextCreator,
     });
   }
 
-  public addModulesContainer(container: NestContainer) {
+  public addModulesContainer(modulesContainer: ModulesContainer) {
     this._components.set(ModulesContainer.name, {
       name: ModulesContainer.name,
       metatype: ModulesContainer,
       isResolved: true,
-      instance: container.getModules(),
+      instance: modulesContainer,
+    });
+  }
+
+  public addApplicationRefHost(applicationRefHost: ApplicationReferenceHost) {
+    this._components.set(ApplicationReferenceHost.name, {
+      name: ApplicationReferenceHost.name,
+      metatype: ApplicationReferenceHost,
+      isResolved: true,
+      instance: applicationRefHost,
     });
   }
 
@@ -242,7 +242,7 @@ export class Module {
   }
 
   public addCustomClass(component: CustomClass, collection: Map<string, any>) {
-    const { provide, name, useClass } = component;
+    const { name, useClass } = component;
     collection.set(name, {
       name,
       metatype: useClass,
@@ -252,7 +252,7 @@ export class Module {
   }
 
   public addCustomValue(component: CustomValue, collection: Map<string, any>) {
-    const { provide, name, useValue: value } = component;
+    const { name, useValue: value } = component;
     collection.set(name, {
       name,
       metatype: null,
@@ -267,7 +267,7 @@ export class Module {
     component: CustomFactory,
     collection: Map<string, any>,
   ) {
-    const { provide, name, useFactory: factory, inject } = component;
+    const { name, useFactory: factory, inject } = component;
     collection.set(name, {
       name,
       metatype: factory as any,
@@ -279,14 +279,14 @@ export class Module {
   }
 
   public addExportedComponent(
-    exportedComponent: ComponentMetatype | string | DynamicModule,
+    exportedComponent: ComponentMetatype | string | symbol | DynamicModule,
   ) {
-    const addExportedUnit = (token: string) =>
+    const addExportedUnit = (token: string | symbol) =>
       this._exports.add(this.validateExportedProvider(token));
 
     if (this.isCustomProvider(exportedComponent as any)) {
       return this.addCustomExportedComponent(exportedComponent as any);
-    } else if (isString(exportedComponent)) {
+    } else if (isString(exportedComponent) || isSymbol(exportedComponent)) {
       return addExportedUnit(exportedComponent);
     } else if (this.isDynamicModule(exportedComponent)) {
       const { module } = exportedComponent;
@@ -305,7 +305,7 @@ export class Module {
     this._exports.add(this.validateExportedProvider(provide.name));
   }
 
-  public validateExportedProvider(token: string) {
+  public validateExportedProvider(token: string | symbol) {
     if (this._components.has(token)) {
       return token;
     }
@@ -316,7 +316,7 @@ export class Module {
       .filter(metatype => metatype)
       .map(({ name }) => name);
 
-    if (importedRefNames.indexOf(token) < 0) {
+    if (!importedRefNames.includes(token as any)) {
       const { name } = this.metatype;
       throw new UnknownExportException(name);
     }
@@ -364,6 +364,13 @@ export class Module {
           typeOrToken,
           self,
         );
+      }
+
+      public async create<T = any>(type: Type<T>): Promise<T> {
+        if (!(type && isFunction(type) && type.prototype)) {
+          throw new InvalidClassException(type);
+        }
+        return this.instantiateClass<T>(type, self);
       }
     };
   }
