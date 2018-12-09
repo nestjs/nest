@@ -73,6 +73,15 @@ describe('NATS transport', () => {
       .expect(200, 'true');
   });
 
+  it(`/GET (exception)`, () => {
+    return request(server)
+      .get('/exception')
+      .expect(200, {
+        message: 'test',
+        status: 'error',
+      });
+  });
+
   afterEach(async () => {
     await app.close();
   });

@@ -1,5 +1,12 @@
+import { isObject } from './shared.utils';
+
 export const createHttpExceptionBody = (
-  message: any,
+  message: object | string,
   error: string,
   statusCode: number,
-) => (message ? { statusCode, error, message } : { statusCode, error });
+) => {
+  if (!message) {
+    return { statusCode, error };
+  }
+  return isObject(message) ? message : { statusCode, error, message };
+};
