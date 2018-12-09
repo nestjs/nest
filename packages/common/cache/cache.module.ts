@@ -24,7 +24,10 @@ export class CacheModule {
     return {
       module: CacheModule,
       imports: options.imports,
-      providers: this.createAsyncProviders(options),
+      providers: [
+        ...this.createAsyncProviders(options),
+        ...(options.extraProviders || []),
+      ],
     };
   }
 
@@ -55,7 +58,8 @@ export class CacheModule {
     }
     return {
       provide: CACHE_MODULE_OPTIONS,
-      useFactory: async (optionsFactory: CacheOptionsFactory) => optionsFactory.createCacheOptions(),
+      useFactory: async (optionsFactory: CacheOptionsFactory) =>
+        optionsFactory.createCacheOptions(),
       inject: [options.useExisting || options.useClass],
     };
   }

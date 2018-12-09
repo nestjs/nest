@@ -1,4 +1,4 @@
-import { ModuleMetadata, Type } from '../../interfaces';
+import { ModuleMetadata, Provider, Type } from '../../interfaces';
 import { CacheManagerOptions } from './cache-manager.interface';
 
 export interface CacheModuleOptions extends CacheManagerOptions {
@@ -14,7 +14,8 @@ export interface CacheModuleAsyncOptions
   useExisting?: Type<CacheOptionsFactory>;
   useClass?: Type<CacheOptionsFactory>;
   useFactory?: (
-    ...args: any[],
+    ...args: any[]
   ) => Promise<CacheModuleOptions> | CacheModuleOptions;
   inject?: any[];
+  extraProviders?: Provider[];
 }

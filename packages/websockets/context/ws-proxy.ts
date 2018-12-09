@@ -1,18 +1,41 @@
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
+import { empty } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
 
 export class WsProxy {
   public create(
-    targetCallback: (...args) => Promise<void>,
+    targetCallback: (...args) => Promise<any>,
     exceptionsHandler: WsExceptionsHandler,
-  ): (...args) => Promise<void> {
+  ): (...args) => Promise<any> {
     return async (...args) => {
       try {
-        return await targetCallback(...args);
-      } catch (e) {
-        const host = new ExecutionContextHost(args);
-        exceptionsHandler.handle(e, host);
+        const result = await targetCallback(...args);
+        return !this.isObservable(result)
+          ? result
+          : result.pipe(
+              catchError(error => {
+                this.handleError(exceptionsHandler, args, error);
+                return empty();
+              }),
+            );
+      } catch (error) {
+        this.handleError(exceptionsHandler, args, error);
       }
     };
+  }
+
+  handleError<T>(
+    exceptionsHandler: WsExceptionsHandler,
+    args: any[],
+    error: T,
+  ) {
+    const host = new ExecutionContextHost(args);
+    exceptionsHandler.handle(error, host);
+  }
+
+  isObservable(result: any): boolean {
+    return result && isFunction(result.subscribe);
   }
 }
