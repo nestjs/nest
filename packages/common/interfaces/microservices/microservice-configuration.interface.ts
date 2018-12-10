@@ -8,6 +8,7 @@ export type MicroserviceOptions =
   | RedisOptions
   | NatsOptions
   | MqttOptions
+  | RmqOptions
   | CustomStrategy;
 
 export interface CustomStrategy {
@@ -36,7 +37,7 @@ export interface GrpcOptions {
       oneofs?: boolean;
       json?: boolean;
       includeDirs?: string[];
-    }
+    };
   };
 }
 
@@ -76,5 +77,17 @@ export interface NatsOptions {
     reconnectTimeWait?: number;
     servers?: string[];
     tls?: any;
+    queue?: string;
+  };
+}
+
+export interface RmqOptions {
+  transport?: Transport.RMQ;
+  options?: {
+    urls?: string[];
+    queue?: string;
+    prefetchCount?: number;
+    isGlobalPrefetchCount?: boolean;
+    queueOptions?: any;
   };
 }

@@ -84,10 +84,9 @@ export class Logger implements LoggerService {
     isTimeDiffEnabled?: boolean,
   ) {
     if (Logger.contextEnvironment === NestEnvironment.TEST) {
-      return void 0;
+      return;
     }
-    const output =
-      message && isObject(message) ? JSON.stringify(message, null, 2) : message;
+    const output = isObject(message) ? JSON.stringify(message, null, 2) : message;
     process.stdout.write(color(`[Nest] ${process.pid}   - `));
     process.stdout.write(`${new Date(Date.now()).toLocaleString()}   `);
 
@@ -110,7 +109,7 @@ export class Logger implements LoggerService {
 
   private static printStackTrace(trace: string) {
     if (this.contextEnvironment === NestEnvironment.TEST || !trace) {
-      return void 0;
+      return;
     }
     process.stdout.write(trace);
     process.stdout.write(`\n`);

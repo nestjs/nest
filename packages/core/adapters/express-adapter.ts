@@ -76,11 +76,11 @@ export class ExpressAdapter implements HttpServer {
   }
 
   setErrorHandler(handler: Function) {
-    return this.use(handler as any);
+    return this.use(handler);
   }
 
   setNotFoundHandler(handler: Function) {
-    return this.use(handler as any);
+    return this.use(handler);
   }
 
   setHeader(response, name: string, value: string) {
@@ -88,7 +88,7 @@ export class ExpressAdapter implements HttpServer {
   }
 
   getHttpServer<T = any>(): T {
-    return this.httpServer as any as T;
+    return this.httpServer as T;
   }
 
   setHttpServer(httpServer) {
@@ -96,7 +96,7 @@ export class ExpressAdapter implements HttpServer {
   }
 
   getInstance<T = any>(): T {
-    return this.instance as any as T;
+    return this.instance as T;
   }
 
   close() {

@@ -1,9 +1,7 @@
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { NestContainer } from '@nestjs/core/injector/container';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import 'reflect-metadata';
 import { from as fromPromise, Observable, of, Subject } from 'rxjs';
 import { distinctUntilChanged, mergeAll } from 'rxjs/operators';
 import { GATEWAY_OPTIONS, PORT_METADATA } from './constants';
@@ -15,23 +13,18 @@ import {
 } from './gateway-metadata-explorer';
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
-import { MiddlewareInjector } from './middleware-injector';
 import { SocketServerProvider } from './socket-server-provider';
 
 export class WebSocketsController {
   private readonly metadataExplorer = new GatewayMetadataExplorer(
     new MetadataScanner(),
   );
-  private readonly middlewareInjector: MiddlewareInjector;
 
   constructor(
     private readonly socketServerProvider: SocketServerProvider,
-    private readonly container: NestContainer,
     private readonly config: ApplicationConfig,
     private readonly contextCreator: WsContextCreator,
-  ) {
-    this.middlewareInjector = new MiddlewareInjector(container, config);
-  }
+  ) {}
 
   public hookGatewayIntoServer(
     instance: NestGateway,
@@ -53,8 +46,8 @@ export class WebSocketsController {
     port: number,
     module: string,
   ) {
-    const plainMessageHandlers = this.metadataExplorer.explore(instance);
-    const messageHandlers = plainMessageHandlers.map(
+    const nativeMessageHandlers = this.metadataExplorer.explore(instance);
+    const messageHandlers = nativeMessageHandlers.map(
       ({ callback, message }) => ({
         message,
         callback: this.contextCreator.create(instance, callback, module),
@@ -64,18 +57,13 @@ export class WebSocketsController {
       options,
       port,
     );
-    this.injectMiddleware(observableServer, instance, module);
     this.hookServerToProperties(instance, observableServer.server);
     this.subscribeEvents(instance, messageHandlers, observableServer);
   }
 
-  public injectMiddleware({ server }, instance: NestGateway, module: string) {
-    this.middlewareInjector.inject(server, instance, module);
-  }
-
   public subscribeEvents(
     instance: NestGateway,
-    messageHandlers: MessageMappingProperties[],
+    subscribersMap: MessageMappingProperties[],
     observableServer: ObservableSocketServer,
   ) {
     const { init, disconnect, connection, server } = observableServer;
@@ -88,7 +76,7 @@ export class WebSocketsController {
     const handler = this.getConnectionHandler(
       this,
       instance,
-      messageHandlers,
+      subscribersMap,
       disconnect,
       connection,
     );
@@ -98,7 +86,7 @@ export class WebSocketsController {
   public getConnectionHandler(
     context: WebSocketsController,
     instance: NestGateway,
-    messageHandlers: MessageMappingProperties[],
+    subscribersMap: MessageMappingProperties[],
     disconnect: Subject<any>,
     connection: Subject<any>,
   ) {
@@ -106,7 +94,7 @@ export class WebSocketsController {
     return (...args: any[]) => {
       const [client] = args;
       connection.next(args);
-      context.subscribeMessages(messageHandlers, client, instance);
+      context.subscribeMessages(subscribersMap, client, instance);
 
       const disconnectHook = adapter.bindClientDisconnect;
       disconnectHook &&
@@ -136,13 +124,13 @@ export class WebSocketsController {
     }
   }
 
-  public subscribeMessages(
-    messageHandlers: MessageMappingProperties[],
-    client,
+  public subscribeMessages<T = any>(
+    subscribersMap: MessageMappingProperties[],
+    client: T,
     instance: NestGateway,
   ) {
     const adapter = this.config.getIoAdapter();
-    const handlers = messageHandlers.map(({ callback, message }) => ({
+    const handlers = subscribersMap.map(({ callback, message }) => ({
       message,
       callback: callback.bind(instance, client),
     }));

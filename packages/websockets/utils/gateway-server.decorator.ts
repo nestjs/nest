@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { GATEWAY_SERVER_METADATA } from '../constants';
 
 /**

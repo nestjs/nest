@@ -189,7 +189,7 @@ export class NestApplication extends NestApplicationContext
   public async registerRouter() {
     await this.registerMiddleware(this.httpAdapter);
     const prefix = this.config.getGlobalPrefix();
-    const basePath = prefix ? validatePath(prefix) : '';
+    const basePath = validatePath(prefix);
     this.routesResolver.resolve(this.httpAdapter, basePath);
   }
 
@@ -206,8 +206,8 @@ export class NestApplication extends NestApplicationContext
 
     const applicationConfig = new ApplicationConfig();
     const instance = new NestMicroservice(
-      this.container as any,
-      options as any,
+      this.container,
+      options,
       applicationConfig,
     );
     instance.registerListeners();

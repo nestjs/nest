@@ -4,6 +4,7 @@
  * https://nestjs.com
  * MIT Licensed
  */
+import 'reflect-metadata';
 
 export * from './cache';
 export * from './decorators';
@@ -39,6 +40,7 @@ export {
   Provider,
   RpcExceptionFilter,
   Type,
+  ValidationError,
   WebSocketAdapter,
   WsExceptionFilter,
 } from './interfaces';

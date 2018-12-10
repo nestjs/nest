@@ -65,8 +65,8 @@ export abstract class Server {
     obj: MicroserviceOptions['options'],
     prop: keyof T['options'],
     defaultValue = undefined,
-  ): R {
-    return obj ? obj[prop as any] : defaultValue;
+  ) {
+    return obj ? obj[prop as string] : defaultValue;
   }
 
   protected handleError(error: string) {

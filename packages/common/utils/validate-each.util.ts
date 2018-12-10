@@ -1,8 +1,15 @@
-import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
+export class InvalidDecoratorItemException extends Error {
+  private readonly msg: string;
 
-export class InvalidDecoratorItemException extends RuntimeException {
   constructor(decorator: string, item: string, context: string) {
-    super(`Invalid ${item} passed to ${decorator}() decorator (${context}).`);
+    const message = `Invalid ${item} passed to ${decorator}() decorator (${context}).`;
+    super(message);
+
+    this.msg = message;
+  }
+
+  public what(): string {
+    return this.msg;
   }
 }
 

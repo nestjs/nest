@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { WebSocketGateway } from '../../utils/socket-gateway.decorator';
 import { GATEWAY_METADATA, GATEWAY_OPTIONS } from '../../constants';

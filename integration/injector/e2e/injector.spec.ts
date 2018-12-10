@@ -1,13 +1,14 @@
-import { expect } from 'chai';
-import { Test, TestingModuleBuilder } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import { ExportsModule } from '../src/exports/exports.module';
-import { TestingModule } from '@nestjs/testing/testing-module';
-import { UnknownExportException } from '@nestjs/core/errors/exceptions/unknown-export.exception';
-import { UndefinedDependencyException } from '@nestjs/core/errors/exceptions/undefined-dependency.exception';
-import { InjectModule } from '../src/inject/inject.module';
 import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
-import { NestDynamicModule, DYNAMIC_TOKEN, DYNAMIC_VALUE } from '../src/dynamic/dynamic.module';
+import { UnknownExportException } from '@nestjs/core/errors/exceptions/unknown-export.exception';
+import { Test } from '@nestjs/testing';
+import { expect } from 'chai';
+import {
+  DYNAMIC_TOKEN,
+  DYNAMIC_VALUE,
+  NestDynamicModule,
+} from '../src/dynamic/dynamic.module';
+import { ExportsModule } from '../src/exports/exports.module';
+import { InjectModule } from '../src/inject/inject.module';
 
 describe('Injector', () => {
   describe('when "providers" and "exports" properties are inconsistent', () => {

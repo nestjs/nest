@@ -6,16 +6,18 @@ node_modules/
 /.awcache
 /.vscode
 
+# bundle
+packages/**/*.d.ts
+packages/**/*.js
+
 # misc
 .DS_Store
 lerna-debug.log
 npm-debug.log
 yarn-error.log
-/src/common/npm-debug.log
-/src/core/npm-debug.log
-/src/testing/npm-debug.log
-/src/microservices/npm-debug.log
-/src/websockets/npm-debug.log
+/**/npm-debug.log
+/packages/**/.npmignore
+/packages/**/LICENSE
 
 # example
 /quick-start

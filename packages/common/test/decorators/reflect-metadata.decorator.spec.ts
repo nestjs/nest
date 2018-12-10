@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { ReflectMetadata } from '../../decorators/core/reflect-metadata.decorator';
 

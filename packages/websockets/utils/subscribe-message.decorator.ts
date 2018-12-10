@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA } from '../constants';
 
 /**

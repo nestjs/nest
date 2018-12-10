@@ -2,7 +2,6 @@ import { HttpServer } from '@nestjs/common';
 import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { ApplicationConfig } from '../application-config';
 import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context';
 import { ExceptionsHandler } from '../exceptions/exceptions-handler';

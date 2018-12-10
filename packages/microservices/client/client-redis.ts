@@ -111,7 +111,7 @@ export class ClientRedis extends ClientProxy {
     ) {
       return undefined;
     }
-    return this.getOptionsProp(this.options, 'retryDelay') || 0;
+    return this.getOptionsProp<RedisOptions>(this.options, 'retryDelay') || 0;
   }
 
   public createResponseCallback(): Function {

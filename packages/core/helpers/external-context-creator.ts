@@ -2,7 +2,6 @@ import { ForbiddenException, ParamData } from '@nestjs/common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
 import { Controller, Transform } from '@nestjs/common/interfaces';
 import { isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
@@ -167,7 +166,7 @@ export class ExternalContextCreator {
   }
 
   public getCustomFactory(factory: (...args) => void, data): (...args) => any {
-    return !isUndefined(factory) && isFunction(factory)
+    return isFunction(factory)
       ? (...args) => factory(data, args)
       : () => null;
   }

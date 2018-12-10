@@ -13,6 +13,7 @@ import {
   isSymbol,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { ApplicationReferenceHost } from '../helpers/application-ref-host';
@@ -46,7 +47,7 @@ export class Module {
   private readonly _components = new Map<any, InstanceWrapper<Injectable>>();
   private readonly _injectables = new Map<any, InstanceWrapper<Injectable>>();
   private readonly _routes = new Map<string, InstanceWrapper<Controller>>();
-  private readonly _exports = new Set<string>();
+  private readonly _exports = new Set<string | symbol>();
 
   constructor(
     private readonly _metatype: Type<any>,
@@ -81,7 +82,7 @@ export class Module {
     return this._routes;
   }
 
-  get exports(): Set<string> {
+  get exports(): Set<string | symbol> {
     return this._exports;
   }
 
@@ -278,14 +279,14 @@ export class Module {
   }
 
   public addExportedComponent(
-    exportedComponent: ComponentMetatype | string | DynamicModule,
+    exportedComponent: ComponentMetatype | string | symbol | DynamicModule,
   ) {
-    const addExportedUnit = (token: string) =>
+    const addExportedUnit = (token: string | symbol) =>
       this._exports.add(this.validateExportedProvider(token));
 
     if (this.isCustomProvider(exportedComponent as any)) {
       return this.addCustomExportedComponent(exportedComponent as any);
-    } else if (isString(exportedComponent)) {
+    } else if (isString(exportedComponent) || isSymbol(exportedComponent)) {
       return addExportedUnit(exportedComponent);
     } else if (this.isDynamicModule(exportedComponent)) {
       const { module } = exportedComponent;
@@ -304,7 +305,7 @@ export class Module {
     this._exports.add(this.validateExportedProvider(provide.name));
   }
 
-  public validateExportedProvider(token: string) {
+  public validateExportedProvider(token: string | symbol) {
     if (this._components.has(token)) {
       return token;
     }
@@ -315,7 +316,7 @@ export class Module {
       .filter(metatype => metatype)
       .map(({ name }) => name);
 
-    if (!importedRefNames.includes(token)) {
+    if (!importedRefNames.includes(token as any)) {
       const { name } = this.metatype;
       throw new UnknownExportException(name);
     }
@@ -363,6 +364,13 @@ export class Module {
           typeOrToken,
           self,
         );
+      }
+
+      public async create<T = any>(type: Type<T>): Promise<T> {
+        if (!(type && isFunction(type) && type.prototype)) {
+          throw new InvalidClassException(type);
+        }
+        return this.instantiateClass<T>(type, self);
       }
     };
   }

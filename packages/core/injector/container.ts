@@ -1,7 +1,6 @@
 import { DynamicModule } from '@nestjs/common';
 import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import 'reflect-metadata';
 import { ApplicationConfig } from '../application-config';
 import { CircularDependencyException } from '../errors/exceptions/circular-dependency.exception';
 import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';

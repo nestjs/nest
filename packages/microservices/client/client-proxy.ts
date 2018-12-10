@@ -83,10 +83,10 @@ export abstract class ClientProxy {
     prop: keyof T['options'],
     defaultValue = undefined,
   ) {
-    return obj ? obj[prop as any] : defaultValue;
+    return obj ? obj[prop as string] : defaultValue;
   }
 
   protected normalizePattern<T = any>(pattern: T): string {
-    return pattern && isString(pattern) ? pattern : JSON.stringify(pattern);
+    return isString(pattern) ? pattern : JSON.stringify(pattern);
   }
 }

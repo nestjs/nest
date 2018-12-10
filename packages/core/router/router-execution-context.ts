@@ -21,7 +21,6 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import 'reflect-metadata';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
@@ -170,7 +169,7 @@ export class RouterExecutionContext {
   }
 
   public getCustomFactory(factory: (...args) => void, data): (...args) => any {
-    return !isUndefined(factory) && isFunction(factory)
+    return isFunction(factory)
       ? (req, res, next) => factory(data, req)
       : () => null;
   }

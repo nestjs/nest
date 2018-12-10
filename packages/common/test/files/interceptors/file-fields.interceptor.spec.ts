@@ -30,7 +30,7 @@ describe('FileFieldsInterceptor', () => {
 
       const callback = (req, res, next) => next();
       const fieldsSpy = sinon
-        .stub((target as any).upload, 'fields')
+        .stub((target as any).multer, 'fields')
         .returns(callback);
 
       await target.intercept(new ExecutionContextHost([]), stream$);

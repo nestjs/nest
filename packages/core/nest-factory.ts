@@ -92,7 +92,7 @@ export class NestFactoryStatic {
     this.applyLogger(options);
     await this.initialize(module, container, applicationConfig);
     return this.createNestInstance<INestMicroservice>(
-      new NestMicroservice(container, options as any, applicationConfig),
+      new NestMicroservice(container, options, applicationConfig),
     );
   }
 

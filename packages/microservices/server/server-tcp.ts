@@ -1,3 +1,4 @@
+import { isString } from '@nestjs/common/utils/shared.utils';
 import * as JsonSocket from 'json-socket';
 import * as net from 'net';
 import { Server as NetSocket } from 'net';
@@ -46,8 +47,11 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   }
 
   public async handleMessage(socket, packet: ReadPacket & PacketId) {
-    const pattern = JSON.stringify(packet.pattern);
+    const pattern = !isString(packet.pattern)
+      ? JSON.stringify(packet.pattern)
+      : packet.pattern;
     const handler = this.getHandlerByPattern(pattern);
+
     if (!handler) {
       const status = 'error';
       return socket.sendMessage({

@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { expect } from 'chai';
 import { UseGuards } from '../../decorators/core/use-guards.decorator';
 import { GUARDS_METADATA } from '../../constants';

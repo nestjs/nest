@@ -81,11 +81,11 @@ export class FastifyAdapter {
   }
 
   getHttpServer<T = any>(): T {
-    return this.instance.server as any as T;
+    return this.instance.server as T;
   }
 
   getInstance<T = any>(): T {
-    return this.instance as any as T;
+    return this.instance as T;
   }
 
   register(...args) {

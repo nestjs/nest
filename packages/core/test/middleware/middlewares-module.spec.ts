@@ -107,7 +107,7 @@ describe('MiddlewareModule', () => {
 
       const container = new MiddlewareContainer();
       const moduleKey = 'Test' as any;
-      container.addConfig([configuration as any], moduleKey);
+      container.addConfig([configuration], moduleKey);
 
       const instance = new InvalidMiddleware();
       container.getMiddleware(moduleKey).set('InvalidMiddleware', {

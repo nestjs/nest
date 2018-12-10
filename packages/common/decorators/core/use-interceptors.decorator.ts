@@ -1,8 +1,8 @@
 import { INTERCEPTORS_METADATA } from '../../constants';
+import { NestInterceptor } from '../../interfaces';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';
 import { isFunction } from '../../utils/shared.utils';
 import { validateEach } from '../../utils/validate-each.util';
-import { NestInterceptor } from '../../interfaces';
 
 /**
  * Binds interceptors to the particular context.
@@ -15,7 +15,7 @@ import { NestInterceptor } from '../../interfaces';
  * @param  {} ...interceptors
  */
 export function UseInterceptors(
-  ...interceptors: (NestInterceptor | Function)[],
+  ...interceptors: (NestInterceptor | Function)[]
 ) {
   return (target: any, key?, descriptor?) => {
     const isValidInterceptor = interceptor =>

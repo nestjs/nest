@@ -19,14 +19,14 @@ export function FileFieldsInterceptor(
   localOptions?: MulterOptions,
 ) {
   class MixinInterceptor implements NestInterceptor {
-    readonly upload: MulterInstance;
+    protected multer: MulterInstance;
 
     constructor(
       @Optional()
       @Inject(MULTER_MODULE_OPTIONS)
       options: MulterModuleOptions = {},
     ) {
-      this.upload = multer({
+      this.multer = multer({
         ...options,
         ...localOptions,
       });
@@ -39,7 +39,7 @@ export function FileFieldsInterceptor(
       const ctx = context.switchToHttp();
 
       await new Promise((resolve, reject) =>
-        this.upload.fields(uploadFields)(
+        this.multer.fields(uploadFields)(
           ctx.getRequest(),
           ctx.getResponse(),
           err => {
