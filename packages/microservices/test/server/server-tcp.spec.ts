@@ -72,7 +72,7 @@ describe('ServerTCP', () => {
         new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
 
       (server as any).messageHandlers = objectToMap({
-        [JSON.stringify(msg.pattern)]: handler as any,
+        [msg.pattern]: handler as any,
       });
       server.handleMessage(socket, msg);
       expect(handler.calledOnce).to.be.true;

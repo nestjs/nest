@@ -52,7 +52,7 @@ describe('ServerNats', () => {
         subscribe: subscribeSpy,
       };
     });
-    it('should subscribe each acknowledge patterns', () => {
+    it('should subscribe to each acknowledge patterns', () => {
       const pattern = 'test';
       const handler = sinon.spy();
 

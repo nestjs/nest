@@ -41,20 +41,20 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
   public bindEvents(client: Client) {
     const queue = this.getOptionsProp<NatsOptions>(this.options, 'queue');
-    const subscribe = (channel: string) => {
-      if (queue) {
-        return client.subscribe(
-          channel,
-          { queue },
-          this.getMessageHandler(channel, client).bind(this),
-        );
-      }
-      client.subscribe(
-        channel,
-        this.getMessageHandler(channel, client).bind(this),
-      );
-    };
-    const registeredPatterns = Object.keys(this.messageHandlers);
+    const subscribe = queue
+      ? (channel: string) =>
+          client.subscribe(
+            channel,
+            { queue },
+            this.getMessageHandler(channel, client).bind(this),
+          )
+      : (channel: string) =>
+          client.subscribe(
+            channel,
+            this.getMessageHandler(channel, client).bind(this),
+          );
+
+    const registeredPatterns = [...this.messageHandlers.keys()];
     registeredPatterns.forEach(channel => subscribe(channel));
   }
 
