@@ -93,9 +93,12 @@ describe('ServerRMQ', () => {
     });
     it('should call handler if exists in handlers object', async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+      const objectToMap = obj =>
+        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
+      (server as any).messageHandlers = objectToMap({
         [JSON.stringify(pattern)]: handler as any,
-      };
+      });
       await server.handleMessage(msg);
       expect(handler.calledOnce).to.be.true;
     });

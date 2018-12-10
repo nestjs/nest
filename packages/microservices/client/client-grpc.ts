@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
-import { GRPC_DEFAULT_URL } from '../constants';
+import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
@@ -24,11 +24,12 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     this.url =
       this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
 
+    const protoLoader =
+      this.getOptionsProp<GrpcOptions>(options, 'protoLoader') ||
+      GRPC_DEFAULT_PROTO_LOADER;
+
     grpcPackage = loadPackage('grpc', ClientGrpcProxy.name);
-    grpcProtoLoaderPackage = loadPackage(
-      '@grpc/proto-loader',
-      ClientGrpcProxy.name,
-    );
+    grpcProtoLoaderPackage = loadPackage(protoLoader, ClientGrpcProxy.name);
     this.grpcClient = this.createClient();
   }
 

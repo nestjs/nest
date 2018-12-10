@@ -39,6 +39,7 @@ export {
   Provider,
   RpcExceptionFilter,
   Type,
+  ValidationError,
   WebSocketAdapter,
   WsExceptionFilter,
 } from './interfaces';

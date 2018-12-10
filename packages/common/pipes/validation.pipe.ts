@@ -1,6 +1,10 @@
 import { Optional } from '../decorators';
 import { Injectable } from '../decorators/core';
-import { ArgumentMetadata, BadRequestException } from '../index';
+import {
+  ArgumentMetadata,
+  BadRequestException,
+  ValidationError,
+} from '../index';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { loadPackage } from '../utils/load-package.util';
@@ -9,6 +13,7 @@ import { isNil } from '../utils/shared.utils';
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
   disableErrorMessages?: boolean;
+  exceptionFactory?: (errors: ValidationError[]) => any;
 }
 
 let classValidator: any = {};
@@ -19,6 +24,7 @@ export class ValidationPipe implements PipeTransform<any> {
   protected isTransformEnabled: boolean;
   protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
+  protected exceptionFactory: (errors: ValidationError[]) => any;
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
@@ -26,6 +32,12 @@ export class ValidationPipe implements PipeTransform<any> {
     this.isTransformEnabled = !!transform;
     this.validatorOptions = validatorOptions;
     this.isDetailedOutputDisabled = disableErrorMessages;
+    this.exceptionFactory =
+      options.exceptionFactory ||
+      (errors =>
+        new BadRequestException(
+          this.isDetailedOutputDisabled ? undefined : errors,
+        ));
 
     const loadPkg = (pkg: any) => loadPackage(pkg, 'ValidationPipe');
     classValidator = loadPkg('class-validator');
@@ -43,9 +55,7 @@ export class ValidationPipe implements PipeTransform<any> {
     );
     const errors = await classValidator.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
-      throw new BadRequestException(
-        this.isDetailedOutputDisabled ? undefined : errors,
-      );
+      throw this.exceptionFactory(errors);
     }
     return this.isTransformEnabled
       ? entity

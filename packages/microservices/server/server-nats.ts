@@ -41,20 +41,20 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
   public bindEvents(client: Client) {
     const queue = this.getOptionsProp<NatsOptions>(this.options, 'queue');
-    const subscribe = (channel: string) => {
-      if (queue) {
-        return client.subscribe(
-          channel,
-          { queue },
-          this.getMessageHandler(channel, client).bind(this),
-        );
-      }
-      client.subscribe(
-        channel,
-        this.getMessageHandler(channel, client).bind(this),
-      );
-    };
-    const registeredPatterns = Object.keys(this.messageHandlers);
+    const subscribe = queue
+      ? (channel: string) =>
+          client.subscribe(
+            channel,
+            { queue },
+            this.getMessageHandler(channel, client).bind(this),
+          )
+      : (channel: string) =>
+          client.subscribe(
+            channel,
+            this.getMessageHandler(channel, client).bind(this),
+          );
+
+    const registeredPatterns = [...this.messageHandlers.keys()];
     registeredPatterns.forEach(channel => subscribe(channel));
   }
 
@@ -72,7 +72,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     });
   }
 
-  public getMessageHandler(channel: string, client: Client) {
+  public getMessageHandler(channel: string, client: Client): Function {
     return async (buffer: ReadPacket & PacketId, replyTo: string) =>
       this.handleMessage(channel, buffer, client, replyTo);
   }
@@ -84,12 +84,11 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     replyTo: string,
   ) {
     const publish = this.getPublisher(client, replyTo, message.id);
-    const status = 'error';
-
-    if (!this.messageHandlers[channel]) {
+    const handler = this.getHandlerByPattern(channel);
+    if (!handler) {
+      const status = 'error';
       return publish({ id: message.id, status, err: NO_PATTERN_MESSAGE });
     }
-    const handler = this.messageHandlers[channel];
     const response$ = this.transformToObservable(
       await handler(message.data),
     ) as Observable<any>;

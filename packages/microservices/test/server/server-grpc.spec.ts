@@ -80,10 +80,12 @@ describe('ServerGrpc', () => {
 
   describe('createService', () => {
     it('should call "createServiceMethod"', async () => {
-      const handlers = {
+      const objectToMap = obj =>
+        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+      const handlers = objectToMap({
         test: null,
         test2: () => ({}),
-      };
+      });
       sinon
         .stub(server, 'createPattern')
         .onFirstCall()

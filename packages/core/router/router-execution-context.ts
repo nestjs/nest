@@ -19,7 +19,6 @@ import {
   isEmpty,
   isFunction,
   isString,
-  isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
@@ -191,7 +190,7 @@ export class RouterExecutionContext {
     factory: (...args: any[]) => void,
     data: any,
   ): (...args: any[]) => any {
-    return !isUndefined(factory) && isFunction(factory)
+    return isFunction(factory)
       ? (req, res, next) => factory(data, req)
       : () => null;
   }

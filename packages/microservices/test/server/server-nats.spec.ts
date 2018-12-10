@@ -52,12 +52,16 @@ describe('ServerNats', () => {
         subscribe: subscribeSpy,
       };
     });
-    it('should subscribe each acknowledge patterns', () => {
+    it('should subscribe to each acknowledge patterns', () => {
       const pattern = 'test';
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+
+      const objectToMap = obj =>
+        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
+      (server as any).messageHandlers = objectToMap({
         [pattern]: handler,
-      };
+      });
       server.bindEvents(natsClient);
       expect(subscribeSpy.calledWith(pattern)).to.be.true;
     });
@@ -104,9 +108,12 @@ describe('ServerNats', () => {
     });
     it(`should call handler with expected arguments`, () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+      const objectToMap = obj =>
+        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
+      (server as any).messageHandlers = objectToMap({
         [channel]: handler,
-      };
+      });
 
       server.handleMessage(channel, { pattern: '', data, id: '2' }, null, '');
       expect(handler.calledWith(data)).to.be.true;

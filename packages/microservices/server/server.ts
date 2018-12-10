@@ -9,11 +9,14 @@ import {
   Subscription,
 } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
-import { MicroserviceOptions, WritePacket } from '../interfaces';
-import { MessageHandlers } from '../interfaces/message-handlers.interface';
+import {
+  MessageHandler,
+  MicroserviceOptions,
+  WritePacket,
+} from '../interfaces';
 
 export abstract class Server {
-  protected readonly messageHandlers: MessageHandlers = {};
+  protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger = new Logger(Server.name);
 
   public addHandler(
@@ -21,17 +24,17 @@ export abstract class Server {
     callback: <T>(data: T) => Promise<Observable<any>>,
   ) {
     const key = isString(pattern) ? pattern : JSON.stringify(pattern);
-    this.messageHandlers[key] = callback;
+    this.messageHandlers.set(key, callback);
   }
 
-  public getHandlers(): MessageHandlers {
+  public getHandlers(): Map<string, MessageHandler> {
     return this.messageHandlers;
   }
 
-  public getHandlerByPattern(
-    pattern: string,
-  ): <T>(data: T) => Promise<Observable<any>> | null {
-    return this.messageHandlers[pattern] ? this.messageHandlers[pattern] : null;
+  public getHandlerByPattern(pattern: string): MessageHandler | null {
+    return this.messageHandlers.has(pattern)
+      ? this.messageHandlers.get(pattern)
+      : null;
   }
 
   public send(
@@ -70,7 +73,7 @@ export abstract class Server {
     this.logger.error(error);
   }
 
-  protected loadPackage(name: string, ctx: string) {
+  protected loadPackage<T = any>(name: string, ctx: string): T {
     return loadPackage(name, ctx);
   }
 }
