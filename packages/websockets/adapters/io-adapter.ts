@@ -7,8 +7,10 @@ import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
 import * as io from 'socket.io';
 import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
 import { MessageMappingProperties } from '../gateway-metadata-explorer';
+import { BaseWsExceptionFilter } from './../exceptions/base-ws-exception-filter';
 
 export class IoAdapter implements WebSocketAdapter {
+  protected readonly baseExceptionFilter = new BaseWsExceptionFilter();
   protected readonly httpServer: Server;
 
   constructor(appOrHttpServer?: INestApplicationContext | Server) {
@@ -41,11 +43,11 @@ export class IoAdapter implements WebSocketAdapter {
     return io(port, options);
   }
 
-  public bindClientConnect(server: any, callback: (...args) => void) {
+  public bindClientConnect(server: any, callback: (...args: any[]) => void) {
     server.on(CONNECTION_EVENT, callback);
   }
 
-  public bindClientDisconnect(client: any, callback: (...args) => void) {
+  public bindClientDisconnect(client: any, callback: (...args: any[]) => void) {
     client.on(DISCONNECT_EVENT, callback);
   }
 
@@ -64,18 +66,21 @@ export class IoAdapter implements WebSocketAdapter {
         mergeMap((payload: any) => {
           const { data, ack } = this.mapPayload(payload);
           return transform(callback(data)).pipe(
-            filter(response => !isNil(response)),
-            map(response => [response, ack]),
+            filter((response: any) => !isNil(response)),
+            map((response: any) => [response, ack]),
           );
         }),
         takeUntil(disconnect$),
       );
-      source$.subscribe(([response, ack]) => {
+      const onMessage = ([response, ack]) => {
         if (response.event) {
           return client.emit(response.event, response.data);
         }
         isFunction(ack) && ack(response);
-      });
+      };
+      const onError = (err: any) =>
+        this.baseExceptionFilter.handleError(client, err);
+      source$.subscribe(onMessage as any, onError);
     });
   }
 

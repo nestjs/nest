@@ -78,7 +78,7 @@ export class NestFactoryStatic {
    * @returns {Promise}
    */
   public async createMicroservice(
-    module,
+    module: any,
     options?: NestMicroserviceOptions & MicroserviceOptions,
   ): Promise<INestMicroservice> {
     const { NestMicroservice } = loadPackage(
@@ -104,7 +104,7 @@ export class NestFactoryStatic {
    * @returns {Promise}
    */
   public async createApplicationContext(
-    module,
+    module: any,
     options?: NestApplicationContextOptions,
   ): Promise<INestApplicationContext> {
     const container = new NestContainer();
@@ -125,7 +125,7 @@ export class NestFactoryStatic {
   }
 
   private async initialize(
-    module,
+    module: any,
     container: NestContainer,
     config = new ApplicationConfig(),
     httpServer: HttpServer = null,
@@ -149,7 +149,7 @@ export class NestFactoryStatic {
     }
   }
 
-  private createProxy(target) {
+  private createProxy(target: any) {
     const proxy = this.createExceptionProxy();
     return new Proxy(target, {
       get: proxy,
@@ -158,11 +158,11 @@ export class NestFactoryStatic {
   }
 
   private createExceptionProxy() {
-    return (receiver, prop) => {
+    return (receiver: Record<string, any>, prop: string) => {
       if (!(prop in receiver)) return;
 
       if (isFunction(receiver[prop])) {
-        return (...args) => {
+        return (...args: any[]) => {
           let result;
           ExceptionsZone.run(() => {
             result = receiver[prop](...args);

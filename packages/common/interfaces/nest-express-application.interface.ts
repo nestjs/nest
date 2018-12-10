@@ -7,7 +7,7 @@ export interface INestExpressApplication {
    *
    * @returns {this}
    */
-  set(...args): this;
+  set(...args: any[]): this;
 
   /**
    * A wrapper function around native `express.engine()` method.
@@ -15,7 +15,7 @@ export interface INestExpressApplication {
    *
    * @returns {this}
    */
-  engine(...args): this;
+  engine(...args: any[]): this;
 
   /**
    * A wrapper function around native `express.enable()` method.
@@ -23,7 +23,7 @@ export interface INestExpressApplication {
    *
    * @returns {this}
    */
-  enable(...args): this;
+  enable(...args: any[]): this;
 
   /**
    * A wrapper function around native `express.disable()` method.
@@ -31,7 +31,7 @@ export interface INestExpressApplication {
    *
    * @returns {this}
    */
-  disable(...args): this;
+  disable(...args: any[]): this;
 
   /**
    * Sets a base directory for public assets.

@@ -21,7 +21,7 @@ export interface INestApplication extends INestApplicationContext {
    *
    * @returns {void}
    */
-  use(...args): this;
+  use(...args: any[]): this;
 
   /**
    * Enables CORS (Cross-Origin Resource Sharing)

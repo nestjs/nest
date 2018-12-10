@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { of, throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { WsProxy } from '../../context/ws-proxy';
-import { WsException } from '../../exceptions/ws-exception';
+import { WsException } from '../../errors/ws-exception';
 import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
 
 describe('WsProxy', () => {

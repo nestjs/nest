@@ -1,13 +1,13 @@
 import { HttpServer } from '@nestjs/common';
 
-export class ApplicationReferenceHost {
-  private _applicationRef: HttpServer | any;
+export class ApplicationReferenceHost<T extends HttpServer = any> {
+  private _applicationRef: T;
 
-  set applicationRef(applicationRef: any) {
+  set applicationRef(applicationRef: T) {
     this._applicationRef = applicationRef;
   }
 
-  get applicationRef(): HttpServer | any {
+  get applicationRef(): T | undefined {
     return this._applicationRef;
   }
 }

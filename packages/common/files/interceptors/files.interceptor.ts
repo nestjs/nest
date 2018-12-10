@@ -1,8 +1,8 @@
 import * as multer from 'multer';
 import { Observable } from 'rxjs';
 import { Inject, Optional } from '../../decorators';
-import { mixin } from '../../decorators/core/component.decorator';
-import { ExecutionContext } from '../../interfaces';
+import { mixin } from '../../decorators/core/injectable.decorator';
+import { ExecutionContext, Type } from '../../interfaces';
 import { MulterOptions } from '../../interfaces/external/multer-options.interface';
 import { NestInterceptor } from '../../interfaces/features/nest-interceptor.interface';
 import { MULTER_MODULE_OPTIONS } from '../files.constants';
@@ -15,7 +15,7 @@ export function FilesInterceptor(
   fieldName: string,
   maxCount?: number,
   localOptions?: MulterOptions,
-) {
+): Type<NestInterceptor> {
   class MixinInterceptor implements NestInterceptor {
     protected multer: MulterInstance;
 
@@ -40,7 +40,7 @@ export function FilesInterceptor(
         this.multer.array(fieldName, maxCount)(
           ctx.getRequest(),
           ctx.getResponse(),
-          err => {
+          (err: any) => {
             if (err) {
               const error = transformException(err);
               return reject(error);
@@ -53,5 +53,5 @@ export function FilesInterceptor(
     }
   }
   const Interceptor = mixin(MixinInterceptor);
-  return Interceptor;
+  return Interceptor as Type<NestInterceptor>;
 }

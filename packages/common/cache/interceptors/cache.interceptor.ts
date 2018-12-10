@@ -1,21 +1,29 @@
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Inject, Injectable, Optional } from '../../decorators';
-import { ExecutionContext, NestInterceptor } from '../../interfaces';
+import {
+  ExecutionContext,
+  HttpServer,
+  NestInterceptor,
+} from '../../interfaces';
 import { CACHE_KEY_METADATA, CACHE_MANAGER } from '../cache.constants';
 
 const APPLICATION_REFERENCE_HOST = 'ApplicationReferenceHost';
 const REFLECTOR = 'Reflector';
 
+export interface ApplicationHost<T extends HttpServer = any> {
+  applicationRef: T;
+}
+
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
   @Optional()
   @Inject(APPLICATION_REFERENCE_HOST)
-  protected readonly applicationRefHost: any;
+  protected readonly applicationRefHost: ApplicationHost;
 
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
-    @Inject(REFLECTOR) protected readonly reflector,
+    @Inject(REFLECTOR) protected readonly reflector: any,
   ) {}
 
   async intercept(
@@ -31,7 +39,9 @@ export class CacheInterceptor implements NestInterceptor {
       if (value) {
         return of(value);
       }
-      return call$.pipe(tap(response => this.cacheManager.set(key, response)));
+      return call$.pipe(
+        tap((response: any) => this.cacheManager.set(key, response)),
+      );
     } catch {
       return call$;
     }

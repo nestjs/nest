@@ -51,7 +51,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     applicationRef.reply(host.getArgByIndex(1), message, exception.getStatus());
   }
 
-  public isExceptionObject(err): err is Error {
+  public isExceptionObject(err: any): err is Error {
     return isObject(err) && !!(err as Error).message;
   }
 }

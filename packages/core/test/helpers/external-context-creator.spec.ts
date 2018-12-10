@@ -94,57 +94,57 @@ describe('ExternalContextCreator', () => {
         expect(contextCreator.findContextModuleName({} as any)).to.be.eql('');
       });
     });
-    describe('when component exists', () => {
+    describe('when provider exists', () => {
       it('should return module key', () => {
         const modules = new Map();
-        const componentKey = 'test';
+        const providerKey = 'test';
         const moduleKey = 'key';
 
         modules.set(moduleKey, {});
         (contextCreator as any).modulesContainer = modules;
         sinon
-          .stub(contextCreator, 'findComponentByClassName')
+          .stub(contextCreator, 'findProviderByClassName')
           .callsFake(() => true);
 
         expect(
-          contextCreator.findContextModuleName({ name: componentKey } as any),
+          contextCreator.findContextModuleName({ name: providerKey } as any),
         ).to.be.eql(moduleKey);
       });
     });
-    describe('when component does not exists', () => {
+    describe('when provider does not exists', () => {
       it('should return empty string', () => {
         sinon
-          .stub(contextCreator, 'findComponentByClassName')
+          .stub(contextCreator, 'findProviderByClassName')
           .callsFake(() => false);
         expect(contextCreator.findContextModuleName({} as any)).to.be.eql('');
       });
     });
   });
-  describe('findComponentByClassName', () => {
-    describe('when component exists', () => {
+  describe('findProviderByClassName', () => {
+    describe('when provider exists', () => {
       it('should return true', () => {
-        const components = new Map();
+        const providers = new Map();
         const key = 'test';
-        components.set(key, key);
+        providers.set(key, key);
 
         expect(
-          contextCreator.findComponentByClassName(
+          contextCreator.findProviderByClassName(
             {
-              components,
+              providers,
             } as any,
             key,
           ),
         ).to.be.true;
       });
     });
-    describe('when component does not exists', () => {
+    describe('when provider does not exists', () => {
       it('should return false', () => {
-        const components = new Map();
+        const providers = new Map();
         const key = 'test';
         expect(
-          contextCreator.findComponentByClassName(
+          contextCreator.findProviderByClassName(
             {
-              components,
+              providers,
             } as any,
             key,
           ),

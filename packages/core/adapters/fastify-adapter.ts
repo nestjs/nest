@@ -88,11 +88,11 @@ export class FastifyAdapter {
     return this.instance as T;
   }
 
-  register(...args) {
+  register(...args: any[]) {
     return this.instance.register(...args);
   }
 
-  inject(...args) {
+  inject(...args: any[]) {
     return this.instance.inject(...args);
   }
 

@@ -18,12 +18,13 @@ import { ExpressFactory } from '@nestjs/core/adapters/express-factory';
 import { FastifyAdapter } from '@nestjs/core/adapters/fastify-adapter';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
+import { Module } from '@nestjs/core/injector/module';
 
 export class TestingModule extends NestApplicationContext {
   constructor(
     container: NestContainer,
     scope: Type<any>[],
-    contextModule,
+    contextModule: Module,
     private readonly applicationConfig: ApplicationConfig,
   ) {
     super(container, scope, contextModule);
@@ -81,7 +82,9 @@ export class TestingModule extends NestApplicationContext {
     return new ExpressAdapter(httpAdapter);
   }
 
-  private applyLogger(options: NestApplicationContextOptions | undefined) {
+  private applyLogger(
+    options: NestApplicationContextOptions | undefined,
+  ): void {
     if (!options || !options.logger) {
       return undefined;
     }

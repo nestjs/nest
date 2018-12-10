@@ -12,7 +12,6 @@ export * from './features/execution-context.interface';
 export * from './features/nest-interceptor.interface';
 export * from './features/paramtype.interface';
 export * from './features/pipe-transform.interface';
-export * from './http/http-server-factory.interface';
 export * from './http/http-server.interface';
 export * from './injectable.interface';
 export * from './middleware';

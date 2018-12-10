@@ -8,6 +8,7 @@ import 'reflect-metadata';
 
 export * from './adapters/io-adapter';
 export * from './adapters/ws-adapter';
+export * from './errors';
 export * from './exceptions';
 export { MessageMappingProperties } from './gateway-metadata-explorer';
 export * from './interfaces';

@@ -39,14 +39,17 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     this.server.close();
   }
 
-  public bindHandler(socket) {
+  public bindHandler<T extends Record<string, any>>(socket: T) {
     const readSocket = this.getSocketInstance(socket);
-    readSocket.on(MESSAGE_EVENT, async msg =>
+    readSocket.on(MESSAGE_EVENT, async (msg: ReadPacket & PacketId) =>
       this.handleMessage(readSocket, msg),
     );
   }
 
-  public async handleMessage(socket, packet: ReadPacket & PacketId) {
+  public async handleMessage<T extends Record<string, any>>(
+    socket: T,
+    packet: ReadPacket & PacketId,
+  ) {
     const pattern = !isString(packet.pattern)
       ? JSON.stringify(packet.pattern)
       : packet.pattern;
@@ -91,7 +94,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     this.server.on(CLOSE_EVENT, this.handleClose.bind(this));
   }
 
-  private getSocketInstance(socket): JsonSocket {
+  private getSocketInstance<T>(socket: T): JsonSocket {
     return new JsonSocket(socket);
   }
 }

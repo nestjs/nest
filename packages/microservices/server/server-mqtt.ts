@@ -57,7 +57,8 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(pub: MqttClient): Function {
-    return async (channel, buffer) => this.handleMessage(channel, buffer, pub);
+    return async (channel: string, buffer: Buffer) =>
+      this.handleMessage(channel, buffer, pub);
   }
 
   public async handleMessage(
@@ -81,14 +82,14 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public getPublisher(client: MqttClient, pattern: any, id: string): any {
-    return response =>
+    return (response: any) =>
       client.publish(
         this.getResQueueName(pattern),
         JSON.stringify(Object.assign(response, { id })),
       );
   }
 
-  public deserialize(content): ReadPacket & PacketId {
+  public deserialize(content: any): ReadPacket & PacketId {
     try {
       return JSON.parse(content);
     } catch (e) {
@@ -104,7 +105,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     return `${pattern}_res`;
   }
 
-  public handleError(stream) {
-    stream.on(ERROR_EVENT, err => this.logger.error(err));
+  public handleError(stream: any) {
+    stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 }

@@ -21,7 +21,8 @@ const REFLECTOR = 'Reflector';
 @Injectable()
 export class ClassSerializerInterceptor implements NestInterceptor {
   constructor(@Inject(REFLECTOR) protected readonly reflector: any) {
-    const loadPkg = pkg => loadPackage(pkg, 'ClassSerializerInterceptor');
+    const loadPkg = (pkg: any) =>
+      loadPackage(pkg, 'ClassSerializerInterceptor');
     classTransformer = loadPkg('class-transformer');
   }
 
@@ -53,7 +54,7 @@ export class ClassSerializerInterceptor implements NestInterceptor {
   }
 
   transformToPlain(
-    plainOrClass,
+    plainOrClass: any,
     options: ClassTransformOptions,
   ): PlainLiteralObject {
     return plainOrClass && plainOrClass.constructor !== Object
@@ -70,7 +71,9 @@ export class ClassSerializerInterceptor implements NestInterceptor {
     );
   }
 
-  private reflectSerializeMetadata(obj): ClassTransformOptions | undefined {
+  private reflectSerializeMetadata(
+    obj: object | Function,
+  ): ClassTransformOptions | undefined {
     return this.reflector.get(CLASS_SERIALIZER_OPTIONS, obj);
   }
 }

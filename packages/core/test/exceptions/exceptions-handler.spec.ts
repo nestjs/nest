@@ -1,11 +1,11 @@
-import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
-import { Logger } from '../../../common/services/logger.service';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
-import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
 import { HttpException } from '@nestjs/common';
+import { expect } from 'chai';
+import * as sinon from 'sinon';
+import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
+import { Logger } from '../../../common/services/logger.service';
 import { ExpressAdapter } from '../../adapters/express-adapter';
+import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
+import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
 import { ExecutionContextHost } from '../../helpers/execution-context.host';
 
 describe('ExceptionsHandler', () => {
@@ -116,7 +116,7 @@ describe('ExceptionsHandler', () => {
           const exception = new TestException();
           const res = { foo: 'bar' };
 
-          handler.invokeCustomFilters(exception, res);
+          handler.invokeCustomFilters(exception, res as any);
           expect(funcSpy.calledWith(exception, res)).to.be.true;
         });
         it('should returns true', () => {

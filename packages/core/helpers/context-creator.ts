@@ -8,7 +8,7 @@ export abstract class ContextCreator {
 
   public createContext<T extends any[], R extends any[]>(
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
     metadataKey: string,
   ): R {
     const globalMetadata =
@@ -28,7 +28,7 @@ export abstract class ContextCreator {
   }
 
   public reflectMethodMetadata<T>(
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
     metadataKey: string,
   ): T {
     return Reflect.getMetadata(metadataKey, callback);

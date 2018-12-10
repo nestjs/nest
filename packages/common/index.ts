@@ -21,7 +21,6 @@ export {
   ExecutionContext,
   ForwardReference,
   HttpServer,
-  HttpServerFactory,
   INestApplication,
   INestApplicationContext,
   INestExpressApplication,

@@ -13,20 +13,20 @@ export class BaseRpcExceptionFilter<T = any, R = any>
     if (!(exception instanceof RpcException)) {
       const errorMessage = MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
 
-      const isError = isObject(exception) && (exception as Error).message;
-      const loggerArgs = isError
-        ? [
-            ((exception as any) as Error).message,
-            ((exception as any) as Error).stack,
-          ]
+      const loggerArgs = this.isError(exception)
+        ? [exception.message, exception.stack]
         : [exception];
       const logger = BaseRpcExceptionFilter.logger;
-      logger.error.apply(logger, loggerArgs);
+      logger.error.apply(logger, loggerArgs as any);
 
       return _throw({ status, message: errorMessage });
     }
     const res = exception.getError();
     const message = isObject(res) ? res : { status, message: res };
     return _throw(message);
+  }
+
+  isError(exception: any): exception is Error {
+    return !!(isObject(exception) && (exception as Error).message);
   }
 }

@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { join } from 'path';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
+import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { ServerGrpc } from '../../server/server-grpc';
 
 describe('ServerGrpc', () => {

@@ -1,4 +1,5 @@
 import { GLOBAL_MODULE_METADATA } from '../../constants';
+
 /**
  * Makes the module global-scoped.
  * Once imported will be available for all existing modules.

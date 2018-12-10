@@ -2,8 +2,8 @@ import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as sinon from 'sinon';
-import { Component } from '../../../common/decorators/core/component.decorator';
 import { Inject } from '../../../common/decorators/core/inject.decorator';
+import { Injectable } from '../../../common/decorators/core/injectable.decorator';
 import { InstanceWrapper, NestContainer } from '../../injector/container';
 import { Injector, PropertyDependency } from '../../injector/injector';
 import { Module } from '../../injector/module';
@@ -17,13 +17,13 @@ describe('Injector', () => {
   });
 
   describe('loadInstance', () => {
-    @Component()
+    @Injectable()
     class DependencyOne {}
 
-    @Component()
+    @Injectable()
     class DependencyTwo {}
 
-    @Component()
+    @Injectable()
     class MainTest {
       @Inject() property: DependencyOne;
 
@@ -53,18 +53,18 @@ describe('Injector', () => {
         instance: Object.create(DependencyOne.prototype),
         isResolved: false,
       };
-      moduleDeps.components.set('MainTest', mainTest);
-      moduleDeps.components.set('DependencyOne', depOne);
-      moduleDeps.components.set('DependencyTwo', depTwo);
-      moduleDeps.components.set('MainTestResolved', {
+      moduleDeps.providers.set('MainTest', mainTest);
+      moduleDeps.providers.set('DependencyOne', depOne);
+      moduleDeps.providers.set('DependencyTwo', depTwo);
+      moduleDeps.providers.set('MainTestResolved', {
         ...mainTest,
         isResolved: true,
       });
     });
 
     it('should create an instance of component with proper dependencies', async () => {
-      await injector.loadInstance(mainTest, moduleDeps.components, moduleDeps);
-      const { instance } = moduleDeps.components.get(
+      await injector.loadInstance(mainTest, moduleDeps.providers, moduleDeps);
+      const { instance } = moduleDeps.providers.get(
         'MainTest',
       ) as InstanceWrapper<MainTest>;
 
@@ -74,8 +74,8 @@ describe('Injector', () => {
     });
 
     it('should set "isResolved" property to true after instance initialization', async () => {
-      await injector.loadInstance(mainTest, moduleDeps.components, moduleDeps);
-      const { isResolved } = moduleDeps.components.get(
+      await injector.loadInstance(mainTest, moduleDeps.providers, moduleDeps);
+      const { isResolved } = moduleDeps.providers.get(
         'MainTest',
       ) as InstanceWrapper<MainTest>;
       expect(isResolved).to.be.true;
@@ -83,7 +83,7 @@ describe('Injector', () => {
 
     it('should throw RuntimeException when type is not stored in collection', () => {
       return expect(
-        injector.loadInstance({} as any, moduleDeps.components, moduleDeps),
+        injector.loadInstance({} as any, moduleDeps.providers, moduleDeps),
       ).to.eventually.be.rejected;
     });
 
@@ -98,7 +98,7 @@ describe('Injector', () => {
           isPending: true,
           done$: Promise.resolve(value) as any,
         },
-        moduleDeps.components,
+        moduleDeps.providers,
         moduleDeps,
       );
       expect(result).to.be.eql(value);
@@ -113,7 +113,7 @@ describe('Injector', () => {
           instance: Object.create(MainTest.prototype),
           isResolved: true,
         },
-        moduleDeps.components,
+        moduleDeps.providers,
         moduleDeps,
       );
       expect(result).to.be.undefined;
@@ -121,7 +121,7 @@ describe('Injector', () => {
   });
 
   describe('loadPrototypeOfInstance', () => {
-    @Component()
+    @Injectable()
     class Test {}
 
     let moduleDeps: Module;
@@ -135,7 +135,7 @@ describe('Injector', () => {
         instance: Object.create(Test.prototype),
         isResolved: false,
       };
-      moduleDeps.components.set('Test', test);
+      moduleDeps.providers.set('Test', test);
     });
 
     it('should create prototype of instance', () => {
@@ -145,8 +145,8 @@ describe('Injector', () => {
         metatype: Test,
         name: 'Test',
       };
-      injector.loadPrototypeOfInstance(test, moduleDeps.components);
-      expect(moduleDeps.components.get('Test')).to.deep.equal(expectedResult);
+      injector.loadPrototypeOfInstance(test, moduleDeps.providers);
+      expect(moduleDeps.providers.get('Test')).to.deep.equal(expectedResult);
     });
 
     it('should return null when collection is nil', () => {
@@ -225,7 +225,7 @@ describe('Injector', () => {
     });
   });
 
-  describe('loadInstanceOfRoute', () => {
+  describe('loadInstanceOfController', () => {
     let loadInstance: sinon.SinonSpy;
 
     beforeEach(() => {
@@ -234,11 +234,11 @@ describe('Injector', () => {
     });
 
     it('should call "loadInstance" with expected arguments', async () => {
-      const module = { routes: [] };
+      const module = { controllers: [] };
       const wrapper = { test: 'test' };
 
-      await injector.loadInstanceOfRoute(wrapper as any, module as any);
-      expect(loadInstance.calledWith(wrapper, module.routes, module)).to.be
+      await injector.loadInstanceOfController(wrapper as any, module as any);
+      expect(loadInstance.calledWith(wrapper, module.controllers, module)).to.be
         .true;
     });
   });
@@ -363,7 +363,7 @@ describe('Injector', () => {
           [
             'key',
             {
-              components: {
+              providers: {
                 has: () => false,
               },
               exports: {
@@ -385,7 +385,7 @@ describe('Injector', () => {
           [
             'key',
             {
-              components: {
+              providers: {
                 has: () => true,
               },
               exports: {
@@ -409,7 +409,7 @@ describe('Injector', () => {
           [
             'key',
             {
-              components: {
+              providers: {
                 has: () => true,
                 get: () => ({
                   isResolved: false,
@@ -436,7 +436,7 @@ describe('Injector', () => {
           [
             'key',
             {
-              components: {
+              providers: {
                 has: () => true,
                 get: () => ({
                   isResolved: true,

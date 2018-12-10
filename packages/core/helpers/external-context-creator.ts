@@ -1,7 +1,7 @@
 import { ForbiddenException, ParamData } from '@nestjs/common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
 import { Controller, Transform } from '@nestjs/common/interfaces';
-import { isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
@@ -52,7 +52,7 @@ export class ExternalContextCreator {
 
   public create<T extends ParamsMetadata = ParamsMetadata>(
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
     methodName: string,
     metadataKey?: string,
     paramsFactory?: ParamsFactory,
@@ -87,7 +87,7 @@ export class ExternalContextCreator {
       : [];
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
 
-    const handler = (initialArgs, ...args) => async () => {
+    const handler = (initialArgs: any[], ...args: any[]) => async () => {
       if (fnApplyPipes) {
         await fnApplyPipes(initialArgs, ...args);
         return callback.apply(instance, initialArgs);
@@ -95,7 +95,7 @@ export class ExternalContextCreator {
       return callback.apply(instance, args);
     };
 
-    return async (...args) => {
+    return async (...args: any[]) => {
       const initialArgs = this.contextUtils.createNullArray(argsLength);
       const canActivate = await this.guardsConsumer.tryActivate(
         guards,
@@ -123,19 +123,19 @@ export class ExternalContextCreator {
       return '';
     }
     for (const [key, module] of [...this.modulesContainer.entries()]) {
-      if (this.findComponentByClassName(module, className)) {
+      if (this.findProviderByClassName(module, className)) {
         return key;
       }
     }
     return '';
   }
 
-  public findComponentByClassName(module: Module, className: string): boolean {
-    const { components } = module;
-    const hasComponent = [...components.keys()].some(
-      component => component === className,
+  public findProviderByClassName(module: Module, className: string): boolean {
+    const { providers } = module;
+    const hasProvider = [...providers.keys()].some(
+      provider => provider === className,
     );
-    return hasComponent;
+    return hasProvider;
   }
 
   public exchangeKeysForValues<TMetadata = any>(
@@ -158,16 +158,19 @@ export class ExternalContextCreator {
         return { index, extractValue: customExtractValue, type, data, pipes };
       }
       const numericType = Number(type);
-      const extractValue = (...args) =>
+      const extractValue = (...args: any[]) =>
         paramsFactory.exchangeKeyForValue(numericType, data, args);
 
       return { index, extractValue, type: numericType, data, pipes };
     });
   }
 
-  public getCustomFactory(factory: (...args) => void, data): (...args) => any {
+  public getCustomFactory(
+    factory: (...args: any[]) => void,
+    data: any,
+  ): (...args: any[]) => any {
     return isFunction(factory)
-      ? (...args) => factory(data, args)
+      ? (...args: any[]) => factory(data, args)
       : () => null;
   }
 
@@ -175,7 +178,7 @@ export class ExternalContextCreator {
     pipes: any[],
     paramsOptions: (ParamProperties & { metatype?: any })[],
   ) {
-    const pipesFn = async (args, ...gqlArgs) => {
+    const pipesFn = async (args: any[], ...params: any[]) => {
       await Promise.all(
         paramsOptions.map(async param => {
           const {
@@ -186,7 +189,7 @@ export class ExternalContextCreator {
             metatype,
             pipes: paramPipes,
           } = param;
-          const value = extractValue(...gqlArgs);
+          const value = extractValue(...params);
 
           args[index] = await this.getParamValue(
             value,
@@ -201,7 +204,7 @@ export class ExternalContextCreator {
 
   public async getParamValue<T>(
     value: T,
-    { metatype, type, data },
+    { metatype, type, data }: { metatype: any; type: any; data: any },
     transforms: Transform<any>[],
   ): Promise<any> {
     return this.pipesConsumer.apply(
@@ -211,7 +214,7 @@ export class ExternalContextCreator {
     );
   }
 
-  public async transformToResult(resultOrDeffered) {
+  public async transformToResult(resultOrDeffered: any) {
     if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
       return resultOrDeffered.toPromise();
     }

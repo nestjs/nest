@@ -26,9 +26,9 @@ export class RpcContextCreator {
 
   public create(
     instance: Controller,
-    callback: (data) => Observable<any>,
-    module,
-  ): (...args) => Promise<Observable<any>> {
+    callback: (data: any, ...args: any[]) => Observable<any>,
+    module: string,
+  ): (...args: any[]) => Promise<Observable<any>> {
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
       callback,
@@ -53,7 +53,7 @@ export class RpcContextCreator {
       return callback.call(instance, result, ...params);
     };
 
-    return this.rpcProxy.create(async (...args) => {
+    return this.rpcProxy.create(async (...args: any[]) => {
       fnCanActivate && (await fnCanActivate(args));
 
       return this.interceptorsConsumer.intercept(
@@ -68,12 +68,15 @@ export class RpcContextCreator {
 
   public reflectCallbackParamtypes(
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
   ): any[] {
     return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
   }
 
-  public getDataMetatype(instance, callback) {
+  public getDataMetatype(
+    instance: Controller,
+    callback: (...args: any[]) => any,
+  ) {
     const paramtypes = this.reflectCallbackParamtypes(instance, callback);
     return paramtypes && paramtypes.length ? paramtypes[0] : null;
   }
@@ -81,7 +84,7 @@ export class RpcContextCreator {
   public createGuardsFn(
     guards: any[],
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
   ): Function | null {
     const canActivateFn = async (args: any[]) => {
       const canActivate = await this.guardsConsumer.tryActivate(

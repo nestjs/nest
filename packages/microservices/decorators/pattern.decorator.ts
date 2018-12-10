@@ -1,4 +1,4 @@
-import { PATTERN_METADATA, PATTERN_HANDLER_METADATA } from '../constants';
+import { PATTERN_HANDLER_METADATA, PATTERN_METADATA } from '../constants';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 
 /**
@@ -7,7 +7,11 @@ import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 export const MessagePattern = <T = PatternMetadata | string>(
   metadata?: T,
 ): MethodDecorator => {
-  return (target, key, descriptor: PropertyDescriptor) => {
+  return (
+    target: any,
+    key: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) => {
     Reflect.defineMetadata(PATTERN_METADATA, metadata, descriptor.value);
     Reflect.defineMetadata(PATTERN_HANDLER_METADATA, true, descriptor.value);
     return descriptor;
@@ -17,10 +21,14 @@ export const MessagePattern = <T = PatternMetadata | string>(
 /**
  * Registers gRPC method handler for specified service.
  */
-export function GrpcMethod(service?: string);
-export function GrpcMethod(service: string, method?: string);
-export function GrpcMethod(service: string, method?: string) {
-  return (target, key, descriptor: PropertyDescriptor) => {
+export function GrpcMethod(service?: string): MethodDecorator;
+export function GrpcMethod(service: string, method?: string): MethodDecorator;
+export function GrpcMethod(service: string, method?: string): MethodDecorator {
+  return (
+    target: any,
+    key: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) => {
     const metadata = createMethodMetadata(target, key, service, method);
     return MessagePattern(metadata)(target, key, descriptor);
   };
@@ -28,7 +36,7 @@ export function GrpcMethod(service: string, method?: string) {
 
 export function createMethodMetadata(
   target: any,
-  key: string,
+  key: string | symbol,
   service: string | undefined,
   method: string | undefined,
 ) {
@@ -37,10 +45,10 @@ export function createMethodMetadata(
 
   if (!service) {
     const { name } = target.constructor;
-    return { service: name, rpc: capitalizeFirstLetter(key) };
+    return { service: name, rpc: capitalizeFirstLetter(key as string) };
   }
   if (service && !method) {
-    return { service, rpc: capitalizeFirstLetter(key) };
+    return { service, rpc: capitalizeFirstLetter(key as string) };
   }
   return { service, rpc: method };
 }
