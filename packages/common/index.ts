@@ -14,6 +14,7 @@ export * from './http';
 export {
   ArgumentMetadata,
   ArgumentsHost,
+  CallHandler,
   CanActivate,
   DynamicModule,
   ExceptionFilter,
@@ -36,6 +37,7 @@ export {
   Provider,
   RpcExceptionFilter,
   Type,
+  ValidationError,
   WebSocketAdapter,
   WsExceptionFilter,
 } from './interfaces';

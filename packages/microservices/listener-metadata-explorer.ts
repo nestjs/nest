@@ -10,6 +10,16 @@ import {
 import { ClientOptions } from './interfaces/client-metadata.interface';
 import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 
+export interface ClientProperties {
+  property: string;
+  metadata: ClientOptions;
+}
+
+export interface PatternProperties {
+  pattern: PatternMetadata;
+  targetCallback: (...args: any[]) => any;
+}
+
 export class ListenerMetadataExplorer {
   constructor(private readonly metadataScanner: MetadataScanner) {}
 
@@ -62,14 +72,4 @@ export class ListenerMetadataExplorer {
       yield { property, metadata };
     }
   }
-}
-
-export interface ClientProperties {
-  property: string;
-  metadata: ClientOptions;
-}
-
-export interface PatternProperties {
-  pattern: PatternMetadata;
-  targetCallback: (...args: any[]) => any;
 }

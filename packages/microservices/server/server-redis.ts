@@ -51,7 +51,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
   public bindEvents(subClient: RedisClient, pubClient: RedisClient) {
     subClient.on(MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
-    const subscribePatterns = Object.keys(this.messageHandlers);
+    const subscribePatterns = [...this.messageHandlers.keys()];
     subscribePatterns.forEach(pattern =>
       subClient.subscribe(this.getAckQueueName(pattern)),
     );
@@ -83,12 +83,12 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     const packet = this.deserialize(buffer);
     const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(pub, pattern, packet.id);
-    const status = 'error';
+    const handler = this.getHandlerByPattern(pattern);
 
-    if (!this.messageHandlers[pattern]) {
+    if (!handler) {
+      const status = 'error';
       return publish({ id: packet.id, status, err: NO_PATTERN_MESSAGE });
     }
-    const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(
       await handler(packet.data),
     ) as Observable<any>;

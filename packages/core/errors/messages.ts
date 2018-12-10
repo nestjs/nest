@@ -11,7 +11,7 @@ import { Module } from '../injector/module';
  * Returns the name of an instance
  * @param instance The instance which should get the name from
  */
-const getInstanceName = (instance: any) =>
+const getInstanceName = (instance: unknown) =>
   instance && (instance as Type<any>).name;
 
 /**

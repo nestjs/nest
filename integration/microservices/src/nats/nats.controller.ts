@@ -1,12 +1,13 @@
-import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
   ClientProxy,
   MessagePattern,
+  RpcException,
   Transport,
 } from '@nestjs/microservices';
-import { from, Observable, of } from 'rxjs';
-import { scan } from 'rxjs/operators';
+import { from, Observable, of, throwError } from 'rxjs';
+import { catchError, scan } from 'rxjs/operators';
 
 @Controller()
 export class NatsController {
@@ -70,5 +71,17 @@ export class NatsController {
   @MessagePattern('streaming.*')
   streaming(data: number[]): Observable<number> {
     return from(data);
+  }
+
+  @Get('exception')
+  async getError() {
+    return await this.client
+      .send<number>('exception', {})
+      .pipe(catchError(err => of(err)));
+  }
+
+  @MessagePattern('exception')
+  throwError(): Observable<number> {
+    return throwError(new RpcException('test'));
   }
 }

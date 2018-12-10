@@ -1,3 +1,4 @@
+import { CallHandler } from '@nestjs/common';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 import { expect } from 'chai';
 import { of } from 'rxjs';
@@ -10,9 +11,11 @@ describe('FileInterceptor', () => {
     expect(targetClass.prototype.intercept).to.not.be.undefined;
   });
   describe('intercept', () => {
-    let stream$;
+    let handler: CallHandler;
     beforeEach(() => {
-      stream$ = of('test');
+      handler = {
+        handle: () => of('test'),
+      };
     });
     it('should call single() with expected params', async () => {
       const fieldName = 'file';
@@ -22,7 +25,7 @@ describe('FileInterceptor', () => {
         .stub((target as any).multer, 'single')
         .returns(callback);
 
-      await target.intercept(new ExecutionContextHost([]), stream$);
+      await target.intercept(new ExecutionContextHost([]), handler);
 
       expect(singleSpy.called).to.be.true;
       expect(singleSpy.calledWith(fieldName)).to.be.true;
@@ -37,7 +40,7 @@ describe('FileInterceptor', () => {
         single: () => callback,
       };
       expect(
-        target.intercept(new ExecutionContextHost([]), stream$),
+        target.intercept(new ExecutionContextHost([]), handler),
       ).to.eventually.throw();
     });
   });

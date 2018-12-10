@@ -66,9 +66,12 @@ describe('ServerRedis', () => {
     it('should subscribe each acknowledge patterns', () => {
       const pattern = 'test';
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+      const objectToMap = obj =>
+        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
+      (server as any).messageHandlers = objectToMap({
         [pattern]: handler,
-      };
+      });
       server.bindEvents(sub, null);
 
       const expectedPattern = 'test_ack';
@@ -104,9 +107,12 @@ describe('ServerRedis', () => {
     });
     it(`should call handler with expected arguments`, () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+      const objectToMap = obj =>
+        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
+      (server as any).messageHandlers = objectToMap({
         [channel]: handler,
-      };
+      });
 
       server.handleMessage(channel, {}, null);
       expect(handler.calledWith(data)).to.be.true;

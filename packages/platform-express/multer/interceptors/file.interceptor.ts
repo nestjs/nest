@@ -1,4 +1,5 @@
 import {
+  CallHandler,
   ExecutionContext,
   Inject,
   mixin,
@@ -35,7 +36,7 @@ export function FileInterceptor(
 
     async intercept(
       context: ExecutionContext,
-      call$: Observable<any>,
+      next: CallHandler,
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
 
@@ -52,7 +53,7 @@ export function FileInterceptor(
           },
         ),
       );
-      return call$;
+      return next.handle();
     }
   }
   const Interceptor = mixin(MixinInterceptor);

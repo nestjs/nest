@@ -68,9 +68,12 @@ describe('ServerTCP', () => {
     });
     it('should call handler if exists in handlers object', () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+      const objectToMap = obj =>
+        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
+      (server as any).messageHandlers = objectToMap({
         [msg.pattern]: handler as any,
-      };
+      });
       server.handleMessage(socket, msg);
       expect(handler.calledOnce).to.be.true;
     });

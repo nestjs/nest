@@ -1,8 +1,7 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { NO_PATTERN_MESSAGE } from '../../constants';
 import { ServerMqtt } from '../../server/server-mqtt';
-import { Observable } from 'rxjs';
 
 describe('ServerMqtt', () => {
   let server: ServerMqtt;
@@ -59,9 +58,12 @@ describe('ServerMqtt', () => {
     it('should subscribe each acknowledge patterns', () => {
       const pattern = 'test';
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+
+      const objectToMap = obj =>
+        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+      (server as any).messageHandlers = objectToMap({
         [pattern]: handler,
-      };
+      });
       server.bindEvents(mqttClient);
 
       const expectedPattern = 'test_ack';
@@ -111,9 +113,12 @@ describe('ServerMqtt', () => {
     });
     it(`should call handler with expected arguments`, () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+      const objectToMap = obj =>
+        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
+      (server as any).messageHandlers = objectToMap({
         [channel]: handler,
-      };
+      });
 
       server.handleMessage(
         channel,

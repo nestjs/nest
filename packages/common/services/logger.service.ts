@@ -86,8 +86,7 @@ export class Logger implements LoggerService {
     if (Logger.contextEnvironment === NestEnvironment.TEST) {
       return;
     }
-    const output =
-      message && isObject(message) ? JSON.stringify(message, null, 2) : message;
+    const output = isObject(message) ? JSON.stringify(message, null, 2) : message;
     process.stdout.write(color(`[Nest] ${process.pid}   - `));
     process.stdout.write(`${new Date(Date.now()).toLocaleString()}   `);
 

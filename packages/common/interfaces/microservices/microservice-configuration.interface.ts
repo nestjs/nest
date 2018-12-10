@@ -75,6 +75,7 @@ export interface NatsOptions {
     reconnectTimeWait?: number;
     servers?: string[];
     tls?: any;
+    queue?: string;
   };
 }
 

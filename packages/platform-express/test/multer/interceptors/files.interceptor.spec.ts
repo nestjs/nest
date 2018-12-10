@@ -1,3 +1,4 @@
+import { CallHandler } from '@nestjs/common';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 import { expect } from 'chai';
 import { of } from 'rxjs';
@@ -10,9 +11,11 @@ describe('FilesInterceptor', () => {
     expect(targetClass.prototype.intercept).to.not.be.undefined;
   });
   describe('intercept', () => {
-    let stream$;
+    let handler: CallHandler;
     beforeEach(() => {
-      stream$ = of('test');
+      handler = {
+        handle: () => of('test'),
+      };
     });
     it('should call array() with expected params', async () => {
       const fieldName = 'file';
@@ -24,7 +27,7 @@ describe('FilesInterceptor', () => {
         .stub((target as any).multer, 'array')
         .returns(callback);
 
-      await target.intercept(new ExecutionContextHost([]), stream$);
+      await target.intercept(new ExecutionContextHost([]), handler);
 
       expect(arraySpy.called).to.be.true;
       expect(arraySpy.calledWith(fieldName, maxCount)).to.be.true;
@@ -39,7 +42,7 @@ describe('FilesInterceptor', () => {
         array: () => callback,
       };
       expect(
-        target.intercept(new ExecutionContextHost([]), stream$),
+        target.intercept(new ExecutionContextHost([]), handler),
       ).to.eventually.throw();
     });
   });
