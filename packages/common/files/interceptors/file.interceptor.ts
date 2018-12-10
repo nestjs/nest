@@ -4,7 +4,10 @@ import { Inject, Optional } from '../../decorators';
 import { mixin } from '../../decorators/core/injectable.decorator';
 import { ExecutionContext, Type } from '../../interfaces';
 import { MulterOptions } from '../../interfaces/external/multer-options.interface';
-import { NestInterceptor } from '../../interfaces/features/nest-interceptor.interface';
+import {
+  CallHandler,
+  NestInterceptor,
+} from '../../interfaces/features/nest-interceptor.interface';
 import { MULTER_MODULE_OPTIONS } from '../files.constants';
 import { MulterModuleOptions } from '../interfaces';
 import { transformException } from '../multer/multer.utils';
@@ -31,7 +34,7 @@ export function FileInterceptor(
 
     async intercept(
       context: ExecutionContext,
-      call$: Observable<any>,
+      next: CallHandler,
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
 
@@ -48,7 +51,7 @@ export function FileInterceptor(
           },
         ),
       );
-      return call$;
+      return next.handle();
     }
   }
   const Interceptor = mixin(MixinInterceptor);
