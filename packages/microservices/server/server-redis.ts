@@ -139,6 +139,6 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     ) {
       return undefined;
     }
-    return this.getOptionsProp(this.options, 'retryDelay') || 0;
+    return this.getOptionsProp<RedisOptions>(this.options, 'retryDelay') || 0;
   }
 }

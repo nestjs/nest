@@ -87,6 +87,6 @@ export abstract class ClientProxy {
   }
 
   protected normalizePattern<T = any>(pattern: T): string {
-    return pattern && isString(pattern) ? pattern : JSON.stringify(pattern);
+    return isString(pattern) ? pattern : JSON.stringify(pattern);
   }
 }

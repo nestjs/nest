@@ -169,7 +169,7 @@ export class RouterExecutionContext {
   }
 
   public getCustomFactory(factory: (...args) => void, data): (...args) => any {
-    return !isUndefined(factory) && isFunction(factory)
+    return isFunction(factory)
       ? (req, res, next) => factory(data, req)
       : () => null;
   }

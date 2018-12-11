@@ -1,6 +1,6 @@
 import { fromEvent } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { CANCEL_EVENT, GRPC_DEFAULT_URL } from '../constants';
+import { CANCEL_EVENT, GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
 import { InvalidGrpcPackageException } from '../exceptions/errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/errors/invalid-proto-definition.exception';
 import { CustomTransportStrategy } from '../interfaces';
@@ -22,9 +22,12 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     this.url =
       this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
 
+    const protoLoader =
+      this.getOptionsProp<GrpcOptions>(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
+
     grpcPackage = this.loadPackage('grpc', ServerGrpc.name);
     grpcProtoLoaderPackage = this.loadPackage(
-      '@grpc/proto-loader',
+      protoLoader,
       ServerGrpc.name,
     );
   }
