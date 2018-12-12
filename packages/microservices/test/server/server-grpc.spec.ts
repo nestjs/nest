@@ -51,7 +51,13 @@ describe('ServerGrpc', () => {
     });
     describe('when package exist', () => {
       it('should call "addService"', async () => {
-        const serviceNames = ['test', 'test2'];
+        const serviceNames = [{
+          name: 'test',
+          service: true
+        }, {
+          name: 'test2',
+          service: true
+        }];
         sinon.stub(server, 'lookupPackage').callsFake(() => ({
           test: {service: true},
           test2: {service: true}
