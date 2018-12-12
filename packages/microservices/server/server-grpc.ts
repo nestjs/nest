@@ -76,7 +76,6 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
    * @param grpcPkg
    */
   public getServiceNames(grpcPkg: any): {name: string, service: any}[] {
-    const keys = Object.keys(grpcPkg);
     // Define accumulator to collect all of the services available to load
     const services: {name: string, service: any}[] = [];
     // Initiate recursive services collector starting with empty name
@@ -232,8 +231,12 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         nameExtended = name + '.' + key;
       // Take nested object
       const nested = grpcDefinition[key];
-      // Check if it's in depth with service definition
-      if (nested.hasOwnProperty('service')) {
+      // Check if it's in depth with service definition available
+      const requirement1 = typeof nested.service !== 'undefined';
+      // Check if first requirement passable and service isn't a boolean value
+      const requirement2 = requirement1 ? nested.service !== false : false;
+      // Check if both requirements satisfied
+      if (requirement1 && requirement2) {
         // Add new service object to accumulator
         accumulator.push({
           name: nameExtended,
