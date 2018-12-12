@@ -1,8 +1,7 @@
 {
-  "name": "@nestjs/platform-express",
+  "name": "@nestjs/platform-ws",
   "version": "5.4.1",
-  "description":
-    "Nest - modern, fast, powerful node.js web framework (@platform-express)",
+  "description": "Nest - modern, fast, powerful node.js web framework (@platform-ws)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "repository": {
@@ -10,6 +9,7 @@
     "url": "https://github.com/nestjs/nest"
   },
   "dependencies": {
+    "@types/express": "^4.0.39",
     "body-parser": "1.18.3",
     "cors": "2.8.4",
     "express": "4.16.3",

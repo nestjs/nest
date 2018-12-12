@@ -1,5 +1,4 @@
 import { RequestMethod } from '@nestjs/common';
-import { ErrorHandler, RequestHandler } from '@nestjs/common/interfaces';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -22,54 +21,6 @@ export class FastifyAdapter extends AbstractHttpAdapter {
         : fastify(instanceOrOptions as fastify.ServerOptions);
 
     super(instance);
-  }
-
-  public use(handler: RequestHandler | ErrorHandler);
-  public use(path: any, handler: RequestHandler | ErrorHandler);
-  public use(...args: any[]) {
-    return this.instance.use(...args);
-  }
-
-  public get(handler: RequestHandler);
-  public get(path: any, handler: RequestHandler);
-  public get(...args: any[]) {
-    return this.instance.get(...args);
-  }
-
-  public post(handler: RequestHandler);
-  public post(path: any, handler: RequestHandler);
-  public post(...args: any[]) {
-    return this.instance.post(...args);
-  }
-
-  public head(handler: RequestHandler);
-  public head(path: any, handler: RequestHandler);
-  public head(...args: any[]) {
-    return this.instance.head(...args);
-  }
-
-  public delete(handler: RequestHandler);
-  public delete(path: any, handler: RequestHandler);
-  public delete(...args: any[]) {
-    return this.instance.delete(...args);
-  }
-
-  public put(handler: RequestHandler);
-  public put(path: any, handler: RequestHandler);
-  public put(...args: any[]) {
-    return this.instance.put(...args);
-  }
-
-  public patch(handler: RequestHandler);
-  public patch(path: any, handler: RequestHandler);
-  public patch(...args: any[]) {
-    return this.instance.patch(...args);
-  }
-
-  public options(handler: RequestHandler);
-  public options(path: any, handler: RequestHandler);
-  public options(...args: any[]) {
-    return this.instance.options(...args);
   }
 
   public listen(port: string | number, callback?: () => void);

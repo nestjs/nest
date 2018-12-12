@@ -1,26 +1,14 @@
-import { INestApplicationContext, WebSocketAdapter } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
-import { NestApplication } from '@nestjs/core';
-import { Server } from 'http';
+import {
+  AbstractWsAdapter,
+  MessageMappingProperties,
+} from '@nestjs/websockets';
+import { DISCONNECT_EVENT } from '@nestjs/websockets/constants';
 import { fromEvent, Observable } from 'rxjs';
 import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
 import * as io from 'socket.io';
-import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
-import { MessageMappingProperties } from '../gateway-metadata-explorer';
-import { BaseWsExceptionFilter } from './../exceptions/base-ws-exception-filter';
 
-export class IoAdapter implements WebSocketAdapter {
-  protected readonly baseExceptionFilter = new BaseWsExceptionFilter();
-  protected readonly httpServer: Server;
-
-  constructor(appOrHttpServer?: INestApplicationContext | Server) {
-    if (appOrHttpServer && appOrHttpServer instanceof NestApplication) {
-      this.httpServer = appOrHttpServer.getUnderlyingHttpServer();
-    } else {
-      this.httpServer = appOrHttpServer as Server;
-    }
-  }
-
+export class IoAdapter extends AbstractWsAdapter {
   public create(
     port: number,
     options?: any & { namespace?: string; server?: any },
@@ -32,8 +20,8 @@ export class IoAdapter implements WebSocketAdapter {
     return server && isFunction(server.of)
       ? server.of(namespace)
       : namespace
-        ? this.createIOServer(port, opt).of(namespace)
-        : this.createIOServer(port, opt);
+      ? this.createIOServer(port, opt).of(namespace)
+      : this.createIOServer(port, opt);
   }
 
   public createIOServer(port: number, options?: any): any {
@@ -41,14 +29,6 @@ export class IoAdapter implements WebSocketAdapter {
       return io(this.httpServer, options);
     }
     return io(port, options);
-  }
-
-  public bindClientConnect(server: any, callback: (...args: any[]) => void) {
-    server.on(CONNECTION_EVENT, callback);
-  }
-
-  public bindClientDisconnect(client: any, callback: (...args: any[]) => void) {
-    client.on(DISCONNECT_EVENT, callback);
   }
 
   public bindMessageHandlers(
@@ -72,15 +52,12 @@ export class IoAdapter implements WebSocketAdapter {
         }),
         takeUntil(disconnect$),
       );
-      const onMessage = ([response, ack]) => {
+      source$.subscribe(([response, ack]) => {
         if (response.event) {
           return client.emit(response.event, response.data);
         }
         isFunction(ack) && ack(response);
-      };
-      const onError = (err: any) =>
-        this.baseExceptionFilter.handleError(client, err);
-      source$.subscribe(onMessage as any, onError);
+      });
     });
   }
 
@@ -98,13 +75,5 @@ export class IoAdapter implements WebSocketAdapter {
       };
     }
     return { data: payload };
-  }
-
-  public bindMiddleware(server, middleware: (socket, next) => void) {
-    server.use(middleware);
-  }
-
-  public close(server: any) {
-    isFunction(server.close) && server.close();
   }
 }

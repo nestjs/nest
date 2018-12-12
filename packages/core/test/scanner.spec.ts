@@ -165,9 +165,9 @@ describe('DependenciesScanner', () => {
     });
     describe('when "related" is nil', () => {
       it('should throw exception', () => {
-        expect(
-          scanner.insertRelatedModule(undefined, [] as any, 'test'),
-        ).to.eventually.throws();
+        scanner
+          .insertRelatedModule(undefined, [] as any, 'test')
+          .catch(err => expect(err).to.not.be.undefined);
       });
     });
   });

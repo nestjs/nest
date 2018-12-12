@@ -14,6 +14,7 @@ import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { ExceptionsZone } from './errors/exceptions-zone';
+import { loadAdapter } from './helpers/load-adapter';
 import { NestContainer } from './injector/container';
 import { InstanceLoader } from './injector/instance-loader';
 import { MetadataScanner } from './metadata-scanner';
@@ -58,8 +59,8 @@ export class NestFactoryStatic {
       applicationConfig,
       appOptions,
     );
-    const target = this.createAdapterProxy<T>(instance, httpServer);
-    return this.createNestInstance<T>(target);
+    const target = this.createNestInstance(instance);
+    return this.createAdapterProxy<T>(target, httpServer);
   }
 
   /**
@@ -155,15 +156,22 @@ export class NestFactoryStatic {
         return;
       }
       if (isFunction(receiver[prop])) {
-        return (...args: any[]) => {
-          let result;
-          ExceptionsZone.run(() => {
-            result = receiver[prop](...args);
-          });
-          return result;
-        };
+        return this.createExceptionZone(receiver, prop);
       }
       return receiver[prop];
+    };
+  }
+
+  private createExceptionZone(
+    receiver: Record<string, any>,
+    prop: string,
+  ): Function {
+    return (...args: unknown[]) => {
+      let result;
+      ExceptionsZone.run(() => {
+        result = receiver[prop](...args);
+      });
+      return result;
     };
   }
 
@@ -175,10 +183,7 @@ export class NestFactoryStatic {
   }
 
   private createHttpAdapter<T = any>(httpServer?: T): HttpServer {
-    const { ExpressAdapter } = loadPackage(
-      '@nestjs/platform-express',
-      'NestFactory',
-    );
+    const { ExpressAdapter } = loadAdapter('@nestjs/platform-express', 'HTTP');
     return new ExpressAdapter(httpServer);
   }
 
@@ -192,11 +197,11 @@ export class NestFactoryStatic {
     return (new Proxy(app, {
       get: (receiver: Record<string, any>, prop: string) => {
         if (!(prop in receiver) && prop in adapter) {
-          return adapter[prop];
+          return this.createExceptionZone(receiver, prop);
         }
         return receiver[prop];
       },
-    }) as any) as T;
+    }) as unknown) as T;
   }
 }
 

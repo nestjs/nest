@@ -18,6 +18,10 @@ const packages = {
   'platform-fastify': ts.createProject(
     'packages/platform-fastify/tsconfig.json',
   ),
+  'platform-socket.io': ts.createProject(
+    'packages/platform-socket.io/tsconfig.json',
+  ),
+  'platform-ws': ts.createProject('packages/platform-ws/tsconfig.json'),
 };
 const modules = Object.keys(packages);
 const source = 'packages';
@@ -42,7 +46,9 @@ gulp.task('copy-misc', function() {
     .pipe(gulp.dest(`${source}/websockets`))
     .pipe(gulp.dest(`${source}/testing`))
     .pipe(gulp.dest(`${source}/platform-fastify`))
-    .pipe(gulp.dest(`${source}/platform-express`));
+    .pipe(gulp.dest(`${source}/platform-express`))
+    .pipe(gulp.dest(`${source}/platform-ws`))
+    .pipe(gulp.dest(`${source}/platform-socket.io`));
 });
 
 gulp.task('clean:output', function() {

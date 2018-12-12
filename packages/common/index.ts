@@ -40,6 +40,7 @@ export {
   ValidationError,
   WebSocketAdapter,
   WsExceptionFilter,
+  WsMessageHandler,
 } from './interfaces';
 export * from './pipes';
 export * from './serializer';

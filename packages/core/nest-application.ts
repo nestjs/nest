@@ -18,6 +18,7 @@ import iterate from 'iterare';
 import * as optional from 'optional';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
+import { loadAdapter } from './helpers/load-adapter';
 import { NestContainer } from './injector/container';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
@@ -29,8 +30,6 @@ const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
 const { MicroservicesModule } =
   optional('@nestjs/microservices/microservices-module') || ({} as any);
-const { IoAdapter } =
-  optional('@nestjs/websockets/adapters/io-adapter') || ({} as any);
 
 export class NestApplication extends NestApplicationContext
   implements INestApplication {
@@ -68,6 +67,7 @@ export class NestApplication extends NestApplicationContext
   public registerHttpServer() {
     this.httpServer = this.createServer();
 
+    const { IoAdapter } = optional('@nestjs/platform-socket.io') || ({} as any);
     const ioAdapter = IoAdapter ? new IoAdapter(this.httpServer) : null;
     this.config.setIoAdapter(ioAdapter);
   }
@@ -93,8 +93,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public async registerModules() {
-    this.socketModule &&
-      this.socketModule.register(this.container, this.config);
+    this.registerWsModule();
 
     if (this.microservicesModule) {
       this.microservicesModule.register(this.container, this.config);
@@ -105,6 +104,17 @@ export class NestApplication extends NestApplicationContext
       this.container,
       this.config,
     );
+  }
+
+  public registerWsModule() {
+    if (!this.socketModule) {
+      return;
+    }
+    const adapter = this.config.getIoAdapter();
+    if (!adapter) {
+      return loadAdapter('@nestjs/platform-socket.io', 'WebSockets');
+    }
+    this.socketModule.register(this.container, this.config);
   }
 
   public async init(): Promise<this> {

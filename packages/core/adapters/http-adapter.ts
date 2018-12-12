@@ -3,8 +3,12 @@ import { RequestHandler } from '@nestjs/common/interfaces';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 
-export abstract class AbstractHttpAdapter<T = any> implements HttpServer {
-  protected httpServer: T;
+export abstract class AbstractHttpAdapter<
+  TServer = any,
+  TRequest = any,
+  TResponse = any
+> implements HttpServer<TRequest, TResponse> {
+  protected httpServer: TServer;
 
   constructor(protected readonly instance: any) {}
 
@@ -60,11 +64,11 @@ export abstract class AbstractHttpAdapter<T = any> implements HttpServer {
     return this.instance.listen(port, hostname, callback);
   }
 
-  public getHttpServer(): T {
-    return this.httpServer as T;
+  public getHttpServer(): TServer {
+    return this.httpServer as TServer;
   }
 
-  public setHttpServer(httpServer: T) {
+  public setHttpServer(httpServer: TServer) {
     this.httpServer = httpServer;
   }
 

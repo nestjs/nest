@@ -1,5 +1,5 @@
 import { CallHandler } from '@nestjs/common';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
@@ -39,9 +39,9 @@ describe('FileInterceptor', () => {
       (target as any).multer = {
         single: () => callback,
       };
-      expect(
-        target.intercept(new ExecutionContextHost([]), handler),
-      ).to.eventually.throw();
+      (target.intercept(new ExecutionContextHost([]), handler) as any).catch(
+        error => expect(error).to.not.be.undefined,
+      );
     });
   });
 });
