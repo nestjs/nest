@@ -1,9 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Injectable } from '../../../common';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
 import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
-import { Logger } from '../../../common/services/logger.service';
 import { MiddlewareContainer } from '../../middleware/container';
 import { MiddlewareResolver } from '../../middleware/resolver';
 
@@ -18,8 +16,6 @@ describe('MiddlewareResolver', () => {
   let resolver: MiddlewareResolver;
   let container: MiddlewareContainer;
   let mockContainer: sinon.SinonMock;
-
-  before(() => Logger.setMode(NestEnvironment.TEST));
 
   beforeEach(() => {
     container = new MiddlewareContainer();
