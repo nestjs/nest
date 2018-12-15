@@ -1,3 +1,5 @@
+import { Scope } from '@nestjs/common';
+import { SCOPE_OPTIONS_METADATA } from '@nestjs/common/constants';
 import {
   Controller,
   DynamicModule,
@@ -18,8 +20,10 @@ import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { ApplicationReferenceHost } from '../helpers/application-ref-host';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
+import { AsyncContext } from '../hooks/async-context';
 import { Reflector } from '../services/reflector.service';
-import { InstanceWrapper, NestContainer } from './container';
+import { NestContainer } from './container';
+import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
 import { ModulesContainer } from './modules-container';
 import { HTTP_SERVER_REF } from './tokens';
@@ -28,11 +32,15 @@ export interface CustomProvider {
   provide: any;
   name: string;
 }
-export type OpaqueToken = string | symbol | object | Type<any>;
-export type CustomClass = CustomProvider & { useClass: Type<any> };
+export type OpaqueToken = string | symbol | Type<any>;
+export type CustomClass = CustomProvider & {
+  useClass: Type<any>;
+  scope?: Scope;
+};
 export type CustomFactory = CustomProvider & {
   useFactory: (...args: any[]) => any;
   inject?: OpaqueToken[];
+  scope?: Scope;
 };
 export type CustomValue = CustomProvider & { useValue: any };
 export type ProviderMetatype =
@@ -43,7 +51,7 @@ export type ProviderMetatype =
 
 export class Module {
   private readonly _id: string;
-  private readonly _relatedModules = new Set<Module>();
+  private readonly _imports = new Set<Module>();
   private readonly _providers = new Map<any, InstanceWrapper<Injectable>>();
   private readonly _injectables = new Map<any, InstanceWrapper<Injectable>>();
   private readonly _controllers = new Map<
@@ -69,12 +77,19 @@ export class Module {
     return this._scope;
   }
 
-  get relatedModules(): Set<Module> {
-    return this._relatedModules;
-  }
-
   get providers(): Map<string, InstanceWrapper<Injectable>> {
     return this._providers;
+  }
+
+  get imports(): Set<Module> {
+    return this._imports;
+  }
+
+  /**
+   * Left for backward-compatibility reasons
+   */
+  get relatedModules(): Set<Module> {
+    return this._imports;
   }
 
   /**
@@ -123,96 +138,145 @@ export class Module {
     this.addExternalContextCreator(container.getExternalContextCreator());
     this.addModulesContainer(container.getModulesContainer());
     this.addApplicationRefHost(container.getApplicationRefHost());
+
+    this._providers.set(
+      AsyncContext.name,
+      new InstanceWrapper({
+        name: AsyncContext.name,
+        metatype: AsyncContext as any,
+        isResolved: true,
+        instance: AsyncContext.instance,
+        host: this,
+      }),
+    );
   }
 
   public addModuleRef() {
-    const moduleRef = this.createModuleRefMetatype();
-    this._providers.set(ModuleRef.name, {
-      name: ModuleRef.name,
-      metatype: ModuleRef as any,
-      isResolved: true,
-      instance: new moduleRef(),
-    });
+    const moduleRef = this.createModuleReferenceType();
+    this._providers.set(
+      ModuleRef.name,
+      new InstanceWrapper({
+        name: ModuleRef.name,
+        metatype: ModuleRef as any,
+        isResolved: true,
+        instance: new moduleRef(),
+        host: this,
+      }),
+    );
   }
 
   public addModuleAsProvider() {
-    this._providers.set(this._metatype.name, {
-      name: this._metatype.name,
-      metatype: this._metatype,
-      isResolved: false,
-      instance: null,
-    });
+    this._providers.set(
+      this._metatype.name,
+      new InstanceWrapper({
+        name: this._metatype.name,
+        metatype: this._metatype,
+        isResolved: false,
+        instance: null,
+        host: this,
+      }),
+    );
   }
 
   public addReflector(reflector: Reflector) {
-    this._providers.set(Reflector.name, {
-      name: Reflector.name,
-      metatype: Reflector,
-      isResolved: true,
-      instance: reflector,
-    });
+    this._providers.set(
+      Reflector.name,
+      new InstanceWrapper({
+        name: Reflector.name,
+        metatype: Reflector,
+        isResolved: true,
+        instance: reflector,
+        host: this,
+      }),
+    );
   }
 
   public addApplicationRef(applicationRef: any) {
-    this._providers.set(HTTP_SERVER_REF, {
-      name: HTTP_SERVER_REF,
-      metatype: {} as any,
-      isResolved: true,
-      instance: applicationRef || {},
-    });
+    this._providers.set(
+      HTTP_SERVER_REF,
+      new InstanceWrapper({
+        name: HTTP_SERVER_REF,
+        metatype: {} as any,
+        isResolved: true,
+        instance: applicationRef || {},
+        host: this,
+      }),
+    );
   }
 
   public addExternalContextCreator(
     externalContextCreator: ExternalContextCreator,
   ) {
-    this._providers.set(ExternalContextCreator.name, {
-      name: ExternalContextCreator.name,
-      metatype: ExternalContextCreator,
-      isResolved: true,
-      instance: externalContextCreator,
-    });
+    this._providers.set(
+      ExternalContextCreator.name,
+      new InstanceWrapper({
+        name: ExternalContextCreator.name,
+        metatype: ExternalContextCreator,
+        isResolved: true,
+        instance: externalContextCreator,
+        host: this,
+      }),
+    );
   }
 
   public addModulesContainer(modulesContainer: ModulesContainer) {
-    this._providers.set(ModulesContainer.name, {
-      name: ModulesContainer.name,
-      metatype: ModulesContainer,
-      isResolved: true,
-      instance: modulesContainer,
-    });
+    this._providers.set(
+      ModulesContainer.name,
+      new InstanceWrapper({
+        name: ModulesContainer.name,
+        metatype: ModulesContainer,
+        isResolved: true,
+        instance: modulesContainer,
+        host: this,
+      }),
+    );
   }
 
   public addApplicationRefHost(applicationRefHost: ApplicationReferenceHost) {
-    this._providers.set(ApplicationReferenceHost.name, {
-      name: ApplicationReferenceHost.name,
-      metatype: ApplicationReferenceHost,
-      isResolved: true,
-      instance: applicationRefHost,
-    });
+    this._providers.set(
+      ApplicationReferenceHost.name,
+      new InstanceWrapper({
+        name: ApplicationReferenceHost.name,
+        metatype: ApplicationReferenceHost,
+        isResolved: true,
+        instance: applicationRefHost,
+        host: this,
+      }),
+    );
   }
 
   public addInjectable<T = Injectable>(injectable: Type<T>) {
     if (this.isCustomProvider(injectable)) {
       return this.addCustomProvider(injectable, this._injectables);
     }
-    this._injectables.set(injectable.name, {
-      name: injectable.name,
-      metatype: injectable,
-      instance: null,
-      isResolved: false,
-    });
+    this._injectables.set(
+      injectable.name,
+      new InstanceWrapper({
+        name: injectable.name,
+        metatype: injectable,
+        instance: null,
+        isResolved: false,
+        scope: this.getClassScope(injectable),
+        host: this,
+      }),
+    );
   }
 
   public addProvider(provider: ProviderMetatype): string {
     if (this.isCustomProvider(provider)) {
       return this.addCustomProvider(provider, this._providers);
     }
-    this._providers.set((provider as Type<Injectable>).name, {
-      name: (provider as Type<Injectable>).name,
-      metatype: provider as Type<Injectable>,
-      instance: null,
-      isResolved: false,
-    });
+    this._providers.set(
+      (provider as Type<Injectable>).name,
+      new InstanceWrapper({
+        name: (provider as Type<Injectable>).name,
+        metatype: provider as Type<Injectable>,
+        instance: null,
+        isResolved: false,
+        scope: this.getClassScope(provider),
+        host: this,
+      }),
+    );
     return (provider as Type<Injectable>).name;
   }
 
@@ -228,17 +292,18 @@ export class Module {
   ): string {
     const { provide } = provider;
     const name = isFunction(provide) ? provide.name : provide;
-    const providerNamePair = {
+
+    provider = {
       ...provider,
       name,
     };
-    if (this.isCustomClass(providerNamePair))
-      this.addCustomClass(providerNamePair, collection);
-    else if (this.isCustomValue(providerNamePair))
-      this.addCustomValue(providerNamePair, collection);
-    else if (this.isCustomFactory(providerNamePair))
-      this.addCustomFactory(providerNamePair, collection);
-
+    if (this.isCustomClass(provider)) {
+      this.addCustomClass(provider, collection);
+    } else if (this.isCustomValue(provider)) {
+      this.addCustomValue(provider, collection);
+    } else if (this.isCustomFactory(provider)) {
+      this.addCustomFactory(provider, collection);
+    }
     return name;
   }
 
@@ -258,41 +323,59 @@ export class Module {
     return exported && exported.module;
   }
 
-  public addCustomClass(provider: CustomClass, collection: Map<string, any>) {
-    const { name, useClass } = provider;
-    collection.set(name, {
+  public addCustomClass(
+    provider: CustomClass,
+    collection: Map<string, InstanceWrapper>,
+  ) {
+    const { name, useClass, scope } = provider;
+    collection.set(
       name,
-      metatype: useClass,
-      instance: null,
-      isResolved: false,
-    });
+      new InstanceWrapper({
+        name,
+        metatype: useClass,
+        instance: null,
+        isResolved: false,
+        scope,
+        host: this,
+      }),
+    );
   }
 
-  public addCustomValue(provider: CustomValue, collection: Map<string, any>) {
+  public addCustomValue(
+    provider: CustomValue,
+    collection: Map<string, InstanceWrapper>,
+  ) {
     const { name, useValue: value } = provider;
-    collection.set(name, {
+    collection.set(
       name,
-      metatype: null,
-      instance: value,
-      isResolved: true,
-      isNotMetatype: true,
-      async: value instanceof Promise,
-    });
+      new InstanceWrapper({
+        name,
+        metatype: null,
+        instance: value,
+        isResolved: true,
+        async: value instanceof Promise,
+        host: this,
+      }),
+    );
   }
 
   public addCustomFactory(
     provider: CustomFactory,
-    collection: Map<string, any>,
+    collection: Map<string, InstanceWrapper>,
   ) {
-    const { name, useFactory: factory, inject } = provider;
-    collection.set(name, {
+    const { name, useFactory: factory, inject, scope } = provider;
+    collection.set(
       name,
-      metatype: factory as any,
-      instance: null,
-      isResolved: false,
-      inject: inject || [],
-      isNotMetatype: true,
-    });
+      new InstanceWrapper({
+        name,
+        metatype: factory as any,
+        instance: null,
+        isResolved: false,
+        inject: inject || [],
+        scope,
+        host: this,
+      }),
+    );
   }
 
   public addExportedProvider(
@@ -326,14 +409,14 @@ export class Module {
     if (this._providers.has(token)) {
       return token;
     }
-    const importedArray = [...this._relatedModules.values()];
-    const importedRefNames = importedArray
+    const importsArray = [...this._imports.values()];
+    const importsNames = importsArray
       .filter(item => item)
       .map(({ metatype }) => metatype)
       .filter(metatype => metatype)
       .map(({ name }) => name);
 
-    if (!importedRefNames.includes(token as any)) {
+    if (!importsNames.includes(token as any)) {
       const { name } = this.metatype;
       throw new UnknownExportException(name);
     }
@@ -341,16 +424,21 @@ export class Module {
   }
 
   public addController(controller: Type<Controller>) {
-    this._controllers.set(controller.name, {
-      name: controller.name,
-      metatype: controller,
-      instance: null,
-      isResolved: false,
-    });
+    this._controllers.set(
+      controller.name,
+      new InstanceWrapper({
+        name: controller.name,
+        metatype: controller,
+        instance: null,
+        isResolved: false,
+        scope: this.getClassScope(controller),
+        host: this,
+      }),
+    );
   }
 
   public addRelatedModule(module: any) {
-    this._relatedModules.add(module);
+    this._imports.add(module);
   }
 
   public replace(toReplace: string | symbol | Type<any>, options: any) {
@@ -363,7 +451,7 @@ export class Module {
     });
   }
 
-  public createModuleRefMetatype(): any {
+  public createModuleReferenceType(): any {
     const self = this;
     return class extends ModuleRef {
       constructor() {
@@ -390,5 +478,10 @@ export class Module {
         return this.instantiateClass<T>(type, self);
       }
     };
+  }
+
+  private getClassScope(provider: ProviderMetatype): Scope {
+    const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, provider);
+    return metadata && metadata.scope;
   }
 }

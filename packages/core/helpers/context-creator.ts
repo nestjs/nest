@@ -1,8 +1,11 @@
 import { Controller } from '@nestjs/common/interfaces';
+import { STATIC_CONTEXT } from '../injector/constants';
+import { ContextId } from '../injector/instance-wrapper';
 
 export abstract class ContextCreator {
   public abstract createConcreteContext<T extends any[], R extends any[]>(
     metadata: T,
+    contextId?: ContextId,
   ): R;
   public getGlobalMetadata?<T extends any[]>(): T;
 
@@ -10,15 +13,19 @@ export abstract class ContextCreator {
     instance: Controller,
     callback: (...args: any[]) => any,
     metadataKey: string,
+    contextId = STATIC_CONTEXT,
   ): R {
     const globalMetadata =
       this.getGlobalMetadata && this.getGlobalMetadata<T>();
     const classMetadata = this.reflectClassMetadata<T>(instance, metadataKey);
     const methodMetadata = this.reflectMethodMetadata<T>(callback, metadataKey);
     return [
-      ...this.createConcreteContext<T, R>(globalMetadata || ([] as T)),
-      ...this.createConcreteContext<T, R>(classMetadata),
-      ...this.createConcreteContext<T, R>(methodMetadata),
+      ...this.createConcreteContext<T, R>(
+        globalMetadata || ([] as T),
+        contextId,
+      ),
+      ...this.createConcreteContext<T, R>(classMetadata, contextId),
+      ...this.createConcreteContext<T, R>(methodMetadata, contextId),
     ] as R;
   }
 

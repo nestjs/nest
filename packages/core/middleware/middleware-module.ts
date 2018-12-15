@@ -13,11 +13,12 @@ import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middlew
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 import { NestContainer } from '../injector/container';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
 import { RouterProxy } from '../router/router-proxy';
 import { MiddlewareBuilder } from './builder';
-import { MiddlewareContainer, MiddlewareWrapper } from './container';
+import { MiddlewareContainer } from './container';
 import { MiddlewareResolver } from './resolver';
 import { RoutesMapper } from './routes-mapper';
 
@@ -140,7 +141,7 @@ export class MiddlewareModule {
           throw new RuntimeException();
         }
 
-        const { instance } = middleware as MiddlewareWrapper;
+        const { instance } = middleware as InstanceWrapper;
         await this.bindHandler(
           instance,
           metatype,
@@ -181,8 +182,7 @@ export class MiddlewareModule {
         middlewareInstance,
         path,
       );
-    const resolve = instance.resolve();
-    const middleware = await resolve;
+    const middleware = await instance.resolve();
     bindWithProxy(middleware);
   }
 

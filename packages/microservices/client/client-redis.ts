@@ -115,7 +115,7 @@ export class ClientRedis extends ClientProxy {
     return this.getOptionsProp<RedisOptions>(this.options, 'retryDelay') || 0;
   }
 
-  public createResponseCallback(): Function {
+  public createResponseCallback(): (channel: string, buffer: string) => void {
     return (channel: string, buffer: string) => {
       const { err, response, isDisposed, id } = JSON.parse(
         buffer,

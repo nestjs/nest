@@ -101,7 +101,7 @@ export class NestContainer {
     return this.modules;
   }
 
-  public async addRelatedModule(
+  public async addImport(
     relatedModule: Type<any> | DynamicModule,
     token: string,
   ) {
@@ -165,20 +165,17 @@ export class NestContainer {
   }
 
   public bindGlobalScope() {
-    this.modules.forEach(module => this.bindGlobalsToRelatedModules(module));
+    this.modules.forEach(module => this.bindGlobalsToImports(module));
   }
 
-  public bindGlobalsToRelatedModules(module: Module) {
+  public bindGlobalsToImports(module: Module) {
     this.globalModules.forEach(globalModule =>
       this.bindGlobalModuleToModule(module, globalModule),
     );
   }
 
-  public bindGlobalModuleToModule(module: Module, globalModule: Module) {
-    if (module === globalModule) {
-      return;
-    }
-    module.addRelatedModule(globalModule);
+  public bindGlobalModuleToModule(target: Module, globalModule: Module) {
+    target !== globalModule && target.addRelatedModule(globalModule);
   }
 
   public getDynamicMetadataByToken(
@@ -213,17 +210,4 @@ export class NestContainer {
     }
     return this.modulesContainer;
   }
-}
-
-export interface InstanceWrapper<T> {
-  name: any;
-  metatype: Type<T>;
-  instance: T;
-  isResolved: boolean;
-  isPending?: boolean;
-  done$?: Promise<void>;
-  inject?: Type<any>[];
-  isNotMetatype?: boolean;
-  forwardRef?: boolean;
-  async?: boolean;
 }

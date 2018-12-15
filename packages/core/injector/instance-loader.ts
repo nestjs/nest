@@ -41,52 +41,49 @@ export class InstanceLoader {
   }
 
   private createPrototypesOfProviders(module: Module) {
-    module.providers.forEach(wrapper => {
-      this.injector.loadPrototypeOfInstance<Injectable>(
-        wrapper,
-        module.providers,
-      );
-    });
+    const { providers } = module;
+    providers.forEach(wrapper =>
+      this.injector.loadPrototype<Injectable>(wrapper, providers),
+    );
   }
 
   private async createInstancesOfProviders(module: Module) {
+    const { providers } = module;
     await Promise.all(
-      [...module.providers.values()].map(async wrapper =>
-        this.injector.loadInstanceOfComponent(wrapper, module),
+      [...providers.values()].map(async wrapper =>
+        this.injector.loadProvider(wrapper, module),
       ),
     );
   }
 
   private createPrototypesOfControllers(module: Module) {
-    module.controllers.forEach(wrapper => {
-      this.injector.loadPrototypeOfInstance<Controller>(
-        wrapper,
-        module.controllers,
-      );
-    });
+    const { controllers } = module;
+    controllers.forEach(wrapper =>
+      this.injector.loadPrototype<Controller>(wrapper, controllers),
+    );
   }
 
   private async createInstancesOfControllers(module: Module) {
+    const { controllers } = module;
     await Promise.all(
-      [...module.controllers.values()].map(async wrapper =>
-        this.injector.loadInstanceOfController(wrapper, module),
+      [...controllers.values()].map(async wrapper =>
+        this.injector.loadController(wrapper, module),
       ),
     );
   }
 
   private createPrototypesOfInjectables(module: Module) {
-    module.injectables.forEach(wrapper => {
-      this.injector.loadPrototypeOfInstance<Controller>(
-        wrapper,
-        module.injectables,
-      );
-    });
+    const { injectables } = module;
+    injectables.forEach(wrapper =>
+      this.injector.loadPrototype<Controller>(wrapper, injectables),
+    );
   }
 
   private async createInstancesOfInjectables(module: Module) {
+    const { injectables } = module;
     await Promise.all(
-      [...module.injectables.values()].map(async wrapper =>
-        this.injector.loadInstanceOfInjectable(wrapper, module),
+      [...injectables.values()].map(async wrapper =>
+        this.injector.loadInjectable(wrapper, module),
       ),
     );
   }

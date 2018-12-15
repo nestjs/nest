@@ -2,14 +2,12 @@ import { CanActivate } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
-import {
-  isEmpty,
-  isFunction,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { ContextCreator } from '../helpers/context-creator';
+import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
+import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 
 export class GuardsContextCreator extends ContextCreator {
   private moduleContext: string;
@@ -25,6 +23,7 @@ export class GuardsContextCreator extends ContextCreator {
     instance: Controller,
     callback: (...args: any[]) => any,
     module: string,
+    contextId = STATIC_CONTEXT,
   ): CanActivate[] {
     this.moduleContext = module;
     return this.createContext(instance, callback, GUARDS_METADATA);
@@ -32,31 +31,34 @@ export class GuardsContextCreator extends ContextCreator {
 
   public createConcreteContext<T extends any[], R extends any[]>(
     metadata: T,
+    contextId = STATIC_CONTEXT,
   ): R {
     if (isEmpty(metadata)) {
       return [] as R;
     }
     return iterate(metadata)
       .filter((guard: any) => guard && (guard.name || guard.canActivate))
-      .map(guard => this.getGuardInstance(guard))
+      .map(guard => this.getGuardInstance(guard, contextId))
       .filter((guard: CanActivate) => guard && isFunction(guard.canActivate))
       .toArray() as R;
   }
 
-  public getGuardInstance(guard: Function | CanActivate) {
+  public getGuardInstance(guard: Function | CanActivate, contextId: ContextId) {
     const isObject = (guard as CanActivate).canActivate;
     if (isObject) {
       return guard;
     }
     const instanceWrapper = this.getInstanceByMetatype(guard);
-    return instanceWrapper && instanceWrapper.instance
-      ? instanceWrapper.instance
-      : null;
+    if (!instanceWrapper) {
+      return null;
+    }
+    const instanceHost = instanceWrapper.getInstanceByContextId(contextId);
+    return instanceHost && instanceHost.instance;
   }
 
   public getInstanceByMetatype<T extends Record<string, any>>(
     guard: T,
-  ): { instance: any } | undefined {
+  ): InstanceWrapper | undefined {
     if (!this.moduleContext) {
       return undefined;
     }

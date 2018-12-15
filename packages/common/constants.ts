@@ -13,6 +13,7 @@ export const SELF_DECLARED_DEPS_METADATA = 'self:paramtypes';
 export const OPTIONAL_DEPS_METADATA = 'optional:paramtypes';
 export const PROPERTY_DEPS_METADATA = 'self:properties_metadata';
 export const OPTIONAL_PROPERTY_DEPS_METADATA = 'optional:properties_metadata';
+export const SCOPE_OPTIONS_METADATA = 'scope:options';
 
 export const METHOD_METADATA = 'method';
 export const ROUTE_ARGS_METADATA = '__routeArguments__';

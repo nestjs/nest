@@ -93,7 +93,7 @@ describe('NestContainer', () => {
     });
   });
 
-  describe('bindGlobalsToRelatedModules', () => {
+  describe('bindGlobalsToImports', () => {
     it('should call "bindGlobalModuleToModule" for every global module', () => {
       const global1 = { test: 1 };
       const global2 = { test: 2 };
@@ -105,7 +105,7 @@ describe('NestContainer', () => {
         container,
         'bindGlobalModuleToModule',
       );
-      container.bindGlobalsToRelatedModules({
+      container.bindGlobalsToImports({
         addRelatedModule: sinon.spy(),
       } as any);
       expect(bindGlobalModuleToModuleSpy.calledTwice).to.be.true;

@@ -27,7 +27,7 @@ describe('InstanceLoader', () => {
     mockContainer = sinon.mock(container);
   });
 
-  it('should call "loadPrototypeOfInstance" for each provider and route in each module', async () => {
+  it('should call "loadPrototype" for each provider and route in each module', async () => {
     const injector = new Injector();
     (loader as any).injector = injector;
 
@@ -47,13 +47,10 @@ describe('InstanceLoader', () => {
     modules.set('Test', module);
     mockContainer.expects('getModules').returns(modules);
 
-    const loadProviderPrototypeStub = sinon.stub(
-      injector,
-      'loadPrototypeOfInstance',
-    );
+    const loadProviderPrototypeStub = sinon.stub(injector, 'loadPrototype');
 
-    sinon.stub(injector, 'loadInstanceOfController');
-    sinon.stub(injector, 'loadInstanceOfComponent');
+    sinon.stub(injector, 'loadController');
+    sinon.stub(injector, 'loadProvider');
 
     await loader.createInstancesOfDependencies();
     expect(
@@ -64,7 +61,7 @@ describe('InstanceLoader', () => {
     ).to.be.true;
   });
 
-  it('should call "loadInstanceOfComponent" for each provider in each module', async () => {
+  it('should call "loadProvider" for each provider in each module', async () => {
     const injector = new Injector();
     (loader as any).injector = injector;
 
@@ -86,8 +83,8 @@ describe('InstanceLoader', () => {
     modules.set('Test', module);
     mockContainer.expects('getModules').returns(modules);
 
-    const loadProviderStub = sinon.stub(injector, 'loadInstanceOfComponent');
-    sinon.stub(injector, 'loadInstanceOfController');
+    const loadProviderStub = sinon.stub(injector, 'loadProvider');
+    sinon.stub(injector, 'loadController');
 
     await loader.createInstancesOfDependencies();
     expect(
@@ -95,7 +92,7 @@ describe('InstanceLoader', () => {
     ).to.be.true;
   });
 
-  it('should call "loadInstanceOfController" for each route in each module', async () => {
+  it('should call "loadController" for each route in each module', async () => {
     const injector = new Injector();
     (loader as any).injector = injector;
 
@@ -112,8 +109,8 @@ describe('InstanceLoader', () => {
     modules.set('Test', module);
     mockContainer.expects('getModules').returns(modules);
 
-    sinon.stub(injector, 'loadInstanceOfProvider');
-    const loadRoutesStub = sinon.stub(injector, 'loadInstanceOfController');
+    sinon.stub(injector, 'loadProvider');
+    const loadRoutesStub = sinon.stub(injector, 'loadController');
 
     await loader.createInstancesOfDependencies();
     expect(
@@ -121,7 +118,7 @@ describe('InstanceLoader', () => {
     ).to.be.true;
   });
 
-  it('should call "loadInstanceOfInjectable" for each injectable in each module', async () => {
+  it('should call "loadInjectable" for each injectable in each module', async () => {
     const injector = new Injector();
     (loader as any).injector = injector;
 
@@ -142,8 +139,8 @@ describe('InstanceLoader', () => {
     modules.set('Test', module);
     mockContainer.expects('getModules').returns(modules);
 
-    const loadInjectableStub = sinon.stub(injector, 'loadInstanceOfInjectable');
-    sinon.stub(injector, 'loadInstanceOfController');
+    const loadInjectableStub = sinon.stub(injector, 'loadInjectable');
+    sinon.stub(injector, 'loadController');
 
     await loader.createInstancesOfDependencies();
     expect(

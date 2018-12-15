@@ -39,9 +39,12 @@ gulp.task('copy-misc', function() {
 
 gulp.task('clean:output', function() {
   return gulp
-    .src([`${source}/**/*.js`, `${source}/**/*.d.ts`], {
-      read: false,
-    })
+    .src(
+      [`${source}/**/*.js`, `${source}/**/*.d.ts`, `${source}/**/*.js.map`],
+      {
+        read: false,
+      },
+    )
     .pipe(clean());
 });
 

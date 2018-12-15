@@ -1,3 +1,4 @@
+import { Scope } from '../scope-options.interface';
 import { Type } from '../type.interface';
 
 export type Provider =
@@ -9,6 +10,7 @@ export type Provider =
 export interface ClassProvider {
   provide: any;
   useClass: Type<any>;
+  scope?: Scope;
 }
 
 export interface ValueProvider {
@@ -20,4 +22,5 @@ export interface FactoryProvider {
   provide: any;
   useFactory: (...args: any[]) => any;
   inject?: Array<Type<any> | string | any>;
+  scope?: Scope;
 }

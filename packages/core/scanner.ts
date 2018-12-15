@@ -91,14 +91,14 @@ export class DependenciesScanner {
     const modules = this.container.getModules();
 
     for (const [token, { metatype }] of modules) {
-      await this.reflectRelatedModules(metatype, token, metatype.name);
+      await this.reflectImports(metatype, token, metatype.name);
       this.reflectProviders(metatype, token);
       this.reflectControllers(metatype, token);
       this.reflectExports(metatype, token);
     }
   }
 
-  public async reflectRelatedModules(
+  public async reflectImports(
     module: Type<any>,
     token: string,
     context: string,
@@ -111,7 +111,7 @@ export class DependenciesScanner {
       ),
     ];
     for (const related of modules) {
-      await this.insertRelatedModule(related, token, context);
+      await this.insertImport(related, token, context);
     }
   }
 
@@ -234,18 +234,14 @@ export class DependenciesScanner {
     return undefined;
   }
 
-  public async insertRelatedModule(
-    related: any,
-    token: string,
-    context: string,
-  ) {
+  public async insertImport(related: any, token: string, context: string) {
     if (isUndefined(related)) {
       throw new CircularDependencyException(context);
     }
     if (related && related.forwardRef) {
-      return this.container.addRelatedModule(related.forwardRef(), token);
+      return this.container.addImport(related.forwardRef(), token);
     }
-    await this.container.addRelatedModule(related, token);
+    await this.container.addImport(related, token);
   }
 
   public isCustomProvider(

@@ -28,10 +28,10 @@ describe('MiddlewareResolver', () => {
   });
 
   it('should resolve middleware instances from container', () => {
-    const loadInstanceOfMiddleware = sinon.stub(
+    const loadMiddleware = sinon.stub(
       // tslint:disable-next-line:no-string-literal
       resolver['instanceLoader'],
-      'loadInstanceOfMiddleware',
+      'loadMiddleware',
     );
     const middleware = new Map();
     const wrapper = {
@@ -44,10 +44,9 @@ describe('MiddlewareResolver', () => {
     mockContainer.expects('getMiddleware').returns(middleware);
     resolver.resolveInstances(module, null);
 
-    expect(loadInstanceOfMiddleware.callCount).to.be.equal(middleware.size);
-    expect(loadInstanceOfMiddleware.calledWith(wrapper, middleware, module)).to
-      .be.true;
+    expect(loadMiddleware.callCount).to.be.equal(middleware.size);
+    expect(loadMiddleware.calledWith(wrapper, middleware, module)).to.be.true;
 
-    loadInstanceOfMiddleware.restore();
+    loadMiddleware.restore();
   });
 });

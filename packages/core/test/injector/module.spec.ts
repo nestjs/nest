@@ -128,6 +128,7 @@ describe('Module', () => {
     const type = { name: 'TypeTest' };
     const provider = { provide: type, useClass: type, name: 'test' };
     let setSpy;
+
     beforeEach(() => {
       const collection = new Map();
       setSpy = sinon.spy(collection, 'set');
@@ -261,7 +262,7 @@ describe('Module', () => {
   describe('relatedModules', () => {
     it('should return relatedModules', () => {
       const test = ['test'];
-      (module as any)._relatedModules = test;
+      (module as any)._imports = test;
       expect(module.relatedModules).to.be.eql(test);
     });
   });
@@ -290,13 +291,13 @@ describe('Module', () => {
     });
   });
 
-  describe('createModuleRefMetatype', () => {
+  describe('createModuleReferenceType', () => {
     let moduleRef;
 
     class SimpleClass {}
 
     beforeEach(() => {
-      const Class = module.createModuleRefMetatype();
+      const Class = module.createModuleReferenceType();
       moduleRef = new Class();
     });
 
@@ -321,7 +322,7 @@ describe('Module', () => {
     describe('when unit exists in related modules collection', () => {
       it('should behave as identity', () => {
         const metatype = { name: token };
-        (module as any)._relatedModules = new Set([
+        (module as any)._imports = new Set([
           new Module(metatype as any, [], new NestContainer()),
         ]);
         expect(module.validateExportedProvider(token)).to.be.eql(token);

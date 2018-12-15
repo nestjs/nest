@@ -24,6 +24,7 @@ import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { ContextUtils } from '../helpers/context-utils';
+import { STATIC_CONTEXT } from '../injector/constants';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../pipes/pipes-consumer';
@@ -69,6 +70,7 @@ export class RouterExecutionContext {
     methodName: string,
     module: string,
     requestMethod: RequestMethod,
+    contextId = STATIC_CONTEXT,
   ) {
     const metadata =
       this.contextUtils.reflectCallbackMetadata(
@@ -78,16 +80,27 @@ export class RouterExecutionContext {
       ) || {};
     const keys = Object.keys(metadata);
     const argsLength = this.contextUtils.getArgumentsLength(keys, metadata);
-    const pipes = this.pipesContextCreator.create(instance, callback, module);
+    const pipes = this.pipesContextCreator.create(
+      instance,
+      callback,
+      module,
+      contextId,
+    );
     const paramtypes = this.contextUtils.reflectCallbackParamtypes(
       instance,
       methodName,
     );
-    const guards = this.guardsContextCreator.create(instance, callback, module);
+    const guards = this.guardsContextCreator.create(
+      instance,
+      callback,
+      module,
+      contextId,
+    );
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
       module,
+      contextId,
     );
     const httpCode = this.reflectHttpStatusCode(callback);
     const paramsMetadata = this.exchangeKeysForValues(keys, metadata, module);

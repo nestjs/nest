@@ -29,5 +29,6 @@ export * from './nest-fastify-application.interface';
 export * from './nest-microservice.interface';
 export * from './on-application-bootstrap.interface';
 export * from './request-mapping-metadata.interface';
+export * from './scope-options.interface';
 export * from './type.interface';
 export * from './websockets/web-socket-adapter.interface';

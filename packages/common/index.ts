@@ -39,6 +39,7 @@ export {
   PipeTransform,
   Provider,
   RpcExceptionFilter,
+  Scope,
   Type,
   ValidationError,
   WebSocketAdapter,

@@ -2,10 +2,8 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
-import {
-  InstanceWrapper,
-  NestContainer,
-} from '@nestjs/core/injector/container';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';

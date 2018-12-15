@@ -11,7 +11,9 @@ import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { ROUTE_MAPPED_MESSAGE } from '../helpers/messages';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
+import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
+import { Injector } from '../injector/injector';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { MetadataScanner } from '../metadata-scanner';
@@ -34,12 +36,15 @@ export class RouterExplorer {
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(RouterExplorer.name, true);
 
+  // TEMP
+  private readonly injector = new Injector();
+
   constructor(
     private readonly metadataScanner: MetadataScanner,
-    container: NestContainer,
+    private readonly container: NestContainer,
     private readonly routerProxy?: RouterProxy,
     private readonly exceptionsFilter?: ExceptionsFilter,
-    private readonly config?: ApplicationConfig,
+    config?: ApplicationConfig,
   ) {
     this.executionContextCreator = new RouterExecutionContext(
       new RouteParamsFactory(),
@@ -155,6 +160,10 @@ export class RouterExplorer {
       .get(router, requestMethod)
       .bind(router);
 
+    const stripSlash = (str: string) =>
+      str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
+    const fullPath = stripSlash(basePath) + path;
+    // TODO:
     const proxy = this.createCallbackProxy(
       instance,
       targetCallback,
@@ -162,10 +171,32 @@ export class RouterExplorer {
       module,
       requestMethod,
     );
-    const stripSlash = (str: string) =>
-      str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
-    const fullPath = stripSlash(basePath) + path;
     routerMethod(stripSlash(fullPath) || '/', proxy);
+    /*routerMethod(
+      stripSlash(fullPath) || '/',
+      async <TRequest, TResponse>(
+        req: TRequest,
+        res: TResponse,
+        next: Function,
+      ) => {
+        const ctx = { id: 2 }; // asyncId
+        const contextInstance = await this.injector.loadControllerPerContext(
+          instance,
+          this.container.getModules(),
+          module,
+          ctx,
+        );
+        const proxy = this.createCallbackProxy(
+          contextInstance,
+          contextInstance[methodName],
+          methodName,
+          module,
+          requestMethod,
+          ctx,
+        );
+        proxy(req, res, next);
+      },
+    );*/
   }
 
   private createCallbackProxy(
@@ -174,6 +205,7 @@ export class RouterExplorer {
     methodName: string,
     module: string,
     requestMethod: RequestMethod,
+    contextId = STATIC_CONTEXT,
   ) {
     const executionContext = this.executionContextCreator.create(
       instance,
@@ -181,11 +213,13 @@ export class RouterExplorer {
       methodName,
       module,
       requestMethod,
+      contextId,
     );
     const exceptionFilter = this.exceptionsFilter.create(
       instance,
       callback,
       module,
+      contextId,
     );
     return this.routerProxy.createProxy(executionContext, exceptionFilter);
   }
