@@ -1,5 +1,9 @@
-import { HttpServer } from '@nestjs/common';
-import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import { HttpServer, Scope } from '@nestjs/common';
+import {
+  METHOD_METADATA,
+  PATH_METADATA,
+  SCOPE_OPTIONS_METADATA,
+} from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -163,7 +167,36 @@ export class RouterExplorer {
     const stripSlash = (str: string) =>
       str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
     const fullPath = stripSlash(basePath) + path;
-    // TODO:
+
+    const classScope = this.getClassScope(instance);
+    const isRequestScoped = classScope === Scope.REQUEST;
+    if (isRequestScoped) {
+      routerMethod(
+        stripSlash(fullPath) || '/',
+        async <TRequest, TResponse>(
+          req: TRequest,
+          res: TResponse,
+          next: Function,
+        ) => {
+          const contextId = { id: 1 }; // asyncId
+          const contextInstance = await this.injector.loadControllerPerContext(
+            instance,
+            this.container.getModules(),
+            module,
+            contextId,
+          );
+          this.createCallbackProxy(
+            contextInstance,
+            contextInstance[methodName],
+            methodName,
+            module,
+            requestMethod,
+            contextId,
+          )(req, res, next);
+        },
+      );
+      return;
+    }
     const proxy = this.createCallbackProxy(
       instance,
       targetCallback,
@@ -172,31 +205,6 @@ export class RouterExplorer {
       requestMethod,
     );
     routerMethod(stripSlash(fullPath) || '/', proxy);
-    /*routerMethod(
-      stripSlash(fullPath) || '/',
-      async <TRequest, TResponse>(
-        req: TRequest,
-        res: TResponse,
-        next: Function,
-      ) => {
-        const ctx = { id: 2 }; // asyncId
-        const contextInstance = await this.injector.loadControllerPerContext(
-          instance,
-          this.container.getModules(),
-          module,
-          ctx,
-        );
-        const proxy = this.createCallbackProxy(
-          contextInstance,
-          contextInstance[methodName],
-          methodName,
-          module,
-          requestMethod,
-          ctx,
-        );
-        proxy(req, res, next);
-      },
-    );*/
   }
 
   private createCallbackProxy(
@@ -222,5 +230,10 @@ export class RouterExplorer {
       contextId,
     );
     return this.routerProxy.createProxy(executionContext, exceptionFilter);
+  }
+
+  private getClassScope(controller: Controller): Scope {
+    const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, controller);
+    return metadata && metadata.scope;
   }
 }

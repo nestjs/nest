@@ -1,5 +1,7 @@
 import { HttpServer } from '@nestjs/common';
+import { SCOPE_OPTIONS_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { Scope } from '@nestjs/common/interfaces';
 import {
   MiddlewareConfiguration,
   RouteInfo,
@@ -182,6 +184,13 @@ export class MiddlewareModule {
         middlewareInstance,
         path,
       );
+
+    const classScope = this.getClassScope(instance);
+    if (classScope === Scope.REQUEST) {
+      return bindWithProxy(async (...args: unknown[]) =>
+        (await instance.resolve())(...args),
+      );
+    }
     const middleware = await instance.resolve();
     bindWithProxy(middleware);
   }
@@ -200,5 +209,10 @@ export class MiddlewareModule {
     const prefix = this.config.getGlobalPrefix();
     const basePath = validatePath(prefix);
     router(basePath + path, proxy);
+  }
+
+  private getClassScope(instance: NestMiddleware): Scope {
+    const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, instance);
+    return metadata && metadata.scope;
   }
 }

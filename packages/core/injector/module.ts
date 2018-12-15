@@ -20,7 +20,6 @@ import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { ApplicationReferenceHost } from '../helpers/application-ref-host';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
-import { AsyncContext } from '../hooks/async-context';
 import { Reflector } from '../services/reflector.service';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
@@ -138,17 +137,6 @@ export class Module {
     this.addExternalContextCreator(container.getExternalContextCreator());
     this.addModulesContainer(container.getModulesContainer());
     this.addApplicationRefHost(container.getApplicationRefHost());
-
-    this._providers.set(
-      AsyncContext.name,
-      new InstanceWrapper({
-        name: AsyncContext.name,
-        metatype: AsyncContext as any,
-        isResolved: true,
-        instance: AsyncContext.instance,
-        host: this,
-      }),
-    );
   }
 
   public addModuleRef() {

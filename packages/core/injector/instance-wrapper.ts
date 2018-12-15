@@ -2,7 +2,7 @@ import { Scope, Type } from '@nestjs/common';
 import { STATIC_CONTEXT } from './constants';
 import { Module } from './module';
 
-export const INSTANCE_METADATA_SYMBOL = Symbol.for('metadata:cache');
+export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 
 export interface ContextId {
   readonly id: number;

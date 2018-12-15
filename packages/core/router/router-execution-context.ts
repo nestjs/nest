@@ -24,6 +24,10 @@ import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { ContextUtils } from '../helpers/context-utils';
+import {
+  HandlerMetadata,
+  HandlerMetadataStorage,
+} from '../helpers/handler-metadata-storage';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
@@ -48,6 +52,7 @@ export interface ParamProperties {
 }
 
 export class RouterExecutionContext {
+  private readonly handlerMetadataStorage = new HandlerMetadataStorage();
   private readonly contextUtils = new ContextUtils();
   private readonly responseController: RouterResponseController;
 
@@ -72,23 +77,18 @@ export class RouterExecutionContext {
     requestMethod: RequestMethod,
     contextId = STATIC_CONTEXT,
   ) {
-    const metadata =
-      this.contextUtils.reflectCallbackMetadata(
-        instance,
-        methodName,
-        ROUTE_ARGS_METADATA,
-      ) || {};
-    const keys = Object.keys(metadata);
-    const argsLength = this.contextUtils.getArgumentsLength(keys, metadata);
+    const { argsLength, paramsOptions, fnHandleResponse } = this.getMetadata(
+      instance,
+      callback,
+      methodName,
+      module,
+      requestMethod,
+    );
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
       module,
       contextId,
-    );
-    const paramtypes = this.contextUtils.reflectCallbackParamtypes(
-      instance,
-      methodName,
     );
     const guards = this.guardsContextCreator.create(
       instance,
@@ -102,27 +102,10 @@ export class RouterExecutionContext {
       module,
       contextId,
     );
-    const httpCode = this.reflectHttpStatusCode(callback);
-    const paramsMetadata = this.exchangeKeysForValues(keys, metadata, module);
-    const isResponseHandled = paramsMetadata.some(
-      ({ type }) =>
-        type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
-    );
-    const paramsOptions = this.contextUtils.mergeParamsMetatypes(
-      paramsMetadata,
-      paramtypes,
-    );
-    const httpStatusCode = httpCode
-      ? httpCode
-      : this.responseController.getStatusByMethod(requestMethod);
 
     const fnCanActivate = this.createGuardsFn(guards, instance, callback);
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
-    const fnHandleResponse = this.createHandleResponseFn(
-      callback,
-      isResponseHandled,
-      httpStatusCode,
-    );
+
     const handler = <TRequest, TResponse>(
       args: any[],
       req: TRequest,
@@ -150,6 +133,57 @@ export class RouterExecutionContext {
       );
       await fnHandleResponse(result, res);
     };
+  }
+
+  public getMetadata(
+    instance: Controller,
+    callback: (...args: any[]) => any,
+    methodName: string,
+    module: string,
+    requestMethod: RequestMethod,
+  ): HandlerMetadata {
+    const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
+    if (cacheMetadata) {
+      return cacheMetadata;
+    }
+    const metadata =
+      this.contextUtils.reflectCallbackMetadata(
+        instance,
+        methodName,
+        ROUTE_ARGS_METADATA,
+      ) || {};
+    const keys = Object.keys(metadata);
+    const argsLength = this.contextUtils.getArgumentsLength(keys, metadata);
+    const paramtypes = this.contextUtils.reflectCallbackParamtypes(
+      instance,
+      methodName,
+    );
+    const httpCode = this.reflectHttpStatusCode(callback);
+    const paramsMetadata = this.exchangeKeysForValues(keys, metadata, module);
+    const isResponseHandled = paramsMetadata.some(
+      ({ type }) =>
+        type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
+    );
+    const paramsOptions = this.contextUtils.mergeParamsMetatypes(
+      paramsMetadata,
+      paramtypes,
+    );
+    const httpStatusCode = httpCode
+      ? httpCode
+      : this.responseController.getStatusByMethod(requestMethod);
+
+    const fnHandleResponse = this.createHandleResponseFn(
+      callback,
+      isResponseHandled,
+      httpStatusCode,
+    );
+    const handlerMetadata: HandlerMetadata = {
+      argsLength,
+      paramsOptions,
+      fnHandleResponse,
+    };
+    this.handlerMetadataStorage.set(instance, methodName, handlerMetadata);
+    return handlerMetadata;
   }
 
   public reflectHttpStatusCode(callback: (...args: any[]) => any): number {
