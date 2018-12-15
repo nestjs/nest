@@ -42,6 +42,9 @@ __decorate(
   'root',
   null,
 );
-AppController = __decorate([common_1.Controller()], AppController);
+AppController = __decorate(
+  [common_1.Controller({ scope: common_1.Scope.REQUEST })],
+  AppController,
+);
 exports.AppController = AppController;
 //# sourceMappingURL=app.controller.js.map
