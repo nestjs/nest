@@ -1,9 +1,5 @@
-import { HttpServer, Scope } from '@nestjs/common';
-import {
-  METHOD_METADATA,
-  PATH_METADATA,
-  SCOPE_OPTIONS_METADATA,
-} from '@nestjs/common/constants';
+import { HttpServer } from '@nestjs/common';
+import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -18,6 +14,7 @@ import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { MetadataScanner } from '../metadata-scanner';
@@ -40,12 +37,10 @@ export class RouterExplorer {
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(RouterExplorer.name, true);
 
-  // TEMP
-  private readonly injector = new Injector();
-
   constructor(
     private readonly metadataScanner: MetadataScanner,
     private readonly container: NestContainer,
+    private readonly injector?: Injector,
     private readonly routerProxy?: RouterProxy,
     private readonly exceptionsFilter?: ExceptionsFilter,
     config?: ApplicationConfig,
@@ -63,17 +58,17 @@ export class RouterExplorer {
   }
 
   public explore<T extends HttpServer = any>(
-    instance: Controller,
-    metatype: Type<Controller>,
+    instanceWrapper: InstanceWrapper,
     module: string,
     applicationRef: T,
     basePath: string,
   ) {
+    const { instance } = instanceWrapper;
     const routerPaths = this.scanForPaths(instance);
     this.applyPathsToRouterProxy(
       applicationRef,
       routerPaths,
-      instance,
+      instanceWrapper,
       module,
       basePath,
     );
@@ -135,7 +130,7 @@ export class RouterExplorer {
   public applyPathsToRouterProxy<T extends HttpServer>(
     router: T,
     routePaths: RoutePathProperties[],
-    instance: Controller,
+    instanceWrapper: InstanceWrapper,
     module: string,
     basePath: string,
   ) {
@@ -144,7 +139,7 @@ export class RouterExplorer {
       this.applyCallbackToRouter(
         router,
         pathProperties,
-        instance,
+        instanceWrapper,
         module,
         basePath,
       );
@@ -155,7 +150,7 @@ export class RouterExplorer {
   private applyCallbackToRouter<T extends HttpServer>(
     router: T,
     pathProperties: RoutePathProperties,
-    instance: Controller,
+    instanceWrapper: InstanceWrapper,
     module: string,
     basePath: string,
   ) {
@@ -168,8 +163,9 @@ export class RouterExplorer {
       str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
     const fullPath = stripSlash(basePath) + path;
 
-    const classScope = this.getClassScope(instance);
-    const isRequestScoped = classScope === Scope.REQUEST;
+    const { instance } = instanceWrapper;
+    const isRequestScoped = !instanceWrapper.isDependencyTreeStatic();
+
     if (isRequestScoped) {
       routerMethod(
         stripSlash(fullPath) || '/',
@@ -230,10 +226,5 @@ export class RouterExplorer {
       contextId,
     );
     return this.routerProxy.createProxy(executionContext, exceptionFilter);
-  }
-
-  private getClassScope(controller: Controller): Scope {
-    const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, controller);
-    return metadata && metadata.scope;
   }
 }

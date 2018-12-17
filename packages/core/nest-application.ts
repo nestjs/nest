@@ -32,6 +32,7 @@ import { FastifyAdapter } from './adapters/fastify-adapter';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { NestContainer } from './injector/container';
+import { Injector } from './injector/injector';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
@@ -73,7 +74,11 @@ export class NestApplication extends NestApplicationContext
     this.selectContextModule();
     this.registerHttpServer();
 
-    this.routesResolver = new RoutesResolver(this.container, this.config);
+    this.routesResolver = new RoutesResolver(
+      this.container,
+      this.config,
+      new Injector(),
+    );
   }
 
   public getHttpAdapter(): HttpServer {

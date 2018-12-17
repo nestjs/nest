@@ -6,6 +6,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '../application-config';
 import { CONTROLLER_MAPPING_MESSAGE } from '../helpers/messages';
 import { NestContainer } from '../injector/container';
+import { Injector } from '../injector/injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { MetadataScanner } from '../metadata-scanner';
 import { Resolver } from './interfaces/resolver.interface';
@@ -22,6 +23,7 @@ export class RoutesResolver implements Resolver {
   constructor(
     private readonly container: NestContainer,
     private readonly config: ApplicationConfig,
+    private readonly injector: Injector,
   ) {
     this.routerExceptionsFilter = new RouterExceptionFilters(
       container,
@@ -31,6 +33,7 @@ export class RoutesResolver implements Resolver {
     this.routerBuilder = new RouterExplorer(
       new MetadataScanner(),
       this.container,
+      this.injector,
       this.routerProxy,
       this.routerExceptionsFilter,
       this.config,
@@ -54,14 +57,14 @@ export class RoutesResolver implements Resolver {
     basePath: string,
     applicationRef: HttpServer,
   ) {
-    routes.forEach(({ instance, metatype }) => {
+    routes.forEach(instanceWrapper => {
+      const { metatype } = instanceWrapper;
       const path = this.routerBuilder.extractRouterPath(metatype, basePath);
       const controllerName = metatype.name;
 
       this.logger.log(CONTROLLER_MAPPING_MESSAGE(controllerName, path));
       this.routerBuilder.explore(
-        instance,
-        metatype,
+        instanceWrapper,
         moduleName,
         applicationRef,
         path,

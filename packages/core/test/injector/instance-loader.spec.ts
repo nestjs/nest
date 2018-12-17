@@ -7,6 +7,7 @@ import { Logger } from '../../../common/services/logger.service';
 import { NestContainer } from '../../injector/container';
 import { Injector } from '../../injector/injector';
 import { InstanceLoader } from '../../injector/instance-loader';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 
 describe('InstanceLoader', () => {
   let loader: InstanceLoader;
@@ -71,12 +72,11 @@ describe('InstanceLoader', () => {
       injectables: new Map(),
       metatype: { name: 'test' },
     };
-    const testComp = {
+    const testComp = new InstanceWrapper({
       instance: null,
       metatype: TestProvider,
       name: 'TestProvider',
-    };
-
+    });
     module.providers.set('TestProvider', testComp);
 
     const modules = new Map();
@@ -102,7 +102,11 @@ describe('InstanceLoader', () => {
       injectables: new Map(),
       metatype: { name: 'test' },
     };
-    const wrapper = { name: 'TestRoute', instance: null, metatype: TestRoute };
+    const wrapper = new InstanceWrapper({
+      name: 'TestRoute',
+      instance: null,
+      metatype: TestRoute,
+    });
     module.controllers.set('TestRoute', wrapper);
 
     const modules = new Map();
@@ -128,11 +132,11 @@ describe('InstanceLoader', () => {
       injectables: new Map(),
       metatype: { name: 'test' },
     };
-    const testComp = {
+    const testComp = new InstanceWrapper({
       instance: null,
       metatype: TestProvider,
       name: 'TestProvider',
-    };
+    });
     module.injectables.set('TestProvider', testComp);
 
     const modules = new Map();

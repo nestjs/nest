@@ -155,18 +155,18 @@ describe('DependenciesScanner', () => {
     });
   });
 
-  describe('insertRelatedModule', () => {
+  describe('insertImport', () => {
     it('should call forwardRef() when forwardRef property exists', async () => {
       const module = { forwardRef: sinon.stub().returns({}) };
 
       sinon.stub(container, 'addRelatedModule').returns({});
-      await scanner.insertRelatedModule(module as any, [] as any, 'test');
+      await scanner.insertImport(module as any, [] as any, 'test');
       expect(module.forwardRef.called).to.be.true;
     });
     describe('when "related" is nil', () => {
       it('should throw exception', () => {
         expect(
-          scanner.insertRelatedModule(undefined, [] as any, 'test'),
+          scanner.insertImport(undefined, [] as any, 'test'),
         ).to.eventually.throws();
       });
     });

@@ -11,7 +11,7 @@ export class AsyncContext implements OnModuleInit, OnModuleDestroy {
     private readonly asyncHookRef: asyncHooks.AsyncHook,
   ) {}
 
-  static get instance() {
+  static getInstance(): AsyncContext {
     if (!this._instance) {
       this.initialize();
     }

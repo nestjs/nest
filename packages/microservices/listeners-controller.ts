@@ -1,11 +1,14 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { ListenerMetadataExplorer } from './listener-metadata-explorer';
-import { Server } from './server/server';
-import { ClientProxyFactory } from './client/client-proxy-factory';
+import { NestContainer } from '@nestjs/core/injector/container';
+import { Injector } from '@nestjs/core/injector/injector';
+import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { CustomTransportStrategy } from './interfaces';
+import { ClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';
 import { RpcContextCreator } from './context/rpc-context-creator';
+import { CustomTransportStrategy } from './interfaces';
+import { ListenerMetadataExplorer } from './listener-metadata-explorer';
+import { Server } from './server/server';
 
 export class ListenersController {
   private readonly metadataExplorer = new ListenerMetadataExplorer(
@@ -15,21 +18,43 @@ export class ListenersController {
   constructor(
     private readonly clientsContainer: ClientsContainer,
     private readonly contextCreator: RpcContextCreator,
+    private readonly container: NestContainer,
+    private readonly injector: Injector,
   ) {}
 
   public bindPatternHandlers(
-    instance: Controller,
+    instanceWrapper: InstanceWrapper<Controller>,
     server: Server & CustomTransportStrategy,
-    module: string,
+    moduleKey: string,
   ) {
+    const { instance } = instanceWrapper;
+    const isStatic = instanceWrapper.isDependencyTreeStatic();
     const patternHandlers = this.metadataExplorer.explore(instance);
-    patternHandlers.forEach(({ pattern, targetCallback }) => {
-      const proxy = this.contextCreator.create(
-        instance,
-        targetCallback,
-        module,
-      );
-      server.addHandler(pattern, proxy);
+
+    patternHandlers.forEach(({ pattern, targetCallback, methodKey }) => {
+      if (isStatic) {
+        const proxy = this.contextCreator.create(
+          instance,
+          targetCallback,
+          moduleKey,
+        );
+        return server.addHandler(pattern, proxy);
+      }
+      server.addHandler(pattern, data => {
+        const contextId = { id: 1 }; // async id
+        const contextInstance = this.injector.loadControllerPerContext(
+          instance,
+          this.container.getModules(),
+          moduleKey,
+          contextId,
+        );
+        const proxy = this.contextCreator.create(
+          contextInstance,
+          contextInstance[methodKey],
+          moduleKey,
+        );
+        return proxy(data);
+      });
     });
   }
 

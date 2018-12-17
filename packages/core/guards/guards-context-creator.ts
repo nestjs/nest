@@ -7,7 +7,7 @@ import iterate from 'iterare';
 import { ContextCreator } from '../helpers/context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
-import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 
 export class GuardsContextCreator extends ContextCreator {
   private moduleContext: string;
@@ -43,7 +43,10 @@ export class GuardsContextCreator extends ContextCreator {
       .toArray() as R;
   }
 
-  public getGuardInstance(guard: Function | CanActivate, contextId: ContextId) {
+  public getGuardInstance(
+    guard: Function | CanActivate,
+    contextId = STATIC_CONTEXT,
+  ) {
     const isObject = (guard as CanActivate).canActivate;
     if (isObject) {
       return guard;

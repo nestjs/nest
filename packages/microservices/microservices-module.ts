@@ -4,6 +4,7 @@ import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.excepti
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
 import { NestContainer } from '@nestjs/core/injector/container';
+import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
@@ -35,6 +36,8 @@ export class MicroservicesModule {
     this.listenersController = new ListenersController(
       this.clientsContainer,
       contextCreator,
+      container,
+      new Injector(),
     );
   }
 
@@ -67,8 +70,8 @@ export class MicroservicesModule {
     server: Server & CustomTransportStrategy,
     module: string,
   ) {
-    controllers.forEach(({ instance }) =>
-      this.listenersController.bindPatternHandlers(instance, server, module),
+    controllers.forEach(wrapper =>
+      this.listenersController.bindPatternHandlers(wrapper, server, module),
     );
   }
 

@@ -419,7 +419,6 @@ export class Module {
         metatype: controller,
         instance: null,
         isResolved: false,
-        scope: this.getClassScope(controller),
         host: this,
       }),
     );

@@ -5,6 +5,7 @@ import { Controller } from '../../../common/decorators/core/controller.decorator
 import { Get } from '../../../common/decorators/http/request-mapping.decorator';
 import { ExpressAdapter } from '../../adapters/express-adapter';
 import { ApplicationConfig } from '../../application-config';
+import { Injector } from '../../injector/injector';
 import { RoutesResolver } from '../../router/routes-resolver';
 
 describe('RoutesResolver', () => {
@@ -41,7 +42,11 @@ describe('RoutesResolver', () => {
   });
 
   beforeEach(() => {
-    routesResolver = new RoutesResolver(container, new ApplicationConfig());
+    routesResolver = new RoutesResolver(
+      container,
+      new ApplicationConfig(),
+      new Injector(),
+    );
   });
 
   describe('registerRouters', () => {

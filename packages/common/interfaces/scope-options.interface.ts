@@ -1,7 +1,8 @@
 export enum Scope {
   DEFAULT,
   REQUEST,
-  LAZY,
+  /** @experimental */
+  LAZY_ASYNC,
 }
 
 export interface ScopeOptions {

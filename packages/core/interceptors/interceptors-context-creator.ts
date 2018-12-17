@@ -6,7 +6,7 @@ import iterate from 'iterare';
 import { ContextCreator } from '../helpers/context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
-import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 
 export class InterceptorsContextCreator extends ContextCreator {
   private moduleContext: string;
@@ -55,7 +55,7 @@ export class InterceptorsContextCreator extends ContextCreator {
 
   public getInterceptorInstance(
     interceptor: Function | NestInterceptor,
-    contextId: ContextId,
+    contextId = STATIC_CONTEXT,
   ) {
     const isObject = (interceptor as NestInterceptor).intercept;
     if (isObject) {

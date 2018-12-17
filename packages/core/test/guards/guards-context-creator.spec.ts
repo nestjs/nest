@@ -1,7 +1,6 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
-import { Observable } from 'rxjs';
 
 class Guard {}
 
@@ -18,12 +17,14 @@ describe('GuardsContextCreator', () => {
         instance: {
           canActivate: () => true,
         },
+        getInstanceByContextId: () => guards[0],
       },
       {
         name: 'test2',
         instance: {
           canActivate: () => true,
         },
+        getInstanceByContextId: () => guards[1],
       },
       {},
       undefined,
@@ -69,7 +70,10 @@ describe('GuardsContextCreator', () => {
     });
     describe('when param is a constructor', () => {
       it('should pick instance from container', () => {
-        const wrapper = { instance: 'test' };
+        const wrapper = {
+          instance: 'test',
+          getInstanceByContextId: () => wrapper,
+        };
         sinon
           .stub(guardsContextCreator, 'getInstanceByMetatype')
           .callsFake(() => wrapper);

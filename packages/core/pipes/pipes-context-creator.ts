@@ -9,7 +9,7 @@ import iterate from 'iterare';
 import { ApplicationConfig } from '../application-config';
 import { ContextCreator } from '../helpers/context-creator';
 import { NestContainer } from '../injector/container';
-import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 import { STATIC_CONTEXT } from './../injector/constants';
 
 export class PipesContextCreator extends ContextCreator {
@@ -47,7 +47,10 @@ export class PipesContextCreator extends ContextCreator {
       .toArray() as R;
   }
 
-  public getPipeInstance(pipe: Function | PipeTransform, contextId: ContextId) {
+  public getPipeInstance(
+    pipe: Function | PipeTransform,
+    contextId = STATIC_CONTEXT,
+  ) {
     const isObject = (pipe as PipeTransform).transform;
     if (isObject) {
       return pipe;

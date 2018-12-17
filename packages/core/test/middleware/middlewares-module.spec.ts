@@ -10,6 +10,7 @@ import { ApplicationConfig } from '../../application-config';
 import { InvalidMiddlewareException } from '../../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { NestContainer } from '../../injector/container';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { MiddlewareBuilder } from '../../middleware/builder';
 import { MiddlewareContainer } from '../../middleware/container';
 import { MiddlewareModule } from '../../middleware/middleware-module';
@@ -142,10 +143,13 @@ describe('MiddlewareModule', () => {
       container.addConfig([configuration], moduleKey);
 
       const instance = new TestMiddleware();
-      container.getMiddleware(moduleKey).set('TestMiddleware', {
-        metatype: TestMiddleware,
-        instance,
-      });
+      container.getMiddleware(moduleKey).set(
+        'TestMiddleware',
+        new InstanceWrapper({
+          metatype: TestMiddleware,
+          instance,
+        }),
+      );
 
       middlewareModule.registerRouteMiddleware(
         container,

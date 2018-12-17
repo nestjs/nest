@@ -17,6 +17,7 @@ export interface ClientProperties {
 
 export interface PatternProperties {
   pattern: PatternMetadata;
+  methodKey: string;
   targetCallback: (...args: any[]) => any;
 }
 
@@ -36,9 +37,9 @@ export class ListenerMetadataExplorer {
   public exploreMethodMetadata(
     instance: object,
     instancePrototype: any,
-    methodName: string,
+    methodKey: string,
   ): PatternProperties {
-    const targetCallback = instancePrototype[methodName];
+    const targetCallback = instancePrototype[methodKey];
     const isPattern = Reflect.getMetadata(
       PATTERN_HANDLER_METADATA,
       targetCallback,
@@ -49,6 +50,7 @@ export class ListenerMetadataExplorer {
     }
     const pattern = Reflect.getMetadata(PATTERN_METADATA, targetCallback);
     return {
+      methodKey,
       targetCallback,
       pattern,
     };

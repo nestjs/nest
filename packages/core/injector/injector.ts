@@ -256,6 +256,7 @@ export class Injector {
         if (!instanceHost.isResolved && !paramWrapper.forwardRef) {
           isResolved = false;
         }
+        wrapper.addCtorMetadata(index, paramWrapper);
         return instanceHost && instanceHost.instance;
       } catch (err) {
         const isOptional = optionalDependenciesIds.includes(index);
@@ -348,10 +349,9 @@ export class Injector {
       await this.loadProvider(instanceWrapper, module, contextId);
     }
     if (instanceWrapper.async) {
-      instanceWrapper.setInstanceByContextId(
-        contextId,
-        await instanceWrapper.getInstanceByContextId(contextId),
-      );
+      const host = instanceWrapper.getInstanceByContextId(contextId);
+      host.instance = await host.instance;
+      instanceWrapper.setInstanceByContextId(contextId, host);
     }
     return instanceWrapper;
   }
@@ -384,8 +384,8 @@ export class Injector {
     const instanceWrapper = await this.lookupComponentInImports(
       module,
       dependencyContext.name,
-      [],
       wrapper,
+      [],
       contextId,
     );
     if (isNil(instanceWrapper)) {
@@ -401,8 +401,8 @@ export class Injector {
   public async lookupComponentInImports(
     module: Module,
     name: any,
-    moduleRegistry: any[] = [],
     wrapper: InstanceWrapper,
+    moduleRegistry: any[] = [],
     contextId = STATIC_CONTEXT,
   ): Promise<any> {
     let instanceWrapperRef: InstanceWrapper = null;
@@ -420,8 +420,8 @@ export class Injector {
         const instanceRef = await this.lookupComponentInImports(
           relatedModule,
           name,
-          moduleRegistry,
           wrapper,
+          moduleRegistry,
           contextId,
         );
         if (instanceRef) {
@@ -481,6 +481,7 @@ export class Injector {
           if (!paramWrapper) {
             return undefined;
           }
+          wrapper.addPropertiesMetadata(item.key, paramWrapper);
           const instanceHost = paramWrapper.getInstanceByContextId(contextId);
           return instanceHost.instance;
         } catch (err) {
@@ -538,7 +539,7 @@ export class Injector {
         ? Object.assign(targetInstance.instance, new metatype(...instances))
         : new metatype(...instances);
 
-      if (scope === Scope.LAZY) {
+      if (scope === Scope.LAZY_ASYNC) {
         this.mergeAsyncProxy(
           instances,
           targetInstance,
@@ -552,7 +553,7 @@ export class Injector {
         ...instances,
       );
       instanceHost.instance = await factoryReturnValue;
-      if (scope === Scope.LAZY) {
+      if (scope === Scope.LAZY_ASYNC) {
         this.mergeAsyncProxy(
           instances,
           instanceHost,
@@ -574,18 +575,19 @@ export class Injector {
     metatype: Type<any>,
     factory: (...intances: any[]) => any,
   ) {
-    AsyncContext.instance.set(instanceKey, targetInstance.instance);
+    const asyncContext = AsyncContext.getInstance();
+    asyncContext.set(instanceKey, targetInstance.instance);
 
     const proxy = (target: unknown, property: string | number | symbol) => {
       if (!(property in (target as object))) {
         return;
       }
-      const cachedInstance = AsyncContext.instance.get(instanceKey);
+      const cachedInstance = asyncContext.get(instanceKey);
       if (cachedInstance) {
         return cachedInstance[property];
       }
       const value = factory(...instances);
-      AsyncContext.instance.set(instanceKey, value);
+      asyncContext.set(instanceKey, value);
       return value[property];
     };
     targetInstance.instance = new Proxy(targetInstance.instance, {

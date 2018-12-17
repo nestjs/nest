@@ -52,7 +52,7 @@ export class InstanceWrapper<T = any> {
   }
 
   get isNotMetatype(): boolean {
-    return !!this.metatype;
+    return !this.metatype;
   }
 
   getInstanceByContextId(contextId: ContextId): InstancePerContext<T> {
@@ -96,17 +96,18 @@ export class InstanceWrapper<T = any> {
       return false;
     }
     const { dependencies, properties } = this[INSTANCE_METADATA_SYMBOL];
+    const isStatic =
+      (dependencies && this.isWrapperStatic(dependencies)) || !dependencies;
 
-    const isItemStatic = (item: InstanceWrapper) =>
-      item.isDependencyTreeStatic();
-    const isTreeStatic = (tree: InstanceWrapper[]) => tree.every(isItemStatic);
+    if (!properties || !isStatic) {
+      return isStatic;
+    }
+    const propHosts = properties.map(item => item.wrapper);
+    return isStatic && this.isWrapperStatic(propHosts);
+  }
 
-    let isStatic =
-      (dependencies && isTreeStatic(dependencies)) || !dependencies;
-    isStatic =
-      isStatic &&
-      ((properties && isTreeStatic(properties as any)) || !properties);
-    return isStatic;
+  private isWrapperStatic(tree: InstanceWrapper[]) {
+    return tree.every((item: InstanceWrapper) => item.isDependencyTreeStatic());
   }
 
   private initialize(
