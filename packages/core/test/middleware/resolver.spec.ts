@@ -41,7 +41,7 @@ describe('MiddlewareResolver', () => {
     middleware.set('TestMiddleware', wrapper);
 
     const module = { metatype: { name: '' } } as any;
-    mockContainer.expects('getMiddleware').returns(middleware);
+    mockContainer.expects('getMiddlewareCollection').returns(middleware);
     resolver.resolveInstances(module, null);
 
     expect(loadMiddleware.callCount).to.be.equal(middleware.size);

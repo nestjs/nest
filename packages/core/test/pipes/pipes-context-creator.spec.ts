@@ -37,7 +37,10 @@ describe('PipesContextCreator', () => {
     });
     describe('when param is a constructor', () => {
       it('should pick instance from container', () => {
-        const wrapper = { instance: 'test' };
+        const wrapper = {
+          instance: 'test',
+          getInstanceByContextId: () => wrapper,
+        };
         sinon.stub(creator, 'getInstanceByMetatype').callsFake(() => wrapper);
         expect(creator.getPipeInstance(Pipe)).to.be.eql(wrapper.instance);
       });

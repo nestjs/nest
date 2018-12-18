@@ -1,5 +1,6 @@
 import { DynamicModule } from '@nestjs/common';
 import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
+import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { ApplicationConfig } from '../application-config';
 import { CircularDependencyException } from '../errors/exceptions/circular-dependency.exception';
@@ -101,6 +102,10 @@ export class NestContainer {
     return this.modules;
   }
 
+  public getModuleByKey(moduleKey: string): Module {
+    return this.modulesContainer.get(moduleKey);
+  }
+
   public async addImport(
     relatedModule: Type<any> | DynamicModule,
     token: string,
@@ -130,12 +135,16 @@ export class NestContainer {
     return module.addProvider(provider);
   }
 
-  public addInjectable(injectable: Type<any>, token: string) {
+  public addInjectable(
+    injectable: Type<any>,
+    token: string,
+    host: Type<Injectable>,
+  ) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
     const module = this.modules.get(token);
-    module.addInjectable(injectable);
+    module.addInjectable(injectable, host);
   }
 
   public addExportedProvider(provider: Type<any>, token: string) {

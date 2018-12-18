@@ -1,8 +1,10 @@
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
+import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
+import { ClientProxyFactory } from '../client';
 import { ClientsContainer } from '../container';
 import { RpcContextCreator } from '../context/rpc-context-creator';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
@@ -13,18 +15,21 @@ describe('ListenersController', () => {
     explorer: sinon.SinonMock,
     metadataExplorer: ListenerMetadataExplorer,
     server,
-    addSpy: sinon.SinonSpy;
+    addSpy: sinon.SinonSpy,
+    container: NestContainer;
 
   before(() => {
     metadataExplorer = new ListenerMetadataExplorer(new MetadataScanner());
     explorer = sinon.mock(metadataExplorer);
   });
   beforeEach(() => {
+    container = new NestContainer();
     instance = new ListenersController(
       new ClientsContainer(),
       sinon.createStubInstance(RpcContextCreator) as any,
-      new NestContainer(),
+      container,
       new Injector(),
+      ClientProxyFactory,
     );
     (instance as any).metadataExplorer = metadataExplorer;
     addSpy = sinon.spy();
@@ -38,8 +43,11 @@ describe('ListenersController', () => {
         { pattern: 'test', targetCallback: 'tt' },
         { pattern: 'test2', targetCallback: '2' },
       ];
+      sinon.stub(container, 'getModuleByKey').callsFake(() => ({}));
       explorer.expects('explore').returns(handlers);
-      instance.bindPatternHandlers(null, server, '');
+
+      instance.bindPatternHandlers(new InstanceWrapper(), server, '');
+
       expect(addSpy.calledTwice).to.be.true;
     });
   });

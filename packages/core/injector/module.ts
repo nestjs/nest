@@ -233,21 +233,27 @@ export class Module {
     );
   }
 
-  public addInjectable<T = Injectable>(injectable: Type<T>) {
+  public addInjectable<T extends Injectable>(
+    injectable: Type<T>,
+    host?: Type<T>,
+  ) {
     if (this.isCustomProvider(injectable)) {
       return this.addCustomProvider(injectable, this._injectables);
     }
-    this._injectables.set(
-      injectable.name,
-      new InstanceWrapper({
-        name: injectable.name,
-        metatype: injectable,
-        instance: null,
-        isResolved: false,
-        scope: this.getClassScope(injectable),
-        host: this,
-      }),
-    );
+    const instanceWrapper = new InstanceWrapper({
+      name: injectable.name,
+      metatype: injectable,
+      instance: null,
+      isResolved: false,
+      scope: this.getClassScope(injectable),
+      host: this,
+    });
+    this._injectables.set(injectable.name, instanceWrapper);
+
+    if (host) {
+      const hostWrapper = this._controllers.get(host && host.name);
+      hostWrapper && hostWrapper.addEnhancerMetadata(instanceWrapper);
+    }
   }
 
   public addProvider(provider: ProviderMetatype): string {

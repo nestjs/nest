@@ -1,3 +1,4 @@
+import { Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Injectable } from '../../../common';
@@ -179,7 +180,7 @@ describe('Module', () => {
           new InstanceWrapper({
             host: module,
             name,
-            scope: undefined,
+            scope: Scope.DEFAULT,
             metatype: null,
             instance: value,
             isResolved: true,
@@ -206,6 +207,7 @@ describe('Module', () => {
       expect(setSpy.getCall(0).args).to.deep.equal([
         provider.name,
         new InstanceWrapper({
+          host: module,
           name: provider.name,
           scope: undefined,
           metatype: type as any,

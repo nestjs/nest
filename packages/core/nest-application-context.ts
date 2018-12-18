@@ -88,6 +88,7 @@ export class NestApplicationContext implements INestApplicationContext {
 
     await Promise.all(
       iterate(instances)
+        .filter(([key, wrapper]) => wrapper.isDependencyTreeStatic())
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
         .filter(this.hasOnModuleInitHook)
@@ -118,6 +119,7 @@ export class NestApplicationContext implements INestApplicationContext {
 
     await Promise.all(
       iterate(instances)
+        .filter(([key, wrapper]) => wrapper.isDependencyTreeStatic())
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
         .filter(this.hasOnModuleDestroyHook)
@@ -149,6 +151,7 @@ export class NestApplicationContext implements INestApplicationContext {
 
     await Promise.all(
       iterate(instances)
+        .filter(([key, wrapper]) => wrapper.isDependencyTreeStatic())
         .map(([key, { instance }]) => instance)
         .filter(instance => !isNil(instance))
         .filter(this.hasOnAppBotstrapHook)

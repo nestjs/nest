@@ -9,7 +9,9 @@ export class MiddlewareResolver {
   constructor(private readonly middlewareContainer: MiddlewareContainer) {}
 
   public async resolveInstances(module: Module, moduleName: string) {
-    const middleware = this.middlewareContainer.getMiddleware(moduleName);
+    const middleware = this.middlewareContainer.getMiddlewareCollection(
+      moduleName,
+    );
     await Promise.all(
       [...middleware.values()].map(async wrapper =>
         this.resolveMiddlewareInstance(wrapper, middleware, module),

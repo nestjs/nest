@@ -51,6 +51,7 @@ export class NestApplication extends NestApplicationContext
     INestExpressApplication,
     INestFastifyApplication {
   private readonly logger = new Logger(NestApplication.name, true);
+  private readonly injector = new Injector();
   private readonly middlewareModule = new MiddlewareModule();
   private readonly middlewareContainer = new MiddlewareContainer();
   private readonly microservicesModule = MicroservicesModule
@@ -77,7 +78,7 @@ export class NestApplication extends NestApplicationContext
     this.routesResolver = new RoutesResolver(
       this.container,
       this.config,
-      new Injector(),
+      this.injector,
     );
   }
 
@@ -142,6 +143,7 @@ export class NestApplication extends NestApplicationContext
       this.middlewareContainer,
       this.container,
       this.config,
+      this.injector,
     );
   }
 

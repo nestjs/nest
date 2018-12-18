@@ -11,6 +11,7 @@ import { InvalidMiddlewareException } from '../../errors/exceptions/invalid-midd
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { NestContainer } from '../../injector/container';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { Module } from '../../injector/module';
 import { MiddlewareBuilder } from '../../middleware/builder';
 import { MiddlewareContainer } from '../../middleware/container';
 import { MiddlewareModule } from '../../middleware/middleware-module';
@@ -20,10 +21,10 @@ describe('MiddlewareModule', () => {
   let middlewareModule: MiddlewareModule;
 
   @Controller('test')
-  class AnotherRoute {}
+  class BasicController {}
 
   @Controller('test')
-  class TestRoute {
+  class BaseController {
     @RequestMapping({ path: 'test' })
     public getTest() {}
 
@@ -76,7 +77,7 @@ describe('MiddlewareModule', () => {
       const route = { path: 'Test' };
       const configuration = {
         middleware: [TestMiddleware],
-        forRoutes: [TestRoute],
+        forRoutes: [BaseController],
       };
 
       const useSpy = sinon.spy();
@@ -100,7 +101,7 @@ describe('MiddlewareModule', () => {
       const route = { path: 'Test' };
       const configuration = {
         middleware: [InvalidMiddleware],
-        forRoutes: [TestRoute],
+        forRoutes: [BaseController],
       };
 
       const useSpy = sinon.spy();
@@ -108,10 +109,10 @@ describe('MiddlewareModule', () => {
 
       const container = new MiddlewareContainer();
       const moduleKey = 'Test' as any;
-      container.addConfig([configuration], moduleKey);
+      container.insertConfig([configuration], moduleKey);
 
       const instance = new InvalidMiddleware();
-      container.getMiddleware(moduleKey).set('InvalidMiddleware', {
+      container.getMiddlewareCollection(moduleKey).set('InvalidMiddleware', {
         metatype: InvalidMiddleware,
         instance,
       } as any);
@@ -127,38 +128,46 @@ describe('MiddlewareModule', () => {
       ).to.be.rejectedWith(InvalidMiddlewareException);
     });
 
-    it('should mount middleware when is stored in container', () => {
+    it('should mount middleware when is stored in container', async () => {
       const route = 'testPath';
       const configuration = {
         middleware: [TestMiddleware],
-        forRoutes: ['test', AnotherRoute, TestRoute],
+        forRoutes: ['test', BasicController, BaseController],
       };
 
-      const createMiddlewareFactorySpy = sinon.spy();
+      const createMiddlewareFactoryStub = sinon
+        .stub()
+        .callsFake(() => () => null);
       const app = {
-        createMiddlewareFactory: createMiddlewareFactorySpy,
+        createMiddlewareFactory: createMiddlewareFactoryStub,
       };
       const container = new MiddlewareContainer();
-      const moduleKey = 'Test' as any;
-      container.addConfig([configuration], moduleKey);
+      const moduleKey = 'Test';
+      container.insertConfig([configuration], moduleKey);
 
       const instance = new TestMiddleware();
-      container.getMiddleware(moduleKey).set(
+      container.getMiddlewareCollection(moduleKey).set(
         'TestMiddleware',
         new InstanceWrapper({
           metatype: TestMiddleware,
           instance,
         }),
       );
+      const nestContainer = new NestContainer();
+      sinon
+        .stub(nestContainer, 'getModuleByKey')
+        .callsFake(() => new Module(class {}, [], nestContainer));
+      // tslint:disable-next-line:no-string-literal
+      middlewareModule['container'] = nestContainer;
 
-      middlewareModule.registerRouteMiddleware(
+      await middlewareModule.registerRouteMiddleware(
         container,
         { path: route, method: RequestMethod.ALL },
         configuration,
         moduleKey,
         app as any,
       );
-      expect(createMiddlewareFactorySpy.calledOnce).to.be.true;
+      expect(createMiddlewareFactoryStub.calledOnce).to.be.true;
     });
   });
 });

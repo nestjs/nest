@@ -19,9 +19,10 @@ export interface PropertyMetadata {
   wrapper: InstanceWrapper;
 }
 
-export interface InstanceMetadataStore {
+interface InstanceMetadataStore {
   dependencies?: InstanceWrapper[];
   properties?: PropertyMetadata[];
+  enhancers?: InstanceWrapper[];
 }
 
 export class InstanceWrapper<T = any> {
@@ -91,19 +92,36 @@ export class InstanceWrapper<T = any> {
     return this[INSTANCE_METADATA_SYMBOL].properties;
   }
 
+  addEnhancerMetadata(wrapper: InstanceWrapper) {
+    if (!this[INSTANCE_METADATA_SYMBOL].enhancers) {
+      this[INSTANCE_METADATA_SYMBOL].enhancers = [];
+    }
+    this[INSTANCE_METADATA_SYMBOL].enhancers.push(wrapper);
+  }
+
+  getEnhancersMetadata(): InstanceWrapper[] {
+    return this[INSTANCE_METADATA_SYMBOL].enhancers;
+  }
+
   isDependencyTreeStatic(): boolean {
     if (this.scope === Scope.REQUEST) {
       return false;
     }
-    const { dependencies, properties } = this[INSTANCE_METADATA_SYMBOL];
-    const isStatic =
+    const { dependencies, properties, enhancers } = this[
+      INSTANCE_METADATA_SYMBOL
+    ];
+    let isStatic =
       (dependencies && this.isWrapperStatic(dependencies)) || !dependencies;
 
     if (!properties || !isStatic) {
       return isStatic;
     }
-    const propHosts = properties.map(item => item.wrapper);
-    return isStatic && this.isWrapperStatic(propHosts);
+    const propertiesHosts = properties.map(item => item.wrapper);
+    isStatic = isStatic && this.isWrapperStatic(propertiesHosts);
+    if (!enhancers || !isStatic) {
+      return isStatic;
+    }
+    return this.isWrapperStatic(enhancers);
   }
 
   private isWrapperStatic(tree: InstanceWrapper[]) {

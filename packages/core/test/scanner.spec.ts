@@ -11,9 +11,9 @@ import { NestContainer } from '../injector/container';
 import { MetadataScanner } from '../metadata-scanner';
 import { DependenciesScanner } from '../scanner';
 
-class Guard {}
-
 describe('DependenciesScanner', () => {
+  class Guard {}
+
   @Injectable()
   class TestComponent {}
 
@@ -25,10 +25,10 @@ describe('DependenciesScanner', () => {
     controllers: [TestController],
     exports: [TestComponent],
   })
-  class AnotherTestModule {}
+  class BasicModule {}
 
   @Module({
-    imports: [AnotherTestModule],
+    imports: [BasicModule],
     providers: [TestComponent],
     controllers: [TestController],
   })
@@ -121,7 +121,7 @@ describe('DependenciesScanner', () => {
       const comp = {};
       const token = 'token';
 
-      scanner.insertInjectable(comp as any, token);
+      scanner.insertInjectable(comp as any, token, null);
       expect(addInjectable.calledWith(comp, token)).to.be.true;
     });
   });

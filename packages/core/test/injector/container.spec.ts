@@ -45,7 +45,7 @@ describe('NestContainer', () => {
   });
 
   it('should "addInjectable" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addInjectable(null, 'TestModule')).throw(
+    expect(() => container.addInjectable(null, 'TestModule', null)).throw(
       UnknownModuleException,
     );
   });

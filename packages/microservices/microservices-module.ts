@@ -10,6 +10,7 @@ import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-con
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import { ClientProxyFactory } from './client';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { RpcContextCreator } from './context/rpc-context-creator';
@@ -38,6 +39,7 @@ export class MicroservicesModule {
       contextCreator,
       container,
       new Injector(),
+      ClientProxyFactory,
     );
   }
 

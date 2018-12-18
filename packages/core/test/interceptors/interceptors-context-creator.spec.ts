@@ -1,6 +1,6 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { Observable, of } from 'rxjs';
+import { of } from 'rxjs';
+import * as sinon from 'sinon';
 import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
 
 class Interceptor {}
@@ -15,12 +15,14 @@ describe('InterceptorsContextCreator', () => {
     interceptors = [
       {
         name: 'test',
+        getInstanceByContextId: () => interceptors[0],
         instance: {
           intercept: () => of(true),
         },
       },
       {
         name: 'test2',
+        getInstanceByContextId: () => interceptors[1],
         instance: {
           intercept: () => of(true),
         },
@@ -76,7 +78,10 @@ describe('InterceptorsContextCreator', () => {
     });
     describe('when param is a constructor', () => {
       it('should pick instance from container', () => {
-        const wrapper = { instance: 'test' };
+        const wrapper = {
+          instance: 'test',
+          getInstanceByContextId: () => wrapper,
+        };
         sinon
           .stub(interceptorsContextCreator, 'getInstanceByMetatype')
           .callsFake(() => wrapper);

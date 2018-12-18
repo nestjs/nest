@@ -6,6 +6,7 @@ import { Get } from '../../../common/decorators/http/request-mapping.decorator';
 import { ExpressAdapter } from '../../adapters/express-adapter';
 import { ApplicationConfig } from '../../application-config';
 import { Injector } from '../../injector/injector';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { RoutesResolver } from '../../router/routes-resolver';
 
 describe('RoutesResolver', () => {
@@ -24,7 +25,7 @@ describe('RoutesResolver', () => {
   let modules: Map<string, any>;
   let applicationRef;
 
-  before(() => {
+  beforeEach(() => {
     modules = new Map();
     applicationRef = {
       use: () => ({}),
@@ -33,6 +34,7 @@ describe('RoutesResolver', () => {
     };
     container = {
       getModules: () => modules,
+      getModuleByKey: (key: string) => modules.get(key),
       getApplicationRef: () => applicationRef,
     };
     router = {
@@ -52,10 +54,10 @@ describe('RoutesResolver', () => {
   describe('registerRouters', () => {
     it('should method register controllers to router instance', () => {
       const routes = new Map();
-      const routeWrapper = {
+      const routeWrapper = new InstanceWrapper({
         instance: new TestRoute(),
         metatype: TestRoute,
-      };
+      });
       routes.set('TestRoute', routeWrapper);
 
       const appInstance = new ExpressAdapter(router);
@@ -64,6 +66,7 @@ describe('RoutesResolver', () => {
         'explore',
       );
       const moduleName = '';
+      modules.set(moduleName, {});
 
       sinon
         .stub((routesResolver as any).routerBuilder, 'extractRouterPath')
@@ -71,36 +74,30 @@ describe('RoutesResolver', () => {
       routesResolver.registerRouters(routes, moduleName, '', appInstance);
 
       expect(exploreSpy.called).to.be.true;
-      expect(
-        exploreSpy.calledWith(
-          routeWrapper.instance,
-          routeWrapper.metatype,
-          moduleName,
-          appInstance,
-          '',
-        ),
-      ).to.be.true;
+      expect(exploreSpy.calledWith(routeWrapper, moduleName, appInstance, ''))
+        .to.be.true;
     });
   });
 
   describe('resolve', () => {
     it('should call "registerRouters" for each module', () => {
       const routes = new Map();
-      routes.set('TestRoute', {
-        instance: new TestRoute(),
-        metatype: TestRoute,
-      });
+      routes.set(
+        'TestRoute',
+        new InstanceWrapper({
+          instance: new TestRoute(),
+          metatype: TestRoute,
+        }),
+      );
       modules.set('TestModule', { routes });
       modules.set('TestModule2', { routes });
 
-      const spy = sinon
+      const registerRoutersStub = sinon
         .stub(routesResolver, 'registerRouters')
         .callsFake(() => undefined);
-      routesResolver.resolve(
-        { use: sinon.spy() } as any,
-        { use: sinon.spy() } as any,
-      );
-      expect(spy.calledTwice).to.be.true;
+
+      routesResolver.resolve({ use: sinon.spy() } as any, 'basePath');
+      expect(registerRoutersStub.calledTwice).to.be.true;
     });
   });
 

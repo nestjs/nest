@@ -151,10 +151,11 @@ export class RouterExplorer {
     router: T,
     pathProperties: RoutePathProperties,
     instanceWrapper: InstanceWrapper,
-    module: string,
+    moduleKey: string,
     basePath: string,
   ) {
     const { path, requestMethod, targetCallback, methodName } = pathProperties;
+    const { instance } = instanceWrapper;
     const routerMethod = this.routerMethodFactory
       .get(router, requestMethod)
       .bind(router);
@@ -163,8 +164,9 @@ export class RouterExplorer {
       str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
     const fullPath = stripSlash(basePath) + path;
 
-    const { instance } = instanceWrapper;
     const isRequestScoped = !instanceWrapper.isDependencyTreeStatic();
+    const module = this.container.getModuleByKey(moduleKey);
+    const collection = module.controllers;
 
     if (isRequestScoped) {
       routerMethod(
@@ -175,17 +177,17 @@ export class RouterExplorer {
           next: Function,
         ) => {
           const contextId = { id: 1 }; // asyncId
-          const contextInstance = await this.injector.loadControllerPerContext(
+          const contextInstance = await this.injector.loadPerContext(
             instance,
-            this.container.getModules(),
             module,
+            collection,
             contextId,
           );
           this.createCallbackProxy(
             contextInstance,
             contextInstance[methodName],
             methodName,
-            module,
+            moduleKey,
             requestMethod,
             contextId,
           )(req, res, next);
@@ -197,7 +199,7 @@ export class RouterExplorer {
       instance,
       targetCallback,
       methodName,
-      module,
+      moduleKey,
       requestMethod,
     );
     routerMethod(stripSlash(fullPath) || '/', proxy);

@@ -182,13 +182,13 @@ export class DependenciesScanner {
       (a: any[], b) => a.concat(b),
       [],
     );
-    const mergedInjectables = [
+    const injectables = [
       ...controllerInjectables,
       ...flattenMethodsInjectables,
     ].filter(isFunction);
 
-    mergedInjectables.forEach(injectable =>
-      this.insertInjectable(injectable, token),
+    injectables.forEach(injectable =>
+      this.insertInjectable(injectable, token, component),
     );
   }
 
@@ -209,7 +209,7 @@ export class DependenciesScanner {
         flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
     );
     flatten(paramsInjectables).forEach((injectable: Type<Injectable>) =>
-      this.insertInjectable(injectable, token),
+      this.insertInjectable(injectable, token, component),
     );
   }
 
@@ -278,8 +278,12 @@ export class DependenciesScanner {
     );
   }
 
-  public insertInjectable(injectable: Type<Injectable>, token: string) {
-    this.container.addInjectable(injectable, token);
+  public insertInjectable(
+    injectable: Type<Injectable>,
+    token: string,
+    host: Type<Injectable>,
+  ) {
+    this.container.addInjectable(injectable, token, host);
   }
 
   public insertExportedProvider(

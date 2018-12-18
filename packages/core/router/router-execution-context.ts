@@ -64,7 +64,7 @@ export class RouterExecutionContext {
     private readonly guardsConsumer: GuardsConsumer,
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
     private readonly interceptorsConsumer: InterceptorsConsumer,
-    private readonly applicationRef: HttpServer,
+    readonly applicationRef: HttpServer,
   ) {
     this.responseController = new RouterResponseController(applicationRef);
   }
