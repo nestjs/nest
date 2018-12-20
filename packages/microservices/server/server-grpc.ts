@@ -15,12 +15,19 @@ let grpcProtoLoaderPackage: any = {};
 
 export class ServerGrpc extends Server implements CustomTransportStrategy {
   private readonly url: string;
+  private readonly maxSendMessageLength: number;
+  private readonly maxReceiveMessageLength: number;
   private grpcClient: any;
 
   constructor(private readonly options: MicroserviceOptions['options']) {
     super();
     this.url =
       this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
+
+    this.maxSendMessageLength =
+      this.getOptionsProp<GrpcOptions>(options, 'maxSendMessageLength') || GRPC_DEFAULT_URL;
+    this.maxReceiveMessageLength =
+      this.getOptionsProp<GrpcOptions>(options, 'maxReceiveMessageLength') || GRPC_DEFAULT_URL;
 
     const protoLoader =
       this.getOptionsProp<GrpcOptions>(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
@@ -137,7 +144,10 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public createClient(): any {
-    const server = new grpcPackage.Server();
+    const server = new grpcPackage.Server({
+      ...this.maxSendMessageLength ? { 'grpc.max_send_message_length': this.maxSendMessageLength } : {},
+      ...this.maxReceiveMessageLength ? { 'grpc.max_receive_message_length': this.maxReceiveMessageLength } : {}
+  });
     const credentials = this.getOptionsProp<GrpcOptions>(
       this.options,
       'credentials',
