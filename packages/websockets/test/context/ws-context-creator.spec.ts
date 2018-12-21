@@ -129,8 +129,9 @@ describe('WsContextCreator', () => {
             module,
           );
           const data = 'test';
-
-          expect(proxy(null, data)).to.eventually.rejectedWith(WsException);
+          proxy(null, data).catch(err =>
+            expect(err).to.be.instanceOf(WsException),
+          );
         });
       });
     });
@@ -164,7 +165,7 @@ describe('WsContextCreator', () => {
     it('should throw exception when "tryActivate" returns false', () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
-      expect(guardsFn([])).to.eventually.throw();
+      guardsFn([]).catch(err => expect(err).to.not.be.undefined);
     });
   });
 });

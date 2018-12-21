@@ -2,8 +2,6 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Injectable } from '../../../common';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
-import { Logger } from '../../../common/services/logger.service';
 import { NestContainer } from '../../injector/container';
 import { Injector } from '../../injector/injector';
 import { InstanceLoader } from '../../injector/instance-loader';
@@ -19,8 +17,6 @@ describe('InstanceLoader', () => {
 
   @Injectable()
   class TestProvider {}
-
-  before(() => Logger.setMode(NestEnvironment.TEST));
 
   beforeEach(() => {
     container = new NestContainer();

@@ -133,7 +133,9 @@ describe('RpcContextCreator', () => {
           );
           const data = 'test';
 
-          expect(proxy(data)).to.eventually.rejectedWith(RpcException);
+          proxy(null, data).catch(err =>
+            expect(err).to.be.instanceOf(RpcException),
+          );
         });
       });
     });
@@ -167,7 +169,7 @@ describe('RpcContextCreator', () => {
     it('should throw exception when "tryActivate" returns false', () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
-      expect(guardsFn([])).to.eventually.throw();
+      guardsFn([]).catch(err => expect(err).to.not.be.undefined);
     });
   });
 });

@@ -29,12 +29,12 @@ export class ExceptionsHandler extends BaseExceptionFilter {
     if (isEmpty(this.filters)) return false;
 
     const filter = this.filters.find(({ exceptionMetatypes }) => {
-      const hasMetatype =
+      const typeExists =
         !exceptionMetatypes.length ||
         exceptionMetatypes.some(
           ExceptionMetatype => exception instanceof ExceptionMetatype,
         );
-      return hasMetatype;
+      return typeExists;
     });
     filter && filter.func(exception, ctx);
     return !!filter;

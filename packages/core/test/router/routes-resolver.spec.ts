@@ -3,11 +3,11 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { Get } from '../../../common/decorators/http/request-mapping.decorator';
-import { ExpressAdapter } from '../../adapters/express-adapter';
 import { ApplicationConfig } from '../../application-config';
 import { Injector } from '../../injector/injector';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { RoutesResolver } from '../../router/routes-resolver';
+import { NoopHttpAdapter } from '../utils/noop-adapter';
 
 describe('RoutesResolver', () => {
   @Controller('global')
@@ -60,7 +60,7 @@ describe('RoutesResolver', () => {
       });
       routes.set('TestRoute', routeWrapper);
 
-      const appInstance = new ExpressAdapter(router);
+      const appInstance = new NoopHttpAdapter(router);
       const exploreSpy = sinon.spy(
         (routesResolver as any).routerBuilder,
         'explore',

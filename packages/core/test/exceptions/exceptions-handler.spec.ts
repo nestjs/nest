@@ -1,23 +1,23 @@
 import { HttpException } from '@nestjs/common';
+import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
-import { Logger } from '../../../common/services/logger.service';
-import { ExpressAdapter } from '../../adapters/express-adapter';
+import { AbstractHttpAdapter } from '../../adapters';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
-import { ExecutionContextHost } from '../../helpers/execution-context.host';
+import { ExecutionContextHost } from '../../helpers/execution-context-host';
+import { NoopHttpAdapter } from './../utils/noop-adapter';
 
 describe('ExceptionsHandler', () => {
+  let adapter: AbstractHttpAdapter;
   let handler: ExceptionsHandler;
   let statusStub: sinon.SinonStub;
   let jsonStub: sinon.SinonStub;
   let response;
 
-  before(() => Logger.setMode(NestEnvironment.TEST));
-
   beforeEach(() => {
-    handler = new ExceptionsHandler(new ExpressAdapter({}));
+    adapter = new NoopHttpAdapter({});
+    handler = new ExceptionsHandler(adapter);
     statusStub = sinon.stub();
     jsonStub = sinon.stub();
 
@@ -30,6 +30,17 @@ describe('ExceptionsHandler', () => {
   });
 
   describe('next', () => {
+    beforeEach(() => {
+      sinon
+        .stub(adapter, 'reply')
+        .callsFake((responseRef: any, body: any, statusCode: number) => {
+          const res = responseRef.status(statusCode);
+          if (isNil(body)) {
+            return res.send();
+          }
+          return isObject(body) ? res.json(body) : res.send(String(body));
+        });
+    });
     it('should method send expected response status code and message when exception is unknown', () => {
       handler.next(new Error(), new ExecutionContextHost([0, response]));
 

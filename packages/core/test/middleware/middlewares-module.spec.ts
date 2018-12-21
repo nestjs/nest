@@ -5,7 +5,6 @@ import { Controller } from '../../../common/decorators/core/controller.decorator
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
-import { ExpressAdapter } from '../../adapters/express-adapter';
 import { ApplicationConfig } from '../../application-config';
 import { InvalidMiddlewareException } from '../../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';
@@ -16,6 +15,7 @@ import { MiddlewareBuilder } from '../../middleware/builder';
 import { MiddlewareContainer } from '../../middleware/container';
 import { MiddlewareModule } from '../../middleware/middleware-module';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
+import { NoopHttpAdapter } from '../utils/noop-adapter';
 
 describe('MiddlewareModule', () => {
   let middlewareModule: MiddlewareModule;
@@ -45,7 +45,7 @@ describe('MiddlewareModule', () => {
     (middlewareModule as any).routerExceptionFilter = new RouterExceptionFilters(
       new NestContainer(),
       appConfig,
-      new ExpressAdapter({}),
+      new NoopHttpAdapter({}),
     );
     (middlewareModule as any).config = appConfig;
   });

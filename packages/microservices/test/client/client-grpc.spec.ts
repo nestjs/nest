@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
 import { Observable } from 'rxjs';
@@ -7,6 +8,11 @@ import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.e
 import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
 // tslint:disable:no-string-literal
+class NoopLogger extends Logger {
+  log(message: any, context?: string): void {}
+  error(message: any, trace?: string, context?: string): void {}
+  warn(message: any, context?: string): void {}
+}
 
 class GrpcService {
   test = null;
@@ -188,9 +194,13 @@ describe('ClientGrpcProxy', () => {
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', () => {
         sinon.stub(client, 'lookupPackage').callsFake(() => null);
-        expect(() => client.createClient()).to.throw(
-          InvalidGrpcPackageException,
-        );
+        (client as any).logger = new NoopLogger();
+
+        try {
+          client.createClient();
+        } catch (err) {
+          expect(err).to.be.instanceof(InvalidGrpcPackageException);
+        }
       });
     });
   });
@@ -201,6 +211,7 @@ describe('ClientGrpcProxy', () => {
         sinon.stub(client, 'getOptionsProp').callsFake(() => {
           throw new Error();
         });
+        (client as any).logger = new NoopLogger();
         expect(() => client.loadProto()).to.throws(
           InvalidProtoDefinitionException,
         );
@@ -231,7 +242,7 @@ describe('ClientGrpcProxy', () => {
 
   describe('connect', () => {
     it('should throw exception', () => {
-      expect(client.connect()).to.eventually.throws(Error);
+      client.connect().catch(error => expect(error).to.be.instanceof(Error));
     });
   });
 });

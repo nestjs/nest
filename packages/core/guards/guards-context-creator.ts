@@ -70,7 +70,8 @@ export class GuardsContextCreator extends ContextCreator {
     if (!module) {
       return undefined;
     }
-    return module.injectables.get(guard.name);
+    const injectables = module.injectables;
+    return injectables.get(guard.name);
   }
 
   public getGlobalMetadata<T extends any[]>(): T {

@@ -3,7 +3,7 @@ import * as sinon from 'sinon';
 import { RouteParamsMetadata } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
-import { ExpressAdapter } from '../../adapters/express-adapter';
+import { AbstractHttpAdapter } from '../../adapters';
 import { ApplicationConfig } from '../../application-config';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
@@ -14,6 +14,7 @@ import { PipesConsumer } from '../../pipes/pipes-consumer';
 import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { RouteParamsFactory } from '../../router/route-params-factory';
 import { RouterExecutionContext } from '../../router/router-execution-context';
+import { NoopHttpAdapter } from '../utils/noop-adapter';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;
@@ -23,6 +24,7 @@ describe('RouterExecutionContext', () => {
   let factory: RouteParamsFactory;
   let consumer: PipesConsumer;
   let guardsConsumer: GuardsConsumer;
+  let adapter: AbstractHttpAdapter;
 
   beforeEach(() => {
     callback = {
@@ -36,6 +38,7 @@ describe('RouterExecutionContext', () => {
     consumer = new PipesConsumer();
     guardsConsumer = new GuardsConsumer();
 
+    adapter = new NoopHttpAdapter({});
     contextCreator = new RouterExecutionContext(
       factory,
       new PipesContextCreator(new NestContainer(), new ApplicationConfig()),
@@ -44,7 +47,7 @@ describe('RouterExecutionContext', () => {
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
       new InterceptorsConsumer(),
-      new ExpressAdapter({}),
+      adapter,
     );
   });
   describe('create', () => {
@@ -124,7 +127,9 @@ describe('RouterExecutionContext', () => {
           });
           it('should throw exception when "tryActivate" returns false', () => {
             sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
-            expect(proxyContext(request, response, next)).to.eventually.throw();
+            proxyContext(request, response, next).catch(
+              error => expect(error).to.not.be.undefined,
+            );
           });
         });
       });
@@ -254,11 +259,18 @@ describe('RouterExecutionContext', () => {
     it('should throw exception when "tryActivate" returns false', () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
-      expect(guardsFn([])).to.eventually.throw();
+      guardsFn([]).catch(err => expect(err).to.not.be.undefined);
     });
   });
   describe('createHandleResponseFn', () => {
     describe('when "renderTemplate" is defined', () => {
+      beforeEach(() => {
+        sinon
+          .stub(adapter, 'render')
+          .callsFake((response, view: string, options: any) => {
+            return response.render(view, options);
+          });
+      });
       it('should call "res.render()" with expected args', async () => {
         const template = 'template';
         const value = 'test';

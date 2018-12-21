@@ -6,10 +6,12 @@ export class ObservableSocket {
     const init = new ReplaySubject<T>();
     init.next(server);
 
+    const connection = new Subject();
+    const disconnect = new Subject();
     return {
       init,
-      connection: new Subject(),
-      disconnect: new Subject(),
+      connection,
+      disconnect,
       server,
     };
   }

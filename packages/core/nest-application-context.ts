@@ -21,8 +21,8 @@ export class NestApplicationContext implements INestApplicationContext {
 
   constructor(
     protected readonly container: NestContainer,
-    private readonly scope: Type<any>[],
-    private contextModule: Module,
+    private readonly scope: Type<any>[] = [],
+    private contextModule: Module = null,
   ) {
     this.containerScanner = new ContainerScanner(container);
   }

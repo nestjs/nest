@@ -73,7 +73,7 @@ describe('ExternalContextCreator', () => {
         describe('when can not activate', () => {
           it('should throw exception when "tryActivate" returns false', () => {
             sinon.stub(guardsConsumer, 'tryActivate', () => false);
-            expect(proxyContext(1, 2, 3)).to.eventually.throw;
+            proxyContext(1, 2, 3).catch(err => expect(err).to.not.be.undefined);
           });
         });
         describe('when can activate', () => {
