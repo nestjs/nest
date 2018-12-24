@@ -8,9 +8,7 @@ import { MiddlewareResolver } from '../../middleware/resolver';
 describe('MiddlewareResolver', () => {
   @Injectable()
   class TestMiddleware implements NestMiddleware {
-    public resolve() {
-      return (req, res, next) => {};
-    }
+    public use(req, res, next) {}
   }
 
   let resolver: MiddlewareResolver;

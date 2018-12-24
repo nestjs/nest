@@ -21,9 +21,6 @@ describe('MiddlewareBuilder', () => {
       expect(configProxy instanceof metatype).to.be.true;
     });
     describe('configuration proxy', () => {
-      it('should returns itself on "with()" call', () => {
-        expect(configProxy.with()).to.be.eq(configProxy);
-      });
       describe('when "forRoutes()" called', () => {
         @Controller('path')
         class Test {
@@ -100,10 +97,12 @@ describe('MiddlewareBuilder', () => {
             method: RequestMethod.POST,
           });
 
-          expect(proxy.isRouteExcluded({
-            ...routeInfo,
-            path: '/test/',
-          })).to.be.true;
+          expect(
+            proxy.isRouteExcluded({
+              ...routeInfo,
+              path: '/test/',
+            }),
+          ).to.be.true;
         });
       });
       describe('when method is not equal', () => {

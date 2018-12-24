@@ -19,9 +19,7 @@ describe('MiddlewareContainer', () => {
 
   @Injectable()
   class TestMiddleware implements NestMiddleware {
-    public resolve() {
-      return (req, res, next) => {};
-    }
+    public use(req, res, next) {}
   }
 
   let container: MiddlewareContainer;
