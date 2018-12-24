@@ -10,7 +10,6 @@ export * from './adapters';
 export { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 export * from './exceptions';
 export * from './helpers';
-export * from './hooks';
 export * from './injector';
 export * from './middleware';
 export * from './nest-application';
