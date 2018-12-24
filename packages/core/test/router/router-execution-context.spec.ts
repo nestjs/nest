@@ -14,7 +14,7 @@ import { PipesConsumer } from '../../pipes/pipes-consumer';
 import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { RouteParamsFactory } from '../../router/route-params-factory';
 import { RouterExecutionContext } from '../../router/router-execution-context';
-import { NoopHttpAdapter } from '../utils/noop-adapter';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;

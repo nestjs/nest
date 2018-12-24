@@ -18,14 +18,9 @@ import {
 import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
-import { ApplicationReferenceHost } from '../helpers/application-ref-host';
-import { ExternalContextCreator } from '../helpers/external-context-creator';
-import { Reflector } from '../services/reflector.service';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
-import { ModulesContainer } from './modules-container';
-import { HTTP_SERVER_REF } from './tokens';
 
 export interface CustomProvider {
   provide: any;
@@ -76,7 +71,7 @@ export class Module {
     return this._scope;
   }
 
-  get providers(): Map<string, InstanceWrapper<Injectable>> {
+  get providers(): Map<any, InstanceWrapper<Injectable>> {
     return this._providers;
   }
 
@@ -132,11 +127,6 @@ export class Module {
   public addCoreProviders(container: NestContainer) {
     this.addModuleAsProvider();
     this.addModuleRef();
-    this.addReflector(container.getReflector());
-    this.addApplicationRef(container.getApplicationRef());
-    this.addExternalContextCreator(container.getExternalContextCreator());
-    this.addModulesContainer(container.getModulesContainer());
-    this.addApplicationRefHost(container.getApplicationRefHost());
   }
 
   public addModuleRef() {
@@ -161,73 +151,6 @@ export class Module {
         metatype: this._metatype,
         isResolved: false,
         instance: null,
-        host: this,
-      }),
-    );
-  }
-
-  public addReflector(reflector: Reflector) {
-    this._providers.set(
-      Reflector.name,
-      new InstanceWrapper({
-        name: Reflector.name,
-        metatype: Reflector,
-        isResolved: true,
-        instance: reflector,
-        host: this,
-      }),
-    );
-  }
-
-  public addApplicationRef(applicationRef: any) {
-    this._providers.set(
-      HTTP_SERVER_REF,
-      new InstanceWrapper({
-        name: HTTP_SERVER_REF,
-        metatype: {} as any,
-        isResolved: true,
-        instance: applicationRef || {},
-        host: this,
-      }),
-    );
-  }
-
-  public addExternalContextCreator(
-    externalContextCreator: ExternalContextCreator,
-  ) {
-    this._providers.set(
-      ExternalContextCreator.name,
-      new InstanceWrapper({
-        name: ExternalContextCreator.name,
-        metatype: ExternalContextCreator,
-        isResolved: true,
-        instance: externalContextCreator,
-        host: this,
-      }),
-    );
-  }
-
-  public addModulesContainer(modulesContainer: ModulesContainer) {
-    this._providers.set(
-      ModulesContainer.name,
-      new InstanceWrapper({
-        name: ModulesContainer.name,
-        metatype: ModulesContainer,
-        isResolved: true,
-        instance: modulesContainer,
-        host: this,
-      }),
-    );
-  }
-
-  public addApplicationRefHost(applicationRefHost: ApplicationReferenceHost) {
-    this._providers.set(
-      ApplicationReferenceHost.name,
-      new InstanceWrapper({
-        name: ApplicationReferenceHost.name,
-        metatype: ApplicationReferenceHost,
-        isResolved: true,
-        instance: applicationRefHost,
         host: this,
       }),
     );
@@ -442,6 +365,10 @@ export class Module {
       provide: toReplace,
       ...options,
     });
+  }
+
+  public getProviderByKey<T = any>(name: string | symbol): InstanceWrapper<T> {
+    return this._providers.get(name) as InstanceWrapper<T>;
   }
 
   public createModuleReferenceType(): any {

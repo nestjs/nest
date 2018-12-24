@@ -277,10 +277,12 @@ describe('Module', () => {
     });
   });
 
-  describe('relatedModules', () => {
+  describe('imports', () => {
     it('should return relatedModules', () => {
       const test = ['test'];
       (module as any)._imports = test;
+
+      expect(module.imports).to.be.eql(test);
       expect(module.relatedModules).to.be.eql(test);
     });
   });
@@ -297,7 +299,9 @@ describe('Module', () => {
     it('should return controllers', () => {
       const test = ['test'];
       (module as any)._controllers = test;
+
       expect(module.controllers).to.be.eql(test);
+      expect(module.routes).to.be.eql(test);
     });
   });
 
@@ -305,7 +309,18 @@ describe('Module', () => {
     it('should return exports', () => {
       const test = ['test'];
       (module as any)._exports = test;
+
       expect(module.exports).to.be.eql(test);
+    });
+  });
+
+  describe('providers', () => {
+    it('should return providers', () => {
+      const test = ['test'];
+      (module as any)._providers = test;
+
+      expect(module.providers).to.be.eql(test);
+      expect(module.components).to.be.eql(test);
     });
   });
 

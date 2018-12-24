@@ -5,7 +5,7 @@ import { UseFilters } from '../../../common/decorators/core/exception-filters.de
 import { ApplicationConfig } from '../../application-config';
 import { NestContainer } from '../../injector/container';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { NoopHttpAdapter } from '../utils/noop-adapter';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('RouterExceptionFilters', () => {
   let moduleName: string;

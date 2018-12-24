@@ -1,4 +1,5 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { createContextId } from '@nestjs/core/helpers/context-id-factory';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
@@ -45,7 +46,7 @@ export class ListenersController {
         return server.addHandler(pattern, proxy);
       }
       server.addHandler(pattern, data => {
-        const contextId = { id: 1 }; // async id
+        const contextId = createContextId();
         const contextInstance = this.injector.loadPerContext(
           instance,
           module,

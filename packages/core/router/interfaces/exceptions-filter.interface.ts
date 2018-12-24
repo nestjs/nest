@@ -8,5 +8,6 @@ export interface ExceptionsFilter {
     callback: Function,
     module: string,
     contextId?: ContextId,
+    inquirerId?: string,
   ): ExceptionsHandler;
 }

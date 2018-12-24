@@ -24,21 +24,29 @@ export class GuardsContextCreator extends ContextCreator {
     callback: (...args: any[]) => any,
     module: string,
     contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): CanActivate[] {
     this.moduleContext = module;
-    return this.createContext(instance, callback, GUARDS_METADATA);
+    return this.createContext(
+      instance,
+      callback,
+      GUARDS_METADATA,
+      contextId,
+      inquirerId,
+    );
   }
 
   public createConcreteContext<T extends any[], R extends any[]>(
     metadata: T,
     contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): R {
     if (isEmpty(metadata)) {
       return [] as R;
     }
     return iterate(metadata)
       .filter((guard: any) => guard && (guard.name || guard.canActivate))
-      .map(guard => this.getGuardInstance(guard, contextId))
+      .map(guard => this.getGuardInstance(guard, contextId, inquirerId))
       .filter((guard: CanActivate) => guard && isFunction(guard.canActivate))
       .toArray() as R;
   }
@@ -46,16 +54,20 @@ export class GuardsContextCreator extends ContextCreator {
   public getGuardInstance(
     guard: Function | CanActivate,
     contextId = STATIC_CONTEXT,
-  ) {
+    inquirerId?: string,
+  ): CanActivate | null {
     const isObject = (guard as CanActivate).canActivate;
     if (isObject) {
-      return guard;
+      return guard as CanActivate;
     }
     const instanceWrapper = this.getInstanceByMetatype(guard);
     if (!instanceWrapper) {
       return null;
     }
-    const instanceHost = instanceWrapper.getInstanceByContextId(contextId);
+    const instanceHost = instanceWrapper.getInstanceByContextId(
+      contextId,
+      inquirerId,
+    );
     return instanceHost && instanceHost.instance;
   }
 

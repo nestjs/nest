@@ -15,7 +15,7 @@ import { MiddlewareBuilder } from '../../middleware/builder';
 import { MiddlewareContainer } from '../../middleware/container';
 import { MiddlewareModule } from '../../middleware/middleware-module';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { NoopHttpAdapter } from '../utils/noop-adapter';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('MiddlewareModule', () => {
   let middlewareModule: MiddlewareModule;

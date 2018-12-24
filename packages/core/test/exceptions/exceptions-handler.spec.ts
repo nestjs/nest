@@ -6,7 +6,7 @@ import { AbstractHttpAdapter } from '../../adapters';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
 import { ExecutionContextHost } from '../../helpers/execution-context-host';
-import { NoopHttpAdapter } from './../utils/noop-adapter';
+import { NoopHttpAdapter } from './../utils/noop-adapter.spec';
 
 describe('ExceptionsHandler', () => {
   let adapter: AbstractHttpAdapter;

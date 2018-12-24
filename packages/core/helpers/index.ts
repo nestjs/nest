@@ -1,1 +1,1 @@
-export * from './application-ref-host';
+export * from './http-adapter-host';

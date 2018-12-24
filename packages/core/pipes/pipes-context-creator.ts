@@ -27,21 +27,29 @@ export class PipesContextCreator extends ContextCreator {
     callback: (...args: any[]) => any,
     module: string,
     contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): Transform<any>[] {
     this.moduleContext = module;
-    return this.createContext(instance, callback, PIPES_METADATA, contextId);
+    return this.createContext(
+      instance,
+      callback,
+      PIPES_METADATA,
+      contextId,
+      inquirerId,
+    );
   }
 
   public createConcreteContext<T extends any[], R extends any[]>(
     metadata: T,
     contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): R {
     if (isEmpty(metadata)) {
       return [] as R;
     }
     return iterate(metadata)
       .filter((pipe: any) => pipe && (pipe.name || pipe.transform))
-      .map(pipe => this.getPipeInstance(pipe, contextId))
+      .map(pipe => this.getPipeInstance(pipe, contextId, inquirerId))
       .filter(pipe => pipe && pipe.transform && isFunction(pipe.transform))
       .map(pipe => pipe.transform.bind(pipe))
       .toArray() as R;
@@ -50,16 +58,20 @@ export class PipesContextCreator extends ContextCreator {
   public getPipeInstance(
     pipe: Function | PipeTransform,
     contextId = STATIC_CONTEXT,
-  ) {
+    inquirerId?: string,
+  ): PipeTransform | null {
     const isObject = (pipe as PipeTransform).transform;
     if (isObject) {
-      return pipe;
+      return pipe as PipeTransform;
     }
     const instanceWrapper = this.getInstanceByMetatype(pipe as Function);
     if (!instanceWrapper) {
       return null;
     }
-    const instanceHost = instanceWrapper.getInstanceByContextId(contextId);
+    const instanceHost = instanceWrapper.getInstanceByContextId(
+      contextId,
+      inquirerId,
+    );
     return instanceHost && instanceHost.instance;
   }
 

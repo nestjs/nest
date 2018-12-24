@@ -7,7 +7,7 @@ import { ApplicationConfig } from '../../application-config';
 import { Injector } from '../../injector/injector';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { RoutesResolver } from '../../router/routes-resolver';
-import { NoopHttpAdapter } from '../utils/noop-adapter';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('RoutesResolver', () => {
   @Controller('global')
@@ -35,7 +35,7 @@ describe('RoutesResolver', () => {
     container = {
       getModules: () => modules,
       getModuleByKey: (key: string) => modules.get(key),
-      getApplicationRef: () => applicationRef,
+      getHttpAdapterRef: () => applicationRef,
     };
     router = {
       get() {},
@@ -130,7 +130,6 @@ describe('RoutesResolver', () => {
 
   describe('registerExceptionHandler', () => {
     it('should register exception handler', () => {
-      const ref = container.getApplicationRef();
       routesResolver.registerExceptionHandler();
 
       expect(applicationRef.setErrorHandler.called).to.be.true;

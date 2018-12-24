@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { InstanceWrapper } from 'injector/instance-wrapper';
 import iterate from 'iterare';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
 import { NestContainer } from './injector/container';
@@ -85,15 +86,25 @@ export class NestApplicationContext implements INestApplicationContext {
     // Lifecycle hook has to be called once all classes are properly initialized
     const [_, { instance: moduleClassInstance }] = providers.shift();
     const instances = [...module.controllers, ...providers];
-
-    await Promise.all(
-      iterate(instances)
-        .filter(([key, wrapper]) => wrapper.isDependencyTreeStatic())
-        .map(([key, { instance }]) => instance)
+    const callOperator = (list: any) =>
+      list
         .filter(instance => !isNil(instance))
         .filter(this.hasOnModuleInitHook)
-        .map(async instance => (instance as OnModuleInit).onModuleInit()),
+        .map(async instance => (instance as OnModuleInit).onModuleInit());
+
+    await Promise.all(
+      callOperator(
+        iterate(instances)
+          .filter(
+            ([key, wrapper]) =>
+              wrapper.isDependencyTreeStatic() && !wrapper.isTransient,
+          )
+          .map(([key, { instance }]) => instance),
+      ),
     );
+    const transientInstances = this.getTransientInstances(instances);
+    await Promise.all(callOperator(iterate(transientInstances)));
+
     if (moduleClassInstance && this.hasOnModuleInitHook(moduleClassInstance)) {
       await (moduleClassInstance as OnModuleInit).onModuleInit();
     }
@@ -116,15 +127,25 @@ export class NestApplicationContext implements INestApplicationContext {
     // Lifecycle hook has to be called once all classes are properly destroyed
     const [_, { instance: moduleClassInstance }] = providers.shift();
     const instances = [...module.controllers, ...providers];
-
-    await Promise.all(
-      iterate(instances)
-        .filter(([key, wrapper]) => wrapper.isDependencyTreeStatic())
-        .map(([key, { instance }]) => instance)
+    const callOperator = (list: any) =>
+      list
         .filter(instance => !isNil(instance))
         .filter(this.hasOnModuleDestroyHook)
-        .map(async instance => (instance as OnModuleDestroy).onModuleDestroy()),
+        .map(async instance => (instance as OnModuleDestroy).onModuleDestroy());
+
+    await Promise.all(
+      callOperator(
+        iterate(instances)
+          .filter(
+            ([key, wrapper]) =>
+              wrapper.isDependencyTreeStatic() && !wrapper.isTransient,
+          )
+          .map(([key, { instance }]) => instance),
+      ),
     );
+    const transientInstances = this.getTransientInstances(instances);
+    await Promise.all(callOperator(iterate(transientInstances)));
+
     if (
       moduleClassInstance &&
       this.hasOnModuleDestroyHook(moduleClassInstance)
@@ -149,16 +170,27 @@ export class NestApplicationContext implements INestApplicationContext {
     const [_, { instance: moduleClassInstance }] = providers.shift();
     const instances = [...module.controllers, ...providers];
 
-    await Promise.all(
-      iterate(instances)
-        .filter(([key, wrapper]) => wrapper.isDependencyTreeStatic())
-        .map(([key, { instance }]) => instance)
+    const callOperator = (list: any) =>
+      list
         .filter(instance => !isNil(instance))
         .filter(this.hasOnAppBotstrapHook)
         .map(async instance =>
           (instance as OnApplicationBootstrap).onApplicationBootstrap(),
-        ),
+        );
+
+    await Promise.all(
+      callOperator(
+        iterate(instances)
+          .filter(
+            ([key, wrapper]) =>
+              wrapper.isDependencyTreeStatic() && !wrapper.isTransient,
+          )
+          .map(([key, { instance }]) => instance),
+      ),
     );
+    const transientInstances = this.getTransientInstances(instances);
+    await Promise.all(callOperator(iterate(transientInstances)));
+
     if (moduleClassInstance && this.hasOnAppBotstrapHook(moduleClassInstance)) {
       await (moduleClassInstance as OnApplicationBootstrap).onApplicationBootstrap();
     }
@@ -186,5 +218,17 @@ export class NestApplicationContext implements INestApplicationContext {
       TInput,
       TResult
     >(metatypeOrToken, contextModule);
+  }
+
+  private getTransientInstances(
+    instances: [string, InstanceWrapper][],
+  ): InstanceWrapper[] {
+    return iterate(instances)
+      .filter(([key, wrapper]) => wrapper.isDependencyTreeStatic())
+      .map(([key, wrapper]) => wrapper.getStaticTransientInstances())
+      .flatten()
+      .filter(item => !!item)
+      .map(({ instance }: any) => instance)
+      .toArray() as InstanceWrapper[];
   }
 }

@@ -31,7 +31,7 @@ export abstract class ModuleRef {
     module: Module,
   ): Promise<T> {
     const wrapper = new InstanceWrapper({
-      name: type.name,
+      name: type && type.name,
       metatype: type,
       instance: undefined,
       isResolved: false,

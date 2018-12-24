@@ -25,6 +25,7 @@ import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
 import { NestContainer } from './injector/container';
+import { Module } from './injector/module';
 import { MetadataScanner } from './metadata-scanner';
 
 interface ApplicationProviderWrapper {
@@ -35,6 +36,7 @@ interface ApplicationProviderWrapper {
 
 export class DependenciesScanner {
   private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] = [];
+
   constructor(
     private readonly container: NestContainer,
     private readonly metadataScanner: MetadataScanner,
@@ -42,6 +44,7 @@ export class DependenciesScanner {
   ) {}
 
   public async scan(module: Type<any>) {
+    await this.registerCoreModule();
     await this.scanForModules(module);
     await this.scanModulesForDependencies();
     this.container.bindGlobalScope();
@@ -51,8 +54,8 @@ export class DependenciesScanner {
     module: ForwardReference | Type<any> | DynamicModule,
     scope: Type<any>[] = [],
     ctxRegistry: (ForwardReference | DynamicModule | Type<any>)[] = [],
-  ) {
-    await this.insertModule(module, scope);
+  ): Promise<Module> {
+    const moduleInstance = await this.insertModule(module, scope);
     ctxRegistry.push(module);
 
     if (this.isForwardReference(module)) {
@@ -78,13 +81,14 @@ export class DependenciesScanner {
         ctxRegistry,
       );
     }
+    return moduleInstance;
   }
 
-  public async insertModule(module: any, scope: Type<any>[]) {
+  public async insertModule(module: any, scope: Type<any>[]): Promise<Module> {
     if (module && module.forwardRef) {
       return this.container.addModule(module.forwardRef(), scope);
     }
-    await this.container.addModule(module, scope);
+    return this.container.addModule(module, scope);
   }
 
   public async scanModulesForDependencies() {
@@ -299,6 +303,12 @@ export class DependenciesScanner {
 
   public reflectMetadata(metatype: Type<any>, metadataKey: string) {
     return Reflect.getMetadata(metadataKey, metatype) || [];
+  }
+
+  public async registerCoreModule() {
+    const module = this.container.createCoreModule();
+    const instance = await this.scanForModules(module);
+    this.container.registerCoreModuleRef(instance);
   }
 
   public applyApplicationProviders() {

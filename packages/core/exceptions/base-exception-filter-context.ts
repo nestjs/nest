@@ -18,6 +18,7 @@ export class BaseExceptionFilterContext extends ContextCreator {
   public createConcreteContext<T extends any[], R extends any[]>(
     metadata: T,
     contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): R {
     if (isEmpty(metadata)) {
       return [] as R;
@@ -26,7 +27,8 @@ export class BaseExceptionFilterContext extends ContextCreator {
       .filter(
         instance => instance && (isFunction(instance.catch) || instance.name),
       )
-      .map(filter => this.getFilterInstance(filter, contextId))
+      .map(filter => this.getFilterInstance(filter, contextId, inquirerId))
+      .filter(item => !!item)
       .map(instance => ({
         func: instance.catch.bind(instance),
         exceptionMetatypes: this.reflectCatchExceptions(instance),
@@ -37,16 +39,20 @@ export class BaseExceptionFilterContext extends ContextCreator {
   public getFilterInstance(
     filter: Function | ExceptionFilter,
     contextId = STATIC_CONTEXT,
-  ) {
+    inquirerId?: string,
+  ): ExceptionFilter | null {
     const isObject = (filter as ExceptionFilter).catch;
     if (isObject) {
-      return filter;
+      return filter as ExceptionFilter;
     }
     const instanceWrapper = this.getInstanceByMetatype(filter);
     if (!instanceWrapper) {
       return null;
     }
-    const instanceHost = instanceWrapper.getInstanceByContextId(contextId);
+    const instanceHost = instanceWrapper.getInstanceByContextId(
+      contextId,
+      inquirerId,
+    );
     return instanceHost && instanceHost.instance;
   }
 

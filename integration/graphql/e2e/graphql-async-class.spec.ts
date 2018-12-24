@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+/*import { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import * as request from 'supertest';
 import { AsyncClassApplicationModule } from '../src/async-options-class.module';
@@ -36,3 +36,4 @@ describe('GraphQL (async class)', () => {
     await app.close();
   });
 });
+*/

@@ -60,12 +60,14 @@ export class ListenerMetadataExplorer {
     instance: Controller,
   ): IterableIterator<ClientProperties> {
     for (const propertyKey in instance) {
-      if (isFunction(propertyKey)) continue;
-
+      if (isFunction(propertyKey)) {
+        continue;
+      }
       const property = String(propertyKey);
       const isClient = Reflect.getMetadata(CLIENT_METADATA, instance, property);
-      if (isUndefined(isClient)) continue;
-
+      if (isUndefined(isClient)) {
+        continue;
+      }
       const metadata = Reflect.getMetadata(
         CLIENT_CONFIGURATION_METADATA,
         instance,

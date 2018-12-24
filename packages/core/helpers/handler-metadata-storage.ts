@@ -1,11 +1,17 @@
 import { Controller } from '@nestjs/common/interfaces';
+import { ContextId } from './../injector/instance-wrapper';
 import { ParamProperties } from './context-utils';
 
 export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');
 
 export interface HandlerMetadata {
   argsLength: number;
-  paramsOptions: (ParamProperties & { metatype?: any })[];
+  paramtypes: any[];
+  getParamsMetadata: (
+    moduleKey: string,
+    contextId?: ContextId,
+    inquirerId?: string,
+  ) => (ParamProperties & { metatype?: any })[];
   fnHandleResponse: <TResult, TResponse>(
     result: TResult,
     res: TResponse,

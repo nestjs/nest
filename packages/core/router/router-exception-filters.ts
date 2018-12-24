@@ -23,6 +23,7 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
     callback: RouterProxyCallback,
     module: string,
     contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): ExceptionsHandler {
     this.moduleContext = module;
 
@@ -32,6 +33,7 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
       callback,
       EXCEPTION_FILTERS_METADATA,
       contextId,
+      inquirerId,
     );
     if (isEmpty(filters)) {
       return exceptionHandler;

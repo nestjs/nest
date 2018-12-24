@@ -47,6 +47,7 @@ describe('DependenciesScanner', () => {
       new MetadataScanner(),
       new ApplicationConfig(),
     );
+    sinon.stub(scanner, 'registerCoreModule').callsFake(() => {});
   });
 
   afterEach(() => {
@@ -55,6 +56,7 @@ describe('DependenciesScanner', () => {
 
   it('should "insertModule" call twice (2 modules) container method "addModule"', async () => {
     const expectation = mockContainer.expects('addModule').twice();
+
     await scanner.scan(TestModule as any);
     expectation.verify();
   });

@@ -6,6 +6,7 @@ export abstract class ContextCreator {
   public abstract createConcreteContext<T extends any[], R extends any[]>(
     metadata: T,
     contextId?: ContextId,
+    inquirerId?: string,
   ): R;
   public getGlobalMetadata?<T extends any[]>(): T;
 
@@ -14,6 +15,7 @@ export abstract class ContextCreator {
     callback: (...args: any[]) => any,
     metadataKey: string,
     contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): R {
     const globalMetadata =
       this.getGlobalMetadata && this.getGlobalMetadata<T>();
@@ -23,9 +25,14 @@ export abstract class ContextCreator {
       ...this.createConcreteContext<T, R>(
         globalMetadata || ([] as T),
         contextId,
+        inquirerId,
       ),
-      ...this.createConcreteContext<T, R>(classMetadata, contextId),
-      ...this.createConcreteContext<T, R>(methodMetadata, contextId),
+      ...this.createConcreteContext<T, R>(classMetadata, contextId, inquirerId),
+      ...this.createConcreteContext<T, R>(
+        methodMetadata,
+        contextId,
+        inquirerId,
+      ),
     ] as R;
   }
 

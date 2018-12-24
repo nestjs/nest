@@ -76,31 +76,38 @@ export class RouterExecutionContext {
     module: string,
     requestMethod: RequestMethod,
     contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ) {
-    const { argsLength, paramsOptions, fnHandleResponse } = this.getMetadata(
-      instance,
-      callback,
-      methodName,
-      module,
-      requestMethod,
+    const {
+      argsLength,
+      fnHandleResponse,
+      paramtypes,
+      getParamsMetadata,
+    } = this.getMetadata(instance, callback, methodName, module, requestMethod);
+    const paramsOptions = this.contextUtils.mergeParamsMetatypes(
+      getParamsMetadata(module, contextId, inquirerId),
+      paramtypes,
     );
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
       module,
       contextId,
+      inquirerId,
     );
     const guards = this.guardsContextCreator.create(
       instance,
       callback,
       module,
       contextId,
+      inquirerId,
     );
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
       module,
       contextId,
+      inquirerId,
     );
 
     const fnCanActivate = this.createGuardsFn(guards, instance, callback);
@@ -159,14 +166,23 @@ export class RouterExecutionContext {
       methodName,
     );
     const httpCode = this.reflectHttpStatusCode(callback);
-    const paramsMetadata = this.exchangeKeysForValues(keys, metadata, module);
+    const getParamsMetadata = (
+      moduleKey: string,
+      contextId = STATIC_CONTEXT,
+      inquirerId?: string,
+    ) =>
+      this.exchangeKeysForValues(
+        keys,
+        metadata,
+        moduleKey,
+        contextId,
+        inquirerId,
+      );
+
+    const paramsMetadata = getParamsMetadata(module);
     const isResponseHandled = paramsMetadata.some(
       ({ type }) =>
         type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
-    );
-    const paramsOptions = this.contextUtils.mergeParamsMetatypes(
-      paramsMetadata,
-      paramtypes,
     );
     const httpStatusCode = httpCode
       ? httpCode
@@ -179,8 +195,9 @@ export class RouterExecutionContext {
     );
     const handlerMetadata: HandlerMetadata = {
       argsLength,
-      paramsOptions,
       fnHandleResponse,
+      paramtypes,
+      getParamsMetadata,
     };
     this.handlerMetadataStorage.set(instance, methodName, handlerMetadata);
     return handlerMetadata;
@@ -204,12 +221,16 @@ export class RouterExecutionContext {
     keys: string[],
     metadata: RouteParamsMetadata,
     moduleContext: string,
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
         pipesCollection,
+        contextId,
+        inquirerId,
       );
       const type = this.contextUtils.mapParamType(key);
 

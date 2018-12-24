@@ -78,11 +78,11 @@ export class NestFactoryStatic {
       '@nestjs/microservices',
       'NestFactory',
     );
-
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
 
     this.applyLogger(options);
+
     await this.initialize(module, container, applicationConfig);
     return this.createNestInstance<INestMicroservice>(
       new NestMicroservice(container, options, applicationConfig),
@@ -129,7 +129,7 @@ export class NestFactoryStatic {
       new MetadataScanner(),
       config,
     );
-    container.setApplicationRef(httpServer);
+    container.setHttpAdapter(httpServer);
     try {
       this.logger.log(MESSAGES.APPLICATION_START);
       await ExceptionsZone.asyncRun(async () => {

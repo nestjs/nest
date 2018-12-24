@@ -3,7 +3,7 @@ import * as sinon from 'sinon';
 import { HttpException } from '../../../common/exceptions/http.exception';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
 import { RouterProxy } from '../../router/router-proxy';
-import { NoopHttpAdapter } from '../utils/noop-adapter';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('RouterProxy', () => {
   let routerProxy: RouterProxy;

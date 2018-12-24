@@ -23,6 +23,7 @@ export class InterceptorsContextCreator extends ContextCreator {
     callback: (...args: any[]) => any,
     module: string,
     contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): NestInterceptor[] {
     this.moduleContext = module;
     return this.createContext(
@@ -30,12 +31,14 @@ export class InterceptorsContextCreator extends ContextCreator {
       callback,
       INTERCEPTORS_METADATA,
       contextId,
+      inquirerId,
     );
   }
 
   public createConcreteContext<T extends any[], R extends any[]>(
     metadata: T,
     contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): R {
     if (isEmpty(metadata)) {
       return [] as R;
@@ -45,7 +48,9 @@ export class InterceptorsContextCreator extends ContextCreator {
         (interceptor: any) =>
           interceptor && (interceptor.name || interceptor.intercept),
       )
-      .map(interceptor => this.getInterceptorInstance(interceptor, contextId))
+      .map(interceptor =>
+        this.getInterceptorInstance(interceptor, contextId, inquirerId),
+      )
       .filter(
         (interceptor: NestInterceptor) =>
           interceptor && isFunction(interceptor.intercept),
@@ -56,16 +61,20 @@ export class InterceptorsContextCreator extends ContextCreator {
   public getInterceptorInstance(
     interceptor: Function | NestInterceptor,
     contextId = STATIC_CONTEXT,
-  ) {
+    inquirerId?: string,
+  ): NestInterceptor | null {
     const isObject = (interceptor as NestInterceptor).intercept;
     if (isObject) {
-      return interceptor;
+      return interceptor as NestInterceptor;
     }
     const instanceWrapper = this.getInstanceByMetatype(interceptor);
     if (!instanceWrapper) {
       return null;
     }
-    const instanceHost = instanceWrapper.getInstanceByContextId(contextId);
+    const instanceHost = instanceWrapper.getInstanceByContextId(
+      contextId,
+      inquirerId,
+    );
     return instanceHost && instanceHost.instance;
   }
 

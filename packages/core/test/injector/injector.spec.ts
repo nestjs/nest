@@ -150,25 +150,28 @@ describe('Injector', () => {
       );
     });
 
-    it('should return null when collection is nil', () => {
+    it('should return undefined when collection is nil', () => {
       const result = injector.loadPrototype(test, null);
-      expect(result).to.be.null;
+      expect(result).to.be.undefined;
     });
 
-    it('should return null when target isResolved', () => {
+    it('should return undefined when target isResolved', () => {
       const collection = {
-        get: () => ({ getInstanceByContextId: () => ({ isResolved: true }) }),
+        get: () => ({
+          getInstanceByContextId: () => ({ isResolved: true }),
+          createPrototype: () => {},
+        }),
       };
       const result = injector.loadPrototype(test, collection as any);
-      expect(result).to.be.null;
+      expect(result).to.be.undefined;
     });
 
-    it('should return null when "inject" is not nil', () => {
+    it('should return undefined when "inject" is not nil', () => {
       const collection = {
         get: () => new InstanceWrapper({ inject: [] }),
       };
       const result = injector.loadPrototype(test, collection as any);
-      expect(result).to.be.null;
+      expect(result).to.be.undefined;
     });
   });
 
@@ -236,7 +239,7 @@ describe('Injector', () => {
 
     it('should call "loadInstance" with expected arguments', async () => {
       const module = { controllers: [] };
-      const wrapper = { test: 'test' };
+      const wrapper = { test: 'test', getEnhancersMetadata: () => [] };
 
       await injector.loadController(wrapper as any, module as any);
       expect(loadInstance.calledWith(wrapper, module.controllers, module)).to.be
@@ -603,6 +606,128 @@ describe('Injector', () => {
         expect(obj.two).to.be.undefined;
         expect(obj.three).to.be.eql(properties[2].instance);
       });
+    });
+  });
+
+  describe('instantiateClass', () => {
+    class TestClass {}
+
+    describe('when context is static', () => {
+      it('should instantiate class', async () => {
+        const wrapper = new InstanceWrapper({ metatype: TestClass });
+        await injector.instantiateClass([], wrapper, wrapper, STATIC_CONTEXT);
+
+        expect(wrapper.instance).to.not.be.undefined;
+        expect(wrapper.instance).to.be.instanceOf(TestClass);
+      });
+      it('should call factory', async () => {
+        const wrapper = new InstanceWrapper({
+          inject: [],
+          metatype: (() => ({})) as any,
+        });
+        await injector.instantiateClass([], wrapper, wrapper, STATIC_CONTEXT);
+
+        expect(wrapper.instance).to.not.be.undefined;
+      });
+    });
+    describe('when context is not static', () => {
+      it('should not instantiate class', async () => {
+        const ctx = { id: 3 };
+        const wrapper = new InstanceWrapper({ metatype: TestClass });
+        await injector.instantiateClass([], wrapper, wrapper, ctx);
+
+        expect(wrapper.instance).to.be.undefined;
+        expect(wrapper.getInstanceByContextId(ctx).isResolved).to.be.true;
+      });
+
+      it('should not call factory', async () => {
+        const wrapper = new InstanceWrapper({
+          inject: [],
+          metatype: sinon.spy() as any,
+        });
+        await injector.instantiateClass([], wrapper, wrapper, { id: 2 });
+        expect(wrapper.instance).to.be.undefined;
+        expect((wrapper.metatype as any).called).to.be.false;
+      });
+    });
+  });
+
+  describe('loadPerContext', () => {
+    class TestClass {}
+
+    it('should load instance per context id', async () => {
+      const container = new NestContainer();
+      const moduleCtor = class TestModule {};
+      const ctx = STATIC_CONTEXT;
+      const module = await container.addModule(moduleCtor, []);
+
+      module.addProvider({
+        name: 'TestClass',
+        provide: TestClass,
+        useClass: TestClass,
+      });
+      const instance = await injector.loadPerContext(
+        new TestClass(),
+        module,
+        module.providers,
+        ctx,
+      );
+      expect(instance).to.be.instanceOf(TestClass);
+    });
+  });
+
+  describe('loadEnhancersPerContext', () => {
+    it('should load enhancers per context id', async () => {
+      const wrapper = new InstanceWrapper();
+      wrapper.addEnhancerMetadata(new InstanceWrapper());
+      wrapper.addEnhancerMetadata(new InstanceWrapper());
+
+      const loadInstanceStub = sinon
+        .stub(injector, 'loadInstance')
+        .callsFake(() => ({}));
+
+      await injector.loadEnhancersPerContext(
+        wrapper,
+        new Module(class {}, [], new NestContainer()),
+        STATIC_CONTEXT,
+      );
+      expect(loadInstanceStub.calledTwice).to.be.true;
+    });
+  });
+
+  describe('loadCtorMetadata', () => {
+    it('should resolve ctor metadata', async () => {
+      const wrapper = new InstanceWrapper();
+      wrapper.addCtorMetadata(0, new InstanceWrapper());
+      wrapper.addCtorMetadata(1, new InstanceWrapper());
+
+      const resolveComponentHostStub = sinon
+        .stub(injector, 'resolveComponentHost')
+        .callsFake(() => new InstanceWrapper());
+
+      await injector.loadCtorMetadata(
+        wrapper.getCtorMetadata(),
+        STATIC_CONTEXT,
+      );
+      expect(resolveComponentHostStub.calledTwice).to.be.true;
+    });
+  });
+
+  describe('loadPropertiesMetadata', () => {
+    it('should resolve properties metadata', async () => {
+      const wrapper = new InstanceWrapper();
+      wrapper.addPropertiesMetadata('key1', new InstanceWrapper());
+      wrapper.addPropertiesMetadata('key2', new InstanceWrapper());
+
+      const resolveComponentHostStub = sinon
+        .stub(injector, 'resolveComponentHost')
+        .callsFake(() => new InstanceWrapper());
+
+      await injector.loadPropertiesMetadata(
+        wrapper.getPropertiesMetadata(),
+        STATIC_CONTEXT,
+      );
+      expect(resolveComponentHostStub.calledTwice).to.be.true;
     });
   });
 });

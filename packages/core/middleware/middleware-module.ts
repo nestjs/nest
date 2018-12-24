@@ -38,7 +38,7 @@ export class MiddlewareModule {
     config: ApplicationConfig,
     injector: Injector,
   ) {
-    const appRef = container.getApplicationRef();
+    const appRef = container.getHttpAdapterRef();
     this.routerExceptionFilter = new RouterExceptionFilters(
       container,
       config,

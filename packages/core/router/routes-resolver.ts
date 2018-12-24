@@ -28,7 +28,7 @@ export class RoutesResolver implements Resolver {
     this.routerExceptionsFilter = new RouterExceptionFilters(
       container,
       config,
-      container.getApplicationRef(),
+      container.getHttpAdapterRef(),
     );
     this.routerBuilder = new RouterExplorer(
       new MetadataScanner(),
@@ -73,7 +73,7 @@ export class RoutesResolver implements Resolver {
   }
 
   public registerNotFoundHandler() {
-    const applicationRef = this.container.getApplicationRef();
+    const applicationRef = this.container.getHttpAdapterRef();
     const callback = <TRequest, TResponse>(req: TRequest, res: TResponse) => {
       const method = applicationRef.getRequestMethod(req);
       const url = applicationRef.getRequestUrl(req);
@@ -100,7 +100,7 @@ export class RoutesResolver implements Resolver {
       undefined,
     );
     const proxy = this.routerProxy.createExceptionLayerProxy(callback, handler);
-    const applicationRef = this.container.getApplicationRef();
+    const applicationRef = this.container.getHttpAdapterRef();
     applicationRef.setErrorHandler && applicationRef.setErrorHandler(proxy);
   }
 
