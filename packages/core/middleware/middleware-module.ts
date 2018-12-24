@@ -172,7 +172,7 @@ export class MiddlewareModule {
     collection: Map<string, InstanceWrapper>,
   ) {
     const { instance, metatype } = wrapper;
-    if (isUndefined(instance.resolve)) {
+    if (isUndefined(instance.use)) {
       throw new InvalidMiddlewareException(metatype.name);
     }
     const router = applicationRef.createMiddlewareFactory(method);
@@ -211,11 +211,11 @@ export class MiddlewareModule {
   ): Promise<(req: TRequest, res: TResponse, next: Function) => void> {
     const exceptionsHandler = this.routerExceptionFilter.create(
       instance,
-      instance.resolve,
+      instance.use,
       undefined,
       contextId,
     );
-    const middleware = await instance.resolve();
+    const middleware = instance.use.bind(instance);
     return this.routerProxy.createProxy(middleware, exceptionsHandler);
   }
 
