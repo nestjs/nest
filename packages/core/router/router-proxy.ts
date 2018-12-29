@@ -4,7 +4,7 @@ import { ExecutionContextHost } from '../helpers/execution-context-host';
 export type RouterProxyCallback = <TRequest, TResponse>(
   req?: TRequest,
   res?: TResponse,
-  next?: Function,
+  next?: () => void,
 ) => void;
 
 export class RouterProxy {
