@@ -34,9 +34,7 @@ describe('MiddlewareModule', () => {
 
   @Injectable()
   class TestMiddleware implements NestMiddleware {
-    public resolve() {
-      return (req, res, next) => {};
-    }
+    public use(req, res, next) {}
   }
 
   beforeEach(() => {
@@ -94,7 +92,7 @@ describe('MiddlewareModule', () => {
       ).to.eventually.be.rejectedWith(RuntimeException);
     });
 
-    it('should throw "InvalidMiddlewareException" exception when middleware does not have "resolve" method', () => {
+    it('should throw "InvalidMiddlewareException" exception when middleware does not have "use" method', () => {
       @Injectable()
       class InvalidMiddleware {}
 

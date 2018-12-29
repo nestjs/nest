@@ -4,14 +4,6 @@ import { MiddlewareConsumer } from './middleware-consumer.interface';
 
 export interface MiddlewareConfigProxy {
   /**
-   * Delegates custom arguments to the `resolve()` method of the middleware.
-   *
-   * @param  {} ...data
-   * @returns {MiddlewareConfigProxy}
-   */
-  with(...data: any[]): MiddlewareConfigProxy;
-
-  /**
    * Excludes routes from the currently processed middleware.
    * This excluded route has to use an exact same route path.
    *
