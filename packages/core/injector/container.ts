@@ -1,14 +1,16 @@
 import { DynamicModule } from '@nestjs/common';
 import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
+import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { ApplicationConfig } from '../application-config';
 import { CircularDependencyException } from '../errors/exceptions/circular-dependency.exception';
 import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
-import { ApplicationReferenceHost } from '../helpers/application-ref-host';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
-import { Reflector } from '../services';
+import { HttpAdapterHost } from '../helpers/http-adapter-host';
 import { ModuleCompiler } from './compiler';
+import { InternalCoreModule } from './internal-core-module';
+import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
 import { ModulesContainer } from './modules-container';
 
@@ -20,11 +22,8 @@ export class NestContainer {
     string,
     Partial<DynamicModule>
   >();
-  private readonly reflector = new Reflector();
-  private readonly applicationRefHost = new ApplicationReferenceHost();
-  private externalContextCreator: ExternalContextCreator;
-  private modulesContainer: ModulesContainer;
-  private applicationRef: any;
+  private readonly internalProvidersStorage = new InternalProvidersStorage();
+  private internalCoreModule: Module;
 
   constructor(
     private readonly _applicationConfig: ApplicationConfig = undefined,
@@ -34,23 +33,24 @@ export class NestContainer {
     return this._applicationConfig;
   }
 
-  public setApplicationRef(applicationRef: any) {
-    this.applicationRef = applicationRef;
+  public setHttpAdapter(httpAdapter: any) {
+    this.internalProvidersStorage.httpAdapter = httpAdapter;
 
-    if (!this.applicationRefHost) {
+    if (!this.internalProvidersStorage.httpAdapterHost) {
       return;
     }
-    this.applicationRefHost.applicationRef = applicationRef;
+    const host = this.internalProvidersStorage.httpAdapterHost;
+    host.httpAdapter = httpAdapter;
   }
 
-  public getApplicationRef() {
-    return this.applicationRef;
+  public getHttpAdapterRef() {
+    return this.internalProvidersStorage.httpAdapter;
   }
 
   public async addModule(
     metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
     scope: Type<any>[],
-  ) {
+  ): Promise<Module> {
     if (!metatype) {
       throw new InvalidModuleException(scope);
     }
@@ -66,6 +66,8 @@ export class NestContainer {
 
     this.addDynamicMetadata(token, dynamicMetadata, [].concat(scope, type));
     this.isGlobalModule(type) && this.addGlobalModule(module);
+
+    return module;
   }
 
   public addDynamicMetadata(
@@ -101,7 +103,15 @@ export class NestContainer {
     return this.modules;
   }
 
-  public async addRelatedModule(
+  public getModuleByKey(moduleKey: string): Module {
+    return this.modules.get(moduleKey);
+  }
+
+  public getInternalCoreModuleRef(): Module | undefined {
+    return this.internalCoreModule;
+  }
+
+  public async addImport(
     relatedModule: Type<any> | DynamicModule,
     token: string,
   ) {
@@ -130,12 +140,16 @@ export class NestContainer {
     return module.addProvider(provider);
   }
 
-  public addInjectable(injectable: Type<any>, token: string) {
+  public addInjectable(
+    injectable: Type<any>,
+    token: string,
+    host: Type<Injectable>,
+  ) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
     const module = this.modules.get(token);
-    module.addInjectable(injectable);
+    module.addInjectable(injectable, host);
   }
 
   public addExportedProvider(provider: Type<any>, token: string) {
@@ -165,20 +179,17 @@ export class NestContainer {
   }
 
   public bindGlobalScope() {
-    this.modules.forEach(module => this.bindGlobalsToRelatedModules(module));
+    this.modules.forEach(module => this.bindGlobalsToImports(module));
   }
 
-  public bindGlobalsToRelatedModules(module: Module) {
+  public bindGlobalsToImports(module: Module) {
     this.globalModules.forEach(globalModule =>
       this.bindGlobalModuleToModule(module, globalModule),
     );
   }
 
-  public bindGlobalModuleToModule(module: Module, globalModule: Module) {
-    if (module === globalModule) {
-      return;
-    }
-    module.addRelatedModule(globalModule);
+  public bindGlobalModuleToModule(target: Module, globalModule: Module) {
+    target !== globalModule && target.addRelatedModule(globalModule);
   }
 
   public getDynamicMetadataByToken(
@@ -192,38 +203,24 @@ export class NestContainer {
     return [];
   }
 
-  public getReflector(): Reflector {
-    return this.reflector;
+  public createCoreModule(): DynamicModule {
+    return InternalCoreModule.register([
+      {
+        provide: ExternalContextCreator,
+        useValue: ExternalContextCreator.fromContainer(this),
+      },
+      {
+        provide: ModulesContainer,
+        useValue: this.modules,
+      },
+      {
+        provide: HttpAdapterHost,
+        useValue: this.internalProvidersStorage.httpAdapterHost,
+      },
+    ]);
   }
 
-  public getExternalContextCreator(): ExternalContextCreator {
-    if (!this.externalContextCreator) {
-      this.externalContextCreator = ExternalContextCreator.fromContainer(this);
-    }
-    return this.externalContextCreator;
+  public registerCoreModuleRef(moduleRef: Module) {
+    this.internalCoreModule = moduleRef;
   }
-
-  public getApplicationRefHost(): ApplicationReferenceHost {
-    return this.applicationRefHost;
-  }
-
-  public getModulesContainer(): ModulesContainer {
-    if (!this.modulesContainer) {
-      this.modulesContainer = this.getModules();
-    }
-    return this.modulesContainer;
-  }
-}
-
-export interface InstanceWrapper<T> {
-  name: any;
-  metatype: Type<T>;
-  instance: T;
-  isResolved: boolean;
-  isPending?: boolean;
-  done$?: Promise<void>;
-  inject?: Type<any>[];
-  isNotMetatype?: boolean;
-  forwardRef?: boolean;
-  async?: boolean;
 }

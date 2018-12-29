@@ -1,28 +1,33 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterExplorer } from '../../router/router-explorer';
+import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
+import {
+  All,
+  Get,
+  Post,
+} from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { MetadataScanner } from '../../metadata-scanner';
 import { NestContainer } from '../../injector/container';
+import { MetadataScanner } from '../../metadata-scanner';
+import { RouterExplorer } from '../../router/router-explorer';
 
 describe('RouterExplorer', () => {
   @Controller('global')
   class TestRoute {
-    @RequestMapping({ path: 'test' })
+    @Get('test')
     public getTest() {}
-
-    @RequestMapping({ path: 'test', method: RequestMethod.POST })
+    @Post('test')
     public postTest() {}
-
-    @RequestMapping({ path: 'another-test', method: RequestMethod.ALL })
+    @All('another-test')
     public anotherTest() {}
   }
 
   let routerBuilder: RouterExplorer;
   beforeEach(() => {
-    routerBuilder = new RouterExplorer(new MetadataScanner(), new NestContainer());
+    routerBuilder = new RouterExplorer(
+      new MetadataScanner(),
+      new NestContainer(),
+    );
   });
   describe('scanForPaths', () => {
     it('should method return expected list of route paths', () => {

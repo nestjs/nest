@@ -1,12 +1,12 @@
 import { expect } from 'chai';
-import { ApplicationReferenceHost } from './../../helpers/application-ref-host';
+import { HttpAdapterHost } from '../../helpers/http-adapter-host';
 
-describe('ApplicationReferenceHost', () => {
-  const applicationRefHost = new ApplicationReferenceHost();
+describe('HttpAdapterHost', () => {
+  const applicationRefHost = new HttpAdapterHost();
   it('should wrap application reference', () => {
     const ref = {};
-    applicationRefHost.applicationRef = ref;
+    applicationRefHost.httpAdapter = ref;
 
-    expect(applicationRefHost.applicationRef).to.be.eql(ref);
+    expect(applicationRefHost.httpAdapter).to.be.eql(ref);
   });
 });

@@ -37,8 +37,10 @@ describe('MiddlewareContainer', () => {
         forRoutes: [TestRoute, 'test'],
       },
     ];
-    container.addConfig(config, 'Module' as any);
-    expect([...container.getConfigs().get('Module')]).to.deep.equal(config);
+    container.insertConfig(config, 'Module' as any);
+    expect([...container.getConfigurations().get('Module')]).to.deep.equal(
+      config,
+    );
   });
 
   it('should store expected middleware for given module', () => {
@@ -50,11 +52,14 @@ describe('MiddlewareContainer', () => {
     ];
 
     const key = 'Test' as any;
-    container.addConfig(config, key);
-    expect(container.getMiddleware(key).size).to.eql(config.length);
-    expect(container.getMiddleware(key).get('TestMiddleware')).to.eql({
-      instance: null,
-      metatype: TestMiddleware,
-    });
+    container.insertConfig(config, key);
+    expect(container.getMiddlewareCollection(key).size).to.eql(config.length);
+    expect(container.getMiddlewareCollection(key).get('TestMiddleware')).to.eql(
+      {
+        scope: undefined,
+        metatype: TestMiddleware,
+        values: new WeakMap(),
+      },
+    );
   });
 });

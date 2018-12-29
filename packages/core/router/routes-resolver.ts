@@ -5,7 +5,9 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '../application-config';
 import { CONTROLLER_MAPPING_MESSAGE } from '../helpers/messages';
-import { InstanceWrapper, NestContainer } from '../injector/container';
+import { NestContainer } from '../injector/container';
+import { Injector } from '../injector/injector';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 import { MetadataScanner } from '../metadata-scanner';
 import { Resolver } from './interfaces/resolver.interface';
 import { RouterExceptionFilters } from './router-exception-filters';
@@ -21,15 +23,17 @@ export class RoutesResolver implements Resolver {
   constructor(
     private readonly container: NestContainer,
     private readonly config: ApplicationConfig,
+    private readonly injector: Injector,
   ) {
     this.routerExceptionsFilter = new RouterExceptionFilters(
       container,
       config,
-      container.getApplicationRef(),
+      container.getHttpAdapterRef(),
     );
     this.routerBuilder = new RouterExplorer(
       new MetadataScanner(),
       this.container,
+      this.injector,
       this.routerProxy,
       this.routerExceptionsFilter,
       this.config,
@@ -53,14 +57,14 @@ export class RoutesResolver implements Resolver {
     basePath: string,
     applicationRef: HttpServer,
   ) {
-    routes.forEach(({ instance, metatype }) => {
+    routes.forEach(instanceWrapper => {
+      const { metatype } = instanceWrapper;
       const path = this.routerBuilder.extractRouterPath(metatype, basePath);
       const controllerName = metatype.name;
 
       this.logger.log(CONTROLLER_MAPPING_MESSAGE(controllerName, path));
       this.routerBuilder.explore(
-        instance,
-        metatype,
+        instanceWrapper,
         moduleName,
         applicationRef,
         path,
@@ -69,7 +73,7 @@ export class RoutesResolver implements Resolver {
   }
 
   public registerNotFoundHandler() {
-    const applicationRef = this.container.getApplicationRef();
+    const applicationRef = this.container.getHttpAdapterRef();
     const callback = <TRequest, TResponse>(req: TRequest, res: TResponse) => {
       const method = applicationRef.getRequestMethod(req);
       const url = applicationRef.getRequestUrl(req);
@@ -96,7 +100,7 @@ export class RoutesResolver implements Resolver {
       undefined,
     );
     const proxy = this.routerProxy.createExceptionLayerProxy(callback, handler);
-    const applicationRef = this.container.getApplicationRef();
+    const applicationRef = this.container.getHttpAdapterRef();
     applicationRef.setErrorHandler && applicationRef.setErrorHandler(proxy);
   }
 

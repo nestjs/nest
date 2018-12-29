@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { RequestMethod } from '../../../common';
 import { RouterResponseController } from '../../router/router-response-controller';
-import { NoopHttpAdapter } from '../utils/noop-adapter';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('RouterResponseController', () => {
   let adapter: NoopHttpAdapter;

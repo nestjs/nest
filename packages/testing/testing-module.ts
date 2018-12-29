@@ -32,7 +32,7 @@ export class TestingModule extends NestApplicationContext {
     httpAdapter = httpAdapter || this.createHttpAdapter();
 
     this.applyLogger(options);
-    this.container.setApplicationRef(httpAdapter);
+    this.container.setHttpAdapter(httpAdapter);
 
     const instance = new NestApplication(
       this.container,

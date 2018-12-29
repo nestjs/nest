@@ -20,6 +20,7 @@ import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { loadAdapter } from './helpers/load-adapter';
 import { NestContainer } from './injector/container';
+import { Injector } from './injector/injector';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
@@ -34,6 +35,7 @@ const { MicroservicesModule } =
 export class NestApplication extends NestApplicationContext
   implements INestApplication {
   private readonly logger = new Logger(NestApplication.name, true);
+  private readonly injector = new Injector();
   private readonly middlewareModule = new MiddlewareModule();
   private readonly middlewareContainer = new MiddlewareContainer();
   private readonly microservicesModule = MicroservicesModule
@@ -57,7 +59,11 @@ export class NestApplication extends NestApplicationContext
     this.selectContextModule();
     this.registerHttpServer();
 
-    this.routesResolver = new RoutesResolver(this.container, this.config);
+    this.routesResolver = new RoutesResolver(
+      this.container,
+      this.config,
+      this.injector,
+    );
   }
 
   public getHttpAdapter(): HttpServer {
@@ -103,6 +109,7 @@ export class NestApplication extends NestApplicationContext
       this.middlewareContainer,
       this.container,
       this.config,
+      this.injector,
     );
   }
 

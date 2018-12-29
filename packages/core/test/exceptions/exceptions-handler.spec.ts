@@ -2,13 +2,11 @@ import { HttpException } from '@nestjs/common';
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
-import { Logger } from '../../../common/services/logger.service';
 import { AbstractHttpAdapter } from '../../adapters';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
 import { ExecutionContextHost } from '../../helpers/execution-context-host';
-import { NoopHttpAdapter } from './../utils/noop-adapter';
+import { NoopHttpAdapter } from './../utils/noop-adapter.spec';
 
 describe('ExceptionsHandler', () => {
   let adapter: AbstractHttpAdapter;
@@ -16,8 +14,6 @@ describe('ExceptionsHandler', () => {
   let statusStub: sinon.SinonStub;
   let jsonStub: sinon.SinonStub;
   let response;
-
-  before(() => Logger.setMode(NestEnvironment.TEST));
 
   beforeEach(() => {
     adapter = new NoopHttpAdapter({});

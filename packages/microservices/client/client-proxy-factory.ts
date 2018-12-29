@@ -6,8 +6,12 @@ import { ClientMqtt } from './client-mqtt';
 import { ClientNats } from './client-nats';
 import { ClientProxy } from './client-proxy';
 import { ClientRedis } from './client-redis';
-import { ClientTCP } from './client-tcp';
 import { ClientRMQ } from './client-rmq';
+import { ClientTCP } from './client-tcp';
+
+export interface IClientProxyFactory {
+  create(clientOptions: ClientOptions): ClientProxy & Closeable;
+}
 
 export class ClientProxyFactory {
   public static create(clientOptions: ClientOptions): ClientProxy & Closeable {

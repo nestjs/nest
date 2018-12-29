@@ -1,3 +1,4 @@
+import { Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Injectable } from '../../../common';
@@ -6,6 +7,7 @@ import { RuntimeException } from '../../errors/exceptions/runtime.exception';
 import { UnknownElementException } from '../../errors/exceptions/unknown-element.exception';
 import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception';
 import { NestContainer } from '../../injector/container';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { Module } from '../../injector/module';
 
 describe('Module', () => {
@@ -32,12 +34,14 @@ describe('Module', () => {
     module.addController(Test);
     expect(setSpy.getCall(0).args).to.deep.equal([
       'Test',
-      {
+      new InstanceWrapper({
+        host: module,
         name: 'Test',
+        scope: 0,
         metatype: Test,
         instance: null,
         isResolved: false,
-      },
+      }),
     ]);
   });
 
@@ -49,12 +53,14 @@ describe('Module', () => {
     module.addInjectable(TestProvider);
     expect(setSpy.getCall(0).args).to.deep.equal([
       'TestProvider',
-      {
+      new InstanceWrapper({
+        host: module,
         name: 'TestProvider',
+        scope: undefined,
         metatype: TestProvider,
         instance: null,
         isResolved: false,
-      },
+      }),
     ]);
   });
 
@@ -75,12 +81,14 @@ describe('Module', () => {
     module.addProvider(TestProvider);
     expect(setSpy.getCall(0).args).to.deep.equal([
       'TestProvider',
-      {
+      new InstanceWrapper({
+        host: module,
         name: 'TestProvider',
+        scope: undefined,
         metatype: TestProvider,
         instance: null,
         isResolved: false,
-      },
+      }),
     ]);
   });
 
@@ -128,6 +136,7 @@ describe('Module', () => {
     const type = { name: 'TypeTest' };
     const provider = { provide: type, useClass: type, name: 'test' };
     let setSpy;
+
     beforeEach(() => {
       const collection = new Map();
       setSpy = sinon.spy(collection, 'set');
@@ -136,12 +145,17 @@ describe('Module', () => {
     it('should store provider', () => {
       module.addCustomClass(provider as any, (module as any)._providers);
       expect(
-        setSpy.calledWith(provider.name, {
-          name: provider.name,
-          metatype: type,
-          instance: null,
-          isResolved: false,
-        }),
+        setSpy.calledWith(
+          provider.name,
+          new InstanceWrapper({
+            host: module,
+            name: provider.name,
+            scope: undefined,
+            metatype: type as any,
+            instance: null,
+            isResolved: false,
+          }),
+        ),
       ).to.be.true;
     });
   });
@@ -161,14 +175,18 @@ describe('Module', () => {
     it('should store provider', () => {
       module.addCustomValue(provider as any, (module as any)._providers);
       expect(
-        setSpy.calledWith(name, {
+        setSpy.calledWith(
           name,
-          metatype: null,
-          instance: value,
-          isResolved: true,
-          isNotMetatype: true,
-          async: false,
-        }),
+          new InstanceWrapper({
+            host: module,
+            name,
+            scope: Scope.DEFAULT,
+            metatype: null,
+            instance: value,
+            isResolved: true,
+            async: false,
+          }),
+        ),
       ).to.be.true;
     });
   });
@@ -188,14 +206,15 @@ describe('Module', () => {
       module.addCustomFactory(provider as any, (module as any)._providers);
       expect(setSpy.getCall(0).args).to.deep.equal([
         provider.name,
-        {
+        new InstanceWrapper({
+          host: module,
           name: provider.name,
-          metatype: type,
+          scope: undefined,
+          metatype: type as any,
           instance: null,
           isResolved: false,
-          inject,
-          isNotMetatype: true,
-        },
+          inject: inject as any,
+        }),
       ]);
     });
   });
@@ -258,10 +277,12 @@ describe('Module', () => {
     });
   });
 
-  describe('relatedModules', () => {
+  describe('imports', () => {
     it('should return relatedModules', () => {
       const test = ['test'];
-      (module as any)._relatedModules = test;
+      (module as any)._imports = test;
+
+      expect(module.imports).to.be.eql(test);
       expect(module.relatedModules).to.be.eql(test);
     });
   });
@@ -278,7 +299,9 @@ describe('Module', () => {
     it('should return controllers', () => {
       const test = ['test'];
       (module as any)._controllers = test;
+
       expect(module.controllers).to.be.eql(test);
+      expect(module.routes).to.be.eql(test);
     });
   });
 
@@ -286,17 +309,28 @@ describe('Module', () => {
     it('should return exports', () => {
       const test = ['test'];
       (module as any)._exports = test;
+
       expect(module.exports).to.be.eql(test);
     });
   });
 
-  describe('createModuleRefMetatype', () => {
+  describe('providers', () => {
+    it('should return providers', () => {
+      const test = ['test'];
+      (module as any)._providers = test;
+
+      expect(module.providers).to.be.eql(test);
+      expect(module.components).to.be.eql(test);
+    });
+  });
+
+  describe('createModuleReferenceType', () => {
     let moduleRef;
 
     class SimpleClass {}
 
     beforeEach(() => {
-      const Class = module.createModuleRefMetatype();
+      const Class = module.createModuleReferenceType();
       moduleRef = new Class();
     });
 
@@ -321,7 +355,7 @@ describe('Module', () => {
     describe('when unit exists in related modules collection', () => {
       it('should behave as identity', () => {
         const metatype = { name: token };
-        (module as any)._relatedModules = new Set([
+        (module as any)._imports = new Set([
           new Module(metatype as any, [], new NestContainer()),
         ]);
         expect(module.validateExportedProvider(token)).to.be.eql(token);

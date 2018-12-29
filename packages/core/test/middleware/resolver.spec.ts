@@ -1,9 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Injectable } from '../../../common';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
 import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
-import { Logger } from '../../../common/services/logger.service';
 import { MiddlewareContainer } from '../../middleware/container';
 import { MiddlewareResolver } from '../../middleware/resolver';
 
@@ -19,8 +17,6 @@ describe('MiddlewareResolver', () => {
   let container: MiddlewareContainer;
   let mockContainer: sinon.SinonMock;
 
-  before(() => Logger.setMode(NestEnvironment.TEST));
-
   beforeEach(() => {
     container = new MiddlewareContainer();
     resolver = new MiddlewareResolver(container);
@@ -28,10 +24,10 @@ describe('MiddlewareResolver', () => {
   });
 
   it('should resolve middleware instances from container', () => {
-    const loadInstanceOfMiddleware = sinon.stub(
+    const loadMiddleware = sinon.stub(
       // tslint:disable-next-line:no-string-literal
       resolver['instanceLoader'],
-      'loadInstanceOfMiddleware',
+      'loadMiddleware',
     );
     const middleware = new Map();
     const wrapper = {
@@ -41,13 +37,12 @@ describe('MiddlewareResolver', () => {
     middleware.set('TestMiddleware', wrapper);
 
     const module = { metatype: { name: '' } } as any;
-    mockContainer.expects('getMiddleware').returns(middleware);
+    mockContainer.expects('getMiddlewareCollection').returns(middleware);
     resolver.resolveInstances(module, null);
 
-    expect(loadInstanceOfMiddleware.callCount).to.be.equal(middleware.size);
-    expect(loadInstanceOfMiddleware.calledWith(wrapper, middleware, module)).to
-      .be.true;
+    expect(loadMiddleware.callCount).to.be.equal(middleware.size);
+    expect(loadMiddleware.calledWith(wrapper, middleware, module)).to.be.true;
 
-    loadInstanceOfMiddleware.restore();
+    loadMiddleware.restore();
   });
 });

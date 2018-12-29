@@ -9,15 +9,20 @@ import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { createContextId } from '../helpers/context-id-factory';
 import { ROUTE_MAPPED_MESSAGE } from '../helpers/messages';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
+import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
+import { Injector } from '../injector/injector';
+import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { MetadataScanner } from '../metadata-scanner';
 import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
+import { REQUEST } from './request';
 import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
@@ -36,10 +41,11 @@ export class RouterExplorer {
 
   constructor(
     private readonly metadataScanner: MetadataScanner,
-    container: NestContainer,
+    private readonly container: NestContainer,
+    private readonly injector?: Injector,
     private readonly routerProxy?: RouterProxy,
     private readonly exceptionsFilter?: ExceptionsFilter,
-    private readonly config?: ApplicationConfig,
+    config?: ApplicationConfig,
   ) {
     this.executionContextCreator = new RouterExecutionContext(
       new RouteParamsFactory(),
@@ -49,22 +55,22 @@ export class RouterExplorer {
       new GuardsConsumer(),
       new InterceptorsContextCreator(container, config),
       new InterceptorsConsumer(),
-      container.getApplicationRef(),
+      container.getHttpAdapterRef(),
     );
   }
 
   public explore<T extends HttpServer = any>(
-    instance: Controller,
-    metatype: Type<Controller>,
+    instanceWrapper: InstanceWrapper,
     module: string,
     applicationRef: T,
     basePath: string,
   ) {
+    const { instance } = instanceWrapper;
     const routerPaths = this.scanForPaths(instance);
     this.applyPathsToRouterProxy(
       applicationRef,
       routerPaths,
-      instance,
+      instanceWrapper,
       module,
       basePath,
     );
@@ -126,7 +132,7 @@ export class RouterExplorer {
   public applyPathsToRouterProxy<T extends HttpServer>(
     router: T,
     routePaths: RoutePathProperties[],
-    instance: Controller,
+    instanceWrapper: InstanceWrapper,
     module: string,
     basePath: string,
   ) {
@@ -135,7 +141,7 @@ export class RouterExplorer {
       this.applyCallbackToRouter(
         router,
         pathProperties,
-        instance,
+        instanceWrapper,
         module,
         basePath,
       );
@@ -146,25 +152,61 @@ export class RouterExplorer {
   private applyCallbackToRouter<T extends HttpServer>(
     router: T,
     pathProperties: RoutePathProperties,
-    instance: Controller,
-    module: string,
+    instanceWrapper: InstanceWrapper,
+    moduleKey: string,
     basePath: string,
   ) {
     const { path, requestMethod, targetCallback, methodName } = pathProperties;
+    const { instance } = instanceWrapper;
     const routerMethod = this.routerMethodFactory
       .get(router, requestMethod)
       .bind(router);
 
+    const stripSlash = (str: string) =>
+      str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
+    const fullPath = stripSlash(basePath) + path;
+
+    const isRequestScoped = !instanceWrapper.isDependencyTreeStatic();
+    const module = this.container.getModuleByKey(moduleKey);
+    const collection = module.controllers;
+
+    if (isRequestScoped) {
+      routerMethod(
+        stripSlash(fullPath) || '/',
+        async <TRequest, TResponse>(
+          req: TRequest,
+          res: TResponse,
+          next: Function,
+        ) => {
+          const contextId = createContextId();
+          this.registerRequestProvider(req, contextId);
+
+          const contextInstance = await this.injector.loadPerContext(
+            instance,
+            module,
+            collection,
+            contextId,
+          );
+          this.createCallbackProxy(
+            contextInstance,
+            contextInstance[methodName],
+            methodName,
+            moduleKey,
+            requestMethod,
+            contextId,
+            instanceWrapper.id,
+          )(req, res, next);
+        },
+      );
+      return;
+    }
     const proxy = this.createCallbackProxy(
       instance,
       targetCallback,
       methodName,
-      module,
+      moduleKey,
       requestMethod,
     );
-    const stripSlash = (str: string) =>
-      str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
-    const fullPath = stripSlash(basePath) + path;
     routerMethod(stripSlash(fullPath) || '/', proxy);
   }
 
@@ -174,6 +216,8 @@ export class RouterExplorer {
     methodName: string,
     module: string,
     requestMethod: RequestMethod,
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ) {
     const executionContext = this.executionContextCreator.create(
       instance,
@@ -181,12 +225,26 @@ export class RouterExplorer {
       methodName,
       module,
       requestMethod,
+      contextId,
+      inquirerId,
     );
     const exceptionFilter = this.exceptionsFilter.create(
       instance,
       callback,
       module,
+      contextId,
+      inquirerId,
     );
     return this.routerProxy.createProxy(executionContext, exceptionFilter);
+  }
+
+  private registerRequestProvider<T = any>(request: T, contextId: ContextId) {
+    const coreModuleRef = this.container.getInternalCoreModuleRef();
+    const wrapper = coreModuleRef.getProviderByKey(REQUEST);
+
+    wrapper.setInstanceByContextId(contextId, {
+      instance: request,
+      isResolved: true,
+    });
   }
 }

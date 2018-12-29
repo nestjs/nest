@@ -5,6 +5,8 @@ import { Global } from '../../../common/index';
 import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { NestContainer } from '../../injector/container';
+import { InternalCoreModule } from '../../injector/internal-core-module';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('NestContainer', () => {
   let container: NestContainer;
@@ -45,7 +47,7 @@ describe('NestContainer', () => {
   });
 
   it('should "addInjectable" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addInjectable(null, 'TestModule')).throw(
+    expect(() => container.addInjectable(null, 'TestModule', null)).throw(
       UnknownModuleException,
     );
   });
@@ -93,7 +95,7 @@ describe('NestContainer', () => {
     });
   });
 
-  describe('bindGlobalsToRelatedModules', () => {
+  describe('bindGlobalsToImports', () => {
     it('should call "bindGlobalModuleToModule" for every global module', () => {
       const global1 = { test: 1 };
       const global2 = { test: 2 };
@@ -105,7 +107,7 @@ describe('NestContainer', () => {
         container,
         'bindGlobalModuleToModule',
       );
-      container.bindGlobalsToRelatedModules({
+      container.bindGlobalsToImports({
         addRelatedModule: sinon.spy(),
       } as any);
       expect(bindGlobalModuleToModuleSpy.calledTwice).to.be.true;
@@ -171,6 +173,48 @@ describe('NestContainer', () => {
         container.addDynamicModules([Test] as any, []);
         expect(addModuleSpy.called).to.be.true;
       });
+    });
+  });
+
+  describe('get applicationConfig', () => {
+    it('should return ApplicationConfig instance', () => {
+      expect(container.applicationConfig).to.be.eql(
+        (container as any)._applicationConfig,
+      );
+    });
+  });
+
+  describe('setHttpAdapter', () => {
+    it('should set http adapter', () => {
+      const httpAdapter = new NoopHttpAdapter({});
+      container.setHttpAdapter(httpAdapter);
+
+      const internalStorage = (container as any).internalProvidersStorage;
+      expect(internalStorage.httpAdapter).to.be.eql(httpAdapter);
+    });
+  });
+
+  describe('getModuleByKey', () => {
+    it('should return module by passed key', () => {
+      const key = 'test';
+      const value = {};
+      container.getModules().set(key, value as any);
+
+      expect(container.getModuleByKey(key)).to.be.eql(value);
+    });
+  });
+
+  describe('createCoreModule', () => {
+    it('should create InternalCoreModule', () => {
+      expect(container.createCoreModule().module).to.be.eql(InternalCoreModule);
+    });
+  });
+
+  describe('registerCoreModuleRef', () => {
+    it('should register core module ref', () => {
+      const ref = {} as any;
+      container.registerCoreModuleRef(ref);
+      expect((container as any).internalCoreModule).to.be.eql(ref);
     });
   });
 });

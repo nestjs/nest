@@ -24,6 +24,11 @@ import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { ContextUtils } from '../helpers/context-utils';
+import {
+  HandlerMetadata,
+  HandlerMetadataStorage,
+} from '../helpers/handler-metadata-storage';
+import { STATIC_CONTEXT } from '../injector/constants';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../pipes/pipes-consumer';
@@ -47,6 +52,7 @@ export interface ParamProperties {
 }
 
 export class RouterExecutionContext {
+  private readonly handlerMetadataStorage = new HandlerMetadataStorage();
   private readonly contextUtils = new ContextUtils();
   private readonly responseController: RouterResponseController;
 
@@ -58,7 +64,7 @@ export class RouterExecutionContext {
     private readonly guardsConsumer: GuardsConsumer,
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
     private readonly interceptorsConsumer: InterceptorsConsumer,
-    private readonly applicationRef: HttpServer,
+    readonly applicationRef: HttpServer,
   ) {
     this.responseController = new RouterResponseController(applicationRef);
   }
@@ -69,47 +75,44 @@ export class RouterExecutionContext {
     methodName: string,
     module: string,
     requestMethod: RequestMethod,
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ) {
-    const metadata =
-      this.contextUtils.reflectCallbackMetadata(
-        instance,
-        methodName,
-        ROUTE_ARGS_METADATA,
-      ) || {};
-    const keys = Object.keys(metadata);
-    const argsLength = this.contextUtils.getArgumentsLength(keys, metadata);
-    const pipes = this.pipesContextCreator.create(instance, callback, module);
-    const paramtypes = this.contextUtils.reflectCallbackParamtypes(
-      instance,
-      methodName,
+    const {
+      argsLength,
+      fnHandleResponse,
+      paramtypes,
+      getParamsMetadata,
+    } = this.getMetadata(instance, callback, methodName, module, requestMethod);
+    const paramsOptions = this.contextUtils.mergeParamsMetatypes(
+      getParamsMetadata(module, contextId, inquirerId),
+      paramtypes,
     );
-    const guards = this.guardsContextCreator.create(instance, callback, module);
+    const pipes = this.pipesContextCreator.create(
+      instance,
+      callback,
+      module,
+      contextId,
+      inquirerId,
+    );
+    const guards = this.guardsContextCreator.create(
+      instance,
+      callback,
+      module,
+      contextId,
+      inquirerId,
+    );
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
       module,
+      contextId,
+      inquirerId,
     );
-    const httpCode = this.reflectHttpStatusCode(callback);
-    const paramsMetadata = this.exchangeKeysForValues(keys, metadata, module);
-    const isResponseHandled = paramsMetadata.some(
-      ({ type }) =>
-        type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
-    );
-    const paramsOptions = this.contextUtils.mergeParamsMetatypes(
-      paramsMetadata,
-      paramtypes,
-    );
-    const httpStatusCode = httpCode
-      ? httpCode
-      : this.responseController.getStatusByMethod(requestMethod);
 
     const fnCanActivate = this.createGuardsFn(guards, instance, callback);
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
-    const fnHandleResponse = this.createHandleResponseFn(
-      callback,
-      isResponseHandled,
-      httpStatusCode,
-    );
+
     const handler = <TRequest, TResponse>(
       args: any[],
       req: TRequest,
@@ -139,6 +142,67 @@ export class RouterExecutionContext {
     };
   }
 
+  public getMetadata(
+    instance: Controller,
+    callback: (...args: any[]) => any,
+    methodName: string,
+    module: string,
+    requestMethod: RequestMethod,
+  ): HandlerMetadata {
+    const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
+    if (cacheMetadata) {
+      return cacheMetadata;
+    }
+    const metadata =
+      this.contextUtils.reflectCallbackMetadata(
+        instance,
+        methodName,
+        ROUTE_ARGS_METADATA,
+      ) || {};
+    const keys = Object.keys(metadata);
+    const argsLength = this.contextUtils.getArgumentsLength(keys, metadata);
+    const paramtypes = this.contextUtils.reflectCallbackParamtypes(
+      instance,
+      methodName,
+    );
+    const httpCode = this.reflectHttpStatusCode(callback);
+    const getParamsMetadata = (
+      moduleKey: string,
+      contextId = STATIC_CONTEXT,
+      inquirerId?: string,
+    ) =>
+      this.exchangeKeysForValues(
+        keys,
+        metadata,
+        moduleKey,
+        contextId,
+        inquirerId,
+      );
+
+    const paramsMetadata = getParamsMetadata(module);
+    const isResponseHandled = paramsMetadata.some(
+      ({ type }) =>
+        type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
+    );
+    const httpStatusCode = httpCode
+      ? httpCode
+      : this.responseController.getStatusByMethod(requestMethod);
+
+    const fnHandleResponse = this.createHandleResponseFn(
+      callback,
+      isResponseHandled,
+      httpStatusCode,
+    );
+    const handlerMetadata: HandlerMetadata = {
+      argsLength,
+      fnHandleResponse,
+      paramtypes,
+      getParamsMetadata,
+    };
+    this.handlerMetadataStorage.set(instance, methodName, handlerMetadata);
+    return handlerMetadata;
+  }
+
   public reflectHttpStatusCode(callback: (...args: any[]) => any): number {
     return Reflect.getMetadata(HTTP_CODE_METADATA, callback);
   }
@@ -157,12 +221,16 @@ export class RouterExecutionContext {
     keys: string[],
     metadata: RouteParamsMetadata,
     moduleContext: string,
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
         pipesCollection,
+        contextId,
+        inquirerId,
       );
       const type = this.contextUtils.mapParamType(key);
 

@@ -11,9 +11,9 @@ import { NestContainer } from '../injector/container';
 import { MetadataScanner } from '../metadata-scanner';
 import { DependenciesScanner } from '../scanner';
 
-class Guard {}
-
 describe('DependenciesScanner', () => {
+  class Guard {}
+
   @Injectable()
   class TestComponent {}
 
@@ -25,10 +25,10 @@ describe('DependenciesScanner', () => {
     controllers: [TestController],
     exports: [TestComponent],
   })
-  class AnotherTestModule {}
+  class BasicModule {}
 
   @Module({
-    imports: [AnotherTestModule],
+    imports: [BasicModule],
     providers: [TestComponent],
     controllers: [TestController],
   })
@@ -47,6 +47,7 @@ describe('DependenciesScanner', () => {
       new MetadataScanner(),
       new ApplicationConfig(),
     );
+    sinon.stub(scanner, 'registerCoreModule').callsFake(() => {});
   });
 
   afterEach(() => {
@@ -55,6 +56,7 @@ describe('DependenciesScanner', () => {
 
   it('should "insertModule" call twice (2 modules) container method "addModule"', async () => {
     const expectation = mockContainer.expects('addModule').twice();
+
     await scanner.scan(TestModule as any);
     expectation.verify();
   });
@@ -121,7 +123,7 @@ describe('DependenciesScanner', () => {
       const comp = {};
       const token = 'token';
 
-      scanner.insertInjectable(comp as any, token);
+      scanner.insertInjectable(comp as any, token, null);
       expect(addInjectable.calledWith(comp, token)).to.be.true;
     });
   });
@@ -155,18 +157,18 @@ describe('DependenciesScanner', () => {
     });
   });
 
-  describe('insertRelatedModule', () => {
+  describe('insertImport', () => {
     it('should call forwardRef() when forwardRef property exists', async () => {
       const module = { forwardRef: sinon.stub().returns({}) };
 
       sinon.stub(container, 'addRelatedModule').returns({});
-      await scanner.insertRelatedModule(module as any, [] as any, 'test');
+      await scanner.insertImport(module as any, [] as any, 'test');
       expect(module.forwardRef.called).to.be.true;
     });
     describe('when "related" is nil', () => {
       it('should throw exception', () => {
         scanner
-          .insertRelatedModule(undefined, [] as any, 'test')
+          .insertImport(undefined, [] as any, 'test')
           .catch(err => expect(err).to.not.be.undefined);
       });
     });

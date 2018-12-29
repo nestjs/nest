@@ -1,7 +1,8 @@
 import { Type } from '@nestjs/common';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
-import { InstanceWrapper, NestContainer } from './container';
+import { NestContainer } from './container';
+import { InstanceWrapper } from './instance-wrapper';
 import { Module } from './module';
 
 export class ContainerScanner {
@@ -35,7 +36,7 @@ export class ContainerScanner {
     if (!instanceWrapper) {
       throw new UnknownElementException();
     }
-    return (instanceWrapper as InstanceWrapper<any>).instance;
+    return (instanceWrapper as InstanceWrapper).instance;
   }
 
   private initFlatContainer(): void {

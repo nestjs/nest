@@ -10,21 +10,21 @@ import {
 } from '@nestjs/common';
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { MESSAGES } from '../constants';
-import { ApplicationReferenceHost } from './../helpers/application-ref-host';
+import { HttpAdapterHost } from '../helpers';
 
 export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
   private static readonly logger = new Logger('ExceptionsHandler');
 
   @Optional()
   @Inject()
-  protected readonly applicationRefHost?: ApplicationReferenceHost;
+  protected readonly httpAdapterHost?: HttpAdapterHost;
 
   constructor(protected readonly applicationRef?: HttpServer) {}
 
   catch(exception: T, host: ArgumentsHost) {
     const applicationRef =
       this.applicationRef ||
-      (this.applicationRefHost && this.applicationRefHost.applicationRef);
+      (this.httpAdapterHost && this.httpAdapterHost.httpAdapter);
 
     if (!(exception instanceof HttpException)) {
       const body = {
