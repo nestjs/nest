@@ -2,6 +2,6 @@ import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.excepti
 
 export class InvalidSocketPortException extends RuntimeException {
   constructor(port: number | string, type: any) {
-    super(`Invalid port (${port}) in gateway ${type}!`);
+    super(`Invalid port (${port}) in gateway ${type}`);
   }
 }

@@ -1,9 +1,7 @@
-import * as express from 'express';
-import * as request from 'supertest';
-import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
-import { RedisController } from '../src/redis/redis.controller';
+import { Test } from '@nestjs/testing';
+import * as request from 'supertest';
 import { RedisBroadcastController } from '../src/redis/redis-broadcast.controller';
 
 describe('REDIS transport', () => {
@@ -15,8 +13,9 @@ describe('REDIS transport', () => {
       controllers: [RedisBroadcastController],
     }).compile();
 
-    server = express();
-    app = module.createNestApplication(server);
+    app = module.createNestApplication();
+    server = app.getHttpAdapter().getInstance();
+
     app.connectMicroservice({
       transport: Transport.REDIS,
     });

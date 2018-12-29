@@ -27,27 +27,32 @@ export class SocketModule {
 
   public register(container: NestContainer, config: ApplicationConfig) {
     this.applicationConfig = config;
-    this.webSocketsController = new WebSocketsController(
-      new SocketServerProvider(this.socketsContainer, config),
+    const serverProvider = new SocketServerProvider(
+      this.socketsContainer,
       config,
-      this.getContextCreator(container),
+    );
+    const contextCreator = this.getContextCreator(container);
+    this.webSocketsController = new WebSocketsController(
+      serverProvider,
+      config,
+      contextCreator,
     );
     const modules = container.getModules();
     modules.forEach(({ providers }, moduleName: string) =>
-      this.hookGatewaysIntoServers(providers, moduleName),
+      this.mergeAllGateways(providers, moduleName),
     );
   }
 
-  public hookGatewaysIntoServers(
+  public mergeAllGateways(
     providers: Map<string, InstanceWrapper<Injectable>>,
     moduleName: string,
   ) {
     providers.forEach(wrapper =>
-      this.hookGatewayIntoServer(wrapper, moduleName),
+      this.mergeGatewayAndServer(wrapper, moduleName),
     );
   }
 
-  public hookGatewayIntoServer(
+  public mergeGatewayAndServer(
     wrapper: InstanceWrapper<Injectable>,
     moduleName: string,
   ) {
@@ -59,7 +64,7 @@ export class SocketModule {
     if (!metadataKeys.includes(GATEWAY_METADATA)) {
       return;
     }
-    this.webSocketsController.hookGatewayIntoServer(
+    this.webSocketsController.mergeGatewayAndServer(
       instance as NestGateway,
       metatype,
       moduleName,

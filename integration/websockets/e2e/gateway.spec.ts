@@ -15,7 +15,6 @@ async function createNestApp(...gateways): Promise<INestApplication> {
 }
 
 describe('WebSocketGateway', () => {
-  const event = 'push';
   let ws, app;
 
   it(`should handle message (2nd port)`, async () => {

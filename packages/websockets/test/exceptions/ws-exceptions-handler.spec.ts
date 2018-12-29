@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
 import { WsException } from '../../errors/ws-exception';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 
 describe('WsExceptionsHandler', () => {
   let handler: WsExceptionsHandler;

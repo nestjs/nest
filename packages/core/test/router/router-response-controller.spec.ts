@@ -1,16 +1,17 @@
+import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { RequestMethod } from '../../../common';
-import { ExpressAdapter } from '../../adapters/express-adapter';
 import { RouterResponseController } from '../../router/router-response-controller';
+import { NoopHttpAdapter } from '../utils/noop-adapter';
 
 describe('RouterResponseController', () => {
-  let adapter: ExpressAdapter;
+  let adapter: NoopHttpAdapter;
   let routerResponseController: RouterResponseController;
 
   beforeEach(() => {
-    adapter = new ExpressAdapter({});
+    adapter = new NoopHttpAdapter({});
     routerResponseController = new RouterResponseController(adapter);
   });
 
@@ -25,6 +26,17 @@ describe('RouterResponseController', () => {
       response.status = sinon.stub().returns(response);
     });
     describe('when result is', () => {
+      beforeEach(() => {
+        sinon
+          .stub(adapter, 'reply')
+          .callsFake((responseRef: any, body: any, statusCode: number) => {
+            const res = responseRef.status(statusCode);
+            if (isNil(body)) {
+              return res.send();
+            }
+            return isObject(body) ? res.json(body) : res.send(String(body));
+          });
+      });
       describe('nil', () => {
         it('should call send()', async () => {
           const value = null;
@@ -102,6 +114,13 @@ describe('RouterResponseController', () => {
   });
 
   describe('render', () => {
+    beforeEach(() => {
+      sinon
+        .stub(adapter, 'render')
+        .callsFake((response, view: string, options: any) => {
+          return response.render(view, options);
+        });
+    });
     it('should call "res.render()" with expected args', async () => {
       const template = 'template';
       const value = 'test';

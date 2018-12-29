@@ -1,9 +1,16 @@
+import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { ServerGrpc } from '../../server/server-grpc';
+
+class NoopLogger extends Logger {
+  log(message: any, context?: string): void {}
+  error(message: any, trace?: string, context?: string): void {}
+  warn(message: any, context?: string): void {}
+}
 
 describe('ServerGrpc', () => {
   let server: ServerGrpc;
@@ -42,11 +49,14 @@ describe('ServerGrpc', () => {
 
   describe('bindEvents', () => {
     describe('when package does not exist', () => {
-      it('should throw "InvalidGrpcPackageException"', () => {
+      it('should throw "InvalidGrpcPackageException"', async () => {
         sinon.stub(server, 'lookupPackage').callsFake(() => null);
-        expect(server.bindEvents()).to.eventually.throws(
-          InvalidGrpcPackageException,
-        );
+        (server as any).logger = new NoopLogger();
+        try {
+          await server.bindEvents();
+        } catch (err) {
+          expect(err).to.be.instanceof(InvalidGrpcPackageException);
+        }
       });
     });
     describe('when package exist', () => {
