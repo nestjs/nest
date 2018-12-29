@@ -1,12 +1,15 @@
 {
   "name": "@nestjs/testing",
-  "version": "5.5.0",
+  "version": "6.0.0-alpha.3",
   "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/nestjs/nest"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "optional": "0.1.4"

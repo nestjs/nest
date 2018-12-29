@@ -31,7 +31,7 @@ export class RouterProxy {
       err: TError,
       req: TRequest,
       res: TResponse,
-      next: Function,
+      next: () => void,
     ) => void,
     exceptionsHandler: ExceptionsHandler,
   ) {
@@ -39,7 +39,7 @@ export class RouterProxy {
       err: TError,
       req: TRequest,
       res: TResponse,
-      next: Function,
+      next: () => void,
     ) => {
       try {
         await targetCallback(err, req, res, next);

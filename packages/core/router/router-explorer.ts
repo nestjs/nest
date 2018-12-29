@@ -176,7 +176,7 @@ export class RouterExplorer {
         async <TRequest, TResponse>(
           req: TRequest,
           res: TResponse,
-          next: Function,
+          next: () => void,
         ) => {
           const contextId = createContextId();
           this.registerRequestProvider(req, contextId);

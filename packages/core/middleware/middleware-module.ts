@@ -187,7 +187,7 @@ export class MiddlewareModule {
       async <TRequest, TResponse>(
         req: TRequest,
         res: TResponse,
-        next: Function,
+        next: () => void,
       ) => {
         const contextId = { id: 1 };
         const contextInstance = await this.injector.loadPerContext(
@@ -208,7 +208,7 @@ export class MiddlewareModule {
   private async createProxy<TRequest = any, TResponse = any>(
     instance: NestMiddleware,
     contextId = STATIC_CONTEXT,
-  ): Promise<(req: TRequest, res: TResponse, next: Function) => void> {
+  ): Promise<(req: TRequest, res: TResponse, next: () => void) => void> {
     const exceptionsHandler = this.routerExceptionFilter.create(
       instance,
       instance.use,
@@ -225,7 +225,7 @@ export class MiddlewareModule {
     proxy: <TRequest, TResponse>(
       req: TRequest,
       res: TResponse,
-      next: Function,
+      next: () => void,
     ) => void,
   ) {
     const prefix = this.config.getGlobalPrefix();
