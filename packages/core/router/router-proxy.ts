@@ -15,7 +15,7 @@ export class RouterProxy {
     return async <TRequest, TResponse>(
       req: TRequest,
       res: TResponse,
-      next: Function,
+      next: () => void,
     ) => {
       try {
         await targetCallback(req, res, next);
