@@ -730,4 +730,38 @@ describe('Injector', () => {
       expect(resolveComponentHostStub.calledTwice).to.be.true;
     });
   });
+
+  describe('resolveConstructorParams', () => {
+    it('should call "loadCtorMetadata" if metadata is not undefined', async () => {
+      const wrapper = new InstanceWrapper();
+      const metadata = [];
+      sinon.stub(wrapper, 'getCtorMetadata').callsFake(() => metadata);
+
+      const loadCtorMetadataSpy = sinon.spy(injector, 'loadCtorMetadata');
+      await injector.resolveConstructorParams(
+        wrapper,
+        null,
+        [],
+        () => {
+          expect(loadCtorMetadataSpy.called).to.be.true;
+        },
+        { id: 2 },
+      );
+    });
+  });
+
+  describe('resolveProperties', () => {
+    it('should call "loadPropertiesMetadata" if metadata is not undefined', async () => {
+      const wrapper = new InstanceWrapper();
+      const metadata = [];
+      sinon.stub(wrapper, 'getPropertiesMetadata').callsFake(() => metadata);
+
+      const loadPropertiesMetadataSpy = sinon.spy(
+        injector,
+        'loadPropertiesMetadata',
+      );
+      await injector.resolveProperties(wrapper, null, null, { id: 2 });
+      expect(loadPropertiesMetadataSpy.called).to.be.true;
+    });
+  });
 });
