@@ -3,12 +3,22 @@ import { expect } from 'chai';
 import { ArgumentMetadata } from '../../interfaces';
 import { IsString } from 'class-validator';
 import { ValidationPipe } from '../../pipes/validation.pipe';
+import { Exclude, Expose } from 'class-transformer';
 
+@Exclude()
 class TestModel {
   constructor() {}
-  @IsString() public prop1: string;
+  @Expose()
+  @IsString()
+  public prop1: string;
 
-  @IsString() public prop2: string;
+  @Expose()
+  @IsString()
+  public prop2: string;
+
+  @Expose({ groups: ['internal'] })
+  @IsString()
+  public propInternal: string;
 }
 
 describe('ValidationPipe', () => {
@@ -66,6 +76,36 @@ describe('ValidationPipe', () => {
           target = new ValidationPipe({ forbidNonWhitelisted: true });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
           expect(target.transform(testObj, metadata)).to.eventually.throw;
+        });
+      });
+      describe('when transformation is internal', () => {
+        it('should return a TestModel with internal property', async () => {
+          target = new ValidationPipe({
+            transformOptions: { groups: ['internal'] },
+          });
+          const testObj = {
+            prop1: 'value1',
+            prop2: 'value2',
+            propInternal: 'value3',
+          };
+          expect(await target.transform(testObj, metadata)).to.have.property(
+            'propInternal',
+          );
+        });
+      });
+      describe('when transformation is external', () => {
+        it('should return a TestModel without internal property', async () => {
+          target = new ValidationPipe({
+            transformOptions: { groups: ['external'] },
+          });
+          const testObj = {
+            prop1: 'value1',
+            prop2: 'value2',
+            propInternal: 'value3',
+          };
+          expect(
+            await target.transform(testObj, metadata),
+          ).to.not.have.property('propInternal');
         });
       });
     });
