@@ -17,7 +17,7 @@ import { Module } from './injector/module';
 import { ModuleTokenFactory } from './injector/module-token-factory';
 import { callModuleInitHook } from './hooks/on-module-init.hook';
 import { callModuleBootstrapHook } from './hooks/on-app-bootstrap.hook';
-import { callModuleDestroyHook } from './hooks/on-module-destory.hook';
+import { callModuleDestroyHook } from './hooks/on-module-destroy.hook';
 
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
