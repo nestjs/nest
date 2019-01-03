@@ -1,15 +1,5 @@
-import {
-  INestApplicationContext,
-  Logger,
-  LoggerService,
-  OnApplicationBootstrap,
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
+import { INestApplicationContext, Logger, LoggerService } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { InstanceWrapper } from 'injector/instance-wrapper';
-import iterate from 'iterare';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
 import { NestContainer } from './injector/container';
 import { ContainerScanner } from './injector/container-scanner';
