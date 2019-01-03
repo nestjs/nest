@@ -16,7 +16,8 @@ import { ContainerScanner } from './injector/container-scanner';
 import { Module } from './injector/module';
 import { ModuleTokenFactory } from './injector/module-token-factory';
 import { callModuleInitHook } from './hooks/on-module-init.hook';
-import { callModuleBootstrapHook } from 'hooks/on-app-bootstrap.hook';
+import { callModuleBootstrapHook } from './hooks/on-app-bootstrap.hook';
+import { callModuleDestroyHook } from './hooks/on-module-destory.hook';
 
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
@@ -85,45 +86,8 @@ export class NestApplicationContext implements INestApplicationContext {
   protected async callDestroyHook(): Promise<any> {
     const modulesContainer = this.container.getModules();
     for (const module of modulesContainer.values()) {
-      await this.callModuleDestroyHook(module);
+      await callModuleDestroyHook(module);
     }
-  }
-
-  protected async callModuleDestroyHook(module: Module): Promise<any> {
-    const providers = [...module.providers];
-    // Module (class) instance is the first element of the providers array
-    // Lifecycle hook has to be called once all classes are properly destroyed
-    const [_, { instance: moduleClassInstance }] = providers.shift();
-    const instances = [...module.controllers, ...providers];
-    const callOperator = (list: any) =>
-      list
-        .filter(instance => !isNil(instance))
-        .filter(this.hasOnModuleDestroyHook)
-        .map(async instance => (instance as OnModuleDestroy).onModuleDestroy());
-
-    await Promise.all(
-      callOperator(
-        iterate(instances)
-          .filter(
-            ([key, wrapper]) =>
-              wrapper.isDependencyTreeStatic() && !wrapper.isTransient,
-          )
-          .map(([key, { instance }]) => instance),
-      ),
-    );
-    const transientInstances = this.getTransientInstances(instances);
-    await Promise.all(callOperator(iterate(transientInstances)));
-
-    if (
-      moduleClassInstance &&
-      this.hasOnModuleDestroyHook(moduleClassInstance)
-    ) {
-      await (moduleClassInstance as OnModuleDestroy).onModuleDestroy();
-    }
-  }
-
-  protected hasOnModuleDestroyHook(instance: any): instance is OnModuleDestroy {
-    return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
   }
 
   protected async callBootstrapHook(): Promise<any> {
