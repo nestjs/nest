@@ -66,21 +66,33 @@ export class NestApplicationContext implements INestApplicationContext {
     Logger.overrideLogger(logger);
   }
 
-  protected async callInitHook(): Promise<any> {
+  /**
+   * Calls the `callInitHook` function on the registered
+   * modules and its children.
+   */
+  protected async callInitHook(): Promise<void> {
     const modulesContainer = this.container.getModules();
     for (const module of [...modulesContainer.values()].reverse()) {
       await callModuleInitHook(module);
     }
   }
 
-  protected async callDestroyHook(): Promise<any> {
+  /**
+   * Calls the `callDestroyHook` function on the registered
+   * modules and its children.
+   */
+  protected async callDestroyHook(): Promise<void> {
     const modulesContainer = this.container.getModules();
     for (const module of modulesContainer.values()) {
       await callModuleDestroyHook(module);
     }
   }
 
-  protected async callBootstrapHook(): Promise<any> {
+  /**
+   * Calls the `onApplicationBootstrap` function on the registered
+   * modules and its children.
+   */
+  protected async callBootstrapHook(): Promise<void> {
     const modulesContainer = this.container.getModules();
     for (const module of [...modulesContainer.values()].reverse()) {
       await callModuleBootstrapHook(module);
