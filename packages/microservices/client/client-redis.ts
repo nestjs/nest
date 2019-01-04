@@ -167,4 +167,13 @@ export class ClientRedis extends ClientProxy {
       callback({ err });
     }
   }
+
+  protected dispatchEvent(packet: ReadPacket): Promise<any> {
+    const pattern = this.normalizePattern(packet.pattern);
+    return new Promise((resolve, reject) =>
+      this.pubClient.publish(pattern, JSON.stringify(packet), err =>
+        err ? reject(err) : resolve(),
+      ),
+    );
+  }
 }

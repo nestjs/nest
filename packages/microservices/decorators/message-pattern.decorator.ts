@@ -1,4 +1,5 @@
 import { PATTERN_HANDLER_METADATA, PATTERN_METADATA } from '../constants';
+import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 
 /**
@@ -13,7 +14,11 @@ export const MessagePattern = <T = PatternMetadata | string>(
     descriptor: PropertyDescriptor,
   ) => {
     Reflect.defineMetadata(PATTERN_METADATA, metadata, descriptor.value);
-    Reflect.defineMetadata(PATTERN_HANDLER_METADATA, true, descriptor.value);
+    Reflect.defineMetadata(
+      PATTERN_HANDLER_METADATA,
+      PatternHandler.MESSAGE,
+      descriptor.value,
+    );
     return descriptor;
   };
 };

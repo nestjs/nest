@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { Client } from '../decorators/client.decorator';
-import { MessagePattern } from '../decorators/pattern.decorator';
+import { MessagePattern } from '../decorators/message-pattern.decorator';
 import { Transport } from '../enums/transport.enum';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 
@@ -59,21 +59,26 @@ describe('ListenerMetadataExplorer', () => {
     beforeEach(() => {
       test = new Test();
     });
-    it(`should return null when "isPattern" metadata is undefined`, () => {
+    it(`should return undefined when "handlerType" metadata is undefined`, () => {
       const metadata = instance.exploreMethodMetadata(
         test,
         Object.getPrototypeOf(test),
         'noPattern',
       );
-      expect(metadata).to.eq(null);
+      expect(metadata).to.eq(undefined);
     });
-    it(`should return pattern properties when "isPattern" metadata is not undefined`, () => {
+    it(`should return pattern properties when "handlerType" metadata is not undefined`, () => {
       const metadata = instance.exploreMethodMetadata(
         test,
         Object.getPrototypeOf(test),
         'test',
       );
-      expect(metadata).to.have.keys(['methodKey', 'targetCallback', 'pattern']);
+      expect(metadata).to.have.keys([
+        'isEventHandler',
+        'methodKey',
+        'targetCallback',
+        'pattern',
+      ]);
       expect(metadata.pattern).to.eql(pattern);
     });
   });

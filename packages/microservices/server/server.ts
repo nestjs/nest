@@ -21,9 +21,11 @@ export abstract class Server {
 
   public addHandler(
     pattern: any,
-    callback: <T>(data: T) => Promise<Observable<any>>,
+    callback: MessageHandler,
+    isEventHandler = false,
   ) {
     const key = isString(pattern) ? pattern : JSON.stringify(pattern);
+    callback.isEventHandler = isEventHandler;
     this.messageHandlers.set(key, callback);
   }
 

@@ -222,5 +222,6 @@ export class NestContainer {
 
   public registerCoreModuleRef(moduleRef: Module) {
     this.internalCoreModule = moduleRef;
+    this.modules[InternalCoreModule.name] = moduleRef;
   }
 }

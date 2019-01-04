@@ -3,6 +3,8 @@ import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
+import { ApplicationConfig } from '../../application-config';
+import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { ExternalContextCreator } from '../../helpers/external-context-creator';
@@ -40,6 +42,10 @@ describe('ExternalContextCreator', () => {
       new ModulesContainer(),
       new PipesContextCreator(new NestContainer()),
       consumer,
+      new ExternalExceptionFilterContext(
+        new NestContainer(),
+        new ApplicationConfig(),
+      ),
     );
   });
   describe('create', () => {

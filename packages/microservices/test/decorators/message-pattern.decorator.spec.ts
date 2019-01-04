@@ -1,10 +1,9 @@
 import { expect } from 'chai';
 import { PATTERN_METADATA } from '../../constants';
 import {
-  MessagePattern,
   GrpcMethod,
-  createMethodMetadata,
-} from '../../decorators/pattern.decorator';
+  MessagePattern,
+} from '../../decorators/message-pattern.decorator';
 
 describe('@MessagePattern', () => {
   const pattern = { role: 'test' };

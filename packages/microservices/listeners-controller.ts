@@ -36,31 +36,37 @@ export class ListenersController {
     const module = this.container.getModuleByKey(moduleKey);
     const collection = module.controllers;
 
-    patternHandlers.forEach(({ pattern, targetCallback, methodKey }) => {
-      if (isStatic) {
-        const proxy = this.contextCreator.create(
-          instance,
-          targetCallback,
-          moduleKey,
+    patternHandlers.forEach(
+      ({ pattern, targetCallback, methodKey, isEventHandler }) => {
+        if (isStatic) {
+          const proxy = this.contextCreator.create(
+            instance,
+            targetCallback,
+            moduleKey,
+          );
+          return server.addHandler(pattern, proxy, isEventHandler);
+        }
+        server.addHandler(
+          pattern,
+          data => {
+            const contextId = createContextId();
+            const contextInstance = this.injector.loadPerContext(
+              instance,
+              module,
+              collection,
+              contextId,
+            );
+            const proxy = this.contextCreator.create(
+              contextInstance,
+              contextInstance[methodKey],
+              moduleKey,
+            );
+            return proxy(data);
+          },
+          isEventHandler,
         );
-        return server.addHandler(pattern, proxy);
-      }
-      server.addHandler(pattern, data => {
-        const contextId = createContextId();
-        const contextInstance = this.injector.loadPerContext(
-          instance,
-          module,
-          collection,
-          contextId,
-        );
-        const proxy = this.contextCreator.create(
-          contextInstance,
-          contextInstance[methodKey],
-          moduleKey,
-        );
-        return proxy(data);
-      });
-    });
+      },
+    );
   }
 
   public bindClientsToProperties(instance: Controller) {

@@ -7,6 +7,7 @@ import {
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
 } from './constants';
+import { PatternHandler } from './enums/pattern-handler.enum';
 import { ClientOptions } from './interfaces/client-metadata.interface';
 import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 
@@ -18,6 +19,7 @@ export interface ClientProperties {
 export interface PatternProperties {
   pattern: PatternMetadata;
   methodKey: string;
+  isEventHandler: boolean;
   targetCallback: (...args: any[]) => any;
 }
 
@@ -40,19 +42,19 @@ export class ListenerMetadataExplorer {
     methodKey: string,
   ): PatternProperties {
     const targetCallback = instancePrototype[methodKey];
-    const isPattern = Reflect.getMetadata(
+    const handlerType = Reflect.getMetadata(
       PATTERN_HANDLER_METADATA,
       targetCallback,
     );
-
-    if (isUndefined(isPattern)) {
-      return null;
+    if (isUndefined(handlerType)) {
+      return;
     }
     const pattern = Reflect.getMetadata(PATTERN_METADATA, targetCallback);
     return {
       methodKey,
       targetCallback,
       pattern,
+      isEventHandler: handlerType === PatternHandler.EVENT,
     };
   }
 

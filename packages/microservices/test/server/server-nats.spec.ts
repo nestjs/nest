@@ -1,10 +1,14 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_PATTERN_MESSAGE } from '../../constants';
+import { NO_MESSAGE_HANDLER } from '../../constants';
 import { ServerNats } from '../../server/server-nats';
 
 describe('ServerNats', () => {
   let server: ServerNats;
+
+  const objectToMap = obj =>
+    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
   beforeEach(() => {
     server = new ServerNats({});
   });
@@ -55,10 +59,6 @@ describe('ServerNats', () => {
     it('should subscribe to each acknowledge patterns', () => {
       const pattern = 'test';
       const handler = sinon.spy();
-
-      const objectToMap = obj =>
-        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
-
       (server as any).messageHandlers = objectToMap({
         [pattern]: handler,
       });
@@ -96,21 +96,23 @@ describe('ServerNats', () => {
       getPublisherSpy = sinon.spy();
       sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
     });
-    it(`should publish NO_PATTERN_MESSAGE if pattern not exists in messageHandlers object`, () => {
+    it('should call "handleEvent" if identifier is not present', () => {
+      const handleEventSpy = sinon.spy(server, 'handleEvent');
+      server.handleMessage(channel, { pattern: '', data: '' }, null, '');
+      expect(handleEventSpy.called).to.be.true;
+    });
+    it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, () => {
       server.handleMessage(channel, { id, pattern: '', data: '' }, null, '');
       expect(
         getPublisherSpy.calledWith({
           id,
           status: 'error',
-          err: NO_PATTERN_MESSAGE,
+          err: NO_MESSAGE_HANDLER,
         }),
       ).to.be.true;
     });
     it(`should call handler with expected arguments`, () => {
       const handler = sinon.spy();
-      const objectToMap = obj =>
-        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
-
       (server as any).messageHandlers = objectToMap({
         [channel]: handler,
       });
@@ -140,6 +142,20 @@ describe('ServerNats', () => {
       const respond = 'test';
       publisher({ respond, id });
       expect(publisherSpy.calledWith(replyTo, { respond, id })).to.be.true;
+    });
+  });
+  describe('handleEvent', () => {
+    const channel = 'test';
+    const data = 'test';
+
+    it('should call handler with expected arguments', () => {
+      const handler = sinon.spy();
+      (server as any).messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+
+      server.handleEvent(channel, { pattern: '', data });
+      expect(handler.calledWith(data)).to.be.true;
     });
   });
 });

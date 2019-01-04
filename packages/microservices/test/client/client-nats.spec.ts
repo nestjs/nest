@@ -242,4 +242,29 @@ describe('ClientNats', () => {
       expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
     });
   });
+  describe('dispatchEvent', () => {
+    const msg = { pattern: 'pattern', data: 'data' };
+    let publishStub: sinon.SinonStub, natsClient;
+
+    beforeEach(() => {
+      publishStub = sinon.stub();
+      natsClient = {
+        publish: publishStub,
+      };
+      (client as any).natsClient = natsClient;
+    });
+
+    it('should publish packet', async () => {
+      publishStub.callsFake((a, b, c) => c());
+      await client['dispatchEvent'](msg);
+
+      expect(publishStub.called).to.be.true;
+    });
+    it('should throw error', async () => {
+      publishStub.callsFake((a, b, c) => c(new Error()));
+      client['dispatchEvent'](msg).catch(err =>
+        expect(err).to.be.instanceOf(Error),
+      );
+    });
+  });
 });

@@ -21,6 +21,7 @@ import {
 export abstract class ClientProxy {
   public abstract connect(): Promise<any>;
   public abstract close(): any;
+
   protected routingMap = new Map<string, Function>();
 
   public send<TResult = any, TInput = any>(
@@ -41,10 +42,24 @@ export abstract class ClientProxy {
     );
   }
 
+  public emit<TResult = any, TInput = any>(
+    pattern: any,
+    data: TInput,
+  ): Observable<TResult> {
+    if (isNil(pattern) || isNil(data)) {
+      return _throw(new InvalidMessageException());
+    }
+    return defer(async () => this.connect()).pipe(
+      mergeMap(() => this.dispatchEvent({ pattern, data })),
+    );
+  }
+
   protected abstract publish(
     packet: ReadPacket,
     callback: (packet: WritePacket) => void,
-  ): Function | void;
+  ): Function;
+
+  protected abstract dispatchEvent<T = any>(packet: ReadPacket): Promise<T>;
 
   protected createObserver<T>(
     observer: Observer<T>,

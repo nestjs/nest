@@ -1,9 +1,11 @@
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
-  NO_PATTERN_MESSAGE,
+  NO_EVENT_HANDLER,
+  NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_URL,
 } from '../constants';
 import {
@@ -52,9 +54,12 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   public bindEvents(subClient: RedisClient, pubClient: RedisClient) {
     subClient.on(MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
     const subscribePatterns = [...this.messageHandlers.keys()];
-    subscribePatterns.forEach(pattern =>
-      subClient.subscribe(this.getAckQueueName(pattern)),
-    );
+    subscribePatterns.forEach(pattern => {
+      const { isEventHandler } = this.messageHandlers.get(pattern);
+      subClient.subscribe(
+        isEventHandler ? pattern : this.getAckQueueName(pattern),
+      );
+    });
   }
 
   public close() {
@@ -81,18 +86,29 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     pub: RedisClient,
   ) {
     const packet = this.deserialize(buffer);
+    if (isUndefined(packet.id)) {
+      return this.handleEvent(channel, packet);
+    }
     const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(pub, pattern, packet.id);
     const handler = this.getHandlerByPattern(pattern);
 
     if (!handler) {
       const status = 'error';
-      return publish({ id: packet.id, status, err: NO_PATTERN_MESSAGE });
+      return publish({ id: packet.id, status, err: NO_MESSAGE_HANDLER });
     }
     const response$ = this.transformToObservable(
       await handler(packet.data),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
+  }
+
+  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
+    const handler = this.getHandlerByPattern(pattern);
+    if (!handler) {
+      return this.logger.error(NO_EVENT_HANDLER);
+    }
+    await handler(packet.data);
   }
 
   public getPublisher(pub: RedisClient, pattern: any, id: string) {

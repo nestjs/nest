@@ -177,7 +177,13 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     );
   }
 
-  protected publish(partialPacket: any, callback: (packet: any) => any) {
+  protected publish(packet: any, callback: (packet: any) => any): any {
+    throw new Error(
+      'Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).',
+    );
+  }
+
+  protected async dispatchEvent(packet: any): Promise<any> {
     throw new Error(
       'Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).',
     );

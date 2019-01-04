@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
+import { expect } from 'chai';
 import * as request from 'supertest';
 import { NatsController } from '../src/nats/nats.controller';
 
@@ -79,6 +80,18 @@ describe('NATS transport', () => {
       .expect(200, {
         message: 'test',
         status: 'error',
+      });
+  });
+
+  it(`/POST (event notification)`, done => {
+    request(server)
+      .post('/notify')
+      .send([1, 2, 3, 4, 5])
+      .end(() => {
+        setTimeout(() => {
+          expect(NatsController.IS_NOTIFIED).to.be.true;
+          done();
+        }, 1000);
       });
   });
 

@@ -30,8 +30,9 @@ export class RoutesResolver implements Resolver {
       config,
       container.getHttpAdapterRef(),
     );
+    const metadataScanner = new MetadataScanner();
     this.routerBuilder = new RouterExplorer(
-      new MetadataScanner(),
+      metadataScanner,
       this.container,
       this.injector,
       this.routerProxy,

@@ -1,9 +1,11 @@
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
   NATS_DEFAULT_URL,
-  NO_PATTERN_MESSAGE,
+  NO_EVENT_HANDLER,
+  NO_MESSAGE_HANDLER,
 } from '../constants';
 import { Client } from '../external/nats-client.interface';
 import { CustomTransportStrategy, PacketId } from '../interfaces';
@@ -79,20 +81,31 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
   public async handleMessage(
     channel: string,
-    message: ReadPacket & PacketId,
+    message: ReadPacket & Partial<PacketId>,
     client: Client,
     replyTo: string,
   ) {
+    if (isUndefined(message.id)) {
+      return this.handleEvent(channel, message);
+    }
     const publish = this.getPublisher(client, replyTo, message.id);
     const handler = this.getHandlerByPattern(channel);
     if (!handler) {
       const status = 'error';
-      return publish({ id: message.id, status, err: NO_PATTERN_MESSAGE });
+      return publish({ id: message.id, status, err: NO_MESSAGE_HANDLER });
     }
     const response$ = this.transformToObservable(
       await handler(message.data),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
+  }
+
+  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
+    const handler = this.getHandlerByPattern(pattern);
+    if (!handler) {
+      return this.logger.error(NO_EVENT_HANDLER);
+    }
+    await handler(packet.data);
   }
 
   public getPublisher(publisher: Client, replyTo: string, id: string) {

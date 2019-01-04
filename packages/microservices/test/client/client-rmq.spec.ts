@@ -322,4 +322,29 @@ describe('ClientRQM', () => {
       expect(clientCloseSpy.called).to.be.true;
     });
   });
+  describe('dispatchEvent', () => {
+    const msg = { pattern: 'pattern', data: 'data' };
+    let sendToQueueStub: sinon.SinonStub, channel;
+
+    beforeEach(() => {
+      sendToQueueStub = sinon.stub();
+      channel = {
+        sendToQueue: sendToQueueStub,
+      };
+      (client as any).channel = channel;
+    });
+
+    it('should publish packet', async () => {
+      sendToQueueStub.callsFake((a, b, c, d) => d());
+      await client['dispatchEvent'](msg);
+
+      expect(sendToQueueStub.called).to.be.true;
+    });
+    it('should throw error', async () => {
+      sendToQueueStub.callsFake((a, b, c, d) => d(new Error()));
+      client['dispatchEvent'](msg).catch(err =>
+        expect(err).to.be.instanceOf(Error),
+      );
+    });
+  });
 });

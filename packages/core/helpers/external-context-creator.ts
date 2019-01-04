@@ -12,7 +12,12 @@ import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
+import { ExternalExceptionFilterContext } from './../exceptions/external-exception-filter-context';
+import { STATIC_CONTEXT } from './../injector/constants';
+import { ContextId } from './../injector/instance-wrapper';
 import { ContextUtils, ParamProperties } from './context-utils';
+import { ExternalErrorProxy } from './external-proxy';
+import { HandlerMetadataStorage } from './handler-metadata-storage';
 
 export interface ParamsMetadata {
   [prop: number]: {
@@ -25,8 +30,22 @@ export interface ParamsFactory {
   exchangeKeyForValue(type: number, data: ParamData, args: any): any;
 }
 
+export interface ExternalHandlerMetadata {
+  argsLength: number;
+  paramtypes: any[];
+  getParamsMetadata: (
+    moduleKey: string,
+    contextId?: ContextId,
+    inquirerId?: string,
+  ) => (ParamProperties & { metatype?: any })[];
+}
+
 export class ExternalContextCreator {
   private readonly contextUtils = new ContextUtils();
+  private readonly externalErrorProxy = new ExternalErrorProxy();
+  private readonly handlerMetadataStorage = new HandlerMetadataStorage<
+    ExternalHandlerMetadata
+  >();
 
   constructor(
     private readonly guardsContextCreator: GuardsContextCreator,
@@ -36,17 +55,38 @@ export class ExternalContextCreator {
     private readonly modulesContainer: ModulesContainer,
     private readonly pipesContextCreator: PipesContextCreator,
     private readonly pipesConsumer: PipesConsumer,
+    private readonly filtersContextCreator: ExternalExceptionFilterContext,
   ) {}
 
   static fromContainer(container: NestContainer): ExternalContextCreator {
+    const guardsContextCreator = new GuardsContextCreator(
+      container,
+      container.applicationConfig,
+    );
+    const guardsConsumer = new GuardsConsumer();
+    const interceptorsContextCreator = new InterceptorsContextCreator(
+      container,
+      container.applicationConfig,
+    );
+    const interceptorsConsumer = new InterceptorsConsumer();
+    const pipesContextCreator = new PipesContextCreator(
+      container,
+      container.applicationConfig,
+    );
+    const pipesConsumer = new PipesConsumer();
+    const filtersContextCreator = new ExternalExceptionFilterContext(
+      container,
+      container.applicationConfig,
+    );
     return new ExternalContextCreator(
-      new GuardsContextCreator(container, container.applicationConfig),
-      new GuardsConsumer(),
-      new InterceptorsContextCreator(container, container.applicationConfig),
-      new InterceptorsConsumer(),
+      guardsContextCreator,
+      guardsConsumer,
+      interceptorsContextCreator,
+      interceptorsConsumer,
       container.getModules(),
-      new PipesContextCreator(container, container.applicationConfig),
-      new PipesConsumer(),
+      pipesContextCreator,
+      pipesConsumer,
+      filtersContextCreator,
     );
   }
 
@@ -56,37 +96,53 @@ export class ExternalContextCreator {
     methodName: string,
     metadataKey?: string,
     paramsFactory?: ParamsFactory,
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ) {
     const module = this.findContextModuleName(instance.constructor);
-    const pipes = this.pipesContextCreator.create(instance, callback, module);
-    const paramtypes = this.contextUtils.reflectCallbackParamtypes(
+    const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
       instance,
       methodName,
+      metadataKey,
+      paramsFactory,
     );
-    const guards = this.guardsContextCreator.create(instance, callback, module);
+
+    const pipes = this.pipesContextCreator.create(
+      instance,
+      callback,
+      module,
+      contextId,
+      inquirerId,
+    );
+
+    const guards = this.guardsContextCreator.create(
+      instance,
+      callback,
+      module,
+      contextId,
+      inquirerId,
+    );
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
       module,
+      contextId,
+      inquirerId,
+    );
+    const exceptionFilter = this.filtersContextCreator.create(
+      instance,
+      callback,
+      module,
+      contextId,
+      inquirerId,
     );
 
-    const metadata =
-      this.contextUtils.reflectCallbackMetadata<T>(
-        instance,
-        methodName,
-        metadataKey || '',
-      ) || {};
-    const keys = Object.keys(metadata);
-    const argsLength = this.contextUtils.getArgumentsLength(keys, metadata);
-    const paramsMetadata = paramsFactory
-      ? this.exchangeKeysForValues(keys, metadata, module, paramsFactory)
-      : null;
-
+    const paramsMetadata = getParamsMetadata(module, contextId, inquirerId);
     const paramsOptions = paramsMetadata
       ? this.contextUtils.mergeParamsMetatypes(paramsMetadata, paramtypes)
       : [];
-    const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
 
+    const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
     const handler = (initialArgs: any[], ...args: any[]) => async () => {
       if (fnApplyPipes) {
         await fnApplyPipes(initialArgs, ...args);
@@ -95,7 +151,7 @@ export class ExternalContextCreator {
       return callback.apply(instance, args);
     };
 
-    return async (...args: any[]) => {
+    const target = async (...args: any[]) => {
       const initialArgs = this.contextUtils.createNullArray(argsLength);
       const canActivate = await this.guardsConsumer.tryActivate(
         guards,
@@ -115,6 +171,54 @@ export class ExternalContextCreator {
       );
       return this.transformToResult(result);
     };
+    return this.externalErrorProxy.createProxy(target, exceptionFilter);
+  }
+
+  public getMetadata<T>(
+    instance: Controller,
+    methodName: string,
+    metadataKey?: string,
+    paramsFactory?: ParamsFactory,
+  ): ExternalHandlerMetadata {
+    const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
+    if (cacheMetadata) {
+      return cacheMetadata;
+    }
+    const metadata =
+      this.contextUtils.reflectCallbackMetadata<T>(
+        instance,
+        methodName,
+        metadataKey || '',
+      ) || {};
+    const keys = Object.keys(metadata);
+    const argsLength = this.contextUtils.getArgumentsLength(keys, metadata);
+    const paramtypes = this.contextUtils.reflectCallbackParamtypes(
+      instance,
+      methodName,
+    );
+    const getParamsMetadata = (
+      moduleKey: string,
+      contextId = STATIC_CONTEXT,
+      inquirerId?: string,
+    ) =>
+      paramsFactory
+        ? this.exchangeKeysForValues(
+            keys,
+            metadata,
+            moduleKey,
+            paramsFactory,
+            contextId,
+            inquirerId,
+          )
+        : null;
+
+    const handlerMetadata: ExternalHandlerMetadata = {
+      argsLength,
+      paramtypes,
+      getParamsMetadata,
+    };
+    this.handlerMetadataStorage.set(instance, methodName, handlerMetadata);
+    return handlerMetadata;
   }
 
   public findContextModuleName(constructor: Function): string {
@@ -143,12 +247,16 @@ export class ExternalContextCreator {
     metadata: TMetadata,
     moduleContext: string,
     paramsFactory: ParamsFactory,
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
         pipesCollection,
+        contextId,
+        inquirerId,
       );
       const type = this.contextUtils.mapParamType(key);
 

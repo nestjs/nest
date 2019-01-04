@@ -4,7 +4,7 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { EventEmitter } from 'events';
 import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
-import { ClientOptions, RmqOptions } from '../interfaces';
+import { ClientOptions, ReadPacket, RmqOptions } from '../interfaces';
 import {
   DISCONNECT_EVENT,
   ERROR_EVENT,
@@ -79,7 +79,10 @@ export class ClientRMQ extends ClientProxy {
 
     const connect$ = this.connect$(this.client);
     this.connection = this.mergeDisconnectEvent(this.client, connect$)
-      .pipe(switchMap(() => this.createChannel()), share())
+      .pipe(
+        switchMap(() => this.createChannel()),
+        share(),
+      )
       .toPromise();
     return this.connection;
   }
@@ -124,28 +127,8 @@ export class ClientRMQ extends ClientProxy {
     resolve();
   }
 
-  protected publish(
-    message: any,
-    callback: (packet: WritePacket) => any,
-  ): Function {
-    try {
-      const correlationId = randomStringGenerator();
-      const listener = ({ content }: { content: any }) =>
-        this.handleMessage(JSON.parse(content.toString()), callback);
-
-      this.responseEmitter.on(correlationId, listener);
-      this.channel.sendToQueue(
-        this.queue,
-        Buffer.from(JSON.stringify(message)),
-        {
-          replyTo: this.replyQueue,
-          correlationId,
-        },
-      );
-      return () => this.responseEmitter.removeListener(correlationId, listener);
-    } catch (err) {
-      callback({ err });
-    }
+  public handleError(client: any): void {
+    client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 
   public handleMessage(
@@ -166,7 +149,39 @@ export class ClientRMQ extends ClientProxy {
     });
   }
 
-  public handleError(client: any): void {
-    client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
+  protected publish(
+    message: ReadPacket,
+    callback: (packet: WritePacket) => any,
+  ): Function {
+    try {
+      const correlationId = randomStringGenerator();
+      const listener = ({ content }: { content: any }) =>
+        this.handleMessage(JSON.parse(content.toString()), callback);
+
+      Object.assign(message, { id: correlationId });
+      this.responseEmitter.on(correlationId, listener);
+      this.channel.sendToQueue(
+        this.queue,
+        Buffer.from(JSON.stringify(message)),
+        {
+          replyTo: this.replyQueue,
+          correlationId,
+        },
+      );
+      return () => this.responseEmitter.removeListener(correlationId, listener);
+    } catch (err) {
+      callback({ err });
+    }
+  }
+
+  protected dispatchEvent(packet: ReadPacket): Promise<any> {
+    return new Promise((resolve, reject) =>
+      this.channel.sendToQueue(
+        this.queue,
+        Buffer.from(JSON.stringify(packet)),
+        {},
+        err => (err ? reject(err) : resolve()),
+      ),
+    );
   }
 }

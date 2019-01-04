@@ -245,4 +245,12 @@ describe('ClientGrpcProxy', () => {
       client.connect().catch(error => expect(error).to.be.instanceof(Error));
     });
   });
+
+  describe('dispatchEvent', () => {
+    it('should throw exception', () => {
+      client['dispatchEvent'](null).catch(error =>
+        expect(error).to.be.instanceof(Error),
+      );
+    });
+  });
 });

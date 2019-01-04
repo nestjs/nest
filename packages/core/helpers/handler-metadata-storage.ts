@@ -18,18 +18,15 @@ export interface HandlerMetadata {
   ) => any;
 }
 
-export class HandlerMetadataStorage<T = any> {
-  private readonly [HANDLER_METADATA_SYMBOL] = new Map<
-    string,
-    HandlerMetadata
-  >();
+export class HandlerMetadataStorage<TValue = HandlerMetadata, TKey = any> {
+  private readonly [HANDLER_METADATA_SYMBOL] = new Map<string, TValue>();
 
-  set(controller: T, methodName: string, metadata: HandlerMetadata) {
+  set(controller: TKey, methodName: string, metadata: TValue) {
     const metadataKey = this.getMetadataKey(controller, methodName);
     this[HANDLER_METADATA_SYMBOL].set(metadataKey, metadata);
   }
 
-  get(controller: T, methodName: string): HandlerMetadata | undefined {
+  get(controller: TKey, methodName: string): TValue | undefined {
     const metadataKey = this.getMetadataKey(controller, methodName);
     return this[HANDLER_METADATA_SYMBOL].get(metadataKey);
   }

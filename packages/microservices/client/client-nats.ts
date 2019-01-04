@@ -103,4 +103,13 @@ export class ClientNats extends ClientProxy {
       callback({ err });
     }
   }
+
+  protected dispatchEvent(packet: ReadPacket): Promise<any> {
+    const pattern = this.normalizePattern(packet.pattern);
+    return new Promise((resolve, reject) =>
+      this.natsClient.publish(pattern, packet as any, err =>
+        err ? reject(err) : resolve(),
+      ),
+    );
+  }
 }

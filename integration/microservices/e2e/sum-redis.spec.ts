@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
+import { expect } from 'chai';
 import * as request from 'supertest';
 import { RedisController } from '../src/redis/redis.controller';
 
@@ -68,6 +69,18 @@ describe('REDIS transport', () => {
       .post('/stream')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
+  });
+
+  it(`/POST (event notification)`, done => {
+    request(server)
+      .post('/notify')
+      .send([1, 2, 3, 4, 5])
+      .end(() => {
+        setTimeout(() => {
+          expect(RedisController.IS_NOTIFIED).to.be.true;
+          done();
+        }, 1000);
+      });
   });
 
   afterEach(async () => {

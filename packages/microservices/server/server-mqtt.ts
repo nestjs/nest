@@ -1,10 +1,12 @@
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
   MQTT_DEFAULT_URL,
-  NO_PATTERN_MESSAGE,
+  NO_EVENT_HANDLER,
+  NO_MESSAGE_HANDLER,
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
 import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
@@ -43,9 +45,12 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   public bindEvents(mqttClient: MqttClient) {
     mqttClient.on(MESSAGE_EVENT, this.getMessageHandler(mqttClient).bind(this));
     const registeredPatterns = [...this.messageHandlers.keys()];
-    registeredPatterns.forEach(pattern =>
-      mqttClient.subscribe(this.getAckQueueName(pattern)),
-    );
+    registeredPatterns.forEach(pattern => {
+      const { isEventHandler } = this.messageHandlers.get(pattern);
+      mqttClient.subscribe(
+        isEventHandler ? pattern : this.getAckQueueName(pattern),
+      );
+    });
   }
 
   public close() {
@@ -53,7 +58,10 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public createMqttClient(): MqttClient {
-    return mqttPackage.connect(this.url, this.options as MqttOptions);
+    return mqttPackage.connect(
+      this.url,
+      this.options as MqttOptions,
+    );
   }
 
   public getMessageHandler(pub: MqttClient): Function {
@@ -67,18 +75,29 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     pub: MqttClient,
   ): Promise<any> {
     const packet = this.deserialize(buffer.toString());
+    if (isUndefined(packet.id)) {
+      return this.handleEvent(channel, packet);
+    }
     const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(pub, pattern, packet.id);
     const handler = this.getHandlerByPattern(pattern);
 
     if (!handler) {
       const status = 'error';
-      return publish({ id: packet.id, status, err: NO_PATTERN_MESSAGE });
+      return publish({ id: packet.id, status, err: NO_MESSAGE_HANDLER });
     }
     const response$ = this.transformToObservable(
       await handler(packet.data),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
+  }
+
+  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
+    const handler = this.getHandlerByPattern(pattern);
+    if (!handler) {
+      return this.logger.error(NO_EVENT_HANDLER);
+    }
+    await handler(packet.data);
   }
 
   public getPublisher(client: MqttClient, pattern: any, id: string): any {

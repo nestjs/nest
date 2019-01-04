@@ -104,8 +104,19 @@ export class Logger implements LoggerService {
       ? `${color('Object:')}\n${JSON.stringify(message, null, 2)}\n`
       : color(message);
 
+    const localeStringOptions = {
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      day: '2-digit',
+      month: '2-digit',
+    };
+    const timestamp = new Date(Date.now()).toLocaleString(
+      undefined,
+      localeStringOptions,
+    );
     process.stdout.write(color(`[Nest] ${process.pid}   - `));
-    process.stdout.write(`${new Date(Date.now()).toLocaleString()}   `);
+    process.stdout.write(`${timestamp}   `);
 
     context && process.stdout.write(yellow(`[${context}] `));
     process.stdout.write(output);
