@@ -1,3 +1,3 @@
 export interface OnApplicationShutdown {
-  onApplicationShutdown(signal: string): any;
+  onApplicationShutdown(signal?: string): any;
 }

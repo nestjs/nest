@@ -21,7 +21,7 @@ function hasOnAppBootstrapHook(instance: unknown): instance is OnApplicationShut
 /**
  * Calls the given instances
  */
-function callOperator(instances: InstanceWrapper[], signal: string): Promise<any>[] {
+function callOperator(instances: InstanceWrapper[], signal?: string): Promise<any>[] {
   return iterate(instances)
     .filter(instance => !isNil(instance))
     .filter(hasOnAppBootstrapHook)
@@ -35,7 +35,7 @@ function callOperator(instances: InstanceWrapper[], signal: string): Promise<any
  *
  * @param module The module which will be initialized
  */
-export async function callAppShutdownHook(module: Module, signal: string): Promise<any> {
+export async function callAppShutdownHook(module: Module, signal?: string): Promise<any> {
   const providers = [...module.providers];
   // Module (class) instance is the first element of the providers array
   // Lifecycle hook has to be called once all classes are properly initialized

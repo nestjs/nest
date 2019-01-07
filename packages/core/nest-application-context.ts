@@ -65,6 +65,7 @@ export class NestApplicationContext implements INestApplicationContext {
 
   public async close(): Promise<void> {
     await this.callDestroyHook();
+    await this.callShutdownHook();
   }
 
   public useLogger(logger: LoggerService) {
@@ -74,7 +75,7 @@ export class NestApplicationContext implements INestApplicationContext {
   protected listenToShutdownSignals() {
     SHUTDOWN_SIGNALS.forEach((signal: any) =>
       process.on(signal, async () => {
-        await this.close();
+        await this.callDestroyHook();
         await this.callShutdownHook(signal);
       }),
     );
@@ -117,7 +118,7 @@ export class NestApplicationContext implements INestApplicationContext {
    * Calls the `onApplicationShutdown` function on the registered
    * modules and children.
    */
-  protected async callShutdownHook(signal: string): Promise<void> {
+  protected async callShutdownHook(signal?: string): Promise<void> {
     const modulesContainer = this.container.getModules();
     for (const module of [...modulesContainer.values()].reverse()) {
       await callAppShutdownHook(module, signal);
