@@ -5,10 +5,12 @@ import { NestContainer } from './injector/container';
 import { ContainerScanner } from './injector/container-scanner';
 import { Module } from './injector/module';
 import { ModuleTokenFactory } from './injector/module-token-factory';
-import { callModuleInitHook } from './hooks/on-module-init.hook';
-import { callModuleBootstrapHook } from './hooks/on-app-bootstrap.hook';
-import { callModuleDestroyHook } from './hooks/on-module-destroy.hook';
-import { callAppShutdownHook } from './hooks/on-app-shutdown.hook';
+import {
+  callModuleInitHook,
+  callModuleBootstrapHook,
+  callModuleDestroyHook,
+  callAppShutdownHook,
+} from './hooks';
 import { SHUTDOWN_SIGNALS } from './constants';
 
 export class NestApplicationContext implements INestApplicationContext {
