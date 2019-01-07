@@ -8,6 +8,8 @@ import { ModuleTokenFactory } from './injector/module-token-factory';
 import { callModuleInitHook } from './hooks/on-module-init.hook';
 import { callModuleBootstrapHook } from './hooks/on-app-bootstrap.hook';
 import { callModuleDestroyHook } from './hooks/on-module-destroy.hook';
+import { callAppShutdownHook } from './hooks/on-app-shutdown.hook';
+import { SHUTDOWN_SIGNALS } from './constants';
 
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
@@ -55,6 +57,7 @@ export class NestApplicationContext implements INestApplicationContext {
   public async init(): Promise<this> {
     await this.callInitHook();
     await this.callBootstrapHook();
+    await this.listenToShutdownSignals();
     return this;
   }
 
@@ -66,8 +69,17 @@ export class NestApplicationContext implements INestApplicationContext {
     Logger.overrideLogger(logger);
   }
 
+  protected listenToShutdownSignals() {
+    SHUTDOWN_SIGNALS.forEach((signal: any) =>
+      process.on(signal, async () => {
+        await this.close();
+        await this.callShutdownHook(signal);
+      }),
+    );
+  }
+
   /**
-   * Calls the `callInitHook` function on the registered
+   * Calls the `onModuleInit` function on the registered
    * modules and its children.
    */
   protected async callInitHook(): Promise<void> {
@@ -78,7 +90,7 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   /**
-   * Calls the `callDestroyHook` function on the registered
+   * Calls the `onModuleDestroy` function on the registered
    * modules and its children.
    */
   protected async callDestroyHook(): Promise<void> {
@@ -96,6 +108,17 @@ export class NestApplicationContext implements INestApplicationContext {
     const modulesContainer = this.container.getModules();
     for (const module of [...modulesContainer.values()].reverse()) {
       await callModuleBootstrapHook(module);
+    }
+  }
+
+  /**
+   * Calls the `onApplicationShutdown` function on the registered
+   * modules and children.
+   */
+  protected async callShutdownHook(signal: string): Promise<void> {
+    const modulesContainer = this.container.getModules();
+    for (const module of [...modulesContainer.values()].reverse()) {
+      await callAppShutdownHook(module, signal);
     }
   }
 
