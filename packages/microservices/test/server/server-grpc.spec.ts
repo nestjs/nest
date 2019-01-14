@@ -51,10 +51,16 @@ describe('ServerGrpc', () => {
     });
     describe('when package exist', () => {
       it('should call "addService"', async () => {
-        const serviceNames = ['test', 'test2'];
+        const serviceNames = [{
+          name: 'test',
+          service: true
+        }, {
+          name: 'test2',
+          service: true
+        }];
         sinon.stub(server, 'lookupPackage').callsFake(() => ({
-          test: true,
-          test2: true,
+          test: {service: true},
+          test2: {service: true}
         }));
         sinon.stub(server, 'getServiceNames').callsFake(() => serviceNames);
 
@@ -73,7 +79,16 @@ describe('ServerGrpc', () => {
         key2: { service: true },
         key3: { service: false },
       };
-      const expected = ['key', 'key2'];
+      const expected = [
+        {
+          name: 'key',
+          service: {service: true}
+        },
+        {
+          name: 'key2',
+          service: {service: true}
+        }
+      ];
       expect(server.getServiceNames(obj)).to.be.eql(expected);
     });
   });
@@ -223,6 +238,59 @@ describe('ServerGrpc', () => {
     it(`should not parse argument if it is not an object`, () => {
       const content = 'test';
       expect(server.deserialize(content)).to.equal(content);
+    });
+  });
+
+  describe('proto interfaces parser should account for package namespaces', () => {
+    it('should parse multi-level proto package tree"', () => {
+      const grpcPkg = {
+        A: {
+          C: {
+            E: {
+              service: {
+                serviceName: {}
+              }
+            }
+          }
+        },
+        B: {
+          D: {
+            service: {
+              serviceName: {}
+            }
+          }
+        }
+      };
+      const svcs = server.getServiceNames(grpcPkg);
+      expect(svcs.length).to
+        .be.equal(
+          2,
+        'Amount of services collected from namespace should be equal 2'
+      );
+      expect(svcs[0].name).to.be.equal('A.C.E');
+      expect(svcs[1].name).to.be.equal('B.D');
+    });
+    it('should parse single level proto package tree"', () => {
+      const grpcPkg = {
+        A: {
+          service: {
+            serviceName: {}
+          }
+        },
+        B: {
+          service: {
+            serviceName: {}
+          }
+        }
+      };
+      const services = server.getServiceNames(grpcPkg);
+      expect(services.length).to
+        .be.equal(
+        2,
+        'Amount of services collected from namespace should be equal 2'
+      );
+      expect(services[0].name).to.be.equal('A');
+      expect(services[1].name).to.be.equal('B');
     });
   });
 });

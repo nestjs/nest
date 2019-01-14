@@ -55,16 +55,32 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       this.logger.error(invalidPackageError.message, invalidPackageError.stack);
       throw invalidPackageError;
     }
-    for (const name of this.getServiceNames(grpcPkg)) {
+    // Take all of the services defined in grpcPkg and assign them to
+    // method handlers defined in Controllers
+    for (const definition of this.getServiceNames(grpcPkg)) {
       this.grpcClient.addService(
-        grpcPkg[name].service,
-        await this.createService(grpcPkg[name], name),
+        // First parameter requires exact service definition from proto
+        definition.service.service,
+        // Here full proto definition required along with namespaced pattern name
+        await this.createService(definition.service, definition.name)
       );
     }
   }
 
-  public getServiceNames(grpcPkg: any) {
-    return Object.keys(grpcPkg).filter(name => grpcPkg[name].service);
+  /**
+   * Will return all of the services along with their fully namespaced
+   * names as an array of objects.
+   *
+   * This method initiates recursive scan of grpcPkg object
+   *
+   * @param grpcPkg
+   */
+  public getServiceNames(grpcPkg: any): {name: string, service: any}[] {
+    // Define accumulator to collect all of the services available to load
+    const services: {name: string, service: any}[] = [];
+    // Initiate recursive services collector starting with empty name
+    this._getServiceNamesCollector('', grpcPkg, services);
+    return services;
   }
 
   public async createService(grpcService: any, name: string) {
@@ -175,6 +191,60 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
       this.logger.error(message, invalidProtoError.stack);
       throw invalidProtoError;
+    }
+  }
+
+  /**
+   * Recursively fetch all of the service methods available on loaded
+   * protobuf descriptor object, and collect those as an objects with
+   * dot-syntax full-path names.
+   *
+   * Example:
+   *  for proto package Bundle.FirstService with service Events { rpc...
+   *  will be resolved to object of (while loaded for Bundle package):
+   *    {
+   *      name: "FirstService.Events",
+   *      service: {Object}
+   *    }
+   *
+   * @param name
+   * @param grpcDefinition
+   * @param accumulator
+   * @private
+   */
+  private _getServiceNamesCollector(name, grpcDefinition, accumulator) {
+    // Confirm that next definition to unwrap is an object
+    if (typeof grpcDefinition !== 'object')
+    // Exit for non objects
+      return;
+    // Collect keys for traverse
+    const keys = Object.keys(grpcDefinition);
+    // Traverse definitions or namespace extensions
+    for (const key of keys) {
+      // Define name extension variable
+      let nameExtended = '';
+      // If depth is zero then just add key
+      if (name.length === 0)
+        nameExtended = key;
+      // If depth non-zero then add next through dot syntax
+      else
+        nameExtended = name + '.' + key;
+      // Take nested object
+      const nested = grpcDefinition[key];
+      // Check if it's in depth with service definition available
+      const requirement1 = typeof nested.service !== 'undefined';
+      // Check if first requirement passable and service isn't a boolean value
+      const requirement2 = requirement1 ? nested.service !== false : false;
+      // Check if both requirements satisfied
+      if (requirement1 && requirement2) {
+        // Add new service object to accumulator
+        accumulator.push({
+          name: nameExtended,
+          service: nested
+        });
+      } else
+      // Continue recursion until objects end or service definition found
+        this._getServiceNamesCollector(nameExtended, nested, accumulator);
     }
   }
 }
