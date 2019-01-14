@@ -3,8 +3,10 @@ import { fromEvent } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
+  GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+  GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
   GRPC_DEFAULT_PROTO_LOADER,
-  GRPC_DEFAULT_URL,
+  GRPC_DEFAULT_URL
 } from '../constants';
 import { InvalidGrpcPackageException } from '../exceptions/errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/errors/invalid-proto-definition.exception';
@@ -154,7 +156,10 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public createClient(): any {
-    const server = new grpcPackage.Server();
+    const server = new grpcPackage.Server({
+      'grpc.max_send_message_length': this.getOptionsProp<GrpcOptions>(this.options, 'maxSendMessageLength', GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH),
+      'grpc.max_receive_message_length': this.getOptionsProp<GrpcOptions>(this.options, 'maxReceiveMessageLength', GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH)
+  });
     const credentials = this.getOptionsProp<GrpcOptions>(
       this.options,
       'credentials',
