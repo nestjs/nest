@@ -20,7 +20,7 @@ export interface ApplicationHost<T extends HttpServer = any> {
 export class CacheInterceptor implements NestInterceptor {
   @Optional()
   @Inject(APPLICATION_REFERENCE_HOST)
-  protected readonly applicationRefHost: ApplicationHost;
+  protected readonly applicationHost: ApplicationHost;
 
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
@@ -49,7 +49,7 @@ export class CacheInterceptor implements NestInterceptor {
   }
 
   trackBy(context: ExecutionContext): string | undefined {
-    const httpServer = this.applicationRefHost.applicationRef;
+    const httpServer = this.applicationHost.applicationRef;
     const isHttpApp = httpServer && !!httpServer.getRequestMethod;
 
     if (!isHttpApp) {

@@ -18,7 +18,6 @@ import iterate from 'iterare';
 import * as optional from 'optional';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
-import { loadAdapter } from './helpers/load-adapter';
 import { NestContainer } from './injector/container';
 import { Injector } from './injector/injector';
 import { MiddlewareContainer } from './middleware/container';
@@ -72,10 +71,6 @@ export class NestApplication extends NestApplicationContext
 
   public registerHttpServer() {
     this.httpServer = this.createServer();
-
-    const { IoAdapter } = optional('@nestjs/platform-socket.io') || ({} as any);
-    const ioAdapter = IoAdapter ? new IoAdapter(this.httpServer) : null;
-    this.config.setIoAdapter(ioAdapter);
   }
 
   public getUnderlyingHttpServer<T>(): T {
@@ -117,11 +112,7 @@ export class NestApplication extends NestApplicationContext
     if (!this.socketModule) {
       return;
     }
-    const adapter = this.config.getIoAdapter();
-    if (!adapter) {
-      return loadAdapter('@nestjs/platform-socket.io', 'WebSockets');
-    }
-    this.socketModule.register(this.container, this.config);
+    this.socketModule.register(this.container, this.config, this.httpServer);
   }
 
   public async init(): Promise<this> {

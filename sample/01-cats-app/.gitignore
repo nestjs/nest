@@ -9,9 +9,6 @@
 # misc
 npm-debug.log
 
-# example
-/quick-start
-
 # tests
 /test
 /coverage

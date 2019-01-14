@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { MODULE_INIT_MESSAGE } from '../helpers/messages';
 import { NestContainer } from './container';
 import { Injector } from './injector';
+import { InternalCoreModule } from './internal-core-module';
 import { Module } from './module';
 
 export class InstanceLoader {
@@ -35,7 +36,8 @@ export class InstanceLoader {
         await this.createInstancesOfControllers(module);
 
         const { name } = module.metatype;
-        this.logger.log(MODULE_INIT_MESSAGE`${name}`);
+        this.isModuleWhitelisted(name) &&
+          this.logger.log(MODULE_INIT_MESSAGE`${name}`);
       }),
     );
   }
@@ -86,5 +88,9 @@ export class InstanceLoader {
         this.injector.loadInjectable(wrapper, module),
       ),
     );
+  }
+
+  private isModuleWhitelisted(name: string): boolean {
+    return name !== InternalCoreModule.name;
   }
 }

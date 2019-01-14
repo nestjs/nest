@@ -40,16 +40,9 @@ export class NestMicroservice extends NestApplicationContext
   ) {
     super(container);
 
-    this.registerWsAdapter();
     this.microservicesModule.register(container, this.applicationConfig);
     this.createServer(config);
     this.selectContextModule();
-  }
-
-  public registerWsAdapter() {
-    const { IoAdapter } = optional('@nestjs/platform-socket.io') || ({} as any);
-    const ioAdapter = IoAdapter ? new IoAdapter() : null;
-    this.applicationConfig.setIoAdapter(ioAdapter);
   }
 
   public createServer(config: MicroserviceOptions) {

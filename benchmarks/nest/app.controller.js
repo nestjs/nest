@@ -7,8 +7,8 @@ var __decorate =
         c < 3
           ? target
           : desc === null
-            ? (desc = Object.getOwnPropertyDescriptor(target, key))
-            : desc,
+          ? (desc = Object.getOwnPropertyDescriptor(target, key))
+          : desc,
       d;
     if (typeof Reflect === 'object' && typeof Reflect.decorate === 'function')
       r = Reflect.decorate(decorators, target, key, desc);
@@ -42,9 +42,6 @@ __decorate(
   'root',
   null,
 );
-AppController = __decorate(
-  [common_1.Controller({ scope: common_1.Scope.REQUEST })],
-  AppController,
-);
+AppController = __decorate([common_1.Controller()], AppController);
 exports.AppController = AppController;
 //# sourceMappingURL=app.controller.js.map

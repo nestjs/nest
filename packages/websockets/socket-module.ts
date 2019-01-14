@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+import { loadAdapter } from '@nestjs/core/helpers/load-adapter';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
@@ -18,18 +19,26 @@ import { NestGateway } from './interfaces/nest-gateway.interface';
 import { SocketServerProvider } from './socket-server-provider';
 import { WebSocketsController } from './web-sockets-controller';
 
-export class SocketModule {
+export class SocketModule<HttpServer = any> {
   private readonly socketsContainer = new SocketsContainer();
   private applicationConfig: ApplicationConfig;
   private webSocketsController: WebSocketsController;
+  private isAdapterInitialized: boolean;
+  private httpServer: HttpServer | undefined;
 
-  public register(container: NestContainer, config: ApplicationConfig) {
+  public register(
+    container: NestContainer,
+    config: ApplicationConfig,
+    httpServer?: HttpServer,
+  ) {
     this.applicationConfig = config;
+    this.httpServer = httpServer;
+
+    const contextCreator = this.getContextCreator(container);
     const serverProvider = new SocketServerProvider(
       this.socketsContainer,
       config,
     );
-    const contextCreator = this.getContextCreator(container);
     this.webSocketsController = new WebSocketsController(
       serverProvider,
       config,
@@ -37,30 +46,30 @@ export class SocketModule {
     );
     const modules = container.getModules();
     modules.forEach(({ providers }, moduleName: string) =>
-      this.mergeAllGateways(providers, moduleName),
+      this.combineAllGateways(providers, moduleName),
     );
   }
 
-  public mergeAllGateways(
+  public combineAllGateways(
     providers: Map<string, InstanceWrapper<Injectable>>,
     moduleName: string,
   ) {
-    providers.forEach(wrapper =>
-      this.mergeGatewayAndServer(wrapper, moduleName),
-    );
+    [...providers.values()]
+      .filter(wrapper => wrapper && !wrapper.isNotMetatype)
+      .forEach(wrapper => this.combineGatewayAndServer(wrapper, moduleName));
   }
 
-  public mergeGatewayAndServer(
+  public combineGatewayAndServer(
     wrapper: InstanceWrapper<Injectable>,
     moduleName: string,
   ) {
-    const { instance, metatype, isNotMetatype } = wrapper;
-    if (isNotMetatype) {
-      return;
-    }
+    const { instance, metatype } = wrapper;
     const metadataKeys = Reflect.getMetadataKeys(metatype);
     if (!metadataKeys.includes(GATEWAY_METADATA)) {
       return;
+    }
+    if (!this.isAdapterInitialized) {
+      this.initializeAdapter();
     }
     this.webSocketsController.mergeGatewayAndServer(
       instance as NestGateway,
@@ -71,16 +80,35 @@ export class SocketModule {
 
   public async close(): Promise<any> {
     if (!this.applicationConfig) {
-      return undefined;
+      return;
     }
     const adapter = this.applicationConfig.getIoAdapter();
+    if (!adapter) {
+      return;
+    }
     const servers = this.socketsContainer.getAllServers();
     await Promise.all(
-      iterate(servers.values()).map(
-        async ({ server }) => server && adapter.close(server),
-      ),
+      iterate(servers.values())
+        .filter(({ server }) => server)
+        .map(async ({ server }) => adapter.close(server)),
     );
     this.socketsContainer.clear();
+  }
+
+  private initializeAdapter() {
+    const adapter = this.applicationConfig.getIoAdapter();
+    if (adapter) {
+      this.isAdapterInitialized = true;
+      return;
+    }
+    const { IoAdapter } = loadAdapter(
+      '@nestjs/platform-socket.io',
+      'WebSockets',
+    );
+    const ioAdapter = new IoAdapter(this.httpServer);
+    this.applicationConfig.setIoAdapter(ioAdapter);
+
+    this.isAdapterInitialized = true;
   }
 
   private getContextCreator(container: NestContainer): WsContextCreator {

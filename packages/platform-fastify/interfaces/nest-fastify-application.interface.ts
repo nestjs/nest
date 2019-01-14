@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { HTTPInjectOptions, HTTPInjectResponse } from 'fastify';
 
-export interface INestFastifyApplication extends INestApplication {
+export interface NestFastifyApplication extends INestApplication {
   /**
    * A wrapper function around native `fastify.register()` method.
    * Example `app.register(require('fastify-formbody'))`

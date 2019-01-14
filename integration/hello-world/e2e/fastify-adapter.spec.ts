@@ -1,20 +1,20 @@
 import {
   FastifyAdapter,
-  INestFastifyApplication,
+  NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { ApplicationModule } from '../src/app.module';
 
 describe('Hello world (fastify adapter)', () => {
-  let app: INestFastifyApplication;
+  let app: NestFastifyApplication;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       imports: [ApplicationModule],
     }).compile();
 
-    app = module.createNestApplication<INestFastifyApplication>(
+    app = module.createNestApplication<NestFastifyApplication>(
       new FastifyAdapter(),
     );
     await app.init();

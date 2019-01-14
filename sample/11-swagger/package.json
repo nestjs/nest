@@ -4,36 +4,26 @@
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "start": "ts-node src/main",
-    "prestart:prod": "tsc",
-    "start:prod": "node dist/main.js",
-    "test": "jest --config=jest.json",
-    "test:watch": "jest --watch --config=jest.json",
-    "test:coverage":
-      "jest --config=jest.json --coverage --coverageDirectory=coverage",
-    "e2e": "jest --config=e2e/jest-e2e.json --forceExit",
-    "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
+    "prestart:prod": "npm run build",
+    "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "^5.3.0",
-    "@nestjs/core": "^5.3.0",
-    "@nestjs/microservices": "^5.3.0",
-    "@nestjs/swagger": "^2.4.4",
-    "@nestjs/testing": "^5.3.0",
-    "@nestjs/websockets": "^5.3.0",
-    "class-transformer": "^0.1.7",
-    "class-validator": "^0.7.2",
+    "@nestjs/common": "^6.0.0",
+    "@nestjs/core": "^6.0.0",
+    "@nestjs/platform-express": "^6.0.0",
+    "@nestjs/swagger": "^2.5.1",
+    "class-transformer": "^0.2.0",
+    "class-validator": "^0.9.1",
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
-    "typescript": "^3.1.0"
+    "rxjs": "^6.3.3",
+    "typescript": "^3.2.2"
   },
   "devDependencies": {
-    "@types/jest": "^20.0.8",
-    "@types/node": "^7.0.41",
-    "jest": "^20.0.4",
-    "supertest": "^3.0.0",
-    "ts-jest": "^20.0.14",
-    "ts-node": "^6.0.0",
-    "tslint": "^5.9.1"
+    "@types/node": "^10.12.18",
+    "supertest": "^3.3.0",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.12.0"
   }
 }

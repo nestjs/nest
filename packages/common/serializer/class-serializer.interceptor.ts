@@ -28,6 +28,7 @@ export class ClassSerializerInterceptor implements NestInterceptor {
     const loadPkg = (pkg: any) =>
       loadPackage(pkg, 'ClassSerializerInterceptor');
     classTransformer = loadPkg('class-transformer');
+    require('class-transformer');
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
