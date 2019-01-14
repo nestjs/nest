@@ -1,6 +1,11 @@
+import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { fromEvent } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { CANCEL_EVENT, GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
+import {
+  CANCEL_EVENT,
+  GRPC_DEFAULT_PROTO_LOADER,
+  GRPC_DEFAULT_URL,
+} from '../constants';
 import { InvalidGrpcPackageException } from '../exceptions/errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/errors/invalid-proto-definition.exception';
 import { CustomTransportStrategy } from '../interfaces';
@@ -23,13 +28,11 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
 
     const protoLoader =
-      this.getOptionsProp<GrpcOptions>(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
+      this.getOptionsProp<GrpcOptions>(options, 'protoLoader') ||
+      GRPC_DEFAULT_PROTO_LOADER;
 
     grpcPackage = this.loadPackage('grpc', ServerGrpc.name);
-    grpcProtoLoaderPackage = this.loadPackage(
-      protoLoader,
-      ServerGrpc.name,
-    );
+    grpcProtoLoaderPackage = this.loadPackage(protoLoader, ServerGrpc.name);
   }
 
   public async listen(callback: () => void) {
@@ -55,6 +58,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       this.logger.error(invalidPackageError.message, invalidPackageError.stack);
       throw invalidPackageError;
     }
+
     // Take all of the services defined in grpcPkg and assign them to
     // method handlers defined in Controllers
     for (const definition of this.getServiceNames(grpcPkg)) {
@@ -62,7 +66,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         // First parameter requires exact service definition from proto
         definition.service.service,
         // Here full proto definition required along with namespaced pattern name
-        await this.createService(definition.service, definition.name)
+        await this.createService(definition.service, definition.name),
       );
     }
   }
@@ -70,16 +74,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   /**
    * Will return all of the services along with their fully namespaced
    * names as an array of objects.
-   *
    * This method initiates recursive scan of grpcPkg object
-   *
-   * @param grpcPkg
    */
-  public getServiceNames(grpcPkg: any): {name: string, service: any}[] {
+  public getServiceNames(grpcPkg: any): { name: string; service: any }[] {
     // Define accumulator to collect all of the services available to load
-    const services: {name: string, service: any}[] = [];
+    const services: { name: string; service: any }[] = [];
     // Initiate recursive services collector starting with empty name
-    this._getServiceNamesCollector('', grpcPkg, services);
+    this.collectDeepServices('', grpcPkg, services);
     return services;
   }
 
@@ -206,45 +207,45 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
    *      name: "FirstService.Events",
    *      service: {Object}
    *    }
-   *
-   * @param name
-   * @param grpcDefinition
-   * @param accumulator
-   * @private
    */
-  private _getServiceNamesCollector(name, grpcDefinition, accumulator) {
-    // Confirm that next definition to unwrap is an object
-    if (typeof grpcDefinition !== 'object')
-    // Exit for non objects
+  private collectDeepServices(
+    name: string,
+    grpcDefinition: any,
+    accumulator: { name: string; service: any }[],
+  ) {
+    if (!isObject(grpcDefinition)) {
       return;
-    // Collect keys for traverse
-    const keys = Object.keys(grpcDefinition);
+    }
+    const keysToTraverse = Object.keys(grpcDefinition);
     // Traverse definitions or namespace extensions
-    for (const key of keys) {
-      // Define name extension variable
-      let nameExtended = '';
-      // If depth is zero then just add key
-      if (name.length === 0)
-        nameExtended = key;
-      // If depth non-zero then add next through dot syntax
-      else
-        nameExtended = name + '.' + key;
-      // Take nested object
-      const nested = grpcDefinition[key];
-      // Check if it's in depth with service definition available
-      const requirement1 = typeof nested.service !== 'undefined';
-      // Check if first requirement passable and service isn't a boolean value
-      const requirement2 = requirement1 ? nested.service !== false : false;
-      // Check if both requirements satisfied
-      if (requirement1 && requirement2) {
-        // Add new service object to accumulator
+    for (const key of keysToTraverse) {
+      const nameExtended = this.parseDeepServiceName(name, key);
+      const deepDefinition = grpcDefinition[key];
+
+      const isServiceDefined = !isUndefined(deepDefinition.service);
+      const isServiceBoolean = isServiceDefined
+        ? deepDefinition.service !== false
+        : false;
+
+      if (isServiceDefined && isServiceBoolean) {
         accumulator.push({
           name: nameExtended,
-          service: nested
+          service: deepDefinition,
         });
-      } else
+      }
       // Continue recursion until objects end or service definition found
-        this._getServiceNamesCollector(nameExtended, nested, accumulator);
+      else {
+        this.collectDeepServices(nameExtended, deepDefinition, accumulator);
+      }
     }
+  }
+
+  private parseDeepServiceName(name: string, key: string): string {
+    // If depth is zero then just return key
+    if (name.length === 0) {
+      return key;
+    }
+    // Otherwise add next through dot syntax
+    return name + '.' + key;
   }
 }
