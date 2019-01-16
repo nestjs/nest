@@ -16,6 +16,7 @@
 <a href="https://travis-ci.org/nestjs/nest"><img src="https://img.shields.io/travis/nestjs/nest/master.svg?label=linux" alt="Linux" /></a>
 <a href="https://coveralls.io/github/nestjs/nest?branch=master"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#8" alt="Coverage" /></a>
 <a href="https://gitter.im/nestjs/nestjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge"><img src="https://badges.gitter.im/nestjs/nestjs.svg" alt="Gitter" /></a>
+<a href="https://discord.gg/G7Qnnhy"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
 <a href="https://opencollective.com/nest#backer"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
 <a href="https://opencollective.com/nest#sponsor"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
   <a href="https://paypal.me/kamilmysliwiec"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
@@ -48,13 +49,10 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="320" /></a>
 
-#### Gold Sponsors
-
-<a href="http://xtremis.com/"><img src="https://nestjs.com/img/logo-xtremis.svg" width="220" /></a> 
-
 #### Silver Sponsors
 <a href="https://neoteric.eu/"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" /></a> &nbsp;
-  <a href="http://gojob.com"><img src="http://nestjs.com/img/gojob-logo.png" valign="bottom" height="95" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="150" /> </a>
+  <a href="http://gojob.com"><img src="http://nestjs.com/img/gojob-logo.png" valign="bottom" height="95" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="150" /> </a> &nbsp;
+  <a href="http://xtremis.com/"><img src="https://nestjs.com/img/logo-xtremis.svg" width="150" /></a> 
 
 #### Sponsors
 
