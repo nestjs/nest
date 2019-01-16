@@ -1,5 +1,5 @@
 export interface GatewayMetadata {
-  namespace?: string;
+  namespace?: string | RegExp;
   path?: string;
   serveClient?: boolean;
   adapter?: any;
