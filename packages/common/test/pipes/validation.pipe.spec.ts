@@ -1,8 +1,26 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ArgumentMetadata } from '../../interfaces';
-import { IsString } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 import { ValidationPipe } from '../../pipes/validation.pipe';
+import { Exclude, Expose } from 'class-transformer';
+
+@Exclude()
+class TestModelInternal {
+  constructor() {}
+  @Expose()
+  @IsString()
+  public prop1: string;
+
+  @Expose()
+  @IsString()
+  public prop2: string;
+
+  @Expose({ groups: ['internal'] })
+  @IsString()
+  @IsOptional()
+  public propInternal: string;
+}
 
 class TestModel {
   constructor() {}
@@ -16,6 +34,11 @@ describe('ValidationPipe', () => {
   const metadata: ArgumentMetadata = {
     type: 'body',
     metatype: TestModel,
+    data: '',
+  };
+  const metadatainternal: ArgumentMetadata = {
+    type: 'body',
+    metatype: TestModelInternal,
     data: '',
   };
 
@@ -66,6 +89,38 @@ describe('ValidationPipe', () => {
           target = new ValidationPipe({ forbidNonWhitelisted: true });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
           expect(target.transform(testObj, metadata)).to.eventually.throw;
+        });
+      });
+      describe('when transformation is internal', () => {
+        it('should return a TestModel with internal property', async () => {
+          target = new ValidationPipe({ 
+            transform: true,
+            transformOptions: { groups: ['internal'] }
+          });
+          const testObj = {
+            prop1: 'value1',
+            prop2: 'value2',
+            propInternal: 'value3'
+          };
+          expect(
+            await target.transform(testObj, metadatainternal)
+            ).to.have.property('propInternal');
+        });
+      });
+      describe('when transformation is external', () => {
+        it('should return a TestModel without internal property', async () => {
+          target = new ValidationPipe({ 
+            transform: true,
+            transformOptions: { groups: ['external'] }
+          });
+          const testObj = {
+            prop1: 'value1',
+            prop2: 'value2',
+            propInternal: 'value3'
+          };
+          expect(
+            await target.transform(testObj, metadatainternal)
+          ).to.not.have.property('propInternal');
         });
       });
     });
