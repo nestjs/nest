@@ -177,7 +177,7 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   protected findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
-    metatypeOrToken: Type<TInput> | string | symbol,
+    metatypeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextModule: Partial<Module>,
   ): TResult {
     return this.containerScanner.findInstanceByPrototypeOrToken<
