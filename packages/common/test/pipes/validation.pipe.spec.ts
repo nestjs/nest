@@ -1,8 +1,25 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import { Exclude, Expose } from 'class-transformer';
+import { IsOptional, IsString } from 'class-validator';
 import { ArgumentMetadata } from '../../interfaces';
-import { IsString } from 'class-validator';
 import { ValidationPipe } from '../../pipes/validation.pipe';
+
+@Exclude()
+class TestModelInternal {
+  constructor() {}
+  @Expose()
+  @IsString()
+  public prop1: string;
+
+  @Expose()
+  @IsString()
+  public prop2: string;
+
+  @Expose({ groups: ['internal'] })
+  @IsString()
+  @IsOptional()
+  public propInternal: string;
+}
 
 class TestModel {
   constructor() {}
@@ -16,6 +33,11 @@ describe('ValidationPipe', () => {
   const metadata: ArgumentMetadata = {
     type: 'body',
     metatype: TestModel,
+    data: '',
+  };
+  const transformMetadata: ArgumentMetadata = {
+    type: 'body',
+    metatype: TestModelInternal,
     data: '',
   };
 
@@ -68,8 +90,40 @@ describe('ValidationPipe', () => {
           expect(target.transform(testObj, metadata)).to.eventually.throw;
         });
       });
+      describe('when transformation is internal', () => {
+        it('should return a TestModel with internal property', async () => {
+          target = new ValidationPipe({
+            transform: true,
+            transformOptions: { groups: ['internal'] },
+          });
+          const testObj = {
+            prop1: 'value1',
+            prop2: 'value2',
+            propInternal: 'value3',
+          };
+          expect(
+            await target.transform(testObj, transformMetadata),
+          ).to.have.property('propInternal');
+        });
+      });
+      describe('when transformation is external', () => {
+        it('should return a TestModel without internal property', async () => {
+          target = new ValidationPipe({
+            transform: true,
+            transformOptions: { groups: ['external'] },
+          });
+          const testObj = {
+            prop1: 'value1',
+            prop2: 'value2',
+            propInternal: 'value3',
+          };
+          expect(
+            await target.transform(testObj, transformMetadata),
+          ).to.not.have.property('propInternal');
+        });
+      });
     });
-    describe("when validation doesn't transform", () => {
+    describe('when validation doesn\'t transform', () => {
       describe('when validation strips', () => {
         it('should return a plain object without extra properties', async () => {
           target = new ValidationPipe({ transform: false, whitelist: true });
