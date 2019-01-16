@@ -32,9 +32,9 @@
   "license": "MIT",
   "dependencies": {
     "@grpc/proto-loader": "^0.3.0",
-    "@nestjs/common": "5.1.0",
-    "@nestjs/core": "^5.3.10",
-    "@nestjs/microservices": "5.1.0",
+    "@nestjs/common": "5.5.0",
+    "@nestjs/core": "^5.5.0",
+    "@nestjs/microservices": "5.5.0",
     "@nestjs/testing": "5.1.0",
     "@nestjs/websockets": "5.1.0",
     "@nuxtjs/opencollective": "^0.1.0",
