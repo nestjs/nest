@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import { join } from 'path';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
 import { ServerGrpc } from '../../server/server-grpc';
+import { concatMap } from 'rxjs/operators';
 
 describe('ServerGrpc', () => {
   let server: ServerGrpc;
@@ -197,6 +198,30 @@ describe('ServerGrpc', () => {
         await server.createStreamServiceMethod(native)(call, callback);
         expect(call.write.calledTwice).to.be.true;
         expect(call.end.called).to.be.true;
+      });
+
+      it(`should call native error handle method when observable error occurs`, async () => {
+        let cancelCb: () => void;
+        const call = {
+          write: sinon
+            .stub()
+            .onSecondCall()
+            .callsFake(() => cancelCb()),
+          end: sinon.spy(),
+          addListener: (name, cb) => (cancelCb = cb),
+          removeListener: sinon.spy(),
+          emit: sinon.spy(),
+        };
+        const result$ = of(1, 2).pipe(concatMap(() => throwError('error')));
+        const callback = sinon.spy();
+        const native = sinon
+          .stub()
+          .returns(new Promise((resolve, reject) => resolve(result$)));
+
+        await server.createStreamServiceMethod(native)(call, callback);
+        expect(call.write.called).to.be.true;
+        expect(call.end.called).to.be.true;
+        expect(call.emit.called).to.be.true;
       });
     });
   });

@@ -1,6 +1,6 @@
 import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { fromEvent } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { fromEvent, of } from 'rxjs';
+import { takeUntil, catchError } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
   GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
@@ -136,7 +136,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(call.request, call.metadata);
       const result$ = this.transformToObservable(await handler);
       await result$
-        .pipe(takeUntil(fromEvent(call, CANCEL_EVENT)))
+        .pipe(
+          takeUntil(fromEvent(call, CANCEL_EVENT)),
+          catchError((err) => {
+            call.emit('error', err);
+            return of(err);
+          }),
+          )
         .forEach(data => call.write(data));
       call.end();
     };
