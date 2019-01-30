@@ -29,6 +29,7 @@ export {
   NestMiddleware,
   NestModule,
   OnApplicationBootstrap,
+  OnApplicationShutdown,
   OnModuleDestroy,
   OnModuleInit,
   Paramtype,

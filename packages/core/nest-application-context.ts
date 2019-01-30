@@ -1,20 +1,17 @@
-import {
-  INestApplicationContext,
-  Logger,
-  LoggerService,
-  OnApplicationBootstrap,
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
+import { INestApplicationContext, Logger, LoggerService } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { InstanceWrapper } from 'injector/instance-wrapper';
-import iterate from 'iterare';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
 import { NestContainer } from './injector/container';
 import { ContainerScanner } from './injector/container-scanner';
 import { Module } from './injector/module';
 import { ModuleTokenFactory } from './injector/module-token-factory';
+import {
+  callModuleInitHook,
+  callModuleBootstrapHook,
+  callModuleDestroyHook,
+  callAppShutdownHook,
+} from './hooks';
+import { SHUTDOWN_SIGNALS } from './constants';
 
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
@@ -62,146 +59,70 @@ export class NestApplicationContext implements INestApplicationContext {
   public async init(): Promise<this> {
     await this.callInitHook();
     await this.callBootstrapHook();
+    await this.listenToShutdownSignals();
     return this;
   }
 
   public async close(): Promise<void> {
     await this.callDestroyHook();
+    await this.callShutdownHook();
   }
 
   public useLogger(logger: LoggerService) {
     Logger.overrideLogger(logger);
   }
 
-  protected async callInitHook(): Promise<any> {
+  protected listenToShutdownSignals() {
+    SHUTDOWN_SIGNALS.forEach((signal: any) =>
+      process.on(signal, async () => {
+        await this.callDestroyHook();
+        await this.callShutdownHook(signal);
+      }),
+    );
+  }
+
+  /**
+   * Calls the `onModuleInit` function on the registered
+   * modules and its children.
+   */
+  protected async callInitHook(): Promise<void> {
     const modulesContainer = this.container.getModules();
     for (const module of [...modulesContainer.values()].reverse()) {
-      await this.callModuleInitHook(module);
+      await callModuleInitHook(module);
     }
   }
 
-  protected async callModuleInitHook(module: Module): Promise<any> {
-    const providers = [...module.providers];
-    // Module (class) instance is the first element of the providers array
-    // Lifecycle hook has to be called once all classes are properly initialized
-    const [_, { instance: moduleClassInstance }] = providers.shift();
-    const instances = [...module.controllers, ...providers];
-    const callOperator = (list: any) =>
-      list
-        .filter(instance => !isNil(instance))
-        .filter(this.hasOnModuleInitHook)
-        .map(async instance => (instance as OnModuleInit).onModuleInit());
-
-    await Promise.all(
-      callOperator(
-        iterate(instances)
-          .filter(
-            ([key, wrapper]) =>
-              wrapper.isDependencyTreeStatic() && !wrapper.isTransient,
-          )
-          .map(([key, { instance }]) => instance),
-      ),
-    );
-    const transientInstances = this.getTransientInstances(instances);
-    await Promise.all(callOperator(iterate(transientInstances)));
-
-    if (moduleClassInstance && this.hasOnModuleInitHook(moduleClassInstance)) {
-      await (moduleClassInstance as OnModuleInit).onModuleInit();
-    }
-  }
-
-  protected hasOnModuleInitHook(instance: any): instance is OnModuleInit {
-    return !isUndefined((instance as OnModuleInit).onModuleInit);
-  }
-
-  protected async callDestroyHook(): Promise<any> {
+  /**
+   * Calls the `onModuleDestroy` function on the registered
+   * modules and its children.
+   */
+  protected async callDestroyHook(): Promise<void> {
     const modulesContainer = this.container.getModules();
     for (const module of modulesContainer.values()) {
-      await this.callModuleDestroyHook(module);
+      await callModuleDestroyHook(module);
     }
   }
 
-  protected async callModuleDestroyHook(module: Module): Promise<any> {
-    const providers = [...module.providers];
-    // Module (class) instance is the first element of the providers array
-    // Lifecycle hook has to be called once all classes are properly destroyed
-    const [_, { instance: moduleClassInstance }] = providers.shift();
-    const instances = [...module.controllers, ...providers];
-    const callOperator = (list: any) =>
-      list
-        .filter(instance => !isNil(instance))
-        .filter(this.hasOnModuleDestroyHook)
-        .map(async instance => (instance as OnModuleDestroy).onModuleDestroy());
-
-    await Promise.all(
-      callOperator(
-        iterate(instances)
-          .filter(
-            ([key, wrapper]) =>
-              wrapper.isDependencyTreeStatic() && !wrapper.isTransient,
-          )
-          .map(([key, { instance }]) => instance),
-      ),
-    );
-    const transientInstances = this.getTransientInstances(instances);
-    await Promise.all(callOperator(iterate(transientInstances)));
-
-    if (
-      moduleClassInstance &&
-      this.hasOnModuleDestroyHook(moduleClassInstance)
-    ) {
-      await (moduleClassInstance as OnModuleDestroy).onModuleDestroy();
-    }
-  }
-
-  protected hasOnModuleDestroyHook(instance: any): instance is OnModuleDestroy {
-    return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
-  }
-
-  protected async callBootstrapHook(): Promise<any> {
+  /**
+   * Calls the `onApplicationBootstrap` function on the registered
+   * modules and its children.
+   */
+  protected async callBootstrapHook(): Promise<void> {
     const modulesContainer = this.container.getModules();
     for (const module of [...modulesContainer.values()].reverse()) {
-      await this.callModuleBootstrapHook(module);
+      await callModuleBootstrapHook(module);
     }
   }
 
-  protected async callModuleBootstrapHook(module: Module): Promise<any> {
-    const providers = [...module.providers];
-    const [_, { instance: moduleClassInstance }] = providers.shift();
-    const instances = [...module.controllers, ...providers];
-
-    const callOperator = (list: any) =>
-      list
-        .filter(instance => !isNil(instance))
-        .filter(this.hasOnAppBotstrapHook)
-        .map(async instance =>
-          (instance as OnApplicationBootstrap).onApplicationBootstrap(),
-        );
-
-    await Promise.all(
-      callOperator(
-        iterate(instances)
-          .filter(
-            ([key, wrapper]) =>
-              wrapper.isDependencyTreeStatic() && !wrapper.isTransient,
-          )
-          .map(([key, { instance }]) => instance),
-      ),
-    );
-    const transientInstances = this.getTransientInstances(instances);
-    await Promise.all(callOperator(iterate(transientInstances)));
-
-    if (moduleClassInstance && this.hasOnAppBotstrapHook(moduleClassInstance)) {
-      await (moduleClassInstance as OnApplicationBootstrap).onApplicationBootstrap();
+  /**
+   * Calls the `onApplicationShutdown` function on the registered
+   * modules and children.
+   */
+  protected async callShutdownHook(signal?: string): Promise<void> {
+    const modulesContainer = this.container.getModules();
+    for (const module of [...modulesContainer.values()].reverse()) {
+      await callAppShutdownHook(module, signal);
     }
-  }
-
-  protected hasOnAppBotstrapHook(
-    instance: any,
-  ): instance is OnApplicationBootstrap {
-    return !isUndefined(
-      (instance as OnApplicationBootstrap).onApplicationBootstrap,
-    );
   }
 
   protected find<TInput = any, TResult = TInput>(
@@ -218,17 +139,5 @@ export class NestApplicationContext implements INestApplicationContext {
       TInput,
       TResult
     >(metatypeOrToken, contextModule);
-  }
-
-  private getTransientInstances(
-    instances: [string, InstanceWrapper][],
-  ): InstanceWrapper[] {
-    return iterate(instances)
-      .filter(([key, wrapper]) => wrapper.isDependencyTreeStatic())
-      .map(([key, wrapper]) => wrapper.getStaticTransientInstances())
-      .flatten()
-      .filter(item => !!item)
-      .map(({ instance }: any) => instance)
-      .toArray() as InstanceWrapper[];
   }
 }
