@@ -49,6 +49,7 @@ export class TestingModule extends NestApplicationContext {
     const { NestMicroservice } = loadPackage(
       '@nestjs/microservices',
       'TestingModule',
+      () => require('@nestjs/microservices'),
     );
     this.applyLogger(options);
     return new NestMicroservice(

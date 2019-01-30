@@ -39,9 +39,12 @@ export class ValidationPipe implements PipeTransform<any> {
           this.isDetailedOutputDisabled ? undefined : errors,
         ));
 
-    const loadPkg = (pkg: any) => loadPackage(pkg, 'ValidationPipe');
-    classValidator = loadPkg('class-validator');
-    classTransformer = loadPkg('class-transformer');
+    classValidator = loadPackage('class-validator', 'ValidationPipe', () =>
+      require('class-validator'),
+    );
+    classTransformer = loadPackage('class-transformer', 'ValidationPipe', () =>
+      require('class-transformer'),
+    );
   }
 
   public async transform(value: any, metadata: ArgumentMetadata) {

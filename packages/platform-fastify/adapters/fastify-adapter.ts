@@ -76,7 +76,9 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     send?: any;
   }) {
     return this.register(
-      loadPackage('fastify-static', 'FastifyAdapter.useStaticAssets()'),
+      loadPackage('fastify-static', 'FastifyAdapter.useStaticAssets()', () =>
+        require('fastify-static'),
+      ),
       options,
     );
   }
@@ -85,6 +87,7 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     return this.register(
       loadPackage('point-of-view', 'FastifyAdapter.setViewEngine()'),
       options,
+      () => require('point-of-view'),
     );
   }
 

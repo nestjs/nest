@@ -77,6 +77,7 @@ export class NestFactoryStatic {
     const { NestMicroservice } = loadPackage(
       '@nestjs/microservices',
       'NestFactory',
+      () => require('@nestjs/microservices'),
     );
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);

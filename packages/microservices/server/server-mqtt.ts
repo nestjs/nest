@@ -27,7 +27,9 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     this.url =
       this.getOptionsProp<MqttOptions>(options, 'url') || MQTT_DEFAULT_URL;
 
-    mqttPackage = this.loadPackage('mqtt', ServerMqtt.name);
+    mqttPackage = this.loadPackage('mqtt', ServerMqtt.name, () =>
+      require('mqtt'),
+    );
   }
 
   public async listen(callback: () => void) {
@@ -58,10 +60,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public createMqttClient(): MqttClient {
-    return mqttPackage.connect(
-      this.url,
-      this.options as MqttOptions,
-    );
+    return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 
   public getMessageHandler(pub: MqttClient): Function {

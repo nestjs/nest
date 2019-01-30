@@ -34,7 +34,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
       this.getOptionsProp<RedisOptions>(this.options, 'url') ||
       REDIS_DEFAULT_URL;
 
-    redisPackage = this.loadPackage('redis', ServerRedis.name);
+    redisPackage = this.loadPackage('redis', ServerRedis.name, () =>
+      require('redis'),
+    );
   }
 
   public listen(callback: () => void) {

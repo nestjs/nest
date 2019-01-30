@@ -27,7 +27,9 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     this.url =
       this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
 
-    natsPackage = this.loadPackage('nats', ServerNats.name);
+    natsPackage = this.loadPackage('nats', ServerNats.name, () =>
+      require('nats'),
+    );
   }
 
   public listen(callback: () => void) {

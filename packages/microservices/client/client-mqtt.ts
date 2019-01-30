@@ -27,7 +27,7 @@ export class ClientMqtt extends ClientProxy {
     this.url =
       this.getOptionsProp<MqttOptions>(this.options, 'url') || MQTT_DEFAULT_URL;
 
-    mqttPackage = loadPackage('mqtt', ClientMqtt.name);
+    mqttPackage = loadPackage('mqtt', ClientMqtt.name, () => require('mqtt'));
   }
   public getAckPatternName(pattern: string): string {
     return `${pattern}_ack`;
@@ -75,10 +75,7 @@ export class ClientMqtt extends ClientProxy {
   }
 
   public createClient(): MqttClient {
-    return mqttPackage.connect(
-      this.url,
-      this.options as MqttOptions,
-    );
+    return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 
   public handleError(client: MqttClient) {
@@ -143,8 +140,10 @@ export class ClientMqtt extends ClientProxy {
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
     return new Promise((resolve, reject) =>
-      this.mqttClient.publish(pattern, JSON.stringify(packet), err =>
-        err ? reject(err) : resolve(),
+      this.mqttClient.publish(
+        pattern,
+        JSON.stringify(packet),
+        err => (err ? reject(err) : resolve()),
       ),
     );
   }

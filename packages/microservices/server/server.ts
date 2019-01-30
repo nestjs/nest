@@ -75,7 +75,11 @@ export abstract class Server {
     this.logger.error(error);
   }
 
-  protected loadPackage<T = any>(name: string, ctx: string): T {
-    return loadPackage(name, ctx);
+  protected loadPackage<T = any>(
+    name: string,
+    ctx: string,
+    loader?: Function,
+  ): T {
+    return loadPackage(name, ctx, loader);
   }
 }

@@ -50,8 +50,10 @@ export class ClientRMQ extends ClientProxy {
       this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
 
-    loadPackage('amqplib', ClientRMQ.name);
-    rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name);
+    loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
+    rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
+      require('amqp-connection-manager'),
+    );
   }
 
   public close(): void {
@@ -79,10 +81,7 @@ export class ClientRMQ extends ClientProxy {
 
     const connect$ = this.connect$(this.client);
     this.connection = this.mergeDisconnectEvent(this.client, connect$)
-      .pipe(
-        switchMap(() => this.createChannel()),
-        share(),
-      )
+      .pipe(switchMap(() => this.createChannel()), share())
       .toPromise();
     return this.connection;
   }

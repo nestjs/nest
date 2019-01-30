@@ -1,4 +1,3 @@
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
@@ -46,8 +45,12 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
 
-    loadPackage('amqplib', ServerRMQ.name);
-    rqmPackage = loadPackage('amqp-connection-manager', ServerRMQ.name);
+    this.loadPackage('amqplib', ServerRMQ.name, () => require('amqplib'));
+    rqmPackage = this.loadPackage(
+      'amqp-connection-manager',
+      ServerRMQ.name,
+      () => require('amqp-connection-manager'),
+    );
   }
 
   public async listen(callback: () => void): Promise<void> {

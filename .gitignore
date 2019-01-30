@@ -28,4 +28,5 @@ yarn-error.log
 /test
 /coverage
 /.nyc_output
+/benchmarks/memory
 build/config\.gypi

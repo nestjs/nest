@@ -25,9 +25,11 @@ const REFLECTOR = 'Reflector';
 @Injectable()
 export class ClassSerializerInterceptor implements NestInterceptor {
   constructor(@Inject(REFLECTOR) protected readonly reflector: any) {
-    const loadPkg = (pkg: any) =>
-      loadPackage(pkg, 'ClassSerializerInterceptor');
-    classTransformer = loadPkg('class-transformer');
+    classTransformer = loadPackage(
+      'class-transformer',
+      'ClassSerializerInterceptor',
+      () => require('class-transformer'),
+    );
     require('class-transformer');
   }
 

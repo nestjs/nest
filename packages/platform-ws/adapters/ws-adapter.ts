@@ -24,7 +24,7 @@ export class WsAdapter extends AbstractWsAdapter {
 
   constructor(appOrHttpServer?: INestApplicationContext | any) {
     super(appOrHttpServer);
-    wsPackage = loadPackage('ws', 'WsAdapter');
+    wsPackage = loadPackage('ws', 'WsAdapter', () => require('ws'));
   }
 
   public create(
@@ -55,10 +55,7 @@ export class WsAdapter extends AbstractWsAdapter {
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {
-    const close$ = fromEvent(client, CLOSE_EVENT).pipe(
-      share(),
-      first(),
-    );
+    const close$ = fromEvent(client, CLOSE_EVENT).pipe(share(), first());
     const source$ = fromEvent(client, 'message').pipe(
       mergeMap(data =>
         this.bindMessageHandler(data, handlers, transform).pipe(

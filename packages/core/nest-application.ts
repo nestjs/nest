@@ -149,9 +149,10 @@ export class NestApplication extends NestApplicationContext
   }
 
   public connectMicroservice(options: MicroserviceOptions): INestMicroservice {
-    const { NestMicroservice } = this.loadPackage(
+    const { NestMicroservice } = loadPackage(
       '@nestjs/microservices',
       'NestFactory',
+      () => require('@nestjs/microservices'),
     );
 
     const applicationConfig = new ApplicationConfig();
@@ -279,10 +280,6 @@ export class NestApplication extends NestApplicationContext
     this.httpAdapter.setViewEngine &&
       this.httpAdapter.setViewEngine(engineOrOptions);
     return this;
-  }
-
-  private loadPackage<T = any>(name: string, ctx: string): T {
-    return loadPackage(name, ctx) as T;
   }
 
   private async registerMiddleware(instance: any) {

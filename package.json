@@ -90,6 +90,7 @@
     "@types/sinon": "^1.16.36",
     "@types/socket.io": "^1.4.32",
     "@types/ws": "^4.0.1",
+    "artillery": "^1.6.0-26",
     "awesome-typescript-loader": "^3.0.0-beta.18",
     "body-parser": "^1.18.3",
     "chai": "^3.5.0",
@@ -99,6 +100,7 @@
     "conventional-changelog": "^1.1.15",
     "core-js": "^2.4.1",
     "coveralls": "^2.11.16",
+    "csv-write-stream": "^2.0.0",
     "delete-empty": "^2.0.0",
     "fastify-static": "^0.8.0",
     "gulp": "^4.0.0",
@@ -113,6 +115,7 @@
     "json-loader": "^0.5.4",
     "lerna": "^2.5.1",
     "lint-staged": "^7.2.2",
+    "memory-usage": "^1.2.1",
     "mocha": "^3.2.0",
     "nodemon": "^1.18.4",
     "nyc": "^10.1.2",
@@ -123,7 +126,7 @@
     "supertest": "^3.0.0",
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
-    "typescript": "^3.2.2"
+    "typescript": "^3.2.4"
   },
   "collective": {
     "type": "opencollective",
