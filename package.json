@@ -72,7 +72,7 @@
     "nats": "^0.8.4",
     "object-hash": "^1.3.0",
     "optional": "^0.1.4",
-    "path-to-regexp": "^2.2.1",
+    "path-to-regexp": "2.4.0",
     "pump": "^3.0.0",
     "redis": "^2.7.1",
     "reflect-metadata": "^0.1.12",
