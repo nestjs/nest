@@ -22,7 +22,7 @@
     "typescript": "3.0.3"
   },
   "devDependencies": {
-    "@types/node": "10.9.4",
+    "@types/node": "10.12.21",
     "ts-node": "7.0.1",
     "tslint": "5.11.0"
   }
