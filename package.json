@@ -53,7 +53,7 @@
     "cache-manager": "^2.9.0",
     "class-transformer": "^0.1.8",
     "class-validator": "^0.8.1",
-    "cli-color": "^1.1.0",
+    "cli-color": "1.4.0",
     "connect": "^3.6.6",
     "cors": "^2.8.4",
     "deprecate": "^1.0.0",
