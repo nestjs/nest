@@ -9,22 +9,22 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "^5.3.0",
-    "@nestjs/core": "^5.3.0",
-    "@nestjs/microservices": "^5.3.0",
-    "@nestjs/testing": "^5.3.0",
-    "@nestjs/websockets": "^5.3.0",
-    "mysql2": "^1.4.2",
-    "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
-    "sequelize": "^4.28.0",
-    "sequelize-typescript": "^0.6.1",
-    "typescript": "^2.6.2"
+    "@nestjs/common": "5.6.2",
+    "@nestjs/core": "5.6.2",
+    "@nestjs/microservices": "5.6.2",
+    "@nestjs/testing": "5.6.2",
+    "@nestjs/websockets": "5.6.2",
+    "mysql2": "1.5.3",
+    "reflect-metadata": "0.1.12",
+    "rxjs": "5.5.7",
+    "sequelize": "4.37.4",
+    "sequelize-typescript": "0.6.3",
+    "typescript": "2.7.2"
   },
   "devDependencies": {
-    "@types/node": "^7.0.41",
-    "@types/sequelize": "^4.0.75",
-    "ts-node": "^6.0.0",
-    "tslint": "^5.9.1"
+    "@types/node": "7.0.57",
+    "@types/sequelize": "4.27.5",
+    "ts-node": "3.3.0",
+    "tslint": "5.12.1"
   }
 }

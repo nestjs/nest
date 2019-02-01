@@ -11,17 +11,17 @@
   },
   "dependencies": {
     "@nestjs/common": "5.6.2",
-    "@nestjs/core": "^5.3.0",
-    "hbs": "^4.0.1",
-    "pug": "^2.0.3",
-    "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
-    "typescript": "^2.8.0"
+    "@nestjs/core": "5.6.2",
+    "hbs": "4.0.1",
+    "pug": "2.0.3",
+    "reflect-metadata": "0.1.12",
+    "rxjs": "6.2.1",
+    "typescript": "2.9.2"
   },
   "devDependencies": {
-    "@types/node": "^8.0.28",
-    "nodemon": "^1.12.1",
-    "ts-node": "^6.0.0",
-    "tslint": "^5.9.1"
+    "@types/node": "8.10.0",
+    "nodemon": "1.17.2",
+    "ts-node": "6.2.0",
+    "tslint": "5.10.0"
   }
 }

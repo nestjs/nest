@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "iterare": "0.0.8",
-    "socket.io": "^2.1.1"
+    "socket.io": "2.1.1"
   },
   "peerDependencies": {
     "@nestjs/common": "^5.0.0",

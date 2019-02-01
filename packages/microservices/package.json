@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "iterare": "0.0.8",
-    "json-socket": "^0.2.1",
+    "json-socket": "0.2.1",
     "optional": "0.1.4"
   },
   "peerDependencies": {

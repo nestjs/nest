@@ -8,22 +8,22 @@
     "webpack": "webpack --config webpack.config.js"
   },
   "dependencies": {
-    "@nestjs/common": "^5.3.0",
-    "@nestjs/core": "^5.3.0",
-    "@nestjs/microservices": "^5.3.0",
-    "@nestjs/testing": "^5.3.0",
-    "@nestjs/websockets": "^5.3.0",
-    "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
-    "typescript": "^2.8.0"
+    "@nestjs/common": "5.6.2",
+    "@nestjs/core": "5.6.2",
+    "@nestjs/microservices": "5.6.2",
+    "@nestjs/testing": "5.6.2",
+    "@nestjs/websockets": "5.6.2",
+    "reflect-metadata": "0.1.12",
+    "rxjs": "6.4.0",
+    "typescript": "2.9.2"
   },
   "devDependencies": {
-    "@types/node": "^9.3.0",
-    "ts-loader": "^4.0.0",
-    "ts-node": "^6.0.0",
-    "tslint": "^5.9.1",
-    "webpack": "^4.0.0",
-    "webpack-cli": "^2.0.8",
-    "webpack-node-externals": "^1.6.0"
+    "@types/node": "9.4.6",
+    "ts-loader": "4.0.0",
+    "ts-node": "6.2.0",
+    "tslint": "5.12.1",
+    "webpack": "4.0.0",
+    "webpack-cli": "2.0.8",
+    "webpack-node-externals": "1.6.0"
   }
 }
