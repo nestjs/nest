@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "^8.0.28",
-    "nodemon": "^1.12.1",
+    "nodemon": "1.18.9",
     "ts-node": "^6.0.0",
     "tslint": "^5.9.1"
   }

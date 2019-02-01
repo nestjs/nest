@@ -24,7 +24,7 @@
     "typescript": "3.1.1"
   },
   "devDependencies": {
-    "nodemon": "1.18.4",
+    "nodemon": "1.18.9",
     "prettier": "1.14.3",
     "ts-node": "7.0.1",
     "tsconfig-paths": "3.6.0",
