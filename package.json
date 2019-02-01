@@ -60,7 +60,7 @@
     "engine.io-client": "^3.1.1",
     "express": "^4.16.2",
     "fast-json-stringify": "^1.5.4",
-    "fast-safe-stringify": "^1.2.0",
+    "fast-safe-stringify": "1.2.3",
     "fastify": "^1.1.1",
     "fastify-formbody": "^2.0.0",
     "fastify-multipart": "^0.4.1",
