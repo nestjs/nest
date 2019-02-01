@@ -11,7 +11,7 @@
     "@nestjs/core": "^5.0.0",
     "@nestjs/microservices": "^5.0.0",
     "@nestjs/testing": "^5.0.0",
-    "@nestjs/websockets": "^5.0.0",
+    "@nestjs/websockets": "5.6.2",
     "class-transformer": "^0.1.7",
     "class-validator": "^0.7.2",
     "fastify": "^1.1.1",

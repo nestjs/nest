@@ -45,7 +45,7 @@
     "@nestjs/core": "^5.5.0",
     "@nestjs/microservices": "5.5.0",
     "@nestjs/testing": "5.1.0",
-    "@nestjs/websockets": "5.1.0",
+    "@nestjs/websockets": "5.6.2",
     "@nuxtjs/opencollective": "^0.1.0",
     "amqp-connection-manager": "^2.2.0",
     "amqplib": "^0.5.2",
