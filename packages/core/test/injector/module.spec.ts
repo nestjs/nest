@@ -15,10 +15,10 @@ describe('Module', () => {
   let container: NestContainer;
 
   @ModuleDecorator({})
-  class TestModule {}
+  class TestModule { }
 
   @Injectable()
-  class TestProvider {}
+  class TestProvider { }
 
   beforeEach(() => {
     container = new NestContainer();
@@ -67,6 +67,7 @@ describe('Module', () => {
   });
 
   describe('when injectable is custom provided', () => {
+
     it('should call `addCustomProvider`', () => {
       const addCustomProviderSpy = sinon.spy(module, 'addCustomProvider');
 
@@ -134,6 +135,97 @@ describe('Module', () => {
     expect((addCustomFactory as sinon.SinonSpy).called).to.be.true;
   });
 
+  describe('multi provider', () => {
+    let setSpy;
+    const name = 'test';
+
+    beforeEach(() => {
+      const collection = new Map();
+      setSpy = sinon.spy(collection, 'set');
+      (module as any)._providers = collection;
+    });
+
+    it('should store a multi "useFactory" provider', () => {
+      const addCustomFactory = sinon.spy();
+      module.addCustomFactory = addCustomFactory;
+
+      const provider = { provide: name, useFactory: () => null };
+
+      module.addCustomProvider(provider as any, new Map());
+      expect((addCustomFactory as sinon.SinonSpy).called).to.be.true;
+    });
+
+    it('should store a multi "useValue" provider', () => {
+      const provider = { provide: name, multi: true };
+
+      const providerA = { ...provider, useValue: 'a' } as any;
+      module.addCustomProvider(providerA, (module as any)._providers);
+
+      expect(setSpy.getCall(0).args[1].name).to.be.eq(name);
+      expect(setSpy.getCall(0).args[1].inject).to.deep.eq([{ ...providerA, name }]);
+
+      expect(setSpy.getCall(1).args[1].instance).to.be.eq('a');
+
+      const providerB = { ...provider, useValue: 'b' } as any;
+      module.addCustomProvider(providerB, (module as any)._providers);
+
+      expect(setSpy.getCall(2).args[1].name).to.be.eq(name);
+      expect(setSpy.getCall(2).args[1].inject).to.deep.eq([{ ...providerA, name }, { ...providerB, name }]);
+
+      expect(setSpy.getCall(3).args[1].instance).to.be.eq('b');
+    });
+
+    it('should store a multi "useFactory" provider', () => {
+      const provider = { provide: name, multi: true };
+
+      const providerA = { ...provider, useFactory: () => 'a' } as any;
+      module.addCustomProvider(providerA, (module as any)._providers);
+
+      expect(setSpy.getCall(0).args[1].name).to.be.eq(name);
+      expect(setSpy.getCall(0).args[1].inject).to.deep.eq([{ ...providerA, name }]);
+
+      expect(setSpy.getCall(1).args[1].metatype()).to.be.eq('a');
+
+      const providerB = { ...provider, useFactory: () => 'b' } as any;
+      module.addCustomProvider(providerB, (module as any)._providers);
+
+      expect(setSpy.getCall(2).args[1].name).to.be.eq(name);
+      expect(setSpy.getCall(2).args[1].inject).to.deep.eq([{ ...providerA, name }, { ...providerB, name }]);
+
+      expect(setSpy.getCall(3).args[1].metatype()).to.be.eq('b');
+    });
+
+    it('should store a multi "useClass" provider', () => {
+      const provider = { provide: name, multi: true };
+
+      const providerA = { ...provider, useClass: { test: () => 'a'} } as any;
+      module.addCustomProvider(providerA, (module as any)._providers);
+
+      expect(setSpy.getCall(0).args[1].name).to.be.eq(name);
+      expect(setSpy.getCall(0).args[1].inject).to.deep.eq([{ ...providerA, name }]);
+
+      expect(setSpy.getCall(1).args[1].metatype.test()).to.be.eq('a');
+
+      const providerB = { ...provider, useClass: { test: () => 'b'} } as any;
+      module.addCustomProvider(providerB, (module as any)._providers);
+
+      expect(setSpy.getCall(2).args[1].name).to.be.eq(name);
+      expect(setSpy.getCall(2).args[1].inject).to.deep.eq([{ ...providerA, name }, { ...providerB, name }]);
+
+      expect(setSpy.getCall(3).args[1].metatype.test()).to.be.eq('b');
+    });
+
+    it('should throw an exception if mixed multi provider', () => {
+
+      const provider = { provide: name, useValue: 'a' };
+      module.addCustomProvider({ ...provider, multi: true } as any, (module as any)._providers);
+      expect(() =>
+        module.addCustomProvider({ ...provider, multi: false } as any, (module as any)._providers)
+      ).to.throws(RuntimeException);
+    });
+
+  });
+
   describe('addCustomClass', () => {
     const type = { name: 'TypeTest' };
     const provider = { provide: type, useClass: type, name: 'test' };
@@ -156,6 +248,7 @@ describe('Module', () => {
             metatype: type as any,
             instance: null,
             isResolved: false,
+            multi: undefined,
           }),
         ),
       ).to.be.true;
@@ -193,48 +286,6 @@ describe('Module', () => {
       ).to.be.true;
     });
 
-    it('should store multi provider', () => {
-      module.addCustomValue({...provider, multi: true, useValue: 'a'} as any, (module as any)._providers);
-      expect(
-        setSpy.calledWith(
-          name,
-          new InstanceWrapper({
-            host: module,
-            name,
-            scope: Scope.DEFAULT,
-            metatype: null,
-            instance: ['a'],
-            isResolved: true,
-            async: false,
-            multi: true,
-          }),
-        ),
-      ).to.be.true;
-
-      module.addCustomValue({...provider, multi: true, useValue: 'b'} as any, (module as any)._providers);
-      expect(
-        setSpy.calledWith(
-          name,
-          new InstanceWrapper({
-            host: module,
-            name,
-            scope: Scope.DEFAULT,
-            metatype: null,
-            instance: ['a', 'b'],
-            isResolved: true,
-            async: false,
-            multi: true,
-          }),
-        ),
-      ).to.be.true;
-    });
-
-    it('should throw an exception if mixed multi provider', () => {
-      module.addCustomValue({...provider, multi: true, useValue: 'a'} as any, (module as any)._providers);
-      expect(() =>
-        module.addCustomValue({...provider, multi: false, useValue: 'a'} as any, (module as any)._providers)
-      ).to.throws(RuntimeException);
-    });
   });
 
   describe('addCustomFactory', () => {
@@ -260,6 +311,7 @@ describe('Module', () => {
           instance: null,
           isResolved: false,
           inject: inject as any,
+          multi: undefined,
         }),
       ]);
     });
@@ -373,7 +425,7 @@ describe('Module', () => {
   describe('createModuleReferenceType', () => {
     let moduleRef;
 
-    class SimpleClass {}
+    class SimpleClass { }
 
     beforeEach(() => {
       const Class = module.createModuleReferenceType();

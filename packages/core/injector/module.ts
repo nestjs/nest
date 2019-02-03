@@ -49,6 +49,11 @@ export type ProviderMetatype =
   | CustomValue
   | CustomClass;
 
+/**
+ * The factory which will be used for multi providers
+ */
+const MULTI_PROVIDER_FACTORY =  ((...args) => args) as any;
+
 export class Module {
   private readonly _id: string;
   private readonly _imports = new Set<Module>();
@@ -214,12 +219,24 @@ export class Module {
     collection: Map<string, any>,
   ): string {
     const { provide } = provider;
-    const name = isFunction(provide) ? provide.name : provide;
+    let name = isFunction(provide) ? provide.name : provide;
 
     provider = {
       ...provider,
       name,
     };
+
+    this.checkForMixedMulti(provider, collection);
+
+    if (provider.multi === true) {
+      // Add a multi provider in case the multi option equals true
+      name = this.addMultiProvider(provider, collection);
+      provider = {
+        ...provider,
+        name,
+      };
+    }
+
     if (this.isCustomClass(provider)) {
       this.addCustomClass(provider, collection);
     } else if (this.isCustomValue(provider)) {
@@ -227,6 +244,7 @@ export class Module {
     } else if (this.isCustomFactory(provider)) {
       this.addCustomFactory(provider, collection);
     }
+
     return name;
   }
 
@@ -246,11 +264,96 @@ export class Module {
     return exported && exported.module;
   }
 
+  /**
+   * Checks if the already stored provider has the same `multi` value
+   * as the new provider.
+   *
+   * @param storedProvider The already stored provider
+   * @param provider The provider which should get newly added
+   *
+   * @throws {MixedMultiProviderException}
+   * If the `multi` option of the stored provider differs from the given provider
+   */
+  private checkForMixedMulti(
+    provider: CustomProvider,
+    collection: Map<string, InstanceWrapper>,
+  ) {
+    // Get provider which is already stored in the collection.
+    const storedProvider = collection.get(provider.provide);
+    if (storedProvider) {
+      // Multiple provider use the same key.
+      // Check if the new provider has the same multi value
+      if (provider.multi !== !!storedProvider.multi) {
+        // It has mixed multi option
+        throw new MixedMultiProviderException(provider.name);
+      }
+    }
+  }
+
+  /**
+   * Adds a new provider which acts as a multi provider.
+   * A multi provider is a custom factory which returns all the
+   * values as an array of the same token.
+   *
+   * @returns {any}
+   * The new token which should be used for the given provider,
+   * because the new created multi provider will be using the
+   * token of the given provider.
+   *
+   * @param provider The provider which is a multi provider
+   * @param collection The collection to add the multi provider to
+   */
+  private addMultiProvider(
+    provider: CustomProvider,
+    collection: Map<string, InstanceWrapper>,
+  ): any {
+    const { multi } = provider;
+
+    // Get provider which is already stored in the collection.
+    const storedProvider = collection.get(provider.provide);
+
+    let token = provider.provide;
+
+    let inject: any[] = null;
+    const multiProviderToken = provider.provide;
+
+    token = provider;
+
+    // If the provider indicates that it's a multi-provider, process it specially.
+    // First check whether it's been defined already.
+    if (storedProvider) {
+      // A provider already exists. Append new value
+      inject = [
+        ...(storedProvider.inject || []),
+        token
+      ];
+    } else {
+      // First multi provider with this token
+      inject = [token];
+    }
+
+    collection.set(
+      multiProviderToken,
+      // The new multi provider
+      new InstanceWrapper({
+        name: multiProviderToken,
+        // Returns all the inject arguments as array
+        metatype: MULTI_PROVIDER_FACTORY,
+        inject,
+        instance: null,
+        isResolved: false,
+        multi,
+        host: this,
+      }),
+    );
+    return token;
+  }
+
   public addCustomClass(
     provider: CustomClass,
     collection: Map<string, InstanceWrapper>,
   ) {
-    const { name, useClass, scope } = provider;
+    const { name, useClass, scope, multi } = provider;
     collection.set(
       name,
       new InstanceWrapper({
@@ -260,6 +363,7 @@ export class Module {
         isResolved: false,
         scope,
         host: this,
+        multi,
       }),
     );
   }
@@ -268,33 +372,7 @@ export class Module {
     provider: CustomValue,
     collection: Map<string, InstanceWrapper>,
   ) {
-    const { name, multi } = provider;
-    let value = provider.useValue;
-
-    // Get provider which is already stored in the collection.
-    const storedProvider = collection.get(name);
-
-    if (storedProvider) {
-      // Multiple provider use the same key.
-      // Check if the new provider has the same multi value
-      if (multi !== !!storedProvider.multi) {
-        // It has mixed multi option
-        throw new MixedMultiProviderException(name);
-      }
-    }
-
-    if (multi === true) {
-      // If the provider indicates that it's a multi-provider, process it specially.
-      // First check whether it's been defined already.
-      if (storedProvider) {
-        // A provider already exists. Append new value
-        value = [...storedProvider.instance, value];
-      } else {
-        // First multi provider
-        value = [value];
-      }
-    }
-
+    const { name, useValue: value, multi } = provider;
     collection.set(
       name,
       new InstanceWrapper({
@@ -313,7 +391,7 @@ export class Module {
     provider: CustomFactory,
     collection: Map<string, InstanceWrapper>,
   ) {
-    const { name, useFactory: factory, inject, scope } = provider;
+    const { name, useFactory: factory, inject, scope, multi } = provider;
     collection.set(
       name,
       new InstanceWrapper({
@@ -324,6 +402,7 @@ export class Module {
         inject: inject || [],
         scope,
         host: this,
+        multi,
       }),
     );
   }

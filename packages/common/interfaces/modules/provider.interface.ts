@@ -11,6 +11,11 @@ export interface ClassProvider {
   provide: any;
   useClass: Type<any>;
   scope?: Scope;
+  /**
+   * If true, then injector returns an array of instances. This is useful to allow multiple
+   * providers spread across many files to provide configuration information to a common token.
+   */
+  multi?: boolean | undefined;
 }
 
 export interface ValueProvider {
@@ -28,4 +33,9 @@ export interface FactoryProvider {
   useFactory: (...args: any[]) => any;
   inject?: Array<Type<any> | string | any>;
   scope?: Scope;
+  /**
+   * If true, then injector returns an array of instances. This is useful to allow multiple
+   * providers spread across many files to provide configuration information to a common token.
+   */
+  multi?: boolean | undefined;
 }
