@@ -18,6 +18,7 @@ import {
 import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import { MixedMultiProviderException } from '../errors/exceptions/mixed-multi-provider.exception';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
@@ -25,6 +26,11 @@ import { ModuleRef } from './module-ref';
 export interface CustomProvider {
   provide: any;
   name: string;
+  /**
+   * If true, then injector returns an array of instances. This is useful to allow multiple
+   * providers spread across many files to provide configuration information to a common token.
+   */
+  multi?: boolean;
 }
 export type OpaqueToken = string | symbol | Type<any>;
 export type CustomClass = CustomProvider & {
@@ -262,7 +268,33 @@ export class Module {
     provider: CustomValue,
     collection: Map<string, InstanceWrapper>,
   ) {
-    const { name, useValue: value } = provider;
+    const { name, multi } = provider;
+    let value = provider.useValue;
+
+    // Get provider which is already stored in the collection.
+    const storedProvider = collection.get(name);
+
+    if (storedProvider) {
+      // Multiple provider use the same key.
+      // Check if the new provider has the same multi value
+      if (multi !== !!storedProvider.multi) {
+        // It has mixed multi option
+        throw new MixedMultiProviderException(name);
+      }
+    }
+
+    if (multi === true) {
+      // If the provider indicates that it's a multi-provider, process it specially.
+      // First check whether it's been defined already.
+      if (storedProvider) {
+        // A provider already exists. Append new value
+        value = [...storedProvider.instance, value];
+      } else {
+        // First multi provider
+        value = [value];
+      }
+    }
+
     collection.set(
       name,
       new InstanceWrapper({
@@ -272,6 +304,7 @@ export class Module {
         isResolved: true,
         async: value instanceof Promise,
         host: this,
+        multi,
       }),
     );
   }

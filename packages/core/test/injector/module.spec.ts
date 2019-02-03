@@ -187,9 +187,53 @@ describe('Module', () => {
             instance: value,
             isResolved: true,
             async: false,
+            multi: undefined,
           }),
         ),
       ).to.be.true;
+    });
+
+    it('should store multi provider', () => {
+      module.addCustomValue({...provider, multi: true, useValue: 'a'} as any, (module as any)._providers);
+      expect(
+        setSpy.calledWith(
+          name,
+          new InstanceWrapper({
+            host: module,
+            name,
+            scope: Scope.DEFAULT,
+            metatype: null,
+            instance: ['a'],
+            isResolved: true,
+            async: false,
+            multi: true,
+          }),
+        ),
+      ).to.be.true;
+
+      module.addCustomValue({...provider, multi: true, useValue: 'b'} as any, (module as any)._providers);
+      expect(
+        setSpy.calledWith(
+          name,
+          new InstanceWrapper({
+            host: module,
+            name,
+            scope: Scope.DEFAULT,
+            metatype: null,
+            instance: ['a', 'b'],
+            isResolved: true,
+            async: false,
+            multi: true,
+          }),
+        ),
+      ).to.be.true;
+    });
+
+    it('should throw an exception if mixed multi provider', () => {
+      module.addCustomValue({...provider, multi: true, useValue: 'a'} as any, (module as any)._providers);
+      expect(() =>
+        module.addCustomValue({...provider, multi: false, useValue: 'a'} as any, (module as any)._providers)
+      ).to.throws(RuntimeException);
     });
   });
 

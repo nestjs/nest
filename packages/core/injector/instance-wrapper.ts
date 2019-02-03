@@ -34,6 +34,7 @@ export class InstanceWrapper<T = any> {
   public readonly inject?: (string | symbol | Function | Type<any>)[];
   public readonly async?: boolean;
   public readonly host?: Module;
+  public readonly multi?: boolean | undefined;
   public readonly scope?: Scope = Scope.DEFAULT;
   public forwardRef?: boolean;
 
