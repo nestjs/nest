@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "5.6.2",
+  "version": "5.7.0",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
@@ -41,7 +41,7 @@
   "license": "MIT",
   "dependencies": {
     "@grpc/proto-loader": "^0.3.0",
-    "@nestjs/common": "5.5.0",
+    "@nestjs/common": "5.6.2",
     "@nestjs/core": "^5.5.0",
     "@nestjs/microservices": "5.5.0",
     "@nestjs/testing": "5.1.0",

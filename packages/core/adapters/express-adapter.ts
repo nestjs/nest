@@ -126,7 +126,7 @@ export class ExpressAdapter implements HttpServer {
     return this.use(express.static(path, options));
   }
 
-  setBaseViewsDir(path: string) {
+  setBaseViewsDir(path: string | string[]) {
     return this.set('views', path);
   }
 
