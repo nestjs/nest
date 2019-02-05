@@ -38,7 +38,7 @@ export interface HttpServer {
   setErrorHandler?(handler: Function);
   setNotFoundHandler?(handler: Function);
   useStaticAssets?(...args: any[]): this;
-  setBaseViewsDir?(path: string): this;
+  setBaseViewsDir?(path: string | string[]): this;
   setViewEngine?(engineOrOptions: any): this;
   createMiddlewareFactory(
     method: RequestMethod,

@@ -11,34 +11,42 @@ describe('RouterExplorer', () => {
   @Controller('global')
   class TestRoute {
     @RequestMapping({ path: 'test' })
-    public getTest() {}
+    public getTest() { }
 
     @RequestMapping({ path: 'test', method: RequestMethod.POST })
-    public postTest() {}
+    public postTest() { }
 
     @RequestMapping({ path: 'another-test', method: RequestMethod.ALL })
-    public anotherTest() {}
+    public anotherTest() { }
+
+    @RequestMapping({ path: ['foo', 'bar'] })
+    public getTestUsingArray() { }
   }
 
   let routerBuilder: RouterExplorer;
+
   beforeEach(() => {
     routerBuilder = new RouterExplorer(new MetadataScanner(), new NestContainer());
   });
+
   describe('scanForPaths', () => {
     it('should method return expected list of route paths', () => {
       const paths = routerBuilder.scanForPaths(new TestRoute());
 
-      expect(paths).to.have.length(3);
+      expect(paths).to.have.length(4);
 
-      expect(paths[0].path).to.eql('/test');
-      expect(paths[1].path).to.eql('/test');
-      expect(paths[2].path).to.eql('/another-test');
+      expect(paths[0].path).to.eql(['/test']);
+      expect(paths[1].path).to.eql(['/test']);
+      expect(paths[2].path).to.eql(['/another-test']);
+      expect(paths[3].path).to.eql(['/foo', '/bar']);
 
       expect(paths[0].requestMethod).to.eql(RequestMethod.GET);
       expect(paths[1].requestMethod).to.eql(RequestMethod.POST);
       expect(paths[2].requestMethod).to.eql(RequestMethod.ALL);
+      expect(paths[3].requestMethod).to.eql(RequestMethod.GET);
     });
   });
+
   describe('exploreMethodMetadata', () => {
     it('should method return expected object which represent single route', () => {
       const instance = new TestRoute();
@@ -50,16 +58,32 @@ describe('RouterExplorer', () => {
         'getTest',
       );
 
-      expect(route.path).to.eql('/test');
+      expect(route.path).to.eql(['/test']);
+      expect(route.requestMethod).to.eql(RequestMethod.GET);
+    });
+
+    it('should method return expected object which represent multiple routes', () => {
+      const instance = new TestRoute();
+      const instanceProto = Object.getPrototypeOf(instance);
+
+      const route = routerBuilder.exploreMethodMetadata(
+        new TestRoute(),
+        instanceProto,
+        'getTestUsingArray',
+      );
+
+      expect(route.path).to.eql(['/foo', '/bar']);
       expect(route.requestMethod).to.eql(RequestMethod.GET);
     });
   });
+
   describe('applyPathsToRouterProxy', () => {
     it('should method return expected object which represent single route', () => {
       const bindStub = sinon.stub(routerBuilder, 'applyCallbackToRouter');
       const paths = [
-        { path: '', requestMethod: RequestMethod.GET },
-        { path: 'test', requestMethod: RequestMethod.GET },
+        { path: [''], requestMethod: RequestMethod.GET },
+        { path: ['test'], requestMethod: RequestMethod.GET },
+        { path: ['foo', 'bar'], requestMethod: RequestMethod.GET },
       ];
 
       routerBuilder.applyPathsToRouterProxy(null, paths as any, null, '', '');
