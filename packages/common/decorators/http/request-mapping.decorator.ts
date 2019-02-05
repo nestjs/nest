@@ -1,6 +1,6 @@
-import { RequestMappingMetadata } from '../../interfaces/request-mapping-metadata.interface';
+import { METHOD_METADATA, PATH_METADATA } from '../../constants';
 import { RequestMethod } from '../../enums/request-method.enum';
-import { PATH_METADATA, METHOD_METADATA } from '../../constants';
+import { RequestMappingMetadata } from '../../interfaces/request-mapping-metadata.interface';
 
 const defaultMetadata = {
   [PATH_METADATA]: '/',
@@ -10,8 +10,8 @@ const defaultMetadata = {
 export const RequestMapping = (
   metadata: RequestMappingMetadata = defaultMetadata,
 ): MethodDecorator => {
-  const pathMetaData = metadata[PATH_METADATA];
-  const path = pathMetaData && pathMetaData.length ? pathMetaData : false || '/';
+  const pathMetadata = metadata[PATH_METADATA];
+  const path = pathMetadata && pathMetadata.length ? pathMetadata : '/';
   const requestMethod = metadata[METHOD_METADATA] || RequestMethod.GET;
 
   return (target, key, descriptor: PropertyDescriptor) => {

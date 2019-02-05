@@ -149,7 +149,7 @@ export class RouterExplorer {
     module: string,
     basePath: string,
   ) {
-    const { path, requestMethod, targetCallback, methodName } = pathProperties;
+    const { path: paths, requestMethod, targetCallback, methodName } = pathProperties;
     const routerMethod = this.routerMethodFactory
       .get(router, requestMethod)
       .bind(router);
@@ -163,8 +163,8 @@ export class RouterExplorer {
     );
     const stripSlash = str =>
       str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
-    path.forEach(p => {
-      const fullPath = stripSlash(basePath) + p;
+    paths.forEach(path => {
+      const fullPath = stripSlash(basePath) + path;
       routerMethod(stripSlash(fullPath) || '/', proxy);
     });
   }

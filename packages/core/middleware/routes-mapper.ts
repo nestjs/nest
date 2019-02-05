@@ -37,11 +37,11 @@ export class RoutesMapper {
       Object.create(route),
       route.prototype,
     );
-    const reducer = (accumulator, currentValue) => accumulator.concat(currentValue);
-    return paths.map(item => item.path.map(p => ({
+    const concatPaths = <T>(acc: T[], currentValue: T[]) => acc.concat(currentValue);
+    return paths.map(item => item.path && item.path.map(p => ({
       path: this.validateGlobalPath(routePath) + this.validateRoutePath(p),
       method: item.requestMethod,
-    }))).reduce(reducer, []);
+    }))).reduce(concatPaths, []);
   }
 
   private isRouteInfo(
