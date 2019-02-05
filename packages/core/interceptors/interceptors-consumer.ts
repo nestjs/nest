@@ -31,7 +31,6 @@ export class InterceptorsConsumer {
       Promise.resolve(start$),
     );
     return result$;
-    // return result$.toPromise(); # Promise breaking Observable stream
   }
 
   public createContext(
