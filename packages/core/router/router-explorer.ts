@@ -3,7 +3,7 @@ import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
-import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
+import { isString, isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';
@@ -22,7 +22,7 @@ import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
 
 export interface RoutePathProperties {
-  path: string;
+  path: string[];
   requestMethod: RequestMethod;
   targetCallback: RouterProxyCallback;
   methodName: string;
@@ -111,8 +111,11 @@ export class RouterExplorer {
       METHOD_METADATA,
       targetCallback,
     );
+    const path = isString(routePath) ?
+      [this.validateRoutePath(routePath)] :
+      routePath.map(p => this.validateRoutePath(p));
     return {
-      path: this.validateRoutePath(routePath),
+      path,
       requestMethod,
       targetCallback,
       methodName,
@@ -135,7 +138,7 @@ export class RouterExplorer {
         module,
         basePath,
       );
-      this.logger.log(ROUTE_MAPPED_MESSAGE(path, requestMethod));
+      path.forEach(p => this.logger.log(ROUTE_MAPPED_MESSAGE(p, requestMethod)));
     });
   }
 
@@ -146,7 +149,7 @@ export class RouterExplorer {
     module: string,
     basePath: string,
   ) {
-    const { path, requestMethod, targetCallback, methodName } = pathProperties;
+    const { path: paths, requestMethod, targetCallback, methodName } = pathProperties;
     const routerMethod = this.routerMethodFactory
       .get(router, requestMethod)
       .bind(router);
@@ -160,8 +163,10 @@ export class RouterExplorer {
     );
     const stripSlash = str =>
       str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
-    const fullPath = stripSlash(basePath) + path;
-    routerMethod(stripSlash(fullPath) || '/', proxy);
+    paths.forEach(path => {
+      const fullPath = stripSlash(basePath) + path;
+      routerMethod(stripSlash(fullPath) || '/', proxy);
+    });
   }
 
   private createCallbackProxy(
