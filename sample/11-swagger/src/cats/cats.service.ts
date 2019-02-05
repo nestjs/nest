@@ -8,16 +8,10 @@ export class CatsService {
 
   create(cat: CreateCatDto): Cat {
     this.cats.push(cat);
-    return {
-      id: (this.cats.length - 1),
-      ...cat,
-    };
+    return cat;
   }
 
   findOne(id: number): Cat {
-    return {
-      id,
-      ...this.cats[id],
-    };
+    return this.cats[id];
   }
 }
