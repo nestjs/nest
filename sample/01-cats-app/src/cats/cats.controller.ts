@@ -1,6 +1,5 @@
 import {
   Body,
-  Catch,
   Controller,
   Get,
   Param,
@@ -17,7 +16,6 @@ import { CatsService } from './cats.service';
 import { CreateCatDto } from './dto/create-cat.dto';
 import { Cat } from './interfaces/cat.interface';
 
-@Catch()
 @Controller('cats')
 @UseGuards(RolesGuard)
 @UseInterceptors(LoggingInterceptor, TransformInterceptor)

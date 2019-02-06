@@ -30,7 +30,7 @@ export class InterceptorsConsumer {
       async (stream$, interceptor) => interceptor.intercept(context, await stream$),
       Promise.resolve(start$),
     );
-    return result$.toPromise();
+    return result$;
   }
 
   public createContext(

@@ -77,13 +77,17 @@ export class Logger implements LoggerService {
     this.printMessage(message, clc.yellow, context, isTimeDiffEnabled);
   }
 
+  protected static isActive(): boolean {
+    return Logger.contextEnvironment !== NestEnvironment.TEST;
+  }
+
   private static printMessage(
     message: any,
     color: (message: string) => string,
     context: string = '',
     isTimeDiffEnabled?: boolean,
   ) {
-    if (Logger.contextEnvironment === NestEnvironment.TEST) {
+    if (!this.isActive()) {
       return;
     }
     const output = isObject(message) ? JSON.stringify(message, null, 2) : message;
@@ -108,7 +112,7 @@ export class Logger implements LoggerService {
   }
 
   private static printStackTrace(trace: string) {
-    if (this.contextEnvironment === NestEnvironment.TEST || !trace) {
+    if (!this.isActive() || !trace) {
       return;
     }
     process.stdout.write(trace);
