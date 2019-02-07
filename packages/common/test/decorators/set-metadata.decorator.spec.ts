@@ -1,15 +1,15 @@
 import { expect } from 'chai';
-import { ReflectMetadata } from '../../decorators/core/reflect-metadata.decorator';
+import { SetMetadata } from '../../decorators/core/set-metadata.decorator';
 
-describe('@ReflectMetadata', () => {
+describe('@SetMetadata', () => {
   const key = 'key',
     value = 'value';
 
-  @ReflectMetadata(key, value)
+  @SetMetadata(key, value)
   class Test {}
 
   class TestWithMethod {
-    @ReflectMetadata(key, value)
+    @SetMetadata(key, value)
     public static test() {}
   }
 
