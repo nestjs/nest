@@ -227,7 +227,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const nameExtended = this.parseDeepServiceName(name, key);
       const deepDefinition = grpcDefinition[key];
 
-      const isServiceDefined = !isUndefined(deepDefinition.service);
+      const isServiceDefined = deepDefinition && !isUndefined(deepDefinition.service);
       const isServiceBoolean = isServiceDefined
         ? deepDefinition.service !== false
         : false;
