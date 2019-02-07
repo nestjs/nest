@@ -1,5 +1,6 @@
 import * as clc from 'cli-color';
-import { Injectable, Optional } from '../decorators';
+import { Injectable } from '../decorators/core/injectable.decorator';
+import { Optional } from '../decorators/core/optional.decorator';
 import { isObject } from '../utils/shared.utils';
 
 declare const process: any;
