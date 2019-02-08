@@ -139,7 +139,13 @@ export class FastifyAdapter {
       const normalizedPath = path === '/*' ? '' : path;
 
       this.instance.use(normalizedPath, (req, res, next) => {
-        if (!re.exec(req.originalUrl + '/')) {
+        const queryParamsIndex = req.originalUrl.indexOf('?');
+        const pathname =
+          queryParamsIndex >= 0
+            ? req.originalUrl.slice(0, queryParamsIndex)
+            : req.originalUrl;
+
+        if (!re.exec(pathname + '/')) {
           return next();
         }
         if (
