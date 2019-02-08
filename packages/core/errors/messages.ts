@@ -12,7 +12,7 @@ import { Module } from '../injector/module';
  * @param instance The instance which should get the name from
  */
 const getInstanceName = (instance: any) =>
-  (instance && (instance as Type<any>).name);
+  instance && (instance as Type<any>).name;
 
 /**
  * Returns the name of the dependency
@@ -20,13 +20,15 @@ const getInstanceName = (instance: any) =>
  * (= injection token). As fallback it returns '+'
  * @param dependency The dependency whichs name should get displayed
  */
-const getDependencyName = (dependency: InjectorDependency) => getInstanceName(dependency) || dependency || '+';
+const getDependencyName = (dependency: InjectorDependency) =>
+  getInstanceName(dependency) || dependency || '+';
 /**
  * Returns the name of the module
  * Tries to get the class name. As fallback it returns 'current'.
  * @param module The module which should get displayed
  */
-const getModuleName = (module: Module) => (module && getInstanceName(module.metatype)) || 'current';
+const getModuleName = (module: Module) =>
+  (module && getInstanceName(module.metatype)) || 'current';
 
 export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   type: string,
@@ -45,7 +47,9 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
 
   message += ` (`;
   message += dependenciesName.join(', ');
-  message += `). Please make sure that the argument at index [${index}] is available in the ${getModuleName(module)} context.`;
+  message += `). Please make sure that the argument at index [${index}] is available in the ${getModuleName(
+    module,
+  )} context.`;
   return message;
 };
 
@@ -61,8 +65,8 @@ export const UNKNOWN_EXPORT_MESSAGE = (text, module: string) =>
 export const INVALID_CLASS_MESSAGE = (text, value: any) =>
   `ModuleRef cannot instantiate class (${value} is not constructable).`;
 
-export const INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuration passed inside the module 'configure()' method.`;
-export const UNKNOWN_REQUEST_MAPPING = `Request mapping properties not defined in the @RequestMapping() annotation!`;
+export const INVALID_MIDDLEWARE_CONFIGURATION = `An invalid middleware configuration has been passed inside the module 'configure()' method.`;
+export const UNKNOWN_REQUEST_MAPPING = `An invalid controller has been detected. Perhaps, one of your controllers is missing @Controller() decorator.`;
 export const UNHANDLED_RUNTIME_EXCEPTION = `Unhandled Runtime Exception.`;
 export const INVALID_EXCEPTION_FILTER = `Invalid exception filters (@UseFilters()).`;
 export const MICROSERVICES_PACKAGE_NOT_FOUND_EXCEPTION = `Unable to load @nestjs/microservices package. (Please make sure that it's already installed.)`;
