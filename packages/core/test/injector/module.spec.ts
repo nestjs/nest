@@ -1,4 +1,4 @@
-import { Scope } from '@nestjs/common';
+import { Controller, Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Injectable } from '../../../common';
@@ -30,14 +30,16 @@ describe('Module', () => {
     const setSpy = sinon.spy(collection, 'set');
     (module as any)._controllers = collection;
 
+    @Controller({ scope: Scope.REQUEST })
     class Test {}
+
     module.addController(Test);
     expect(setSpy.getCall(0).args).to.deep.equal([
       'Test',
       new InstanceWrapper({
         host: module,
         name: 'Test',
-        scope: 0,
+        scope: Scope.REQUEST,
         metatype: Test,
         instance: null,
         isResolved: false,
