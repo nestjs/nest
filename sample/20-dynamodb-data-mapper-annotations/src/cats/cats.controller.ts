@@ -9,8 +9,11 @@ export class CatsController {
 
   @Post('createTable')
   async createTable() {
-    await this.catsService.createCatsTable()
-      .catch(error => console.error(error));
+    try {
+      await this.catsService.createCatsTable();
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   @Post('deleteTable')
@@ -27,10 +30,11 @@ export class CatsController {
 
   @Get()
   async findAll(): Promise<Cat[]> {
-    return this.catsService.findAll()
-      .catch(error => {
-        console.error(error);
-        return [];
-      });
+    try{
+      return await this.catsService.findAll()
+    }catch(error){
+      console.error(error);
+      return [];
+    }
   }
 }
