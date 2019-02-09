@@ -30,9 +30,9 @@ export class CatsController {
 
   @Get()
   async findAll(): Promise<Cat[]> {
-    try{
+    try {
       return await this.catsService.findAll()
-    }catch(error){
+    } catch(error) {
       console.error(error);
       return [];
     }
