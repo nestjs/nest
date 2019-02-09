@@ -22,9 +22,8 @@ export class CatsService {
   async create(createCatDto: CreateCatDto): Promise<Cat> {
     const createdCat = new Cat();
     createdCat.createdAt = new Date();
-    createdCat.name = createCatDto.name;
-    createdCat.age = createCatDto.age;
-    createdCat.breed = createCatDto.breed;
+    const {name, age, breed} = createCatDto;
+    Object.assign(createdCat, {name, age, breed});
     return this.dynamoDB.mapper.put(createdCat);
   }
 
