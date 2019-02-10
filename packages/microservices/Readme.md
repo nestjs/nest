@@ -51,7 +51,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 #### Base Sponsor
 
-<a href="https://blueanchor.io/"><img src="https://nestjs.com/img/blueanchor.png" width="300" /></a>
+<a href="https://blueanchor.io/"><img src="https://nestjs.com/img/blueanchor.png" width="300" /></a> &nbsp;
+<a href="https://www.novologic.com/"><img src="https://nestjs.com/img/novologic.png" width="200" /></a>
 
 #### Silver Sponsors
 <a href="https://neoteric.eu/"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" valign="middle" /></a> &nbsp;
