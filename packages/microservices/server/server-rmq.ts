@@ -9,6 +9,7 @@ import {
   RQM_DEFAULT_PREFETCH_COUNT,
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
+  RQM_DEFAULT_SOCKET_OPTIONS,
   RQM_DEFAULT_URL,
 } from '../constants';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
@@ -43,6 +44,9 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     this.queueOptions =
       this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
+    this.socketOptions =
+      this.getOptionsProp<RmqOptions>(this.options, 'socketOptions') ||
+      RQM_DEFAULT_SOCKET_OPTIONS;
 
     loadPackage('amqplib', ServerRMQ.name);
     rqmPackage = loadPackage('amqp-connection-manager', ServerRMQ.name);
@@ -71,7 +75,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   }
 
   public createClient<T = any>(): T {
-    return rqmPackage.connect(this.urls);
+    return rqmPackage.connect(this.urls, this.socketOptions);
   }
 
   public async setupChannel(channel: any, callback: Function) {
