@@ -25,6 +25,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   private readonly queue: string;
   private readonly prefetchCount: number;
   private readonly queueOptions: any;
+  private readonly socketOptions: any;
   private readonly isGlobalPrefetchCount: boolean;
 
   constructor(private readonly options: MicroserviceOptions) {
