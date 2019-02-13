@@ -86,14 +86,39 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return services;
   }
 
+  /**
+   * Will create service mapping from gRPC generated Object to handlers
+   * defined with @GrpcMethod or @GrpcStream annotations
+   *
+   * @param grpcService
+   * @param name
+   */
   public async createService(grpcService: any, name: string) {
     const service = {};
 
     // tslint:disable-next-line:forin
     for (const methodName in grpcService.prototype) {
-      const methodHandler = this.messageHandlers[
-        this.createPattern(name, methodName)
-      ];
+      // Extract callable from gRPC service object
+      const methodFunction = grpcService.prototype[methodName];
+      // Extract definition check to expect request part as a stream
+      const methodReqStreaming = methodFunction.requestStream;
+      // Define pattern stub
+      let pattern = '';
+      // Check if extracted value presented and truthy
+      if (!isUndefined(methodReqStreaming) && methodReqStreaming) {
+        // Pattern will be created as expecting streaming handler
+        // to be presented, because there is no other way to handle req stream
+        pattern = this.createPattern(name, methodName, true);
+      } else {
+        // Pattern will be created as expecting just method handler to be
+        // presented, to not break possibly existing handler bindings
+        pattern = this.createPattern(name, methodName, false);
+      }
+      // Select appropriate handler
+      // @TODO Add additional check for another pattern if developer wants
+      // to define all of his handlers as call pass-through handlers
+      const methodHandler = this.messageHandlers[pattern];
+
       if (!methodHandler) {
         continue;
       }
@@ -105,17 +130,38 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return service;
   }
 
-  public createPattern(service: string, methodName: string): string {
+  /**
+   * Will create a string of a JSON serialized format
+   *
+   * @param service       : name of the service which should be a match
+   *                        to gRPC service definition name
+   * @param methodName    : name of the method which is coming after rpc
+   *                        keyword
+   * @param streaming     : boolean parameter which should correspond to
+   *                        steam keyword in gRPC service request part
+   */
+  public createPattern(service: string, methodName: string, streaming: boolean): string {
     return JSON.stringify({
       service,
       rpc: methodName,
+      streaming
     });
   }
 
+  /**
+   * Will return async function which will handle gRPC call
+   * with Rx streams or as a direct call passthrough
+   *
+   * @param methodHandler
+   * @param protoNativeHandler
+   */
   public createServiceMethod(
     methodHandler: Function,
     protoNativeHandler: any,
   ): Function {
+    if (protoNativeHandler.requestStream) {
+      return this.createStreamCallMethod(methodHandler);
+    }
     return protoNativeHandler.responseStream
       ? this.createStreamServiceMethod(methodHandler)
       : this.createUnaryServiceMethod(methodHandler);
@@ -139,6 +185,12 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         .pipe(takeUntil(fromEvent(call, CANCEL_EVENT)))
         .forEach(data => call.write(data));
       call.end();
+    };
+  }
+
+  public createStreamCallMethod(methodHandler) {
+    return async (call) => {
+      methodHandler(call);
     };
   }
 
