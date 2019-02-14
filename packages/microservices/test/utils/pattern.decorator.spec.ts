@@ -3,7 +3,7 @@ import { PATTERN_METADATA } from '../../constants';
 import {
   MessagePattern,
   GrpcMethod,
-  createMethodMetadata,
+  GrpcStream,
 } from '../../decorators/pattern.decorator';
 
 describe('@MessagePattern', () => {
@@ -36,6 +36,7 @@ describe('@GrpcMethod', () => {
     expect(metadata).to.be.eql({
       service: TestService.name,
       rpc: 'Test',
+      streaming: false
     });
   });
 
@@ -45,6 +46,7 @@ describe('@GrpcMethod', () => {
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
+      streaming: false
     });
   });
 
@@ -54,6 +56,50 @@ describe('@GrpcMethod', () => {
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
+      streaming: false
+    });
+  });
+});
+
+describe('@GrpcStream', () => {
+  class TestService {
+    @GrpcStream()
+    public test() {}
+
+    @GrpcStream('TestService2')
+    public test2() {}
+
+    @GrpcStream('TestService2', 'Test2')
+    public test3() {}
+  }
+
+  it('should derive method and service name', () => {
+    const svc = new TestService();
+    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test);
+    expect(metadata).to.be.eql({
+      service: TestService.name,
+      rpc: 'Test',
+      streaming: true
+    });
+  });
+
+  it('should derive method', () => {
+    const svc = new TestService();
+    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
+    expect(metadata).to.be.eql({
+      service: 'TestService2',
+      rpc: 'Test2',
+      streaming: true
+    });
+  });
+
+  it('should override both method and service', () => {
+    const svc = new TestService();
+    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test3);
+    expect(metadata).to.be.eql({
+      service: 'TestService2',
+      rpc: 'Test2',
+      streaming: true
     });
   });
 });
