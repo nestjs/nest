@@ -107,9 +107,9 @@ describe('ClientGrpcProxy', () => {
       let stream$: Observable<any>;
 
       beforeEach(() => {
-        dataSpy.reset();
-        errorSpy.reset();
-        completeSpy.reset();
+        dataSpy.resetHistory();
+        errorSpy.resetHistory();
+        completeSpy.resetHistory();
         eventCallbacks = {};
         callMock = {
           on: (type, fn) => (eventCallbacks[type] = fn),
@@ -198,7 +198,7 @@ describe('ClientGrpcProxy', () => {
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {
-        sinon.stub(client, 'getOptionsProp').callsFake(() => {
+        sinon.stub(client, 'getOptionsProp' as any).callsFake(() => {
           throw new Error();
         });
         expect(() => client.loadProto()).to.throws(
