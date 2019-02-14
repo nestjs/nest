@@ -14,7 +14,7 @@ describe('ServerTCP', () => {
     const socket = { on: sinon.spy() };
     beforeEach(() => {
       getSocketInstance = sinon
-        .stub(server, 'getSocketInstance')
+        .stub(server, 'getSocketInstance' as any)
         .callsFake(() => socket);
     });
     it('should bind message event to handler', () => {
