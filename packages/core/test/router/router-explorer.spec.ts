@@ -79,7 +79,7 @@ describe('RouterExplorer', () => {
 
   describe('applyPathsToRouterProxy', () => {
     it('should method return expected object which represent single route', () => {
-      const bindStub = sinon.stub(routerBuilder, 'applyCallbackToRouter' as any);
+      const bindStub = sinon.stub(routerBuilder, 'applyCallbackToRouter');
       const paths = [
         { path: [''], requestMethod: RequestMethod.GET },
         { path: ['test'], requestMethod: RequestMethod.GET },
