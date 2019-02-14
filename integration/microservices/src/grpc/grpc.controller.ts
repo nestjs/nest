@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { Client, ClientGrpc, GrpcMethod, Transport } from '@nestjs/microservices';
+import { Client, ClientGrpc, GrpcMethod, GrpcStream, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { Observable, of } from 'rxjs';
 
@@ -26,5 +26,15 @@ export class GrpcController {
     return of({
       result: data.reduce((a, b) => a + b),
     });
+  }
+
+  @GrpcStream('Math')
+  async sumStream(stream: any) {
+
+    stream.on('data', (msg) => {
+      console.log('DATA@!', msg);
+      stream.write({result: 1});
+    });
+
   }
 }
