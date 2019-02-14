@@ -134,7 +134,7 @@ describe('ClientTCP', () => {
           toPromise: () => source,
           pipe: () => source,
         };
-        connect$Stub = sinon.stub(client, 'connect$').callsFake(() => source);
+        connect$Stub = sinon.stub(client, 'connect$' as any).callsFake(() => source);
         await client.connect();
       });
       afterEach(() => {
