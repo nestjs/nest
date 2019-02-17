@@ -1,18 +1,21 @@
-import iterate from 'iterare';
-
-import { isUndefined, isNil } from '@nestjs/common/utils/shared.utils';
 import { OnApplicationBootstrap } from '@nestjs/common';
-
-import { Module } from '../injector/module';
+import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import iterate from 'iterare';
 import { InstanceWrapper } from '../injector/instance-wrapper';
-import { getTransientInstances, getNonTransientInstances } from '../injector/instance-trancient';
+import { Module } from '../injector/module';
+import {
+  getNonTransientInstances,
+  getTransientInstances,
+} from '../injector/transient-instances';
 
 /**
  * Checks if the given instance has the `onApplicationBootstrap` function
  *
  * @param instance The instance which should be checked
  */
-function hasOnAppBootstrapHook(instance: unknown): instance is OnApplicationBootstrap {
+function hasOnAppBootstrapHook(
+  instance: unknown,
+): instance is OnApplicationBootstrap {
   return !isUndefined(
     (instance as OnApplicationBootstrap).onApplicationBootstrap,
   );
@@ -25,7 +28,9 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
   return iterate(instances)
     .filter(instance => !isNil(instance))
     .filter(hasOnAppBootstrapHook)
-    .map(async instance => (instance as any as OnApplicationBootstrap).onApplicationBootstrap())
+    .map(async instance =>
+      ((instance as any) as OnApplicationBootstrap).onApplicationBootstrap(),
+    )
     .toArray();
 }
 

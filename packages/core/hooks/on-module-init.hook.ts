@@ -1,11 +1,12 @@
-import iterate from 'iterare';
-
 import { OnModuleInit } from '@nestjs/common';
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
-
-import { Module } from '../injector/module';
+import iterate from 'iterare';
 import { InstanceWrapper } from '../injector/instance-wrapper';
-import { getTransientInstances, getNonTransientInstances } from '../injector/instance-trancient';
+import { Module } from '../injector/module';
+import {
+  getNonTransientInstances,
+  getTransientInstances,
+} from '../injector/transient-instances';
 
 /**
  * Returns true or false if the given instance has a `onModuleInit` function
@@ -23,7 +24,7 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
   return iterate(instances)
     .filter(instance => !isNil(instance))
     .filter(hasOnModuleInitHook)
-    .map(async instance => (instance as any as OnModuleInit).onModuleInit())
+    .map(async instance => ((instance as any) as OnModuleInit).onModuleInit())
     .toArray();
 }
 

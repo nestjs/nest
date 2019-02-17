@@ -1,13 +1,13 @@
 import {
   CanActivate,
   ExceptionFilter,
+  HttpServer,
   INestApplication,
   INestMicroservice,
   NestInterceptor,
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { HttpServer } from '@nestjs/common/interfaces';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
@@ -16,6 +16,7 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject, validatePath } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import * as optional from 'optional';
+import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { NestContainer } from './injector/container';
@@ -65,8 +66,8 @@ export class NestApplication extends NestApplicationContext
     );
   }
 
-  public getHttpAdapter(): HttpServer {
-    return this.httpAdapter;
+  public getHttpAdapter(): AbstractHttpAdapter {
+    return this.httpAdapter as AbstractHttpAdapter;
   }
 
   public registerHttpServer() {

@@ -72,8 +72,8 @@ export abstract class AbstractHttpAdapter<
     this.httpServer = httpServer;
   }
 
-  public getInstance(): any {
-    return this.instance;
+  public getInstance<T = any>(): T {
+    return this.instance as T;
   }
 
   abstract close();

@@ -11,6 +11,7 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
+import { AbstractHttpAdapter } from './adapters/http-adapter';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { ExceptionsZone } from './errors/exceptions-zone';
@@ -34,12 +35,12 @@ export class NestFactoryStatic {
   ): Promise<T>;
   public async create<T extends INestApplication = INestApplication>(
     module: any,
-    httpServer: HttpServer,
+    httpAdapter: AbstractHttpAdapter,
     options?: NestApplicationOptions,
   ): Promise<T>;
   public async create<T extends INestApplication = INestApplication>(
     module: any,
-    serverOrOptions?: HttpServer | NestApplicationOptions,
+    serverOrOptions?: AbstractHttpAdapter | NestApplicationOptions,
     options?: NestApplicationOptions,
   ): Promise<T> {
     // tslint:disable-next-line:prefer-const
@@ -183,15 +184,17 @@ export class NestFactoryStatic {
     !isNil(options.logger) && Logger.overrideLogger(options.logger);
   }
 
-  private createHttpAdapter<T = any>(httpServer?: T): HttpServer {
+  private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
     const { ExpressAdapter } = loadAdapter('@nestjs/platform-express', 'HTTP');
     return new ExpressAdapter(httpServer);
   }
 
   private isHttpServer(
-    serverOrOptions: HttpServer | NestApplicationOptions,
-  ): serverOrOptions is HttpServer {
-    return !!(serverOrOptions && (serverOrOptions as HttpServer).patch);
+    serverOrOptions: AbstractHttpAdapter | NestApplicationOptions,
+  ): serverOrOptions is AbstractHttpAdapter {
+    return !!(
+      serverOrOptions && (serverOrOptions as AbstractHttpAdapter).patch
+    );
   }
 
   private createAdapterProxy<T>(app: NestApplication, adapter: HttpServer): T {

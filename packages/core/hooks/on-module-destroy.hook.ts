@@ -1,18 +1,21 @@
-import iterate from 'iterare';
-
-import { isUndefined, isNil } from '@nestjs/common/utils/shared.utils';
 import { OnModuleDestroy } from '@nestjs/common';
-
-import { Module } from '../injector/module';
+import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import iterate from 'iterare';
 import { InstanceWrapper } from '../injector/instance-wrapper';
-import { getTransientInstances, getNonTransientInstances } from '../injector/instance-trancient';
+import { Module } from '../injector/module';
+import {
+  getNonTransientInstances,
+  getTransientInstances,
+} from '../injector/transient-instances';
 
 /**
  * Returns true or false if the given instance has a `onModuleDestroy` function
  *
  * @param instance The instance which should be checked
  */
-function hasOnModuleDestroyHook(instance: unknown): instance is OnModuleDestroy {
+function hasOnModuleDestroyHook(
+  instance: unknown,
+): instance is OnModuleDestroy {
   return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
 }
 
@@ -23,7 +26,9 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
   return iterate(instances)
     .filter(instance => !isNil(instance))
     .filter(hasOnModuleDestroyHook)
-    .map(async instance => (instance as any as OnModuleDestroy).onModuleDestroy())
+    .map(async instance =>
+      ((instance as any) as OnModuleDestroy).onModuleDestroy(),
+    )
     .toArray();
 }
 
@@ -47,10 +52,7 @@ export async function callModuleDestroyHook(module: Module): Promise<any> {
   await Promise.all(callOperator(transientInstances));
 
   // Call the module instance itself
-  if (
-    moduleClassInstance &&
-    hasOnModuleDestroyHook(moduleClassInstance)
-  ) {
+  if (moduleClassInstance && hasOnModuleDestroyHook(moduleClassInstance)) {
     await (moduleClassInstance as OnModuleDestroy).onModuleDestroy();
   }
 }
