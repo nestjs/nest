@@ -1,0 +1,32 @@
+{
+  "name": "nest-typescript-starter",
+  "version": "1.0.0",
+  "description": "Nest TypeScript starter repository",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node src/main",
+    "prestart:prod": "tsc",
+    "start:prod": "node dist/main.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^5.1.0",
+    "@nestjs/core": "^5.1.0",
+    "@nestjs/graphql": "^5.0.0",
+    "apollo-server-express": "^2.0.4",
+    "class-transformer": "^0.2.0",
+    "class-validator": "^0.9.1",
+    "graphql": "^14.1.1",
+    "graphql-tools": "^2.11.0",
+    "reflect-metadata": "^0.1.12",
+    "rxjs": "^6.0.0",
+    "subscriptions-transport-ws": "^0.9.5",
+    "type-graphql": "^0.17.0-beta.7",
+    "typescript": "^3.1.0",
+    "ws": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^7.0.41",
+    "ts-node": "^6.0.0",
+    "tslint": "^5.9.1"
+  }
+}

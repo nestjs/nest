@@ -1,6 +1,8 @@
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'apollo-server-express';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { DataInterceptor } from '../common/interceptors/data.interceptor';
 import { NewRecipeInput } from './dto/new-recipe.input';
 import { RecipesArgs } from './dto/recipes.args';
 import { Recipe } from './models/recipe';
@@ -8,10 +10,12 @@ import { RecipesService } from './recipes.service';
 
 const pubSub = new PubSub();
 
+@UseInterceptors(DataInterceptor)
 @Resolver(of => Recipe)
 export class RecipesResolver {
   constructor(private readonly recipesService: RecipesService) {}
 
+  @UseGuards(AuthGuard)
   @Query(returns => Recipe)
   async recipe(@Args('id') id: string): Promise<Recipe> {
     const recipe = await this.recipesService.findOneById(id);
