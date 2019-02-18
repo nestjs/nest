@@ -30,11 +30,8 @@ export class GrpcController {
 
   @GrpcStream('Math')
   async sumStream(stream: any) {
-
-    stream.on('data', (msg) => {
-      console.log('DATA@!', msg);
-      stream.write({result: 1});
+    stream.on('data', (msg: any) => {
+      stream.write({result: msg.data.reduce((a, b) => a + b)});
     });
-
   }
 }
