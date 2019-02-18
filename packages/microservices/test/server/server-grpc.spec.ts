@@ -125,10 +125,11 @@ describe('ServerGrpc', () => {
     it('should return pattern', () => {
       const service = 'test';
       const method = 'method';
-      expect(server.createPattern(service, method)).to.be.eql(
+      expect(server.createPattern(service, method, false)).to.be.eql(
         JSON.stringify({
           service,
           rpc: method,
+          streaming: false
         }),
       );
     });
