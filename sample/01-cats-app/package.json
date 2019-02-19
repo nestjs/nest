@@ -9,8 +9,7 @@
     "start:prod": "node dist/main.js",
     "test": "jest --config=jest.json",
     "test:watch": "jest --watch --config=jest.json",
-    "test:coverage":
-      "jest --config=jest.json --coverage --coverageDirectory=coverage",
+    "test:coverage": "jest --config=jest.json --coverage --coverageDirectory=coverage",
     "e2e": "jest --config=e2e/jest-e2e.json --forceExit",
     "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
   },
@@ -20,19 +19,19 @@
     "@nestjs/microservices": "^5.3.0",
     "@nestjs/testing": "^5.3.0",
     "@nestjs/websockets": "^5.3.0",
-    "class-transformer": "^0.1.7",
-    "class-validator": "^0.8.1",
-    "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
+    "class-transformer": "^0.1.10",
+    "dotenv": "^6.2.0",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^6.4.0",
     "typescript": "^2.8.0"
   },
   "devDependencies": {
     "@types/jest": "^20.0.8",
-    "@types/node": "^7.0.41",
+    "@types/node": "^7.10.3",
     "jest": "^20.0.4",
-    "supertest": "^3.0.0",
+    "supertest": "^3.4.2",
     "ts-jest": "^20.0.14",
     "ts-node": "^6.0.0",
-    "tslint": "^5.9.1"
+    "tslint": "5.9.1"
   }
 }
