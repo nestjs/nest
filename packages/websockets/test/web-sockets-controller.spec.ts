@@ -30,7 +30,7 @@ describe('WebSocketsController', () => {
     instance = new WebSocketsController(
       provider,
       config,
-      sinon.createStubInstance(WsContextCreator),
+      sinon.createStubInstance(WsContextCreator) as any,
     );
   });
   describe('hookGatewayIntoServer', () => {
@@ -96,8 +96,6 @@ describe('WebSocketsController', () => {
 
       (instance as any).hookServerToProperties = hookServerToProperties;
       (instance as any).subscribeEvents = subscribeEvents;
-
-      sinon.stub(instance, 'injectMiddleware').returns(0);
     });
     it('should call "hookServerToProperties" with expected arguments', () => {
       instance.subscribeObservableServer(gateway, namespace, port, '');

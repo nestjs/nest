@@ -5,30 +5,21 @@
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "precommit": "lint-staged",
-    "test":
-      "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --require 'node_modules/reflect-metadata/Reflect.js'",
-    "integration-test":
-      "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js'",
-    "lint":
-      "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
-    "format":
-      "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
+    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --require 'node_modules/reflect-metadata/Reflect.js'",
+    "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js'",
+    "lint": "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
+    "format": "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
     "clean": "gulp clean:bundle",
     "build": "npm run clean && gulp build",
     "prebuild:dev": "rm -rf node_modules/@nestjs",
     "build:dev": "gulp build --dist node_modules/@nestjs && gulp move",
     "postinstall": "opencollective",
     "prerelease": "gulp copy-misc && gulp build --dist node_modules/@nestjs",
-    "publish":
-      "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --force-publish --exact -m \"chore(@nestjs) publish %s release\"",
-    "publish:rc":
-      "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
-    "publish:next":
-      "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
-    "publish:beta":
-      "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\"",
-    "publish:test":
-      "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --force-publish --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\""
+    "publish": "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --force-publish --exact -m \"chore(@nestjs) publish %s release\"",
+    "publish:rc": "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=rc -m \"chore(@nestjs) publish %s release\"",
+    "publish:next": "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=next --skip-git -m \"chore(@nestjs) publish %s release\"",
+    "publish:beta": "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --npm-tag=beta -m \"chore(@nestjs) publish %s release\"",
+    "publish:test": "npm run prerelease && npm run build && ./node_modules/.bin/lerna publish --force-publish --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\""
   },
   "engines": {
     "node": ">= 8.9.0"
@@ -64,7 +55,7 @@
     "fastify": "^1.1.1",
     "fastify-formbody": "^2.0.0",
     "fastify-multipart": "^0.4.1",
-    "grpc": "^1.14.1",
+    "grpc": "^1.16.1",
     "iterare": "0.0.8",
     "json-socket": "^0.2.1",
     "mqtt": "^2.16.0",
@@ -86,7 +77,7 @@
   "devDependencies": {
     "@types/amqplib": "^0.5.7",
     "@types/cache-manager": "^1.2.6",
-    "@types/chai": "^3.5.2",
+    "@types/chai": "^4.1.7",
     "@types/chai-as-promised": "0.0.31",
     "@types/cors": "^2.8.3",
     "@types/express": "^4.0.39",
@@ -95,12 +86,12 @@
     "@types/node": "^7.0.5",
     "@types/redis": "^0.12.36",
     "@types/reflect-metadata": "0.0.5",
-    "@types/sinon": "^1.16.36",
+    "@types/sinon": "^7.0.6",
     "@types/socket.io": "^1.4.32",
     "@types/ws": "^4.0.1",
     "awesome-typescript-loader": "^3.0.0-beta.18",
     "body-parser": "^1.18.3",
-    "chai": "^3.5.0",
+    "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "clang-format": "^1.1.0",
     "concurrently": "^3.4.0",
@@ -125,8 +116,8 @@
     "nodemon": "^1.18.4",
     "nyc": "^10.1.2",
     "prettier": "^1.9.2",
-    "sinon": "^2.1.0",
-    "sinon-chai": "^2.8.0",
+    "sinon": "^7.2.3",
+    "sinon-chai": "^3.3.0",
     "socket.io-client": "^2.0.4",
     "supertest": "^3.0.0",
     "ts-node": "^6.0.0",
@@ -141,7 +132,9 @@
     }
   },
   "nyc": {
-    "include": ["packages/**/*.ts"],
+    "include": [
+      "packages/**/*.ts"
+    ],
     "exclude": [
       "node_modules/",
       "packages/**/*.spec.ts",
@@ -161,13 +154,23 @@
       "packages/common/serializer/**/*",
       "packages/common/services/logger.service.ts"
     ],
-    "extension": [".ts"],
-    "require": ["ts-node/register"],
-    "reporter": ["text-summary", "html"],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
     "sourceMap": true,
     "instrument": true
   },
   "lint-staged": {
-    "packages/**/*.{ts,json}": ["npm run format", "git add"]
+    "packages/**/*.{ts,json}": [
+      "npm run format",
+      "git add"
+    ]
   }
 }

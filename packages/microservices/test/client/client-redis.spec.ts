@@ -68,7 +68,7 @@ describe('ClientRedis', () => {
       let assignPacketIdStub: sinon.SinonStub;
       beforeEach(() => {
         assignPacketIdStub = sinon
-          .stub(client, 'assignPacketId')
+          .stub(client, 'assignPacketId' as any)
           .callsFake(() => {
             throw new Error();
           });
@@ -95,7 +95,7 @@ describe('ClientRedis', () => {
       beforeEach(async () => {
         callback = sinon.spy();
         assignStub = sinon
-          .stub(client, 'assignPacketId')
+          .stub(client, 'assignPacketId' as any)
           .callsFake(packet => Object.assign(packet, { id }));
 
         getResPatternStub = sinon
