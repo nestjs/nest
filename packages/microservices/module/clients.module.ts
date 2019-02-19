@@ -1,5 +1,5 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { ClientProxyFactory } from 'client';
+import { ClientProxyFactory } from './../client';
 import { getClientToken } from './clients.utils';
 import { ClientsModuleOptions } from './interfaces/clients-module.interface';
 
