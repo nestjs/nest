@@ -51,6 +51,11 @@ export class HttpModule {
           provide: HTTP_MODULE_ID,
           useValue: randomStringGenerator(),
         },
+        {
+          provide: AXIOS_INSTANCE_TOKEN,
+          useValue: (config: HttpModuleOptions) => Axios.create(config),
+          inject: [HTTP_MODULE_OPTIONS],
+        },
         ...(options.extraProviders || []),
       ],
     };
