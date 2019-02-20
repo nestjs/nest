@@ -1,7 +1,7 @@
 import { DynamicModule } from '@nestjs/common';
 import { expect } from 'chai';
 import { ClientProxyFactory } from '../../client';
-import { ClientsModule, getClientToken } from '../../module';
+import { ClientsModule } from '../../module';
 
 describe('ClientsModule', () => {
   let dynamicModule: DynamicModule;
@@ -19,7 +19,7 @@ describe('ClientsModule', () => {
   it('should return an expected providers array', () => {
     expect(dynamicModule.providers).to.be.deep.eq([
       {
-        provide: getClientToken('test'),
+        provide: 'test',
         useValue: ClientProxyFactory.create({}),
       },
     ]);
