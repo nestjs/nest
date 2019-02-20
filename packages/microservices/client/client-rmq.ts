@@ -16,6 +16,7 @@ import {
 } from './../constants';
 import { WritePacket } from './../interfaces';
 import { ClientProxy } from './client-proxy';
+import { RABBITMQ_REPLY_QUEUE } from './constants';
 
 let rqmPackage: any = {};
 
@@ -29,7 +30,6 @@ export class ClientRMQ extends ClientProxy {
   protected prefetchCount: number;
   protected isGlobalPrefetchCount: boolean;
   protected queueOptions: any;
-  protected replyQueue: string;
   protected responseEmitter: EventEmitter;
 
   constructor(protected readonly options: ClientOptions['options']) {
@@ -62,7 +62,7 @@ export class ClientRMQ extends ClientProxy {
   public consumeChannel() {
     this.channel.addSetup(channel =>
       channel.consume(
-        this.replyQueue,
+        RABBITMQ_REPLY_QUEUE,
         msg => this.responseEmitter.emit(msg.properties.correlationId, msg),
         { noAck: true },
       ),
@@ -78,7 +78,10 @@ export class ClientRMQ extends ClientProxy {
 
     const connect$ = this.connect$(this.client);
     this.connection = this.mergeDisconnectEvent(this.client, connect$)
-      .pipe(switchMap(() => this.createChannel()), share())
+      .pipe(
+        switchMap(() => this.createChannel()),
+        share(),
+      )
       .toPromise();
     return this.connection;
   }
@@ -112,10 +115,6 @@ export class ClientRMQ extends ClientProxy {
     await channel.assertQueue(this.queue, this.queueOptions);
     await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
 
-    this.replyQueue = (await channel.assertQueue('', {
-      exclusive: true,
-    })).queue;
-
     this.responseEmitter = new EventEmitter();
     this.responseEmitter.setMaxListeners(0);
     this.consumeChannel();
@@ -137,7 +136,7 @@ export class ClientRMQ extends ClientProxy {
         this.queue,
         Buffer.from(JSON.stringify(message)),
         {
-          replyTo: this.replyQueue,
+          replyTo: RABBITMQ_REPLY_QUEUE,
           correlationId,
         },
       );
