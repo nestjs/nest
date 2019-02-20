@@ -18,7 +18,6 @@ export const SHUTDOWN_SIGNALS = [
   'SIGABRT',
   'SIGBUS',
   'SIGFPE',
-  'SIGUSR1',
   'SIGSEGV',
   'SIGUSR2',
   'SIGTERM',

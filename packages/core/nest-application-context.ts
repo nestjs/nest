@@ -1,17 +1,17 @@
 import { INestApplicationContext, Logger, LoggerService } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { SHUTDOWN_SIGNALS } from './constants';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
+import {
+  callAppShutdownHook,
+  callModuleBootstrapHook,
+  callModuleDestroyHook,
+  callModuleInitHook,
+} from './hooks';
 import { NestContainer } from './injector/container';
 import { ContainerScanner } from './injector/container-scanner';
 import { Module } from './injector/module';
 import { ModuleTokenFactory } from './injector/module-token-factory';
-import {
-  callModuleInitHook,
-  callModuleBootstrapHook,
-  callModuleDestroyHook,
-  callAppShutdownHook,
-} from './hooks';
-import { SHUTDOWN_SIGNALS } from './constants';
 
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
@@ -74,9 +74,10 @@ export class NestApplicationContext implements INestApplicationContext {
 
   protected listenToShutdownSignals() {
     SHUTDOWN_SIGNALS.forEach((signal: any) =>
-      process.on(signal, async () => {
+      process.on(signal, async code => {
         await this.callDestroyHook();
         await this.callShutdownHook(signal);
+        process.exit(code || 1);
       }),
     );
   }
