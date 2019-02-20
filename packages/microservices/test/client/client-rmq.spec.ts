@@ -132,8 +132,7 @@ describe('ClientRQM', () => {
     beforeEach(() => {
       client['queue'] = queue;
       client['queueOptions'] = queueOptions;
-      client['isGlobalPrefetchCount'] = isGlobalPrefetchCount;
-      client['prefetchCount'] = prefetchCount;
+      (client as any)['options'] = { isGlobalPrefetchCount, prefetchCount };
 
       channel = {
         assertQueue: sinon.spy(() => ({})),
