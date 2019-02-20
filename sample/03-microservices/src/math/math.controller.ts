@@ -1,16 +1,11 @@
-import { Controller, Get } from '@nestjs/common';
-import {
-  Client,
-  ClientProxy,
-  MessagePattern,
-  Transport,
-} from '@nestjs/microservices';
+import { Controller, Get, Inject } from '@nestjs/common';
+import { ClientProxy, MessagePattern } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
+import { MATH_SERVICE } from './math.constants';
 
 @Controller()
 export class MathController {
-  @Client({ transport: Transport.TCP })
-  client: ClientProxy;
+  constructor(@Inject(MATH_SERVICE) private readonly client: ClientProxy) {}
 
   @Get()
   execute(): Observable<number> {

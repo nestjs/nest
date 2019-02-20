@@ -1,8 +1,7 @@
 import { ClientOptions } from '../../interfaces';
 
-export interface ClientProviderOptions {
+export type ClientProviderOptions = ClientOptions & {
   name: string;
-  options: ClientOptions;
-}
+};
 
 export interface ClientsModuleOptions extends Array<ClientProviderOptions> {}
