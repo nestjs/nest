@@ -31,7 +31,7 @@ import { MetadataScanner } from './metadata-scanner';
 interface ApplicationProviderWrapper {
   moduleKey: string;
   providerKey: string;
-  type: string;
+  type: string | symbol | Type<any>;
 }
 
 export class DependenciesScanner {
@@ -264,7 +264,7 @@ export class DependenciesScanner {
     const type = (provider as ClassProvider | ValueProvider | FactoryProvider)
       .provide;
 
-    if (!providersKeys.includes(type)) {
+    if (!providersKeys.includes(type as string)) {
       return this.container.addProvider(provider as any, token);
     }
     const providerToken = randomStringGenerator();
@@ -319,7 +319,7 @@ export class DependenciesScanner {
         const { providers } = modules.get(moduleKey);
         const { instance } = providers.get(providerKey);
 
-        applyProvidersMap[type](instance);
+        applyProvidersMap[type as string](instance);
       },
     );
   }
