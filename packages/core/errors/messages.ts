@@ -1,5 +1,5 @@
 import { Type } from '@nestjs/common';
-import { isNil } from '@nestjs/common/utils/shared.utils';
+import { isNil, isSymbol } from '@nestjs/common/utils/shared.utils';
 import {
   InjectorDependency,
   InjectorDependencyContext,
@@ -21,7 +21,15 @@ const getInstanceName = (instance: any) =>
  * @param dependency The dependency whichs name should get displayed
  */
 const getDependencyName = (dependency: InjectorDependency) =>
-  getInstanceName(dependency) || dependency || '+';
+  // use class name
+  getInstanceName(dependency) ||
+  // use injection token (symbol)
+  (isSymbol(dependency) && dependency.toString()) ||
+  // use string directly
+  dependency ||
+  // otherwise
+  '+';
+
 /**
  * Returns the name of the module
  * Tries to get the class name. As fallback it returns 'current'.
@@ -31,15 +39,15 @@ const getModuleName = (module: Module) =>
   (module && getInstanceName(module.metatype)) || 'current';
 
 export const UNKNOWN_DEPENDENCIES_MESSAGE = (
-  type: string,
+  type: string | symbol,
   unknownDependencyContext: InjectorDependencyContext,
   module: Module,
 ) => {
   const { index, dependencies, key } = unknownDependencyContext;
-  let message = `Nest can't resolve dependencies of the ${type}`;
+  let message = `Nest can't resolve dependencies of the ${type.toString()}`;
 
   if (isNil(index)) {
-    message += `. Please make sure that the "${key}" property is available in the current context.`;
+    message += `. Please make sure that the "${key.toString()}" property is available in the current context.`;
     return message;
   }
   const dependenciesName = (dependencies || []).map(getDependencyName);
