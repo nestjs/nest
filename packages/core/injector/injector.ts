@@ -49,7 +49,7 @@ export interface InjectorDependencyContext {
   /**
    * The name of the property key (property-based injection)
    */
-  key?: string;
+  key?: string | symbol;
   /**
    * The name of the function or injection token
    */
