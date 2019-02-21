@@ -57,7 +57,7 @@
     "fastify-formbody": "^2.0.0",
     "fastify-multipart": "^0.4.1",
     "graphql": "^14.1.1",
-    "grpc": "^1.14.1",
+    "grpc": "^1.16.1",
     "http2": "^3.3.7",
     "iterare": "0.0.8",
     "json-socket": "^0.2.1",
