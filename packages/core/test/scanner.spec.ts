@@ -47,7 +47,7 @@ describe('DependenciesScanner', () => {
       new MetadataScanner(),
       new ApplicationConfig(),
     );
-    sinon.stub(scanner, 'registerCoreModule').callsFake(() => {});
+    sinon.stub(scanner, 'registerCoreModule').callsFake(async () => {});
   });
 
   afterEach(() => {
@@ -151,7 +151,7 @@ describe('DependenciesScanner', () => {
     it('should call forwardRef() when forwardRef property exists', () => {
       const module = { forwardRef: sinon.spy() };
 
-      sinon.stub(container, 'addModule').returns({});
+      sinon.stub(container, 'addModule').returns({} as any);
       scanner.insertModule(module as any, [] as any);
       expect(module.forwardRef.called).to.be.true;
     });
@@ -161,7 +161,7 @@ describe('DependenciesScanner', () => {
     it('should call forwardRef() when forwardRef property exists', async () => {
       const module = { forwardRef: sinon.stub().returns({}) };
 
-      sinon.stub(container, 'addRelatedModule').returns({});
+      sinon.stub(container, 'addImport').returns({} as any);
       await scanner.insertImport(module as any, [] as any, 'test');
       expect(module.forwardRef.called).to.be.true;
     });

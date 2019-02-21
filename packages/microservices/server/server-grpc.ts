@@ -1,7 +1,10 @@
+import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { fromEvent } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
+  GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+  GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
   GRPC_DEFAULT_PROTO_LOADER,
   GRPC_DEFAULT_URL,
 } from '../constants';
@@ -65,16 +68,30 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       this.logger.error(invalidPackageError.message, invalidPackageError.stack);
       throw invalidPackageError;
     }
-    for (const name of this.getServiceNames(grpcPkg)) {
+
+    // Take all of the services defined in grpcPkg and assign them to
+    // method handlers defined in Controllers
+    for (const definition of this.getServiceNames(grpcPkg)) {
       this.grpcClient.addService(
-        grpcPkg[name].service,
-        await this.createService(grpcPkg[name], name),
+        // First parameter requires exact service definition from proto
+        definition.service.service,
+        // Here full proto definition required along with namespaced pattern name
+        await this.createService(definition.service, definition.name),
       );
     }
   }
 
-  public getServiceNames(grpcPkg: any) {
-    return Object.keys(grpcPkg).filter(name => grpcPkg[name].service);
+  /**
+   * Will return all of the services along with their fully namespaced
+   * names as an array of objects.
+   * This method initiates recursive scan of grpcPkg object
+   */
+  public getServiceNames(grpcPkg: any): { name: string; service: any }[] {
+    // Define accumulator to collect all of the services available to load
+    const services: { name: string; service: any }[] = [];
+    // Initiate recursive services collector starting with empty name
+    this.collectDeepServices('', grpcPkg, services);
+    return services;
   }
 
   public async createService(grpcService: any, name: string) {
@@ -147,7 +164,18 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public createClient(): any {
-    const server = new grpcPackage.Server();
+    const server = new grpcPackage.Server({
+      'grpc.max_send_message_length': this.getOptionsProp<GrpcOptions>(
+        this.options,
+        'maxSendMessageLength',
+        GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
+      ),
+      'grpc.max_receive_message_length': this.getOptionsProp<GrpcOptions>(
+        this.options,
+        'maxReceiveMessageLength',
+        GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+      ),
+    });
     const credentials = this.getOptionsProp<GrpcOptions>(
       this.options,
       'credentials',
@@ -186,5 +214,60 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       this.logger.error(message, invalidProtoError.stack);
       throw invalidProtoError;
     }
+  }
+
+  /**
+   * Recursively fetch all of the service methods available on loaded
+   * protobuf descriptor object, and collect those as an objects with
+   * dot-syntax full-path names.
+   *
+   * Example:
+   *  for proto package Bundle.FirstService with service Events { rpc...
+   *  will be resolved to object of (while loaded for Bundle package):
+   *    {
+   *      name: "FirstService.Events",
+   *      service: {Object}
+   *    }
+   */
+  private collectDeepServices(
+    name: string,
+    grpcDefinition: any,
+    accumulator: { name: string; service: any }[],
+  ) {
+    if (!isObject(grpcDefinition)) {
+      return;
+    }
+    const keysToTraverse = Object.keys(grpcDefinition);
+    // Traverse definitions or namespace extensions
+    for (const key of keysToTraverse) {
+      const nameExtended = this.parseDeepServiceName(name, key);
+      const deepDefinition = grpcDefinition[key];
+
+      const isServiceDefined =
+        deepDefinition && !isUndefined(deepDefinition.service);
+      const isServiceBoolean = isServiceDefined
+        ? deepDefinition.service !== false
+        : false;
+
+      if (isServiceDefined && isServiceBoolean) {
+        accumulator.push({
+          name: nameExtended,
+          service: deepDefinition,
+        });
+      }
+      // Continue recursion until objects end or service definition found
+      else {
+        this.collectDeepServices(nameExtended, deepDefinition, accumulator);
+      }
+    }
+  }
+
+  private parseDeepServiceName(name: string, key: string): string {
+    // If depth is zero then just return key
+    if (name.length === 0) {
+      return key;
+    }
+    // Otherwise add next through dot syntax
+    return name + '.' + key;
   }
 }

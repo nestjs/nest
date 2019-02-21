@@ -46,7 +46,7 @@ describe('ListenersController', () => {
     ];
 
     beforeEach(() => {
-      sinon.stub(container, 'getModuleByKey').callsFake(() => ({}));
+      sinon.stub(container, 'getModuleByKey').callsFake(() => ({} as any));
     });
     it(`should call "addHandler" method of server for each pattern handler`, () => {
       explorer.expects('explore').returns(handlers);

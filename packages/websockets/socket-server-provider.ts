@@ -1,5 +1,6 @@
 import { validatePath } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { isString } from 'util';
 import { SocketsContainer } from './container';
 import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
 import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
@@ -66,7 +67,10 @@ export class SocketServerProvider {
     });
   }
 
-  private validateNamespace(namespace: string): string {
+  private validateNamespace(namespace: string | RegExp): string | RegExp {
+    if (!isString(namespace)) {
+      return namespace;
+    }
     return validatePath(namespace);
   }
 }

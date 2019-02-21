@@ -21,6 +21,8 @@ export interface GrpcOptions {
   transport?: Transport.GRPC;
   options: {
     url?: string;
+    maxSendMessageLength?: number;
+    maxReceiveMessageLength?: number;
     credentials?: any;
     protoPath: string;
     package: string;

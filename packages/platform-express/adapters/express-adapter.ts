@@ -69,7 +69,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return this.use(express.static(path, options));
   }
 
-  public setBaseViewsDir(path: string) {
+  public setBaseViewsDir(path: string | string[]) {
     return this.set('views', path);
   }
 

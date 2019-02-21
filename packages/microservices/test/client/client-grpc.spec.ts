@@ -105,17 +105,15 @@ describe('ClientGrpcProxy', () => {
         removeAllListeners: sinon.SinonSpy;
       };
       let eventCallbacks: { [type: string]: EvtCallback };
-      let obj;
-      const dataSpy = sinon.spy();
-      const errorSpy = sinon.spy();
-      const completeSpy = sinon.spy();
+      let obj, dataSpy, errorSpy, completeSpy;
 
       let stream$: Observable<any>;
 
       beforeEach(() => {
-        dataSpy.reset();
-        errorSpy.reset();
-        completeSpy.reset();
+        dataSpy = sinon.spy();
+        errorSpy = sinon.spy();
+        completeSpy = sinon.spy();
+
         eventCallbacks = {};
         callMock = {
           on: (type, fn) => (eventCallbacks[type] = fn),
@@ -208,7 +206,7 @@ describe('ClientGrpcProxy', () => {
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {
-        sinon.stub(client, 'getOptionsProp').callsFake(() => {
+        sinon.stub(client, 'getOptionsProp' as any).callsFake(() => {
           throw new Error();
         });
         (client as any).logger = new NoopLogger();

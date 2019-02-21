@@ -1,4 +1,5 @@
 import { INestApplicationContext, Logger, LoggerService } from '@nestjs/common';
+import { Abstract } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { SHUTDOWN_SIGNALS } from './constants';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
@@ -44,7 +45,7 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   public get<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | string | symbol,
+    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     options: { strict: boolean } = { strict: false },
   ): TResult {
     if (!(options && options.strict)) {
@@ -127,13 +128,13 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   protected find<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | string | symbol,
+    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
   ): TResult {
     return this.containerScanner.find<TInput, TResult>(typeOrToken);
   }
 
   protected findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
-    metatypeOrToken: Type<TInput> | string | symbol,
+    metatypeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextModule: Partial<Module>,
   ): TResult {
     return this.containerScanner.findInstanceByPrototypeOrToken<

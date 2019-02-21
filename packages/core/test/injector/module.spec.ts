@@ -34,17 +34,19 @@ describe('Module', () => {
     class Test {}
 
     module.addController(Test);
-    expect(setSpy.getCall(0).args).to.deep.equal([
-      'Test',
-      new InstanceWrapper({
-        host: module,
-        name: 'Test',
-        scope: Scope.REQUEST,
-        metatype: Test,
-        instance: null,
-        isResolved: false,
-      }),
-    ]);
+    expect(
+      setSpy.calledWith(
+        'Test',
+        new InstanceWrapper({
+          host: module,
+          name: 'Test',
+          scope: Scope.REQUEST,
+          metatype: Test,
+          instance: null,
+          isResolved: false,
+        }),
+      ),
+    ).to.be.true;
   });
 
   it('should add injectable', () => {
@@ -53,17 +55,19 @@ describe('Module', () => {
     (module as any)._injectables = collection;
 
     module.addInjectable(TestProvider);
-    expect(setSpy.getCall(0).args).to.deep.equal([
-      'TestProvider',
-      new InstanceWrapper({
-        host: module,
-        name: 'TestProvider',
-        scope: undefined,
-        metatype: TestProvider,
-        instance: null,
-        isResolved: false,
-      }),
-    ]);
+    expect(
+      setSpy.calledWith(
+        'TestProvider',
+        new InstanceWrapper({
+          host: module,
+          name: 'TestProvider',
+          scope: undefined,
+          metatype: TestProvider,
+          instance: null,
+          isResolved: false,
+        }),
+      ),
+    ).to.be.true;
   });
 
   describe('when injectable is custom provided', () => {
@@ -81,17 +85,19 @@ describe('Module', () => {
     (module as any)._providers = collection;
 
     module.addProvider(TestProvider);
-    expect(setSpy.getCall(0).args).to.deep.equal([
-      'TestProvider',
-      new InstanceWrapper({
-        host: module,
-        name: 'TestProvider',
-        scope: undefined,
-        metatype: TestProvider,
-        instance: null,
-        isResolved: false,
-      }),
-    ]);
+    expect(
+      setSpy.calledWith(
+        'TestProvider',
+        new InstanceWrapper({
+          host: module,
+          name: 'TestProvider',
+          scope: undefined,
+          metatype: TestProvider,
+          instance: null,
+          isResolved: false,
+        }),
+      ),
+    ).to.be.true;
   });
 
   it('should call "addCustomProvider" when "provide" property exists', () => {
@@ -206,18 +212,20 @@ describe('Module', () => {
     });
     it('should store provider', () => {
       module.addCustomFactory(provider as any, (module as any)._providers);
-      expect(setSpy.getCall(0).args).to.deep.equal([
-        provider.name,
-        new InstanceWrapper({
-          host: module,
-          name: provider.name,
-          scope: undefined,
-          metatype: type as any,
-          instance: null,
-          isResolved: false,
-          inject: inject as any,
-        }),
-      ]);
+      expect(
+        setSpy.calledWith(
+          provider.name,
+          new InstanceWrapper({
+            host: module,
+            name: provider.name,
+            scope: undefined,
+            metatype: type as any,
+            instance: null,
+            isResolved: false,
+            inject: inject as any,
+          }),
+        ),
+      ).to.be.true;
     });
   });
 

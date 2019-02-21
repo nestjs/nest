@@ -34,8 +34,14 @@ describe('InstanceLoader', () => {
       injectables: new Map(),
       metatype: { name: 'test' },
     };
-    const providerWrapper = { instance: null, metatype: TestProvider };
-    const routeWrapper = { instance: null, metatype: TestRoute };
+    const providerWrapper: InstanceWrapper = {
+      instance: null,
+      metatype: TestProvider,
+    } as any;
+    const routeWrapper: InstanceWrapper = {
+      instance: null,
+      metatype: TestRoute,
+    } as any;
 
     module.providers.set('TestProvider', providerWrapper);
     module.controllers.set('TestRoute', routeWrapper);
@@ -84,7 +90,10 @@ describe('InstanceLoader', () => {
 
     await loader.createInstancesOfDependencies();
     expect(
-      loadProviderStub.calledWith(module.providers.get('TestProvider'), module),
+      loadProviderStub.calledWith(
+        module.providers.get('TestProvider'),
+        module as any,
+      ),
     ).to.be.true;
   });
 
@@ -114,7 +123,10 @@ describe('InstanceLoader', () => {
 
     await loader.createInstancesOfDependencies();
     expect(
-      loadRoutesStub.calledWith(module.controllers.get('TestRoute'), module),
+      loadRoutesStub.calledWith(
+        module.controllers.get('TestRoute'),
+        module as any,
+      ),
     ).to.be.true;
   });
 
@@ -146,7 +158,7 @@ describe('InstanceLoader', () => {
     expect(
       loadInjectableStub.calledWith(
         module.injectables.get('TestProvider'),
-        module,
+        module as any,
       ),
     ).to.be.true;
   });

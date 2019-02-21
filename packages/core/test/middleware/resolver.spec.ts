@@ -39,7 +39,8 @@ describe('MiddlewareResolver', () => {
     resolver.resolveInstances(module, null);
 
     expect(loadMiddleware.callCount).to.be.equal(middleware.size);
-    expect(loadMiddleware.calledWith(wrapper, middleware, module)).to.be.true;
+    expect(loadMiddleware.calledWith(wrapper as any, middleware, module)).to.be
+      .true;
 
     loadMiddleware.restore();
   });

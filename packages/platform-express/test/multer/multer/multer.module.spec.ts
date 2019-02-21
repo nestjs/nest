@@ -12,9 +12,9 @@ describe('MulterModule', () => {
       const dynamicModule = MulterModule.register(options as any);
 
       expect(dynamicModule.providers).to.have.length(1);
-      expect(dynamicModule.imports).to.be.empty;
-      expect(dynamicModule.exports).to.contain(MULTER_MODULE_OPTIONS);
-      expect(dynamicModule.providers).to.contain({
+      expect(dynamicModule.imports).to.be.undefined;
+      expect(dynamicModule.exports).to.include(MULTER_MODULE_OPTIONS);
+      expect(dynamicModule.providers).to.deep.include({
         provide: MULTER_MODULE_OPTIONS,
         useValue: options,
       });
@@ -31,9 +31,9 @@ describe('MulterModule', () => {
         const dynamicModule = MulterModule.registerAsync(asyncOptions);
 
         expect(dynamicModule.providers).to.have.length(1);
-        expect(dynamicModule.imports).to.be.empty;
-        expect(dynamicModule.exports).to.contain(MULTER_MODULE_OPTIONS);
-        expect(dynamicModule.providers).to.contain({
+        expect(dynamicModule.imports).to.be.undefined;
+        expect(dynamicModule.exports).to.include(MULTER_MODULE_OPTIONS);
+        expect(dynamicModule.providers).to.deep.include({
           provide: MULTER_MODULE_OPTIONS,
           useFactory: asyncOptions.useFactory,
           inject: [],
@@ -49,8 +49,8 @@ describe('MulterModule', () => {
         const dynamicModule = MulterModule.registerAsync(asyncOptions as any);
 
         expect(dynamicModule.providers).to.have.length(1);
-        expect(dynamicModule.imports).to.be.empty;
-        expect(dynamicModule.exports).to.contain(MULTER_MODULE_OPTIONS);
+        expect(dynamicModule.imports).to.be.undefined;
+        expect(dynamicModule.exports).to.include(MULTER_MODULE_OPTIONS);
       });
     });
 
@@ -62,8 +62,8 @@ describe('MulterModule', () => {
         const dynamicModule = MulterModule.registerAsync(asyncOptions as any);
 
         expect(dynamicModule.providers).to.have.length(2);
-        expect(dynamicModule.imports).to.be.empty;
-        expect(dynamicModule.exports).to.contain(MULTER_MODULE_OPTIONS);
+        expect(dynamicModule.imports).to.be.undefined;
+        expect(dynamicModule.exports).to.include(MULTER_MODULE_OPTIONS);
       });
       it('provider should call "createMulterOptions"', async () => {
         const asyncOptions = {

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.3.0",
+<<<<<<< HEAD
     "@nestjs/common": "^6.0.0",
     "@nestjs/core": "^6.0.0",
     "@nestjs/microservices": "^6.0.0",
@@ -18,6 +19,16 @@
     "class-transformer": "^0.2.0",
     "class-validator": "^0.9.1",
     "grpc": "^1.17.0",
+=======
+    "@nestjs/common": "5.6.2",
+    "@nestjs/core": "^5.3.7",
+    "@nestjs/microservices": "^5.3.7",
+    "@nestjs/testing": "^5.3.7",
+    "@nestjs/websockets": "^5.3.7",
+    "class-transformer": "^0.1.7",
+    "class-validator": "^0.7.2",
+    "grpc": "^1.10.0",
+>>>>>>> master
     "reflect-metadata": "^0.1.12",
     "rxjs": "^6.3.3",
     "typescript": "^3.2.2"

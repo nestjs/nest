@@ -10,9 +10,14 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@nestjs/common": "^6.0.0",
     "@nestjs/core": "^6.0.0",
     "@nestjs/platform-express": "^6.0.0",
+=======
+    "@nestjs/common": "5.6.2",
+    "@nestjs/core": "^5.3.0",
+>>>>>>> master
     "hbs": "^4.0.1",
     "pug": "^2.0.3",
     "reflect-metadata": "^0.1.12",

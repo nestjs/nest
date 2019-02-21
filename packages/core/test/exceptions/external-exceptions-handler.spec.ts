@@ -19,7 +19,7 @@ describe('ExternalExceptionsHandler', () => {
     describe('when "invokeCustomFilters" returns value', () => {
       const observable$ = of(true);
       beforeEach(() => {
-        sinon.stub(handler, 'invokeCustomFilters').returns(observable$);
+        sinon.stub(handler, 'invokeCustomFilters').returns(observable$ as any);
       });
       it('should returns observable', () => {
         const result = handler.next(new Error(), null);

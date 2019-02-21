@@ -27,7 +27,9 @@ describe('BaseExceptionFilterContext', () => {
           instance: 'test',
           getInstanceByContextId: () => wrapper,
         };
-        sinon.stub(filter, 'getInstanceByMetatype').callsFake(() => wrapper);
+        sinon
+          .stub(filter, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
         expect(filter.getFilterInstance(Filter)).to.be.eql(wrapper.instance);
       });
       it('should return null', () => {
@@ -60,7 +62,9 @@ describe('BaseExceptionFilterContext', () => {
         it('should return instance', () => {
           const instance = { test: true };
           const module = { injectables: { get: () => instance } };
-          sinon.stub(container.getModules(), 'get').callsFake(() => module);
+          sinon
+            .stub(container.getModules(), 'get')
+            .callsFake(() => module as any);
           expect(filter.getInstanceByMetatype({})).to.be.eql(instance);
         });
       });

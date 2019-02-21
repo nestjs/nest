@@ -75,12 +75,15 @@ describe('WsContextCreator', () => {
     it('should create exception handler', () => {
       const handlerCreateSpy = sinon.spy(exceptionFiltersContext, 'create');
       contextCreator.create(instance, instance.test, module);
-      expect(handlerCreateSpy.calledWith(instance, instance.test)).to.be.true;
+      expect(
+        handlerCreateSpy.calledWith(instance, instance.test as any, module),
+      ).to.be.true;
     });
     it('should create pipes context', () => {
       const pipesCreateSpy = sinon.spy(pipesCreator, 'create');
       contextCreator.create(instance, instance.test, module);
-      expect(pipesCreateSpy.calledWith(instance, instance.test)).to.be.true;
+      expect(pipesCreateSpy.calledWith(instance, instance.test, module)).to.be
+        .true;
     });
     it('should create guards context', () => {
       const guardsCreateSpy = sinon.spy(guardsContextCreator, 'create');
@@ -120,9 +123,9 @@ describe('WsContextCreator', () => {
       });
       describe('when can not activate', () => {
         it('should throws forbidden exception', async () => {
-          const tryActivateStub = sinon
+          sinon
             .stub(guardsConsumer, 'tryActivate')
-            .returns(false);
+            .callsFake(async () => false);
           const proxy = await contextCreator.create(
             instance,
             instance.test,
@@ -164,7 +167,7 @@ describe('WsContextCreator', () => {
   describe('createGuardsFn', () => {
     it('should throw exception when "tryActivate" returns false', () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
-      sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
+      sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
       guardsFn([]).catch(err => expect(err).to.not.be.undefined);
     });
   });

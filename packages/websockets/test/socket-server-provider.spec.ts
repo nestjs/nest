@@ -28,7 +28,7 @@ describe('SocketServerProvider', () => {
     const port = 30;
 
     beforeEach(() => {
-      createSocketServerSpy = sinon.spy(instance, 'createSocketServer');
+      createSocketServerSpy = sinon.spy(instance, 'createSocketServer' as any);
     });
     afterEach(() => {
       mockContainer.restore();

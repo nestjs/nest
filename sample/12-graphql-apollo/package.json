@@ -10,12 +10,20 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@nestjs/common": "^6.0.0",
     "@nestjs/core": "^6.0.0",
     "@nestjs/graphql": "^6.0.0",
     "@nestjs/platform-express": "^6.0.0",
     "apollo-server-express": "2.3.1",
     "class-transformer": "^0.2.0",
+=======
+    "@nestjs/common": "5.6.2",
+    "@nestjs/core": "^5.3.6",
+    "@nestjs/graphql": "^5.3.0",
+    "apollo-server-express": "2.0.4",
+    "class-transformer": "^0.1.9",
+>>>>>>> master
     "class-validator": "^0.9.1",
     "graphql": "14.0.2",
     "graphql-subscriptions": "1.0.0",

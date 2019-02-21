@@ -42,10 +42,12 @@ describe('ClientNats', () => {
       };
       (client as any).natsClient = natsClient;
 
-      connectSpy = sinon.stub(client, 'connect').callsFake(() => {
+      connectSpy = sinon.stub(client, 'connect').callsFake(async () => {
         (client as any).natsClient = natsClient;
       });
-      createClient = sinon.stub(client, 'createClient').callsFake(() => client);
+      createClient = sinon
+        .stub(client, 'createClient')
+        .callsFake(() => client as any);
     });
     afterEach(() => {
       connectSpy.restore();
@@ -59,7 +61,7 @@ describe('ClientNats', () => {
       let assignPacketIdStub: sinon.SinonStub;
       beforeEach(() => {
         assignPacketIdStub = sinon
-          .stub(client, 'assignPacketId')
+          .stub(client, 'assignPacketId' as any)
           .callsFake(() => {
             throw new Error();
           });
@@ -83,7 +85,7 @@ describe('ClientNats', () => {
       beforeEach(async () => {
         callback = sinon.spy();
         assignStub = sinon
-          .stub(client, 'assignPacketId')
+          .stub(client, 'assignPacketId' as any)
           .callsFake(packet => Object.assign(packet, { id }));
 
         subscription = await client['publish'](msg, callback);
@@ -191,9 +193,9 @@ describe('ClientNats', () => {
     beforeEach(async () => {
       createClientSpy = sinon
         .stub(client, 'createClient')
-        .callsFake(() => natsClient);
+        .callsFake(() => natsClient as any);
       handleErrorsSpy = sinon.spy(client, 'handleError');
-      connect$Spy = sinon.spy(client, 'connect$');
+      connect$Spy = sinon.spy(client, 'connect$' as any);
 
       await client.connect();
     });

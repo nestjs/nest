@@ -1,9 +1,6 @@
 import { Type } from '@nestjs/common';
 import { isNil } from '@nestjs/common/utils/shared.utils';
-import {
-  InjectorDependency,
-  InjectorDependencyContext,
-} from '../injector/injector';
+import { InjectorDependency, InjectorDependencyContext } from '../injector/injector';
 import { Module } from '../injector/module';
 
 // TODO: Replace `any` with `unknown` type when TS 3.0.0 is supported
@@ -73,8 +70,8 @@ export const UNKNOWN_EXPORT_MESSAGE = (
 export const INVALID_CLASS_MESSAGE = (text: TemplateStringsArray, value: any) =>
   `ModuleRef cannot instantiate class (${value} is not constructable).`;
 
-export const INVALID_MIDDLEWARE_CONFIGURATION = `Invalid middleware configuration passed inside the module 'configure()' method.`;
-export const UNKNOWN_REQUEST_MAPPING = `Request mapping properties not defined in the @RequestMapping() annotation!`;
+export const INVALID_MIDDLEWARE_CONFIGURATION = `An invalid middleware configuration has been passed inside the module 'configure()' method.`;
+export const UNKNOWN_REQUEST_MAPPING = `An invalid controller has been detected. Perhaps, one of your controllers is missing @Controller() decorator.`;
 export const UNHANDLED_RUNTIME_EXCEPTION = `Unhandled Runtime Exception.`;
 export const INVALID_EXCEPTION_FILTER = `Invalid exception filters (@UseFilters()).`;
 export const MICROSERVICES_PACKAGE_NOT_FOUND_EXCEPTION = `Unable to load @nestjs/microservices package. (Please make sure that it's already installed.)`;

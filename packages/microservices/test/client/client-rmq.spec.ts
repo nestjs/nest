@@ -20,7 +20,7 @@ describe('ClientRQM', () => {
         removeListener: () => ({}),
       }));
       handleErrorsSpy = sinon.spy(client, 'handleError');
-      connect$Stub = sinon.stub(client, 'connect$').callsFake(() => ({
+      connect$Stub = sinon.stub(client, 'connect$' as any).callsFake(() => ({
         subscribe: resolve => resolve(),
         toPromise() {
           return this;

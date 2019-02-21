@@ -44,12 +44,12 @@ export interface NestExpressApplication extends INestApplication {
   useStaticAssets(path: string, options?: ServeStaticOptions): this;
 
   /**
-   * Sets a base directory for templates (views).
+   * Sets one or multiple base directories for templates (views).
    * Example `app.setBaseViewsDir('views')`
    *
    * @returns {this}
    */
-  setBaseViewsDir(path: string): this;
+  setBaseViewsDir(path: string | string[]): this;
 
   /**
    * Sets a view engine for templates (views).

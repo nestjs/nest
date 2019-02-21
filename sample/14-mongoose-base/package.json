@@ -10,10 +10,16 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@nestjs/common": "^6.0.0",
     "@nestjs/core": "^6.0.0",
     "@nestjs/platform-express": "^6.0.0",
     "mongoose": "^5.4.4",
+=======
+    "@nestjs/common": "5.6.2",
+    "@nestjs/core": "^5.3.0",
+    "mongoose": "^5.0.6",
+>>>>>>> master
     "reflect-metadata": "^0.1.12",
     "rxjs": "^6.3.3",
     "typescript": "^3.2.2"

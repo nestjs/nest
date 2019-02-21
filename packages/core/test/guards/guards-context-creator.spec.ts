@@ -76,7 +76,7 @@ describe('GuardsContextCreator', () => {
         };
         sinon
           .stub(guardsContextCreator, 'getInstanceByMetatype')
-          .callsFake(() => wrapper);
+          .callsFake(() => wrapper as any);
         expect(guardsContextCreator.getGuardInstance(Guard)).to.be.eql(
           wrapper.instance,
         );

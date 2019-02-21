@@ -273,7 +273,7 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public setBaseViewsDir(path: string): this {
+  public setBaseViewsDir(path: string | string[]): this {
     this.httpAdapter.setBaseViewsDir && this.httpAdapter.setBaseViewsDir(path);
     return this;
   }

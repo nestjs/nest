@@ -68,7 +68,7 @@ export abstract class Server {
     prop: keyof T['options'],
     defaultValue: any = undefined,
   ) {
-    return obj ? obj[prop as string] : defaultValue;
+    return obj && obj[prop as string] || defaultValue;
   }
 
   protected handleError(error: string) {

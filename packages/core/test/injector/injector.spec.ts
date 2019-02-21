@@ -514,7 +514,7 @@ describe('Injector', () => {
           .callsFake(() => null);
         sinon
           .stub(injector, 'lookupComponent')
-          .returns(new InstanceWrapper({ isResolved: false }));
+          .returns(Promise.resolve(new InstanceWrapper({ isResolved: false })));
 
         await injector.resolveComponentInstance(
           module,
@@ -530,7 +530,7 @@ describe('Injector', () => {
           .callsFake(() => null);
         sinon
           .stub(injector, 'lookupComponent')
-          .returns(new InstanceWrapper({ isResolved: true }));
+          .returns(Promise.resolve(new InstanceWrapper({ isResolved: true })));
 
         await injector.resolveComponentInstance(
           module,
@@ -547,7 +547,9 @@ describe('Injector', () => {
         sinon
           .stub(injector, 'lookupComponent')
           .returns(
-            new InstanceWrapper({ isResolved: false, forwardRef: true }),
+            Promise.resolve(
+              new InstanceWrapper({ isResolved: false, forwardRef: true }),
+            ),
           );
 
         await injector.resolveComponentInstance(
@@ -568,12 +570,14 @@ describe('Injector', () => {
 
         const instance = Promise.resolve(true);
         sinon.stub(injector, 'lookupComponent').returns(
-          new InstanceWrapper({
-            isResolved: false,
-            forwardRef: true,
-            async: true,
-            instance,
-          }),
+          Promise.resolve(
+            new InstanceWrapper({
+              isResolved: false,
+              forwardRef: true,
+              async: true,
+              instance,
+            }),
+          ),
         );
         const result = await injector.resolveComponentInstance(
           module,
@@ -684,7 +688,7 @@ describe('Injector', () => {
 
       const loadInstanceStub = sinon
         .stub(injector, 'loadInstance')
-        .callsFake(() => ({}));
+        .callsFake(async () => ({} as any));
 
       await injector.loadEnhancersPerContext(
         wrapper,
@@ -703,7 +707,7 @@ describe('Injector', () => {
 
       const resolveComponentHostStub = sinon
         .stub(injector, 'resolveComponentHost')
-        .callsFake(() => new InstanceWrapper());
+        .callsFake(async () => new InstanceWrapper());
 
       await injector.loadCtorMetadata(
         wrapper.getCtorMetadata(),
@@ -721,7 +725,7 @@ describe('Injector', () => {
 
       const resolveComponentHostStub = sinon
         .stub(injector, 'resolveComponentHost')
-        .callsFake(() => new InstanceWrapper());
+        .callsFake(async () => new InstanceWrapper());
 
       await injector.loadPropertiesMetadata(
         wrapper.getPropertiesMetadata(),

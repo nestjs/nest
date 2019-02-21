@@ -65,16 +65,6 @@ describe('RouterExceptionFilters', () => {
     class InvalidFilter {}
     const filters = [new ExceptionFilter(), new InvalidFilter(), 'test'];
 
-    beforeEach(() => {
-      sinon
-        .stub(exceptionFilter, 'findExceptionsFilterInstance')
-        .onFirstCall()
-        .returns({
-          catch: () => ({}),
-        })
-        .onSecondCall()
-        .returns({});
-    });
     it('should returns expected exception filters metadata', () => {
       const resolved = exceptionFilter.createConcreteContext(filters as any);
       expect(resolved).to.have.length(1);

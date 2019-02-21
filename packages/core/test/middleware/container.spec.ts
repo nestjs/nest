@@ -5,6 +5,7 @@ import { RequestMapping } from '../../../common/decorators/http/request-mapping.
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { MiddlewareConfiguration } from '../../../common/interfaces/middleware/middleware-configuration.interface';
 import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { MiddlewareContainer } from '../../middleware/container';
 
 describe('MiddlewareContainer', () => {
@@ -51,13 +52,13 @@ describe('MiddlewareContainer', () => {
 
     const key = 'Test' as any;
     container.insertConfig(config, key);
-    expect(container.getMiddlewareCollection(key).size).to.eql(config.length);
-    expect(container.getMiddlewareCollection(key).get('TestMiddleware')).to.eql(
-      {
-        scope: undefined,
-        metatype: TestMiddleware,
-        values: new WeakMap(),
-      },
-    );
+
+    const collection = container.getMiddlewareCollection(key);
+    const insertedMiddleware = collection.get('TestMiddleware');
+
+    expect(collection.size).to.eql(config.length);
+    expect(insertedMiddleware).to.be.instanceOf(InstanceWrapper);
+    expect(insertedMiddleware.scope).to.be.undefined;
+    expect(insertedMiddleware.metatype).to.be.eql(TestMiddleware);
   });
 });

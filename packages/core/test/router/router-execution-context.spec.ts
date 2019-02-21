@@ -126,7 +126,9 @@ describe('RouterExecutionContext', () => {
             });
           });
           it('should throw exception when "tryActivate" returns false', () => {
-            sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
+            sinon
+              .stub(guardsConsumer, 'tryActivate')
+              .callsFake(async () => false);
             proxyContext(request, response, next).catch(
               error => expect(error).to.not.be.undefined,
             );
@@ -258,7 +260,7 @@ describe('RouterExecutionContext', () => {
   describe('createGuardsFn', () => {
     it('should throw exception when "tryActivate" returns false', () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
-      sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
+      sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
       guardsFn([]).catch(err => expect(err).to.not.be.undefined);
     });
   });

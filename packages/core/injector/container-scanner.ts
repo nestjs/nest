@@ -1,4 +1,5 @@
 import { Type } from '@nestjs/common';
+import { Abstract } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
 import { NestContainer } from './container';
@@ -11,7 +12,7 @@ export class ContainerScanner {
   constructor(private readonly container: NestContainer) {}
 
   public find<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | string | symbol,
+    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
   ): TResult {
     this.initFlatContainer();
     return this.findInstanceByPrototypeOrToken<TInput, TResult>(
@@ -21,7 +22,7 @@ export class ContainerScanner {
   }
 
   public findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
-    metatypeOrToken: Type<TInput> | string | symbol,
+    metatypeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextModule: Partial<Module>,
   ): TResult {
     const dependencies = new Map([

@@ -1,4 +1,5 @@
 import { LoggerService } from '../services/logger.service';
+import { Abstract } from './abstract.interface';
 import { Type } from './type.interface';
 
 export interface INestApplicationContext {
@@ -13,7 +14,7 @@ export interface INestApplicationContext {
    * @returns {TResult}
    */
   get<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | string | symbol,
+    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     options?: { strict: boolean },
   ): TResult;
 

@@ -32,7 +32,7 @@ describe('GRPC transport', () => {
     return request(server)
       .post('/')
       .send([1, 2, 3, 4, 5])
-      .expect(200, { result: '15' });
+      .expect(200, { result: 15 });
   });
 
   afterEach(async () => {

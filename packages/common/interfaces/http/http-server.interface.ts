@@ -48,7 +48,7 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   setErrorHandler?(handler: Function): any;
   setNotFoundHandler?(handler: Function): any;
   useStaticAssets?(...args: any[]): this;
-  setBaseViewsDir?(path: string): this;
+  setBaseViewsDir?(path: string | string[]): this;
   setViewEngine?(engineOrOptions: any): this;
   createMiddlewareFactory(
     method: RequestMethod,
