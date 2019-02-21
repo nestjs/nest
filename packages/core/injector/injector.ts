@@ -24,7 +24,7 @@ import { Module } from './module';
 /**
  * The type of an injectable dependency
  */
-export type InjectorDependency = Type<any> | Function | string;
+export type InjectorDependency = Type<any> | Function | string | symbol;
 
 /**
  * The property-based dependency
@@ -44,7 +44,7 @@ export interface InjectorDependencyContext {
   /**
    * The name of the property key (property-based injection)
    */
-  key?: string;
+  key?: string | symbol;
   /**
    * The name of the function or injection token
    */
