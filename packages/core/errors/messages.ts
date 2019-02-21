@@ -1,5 +1,5 @@
 import { Type } from '@nestjs/common';
-import { isNil } from '@nestjs/common/utils/shared.utils';
+import { isNil, isSymbol } from '@nestjs/common/utils/shared.utils';
 import {
   InjectorDependency,
   InjectorDependencyContext,
@@ -21,11 +21,13 @@ const getInstanceName = (instance: any) =>
  * @param dependency The dependency whichs name should get displayed
  */
 const getDependencyName = (dependency: InjectorDependency) =>
-  // Use class name
+  // use class name
   getInstanceName(dependency) ||
-  // Use injection token
-  dependency && dependency.toString() ||
-  // Don't know, don't care
+  // use injection token (symbol)
+  (isSymbol(dependency) && dependency.toString()) ||
+  // use string directly
+  dependency ||
+  // otherwise
   '+';
 
 /**
