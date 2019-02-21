@@ -46,4 +46,14 @@ describe('UnknownDependenciesMessage', () => {
     myModule.metatype = myMetaType;
     expect(new UnknownDependenciesException('CatService', { index, dependencies: ['', 'MY_TOKEN'] }, myModule as Module).message).to.equal(expectedResult);
   });
+  it('should display the symbol name of the provider', () => {
+    const expectedResult = 'Nest can\'t resolve dependencies of the Symbol(CatProvider) (?). ' +
+      'Please make sure that the argument at index [0] is available in the current context.';
+    expect(new UnknownDependenciesException(Symbol('CatProvider'), { index, dependencies: [''] }).message).to.equal(expectedResult);
+  });
+  it('should display the symbol dependency of the provider', () => {
+    const expectedResult = 'Nest can\'t resolve dependencies of the CatProvider (?, Symbol(DogProvider)). ' +
+      'Please make sure that the argument at index [0] is available in the current context.';
+    expect(new UnknownDependenciesException('CatProvider', { index, dependencies: ['', Symbol('DogProvider')] }).message).to.equal(expectedResult);
+  });
 });
