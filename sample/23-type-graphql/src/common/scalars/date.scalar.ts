@@ -1,21 +1,21 @@
-import { Scalar } from '@nestjs/graphql';
-import { Kind, ValueNode } from 'graphql';
+import { CustomScalar, Scalar } from '@nestjs/graphql';
+import { Kind } from 'graphql';
 
 @Scalar('Date', type => Date)
-export class DateScalar {
+export class DateScalar implements CustomScalar<number, Date> {
   description = 'Date custom scalar type';
 
-  parseValue(value: any) {
+  parseValue(value: number): Date {
     return new Date(value); // value from the client
   }
 
-  serialize(value: any) {
+  serialize(value: Date): number {
     return value.getTime(); // value sent to the client
   }
 
-  parseLiteral(ast: ValueNode) {
+  parseLiteral(ast: any): Date {
     if (ast.kind === Kind.INT) {
-      return parseInt(ast.value, 10); // ast value is always in string format
+      return new Date(ast.value);
     }
     return null;
   }
