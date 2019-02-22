@@ -16,6 +16,7 @@
 <a href="https://travis-ci.org/nestjs/nest"><img src="https://img.shields.io/travis/nestjs/nest/master.svg?label=linux" alt="Linux" /></a>
 <a href="https://coveralls.io/github/nestjs/nest?branch=master"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#8" alt="Coverage" /></a>
 <a href="https://gitter.im/nestjs/nestjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge"><img src="https://badges.gitter.im/nestjs/nestjs.svg" alt="Gitter" /></a>
+<a href="https://discord.gg/G7Qnnhy"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
 <a href="https://opencollective.com/nest#backer"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
 <a href="https://opencollective.com/nest#sponsor"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
   <a href="https://paypal.me/kamilmysliwiec"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
@@ -48,17 +49,22 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="320" /></a>
 
-#### Gold Sponsors
+#### Base Sponsor
 
-<a href="http://xtremis.com/"><img src="https://nestjs.com/img/logo-xtremis.svg" width="220" /></a> 
+<a href="https://blueanchor.io/"><img src="https://nestjs.com/img/blueanchor.png" width="300" /></a> &nbsp;
+<a href="https://www.novologic.com/"><img src="https://nestjs.com/img/novologic.png" width="200" /></a>
 
 #### Silver Sponsors
-<a href="https://neoteric.eu/"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" /></a> &nbsp;
-  <a href="http://gojob.com"><img src="http://nestjs.com/img/gojob-logo.png" valign="bottom" height="95" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="150" /> </a>
+<a href="https://neoteric.eu/"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" valign="middle" /></a> &nbsp;
+  <a href="http://gojob.com"><img src="http://nestjs.com/img/gojob-logo.png" valign="middle" height="95" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="150" valign="middle" /> </a> &nbsp; &nbsp;
+  <a href="https://yakaz.com/"><img src="https://nestjs.com/img/yakaz.png" width="100" valign="middle" /></a> 
+  <a href="http://xtremis.com/"><img src="https://nestjs.com/img/logo-xtremis.svg" width="150" valign="middle" /></a> 
 
 #### Sponsors
 
-<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.svg" width="110" /></a> &nbsp; <a href="http://angularity.io"><img src="http://angularity.io/media/logo.svg" height="30" /></a> &nbsp; <!--<a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="30" /></a> &nbsp;--> <a href="https://hostpresto.com"><img src="https://nestjs.com/img/hostpresto.png" height="30" /></a> &nbsp; <a href="https://genuinebee.com/"><img src="https://nestjs.com/img/genuinebee.svg" height="38" /></a> &nbsp; <a href="http://architectnow.net/"><img src="https://nestjs.com/img/architectnow.png" height="24" /></a> &nbsp; <a href="https://quander.io/"><img src="https://nestjs.com/img/quander.png" height="28" /></a>
+<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.svg" width="110" valign="middle" /></a> &nbsp; <a href="http://angularity.io"><img src="http://angularity.io/media/logo.svg" height="30" valign="middle" /></a> &nbsp; <!--<a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="30" /></a> &nbsp;--> <a href="https://hostpresto.com"><img src="https://nestjs.com/img/hostpresto.png" height="30" valign="middle" /></a> &nbsp; <a href="https://genuinebee.com/"><img src="https://nestjs.com/img/genuinebee.svg" height="38" valign="middle" /></a> &nbsp; <a href="http://architectnow.net/"><img src="https://nestjs.com/img/architectnow.png" height="24" valign="middle" /></a> &nbsp; <a href="https://quander.io/"><img src="https://nestjs.com/img/quander.png" height="28" valign="middle" /></a> &nbsp; <a href="https://mantro.net/"><img src="https://nestjs.com/img/mantro-logo.svg" height="20" valign="middle" /></a> &nbsp;
+
+<a href="https://triplebyte.com/"><img src="https://nestjs.com/img/triplebyte.png" height="30" valign="middle" /></a>
 
 
 ## Backers
