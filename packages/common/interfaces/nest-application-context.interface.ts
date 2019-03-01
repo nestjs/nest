@@ -29,4 +29,12 @@ export interface INestApplicationContext {
    * @returns {void}
    */
   useLogger(logger: LoggerService);
+
+  /**
+   * Initalizes the Nest application.
+   * Calls the Nest lifecycle events.
+   *
+   * @returns {Promise<this>} The NestApplicationContext instance as Promise
+   */
+  init(): Promise<this>;
 }

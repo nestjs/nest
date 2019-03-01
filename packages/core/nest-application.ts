@@ -59,7 +59,6 @@ export class NestApplication extends NestApplicationContext
   private readonly routesResolver: Resolver;
   private readonly microservices = [];
   private httpServer: http.Server;
-  private isInitialized = false;
 
   constructor(
     container: NestContainer,

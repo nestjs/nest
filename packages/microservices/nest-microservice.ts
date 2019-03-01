@@ -32,7 +32,6 @@ export class NestMicroservice extends NestApplicationContext
   private microserviceConfig: MicroserviceOptions;
   private server: Server & CustomTransportStrategy;
   private isTerminated = false;
-  private isInitialized = false;
   private isInitHookCalled = false;
 
   constructor(
