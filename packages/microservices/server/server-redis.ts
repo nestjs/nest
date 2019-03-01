@@ -4,7 +4,6 @@ import {
   CONNECT_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
-  NO_EVENT_HANDLER,
   NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_URL,
 } from '../constants';
@@ -103,14 +102,6 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
       await handler(packet.data),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
-  }
-
-  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
-    const handler = this.getHandlerByPattern(pattern);
-    if (!handler) {
-      return this.logger.error(NO_EVENT_HANDLER);
-    }
-    await handler(packet.data);
   }
 
   public getPublisher(pub: RedisClient, pattern: any, id: string) {

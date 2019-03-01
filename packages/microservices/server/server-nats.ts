@@ -4,7 +4,6 @@ import {
   CONNECT_EVENT,
   ERROR_EVENT,
   NATS_DEFAULT_URL,
-  NO_EVENT_HANDLER,
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { Client } from '../external/nats-client.interface';
@@ -100,14 +99,6 @@ export class ServerNats extends Server implements CustomTransportStrategy {
       await handler(message.data),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
-  }
-
-  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
-    const handler = this.getHandlerByPattern(pattern);
-    if (!handler) {
-      return this.logger.error(NO_EVENT_HANDLER);
-    }
-    await handler(packet.data);
   }
 
   public getPublisher(publisher: Client, replyTo: string, id: string) {

@@ -4,7 +4,6 @@ import {
   CONNECT_EVENT,
   DISCONNECTED_RMQ_MESSAGE,
   DISCONNECT_EVENT,
-  NO_EVENT_HANDLER,
   NO_MESSAGE_HANDLER,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
   RQM_DEFAULT_PREFETCH_COUNT,
@@ -12,7 +11,7 @@ import {
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
 } from '../constants';
-import { CustomTransportStrategy, ReadPacket, RmqOptions } from '../interfaces';
+import { CustomTransportStrategy, RmqOptions } from '../interfaces';
 import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
@@ -116,14 +115,6 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       this.sendMessage(data, properties.replyTo, properties.correlationId);
 
     response$ && this.send(response$, publish);
-  }
-
-  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
-    const handler = this.getHandlerByPattern(pattern);
-    if (!handler) {
-      return this.logger.error(NO_EVENT_HANDLER);
-    }
-    await handler(packet.data);
   }
 
   public sendMessage<T = any>(

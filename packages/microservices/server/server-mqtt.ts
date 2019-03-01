@@ -5,7 +5,6 @@ import {
   ERROR_EVENT,
   MESSAGE_EVENT,
   MQTT_DEFAULT_URL,
-  NO_EVENT_HANDLER,
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
@@ -60,7 +59,10 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public createMqttClient(): MqttClient {
-    return mqttPackage.connect(this.url, this.options as MqttOptions);
+    return mqttPackage.connect(
+      this.url,
+      this.options as MqttOptions,
+    );
   }
 
   public getMessageHandler(pub: MqttClient): Function {
@@ -89,14 +91,6 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
       await handler(packet.data),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
-  }
-
-  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
-    const handler = this.getHandlerByPattern(pattern);
-    if (!handler) {
-      return this.logger.error(NO_EVENT_HANDLER);
-    }
-    await handler(packet.data);
   }
 
   public getPublisher(client: MqttClient, pattern: any, id: string): any {

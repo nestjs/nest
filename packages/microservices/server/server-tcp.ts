@@ -7,7 +7,6 @@ import {
   CLOSE_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
-  NO_EVENT_HANDLER,
   NO_MESSAGE_HANDLER,
   TCP_DEFAULT_PORT,
 } from '../constants';
@@ -75,14 +74,6 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
       this.send(response$, data =>
         socket.sendMessage(Object.assign(data, { id: packet.id })),
       );
-  }
-
-  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
-    const handler = this.getHandlerByPattern(pattern);
-    if (!handler) {
-      return this.logger.error(NO_EVENT_HANDLER);
-    }
-    await handler(packet.data);
   }
 
   public handleClose(): undefined | number | NodeJS.Timer {

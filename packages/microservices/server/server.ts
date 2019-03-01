@@ -12,8 +12,10 @@ import { catchError, finalize } from 'rxjs/operators';
 import {
   MessageHandler,
   MicroserviceOptions,
+  ReadPacket,
   WritePacket,
 } from '../interfaces';
+import { NO_EVENT_HANDLER } from './../constants';
 
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
@@ -54,6 +56,14 @@ export abstract class Server {
       .subscribe((response: any) => respond({ err: null, response }));
   }
 
+  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
+    const handler = this.getHandlerByPattern(pattern);
+    if (!handler) {
+      return this.logger.error(NO_EVENT_HANDLER);
+    }
+    await handler(packet.data);
+  }
+
   public transformToObservable<T = any>(resultOrDeffered: any): Observable<T> {
     if (resultOrDeffered instanceof Promise) {
       return fromPromise(resultOrDeffered);
@@ -68,7 +78,7 @@ export abstract class Server {
     prop: keyof T['options'],
     defaultValue: any = undefined,
   ) {
-    return obj && obj[prop as string] || defaultValue;
+    return (obj && obj[prop as string]) || defaultValue;
   }
 
   protected handleError(error: string) {

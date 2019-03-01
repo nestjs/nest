@@ -125,7 +125,7 @@ export class FastifyAdapter extends AbstractHttpAdapter {
             ? req.originalUrl.slice(0, queryParamsIndex)
             : req.originalUrl;
 
-        if (!re.exec(pathname + '/')) {
+        if (!re.exec(pathname + '/') && normalizedPath) {
           return next();
         }
         if (
