@@ -1,6 +1,7 @@
 import { LoggerService } from '../services/logger.service';
 import { Abstract } from './abstract.interface';
 import { Type } from './type.interface';
+import { ShutdownSignal } from '../enums/shutdown-signal.enum';
 
 export interface INestApplicationContext {
   /**
@@ -29,4 +30,13 @@ export interface INestApplicationContext {
    * @returns {void}
    */
   useLogger(logger: LoggerService): void;
+
+  /**
+   * Enables the usage of shutdown hooks. Will call the
+   * `onApplicationShutdown` function of a provider if the
+   * process receives a shutdown signal.
+   *
+   * @returns {this} The Nest application context instance
+   */
+  enableShutdownHooks(signals?: ShutdownSignal[] | string[]): this;
 }
