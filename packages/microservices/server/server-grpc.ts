@@ -1,5 +1,5 @@
-import { fromEvent } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { fromEvent, EMPTY } from 'rxjs';
+import { takeUntil, catchError } from 'rxjs/operators';
 import { CANCEL_EVENT, GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
 import { InvalidGrpcPackageException } from '../exceptions/errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/errors/invalid-proto-definition.exception';
@@ -117,7 +117,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(call.request, call.metadata);
       const result$ = this.transformToObservable(await handler);
       await result$
-        .pipe(takeUntil(fromEvent(call, CANCEL_EVENT)))
+        .pipe(
+          takeUntil(fromEvent(call, CANCEL_EVENT)),
+          catchError(err => {
+            call.emit('error', err);
+            return EMPTY;
+          })
+        )
         .forEach(data => call.write(data));
       call.end();
     };
