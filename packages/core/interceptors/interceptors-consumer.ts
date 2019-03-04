@@ -27,7 +27,8 @@ export class InterceptorsConsumer {
     };
     */
     const result$ = await interceptors.reduce(
-      async (stream$, interceptor) => interceptor.intercept(context, await stream$),
+      async (stream$, interceptor) =>
+        interceptor.intercept(context, await stream$),
       Promise.resolve(start$),
     );
     return result$.toPromise();

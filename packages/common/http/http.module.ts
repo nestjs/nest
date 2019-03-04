@@ -48,6 +48,11 @@ export class HttpModule {
       providers: [
         ...this.createAsyncProviders(options),
         {
+          provide: AXIOS_INSTANCE_TOKEN,
+          useFactory: (config: HttpModuleOptions) => Axios.create(config),
+          inject: [HTTP_MODULE_OPTIONS],
+        },
+        {
           provide: HTTP_MODULE_ID,
           useValue: randomStringGenerator(),
         },

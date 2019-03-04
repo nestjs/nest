@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.3.0",
-    "@nestjs/common": "^5.3.7",
+    "@nestjs/common": "5.6.2",
     "@nestjs/core": "^5.3.7",
     "@nestjs/microservices": "^5.3.7",
     "@nestjs/testing": "^5.3.7",
