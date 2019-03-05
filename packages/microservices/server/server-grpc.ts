@@ -135,8 +135,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   public createStreamServiceMethod(methodHandler): Function {
     return async (call, callback) => {
       const handler = methodHandler(call.request, call.metadata);
-      const result$ = this.transformToObservable(await handler);
-      await result$
+      await this.transformToObservable(await handler)
         .pipe(
           takeUntil(fromEvent(call, CANCEL_EVENT)),
           catchError(err => {
