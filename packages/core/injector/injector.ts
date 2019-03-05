@@ -25,6 +25,7 @@ import {
   PropertyMetadata,
 } from './instance-wrapper';
 import { Module } from './module';
+import { INQUIRER } from './inquirer';
 
 /**
  * The type of an injectable dependency
@@ -217,6 +218,7 @@ export class Injector {
       callback,
       contextId,
       wrapper,
+      inquirer,
     );
   }
 
@@ -227,11 +229,17 @@ export class Injector {
     callback: (args: any[]) => void,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
+    parentInquirer?: InstanceWrapper,
   ) {
     const inquirerId = this.getInquirerId(inquirer);
     const metadata = wrapper.getCtorMetadata();
     if (metadata && contextId !== STATIC_CONTEXT) {
-      const deps = await this.loadCtorMetadata(metadata, contextId, inquirer);
+      const deps = await this.loadCtorMetadata(
+        metadata,
+        contextId,
+        inquirer,
+        parentInquirer,
+      );
       return callback(deps);
     }
     const dependencies = isNil(inject)
@@ -244,6 +252,10 @@ export class Injector {
     let isResolved = true;
     const resolveParam = async (param, index) => {
       try {
+        if (param === INQUIRER && parentInquirer) {
+          return parentInquirer.instance;
+        }
+
         const paramWrapper = await this.resolveSingleParam<T>(
           wrapper,
           param,
@@ -638,10 +650,16 @@ export class Injector {
     metadata: InstanceWrapper<any>[],
     contextId: ContextId,
     inquirer?: InstanceWrapper,
+    parentInquirer?: InstanceWrapper,
   ): Promise<any[]> {
     const hosts = await Promise.all(
       metadata.map(async item =>
-        this.resolveComponentHost(item.host, item, contextId, inquirer),
+        this.resolveScopedComponentHost(
+          item,
+          contextId,
+          inquirer,
+          parentInquirer,
+        ),
       ),
     );
     const inquirerId = this.getInquirerId(inquirer);
@@ -676,5 +694,17 @@ export class Injector {
 
   private getInquirerId(inquirer: InstanceWrapper | undefined): string {
     return inquirer && inquirer.id;
+  }
+
+  private resolveScopedComponentHost(
+    item: InstanceWrapper,
+    contextId: ContextId,
+    inquirer?: InstanceWrapper,
+    parentInquirer?: InstanceWrapper,
+  ) {
+    if (item.isTransient && item.name === INQUIRER && parentInquirer) {
+      return parentInquirer;
+    }
+    return this.resolveComponentHost(item.host, item, contextId, inquirer);
   }
 }
