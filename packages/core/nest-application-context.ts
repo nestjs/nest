@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Abstract } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
 import {
   callAppShutdownHook,
@@ -87,7 +88,7 @@ export class NestApplicationContext implements INestApplicationContext {
    * @returns {this} The Nest application context instance
    */
   public enableShutdownHooks(signals: (ShutdownSignal | string)[] = []): this {
-    if (signals.length === 0) {
+    if (isEmpty(signals)) {
       signals = Object.keys(ShutdownSignal).map(
         (key: string) => ShutdownSignal[key],
       );
@@ -98,13 +99,11 @@ export class NestApplicationContext implements INestApplicationContext {
     }
 
     signals = signals
-      // To string and consistentify
-      .map(
-        (signal: ShutdownSignal | string): string =>
-          signal
-            .toString()
-            .toUpperCase()
-            .trim(),
+      .map((signal: ShutdownSignal | string): string =>
+        signal
+          .toString()
+          .toUpperCase()
+          .trim(),
       )
       // Filter out the signals which is already listening to
       .filter(
