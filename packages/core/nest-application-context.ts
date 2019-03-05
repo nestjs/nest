@@ -1,7 +1,12 @@
-import { INestApplicationContext, Logger, LoggerService } from '@nestjs/common';
+import {
+  INestApplicationContext,
+  Logger,
+  LoggerService,
+  ShutdownSignal,
+} from '@nestjs/common';
 import { Abstract } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { SHUTDOWN_SIGNALS } from './constants';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
 import {
   callAppShutdownHook,
@@ -17,6 +22,7 @@ import { ModuleTokenFactory } from './injector/module-token-factory';
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
   private readonly containerScanner: ContainerScanner;
+  private readonly activeShutdownSignals: string[] = new Array<string>();
 
   constructor(
     protected readonly container: NestContainer,
@@ -60,7 +66,6 @@ export class NestApplicationContext implements INestApplicationContext {
   public async init(): Promise<this> {
     await this.callInitHook();
     await this.callBootstrapHook();
-    await this.listenToShutdownSignals();
     return this;
   }
 
@@ -73,14 +78,61 @@ export class NestApplicationContext implements INestApplicationContext {
     Logger.overrideLogger(logger);
   }
 
-  protected listenToShutdownSignals() {
-    SHUTDOWN_SIGNALS.forEach((signal: any) =>
-      process.on(signal, async code => {
+  /**
+   * Enables the usage of shutdown hooks. Will call the
+   * `onApplicationShutdown` function of a provider if the
+   * process receives a shutdown signal.
+   *
+   * @param {ShutdownSignal[]} [signals=[]] The system signals it should listen to
+   *
+   * @returns {this} The Nest application context instance
+   */
+  public enableShutdownHooks(signals: (ShutdownSignal | string)[] = []): this {
+    if (isEmpty(signals)) {
+      signals = Object.keys(ShutdownSignal).map(
+        (key: string) => ShutdownSignal[key],
+      );
+    } else {
+      // Given signals array should be unique because
+      // process shouldn't listen to the same signal more than once.
+      signals = Array.from(new Set(signals));
+    }
+
+    signals = signals
+      .map((signal: ShutdownSignal | string): string =>
+        signal
+          .toString()
+          .toUpperCase()
+          .trim(),
+      )
+      // Filter out the signals which is already listening to
+      .filter(
+        (signal: string) => !this.activeShutdownSignals.includes(signal),
+      ) as string[];
+
+    this.listenToShutdownSignals(signals);
+    return this;
+  }
+
+  /**
+   * Listens to shutdown signals by listening to
+   * process events
+   *
+   * @param {string[]} signals The system signals it should listen to
+   */
+  protected listenToShutdownSignals(signals: string[]) {
+    signals.forEach((signal: string) => {
+      this.activeShutdownSignals.push(signal);
+
+      process.on(signal as any, async code => {
+        // Call the destroy and shutdown hook
+        // in case the process receives a shutdown signal
         await this.callDestroyHook();
         await this.callShutdownHook(signal);
+
         process.exit(code || 1);
-      }),
-    );
+      });
+    });
   }
 
   /**

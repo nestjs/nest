@@ -126,7 +126,6 @@ export class NestApplication extends NestApplicationContext
     await this.callInitHook();
     await this.registerRouterHooks();
     await this.callBootstrapHook();
-    await this.listenToShutdownSignals();
 
     this.isInitialized = true;
     this.logger.log(MESSAGES.APPLICATION_READY);
