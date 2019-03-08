@@ -8,5 +8,5 @@ export const createHttpExceptionBody = (
   if (!message) {
     return { statusCode, error };
   }
-  return isObject(message) ? message : { statusCode, error, message };
+  return isObject(message) && !Array.isArray(message) ? message : { statusCode, error, message };
 };
