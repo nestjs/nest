@@ -110,7 +110,7 @@ describe('RoutesResolver', () => {
     });
 
     describe('registerRouters', () => {
-      it('should register each module with the base path and append the __module_path__ if present ', () => {
+      it('should register each module with the base path and append the module path if present ', () => {
         const routes = new Map();
         routes.set('TestRoute', {
           instance: new TestRoute(),
@@ -151,7 +151,7 @@ describe('RoutesResolver', () => {
         ).to.be.true;
       });
 
-      it('should register each module with __module_path__ if present and no basePath ', () => {
+      it('should register each module with the module path if present', () => {
         const routes = new Map();
         routes.set('TestRoute', {
           instance: new TestRoute(),
