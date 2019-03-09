@@ -1,4 +1,4 @@
-import { BadRequestException, Post } from '@nestjs/common';
+import { BadRequestException, Post, Module } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
@@ -6,8 +6,10 @@ import { Get } from '../../../common/decorators/http/request-mapping.decorator';
 import { ExpressAdapter } from '../../adapters/express-adapter';
 import { ApplicationConfig } from '../../application-config';
 import { RoutesResolver } from '../../router/routes-resolver';
+import { MODULE_PATH } from '@nestjs/common/constants';
 
 describe('RoutesResolver', () => {
+
   @Controller('global')
   class TestRoute {
     @Get('test')
@@ -16,6 +18,16 @@ describe('RoutesResolver', () => {
     @Post('another-test')
     public anotherTest() {}
   }
+
+  @Module({
+    controllers: [TestRoute]
+  })
+  class TestModule {}
+
+  @Module({
+    controllers: [TestRoute]
+  })
+  class TestModule2 {}
 
   let router;
   let routesResolver: RoutesResolver;
@@ -97,6 +109,54 @@ describe('RoutesResolver', () => {
       );
       expect(spy.calledTwice).to.be.true;
     });
+
+    describe('registerRouters', () => {
+      it('should register each module with the base path and append the __module_path__ if present ', () => {
+        const routes = new Map();
+        routes.set('TestRoute', {
+          instance: new TestRoute(),
+          metatype: TestRoute,
+        });
+
+        Reflect.defineMetadata(MODULE_PATH, '/test', TestModule);
+        modules.set('TestModule', { routes, metatype: TestModule });
+        modules.set('TestModule2', { routes, metatype: TestModule2 });
+
+        const spy = sinon
+          .stub(routesResolver, 'registerRouters')
+          .callsFake(() => undefined);
+
+        routesResolver.resolve(applicationRef, 'api/v1');
+
+        // with module path
+        expect(spy.getCall(0).calledWith(sinon.match.any, sinon.match.any, 'api/v1/test', sinon.match.any)).to.be.true;
+        // without module path
+        expect(spy.getCall(1).calledWith(sinon.match.any, sinon.match.any, 'api/v1', sinon.match.any)).to.be.true;
+      });
+
+      it('should register each module with __module_path__ if present and no basePath ', () => {
+        const routes = new Map();
+        routes.set('TestRoute', {
+          instance: new TestRoute(),
+          metatype: TestRoute,
+        });
+
+        Reflect.defineMetadata(MODULE_PATH, '/test', TestModule);
+        modules.set('TestModule', { routes, metatype: TestModule });
+        modules.set('TestModule2', { routes, metatype: TestModule2 });
+
+        const spy = sinon
+          .stub(routesResolver, 'registerRouters')
+          .callsFake(() => undefined);
+
+        routesResolver.resolve(applicationRef, '');
+
+        // with module path
+        expect(spy.getCall(0).calledWith(sinon.match.any, sinon.match.any, '/test', sinon.match.any)).to.be.true;
+        // without module path
+        expect(spy.getCall(1).calledWith(sinon.match.any, sinon.match.any, '', sinon.match.any)).to.be.true;
+      });
+    })
   });
 
   describe('mapExternalExceptions', () => {
