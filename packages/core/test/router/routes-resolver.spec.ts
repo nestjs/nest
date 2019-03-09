@@ -1,4 +1,5 @@
-import { BadRequestException, Post, Module } from '@nestjs/common';
+import { BadRequestException, Module, Post } from '@nestjs/common';
+import { MODULE_PATH } from '@nestjs/common/constants';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
@@ -6,10 +7,8 @@ import { Get } from '../../../common/decorators/http/request-mapping.decorator';
 import { ExpressAdapter } from '../../adapters/express-adapter';
 import { ApplicationConfig } from '../../application-config';
 import { RoutesResolver } from '../../router/routes-resolver';
-import { MODULE_PATH } from '@nestjs/common/constants';
 
 describe('RoutesResolver', () => {
-
   @Controller('global')
   class TestRoute {
     @Get('test')
@@ -20,12 +19,12 @@ describe('RoutesResolver', () => {
   }
 
   @Module({
-    controllers: [TestRoute]
+    controllers: [TestRoute],
   })
   class TestModule {}
 
   @Module({
-    controllers: [TestRoute]
+    controllers: [TestRoute],
   })
   class TestModule2 {}
 
@@ -129,9 +128,27 @@ describe('RoutesResolver', () => {
         routesResolver.resolve(applicationRef, 'api/v1');
 
         // with module path
-        expect(spy.getCall(0).calledWith(sinon.match.any, sinon.match.any, 'api/v1/test', sinon.match.any)).to.be.true;
+        expect(
+          spy
+            .getCall(0)
+            .calledWith(
+              sinon.match.any,
+              sinon.match.any,
+              'api/v1/test',
+              sinon.match.any,
+            ),
+        ).to.be.true;
         // without module path
-        expect(spy.getCall(1).calledWith(sinon.match.any, sinon.match.any, 'api/v1', sinon.match.any)).to.be.true;
+        expect(
+          spy
+            .getCall(1)
+            .calledWith(
+              sinon.match.any,
+              sinon.match.any,
+              'api/v1',
+              sinon.match.any,
+            ),
+        ).to.be.true;
       });
 
       it('should register each module with __module_path__ if present and no basePath ', () => {
@@ -152,11 +169,24 @@ describe('RoutesResolver', () => {
         routesResolver.resolve(applicationRef, '');
 
         // with module path
-        expect(spy.getCall(0).calledWith(sinon.match.any, sinon.match.any, '/test', sinon.match.any)).to.be.true;
+        expect(
+          spy
+            .getCall(0)
+            .calledWith(
+              sinon.match.any,
+              sinon.match.any,
+              '/test',
+              sinon.match.any,
+            ),
+        ).to.be.true;
         // without module path
-        expect(spy.getCall(1).calledWith(sinon.match.any, sinon.match.any, '', sinon.match.any)).to.be.true;
+        expect(
+          spy
+            .getCall(1)
+            .calledWith(sinon.match.any, sinon.match.any, '', sinon.match.any),
+        ).to.be.true;
       });
-    })
+    });
   });
 
   describe('mapExternalExceptions', () => {

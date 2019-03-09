@@ -75,11 +75,7 @@ export class RoutesResolver implements Resolver {
       const url = applicationRef.getRequestUrl(req);
       throw new NotFoundException(`Cannot ${method} ${url}`);
     };
-    const handler = this.routerExceptionsFilter.create(
-      {},
-      callback,
-      undefined,
-    );
+    const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);
     applicationRef.setNotFoundHandler &&
       applicationRef.setNotFoundHandler(proxy);
