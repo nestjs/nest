@@ -42,7 +42,7 @@ export class RoutesResolver implements Resolver {
       let path = metatype
         ? Reflect.getMetadata(MODULE_PATH, metatype)
         : undefined;
-      path = path ? path + basePath : basePath;
+      path = path ? basePath + path : basePath;
       this.registerRouters(routes, moduleName, path, appInstance);
     });
   }
@@ -75,11 +75,7 @@ export class RoutesResolver implements Resolver {
       const url = applicationRef.getRequestUrl(req);
       throw new NotFoundException(`Cannot ${method} ${url}`);
     };
-    const handler = this.routerExceptionsFilter.create(
-      {},
-      callback,
-      undefined,
-    );
+    const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);
     applicationRef.setNotFoundHandler &&
       applicationRef.setNotFoundHandler(proxy);
