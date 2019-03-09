@@ -1,4 +1,4 @@
-import { Length, MaxLength } from 'class-validator';
+import { IsOptional, Length, MaxLength } from 'class-validator';
 import { Field, InputType } from 'type-graphql';
 
 @InputType()
@@ -8,6 +8,7 @@ export class NewRecipeInput {
   title: string;
 
   @Field({ nullable: true })
+  @IsOptional()
   @Length(30, 255)
   description?: string;
 
