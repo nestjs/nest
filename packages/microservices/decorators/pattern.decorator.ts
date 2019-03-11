@@ -30,13 +30,13 @@ export function GrpcMethod(service: string, method?: string) {
 }
 
 /**
- * Registers gRPC call pass through handler for service and method
+ * Registers gRPC call through RX handler for service and method
  *
  * @param service  : String parameter reflecting the name of service
  *                   definition from proto file
  * @constructor
  */
-export function GrpcStream(service?: string);
+export function GrpcStreamMethod(service?: string);
 /**
  *
  * @param service  : String parameter reflecting the name of service
@@ -46,11 +46,38 @@ export function GrpcStream(service?: string);
  *                   rpc keyword
  * @constructor
  */
-export function GrpcStream(service: string, method?: string);
-export function GrpcStream(service: string, method?: string) {
+export function GrpcStreamMethod(service: string, method?: string);
+export function GrpcStreamMethod(service: string, method?: string) {
   return (target, key, descriptor: PropertyDescriptor) => {
     const metadata = createMethodMetadata(
-      target, key, service, method, true
+      target, key, service, method, GrpcMethodStreamingType.RX_STREAMING
+    );
+    return MessagePattern(metadata)(target, key, descriptor);
+  };
+}
+
+/**
+ * Registers gRPC call pass through handler for service and method
+ *
+ * @param service  : String parameter reflecting the name of service
+ *                   definition from proto file
+ * @constructor
+ */
+export function GrpcStreamCall(service?: string);
+/**
+ *
+ * @param service  : String parameter reflecting the name of service
+ *                   definition from proto file
+ * @param method   : Optional string parameter reflecting the name of
+ *                   method inside of a service definition coming after
+ *                   rpc keyword
+ * @constructor
+ */
+export function GrpcStreamCall(service: string, method?: string);
+export function GrpcStreamCall(service: string, method?: string) {
+  return (target, key, descriptor: PropertyDescriptor) => {
+    const metadata = createMethodMetadata(
+      target, key, service, method, GrpcMethodStreamingType.PT_STREAMING
     );
     return MessagePattern(metadata)(target, key, descriptor);
   };
@@ -61,7 +88,7 @@ export function createMethodMetadata(
   key: string,
   service: string | undefined,
   method: string | undefined,
-  streaming = false
+  streaming = GrpcMethodStreamingType.NO_STREAMING
 ) {
   const capitalizeFirstLetter = (str: string) =>
     str.charAt(0).toUpperCase() + str.slice(1);
@@ -74,4 +101,10 @@ export function createMethodMetadata(
     return { service, rpc: capitalizeFirstLetter(key), streaming};
   }
   return { service, rpc: method, streaming};
+}
+
+export enum GrpcMethodStreamingType {
+  NO_STREAMING = 'no_stream',
+  RX_STREAMING = 'rx_stream',
+  PT_STREAMING = 'pt_stream'
 }
