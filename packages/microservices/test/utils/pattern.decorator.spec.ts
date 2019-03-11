@@ -3,8 +3,9 @@ import { PATTERN_METADATA } from '../../constants';
 import {
   MessagePattern,
   GrpcMethod,
-  GrpcStreamMethod,
+  GrpcStreamMethod, GrpcMethodStreamingType,
 } from '../../decorators/pattern.decorator';
+import { GrpcStreamCall } from '@nestjs/microservices';
 
 describe('@MessagePattern', () => {
   const pattern = { role: 'test' };
@@ -36,7 +37,7 @@ describe('@GrpcMethod', () => {
     expect(metadata).to.be.eql({
       service: TestService.name,
       rpc: 'Test',
-      streaming: false
+      streaming: GrpcMethodStreamingType.NO_STREAMING
     });
   });
 
@@ -46,7 +47,7 @@ describe('@GrpcMethod', () => {
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
-      streaming: false
+      streaming: GrpcMethodStreamingType.NO_STREAMING
     });
   });
 
@@ -56,7 +57,7 @@ describe('@GrpcMethod', () => {
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
-      streaming: false
+      streaming: GrpcMethodStreamingType.NO_STREAMING
     });
   });
 });
@@ -79,7 +80,7 @@ describe('@GrpcStreamMethod', () => {
     expect(metadata).to.be.eql({
       service: TestService.name,
       rpc: 'Test',
-      streaming: true
+      streaming: GrpcMethodStreamingType.RX_STREAMING
     });
   });
 
@@ -89,7 +90,7 @@ describe('@GrpcStreamMethod', () => {
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
-      streaming: true
+      streaming: GrpcMethodStreamingType.RX_STREAMING
     });
   });
 
@@ -99,7 +100,50 @@ describe('@GrpcStreamMethod', () => {
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
-      streaming: true
+      streaming: GrpcMethodStreamingType.RX_STREAMING
+    });
+  });
+});
+
+describe('@GrpcStreamCall', () => {
+  class TestService {
+    @GrpcStreamCall()
+    public test() {}
+
+    @GrpcStreamCall('TestService2')
+    public test2() {}
+
+    @GrpcStreamCall('TestService2', 'Test2')
+    public test3() {}
+  }
+
+  it('should derive method and service name', () => {
+    const svc = new TestService();
+    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test);
+    expect(metadata).to.be.eql({
+      service: TestService.name,
+      rpc: 'Test',
+      streaming: GrpcMethodStreamingType.PT_STREAMING
+    });
+  });
+
+  it('should derive method', () => {
+    const svc = new TestService();
+    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
+    expect(metadata).to.be.eql({
+      service: 'TestService2',
+      rpc: 'Test2',
+      streaming: GrpcMethodStreamingType.PT_STREAMING
+    });
+  });
+
+  it('should override both method and service', () => {
+    const svc = new TestService();
+    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test3);
+    expect(metadata).to.be.eql({
+      service: 'TestService2',
+      rpc: 'Test2',
+      streaming: GrpcMethodStreamingType.PT_STREAMING
     });
   });
 });
