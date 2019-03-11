@@ -1,21 +1,19 @@
 import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { fromEvent } from 'rxjs';
+import { fromEvent, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
   GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
   GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
   GRPC_DEFAULT_PROTO_LOADER,
-  GRPC_DEFAULT_URL
+  GRPC_DEFAULT_URL,
 } from '../constants';
 import { InvalidGrpcPackageException } from '../exceptions/errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../exceptions/errors/invalid-proto-definition.exception';
 import { CustomTransportStrategy } from '../interfaces';
-import {
-  GrpcOptions,
-  MicroserviceOptions,
-} from '../interfaces/microservice-configuration.interface';
+import { GrpcOptions, MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import { GrpcMethodStreamingType } from '../decorators';
 
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
@@ -88,7 +86,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   /**
    * Will create service mapping from gRPC generated Object to handlers
-   * defined with @GrpcMethod or @GrpcStream annotations
+   * defined with @GrpcMethod or @GrpcStreamMethod annotations
    *
    * @param grpcService
    * @param name
@@ -98,33 +96,53 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
     // tslint:disable-next-line:forin
     for (const methodName in grpcService.prototype) {
+      // Define pattern
+      let pattern = '';
+      // Define methodHandler
+      let methodHandler = null;
+      // Define streaming type to define which handler mechanics should be selected
+      let streamingType = GrpcMethodStreamingType.NO_STREAMING;
       // Extract callable from gRPC service object
       const methodFunction = grpcService.prototype[methodName];
       // Extract definition check to expect request part as a stream
       const methodReqStreaming = methodFunction.requestStream;
-      // Define pattern stub
-      let pattern = '';
       // Check if extracted value presented and truthy
       if (!isUndefined(methodReqStreaming) && methodReqStreaming) {
-        // Pattern will be created as expecting streaming handler
-        // to be presented, because there is no other way to handle req stream
-        pattern = this.createPattern(name, methodName, true);
+        // Try first pattern to be presented, RX streaming pattern would be
+        // a preferable pattern to select among few defined
+        pattern = this.createPattern(
+          name, methodName, GrpcMethodStreamingType.RX_STREAMING
+        );
+        methodHandler = this.messageHandlers[pattern];
+        streamingType = GrpcMethodStreamingType.RX_STREAMING;
+        // If first pattern didn't match to any of handlers then try
+        // pass-through handler to be presented
+        if (!methodHandler) {
+          pattern = this.createPattern(
+            name, methodName, GrpcMethodStreamingType.PT_STREAMING
+          );
+          methodHandler = this.messageHandlers[pattern];
+          streamingType = GrpcMethodStreamingType.PT_STREAMING;
+        }
       } else {
         // Pattern will be created as expecting just method handler to be
         // presented, to not break possibly existing handler bindings
-        pattern = this.createPattern(name, methodName, false);
+        pattern = this.createPattern(
+          name, methodName, GrpcMethodStreamingType.NO_STREAMING
+        );
+        // Select handler if any presented for No-Streaming pattern
+        methodHandler = this.messageHandlers[pattern];
+        streamingType = GrpcMethodStreamingType.NO_STREAMING;
       }
-      // Select appropriate handler
-      // @TODO Add additional check for another pattern if developer wants
-      // to define all of his handlers as call pass-through handlers
-      const methodHandler = this.messageHandlers[pattern];
-
+      // Check if method handler is presented and not null
       if (!methodHandler) {
         continue;
       }
+      // Create new service mapping of handler to route
       service[methodName] = await this.createServiceMethod(
         methodHandler,
         grpcService.prototype[methodName],
+        streamingType
       );
     }
     return service;
@@ -137,10 +155,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
    *                        to gRPC service definition name
    * @param methodName    : name of the method which is coming after rpc
    *                        keyword
-   * @param streaming     : boolean parameter which should correspond to
-   *                        steam keyword in gRPC service request part
+   * @param streaming     : GrpcMethodStreamingType parameter which should
+   *                        correspond to steam keyword in gRPC service
+   *                        request part
    */
-  public createPattern(service: string, methodName: string, streaming: boolean): string {
+  public createPattern(service: string,
+                       methodName: string,
+                       streaming: GrpcMethodStreamingType): string {
     return JSON.stringify({
       service,
       rpc: methodName,
@@ -158,9 +179,17 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   public createServiceMethod(
     methodHandler: Function,
     protoNativeHandler: any,
+    streamType: GrpcMethodStreamingType
   ): Function {
+    // If proto handler has request stream as True then we expect it to have
+    // streaming from the side of requester
     if (protoNativeHandler.requestStream) {
-      return this.createStreamCallMethod(methodHandler);
+      // If any handlers were defined with GrpcStreamMethod annotation use RX
+      if (streamType === GrpcMethodStreamingType.RX_STREAMING)
+        return this.createStreamDuplexMethod(methodHandler);
+      // If any handlers were defined with GrpcStreamCall annotation
+      else if (streamType === GrpcMethodStreamingType.PT_STREAMING)
+        return this.createStreamCallMethod(methodHandler);
     }
     return protoNativeHandler.responseStream
       ? this.createStreamServiceMethod(methodHandler)
@@ -184,6 +213,36 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       await result$
         .pipe(takeUntil(fromEvent(call, CANCEL_EVENT)))
         .forEach(data => call.write(data));
+      call.end();
+    };
+  }
+
+  public createStreamDuplexMethod(methodHandler) {
+    return async (call) => {
+      const req = new Subject<any>();
+      // Pass data to request
+      call.on('data', (m: any) => req.next(m));
+      // React on error
+      call.on('error', (e: any) => {
+        // Check if error means that stream ended on other end
+        if (String(e).toLowerCase().indexOf('cancelled') > -1) {
+          call.end();
+          return;
+        }
+        // If another error then just pass it along
+        req.error(e);
+      });
+      // On end complete the Observable
+      call.on('end', () => req.complete());
+      // Pass request to handler
+      const handler = methodHandler(req.asObservable());
+      // Receive back observable
+      const res = this.transformToObservable(await handler);
+      // Write until cancelled event happened
+      await res.pipe(
+        takeUntil(fromEvent(call, CANCEL_EVENT))
+      ).forEach(m => call.write(m));
+      // End connection when response is done
       call.end();
     };
   }
