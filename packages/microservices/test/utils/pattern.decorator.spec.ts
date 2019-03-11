@@ -3,7 +3,7 @@ import { PATTERN_METADATA } from '../../constants';
 import {
   MessagePattern,
   GrpcMethod,
-  GrpcStream,
+  GrpcStreamMethod,
 } from '../../decorators/pattern.decorator';
 
 describe('@MessagePattern', () => {
@@ -61,15 +61,15 @@ describe('@GrpcMethod', () => {
   });
 });
 
-describe('@GrpcStream', () => {
+describe('@GrpcStreamMethod', () => {
   class TestService {
-    @GrpcStream()
+    @GrpcStreamMethod()
     public test() {}
 
-    @GrpcStream('TestService2')
+    @GrpcStreamMethod('TestService2')
     public test2() {}
 
-    @GrpcStream('TestService2', 'Test2')
+    @GrpcStreamMethod('TestService2', 'Test2')
     public test3() {}
   }
 
