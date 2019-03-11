@@ -5,6 +5,7 @@ package math;
 service Math {
   rpc Sum (RequestSum) returns (SumResult);
   rpc SumStream(stream RequestSum) returns(stream SumResult);
+  rpc SumStreamPass(stream RequestSum) returns(stream SumResult);
 }
 
 message SumResult {

@@ -52,9 +52,34 @@ describe('GRPC transport', () => {
       .expect(200, { result: 15 });
   });
 
-  it('GRPC Sending and receiving Stream', async () => {
+  it('GRPC Sending and receiving Stream from RX handler', async () => {
 
     const callHandler = client.SumStream();
+
+    callHandler.on('data', (msg: number) => {
+      // Do deep comparison (to.eql)
+      expect(msg).to.eql({result: 15});
+      callHandler.cancel();
+    });
+
+    callHandler.on('error', (err: any) => {
+      // We want to fail only on real errors while Cancellation error
+      // is expected
+      if (String(err).toLowerCase().indexOf('cancelled') === -1) {
+        fail('gRPC Stream error happened, error: ' + err);
+      }
+    });
+
+    return new Promise((resolve, reject) => {
+      callHandler.write({data: [1, 2, 3, 4, 5]});
+      setTimeout(() => resolve(), 1000);
+    });
+
+  });
+
+  it('GRPC Sending and receiving Stream from Call Passthrough handler', async () => {
+
+    const callHandler = client.SumStreamPass();
 
     callHandler.on('data', (msg: number) => {
       // Do deep comparison (to.eql)

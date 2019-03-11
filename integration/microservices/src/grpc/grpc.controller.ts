@@ -1,5 +1,8 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { Client, ClientGrpc, GrpcMethod, GrpcStream, Transport } from '@nestjs/microservices';
+import {
+  Client, ClientGrpc, GrpcMethod,
+  GrpcStreamMethod, GrpcStreamCall, Transport,
+} from '@nestjs/microservices';
 import { join } from 'path';
 import { Observable, of } from 'rxjs';
 
@@ -28,8 +31,24 @@ export class GrpcController {
     });
   }
 
-  @GrpcStream('Math')
-  async sumStream(stream: any) {
+  @GrpcStreamMethod('Math')
+  async sumStream(messages: Observable<any>): Promise<any> {
+    // Form a resulting promise
+    return new Promise<any>((resolve, reject) => {
+      // Subscribe for a message to for a test answer
+      messages.subscribe(msg => {
+        // Resolve with reduce function
+        resolve({
+          result: msg.data.reduce((a, b) => a + b),
+        });
+      }, err => {
+        reject(err);
+      });
+    });
+  }
+
+  @GrpcStreamCall('Math')
+  async sumStreamPass(stream: any) {
     stream.on('data', (msg: any) => {
       stream.write({result: msg.data.reduce((a, b) => a + b)});
     });
