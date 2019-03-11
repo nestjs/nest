@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
 import { ServerGrpc } from '../../server/server-grpc';
+import { GrpcMethodStreamingType } from '@nestjs/microservices';
 
 describe('ServerGrpc', () => {
   let server: ServerGrpc;
@@ -125,11 +126,12 @@ describe('ServerGrpc', () => {
     it('should return pattern', () => {
       const service = 'test';
       const method = 'method';
-      expect(server.createPattern(service, method, false)).to.be.eql(
+      expect(server.createPattern(service, method, GrpcMethodStreamingType.NO_STREAMING))
+        .to.be.eql(
         JSON.stringify({
           service,
           rpc: method,
-          streaming: false
+          streaming: GrpcMethodStreamingType.NO_STREAMING
         }),
       );
     });
@@ -140,7 +142,11 @@ describe('ServerGrpc', () => {
       it('should call "createStreamServiceMethod"', () => {
         const cln = sinon.spy();
         const spy = sinon.spy(server, 'createStreamServiceMethod');
-        server.createServiceMethod(cln, { responseStream: true } as any);
+        server.createServiceMethod(
+          cln,
+          { responseStream: true } as any,
+          GrpcMethodStreamingType.NO_STREAMING
+        );
 
         expect(spy.called).to.be.true;
       });
@@ -149,7 +155,11 @@ describe('ServerGrpc', () => {
       it('should call "createUnaryServiceMethod"', () => {
         const cln = sinon.spy();
         const spy = sinon.spy(server, 'createUnaryServiceMethod');
-        server.createServiceMethod(cln, { responseStream: false } as any);
+        server.createServiceMethod(
+          cln,
+          { responseStream: false } as any,
+          GrpcMethodStreamingType.NO_STREAMING
+        );
 
         expect(spy.called).to.be.true;
       });
