@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { join } from 'path';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
 import { ServerGrpc } from '../../server/server-grpc';
@@ -53,14 +53,14 @@ describe('ServerGrpc', () => {
       it('should call "addService"', async () => {
         const serviceNames = [{
           name: 'test',
-          service: true
+          service: true,
         }, {
           name: 'test2',
-          service: true
+          service: true,
         }];
         sinon.stub(server, 'lookupPackage').callsFake(() => ({
-          test: {service: true},
-          test2: {service: true}
+          test: { service: true },
+          test2: { service: true },
         }));
         sinon.stub(server, 'getServiceNames').callsFake(() => serviceNames);
 
@@ -82,12 +82,12 @@ describe('ServerGrpc', () => {
       const expected = [
         {
           name: 'key',
-          service: {service: true}
+          service: { service: true },
         },
         {
           name: 'key2',
-          service: {service: true}
-        }
+          service: { service: true },
+        },
       ];
       expect(server.getServiceNames(obj)).to.be.eql(expected);
     });
@@ -198,6 +198,30 @@ describe('ServerGrpc', () => {
         expect(call.write.calledTwice).to.be.true;
         expect(call.end.called).to.be.true;
       });
+
+      it('stream error handling', async () => {
+        let cancelCb: () => void;
+        const err = { code: 2, message: 'Error' };
+        const call = {
+          end: sinon.spy(),
+          addListener: (name, cb) => (cancelCb = cb),
+          removeListener: sinon.spy(),
+          emit: sinon.spy(),
+        };
+        const result$ = throwError(err);
+        const callback = sinon.spy();
+        const native = sinon
+          .stub()
+          .returns(new Promise((resolve, reject) => resolve(result$)));
+
+        await server.createStreamServiceMethod(native)(call, callback);
+
+        const args = call.emit.args[0];
+
+        expect(args[0]).to.equal('error');
+        expect(args[1]).to.equal(err);
+        expect(call.end.called).to.be.true;
+      });
     });
   });
 
@@ -248,24 +272,24 @@ describe('ServerGrpc', () => {
           C: {
             E: {
               service: {
-                serviceName: {}
-              }
-            }
-          }
+                serviceName: {},
+              },
+            },
+          },
         },
         B: {
           D: {
             service: {
-              serviceName: {}
-            }
-          }
-        }
+              serviceName: {},
+            },
+          },
+        },
       };
       const svcs = server.getServiceNames(grpcPkg);
       expect(svcs.length).to
         .be.equal(
-          2,
-        'Amount of services collected from namespace should be equal 2'
+        2,
+        'Amount of services collected from namespace should be equal 2',
       );
       expect(svcs[0].name).to.be.equal('A.C.E');
       expect(svcs[1].name).to.be.equal('B.D');
@@ -274,20 +298,20 @@ describe('ServerGrpc', () => {
       const grpcPkg = {
         A: {
           service: {
-            serviceName: {}
-          }
+            serviceName: {},
+          },
         },
         B: {
           service: {
-            serviceName: {}
-          }
-        }
+            serviceName: {},
+          },
+        },
       };
       const services = server.getServiceNames(grpcPkg);
       expect(services.length).to
         .be.equal(
         2,
-        'Amount of services collected from namespace should be equal 2'
+        'Amount of services collected from namespace should be equal 2',
       );
       expect(services[0].name).to.be.equal('A');
       expect(services[1].name).to.be.equal('B');
