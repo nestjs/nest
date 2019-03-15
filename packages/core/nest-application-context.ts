@@ -93,19 +93,19 @@ export class NestApplicationContext implements INestApplicationContext {
         (key: string) => ShutdownSignal[key],
       );
     } else {
-      // Given signals array should be unique because
+      // given signals array should be unique because
       // process shouldn't listen to the same signal more than once.
       signals = Array.from(new Set(signals));
     }
 
     signals = signals
-      .map((signal: ShutdownSignal | string): string =>
+      .map((signal: string) =>
         signal
           .toString()
           .toUpperCase()
           .trim(),
       )
-      // Filter out the signals which is already listening to
+      // filter out the signals which is already listening to
       .filter(
         (signal: string) => !this.activeShutdownSignals.includes(signal),
       ) as string[];
