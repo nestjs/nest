@@ -106,9 +106,7 @@ export class NestApplicationContext implements INestApplicationContext {
           .trim(),
       )
       // filter out the signals which is already listening to
-      .filter(
-        (signal: string) => !this.activeShutdownSignals.includes(signal),
-      ) as string[];
+      .filter(signal => !this.activeShutdownSignals.includes(signal));
 
     this.listenToShutdownSignals(signals);
     return this;

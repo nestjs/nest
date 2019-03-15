@@ -1,6 +1,4 @@
-export interface Constructor<T> {
-  new (...args: any[]): T;
-}
+export type Constructor<T> = new (...args: any[]) => T;
 
 export const MergeWithValues = <T extends Constructor<{}>>(data: {
   [param: string]: any;
