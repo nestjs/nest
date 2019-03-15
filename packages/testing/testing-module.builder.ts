@@ -92,9 +92,10 @@ export class TestingModuleBuilder {
   }
 
   private createModule(metadata: ModuleMetadata) {
-    class TestModule {}
-    Module(metadata)(TestModule);
-    return TestModule;
+    // tslint:disable-next-line:class-name
+    class _RootTestModule {}
+    Module(metadata)(_RootTestModule);
+    return _RootTestModule;
   }
 
   private applyLogger() {

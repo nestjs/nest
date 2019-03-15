@@ -47,7 +47,7 @@ export class RoutesResolver implements Resolver {
       let path = metatype
         ? Reflect.getMetadata(MODULE_PATH, metatype)
         : undefined;
-      path = path ? path + basePath : basePath;
+      path = path ? basePath + path : basePath;
       this.registerRouters(controllers, moduleName, path, applicationRef);
     });
   }

@@ -32,4 +32,13 @@ describe('createHttpExceptionBody', () => {
       });
     });
   });
+  it('should not override pre-defined body if message is array', () => {
+    expect(
+      createHttpExceptionBody(['a', 'random', 'array'], 'error', 200),
+    ).to.eql({
+      message: ['a', 'random', 'array'],
+      error: 'error',
+      statusCode: 200,
+    });
+  });
 });
