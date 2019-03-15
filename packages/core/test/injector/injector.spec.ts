@@ -198,9 +198,7 @@ describe('Injector', () => {
 
     it('should call "resolveConstructorParams" when instance is not resolved', () => {
       const collection = {
-        get: (...args) => ({
-          instance: null,
-        }),
+        get: (...args) => ({}),
         set: (...args) => {},
       };
 

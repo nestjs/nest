@@ -26,14 +26,11 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
 
   private static readonly ConfigProxy = class implements MiddlewareConfigProxy {
     private excludedRoutes: RouteInfo[] = [];
-    private readonly includedRoutes: any[];
 
     constructor(
       private readonly builder: MiddlewareBuilder,
-      middleware: any[],
-    ) {
-      this.includedRoutes = filterMiddleware(middleware);
-    }
+      private readonly middleware: Array<Type<any> | Function | any>,
+    ) {}
 
     public getExcludedRoutes(): RouteInfo[] {
       return this.excludedRoutes;
@@ -58,7 +55,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
         routes.map(route => routesMapper.mapRouteToRouteInfo(route)),
       );
       const configuration = {
-        middleware: this.includedRoutes,
+        middleware: filterMiddleware(this.middleware),
         forRoutes: forRoutes.filter(route => !this.isRouteExcluded(route)),
       };
       middlewareCollection.add(configuration);

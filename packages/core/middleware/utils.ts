@@ -15,8 +15,7 @@ export const mapToClass = <T extends Function | Type<any>>(middleware: T) => {
   }
   return assignToken(
     class {
-      resolve = (...args: any[]) => (...params: any[]) =>
-        (middleware as Function)(...params)
+      use = (...params: any[]) => (middleware as Function)(...params);
     },
   );
 };

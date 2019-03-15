@@ -75,7 +75,7 @@ export class Injector {
   ) {
     const { metatype } = wrapper;
     const targetWrapper = collection.get(metatype.name);
-    if (targetWrapper.instance !== null) {
+    if (!isUndefined(targetWrapper.instance)) {
       return;
     }
     const loadInstance = (instances: any[]) => {
