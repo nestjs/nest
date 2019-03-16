@@ -10,16 +10,16 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "^6.0.0",
-    "@nestjs/core": "^6.0.0",
-    "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.3.3",
-    "typescript": "^3.2.2"
+    "@nestjs/common": "6.0.0",
+    "@nestjs/core": "6.0.0",
+    "reflect-metadata": "0.1.13",
+    "rxjs": "6.4.0",
+    "typescript": "3.3.3333"
   },
   "devDependencies": {
-    "@types/node": "^10.12.18",
-    "ts-loader": "^5.3.3",
-    "ts-node": "^7.0.1",
-    "tslint": "^5.12.1"
+    "@types/node": "10.14.1",
+    "ts-loader": "5.3.3",
+    "ts-node": "7.0.1",
+    "tslint": "5.14.0"
   }
 }

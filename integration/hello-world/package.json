@@ -8,20 +8,20 @@
   },
   "dependencies": {
     "@nestjs/common": "5.6.2",
-    "@nestjs/core": "^5.0.0",
-    "@nestjs/microservices": "^5.0.0",
-    "@nestjs/testing": "^5.0.0",
-    "@nestjs/websockets": "^5.0.0",
-    "class-transformer": "^0.1.7",
-    "class-validator": "^0.7.2",
-    "fastify": "^1.1.1",
-    "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
-    "typescript": "^3.1.0"
+    "@nestjs/core": "5.3.15",
+    "@nestjs/microservices": "5.3.15",
+    "@nestjs/testing": "5.3.15",
+    "@nestjs/websockets": "5.3.15",
+    "class-transformer": "0.1.10",
+    "class-validator": "0.7.3",
+    "fastify": "1.12.1",
+    "reflect-metadata": "0.1.12",
+    "rxjs": "6.0.0",
+    "typescript": "2.9.2"
   },
   "devDependencies": {
-    "@types/node": "^7.0.41",
-    "supertest": "^3.0.0",
-    "ts-node": "^6.0.0"
+    "@types/node": "7.10.0",
+    "supertest": "3.3.0",
+    "ts-node": "6.2.0"
   }
 }
