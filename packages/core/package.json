@@ -22,15 +22,15 @@
     }
   },
   "dependencies": {
-    "@nuxtjs/opencollective": "0.1.0",
-    "fast-safe-stringify": "1.2.0",
-    "iterare": "0.0.8",
-    "object-hash": "1.3.0",
+    "@nuxtjs/opencollective": "0.2.1",
+    "fast-safe-stringify": "2.0.6",
+    "iterare": "1.1.2",
+    "object-hash": "1.3.1",
     "optional": "0.1.4",
     "uuid": "3.3.2"
   },
   "peerDependencies": {
-    "@nestjs/common": "^5.0.0",
+    "@nestjs/common": "^6.0.0",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0"
   }

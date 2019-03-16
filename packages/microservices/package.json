@@ -12,13 +12,13 @@
     "access": "public"
   },
   "dependencies": {
-    "iterare": "0.0.8",
-    "json-socket": "^0.2.1",
+    "iterare": "1.1.2",
+    "json-socket": "^0.3.0",
     "optional": "0.1.4"
   },
   "peerDependencies": {
-    "@nestjs/common": "^5.0.0",
-    "@nestjs/core": "^5.0.0",
+    "@nestjs/common": "^6.0.0",
+    "@nestjs/core": "^6.0.0",
     "rxjs": "^6.0.0"
   }
 }

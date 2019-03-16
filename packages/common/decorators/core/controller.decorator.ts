@@ -10,9 +10,9 @@ export interface ControllerOptions extends ScopeOptions {
  * Defines the controller. Controller can inject dependencies through constructor.
  * Those dependencies have to belong to the same module.
  */
-export function Controller();
-export function Controller(prefix: string);
-export function Controller(options: ControllerOptions);
+export function Controller(): ClassDecorator;
+export function Controller(prefix: string): ClassDecorator;
+export function Controller(options: ControllerOptions): ClassDecorator;
 export function Controller(
   prefixOrOptions?: string | ControllerOptions,
 ): ClassDecorator {

@@ -26,7 +26,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return isObject(body) ? res.json(body) : res.send(String(body));
   }
 
-  public render(response, view: string, options: any) {
+  public render(response: any, view: string, options: any) {
     return response.render(view, options);
   }
 
@@ -38,7 +38,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return this.use(handler);
   }
 
-  public setHeader(response, name: string, value: string) {
+  public setHeader(response: any, name: string, value: string) {
     return response.set(name, value);
   }
 
@@ -77,11 +77,11 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return this.set('view engine', engine);
   }
 
-  public getRequestMethod(request): string {
+  public getRequestMethod(request: any): string {
     return request.method;
   }
 
-  public getRequestUrl(request): string {
+  public getRequestUrl(request: any): string {
     return request.url;
   }
 

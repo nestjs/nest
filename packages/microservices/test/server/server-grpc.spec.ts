@@ -57,7 +57,7 @@ describe('ServerGrpc', () => {
         try {
           await server.bindEvents();
         } catch (err) {
-          expect(err).to.be.instanceof(InvalidGrpcPackageException);
+          expect(err).to.be.instanceOf(InvalidGrpcPackageException);
         }
       });
     });

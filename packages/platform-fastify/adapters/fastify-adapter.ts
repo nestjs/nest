@@ -29,11 +29,11 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     return this.instance.listen(port, hostname, callback);
   }
 
-  public reply(response, body: any, statusCode: number) {
+  public reply(response: any, body: any, statusCode: number) {
     return response.code(statusCode).send(body);
   }
 
-  public render(response, view: string, options: any) {
+  public render(response: any, view: string, options: any) {
     return response.view(view, options);
   }
 
@@ -91,20 +91,20 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     );
   }
 
-  public setHeader(response, name: string, value: string) {
+  public setHeader(response: any, name: string, value: string) {
     return response.header(name, value);
   }
 
-  public getRequestMethod(request): string {
+  public getRequestMethod(request: any): string {
     return request.raw.method;
   }
 
-  public getRequestUrl(request): string {
+  public getRequestUrl(request: any): string {
     return request.raw.url;
   }
 
   public enableCors(options: CorsOptions) {
-    this.register(cors(options));
+    this.register(cors, { options });
   }
 
   public registerParserMiddleware() {

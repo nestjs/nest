@@ -12,11 +12,11 @@
     "access": "public"
   },
   "dependencies": {
-    "iterare": "0.0.8"
+    "iterare": "1.1.2"
   },
   "peerDependencies": {
-    "@nestjs/common": "^5.0.0",
-    "@nestjs/core": "^5.0.0",
+    "@nestjs/common": "^6.0.0",
+    "@nestjs/core": "^6.0.0",
     "rxjs": "^6.0.0"
   }
 }

@@ -12,11 +12,11 @@
     "access": "public"
   },
   "dependencies": {
-    "ws": "^5.1.1"
+    "ws": "^6.2.0"
   },
   "peerDependencies": {
-    "@nestjs/common": "^5.0.0",
-    "@nestjs/websockets": "^5.0.0",
+    "@nestjs/common": "^6.0.0",
+    "@nestjs/websockets": "^6.0.0",
     "rxjs": "^6.0.0"
   }
 }

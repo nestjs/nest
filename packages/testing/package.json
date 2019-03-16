@@ -15,7 +15,7 @@
     "optional": "0.1.4"
   },
   "peerDependencies": {
-    "@nestjs/common": "5.*",
-    "@nestjs/core": "^5.0.0"
+    "@nestjs/common": "^6.0.0",
+    "@nestjs/core": "^6.0.0"
   }
 }
