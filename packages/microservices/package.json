@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "iterare": "1.1.2",
-    "json-socket": "^0.3.0",
+    "json-socket": "0.3.0",
     "optional": "0.1.4"
   },
   "peerDependencies": {

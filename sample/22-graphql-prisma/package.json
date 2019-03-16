@@ -10,10 +10,10 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "^6.0.0",
-    "@nestjs/core": "^6.0.0",
-    "@nestjs/graphql": "^6.0.0",
-    "@nestjs/platform-express": "^6.0.0",
+    "@nestjs/common": "6.0.0",
+    "@nestjs/core": "6.0.0",
+    "@nestjs/graphql": "6.0.0",
+    "@nestjs/platform-express": "6.0.0",
     "apollo-server-express": "2.3.1",
     "graphql": "14.0.2",
     "graphql-tools": "4.0.4",

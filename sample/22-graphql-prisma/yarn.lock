@@ -26,7 +26,7 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@nestjs/common@^6.0.0":
+"@nestjs/common@6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.0.0.tgz#bbb8f1c0a98c8201fe9f2564f0e3203eff55a02d"
   dependencies:
@@ -34,7 +34,7 @@
     cli-color "1.2.0"
     uuid "3.3.2"
 
-"@nestjs/core@^6.0.0":
+"@nestjs/core@6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.0.0.tgz#e2bd6eaa698d97e0ea48672315d97cc2cdbe28de"
   dependencies:
@@ -45,7 +45,7 @@
     optional "0.1.4"
     uuid "3.3.2"
 
-"@nestjs/graphql@^6.0.0":
+"@nestjs/graphql@6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.0.0.tgz#3989244cba2913071645149fe46c73b6b654ccea"
   dependencies:
@@ -59,7 +59,7 @@
     ts-morph "^1.1.0"
     uuid "3.3.2"
 
-"@nestjs/platform-express@^6.0.0":
+"@nestjs/platform-express@6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.0.0.tgz#ae751bc115ff4db9216180f8c045830dc41e7430"
   dependencies:
