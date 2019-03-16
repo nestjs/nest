@@ -11,6 +11,7 @@ import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
+import { createContextId } from '../helpers/context-id-factory';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
@@ -189,7 +190,7 @@ export class MiddlewareModule {
         res: TResponse,
         next: () => void,
       ) => {
-        const contextId = { id: 1 };
+        const contextId = createContextId();
         const contextInstance = await this.injector.loadPerContext(
           instance,
           module,
