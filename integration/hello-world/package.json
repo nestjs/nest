@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@types/node": "7.10.0",
-    "supertest": "3.3.0",
+    "supertest": "3.4.2",
     "ts-node": "6.2.0"
   }
 }
