@@ -23,10 +23,10 @@
     "typescript": "3.2.2"
   },
   "devDependencies": {
-    "nodemon": "1.18.9",
+    "nodemon": "1.18.10",
     "prettier": "1.16.4",
     "ts-node": "7.0.1",
-    "tsconfig-paths": "3.8.0",
+    "tsconfig-paths": "3.7.0",
     "tslint": "5.12.1"
   }
 }
