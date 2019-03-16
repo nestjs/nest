@@ -13,7 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "axios": "0.18.0",
-    "cli-color": "1.2.0",
+    "cli-color": "1.4.0",
     "uuid": "3.3.2"
   },
   "peerDependencies": {
