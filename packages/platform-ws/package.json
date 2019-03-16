@@ -1,0 +1,22 @@
+{
+  "name": "@nestjs/platform-ws",
+  "version": "6.0.0-rc.1",
+  "description": "Nest - modern, fast, powerful node.js web framework (@platform-ws)",
+  "author": "Kamil Mysliwiec",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nestjs/nest"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "ws": "^5.1.1"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^5.0.0",
+    "@nestjs/websockets": "^5.0.0",
+    "rxjs": "^6.0.0"
+  }
+}

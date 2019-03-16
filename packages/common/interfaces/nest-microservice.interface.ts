@@ -1,9 +1,9 @@
-import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 import { ExceptionFilter } from './exceptions/exception-filter.interface';
-import { PipeTransform } from './features/pipe-transform.interface';
-import { NestInterceptor } from './features/nest-interceptor.interface';
 import { CanActivate } from './features/can-activate.interface';
+import { NestInterceptor } from './features/nest-interceptor.interface';
+import { PipeTransform } from './features/pipe-transform.interface';
 import { INestApplicationContext } from './nest-application-context.interface';
+import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 
 export interface INestMicroservice extends INestApplicationContext {
   /**
@@ -12,7 +12,7 @@ export interface INestMicroservice extends INestApplicationContext {
    * @param  {Function} callback
    * @returns {Promise}
    */
-  listen(callback: () => void);
+  listen(callback: () => void): any;
 
   /**
    * Starts the microservice (can be awaited).

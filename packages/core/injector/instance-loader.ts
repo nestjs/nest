@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { MODULE_INIT_MESSAGE } from '../helpers/messages';
 import { NestContainer } from './container';
 import { Injector } from './injector';
+import { InternalCoreModule } from './internal-core-module';
 import { Module } from './module';
 
 export class InstanceLoader {
@@ -21,70 +22,75 @@ export class InstanceLoader {
 
   private createPrototypes(modules: Map<string, Module>) {
     modules.forEach(module => {
-      this.createPrototypesOfComponents(module);
+      this.createPrototypesOfProviders(module);
       this.createPrototypesOfInjectables(module);
-      this.createPrototypesOfRoutes(module);
+      this.createPrototypesOfControllers(module);
     });
   }
 
   private async createInstances(modules: Map<string, Module>) {
     await Promise.all(
       [...modules.values()].map(async module => {
-        await this.createInstancesOfComponents(module);
+        await this.createInstancesOfProviders(module);
         await this.createInstancesOfInjectables(module);
-        await this.createInstancesOfRoutes(module);
+        await this.createInstancesOfControllers(module);
 
         const { name } = module.metatype;
-        this.logger.log(MODULE_INIT_MESSAGE`${name}`);
+        this.isModuleWhitelisted(name) &&
+          this.logger.log(MODULE_INIT_MESSAGE`${name}`);
       }),
     );
   }
 
-  private createPrototypesOfComponents(module: Module) {
-    module.components.forEach(wrapper => {
-      this.injector.loadPrototypeOfInstance<Injectable>(
-        wrapper,
-        module.components,
-      );
-    });
+  private createPrototypesOfProviders(module: Module) {
+    const { providers } = module;
+    providers.forEach(wrapper =>
+      this.injector.loadPrototype<Injectable>(wrapper, providers),
+    );
   }
 
-  private async createInstancesOfComponents(module: Module) {
+  private async createInstancesOfProviders(module: Module) {
+    const { providers } = module;
     await Promise.all(
-      [...module.components.values()].map(async wrapper =>
-        this.injector.loadInstanceOfComponent(wrapper, module),
+      [...providers.values()].map(async wrapper =>
+        this.injector.loadProvider(wrapper, module),
       ),
     );
   }
 
-  private createPrototypesOfRoutes(module: Module) {
-    module.routes.forEach(wrapper => {
-      this.injector.loadPrototypeOfInstance<Controller>(wrapper, module.routes);
-    });
+  private createPrototypesOfControllers(module: Module) {
+    const { controllers } = module;
+    controllers.forEach(wrapper =>
+      this.injector.loadPrototype<Controller>(wrapper, controllers),
+    );
   }
 
-  private async createInstancesOfRoutes(module: Module) {
+  private async createInstancesOfControllers(module: Module) {
+    const { controllers } = module;
     await Promise.all(
-      [...module.routes.values()].map(async wrapper =>
-        this.injector.loadInstanceOfRoute(wrapper, module),
+      [...controllers.values()].map(async wrapper =>
+        this.injector.loadController(wrapper, module),
       ),
     );
   }
 
   private createPrototypesOfInjectables(module: Module) {
-    module.injectables.forEach(wrapper => {
-      this.injector.loadPrototypeOfInstance<Controller>(
-        wrapper,
-        module.injectables,
-      );
-    });
+    const { injectables } = module;
+    injectables.forEach(wrapper =>
+      this.injector.loadPrototype<Controller>(wrapper, injectables),
+    );
   }
 
   private async createInstancesOfInjectables(module: Module) {
+    const { injectables } = module;
     await Promise.all(
-      [...module.injectables.values()].map(async wrapper =>
-        this.injector.loadInstanceOfInjectable(wrapper, module),
+      [...injectables.values()].map(async wrapper =>
+        this.injector.loadInjectable(wrapper, module),
       ),
     );
+  }
+
+  private isModuleWhitelisted(name: string): boolean {
+    return name !== InternalCoreModule.name;
   }
 }

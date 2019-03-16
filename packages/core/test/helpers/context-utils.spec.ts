@@ -1,9 +1,5 @@
 import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
-import {
-  Body,
-  createRouteParamDecorator,
-  Request,
-} from '@nestjs/common/decorators';
+import { Body, createParamDecorator, Request } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { expect } from 'chai';
 import { ROUTE_ARGS_METADATA } from '../../../common/constants';
@@ -16,7 +12,7 @@ describe('ContextUtils', () => {
     contextUtils = new ContextUtils();
   });
   describe('reflectCallbackMetadata', () => {
-    const CustomDecorator = createRouteParamDecorator(() => {});
+    const CustomDecorator = createParamDecorator(() => {});
     class TestController {
       public callback(
         @Request() req,

@@ -2,11 +2,11 @@ import { ObservableSocketServer } from './interfaces';
 
 export class SocketsContainer {
   private readonly observableServers = new Map<
-    string,
+    string | RegExp,
     ObservableSocketServer
   >();
 
-  public getAllServers(): Map<string, ObservableSocketServer> {
+  public getAllServers(): Map<string | RegExp, ObservableSocketServer> {
     return this.observableServers;
   }
 
@@ -15,7 +15,7 @@ export class SocketsContainer {
   }
 
   public addServer(
-    namespace: string,
+    namespace: string | RegExp,
     port: number,
     server: ObservableSocketServer,
   ) {

@@ -4,29 +4,31 @@
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node src/main.ts",
-    "prestart:prod": "tsc",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "ts-node src/main",
+    "prestart:prod": "npm run build",
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "^5.3.0",
-    "@nestjs/core": "^5.3.0",
-    "@nestjs/jwt": "^0.1.3",
-    "@nestjs/passport": "^5.0.0",
+    "@nestjs/common": "^6.0.0",
+    "@nestjs/core": "^6.0.0",
+    "@nestjs/jwt": "^0.2.1",
+    "@nestjs/platform-express": "^6.0.0",
+    "@nestjs/passport": "^5.1.0",
     "passport": "^0.4.0",
     "passport-http-bearer": "^1.0.1",
     "passport-jwt": "^4.0.0",
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
-    "typescript": "^2.8.1"
+    "rxjs": "^6.3.3",
+    "typescript": "^3.2.2"
   },
   "devDependencies": {
-    "@types/jest": "^20.0.8",
-    "@types/node": "^7.0.41",
-    "jest": "^20.0.4",
-    "supertest": "^3.0.0",
-    "ts-jest": "^20.0.14",
-    "ts-node": "^6.0.0",
-    "tslint": "^5.9.1"
+    "@types/jest": "^23.3.12",
+    "@types/node": "^10.12.18",
+    "jest": "^23.6.0",
+    "supertest": "^3.3.0",
+    "ts-jest": "^23.10.5",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.12.1"
   }
 }

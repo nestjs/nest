@@ -4,27 +4,26 @@
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "start": "ts-node src/main",
-    "prestart:prod": "tsc",
+    "prestart:prod": "npm run build",
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "^5.3.0",
-    "@nestjs/core": "^5.3.0",
-    "@nestjs/microservices": "^5.3.0",
-    "@nestjs/testing": "^5.3.0",
-    "@nestjs/websockets": "^5.3.0",
-    "mysql2": "^1.4.2",
+    "@nestjs/common": "^6.0.0",
+    "@nestjs/core": "^6.0.0",
+    "@nestjs/platform-express": "^6.0.0",
+    "mysql2": "^1.6.4",
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
-    "sequelize": "^4.28.0",
-    "sequelize-typescript": "^0.6.1",
-    "typescript": "^2.6.2"
+    "rxjs": "^6.3.3",
+    "sequelize": "^4.42.0",
+    "sequelize-typescript": "^0.6.6",
+    "typescript": "^3.2.2"
   },
   "devDependencies": {
-    "@types/node": "^7.0.41",
-    "@types/sequelize": "^4.0.75",
-    "ts-node": "^6.0.0",
-    "tslint": "^5.9.1"
+    "@types/node": "^10.12.18",
+    "@types/sequelize": "^4.27.33",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.12.0"
   }
 }

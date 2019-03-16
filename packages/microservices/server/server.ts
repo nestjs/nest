@@ -9,29 +9,36 @@ import {
   Subscription,
 } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
-import { MicroserviceOptions, WritePacket } from '../interfaces';
-import { MessageHandlers } from '../interfaces/message-handlers.interface';
+import {
+  MessageHandler,
+  MicroserviceOptions,
+  ReadPacket,
+  WritePacket,
+} from '../interfaces';
+import { NO_EVENT_HANDLER } from './../constants';
 
 export abstract class Server {
-  protected readonly messageHandlers: MessageHandlers = {};
+  protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger = new Logger(Server.name);
 
   public addHandler(
     pattern: any,
-    callback: (data) => Promise<Observable<any>>,
+    callback: MessageHandler,
+    isEventHandler = false,
   ) {
     const key = isString(pattern) ? pattern : JSON.stringify(pattern);
-    this.messageHandlers[key] = callback;
+    callback.isEventHandler = isEventHandler;
+    this.messageHandlers.set(key, callback);
   }
 
-  public getHandlers(): MessageHandlers {
+  public getHandlers(): Map<string, MessageHandler> {
     return this.messageHandlers;
   }
 
-  public getHandlerByPattern(
-    pattern: string,
-  ): (data) => Promise<Observable<any>> | null {
-    return this.messageHandlers[pattern] ? this.messageHandlers[pattern] : null;
+  public getHandlerByPattern(pattern: string): MessageHandler | null {
+    return this.messageHandlers.has(pattern)
+      ? this.messageHandlers.get(pattern)
+      : null;
   }
 
   public send(
@@ -40,16 +47,24 @@ export abstract class Server {
   ): Subscription {
     return stream$
       .pipe(
-        catchError(err => {
+        catchError((err: any) => {
           respond({ err, response: null });
           return empty;
         }),
         finalize(() => respond({ isDisposed: true })),
       )
-      .subscribe(response => respond({ err: null, response }));
+      .subscribe((response: any) => respond({ err: null, response }));
   }
 
-  public transformToObservable<T = any>(resultOrDeffered): Observable<T> {
+  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
+    const handler = this.getHandlerByPattern(pattern);
+    if (!handler) {
+      return this.logger.error(NO_EVENT_HANDLER);
+    }
+    await handler(packet.data);
+  }
+
+  public transformToObservable<T = any>(resultOrDeffered: any): Observable<T> {
     if (resultOrDeffered instanceof Promise) {
       return fromPromise(resultOrDeffered);
     } else if (!(resultOrDeffered && isFunction(resultOrDeffered.subscribe))) {
@@ -58,19 +73,23 @@ export abstract class Server {
     return resultOrDeffered;
   }
 
-  public getOptionsProp<T extends { options? }>(
+  public getOptionsProp<T extends { options?: any }>(
     obj: MicroserviceOptions['options'],
     prop: keyof T['options'],
-    defaultValue = undefined,
+    defaultValue: any = undefined,
   ) {
-    return obj && obj[prop as string] || defaultValue;
+    return (obj && obj[prop as string]) || defaultValue;
   }
 
   protected handleError(error: string) {
     this.logger.error(error);
   }
 
-  protected loadPackage(name: string, ctx: string) {
-    return loadPackage(name, ctx);
+  protected loadPackage<T = any>(
+    name: string,
+    ctx: string,
+    loader?: Function,
+  ): T {
+    return loadPackage(name, ctx, loader);
   }
 }

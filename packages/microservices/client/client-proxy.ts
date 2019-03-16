@@ -10,7 +10,7 @@ import {
 } from 'rxjs';
 import { map, mergeMap, take } from 'rxjs/operators';
 import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
-import { InvalidMessageException } from '../exceptions/errors/invalid-message.exception';
+import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
   ClientOptions,
   PacketId,
@@ -21,6 +21,7 @@ import {
 export abstract class ClientProxy {
   public abstract connect(): Promise<any>;
   public abstract close(): any;
+
   protected routingMap = new Map<string, Function>();
 
   public send<TResult = any, TInput = any>(
@@ -41,10 +42,24 @@ export abstract class ClientProxy {
     );
   }
 
+  public emit<TResult = any, TInput = any>(
+    pattern: any,
+    data: TInput,
+  ): Observable<TResult> {
+    if (isNil(pattern) || isNil(data)) {
+      return _throw(new InvalidMessageException());
+    }
+    return defer(async () => this.connect()).pipe(
+      mergeMap(() => this.dispatchEvent({ pattern, data })),
+    );
+  }
+
   protected abstract publish(
     packet: ReadPacket,
     callback: (packet: WritePacket) => void,
-  ): Function | void;
+  ): Function;
+
+  protected abstract dispatchEvent<T = any>(packet: ReadPacket): Promise<T>;
 
   protected createObserver<T>(
     observer: Observer<T>,
@@ -70,7 +85,7 @@ export abstract class ClientProxy {
     connectEvent = CONNECT_EVENT,
   ): Observable<any> {
     const error$ = fromEvent(instance, errorEvent).pipe(
-      map(err => {
+      map((err: any) => {
         throw err;
       }),
     );
@@ -78,10 +93,10 @@ export abstract class ClientProxy {
     return merge(error$, connect$).pipe(take(1));
   }
 
-  protected getOptionsProp<T extends { options? }>(
+  protected getOptionsProp<T extends { options?: any }>(
     obj: ClientOptions['options'],
     prop: keyof T['options'],
-    defaultValue = undefined,
+    defaultValue: any = undefined,
   ) {
     return obj ? obj[prop as string] : defaultValue;
   }

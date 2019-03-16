@@ -9,8 +9,9 @@ export interface NatsSubscriber {
 }
 
 export class NatsStrategy extends ServerNats {
-  bindEvents(client) {
-    const handlers = Object.keys(this.messageHandlers).map(item => ({
+  bindEvents(client: any) {
+    const patterns = [...this.messageHandlers.keys()];
+    const handlers = patterns.map(item => ({
       key: item,
       value: JSON.parse(item),
     })) as NatsSubscriber[];

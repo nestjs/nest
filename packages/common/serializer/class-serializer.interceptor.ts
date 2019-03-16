@@ -4,7 +4,11 @@ import { Inject, Injectable } from '../decorators/core';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
 import { loadPackage } from '../utils/load-package.util';
 import { isObject } from '../utils/shared.utils';
-import { ExecutionContext, NestInterceptor } from './../interfaces';
+import {
+  CallHandler,
+  ExecutionContext,
+  NestInterceptor,
+} from './../interfaces';
 import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants';
 
 let classTransformer: any = {};
@@ -21,20 +25,23 @@ const REFLECTOR = 'Reflector';
 @Injectable()
 export class ClassSerializerInterceptor implements NestInterceptor {
   constructor(@Inject(REFLECTOR) protected readonly reflector: any) {
-    const loadPkg = pkg => loadPackage(pkg, 'ClassSerializerInterceptor');
-    classTransformer = loadPkg('class-transformer');
+    classTransformer = loadPackage(
+      'class-transformer',
+      'ClassSerializerInterceptor',
+      () => require('class-transformer'),
+    );
+    require('class-transformer');
   }
 
-  intercept(
-    context: ExecutionContext,
-    call$: Observable<any>,
-  ): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const options = this.getContextOptions(context);
-    return call$.pipe(
-      map((res: PlainLiteralObject | Array<PlainLiteralObject>) =>
-        this.serialize(res, options),
-      ),
-    );
+    return next
+      .handle()
+      .pipe(
+        map((res: PlainLiteralObject | Array<PlainLiteralObject>) =>
+          this.serialize(res, options),
+        ),
+      );
   }
 
   serialize(
@@ -53,7 +60,7 @@ export class ClassSerializerInterceptor implements NestInterceptor {
   }
 
   transformToPlain(
-    plainOrClass,
+    plainOrClass: any,
     options: ClassTransformOptions,
   ): PlainLiteralObject {
     return plainOrClass && plainOrClass.constructor !== Object
@@ -70,7 +77,9 @@ export class ClassSerializerInterceptor implements NestInterceptor {
     );
   }
 
-  private reflectSerializeMetadata(obj): ClassTransformOptions | undefined {
+  private reflectSerializeMetadata(
+    obj: object | Function,
+  ): ClassTransformOptions | undefined {
     return this.reflector.get(CLASS_SERIALIZER_OPTIONS, obj);
   }
 }

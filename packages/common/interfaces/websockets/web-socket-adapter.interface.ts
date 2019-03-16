@@ -1,16 +1,21 @@
 import { Observable } from 'rxjs';
 
-export interface WebSocketAdapter<T = any> {
-  create(port: number, options?: T);
-  bindClientConnect(server: any, callback: (...args) => void);
-  bindClientDisconnect?(client: any, callback: (...args) => void);
+export interface WsMessageHandler<T = string> {
+  message: T;
+  callback: (...args: any[]) => Observable<any> | Promise<any>;
+}
+export interface WebSocketAdapter<
+  TServer = any,
+  TClient = any,
+  TOptions = any
+> {
+  create(port: number, options?: TOptions): TServer;
+  bindClientConnect(server: TServer, callback: Function): any;
+  bindClientDisconnect?(client: TClient, callback: Function): any;
   bindMessageHandlers(
-    client: any,
-    handlers: Array<{
-      message: any;
-      callback: (...args: any[]) => Observable<any> | Promise<any> | any;
-    }>,
+    client: TClient,
+    handlers: WsMessageHandler[],
     transform: (data: any) => Observable<any>,
-  );
-  close(server: any);
+  ): any;
+  close(server: TServer): any;
 }

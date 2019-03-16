@@ -1,8 +1,10 @@
 import { PARAMTYPES_METADATA } from '../../constants';
 
-export function flatten(arr: any[]) {
+export function flatten<T extends any[] = any, R extends any[] = any>(
+  arr: T,
+): R {
   const flat = [].concat(...arr);
-  return flat.some(Array.isArray) ? flatten(flat) : flat;
+  return (flat.some(Array.isArray) ? flatten(flat) : flat) as R;
 }
 
 export const Dependencies = (...dependencies: any[]): ClassDecorator => {

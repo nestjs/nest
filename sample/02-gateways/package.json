@@ -4,27 +4,29 @@
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "start": "ts-node src/main.ts",
-    "prestart:prod": "tsc",
+    "prestart:prod": "npm run build",
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "5.6.2",
-    "@nestjs/core": "^5.3.0",
-    "@nestjs/microservices": "^5.3.0",
-    "@nestjs/testing": "^5.3.0",
-    "@nestjs/websockets": "^5.3.0",
-    "class-transformer": "^0.1.7",
-    "class-validator": "^0.8.1",
+    "@nestjs/common": "^6.0.0",
+    "@nestjs/core": "^6.0.0",
+    "@nestjs/platform-express": "^6.0.0",
+    "@nestjs/platform-socket.io": "^6.0.0",
+    "@nestjs/testing": "^6.0.0",
+    "@nestjs/websockets": "^6.0.0",
+    "class-transformer": "^0.2.0",
+    "class-validator": "^0.9.1",
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
-    "typescript": "^2.8.0",
-    "ws": "^3.1.0"
+    "rxjs": "^6.3.3",
+    "typescript": "^3.2.2"
   },
   "devDependencies": {
-    "@types/node": "^7.0.41",
-    "@types/ws": "^3.0.2",
-    "ts-node": "^6.0.0",
-    "tslint": "^5.9.1"
+    "@types/node": "^10.12.18",
+    "@types/socket.io": "^2.1.2",
+    "@types/ws": "^6.0.1",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.12.0"
   }
 }

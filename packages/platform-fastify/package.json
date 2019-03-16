@@ -1,0 +1,20 @@
+{
+  "name": "@nestjs/platform-fastify",
+  "version": "6.0.0-rc.1",
+  "description": "Nest - modern, fast, powerful node.js web framework (@platform-fastify)",
+  "author": "Kamil Mysliwiec",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nestjs/nest"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "fastify": "^1.13.1",
+    "fastify-cors": "^1.0.0",
+    "fastify-formbody": "2.1.0",
+    "path-to-regexp": "3.0.0"
+  }
+}

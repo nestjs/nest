@@ -3,6 +3,8 @@ import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
+import { ApplicationConfig } from '../../application-config';
+import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { ExternalContextCreator } from '../../helpers/external-context-creator';
@@ -40,6 +42,10 @@ describe('ExternalContextCreator', () => {
       new ModulesContainer(),
       new PipesContextCreator(new NestContainer()),
       consumer,
+      new ExternalExceptionFilterContext(
+        new NestContainer(),
+        new ApplicationConfig(),
+      ),
     );
   });
   describe('create', () => {
@@ -72,14 +78,18 @@ describe('ExternalContextCreator', () => {
       describe('when proxy function called', () => {
         describe('when can not activate', () => {
           it('should throw exception when "tryActivate" returns false', () => {
-            sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
-            expect(proxyContext(1, 2, 3)).to.eventually.throw;
+            sinon
+              .stub(guardsConsumer, 'tryActivate')
+              .callsFake(async () => false);
+            proxyContext(1, 2, 3).catch(err => expect(err).to.not.be.undefined);
           });
         });
         describe('when can activate', () => {
           it('should apply context and args', async () => {
             const args = [1, 2, 3];
-            sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => true);
+            sinon
+              .stub(guardsConsumer, 'tryActivate')
+              .callsFake(async () => true);
 
             await proxyContext(...args);
             expect(applySpy.called).to.be.true;
@@ -94,57 +104,57 @@ describe('ExternalContextCreator', () => {
         expect(contextCreator.findContextModuleName({} as any)).to.be.eql('');
       });
     });
-    describe('when component exists', () => {
+    describe('when provider exists', () => {
       it('should return module key', () => {
         const modules = new Map();
-        const componentKey = 'test';
+        const providerKey = 'test';
         const moduleKey = 'key';
 
         modules.set(moduleKey, {});
         (contextCreator as any).modulesContainer = modules;
         sinon
-          .stub(contextCreator, 'findComponentByClassName')
+          .stub(contextCreator, 'findProviderByClassName')
           .callsFake(() => true);
 
         expect(
-          contextCreator.findContextModuleName({ name: componentKey } as any),
+          contextCreator.findContextModuleName({ name: providerKey } as any),
         ).to.be.eql(moduleKey);
       });
     });
-    describe('when component does not exists', () => {
+    describe('when provider does not exists', () => {
       it('should return empty string', () => {
         sinon
-          .stub(contextCreator, 'findComponentByClassName')
+          .stub(contextCreator, 'findProviderByClassName')
           .callsFake(() => false);
         expect(contextCreator.findContextModuleName({} as any)).to.be.eql('');
       });
     });
   });
-  describe('findComponentByClassName', () => {
-    describe('when component exists', () => {
+  describe('findProviderByClassName', () => {
+    describe('when provider exists', () => {
       it('should return true', () => {
-        const components = new Map();
+        const providers = new Map();
         const key = 'test';
-        components.set(key, key);
+        providers.set(key, key);
 
         expect(
-          contextCreator.findComponentByClassName(
+          contextCreator.findProviderByClassName(
             {
-              components,
+              providers,
             } as any,
             key,
           ),
         ).to.be.true;
       });
     });
-    describe('when component does not exists', () => {
+    describe('when provider does not exists', () => {
       it('should return false', () => {
-        const components = new Map();
+        const providers = new Map();
         const key = 'test';
         expect(
-          contextCreator.findComponentByClassName(
+          contextCreator.findProviderByClassName(
             {
-              components,
+              providers,
             } as any,
             key,
           ),

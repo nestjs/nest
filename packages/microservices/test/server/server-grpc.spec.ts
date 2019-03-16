@@ -1,9 +1,16 @@
+import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
+import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { ServerGrpc } from '../../server/server-grpc';
+
+class NoopLogger extends Logger {
+  log(message: any, context?: string): void {}
+  error(message: any, trace?: string, context?: string): void {}
+  warn(message: any, context?: string): void {}
+}
 
 describe('ServerGrpc', () => {
   let server: ServerGrpc;
@@ -20,7 +27,9 @@ describe('ServerGrpc', () => {
 
     beforeEach(() => {
       callback = sinon.spy();
-      bindEventsStub = sinon.stub(server, 'bindEvents').callsFake(() => ({}));
+      bindEventsStub = sinon
+        .stub(server, 'bindEvents')
+        .callsFake(() => ({} as any));
     });
 
     it('should call "bindEvents"', async () => {
@@ -42,25 +51,31 @@ describe('ServerGrpc', () => {
 
   describe('bindEvents', () => {
     describe('when package does not exist', () => {
-      it('should throw "InvalidGrpcPackageException"', () => {
+      it('should throw "InvalidGrpcPackageException"', async () => {
         sinon.stub(server, 'lookupPackage').callsFake(() => null);
-        expect(server.bindEvents()).to.eventually.throws(
-          InvalidGrpcPackageException,
-        );
+        (server as any).logger = new NoopLogger();
+        try {
+          await server.bindEvents();
+        } catch (err) {
+          expect(err).to.be.instanceof(InvalidGrpcPackageException);
+        }
       });
     });
     describe('when package exist', () => {
       it('should call "addService"', async () => {
-        const serviceNames = [{
-          name: 'test',
-          service: true
-        }, {
-          name: 'test2',
-          service: true
-        }];
+        const serviceNames = [
+          {
+            name: 'test',
+            service: true,
+          },
+          {
+            name: 'test2',
+            service: true,
+          },
+        ];
         sinon.stub(server, 'lookupPackage').callsFake(() => ({
-          test: {service: true},
-          test2: {service: true}
+          test: { service: true },
+          test2: { service: true },
         }));
         sinon.stub(server, 'getServiceNames').callsFake(() => serviceNames);
 
@@ -82,12 +97,12 @@ describe('ServerGrpc', () => {
       const expected = [
         {
           name: 'key',
-          service: {service: true}
+          service: { service: true },
         },
         {
           name: 'key2',
-          service: {service: true}
-        }
+          service: { service: true },
+        },
       ];
       expect(server.getServiceNames(obj)).to.be.eql(expected);
     });
@@ -95,10 +110,12 @@ describe('ServerGrpc', () => {
 
   describe('createService', () => {
     it('should call "createServiceMethod"', async () => {
-      const handlers = {
+      const objectToMap = obj =>
+        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+      const handlers = objectToMap({
         test: null,
         test2: () => ({}),
-      };
+      });
       sinon
         .stub(server, 'createPattern')
         .onFirstCall()
@@ -108,7 +125,7 @@ describe('ServerGrpc', () => {
 
       const spy = sinon
         .stub(server, 'createServiceMethod')
-        .callsFake(() => ({}));
+        .callsFake(() => ({} as any));
 
       (server as any).messageHandlers = handlers;
       await server.createService(
@@ -248,24 +265,23 @@ describe('ServerGrpc', () => {
           C: {
             E: {
               service: {
-                serviceName: {}
-              }
-            }
-          }
+                serviceName: {},
+              },
+            },
+          },
         },
         B: {
           D: {
             service: {
-              serviceName: {}
-            }
-          }
-        }
+              serviceName: {},
+            },
+          },
+        },
       };
       const svcs = server.getServiceNames(grpcPkg);
-      expect(svcs.length).to
-        .be.equal(
-          2,
-        'Amount of services collected from namespace should be equal 2'
+      expect(svcs.length).to.be.equal(
+        2,
+        'Amount of services collected from namespace should be equal 2',
       );
       expect(svcs[0].name).to.be.equal('A.C.E');
       expect(svcs[1].name).to.be.equal('B.D');
@@ -274,20 +290,19 @@ describe('ServerGrpc', () => {
       const grpcPkg = {
         A: {
           service: {
-            serviceName: {}
-          }
+            serviceName: {},
+          },
         },
         B: {
           service: {
-            serviceName: {}
-          }
-        }
+            serviceName: {},
+          },
+        },
       };
       const services = server.getServiceNames(grpcPkg);
-      expect(services.length).to
-        .be.equal(
+      expect(services.length).to.be.equal(
         2,
-        'Amount of services collected from namespace should be equal 2'
+        'Amount of services collected from namespace should be equal 2',
       );
       expect(services[0].name).to.be.equal('A');
       expect(services[1].name).to.be.equal('B');

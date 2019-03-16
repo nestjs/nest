@@ -1,4 +1,4 @@
 export interface OverrideByFactoryOptions {
-  factory: (...args) => any;
+  factory: (...args: any[]) => any;
   inject?: any[];
 }

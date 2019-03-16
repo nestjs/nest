@@ -8,54 +8,39 @@ import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/mic
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import { INestExpressApplication } from '@nestjs/common/interfaces/nest-express-application.interface';
-import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { NestApplication, NestApplicationContext } from '@nestjs/core';
-import { ExpressAdapter } from '@nestjs/core/adapters/express-adapter';
-import { ExpressFactory } from '@nestjs/core/adapters/express-factory';
-import { FastifyAdapter } from '@nestjs/core/adapters/fastify-adapter';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
+import { Module } from '@nestjs/core/injector/module';
 
 export class TestingModule extends NestApplicationContext {
   constructor(
     container: NestContainer,
     scope: Type<any>[],
-    contextModule,
+    contextModule: Module,
     private readonly applicationConfig: ApplicationConfig,
   ) {
     super(container, scope, contextModule);
   }
 
-  public createNestApplication(
-    httpServer?: HttpServer,
+  public createNestApplication<T extends INestApplication = INestApplication>(
+    httpAdapter?: HttpServer,
     options?: NestApplicationOptions,
-  ): INestApplication & INestExpressApplication;
-  public createNestApplication(
-    httpServer?: FastifyAdapter,
-    options?: NestApplicationOptions,
-  ): INestApplication & INestFastifyApplication;
-  public createNestApplication(
-    httpServer?: any,
-    options?: NestApplicationOptions,
-  ): INestApplication & INestExpressApplication;
-  public createNestApplication(
-    httpServer: any = ExpressFactory.create(),
-    options?: NestApplicationOptions,
-  ): INestApplication & (INestExpressApplication | INestFastifyApplication) {
-    httpServer = this.applyExpressAdapter(httpServer);
+  ): T {
+    httpAdapter = httpAdapter || this.createHttpAdapter();
 
     this.applyLogger(options);
-    this.container.setApplicationRef(httpServer);
+    this.container.setHttpAdapter(httpAdapter);
 
-    return new NestApplication(
+    const instance = new NestApplication(
       this.container,
-      httpServer,
+      httpAdapter,
       this.applicationConfig,
       options,
     );
+    return this.createAdapterProxy<T>(instance, httpAdapter);
   }
 
   public createNestMicroservice(
@@ -64,6 +49,7 @@ export class TestingModule extends NestApplicationContext {
     const { NestMicroservice } = loadPackage(
       '@nestjs/microservices',
       'TestingModule',
+      () => require('@nestjs/microservices'),
     );
     this.applyLogger(options);
     return new NestMicroservice(
@@ -73,18 +59,29 @@ export class TestingModule extends NestApplicationContext {
     );
   }
 
-  private applyExpressAdapter(httpAdapter: HttpServer): HttpServer {
-    const isAdapter = httpAdapter.getHttpServer;
-    if (isAdapter) {
-      return httpAdapter;
-    }
-    return new ExpressAdapter(httpAdapter);
+  private createHttpAdapter<T = any>(httpServer?: T): HttpServer {
+    const { ExpressAdapter } = loadPackage(
+      '@nestjs/platform-express',
+      'NestFactory',
+    );
+    return new ExpressAdapter(httpServer);
   }
 
   private applyLogger(options: NestApplicationContextOptions | undefined) {
     if (!options || !options.logger) {
-      return undefined;
+      return;
     }
     Logger.overrideLogger(options.logger);
+  }
+
+  private createAdapterProxy<T>(app: NestApplication, adapter: HttpServer): T {
+    return (new Proxy(app, {
+      get: (receiver: Record<string, any>, prop: string) => {
+        if (!(prop in receiver) && prop in adapter) {
+          return adapter[prop];
+        }
+        return receiver[prop];
+      },
+    }) as any) as T;
   }
 }

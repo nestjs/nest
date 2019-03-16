@@ -206,10 +206,13 @@ describe('ClientMqtt', () => {
     let mergeCloseEvent: sinon.SinonStub;
 
     beforeEach(async () => {
-      createClientStub = sinon.stub(client, 'createClient').callsFake(() => ({
-        addListener: () => ({}),
-        removeListener: () => ({}),
-      }));
+      createClientStub = sinon.stub(client, 'createClient').callsFake(
+        () =>
+          ({
+            addListener: () => ({}),
+            removeListener: () => ({}),
+          } as any),
+      );
       handleErrorsSpy = sinon.spy(client, 'handleError');
       connect$Stub = sinon.stub(client, 'connect$' as any).callsFake(() => ({
         subscribe: resolve => resolve(),
@@ -269,7 +272,7 @@ describe('ClientMqtt', () => {
       };
       client
         .mergeCloseEvent(instance as any, empty())
-        .subscribe(null, err => expect(err).to.be.eql(error));
+        .subscribe(null, (err: any) => expect(err).to.be.eql(error));
     });
   });
   describe('handleError', () => {
@@ -280,6 +283,31 @@ describe('ClientMqtt', () => {
       };
       client.handleError(emitter as any);
       expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
+    });
+  });
+  describe('dispatchEvent', () => {
+    const msg = { pattern: 'pattern', data: 'data' };
+    let publishStub: sinon.SinonStub, mqttClient;
+
+    beforeEach(() => {
+      publishStub = sinon.stub();
+      mqttClient = {
+        publish: publishStub,
+      };
+      (client as any).mqttClient = mqttClient;
+    });
+
+    it('should publish packet', async () => {
+      publishStub.callsFake((a, b, c) => c());
+      await client['dispatchEvent'](msg);
+
+      expect(publishStub.called).to.be.true;
+    });
+    it('should throw error', async () => {
+      publishStub.callsFake((a, b, c) => c(new Error()));
+      client['dispatchEvent'](msg).catch(err =>
+        expect(err).to.be.instanceOf(Error),
+      );
     });
   });
 });

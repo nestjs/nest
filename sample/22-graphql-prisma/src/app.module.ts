@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
-import { PrismaModule } from './prisma/prisma.module';
+import { GraphqlOptions } from './graphql.options';
 import { PostsModule } from './posts/posts.module';
-import { GraphqlOptions } from 'graphql.options';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [

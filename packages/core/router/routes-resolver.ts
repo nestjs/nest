@@ -5,7 +5,9 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '../application-config';
 import { CONTROLLER_MAPPING_MESSAGE } from '../helpers/messages';
-import { InstanceWrapper, NestContainer } from '../injector/container';
+import { NestContainer } from '../injector/container';
+import { Injector } from '../injector/injector';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 import { MetadataScanner } from '../metadata-scanner';
 import { Resolver } from './interfaces/resolver.interface';
 import { RouterExceptionFilters } from './router-exception-filters';
@@ -21,29 +23,32 @@ export class RoutesResolver implements Resolver {
   constructor(
     private readonly container: NestContainer,
     private readonly config: ApplicationConfig,
+    private readonly injector: Injector,
   ) {
     this.routerExceptionsFilter = new RouterExceptionFilters(
       container,
       config,
-      container.getApplicationRef(),
+      container.getHttpAdapterRef(),
     );
+    const metadataScanner = new MetadataScanner();
     this.routerBuilder = new RouterExplorer(
-      new MetadataScanner(),
+      metadataScanner,
       this.container,
+      this.injector,
       this.routerProxy,
       this.routerExceptionsFilter,
       this.config,
     );
   }
 
-  public resolve(appInstance, basePath: string) {
+  public resolve<T extends HttpServer>(applicationRef: T, basePath: string) {
     const modules = this.container.getModules();
-    modules.forEach(({ routes, metatype }, moduleName) => {
+    modules.forEach(({ controllers, metatype }, moduleName) => {
       let path = metatype
         ? Reflect.getMetadata(MODULE_PATH, metatype)
         : undefined;
       path = path ? basePath + path : basePath;
-      this.registerRouters(routes, moduleName, path, appInstance);
+      this.registerRouters(controllers, moduleName, path, applicationRef);
     });
   }
 
@@ -51,26 +56,26 @@ export class RoutesResolver implements Resolver {
     routes: Map<string, InstanceWrapper<Controller>>,
     moduleName: string,
     basePath: string,
-    appInstance: HttpServer,
+    applicationRef: HttpServer,
   ) {
-    routes.forEach(({ instance, metatype }) => {
+    routes.forEach(instanceWrapper => {
+      const { metatype } = instanceWrapper;
       const path = this.routerBuilder.extractRouterPath(metatype, basePath);
       const controllerName = metatype.name;
 
       this.logger.log(CONTROLLER_MAPPING_MESSAGE(controllerName, path));
       this.routerBuilder.explore(
-        instance,
-        metatype,
+        instanceWrapper,
         moduleName,
-        appInstance,
+        applicationRef,
         path,
       );
     });
   }
 
   public registerNotFoundHandler() {
-    const applicationRef = this.container.getApplicationRef();
-    const callback = (req, res) => {
+    const applicationRef = this.container.getHttpAdapterRef();
+    const callback = <TRequest, TResponse>(req: TRequest, res: TResponse) => {
       const method = applicationRef.getRequestMethod(req);
       const url = applicationRef.getRequestUrl(req);
       throw new NotFoundException(`Cannot ${method} ${url}`);
@@ -82,7 +87,12 @@ export class RoutesResolver implements Resolver {
   }
 
   public registerExceptionHandler() {
-    const callback = (err, req, res, next) => {
+    const callback = <TError, TRequest, TResponse>(
+      err: TError,
+      req: TRequest,
+      res: TResponse,
+      next: Function,
+    ) => {
       throw this.mapExternalException(err);
     };
     const handler = this.routerExceptionsFilter.create(
@@ -91,7 +101,7 @@ export class RoutesResolver implements Resolver {
       undefined,
     );
     const proxy = this.routerProxy.createExceptionLayerProxy(callback, handler);
-    const applicationRef = this.container.getApplicationRef();
+    const applicationRef = this.container.getHttpAdapterRef();
     applicationRef.setErrorHandler && applicationRef.setErrorHandler(proxy);
   }
 

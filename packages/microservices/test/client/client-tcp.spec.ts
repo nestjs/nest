@@ -191,4 +191,22 @@ describe('ClientTCP', () => {
       expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
     });
   });
+  describe('dispatchEvent', () => {
+    const msg = { pattern: 'pattern', data: 'data' };
+    let sendMessageStub: sinon.SinonStub, internalSocket;
+
+    beforeEach(() => {
+      sendMessageStub = sinon.stub();
+      internalSocket = {
+        sendMessage: sendMessageStub,
+      };
+      (client as any).socket = internalSocket;
+    });
+
+    it('should publish packet', async () => {
+      await client['dispatchEvent'](msg);
+
+      expect(sendMessageStub.called).to.be.true;
+    });
+  });
 });

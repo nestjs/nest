@@ -1,8 +1,10 @@
-import { SocketsContainer } from './container';
-import { ObservableSocket } from './observable-socket';
-import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
 import { validatePath } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { isString } from 'util';
+import { SocketsContainer } from './container';
+import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
+import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
+import { ObservableSocket } from './observable-socket';
 
 export class SocketServerProvider {
   constructor(
@@ -10,8 +12,8 @@ export class SocketServerProvider {
     private readonly applicationConfig: ApplicationConfig,
   ) {}
 
-  public scanForSocketServer(
-    options: any,
+  public scanForSocketServer<T extends GatewayMetadata>(
+    options: T,
     port: number,
   ): ObservableSocketServer {
     const observableServer = this.socketsContainer.getServerByPort(port);
@@ -20,11 +22,11 @@ export class SocketServerProvider {
       : this.createSocketServer(options, port);
   }
 
-  private createSocketServer(
-    options: any,
+  private createSocketServer<T extends GatewayMetadata>(
+    options: T,
     port: number,
   ): ObservableSocketServer {
-    const { namespace, server, ...opt } = options;
+    const { namespace, server, ...opt } = options as any;
     const adapter = this.applicationConfig.getIoAdapter();
     const ioServer = adapter.create(port, opt);
     const observableSocket = ObservableSocket.create(ioServer);
@@ -33,8 +35,8 @@ export class SocketServerProvider {
     return this.createWithNamespace(options, port, observableSocket);
   }
 
-  private createWithNamespace(
-    options: any,
+  private createWithNamespace<T extends GatewayMetadata>(
+    options: T,
     port: number,
     observableSocket: ObservableSocketServer,
   ): ObservableSocketServer {
@@ -52,16 +54,23 @@ export class SocketServerProvider {
     return observableNamespaceSocket;
   }
 
-  private getServerOfNamespace(options: any, port: number, server) {
+  private getServerOfNamespace<TOptions extends GatewayMetadata, TServer = any>(
+    options: TOptions,
+    port: number,
+    server: TServer,
+  ) {
     const adapter = this.applicationConfig.getIoAdapter();
     return adapter.create(port, {
-      ...options,
+      ...(options as any),
       namespace: this.validateNamespace(options.namespace || ''),
       server,
     });
   }
 
-  private validateNamespace(namespace: string): string {
+  private validateNamespace(namespace: string | RegExp): string | RegExp {
+    if (!isString(namespace)) {
+      return namespace;
+    }
     return validatePath(namespace);
   }
 }

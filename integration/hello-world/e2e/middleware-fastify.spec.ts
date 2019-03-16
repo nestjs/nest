@@ -1,12 +1,8 @@
+import { Controller, Get, MiddlewareConsumer, Module } from '@nestjs/common';
 import {
-  Controller,
-  Get,
-  INestApplication,
-  MiddlewareConsumer,
-  Module,
-} from '@nestjs/common';
-import { INestFastifyApplication } from '@nestjs/common/interfaces/nest-fastify-application.interface';
-import { FastifyAdapter } from '@nestjs/core';
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { ApplicationModule } from '../src/app.module';
@@ -37,12 +33,14 @@ class TestModule {
 }
 
 describe('Middleware (FastifyAdapter)', () => {
-  let app: INestFastifyApplication & INestApplication;
+  let app: NestFastifyApplication;
 
   beforeEach(async () => {
     app = (await Test.createTestingModule({
       imports: [TestModule],
-    }).compile()).createNestApplication(new FastifyAdapter());
+    }).compile()).createNestApplication<NestFastifyApplication>(
+      new FastifyAdapter(),
+    );
 
     await app.init();
   });

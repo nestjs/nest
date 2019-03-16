@@ -2,6 +2,7 @@ import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
 import {
   ClientProxy,
   ClientProxyFactory,
+  EventPattern,
   MessagePattern,
   Transport,
 } from '@nestjs/microservices';
@@ -10,6 +11,8 @@ import { scan } from 'rxjs/operators';
 
 @Controller()
 export class RMQController {
+  static IS_NOTIFIED = false;
+
   client: ClientProxy;
 
   constructor() {
@@ -71,5 +74,15 @@ export class RMQController {
   @MessagePattern({ cmd: 'streaming' })
   streaming(data: number[]): Observable<number> {
     return from(data);
+  }
+
+  @Post('notify')
+  async sendNotification(): Promise<any> {
+    return this.client.emit<number>('notification', true);
+  }
+
+  @EventPattern('notification')
+  eventHandler(data: boolean) {
+    RMQController.IS_NOTIFIED = data;
   }
 }

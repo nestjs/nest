@@ -3,7 +3,7 @@ import { Cat } from '../cats/cat.entity';
 
 export const databaseProviders = [
   {
-    provide: 'SequelizeToken',
+    provide: 'SEQUELIZE',
     useFactory: async () => {
       const sequelize = new Sequelize({
         operatorsAliases: false,

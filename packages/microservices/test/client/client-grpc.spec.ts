@@ -1,12 +1,18 @@
+import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
 import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientGrpcProxy } from '../../client/client-grpc';
-import { InvalidGrpcPackageException } from '../../exceptions/errors/invalid-grpc-package.exception';
-import { InvalidGrpcServiceException } from '../../exceptions/errors/invalid-grpc-service.exception';
-import { InvalidProtoDefinitionException } from '../../exceptions/errors/invalid-proto-definition.exception';
+import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
+import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception';
+import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
 // tslint:disable:no-string-literal
+class NoopLogger extends Logger {
+  log(message: any, context?: string): void {}
+  error(message: any, trace?: string, context?: string): void {}
+  warn(message: any, context?: string): void {}
+}
 
 class GrpcService {
   test = null;
@@ -99,17 +105,15 @@ describe('ClientGrpcProxy', () => {
         removeAllListeners: sinon.SinonSpy;
       };
       let eventCallbacks: { [type: string]: EvtCallback };
-      let obj;
-      const dataSpy = sinon.spy();
-      const errorSpy = sinon.spy();
-      const completeSpy = sinon.spy();
+      let obj, dataSpy, errorSpy, completeSpy;
 
       let stream$: Observable<any>;
 
       beforeEach(() => {
-        dataSpy.resetHistory();
-        errorSpy.resetHistory();
-        completeSpy.resetHistory();
+        dataSpy = sinon.spy();
+        errorSpy = sinon.spy();
+        completeSpy = sinon.spy();
+
         eventCallbacks = {};
         callMock = {
           on: (type, fn) => (eventCallbacks[type] = fn),
@@ -188,9 +192,13 @@ describe('ClientGrpcProxy', () => {
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', () => {
         sinon.stub(client, 'lookupPackage').callsFake(() => null);
-        expect(() => client.createClient()).to.throw(
-          InvalidGrpcPackageException,
-        );
+        (client as any).logger = new NoopLogger();
+
+        try {
+          client.createClient();
+        } catch (err) {
+          expect(err).to.be.instanceof(InvalidGrpcPackageException);
+        }
       });
     });
   });
@@ -201,6 +209,7 @@ describe('ClientGrpcProxy', () => {
         sinon.stub(client, 'getOptionsProp' as any).callsFake(() => {
           throw new Error();
         });
+        (client as any).logger = new NoopLogger();
         expect(() => client.loadProto()).to.throws(
           InvalidProtoDefinitionException,
         );
@@ -231,7 +240,15 @@ describe('ClientGrpcProxy', () => {
 
   describe('connect', () => {
     it('should throw exception', () => {
-      expect(client.connect()).to.eventually.throws(Error);
+      client.connect().catch(error => expect(error).to.be.instanceof(Error));
+    });
+  });
+
+  describe('dispatchEvent', () => {
+    it('should throw exception', () => {
+      client['dispatchEvent'](null).catch(error =>
+        expect(error).to.be.instanceof(Error),
+      );
     });
   });
 });

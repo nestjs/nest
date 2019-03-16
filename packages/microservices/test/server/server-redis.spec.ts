@@ -1,10 +1,14 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_PATTERN_MESSAGE } from '../../constants';
+import { NO_MESSAGE_HANDLER } from '../../constants';
 import { ServerRedis } from '../../server/server-redis';
 
 describe('ServerRedis', () => {
   let server: ServerRedis;
+
+  const objectToMap = obj =>
+    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
   beforeEach(() => {
     server = new ServerRedis({});
   });
@@ -66,9 +70,9 @@ describe('ServerRedis', () => {
     it('should subscribe each acknowledge patterns', () => {
       const pattern = 'test';
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+      (server as any).messageHandlers = objectToMap({
         [pattern]: handler,
-      };
+      });
       server.bindEvents(sub, null);
 
       const expectedPattern = 'test_ack';
@@ -90,23 +94,31 @@ describe('ServerRedis', () => {
     beforeEach(() => {
       getPublisherSpy = sinon.spy();
       sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
-      sinon.stub(server, 'deserialize').callsFake(() => ({ id, data }));
     });
-    it(`should publish NO_PATTERN_MESSAGE if pattern not exists in messageHandlers object`, () => {
+    it('should call "handleEvent" if identifier is not present', () => {
+      const handleEventSpy = sinon.spy(server, 'handleEvent');
+      sinon.stub(server, 'deserialize').callsFake(() => ({ data } as any));
+
+      server.handleMessage(channel, JSON.stringify({}), null);
+      expect(handleEventSpy.called).to.be.true;
+    });
+    it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, () => {
+      sinon.stub(server, 'deserialize').callsFake(() => ({ id, data } as any));
       server.handleMessage(channel, JSON.stringify({ id }), null);
       expect(
         getPublisherSpy.calledWith({
           id,
           status: 'error',
-          err: NO_PATTERN_MESSAGE,
+          err: NO_MESSAGE_HANDLER,
         }),
       ).to.be.true;
     });
     it(`should call handler with expected arguments`, () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+      (server as any).messageHandlers = objectToMap({
         [channel]: handler,
-      };
+      });
+      sinon.stub(server, 'deserialize').callsFake(() => ({ id, data } as any));
 
       server.handleMessage(channel, {}, null);
       expect(handler.calledWith(data)).to.be.true;
@@ -216,6 +228,20 @@ describe('ServerRedis', () => {
         const result = server.createRetryStrategy({ attempt: 2 } as any);
         expect(result).to.be.eql((server as any).options.retryDelay);
       });
+    });
+  });
+  describe('handleEvent', () => {
+    const channel = 'test';
+    const data = 'test';
+
+    it('should call handler with expected arguments', () => {
+      const handler = sinon.spy();
+      (server as any).messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+
+      server.handleEvent(channel, { pattern: '', data });
+      expect(handler.calledWith(data)).to.be.true;
     });
   });
 });

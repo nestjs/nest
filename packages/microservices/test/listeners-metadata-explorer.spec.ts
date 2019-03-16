@@ -1,10 +1,10 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
-import { MessagePattern } from '../decorators/pattern.decorator';
-import { Client } from '../decorators/client.decorator';
-import { Transport } from '../enums/transport.enum';
+import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
+import { Client } from '../decorators/client.decorator';
+import { MessagePattern } from '../decorators/message-pattern.decorator';
+import { Transport } from '../enums/transport.enum';
+import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 
 describe('ListenerMetadataExplorer', () => {
   const pattern = { pattern: 'test' };
@@ -13,8 +13,10 @@ describe('ListenerMetadataExplorer', () => {
   const clientSecMetadata = { transport: Transport.REDIS };
 
   class Test {
-    @Client(clientMetadata as any) public client;
-    @Client(clientSecMetadata as any) public redisClient;
+    @Client(clientMetadata as any)
+    public client;
+    @Client(clientSecMetadata as any)
+    public redisClient;
 
     get testGet() {
       return 0;
@@ -57,21 +59,26 @@ describe('ListenerMetadataExplorer', () => {
     beforeEach(() => {
       test = new Test();
     });
-    it(`should return null when "isPattern" metadata is undefined`, () => {
+    it(`should return undefined when "handlerType" metadata is undefined`, () => {
       const metadata = instance.exploreMethodMetadata(
         test,
         Object.getPrototypeOf(test),
         'noPattern',
       );
-      expect(metadata).to.eq(null);
+      expect(metadata).to.eq(undefined);
     });
-    it(`should return pattern properties when "isPattern" metadata is not undefined`, () => {
+    it(`should return pattern properties when "handlerType" metadata is not undefined`, () => {
       const metadata = instance.exploreMethodMetadata(
         test,
         Object.getPrototypeOf(test),
         'test',
       );
-      expect(metadata).to.have.keys(['targetCallback', 'pattern']);
+      expect(metadata).to.have.keys([
+        'isEventHandler',
+        'methodKey',
+        'targetCallback',
+        'pattern',
+      ]);
       expect(metadata.pattern).to.eql(pattern);
     });
   });

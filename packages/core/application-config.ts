@@ -1,9 +1,9 @@
 import {
-  PipeTransform,
-  WebSocketAdapter,
+  CanActivate,
   ExceptionFilter,
   NestInterceptor,
-  CanActivate,
+  PipeTransform,
+  WebSocketAdapter,
 } from '@nestjs/common';
 import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
 

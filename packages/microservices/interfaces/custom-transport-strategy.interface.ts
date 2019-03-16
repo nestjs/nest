@@ -1,4 +1,4 @@
 export interface CustomTransportStrategy {
-  listen(callback: () => void);
-  close();
+  listen(callback: () => void): any;
+  close(): any;
 }

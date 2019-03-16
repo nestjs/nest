@@ -1,3 +1,3 @@
 export interface OnApplicationBootstrap {
-  onApplicationBootstrap();
+  onApplicationBootstrap(): any;
 }

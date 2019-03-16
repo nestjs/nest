@@ -20,7 +20,7 @@ export class ClientNats extends ClientProxy {
     super();
     this.url =
       this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
-    natsPackage = loadPackage('nats', ClientNats.name);
+    natsPackage = loadPackage('nats', ClientNats.name, () => require('nats'));
   }
 
   public close() {
@@ -54,7 +54,7 @@ export class ClientNats extends ClientProxy {
   public handleError(client: Client) {
     client.addListener(
       ERROR_EVENT,
-      err => err.code !== CONN_ERR && this.logger.error(err),
+      (err: any) => err.code !== CONN_ERR && this.logger.error(err),
     );
   }
 
@@ -102,5 +102,16 @@ export class ClientNats extends ClientProxy {
     } catch (err) {
       callback({ err });
     }
+  }
+
+  protected dispatchEvent(packet: ReadPacket): Promise<any> {
+    const pattern = this.normalizePattern(packet.pattern);
+    return new Promise((resolve, reject) =>
+      this.natsClient.publish(
+        pattern,
+        packet as any,
+        err => (err ? reject(err) : resolve()),
+      ),
+    );
   }
 }

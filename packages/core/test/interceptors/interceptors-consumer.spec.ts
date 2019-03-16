@@ -1,8 +1,7 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { Observable, of } from 'rxjs';
+import { of } from 'rxjs';
+import * as sinon from 'sinon';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context.host';
 
 describe('InterceptorsConsumer', () => {
   let consumer: InterceptorsConsumer;
@@ -11,10 +10,12 @@ describe('InterceptorsConsumer', () => {
     consumer = new InterceptorsConsumer();
     interceptors = [
       {
-        intercept: sinon.stub().returns(of(true)),
+        intercept: sinon.stub().callsFake((ctx, handler) => handler.handle()),
       },
       {
-        intercept: sinon.stub().returns(of(true)),
+        intercept: sinon
+          .stub()
+          .callsFake(async (ctx, handler) => handler.handle()),
       },
     ];
   });
@@ -73,18 +74,18 @@ describe('InterceptorsConsumer', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = async () => val;
-        expect(
-          await consumer.transformDeffered(next).toPromise(),
-        ).to.be.eql(val);
+        expect(await consumer.transformDeffered(next).toPromise()).to.be.eql(
+          val,
+        );
       });
     });
     describe('when next() result is Promise', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = async () => val;
-        expect(
-          await consumer.transformDeffered(next).toPromise(),
-        ).to.be.eql(val);
+        expect(await consumer.transformDeffered(next).toPromise()).to.be.eql(
+          val,
+        );
       });
     });
     describe('when next() result is Observable', () => {

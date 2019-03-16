@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
   ClientProxy,
+  EventPattern,
   MessagePattern,
   RpcException,
   Transport,
@@ -11,6 +12,8 @@ import { catchError, scan } from 'rxjs/operators';
 
 @Controller()
 export class NatsController {
+  static IS_NOTIFIED = false;
+
   @Client({
     transport: Transport.NATS,
     options: {
@@ -83,5 +86,15 @@ export class NatsController {
   @MessagePattern('exception')
   throwError(): Observable<number> {
     return throwError(new RpcException('test'));
+  }
+
+  @Post('notify')
+  async sendNotification(): Promise<any> {
+    return this.client.emit<number>('notification', true);
+  }
+
+  @EventPattern('notification')
+  eventHandler(data: boolean) {
+    NatsController.IS_NOTIFIED = data;
   }
 }

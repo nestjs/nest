@@ -21,8 +21,6 @@ import { ServerFactory } from './server/server-factory';
 
 const { SocketModule } =
   optional('@nestjs/websockets/socket-module') || ({} as any);
-const { IoAdapter } =
-  optional('@nestjs/websockets/adapters/io-adapter') || ({} as any);
 
 export class NestMicroservice extends NestApplicationContext
   implements INestMicroservice {
@@ -40,17 +38,11 @@ export class NestMicroservice extends NestApplicationContext
     config: MicroserviceOptions = {},
     private readonly applicationConfig: ApplicationConfig,
   ) {
-    super(container, [], null);
+    super(container);
 
-    this.registerWsAdapter();
     this.microservicesModule.register(container, this.applicationConfig);
     this.createServer(config);
     this.selectContextModule();
-  }
-
-  public registerWsAdapter() {
-    const ioAdapter = IoAdapter ? new IoAdapter() : null;
-    this.applicationConfig.setIoAdapter(ioAdapter);
   }
 
   public createServer(config: MicroserviceOptions) {

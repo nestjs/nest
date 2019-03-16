@@ -4,23 +4,25 @@
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "start": "ts-node src/main",
-    "prestart:prod": "tsc",
+    "prestart:prod": "npm run build",
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "5.6.2",
-    "@nestjs/core": "^5.3.0",
+    "@nestjs/common": "^6.0.0",
+    "@nestjs/core": "^6.0.0",
+    "@nestjs/platform-express": "^6.0.0",
     "@nestjs/typeorm": "^5.2.0",
-    "mysql": "^2.15.0",
+    "mysql": "^2.16.0",
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
-    "typeorm": "^0.1.16",
-    "typescript": "^2.8.0"
+    "rxjs": "^6.3.3",
+    "typeorm": "^0.2.11",
+    "typescript": "^3.2.2"
   },
   "devDependencies": {
-    "@types/node": "^7.0.41",
-    "ts-node": "^6.0.0",
-    "tslint": "^5.9.1"
+    "@types/node": "^10.12.18",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.12.0"
   }
 }

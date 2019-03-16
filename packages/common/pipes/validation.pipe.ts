@@ -1,12 +1,8 @@
 import { Optional } from '../decorators';
-import { Injectable } from '../decorators/core/component.decorator';
-import {
-  ArgumentMetadata,
-  BadRequestException,
-  ValidationError,
-} from '../index';
-import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
+import { Injectable } from '../decorators/core';
+import { ArgumentMetadata, BadRequestException, ValidationError } from '../index';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
+import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { loadPackage } from '../utils/load-package.util';
 import { isNil } from '../utils/shared.utils';
@@ -48,12 +44,15 @@ export class ValidationPipe implements PipeTransform<any> {
           this.isDetailedOutputDisabled ? undefined : errors,
         ));
 
-    const loadPkg = pkg => loadPackage(pkg, 'ValidationPipe');
-    classValidator = loadPkg('class-validator');
-    classTransformer = loadPkg('class-transformer');
+    classValidator = loadPackage('class-validator', 'ValidationPipe', () =>
+      require('class-validator'),
+    );
+    classTransformer = loadPackage('class-transformer', 'ValidationPipe', () =>
+      require('class-transformer'),
+    );
   }
 
-  public async transform(value, metadata: ArgumentMetadata) {
+  public async transform(value: any, metadata: ArgumentMetadata) {
     const { metatype } = metadata;
     if (!metatype || !this.toValidate(metadata)) {
       return value;

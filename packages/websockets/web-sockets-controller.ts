@@ -6,7 +6,7 @@ import { from as fromPromise, Observable, of, Subject } from 'rxjs';
 import { distinctUntilChanged, mergeAll } from 'rxjs/operators';
 import { GATEWAY_OPTIONS, PORT_METADATA } from './constants';
 import { WsContextCreator } from './context/ws-context-creator';
-import { InvalidSocketPortException } from './exceptions/invalid-socket-port.exception';
+import { InvalidSocketPortException } from './errors/invalid-socket-port.exception';
 import {
   GatewayMetadataExplorer,
   MessageMappingProperties,
@@ -26,7 +26,7 @@ export class WebSocketsController {
     private readonly contextCreator: WsContextCreator,
   ) {}
 
-  public hookGatewayIntoServer(
+  public mergeGatewayAndServer(
     instance: NestGateway,
     metatype: Type<any>,
     module: string,
@@ -98,7 +98,9 @@ export class WebSocketsController {
 
       const disconnectHook = adapter.bindClientDisconnect;
       disconnectHook &&
-        disconnectHook.call(adapter, client, _ => disconnect.next(client));
+        disconnectHook.call(adapter, client, (_: any) =>
+          disconnect.next(client),
+        );
     };
   }
 
@@ -152,7 +154,7 @@ export class WebSocketsController {
     return of(result);
   }
 
-  private hookServerToProperties(instance: NestGateway, server) {
+  private hookServerToProperties<T = any>(instance: NestGateway, server: any) {
     for (const propertyKey of this.metadataExplorer.scanForServerHooks(
       instance,
     )) {

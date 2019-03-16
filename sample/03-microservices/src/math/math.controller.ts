@@ -1,19 +1,14 @@
-import { Controller, Get } from '@nestjs/common';
-import {
-  ClientProxy,
-  Client,
-  Transport,
-  MessagePattern,
-} from '@nestjs/microservices';
+import { Controller, Get, Inject } from '@nestjs/common';
+import { ClientProxy, MessagePattern } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
+import { MATH_SERVICE } from './math.constants';
 
 @Controller()
 export class MathController {
-  @Client({ transport: Transport.TCP })
-  client: ClientProxy;
+  constructor(@Inject(MATH_SERVICE) private readonly client: ClientProxy) {}
 
   @Get()
-  call(): Observable<number> {
+  execute(): Observable<number> {
     const pattern = { cmd: 'sum' };
     const data = [1, 2, 3, 4, 5];
     return this.client.send<number>(pattern, data);

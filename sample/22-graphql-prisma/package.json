@@ -1,33 +1,32 @@
 {
-  "name": "primsa-nestjs",
-  "version": "0.0.0",
-  "description": "description",
-  "author": "",
+  "name": "nest-typescript-starter",
+  "version": "1.0.0",
+  "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
-    "format": "prettier --write \"**/*.ts\"",
-    "start": "ts-node -r tsconfig-paths/register src/main.ts",
-    "start:dev": "nodemon",
-    "prestart:prod": "rm -rf dist && tsc",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "ts-node src/main",
+    "prestart:prod": "npm run build",
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "5.6.2",
-    "@nestjs/core": "5.3.10",
-    "@nestjs/graphql": "5.4.0",
-    "apollo-server-express": "2.1.0",
-    "graphql": "0.13.2",
-    "graphql-tools": "4.0.0",
-    "prisma-binding": "2.1.6",
+    "@nestjs/common": "^6.0.0",
+    "@nestjs/core": "^6.0.0",
+    "@nestjs/graphql": "^6.0.0",
+    "@nestjs/platform-express": "^6.0.0",
+    "apollo-server-express": "2.3.1",
+    "graphql": "14.0.2",
+    "graphql-tools": "4.0.3",
+    "prisma-binding": "2.2.14",
     "reflect-metadata": "0.1.12",
     "rxjs": "6.3.3",
-    "typescript": "3.1.1"
+    "typescript": "3.2.2"
   },
   "devDependencies": {
-    "nodemon": "1.18.4",
-    "prettier": "1.14.3",
+    "nodemon": "1.18.9",
+    "prettier": "1.15.3",
     "ts-node": "7.0.1",
-    "tsconfig-paths": "3.6.0",
-    "tslint": "5.11.0"
+    "tsconfig-paths": "3.7.0",
+    "tslint": "5.12.1"
   }
 }

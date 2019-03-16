@@ -1,15 +1,18 @@
-import { Controller, Post, Body, Query, HttpCode } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
-  MessagePattern,
   ClientProxy,
+  EventPattern,
+  MessagePattern,
   Transport,
 } from '@nestjs/microservices';
-import { Observable, of, from } from 'rxjs';
+import { from, Observable, of } from 'rxjs';
 import { scan } from 'rxjs/operators';
 
 @Controller()
 export class RedisController {
+  static IS_NOTIFIED = false;
+
   @Client({ transport: Transport.REDIS })
   client: ClientProxy;
 
@@ -61,5 +64,15 @@ export class RedisController {
   @MessagePattern({ cmd: 'streaming' })
   streaming(data: number[]): Observable<number> {
     return from(data);
+  }
+
+  @Post('notify')
+  async sendNotification(): Promise<any> {
+    return this.client.emit<number>('notification', true);
+  }
+
+  @EventPattern('notification')
+  eventHandler(data: boolean) {
+    RedisController.IS_NOTIFIED = data;
   }
 }

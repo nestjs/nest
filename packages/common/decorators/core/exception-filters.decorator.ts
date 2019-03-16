@@ -5,9 +5,12 @@ import { isFunction } from '../../utils/shared.utils';
 import { validateEach } from '../../utils/validate-each.util';
 
 const defineFiltersMetadata = (...filters: (Function | ExceptionFilter)[]) => {
-  return (target: any, key?, descriptor?) => {
-    const isFilterValid = filter =>
-      filter && (isFunction(filter) || isFunction(filter.catch));
+  return (target: any, key?: string, descriptor?: any) => {
+    const isFilterValid = <T extends Function | Record<string, any>>(
+      filter: T,
+    ) =>
+      filter &&
+      (isFunction(filter) || isFunction((filter as Record<string, any>).catch));
 
     if (descriptor) {
       validateEach(
@@ -31,12 +34,12 @@ const defineFiltersMetadata = (...filters: (Function | ExceptionFilter)[]) => {
 };
 
 /**
- * Setups exception filters to the chosen context.
+ * Bounds exception filters to the chosen context.
  * When the `@UseFilters()` is used on the controller level:
  * - Exception Filter will be set up to every handler (every method)
  *
  * When the `@UseFilters()` is used on the handle level:
- * - Exception Filter will be set up only to specified method
+ * - Exception Filter will be set up only to the specified method
  *
  * @param  {ExceptionFilter[]} ...filters
  */

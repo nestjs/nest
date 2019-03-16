@@ -1,4 +1,4 @@
-import { RequestMethod, HttpStatus, HttpServer } from '@nestjs/common';
+import { HttpServer, HttpStatus, RequestMethod } from '@nestjs/common';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 
 export interface CustomHeader {
@@ -9,17 +9,25 @@ export interface CustomHeader {
 export class RouterResponseController {
   constructor(private readonly applicationRef: HttpServer) {}
 
-  public async apply(resultOrDeffered, response, httpStatusCode: number) {
+  public async apply<TInput = any, TResponse = any>(
+    resultOrDeffered: TInput,
+    response: TResponse,
+    httpStatusCode: number,
+  ) {
     const result = await this.transformToResult(resultOrDeffered);
     return this.applicationRef.reply(response, result, httpStatusCode);
   }
 
-  public async render(resultOrDeffered, response, template: string) {
+  public async render<TInput = any, TResponse = any>(
+    resultOrDeffered: TInput,
+    response: TResponse,
+    template: string,
+  ) {
     const result = await this.transformToResult(resultOrDeffered);
     this.applicationRef.render(response, template, result);
   }
 
-  public async transformToResult(resultOrDeffered) {
+  public async transformToResult(resultOrDeffered: any) {
     if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
       return resultOrDeffered.toPromise();
     }
@@ -35,7 +43,10 @@ export class RouterResponseController {
     }
   }
 
-  public setHeaders(response, headers: CustomHeader[]) {
+  public setHeaders<TResponse = any>(
+    response: TResponse,
+    headers: CustomHeader[],
+  ) {
     headers.forEach(({ name, value }) =>
       this.applicationRef.setHeader(response, name, value),
     );

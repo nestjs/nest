@@ -1,14 +1,14 @@
 import {
+  Args,
+  Info,
+  Mutation,
   Query,
   Resolver,
   Subscription,
-  Mutation,
-  Args,
-  Info,
 } from '@nestjs/graphql';
-import { PrismaService } from '../prisma/prisma.service';
-import { BatchPayload } from '../prisma/prisma.binding';
 import { Post } from '../graphql.schema';
+import { BatchPayload } from '../prisma/prisma.binding';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Resolver()
 export class PostsResolver {
@@ -50,11 +50,7 @@ export class PostsResolver {
   }
 
   @Subscription('post')
-  onUserMutation() {
-    return {
-      subscribe: (obj, args, ctx, info) => {
-        return this.prisma.subscription.post(args, info);
-      },
-    };
+  onUserMutation(@Args() args, @Info() info) {
+    return this.prisma.subscription.post(args, info);
   }
 }

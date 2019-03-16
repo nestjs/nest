@@ -1,9 +1,10 @@
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
   NATS_DEFAULT_URL,
-  NO_PATTERN_MESSAGE,
+  NO_MESSAGE_HANDLER,
 } from '../constants';
 import { Client } from '../external/nats-client.interface';
 import { CustomTransportStrategy, PacketId } from '../interfaces';
@@ -25,7 +26,9 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     this.url =
       this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
 
-    natsPackage = this.loadPackage('nats', ServerNats.name);
+    natsPackage = this.loadPackage('nats', ServerNats.name, () =>
+      require('nats'),
+    );
   }
 
   public listen(callback: () => void) {
@@ -41,20 +44,20 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
   public bindEvents(client: Client) {
     const queue = this.getOptionsProp<NatsOptions>(this.options, 'queue');
-    const subscribe = (channel: string) => {
-      if (queue) {
-        return client.subscribe(
-          channel,
-          { queue },
-          this.getMessageHandler(channel, client).bind(this),
-        );
-      }
-      client.subscribe(
-        channel,
-        this.getMessageHandler(channel, client).bind(this),
-      );
-    };
-    const registeredPatterns = Object.keys(this.messageHandlers);
+    const subscribe = queue
+      ? (channel: string) =>
+          client.subscribe(
+            channel,
+            { queue },
+            this.getMessageHandler(channel, client).bind(this),
+          )
+      : (channel: string) =>
+          client.subscribe(
+            channel,
+            this.getMessageHandler(channel, client).bind(this),
+          );
+
+    const registeredPatterns = [...this.messageHandlers.keys()];
     registeredPatterns.forEach(channel => subscribe(channel));
   }
 
@@ -72,24 +75,26 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     });
   }
 
-  public getMessageHandler(channel: string, client: Client) {
-    return async (buffer, replyTo: string) =>
+  public getMessageHandler(channel: string, client: Client): Function {
+    return async (buffer: ReadPacket & PacketId, replyTo: string) =>
       this.handleMessage(channel, buffer, client, replyTo);
   }
 
   public async handleMessage(
     channel: string,
-    message: ReadPacket & PacketId,
+    message: ReadPacket & Partial<PacketId>,
     client: Client,
     replyTo: string,
   ) {
-    const publish = this.getPublisher(client, replyTo, message.id);
-    const status = 'error';
-
-    if (!this.messageHandlers[channel]) {
-      return publish({ id: message.id, status, err: NO_PATTERN_MESSAGE });
+    if (isUndefined(message.id)) {
+      return this.handleEvent(channel, message);
     }
-    const handler = this.messageHandlers[channel];
+    const publish = this.getPublisher(client, replyTo, message.id);
+    const handler = this.getHandlerByPattern(channel);
+    if (!handler) {
+      const status = 'error';
+      return publish({ id: message.id, status, err: NO_MESSAGE_HANDLER });
+    }
     const response$ = this.transformToObservable(
       await handler(message.data),
     ) as Observable<any>;
@@ -97,7 +102,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public getPublisher(publisher: Client, replyTo: string, id: string) {
-    return response =>
+    return (response: any) =>
       publisher.publish(
         replyTo,
         Object.assign(response, {
@@ -106,7 +111,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
       );
   }
 
-  public handleError(stream) {
-    stream.on(ERROR_EVENT, err => this.logger.error(err));
+  public handleError(stream: any) {
+    stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 }
