@@ -19,7 +19,7 @@ input NewRecipeInput {
 
 type Query {
   recipe(id: String!): Recipe!
-  recipes: [Recipe!]!
+  recipes(skip: Int = 0, take: Int = 25): [Recipe!]!
 }
 
 type Recipe {
