@@ -16,14 +16,14 @@
     "@nestjs/platform-socket.io": "6.0.0",
     "@nestjs/testing": "5.6.2",
     "@nestjs/websockets": "5.6.2",
-    "class-transformer": "0.1.9",
+    "class-transformer": "0.2.0",
     "class-validator": "0.9.1",
     "reflect-metadata": "0.1.12",
     "rxjs": "6.0.0",
     "typescript": "2.8.3"
   },
   "devDependencies": {
-    "@types/node": "7.0.57",
+    "@types/node": "7.10.5",
     "@types/socket.io": "2.1.2",
     "@types/ws": "3.2.1",
     "ts-node": "6.0.2",

@@ -12,7 +12,7 @@
     "@nestjs/microservices": "5.7.4",
     "@nestjs/testing": "5.7.4",
     "@nestjs/websockets": "5.7.4",
-    "class-transformer": "0.1.10",
+    "class-transformer": "0.2.0",
     "class-validator": "0.9.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.0.0",
