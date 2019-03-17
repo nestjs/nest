@@ -17,7 +17,7 @@
     "point-of-view": "1.0.0",
     "reflect-metadata": "0.1.12",
     "rxjs": "6.2.1",
-    "typescript": "2.7.2"
+    "typescript": "2.9.2"
   },
   "devDependencies": {
     "@types/node": "8.10.44",
