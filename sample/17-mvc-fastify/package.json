@@ -20,9 +20,9 @@
     "typescript": "2.7.2"
   },
   "devDependencies": {
-    "@types/node": "8.10.0",
+    "@types/node": "8.10.44",
     "nodemon": "1.18.10",
     "ts-node": "6.2.0",
-    "tslint": "5.10.0"
+    "tslint": "5.14.0"
   }
 }
