@@ -13,7 +13,7 @@
     "@nestjs/common": "5.6.2",
     "@nestjs/core": "5.6.2",
     "@nestjs/platform-fastify": "6.0.0",
-    "handlebars": "4.0.11",
+    "handlebars": "4.1.1",
     "point-of-view": "1.0.0",
     "reflect-metadata": "0.1.12",
     "rxjs": "6.2.1",
