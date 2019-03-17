@@ -1,12 +1,11 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { InstanceLoader } from '../../injector/instance-loader';
+import * as sinon from 'sinon';
+import { Injectable } from '../../../common';
+import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { NestContainer } from '../../injector/container';
 import { Injector } from '../../injector/injector';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { Component } from '../../../common/decorators/core/component.decorator';
-import { NestEnvironment } from '../../../common/enums/nest-environment.enum';
-import { Logger } from '../../../common/services/logger.service';
+import { InstanceLoader } from '../../injector/instance-loader';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 
 describe('InstanceLoader', () => {
   let loader: InstanceLoader;
@@ -16,10 +15,8 @@ describe('InstanceLoader', () => {
   @Controller('')
   class TestRoute {}
 
-  @Component()
-  class TestComponent {}
-
-  before(() => Logger.setMode(NestEnvironment.TEST));
+  @Injectable()
+  class TestProvider {}
 
   beforeEach(() => {
     container = new NestContainer();
@@ -27,134 +24,141 @@ describe('InstanceLoader', () => {
     mockContainer = sinon.mock(container);
   });
 
-  it('should call "loadPrototypeOfInstance" for each component and route in each module', async () => {
+  it('should call "loadPrototype" for each provider and route in each module', async () => {
     const injector = new Injector();
     (loader as any).injector = injector;
 
     const module = {
-      components: new Map(),
-      routes: new Map(),
+      providers: new Map(),
+      controllers: new Map(),
       injectables: new Map(),
       metatype: { name: 'test' },
     };
-    const componentWrapper = { instance: null, metatype: TestComponent };
-    const routeWrapper = { instance: null, metatype: TestRoute };
+    const providerWrapper: InstanceWrapper = {
+      instance: null,
+      metatype: TestProvider,
+    } as any;
+    const routeWrapper: InstanceWrapper = {
+      instance: null,
+      metatype: TestRoute,
+    } as any;
 
-    module.components.set('TestComponent', componentWrapper);
-    module.routes.set('TestRoute', routeWrapper);
+    module.providers.set('TestProvider', providerWrapper);
+    module.controllers.set('TestRoute', routeWrapper);
 
     const modules = new Map();
     modules.set('Test', module);
     mockContainer.expects('getModules').returns(modules);
 
-    const loadComponentPrototypeStub = sinon.stub(
-      injector,
-      'loadPrototypeOfInstance',
-    );
+    const loadProviderPrototypeStub = sinon.stub(injector, 'loadPrototype');
 
-    sinon.stub(injector, 'loadInstanceOfRoute');
-    sinon.stub(injector, 'loadInstanceOfComponent');
+    sinon.stub(injector, 'loadController');
+    sinon.stub(injector, 'loadProvider');
 
     await loader.createInstancesOfDependencies();
     expect(
-      loadComponentPrototypeStub.calledWith(
-        componentWrapper,
-        module.components,
+      loadProviderPrototypeStub.calledWith(providerWrapper, module.providers),
+    ).to.be.true;
+    expect(
+      loadProviderPrototypeStub.calledWith(routeWrapper, module.controllers),
+    ).to.be.true;
+  });
+
+  it('should call "loadProvider" for each provider in each module', async () => {
+    const injector = new Injector();
+    (loader as any).injector = injector;
+
+    const module = {
+      providers: new Map(),
+      controllers: new Map(),
+      injectables: new Map(),
+      metatype: { name: 'test' },
+    };
+    const testComp = new InstanceWrapper({
+      instance: null,
+      metatype: TestProvider,
+      name: 'TestProvider',
+    });
+    module.providers.set('TestProvider', testComp);
+
+    const modules = new Map();
+    modules.set('Test', module);
+    mockContainer.expects('getModules').returns(modules);
+
+    const loadProviderStub = sinon.stub(injector, 'loadProvider');
+    sinon.stub(injector, 'loadController');
+
+    await loader.createInstancesOfDependencies();
+    expect(
+      loadProviderStub.calledWith(
+        module.providers.get('TestProvider'),
+        module as any,
       ),
     ).to.be.true;
-    expect(
-      loadComponentPrototypeStub.calledWith(routeWrapper, module.components),
-    ).to.be.true;
   });
 
-  it('should call "loadInstanceOfComponent" for each component in each module', async () => {
+  it('should call "loadController" for each route in each module', async () => {
     const injector = new Injector();
     (loader as any).injector = injector;
 
     const module = {
-      components: new Map(),
-      routes: new Map(),
+      providers: new Map(),
+      controllers: new Map(),
       injectables: new Map(),
       metatype: { name: 'test' },
     };
-    const testComp = {
+    const wrapper = new InstanceWrapper({
+      name: 'TestRoute',
       instance: null,
-      metatype: TestComponent,
-      name: 'TestComponent',
-    };
-
-    module.components.set('TestComponent', testComp);
+      metatype: TestRoute,
+    });
+    module.controllers.set('TestRoute', wrapper);
 
     const modules = new Map();
     modules.set('Test', module);
     mockContainer.expects('getModules').returns(modules);
 
-    const loadComponentStub = sinon.stub(injector, 'loadInstanceOfComponent');
-    sinon.stub(injector, 'loadInstanceOfRoute');
+    sinon.stub(injector, 'loadProvider');
+    const loadRoutesStub = sinon.stub(injector, 'loadController');
 
     await loader.createInstancesOfDependencies();
     expect(
-      loadComponentStub.calledWith(
-        module.components.get('TestComponent'),
-        module,
+      loadRoutesStub.calledWith(
+        module.controllers.get('TestRoute'),
+        module as any,
       ),
     ).to.be.true;
   });
 
-  it('should call "loadInstanceOfRoute" for each route in each module', async () => {
+  it('should call "loadInjectable" for each injectable in each module', async () => {
     const injector = new Injector();
     (loader as any).injector = injector;
 
     const module = {
-      components: new Map(),
-      routes: new Map(),
+      providers: new Map(),
+      controllers: new Map(),
       injectables: new Map(),
       metatype: { name: 'test' },
     };
-    const wrapper = { name: 'TestRoute', instance: null, metatype: TestRoute };
-    module.routes.set('TestRoute', wrapper);
-
-    const modules = new Map();
-    modules.set('Test', module);
-    mockContainer.expects('getModules').returns(modules);
-
-    sinon.stub(injector, 'loadInstanceOfComponent');
-    const loadRoutesStub = sinon.stub(injector, 'loadInstanceOfRoute');
-
-    await loader.createInstancesOfDependencies();
-    expect(loadRoutesStub.calledWith(module.routes.get('TestRoute'), module)).to
-      .be.true;
-  });
-
-  it('should call "loadInstanceOfInjectable" for each injectable in each module', async () => {
-    const injector = new Injector();
-    (loader as any).injector = injector;
-
-    const module = {
-      components: new Map(),
-      routes: new Map(),
-      injectables: new Map(),
-      metatype: { name: 'test' },
-    };
-    const testComp = {
+    const testComp = new InstanceWrapper({
       instance: null,
-      metatype: TestComponent,
-      name: 'TestComponent',
-    };
-    module.injectables.set('TestComponent', testComp);
+      metatype: TestProvider,
+      name: 'TestProvider',
+    });
+    module.injectables.set('TestProvider', testComp);
 
     const modules = new Map();
     modules.set('Test', module);
     mockContainer.expects('getModules').returns(modules);
 
-    const loadInjectableStub = sinon.stub(injector, 'loadInstanceOfInjectable');
-    sinon.stub(injector, 'loadInstanceOfRoute');
+    const loadInjectableStub = sinon.stub(injector, 'loadInjectable');
+    sinon.stub(injector, 'loadController');
 
     await loader.createInstancesOfDependencies();
     expect(
       loadInjectableStub.calledWith(
-        module.injectables.get('TestComponent'),
-        module,
+        module.injectables.get('TestProvider'),
+        module as any,
       ),
     ).to.be.true;
   });

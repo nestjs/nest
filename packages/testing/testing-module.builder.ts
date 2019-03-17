@@ -5,7 +5,6 @@ import { NestContainer } from '@nestjs/core/injector/container';
 import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
-import * as deprecate from 'deprecate';
 import { OverrideBy, OverrideByFactoryOptions } from './interfaces';
 import { TestingLogger } from './services/testing-logger.service';
 import { TestingModule } from './testing-module';
@@ -27,31 +26,23 @@ export class TestingModuleBuilder {
     this.module = this.createModule(metadata);
   }
 
-  public overridePipe(typeOrToken): OverrideBy {
+  public overridePipe<T = any>(typeOrToken: T): OverrideBy {
     return this.override(typeOrToken, false);
   }
 
-  public overrideFilter(typeOrToken): OverrideBy {
+  public overrideFilter<T = any>(typeOrToken: T): OverrideBy {
     return this.override(typeOrToken, false);
   }
 
-  public overrideGuard(typeOrToken): OverrideBy {
+  public overrideGuard<T = any>(typeOrToken: T): OverrideBy {
     return this.override(typeOrToken, false);
   }
 
-  public overrideInterceptor(typeOrToken): OverrideBy {
+  public overrideInterceptor<T = any>(typeOrToken: T): OverrideBy {
     return this.override(typeOrToken, false);
   }
 
-  /** @deprecated */
-  public overrideComponent(typeOrToken): OverrideBy {
-    deprecate(
-      'The "overrideComponent()" method is deprecated and will be removed within next major release. Use "overrideProvider()" instead.',
-    );
-    return this.override(typeOrToken, true);
-  }
-
-  public overrideProvider(typeOrToken): OverrideBy {
+  public overrideProvider<T = any>(typeOrToken: T): OverrideBy {
     return this.override(typeOrToken, true);
   }
 
@@ -67,11 +58,11 @@ export class TestingModuleBuilder {
     return new TestingModule(this.container, [], root, this.applicationConfig);
   }
 
-  private override(typeOrToken, isComponent: boolean): OverrideBy {
-    const addOverload = options => {
+  private override<T = any>(typeOrToken: T, isProvider: boolean): OverrideBy {
+    const addOverload = (options: any) => {
       this.overloadsMap.set(typeOrToken, {
         ...options,
-        isComponent,
+        isProvider,
       });
       return this;
     };
@@ -79,7 +70,7 @@ export class TestingModuleBuilder {
   }
 
   private createOverrideByBuilder(
-    add: (provider) => TestingModuleBuilder,
+    add: (provider: any) => TestingModuleBuilder,
   ): OverrideBy {
     return {
       useValue: value => add({ useValue: value }),
@@ -100,11 +91,11 @@ export class TestingModuleBuilder {
     return modules.next().value;
   }
 
-  private createModule(metadata) {
+  private createModule(metadata: ModuleMetadata) {
     // tslint:disable-next-line:class-name
-    class _TestModule {}
-    Module(metadata)(_TestModule);
-    return _TestModule;
+    class _RootTestModule {}
+    Module(metadata)(_RootTestModule);
+    return _RootTestModule;
   }
 
   private applyLogger() {

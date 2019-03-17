@@ -1,6 +1,6 @@
-import * as request from 'supertest';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { INestApplication, HttpStatus } from '@nestjs/common';
+import * as request from 'supertest';
 import { ErrorsController } from '../src/errors/errors.controller';
 
 describe('Error messages', () => {
@@ -10,8 +10,7 @@ describe('Error messages', () => {
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       controllers: [ErrorsController],
-    })
-      .compile();
+    }).compile();
 
     app = module.createNestApplication();
     server = app.getHttpServer();
@@ -25,7 +24,7 @@ describe('Error messages', () => {
       .expect({
         statusCode: 400,
         error: 'Bad Request',
-        message: 'Integration test'
+        message: 'Integration test',
       });
   });
 
@@ -36,7 +35,7 @@ describe('Error messages', () => {
       .expect({
         statusCode: 400,
         error: 'Bad Request',
-        message: 'Integration test'
+        message: 'Integration test',
       });
   });
 

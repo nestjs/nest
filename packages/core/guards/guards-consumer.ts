@@ -1,15 +1,15 @@
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
-import { Controller } from '@nestjs/common/interfaces';
 import { CanActivate } from '@nestjs/common';
+import { Controller } from '@nestjs/common/interfaces';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
-import { ExecutionContextHost } from '../helpers/execution-context.host';
+import { ExecutionContextHost } from '../helpers/execution-context-host';
 
 export class GuardsConsumer {
   public async tryActivate(
     guards: CanActivate[],
     args: any[],
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
   ): Promise<boolean> {
     if (!guards || isEmpty(guards)) {
       return true;
@@ -28,7 +28,7 @@ export class GuardsConsumer {
   public createContext(
     args: any[],
     instance: Controller,
-    callback: (...args) => any,
+    callback: (...args: any[]) => any,
   ): ExecutionContextHost {
     return new ExecutionContextHost(
       args,

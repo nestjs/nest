@@ -6,7 +6,8 @@ export class UserEntity {
   firstName: string;
   lastName: string;
 
-  @Exclude() password: string;
+  @Exclude()
+  password: string;
 
   @Expose()
   get fullName(): string {

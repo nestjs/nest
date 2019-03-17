@@ -36,7 +36,7 @@ export class ContextUtils {
   }
 
   public createNullArray(length: number): any[] {
-    return Array.apply(null, { length }).fill(undefined);
+    return Array.apply(null, { length } as any).fill(undefined);
   }
 
   public mergeParamsMetatypes(

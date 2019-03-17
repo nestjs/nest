@@ -1,32 +1,39 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterExplorer } from '../../router/router-explorer';
+import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
+import {
+  All,
+  Get,
+  Post,
+} from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { MetadataScanner } from '../../metadata-scanner';
 import { NestContainer } from '../../injector/container';
+import { MetadataScanner } from '../../metadata-scanner';
+import { RouterExplorer } from '../../router/router-explorer';
 
 describe('RouterExplorer', () => {
   @Controller('global')
   class TestRoute {
-    @RequestMapping({ path: 'test' })
-    public getTest() { }
+    @Get('test')
+    public getTest() {}
 
-    @RequestMapping({ path: 'test', method: RequestMethod.POST })
-    public postTest() { }
+    @Post('test')
+    public postTest() {}
 
-    @RequestMapping({ path: 'another-test', method: RequestMethod.ALL })
-    public anotherTest() { }
+    @All('another-test')
+    public anotherTest() {}
 
-    @RequestMapping({ path: ['foo', 'bar'] })
-    public getTestUsingArray() { }
+    @Get(['foo', 'bar'])
+    public getTestUsingArray() {}
   }
 
   let routerBuilder: RouterExplorer;
 
   beforeEach(() => {
-    routerBuilder = new RouterExplorer(new MetadataScanner(), new NestContainer());
+    routerBuilder = new RouterExplorer(
+      new MetadataScanner(),
+      new NestContainer(),
+    );
   });
 
   describe('scanForPaths', () => {
@@ -79,7 +86,10 @@ describe('RouterExplorer', () => {
 
   describe('applyPathsToRouterProxy', () => {
     it('should method return expected object which represent single route', () => {
-      const bindStub = sinon.stub(routerBuilder, 'applyCallbackToRouter' as any);
+      const bindStub = sinon.stub(
+        routerBuilder,
+        'applyCallbackToRouter' as any,
+      );
       const paths = [
         { path: [''], requestMethod: RequestMethod.GET },
         { path: ['test'], requestMethod: RequestMethod.GET },

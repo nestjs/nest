@@ -33,7 +33,9 @@ export class ClientRedis extends ClientProxy {
     this.url =
       this.getOptionsProp<RedisOptions>(options, 'url') || REDIS_DEFAULT_URL;
 
-    redisPackage = loadPackage('redis', ClientRedis.name);
+    redisPackage = loadPackage('redis', ClientRedis.name, () =>
+      require('redis'),
+    );
   }
 
   public getAckPatternName(pattern: string): string {
@@ -85,11 +87,12 @@ export class ClientRedis extends ClientProxy {
   }
 
   public handleError(client: RedisClient) {
-    client.addListener(ERROR_EVENT, err => this.logger.error(err));
+    client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 
   public getClientOptions(error$: Subject<Error>): Partial<ClientOpts> {
-    const retry_strategy = options => this.createRetryStrategy(options, error$);
+    const retry_strategy = (options: RetryStrategyOptions) =>
+      this.createRetryStrategy(options, error$);
     return {
       retry_strategy,
     };
@@ -114,7 +117,7 @@ export class ClientRedis extends ClientProxy {
     return this.getOptionsProp<RedisOptions>(this.options, 'retryDelay') || 0;
   }
 
-  public createResponseCallback(): Function {
+  public createResponseCallback(): (channel: string, buffer: string) => void {
     return (channel: string, buffer: string) => {
       const { err, response, isDisposed, id } = JSON.parse(
         buffer,
@@ -148,7 +151,7 @@ export class ClientRedis extends ClientProxy {
       const responseChannel = this.getResPatternName(pattern);
 
       this.routingMap.set(packet.id, callback);
-      this.subClient.subscribe(responseChannel, err => {
+      this.subClient.subscribe(responseChannel, (err: any) => {
         if (err) {
           return;
         }
@@ -165,5 +168,16 @@ export class ClientRedis extends ClientProxy {
     } catch (err) {
       callback({ err });
     }
+  }
+
+  protected dispatchEvent(packet: ReadPacket): Promise<any> {
+    const pattern = this.normalizePattern(packet.pattern);
+    return new Promise((resolve, reject) =>
+      this.pubClient.publish(
+        pattern,
+        JSON.stringify(packet),
+        err => (err ? reject(err) : resolve()),
+      ),
+    );
   }
 }

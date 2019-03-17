@@ -1,6 +1,6 @@
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { WsException } from '../../exceptions/ws-exception';
+import { WsException } from '../../errors/ws-exception';
 
 describe('WsException', () => {
   let instance: WsException;

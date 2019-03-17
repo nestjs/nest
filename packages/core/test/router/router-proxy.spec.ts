@@ -1,9 +1,9 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { RouterProxy } from '../../router/router-proxy';
-import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
+import * as sinon from 'sinon';
 import { HttpException } from '../../../common/exceptions/http.exception';
-import { ExpressAdapter } from '../../adapters/express-adapter';
+import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
+import { RouterProxy } from '../../router/router-proxy';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('RouterProxy', () => {
   let routerProxy: RouterProxy;
@@ -11,7 +11,7 @@ describe('RouterProxy', () => {
   let handler: ExceptionsHandler;
 
   beforeEach(() => {
-    handler = new ExceptionsHandler(new ExpressAdapter({}));
+    handler = new ExceptionsHandler(new NoopHttpAdapter({}));
     handlerMock = sinon.mock(handler);
     routerProxy = new RouterProxy();
   });

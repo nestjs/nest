@@ -219,10 +219,13 @@ describe('ClientRedis', () => {
     let handleErrorsSpy: sinon.SinonSpy;
 
     beforeEach(async () => {
-      createClientSpy = sinon.stub(client, 'createClient').callsFake(() => ({
-        addListener: () => null,
-        removeListener: () => null,
-      }));
+      createClientSpy = sinon.stub(client, 'createClient').callsFake(
+        () =>
+          ({
+            addListener: () => null,
+            removeListener: () => null,
+          } as any),
+      );
       handleErrorsSpy = sinon.spy(client, 'handleError');
 
       client.connect();
@@ -304,6 +307,31 @@ describe('ClientRedis', () => {
         );
         expect(result).to.be.eql((client as any).options.retryDelay);
       });
+    });
+  });
+  describe('dispatchEvent', () => {
+    const msg = { pattern: 'pattern', data: 'data' };
+    let publishStub: sinon.SinonStub, pubClient;
+
+    beforeEach(() => {
+      publishStub = sinon.stub();
+      pubClient = {
+        publish: publishStub,
+      };
+      (client as any).pubClient = pubClient;
+    });
+
+    it('should publish packet', async () => {
+      publishStub.callsFake((a, b, c) => c());
+      await client['dispatchEvent'](msg);
+
+      expect(publishStub.called).to.be.true;
+    });
+    it('should throw error', async () => {
+      publishStub.callsFake((a, b, c) => c(new Error()));
+      client['dispatchEvent'](msg).catch(err =>
+        expect(err).to.be.instanceOf(Error),
+      );
     });
   });
 });

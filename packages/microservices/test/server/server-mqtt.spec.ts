@@ -1,11 +1,14 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { NO_PATTERN_MESSAGE } from '../../constants';
+import * as sinon from 'sinon';
+import { NO_MESSAGE_HANDLER } from '../../constants';
 import { ServerMqtt } from '../../server/server-mqtt';
-import { Observable } from 'rxjs';
 
 describe('ServerMqtt', () => {
   let server: ServerMqtt;
+
+  const objectToMap = obj =>
+    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
   beforeEach(() => {
     server = new ServerMqtt({});
   });
@@ -59,9 +62,9 @@ describe('ServerMqtt', () => {
     it('should subscribe each acknowledge patterns', () => {
       const pattern = 'test';
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+      (server as any).messageHandlers = objectToMap({
         [pattern]: handler,
-      };
+      });
       server.bindEvents(mqttClient);
 
       const expectedPattern = 'test_ack';
@@ -95,7 +98,16 @@ describe('ServerMqtt', () => {
       getPublisherSpy = sinon.spy();
       sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
     });
-    it(`should publish NO_PATTERN_MESSAGE if pattern not exists in messageHandlers object`, () => {
+    it('should call "handleEvent" if identifier is not present', () => {
+      const handleEventSpy = sinon.spy(server, 'handleEvent');
+      server.handleMessage(
+        channel,
+        new Buffer(JSON.stringify({ pattern: '', data })),
+        null,
+      );
+      expect(handleEventSpy.called).to.be.true;
+    });
+    it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, () => {
       server.handleMessage(
         channel,
         new Buffer(JSON.stringify({ id, pattern: '', data })),
@@ -105,15 +117,15 @@ describe('ServerMqtt', () => {
         getPublisherSpy.calledWith({
           id,
           status: 'error',
-          err: NO_PATTERN_MESSAGE,
+          err: NO_MESSAGE_HANDLER,
         }),
       ).to.be.true;
     });
     it(`should call handler with expected arguments`, () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = {
+      (server as any).messageHandlers = objectToMap({
         [channel]: handler,
-      };
+      });
 
       server.handleMessage(
         channel,
@@ -175,6 +187,20 @@ describe('ServerMqtt', () => {
     it(`should not parse argument if it is not an object`, () => {
       const content = 'test';
       expect(server.deserialize(content)).to.equal(content);
+    });
+  });
+  describe('handleEvent', () => {
+    const channel = 'test';
+    const data = 'test';
+
+    it('should call handler with expected arguments', () => {
+      const handler = sinon.spy();
+      (server as any).messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+
+      server.handleEvent(channel, { pattern: '', data });
+      expect(handler.calledWith(data)).to.be.true;
     });
   });
 });

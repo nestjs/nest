@@ -17,8 +17,13 @@ import {
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
-import { MiddlewareWrapper } from '../middleware/container';
-import { InstanceWrapper } from './container';
+import { STATIC_CONTEXT } from './constants';
+import {
+  ContextId,
+  InstancePerContext,
+  InstanceWrapper,
+  PropertyMetadata,
+} from './instance-wrapper';
 import { Module } from './module';
 
 /**
@@ -61,73 +66,104 @@ export interface InjectorDependencyContext {
 }
 
 export class Injector {
-  public async loadInstanceOfMiddleware(
-    wrapper: MiddlewareWrapper,
-    collection: Map<string, MiddlewareWrapper>,
+  public async loadMiddleware(
+    wrapper: InstanceWrapper,
+    collection: Map<string, InstanceWrapper>,
     module: Module,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
   ) {
     const { metatype } = wrapper;
-    const currentMetatype = collection.get(metatype.name);
-    if (currentMetatype.instance !== null) {
+    const targetWrapper = collection.get(metatype.name);
+    if (!isUndefined(targetWrapper.instance)) {
       return;
     }
+    const loadInstance = (instances: any[]) => {
+      targetWrapper.instance = targetWrapper.isDependencyTreeStatic()
+        ? new metatype(...instances)
+        : Object.create(metatype);
+    };
     await this.resolveConstructorParams(
-      wrapper as any,
+      wrapper,
       module,
       null,
-      instances => {
-        collection.set(metatype.name, {
-          instance: new metatype(...instances),
-          metatype,
-        });
-      },
+      loadInstance,
+      contextId,
+      inquirer,
     );
   }
 
-  public async loadInstanceOfRoute(
+  public async loadController(
     wrapper: InstanceWrapper<Controller>,
     module: Module,
+    contextId = STATIC_CONTEXT,
   ) {
-    const routes = module.routes;
-    await this.loadInstance<Controller>(wrapper, routes, module);
+    const controllers = module.controllers;
+    await this.loadInstance<Controller>(
+      wrapper,
+      controllers,
+      module,
+      contextId,
+      wrapper,
+    );
+    await this.loadEnhancersPerContext(wrapper, module, contextId, wrapper);
   }
 
-  public async loadInstanceOfInjectable(
+  public async loadInjectable(
     wrapper: InstanceWrapper<Controller>,
     module: Module,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
   ) {
     const injectables = module.injectables;
-    await this.loadInstance<Controller>(wrapper, injectables, module);
+    await this.loadInstance<Controller>(
+      wrapper,
+      injectables,
+      module,
+      contextId,
+      inquirer,
+    );
   }
 
-  public loadPrototypeOfInstance<T>(
-    { metatype, name }: InstanceWrapper<T>,
-    collection: Map<string, InstanceWrapper<T>>,
-  ) {
-    if (!collection) {
-      return null;
-    }
-    const target = collection.get(name);
-    if (target.isResolved || !isNil(target.inject) || !metatype.prototype) {
-      return null;
-    }
-    collection.set(name, {
-      ...collection.get(name),
-      instance: Object.create(metatype.prototype),
-    });
-  }
-
-  public async loadInstanceOfComponent(
+  public async loadProvider(
     wrapper: InstanceWrapper<Injectable>,
     module: Module,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
   ) {
-    const components = module.components;
-    await this.loadInstance<Injectable>(wrapper, components, module);
+    const providers = module.providers;
+    await this.loadInstance<Injectable>(
+      wrapper,
+      providers,
+      module,
+      contextId,
+      inquirer,
+    );
+    await this.loadEnhancersPerContext(wrapper, module, contextId, wrapper);
   }
 
-  public applyDoneHook<T>(wrapper: InstanceWrapper<T>): () => void {
+  public loadPrototype<T>(
+    { name }: InstanceWrapper<T>,
+    collection: Map<string, InstanceWrapper<T>>,
+    contextId = STATIC_CONTEXT,
+  ) {
+    if (!collection) {
+      return;
+    }
+    const target = collection.get(name);
+    const instance = target.createPrototype(contextId);
+    if (instance) {
+      const wrapper = new InstanceWrapper({
+        ...target,
+        instance,
+      });
+      collection.set(name, wrapper);
+    }
+  }
+
+  public applyDoneHook<T>(wrapper: InstancePerContext<T>): () => void {
     let done: () => void;
-    wrapper.done$ = new Promise<void>((resolve, reject) => {
+    wrapper.donePromise = new Promise<void>((resolve, reject) => {
       done = resolve;
     });
     wrapper.isPending = true;
@@ -136,41 +172,68 @@ export class Injector {
 
   public async loadInstance<T>(
     wrapper: InstanceWrapper<T>,
-    collection: Map<string, InstanceWrapper<any>>,
+    collection: Map<string, InstanceWrapper>,
     module: Module,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
   ) {
-    if (wrapper.isPending) {
-      return wrapper.done$;
+    const inquirerId = this.getInquirerId(inquirer);
+    const instanceHost = wrapper.getInstanceByContextId(contextId, inquirerId);
+    if (instanceHost.isPending) {
+      return instanceHost.donePromise;
     }
-    const done = this.applyDoneHook(wrapper);
+    const done = this.applyDoneHook(instanceHost);
     const { name, inject } = wrapper;
 
     const targetWrapper = collection.get(name);
     if (isUndefined(targetWrapper)) {
       throw new RuntimeException();
     }
-    if (targetWrapper.isResolved) {
+    if (instanceHost.isResolved) {
       return;
     }
-    const callback = async instances => {
-      const properties = await this.resolveProperties(wrapper, module, inject);
+    const callback = async (instances: any[]) => {
+      const properties = await this.resolveProperties(
+        wrapper,
+        module,
+        inject,
+        contextId,
+        wrapper,
+      );
       const instance = await this.instantiateClass(
         instances,
         wrapper,
         targetWrapper,
+        contextId,
+        inquirer,
       );
       this.applyProperties(instance, properties);
       done();
     };
-    await this.resolveConstructorParams<T>(wrapper, module, inject, callback);
+    await this.resolveConstructorParams<T>(
+      wrapper,
+      module,
+      inject,
+      callback,
+      contextId,
+      wrapper,
+    );
   }
 
   public async resolveConstructorParams<T>(
     wrapper: InstanceWrapper<T>,
     module: Module,
     inject: InjectorDependency[],
-    callback: (args) => void,
+    callback: (args: any[]) => void,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
   ) {
+    const inquirerId = this.getInquirerId(inquirer);
+    const metadata = wrapper.getCtorMetadata();
+    if (metadata && contextId !== STATIC_CONTEXT) {
+      const deps = await this.loadCtorMetadata(metadata, contextId, inquirer);
+      return callback(deps);
+    }
     const dependencies = isNil(inject)
       ? this.reflectConstructorParams(wrapper.metatype)
       : inject;
@@ -179,28 +242,34 @@ export class Injector {
       : [];
 
     let isResolved = true;
-    const instances = await Promise.all(
-      dependencies.map(async (param, index) => {
-        try {
-          const paramWrapper = await this.resolveSingleParam<T>(
-            wrapper,
-            param,
-            { index, dependencies },
-            module,
-          );
-          if (!paramWrapper.isResolved && !paramWrapper.forwardRef) {
-            isResolved = false;
-          }
-          return paramWrapper.instance;
-        } catch (err) {
-          const isOptional = optionalDependenciesIds.includes(index);
-          if (!isOptional) {
-            throw err;
-          }
-          return undefined;
+    const resolveParam = async (param, index) => {
+      try {
+        const paramWrapper = await this.resolveSingleParam<T>(
+          wrapper,
+          param,
+          { index, dependencies },
+          module,
+          contextId,
+          inquirer,
+        );
+        const instanceHost = paramWrapper.getInstanceByContextId(
+          contextId,
+          inquirerId,
+        );
+        if (!instanceHost.isResolved && !paramWrapper.forwardRef) {
+          isResolved = false;
         }
-      }),
-    );
+        wrapper.addCtorMetadata(index, paramWrapper);
+        return instanceHost && instanceHost.instance;
+      } catch (err) {
+        const isOptional = optionalDependenciesIds.includes(index);
+        if (!isOptional) {
+          throw err;
+        }
+        return undefined;
+      }
+    };
+    const instances = await Promise.all(dependencies.map(resolveParam));
     isResolved && (await callback(instances));
   }
 
@@ -225,6 +294,8 @@ export class Injector {
     param: Type<any> | string | symbol | any,
     dependencyContext: InjectorDependencyContext,
     module: Module,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
   ) {
     if (isUndefined(param)) {
       throw new UndefinedDependencyException(
@@ -239,6 +310,8 @@ export class Injector {
       isFunction(token) ? (token as Type<any>).name : token,
       dependencyContext,
       wrapper,
+      contextId,
+      inquirer,
     );
   }
 
@@ -258,43 +331,101 @@ export class Injector {
     name: any,
     dependencyContext: InjectorDependencyContext,
     wrapper: InstanceWrapper<T>,
-  ) {
-    const components = module.components;
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
+  ): Promise<InstanceWrapper> {
+    const providers = module.providers;
     const instanceWrapper = await this.lookupComponent(
-      components,
+      providers,
       module,
       { ...dependencyContext, name },
       wrapper,
+      contextId,
+      inquirer,
     );
-    if (!instanceWrapper.isResolved && !instanceWrapper.forwardRef) {
-      await this.loadInstanceOfComponent(instanceWrapper, module);
+    return this.resolveComponentHost(
+      module,
+      instanceWrapper,
+      contextId,
+      inquirer,
+    );
+  }
+
+  public async resolveComponentHost<T>(
+    module: Module,
+    instanceWrapper: InstanceWrapper<T>,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
+  ): Promise<InstanceWrapper> {
+    const inquirerId = this.getInquirerId(inquirer);
+    const instanceHost = instanceWrapper.getInstanceByContextId(
+      contextId,
+      inquirerId,
+    );
+    if (!instanceHost.isResolved && !instanceWrapper.forwardRef) {
+      await this.loadProvider(instanceWrapper, module, contextId, inquirer);
+    } else if (
+      !instanceHost.isResolved &&
+      instanceWrapper.forwardRef &&
+      (contextId !== STATIC_CONTEXT || !!inquirerId)
+    ) {
+      /**
+       * When circular dependency has been detected between
+       * either request/transient providers, we have to asynchronously
+       * resolve instance host for a specific contextId or inquirer, to ensure
+       * that eventual lazily created instance will be merged with the prototype
+       * instantiated beforehand.
+       */
+      instanceHost.donePromise &&
+        instanceHost.donePromise.then(() =>
+          this.loadProvider(instanceWrapper, module, contextId, inquirer),
+        );
     }
     if (instanceWrapper.async) {
-      instanceWrapper.instance = await instanceWrapper.instance;
+      const host = instanceWrapper.getInstanceByContextId(
+        contextId,
+        inquirerId,
+      );
+      host.instance = await host.instance;
+      instanceWrapper.setInstanceByContextId(contextId, host, inquirerId);
     }
     return instanceWrapper;
   }
 
   public async lookupComponent<T = any>(
-    components: Map<string, any>,
+    providers: Map<string, InstanceWrapper>,
     module: Module,
     dependencyContext: InjectorDependencyContext,
     wrapper: InstanceWrapper<T>,
-  ) {
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
+  ): Promise<InstanceWrapper<T>> {
     const { name } = dependencyContext;
     const scanInExports = () =>
-      this.lookupComponentInExports(dependencyContext, module, wrapper);
-    return components.has(name) ? components.get(name) : scanInExports();
+      this.lookupComponentInExports(
+        dependencyContext,
+        module,
+        wrapper,
+        contextId,
+        inquirer,
+      );
+    return providers.has(name) ? providers.get(name) : scanInExports();
   }
 
   public async lookupComponentInExports<T = any>(
     dependencyContext: InjectorDependencyContext,
     module: Module,
     wrapper: InstanceWrapper<T>,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
   ) {
-    const instanceWrapper = await this.lookupComponentInRelatedModules(
+    const instanceWrapper = await this.lookupComponentInImports(
       module,
       dependencyContext.name,
+      wrapper,
+      [],
+      contextId,
+      inquirer,
     );
     if (isNil(instanceWrapper)) {
       throw new UnknownDependenciesException(
@@ -306,48 +437,72 @@ export class Injector {
     return instanceWrapper;
   }
 
-  public async lookupComponentInRelatedModules(
+  public async lookupComponentInImports(
     module: Module,
     name: any,
-    moduleRegistry = [],
-  ) {
-    let componentRef = null;
+    wrapper: InstanceWrapper,
+    moduleRegistry: any[] = [],
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
+  ): Promise<any> {
+    let instanceWrapperRef: InstanceWrapper = null;
 
-    const relatedModules: Set<Module> = module.relatedModules || new Set();
-    const children = [...relatedModules.values()].filter(item => item);
+    const imports = module.imports || new Set<Module>();
+    const children = [...imports.values()].filter(item => item);
+
     for (const relatedModule of children) {
       if (moduleRegistry.includes(relatedModule.id)) {
         continue;
       }
       moduleRegistry.push(relatedModule.id);
-      const { components, exports } = relatedModule;
-      if (!exports.has(name) || !components.has(name)) {
-        const instanceRef = await this.lookupComponentInRelatedModules(
+      const { providers, exports } = relatedModule;
+      if (!exports.has(name) || !providers.has(name)) {
+        const instanceRef = await this.lookupComponentInImports(
           relatedModule,
           name,
+          wrapper,
           moduleRegistry,
+          contextId,
+          inquirer,
         );
         if (instanceRef) {
           return instanceRef;
         }
         continue;
       }
-      componentRef = components.get(name);
-      if (!componentRef.isResolved && !componentRef.forwardRef) {
-        await this.loadInstanceOfComponent(componentRef, relatedModule);
+      instanceWrapperRef = providers.get(name);
+
+      const inquirerId = this.getInquirerId(inquirer);
+      const instanceHost = instanceWrapperRef.getInstanceByContextId(
+        contextId,
+        inquirerId,
+      );
+      if (!instanceHost.isResolved && !instanceWrapperRef.forwardRef) {
+        await this.loadProvider(
+          instanceWrapperRef,
+          relatedModule,
+          contextId,
+          wrapper,
+        );
         break;
       }
     }
-    return componentRef;
+    return instanceWrapperRef;
   }
 
   public async resolveProperties<T>(
     wrapper: InstanceWrapper<T>,
     module: Module,
     inject?: InjectorDependency[],
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
   ): Promise<PropertyDependency[]> {
     if (!isNil(inject)) {
       return [];
+    }
+    const metadata = wrapper.getPropertiesMetadata();
+    if (metadata && contextId !== STATIC_CONTEXT) {
+      return this.loadPropertiesMetadata(metadata, contextId, inquirer);
     }
     const properties = this.reflectProperties(wrapper.metatype);
     const instances = await Promise.all(
@@ -362,8 +517,20 @@ export class Injector {
             item.name,
             dependencyContext,
             module,
+            contextId,
+            inquirer,
           );
-          return (paramWrapper && paramWrapper.instance) || undefined;
+          if (!paramWrapper) {
+            return undefined;
+          }
+          wrapper.addPropertiesMetadata(item.key, paramWrapper);
+
+          const inquirerId = this.getInquirerId(inquirer);
+          const instanceHost = paramWrapper.getInstanceByContextId(
+            contextId,
+            inquirerId,
+          );
+          return instanceHost.instance;
         } catch (err) {
           if (!item.isOptional) {
             throw err;
@@ -383,7 +550,7 @@ export class Injector {
     const optionalKeys: string[] =
       Reflect.getMetadata(OPTIONAL_PROPERTY_DEPS_METADATA, type) || [];
 
-    return properties.map(item => ({
+    return properties.map((item: any) => ({
       ...item,
       name: item.type,
       isOptional: optionalKeys.includes(item.key),
@@ -393,7 +560,7 @@ export class Injector {
   public applyProperties<T = any>(
     instance: T,
     properties: PropertyDependency[],
-  ) {
+  ): void {
     if (!isObject(instance)) {
       return undefined;
     }
@@ -404,21 +571,110 @@ export class Injector {
 
   public async instantiateClass<T = any>(
     instances: any[],
-    wrapper: InstanceWrapper<any>,
-    targetMetatype: InstanceWrapper<any>,
+    wrapper: InstanceWrapper,
+    targetMetatype: InstanceWrapper,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
   ): Promise<T> {
     const { metatype, inject } = wrapper;
-    if (isNil(inject)) {
-      targetMetatype.instance = wrapper.forwardRef
-        ? Object.assign(targetMetatype.instance, new metatype(...instances))
+    const inquirerId = this.getInquirerId(inquirer);
+    const instanceHost = targetMetatype.getInstanceByContextId(
+      contextId,
+      inquirerId,
+    );
+    const isStatic = wrapper.isStatic(contextId, inquirer);
+    const isInRequestScope = wrapper.isInRequestScope(contextId, inquirer);
+    const isLazyTransient = wrapper.isLazyTransient(contextId, inquirer);
+    const isInContext = isStatic || isInRequestScope || isLazyTransient;
+
+    if (isNil(inject) && isInContext) {
+      const targetInstance = wrapper.getInstanceByContextId(
+        contextId,
+        inquirerId,
+      );
+
+      targetInstance.instance = wrapper.forwardRef
+        ? Object.assign(targetInstance.instance, new metatype(...instances))
         : new metatype(...instances);
-    } else {
-      const factoryResult = ((targetMetatype.metatype as any) as Function)(
+    } else if (isInContext) {
+      const factoryReturnValue = ((targetMetatype.metatype as any) as Function)(
         ...instances,
       );
-      targetMetatype.instance = await factoryResult;
+      instanceHost.instance = await factoryReturnValue;
     }
-    targetMetatype.isResolved = true;
-    return targetMetatype.instance;
+    instanceHost.isResolved = true;
+    return instanceHost.instance;
+  }
+
+  public async loadPerContext<T = any>(
+    instance: T,
+    module: Module,
+    collection: Map<string, InstanceWrapper>,
+    ctx: ContextId,
+  ): Promise<T> {
+    const wrapper = collection.get(
+      instance.constructor && instance.constructor.name,
+    );
+    await this.loadInstance(wrapper, collection, module, ctx, wrapper);
+    await this.loadEnhancersPerContext(wrapper, module, ctx, wrapper);
+
+    const host = wrapper.getInstanceByContextId(ctx);
+    return host && (host.instance as T);
+  }
+
+  public async loadEnhancersPerContext(
+    wrapper: InstanceWrapper,
+    module: Module,
+    ctx: ContextId,
+    inquirer?: InstanceWrapper,
+  ) {
+    const enhancers = wrapper.getEnhancersMetadata() || [];
+    const loadEnhancer = (item: InstanceWrapper) =>
+      this.loadInstance(item, module.injectables, module, ctx, inquirer);
+    await Promise.all(enhancers.map(loadEnhancer));
+  }
+
+  public async loadCtorMetadata(
+    metadata: InstanceWrapper<any>[],
+    contextId: ContextId,
+    inquirer?: InstanceWrapper,
+  ): Promise<any[]> {
+    const hosts = await Promise.all(
+      metadata.map(async item =>
+        this.resolveComponentHost(item.host, item, contextId, inquirer),
+      ),
+    );
+    const inquirerId = this.getInquirerId(inquirer);
+    return hosts.map(
+      item => item.getInstanceByContextId(contextId, inquirerId).instance,
+    );
+  }
+
+  public async loadPropertiesMetadata(
+    metadata: PropertyMetadata[],
+    contextId: ContextId,
+    inquirer?: InstanceWrapper,
+  ): Promise<PropertyDependency[]> {
+    const dependenciesHosts = await Promise.all(
+      metadata.map(async ({ wrapper: item, key }) => ({
+        key,
+        host: await this.resolveComponentHost(
+          item.host,
+          item,
+          contextId,
+          inquirer,
+        ),
+      })),
+    );
+    const inquirerId = this.getInquirerId(inquirer);
+    return dependenciesHosts.map(({ key, host }) => ({
+      key,
+      name: key,
+      instance: host.getInstanceByContextId(contextId, inquirerId).instance,
+    }));
+  }
+
+  private getInquirerId(inquirer: InstanceWrapper | undefined): string {
+    return inquirer && inquirer.id;
   }
 }

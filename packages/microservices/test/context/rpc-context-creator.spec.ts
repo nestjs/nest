@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
+import { Injectable, UseGuards, UsePipes } from '../../../common';
 import { ApplicationConfig } from '../../../core/application-config';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
 import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
@@ -9,19 +10,12 @@ import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-co
 import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
 import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
-import { RpcException } from '../../index';
-import {
-  Component,
-  Guard,
-  Injectable,
-  UseGuards,
-  UsePipes,
-} from '../../../common';
 import { ExceptionFiltersContext } from '../../context/exception-filters-context';
 import { RpcContextCreator } from '../../context/rpc-context-creator';
 import { RpcProxy } from '../../context/rpc-proxy';
+import { RpcException } from '../../index';
 
-@Guard()
+@Injectable()
 class TestGuard {
   canActivate: () => true;
 }
@@ -45,7 +39,7 @@ describe('RpcContextCreator', () => {
   let module: string;
 
   @UseGuards(TestGuard)
-  @Component()
+  @Injectable()
   class Test {
     @UsePipes(new TestPipe())
     test(data: string) {
@@ -84,12 +78,15 @@ describe('RpcContextCreator', () => {
     it('should create exception handler', () => {
       const handlerCreateSpy = sinon.spy(exceptionFiltersContext, 'create');
       contextCreator.create(instance, instance.test, module);
-      expect(handlerCreateSpy.calledWith(instance, instance.test)).to.be.true;
+      expect(
+        handlerCreateSpy.calledWith(instance, instance.test as any, module),
+      ).to.be.true;
     });
     it('should create pipes context', () => {
       const pipesCreateSpy = sinon.spy(pipesCreator, 'create');
       contextCreator.create(instance, instance.test, module);
-      expect(pipesCreateSpy.calledWith(instance, instance.test)).to.be.true;
+      expect(pipesCreateSpy.calledWith(instance, instance.test as any, module))
+        .to.be.true;
     });
     it('should create guards context', () => {
       const guardsCreateSpy = sinon.spy(guardsContextCreator, 'create');
@@ -131,7 +128,7 @@ describe('RpcContextCreator', () => {
         it('should throws forbidden exception', async () => {
           const tryActivateStub = sinon
             .stub(guardsConsumer, 'tryActivate')
-            .returns(false);
+            .callsFake(async () => false);
           const proxy = await contextCreator.create(
             instance,
             instance.test,
@@ -139,7 +136,9 @@ describe('RpcContextCreator', () => {
           );
           const data = 'test';
 
-          expect(proxy(data)).to.eventually.rejectedWith(RpcException);
+          proxy(null, data).catch(err =>
+            expect(err).to.be.instanceOf(RpcException),
+          );
         });
       });
     });
@@ -172,8 +171,8 @@ describe('RpcContextCreator', () => {
   describe('createGuardsFn', () => {
     it('should throw exception when "tryActivate" returns false', () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
-      sinon.stub(guardsConsumer, 'tryActivate').callsFake(() => false);
-      expect(guardsFn([])).to.eventually.throw();
+      sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
+      guardsFn([]).catch(err => expect(err).to.not.be.undefined);
     });
   });
 });

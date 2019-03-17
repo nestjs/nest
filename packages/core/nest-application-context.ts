@@ -2,15 +2,18 @@ import {
   INestApplicationContext,
   Logger,
   LoggerService,
-  OnApplicationBootstrap,
-  OnModuleDestroy,
-  OnModuleInit,
+  ShutdownSignal,
 } from '@nestjs/common';
 import { Abstract } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
-import iterate from 'iterare';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
+import {
+  callAppShutdownHook,
+  callModuleBootstrapHook,
+  callModuleDestroyHook,
+  callModuleInitHook,
+} from './hooks';
 import { NestContainer } from './injector/container';
 import { ContainerScanner } from './injector/container-scanner';
 import { Module } from './injector/module';
@@ -19,11 +22,12 @@ import { ModuleTokenFactory } from './injector/module-token-factory';
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
   private readonly containerScanner: ContainerScanner;
+  private readonly activeShutdownSignals: string[] = new Array<string>();
 
   constructor(
     protected readonly container: NestContainer,
-    private readonly scope: Type<any>[],
-    private contextModule: Module,
+    private readonly scope: Type<any>[] = [],
+    private contextModule: Module = null,
   ) {
     this.containerScanner = new ContainerScanner(container);
   }
@@ -67,107 +71,110 @@ export class NestApplicationContext implements INestApplicationContext {
 
   public async close(): Promise<void> {
     await this.callDestroyHook();
+    await this.callShutdownHook();
   }
 
   public useLogger(logger: LoggerService) {
     Logger.overrideLogger(logger);
   }
 
-  protected async callInitHook(): Promise<any> {
+  /**
+   * Enables the usage of shutdown hooks. Will call the
+   * `onApplicationShutdown` function of a provider if the
+   * process receives a shutdown signal.
+   *
+   * @param {ShutdownSignal[]} [signals=[]] The system signals it should listen to
+   *
+   * @returns {this} The Nest application context instance
+   */
+  public enableShutdownHooks(signals: (ShutdownSignal | string)[] = []): this {
+    if (isEmpty(signals)) {
+      signals = Object.keys(ShutdownSignal).map(
+        (key: string) => ShutdownSignal[key],
+      );
+    } else {
+      // given signals array should be unique because
+      // process shouldn't listen to the same signal more than once.
+      signals = Array.from(new Set(signals));
+    }
+
+    signals = signals
+      .map((signal: string) =>
+        signal
+          .toString()
+          .toUpperCase()
+          .trim(),
+      )
+      // filter out the signals which is already listening to
+      .filter(signal => !this.activeShutdownSignals.includes(signal));
+
+    this.listenToShutdownSignals(signals);
+    return this;
+  }
+
+  /**
+   * Listens to shutdown signals by listening to
+   * process events
+   *
+   * @param {string[]} signals The system signals it should listen to
+   */
+  protected listenToShutdownSignals(signals: string[]) {
+    signals.forEach((signal: string) => {
+      this.activeShutdownSignals.push(signal);
+
+      process.on(signal as any, async code => {
+        // Call the destroy and shutdown hook
+        // in case the process receives a shutdown signal
+        await this.callDestroyHook();
+        await this.callShutdownHook(signal);
+
+        process.exit(code || 1);
+      });
+    });
+  }
+
+  /**
+   * Calls the `onModuleInit` function on the registered
+   * modules and its children.
+   */
+  protected async callInitHook(): Promise<void> {
     const modulesContainer = this.container.getModules();
     for (const module of [...modulesContainer.values()].reverse()) {
-      await this.callModuleInitHook(module);
+      await callModuleInitHook(module);
     }
   }
 
-  protected async callModuleInitHook(module: Module): Promise<any> {
-    const components = [...module.components];
-    // The Module (class) instance is the first element of the components array
-    // Lifecycle hook has to be called once all classes are properly initialized
-    const [_, { instance: moduleClassInstance }] = components.shift();
-    const instances = [...module.routes, ...components];
-
-    await Promise.all(
-      iterate(instances)
-        .map(([key, { instance }]) => instance)
-        .filter(instance => !isNil(instance))
-        .filter(this.hasOnModuleInitHook)
-        .map(async instance => (instance as OnModuleInit).onModuleInit()),
-    );
-    if (moduleClassInstance && this.hasOnModuleInitHook(moduleClassInstance)) {
-      await (moduleClassInstance as OnModuleInit).onModuleInit();
-    }
-  }
-
-  protected hasOnModuleInitHook(instance: any): instance is OnModuleInit {
-    return !isUndefined((instance as OnModuleInit).onModuleInit);
-  }
-
-  protected async callDestroyHook(): Promise<any> {
+  /**
+   * Calls the `onModuleDestroy` function on the registered
+   * modules and its children.
+   */
+  protected async callDestroyHook(): Promise<void> {
     const modulesContainer = this.container.getModules();
     for (const module of modulesContainer.values()) {
-      await this.callModuleDestroyHook(module);
+      await callModuleDestroyHook(module);
     }
   }
 
-  protected async callModuleDestroyHook(module: Module): Promise<any> {
-    const components = [...module.components];
-    // The Module (class) instance is the first element of the components array
-    // Lifecycle hook has to be called once all classes are properly destroyed
-    const [_, { instance: moduleClassInstance }] = components.shift();
-    const instances = [...module.routes, ...components];
-
-    await Promise.all(
-      iterate(instances)
-        .map(([key, { instance }]) => instance)
-        .filter(instance => !isNil(instance))
-        .filter(this.hasOnModuleDestroyHook)
-        .map(async instance => (instance as OnModuleDestroy).onModuleDestroy()),
-    );
-    if (
-      moduleClassInstance &&
-      this.hasOnModuleDestroyHook(moduleClassInstance)
-    ) {
-      await (moduleClassInstance as OnModuleDestroy).onModuleDestroy();
-    }
-  }
-
-  protected hasOnModuleDestroyHook(instance): instance is OnModuleDestroy {
-    return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
-  }
-
-  protected async callBootstrapHook(): Promise<any> {
+  /**
+   * Calls the `onApplicationBootstrap` function on the registered
+   * modules and its children.
+   */
+  protected async callBootstrapHook(): Promise<void> {
     const modulesContainer = this.container.getModules();
     for (const module of [...modulesContainer.values()].reverse()) {
-      await this.callModuleBootstrapHook(module);
+      await callModuleBootstrapHook(module);
     }
   }
 
-  protected async callModuleBootstrapHook(module: Module): Promise<any> {
-    const components = [...module.components];
-    const [_, { instance: moduleClassInstance }] = components.shift();
-    const instances = [...module.routes, ...components];
-
-    await Promise.all(
-      iterate(instances)
-        .map(([key, { instance }]) => instance)
-        .filter(instance => !isNil(instance))
-        .filter(this.hasOnAppBotstrapHook)
-        .map(async instance =>
-          (instance as OnApplicationBootstrap).onApplicationBootstrap(),
-        ),
-    );
-    if (moduleClassInstance && this.hasOnAppBotstrapHook(moduleClassInstance)) {
-      await (moduleClassInstance as OnApplicationBootstrap).onApplicationBootstrap();
+  /**
+   * Calls the `onApplicationShutdown` function on the registered
+   * modules and children.
+   */
+  protected async callShutdownHook(signal?: string): Promise<void> {
+    const modulesContainer = this.container.getModules();
+    for (const module of [...modulesContainer.values()].reverse()) {
+      await callAppShutdownHook(module, signal);
     }
-  }
-
-  protected hasOnAppBotstrapHook(
-    instance: any,
-  ): instance is OnApplicationBootstrap {
-    return !isUndefined(
-      (instance as OnApplicationBootstrap).onApplicationBootstrap,
-    );
   }
 
   protected find<TInput = any, TResult = TInput>(

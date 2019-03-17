@@ -2,6 +2,7 @@ import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
   ClientProxy,
+  EventPattern,
   MessagePattern,
   Transport,
 } from '@nestjs/microservices';
@@ -10,6 +11,8 @@ import { scan } from 'rxjs/operators';
 
 @Controller()
 export class MqttController {
+  static IS_NOTIFIED = false;
+
   @Client({ transport: Transport.MQTT })
   client: ClientProxy;
 
@@ -45,6 +48,16 @@ export class MqttController {
     return await data
       .map(async tab => await send(tab))
       .reduce(async (a, b) => (await a) && (await b));
+  }
+
+  @Post('notify')
+  async sendNotification(): Promise<any> {
+    return this.client.emit<number>('notification', true);
+  }
+
+  @EventPattern('notification')
+  eventHandler(data: boolean) {
+    MqttController.IS_NOTIFIED = true;
   }
 
   @MessagePattern({ cmd: 'sum' })

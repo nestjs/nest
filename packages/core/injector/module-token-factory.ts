@@ -1,8 +1,8 @@
 import { DynamicModule } from '@nestjs/common';
 import { SHARED_MODULE_METADATA } from '@nestjs/common/constants';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import * as hash from 'object-hash';
 import stringify from 'fast-safe-stringify';
+import * as hash from 'object-hash';
 
 export class ModuleTokenFactory {
   public create(

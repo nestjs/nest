@@ -52,12 +52,15 @@ export class ClientTCP extends ClientProxy {
       share(),
     );
 
-    this.socket.connect(this.port, this.host);
+    this.socket.connect(
+      this.port,
+      this.host,
+    );
     this.connection = source$.toPromise();
     return this.connection;
   }
 
-  public handleResponse(buffer: WritePacket & PacketId) {
+  public handleResponse(buffer: WritePacket & PacketId): void {
     const { err, response, isDisposed, id } = buffer;
     const callback = this.routingMap.get(id);
     if (!callback) {
@@ -88,7 +91,7 @@ export class ClientTCP extends ClientProxy {
   public bindEvents(socket: JsonSocket) {
     socket.on(
       ERROR_EVENT,
-      err => err.code !== ECONNREFUSED && this.handleError(err),
+      (err: any) => err.code !== ECONNREFUSED && this.handleError(err),
     );
     socket.on(CLOSE_EVENT, () => this.handleClose());
   }
@@ -116,5 +119,10 @@ export class ClientTCP extends ClientProxy {
     } catch (err) {
       callback({ err });
     }
+  }
+
+  protected async dispatchEvent(packet: ReadPacket): Promise<any> {
+    const pattern = this.normalizePattern(packet.pattern);
+    return this.socket.sendMessage(pattern);
   }
 }

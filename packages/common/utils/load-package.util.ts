@@ -5,9 +5,13 @@ const MISSING_REQUIRED_DEPENDENCY = (name: string, reason: string) =>
 
 const logger = new Logger('PackageLoader');
 
-export function loadPackage(packageName: string, context: string) {
+export function loadPackage(
+  packageName: string,
+  context: string,
+  loaderFn?: Function,
+) {
   try {
-    return require(packageName);
+    return loaderFn ? loaderFn() : require(packageName);
   } catch (e) {
     logger.error(MISSING_REQUIRED_DEPENDENCY(packageName, context));
     process.exit(1);

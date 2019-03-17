@@ -1,15 +1,15 @@
-import iterate from 'iterare';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import {
   isConstructor,
   isFunction,
   isNil,
 } from '@nestjs/common/utils/shared.utils';
+import iterate from 'iterare';
 
 export class MetadataScanner {
   public scanFromPrototype<T extends Injectable, R>(
     instance: T,
-    prototype,
+    prototype: any,
     callback: (name: string) => R,
   ): R[] {
     return iterate([...this.getAllFilteredMethodNames(prototype)])
@@ -18,7 +18,7 @@ export class MetadataScanner {
       .toArray();
   }
 
-  *getAllFilteredMethodNames(prototype): IterableIterator<string> {
+  *getAllFilteredMethodNames(prototype: any): IterableIterator<string> {
     do {
       yield* iterate(Object.getOwnPropertyNames(prototype))
         .filter(prop => {

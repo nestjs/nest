@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import * as express from 'express';
+import { expect } from 'chai';
 import * as request from 'supertest';
 import { RMQController } from '../src/rmq/rmq.controller';
 
@@ -14,8 +14,9 @@ describe('RabbitMQ transport', () => {
       controllers: [RMQController],
     }).compile();
 
-    server = express();
-    app = module.createNestApplication(server);
+    app = module.createNestApplication();
+    server = app.getHttpAdapter().getInstance();
+
     app.connectMicroservice({
       transport: Transport.RMQ,
       options: {
@@ -73,6 +74,18 @@ describe('RabbitMQ transport', () => {
       .post('/stream')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
+  });
+
+  it(`/POST (event notification)`, done => {
+    request(server)
+      .post('/notify')
+      .send([1, 2, 3, 4, 5])
+      .end(() => {
+        setTimeout(() => {
+          expect(RMQController.IS_NOTIFIED).to.be.true;
+          done();
+        }, 1000);
+      });
   });
 
   afterEach(async () => {

@@ -2,11 +2,15 @@ import { expect } from 'chai';
 import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientProxy } from '../../client/client-proxy';
+import { ReadPacket } from '../../interfaces';
 // tslint:disable:no-string-literal
 
 class TestClientProxy extends ClientProxy {
+  protected async dispatchEvent<T = any>(
+    packet: ReadPacket<any>,
+  ): Promise<any> {}
   public async connect() {}
-  public publish(pattern, callback) {}
+  public publish(pattern, callback): any {}
   public close() {}
 }
 
@@ -31,11 +35,16 @@ describe('ClientProxy', () => {
     });
     describe('when "connect" throws', () => {
       it('should return Observable with error', () => {
-        sinon.stub(client, 'connect').callsFake(() => { throw new Error(); });
-        const stream$ = client.send({ test: 3 }, 'test');
-        stream$.subscribe(() => {}, (err) => {
-          expect(err).to.be.instanceof(Error);
+        sinon.stub(client, 'connect').callsFake(() => {
+          throw new Error();
         });
+        const stream$ = client.send({ test: 3 }, 'test');
+        stream$.subscribe(
+          () => {},
+          err => {
+            expect(err).to.be.instanceof(Error);
+          },
+        );
       });
     });
     describe('when is connected', () => {
@@ -49,13 +58,62 @@ describe('ClientProxy', () => {
         const stream$ = client.send(pattern, data);
         client.publish = publishSpy;
 
-        stream$.subscribe((() => {
+        stream$.subscribe(() => {
           expect(publishSpy.calledOnce).to.be.true;
-        }));
+        });
       });
     });
     it('should return Observable with error', () => {
       const err$ = client.send(null, null);
+      expect(err$).to.be.instanceOf(Observable);
+    });
+  });
+
+  describe('emit', () => {
+    it(`should return an observable stream`, () => {
+      const stream$ = client.emit({}, '');
+      expect(stream$ instanceof Observable).to.be.true;
+    });
+    it('should call "connect" on subscribe', () => {
+      const connectSpy = sinon.spy();
+      const stream$ = client.emit({ test: 3 }, 'test');
+      client.connect = connectSpy;
+
+      stream$.subscribe();
+      expect(connectSpy.calledOnce).to.be.true;
+    });
+    describe('when "connect" throws', () => {
+      it('should return Observable with error', () => {
+        sinon.stub(client, 'connect').callsFake(() => {
+          throw new Error();
+        });
+        const stream$ = client.emit({ test: 3 }, 'test');
+        stream$.subscribe(
+          () => {},
+          err => {
+            expect(err).to.be.instanceof(Error);
+          },
+        );
+      });
+    });
+    describe('when is connected', () => {
+      beforeEach(() => {
+        sinon.stub(client, 'connect').callsFake(() => Promise.resolve());
+      });
+      it(`should call "dispatchEvent"`, () => {
+        const pattern = { test: 3 };
+        const data = 'test';
+        const dispatchEventSpy = sinon.spy();
+        const stream$ = client.emit(pattern, data);
+        client['dispatchEvent'] = dispatchEventSpy;
+
+        stream$.subscribe(() => {
+          expect(dispatchEventSpy.calledOnce).to.be.true;
+        });
+      });
+    });
+    it('should return Observable with error', () => {
+      const err$ = client.emit(null, null);
       expect(err$).to.be.instanceOf(Observable);
     });
   });

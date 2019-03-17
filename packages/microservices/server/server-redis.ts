@@ -1,9 +1,10 @@
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
-  NO_PATTERN_MESSAGE,
+  NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_URL,
 } from '../constants';
 import {
@@ -32,7 +33,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
       this.getOptionsProp<RedisOptions>(this.options, 'url') ||
       REDIS_DEFAULT_URL;
 
-    redisPackage = this.loadPackage('redis', ServerRedis.name);
+    redisPackage = this.loadPackage('redis', ServerRedis.name, () =>
+      require('redis'),
+    );
   }
 
   public listen(callback: () => void) {
@@ -51,10 +54,13 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
   public bindEvents(subClient: RedisClient, pubClient: RedisClient) {
     subClient.on(MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
-    const subscribePatterns = Object.keys(this.messageHandlers);
-    subscribePatterns.forEach(pattern =>
-      subClient.subscribe(this.getAckQueueName(pattern)),
-    );
+    const subscribePatterns = [...this.messageHandlers.keys()];
+    subscribePatterns.forEach(pattern => {
+      const { isEventHandler } = this.messageHandlers.get(pattern);
+      subClient.subscribe(
+        isEventHandler ? pattern : this.getAckQueueName(pattern),
+      );
+    });
   }
 
   public close() {
@@ -71,19 +77,27 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(pub: RedisClient) {
-    return async (channel, buffer) => this.handleMessage(channel, buffer, pub);
+    return async (channel: string, buffer: string | any) =>
+      this.handleMessage(channel, buffer, pub);
   }
 
-  public async handleMessage(channel, buffer: string | any, pub: RedisClient) {
+  public async handleMessage(
+    channel: string,
+    buffer: string | any,
+    pub: RedisClient,
+  ) {
     const packet = this.deserialize(buffer);
+    if (isUndefined(packet.id)) {
+      return this.handleEvent(channel, packet);
+    }
     const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(pub, pattern, packet.id);
-    const status = 'error';
+    const handler = this.getHandlerByPattern(pattern);
 
-    if (!this.messageHandlers[pattern]) {
-      return publish({ id: packet.id, status, err: NO_PATTERN_MESSAGE });
+    if (!handler) {
+      const status = 'error';
+      return publish({ id: packet.id, status, err: NO_MESSAGE_HANDLER });
     }
-    const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(
       await handler(packet.data),
     ) as Observable<any>;
@@ -91,14 +105,14 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getPublisher(pub: RedisClient, pattern: any, id: string) {
-    return response =>
+    return (response: any) =>
       pub.publish(
         this.getResQueueName(pattern),
         JSON.stringify(Object.assign(response, { id })),
       );
   }
 
-  public deserialize(content): ReadPacket & PacketId {
+  public deserialize(content: any): ReadPacket & PacketId {
     try {
       return JSON.parse(content);
     } catch (e) {
@@ -114,12 +128,13 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     return `${pattern}_res`;
   }
 
-  public handleError(stream) {
-    stream.on(ERROR_EVENT, err => this.logger.error(err));
+  public handleError(stream: any) {
+    stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 
   public getClientOptions(): Partial<ClientOpts> {
-    const retry_strategy = options => this.createRetryStrategy(options);
+    const retry_strategy = (options: RetryStrategyOptions) =>
+      this.createRetryStrategy(options);
     return {
       retry_strategy,
     };

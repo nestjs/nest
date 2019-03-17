@@ -11,5 +11,6 @@ export * from './decorators';
 export * from './enums';
 export * from './exceptions';
 export * from './interfaces';
+export * from './module';
 export * from './nest-microservice';
 export * from './server';

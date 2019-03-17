@@ -1,0 +1,23 @@
+{
+  "name": "nest-typescript-starter",
+  "version": "1.0.0",
+  "description": "Nest TypeScript starter repository",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node src/main"
+  },
+  "dependencies": {
+    "@nestjs/common": "5.7.4",
+    "@nestjs/core": "5.7.4",
+    "class-transformer": "0.1.10",
+    "class-validator": "0.7.3",
+    "reflect-metadata": "0.1.13",
+    "rxjs": "6.4.0",
+    "typescript": "3.3.3333"
+  },
+  "devDependencies": {
+    "@types/node": "7.10.5",
+    "supertest": "3.4.2",
+    "ts-node": "6.2.0"
+  }
+}

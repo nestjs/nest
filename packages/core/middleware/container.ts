@@ -1,58 +1,60 @@
+import { Scope, Type } from '@nestjs/common';
+import { SCOPE_OPTIONS_METADATA } from '@nestjs/common/constants';
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
-import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middleware.interface';
-import { Type } from '@nestjs/common/interfaces/type.interface';
+import { InstanceWrapper } from './../injector/instance-wrapper';
 
 export class MiddlewareContainer {
-  private readonly middleware = new Map<
-    string,
-    Map<string, MiddlewareWrapper>
-  >();
+  private readonly middleware = new Map<string, Map<string, InstanceWrapper>>();
   private readonly configurationSets = new Map<
     string,
     Set<MiddlewareConfiguration>
   >();
 
-  public getMiddleware(module: string): Map<string, MiddlewareWrapper> {
+  public getMiddlewareCollection(module: string): Map<string, InstanceWrapper> {
     return this.middleware.get(module) || new Map();
   }
 
-  public getConfigs(): Map<string, Set<MiddlewareConfiguration>> {
+  public getConfigurations(): Map<string, Set<MiddlewareConfiguration>> {
     return this.configurationSets;
   }
 
-  public addConfig(configList: MiddlewareConfiguration[], module: string) {
-    const middleware = this.getCurrentMiddleware(module);
-    const currentConfig = this.getCurrentConfig(module);
+  public insertConfig(configList: MiddlewareConfiguration[], module: string) {
+    const middleware = this.getTargetMiddleware(module);
+    const targetConfig = this.getTargetConfig(module);
 
     const configurations = configList || [];
-    configurations.forEach(config => {
-      [].concat(config.middleware).map(metatype => {
-        const token = metatype.name;
-        middleware.set(token, {
-          instance: null,
+    const insertMiddleware = <T extends Type<any>>(metatype: T) => {
+      const token = metatype.name;
+      middleware.set(
+        token,
+        new InstanceWrapper({
+          scope: this.getClassScope(metatype),
           metatype,
-        });
-      });
-      currentConfig.add(config);
+        }),
+      );
+    };
+    configurations.forEach(config => {
+      [].concat(config.middleware).map(insertMiddleware);
+      targetConfig.add(config);
     });
   }
 
-  private getCurrentMiddleware(module: string) {
+  private getTargetMiddleware(module: string) {
     if (!this.middleware.has(module)) {
-      this.middleware.set(module, new Map<string, MiddlewareWrapper>());
+      this.middleware.set(module, new Map<string, InstanceWrapper>());
     }
     return this.middleware.get(module);
   }
 
-  private getCurrentConfig(module: string) {
+  private getTargetConfig(module: string) {
     if (!this.configurationSets.has(module)) {
       this.configurationSets.set(module, new Set<MiddlewareConfiguration>());
     }
     return this.configurationSets.get(module);
   }
-}
 
-export interface MiddlewareWrapper {
-  instance: NestMiddleware;
-  metatype: Type<NestMiddleware>;
+  private getClassScope<T = any>(type: Type<T>): Scope {
+    const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, type);
+    return metadata && metadata.scope;
+  }
 }

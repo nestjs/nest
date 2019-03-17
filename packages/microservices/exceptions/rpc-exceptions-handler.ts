@@ -27,12 +27,13 @@ export class RpcExceptionsHandler extends BaseRpcExceptionFilter {
     this.filters = filters;
   }
 
-  public invokeCustomFilters(
-    exception,
+  public invokeCustomFilters<T = any>(
+    exception: T,
     host: ArgumentsHost,
   ): Observable<any> | null {
-    if (isEmpty(this.filters)) return null;
-
+    if (isEmpty(this.filters)) {
+      return null;
+    }
     const filter = this.filters.find(({ exceptionMetatypes, func }) => {
       const hasMetatype =
         !exceptionMetatypes.length ||

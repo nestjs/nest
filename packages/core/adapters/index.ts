@@ -1,1 +1,1 @@
-export * from './fastify-adapter';
+export * from './http-adapter';

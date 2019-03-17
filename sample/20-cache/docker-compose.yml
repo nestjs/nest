@@ -1,9 +1,0 @@
-version: '3'
-
-services:
-  redis:
-    container_name: test-redis
-    image: redis
-    ports:
-      - '6379:6379'
-    restart: always

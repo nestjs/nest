@@ -1,4 +1,4 @@
-import { isString } from '@nestjs/common/utils/shared.utils';
+import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import * as JsonSocket from 'json-socket';
 import * as net from 'net';
 import { Server as NetSocket } from 'net';
@@ -7,7 +7,7 @@ import {
   CLOSE_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
-  NO_PATTERN_MESSAGE,
+  NO_MESSAGE_HANDLER,
   TCP_DEFAULT_PORT,
 } from '../constants';
 import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
@@ -39,30 +39,37 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     this.server.close();
   }
 
-  public bindHandler(socket) {
+  public bindHandler<T extends Record<string, any>>(socket: T) {
     const readSocket = this.getSocketInstance(socket);
-    readSocket.on(MESSAGE_EVENT, async msg =>
+    readSocket.on(MESSAGE_EVENT, async (msg: ReadPacket & PacketId) =>
       this.handleMessage(readSocket, msg),
     );
   }
 
-  public async handleMessage(socket, packet: ReadPacket & PacketId) {
+  public async handleMessage<T extends Record<string, any>>(
+    socket: T,
+    packet: ReadPacket & PacketId,
+  ) {
     const pattern = !isString(packet.pattern)
       ? JSON.stringify(packet.pattern)
       : packet.pattern;
-    const status = 'error';
 
-    if (!this.messageHandlers[pattern]) {
+    if (isUndefined(packet.id)) {
+      return this.handleEvent(pattern, packet);
+    }
+    const handler = this.getHandlerByPattern(pattern);
+    if (!handler) {
+      const status = 'error';
       return socket.sendMessage({
         id: packet.id,
         status,
-        err: NO_PATTERN_MESSAGE,
+        err: NO_MESSAGE_HANDLER,
       });
     }
-    const handler = this.messageHandlers[pattern];
     const response$ = this.transformToObservable(
       await handler(packet.data),
     ) as Observable<any>;
+
     response$ &&
       this.send(response$, data =>
         socket.sendMessage(Object.assign(data, { id: packet.id })),
@@ -91,7 +98,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     this.server.on(CLOSE_EVENT, this.handleClose.bind(this));
   }
 
-  private getSocketInstance(socket): JsonSocket {
+  private getSocketInstance<T>(socket: T): JsonSocket {
     return new JsonSocket(socket);
   }
 }
