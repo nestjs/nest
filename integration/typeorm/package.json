@@ -21,6 +21,6 @@
   "devDependencies": {
     "@types/node": "7.0.57",
     "ts-node": "6.0.5",
-    "tslint": "5.10.0"
+    "tslint": "5.14.0"
   }
 }

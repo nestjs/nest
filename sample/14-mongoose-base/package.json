@@ -22,6 +22,6 @@
     "@types/mongoose": "5.0.7",
     "@types/node": "7.0.57",
     "ts-node": "6.2.0",
-    "tslint": "5.12.1"
+    "tslint": "5.14.0"
   }
 }

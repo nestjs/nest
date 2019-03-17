@@ -27,6 +27,6 @@
     "prettier": "1.16.4",
     "ts-node": "7.0.1",
     "tsconfig-paths": "3.7.0",
-    "tslint": "5.12.1"
+    "tslint": "5.14.0"
   }
 }
