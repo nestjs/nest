@@ -14,7 +14,7 @@
     "@nestjs/core": "5.6.2",
     "@nestjs/platform-express": "6.0.0",
     "@nestjs/typeorm": "5.3.0",
-    "mysql": "2.15.0",
+    "mysql": "2.16.0",
     "reflect-metadata": "0.1.12",
     "rxjs": "6.2.2",
     "typeorm": "0.1.16",
