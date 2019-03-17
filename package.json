@@ -93,7 +93,7 @@
     "@types/socket.io": "1.4.40",
     "@types/ws": "4.0.2",
     "artillery": "1.6.0-27",
-    "awesome-typescript-loader": "3.5.0",
+    "awesome-typescript-loader": "5.2.1",
     "body-parser": "1.18.3",
     "chai": "4.2.0",
     "chai-as-promised": "7.1.1",
