@@ -99,7 +99,7 @@
     "chai-as-promised": "7.1.1",
     "clang-format": "1.2.4",
     "concurrently": "3.6.1",
-    "conventional-changelog": "1.1.24",
+    "conventional-changelog": "3.0.6",
     "core-js": "2.6.5",
     "coveralls": "2.13.3",
     "csv-write-stream": "2.0.0",
