@@ -90,7 +90,7 @@
     "@types/redis": "0.12.36",
     "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "7.0.10",
-    "@types/socket.io": "1.4.40",
+    "@types/socket.io": "2.1.2",
     "@types/ws": "4.0.2",
     "artillery": "1.6.0-27",
     "awesome-typescript-loader": "3.5.0",
