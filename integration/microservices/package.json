@@ -12,7 +12,7 @@
     "@nestjs/microservices": "5.7.4",
     "@nestjs/testing": "5.7.4",
     "@nestjs/websockets": "5.7.4",
-    "amqp-connection-manager": "2.2.0",
+    "amqp-connection-manager": "2.3.0",
     "class-transformer": "0.1.10",
     "class-validator": "0.7.3",
     "reflect-metadata": "0.1.13",
