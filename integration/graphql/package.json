@@ -22,7 +22,7 @@
     "ws": "4.1.0"
   },
   "devDependencies": {
-    "@types/node": "7.0.69",
+    "@types/node": "7.10.5",
     "ts-node": "6.2.0",
     "tslint": "5.14.0"
   }
