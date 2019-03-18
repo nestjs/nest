@@ -45,18 +45,18 @@
     optional "0.1.4"
     uuid "3.3.2"
 
-"@nestjs/graphql@6.0.0":
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.0.0.tgz#3989244cba2913071645149fe46c73b6b654ccea"
+"@nestjs/graphql@6.0.1":
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.0.1.tgz#cf5596959938a881367247a02645540752ed8e8f"
   dependencies:
-    "@types/graphql" "^14.0.7"
-    chokidar "^2.1.1"
-    fast-glob "^2.2.6"
-    graphql-tools "^4.0.3"
-    lodash "^4.17.11"
-    merge-graphql-schemas "^1.5.8"
-    optional "^0.1.4"
-    ts-morph "^1.1.0"
+    "@types/graphql" "14.0.7"
+    chokidar "2.1.2"
+    fast-glob "2.2.6"
+    graphql-tools "4.0.4"
+    lodash "4.17.11"
+    merge-graphql-schemas "1.5.8"
+    optional "0.1.4"
+    ts-morph "1.3.1"
     uuid "3.3.2"
 
 "@nestjs/platform-express@6.0.0":
@@ -180,7 +180,7 @@
     "@types/express-serve-static-core" "*"
     "@types/serve-static" "*"
 
-"@types/graphql@^14.0.7":
+"@types/graphql@14.0.7":
   version "14.0.7"
   resolved "https://registry.yarnpkg.com/@types/graphql/-/graphql-14.0.7.tgz#daa09397220a68ce1cbb3f76a315ff3cd92312f6"
 
@@ -681,7 +681,7 @@ chalk@^2.0.1, chalk@^2.3.0, chalk@^2.4.1:
     escape-string-regexp "^1.0.5"
     supports-color "^5.3.0"
 
-chokidar@^2.1.0, chokidar@^2.1.1:
+chokidar@2.1.2, chokidar@^2.1.0:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-2.1.2.tgz#9c23ea40b01638439e0513864d362aeacc5ad058"
   dependencies:
@@ -739,7 +739,7 @@ cliui@^4.0.0:
     strip-ansi "^4.0.0"
     wrap-ansi "^2.0.0"
 
-code-block-writer@^7.2.2:
+code-block-writer@7.2.2:
   version "7.2.2"
   resolved "https://registry.yarnpkg.com/code-block-writer/-/code-block-writer-7.2.2.tgz#14ec0120de9a65d2cc5d214561d51d1660dddbb1"
 
@@ -1213,6 +1213,17 @@ extglob@^2.0.4:
     snapdragon "^0.8.1"
     to-regex "^3.0.1"
 
+fast-glob@2.2.6:
+  version "2.2.6"
+  resolved "https://registry.yarnpkg.com/fast-glob/-/fast-glob-2.2.6.tgz#a5d5b697ec8deda468d85a74035290a025a95295"
+  dependencies:
+    "@mrmlnc/readdir-enhanced" "^2.2.1"
+    "@nodelib/fs.stat" "^1.1.2"
+    glob-parent "^3.1.0"
+    is-glob "^4.0.0"
+    merge2 "^1.2.3"
+    micromatch "^3.1.10"
+
 fast-glob@^2.0.2:
   version "2.2.2"
   resolved "https://registry.yarnpkg.com/fast-glob/-/fast-glob-2.2.2.tgz#71723338ac9b4e0e2fff1d6748a2a13d5ed352bf"
@@ -1222,17 +1233,6 @@ fast-glob@^2.0.2:
     glob-parent "^3.1.0"
     is-glob "^4.0.0"
     merge2 "^1.2.1"
-    micromatch "^3.1.10"
-
-fast-glob@^2.2.6:
-  version "2.2.6"
-  resolved "https://registry.yarnpkg.com/fast-glob/-/fast-glob-2.2.6.tgz#a5d5b697ec8deda468d85a74035290a025a95295"
-  dependencies:
-    "@mrmlnc/readdir-enhanced" "^2.2.1"
-    "@nodelib/fs.stat" "^1.1.2"
-    glob-parent "^3.1.0"
-    is-glob "^4.0.0"
-    merge2 "^1.2.3"
     micromatch "^3.1.10"
 
 fast-json-stable-stringify@^2.0.0:
@@ -1474,7 +1474,7 @@ graphql-tools@4.0.3:
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-graphql-tools@4.0.4, graphql-tools@^4.0.0, graphql-tools@^4.0.3:
+graphql-tools@4.0.4, graphql-tools@^4.0.0:
   version "4.0.4"
   resolved "https://registry.yarnpkg.com/graphql-tools/-/graphql-tools-4.0.4.tgz#ca08a63454221fdde825fe45fbd315eb2a6d566b"
   dependencies:
@@ -1975,7 +1975,7 @@ lodash.sortby@^4.7.0:
   version "4.7.0"
   resolved "https://registry.yarnpkg.com/lodash.sortby/-/lodash.sortby-4.7.0.tgz#edd14c824e2cc9c1e0b0a1b42bb5210516a42438"
 
-lodash@^4.17.11, lodash@^4.17.4:
+lodash@4.17.11, lodash@^4.17.4:
   version "4.17.11"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.11.tgz#b39ea6229ef607ecd89e2c8df12536891cac9b8d"
 
@@ -2061,7 +2061,7 @@ merge-descriptors@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/merge-descriptors/-/merge-descriptors-1.0.1.tgz#b00aaa556dd8b44568150ec9d1b953f3f90cbb61"
 
-merge-graphql-schemas@^1.5.8:
+merge-graphql-schemas@1.5.8:
   version "1.5.8"
   resolved "https://registry.yarnpkg.com/merge-graphql-schemas/-/merge-graphql-schemas-1.5.8.tgz#89457b60312aabead44d5b2b7625643f8ab9e369"
   dependencies:
@@ -2383,7 +2383,7 @@ once@^1.3.0, once@^1.3.1, once@^1.4.0:
   dependencies:
     wrappy "1"
 
-optional@0.1.4, optional@^0.1.4:
+optional@0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/optional/-/optional-0.1.4.tgz#cdb1a9bedc737d2025f690ceeb50e049444fd5b3"
 
@@ -3050,12 +3050,12 @@ ts-invariant@^0.3.2:
   dependencies:
     tslib "^1.9.3"
 
-ts-morph@^1.1.0:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/ts-morph/-/ts-morph-1.3.0.tgz#06cad37a9d12752be1ac3a02ae3a7067c12d7e0d"
+ts-morph@1.3.1:
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/ts-morph/-/ts-morph-1.3.1.tgz#70795b7d54489c419b50911273675151b7bab8af"
   dependencies:
     "@dsherret/to-absolute-glob" "^2.0.2"
-    code-block-writer "^7.2.2"
+    code-block-writer "7.2.2"
     fs-extra "^7.0.0"
     glob-parent "^3.1.0"
     globby "^8.0.1"
