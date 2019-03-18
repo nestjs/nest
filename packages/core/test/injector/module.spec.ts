@@ -274,6 +274,8 @@ describe('Module', () => {
     describe('when provider', () => {
       it('should call `addProvider`', () => {
         const addProviderSpy = sinon.spy(module, 'addProvider');
+        sinon.stub(module, 'hasProvider').callsFake(() => true);
+
         module.replace(null, { isProvider: true });
         expect(addProviderSpy.called).to.be.true;
       });
@@ -281,6 +283,8 @@ describe('Module', () => {
     describe('when guard', () => {
       it('should call `addInjectable`', () => {
         const addInjectableSpy = sinon.spy(module, 'addInjectable');
+        sinon.stub(module, 'hasInjectable').callsFake(() => true);
+
         module.replace(null, {});
         expect(addInjectableSpy.called).to.be.true;
       });
@@ -376,6 +380,36 @@ describe('Module', () => {
         expect(() => module.validateExportedProvider(token)).to.throws(
           UnknownExportException,
         );
+      });
+    });
+  });
+
+  describe('hasProvider', () => {
+    describe('when module has provider', () => {
+      it('should return true', () => {
+        const token = 'test';
+        module.providers.set(token, new InstanceWrapper());
+        expect(module.hasProvider(token)).to.be.true;
+      });
+    });
+    describe('otherwise', () => {
+      it('should return false', () => {
+        expect(module.hasProvider('_')).to.be.false;
+      });
+    });
+  });
+
+  describe('hasInjectable', () => {
+    describe('when module has injectable', () => {
+      it('should return true', () => {
+        const token = 'test';
+        module.injectables.set(token, new InstanceWrapper());
+        expect(module.hasInjectable(token)).to.be.true;
+      });
+    });
+    describe('otherwise', () => {
+      it('should return false', () => {
+        expect(module.hasInjectable('_')).to.be.false;
       });
     });
   });

@@ -207,9 +207,7 @@ export class Module {
     provider: CustomFactory | CustomValue | CustomClass,
     collection: Map<string, any>,
   ): string {
-    const { provide } = provider;
-    const name = isFunction(provide) ? provide.name : provide;
-
+    const name = this.getProviderStaticToken(provider.provide) as string;
     provider = {
       ...provider,
       name,
@@ -359,13 +357,32 @@ export class Module {
   }
 
   public replace(toReplace: string | symbol | Type<any>, options: any) {
-    if (options.isProvider) {
+    if (options.isProvider && this.hasProvider(toReplace)) {
       return this.addProvider({ provide: toReplace, ...options });
+    } else if (!options.isProvider && this.hasInjectable(toReplace)) {
+      this.addInjectable({
+        provide: toReplace,
+        ...options,
+      });
     }
-    this.addInjectable({
-      provide: toReplace,
-      ...options,
-    });
+  }
+
+  public hasProvider(token: string | symbol | Type<any>): boolean {
+    const name = this.getProviderStaticToken(token);
+    return this._providers.has(name);
+  }
+
+  public hasInjectable(token: string | symbol | Type<any>): boolean {
+    const name = this.getProviderStaticToken(token);
+    return this._injectables.has(name);
+  }
+
+  public getProviderStaticToken(
+    provider: string | symbol | Type<any>,
+  ): string | symbol {
+    return isFunction(provider)
+      ? (provider as Function).name
+      : (provider as string | symbol);
   }
 
   public getProviderByKey<T = any>(name: string | symbol): InstanceWrapper<T> {
