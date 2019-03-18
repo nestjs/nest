@@ -12,7 +12,7 @@
     "@nestjs/core": "6.0.0",
     "@nestjs/platform-express": "6.0.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.3.3",
+    "rxjs": "6.4.0",
     "typescript": "3.2.2"
   },
   "devDependencies": {
