@@ -36,7 +36,7 @@ describe('ClientProxyFactory', () => {
         transport: Transport.GRPC,
         options: {
           protoPath: join(__dirname, './test.proto'),
-          package: 'test'
+          packages: ['test'],
         },
       });
       expect(proxy instanceof ClientGrpcProxy).to.be.true;

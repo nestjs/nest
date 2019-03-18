@@ -14,10 +14,15 @@ class NoopLogger extends Logger {
 
 describe('ServerGrpc', () => {
   let server: ServerGrpc;
+  let serverWithMultiplePackages: ServerGrpc;
   beforeEach(() => {
     server = new ServerGrpc({
       protoPath: join(__dirname, './test.proto'),
-      package: 'test',
+      packages: ['test'],
+    } as any);
+    serverWithMultiplePackages = new ServerGrpc({
+      protoPath: join(__dirname, './test.proto'),
+      packages: ['test', 'imported'],
     } as any);
   });
 
@@ -83,6 +88,50 @@ describe('ServerGrpc', () => {
 
         await server.bindEvents();
         expect((server as any).grpcClient.addService.calledTwice).to.be.true;
+      });
+    });
+    describe('when several packages exist', () => {
+      it('should call "addService"', async () => {
+        const serverWMP = serverWithMultiplePackages;
+        // load first package
+        sinon.stub(serverWMP, 'lookupPackage').callsFake((_, pkgName) => {
+          const pkgMap = {
+            test: {
+              test: { service: true },
+              test2: { service: true },
+            },
+            imported: {
+              anotherTest: { service: true },
+            }
+          };
+          return pkgMap[pkgName];
+        });
+        sinon.stub(serverWMP, 'getServiceNames').callsFake((grpcPkg) => {
+          if (grpcPkg.test) {
+            return [
+              {
+                name: 'test',
+                service: true,
+              },
+              {
+                name: 'test2',
+                service: true,
+              },
+            ];
+          } else {
+            return [
+              {
+                name: 'anotherTest',
+                service: true,
+              },
+            ];
+          }
+        });
+
+        (serverWMP as any).grpcClient = { addService: sinon.spy() };
+
+        await serverWMP.bindEvents();
+        expect((serverWMP as any).grpcClient.addService.callCount).to.be.equal(3);
       });
     });
   });

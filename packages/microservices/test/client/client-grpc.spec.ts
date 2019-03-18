@@ -18,31 +18,73 @@ class GrpcService {
   test = null;
 }
 
+class AnotherGrpcService {
+  imported = null;
+}
+
 describe('ClientGrpcProxy', () => {
   let client: ClientGrpcProxy;
+  let clientWithMultiplePackages: ClientGrpcProxy;
 
   beforeEach(() => {
     client = new ClientGrpcProxy({
       protoPath: join(__dirname, './test.proto'),
-      package: 'test',
+      packages: ['test'],
+    });
+    clientWithMultiplePackages = new ClientGrpcProxy({
+      protoPath: join(__dirname, './test.proto'),
+      packages: ['test', 'imported'],
     });
   });
 
   describe('getService', () => {
-    describe('when "grpcClient[name]" is nil', () => {
+    describe('when "grpcClientMap[name]" is nil', () => {
       it('should throw "InvalidGrpcServiceException"', () => {
-        (client as any).grpcClient = {};
+        (client as any).grpcClientMap = {};
         expect(() => client.getService('test')).to.throw(
           InvalidGrpcServiceException,
         );
       });
     });
-    describe('when "grpcClient[name]" is not nil', () => {
+    describe('when "grpcClientMap[name]" is not nil', () => {
       it('should create grpcService', () => {
-        (client as any).grpcClient = {
-          test: GrpcService,
+        const grpcClient = { test: GrpcService };
+        (client as any).grpcClientMap = {
+          test: grpcClient
         };
         expect(() => client.getService('test')).to.not.throw(
+          InvalidGrpcServiceException,
+        );
+      });
+    });
+    describe('when there\'re several packages in "grpcClientMap"', () => {
+      it('should create several grpcServices', () => {
+        const grpcClient = { testService: GrpcService };
+        const grpcAnotherClient = { anotherService: AnotherGrpcService };
+        const clientWMP = clientWithMultiplePackages;
+        (clientWMP as any).grpcClientMap = {
+          testPkg: grpcClient,
+          importedPkg: grpcAnotherClient,
+        };
+        expect(() => clientWMP.getService('testService')).to.not.throw(
+          InvalidGrpcServiceException,
+        );
+        expect(() => clientWMP.getService('anotherService')).to.not.throw(
+          InvalidGrpcServiceException,
+        );
+      });
+      it('should only get services in matched packages through getService()', () => {
+        const grpcClient = { testService: GrpcService };
+        const grpcAnotherClient = { anotherService: AnotherGrpcService };
+        const clientWMP = clientWithMultiplePackages;
+        (clientWMP as any).grpcClientMap = {
+          testPkg: grpcClient,
+          importedPkg: grpcAnotherClient,
+        };
+        expect(() => clientWMP.getService('testService', 'importedPkg')).to.throw(
+          InvalidGrpcServiceException,
+        );
+        expect(() => clientWMP.getService('anotherService', 'testPkg')).to.throw(
           InvalidGrpcServiceException,
         );
       });
@@ -188,14 +230,14 @@ describe('ClientGrpcProxy', () => {
     });
   });
 
-  describe('createClient', () => {
+  describe('createClients', () => {
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', () => {
         sinon.stub(client, 'lookupPackage').callsFake(() => null);
         (client as any).logger = new NoopLogger();
 
         try {
-          client.createClient();
+          client.createClients();
         } catch (err) {
           expect(err).to.be.instanceof(InvalidGrpcPackageException);
         }
@@ -219,7 +261,9 @@ describe('ClientGrpcProxy', () => {
   describe('close', () => {
     it('should call "close" method', () => {
       const grpcClient = { close: sinon.spy() };
-      (client as any).grpcClient = grpcClient;
+      (client as any).grpcClientMap = {
+        test: grpcClient,
+      };
 
       client.close();
       expect(grpcClient.close.called).to.be.true;

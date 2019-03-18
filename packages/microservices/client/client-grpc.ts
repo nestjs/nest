@@ -17,7 +17,7 @@ let grpcProtoLoaderPackage: any = {};
 export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly url: string;
-  protected grpcClient: any;
+  protected grpcClientMap: { [key: string]: any };
 
   constructor(protected readonly options: ClientOptions['options']) {
     super();
@@ -32,23 +32,36 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       require('grpc'),
     );
     grpcProtoLoaderPackage = loadPackage(protoLoader, ClientGrpcProxy.name);
-    this.grpcClient = this.createClient();
+    this.grpcClientMap = this.createClients();
   }
 
-  public getService<T extends {}>(name: string): T {
+  public getService<T extends {}>(name: string, pkgName?: string): T {
     const options: any = isObject(this.options)
       ? { ...this.options, loader: '' }
       : {};
 
-    if (!this.grpcClient[name]) {
+    let candidateClient: any = null;
+    let TargetClient: any = null;
+    if (pkgName) {
+      candidateClient = this.grpcClientMap[pkgName];
+      TargetClient = candidateClient && candidateClient[name];
+    } else {
+      for (const instance of Object.values(this.grpcClientMap)) {
+        if (instance[name]) {
+          TargetClient = instance[name];
+          break;
+        }
+      }
+    }
+    if (!TargetClient) {
       throw new InvalidGrpcServiceException();
     }
-    const grpcClient = new this.grpcClient[name](
+    const grpcClient = new TargetClient(
       this.url,
       options.credentials || grpcPackage.credentials.createInsecure(),
       options,
     );
-    const protoMethods = Object.keys(this.grpcClient[name].prototype);
+    const protoMethods = Object.keys(TargetClient.prototype);
     const grpcService = {} as T;
     protoMethods.forEach(m => {
       const key = m[0].toLowerCase() + m.slice(1, m.length);
@@ -117,19 +130,23 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     };
   }
 
-  public createClient(): any {
+  public createClients(): any {
     const grpcContext = this.loadProto();
-    const packageName = this.getOptionsProp<GrpcOptions>(
+    const packageNames = this.getOptionsProp<GrpcOptions>(
       this.options,
-      'package',
+      'packages',
     );
-    const grpcPkg = this.lookupPackage(grpcContext, packageName);
-    if (!grpcPkg) {
-      const invalidPackageError = new InvalidGrpcPackageException();
-      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
-      throw invalidPackageError;
+    const grpcPkgs: { [key: string]: any } = {};
+    for (const pkgName of packageNames) {
+      const grpcPkg = this.lookupPackage(grpcContext, pkgName);
+      if (!grpcPkg) {
+        const invalidPackageError = new InvalidGrpcPackageException();
+        this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+        throw invalidPackageError;
+      }
+      grpcPkgs[pkgName] = grpcPkg;
     }
-    return grpcPkg;
+    return grpcPkgs;
   }
 
   public loadProto(): any {
@@ -162,8 +179,10 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public close() {
-    this.grpcClient && this.grpcClient.close();
-    this.grpcClient = null;
+    if (this.grpcClientMap) {
+      Object.values(this.grpcClientMap).forEach((client) => client.close());
+    }
+    this.grpcClientMap = null;
   }
 
   public async connect(): Promise<any> {

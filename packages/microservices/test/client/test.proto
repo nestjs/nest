@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import public "imported.proto";
+
 package test;
 
 service TestService {

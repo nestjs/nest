@@ -52,7 +52,7 @@ describe('ServerFactory', () => {
       expect(
         ServerFactory.create({
           transport: Transport.GRPC,
-          options: { protoPath: '', package: '' },
+          options: { protoPath: '', packages: [''] },
         }) instanceof ServerGrpc,
       ).to.be.true;
     });
