@@ -104,7 +104,7 @@
     "coveralls": "3.0.3",
     "csv-write-stream": "2.0.0",
     "delete-empty": "2.0.0",
-    "fastify-static": "0.14.0",
+    "fastify-static": "2.3.4",
     "gulp": "4.0.0",
     "gulp-clang-format": "1.0.27",
     "gulp-clean": "0.4.0",
