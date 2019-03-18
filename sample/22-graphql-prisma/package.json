@@ -19,7 +19,7 @@
     "graphql-tools": "4.0.4",
     "prisma-binding": "2.2.14",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.3.3",
+    "rxjs": "6.4.0",
     "typescript": "3.2.2"
   },
   "devDependencies": {
