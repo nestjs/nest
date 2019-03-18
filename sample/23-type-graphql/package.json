@@ -19,7 +19,7 @@
     "class-validator": "0.9.1",
     "graphql": "14.1.1",
     "graphql-subscriptions": "1.0.0",
-    "reflect-metadata": "0.1.12",
+    "reflect-metadata": "0.1.13",
     "rxjs": "6.3.3",
     "type-graphql": "0.17.0",
     "typescript": "3.2.2"
