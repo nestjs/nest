@@ -9,14 +9,14 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "5.6.2",
-    "@nestjs/core": "5.6.2",
+    "@nestjs/common": "5.7.4",
+    "@nestjs/core": "5.7.4",
     "@nestjs/typeorm": "5.3.0",
-    "mysql": "2.15.0",
-    "reflect-metadata": "0.1.12",
-    "rxjs": "6.2.0",
-    "typeorm": "0.1.16",
-    "typescript": "2.8.3"
+    "mysql": "2.16.0",
+    "reflect-metadata": "0.1.13",
+    "rxjs": "6.4.0",
+    "typeorm": "0.2.15",
+    "typescript": "2.9.2"
   },
   "devDependencies": {
     "@types/node": "7.10.5",

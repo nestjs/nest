@@ -17,7 +17,7 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
     "sequelize": "4.43.0",
-    "sequelize-typescript": "0.6.7",
+    "sequelize-typescript": "0.6.8",
     "typescript": "3.3.3333"
   },
   "devDependencies": {

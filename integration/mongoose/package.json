@@ -9,13 +9,13 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "5.6.2",
-    "@nestjs/core": "5.6.2",
+    "@nestjs/common": "5.7.4",
+    "@nestjs/core": "5.7.4",
     "@nestjs/mongoose": "5.2.2",
     "mongoose": "5.4.19",
-    "reflect-metadata": "0.1.12",
-    "rxjs": "6.2.0",
-    "typescript": "2.8.3"
+    "reflect-metadata": "0.1.13",
+    "rxjs": "6.4.0",
+    "typescript": "2.9.2"
   },
   "devDependencies": {
     "@types/mongoose": "5.3.22",
