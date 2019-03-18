@@ -15,7 +15,7 @@
     "@nestjs/platform-express": "6.0.0",
     "@nestjs/typeorm": "5.3.0",
     "mysql": "2.16.0",
-    "reflect-metadata": "0.1.12",
+    "reflect-metadata": "0.1.13",
     "rxjs": "6.2.2",
     "typeorm": "0.1.16",
     "typescript": "2.9.2"

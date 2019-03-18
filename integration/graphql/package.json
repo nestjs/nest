@@ -15,9 +15,9 @@
     "apollo-server-express": "2.4.8",
     "graphql": "14.1.1",
     "graphql-tools": "4.0.4",
-    "reflect-metadata": "0.1.12",
+    "reflect-metadata": "0.1.13",
     "rxjs": "6.2.2",
-    "subscriptions-transport-ws": "0.9.16",
+    "subscriptions-transport-ws": "0.9.14",
     "typescript": "3.3.3333",
     "ws": "4.1.0"
   },

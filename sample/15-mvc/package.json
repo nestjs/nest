@@ -15,7 +15,7 @@
     "@nestjs/platform-express": "6.0.0",
     "hbs": "4.0.3",
     "pug": "2.0.3",
-    "reflect-metadata": "0.1.12",
+    "reflect-metadata": "0.1.13",
     "rxjs": "6.2.1",
     "typescript": "2.9.2"
   },
