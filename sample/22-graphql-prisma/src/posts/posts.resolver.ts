@@ -50,7 +50,7 @@ export class PostsResolver {
   }
 
   @Subscription('post')
-  onUserMutation(@Args() args, @Info() info) {
+  onPostMutation(@Args() args, @Info() info) {
     return this.prisma.subscription.post(args, info);
   }
 }
