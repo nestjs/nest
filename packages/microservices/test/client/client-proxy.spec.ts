@@ -125,16 +125,20 @@ describe('ClientProxy', () => {
 
     describe('returned function calls', () => {
       let fn;
-      const error = sinon.spy(),
-        next = sinon.spy(),
-        complete = sinon.spy(),
+      let error: sinon.SinonSpy,
+        next: sinon.SinonSpy,
+        complete: sinon.SinonSpy,
+        observer: any;
+
+      beforeEach(() => {
+        error = sinon.spy();
+        next = sinon.spy();
+        complete = sinon.spy();
         observer = {
           error,
           next,
           complete,
         };
-
-      before(() => {
         fn = client['createObserver'](observer);
       });
 
