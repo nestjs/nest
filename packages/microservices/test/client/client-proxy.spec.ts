@@ -168,7 +168,7 @@ describe('ClientProxy', () => {
         };
         const fn = client['createObserver'](observer);
 
-        fn({ data, isDisposed: true });
+        fn({ data, isDisposed: true } as any);
         expect(complete.called).to.be.true;
       });
     });
