@@ -124,39 +124,51 @@ describe('ClientProxy', () => {
     });
 
     describe('returned function calls', () => {
-      let fn;
-      let error: sinon.SinonSpy,
-        next: sinon.SinonSpy,
-        complete: sinon.SinonSpy,
-        observer: any;
-
-      beforeEach(() => {
-        error = sinon.spy();
-        next = sinon.spy();
-        complete = sinon.spy();
-        observer = {
+      it(`"error" when first parameter is not null or undefined`, () => {
+        const err = 'test';
+        const error = sinon.spy();
+        const next = sinon.spy();
+        const complete = sinon.spy();
+        const observer = {
           error,
           next,
           complete,
         };
-        fn = client['createObserver'](observer);
-      });
+        const fn = client['createObserver'](observer);
 
-      it(`"error" when first parameter is not null or undefined`, () => {
-        const err = 'test';
         fn({ err });
         expect(error.calledWith(err)).to.be.true;
       });
 
       it(`"next" when first parameter is null or undefined`, () => {
         const data = 'test';
+        const error = sinon.spy();
+        const next = sinon.spy();
+        const complete = sinon.spy();
+        const observer = {
+          error,
+          next,
+          complete,
+        };
+        const fn = client['createObserver'](observer);
+
         fn({ response: data });
         expect(next.calledWith(data)).to.be.true;
       });
 
       it(`"complete" when third parameter is true`, () => {
         const data = 'test';
-        fn({ data, isDisposed: true });
+        const error = sinon.spy();
+        const next = sinon.spy();
+        const complete = sinon.spy();
+        const observer = {
+          error,
+          next,
+          complete,
+        };
+        const fn = client['createObserver'](observer);
+
+        fn({ data, isDisposed: true } as any);
         expect(complete.called).to.be.true;
       });
     });

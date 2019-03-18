@@ -42,8 +42,14 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return response.set(name, value);
   }
 
+  public listen(port: string | number, callback?: () => void);
+  public listen(port: string | number, hostname: string, callback?: () => void);
+  public listen(port: any, hostname?: any, callback?: any) {
+    return this.httpServer.listen(port, hostname, callback);
+  }
+
   public close() {
-    return this.instance.close();
+    return this.httpServer ? this.httpServer.close() : undefined;
   }
 
   public set(...args: any[]) {
