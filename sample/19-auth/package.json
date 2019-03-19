@@ -26,7 +26,7 @@
     "@types/jest": "24.0.11",
     "@types/node": "10.14.1",
     "jest": "24.5.0",
-    "supertest": "3.4.2",
+    "supertest": "4.0.2",
     "ts-jest": "24.0.0",
     "ts-node": "7.0.1",
     "tslint": "5.14.0"
