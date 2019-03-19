@@ -36,8 +36,9 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public getService<T extends {}>(name: string): T {
+    // create channel options from GrpcOptions and clean up non channel options
     const options: any = isObject(this.options)
-      ? { ...this.options, loader: '' }
+      ? { ...this.options, protoPath: '', loader: '' }
       : {};
 
     if (!this.grpcClient[name]) {
