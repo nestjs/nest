@@ -26,17 +26,17 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@nestjs/common@6.0.0":
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.0.0.tgz#bbb8f1c0a98c8201fe9f2564f0e3203eff55a02d"
+"@nestjs/common@6.0.1":
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.0.1.tgz#fe6758c2643c98aa7f295844f9cf7863f5de3342"
   dependencies:
     axios "0.18.0"
-    cli-color "1.2.0"
+    cli-color "1.4.0"
     uuid "3.3.2"
 
-"@nestjs/core@6.0.0":
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.0.0.tgz#e2bd6eaa698d97e0ea48672315d97cc2cdbe28de"
+"@nestjs/core@6.0.1":
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.0.1.tgz#7f2455a6258edff812f8ea643cdd589f033d1df7"
   dependencies:
     "@nuxtjs/opencollective" "0.2.1"
     fast-safe-stringify "2.0.6"
@@ -59,9 +59,9 @@
     ts-morph "1.3.1"
     uuid "3.3.2"
 
-"@nestjs/platform-express@6.0.0":
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.0.0.tgz#ae751bc115ff4db9216180f8c045830dc41e7430"
+"@nestjs/platform-express@6.0.1":
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.0.1.tgz#cffd3c84d3b2c1686a13e8ca74faee4fabea4826"
   dependencies:
     body-parser "1.18.3"
     cors "2.8.5"
@@ -715,16 +715,16 @@ cli-boxes@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/cli-boxes/-/cli-boxes-1.0.0.tgz#4fa917c3e59c94a004cd61f8ee509da651687143"
 
-cli-color@1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/cli-color/-/cli-color-1.2.0.tgz#3a5ae74fd76b6267af666e69e2afbbd01def34d1"
+cli-color@1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/cli-color/-/cli-color-1.4.0.tgz#7d10738f48526824f8fe7da51857cb0f572fe01f"
   dependencies:
     ansi-regex "^2.1.1"
     d "1"
-    es5-ext "^0.10.12"
-    es6-iterator "2"
-    memoizee "^0.4.3"
-    timers-ext "0.1"
+    es5-ext "^0.10.46"
+    es6-iterator "^2.0.3"
+    memoizee "^0.4.14"
+    timers-ext "^0.1.5"
 
 cliui@^4.0.0:
   version "4.1.0"
@@ -1048,7 +1048,7 @@ es-to-primitive@^1.1.1:
     is-date-object "^1.0.1"
     is-symbol "^1.0.2"
 
-es5-ext@^0.10.12, es5-ext@^0.10.14, es5-ext@^0.10.35, es5-ext@^0.10.45, es5-ext@^0.10.9, es5-ext@~0.10.14, es5-ext@~0.10.2:
+es5-ext@^0.10.14, es5-ext@^0.10.35, es5-ext@^0.10.45, es5-ext@^0.10.9, es5-ext@~0.10.14, es5-ext@~0.10.2:
   version "0.10.46"
   resolved "https://registry.yarnpkg.com/es5-ext/-/es5-ext-0.10.46.tgz#efd99f67c5a7ec789baa3daa7f79870388f7f572"
   dependencies:
@@ -1056,7 +1056,15 @@ es5-ext@^0.10.12, es5-ext@^0.10.14, es5-ext@^0.10.35, es5-ext@^0.10.45, es5-ext@
     es6-symbol "~3.1.1"
     next-tick "1"
 
-es6-iterator@2, es6-iterator@^2.0.1, es6-iterator@~2.0.3:
+es5-ext@^0.10.46:
+  version "0.10.49"
+  resolved "https://registry.yarnpkg.com/es5-ext/-/es5-ext-0.10.49.tgz#059a239de862c94494fec28f8150c977028c6c5e"
+  dependencies:
+    es6-iterator "~2.0.3"
+    es6-symbol "~3.1.1"
+    next-tick "^1.0.0"
+
+es6-iterator@^2.0.1, es6-iterator@^2.0.3, es6-iterator@~2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/es6-iterator/-/es6-iterator-2.0.3.tgz#a7de889141a05a94b0854403b2d0a0fbfa98f3b7"
   dependencies:
@@ -2030,7 +2038,7 @@ mem@^4.0.0:
     mimic-fn "^2.0.0"
     p-is-promise "^2.0.0"
 
-memoizee@^0.4.3:
+memoizee@^0.4.14:
   version "0.4.14"
   resolved "https://registry.yarnpkg.com/memoizee/-/memoizee-0.4.14.tgz#07a00f204699f9a95c2d9e77218271c7cd610d57"
   dependencies:
@@ -2205,7 +2213,7 @@ negotiator@0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.1.tgz#2b327184e8992101177b28563fb5e7102acd0ca9"
 
-next-tick@1:
+next-tick@1, next-tick@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
 
@@ -2999,7 +3007,7 @@ timed-out@^4.0.0:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/timed-out/-/timed-out-4.0.1.tgz#f32eacac5a175bea25d7fab565ab3ed8741ef56f"
 
-timers-ext@0.1, timers-ext@^0.1.5:
+timers-ext@^0.1.5:
   version "0.1.5"
   resolved "https://registry.yarnpkg.com/timers-ext/-/timers-ext-0.1.5.tgz#77147dd4e76b660c2abb8785db96574cbbd12922"
   dependencies:
