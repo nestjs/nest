@@ -19,7 +19,7 @@
   "devDependencies": {
     "@types/node": "10.14.1",
     "ts-loader": "5.3.3",
-    "ts-node": "7.0.1",
+    "ts-node": "8.0.3",
     "tslint": "5.14.0"
   }
 }
