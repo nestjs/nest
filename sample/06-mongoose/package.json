@@ -13,7 +13,7 @@
     "@nestjs/common": "6.0.0",
     "@nestjs/core": "6.0.0",
     "@nestjs/platform-express": "6.0.0",
-    "@nestjs/mongoose": "5.2.2",
+    "@nestjs/mongoose": "6.0.0",
     "mongoose": "5.4.19",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
