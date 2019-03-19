@@ -13,7 +13,7 @@
     "@nestjs/common": "5.7.4",
     "@nestjs/core": "5.7.4",
     "@nestjs/platform-express": "6.0.0",
-    "@nestjs/typeorm": "5.3.0",
+    "@nestjs/typeorm": "6.0.0",
     "mysql": "2.16.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
