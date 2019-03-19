@@ -21,7 +21,7 @@
     "rxjs": "6.4.0",
     "subscriptions-transport-ws": "0.9.16",
     "type-graphql": "0.17.0",
-    "typescript": "3.3.3",
+    "typescript": "3.3.3333",
     "ws": "4.1.0"
   },
   "devDependencies": {

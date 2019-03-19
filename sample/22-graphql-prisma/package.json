@@ -20,7 +20,7 @@
     "prisma-binding": "2.3.9",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
-    "typescript": "3.2.2"
+    "typescript": "3.3.3333"
   },
   "devDependencies": {
     "nodemon": "1.18.10",
