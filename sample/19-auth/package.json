@@ -14,7 +14,7 @@
     "@nestjs/core": "6.0.1",
     "@nestjs/jwt": "6.0.0",
     "@nestjs/platform-express": "6.0.1",
-    "@nestjs/passport": "5.1.0",
+    "@nestjs/passport": "6.0.0",
     "passport": "0.4.0",
     "passport-http-bearer": "1.0.1",
     "passport-jwt": "4.0.0",
