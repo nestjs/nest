@@ -117,7 +117,7 @@
     "lerna": "2.11.0",
     "lint-staged": "8.1.5",
     "memory-usage": "1.2.1",
-    "mocha": "6.0.2",
+    "mocha": "3.5.3",
     "nodemon": "1.18.10",
     "nyc": "13.3.0",
     "prettier": "1.16.4",
