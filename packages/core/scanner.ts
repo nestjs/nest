@@ -1,8 +1,8 @@
 import {
+  Abstract,
   DynamicModule,
   ForwardReference,
   Provider,
-  Abstract,
 } from '@nestjs/common';
 import {
   EXCEPTION_FILTERS_METADATA,
@@ -36,7 +36,7 @@ import { MetadataScanner } from './metadata-scanner';
 interface ApplicationProviderWrapper {
   moduleKey: string;
   providerKey: string;
-  type: string | symbol | Type<any> | Abstract<any>;
+  type: string | symbol | Type<any> | Abstract<any> | Function;
 }
 
 export class DependenciesScanner {

@@ -18,5 +18,6 @@ export interface ModuleMetadata {
     | Provider
     | ForwardReference
     | Abstract<any>
+    | Function
   >;
 }

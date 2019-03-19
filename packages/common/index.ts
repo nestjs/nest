@@ -1,6 +1,6 @@
 /*
  * Nest @common
- * Copyright(c) 2017 - 2018 Kamil Mysliwiec
+ * Copyright(c) 2017 - 2019 Kamil Mysliwiec
  * https://nestjs.com
  * MIT Licensed
  */

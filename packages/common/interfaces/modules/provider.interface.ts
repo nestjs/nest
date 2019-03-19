@@ -9,18 +9,18 @@ export type Provider<T = any> =
   | FactoryProvider<T>;
 
 export interface ClassProvider<T = any> {
-  provide: string | symbol | Type<any> | Abstract<any>;
+  provide: string | symbol | Type<any> | Abstract<any> | Function;
   useClass: Type<T>;
   scope?: Scope;
 }
 
 export interface ValueProvider<T = any> {
-  provide: string | symbol | Type<any> | Abstract<any>;
+  provide: string | symbol | Type<any> | Abstract<any> | Function;
   useValue: T;
 }
 
 export interface FactoryProvider<T = any> {
-  provide: string | symbol | Type<any> | Abstract<any>;
+  provide: string | symbol | Type<any> | Abstract<any> | Function;
   useFactory: (...args: any[]) => T;
   inject?: Array<Type<any> | string | any>;
   scope?: Scope;
