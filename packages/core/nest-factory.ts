@@ -185,7 +185,11 @@ export class NestFactoryStatic {
   }
 
   private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
-    const { ExpressAdapter } = loadAdapter('@nestjs/platform-express', 'HTTP');
+    const { ExpressAdapter } = loadAdapter(
+      '@nestjs/platform-express',
+      'HTTP',
+      () => require('@nestjs/platform-express'),
+    );
     return new ExpressAdapter(httpServer);
   }
 
