@@ -12,7 +12,6 @@ import {
   RQM_DEFAULT_PREFETCH_COUNT,
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
-  RQM_DEFAULT_SOCKET_OPTIONS,
   RQM_DEFAULT_URL,
 } from './../constants';
 import { WritePacket } from './../interfaces';
@@ -30,7 +29,6 @@ export class ClientRMQ extends ClientProxy {
   protected prefetchCount: number;
   protected isGlobalPrefetchCount: boolean;
   protected queueOptions: any;
-  protected socketOptions: any;
   protected replyQueue: string;
   protected responseEmitter: EventEmitter;
 
@@ -51,9 +49,6 @@ export class ClientRMQ extends ClientProxy {
     this.queueOptions =
       this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
-    this.socketOptions =
-      this.getOptionsProp<RmqOptions>(this.options, 'socketOptions') ||
-      RQM_DEFAULT_SOCKET_OPTIONS;
 
     loadPackage('amqplib', ClientRMQ.name);
     rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name);
@@ -98,6 +93,7 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public createClient<T = any>(): T {
+    const socketOptions = this.getOptionsProp<RmqOptions>(this.options, 'socketOptions');
     return rqmPackage.connect(this.urls, this.socketOptions) as T;
   }
 
