@@ -121,7 +121,7 @@
     "nodemon": "1.18.10",
     "nyc": "13.3.0",
     "prettier": "1.16.4",
-    "sinon": "7.2.7",
+    "sinon": "7.3.0",
     "sinon-chai": "3.3.0",
     "socket.io-client": "2.2.0",
     "supertest": "4.0.2",
