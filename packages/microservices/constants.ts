@@ -25,7 +25,6 @@ export const RQM_DEFAULT_QUEUE = 'default';
 export const RQM_DEFAULT_PREFETCH_COUNT = 0;
 export const RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT = false;
 export const RQM_DEFAULT_QUEUE_OPTIONS = {};
-export const RQM_DEFAULT_SOCKET_OPTIONS = {};
 
 export const GRPC_DEFAULT_PROTO_LOADER = '@grpc/proto-loader';
 export const GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH = 4 * 1024 * 1024;
