@@ -81,8 +81,8 @@ export class TestingModuleBuilder {
   }
 
   private applyOverloadsMap() {
-    [...this.overloadsMap.entries()].forEach(([component, options]) => {
-      this.container.replace(component, options);
+    [...this.overloadsMap.entries()].forEach(([item, options]) => {
+      this.container.replace(item, options);
     });
   }
 

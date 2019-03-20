@@ -211,7 +211,7 @@ export class NestApplication extends NestApplicationContext
   public async listen(port: number | string, ...args: any[]): Promise<any> {
     !this.isInitialized && (await this.init());
 
-    this.httpServer.listen(port, ...args);
+    this.httpAdapter.listen(port, ...args);
     return this.httpServer;
   }
 
@@ -223,7 +223,7 @@ export class NestApplication extends NestApplicationContext
 
   public async close(): Promise<any> {
     this.socketModule && (await this.socketModule.close());
-    this.httpServer && this.httpServer.close();
+    this.httpAdapter && this.httpAdapter.close();
 
     await Promise.all(
       iterate(this.microservices).map(async microservice => {

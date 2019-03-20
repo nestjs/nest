@@ -201,7 +201,7 @@ export class NestFactoryStatic {
     return (new Proxy(app, {
       get: (receiver: Record<string, any>, prop: string) => {
         if (!(prop in receiver) && prop in adapter) {
-          return this.createExceptionZone(receiver, prop);
+          return this.createExceptionZone(adapter, prop);
         }
         return receiver[prop];
       },
