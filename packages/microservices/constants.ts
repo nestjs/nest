@@ -9,6 +9,7 @@ export const RQM_DEFAULT_URL = 'amqp://localhost';
 export const CONNECT_EVENT = 'connect';
 export const DISCONNECT_EVENT = 'disconnect';
 export const MESSAGE_EVENT = 'message';
+export const DATA_EVENT = 'data';
 export const ERROR_EVENT = 'error';
 export const CLOSE_EVENT = 'close';
 export const SUBSCRIBE = 'subscribe';
