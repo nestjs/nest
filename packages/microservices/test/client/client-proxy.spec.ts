@@ -119,8 +119,13 @@ describe('ClientProxy', () => {
   });
 
   describe('createObserver', () => {
+    let testClient: TestClientProxy;
+    beforeEach(() => {
+      testClient = new TestClientProxy();
+    });
+
     it(`should return function`, () => {
-      expect(typeof client['createObserver'](null)).to.be.eql('function');
+      expect(typeof testClient['createObserver'](null)).to.be.eql('function');
     });
 
     describe('returned function calls', () => {
@@ -134,7 +139,7 @@ describe('ClientProxy', () => {
           next,
           complete,
         };
-        const fn = client['createObserver'](observer);
+        const fn = testClient['createObserver'](observer);
 
         fn({ err });
         expect(error.calledWith(err)).to.be.true;
@@ -150,7 +155,7 @@ describe('ClientProxy', () => {
           next,
           complete,
         };
-        const fn = client['createObserver'](observer);
+        const fn = testClient['createObserver'](observer);
 
         fn({ response: data });
         expect(next.calledWith(data)).to.be.true;
@@ -166,7 +171,7 @@ describe('ClientProxy', () => {
           next,
           complete,
         };
-        const fn = client['createObserver'](observer);
+        const fn = testClient['createObserver'](observer);
 
         fn({ data, isDisposed: true } as any);
         expect(complete.called).to.be.true;
