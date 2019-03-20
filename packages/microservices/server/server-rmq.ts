@@ -9,7 +9,6 @@ import {
   RQM_DEFAULT_PREFETCH_COUNT,
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
-  RQM_DEFAULT_SOCKET_OPTIONS,
   RQM_DEFAULT_URL,
 } from '../constants';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
@@ -25,7 +24,6 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   private readonly queue: string;
   private readonly prefetchCount: number;
   private readonly queueOptions: any;
-  private readonly socketOptions: any;
   private readonly isGlobalPrefetchCount: boolean;
 
   constructor(private readonly options: MicroserviceOptions) {
@@ -45,9 +43,6 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     this.queueOptions =
       this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
-    this.socketOptions =
-      this.getOptionsProp<RmqOptions>(this.options, 'socketOptions') ||
-      RQM_DEFAULT_SOCKET_OPTIONS;
 
     loadPackage('amqplib', ServerRMQ.name);
     rqmPackage = loadPackage('amqp-connection-manager', ServerRMQ.name);
@@ -76,7 +71,8 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   }
 
   public createClient<T = any>(): T {
-    return rqmPackage.connect(this.urls, this.socketOptions);
+    const socketOptions = this.getOptionsProp<RmqOptions>(this.options, 'socketOptions');
+    return rqmPackage.connect(this.urls, socketOptions);
   }
 
   public async setupChannel(channel: any, callback: Function) {
