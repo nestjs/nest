@@ -128,7 +128,7 @@ describe('ClientRedis', () => {
     };
 
     describe('not completed', () => {
-      beforeEach(async () => {
+      beforeEach(() => {
         callback = sinon.spy();
 
         subscription = client.createResponseCallback();
@@ -172,7 +172,7 @@ describe('ClientRedis', () => {
       });
     });
     describe('disposed and "id" is incorrect', () => {
-      beforeEach(async () => {
+      beforeEach(() => {
         callback = sinon.spy();
         subscription = client.createResponseCallback();
         subscription('channel', new Buffer(JSON.stringify(responseMessage)));
@@ -218,7 +218,7 @@ describe('ClientRedis', () => {
     let createClientSpy: sinon.SinonSpy;
     let handleErrorsSpy: sinon.SinonSpy;
 
-    beforeEach(async () => {
+    beforeEach(() => {
       createClientSpy = sinon.stub(client, 'createClient').callsFake(
         () =>
           ({
