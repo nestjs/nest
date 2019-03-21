@@ -359,6 +359,7 @@ export class RouterExecutionContext {
       hasCustomHeaders &&
         this.responseController.setHeaders(res, responseHeaders);
 
+      result = await this.responseController.transformToResult(result);
       !isResponseHandled &&
         (await this.responseController.apply(result, res, httpStatusCode));
     };

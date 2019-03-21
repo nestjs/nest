@@ -10,11 +10,10 @@ export class RouterResponseController {
   constructor(private readonly applicationRef: HttpServer) {}
 
   public async apply<TInput = any, TResponse = any>(
-    resultOrDeffered: TInput,
+    result: TInput,
     response: TResponse,
     httpStatusCode: number,
   ) {
-    const result = await this.transformToResult(resultOrDeffered);
     return this.applicationRef.reply(response, result, httpStatusCode);
   }
 

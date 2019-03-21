@@ -66,7 +66,8 @@ export class InstanceWrapper<T = any> {
   }
 
   get isNotMetatype(): boolean {
-    return !this.metatype;
+    const isFactory = this.metatype && !isNil(this.inject);
+    return !this.metatype || isFactory;
   }
 
   get isTransient(): boolean {

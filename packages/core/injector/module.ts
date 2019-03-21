@@ -1,6 +1,7 @@
 import { Scope } from '@nestjs/common';
 import { SCOPE_OPTIONS_METADATA } from '@nestjs/common/constants';
 import {
+  Abstract,
   Controller,
   DynamicModule,
   Injectable,
@@ -26,7 +27,13 @@ export interface CustomProvider {
   provide: any;
   name: string;
 }
-export type OpaqueToken = string | symbol | Type<any>;
+export type OpaqueToken =
+  | string
+  | symbol
+  | Type<any>
+  | Function
+  | Abstract<any>;
+
 export type CustomClass = CustomProvider & {
   useClass: Type<any>;
   scope?: Scope;

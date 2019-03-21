@@ -31,11 +31,11 @@
   "license": "MIT",
   "dependencies": {
     "@grpc/proto-loader": "0.3.0",
-    "@nestjs/common": "6.0.1",
-    "@nestjs/core": "6.0.1",
-    "@nestjs/microservices": "6.0.1",
-    "@nestjs/testing": "6.0.1",
-    "@nestjs/websockets": "6.0.1",
+    "@nestjs/common": "6.0.2",
+    "@nestjs/core": "6.0.2",
+    "@nestjs/microservices": "6.0.2",
+    "@nestjs/testing": "6.0.2",
+    "@nestjs/websockets": "6.0.2",
     "@nuxtjs/opencollective": "0.2.1",
     "amqp-connection-manager": "2.3.0",
     "amqplib": "0.5.3",
@@ -100,7 +100,7 @@
     "clang-format": "1.2.4",
     "concurrently": "4.1.0",
     "conventional-changelog": "3.0.6",
-    "core-js": "2.6.5",
+    "core-js": "3.0.0",
     "coveralls": "3.0.3",
     "csv-write-stream": "2.0.0",
     "delete-empty": "2.0.0",
@@ -127,7 +127,7 @@
     "supertest": "4.0.2",
     "ts-node": "8.0.3",
     "tslint": "5.14.0",
-    "typescript": "3.3.3333"
+    "typescript": "3.3.4000"
   },
   "collective": {
     "type": "opencollective",
