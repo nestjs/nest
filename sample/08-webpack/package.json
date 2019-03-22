@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@types/node": "10.14.1",
+    "cross-spawn": "^6.0.5",
     "ts-loader": "5.3.3",
     "ts-node": "8.0.3",
     "tslint": "5.14.0",
