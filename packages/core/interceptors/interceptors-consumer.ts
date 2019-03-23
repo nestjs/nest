@@ -1,7 +1,7 @@
 import { NestInterceptor } from '@nestjs/common';
 import { CallHandler, Controller } from '@nestjs/common/interfaces';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
-import { defer, from as fromPromise, Observable } from 'rxjs';
+import { defer, from as fromPromise, Observable, of } from 'rxjs';
 import { mergeAll, switchMap } from 'rxjs/operators';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 
@@ -46,8 +46,13 @@ export class InterceptorsConsumer {
   public transformDeffered(next: () => Promise<any>): Observable<any> {
     return fromPromise(next()).pipe(
       switchMap(res => {
-        const isDeffered = res instanceof Promise || res instanceof Observable;
-        return isDeffered ? res : Promise.resolve(res);
+        if (res instanceof Observable) {
+          return res;
+        } else if (res instanceof Promise) {
+          return fromPromise(res);
+        } else {
+          return of(res);
+        }
       }),
     );
   }
