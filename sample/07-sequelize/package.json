@@ -16,12 +16,12 @@
     "mysql2": "1.6.5",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
-    "sequelize": "5.1.0",
+    "sequelize": "5.1.1",
     "sequelize-typescript": "0.6.8",
     "typescript": "3.3.4000"
   },
   "devDependencies": {
-    "@types/node": "10.14.1",
+    "@types/node": "10.14.3",
     "@types/sequelize": "4.27.44",
     "ts-node": "8.0.3",
     "tslint": "5.14.0"
