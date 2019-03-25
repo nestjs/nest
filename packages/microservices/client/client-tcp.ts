@@ -122,7 +122,6 @@ export class ClientTCP extends ClientProxy {
   }
 
   protected async dispatchEvent(packet: ReadPacket): Promise<any> {
-    const pattern = this.normalizePattern(packet.pattern);
-    return this.socket.sendMessage(pattern);
+    return this.socket.sendMessage(packet);
   }
 }
