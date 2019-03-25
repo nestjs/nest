@@ -61,14 +61,17 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 #### Silver Sponsors
 <a href="https://neoteric.eu/" target="_blank"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" valign="middle" /></a> &nbsp;
   <a href="http://gojob.com" target="_blank"><img src="http://nestjs.com/img/gojob-logo.png" valign="middle" height="95" /></a> &nbsp; <a href="https://www.swingdev.io" target="_blank"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="150" valign="middle" /> </a> &nbsp; &nbsp;
-  <a href="https://yakaz.com/" target="_blank"><img src="https://nestjs.com/img/yakaz.png" width="100" valign="middle" /></a> 
+  <a href="https://yakaz.com/" target="_blank"><img src="https://nestjs.com/img/yakaz.png" width="100" valign="middle" /></a> &nbsp;
+    <a href="https://trilon.io" target="_blank"><img src="https://nestjs.com/img/trilon.svg" width="150" valign="middle" /></a> 
   <a href="http://xtremis.com/" target="_blank"><img src="https://nestjs.com/img/logo-xtremis.svg" width="150" valign="middle" /></a> 
 
 #### Sponsors
 
-<a href="https://scal.io" target="_blank"><img src="https://nestjs.com/img/scalio-logo.svg" width="110" valign="middle" /></a> &nbsp; <a href="http://angularity.io" target="_blank"><img src="http://angularity.io/media/logo.svg" height="30" valign="middle" /></a> &nbsp; <!--<a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="30" /></a> &nbsp;--> <a href="https://hostpresto.com" target="_blank"><img src="https://nestjs.com/img/hostpresto.png" height="30" valign="middle" /></a> &nbsp; <a href="https://genuinebee.com/" target="_blank"><img src="https://nestjs.com/img/genuinebee.svg" height="38" valign="middle" /></a> &nbsp; <a href="http://architectnow.net/" target="_blank"><img src="https://nestjs.com/img/architectnow.png" height="24" valign="middle" /></a> &nbsp; <a href="https://quander.io/" target="_blank"><img src="https://nestjs.com/img/quander.png" height="28" valign="middle" /></a> &nbsp; <a href="https://mantro.net/" target="_blank"><img src="https://nestjs.com/img/mantro-logo.svg" height="20" valign="middle" /></a> &nbsp;
+<a href="https://scal.io" target="_blank"><img src="https://nestjs.com/img/scalio-logo.svg" width="110" valign="middle" /></a> &nbsp; <a href="http://angularity.io" target="_blank"><img src="http://angularity.io/media/logo.svg" height="26" valign="middle" /></a> &nbsp; <!--<a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="30" /></a> &nbsp;--> <a href="https://hostpresto.com" target="_blank"><img src="https://nestjs.com/img/hostpresto.png" height="30" valign="middle" /></a> &nbsp; <a href="https://genuinebee.com/" target="_blank"><img src="https://nestjs.com/img/genuinebee.svg" height="36" valign="middle" /></a> &nbsp; <a href="http://architectnow.net/" target="_blank"><img src="https://nestjs.com/img/architectnow.png" height="24" valign="middle" /></a> &nbsp; <a href="https://quander.io/" target="_blank"><img src="https://nestjs.com/img/quander.png" height="28" valign="middle" /></a> &nbsp; <a href="https://mantro.net/" target="_blank"><img src="https://nestjs.com/img/mantro-logo.svg" height="20" valign="middle" /></a> &nbsp;
 
-<a href="https://triplebyte.com/" target="_blank"><img src="https://nestjs.com/img/triplebyte.png" height="30" valign="middle" /></a>
+<a href="https://triplebyte.com/" target="_blank"><img src="https://nestjs.com/img/triplebyte.png" height="30" valign="middle" /></a> &nbsp; 
+<a href="https://ever.co/" target="_blank"><img src="https://nestjs.com/img/ever-logo.png" height="20" valign="middle" /></a>  &nbsp; 
+<a href="https://buddy.works/" target="_blank"><img src="https://nestjs.com/img/buddy-logo.svg" height="35" valign="middle" /></a>
 
 
 ## Backers
