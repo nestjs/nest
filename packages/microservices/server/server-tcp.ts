@@ -1,7 +1,6 @@
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
-import * as JsonSocket from 'json-socket';
 import * as net from 'net';
-import { Server as NetSocket } from 'net';
+import { Server as NetSocket, Socket } from 'net';
 import { Observable } from 'rxjs';
 import {
   CLOSE_EVENT,
@@ -15,6 +14,7 @@ import {
   MicroserviceOptions,
   TcpOptions,
 } from '../interfaces/microservice-configuration.interface';
+import { JsonSocket } from '../helpers/json-socket';
 import { Server } from './server';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
@@ -39,15 +39,16 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     this.server.close();
   }
 
-  public bindHandler<T extends Record<string, any>>(socket: T) {
+  public bindHandler(socket: Socket) {
     const readSocket = this.getSocketInstance(socket);
     readSocket.on(MESSAGE_EVENT, async (msg: ReadPacket & PacketId) =>
       this.handleMessage(readSocket, msg),
     );
+    readSocket.on(ERROR_EVENT, this.handleError.bind(this));
   }
 
-  public async handleMessage<T extends Record<string, any>>(
-    socket: T,
+  public async handleMessage(
+    socket: JsonSocket,
     packet: ReadPacket & PacketId,
   ) {
     const pattern = !isString(packet.pattern)
@@ -98,7 +99,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     this.server.on(CLOSE_EVENT, this.handleClose.bind(this));
   }
 
-  private getSocketInstance<T>(socket: T): JsonSocket {
+  private getSocketInstance(socket: Socket): JsonSocket {
     return new JsonSocket(socket);
   }
 }
