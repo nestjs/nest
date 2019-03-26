@@ -52,10 +52,7 @@ export class ClientTCP extends ClientProxy {
       share(),
     );
 
-    this.socket.connect(
-      this.port,
-      this.host,
-    );
+    this.socket.connect(this.port, this.host);
     this.connection = source$.toPromise();
     return this.connection;
   }
@@ -122,6 +119,9 @@ export class ClientTCP extends ClientProxy {
   }
 
   protected async dispatchEvent(packet: ReadPacket): Promise<any> {
-    return this.socket.sendMessage(packet);
+    return this.socket.sendMessage({
+      ...packet,
+      pattern: this.normalizePattern(packet.pattern),
+    });
   }
 }
