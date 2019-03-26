@@ -119,16 +119,19 @@ describe('ClientProxy', () => {
   });
 
   describe('createObserver', () => {
-    let testClient: TestClientProxy;
-    beforeEach(() => {
-      testClient = new TestClientProxy();
-    });
-
     it(`should return function`, () => {
-      expect(typeof testClient['createObserver'](null)).to.be.eql('function');
+      const testClientProxy = new TestClientProxy();
+      expect(typeof testClientProxy['createObserver']({} as any)).to.be.eql(
+        'function',
+      );
     });
 
     describe('returned function calls', () => {
+      let testClient: TestClientProxy;
+      beforeEach(() => {
+        testClient = new TestClientProxy();
+      });
+
       it(`"error" when first parameter is not null or undefined`, () => {
         const err = 'test';
         const error = sinon.spy();
