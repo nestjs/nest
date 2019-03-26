@@ -14,7 +14,7 @@ import {
   MicroserviceOptions,
   TcpOptions,
 } from '../interfaces/microservice-configuration.interface';
-import { JsonSocket } from '../json-socket';
+import { JsonSocket } from '../helpers/json-socket';
 import { Server } from './server';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {

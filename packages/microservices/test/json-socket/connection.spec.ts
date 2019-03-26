@@ -1,10 +1,10 @@
+import { expect } from 'chai';
 import { AddressInfo, createServer, Socket } from 'net';
 import { CONNECT_EVENT, MESSAGE_EVENT } from '../../constants';
-import { JsonSocket } from '../../json-socket';
+import { JsonSocket } from '../../helpers/json-socket';
 import { longPayload } from './data/long-payload-with-special-chars';
 import * as helpers from './helpers';
 import { ip } from './helpers';
-import { expect } from 'chai';
 // tslint:disable:no-string-literal
 
 describe('JsonSocket connection', () => {
@@ -15,8 +15,8 @@ describe('JsonSocket connection', () => {
           return done(error);
         }
 
-        expect(clientSocket['closed']).to.be.false;
-        expect(serverSocket['closed']).to.be.false;
+        expect(clientSocket['isClosed']).to.be.false;
+        expect(serverSocket['isClosed']).to.be.false;
 
         Promise.all([
           new Promise(callback => {
@@ -36,8 +36,8 @@ describe('JsonSocket connection', () => {
           }),
         ])
           .then(() => {
-            expect(clientSocket['closed']).to.equal(false);
-            expect(serverSocket['closed']).to.equal(false);
+            expect(clientSocket['isClosed']).to.equal(false);
+            expect(serverSocket['isClosed']).to.equal(false);
             clientSocket.end();
             server.close(done);
           })
@@ -51,8 +51,8 @@ describe('JsonSocket connection', () => {
       if (err) {
         return done(err);
       }
-      expect(clientSocket['closed']).to.equal(false);
-      expect(serverSocket['closed']).to.equal(false);
+      expect(clientSocket['isClosed']).to.equal(false);
+      expect(serverSocket['isClosed']).to.equal(false);
       Promise.all([
         new Promise(callback => {
           clientSocket.sendMessage(longPayload, callback);
@@ -71,8 +71,8 @@ describe('JsonSocket connection', () => {
         }),
       ])
         .then(() => {
-          expect(clientSocket['closed']).to.equal(false);
-          expect(serverSocket['closed']).to.equal(false);
+          expect(clientSocket['isClosed']).to.equal(false);
+          expect(serverSocket['isClosed']).to.equal(false);
           clientSocket.end();
           server.close(done);
         })
@@ -130,8 +130,8 @@ describe('JsonSocket connection', () => {
         .then(
           () =>
             new Promise(callback => {
-              expect(clientSocket['closed']).to.equal(true);
-              expect(serverSocket['closed']).to.equal(true);
+              expect(clientSocket['isClosed']).to.equal(true);
+              expect(serverSocket['isClosed']).to.equal(true);
               callback();
             }),
         )
@@ -156,8 +156,8 @@ describe('JsonSocket connection', () => {
         .then(
           () =>
             new Promise(callback => {
-              expect(clientSocket['closed']).to.equal(true);
-              expect(serverSocket['closed']).to.equal(true);
+              expect(clientSocket['isClosed']).to.equal(true);
+              expect(serverSocket['isClosed']).to.equal(true);
               callback();
             }),
         )
@@ -177,12 +177,12 @@ describe('JsonSocket connection', () => {
 
         serverSocket.once('end', () => {
           setTimeout(() => {
-            expect(serverSocket['closed']).to.equal(true);
-            expect(clientSocket['closed']).to.equal(true);
+            expect(serverSocket['isClosed']).to.equal(true);
+            expect(clientSocket['isClosed']).to.equal(true);
 
             clientSocket.on(CONNECT_EVENT, () => {
               setTimeout(() => {
-                expect(clientSocket['closed']).to.equal(false);
+                expect(clientSocket['isClosed']).to.equal(false);
 
                 clientSocket.end();
                 server.close(done);

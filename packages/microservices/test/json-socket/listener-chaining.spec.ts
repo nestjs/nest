@@ -1,5 +1,5 @@
 import { CONNECT_EVENT, MESSAGE_EVENT } from '../../constants';
-import { JsonSocket } from '../../json-socket';
+import { JsonSocket } from '../../helpers/json-socket';
 import * as helpers from './helpers';
 import { expect } from 'chai';
 

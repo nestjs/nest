@@ -5,7 +5,7 @@ import {
   Socket,
 } from 'net';
 import { ERROR_EVENT } from '../../constants';
-import { JsonSocket } from '../../json-socket';
+import { JsonSocket } from '../../helpers/json-socket';
 
 export const ip = '127.0.0.1';
 

@@ -13,7 +13,7 @@ import {
   ClientOptions,
   TcpClientOptions,
 } from '../interfaces/client-metadata.interface';
-import { JsonSocket } from '../json-socket';
+import { JsonSocket } from '../helpers/json-socket';
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 

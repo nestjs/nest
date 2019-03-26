@@ -3,18 +3,20 @@ import { StringDecoder } from 'string_decoder';
 import {
   CLOSE_EVENT,
   CONNECT_EVENT,
+  DATA_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
-  DATA_EVENT,
-} from './constants';
-
-const stringDecoder = new StringDecoder();
+} from '../constants';
+import { CorruptedPacketLengthException } from '../errors/corrupted-packet-length.exception';
+import { InvalidJSONFormatException } from '../errors/invalid-json-format.exception';
+import { NetSocketClosedException } from '../errors/net-socket-closed.exception';
 
 export class JsonSocket {
   private contentLength: number | null = null;
+  private isClosed = false;
   private buffer = '';
-  private closed = false;
 
+  private readonly stringDecoder = new StringDecoder();
   private readonly delimeter = '#';
 
   public get netSocket() {
@@ -23,9 +25,9 @@ export class JsonSocket {
 
   constructor(public readonly socket: Socket) {
     this.socket.on(DATA_EVENT, this.onData.bind(this));
-    this.socket.on(CONNECT_EVENT, () => (this.closed = false));
-    this.socket.on(CLOSE_EVENT, () => (this.closed = true));
-    this.socket.on(ERROR_EVENT, () => (this.closed = true));
+    this.socket.on(CONNECT_EVENT, () => (this.isClosed = false));
+    this.socket.on(CLOSE_EVENT, () => (this.isClosed = true));
+    this.socket.on(ERROR_EVENT, () => (this.isClosed = true));
   }
 
   public connect(port: number, host: string) {
@@ -49,10 +51,8 @@ export class JsonSocket {
   }
 
   public sendMessage(message: any, callback?: (err?: any) => void) {
-    if (this.closed) {
-      if (callback) {
-        callback(new Error('The net socket is closed.'));
-      }
+    if (this.isClosed) {
+      callback && callback(new NetSocketClosedException());
       return;
     }
     this.socket.write(this.formatMessageData(message), 'utf-8', callback);
@@ -60,7 +60,7 @@ export class JsonSocket {
 
   private onData(dataRaw: Buffer | string) {
     const data = Buffer.isBuffer(dataRaw)
-      ? stringDecoder.write(dataRaw)
+      ? this.stringDecoder.write(dataRaw)
       : dataRaw;
 
     try {
@@ -76,7 +76,6 @@ export class JsonSocket {
 
     if (this.contentLength == null) {
       const i = this.buffer.indexOf(this.delimeter);
-
       /**
        * Check if the buffer has the delimeter (#),
        * if not, the end of the buffer string might be in the middle of a content length string
@@ -88,17 +87,13 @@ export class JsonSocket {
         if (isNaN(this.contentLength)) {
           this.contentLength = null;
           this.buffer = '';
-
-          throw new Error(
-            `Corrupted length value "${rawContentLength}" supplied in a packet`,
-          );
+          throw new CorruptedPacketLengthException(rawContentLength);
         }
-
         this.buffer = this.buffer.substring(i + 1);
       }
     }
 
-    if (this.contentLength != null) {
+    if (this.contentLength !== null) {
       const length = this.buffer.length;
 
       if (length === this.contentLength) {
@@ -115,17 +110,14 @@ export class JsonSocket {
   private handleMessage(data: string) {
     this.contentLength = null;
     this.buffer = '';
-    let message: object;
 
+    let message: Record<string, unknown>;
     try {
       message = JSON.parse(data);
     } catch (e) {
-      throw new Error(
-        `Could not parse JSON: ${e.message}\nRequest data: ${data}`,
-      );
+      throw new InvalidJSONFormatException(e, data);
     }
     message = message || {};
-
     this.socket.emit(MESSAGE_EVENT, message);
   }
 
