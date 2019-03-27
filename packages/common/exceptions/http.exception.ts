@@ -1,8 +1,10 @@
+import { isObject } from '../utils/shared.utils';
+
 export class HttpException extends Error {
   public readonly message: any;
 
   /**
-   * The base Nest Application exception, which is handled by the default Exceptions Handler.
+   * Base Nest application exception, which is handled by the default Exceptions Handler.
    * If you throw an exception from your HTTP route handlers, Nest will map them to the appropriate HTTP response and send to the client.
    *
    * When `response` is an object:
@@ -20,7 +22,9 @@ export class HttpException extends Error {
     private readonly status: number,
   ) {
     super();
-    this.message = response;
+    this.message =
+      (isObject(response) && (response as { message?: string }).message) ||
+      response;
   }
 
   public getResponse(): string | object {
