@@ -81,7 +81,7 @@ export class Injector {
     const loadInstance = (instances: any[]) => {
       targetWrapper.instance = targetWrapper.isDependencyTreeStatic()
         ? new metatype(...instances)
-        : Object.create(metatype);
+        : Object.create(metatype.prototype);
     };
     await this.resolveConstructorParams(
       wrapper,

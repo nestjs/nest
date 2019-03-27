@@ -30,6 +30,7 @@ export class MiddlewareContainer {
         new InstanceWrapper({
           scope: this.getClassScope(metatype),
           metatype,
+          name: token,
         }),
       );
     };
