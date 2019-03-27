@@ -11,7 +11,7 @@ import { ExternalExceptionsHandler } from './external-exceptions-handler';
 export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
   constructor(
     container: NestContainer,
-    private readonly config: ApplicationConfig,
+    private readonly config?: ApplicationConfig,
   ) {
     super(container);
   }
@@ -41,6 +41,9 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
   }
 
   public getGlobalMetadata<T extends any[]>(): T {
+    if (!this.config) {
+      return [] as T;
+    }
     return this.config.getGlobalFilters() as T;
   }
 }

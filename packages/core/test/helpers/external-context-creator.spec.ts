@@ -43,8 +43,7 @@ describe('ExternalContextCreator', () => {
       new PipesContextCreator(new NestContainer()),
       consumer,
       new ExternalExceptionFilterContext(
-        new NestContainer(),
-        new ApplicationConfig(),
+        new NestContainer()
       ),
     );
   });

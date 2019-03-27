@@ -1,5 +1,4 @@
 import { Logger } from '@nestjs/common';
-import * as JsonSocket from 'json-socket';
 import * as net from 'net';
 import { share, tap } from 'rxjs/operators';
 import {
@@ -14,6 +13,7 @@ import {
   ClientOptions,
   TcpClientOptions,
 } from '../interfaces/client-metadata.interface';
+import { JsonSocket } from '../helpers/json-socket';
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 
@@ -42,7 +42,7 @@ export class ClientTCP extends ClientProxy {
     this.socket = this.createSocket();
     this.bindEvents(this.socket);
 
-    const source$ = this.connect$(this.socket._socket).pipe(
+    const source$ = this.connect$(this.socket.netSocket).pipe(
       tap(() => {
         this.isConnected = true;
         this.socket.on(MESSAGE_EVENT, (buffer: WritePacket & PacketId) =>
@@ -52,10 +52,7 @@ export class ClientTCP extends ClientProxy {
       share(),
     );
 
-    this.socket.connect(
-      this.port,
-      this.host,
-    );
+    this.socket.connect(this.port, this.host);
     this.connection = source$.toPromise();
     return this.connection;
   }
@@ -122,7 +119,9 @@ export class ClientTCP extends ClientProxy {
   }
 
   protected async dispatchEvent(packet: ReadPacket): Promise<any> {
-    const pattern = this.normalizePattern(packet.pattern);
-    return this.socket.sendMessage(pattern);
+    return this.socket.sendMessage({
+      ...packet,
+      pattern: this.normalizePattern(packet.pattern),
+    });
   }
 }

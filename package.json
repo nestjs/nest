@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "6.0.0",
+  "version": "6.0.3",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
@@ -59,7 +59,6 @@
     "grpc": "1.19.0",
     "http2": "3.3.7",
     "iterare": "1.1.2",
-    "json-socket": "0.3.0",
     "merge-graphql-schemas": "1.5.8",
     "mqtt": "2.18.8",
     "multer": "1.4.1",
@@ -86,7 +85,7 @@
     "@types/fastify-cors": "2.1.0",
     "@types/kafka-node": "2.0.8",
     "@types/mocha": "5.2.6",
-    "@types/node": "10.14.3",
+    "@types/node": "10.14.4",
     "@types/redis": "2.8.11",
     "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "7.0.10",

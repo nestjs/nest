@@ -21,9 +21,9 @@ describe('ServerTCP', () => {
         .stub(server, 'getSocketInstance' as any)
         .callsFake(() => socket);
     });
-    it('should bind message event to handler', () => {
+    it('should bind message and error events to handler', () => {
       server.bindHandler(null);
-      expect(socket.on.called).to.be.true;
+      expect(socket.on.calledTwice).to.be.true;
     });
   });
   describe('close', () => {

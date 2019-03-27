@@ -64,7 +64,7 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
 export const INVALID_MIDDLEWARE_MESSAGE = (
   text: TemplateStringsArray,
   name: string,
-) => `The middleware doesn't provide the 'resolve' method (${name})`;
+) => `The middleware doesn't provide the 'use' method (${name})`;
 
 export const INVALID_MODULE_MESSAGE = (
   text: TemplateStringsArray,
