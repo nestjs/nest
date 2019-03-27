@@ -10,11 +10,11 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.0.3",
-    "@nestjs/core": "6.0.3",
-    "@nestjs/platform-express": "6.0.3",
-    "@nestjs/platform-ws": "6.0.3",
-    "@nestjs/websockets": "6.0.3",
+    "@nestjs/common": "6.0.4",
+    "@nestjs/core": "6.0.4",
+    "@nestjs/platform-express": "6.0.4",
+    "@nestjs/platform-ws": "6.0.4",
+    "@nestjs/websockets": "6.0.4",
     "class-transformer": "0.2.0",
     "class-validator": "0.9.1",
     "reflect-metadata": "0.1.13",
