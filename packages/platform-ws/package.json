@@ -12,7 +12,7 @@
     "access": "public"
   },
   "dependencies": {
-    "ws": "6.2.0"
+    "ws": "6.2.1"
   },
   "peerDependencies": {
     "@nestjs/common": "^6.0.0",
