@@ -32,24 +32,20 @@ describe('GraphQL - Pipes', () => {
             extensions: {
               code: 'INTERNAL_SERVER_ERROR',
               exception: {
-                message: {
-                  error: 'Bad Request',
-                  message: [
-                    {
-                      children: [],
-                      constraints: {
-                        length:
-                          'description must be longer than or equal to 30 characters',
-                      },
-                      property: 'description',
-                      target: {
-                        ingredients: [],
-                        title: 'test',
-                      },
+                message: [
+                  {
+                    children: [],
+                    constraints: {
+                      length:
+                        'description must be longer than or equal to 30 characters',
                     },
-                  ],
-                  statusCode: 400,
-                },
+                    property: 'description',
+                    target: {
+                      ingredients: [],
+                      title: 'test',
+                    },
+                  },
+                ],
                 response: {
                   error: 'Bad Request',
                   message: [
@@ -77,24 +73,20 @@ describe('GraphQL - Pipes', () => {
                 line: 2,
               },
             ],
-            message: {
-              error: 'Bad Request',
-              message: [
-                {
-                  children: [],
-                  constraints: {
-                    length:
-                      'description must be longer than or equal to 30 characters',
-                  },
-                  property: 'description',
-                  target: {
-                    ingredients: [],
-                    title: 'test',
-                  },
+            message: [
+              {
+                children: [],
+                constraints: {
+                  length:
+                    'description must be longer than or equal to 30 characters',
                 },
-              ],
-              statusCode: 400,
-            },
+                property: 'description',
+                target: {
+                  ingredients: [],
+                  title: 'test',
+                },
+              },
+            ],
             path: ['addRecipe'],
           },
         ],

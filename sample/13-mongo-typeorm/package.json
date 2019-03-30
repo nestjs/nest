@@ -10,14 +10,14 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.0.2",
-    "@nestjs/core": "6.0.2",
-    "@nestjs/platform-express": "6.0.2",
+    "@nestjs/common": "6.0.3",
+    "@nestjs/core": "6.0.3",
+    "@nestjs/platform-express": "6.0.3",
     "@nestjs/typeorm": "6.0.0",
     "mongodb": "3.2.2",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
-    "typeorm": "0.2.15",
+    "typeorm": "0.2.16",
     "typescript": "3.3.4000"
   },
   "devDependencies": {

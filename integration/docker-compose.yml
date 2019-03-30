@@ -24,7 +24,6 @@ services:
     restart: always
   mysql:
     image: mysql:5.7.25
-    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: test

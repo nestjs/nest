@@ -10,17 +10,17 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.0.2",
-    "@nestjs/core": "6.0.2",
-    "@nestjs/platform-express": "6.0.2",
-    "@nestjs/platform-ws": "6.0.2",
-    "@nestjs/websockets": "6.0.2",
+    "@nestjs/common": "6.0.3",
+    "@nestjs/core": "6.0.3",
+    "@nestjs/platform-express": "6.0.3",
+    "@nestjs/platform-ws": "6.0.3",
+    "@nestjs/websockets": "6.0.3",
     "class-transformer": "0.2.0",
     "class-validator": "0.9.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
     "typescript": "3.3.4000",
-    "ws": "6.2.0"
+    "ws": "6.2.1"
   },
   "devDependencies": {
     "@types/node": "10.14.4",

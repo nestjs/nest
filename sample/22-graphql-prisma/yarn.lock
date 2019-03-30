@@ -26,17 +26,17 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@nestjs/common@6.0.2":
-  version "6.0.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.0.2.tgz#7776360b52807485681aa5ee727215a35f8515eb"
+"@nestjs/common@6.0.3":
+  version "6.0.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.0.3.tgz#4d65f22b8954f65a4816d4c4401e15dde3ff53c5"
   dependencies:
     axios "0.18.0"
     cli-color "1.4.0"
     uuid "3.3.2"
 
-"@nestjs/core@6.0.2":
-  version "6.0.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.0.2.tgz#a5103ac48a2e10581928ce4af82260b06e6fb597"
+"@nestjs/core@6.0.3":
+  version "6.0.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.0.3.tgz#2fadd2f207e3297c2ed545644df622db3117d842"
   dependencies:
     "@nuxtjs/opencollective" "0.2.1"
     fast-safe-stringify "2.0.6"
@@ -45,9 +45,9 @@
     optional "0.1.4"
     uuid "3.3.2"
 
-"@nestjs/graphql@6.0.2":
-  version "6.0.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.0.2.tgz#a86a5c9fd8d5a67fa936b2b3b4b148f420bc44c6"
+"@nestjs/graphql@6.0.3":
+  version "6.0.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.0.3.tgz#0c3bc2b9f26398a080e2aea6353024dbdc94b3c1"
   dependencies:
     "@types/graphql" "14.0.7"
     chokidar "2.1.2"
@@ -59,9 +59,9 @@
     ts-morph "1.3.1"
     uuid "3.3.2"
 
-"@nestjs/platform-express@6.0.2":
-  version "6.0.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.0.2.tgz#35810b3f59f1ac517102efd8c62a485072cad026"
+"@nestjs/platform-express@6.0.3":
+  version "6.0.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.0.3.tgz#231cb79feb1f3d672185c37582ca55ac57cae2d0"
   dependencies:
     body-parser "1.18.3"
     cors "2.8.5"
@@ -858,9 +858,9 @@ cross-fetch@2.2.2:
     node-fetch "2.1.2"
     whatwg-fetch "2.0.4"
 
-cross-fetch@3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.0.1.tgz#3f207bbd829a76e9aa2a953348bd1f2a3cf388a7"
+cross-fetch@3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.0.2.tgz#b7136491967031949c7f86b15903aef4fa3f1768"
   dependencies:
     node-fetch "2.3.0"
     whatwg-fetch "3.0.0"
@@ -1490,7 +1490,13 @@ graphql-upload@^8.0.2:
     http-errors "^1.7.1"
     object-path "^0.11.4"
 
-graphql@14.1.1, "graphql@^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0":
+graphql@14.2.0:
+  version "14.2.0"
+  resolved "https://registry.yarnpkg.com/graphql/-/graphql-14.2.0.tgz#ff25813ad6d186f3975977d56bc2d2434871f3b9"
+  dependencies:
+    iterall "^1.2.2"
+
+"graphql@^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0":
   version "14.1.1"
   resolved "https://registry.yarnpkg.com/graphql/-/graphql-14.1.1.tgz#d5d77df4b19ef41538d7215d1e7a28834619fac0"
   dependencies:
@@ -2503,14 +2509,14 @@ prettier@1.16.4:
   version "1.16.4"
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-1.16.4.tgz#73e37e73e018ad2db9c76742e2647e21790c9717"
 
-prisma-binding@2.3.9:
-  version "2.3.9"
-  resolved "https://registry.yarnpkg.com/prisma-binding/-/prisma-binding-2.3.9.tgz#0b2f805240160a7ab1e7ea1569a3722ee76522de"
+prisma-binding@2.3.10:
+  version "2.3.10"
+  resolved "https://registry.yarnpkg.com/prisma-binding/-/prisma-binding-2.3.10.tgz#5b45a5ba10d2ee77ba22238dc7b374bcf135094f"
   dependencies:
     apollo-link "1.2.11"
     apollo-link-error "1.1.10"
     apollo-link-ws "1.0.17"
-    cross-fetch "3.0.1"
+    cross-fetch "3.0.2"
     graphql "^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0"
     graphql-binding "2.5.1"
     graphql-import "0.7.1"
