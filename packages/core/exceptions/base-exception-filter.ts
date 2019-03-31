@@ -31,7 +31,8 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
       };
-      applicationRef.reply(host.getArgByIndex(1), body, body.statusCode);
+      applicationRef.status(host.getArgByIndex(1), body.statusCode);
+      applicationRef.reply(host.getArgByIndex(1), body);
       if (this.isExceptionObject(exception)) {
         return BaseExceptionFilter.logger.error(
           exception.message,
@@ -48,7 +49,8 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
           message: res,
         };
 
-    applicationRef.reply(host.getArgByIndex(1), message, exception.getStatus());
+    applicationRef.status(host.getArgByIndex(1), exception.getStatus());
+    applicationRef.reply(host.getArgByIndex(1), message);
   }
 
   public isExceptionObject(err: any): err is Error {

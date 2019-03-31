@@ -28,6 +28,19 @@ export class TransformInterceptor {
   }
 }
 
+@Injectable()
+export class StatusInterceptor {
+
+  constructor(private statusCode: number){}
+
+  intercept(context: ExecutionContext, next: CallHandler) {
+    const ctx = context.switchToHttp();
+    const res = ctx.getResponse();
+    res.status(this.statusCode);
+    return next.handle().pipe(map(data => ({ data })));
+  }
+}
+
 function createTestModule(interceptor) {
   return Test.createTestingModule({
     imports: [ApplicationModule],
@@ -85,6 +98,17 @@ describe('Interceptors', () => {
     return request(app.getHttpServer())
       .get('/hello/async')
       .expect(200, { data: 'Hello world!' });
+  });
+
+  it(`should modify response status`, async () => {
+    app = (await createTestModule(
+      new StatusInterceptor(400),
+    )).createNestApplication();
+
+    await app.init();
+    return request(app.getHttpServer())
+      .get('/hello')
+      .expect(400, { data: 'Hello world!' });
   });
 
   afterEach(async () => {

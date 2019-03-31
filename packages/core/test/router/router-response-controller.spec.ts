@@ -18,36 +18,34 @@ describe('RouterResponseController', () => {
   describe('apply', () => {
     let response: {
       send: sinon.SinonSpy;
-      status?: sinon.SinonSpy;
+      status: sinon.SinonSpy;
       json: sinon.SinonSpy;
     };
     beforeEach(() => {
-      response = { send: sinon.spy(), json: sinon.spy() };
-      response.status = sinon.stub().returns(response);
+      response = { send: sinon.spy(), json: sinon.spy(), status: sinon.spy() };
     });
     describe('when result is', () => {
       beforeEach(() => {
         sinon
           .stub(adapter, 'reply')
-          .callsFake((responseRef: any, body: any, statusCode: number) => {
-            const res = responseRef.status(statusCode);
+          .callsFake((responseRef: any, body: any) => {
             if (isNil(body)) {
-              return res.send();
+              return responseRef.send();
             }
-            return isObject(body) ? res.json(body) : res.send(String(body));
+            return isObject(body) ? responseRef.json(body) : responseRef.send(String(body));
           });
       });
       describe('nil', () => {
         it('should call send()', async () => {
           const value = null;
-          await routerResponseController.apply(value, response, 200);
+          await routerResponseController.apply(value, response);
           expect(response.send.called).to.be.true;
         });
       });
       describe('string', () => {
         it('should call send(value)', async () => {
           const value = 'string';
-          await routerResponseController.apply(value, response, 200);
+          await routerResponseController.apply(value, response);
           expect(response.send.called).to.be.true;
           expect(response.send.calledWith(String(value))).to.be.true;
         });
@@ -55,7 +53,7 @@ describe('RouterResponseController', () => {
       describe('object', () => {
         it('should call json(value)', async () => {
           const value = { test: 'test' };
-          await routerResponseController.apply(value, response, 200);
+          await routerResponseController.apply(value, response);
           expect(response.json.called).to.be.true;
           expect(response.json.calledWith(value)).to.be.true;
         });
@@ -146,6 +144,24 @@ describe('RouterResponseController', () => {
       routerResponseController.setHeaders(response, headers);
       expect(
         setHeaderStub.calledWith(response, headers[0].name, headers[0].value),
+      ).to.be.true;
+    });
+  });
+
+  describe('status', () => {
+    let statusStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      statusStub = sinon.stub(adapter, 'status').callsFake(() => ({}));
+    });
+
+    it('should set status', () => {
+      const response = {};
+      const statusCode = 400;
+
+      routerResponseController.setStatus(response, statusCode);
+      expect(
+        statusStub.calledWith(response, statusCode),
       ).to.be.true;
     });
   });

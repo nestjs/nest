@@ -32,13 +32,17 @@ describe('ExceptionsHandler', () => {
   describe('next', () => {
     beforeEach(() => {
       sinon
+        .stub(adapter, 'status')
+        .callsFake((responseRef: any, statusCode: number) => {
+          return responseRef.status(statusCode);
+        });
+      sinon
         .stub(adapter, 'reply')
-        .callsFake((responseRef: any, body: any, statusCode: number) => {
-          const res = responseRef.status(statusCode);
+        .callsFake((responseRef: any, body: any) => {
           if (isNil(body)) {
-            return res.send();
+            return responseRef.send();
           }
-          return isObject(body) ? res.json(body) : res.send(String(body));
+          return isObject(body) ? responseRef.json(body) : responseRef.send(String(body));
         });
     });
     it('should method send expected response status code and message when exception is unknown', () => {

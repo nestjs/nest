@@ -18,12 +18,15 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     super(instance || express());
   }
 
-  public reply(response, body: any, statusCode: number) {
-    const res = response.status(statusCode);
+  public reply(response, body: any) {
     if (isNil(body)) {
-      return res.send();
+      return response.send();
     }
-    return isObject(body) ? res.json(body) : res.send(String(body));
+    return isObject(body) ? response.json(body) : response.send(String(body));
+  }
+
+  public status(response: any, statusCode: number) {
+    return response.status(statusCode);
   }
 
   public render(response: any, view: string, options: any) {
