@@ -45,12 +45,12 @@
     optional "0.1.4"
     uuid "3.3.2"
 
-"@nestjs/graphql@6.0.3":
-  version "6.0.3"
-  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.0.3.tgz#0c3bc2b9f26398a080e2aea6353024dbdc94b3c1"
+"@nestjs/graphql@6.0.4":
+  version "6.0.4"
+  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.0.4.tgz#dc5d381c293cbe61ea539c81d73d585277076bae"
   dependencies:
     "@types/graphql" "14.0.7"
-    chokidar "2.1.2"
+    chokidar "2.1.5"
     fast-glob "2.2.6"
     graphql-tools "4.0.4"
     lodash "4.17.11"
@@ -680,7 +680,25 @@ chalk@^2.0.1, chalk@^2.3.0, chalk@^2.4.1:
     escape-string-regexp "^1.0.5"
     supports-color "^5.3.0"
 
-chokidar@2.1.2, chokidar@^2.1.0:
+chokidar@2.1.5:
+  version "2.1.5"
+  resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-2.1.5.tgz#0ae8434d962281a5f56c72869e79cb6d9d86ad4d"
+  dependencies:
+    anymatch "^2.0.0"
+    async-each "^1.0.1"
+    braces "^2.3.2"
+    glob-parent "^3.1.0"
+    inherits "^2.0.3"
+    is-binary-path "^1.0.0"
+    is-glob "^4.0.0"
+    normalize-path "^3.0.0"
+    path-is-absolute "^1.0.0"
+    readdirp "^2.2.1"
+    upath "^1.1.1"
+  optionalDependencies:
+    fsevents "^1.2.7"
+
+chokidar@^2.1.0:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-2.1.2.tgz#9c23ea40b01638439e0513864d362aeacc5ad058"
   dependencies:
@@ -3206,7 +3224,7 @@ unzip-response@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/unzip-response/-/unzip-response-2.0.1.tgz#d2f0f737d16b0615e72a6935ed04214572d56f97"
 
-upath@^1.1.0:
+upath@^1.1.0, upath@^1.1.1:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/upath/-/upath-1.1.2.tgz#3db658600edaeeccbe6db5e684d67ee8c2acd068"
 
