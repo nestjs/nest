@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { GrpcMethodStreamingType } from '@nestjs/microservices';
 import { expect } from 'chai';
 import { join } from 'path';
 import { of } from 'rxjs';
@@ -109,9 +110,10 @@ describe('ServerGrpc', () => {
   });
 
   describe('createService', () => {
+    const objectToMap = obj =>
+      new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
     it('should call "createServiceMethod"', async () => {
-      const objectToMap = obj =>
-        new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
       const handlers = objectToMap({
         test: null,
         test2: () => ({}),
@@ -136,16 +138,93 @@ describe('ServerGrpc', () => {
       );
       expect(spy.calledOnce).to.be.true;
     });
+    describe('when RX streaming', () => {
+      it('should call "createPattern" with proper arguments', async () => {
+        const handlers = objectToMap({
+          test2: {
+            requestStream: true,
+          },
+        });
+        const createPatternStub = sinon
+          .stub(server, 'createPattern')
+          .onFirstCall()
+          .returns('test2');
+
+        sinon.stub(server, 'createServiceMethod').callsFake(() => ({} as any));
+
+        (server as any).messageHandlers = handlers;
+        await server.createService(
+          {
+            prototype: {
+              test2: {
+                requestStream: true,
+              },
+            },
+          },
+          'name',
+        );
+        expect(
+          createPatternStub.calledWith(
+            'name',
+            'test2',
+            GrpcMethodStreamingType.RX_STREAMING,
+          ),
+        ).to.be.true;
+      });
+    });
+    describe('when pass through streaming', () => {
+      it('should call "createPattern" with proper arguments', async () => {
+        const handlers = objectToMap({
+          test2: {
+            requestStream: true,
+          },
+        });
+        const createPatternStub = sinon
+          .stub(server, 'createPattern')
+          .onFirstCall()
+          .returns('_invalid')
+          .onSecondCall()
+          .returns('test2');
+
+        sinon.stub(server, 'createServiceMethod').callsFake(() => ({} as any));
+
+        (server as any).messageHandlers = handlers;
+        await server.createService(
+          {
+            prototype: {
+              test2: {
+                requestStream: true,
+              },
+            },
+          },
+          'name',
+        );
+        expect(
+          createPatternStub.calledWith(
+            'name',
+            'test2',
+            GrpcMethodStreamingType.PT_STREAMING,
+          ),
+        ).to.be.true;
+      });
+    });
   });
 
   describe('createPattern', () => {
     it('should return pattern', () => {
       const service = 'test';
       const method = 'method';
-      expect(server.createPattern(service, method)).to.be.eql(
+      expect(
+        server.createPattern(
+          service,
+          method,
+          GrpcMethodStreamingType.NO_STREAMING,
+        ),
+      ).to.be.eql(
         JSON.stringify({
           service,
           rpc: method,
+          streaming: GrpcMethodStreamingType.NO_STREAMING,
         }),
       );
     });
@@ -156,7 +235,11 @@ describe('ServerGrpc', () => {
       it('should call "createStreamServiceMethod"', () => {
         const cln = sinon.spy();
         const spy = sinon.spy(server, 'createStreamServiceMethod');
-        server.createServiceMethod(cln, { responseStream: true } as any);
+        server.createServiceMethod(
+          cln,
+          { responseStream: true } as any,
+          GrpcMethodStreamingType.NO_STREAMING,
+        );
 
         expect(spy.called).to.be.true;
       });
@@ -165,9 +248,41 @@ describe('ServerGrpc', () => {
       it('should call "createUnaryServiceMethod"', () => {
         const cln = sinon.spy();
         const spy = sinon.spy(server, 'createUnaryServiceMethod');
-        server.createServiceMethod(cln, { responseStream: false } as any);
+        server.createServiceMethod(
+          cln,
+          { responseStream: false } as any,
+          GrpcMethodStreamingType.NO_STREAMING,
+        );
 
         expect(spy.called).to.be.true;
+      });
+    });
+    describe('when request is a stream', () => {
+      describe('when stream type is RX_STREAMING', () => {
+        it('should call "createStreamDuplexMethod"', () => {
+          const cln = sinon.spy();
+          const spy = sinon.spy(server, 'createStreamDuplexMethod');
+          server.createServiceMethod(
+            cln,
+            { requestStream: true } as any,
+            GrpcMethodStreamingType.RX_STREAMING,
+          );
+
+          expect(spy.called).to.be.true;
+        });
+      });
+      describe('when stream type is PT_STREAMING', () => {
+        it('should call "createStreamCallMethod"', () => {
+          const cln = sinon.spy();
+          const spy = sinon.spy(server, 'createStreamCallMethod');
+          server.createServiceMethod(
+            cln,
+            { requestStream: true } as any,
+            GrpcMethodStreamingType.PT_STREAMING,
+          );
+
+          expect(spy.called).to.be.true;
+        });
       });
     });
   });
@@ -233,6 +348,32 @@ describe('ServerGrpc', () => {
         expect(native.called).to.be.true;
         expect(callback.called).to.be.true;
       });
+    });
+  });
+
+  describe('createStreamDuplexMethod', () => {
+    it('should wrap call into Subject', () => {
+      const handler = sinon.spy();
+      const fn = server.createStreamDuplexMethod(handler);
+      const call = {
+        on: (event, callback) => callback(),
+        end: sinon.spy(),
+        write: sinon.spy(),
+      };
+      fn(call as any);
+
+      expect(handler.called).to.be.true;
+    });
+  });
+
+  describe('createStreamCallMethod', () => {
+    it('should pass through to "methodHandler"', () => {
+      const handler = sinon.spy();
+      const fn = server.createStreamCallMethod(handler);
+      const args = [1, 2, 3];
+      fn(args as any);
+
+      expect(handler.calledWith(args)).to.be.true;
     });
   });
 
