@@ -18,7 +18,7 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
     "typeorm": "0.2.16",
-    "typescript": "3.3.4000"
+    "typescript": "3.4.1"
   },
   "devDependencies": {
     "@types/node": "7.10.5",
