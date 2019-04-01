@@ -42,7 +42,7 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   options(path: string, handler: RequestHandler<TRequest, TResponse>): any;
   listen(port: number | string, callback?: () => void): any;
   listen(port: number | string, hostname: string, callback?: () => void): any;
-  reply(response: any, body: any): any;
+  reply(response: any, body: any, statusCode?: number): any;
   status(response: any, statusCode: number): any;
   render(response: any, view: string, options: any): any;
   setHeader(response: any, name: string, value: string): any;

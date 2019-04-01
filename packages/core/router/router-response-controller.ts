@@ -11,9 +11,10 @@ export class RouterResponseController {
 
   public async apply<TInput = any, TResponse = any>(
     result: TInput,
-    response: TResponse
+    response: TResponse,
+    httpStatusCode?: number,
   ) {
-    return this.applicationRef.reply(response, result);
+    return this.applicationRef.reply(response, result, httpStatusCode);
   }
 
   public async render<TInput = any, TResponse = any>(

@@ -343,7 +343,8 @@ export class RouterExecutionContext {
 
   public createHandleResponseFn(
     callback: (...args: any[]) => any,
-    isResponseHandled: boolean
+    isResponseHandled: boolean,
+    httpStatusCode?: number
   ) {
     const renderTemplate = this.reflectRenderTemplate(callback);
     const responseHeaders = this.reflectResponseHeaders(callback);
@@ -361,7 +362,7 @@ export class RouterExecutionContext {
         this.responseController.setHeaders(res, responseHeaders);
       result = await this.responseController.transformToResult(result);
       !isResponseHandled &&
-        (await this.responseController.apply(result, res));
+        (await this.responseController.apply(result, res, httpStatusCode));
     };
   }
 }

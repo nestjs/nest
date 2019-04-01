@@ -29,7 +29,10 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     return this.instance.listen(port, ...args);
   }
 
-  public reply(response: any, body: any) {
+  public reply(response: any, body: any, statusCode?: number) {
+    if (statusCode) {
+      response.status(statusCode);
+    }
     return response.send(body);
   }
 

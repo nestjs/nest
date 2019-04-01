@@ -18,7 +18,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     super(instance || express());
   }
 
-  public reply(response, body: any) {
+  public reply(response, body: any, statusCode?: number) {
+    if (statusCode) {
+      response.status(statusCode);
+    }
     if (isNil(body)) {
       return response.send();
     }

@@ -281,7 +281,7 @@ describe('RouterExecutionContext', () => {
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
 
-        const handler = contextCreator.createHandleResponseFn(null, true);
+        const handler = contextCreator.createHandleResponseFn(null, true, 200);
         await handler(value, response);
 
         expect(response.render.calledWith(template, value)).to.be.true;
@@ -295,7 +295,7 @@ describe('RouterExecutionContext', () => {
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
 
-        const handler = contextCreator.createHandleResponseFn(null, true);
+        const handler = contextCreator.createHandleResponseFn(null, true, 200);
         handler(result, response);
 
         expect(response.render.called).to.be.false;

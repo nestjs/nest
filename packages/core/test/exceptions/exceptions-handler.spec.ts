@@ -32,13 +32,11 @@ describe('ExceptionsHandler', () => {
   describe('next', () => {
     beforeEach(() => {
       sinon
-        .stub(adapter, 'status')
-        .callsFake((responseRef: any, statusCode: number) => {
-          return responseRef.status(statusCode);
-        });
-      sinon
         .stub(adapter, 'reply')
-        .callsFake((responseRef: any, body: any) => {
+        .callsFake((responseRef: any, body: any, statusCode?: number) => {
+          if (statusCode) {
+            responseRef.status(statusCode);
+          }
           if (isNil(body)) {
             return responseRef.send();
           }
