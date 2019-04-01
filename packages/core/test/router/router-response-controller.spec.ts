@@ -159,7 +159,7 @@ describe('RouterResponseController', () => {
       const response = {};
       const statusCode = 400;
 
-      routerResponseController.setStatus(response, statusCode);
+      routerResponseController.status(response, statusCode);
       expect(
         statusStub.calledWith(response, statusCode),
       ).to.be.true;
