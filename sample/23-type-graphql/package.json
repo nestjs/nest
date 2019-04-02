@@ -18,7 +18,7 @@
     "class-transformer": "0.2.0",
     "class-validator": "0.9.1",
     "graphql": "14.2.1",
-    "graphql-subscriptions": "1.0.0",
+    "graphql-subscriptions": "1.1.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
     "type-graphql": "0.17.1",
