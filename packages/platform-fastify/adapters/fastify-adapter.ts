@@ -104,7 +104,7 @@ export class FastifyAdapter extends AbstractHttpAdapter {
   }
 
   public enableCors(options: CorsOptions) {
-    this.register(cors, { options });
+    this.register(cors, options);
   }
 
   public registerParserMiddleware() {

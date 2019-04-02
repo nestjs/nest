@@ -10,14 +10,14 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.0.4",
-    "@nestjs/core": "6.0.4",
-    "@nestjs/platform-fastify": "6.0.4",
+    "@nestjs/common": "6.0.5",
+    "@nestjs/core": "6.0.5",
+    "@nestjs/platform-fastify": "6.0.5",
     "handlebars": "4.1.1",
     "point-of-view": "3.1.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
-    "typescript": "3.3.4000"
+    "typescript": "3.4.1"
   },
   "devDependencies": {
     "@types/node": "8.10.45",
