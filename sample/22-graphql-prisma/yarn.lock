@@ -45,18 +45,18 @@
     optional "0.1.4"
     uuid "3.3.2"
 
-"@nestjs/graphql@6.0.4":
-  version "6.0.4"
-  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.0.4.tgz#dc5d381c293cbe61ea539c81d73d585277076bae"
+"@nestjs/graphql@6.0.5":
+  version "6.0.5"
+  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.0.5.tgz#3eac35cf669c5dc9860ca262f5d7dd6d66b742c0"
   dependencies:
-    "@types/graphql" "14.0.7"
+    "@types/graphql" "14.2.0"
     chokidar "2.1.5"
     fast-glob "2.2.6"
     graphql-tools "4.0.4"
     lodash "4.17.11"
     merge-graphql-schemas "1.5.8"
     optional "0.1.4"
-    ts-morph "1.3.1"
+    ts-morph "1.3.2"
     uuid "3.3.2"
 
 "@nestjs/platform-express@6.0.5":
@@ -180,9 +180,9 @@
     "@types/express-serve-static-core" "*"
     "@types/serve-static" "*"
 
-"@types/graphql@14.0.7":
-  version "14.0.7"
-  resolved "https://registry.yarnpkg.com/@types/graphql/-/graphql-14.0.7.tgz#daa09397220a68ce1cbb3f76a315ff3cd92312f6"
+"@types/graphql@14.2.0":
+  version "14.2.0"
+  resolved "https://registry.yarnpkg.com/@types/graphql/-/graphql-14.2.0.tgz#74e1da5f2a4a744ac6eb3ed57b48242ea9367202"
 
 "@types/json5@^0.0.29":
   version "0.0.29"
@@ -3086,9 +3086,9 @@ ts-invariant@^0.3.2:
   dependencies:
     tslib "^1.9.3"
 
-ts-morph@1.3.1:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/ts-morph/-/ts-morph-1.3.1.tgz#70795b7d54489c419b50911273675151b7bab8af"
+ts-morph@1.3.2:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/ts-morph/-/ts-morph-1.3.2.tgz#7cca879159291a031db6ca7a06c39c36a97307f0"
   dependencies:
     "@dsherret/to-absolute-glob" "^2.0.2"
     code-block-writer "7.2.2"
@@ -3098,7 +3098,7 @@ ts-morph@1.3.1:
     is-negated-glob "^1.0.0"
     multimatch "^2.1.0"
     tslib "^1.9.0"
-    typescript "^3.0.1"
+    typescript ">=3.0.1 <3.4.0"
 
 ts-node@8.0.3:
   version "8.0.3"
@@ -3176,9 +3176,9 @@ typescript@3.4.1:
   version "3.4.1"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.4.1.tgz#b6691be11a881ffa9a05765a205cb7383f3b63c6"
 
-typescript@^3.0.1:
-  version "3.3.3333"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.3.3333.tgz#171b2c5af66c59e9431199117a3bcadc66fdcfd6"
+"typescript@>=3.0.1 <3.4.0":
+  version "3.3.4000"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.3.4000.tgz#76b0f89cfdbf97827e1112d64f283f1151d6adf0"
 
 unc-path-regex@^0.1.2:
   version "0.1.2"
