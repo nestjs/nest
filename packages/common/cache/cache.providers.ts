@@ -8,7 +8,9 @@ export function createCacheManager(): Provider {
   return {
     provide: CACHE_MANAGER,
     useFactory: (options: CacheManagerOptions) => {
-      const cacheManager = loadPackage('cache-manager', 'CacheModule');
+      const cacheManager = loadPackage('cache-manager', 'CacheModule', () =>
+        require('cache-manager'),
+      );
       const memoryCache = cacheManager.caching({
         ...defaultCacheOptions,
         ...(options || {}),

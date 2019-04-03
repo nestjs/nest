@@ -1,9 +1,16 @@
-export class CreateCatInput {
+
+/** ------------------------------------------------------
+ * THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+ * -------------------------------------------------------
+ */
+
+/* tslint:disable */
+export abstract class CreateCatInput {
     name?: string;
     age?: number;
 }
 
-export class Cat {
+export abstract class Cat {
     id?: number;
     name?: string;
     age?: number;

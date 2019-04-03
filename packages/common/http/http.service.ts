@@ -36,7 +36,7 @@ export class HttpService {
 
   post<T = any>(
     url: string,
-    data?,
+    data?: any,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<T>> {
     return defer(() => this.instance.post(url, data, config));
@@ -44,7 +44,7 @@ export class HttpService {
 
   put<T = any>(
     url: string,
-    data?,
+    data?: any,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<T>> {
     return defer(() => this.instance.put(url, data, config));
@@ -52,7 +52,7 @@ export class HttpService {
 
   patch<T = any>(
     url: string,
-    data?,
+    data?: any,
     config?: AxiosRequestConfig,
   ): Observable<AxiosResponse<T>> {
     return defer(() => this.instance.patch(url, data, config));

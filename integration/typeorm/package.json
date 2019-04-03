@@ -9,18 +9,18 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "5.6.2",
-    "@nestjs/core": "^5.2.0",
-    "@nestjs/typeorm": "^5.2.0",
-    "mysql": "^2.15.0",
-    "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0",
-    "typeorm": "^0.1.16",
-    "typescript": "^2.8.0"
+    "@nestjs/common": "6.0.5",
+    "@nestjs/core": "6.0.5",
+    "@nestjs/typeorm": "6.0.0",
+    "mysql": "2.16.0",
+    "reflect-metadata": "0.1.13",
+    "rxjs": "6.4.0",
+    "typeorm": "0.2.16",
+    "typescript": "3.4.1"
   },
   "devDependencies": {
-    "@types/node": "^7.0.41",
-    "ts-node": "^6.0.0",
-    "tslint": "^5.9.1"
+    "@types/node": "7.10.5",
+    "ts-node": "8.0.3",
+    "tslint": "5.14.0"
   }
 }

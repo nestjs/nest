@@ -18,11 +18,6 @@ export interface ModuleMetadata {
     | Provider
     | ForwardReference
     | Abstract<any>
+    | Function
   >;
-  /** @deprecated */
-  modules?: Array<
-    Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference
-  >;
-  /** @deprecated */
-  components?: Provider[];
 }

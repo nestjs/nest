@@ -1,6 +1,6 @@
 /*
  * Nest @common
- * Copyright(c) 2017 - 2018 Kamil Mysliwiec
+ * Copyright(c) 2017 - 2019 Kamil Mysliwiec
  * https://nestjs.com
  * MIT Licensed
  */
@@ -10,41 +10,41 @@ export * from './cache';
 export * from './decorators';
 export * from './enums';
 export * from './exceptions';
-export * from './files';
 export * from './http';
 export {
+  Abstract,
   ArgumentMetadata,
   ArgumentsHost,
+  CallHandler,
   CanActivate,
   DynamicModule,
   ExceptionFilter,
   ExecutionContext,
   ForwardReference,
   HttpServer,
-  HttpServerFactory,
   INestApplication,
   INestApplicationContext,
-  INestExpressApplication,
-  INestFastifyApplication,
   INestMicroservice,
   MiddlewareConsumer,
-  MiddlewareFunction,
   NestInterceptor,
   NestMiddleware,
   NestModule,
   OnApplicationBootstrap,
+  OnApplicationShutdown,
   OnModuleDestroy,
   OnModuleInit,
   Paramtype,
   PipeTransform,
   Provider,
   RpcExceptionFilter,
+  Scope,
   Type,
   ValidationError,
   WebSocketAdapter,
   WsExceptionFilter,
+  WsMessageHandler,
 } from './interfaces';
 export * from './pipes';
 export * from './serializer';
-export * from './services/logger.service';
+export * from './services';
 export * from './utils';

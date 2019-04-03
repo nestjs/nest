@@ -1,5 +1,4 @@
-import { ReflectMetadata } from '../../decorators';
+import { SetMetadata } from '../../decorators';
 import { CACHE_KEY_METADATA } from '../cache.constants';
 
-export const CacheKey = (key: string) =>
-  ReflectMetadata(CACHE_KEY_METADATA, key);
+export const CacheKey = (key: string) => SetMetadata(CACHE_KEY_METADATA, key);

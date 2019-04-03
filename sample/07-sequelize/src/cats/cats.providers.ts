@@ -2,7 +2,7 @@ import { Cat } from './cat.entity';
 
 export const catsProviders = [
   {
-    provide: 'CatsRepository',
+    provide: 'CATS_REPOSITORY',
     useValue: Cat,
   },
 ];

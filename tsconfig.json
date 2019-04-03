@@ -12,16 +12,8 @@
     "sourceMap": true,
     "allowJs": true,
     "outDir": "dist",
-    "lib": [
-      "es7"
-    ]
+    "lib": ["es7"]
   },
-  "include": [
-    "packages/**/*",
-    "integration/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.spec.ts"
-  ]
+  "include": ["packages/**/*", "integration/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
 }

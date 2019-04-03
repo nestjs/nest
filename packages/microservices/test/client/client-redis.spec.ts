@@ -68,7 +68,7 @@ describe('ClientRedis', () => {
       let assignPacketIdStub: sinon.SinonStub;
       beforeEach(() => {
         assignPacketIdStub = sinon
-          .stub(client, 'assignPacketId')
+          .stub(client, 'assignPacketId' as any)
           .callsFake(() => {
             throw new Error();
           });
@@ -95,7 +95,7 @@ describe('ClientRedis', () => {
       beforeEach(async () => {
         callback = sinon.spy();
         assignStub = sinon
-          .stub(client, 'assignPacketId')
+          .stub(client, 'assignPacketId' as any)
           .callsFake(packet => Object.assign(packet, { id }));
 
         getResPatternStub = sinon
@@ -128,7 +128,7 @@ describe('ClientRedis', () => {
     };
 
     describe('not completed', () => {
-      beforeEach(async () => {
+      beforeEach(() => {
         callback = sinon.spy();
 
         subscription = client.createResponseCallback();
@@ -172,7 +172,7 @@ describe('ClientRedis', () => {
       });
     });
     describe('disposed and "id" is incorrect', () => {
-      beforeEach(async () => {
+      beforeEach(() => {
         callback = sinon.spy();
         subscription = client.createResponseCallback();
         subscription('channel', new Buffer(JSON.stringify(responseMessage)));
@@ -218,11 +218,14 @@ describe('ClientRedis', () => {
     let createClientSpy: sinon.SinonSpy;
     let handleErrorsSpy: sinon.SinonSpy;
 
-    beforeEach(async () => {
-      createClientSpy = sinon.stub(client, 'createClient').callsFake(() => ({
-        addListener: () => null,
-        removeListener: () => null,
-      }));
+    beforeEach(() => {
+      createClientSpy = sinon.stub(client, 'createClient').callsFake(
+        () =>
+          ({
+            addListener: () => null,
+            removeListener: () => null,
+          } as any),
+      );
       handleErrorsSpy = sinon.spy(client, 'handleError');
 
       client.connect();
@@ -304,6 +307,31 @@ describe('ClientRedis', () => {
         );
         expect(result).to.be.eql((client as any).options.retryDelay);
       });
+    });
+  });
+  describe('dispatchEvent', () => {
+    const msg = { pattern: 'pattern', data: 'data' };
+    let publishStub: sinon.SinonStub, pubClient;
+
+    beforeEach(() => {
+      publishStub = sinon.stub();
+      pubClient = {
+        publish: publishStub,
+      };
+      (client as any).pubClient = pubClient;
+    });
+
+    it('should publish packet', async () => {
+      publishStub.callsFake((a, b, c) => c());
+      await client['dispatchEvent'](msg);
+
+      expect(publishStub.called).to.be.true;
+    });
+    it('should throw error', async () => {
+      publishStub.callsFake((a, b, c) => c(new Error()));
+      client['dispatchEvent'](msg).catch(err =>
+        expect(err).to.be.instanceOf(Error),
+      );
     });
   });
 });

@@ -1,7 +1,8 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { PipesContextCreator } from '../../pipes/pipes-context-creator';
+import * as sinon from 'sinon';
 import { NestContainer } from '../../injector/container';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 
 class Pipe {}
 
@@ -37,7 +38,10 @@ describe('PipesContextCreator', () => {
     });
     describe('when param is a constructor', () => {
       it('should pick instance from container', () => {
-        const wrapper = { instance: 'test' };
+        const wrapper: InstanceWrapper = {
+          instance: 'test',
+          getInstanceByContextId: () => wrapper,
+        } as any;
         sinon.stub(creator, 'getInstanceByMetatype').callsFake(() => wrapper);
         expect(creator.getPipeInstance(Pipe)).to.be.eql(wrapper.instance);
       });
@@ -71,8 +75,12 @@ describe('PipesContextCreator', () => {
         it('should return instance', () => {
           const instance = { test: true };
           const module = { injectables: { get: () => instance } };
-          sinon.stub(container.getModules(), 'get').callsFake(() => module);
-          expect(creator.getInstanceByMetatype({})).to.be.eql(instance);
+          sinon
+            .stub(container.getModules(), 'get')
+            .callsFake(() => module as any);
+          expect(creator.getInstanceByMetatype({ name: 'test' })).to.be.eql(
+            instance,
+          );
         });
       });
     });

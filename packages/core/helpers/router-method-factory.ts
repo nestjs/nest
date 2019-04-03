@@ -1,7 +1,8 @@
+import { HttpServer } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 
 export class RouterMethodFactory {
-  public get(target, requestMethod: RequestMethod) {
+  public get(target: HttpServer, requestMethod: RequestMethod): Function {
     switch (requestMethod) {
       case RequestMethod.POST:
         return target.post;

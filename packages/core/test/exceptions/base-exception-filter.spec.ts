@@ -1,5 +1,5 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { BaseExceptionFilterContext } from '../../exceptions/base-exception-filter-context';
 import { NestContainer } from '../../injector/container';
 
@@ -23,8 +23,13 @@ describe('BaseExceptionFilterContext', () => {
     });
     describe('when param is a constructor', () => {
       it('should pick instance from container', () => {
-        const wrapper = { instance: 'test' };
-        sinon.stub(filter, 'getInstanceByMetatype').callsFake(() => wrapper);
+        const wrapper = {
+          instance: 'test',
+          getInstanceByContextId: () => wrapper,
+        };
+        sinon
+          .stub(filter, 'getInstanceByMetatype')
+          .callsFake(() => wrapper as any);
         expect(filter.getFilterInstance(Filter)).to.be.eql(wrapper.instance);
       });
       it('should return null', () => {
@@ -57,7 +62,9 @@ describe('BaseExceptionFilterContext', () => {
         it('should return instance', () => {
           const instance = { test: true };
           const module = { injectables: { get: () => instance } };
-          sinon.stub(container.getModules(), 'get').callsFake(() => module);
+          sinon
+            .stub(container.getModules(), 'get')
+            .callsFake(() => module as any);
           expect(filter.getInstanceByMetatype({})).to.be.eql(instance);
         });
       });

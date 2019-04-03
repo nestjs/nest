@@ -3,6 +3,8 @@
     "module": "commonjs",
     "declaration": true,
     "noImplicitAny": false,
+    "skipLibCheck": true,
+    "suppressImplicitAnyIndexErrors": true,
     "noUnusedLocals": false,
     "removeComments": false,
     "noLib": false,

@@ -1,5 +1,4 @@
 import { Logger } from '@nestjs/common';
-import * as JsonSocket from 'json-socket';
 import * as net from 'net';
 import { share, tap } from 'rxjs/operators';
 import {
@@ -14,6 +13,7 @@ import {
   ClientOptions,
   TcpClientOptions,
 } from '../interfaces/client-metadata.interface';
+import { JsonSocket } from '../helpers/json-socket';
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 
@@ -42,7 +42,7 @@ export class ClientTCP extends ClientProxy {
     this.socket = this.createSocket();
     this.bindEvents(this.socket);
 
-    const source$ = this.connect$(this.socket._socket).pipe(
+    const source$ = this.connect$(this.socket.netSocket).pipe(
       tap(() => {
         this.isConnected = true;
         this.socket.on(MESSAGE_EVENT, (buffer: WritePacket & PacketId) =>
@@ -57,7 +57,7 @@ export class ClientTCP extends ClientProxy {
     return this.connection;
   }
 
-  public handleResponse(buffer: WritePacket & PacketId) {
+  public handleResponse(buffer: WritePacket & PacketId): void {
     const { err, response, isDisposed, id } = buffer;
     const callback = this.routingMap.get(id);
     if (!callback) {
@@ -88,7 +88,7 @@ export class ClientTCP extends ClientProxy {
   public bindEvents(socket: JsonSocket) {
     socket.on(
       ERROR_EVENT,
-      err => err.code !== ECONNREFUSED && this.handleError(err),
+      (err: any) => err.code !== ECONNREFUSED && this.handleError(err),
     );
     socket.on(CLOSE_EVENT, () => this.handleClose());
   }
@@ -116,5 +116,12 @@ export class ClientTCP extends ClientProxy {
     } catch (err) {
       callback({ err });
     }
+  }
+
+  protected async dispatchEvent(packet: ReadPacket): Promise<any> {
+    return this.socket.sendMessage({
+      ...packet,
+      pattern: this.normalizePattern(packet.pattern),
+    });
   }
 }

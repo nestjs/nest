@@ -22,18 +22,21 @@ export class ExceptionsHandler extends BaseExceptionFilter {
     this.filters = filters;
   }
 
-  public invokeCustomFilters(exception, response): boolean {
+  public invokeCustomFilters<T = any>(
+    exception: T,
+    ctx: ArgumentsHost,
+  ): boolean {
     if (isEmpty(this.filters)) return false;
 
     const filter = this.filters.find(({ exceptionMetatypes }) => {
-      const hasMetatype =
+      const typeExists =
         !exceptionMetatypes.length ||
         exceptionMetatypes.some(
           ExceptionMetatype => exception instanceof ExceptionMetatype,
         );
-      return hasMetatype;
+      return typeExists;
     });
-    filter && filter.func(exception, response);
+    filter && filter.func(exception, ctx);
     return !!filter;
   }
 }

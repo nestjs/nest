@@ -5,7 +5,7 @@ import { Module } from '../../injector/module';
 
 export class UnknownDependenciesException extends RuntimeException {
   constructor(
-    type: string,
+    type: string | symbol,
     unknownDependencyContext: InjectorDependencyContext,
     module?: Module,
   ) {

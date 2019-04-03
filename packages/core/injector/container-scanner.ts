@@ -2,7 +2,8 @@ import { Type } from '@nestjs/common';
 import { Abstract } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
-import { InstanceWrapper, NestContainer } from './container';
+import { NestContainer } from './container';
+import { InstanceWrapper } from './instance-wrapper';
 import { Module } from './module';
 
 export class ContainerScanner {
@@ -25,8 +26,8 @@ export class ContainerScanner {
     contextModule: Partial<Module>,
   ): TResult {
     const dependencies = new Map([
-      ...contextModule.components,
-      ...contextModule.routes,
+      ...contextModule.providers,
+      ...contextModule.controllers,
       ...contextModule.injectables,
     ]);
     const name = isFunction(metatypeOrToken)
@@ -36,17 +37,17 @@ export class ContainerScanner {
     if (!instanceWrapper) {
       throw new UnknownElementException();
     }
-    return (instanceWrapper as InstanceWrapper<any>).instance;
+    return (instanceWrapper as InstanceWrapper).instance;
   }
 
-  private initFlatContainer() {
+  private initFlatContainer(): void {
     if (this.flatContainer) {
-      return undefined;
+      return;
     }
     const modules = this.container.getModules();
-    const initialValue = {
-      components: [],
-      routes: [],
+    const initialValue: any = {
+      providers: [],
+      controllers: [],
       injectables: [],
     };
     const merge = <T = any>(
@@ -56,8 +57,8 @@ export class ContainerScanner {
 
     this.flatContainer = ([...modules.values()].reduce(
       (current, next) => ({
-        components: merge(current.components, next.components),
-        routes: merge(current.routes, next.routes),
+        providers: merge(current.providers, next.providers),
+        controllers: merge(current.controllers, next.controllers),
         injectables: merge(current.injectables, next.injectables),
       }),
       initialValue,

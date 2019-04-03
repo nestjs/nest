@@ -9,8 +9,8 @@ export interface HttpModuleOptionsFactory {
 
 export interface HttpModuleAsyncOptions
   extends Pick<ModuleMetadata, 'imports'> {
-  useExisting?: Type<HttpModuleOptions>;
-  useClass?: Type<HttpModuleOptions>;
+  useExisting?: Type<HttpModuleOptionsFactory>;
+  useClass?: Type<HttpModuleOptionsFactory>;
   useFactory?: (
     ...args: any[]
   ) => Promise<HttpModuleOptions> | HttpModuleOptions;

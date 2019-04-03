@@ -1,53 +1,64 @@
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Inject, Injectable, Optional } from '../../decorators';
-import { ExecutionContext, NestInterceptor } from '../../interfaces';
+import {
+  CallHandler,
+  ExecutionContext,
+  HttpServer,
+  NestInterceptor,
+} from '../../interfaces';
 import { CACHE_KEY_METADATA, CACHE_MANAGER } from '../cache.constants';
 
-const APPLICATION_REFERENCE_HOST = 'ApplicationReferenceHost';
+const HTTP_ADAPTER_HOST = 'HttpAdapterHost';
 const REFLECTOR = 'Reflector';
+
+export interface HttpAdapterHost<T extends HttpServer = any> {
+  httpAdapter: T;
+}
 
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
   @Optional()
-  @Inject(APPLICATION_REFERENCE_HOST)
-  protected readonly applicationRefHost: any;
+  @Inject(HTTP_ADAPTER_HOST)
+  protected readonly httpAdapterHost: HttpAdapterHost;
 
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
-    @Inject(REFLECTOR) protected readonly reflector,
+    @Inject(REFLECTOR) protected readonly reflector: any,
   ) {}
 
   async intercept(
     context: ExecutionContext,
-    call$: Observable<any>,
+    next: CallHandler,
   ): Promise<Observable<any>> {
     const key = this.trackBy(context);
     if (!key) {
-      return call$;
+      return next.handle();
     }
     try {
       const value = await this.cacheManager.get(key);
       if (value) {
         return of(value);
       }
-      return call$.pipe(tap(response => this.cacheManager.set(key, response)));
+      return next
+        .handle()
+        .pipe(tap(response => this.cacheManager.set(key, response)));
     } catch {
-      return call$;
+      return next.handle();
     }
   }
 
   trackBy(context: ExecutionContext): string | undefined {
-    const httpServer = this.applicationRefHost.applicationRef;
-    const isHttpApp = httpServer && !!httpServer.getRequestMethod;
+    const httpAdapter = this.httpAdapterHost.httpAdapter;
+    const isHttpApp = httpAdapter && !!httpAdapter.getRequestMethod;
 
     if (!isHttpApp) {
       return this.reflector.get(CACHE_KEY_METADATA, context.getHandler());
     }
     const request = context.getArgByIndex(0);
-    if (httpServer.getRequestMethod(request) !== 'GET') {
+    if (httpAdapter.getRequestMethod(request) !== 'GET') {
       return undefined;
     }
-    return httpServer.getRequestUrl(request);
+    return httpAdapter.getRequestUrl(request);
   }
 }

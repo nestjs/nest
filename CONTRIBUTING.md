@@ -94,7 +94,7 @@ We cannot accept code without this.
 
 1. Create your patch, **including appropriate test cases**.
 1. Follow our [Coding Rules](#rules).
-1. Run the full Nest test suite, as described in the [developer documentation][dev-doc],
+1. Run the full Nest test suite (see [common scripts](#common-scripts)),
    and ensure that all tests pass.
 1. Commit your changes using a descriptive commit message that follows our
    [commit message conventions](#commit). Adherence to these conventions
@@ -174,7 +174,7 @@ $ sh scripts/prepare.sh
 
 That will compile fresh packages and afterward, move them to all `sample` directories as well as integration tests.
 
-### Commonly used NPM scripts
+### <a name="common-scripts"></a>Commonly used NPM scripts
 
 ```bash
 # build all packages and put them near to their source .ts files

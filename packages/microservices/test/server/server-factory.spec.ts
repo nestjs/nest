@@ -1,11 +1,12 @@
 import { expect } from 'chai';
-import { ServerFactory } from '../../server/server-factory';
-import { ServerTCP } from '../../server/server-tcp';
-import { ServerRedis } from '../../server/server-redis';
 import { Transport } from '../../enums/transport.enum';
+import { ServerFactory } from '../../server/server-factory';
+import { ServerGrpc } from '../../server/server-grpc';
 import { ServerMqtt } from '../../server/server-mqtt';
 import { ServerNats } from '../../server/server-nats';
-import { ServerGrpc } from '../../server/server-grpc';
+import { ServerRedis } from '../../server/server-redis';
+import { ServerRMQ } from '../../server/server-rmq';
+import { ServerTCP } from '../../server/server-tcp';
 
 describe('ServerFactory', () => {
   describe('create', () => {
@@ -38,6 +39,12 @@ describe('ServerFactory', () => {
       expect(
         ServerFactory.create({ transport: Transport.NATS }) instanceof
           ServerNats,
+      ).to.be.true;
+    });
+
+    it(`should return rmq server`, () => {
+      expect(
+        ServerFactory.create({ transport: Transport.RMQ }) instanceof ServerRMQ,
       ).to.be.true;
     });
 

@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 @Injectable()
@@ -14,6 +14,7 @@ export class RolesGuard implements CanActivate {
     const user = request.user;
     const hasRole = () =>
       !!user.roles.find(role => !!roles.find(item => item === role));
+
     return user && user.roles && hasRole();
   }
 }

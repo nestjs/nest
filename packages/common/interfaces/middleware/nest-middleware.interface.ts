@@ -1,5 +1,3 @@
-import { MiddlewareFunction } from './middleware.interface';
-
-export interface NestMiddleware {
-  resolve(...args: any[]): MiddlewareFunction | Promise<MiddlewareFunction>;
+export interface NestMiddleware<TRequest = any, TResponse = any> {
+  use(req: TRequest, res: TResponse, next: () => void);
 }

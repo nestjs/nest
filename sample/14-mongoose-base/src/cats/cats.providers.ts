@@ -3,8 +3,8 @@ import { CatSchema } from './schemas/cat.schema';
 
 export const catsProviders = [
   {
-    provide: 'CatModelToken',
+    provide: 'CAT_MODEL',
     useFactory: (connection: Connection) => connection.model('Cat', CatSchema),
-    inject: ['DbConnectionToken'],
+    inject: ['DATABASE_CONNECTION'],
   },
 ];

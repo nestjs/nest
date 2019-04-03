@@ -2,7 +2,7 @@ import { FILTER_CATCH_EXCEPTIONS } from '../../constants';
 import { Type } from '../../interfaces';
 
 /**
- * Defines the Exceptions Filter. Takes set of exception types as an argument which has to be caught by this Filter.
+ * Defines an exception filter. Takes set of exception types as arguments which have to be caught by this filter.
  * The class should implement the `ExceptionFilter` interface.
  */
 export function Catch(...exceptions: Type<any>[]): ClassDecorator {
