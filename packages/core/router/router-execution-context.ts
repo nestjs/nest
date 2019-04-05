@@ -139,6 +139,12 @@ export class RouterExecutionContext {
 
       this.responseController.status(res, httpStatusCode);
 
+      const responseHeaders = this.reflectResponseHeaders(callback);
+      const hasCustomHeaders = !isEmpty(responseHeaders);
+
+      hasCustomHeaders &&
+        this.responseController.setHeaders(res, responseHeaders);
+
       const result = await this.interceptorsConsumer.intercept(
         interceptors,
         [req, res],
@@ -347,19 +353,13 @@ export class RouterExecutionContext {
     httpStatusCode?: number
   ) {
     const renderTemplate = this.reflectRenderTemplate(callback);
-    const responseHeaders = this.reflectResponseHeaders(callback);
-    const hasCustomHeaders = !isEmpty(responseHeaders);
 
     if (renderTemplate) {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
-        hasCustomHeaders &&
-          this.responseController.setHeaders(res, responseHeaders);
         await this.responseController.render(result, res, renderTemplate);
       };
     }
     return async <TResult, TResponse>(result: TResult, res: TResponse) => {
-      hasCustomHeaders &&
-        this.responseController.setHeaders(res, responseHeaders);
       result = await this.responseController.transformToResult(result);
       !isResponseHandled &&
         (await this.responseController.apply(result, res, httpStatusCode));

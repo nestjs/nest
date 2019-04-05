@@ -41,6 +41,19 @@ export class StatusInterceptor {
   }
 }
 
+@Injectable()
+export class HeaderInterceptor {
+
+  constructor(private authorization: string){}
+
+  intercept(context: ExecutionContext, next: CallHandler) {
+    const ctx = context.switchToHttp();
+    const res = ctx.getResponse();
+    res.header('Authorization', this.authorization);
+    return next.handle().pipe(map(data => ({ data })));
+  }
+}
+
 function createTestModule(interceptor) {
   return Test.createTestingModule({
     imports: [ApplicationModule],
@@ -109,6 +122,18 @@ describe('Interceptors', () => {
     return request(app.getHttpServer())
       .get('/hello')
       .expect(400, { data: 'Hello world!' });
+  });
+
+  it(`should modify Authorization header`, async () => {
+    app = (await createTestModule(
+      new HeaderInterceptor('jwt'),
+    )).createNestApplication();
+
+    await app.init();
+    return request(app.getHttpServer())
+      .get('/hello')
+      .expect(200)
+      .expect('Authorization', 'jwt');
   });
 
   afterEach(async () => {
