@@ -44,12 +44,16 @@ export class StatusInterceptor {
 @Injectable()
 export class HeaderInterceptor {
 
-  constructor(private authorization: string){}
+  constructor(private headers: object){}
 
   intercept(context: ExecutionContext, next: CallHandler) {
     const ctx = context.switchToHttp();
     const res = ctx.getResponse();
-    res.header('Authorization', this.authorization);
+    for (const key in this.headers) {
+      if (this.headers.hasOwnProperty(key)) {
+        res.header(key, this.headers[key]);
+      }
+    }
     return next.handle().pipe(map(data => ({ data })));
   }
 }
@@ -125,8 +129,12 @@ describe('Interceptors', () => {
   });
 
   it(`should modify Authorization header`, async () => {
+    const customHeaders = {
+      Authorization: 'jwt',
+    };
+
     app = (await createTestModule(
-      new HeaderInterceptor('jwt'),
+      new HeaderInterceptor(customHeaders),
     )).createNestApplication();
 
     await app.init();
