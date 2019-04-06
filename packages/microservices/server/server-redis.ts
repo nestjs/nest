@@ -27,11 +27,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   private pubClient: RedisClient;
   private isExplicitlyTerminated = false;
 
-  constructor(private readonly options: MicroserviceOptions['options']) {
+  constructor(private readonly options: RedisOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp<RedisOptions>(this.options, 'url') ||
-      REDIS_DEFAULT_URL;
+    this.url = this.getOptionsProp(this.options, 'url') || REDIS_DEFAULT_URL;
 
     redisPackage = this.loadPackage('redis', ServerRedis.name, () =>
       require('redis'),
@@ -148,12 +146,11 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     }
     if (
       this.isExplicitlyTerminated ||
-      !this.getOptionsProp<RedisOptions>(this.options, 'retryAttempts') ||
-      options.attempt >
-        this.getOptionsProp<RedisOptions>(this.options, 'retryAttempts')
+      !this.getOptionsProp(this.options, 'retryAttempts') ||
+      options.attempt > this.getOptionsProp(this.options, 'retryAttempts')
     ) {
       return undefined;
     }
-    return this.getOptionsProp<RedisOptions>(this.options, 'retryDelay') || 0;
+    return this.getOptionsProp(this.options, 'retryDelay') || 0;
   }
 }

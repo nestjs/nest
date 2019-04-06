@@ -21,10 +21,9 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private natsClient: Client;
 
-  constructor(private readonly options: MicroserviceOptions['options']) {
+  constructor(private readonly options: NatsOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
+    this.url = this.getOptionsProp(this.options, 'url') || NATS_DEFAULT_URL;
 
     natsPackage = this.loadPackage('nats', ServerNats.name, () =>
       require('nats'),
@@ -43,7 +42,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public bindEvents(client: Client) {
-    const queue = this.getOptionsProp<NatsOptions>(this.options, 'queue');
+    const queue = this.getOptionsProp(this.options, 'queue');
     const subscribe = queue
       ? (channel: string) =>
           client.subscribe(
