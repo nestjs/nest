@@ -49,12 +49,12 @@
     "cors": "2.8.5",
     "engine.io-client": "3.3.2",
     "express": "4.16.4",
-    "fast-json-stringify": "1.13.0",
+    "fast-json-stringify": "1.14.0",
     "fast-safe-stringify": "2.0.6",
-    "fastify": "2.1.0",
+    "fastify": "2.2.0",
     "fastify-cors": "2.1.2",
     "fastify-formbody": "3.1.0",
-    "fastify-multipart": "0.7.0",
+    "fastify-multipart": "0.8.0",
     "graphql": "14.2.1",
     "grpc": "1.19.0",
     "http2": "3.3.7",
@@ -99,7 +99,7 @@
     "clang-format": "1.2.4",
     "concurrently": "4.1.0",
     "conventional-changelog": "3.0.6",
-    "core-js": "3.0.0",
+    "core-js": "3.0.1",
     "coveralls": "3.0.3",
     "csv-write-stream": "2.0.0",
     "delete-empty": "2.0.0",
@@ -126,7 +126,7 @@
     "supertest": "4.0.2",
     "ts-node": "8.0.3",
     "tslint": "5.15.0",
-    "typescript": "3.4.1"
+    "typescript": "3.4.2"
   },
   "collective": {
     "type": "opencollective",

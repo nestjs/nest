@@ -14,11 +14,11 @@
     "@nestjs/core": "6.0.5",
     "@nestjs/platform-express": "6.0.5",
     "@nestjs/typeorm": "6.0.0",
-    "mongodb": "3.2.2",
+    "mongodb": "3.2.3",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
     "typeorm": "0.2.16",
-    "typescript": "3.4.1"
+    "typescript": "3.4.2"
   },
   "devDependencies": {
     "@types/node": "10.14.4",
