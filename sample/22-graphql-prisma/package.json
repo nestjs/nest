@@ -10,23 +10,23 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.0.4",
-    "@nestjs/core": "6.0.4",
-    "@nestjs/graphql": "6.0.4",
-    "@nestjs/platform-express": "6.0.4",
+    "@nestjs/common": "6.0.5",
+    "@nestjs/core": "6.0.5",
+    "@nestjs/graphql": "6.0.5",
+    "@nestjs/platform-express": "6.0.5",
     "apollo-server-express": "2.4.8",
     "graphql": "14.2.1",
     "graphql-tools": "4.0.4",
     "prisma-binding": "2.3.10",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
-    "typescript": "3.4.1"
+    "typescript": "3.4.2"
   },
   "devDependencies": {
     "nodemon": "1.18.10",
     "prettier": "1.16.4",
     "ts-node": "8.0.3",
     "tsconfig-paths": "3.8.0",
-    "tslint": "5.14.0"
+    "tslint": "5.15.0"
   }
 }
