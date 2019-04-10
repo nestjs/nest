@@ -17,7 +17,7 @@
     "pug": "2.0.3",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
-    "typescript": "3.4.2"
+    "typescript": "3.4.3"
   },
   "devDependencies": {
     "@types/node": "8.10.45",
