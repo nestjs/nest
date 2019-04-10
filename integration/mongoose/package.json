@@ -12,13 +12,13 @@
     "@nestjs/common": "6.0.5",
     "@nestjs/core": "6.0.5",
     "@nestjs/mongoose": "6.0.0",
-    "mongoose": "5.4.22",
+    "mongoose": "5.5.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
     "typescript": "3.4.2"
   },
   "devDependencies": {
-    "@types/mongoose": "5.3.24",
+    "@types/mongoose": "5.3.25",
     "@types/node": "7.10.5",
     "ts-node": "8.0.3",
     "tslint": "5.15.0"
