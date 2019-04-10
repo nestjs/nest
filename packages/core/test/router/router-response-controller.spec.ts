@@ -22,19 +22,20 @@ describe('RouterResponseController', () => {
       json: sinon.SinonSpy;
     };
     beforeEach(() => {
-      response = { send: sinon.spy(), json: sinon.spy() };
-      response.status = sinon.stub().returns(response);
+      response = { send: sinon.spy(), json: sinon.spy(), status: sinon.spy() };
     });
     describe('when result is', () => {
       beforeEach(() => {
         sinon
           .stub(adapter, 'reply')
-          .callsFake((responseRef: any, body: any, statusCode: number) => {
-            const res = responseRef.status(statusCode);
-            if (isNil(body)) {
-              return res.send();
+          .callsFake((responseRef: any, body: any, statusCode?: number) => {
+            if (statusCode) {
+              responseRef.status(statusCode);
             }
-            return isObject(body) ? res.json(body) : res.send(String(body));
+            if (isNil(body)) {
+              return responseRef.send();
+            }
+            return isObject(body) ? responseRef.json(body) : responseRef.send(String(body));
           });
       });
       describe('nil', () => {
@@ -146,6 +147,24 @@ describe('RouterResponseController', () => {
       routerResponseController.setHeaders(response, headers);
       expect(
         setHeaderStub.calledWith(response, headers[0].name, headers[0].value),
+      ).to.be.true;
+    });
+  });
+
+  describe('status', () => {
+    let statusStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      statusStub = sinon.stub(adapter, 'status').callsFake(() => ({}));
+    });
+
+    it('should set status', () => {
+      const response = {};
+      const statusCode = 400;
+
+      routerResponseController.status(response, statusCode);
+      expect(
+        statusStub.calledWith(response, statusCode),
       ).to.be.true;
     });
   });
