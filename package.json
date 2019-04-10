@@ -30,7 +30,7 @@
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "dependencies": {
-    "@grpc/proto-loader": "0.3.0",
+    "@grpc/proto-loader": "0.5.0",
     "@nestjs/common": "6.0.5",
     "@nestjs/core": "6.0.5",
     "@nestjs/microservices": "6.0.5",
