@@ -26,22 +26,19 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   private readonly queueOptions: any;
   private readonly isGlobalPrefetchCount: boolean;
 
-  constructor(private readonly options: MicroserviceOptions) {
+  constructor(private readonly options: RmqOptions['options']) {
     super();
-    this.urls = this.getOptionsProp<RmqOptions>(this.options, 'urls') || [
-      RQM_DEFAULT_URL,
-    ];
+    this.urls = this.getOptionsProp(this.options, 'urls') || [RQM_DEFAULT_URL];
     this.queue =
-      this.getOptionsProp<RmqOptions>(this.options, 'queue') ||
-      RQM_DEFAULT_QUEUE;
+      this.getOptionsProp(this.options, 'queue') || RQM_DEFAULT_QUEUE;
     this.prefetchCount =
-      this.getOptionsProp<RmqOptions>(this.options, 'prefetchCount') ||
+      this.getOptionsProp(this.options, 'prefetchCount') ||
       RQM_DEFAULT_PREFETCH_COUNT;
     this.isGlobalPrefetchCount =
-      this.getOptionsProp<RmqOptions>(this.options, 'isGlobalPrefetchCount') ||
+      this.getOptionsProp(this.options, 'isGlobalPrefetchCount') ||
       RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
     this.queueOptions =
-      this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
+      this.getOptionsProp(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
 
     this.loadPackage('amqplib', ServerRMQ.name, () => require('amqplib'));
