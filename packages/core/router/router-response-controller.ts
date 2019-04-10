@@ -12,7 +12,7 @@ export class RouterResponseController {
   public async apply<TInput = any, TResponse = any>(
     result: TInput,
     response: TResponse,
-    httpStatusCode: number,
+    httpStatusCode?: number,
   ) {
     return this.applicationRef.reply(response, result, httpStatusCode);
   }
@@ -49,5 +49,9 @@ export class RouterResponseController {
     headers.forEach(({ name, value }) =>
       this.applicationRef.setHeader(response, name, value),
     );
+  }
+
+  public setStatus<TResponse = any>(response: TResponse, statusCode: number) {
+    this.applicationRef.status(response, statusCode);
   }
 }

@@ -12,7 +12,12 @@ export class FastifyAdapter extends AbstractHttpAdapter {
   constructor(
     instanceOrOptions:
       | fastify.FastifyInstance<any, any, any>
-      | fastify.ServerOptions = fastify(),
+      | fastify.ServerOptions
+      | fastify.ServerOptionsAsHttp
+      | fastify.ServerOptionsAsHttp2
+      | fastify.ServerOptionsAsSecure
+      | fastify.ServerOptionsAsSecureHttp
+      | fastify.ServerOptionsAsSecureHttp2 = fastify(),
   ) {
     const instance =
       instanceOrOptions &&
@@ -29,8 +34,15 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     return this.instance.listen(port, ...args);
   }
 
-  public reply(response: any, body: any, statusCode: number) {
-    return response.code(statusCode).send(body);
+  public reply(response: any, body: any, statusCode?: number) {
+    if (statusCode) {
+      response.status(statusCode);
+    }
+    return response.send(body);
+  }
+
+  public status(response: any, statusCode: number) {
+    return response.code(statusCode);
   }
 
   public render(response: any, view: string, options: any) {
@@ -104,7 +116,7 @@ export class FastifyAdapter extends AbstractHttpAdapter {
   }
 
   public enableCors(options: CorsOptions) {
-    this.register(cors, { options });
+    this.register(cors, options);
   }
 
   public registerParserMiddleware() {
