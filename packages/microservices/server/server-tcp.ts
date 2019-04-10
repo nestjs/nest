@@ -26,12 +26,11 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   private isExplicitlyTerminated = false;
   private retryAttemptsCount = 0;
 
-  constructor(private readonly options: MicroserviceOptions['options']) {
+  constructor(private readonly options: TcpOptions['options']) {
     super();
-    this.port =
-      this.getOptionsProp<TcpOptions>(options, 'port') || TCP_DEFAULT_PORT;
+    this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
     this.host =
-      this.getOptionsProp<TcpOptions>(options, 'host') || TCP_DEFAULT_HOST;
+      this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
 
     this.init();
   }
@@ -86,16 +85,16 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   public handleClose(): undefined | number | NodeJS.Timer {
     if (
       this.isExplicitlyTerminated ||
-      !this.getOptionsProp<TcpOptions>(this.options, 'retryAttempts') ||
+      !this.getOptionsProp(this.options, 'retryAttempts') ||
       this.retryAttemptsCount >=
-        this.getOptionsProp<TcpOptions>(this.options, 'retryAttempts')
+        this.getOptionsProp(this.options, 'retryAttempts')
     ) {
       return undefined;
     }
     ++this.retryAttemptsCount;
     return setTimeout(
       () => this.server.listen(this.port),
-      this.getOptionsProp<TcpOptions>(this.options, 'retryDelay') || 0,
+      this.getOptionsProp(this.options, 'retryDelay') || 0,
     );
   }
 
