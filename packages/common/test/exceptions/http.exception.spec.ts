@@ -25,6 +25,10 @@ describe('HttpException', () => {
     });
   });
 
+  it('should return an object even when the message is undefined', () => {
+    expect(new BadRequestException().message).to.be.eql({statusCode: 400, error: 'Bad Request'});
+  });
+
   it('should return a status code', () => {
     expect(new BadRequestException().getStatus()).to.be.eql(400);
     expect(new NotFoundException().getStatus()).to.be.eql(404);
