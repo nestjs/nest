@@ -4,7 +4,7 @@
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --require 'node_modules/reflect-metadata/Reflect.js'",
+    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --retries 3 --require 'node_modules/reflect-metadata/Reflect.js'",
     "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js'",
     "lint": "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
     "format": "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",

@@ -44,8 +44,13 @@ describe('ServerTCP', () => {
     it('should call native listen method with expected arguments', () => {
       const callback = () => {};
       server.listen(callback);
-      expect(serverMock.listen.calledWith((server as any).port, callback)).to.be
-        .true;
+      expect(
+        serverMock.listen.calledWith(
+          (server as any).port,
+          (server as any).host,
+          callback,
+        ),
+      ).to.be.true;
     });
   });
   describe('handleMessage', () => {
