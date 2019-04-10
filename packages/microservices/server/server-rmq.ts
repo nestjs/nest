@@ -75,7 +75,8 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   }
 
   public createClient<T = any>(): T {
-    return rqmPackage.connect(this.urls);
+    const socketOptions = this.getOptionsProp<RmqOptions>(this.options, 'socketOptions');
+    return rqmPackage.connect(this.urls, socketOptions);
   }
 
   public async setupChannel(channel: any, callback: Function) {

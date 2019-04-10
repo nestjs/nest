@@ -93,5 +93,6 @@ export interface RmqOptions {
     prefetchCount?: number;
     isGlobalPrefetchCount?: boolean;
     queueOptions?: any;
+    socketOptions?: any;
   };
 }
