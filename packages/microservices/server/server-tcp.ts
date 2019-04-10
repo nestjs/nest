@@ -7,18 +7,21 @@ import {
   ERROR_EVENT,
   MESSAGE_EVENT,
   NO_MESSAGE_HANDLER,
+  TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
 } from '../constants';
+import { JsonSocket } from '../helpers/json-socket';
 import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
 import {
   MicroserviceOptions,
   TcpOptions,
 } from '../interfaces/microservice-configuration.interface';
-import { JsonSocket } from '../helpers/json-socket';
 import { Server } from './server';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
   private readonly port: number;
+  private readonly host: string;
+
   private server: NetSocket;
   private isExplicitlyTerminated = false;
   private retryAttemptsCount = 0;
@@ -27,11 +30,14 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     super();
     this.port =
       this.getOptionsProp<TcpOptions>(options, 'port') || TCP_DEFAULT_PORT;
+    this.host =
+      this.getOptionsProp<TcpOptions>(options, 'host') || TCP_DEFAULT_HOST;
+
     this.init();
   }
 
   public listen(callback: () => void) {
-    this.server.listen(this.port, callback);
+    this.server.listen(this.port, this.host, callback);
   }
 
   public close() {
