@@ -12,7 +12,6 @@ import {
   RQM_DEFAULT_URL,
 } from '../constants';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
-import { MicroserviceOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 let rqmPackage: any = {};
@@ -72,7 +71,8 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   }
 
   public createClient<T = any>(): T {
-    return rqmPackage.connect(this.urls);
+    const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
+    return rqmPackage.connect(this.urls, socketOptions);
   }
 
   public async setupChannel(channel: any, callback: Function) {
