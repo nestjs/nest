@@ -11,3 +11,6 @@ export const isNil = (obj: any): obj is null | undefined =>
   isUndefined(obj) || obj === null;
 export const isEmpty = (array: any): boolean => !(array && array.length > 0);
 export const isSymbol = (fn: any): fn is symbol => typeof fn === 'symbol';
+export const isError = (exception: any): exception is Error => {
+  return !!(isObject(exception) && (exception as Error).message);
+};
