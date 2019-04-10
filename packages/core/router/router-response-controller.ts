@@ -51,10 +51,7 @@ export class RouterResponseController {
     );
   }
 
-  public status<TResponse = any>(
-    response: TResponse,
-    statusCode: number
-  ) {
+  public setStatus<TResponse = any>(response: TResponse, statusCode: number) {
     this.applicationRef.status(response, statusCode);
   }
 }

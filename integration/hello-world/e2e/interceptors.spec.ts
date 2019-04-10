@@ -30,8 +30,7 @@ export class TransformInterceptor {
 
 @Injectable()
 export class StatusInterceptor {
-
-  constructor(private statusCode: number){}
+  constructor(private statusCode: number) {}
 
   intercept(context: ExecutionContext, next: CallHandler) {
     const ctx = context.switchToHttp();
@@ -43,8 +42,7 @@ export class StatusInterceptor {
 
 @Injectable()
 export class HeaderInterceptor {
-
-  constructor(private headers: object){}
+  constructor(private headers: object) {}
 
   intercept(context: ExecutionContext, next: CallHandler) {
     const ctx = context.switchToHttp();

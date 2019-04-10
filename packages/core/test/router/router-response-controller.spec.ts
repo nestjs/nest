@@ -35,7 +35,9 @@ describe('RouterResponseController', () => {
             if (isNil(body)) {
               return responseRef.send();
             }
-            return isObject(body) ? responseRef.json(body) : responseRef.send(String(body));
+            return isObject(body)
+              ? responseRef.json(body)
+              : responseRef.send(String(body));
           });
       });
       describe('nil', () => {
@@ -162,10 +164,8 @@ describe('RouterResponseController', () => {
       const response = {};
       const statusCode = 400;
 
-      routerResponseController.status(response, statusCode);
-      expect(
-        statusStub.calledWith(response, statusCode),
-      ).to.be.true;
+      routerResponseController.setStatus(response, statusCode);
+      expect(statusStub.calledWith(response, statusCode)).to.be.true;
     });
   });
 });
