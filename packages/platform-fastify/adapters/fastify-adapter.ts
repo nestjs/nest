@@ -12,7 +12,12 @@ export class FastifyAdapter extends AbstractHttpAdapter {
   constructor(
     instanceOrOptions:
       | fastify.FastifyInstance<any, any, any>
-      | fastify.ServerOptions = fastify(),
+      | fastify.ServerOptions
+      | fastify.ServerOptionsAsHttp
+      | fastify.ServerOptionsAsHttp2
+      | fastify.ServerOptionsAsSecure
+      | fastify.ServerOptionsAsSecureHttp
+      | fastify.ServerOptionsAsSecureHttp2 = fastify(),
   ) {
     const instance =
       instanceOrOptions &&
