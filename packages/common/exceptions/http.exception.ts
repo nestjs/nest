@@ -1,5 +1,3 @@
-import { isObject } from '../utils/shared.utils';
-
 export class HttpException extends Error {
   public readonly message: any;
 
@@ -22,9 +20,7 @@ export class HttpException extends Error {
     private readonly status: number,
   ) {
     super();
-    this.message =
-      (isObject(response) && (response as { message?: string }).message) ||
-      response;
+    this.message = response;
   }
 
   public getResponse(): string | object {
