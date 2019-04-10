@@ -3,15 +3,19 @@ syntax = "proto3";
 package math;
 
 service Math {
-  rpc Sum (RequestSum) returns (SumResult);
-  rpc SumStream(stream RequestSum) returns(stream SumResult);
-  rpc SumStreamPass(stream RequestSum) returns(stream SumResult);
+  rpc Sum(RequestSum) returns (SumResult);
+  rpc SumStream(stream RequestSum) returns (stream SumResult);
+  rpc SumStreamPass(stream RequestSum) returns (stream SumResult);
+  rpc Divide(RequestDivide) returns (DivideResult) {}
 }
 
-message SumResult {
-  int32 result = 1;
-}
+message SumResult { int32 result = 1; }
 
-message RequestSum {
-  repeated int32 data = 1;
+message RequestSum { repeated int32 data = 1; }
+
+message DivideResult { int32 result = 1; }
+
+message RequestDivide {
+  int32 first = 1;
+  int32 last = 2;
 }

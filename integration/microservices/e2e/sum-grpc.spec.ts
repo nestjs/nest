@@ -104,7 +104,17 @@ describe('GRPC transport', () => {
     });
   });
 
-  after(async () => {
+  it(`handle exception correctly`, () => {
+    return (
+      request(server)
+        .post('/divide')
+        .send({ first: 42, last: 0 })
+        // TODO: this will change once the grpc client raise the closest HTTP exception to OutOfBound
+        .expect(500, { message: 'Dividing by 0 is Strictly Forbidden' })
+    );
+  });
+
+  afterEach(async () => {
     await app.close();
     client.close();
   });
