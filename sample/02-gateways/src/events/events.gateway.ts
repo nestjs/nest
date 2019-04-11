@@ -6,12 +6,12 @@ import {
 } from '@nestjs/websockets';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Client, Server } from 'socket.io';
+import { Client, Namespace } from 'socket.io';
 
 @WebSocketGateway()
 export class EventsGateway {
   @WebSocketServer()
-  server: Server;
+  server: Namespace;
 
   @SubscribeMessage('events')
   findAll(client: Client, data: any): Observable<WsResponse<number>> {
