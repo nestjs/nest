@@ -83,7 +83,11 @@ export class RouterExecutionContext {
       fnHandleResponse,
       paramtypes,
       getParamsMetadata,
+      httpStatusCode,
+      responseHeaders,
+      hasCustomHeaders,
     } = this.getMetadata(instance, callback, methodName, module, requestMethod);
+
     const paramsOptions = this.contextUtils.mergeParamsMetatypes(
       getParamsMetadata(module, contextId, inquirerId),
       paramtypes,
@@ -131,6 +135,10 @@ export class RouterExecutionContext {
       const args = this.contextUtils.createNullArray(argsLength);
       fnCanActivate && (await fnCanActivate([req, res]));
 
+      this.responseController.setStatus(res, httpStatusCode);
+      hasCustomHeaders &&
+        this.responseController.setHeaders(res, responseHeaders);
+
       const result = await this.interceptorsConsumer.intercept(
         interceptors,
         [req, res],
@@ -165,7 +173,6 @@ export class RouterExecutionContext {
       instance,
       methodName,
     );
-    const httpCode = this.reflectHttpStatusCode(callback);
     const getParamsMetadata = (
       moduleKey: string,
       contextId = STATIC_CONTEXT,
@@ -184,20 +191,28 @@ export class RouterExecutionContext {
       ({ type }) =>
         type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
     );
-    const httpStatusCode = httpCode
-      ? httpCode
-      : this.responseController.getStatusByMethod(requestMethod);
 
     const fnHandleResponse = this.createHandleResponseFn(
       callback,
       isResponseHandled,
-      httpStatusCode,
     );
+
+    const httpCode = this.reflectHttpStatusCode(callback);
+    const httpStatusCode = httpCode
+      ? httpCode
+      : this.responseController.getStatusByMethod(requestMethod);
+
+    const responseHeaders = this.reflectResponseHeaders(callback);
+    const hasCustomHeaders = !isEmpty(responseHeaders);
+
     const handlerMetadata: HandlerMetadata = {
       argsLength,
       fnHandleResponse,
       paramtypes,
       getParamsMetadata,
+      httpStatusCode,
+      hasCustomHeaders,
+      responseHeaders,
     };
     this.handlerMetadataStorage.set(instance, methodName, handlerMetadata);
     return handlerMetadata;
@@ -342,23 +357,16 @@ export class RouterExecutionContext {
   public createHandleResponseFn(
     callback: (...args: any[]) => any,
     isResponseHandled: boolean,
-    httpStatusCode: number,
+    httpStatusCode?: number,
   ) {
     const renderTemplate = this.reflectRenderTemplate(callback);
-    const responseHeaders = this.reflectResponseHeaders(callback);
-    const hasCustomHeaders = !isEmpty(responseHeaders);
 
     if (renderTemplate) {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
-        hasCustomHeaders &&
-          this.responseController.setHeaders(res, responseHeaders);
         await this.responseController.render(result, res, renderTemplate);
       };
     }
     return async <TResult, TResponse>(result: TResult, res: TResponse) => {
-      hasCustomHeaders &&
-        this.responseController.setHeaders(res, responseHeaders);
-
       result = await this.responseController.transformToResult(result);
       !isResponseHandled &&
         (await this.responseController.apply(result, res, httpStatusCode));

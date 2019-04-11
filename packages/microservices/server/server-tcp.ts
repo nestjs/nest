@@ -7,31 +7,36 @@ import {
   ERROR_EVENT,
   MESSAGE_EVENT,
   NO_MESSAGE_HANDLER,
+  TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
 } from '../constants';
+import { JsonSocket } from '../helpers/json-socket';
 import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
 import {
   MicroserviceOptions,
   TcpOptions,
 } from '../interfaces/microservice-configuration.interface';
-import { JsonSocket } from '../helpers/json-socket';
 import { Server } from './server';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
   private readonly port: number;
+  private readonly host: string;
+
   private server: NetSocket;
   private isExplicitlyTerminated = false;
   private retryAttemptsCount = 0;
 
-  constructor(private readonly options: MicroserviceOptions['options']) {
+  constructor(private readonly options: TcpOptions['options']) {
     super();
-    this.port =
-      this.getOptionsProp<TcpOptions>(options, 'port') || TCP_DEFAULT_PORT;
+    this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
+    this.host =
+      this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
+
     this.init();
   }
 
   public listen(callback: () => void) {
-    this.server.listen(this.port, callback);
+    this.server.listen(this.port, this.host, callback);
   }
 
   public close() {
@@ -80,16 +85,16 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   public handleClose(): undefined | number | NodeJS.Timer {
     if (
       this.isExplicitlyTerminated ||
-      !this.getOptionsProp<TcpOptions>(this.options, 'retryAttempts') ||
+      !this.getOptionsProp(this.options, 'retryAttempts') ||
       this.retryAttemptsCount >=
-        this.getOptionsProp<TcpOptions>(this.options, 'retryAttempts')
+        this.getOptionsProp(this.options, 'retryAttempts')
     ) {
       return undefined;
     }
     ++this.retryAttemptsCount;
     return setTimeout(
       () => this.server.listen(this.port),
-      this.getOptionsProp<TcpOptions>(this.options, 'retryDelay') || 0,
+      this.getOptionsProp(this.options, 'retryDelay') || 0,
     );
   }
 

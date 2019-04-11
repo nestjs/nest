@@ -21,10 +21,9 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private mqttClient: MqttClient;
 
-  constructor(private readonly options: MicroserviceOptions['options']) {
+  constructor(private readonly options: MqttOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp<MqttOptions>(options, 'url') || MQTT_DEFAULT_URL;
+    this.url = this.getOptionsProp(options, 'url') || MQTT_DEFAULT_URL;
 
     mqttPackage = this.loadPackage('mqtt', ServerMqtt.name, () =>
       require('mqtt'),
@@ -59,10 +58,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public createMqttClient(): MqttClient {
-    return mqttPackage.connect(
-      this.url,
-      this.options as MqttOptions,
-    );
+    return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 
   public getMessageHandler(pub: MqttClient): Function {
