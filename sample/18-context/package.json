@@ -10,8 +10,8 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.0.5",
-    "@nestjs/core": "6.0.5",
+    "@nestjs/common": "6.1.0",
+    "@nestjs/core": "6.1.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
     "typescript": "3.4.3"
