@@ -20,6 +20,61 @@ describe('ClientProxy', () => {
     client = new TestClientProxy();
   });
 
+  describe('createObserver', () => {
+    describe('returned function calls', () => {
+      it(`"error" when first parameter is not null or undefined`, () => {
+        const testClient = new TestClientProxy();
+        const err = 'test';
+        const error = sinon.spy();
+        const next = sinon.spy();
+        const complete = sinon.spy();
+        const observer = {
+          error,
+          next,
+          complete,
+        };
+        const fn = testClient['createObserver'](observer);
+
+        fn({ err });
+        expect(error.calledWith(err)).to.be.true;
+      });
+
+      it(`"next" when first parameter is null or undefined`, () => {
+        const testClient = new TestClientProxy();
+        const data = 'test';
+        const error = sinon.spy();
+        const next = sinon.spy();
+        const complete = sinon.spy();
+        const observer = {
+          error,
+          next,
+          complete,
+        };
+        const fn = testClient['createObserver'](observer);
+
+        fn({ response: data });
+        expect(next.calledWith(data)).to.be.true;
+      });
+
+      it(`"complete" when third parameter is true`, () => {
+        const testClient = new TestClientProxy();
+        const data = 'test';
+        const error = sinon.spy();
+        const next = sinon.spy();
+        const complete = sinon.spy();
+        const observer = {
+          error,
+          next,
+          complete,
+        };
+        const fn = testClient['createObserver'](observer);
+
+        fn({ data, isDisposed: true } as any);
+        expect(complete.called).to.be.true;
+      });
+    });
+  });
+
   describe('send', () => {
     it(`should return an observable stream`, () => {
       const stream$ = client.send({}, '');
@@ -115,61 +170,6 @@ describe('ClientProxy', () => {
     it('should return Observable with error', () => {
       const err$ = client.emit(null, null);
       expect(err$).to.be.instanceOf(Observable);
-    });
-  });
-
-  describe('createObserver', () => {
-    describe('returned function calls', () => {
-      it(`"error" when first parameter is not null or undefined`, () => {
-        const testClient = new TestClientProxy();
-        const err = 'test';
-        const error = sinon.spy();
-        const next = sinon.spy();
-        const complete = sinon.spy();
-        const observer = {
-          error,
-          next,
-          complete,
-        };
-        const fn = testClient['createObserver'](observer);
-
-        fn({ err });
-        expect(error.calledWith(err)).to.be.true;
-      });
-
-      it(`"next" when first parameter is null or undefined`, () => {
-        const testClient = new TestClientProxy();
-        const data = 'test';
-        const error = sinon.spy();
-        const next = sinon.spy();
-        const complete = sinon.spy();
-        const observer = {
-          error,
-          next,
-          complete,
-        };
-        const fn = testClient['createObserver'](observer);
-
-        fn({ response: data });
-        expect(next.calledWith(data)).to.be.true;
-      });
-
-      it(`"complete" when third parameter is true`, () => {
-        const testClient = new TestClientProxy();
-        const data = 'test';
-        const error = sinon.spy();
-        const next = sinon.spy();
-        const complete = sinon.spy();
-        const observer = {
-          error,
-          next,
-          complete,
-        };
-        const fn = testClient['createObserver'](observer);
-
-        fn({ data, isDisposed: true } as any);
-        expect(complete.called).to.be.true;
-      });
     });
   });
 });
