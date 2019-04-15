@@ -24,8 +24,8 @@
   },
   "devDependencies": {
     "nodemon": "1.18.11",
-    "prettier": "1.16.4",
-    "ts-node": "8.0.3",
+    "prettier": "1.17.0",
+    "ts-node": "8.1.0",
     "tsconfig-paths": "3.8.0",
     "tslint": "5.15.0"
   }
