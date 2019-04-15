@@ -124,7 +124,7 @@
     "sinon-chai": "3.3.0",
     "socket.io-client": "2.2.0",
     "supertest": "4.0.2",
-    "ts-node": "8.0.3",
+    "ts-node": "8.1.0",
     "tslint": "5.15.0",
     "typescript": "3.4.3"
   },
