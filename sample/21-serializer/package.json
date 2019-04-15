@@ -10,9 +10,9 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.1.0",
-    "@nestjs/core": "6.1.0",
-    "@nestjs/platform-express": "6.1.0",
+    "@nestjs/common": "6.1.1",
+    "@nestjs/core": "6.1.1",
+    "@nestjs/platform-express": "6.1.1",
     "class-transformer": "0.2.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
@@ -24,7 +24,7 @@
     "jest": "24.7.1",
     "supertest": "4.0.2",
     "ts-jest": "24.0.2",
-    "ts-node": "8.0.3",
+    "ts-node": "8.1.0",
     "tslint": "5.15.0"
   }
 }

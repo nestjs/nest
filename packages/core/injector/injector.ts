@@ -588,13 +588,8 @@ export class Injector {
     const isInContext = isStatic || isInRequestScope || isLazyTransient;
 
     if (isNil(inject) && isInContext) {
-      const targetInstance = wrapper.getInstanceByContextId(
-        contextId,
-        inquirerId,
-      );
-
-      targetInstance.instance = wrapper.forwardRef
-        ? Object.assign(targetInstance.instance, new metatype(...instances))
+      instanceHost.instance = wrapper.forwardRef
+        ? Object.assign(instanceHost.instance, new metatype(...instances))
         : new metatype(...instances);
     } else if (isInContext) {
       const factoryReturnValue = ((targetMetatype.metatype as any) as Function)(

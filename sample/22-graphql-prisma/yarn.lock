@@ -26,17 +26,17 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@nestjs/common@6.1.0":
-  version "6.1.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.1.0.tgz#5f70c88db621149ace3abcf428bccec78091e29e"
+"@nestjs/common@6.1.1":
+  version "6.1.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.1.1.tgz#6f7f0aa0ff45285f9d2b0a66acde1ebeb0c99060"
   dependencies:
     axios "0.18.0"
     cli-color "1.4.0"
     uuid "3.3.2"
 
-"@nestjs/core@6.1.0":
-  version "6.1.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.1.0.tgz#87b590bfb21722780ff6088eda5da37797889344"
+"@nestjs/core@6.1.1":
+  version "6.1.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.1.1.tgz#10494e8e1a4bcf55059fd114c0934186c2130930"
   dependencies:
     "@nuxtjs/opencollective" "0.2.1"
     fast-safe-stringify "2.0.6"
@@ -59,9 +59,9 @@
     ts-morph "1.3.2"
     uuid "3.3.2"
 
-"@nestjs/platform-express@6.1.0":
-  version "6.1.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.1.0.tgz#4058d5d62433fa0eef91a3383c0ce54e0c9d4da7"
+"@nestjs/platform-express@6.1.1":
+  version "6.1.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.1.1.tgz#4d4d4774a65b14c81646d10da9768f4cb6b922d6"
   dependencies:
     body-parser "1.18.3"
     cors "2.8.5"
@@ -2505,9 +2505,9 @@ prepend-http@^1.0.1:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/prepend-http/-/prepend-http-1.0.4.tgz#d4f4562b0ce3696e41ac52d0e002e57a635dc6dc"
 
-prettier@1.16.4:
-  version "1.16.4"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-1.16.4.tgz#73e37e73e018ad2db9c76742e2647e21790c9717"
+prettier@1.17.0:
+  version "1.17.0"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-1.17.0.tgz#53b303676eed22cc14a9f0cec09b477b3026c008"
 
 prisma-binding@2.3.10:
   version "2.3.10"
@@ -3082,9 +3082,9 @@ ts-morph@1.3.2:
     tslib "^1.9.0"
     typescript ">=3.0.1 <3.4.0"
 
-ts-node@8.0.3:
-  version "8.0.3"
-  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.0.3.tgz#aa60b836a24dafd8bf21b54766841a232fdbc641"
+ts-node@8.1.0:
+  version "8.1.0"
+  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.1.0.tgz#8c4b37036abd448577db22a061fd7a67d47e658e"
   dependencies:
     arg "^4.1.0"
     diff "^3.1.0"
