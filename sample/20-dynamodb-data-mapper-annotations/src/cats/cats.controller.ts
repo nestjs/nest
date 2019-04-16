@@ -3,6 +3,9 @@ import { CreateCatDto } from './dto/create-cat.dto';
 import { CatsService } from './cats.service';
 import { Cat } from './schemas/cat.schema';
 
+// for better exception handling, check the NestJS docs
+// https://docs.nestjs.com/exception-filters
+
 @Controller('cats')
 export class CatsController {
   constructor(private readonly catsService: CatsService) {}
