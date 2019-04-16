@@ -1,4 +1,4 @@
-# NestJS with DynamoDB Data Matter Annotations
+# NestJS with DynamoDB Data Mapper Annotations
 The `@aws/data-mapper-annotations` package is built on top of the AWS SDK. The introductory blog post with examples can be found [here](https://aws.amazon.com/blogs/developer/introducing-the-amazon-dynamodb-datamapper-for-javascript-developer-preview/) and the source code for the relevant packages can be found [here](https://github.com/awslabs/dynamodb-data-mapper-js/).
 
 #### Running the local example
