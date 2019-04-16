@@ -2,7 +2,7 @@ version: "3"
 
 services:
   dynamodb:
-    image: amazon/dynamodb-local:latest
+    image: cnadiminti/dynamodb-local:latest
     ports:
       - 8000:8000
     volumes:
