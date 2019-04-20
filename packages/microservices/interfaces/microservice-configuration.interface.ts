@@ -1,7 +1,7 @@
-import { MqttClientOptions } from '@nestjs/common/interfaces/external/mqtt-options.interface';
-import { Transport } from '../enums/transport.enum';
-import { Server } from './../server/server';
-import { CustomTransportStrategy } from './custom-transport-strategy.interface';
+import {MqttClientOptions} from '@nestjs/common/interfaces/external/mqtt-options.interface';
+import {Transport} from '../enums/transport.enum';
+import {Server} from './../server/server';
+import {CustomTransportStrategy} from './custom-transport-strategy.interface';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -94,5 +94,6 @@ export interface RmqOptions {
     isGlobalPrefetchCount?: boolean;
     queueOptions?: any;
     socketOptions?: any;
+    noAck?: boolean;
   };
 }
