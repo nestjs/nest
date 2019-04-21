@@ -54,7 +54,7 @@
     "fastify": "2.3.0",
     "fastify-cors": "2.1.2",
     "fastify-formbody": "3.1.0",
-    "fastify-multipart": "0.8.0",
+    "fastify-multipart": "0.8.1",
     "graphql": "14.2.1",
     "grpc": "1.20.0",
     "http2": "3.3.7",
@@ -72,7 +72,7 @@
     "rxjs": "6.4.0",
     "rxjs-compat": "6.4.0",
     "socket.io": "2.2.0",
-    "ts-morph": "1.3.3",
+    "ts-morph": "2.0.1",
     "uuid": "3.3.2"
   },
   "devDependencies": {
@@ -85,7 +85,7 @@
     "@types/fastify-cors": "2.1.0",
     "@types/kafka-node": "2.0.8",
     "@types/mocha": "5.2.6",
-    "@types/node": "10.14.4",
+    "@types/node": "10.14.5",
     "@types/redis": "2.8.12",
     "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "7.0.11",
@@ -126,7 +126,7 @@
     "supertest": "4.0.2",
     "ts-node": "8.1.0",
     "tslint": "5.16.0",
-    "typescript": "3.4.3"
+    "typescript": "3.4.4"
   },
   "collective": {
     "type": "opencollective",
