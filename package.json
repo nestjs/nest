@@ -85,7 +85,7 @@
     "@types/fastify-cors": "2.1.0",
     "@types/kafka-node": "2.0.8",
     "@types/mocha": "5.2.6",
-    "@types/node": "10.14.4",
+    "@types/node": "10.14.5",
     "@types/redis": "2.8.12",
     "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "7.0.11",
