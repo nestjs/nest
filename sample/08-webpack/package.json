@@ -21,7 +21,7 @@
     "ts-node": "8.1.0",
     "tslint": "5.16.0",
     "webpack": "4.30.0",
-    "webpack-cli": "3.3.0",
+    "webpack-cli": "3.3.1",
     "webpack-node-externals": "1.7.2"
   }
 }
