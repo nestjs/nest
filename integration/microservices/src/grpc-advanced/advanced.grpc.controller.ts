@@ -70,8 +70,6 @@ export class AdvancedGrpcController {
           carrier: 'test-carrier',
         },
       });
-    }, err => {
-      throw new Error(err.message);
     });
     return o;
   }
