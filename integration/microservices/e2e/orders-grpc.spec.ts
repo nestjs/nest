@@ -109,7 +109,6 @@ describe('Advanced GRPC transport', () => {
           carrier: 'test-carrier',
         },
       });
-      callHandler.cancel();
     });
 
     callHandler.on('error', (err: any) => {
@@ -128,5 +127,40 @@ describe('Advanced GRPC transport', () => {
     });
 
   });
+
+  it('GRPC Sending and receiving Stream from Call handler', async () => {
+
+    const callHandler = client.syncCall();
+
+    callHandler.on('data', (msg: number) => {
+      // Do deep comparison (to.eql)
+      expect(msg).to.eql({
+        id: 1,
+        itemTypes: [1],
+        shipmentType: {
+          from: 'test',
+          to: 'test1',
+          carrier: 'test-carrier',
+        },
+      });
+    });
+
+    callHandler.on('error', (err: any) => {
+      // We want to fail only on real errors while Cancellation error
+      // is expected
+      if (String(err).toLowerCase().indexOf('cancelled') === -1) {
+        fail('gRPC Stream error happened, error: ' + err);
+      }
+    });
+
+    return new Promise((resolve, reject) => {
+      callHandler.write({
+        id: 1,
+      });
+      setTimeout(() => resolve(), 1000);
+    });
+
+  });
+
 
 });
