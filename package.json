@@ -73,7 +73,8 @@
     "rxjs-compat": "6.4.0",
     "socket.io": "2.2.0",
     "ts-morph": "2.0.1",
-    "uuid": "3.3.2"
+    "uuid": "3.3.2",
+    "validator": "^10.11.0"
   },
   "devDependencies": {
     "@types/amqplib": "0.5.11",
