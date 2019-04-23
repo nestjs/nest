@@ -71,7 +71,9 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <a href="https://triplebyte.com/" target="_blank"><img src="https://nestjs.com/img/triplebyte.png" height="30" valign="middle" /></a> &nbsp; 
 <a href="https://ever.co/" target="_blank"><img src="https://nestjs.com/img/ever-logo.png" height="20" valign="middle" /></a>  &nbsp; 
-<a href="https://buddy.works/" target="_blank"><img src="https://nestjs.com/img/buddy-logo.svg" height="35" valign="middle" /></a>
+<a href="https://buddy.works/" target="_blank"><img src="https://nestjs.com/img/buddy-logo.svg" height="35" valign="middle" /></a> &nbsp;
+<a href="https://blokt.com" target="_blank"><img src="https://nestjs.com/img/blokt-logo.png" height="31" valign="middle" /></a>  &nbsp; 
+<a href="https://reposit.co.uk/" target="_blank"><img src="https://nestjs.com/img/reposit-logo.png" height="28" valign="middle" /></a>
 
 
 ## Backers
