@@ -1,3 +1,5 @@
+import * as multer from 'multer';
+import { Observable } from 'rxjs';
 import {
   CallHandler,
   ExecutionContext,
@@ -7,12 +9,12 @@ import {
   Optional,
   Type,
 } from '@nestjs/common';
-import * as multer from 'multer';
-import { Observable } from 'rxjs';
-import { MULTER_MODULE_OPTIONS } from '../files.constants';
-import { MulterModuleOptions } from '../interfaces';
-import { MulterOptions } from '../interfaces/multer-options.interface';
-import { transformException } from '../multer/multer.utils';
+import {
+  MulterOptions,
+  MULTER_MODULE_OPTIONS,
+  MulterModuleOptions,
+  transformException,
+} from '@nestjs/multer';
 
 type MulterInstance = any;
 

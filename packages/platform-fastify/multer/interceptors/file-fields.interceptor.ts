@@ -1,4 +1,4 @@
-import * as multer from 'multer';
+import * as multer from 'fastify-multer';
 import { Observable } from 'rxjs';
 import {
   CallHandler,
@@ -10,11 +10,11 @@ import {
   Type,
 } from '@nestjs/common';
 import {
-  transformException,
   MulterField,
-  MulterModuleOptions,
-  MULTER_MODULE_OPTIONS,
   MulterOptions,
+  MULTER_MODULE_OPTIONS,
+  MulterModuleOptions,
+  transformException,
 } from '@nestjs/multer';
 
 type MulterInstance = any;

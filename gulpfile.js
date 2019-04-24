@@ -9,6 +9,7 @@ const deleteEmpty = require('delete-empty');
 const packages = {
   common: ts.createProject('packages/common/tsconfig.json'),
   core: ts.createProject('packages/core/tsconfig.json'),
+  multer: ts.createProject('packages/multer/tsconfig.json'),
   microservices: ts.createProject('packages/microservices/tsconfig.json'),
   websockets: ts.createProject('packages/websockets/tsconfig.json'),
   testing: ts.createProject('packages/testing/tsconfig.json'),
@@ -42,6 +43,7 @@ gulp.task('copy-misc', function() {
     .src(['Readme.md', 'LICENSE', '.npmignore'])
     .pipe(gulp.dest(`${source}/common`))
     .pipe(gulp.dest(`${source}/core`))
+    .pipe(gulp.dest(`${source}/multer`))
     .pipe(gulp.dest(`${source}/microservices`))
     .pipe(gulp.dest(`${source}/websockets`))
     .pipe(gulp.dest(`${source}/testing`))

@@ -1,11 +1,11 @@
+import { expect } from 'chai';
+import { multerExceptions } from '../../multer/multer.constants';
+import { transformException } from '../../multer/multer.utils';
 import {
   BadRequestException,
   HttpException,
   PayloadTooLargeException,
 } from '@nestjs/common';
-import { expect } from 'chai';
-import { multerExceptions } from '../../../multer/multer/multer.constants';
-import { transformException } from '../../../multer/multer/multer.utils';
 
 describe('transformException', () => {
   describe('if error does not exist', () => {
