@@ -3,7 +3,8 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-hos
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { FileFieldsInterceptor } from '../../../multer/interceptors/file-fields.interceptor';
+import { FileFieldsInterceptor } from '../../../interceptors/file-fields.interceptor';
+import { fakeMulter } from '../fake-multer';
 
 describe('FileFieldsInterceptor', () => {
   it('should return metatype with expected structure', async () => {
@@ -29,7 +30,7 @@ describe('FileFieldsInterceptor', () => {
         { name: fieldName1, maxCount: maxCount1 },
         { name: fieldName2, maxCount: maxCount2 },
       ];
-      const target = new (FileFieldsInterceptor(argument))();
+      const target = new (FileFieldsInterceptor(argument))(null, fakeMulter);
 
       const callback = (req, res, next) => next();
       const fieldsSpy = sinon
@@ -50,7 +51,7 @@ describe('FileFieldsInterceptor', () => {
         { name: fieldName1, maxCount: maxCount1 },
         { name: fieldName2, maxCount: maxCount2 },
       ];
-      const target = new (FileFieldsInterceptor(argument))();
+      const target = new (FileFieldsInterceptor(argument))(null, fakeMulter);
       const err = {};
       const callback = (req, res, next) => next(err);
 

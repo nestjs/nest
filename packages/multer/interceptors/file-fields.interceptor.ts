@@ -1,5 +1,7 @@
-import * as multer from 'multer';
 import { Observable } from 'rxjs';
+import { MULTER_MODULE_ADAPTER, MULTER_MODULE_OPTIONS } from '../constants';
+import { MulterField, MulterModuleOptions, MulterOptions } from '../interfaces';
+import { transformException } from '../utils';
 import {
   CallHandler,
   ExecutionContext,
@@ -9,13 +11,6 @@ import {
   Optional,
   Type,
 } from '@nestjs/common';
-import {
-  transformException,
-  MulterField,
-  MulterModuleOptions,
-  MULTER_MODULE_OPTIONS,
-  MulterOptions,
-} from '@nestjs/multer';
 
 type MulterInstance = any;
 
@@ -30,8 +25,10 @@ export function FileFieldsInterceptor(
       @Optional()
       @Inject(MULTER_MODULE_OPTIONS)
       options: MulterModuleOptions = {},
+      @Inject(MULTER_MODULE_ADAPTER)
+      adapter: MulterInstance,
     ) {
-      this.multer = (multer as any)({
+      this.multer = (adapter as any)({
         ...options,
         ...localOptions,
       });

@@ -1,5 +1,7 @@
-import * as multer from 'fastify-multer';
 import { Observable } from 'rxjs';
+import { MULTER_MODULE_ADAPTER, MULTER_MODULE_OPTIONS } from '../constants';
+import { MulterModuleOptions, MulterOptions } from '../interfaces';
+import { transformException } from '../utils';
 import {
   CallHandler,
   ExecutionContext,
@@ -9,12 +11,6 @@ import {
   Optional,
   Type,
 } from '@nestjs/common';
-import {
-  MulterOptions,
-  MULTER_MODULE_OPTIONS,
-  MulterModuleOptions,
-  transformException,
-} from '@nestjs/multer';
 
 type MulterInstance = any;
 
@@ -30,8 +26,10 @@ export function FilesInterceptor(
       @Optional()
       @Inject(MULTER_MODULE_OPTIONS)
       options: MulterModuleOptions = {},
+      @Inject(MULTER_MODULE_ADAPTER)
+      adapter: MulterInstance,
     ) {
-      this.multer = (multer as any)({
+      this.multer = (adapter as any)({
         ...options,
         ...localOptions,
       });

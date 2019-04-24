@@ -3,11 +3,12 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-hos
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { FileInterceptor } from '../../../multer/interceptors/file.interceptor';
+import { FilesInterceptor } from '../../../interceptors/files.interceptor';
+import { fakeMulter } from '../fake-multer';
 
-describe('FileInterceptor', () => {
+describe('FilesInterceptor', () => {
   it('should return metatype with expected structure', async () => {
-    const targetClass = FileInterceptor('file');
+    const targetClass = FilesInterceptor('file');
     expect(targetClass.prototype.intercept).to.not.be.undefined;
   });
   describe('intercept', () => {
@@ -17,27 +18,32 @@ describe('FileInterceptor', () => {
         handle: () => of('test'),
       };
     });
-    it('should call single() with expected params', async () => {
+    it('should call array() with expected params', async () => {
       const fieldName = 'file';
-      const target = new (FileInterceptor(fieldName))();
+      const maxCount = 10;
+      const target = new (FilesInterceptor(fieldName, maxCount))(
+        null,
+        fakeMulter,
+      );
+
       const callback = (req, res, next) => next();
-      const singleSpy = sinon
-        .stub((target as any).multer, 'single')
+      const arraySpy = sinon
+        .stub((target as any).multer, 'array')
         .returns(callback);
 
       await target.intercept(new ExecutionContextHost([]), handler);
 
-      expect(singleSpy.called).to.be.true;
-      expect(singleSpy.calledWith(fieldName)).to.be.true;
+      expect(arraySpy.called).to.be.true;
+      expect(arraySpy.calledWith(fieldName, maxCount)).to.be.true;
     });
     it('should transform exception', async () => {
       const fieldName = 'file';
-      const target = new (FileInterceptor(fieldName))();
+      const target = new (FilesInterceptor(fieldName))(null, fakeMulter);
       const err = {};
       const callback = (req, res, next) => next(err);
 
       (target as any).multer = {
-        single: () => callback,
+        array: () => callback,
       };
       (target.intercept(new ExecutionContextHost([]), handler) as any).catch(
         error => expect(error).to.not.be.undefined,

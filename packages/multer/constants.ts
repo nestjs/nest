@@ -1,4 +1,5 @@
 export const MULTER_MODULE_OPTIONS = 'MULTER_MODULE_OPTIONS';
+export const MULTER_MODULE_ADAPTER = 'MULTER_MODULE_ADAPTER';
 
 export const multerExceptions = {
   LIMIT_PART_COUNT: 'Too many parts',

@@ -3,7 +3,8 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-hos
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { FileInterceptor } from '../../../multer/interceptors/file.interceptor';
+import { FileInterceptor } from '../../../interceptors/file.interceptor';
+import { fakeMulter } from '../fake-multer';
 
 describe('FileInterceptor', () => {
   it('should return metatype with expected structure', async () => {
@@ -17,9 +18,11 @@ describe('FileInterceptor', () => {
         handle: () => of('test'),
       };
     });
+
     it('should call single() with expected params', async () => {
       const fieldName = 'file';
-      const target = new (FileInterceptor(fieldName))();
+      const target = new (FileInterceptor(fieldName))(null, fakeMulter);
+
       const callback = (req, res, next) => next();
       const singleSpy = sinon
         .stub((target as any).multer, 'single')
@@ -30,9 +33,10 @@ describe('FileInterceptor', () => {
       expect(singleSpy.called).to.be.true;
       expect(singleSpy.calledWith(fieldName)).to.be.true;
     });
+
     it('should transform exception', async () => {
       const fieldName = 'file';
-      const target = new (FileInterceptor(fieldName))();
+      const target = new (FileInterceptor(fieldName))(null, fakeMulter);
       const err = {};
       const callback = (req, res, next) => next(err);
 
