@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { MULTER_MODULE_OPTIONS } from '../../files.constants';
+import { MULTER_MODULE_OPTIONS } from '../../constants';
 import { MulterModule } from '../../multer.module';
 
 describe('MulterModule', () => {

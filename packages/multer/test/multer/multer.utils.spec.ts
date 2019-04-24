@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { multerExceptions } from '../../multer/multer.constants';
-import { transformException } from '../../multer/multer.utils';
+import { multerExceptions } from '../../constants';
+import { transformException } from '../../utils';
 import {
   BadRequestException,
   HttpException,

@@ -1,5 +1,5 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { MULTER_MODULE_OPTIONS } from './files.constants';
+import { MULTER_MODULE_OPTIONS } from './constants';
 import {
   MulterModuleAsyncOptions,
   MulterModuleOptions,

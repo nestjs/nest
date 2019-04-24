@@ -1,3 +1,5 @@
+export const MULTER_MODULE_OPTIONS = 'MULTER_MODULE_OPTIONS';
+
 export const multerExceptions = {
   LIMIT_PART_COUNT: 'Too many parts',
   LIMIT_FILE_SIZE: 'File too large',
