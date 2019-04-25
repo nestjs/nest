@@ -14,7 +14,7 @@
     "@nestjs/core": "6.1.1",
     "@nestjs/platform-fastify": "6.1.1",
     "handlebars": "4.1.2",
-    "point-of-view": "3.2.0",
+    "point-of-view": "3.3.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
     "typescript": "3.4.4"
