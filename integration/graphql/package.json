@@ -18,7 +18,7 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
     "subscriptions-transport-ws": "0.9.16",
-    "typescript": "3.4.4",
+    "typescript": "3.4.5",
     "ws": "6.2.1"
   },
   "devDependencies": {

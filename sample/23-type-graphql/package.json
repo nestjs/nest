@@ -22,7 +22,7 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
     "type-graphql": "0.17.3",
-    "typescript": "3.4.4"
+    "typescript": "3.4.5"
   },
   "devDependencies": {
     "@types/node": "10.14.5",

@@ -126,7 +126,7 @@
     "supertest": "4.0.2",
     "ts-node": "8.1.0",
     "tslint": "5.16.0",
-    "typescript": "3.4.4"
+    "typescript": "3.4.5"
   },
   "collective": {
     "type": "opencollective",
