@@ -7,3 +7,4 @@
 
 export * from './adapters';
 export * from './interfaces';
+export { default as multerAdapter } from 'multer';
