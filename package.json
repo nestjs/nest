@@ -93,7 +93,7 @@
     "@types/ws": "6.0.1",
     "artillery": "1.6.0-27",
     "awesome-typescript-loader": "5.2.1",
-    "body-parser": "1.18.3",
+    "body-parser": "1.19.0",
     "chai": "4.2.0",
     "chai-as-promised": "7.1.1",
     "clang-format": "1.2.4",
