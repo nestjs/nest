@@ -16,7 +16,7 @@
     "mysql2": "1.6.5",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.4.0",
-    "sequelize": "5.7.5",
+    "sequelize": "5.7.6",
     "sequelize-typescript": "0.6.10",
     "typescript": "3.4.4"
   },
