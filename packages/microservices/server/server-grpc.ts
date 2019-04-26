@@ -30,14 +30,12 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private grpcClient: any;
 
-  constructor(private readonly options: MicroserviceOptions['options']) {
+  constructor(private readonly options: GrpcOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
+    this.url = this.getOptionsProp(options, 'url') || GRPC_DEFAULT_URL;
 
     const protoLoader =
-      this.getOptionsProp<GrpcOptions>(options, 'protoLoader') ||
-      GRPC_DEFAULT_PROTO_LOADER;
+      this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
 
     grpcPackage = this.loadPackage('grpc', ServerGrpc.name, () =>
       require('grpc'),
@@ -58,10 +56,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public async bindEvents() {
     const grpcContext = this.loadProto();
-    const packageName = this.getOptionsProp<GrpcOptions>(
-      this.options,
-      'package',
-    );
+    const packageName = this.getOptionsProp(this.options, 'package');
     const grpcPkg = this.lookupPackage(grpcContext, packageName);
     if (!grpcPkg) {
       const invalidPackageError = new InvalidGrpcPackageException();
@@ -165,21 +160,18 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public createClient(): any {
     const server = new grpcPackage.Server({
-      'grpc.max_send_message_length': this.getOptionsProp<GrpcOptions>(
+      'grpc.max_send_message_length': this.getOptionsProp(
         this.options,
         'maxSendMessageLength',
         GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
       ),
-      'grpc.max_receive_message_length': this.getOptionsProp<GrpcOptions>(
+      'grpc.max_receive_message_length': this.getOptionsProp(
         this.options,
         'maxReceiveMessageLength',
         GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
       ),
     });
-    const credentials = this.getOptionsProp<GrpcOptions>(
-      this.options,
-      'credentials',
-    );
+    const credentials = this.getOptionsProp(this.options, 'credentials');
     server.bind(
       this.url,
       credentials || grpcPackage.ServerCredentials.createInsecure(),
@@ -198,8 +190,8 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public loadProto(): any {
     try {
-      const file = this.getOptionsProp<GrpcOptions>(this.options, 'protoPath');
-      const loader = this.getOptionsProp<GrpcOptions>(this.options, 'loader');
+      const file = this.getOptionsProp(this.options, 'protoPath');
+      const loader = this.getOptionsProp(this.options, 'loader');
 
       const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
       const packageObject = grpcPackage.loadPackageDefinition(
