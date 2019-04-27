@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@types/mongoose": "5.3.27",
-    "@types/node": "10.14.5",
+    "@types/node": "10.14.6",
     "ts-node": "8.1.0",
     "tslint": "5.16.0"
   }
