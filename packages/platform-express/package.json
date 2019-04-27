@@ -19,7 +19,6 @@
   },
   "peerDependencies": {
     "@nestjs/common": "^6.0.0",
-    "@nestjs/core": "^6.0.0",
-    "@nestjs/multer": "^6.0.0"
+    "@nestjs/core": "^6.0.0"
   }
 }

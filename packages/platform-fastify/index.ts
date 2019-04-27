@@ -7,4 +7,4 @@
 
 export * from './adapters';
 export * from './interfaces';
-export { default as multerAdapter } from 'fastify-multer';
+export * from './multer';
