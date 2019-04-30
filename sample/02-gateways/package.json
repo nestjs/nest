@@ -23,7 +23,7 @@
     "typescript": "3.4.5"
   },
   "devDependencies": {
-    "@types/node": "7.10.5",
+    "@types/node": "7.10.6",
     "@types/socket.io": "2.1.2",
     "@types/ws": "6.0.1",
     "ts-node": "8.1.0",
