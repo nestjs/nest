@@ -19,7 +19,7 @@
     "rxjs": "6.4.0",
     "subscriptions-transport-ws": "0.9.16",
     "typescript": "3.4.5",
-    "ws": "6.2.1"
+    "ws": "7.0.0"
   },
   "devDependencies": {
     "@types/node": "7.10.5",
