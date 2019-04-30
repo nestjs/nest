@@ -5,7 +5,7 @@ import { ExecutionContextHost } from '../../helpers/execution-context-host';
 describe('ExecutionContextHost', () => {
   let contextHost: ExecutionContextHost;
 
-  const args = ['test', 'test2'],
+  const args = ['test', 'test2', 'test3'],
     constructorRef = { test: 'test' },
     callback = () => null;
 
@@ -64,8 +64,10 @@ describe('ExecutionContextHost', () => {
       const proxy = contextHost.switchToWs();
       expect(proxy.getData).to.be.a('function');
       expect(proxy.getClient).to.be.a('function');
+      expect(proxy.getAck()).to.be.a('function');
       expect(proxy.getClient()).to.be.eq(args[0]);
       expect(proxy.getData()).to.be.eq(args[1]);
+      expect(proxy.getData()).to.be.eq(args[2]);
     });
   });
 });

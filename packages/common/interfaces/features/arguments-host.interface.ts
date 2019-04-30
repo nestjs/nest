@@ -7,6 +7,7 @@ export interface HttpArgumentsHost {
 export interface WsArgumentsHost {
   getData<T = any>(): T;
   getClient<T = any>(): T;
+  getAck<T = any>(): T;
 }
 
 export interface RpcArgumentsHost {
