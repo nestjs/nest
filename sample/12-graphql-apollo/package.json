@@ -20,7 +20,7 @@
     "graphql": "14.2.1",
     "graphql-subscriptions": "1.1.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.4.0",
+    "rxjs": "6.5.1",
     "typescript": "3.4.5"
   },
   "devDependencies": {

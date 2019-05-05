@@ -18,7 +18,7 @@
     "babel-core": "6.26.3",
     "babel-polyfill": "6.26.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.4.0"
+    "rxjs": "6.5.1"
   },
   "devDependencies": {
     "babel-cli": "6.26.0",
