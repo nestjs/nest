@@ -16,7 +16,7 @@
     "@nestjs/typeorm": "6.1.0",
     "mongodb": "3.2.3",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.4.0",
+    "rxjs": "6.5.1",
     "typeorm": "0.2.17",
     "typescript": "3.4.5"
   },
