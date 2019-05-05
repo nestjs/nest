@@ -53,17 +53,14 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="320" /></a>
 
-#### Base Sponsor
+#### Base Sponsors
 
-<a href="https://blueanchor.io/" target="_blank"><img src="https://nestjs.com/img/blueanchor.png" width="300" /></a> &nbsp;
-<a href="https://www.novologic.com/" target="_blank"><img src="https://nestjs.com/img/novologic.png" width="200" /></a>
+3 slots available
 
 #### Silver Sponsors
 <a href="https://neoteric.eu/" target="_blank"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" valign="middle" /></a> &nbsp;
-  <a href="http://gojob.com" target="_blank"><img src="http://nestjs.com/img/gojob-logo.png" valign="middle" height="95" /></a> &nbsp; <a href="https://www.swingdev.io" target="_blank"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="150" valign="middle" /> </a> &nbsp; &nbsp;
-  <a href="https://yakaz.com/" target="_blank"><img src="https://nestjs.com/img/yakaz.png" width="100" valign="middle" /></a> &nbsp;
+  <a href="http://gojob.com" target="_blank"><img src="http://nestjs.com/img/gojob-logo.png" valign="middle" height="95" /></a> &nbsp; <a href="https://www.swingdev.io" target="_blank"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="150" valign="middle" /> </a> &nbsp; 
     <a href="https://trilon.io" target="_blank"><img src="https://nestjs.com/img/trilon.svg" width="150" valign="middle" /></a> 
-  <a href="http://xtremis.com/" target="_blank"><img src="https://nestjs.com/img/logo-xtremis.svg" width="150" valign="middle" /></a> 
 
 #### Sponsors
 
@@ -73,7 +70,10 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://ever.co/" target="_blank"><img src="https://nestjs.com/img/ever-logo.png" height="20" valign="middle" /></a>  &nbsp; 
 <a href="https://buddy.works/" target="_blank"><img src="https://nestjs.com/img/buddy-logo.svg" height="35" valign="middle" /></a> &nbsp;
 <a href="https://blokt.com" target="_blank"><img src="https://nestjs.com/img/blokt-logo.png" height="31" valign="middle" /></a>  &nbsp; 
-<a href="https://reposit.co.uk/" target="_blank"><img src="https://nestjs.com/img/reposit-logo.png" height="28" valign="middle" /></a>
+<a href="https://reposit.co.uk/" target="_blank"><img src="https://nestjs.com/img/reposit-logo.png" height="28" valign="middle" /></a> &nbsp; &nbsp; <a href="https://yakaz.com/" target="_blank"><img src="https://nestjs.com/img/yakaz.png" width="80" valign="middle" /></a> &nbsp;
+  <a href="http://xtremis.com/" target="_blank"><img src="https://nestjs.com/img/logo-xtremis.svg" width="145" valign="middle" /></a> &nbsp; <a href="https://blueanchor.io/" target="_blank"><img src="https://nestjs.com/img/blueanchor.png" width="180" valign="middle" /></a> &nbsp;
+<a href="https://www.novologic.com/" target="_blank"><img src="https://nestjs.com/img/novologic.png" width="130" valign="middle" /></a>
+
 
 
 ## Backers
