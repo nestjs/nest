@@ -117,7 +117,7 @@
     "lint-staged": "8.1.6",
     "memory-usage": "1.2.1",
     "mocha": "3.5.3",
-    "nodemon": "1.18.11",
+    "nodemon": "1.19.0",
     "nyc": "14.1.0",
     "prettier": "1.17.0",
     "sinon": "7.3.2",
