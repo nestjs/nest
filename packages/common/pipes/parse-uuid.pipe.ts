@@ -1,4 +1,4 @@
-import isUUID from 'validator/lib/isUUID';
+import isUUID from '../utils/isUUID';
 import { Optional } from '../decorators';
 import { BadRequestException } from '../exceptions/bad-request.exception';
 import { ArgumentMetadata, Injectable } from '../index';

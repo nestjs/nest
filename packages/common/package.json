@@ -14,8 +14,7 @@
   "dependencies": {
     "axios": "0.18.0",
     "cli-color": "1.4.0",
-    "uuid": "3.3.2",
-    "validator": "^10.11.0"
+    "uuid": "3.3.2"
   },
   "peerDependencies": {
     "reflect-metadata": "^0.1.12",
