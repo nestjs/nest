@@ -10,12 +10,12 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.1.1",
-    "@nestjs/core": "6.1.1",
-    "@nestjs/platform-express": "6.1.1",
-    "@nestjs/platform-socket.io": "6.1.1",
-    "@nestjs/testing": "6.1.1",
-    "@nestjs/websockets": "6.1.1",
+    "@nestjs/common": "6.2.0",
+    "@nestjs/core": "6.2.0",
+    "@nestjs/platform-express": "6.2.0",
+    "@nestjs/platform-socket.io": "6.2.0",
+    "@nestjs/testing": "6.2.0",
+    "@nestjs/websockets": "6.2.0",
     "class-transformer": "0.2.2",
     "class-validator": "0.9.1",
     "reflect-metadata": "0.1.13",
