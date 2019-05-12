@@ -144,6 +144,7 @@
       "packages/**/*.spec.ts",
       "packages/**/adapters/*.ts",
       "packages/**/nest-*.ts",
+      "packages/**/test/**/*.ts",
       "packages/core/errors/**/*",
       "packages/common/exceptions/*.ts",
       "packages/common/http/*.ts",
