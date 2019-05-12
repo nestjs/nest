@@ -54,7 +54,7 @@ describe('Module', () => {
     const setSpy = sinon.spy(collection, 'set');
     (module as any)._injectables = collection;
 
-    module.addInjectable(TestProvider);
+    module.addInjectable(TestProvider, TestModule);
     expect(
       setSpy.calledWith(
         'TestProvider',
@@ -410,6 +410,27 @@ describe('Module', () => {
     describe('otherwise', () => {
       it('should return false', () => {
         expect(module.hasInjectable('_')).to.be.false;
+      });
+    });
+  });
+
+  describe('getter "id"', () => {
+    it('should return module id', () => {
+      // tslint:disable-next-line:no-string-literal
+      expect(module.id).to.be.equal(module['_id']);
+    });
+  });
+
+  describe('getProviderByKey', () => {
+    describe('when does not exist', () => {
+      it('should return undefined', () => {
+        expect(module.getProviderByKey('test')).to.be.undefined;
+      });
+    });
+    describe('otherwise', () => {
+      it('should return instance wrapper', () => {
+        module.addProvider(TestProvider);
+        expect(module.getProviderByKey('TestProvider')).to.not.be.undefined;
       });
     });
   });
