@@ -69,7 +69,7 @@
     "pump": "3.0.0",
     "redis": "2.8.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.1",
+    "rxjs": "6.5.2",
     "rxjs-compat": "6.5.2",
     "socket.io": "2.2.0",
     "ts-morph": "2.0.1",
