@@ -70,7 +70,7 @@
     "redis": "2.8.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.1",
-    "rxjs-compat": "6.5.1",
+    "rxjs-compat": "6.5.2",
     "socket.io": "2.2.0",
     "ts-morph": "2.0.1",
     "uuid": "3.3.2"
@@ -118,7 +118,7 @@
     "memory-usage": "1.2.1",
     "mocha": "3.5.3",
     "nodemon": "1.19.0",
-    "nyc": "14.1.0",
+    "nyc": "14.1.1",
     "prettier": "1.17.0",
     "sinon": "7.3.2",
     "sinon-chai": "3.3.0",
