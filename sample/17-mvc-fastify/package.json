@@ -10,9 +10,9 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.1.1",
-    "@nestjs/core": "6.1.1",
-    "@nestjs/platform-fastify": "6.1.1",
+    "@nestjs/common": "6.2.0",
+    "@nestjs/core": "6.2.0",
+    "@nestjs/platform-fastify": "6.2.0",
     "handlebars": "4.1.2",
     "point-of-view": "3.3.0",
     "reflect-metadata": "0.1.13",
