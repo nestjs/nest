@@ -19,7 +19,7 @@
     "passport-http-bearer": "1.0.1",
     "passport-jwt": "4.0.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.1",
+    "rxjs": "6.5.2",
     "typescript": "3.4.5"
   },
   "devDependencies": {

@@ -16,7 +16,7 @@
     "hbs": "4.0.4",
     "pug": "2.0.3",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.1",
+    "rxjs": "6.5.2",
     "typescript": "3.4.5"
   },
   "devDependencies": {
