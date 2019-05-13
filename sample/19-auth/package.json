@@ -23,7 +23,7 @@
     "typescript": "3.4.5"
   },
   "devDependencies": {
-    "@types/jest": "24.0.12",
+    "@types/jest": "24.0.13",
     "@types/node": "10.14.6",
     "jest": "24.8.0",
     "supertest": "4.0.2",
