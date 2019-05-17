@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "10.14.6",
-    "@types/sequelize": "4.28.0",
+    "@types/sequelize": "4.28.1",
     "ts-node": "8.1.0",
     "tslint": "5.16.0"
   }
