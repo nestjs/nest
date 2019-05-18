@@ -45,7 +45,7 @@
     "class-transformer": "0.2.2",
     "class-validator": "0.9.1",
     "cli-color": "1.4.0",
-    "connect": "3.6.6",
+    "connect": "3.7.0",
     "cors": "2.8.5",
     "engine.io-client": "3.3.2",
     "express": "4.16.4",
