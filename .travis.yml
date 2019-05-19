@@ -21,4 +21,5 @@ install:
 script:
   - npm run lint
   - npm test
+  - npm install -g @zeit/ncc@beta && ncc build ./src/main.ts -o dist
 after_success: npm run coverage
