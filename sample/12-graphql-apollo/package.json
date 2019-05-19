@@ -12,7 +12,7 @@
   "dependencies": {
     "@nestjs/common": "6.2.0",
     "@nestjs/core": "6.2.0",
-    "@nestjs/graphql": "6.0.5",
+    "@nestjs/graphql": "6.2.1",
     "@nestjs/platform-express": "6.2.0",
     "apollo-server-express": "2.5.0",
     "class-transformer": "0.2.2",
@@ -24,7 +24,7 @@
     "typescript": "3.4.5"
   },
   "devDependencies": {
-    "@types/node": "10.14.6",
+    "@types/node": "10.14.7",
     "ts-node": "8.1.0",
     "tslint": "5.16.0"
   }

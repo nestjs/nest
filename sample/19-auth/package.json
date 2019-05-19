@@ -12,9 +12,9 @@
   "dependencies": {
     "@nestjs/common": "6.2.0",
     "@nestjs/core": "6.2.0",
-    "@nestjs/jwt": "6.0.0",
+    "@nestjs/jwt": "6.1.0",
     "@nestjs/platform-express": "6.2.0",
-    "@nestjs/passport": "6.0.0",
+    "@nestjs/passport": "6.1.0",
     "passport": "0.4.0",
     "passport-http-bearer": "1.0.1",
     "passport-jwt": "4.0.0",
@@ -23,8 +23,8 @@
     "typescript": "3.4.5"
   },
   "devDependencies": {
-    "@types/jest": "24.0.12",
-    "@types/node": "10.14.6",
+    "@types/jest": "24.0.13",
+    "@types/node": "10.14.7",
     "jest": "24.8.0",
     "supertest": "4.0.2",
     "ts-jest": "24.0.2",
