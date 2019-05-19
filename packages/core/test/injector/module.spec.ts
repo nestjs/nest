@@ -272,21 +272,28 @@ describe('Module', () => {
 
   describe('replace', () => {
     describe('when provider', () => {
-      it('should call `addProvider`', () => {
-        const addProviderSpy = sinon.spy(module, 'addProvider');
+      it('should call `mergeWith`', () => {
+        const wrapper = {
+          mergeWith: sinon.spy(),
+        };
         sinon.stub(module, 'hasProvider').callsFake(() => true);
+        sinon.stub(module.providers, 'get').callsFake(() => wrapper as any);
 
         module.replace(null, { isProvider: true });
-        expect(addProviderSpy.called).to.be.true;
+        expect(wrapper.mergeWith.called).to.be.true;
       });
     });
     describe('when guard', () => {
-      it('should call `addInjectable`', () => {
-        const addInjectableSpy = sinon.spy(module, 'addInjectable');
+      it('should call `mergeWith`', () => {
+        const wrapper = {
+          mergeWith: sinon.spy(),
+          isProvider: true,
+        };
         sinon.stub(module, 'hasInjectable').callsFake(() => true);
+        sinon.stub(module.injectables, 'get').callsFake(() => wrapper as any);
 
         module.replace(null, {});
-        expect(addInjectableSpy.called).to.be.true;
+        expect(wrapper.mergeWith.called).to.be.true;
       });
     });
   });
