@@ -1,6 +1,6 @@
 {
   "name": "nestjs",
-  "version": "6.2.0",
+  "version": "6.2.1",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
