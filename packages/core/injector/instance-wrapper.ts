@@ -1,4 +1,9 @@
-import { Scope, Type } from '@nestjs/common';
+import { Provider, Scope, Type } from '@nestjs/common';
+import {
+  ClassProvider,
+  FactoryProvider,
+  ValueProvider,
+} from '@nestjs/common/interfaces';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { STATIC_CONTEXT } from './constants';
@@ -30,11 +35,11 @@ interface InstanceMetadataStore {
 
 export class InstanceWrapper<T = any> {
   public readonly name: any;
-  public readonly metatype: Type<T>;
-  public readonly inject?: (string | symbol | Function | Type<any>)[];
   public readonly async?: boolean;
   public readonly host?: Module;
   public readonly scope?: Scope = Scope.DEFAULT;
+  public metatype: Type<T> | Function;
+  public inject?: (string | symbol | Function | Type<any>)[];
   public forwardRef?: boolean;
 
   private readonly values = new WeakMap<ContextId, InstancePerContext<T>>();
@@ -291,6 +296,22 @@ export class InstanceWrapper<T = any> {
     return instances
       .map(item => item.get(STATIC_CONTEXT))
       .filter(item => !!item);
+  }
+
+  public mergeWith(provider: Provider) {
+    if ((provider as ValueProvider).useValue) {
+      this.metatype = null;
+      this.setInstanceByContextId(STATIC_CONTEXT, {
+        instance: (provider as ValueProvider).useValue,
+        isResolved: true,
+        isPending: false,
+      });
+    } else if ((provider as ClassProvider).useClass) {
+      this.metatype = (provider as ClassProvider).useClass;
+    } else if ((provider as FactoryProvider).useFactory) {
+      this.metatype = (provider as FactoryProvider).useFactory;
+      this.inject = (provider as FactoryProvider).inject || [];
+    }
   }
 
   private isNewable(): boolean {
