@@ -301,12 +301,14 @@ export class InstanceWrapper<T = any> {
   public mergeWith(provider: Provider) {
     if ((provider as ValueProvider).useValue) {
       this.metatype = null;
+      this.inject = null;
       this.setInstanceByContextId(STATIC_CONTEXT, {
         instance: (provider as ValueProvider).useValue,
         isResolved: true,
         isPending: false,
       });
     } else if ((provider as ClassProvider).useClass) {
+      this.inject = null;
       this.metatype = (provider as ClassProvider).useClass;
     } else if ((provider as FactoryProvider).useFactory) {
       this.metatype = (provider as FactoryProvider).useFactory;
