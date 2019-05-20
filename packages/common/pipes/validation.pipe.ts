@@ -94,6 +94,7 @@ export class ValidationPipe implements PipeTransform<any> {
   }
 
   private stripProtoKeys(value: Record<string, any>) {
+    if (isNil(value)) { return; }
     delete value.__proto__;
     const keys = Object.keys(value);
     keys
