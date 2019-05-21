@@ -14,7 +14,7 @@
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/core.svg" alt="NPM Downloads" /></a>
 <a href="https://travis-ci.org/nestjs/nest" target="_blank"><img src="https://api.travis-ci.org/nestjs/nest.svg?branch=master" alt="Travis" /></a>
 <a href="https://travis-ci.org/nestjs/nest" target="_blank"><img src="https://img.shields.io/travis/nestjs/nest/master.svg?label=linux" alt="Linux" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#8" alt="Coverage" /></a>
+<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
 <a href="https://gitter.im/nestjs/nestjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge" target="_blank"><img src="https://badges.gitter.im/nestjs/nestjs.svg" alt="Gitter" /></a>
 <a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
 <a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
@@ -63,13 +63,15 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <a href="https://www.swingdev.io" target="_blank"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="125" valign="middle" /> </a> &nbsp; <a href="https://blueanchor.io/" target="_blank"><img src="https://nestjs.com/img/blueanchor.png" width="180" valign="middle" /></a> &nbsp;
 <a href="https://www.novologic.com/" target="_blank"><img src="https://nestjs.com/img/novologic.png" width="130" valign="middle" /></a> &nbsp;
-<a href="https://scal.io" target="_blank"><img src="https://nestjs.com/img/scalio-logo.svg" width="110" valign="middle" /></a> &nbsp; <a href="http://angularity.io" target="_blank"><img src="http://angularity.io/media/logo.svg" height="26" valign="middle" /></a> &nbsp; <!--<a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="30" /></a> &nbsp;--> <a href="https://hostpresto.com" target="_blank"><img src="https://nestjs.com/img/hostpresto.png" height="30" valign="middle" /></a>
+<a href="https://scal.io" target="_blank"><img src="https://nestjs.com/img/scalio-logo.svg" width="100" valign="middle" /></a> &nbsp; <a href="http://angularity.io" target="_blank"><img src="http://angularity.io/media/logo.svg" height="26" valign="middle" /></a> &nbsp; <!--<a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="30" /></a> &nbsp;--> <a href="https://hostpresto.com" target="_blank"><img src="https://nestjs.com/img/hostpresto.png" height="30" valign="middle" /></a>
 
 &nbsp; <a href="https://genuinebee.com/" target="_blank"><img src="https://nestjs.com/img/genuinebee.svg" height="36" valign="middle" /></a> &nbsp; <a href="http://architectnow.net/" target="_blank"><img src="https://nestjs.com/img/architectnow.png" height="24" valign="middle" /></a> &nbsp; <a href="https://quander.io/" target="_blank"><img src="https://nestjs.com/img/quander.png" height="28" valign="middle" /></a> &nbsp; <a href="https://mantro.net/" target="_blank"><img src="https://nestjs.com/img/mantro-logo.svg" height="20" valign="middle" /></a> &nbsp; <a href="https://triplebyte.com/" target="_blank"><img src="https://nestjs.com/img/triplebyte.png" height="30" valign="middle" /></a> &nbsp; 
 <a href="https://ever.co/" target="_blank"><img src="https://nestjs.com/img/ever-logo.png" height="20" valign="middle" /></a>  &nbsp; 
 <a href="https://buddy.works/" target="_blank"><img src="https://nestjs.com/img/buddy-logo.svg" height="35" valign="middle" /></a> &nbsp;
 <a href="https://blokt.com" target="_blank"><img src="https://nestjs.com/img/blokt-logo.png" height="31" valign="middle" /></a>  &nbsp; 
 <a href="https://reposit.co.uk/" target="_blank"><img src="https://nestjs.com/img/reposit-logo.png" height="28" valign="middle" /></a> &nbsp; &nbsp; <a href="https://yakaz.com/" target="_blank"><img src="https://nestjs.com/img/yakaz.png" width="80" valign="middle" /></a> &nbsp;
+<a href="https://nearpod.com/" target="_blank"><img src="https://nestjs.com/img/nearpod-logo.svg" width="120" valign="middle" /></a> &nbsp;
+<a href="https://clay.global/" target="_blank"><img src="https://nestjs.com/img/clay-logo.svg" width="90" valign="middle" /></a> &nbsp;
   <a href="http://xtremis.com/" target="_blank"><img src="https://nestjs.com/img/logo-xtremis.svg" width="145" valign="middle" /></a>
 
 

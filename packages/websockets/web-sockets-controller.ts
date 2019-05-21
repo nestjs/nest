@@ -28,7 +28,7 @@ export class WebSocketsController {
 
   public mergeGatewayAndServer(
     instance: NestGateway,
-    metatype: Type<any>,
+    metatype: Type<any> | Function,
     module: string,
   ) {
     const options = Reflect.getMetadata(GATEWAY_OPTIONS, metatype) || {};

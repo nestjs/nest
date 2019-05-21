@@ -365,9 +365,13 @@ export class Module {
 
   public replace(toReplace: string | symbol | Type<any>, options: any) {
     if (options.isProvider && this.hasProvider(toReplace)) {
-      return this.addProvider({ provide: toReplace, ...options });
+      const name = this.getProviderStaticToken(toReplace);
+      const originalProvider = this._providers.get(name);
+      return originalProvider.mergeWith({ provide: toReplace, ...options });
     } else if (!options.isProvider && this.hasInjectable(toReplace)) {
-      this.addInjectable({
+      const name = this.getProviderStaticToken(toReplace);
+      const originalInjectable = this._injectables.get(name);
+      return originalInjectable.mergeWith({
         provide: toReplace,
         ...options,
       });

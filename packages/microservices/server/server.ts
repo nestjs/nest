@@ -2,13 +2,14 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isString } from '@nestjs/common/utils/shared.utils';
 import {
+  ConnectableObservable,
   EMPTY as empty,
   from as fromPromise,
   Observable,
   of,
   Subscription,
 } from 'rxjs';
-import { catchError, finalize } from 'rxjs/operators';
+import { catchError, finalize, publish } from 'rxjs/operators';
 import {
   MessageHandler,
   MicroserviceOptions,
@@ -61,13 +62,16 @@ export abstract class Server {
     if (!handler) {
       return this.logger.error(NO_EVENT_HANDLER);
     }
-    await handler(packet.data);
+    const resultOrStream = await handler(packet.data);
+    if (this.isObservable(resultOrStream)) {
+      (resultOrStream.pipe(publish()) as ConnectableObservable<any>).connect();
+    }
   }
 
   public transformToObservable<T = any>(resultOrDeffered: any): Observable<T> {
     if (resultOrDeffered instanceof Promise) {
       return fromPromise(resultOrDeffered);
-    } else if (!(resultOrDeffered && isFunction(resultOrDeffered.subscribe))) {
+    } else if (!this.isObservable(resultOrDeffered)) {
       return of(resultOrDeffered);
     }
     return resultOrDeffered;
@@ -90,5 +94,9 @@ export abstract class Server {
     loader?: Function,
   ): T {
     return loadPackage(name, ctx, loader);
+  }
+
+  private isObservable(input: unknown): input is Observable<any> {
+    return input && isFunction((input as Observable<any>).subscribe);
   }
 }
