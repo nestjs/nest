@@ -97,7 +97,7 @@ export class ValidationPipe implements PipeTransform<any> {
     delete value.__proto__;
     const keys = Object.keys(value);
     keys
-      .filter(key => typeof value[key] === 'object')
+      .filter(key => typeof value[key] === 'object' && value[key])
       .forEach(key => this.stripProtoKeys(value[key]));
   }
 }
