@@ -42,7 +42,7 @@
     "apollo-server-express": "2.5.0",
     "axios": "0.18.0",
     "cache-manager": "2.9.0",
-    "class-transformer": "0.2.2",
+    "class-transformer": "0.2.3",
     "class-validator": "0.9.1",
     "cli-color": "1.4.0",
     "connect": "3.7.0",
