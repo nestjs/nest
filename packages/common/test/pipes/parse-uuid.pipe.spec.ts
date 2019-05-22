@@ -20,17 +20,17 @@ describe('ParseUUIDPipe', () => {
       });
 
       it('should return string if value is uuid v3', async () => {
-        target = new ParseUUIDPipe('3');
+        target = new ParseUUIDPipe({ version: '3' });
         expect(await target.transform(v3, {} as ArgumentMetadata)).to.equal(v3);
       });
 
       it('should return string if value is uuid v4', async () => {
-        target = new ParseUUIDPipe('4');
+        target = new ParseUUIDPipe({ version: '4' });
         expect(await target.transform(v4, {} as ArgumentMetadata)).to.equal(v4);
       });
 
       it('should return string if value is uuid v5', async () => {
-        target = new ParseUUIDPipe('5');
+        target = new ParseUUIDPipe({ version: '5' });
         expect(await target.transform(v5, {} as ArgumentMetadata)).to.equal(v5);
       });
     });
@@ -42,21 +42,21 @@ describe('ParseUUIDPipe', () => {
       });
 
       it('should throw an error - v3', async () => {
-        target = new ParseUUIDPipe('3');
+        target = new ParseUUIDPipe({ version: '3' });
         expect(target.transform('123a', {} as ArgumentMetadata)).to.be.rejected;
         expect(target.transform(v4, {} as ArgumentMetadata)).to.be.rejected;
         expect(target.transform(v5, {} as ArgumentMetadata)).to.be.rejected;
       });
 
       it('should throw an error - v4', async () => {
-        target = new ParseUUIDPipe('4');
+        target = new ParseUUIDPipe({ version: '4' });
         expect(target.transform('123a', {} as ArgumentMetadata)).to.be.rejected;
         expect(target.transform(v3, {} as ArgumentMetadata)).to.be.rejected;
         expect(target.transform(v5, {} as ArgumentMetadata)).to.be.rejected;
       });
 
       it('should throw an error - v5 ', async () => {
-        target = new ParseUUIDPipe('5');
+        target = new ParseUUIDPipe({ version: '4' });
         expect(target.transform('123a', {} as ArgumentMetadata)).to.be.rejected;
         expect(target.transform(v3, {} as ArgumentMetadata)).to.be.rejected;
         expect(target.transform(v4, {} as ArgumentMetadata)).to.be.rejected;
