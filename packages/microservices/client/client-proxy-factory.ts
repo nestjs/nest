@@ -14,6 +14,10 @@ export interface IClientProxyFactory {
 }
 
 export class ClientProxyFactory {
+  public static create(
+    clientOptions: { transport: Transport.GRPC } & ClientOptions,
+  ): ClientGrpcProxy;
+  public static create(clientOptions: ClientOptions): ClientProxy & Closeable;
   public static create(clientOptions: ClientOptions): ClientProxy & Closeable {
     const { transport, options } = clientOptions;
     switch (transport) {
