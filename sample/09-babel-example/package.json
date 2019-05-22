@@ -9,12 +9,12 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.2.2",
-    "@nestjs/core": "6.2.2",
-    "@nestjs/microservices": "6.2.2",
-    "@nestjs/platform-express": "6.2.2",
-    "@nestjs/testing": "6.2.2",
-    "@nestjs/websockets": "6.2.2",
+    "@nestjs/common": "6.2.4",
+    "@nestjs/core": "6.2.4",
+    "@nestjs/microservices": "6.2.4",
+    "@nestjs/platform-express": "6.2.4",
+    "@nestjs/testing": "6.2.4",
+    "@nestjs/websockets": "6.2.4",
     "babel-core": "6.26.3",
     "babel-polyfill": "6.26.0",
     "reflect-metadata": "0.1.13",
