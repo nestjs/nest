@@ -2,7 +2,7 @@
 name: "\U0001F4A5 Regression"
 about: Report an unexpected while upgrading your Nest application!
 title: ''
-labels: 'type: bug :sob:'
+labels: 'type: bug :sob:,needs triage'
 assignees: ''
 
 ---
