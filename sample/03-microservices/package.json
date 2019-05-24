@@ -22,7 +22,7 @@
     "typescript": "3.4.5"
   },
   "devDependencies": {
-    "@types/amqplib": "0.5.11",
+    "@types/amqplib": "0.5.12",
     "@types/node": "10.14.7",
     "ts-node": "8.1.0",
     "tslint": "5.16.0"
