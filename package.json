@@ -1,6 +1,7 @@
 {
   "name": "nestjs-monorepo",
   "version": "6.2.4",
+  "private": true,
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
