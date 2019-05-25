@@ -2,7 +2,7 @@
 name: "\U0001F41B Bug Report"
 about: "If something isn't working as expected \U0001F914."
 title: ''
-labels: 'type: bug :sob:,needs triage'
+labels: 'type: potential issue :broken_heart:,needs triage'
 assignees: ''
 
 ---
