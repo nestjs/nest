@@ -14,7 +14,7 @@
     "@nestjs/core": "6.2.4",
     "@nestjs/platform-express": "6.2.4",
     "@nestjs/typeorm": "6.1.1",
-    "mongodb": "3.2.5",
+    "mongodb": "3.2.6",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typeorm": "0.2.17",
