@@ -951,11 +951,11 @@ cross-fetch@2.2.2:
     node-fetch "2.1.2"
     whatwg-fetch "2.0.4"
 
-cross-fetch@3.0.2:
-  version "3.0.2"
-  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.0.2.tgz#b7136491967031949c7f86b15903aef4fa3f1768"
+cross-fetch@3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.0.3.tgz#b988beab275939cb77ad4e362c873f7fa8a221a5"
   dependencies:
-    node-fetch "2.3.0"
+    node-fetch "2.6.0"
     whatwg-fetch "3.0.0"
 
 cross-spawn@^5.0.1:
@@ -2382,13 +2382,17 @@ node-fetch@2.1.2:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.1.2.tgz#ab884e8e7e57e38a944753cec706f788d1768bb5"
 
-node-fetch@2.3.0, node-fetch@^2.3.0:
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.3.0.tgz#1a1d940bbfb916a1d3e0219f037e89e71f8c5fa5"
+node-fetch@2.6.0:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.0.tgz#e633456386d4aa55863f676a7ab0daa8fdecb0fd"
 
 node-fetch@^2.1.2, node-fetch@^2.2.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.2.0.tgz#4ee79bde909262f9775f731e3656d0db55ced5b5"
+
+node-fetch@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.3.0.tgz#1a1d940bbfb916a1d3e0219f037e89e71f8c5fa5"
 
 node-pre-gyp@^0.10.0:
   version "0.10.3"
@@ -2660,14 +2664,14 @@ prettier@1.17.1:
   version "1.17.1"
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-1.17.1.tgz#ed64b4e93e370cb8a25b9ef7fef3e4fd1c0995db"
 
-prisma-binding@2.3.10:
-  version "2.3.10"
-  resolved "https://registry.yarnpkg.com/prisma-binding/-/prisma-binding-2.3.10.tgz#5b45a5ba10d2ee77ba22238dc7b374bcf135094f"
+prisma-binding@2.3.11:
+  version "2.3.11"
+  resolved "https://registry.yarnpkg.com/prisma-binding/-/prisma-binding-2.3.11.tgz#edcb70433e0398065a50c93a2c6c2e0e23b83899"
   dependencies:
     apollo-link "1.2.11"
     apollo-link-error "1.1.10"
     apollo-link-ws "1.0.17"
-    cross-fetch "3.0.2"
+    cross-fetch "3.0.3"
     graphql "^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0"
     graphql-binding "2.5.1"
     graphql-import "0.7.1"
