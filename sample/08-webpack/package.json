@@ -20,7 +20,7 @@
     "ts-loader": "6.0.1",
     "ts-node": "8.1.0",
     "tslint": "5.16.0",
-    "webpack": "4.32.1",
+    "webpack": "4.32.2",
     "webpack-cli": "3.3.2",
     "webpack-node-externals": "1.7.2"
   }

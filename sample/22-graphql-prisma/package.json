@@ -17,13 +17,13 @@
     "apollo-server-express": "2.5.0",
     "graphql": "14.3.0",
     "graphql-tools": "4.0.4",
-    "prisma-binding": "2.3.10",
+    "prisma-binding": "2.3.11",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.4.5"
   },
   "devDependencies": {
-    "nodemon": "1.19.0",
+    "nodemon": "1.19.1",
     "prettier": "1.17.1",
     "ts-node": "8.1.0",
     "tsconfig-paths": "3.8.0",
