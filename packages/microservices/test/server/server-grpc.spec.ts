@@ -357,6 +357,7 @@ describe('ServerGrpc', () => {
       const fn = server.createStreamDuplexMethod(handler);
       const call = {
         on: (event, callback) => callback(),
+        off: sinon.spy(),
         end: sinon.spy(),
         write: sinon.spy(),
       };
