@@ -1,6 +1,6 @@
 import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { fromEvent, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { EMPTY, fromEvent, Subject } from 'rxjs';
+import { catchError, takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
   GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
@@ -12,10 +12,7 @@ import { GrpcMethodStreamingType } from '../decorators';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { CustomTransportStrategy } from '../interfaces';
-import {
-  GrpcOptions,
-  MicroserviceOptions,
-} from '../interfaces/microservice-configuration.interface';
+import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 let grpcPackage: any = {};
@@ -27,6 +24,7 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   end: Function;
   write: Function;
   on: Function;
+  emit: Function;
 }
 
 export class ServerGrpc extends Server implements CustomTransportStrategy {
@@ -216,7 +214,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(call.request, call.metadata);
       const result$ = this.transformToObservable(await handler);
       await result$
-        .pipe(takeUntil(fromEvent(call as any, CANCEL_EVENT)))
+        .pipe(
+          takeUntil(fromEvent(call as any, CANCEL_EVENT)),
+          catchError(err => {
+            call.emit('error', err);
+            return EMPTY;
+          }),
+        )
         .forEach(data => call.write(data));
       call.end();
     };
@@ -244,7 +248,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(req.asObservable());
       const res = this.transformToObservable(await handler);
       await res
-        .pipe(takeUntil(fromEvent(call as any, CANCEL_EVENT)))
+        .pipe(
+          takeUntil(fromEvent(call as any, CANCEL_EVENT)),
+          catchError(err => {
+            call.emit('error', err);
+            return EMPTY;
+          }),
+        )
         .forEach(m => call.write(m));
 
       call.end();
