@@ -4,6 +4,7 @@ import {
   CONNECT_EVENT,
   DISCONNECTED_RMQ_MESSAGE,
   DISCONNECT_EVENT,
+  MESSAGE_FORMAT_ERROR,
   NO_MESSAGE_HANDLER,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
   RQM_DEFAULT_PREFETCH_COUNT,
@@ -85,33 +86,37 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   }
 
   public async handleMessage(message: any): Promise<void> {
-    const { content, properties } = message;
-    const packet = JSON.parse(content.toString());
-    const pattern = isString(packet.pattern)
-      ? packet.pattern
-      : JSON.stringify(packet.pattern);
+    try {
+      const { content, properties } = message;
+      const packet = JSON.parse(content.toString());
+      const pattern = isString(packet.pattern)
+        ? packet.pattern
+        : JSON.stringify(packet.pattern);
 
-    if (isUndefined(packet.id)) {
-      return this.handleEvent(pattern, packet);
+      if (isUndefined(packet.id)) {
+        return this.handleEvent(pattern, packet);
+      }
+      const handler = this.getHandlerByPattern(pattern);
+
+      if (!handler) {
+        const status = 'error';
+        return this.sendMessage(
+          { status, err: NO_MESSAGE_HANDLER },
+          properties.replyTo,
+          properties.correlationId,
+        );
+      }
+      const response$ = this.transformToObservable(
+        await handler(packet.data),
+      ) as Observable<any>;
+
+      const publish = <T>(data: T) =>
+        this.sendMessage(data, properties.replyTo, properties.correlationId);
+
+      response$ && this.send(response$, publish);
+    } catch (err) {
+      this.logger.error(MESSAGE_FORMAT_ERROR);
     }
-    const handler = this.getHandlerByPattern(pattern);
-
-    if (!handler) {
-      const status = 'error';
-      return this.sendMessage(
-        { status, err: NO_MESSAGE_HANDLER },
-        properties.replyTo,
-        properties.correlationId,
-      );
-    }
-    const response$ = this.transformToObservable(
-      await handler(packet.data),
-    ) as Observable<any>;
-
-    const publish = <T>(data: T) =>
-      this.sendMessage(data, properties.replyTo, properties.correlationId);
-
-    response$ && this.send(response$, publish);
   }
 
   public sendMessage<T = any>(

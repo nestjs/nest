@@ -6,16 +6,14 @@ import {
   CLOSE_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
+  MESSAGE_FORMAT_ERROR,
   NO_MESSAGE_HANDLER,
   TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
 } from '../constants';
 import { JsonSocket } from '../helpers/json-socket';
 import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
-import {
-  MicroserviceOptions,
-  TcpOptions,
-} from '../interfaces/microservice-configuration.interface';
+import { TcpOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
@@ -29,8 +27,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   constructor(private readonly options: TcpOptions['options']) {
     super();
     this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
-    this.host =
-      this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
+    this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
 
     this.init();
   }
@@ -56,30 +53,34 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     socket: JsonSocket,
     packet: ReadPacket & PacketId,
   ) {
-    const pattern = !isString(packet.pattern)
-      ? JSON.stringify(packet.pattern)
-      : packet.pattern;
+    try {
+      const pattern = !isString(packet.pattern)
+        ? JSON.stringify(packet.pattern)
+        : packet.pattern;
 
-    if (isUndefined(packet.id)) {
-      return this.handleEvent(pattern, packet);
-    }
-    const handler = this.getHandlerByPattern(pattern);
-    if (!handler) {
-      const status = 'error';
-      return socket.sendMessage({
-        id: packet.id,
-        status,
-        err: NO_MESSAGE_HANDLER,
-      });
-    }
-    const response$ = this.transformToObservable(
-      await handler(packet.data),
-    ) as Observable<any>;
+      if (isUndefined(packet.id)) {
+        return this.handleEvent(pattern, packet);
+      }
+      const handler = this.getHandlerByPattern(pattern);
+      if (!handler) {
+        const status = 'error';
+        return socket.sendMessage({
+          id: packet.id,
+          status,
+          err: NO_MESSAGE_HANDLER,
+        });
+      }
+      const response$ = this.transformToObservable(
+        await handler(packet.data),
+      ) as Observable<any>;
 
-    response$ &&
-      this.send(response$, data =>
-        socket.sendMessage(Object.assign(data, { id: packet.id })),
-      );
+      response$ &&
+        this.send(response$, data =>
+          socket.sendMessage(Object.assign(data, { id: packet.id })),
+        );
+    } catch (err) {
+      this.logger.error(MESSAGE_FORMAT_ERROR);
+    }
   }
 
   public handleClose(): undefined | number | NodeJS.Timer {

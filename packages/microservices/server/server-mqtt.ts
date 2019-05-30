@@ -4,15 +4,13 @@ import {
   CONNECT_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
+  MESSAGE_FORMAT_ERROR,
   MQTT_DEFAULT_URL,
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
 import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
-import {
-  MicroserviceOptions,
-  MqttOptions,
-} from '../interfaces/microservice-configuration.interface';
+import { MqttOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 let mqttPackage: any = {};
@@ -71,22 +69,26 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     buffer: Buffer,
     pub: MqttClient,
   ): Promise<any> {
-    const packet = this.deserialize(buffer.toString());
-    if (isUndefined(packet.id)) {
-      return this.handleEvent(channel, packet);
-    }
-    const pattern = channel.replace(/_ack$/, '');
-    const publish = this.getPublisher(pub, pattern, packet.id);
-    const handler = this.getHandlerByPattern(pattern);
+    try {
+      const packet = this.deserialize(buffer.toString());
+      if (isUndefined(packet.id)) {
+        return this.handleEvent(channel, packet);
+      }
+      const pattern = channel.replace(/_ack$/, '');
+      const publish = this.getPublisher(pub, pattern, packet.id);
+      const handler = this.getHandlerByPattern(pattern);
 
-    if (!handler) {
-      const status = 'error';
-      return publish({ id: packet.id, status, err: NO_MESSAGE_HANDLER });
+      if (!handler) {
+        const status = 'error';
+        return publish({ id: packet.id, status, err: NO_MESSAGE_HANDLER });
+      }
+      const response$ = this.transformToObservable(
+        await handler(packet.data),
+      ) as Observable<any>;
+      response$ && this.send(response$, publish);
+    } catch (err) {
+      this.logger.error(MESSAGE_FORMAT_ERROR);
     }
-    const response$ = this.transformToObservable(
-      await handler(packet.data),
-    ) as Observable<any>;
-    response$ && this.send(response$, publish);
   }
 
   public getPublisher(client: MqttClient, pattern: any, id: string): any {

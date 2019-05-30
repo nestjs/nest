@@ -3,15 +3,13 @@ import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
+  MESSAGE_FORMAT_ERROR,
   NATS_DEFAULT_URL,
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { Client } from '../external/nats-client.interface';
 import { CustomTransportStrategy, PacketId } from '../interfaces';
-import {
-  MicroserviceOptions,
-  NatsOptions,
-} from '../interfaces/microservice-configuration.interface';
+import { NatsOptions } from '../interfaces/microservice-configuration.interface';
 import { ReadPacket } from '../interfaces/packet.interface';
 import { Server } from './server';
 
@@ -85,19 +83,23 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     client: Client,
     replyTo: string,
   ) {
-    if (isUndefined(message.id)) {
-      return this.handleEvent(channel, message);
+    try {
+      if (isUndefined(message.id)) {
+        return this.handleEvent(channel, message);
+      }
+      const publish = this.getPublisher(client, replyTo, message.id);
+      const handler = this.getHandlerByPattern(channel);
+      if (!handler) {
+        const status = 'error';
+        return publish({ id: message.id, status, err: NO_MESSAGE_HANDLER });
+      }
+      const response$ = this.transformToObservable(
+        await handler(message.data),
+      ) as Observable<any>;
+      response$ && this.send(response$, publish);
+    } catch (err) {
+      this.logger.error(MESSAGE_FORMAT_ERROR);
     }
-    const publish = this.getPublisher(client, replyTo, message.id);
-    const handler = this.getHandlerByPattern(channel);
-    if (!handler) {
-      const status = 'error';
-      return publish({ id: message.id, status, err: NO_MESSAGE_HANDLER });
-    }
-    const response$ = this.transformToObservable(
-      await handler(message.data),
-    ) as Observable<any>;
-    response$ && this.send(response$, publish);
   }
 
   public getPublisher(publisher: Client, replyTo: string, id: string) {

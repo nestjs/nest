@@ -28,6 +28,7 @@ export const GRPC_DEFAULT_PROTO_LOADER = '@grpc/proto-loader';
 
 export const NO_MESSAGE_HANDLER = `There is no matching message handler defined in the remote service.`;
 export const NO_EVENT_HANDLER = `There is no matching event handler defined in the remote service.`;
+export const MESSAGE_FORMAT_ERROR = `The incoming message didn't match the expected shape (runtime error). Please, make sure that your producer sends the messages in the proper format.`;
 export const DISCONNECTED_RMQ_MESSAGE = `Disconnected from RMQ. Trying to reconnect.`;
 export const GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH = 4 * 1024 * 1024;
 export const GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH = 4 * 1024 * 1024;

@@ -4,6 +4,7 @@ import {
   CONNECT_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
+  MESSAGE_FORMAT_ERROR,
   NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_URL,
 } from '../constants';
@@ -13,10 +14,7 @@ import {
   RetryStrategyOptions,
 } from '../external/redis.interface';
 import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
-import {
-  MicroserviceOptions,
-  RedisOptions,
-} from '../interfaces/microservice-configuration.interface';
+import { RedisOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 let redisPackage: any = {};
@@ -84,22 +82,26 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     buffer: string | any,
     pub: RedisClient,
   ) {
-    const packet = this.deserialize(buffer);
-    if (isUndefined(packet.id)) {
-      return this.handleEvent(channel, packet);
-    }
-    const pattern = channel.replace(/_ack$/, '');
-    const publish = this.getPublisher(pub, pattern, packet.id);
-    const handler = this.getHandlerByPattern(pattern);
+    try {
+      const packet = this.deserialize(buffer);
+      if (isUndefined(packet.id)) {
+        return this.handleEvent(channel, packet);
+      }
+      const pattern = channel.replace(/_ack$/, '');
+      const publish = this.getPublisher(pub, pattern, packet.id);
+      const handler = this.getHandlerByPattern(pattern);
 
-    if (!handler) {
-      const status = 'error';
-      return publish({ id: packet.id, status, err: NO_MESSAGE_HANDLER });
+      if (!handler) {
+        const status = 'error';
+        return publish({ id: packet.id, status, err: NO_MESSAGE_HANDLER });
+      }
+      const response$ = this.transformToObservable(
+        await handler(packet.data),
+      ) as Observable<any>;
+      response$ && this.send(response$, publish);
+    } catch (err) {
+      this.logger.error(MESSAGE_FORMAT_ERROR);
     }
-    const response$ = this.transformToObservable(
-      await handler(packet.data),
-    ) as Observable<any>;
-    response$ && this.send(response$, publish);
   }
 
   public getPublisher(pub: RedisClient, pattern: any, id: string) {
