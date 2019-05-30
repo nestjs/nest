@@ -1,7 +1,7 @@
 import { Optional } from '../decorators';
 import { ArgumentMetadata, BadRequestException, Injectable } from '../index';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
-import isUUID from '../utils/isUUID';
+import { isUUID } from '../utils/is-uuid';
 
 export interface ParseUUIDPipeOptions {
   version?: '3' | '4' | '5';

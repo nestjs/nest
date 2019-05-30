@@ -1,4 +1,4 @@
-export default function assertString(input: any) {
+export function assertString(input: any) {
   const isString = typeof input === 'string' || input instanceof String;
 
   if (!isString) {
