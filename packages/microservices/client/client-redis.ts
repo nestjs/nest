@@ -14,7 +14,6 @@ import {
   RetryStrategyOptions,
 } from '../external/redis.interface';
 import { PacketId, ReadPacket, RedisOptions, WritePacket } from '../interfaces';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 
@@ -28,10 +27,9 @@ export class ClientRedis extends ClientProxy {
   protected connection: Promise<any>;
   protected isExplicitlyTerminated = false;
 
-  constructor(protected readonly options: ClientOptions['options']) {
+  constructor(protected readonly options: RedisOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp<RedisOptions>(options, 'url') || REDIS_DEFAULT_URL;
+    this.url = this.getOptionsProp(options, 'url') || REDIS_DEFAULT_URL;
 
     redisPackage = loadPackage('redis', ClientRedis.name, () =>
       require('redis'),
@@ -108,13 +106,12 @@ export class ClientRedis extends ClientProxy {
     }
     if (
       this.isExplicitlyTerminated ||
-      !this.getOptionsProp<RedisOptions>(this.options, 'retryAttempts') ||
-      options.attempt >
-        this.getOptionsProp<RedisOptions>(this.options, 'retryAttempts')
+      !this.getOptionsProp(this.options, 'retryAttempts') ||
+      options.attempt > this.getOptionsProp(this.options, 'retryAttempts')
     ) {
       return undefined;
     }
-    return this.getOptionsProp<RedisOptions>(this.options, 'retryDelay') || 0;
+    return this.getOptionsProp(this.options, 'retryDelay') || 0;
   }
 
   public createResponseCallback(): (channel: string, buffer: string) => void {
@@ -173,10 +170,8 @@ export class ClientRedis extends ClientProxy {
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
     return new Promise((resolve, reject) =>
-      this.pubClient.publish(
-        pattern,
-        JSON.stringify(packet),
-        err => (err ? reject(err) : resolve()),
+      this.pubClient.publish(pattern, JSON.stringify(packet), err =>
+        err ? reject(err) : resolve(),
       ),
     );
   }

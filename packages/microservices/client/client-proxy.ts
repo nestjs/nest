@@ -93,15 +93,14 @@ export abstract class ClientProxy {
     return merge(error$, connect$).pipe(take(1));
   }
 
-  protected getOptionsProp<T extends { options?: any }>(
-    obj: ClientOptions['options'],
-    prop: keyof T['options'],
-    defaultValue: any = undefined,
-  ) {
-    return obj ? obj[prop as string] : defaultValue;
+  protected getOptionsProp<
+    T extends ClientOptions['options'],
+    K extends keyof T
+  >(obj: T, prop: K, defaultValue: T[K] = undefined) {
+    return (obj && obj[prop]) || defaultValue;
   }
 
   protected normalizePattern<T = any>(pattern: T): string {
-    return isString(pattern) ? pattern : JSON.stringify(pattern);
+    return (isString(pattern) ? pattern : JSON.stringify(pattern)) as string;
   }
 }

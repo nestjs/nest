@@ -4,7 +4,7 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { EventEmitter } from 'events';
 import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
-import { ClientOptions, ReadPacket, RmqOptions } from '../interfaces';
+import { ReadPacket, RmqOptions } from '../interfaces';
 import {
   DISCONNECT_EVENT,
   ERROR_EVENT,
@@ -31,16 +31,13 @@ export class ClientRMQ extends ClientProxy {
   protected queueOptions: any;
   protected responseEmitter: EventEmitter;
 
-  constructor(protected readonly options: ClientOptions['options']) {
+  constructor(protected readonly options: RmqOptions['options']) {
     super();
-    this.urls = this.getOptionsProp<RmqOptions>(this.options, 'urls') || [
-      RQM_DEFAULT_URL,
-    ];
+    this.urls = this.getOptionsProp(this.options, 'urls') || [RQM_DEFAULT_URL];
     this.queue =
-      this.getOptionsProp<RmqOptions>(this.options, 'queue') ||
-      RQM_DEFAULT_QUEUE;
+      this.getOptionsProp(this.options, 'queue') || RQM_DEFAULT_QUEUE;
     this.queueOptions =
-      this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
+      this.getOptionsProp(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
 
     loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
@@ -92,7 +89,7 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public createClient<T = any>(): T {
-    const socketOptions = this.getOptionsProp<RmqOptions>(this.options, 'socketOptions');
+    const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
     return rqmPackage.connect(this.urls, socketOptions) as T;
   }
 
@@ -110,10 +107,10 @@ export class ClientRMQ extends ClientProxy {
 
   public async setupChannel(channel: any, resolve: Function) {
     const prefetchCount =
-      this.getOptionsProp<RmqOptions>(this.options, 'prefetchCount') ||
+      this.getOptionsProp(this.options, 'prefetchCount') ||
       RQM_DEFAULT_PREFETCH_COUNT;
     const isGlobalPrefetchCount =
-      this.getOptionsProp<RmqOptions>(this.options, 'isGlobalPrefetchCount') ||
+      this.getOptionsProp(this.options, 'isGlobalPrefetchCount') ||
       RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
 
     await channel.assertQueue(this.queue, this.queueOptions);

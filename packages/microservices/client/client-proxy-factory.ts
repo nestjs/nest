@@ -1,6 +1,16 @@
 import { Transport } from '../enums/transport.enum';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
+import {
+  ClientOptions,
+  TcpClientOptions,
+} from '../interfaces/client-metadata.interface';
 import { Closeable } from '../interfaces/closeable.interface';
+import {
+  GrpcOptions,
+  MqttOptions,
+  NatsOptions,
+  RedisOptions,
+  RmqOptions,
+} from '../interfaces/microservice-configuration.interface';
 import { ClientGrpcProxy } from './client-grpc';
 import { ClientMqtt } from './client-mqtt';
 import { ClientNats } from './client-nats';
@@ -18,17 +28,17 @@ export class ClientProxyFactory {
     const { transport, options } = clientOptions;
     switch (transport) {
       case Transport.REDIS:
-        return new ClientRedis(options);
+        return new ClientRedis(options as RedisOptions['options']);
       case Transport.NATS:
-        return new ClientNats(options);
+        return new ClientNats(options as NatsOptions['options']);
       case Transport.MQTT:
-        return new ClientMqtt(options);
+        return new ClientMqtt(options as MqttOptions['options']);
       case Transport.GRPC:
-        return new ClientGrpcProxy(options);
+        return new ClientGrpcProxy(options as GrpcOptions['options']);
       case Transport.RMQ:
-        return new ClientRMQ(options);
+        return new ClientRMQ(options as RmqOptions['options']);
       default:
-        return new ClientTCP(options);
+        return new ClientTCP(options as TcpClientOptions['options']);
     }
   }
 }
