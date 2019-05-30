@@ -1,6 +1,10 @@
 import { Optional } from '../decorators';
 import { Injectable } from '../decorators/core';
-import { ArgumentMetadata, BadRequestException, ValidationError } from '../index';
+import {
+  ArgumentMetadata,
+  BadRequestException,
+  ValidationError,
+} from '../index';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
@@ -57,10 +61,13 @@ export class ValidationPipe implements PipeTransform<any> {
     if (!metatype || !this.toValidate(metadata)) {
       return value;
     }
+    value = this.toEmptyIfNil(value);
+
+    this.stripProtoKeys(value);
     const entity = classTransformer.plainToClass(
       metatype,
-      this.toEmptyIfNil(value),
-      this.transformOptions
+      value,
+      this.transformOptions,
     );
     const errors = await classValidator.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
@@ -69,8 +76,8 @@ export class ValidationPipe implements PipeTransform<any> {
     return this.isTransformEnabled
       ? entity
       : Object.keys(this.validatorOptions).length > 0
-        ? classTransformer.classToPlain(entity, this.transformOptions)
-        : value;
+      ? classTransformer.classToPlain(entity, this.transformOptions)
+      : value;
   }
 
   private toValidate(metadata: ArgumentMetadata): boolean {
@@ -82,7 +89,15 @@ export class ValidationPipe implements PipeTransform<any> {
     return !types.some(t => metatype === t) && !isNil(metatype);
   }
 
-  toEmptyIfNil<T = any, R = any>(value: T): R | {} {
+  private toEmptyIfNil<T = any, R = any>(value: T): R | {} {
     return isNil(value) ? {} : value;
+  }
+
+  private stripProtoKeys(value: Record<string, any>) {
+    delete value.__proto__;
+    const keys = Object.keys(value);
+    keys
+      .filter(key => typeof value[key] === 'object' && value[key])
+      .forEach(key => this.stripProtoKeys(value[key]));
   }
 }

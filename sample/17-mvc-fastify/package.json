@@ -10,19 +10,19 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.0.3",
-    "@nestjs/core": "6.0.3",
-    "@nestjs/platform-fastify": "6.0.3",
-    "handlebars": "4.1.1",
-    "point-of-view": "3.1.1",
+    "@nestjs/common": "6.2.4",
+    "@nestjs/core": "6.2.4",
+    "@nestjs/platform-fastify": "6.2.4",
+    "handlebars": "4.1.2",
+    "point-of-view": "3.4.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.4.0",
-    "typescript": "3.3.4000"
+    "rxjs": "6.5.2",
+    "typescript": "3.4.5"
   },
   "devDependencies": {
-    "@types/node": "8.10.45",
-    "nodemon": "1.18.10",
-    "ts-node": "8.0.3",
-    "tslint": "5.14.0"
+    "@types/node": "8.10.48",
+    "nodemon": "1.19.0",
+    "ts-node": "8.1.0",
+    "tslint": "5.16.0"
   }
 }

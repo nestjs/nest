@@ -48,9 +48,9 @@ export class ListenersController {
         }
         server.addHandler(
           pattern,
-          data => {
+          async data => {
             const contextId = createContextId();
-            const contextInstance = this.injector.loadPerContext(
+            const contextInstance = await this.injector.loadPerContext(
               instance,
               module,
               collection,

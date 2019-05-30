@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants';
-import { HttpServer } from '@nestjs/common/interfaces';
+import { HttpServer, Type } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '../application-config';
@@ -60,7 +60,10 @@ export class RoutesResolver implements Resolver {
   ) {
     routes.forEach(instanceWrapper => {
       const { metatype } = instanceWrapper;
-      const path = this.routerBuilder.extractRouterPath(metatype, basePath);
+      const path = this.routerBuilder.extractRouterPath(
+        metatype as Type<any>,
+        basePath,
+      );
       const controllerName = metatype.name;
 
       this.logger.log(CONTROLLER_MAPPING_MESSAGE(controllerName, path));

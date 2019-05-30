@@ -82,7 +82,8 @@ export abstract class AbstractHttpAdapter<
   abstract setViewEngine(engine: string);
   abstract getRequestMethod(request);
   abstract getRequestUrl(request);
-  abstract reply(response, body: any, statusCode: number);
+  abstract status(response, statusCode: number);
+  abstract reply(response, body: any, statusCode?: number);
   abstract render(response, view: string, options: any);
   abstract setErrorHandler(handler: Function);
   abstract setNotFoundHandler(handler: Function);

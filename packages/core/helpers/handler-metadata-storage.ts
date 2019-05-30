@@ -7,6 +7,9 @@ export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');
 export interface HandlerMetadata {
   argsLength: number;
   paramtypes: any[];
+  httpStatusCode: number;
+  responseHeaders: any[];
+  hasCustomHeaders: boolean;
   getParamsMetadata: (
     moduleKey: string,
     contextId?: ContextId,

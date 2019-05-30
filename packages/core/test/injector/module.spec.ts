@@ -54,7 +54,7 @@ describe('Module', () => {
     const setSpy = sinon.spy(collection, 'set');
     (module as any)._injectables = collection;
 
-    module.addInjectable(TestProvider);
+    module.addInjectable(TestProvider, TestModule);
     expect(
       setSpy.calledWith(
         'TestProvider',
@@ -272,21 +272,28 @@ describe('Module', () => {
 
   describe('replace', () => {
     describe('when provider', () => {
-      it('should call `addProvider`', () => {
-        const addProviderSpy = sinon.spy(module, 'addProvider');
+      it('should call `mergeWith`', () => {
+        const wrapper = {
+          mergeWith: sinon.spy(),
+        };
         sinon.stub(module, 'hasProvider').callsFake(() => true);
+        sinon.stub(module.providers, 'get').callsFake(() => wrapper as any);
 
         module.replace(null, { isProvider: true });
-        expect(addProviderSpy.called).to.be.true;
+        expect(wrapper.mergeWith.called).to.be.true;
       });
     });
     describe('when guard', () => {
-      it('should call `addInjectable`', () => {
-        const addInjectableSpy = sinon.spy(module, 'addInjectable');
+      it('should call `mergeWith`', () => {
+        const wrapper = {
+          mergeWith: sinon.spy(),
+          isProvider: true,
+        };
         sinon.stub(module, 'hasInjectable').callsFake(() => true);
+        sinon.stub(module.injectables, 'get').callsFake(() => wrapper as any);
 
         module.replace(null, {});
-        expect(addInjectableSpy.called).to.be.true;
+        expect(wrapper.mergeWith.called).to.be.true;
       });
     });
   });
@@ -410,6 +417,27 @@ describe('Module', () => {
     describe('otherwise', () => {
       it('should return false', () => {
         expect(module.hasInjectable('_')).to.be.false;
+      });
+    });
+  });
+
+  describe('getter "id"', () => {
+    it('should return module id', () => {
+      // tslint:disable-next-line:no-string-literal
+      expect(module.id).to.be.equal(module['_id']);
+    });
+  });
+
+  describe('getProviderByKey', () => {
+    describe('when does not exist', () => {
+      it('should return undefined', () => {
+        expect(module.getProviderByKey('test')).to.be.undefined;
+      });
+    });
+    describe('otherwise', () => {
+      it('should return instance wrapper', () => {
+        module.addProvider(TestProvider);
+        expect(module.getProviderByKey('TestProvider')).to.not.be.undefined;
       });
     });
   });
