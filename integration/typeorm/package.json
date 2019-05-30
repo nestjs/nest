@@ -16,11 +16,11 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typeorm": "0.2.17",
-    "typescript": "3.4.5"
+    "typescript": "3.5.1"
   },
   "devDependencies": {
     "@types/node": "7.10.6",
-    "ts-node": "8.1.0",
+    "ts-node": "8.2.0",
     "tslint": "5.16.0"
   }
 }

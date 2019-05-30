@@ -320,7 +320,7 @@ changes to be accepted, the CLA must be signed. It's a quick process, we promise
 [corporate-cla]: http://code.google.com/legal/corporate-cla-v1.0.html
 [dev-doc]: https://github.com/nestjs/nest/blob/master/docs/DEVELOPER.md
 [github]: https://github.com/nestjs/nest
-[gitter]: https://gitter.im/nestjs/nest
+[gitter]: https://gitter.im/nestjs/nestjs
 [individual-cla]: http://code.google.com/legal/individual-cla-v1.0.html
 [js-style-guide]: https://google.github.io/styleguide/jsguide.html
 [jsfiddle]: http://jsfiddle.net

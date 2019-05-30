@@ -14,15 +14,15 @@
     "@nestjs/core": "6.2.4",
     "@nestjs/platform-express": "6.2.4",
     "@nestjs/typeorm": "6.1.1",
-    "mongodb": "3.2.5",
+    "mongodb": "3.2.6",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typeorm": "0.2.17",
-    "typescript": "3.4.5"
+    "typescript": "3.5.1"
   },
   "devDependencies": {
     "@types/node": "10.14.7",
-    "ts-node": "8.1.0",
+    "ts-node": "8.2.0",
     "tslint": "5.16.0"
   }
 }
