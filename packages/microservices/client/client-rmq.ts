@@ -13,6 +13,7 @@ import {
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
+  RQM_DEFAULT_NOACK
 } from './../constants';
 import { WritePacket } from './../interfaces';
 import { ClientProxy } from './client-proxy';
@@ -57,7 +58,10 @@ export class ClientRMQ extends ClientProxy {
         REPLY_QUEUE,
         (msg: any) =>
           this.responseEmitter.emit(msg.properties.correlationId, msg),
-        { noAck: true },
+          {
+            noAck: this.getOptionsProp<RmqOptions>(this.options, 'noAck') ||
+                RQM_DEFAULT_NOACK
+          }
       ),
     );
   }

@@ -94,5 +94,6 @@ export interface RmqOptions {
     isGlobalPrefetchCount?: boolean;
     queueOptions?: any;
     socketOptions?: any;
+    noAck?: boolean;
   };
 }
