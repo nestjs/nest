@@ -9,11 +9,11 @@ import {
   DISCONNECT_EVENT,
   ERROR_EVENT,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
+  RQM_DEFAULT_NOACK,
   RQM_DEFAULT_PREFETCH_COUNT,
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
-  RQM_DEFAULT_NOACK
 } from './../constants';
 import { WritePacket } from './../interfaces';
 import { ClientProxy } from './client-proxy';
@@ -53,15 +53,16 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public consumeChannel() {
+    const noAck =
+      this.getOptionsProp(this.options, 'noAck') || RQM_DEFAULT_NOACK;
     this.channel.addSetup((channel: any) =>
       channel.consume(
         REPLY_QUEUE,
         (msg: any) =>
           this.responseEmitter.emit(msg.properties.correlationId, msg),
-          {
-            noAck: this.getOptionsProp<RmqOptions>(this.options, 'noAck') ||
-                RQM_DEFAULT_NOACK
-          }
+        {
+          noAck,
+        },
       ),
     );
   }
