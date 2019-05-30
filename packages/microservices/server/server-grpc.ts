@@ -1,5 +1,5 @@
 import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { fromEvent } from 'rxjs';
+import { fromEvent, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
@@ -8,6 +8,7 @@ import {
   GRPC_DEFAULT_PROTO_LOADER,
   GRPC_DEFAULT_URL,
 } from '../constants';
+import { GrpcMethodStreamingType } from '../decorators';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { CustomTransportStrategy } from '../interfaces';
@@ -25,7 +26,9 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   metadata: TMetadata;
   end: Function;
   write: Function;
+  on: Function;
 }
+
 export class ServerGrpc extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private grpcClient: any;
@@ -89,36 +92,110 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return services;
   }
 
+  /**
+   * Will create service mapping from gRPC generated Object to handlers
+   * defined with @GrpcMethod or @GrpcStreamMethod annotations
+   *
+   * @param grpcService
+   * @param name
+   */
   public async createService(grpcService: any, name: string) {
     const service = {};
 
     // tslint:disable-next-line:forin
     for (const methodName in grpcService.prototype) {
-      const methodHandler = this.getHandlerByPattern(
-        this.createPattern(name, methodName),
-      );
+      let pattern = '';
+      let methodHandler = null;
+      let streamingType = GrpcMethodStreamingType.NO_STREAMING;
+
+      const methodFunction = grpcService.prototype[methodName];
+      const methodReqStreaming = methodFunction.requestStream;
+
+      if (!isUndefined(methodReqStreaming) && methodReqStreaming) {
+        // Try first pattern to be presented, RX streaming pattern would be
+        // a preferable pattern to select among a few defined
+        pattern = this.createPattern(
+          name,
+          methodName,
+          GrpcMethodStreamingType.RX_STREAMING,
+        );
+        methodHandler = this.messageHandlers.get(pattern);
+        streamingType = GrpcMethodStreamingType.RX_STREAMING;
+        // If first pattern didn't match to any of handlers then try
+        // pass-through handler to be presented
+        if (!methodHandler) {
+          pattern = this.createPattern(
+            name,
+            methodName,
+            GrpcMethodStreamingType.PT_STREAMING,
+          );
+          methodHandler = this.messageHandlers.get(pattern);
+          streamingType = GrpcMethodStreamingType.PT_STREAMING;
+        }
+      } else {
+        pattern = this.createPattern(
+          name,
+          methodName,
+          GrpcMethodStreamingType.NO_STREAMING,
+        );
+        // Select handler if any presented for No-Streaming pattern
+        methodHandler = this.messageHandlers.get(pattern);
+        streamingType = GrpcMethodStreamingType.NO_STREAMING;
+      }
       if (!methodHandler) {
         continue;
       }
       service[methodName] = await this.createServiceMethod(
         methodHandler,
         grpcService.prototype[methodName],
+        streamingType,
       );
     }
     return service;
   }
 
-  public createPattern(service: string, methodName: string): string {
+  /**
+   * Will create a string of a JSON serialized format
+   *
+   * @param service name of the service which should be a match to gRPC service definition name
+   * @param methodName name of the method which is coming after rpc keyword
+   * @param streaming GrpcMethodStreamingType parameter which should correspond to
+   * stream keyword in gRPC service request part
+   */
+  public createPattern(
+    service: string,
+    methodName: string,
+    streaming: GrpcMethodStreamingType,
+  ): string {
     return JSON.stringify({
       service,
       rpc: methodName,
+      streaming,
     });
   }
 
+  /**
+   * Will return async function which will handle gRPC call
+   * with Rx streams or as a direct call passthrough
+   *
+   * @param methodHandler
+   * @param protoNativeHandler
+   */
   public createServiceMethod(
     methodHandler: Function,
     protoNativeHandler: any,
+    streamType: GrpcMethodStreamingType,
   ): Function {
+    // If proto handler has request stream as "true" then we expect it to have
+    // streaming from the side of requester
+    if (protoNativeHandler.requestStream) {
+      // If any handlers were defined with GrpcStreamMethod annotation use RX
+      if (streamType === GrpcMethodStreamingType.RX_STREAMING)
+        return this.createStreamDuplexMethod(methodHandler);
+      // If any handlers were defined with GrpcStreamCall annotation
+      else if (streamType === GrpcMethodStreamingType.PT_STREAMING)
+        return this.createStreamCallMethod(methodHandler);
+    }
     return protoNativeHandler.responseStream
       ? this.createStreamServiceMethod(methodHandler)
       : this.createUnaryServiceMethod(methodHandler);
@@ -142,6 +219,41 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         .pipe(takeUntil(fromEvent(call as any, CANCEL_EVENT)))
         .forEach(data => call.write(data));
       call.end();
+    };
+  }
+
+  public createStreamDuplexMethod(methodHandler: Function) {
+    return async (call: GrpcCall) => {
+      const req = new Subject<any>();
+      call.on('data', (m: any) => req.next(m));
+      call.on('error', (e: any) => {
+        // Check if error means that stream ended on other end
+        if (
+          String(e)
+            .toLowerCase()
+            .indexOf('cancelled') > -1
+        ) {
+          call.end();
+          return;
+        }
+        // If another error then just pass it along
+        req.error(e);
+      });
+      call.on('end', () => req.complete());
+
+      const handler = methodHandler(req.asObservable());
+      const res = this.transformToObservable(await handler);
+      await res
+        .pipe(takeUntil(fromEvent(call as any, CANCEL_EVENT)))
+        .forEach(m => call.write(m));
+
+      call.end();
+    };
+  }
+
+  public createStreamCallMethod(methodHandler: Function) {
+    return async (call: GrpcCall) => {
+      methodHandler(call);
     };
   }
 
