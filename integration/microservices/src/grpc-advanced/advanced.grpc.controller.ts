@@ -1,7 +1,11 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import {
-  Client, ClientGrpc, GrpcMethod,
-  GrpcStreamMethod, GrpcStreamCall, Transport,
+  Client,
+  ClientGrpc,
+  GrpcMethod,
+  GrpcStreamCall,
+  GrpcStreamMethod,
+  Transport,
 } from '@nestjs/microservices';
 import { join } from 'path';
 import { Observable, of, Subject } from 'rxjs';
@@ -14,6 +18,7 @@ export class AdvancedGrpcController {
   @Client({
     transport: Transport.GRPC,
     options: {
+      url: 'localhost:5001',
       package: 'proto_example.orders',
       protoPath: 'root.proto',
       loader: {

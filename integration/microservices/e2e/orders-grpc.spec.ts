@@ -1,13 +1,14 @@
+import * as ProtoLoader from '@grpc/proto-loader';
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
+import { fail } from 'assert';
+import { expect } from 'chai';
 import * as express from 'express';
+import * as GRPC from 'grpc';
 import { join } from 'path';
 import * as request from 'supertest';
-import * as ProtoLoader from '@grpc/proto-loader';
-import * as GRPC from 'grpc';
-import { expect } from 'chai';
-import { fail } from 'assert';
 import { AdvancedGrpcController } from '../src/grpc-advanced/advanced.grpc.controller';
 
 describe('Advanced GRPC transport', () => {
@@ -21,13 +22,14 @@ describe('Advanced GRPC transport', () => {
     }).compile();
     // Create gRPC + HTTP server
     server = express();
-    app = module.createNestApplication(server);
+    app = module.createNestApplication(new ExpressAdapter(server));
     /*
      *  Create microservice configuration
      */
     app.connectMicroservice({
       transport: Transport.GRPC,
       options: {
+        url: 'localhost:5001',
         package: 'proto_example',
         protoPath: 'root.proto',
         loader: {
@@ -41,16 +43,15 @@ describe('Advanced GRPC transport', () => {
     await app.init();
     // Load proto-buffers for test gRPC dispatch
     const proto = ProtoLoader.loadSync('root.proto', {
-        includeDirs: [join(__dirname, '../src/grpc-advanced/proto')],
+      includeDirs: [join(__dirname, '../src/grpc-advanced/proto')],
     }) as any;
     // Create Raw gRPC client object
     const protoGRPC = GRPC.loadPackageDefinition(proto) as any;
     // Create client connected to started services at standard 5000 port
     client = new protoGRPC.proto_example.orders.OrderService(
-      'localhost:5000',
+      'localhost:5001',
       GRPC.credentials.createInsecure(),
     );
-
   });
 
   it(`GRPC Sending and Receiving HTTP POST`, () => {
@@ -69,33 +70,32 @@ describe('Advanced GRPC transport', () => {
   });
 
   it('GRPC Sending and receiving message', async () => {
-
     // Execute find in Promise
     return new Promise(resolve => {
-      client.find({
-        id: 1,
-      }, (err, result) => {
-        // Compare results
-        expect(err).to.be.null;
-        expect(result).to.eql({
+      client.find(
+        {
           id: 1,
-          itemTypes: [1],
-          shipmentType: {
-            from: 'test',
-            to: 'test1',
-            carrier: 'test-carrier',
-          },
-        });
-        // Resolve after checkups
-        resolve();
-      });
-
+        },
+        (err, result) => {
+          // Compare results
+          expect(err).to.be.null;
+          expect(result).to.eql({
+            id: 1,
+            itemTypes: [1],
+            shipmentType: {
+              from: 'test',
+              to: 'test1',
+              carrier: 'test-carrier',
+            },
+          });
+          // Resolve after checkups
+          resolve();
+        },
+      );
     });
-
   });
 
   it('GRPC Sending and receiving Stream from RX handler', async () => {
-
     const callHandler = client.sync();
 
     callHandler.on('data', (msg: number) => {
@@ -114,7 +114,11 @@ describe('Advanced GRPC transport', () => {
     callHandler.on('error', (err: any) => {
       // We want to fail only on real errors while Cancellation error
       // is expected
-      if (String(err).toLowerCase().indexOf('cancelled') === -1) {
+      if (
+        String(err)
+          .toLowerCase()
+          .indexOf('cancelled') === -1
+      ) {
         fail('gRPC Stream error happened, error: ' + err);
       }
     });
@@ -125,11 +129,9 @@ describe('Advanced GRPC transport', () => {
       });
       setTimeout(() => resolve(), 1000);
     });
-
   });
 
   it('GRPC Sending and receiving Stream from Call handler', async () => {
-
     const callHandler = client.syncCall();
 
     callHandler.on('data', (msg: number) => {
@@ -148,7 +150,11 @@ describe('Advanced GRPC transport', () => {
     callHandler.on('error', (err: any) => {
       // We want to fail only on real errors while Cancellation error
       // is expected
-      if (String(err).toLowerCase().indexOf('cancelled') === -1) {
+      if (
+        String(err)
+          .toLowerCase()
+          .indexOf('cancelled') === -1
+      ) {
         fail('gRPC Stream error happened, error: ' + err);
       }
     });
@@ -159,8 +165,5 @@ describe('Advanced GRPC transport', () => {
       });
       setTimeout(() => resolve(), 1000);
     });
-
   });
-
-
 });
