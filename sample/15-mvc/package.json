@@ -17,12 +17,12 @@
     "pug": "2.0.3",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
-    "typescript": "3.4.5"
+    "typescript": "3.5.1"
   },
   "devDependencies": {
     "@types/node": "8.10.48",
-    "nodemon": "1.19.0",
-    "ts-node": "8.1.0",
+    "nodemon": "1.19.1",
+    "ts-node": "8.2.0",
     "tslint": "5.16.0"
   }
 }
