@@ -63,10 +63,9 @@ export class AdvancedGrpcController {
    */
   @GrpcStreamMethod('orders.OrderService')
   async sync(messages: Observable<any>): Promise<any> {
-    const s = new Subject();
-    const o = s.asObservable();
+    const subject = new Subject();
     messages.subscribe(msg => {
-      s.next({
+      subject.next({
         id: 1,
         itemTypes: [1],
         shipmentType: {
@@ -76,7 +75,7 @@ export class AdvancedGrpcController {
         },
       });
     });
-    return o;
+    return subject.asObservable();
   }
 
   /**
