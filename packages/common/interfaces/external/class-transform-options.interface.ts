@@ -38,4 +38,8 @@ export interface ClassTransformOptions {
    * This option is useful when you know for sure that your types might have a circular dependency.
    */
   enableCircularCheck?: boolean;
+  /**
+   * If set to true class-transformer will attempt conversion based on TS reflected type
+   */
+  enableImplicitConversion?: boolean;
 }

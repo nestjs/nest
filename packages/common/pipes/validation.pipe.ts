@@ -16,6 +16,7 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   disableErrorMessages?: boolean;
   transformOptions?: ClassTransformOptions;
   exceptionFactory?: (errors: ValidationError[]) => any;
+  validateCustomDecorators?: boolean;
 }
 
 let classValidator: any = {};
@@ -28,6 +29,7 @@ export class ValidationPipe implements PipeTransform<any> {
   protected validatorOptions: ValidatorOptions;
   protected transformOptions: ClassTransformOptions;
   protected exceptionFactory: (errors: ValidationError[]) => any;
+  protected validateCustomDecorators: boolean;
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
@@ -35,12 +37,14 @@ export class ValidationPipe implements PipeTransform<any> {
       transform,
       disableErrorMessages,
       transformOptions,
+      validateCustomDecorators,
       ...validatorOptions
     } = options;
     this.isTransformEnabled = !!transform;
     this.validatorOptions = validatorOptions;
     this.transformOptions = transformOptions;
     this.isDetailedOutputDisabled = disableErrorMessages;
+    this.validateCustomDecorators = validateCustomDecorators || false;
     this.exceptionFactory =
       options.exceptionFactory ||
       (errors =>
@@ -82,7 +86,7 @@ export class ValidationPipe implements PipeTransform<any> {
 
   private toValidate(metadata: ArgumentMetadata): boolean {
     const { metatype, type } = metadata;
-    if (type === 'custom') {
+    if (type === 'custom' && !this.validateCustomDecorators) {
       return false;
     }
     const types = [String, Boolean, Number, Array, Object];
