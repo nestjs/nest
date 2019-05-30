@@ -142,6 +142,7 @@
     ],
     "exclude": [
       "node_modules/",
+      "packages/**/test/**",
       "packages/**/*.spec.ts",
       "packages/**/adapters/*.ts",
       "packages/**/nest-*.ts",
