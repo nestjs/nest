@@ -48,7 +48,8 @@ export function createParamDecorator(
 
     const isPipe = (pipe: any) =>
       pipe &&
-      ((isFunction(pipe) && pipe.prototype) || isFunction(pipe.transform));
+      ((isFunction(pipe) && pipe.prototype && isFunction(pipe.prototype.transform)) ||
+        isFunction(pipe.transform));
 
     const hasParamData = isNil(data) || !isPipe(data);
     const paramData = hasParamData ? data : undefined;
