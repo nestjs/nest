@@ -2,7 +2,12 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
-import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
+import {
+  GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+  GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
+  GRPC_DEFAULT_PROTO_LOADER,
+  GRPC_DEFAULT_URL,
+} from '../constants';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
@@ -36,8 +41,23 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public getService<T extends {}>(name: string): T {
+    const maxSendMessageLengthKey = 'grpc.max_send_message_length';
+    const maxReceiveMessageLengthKey = 'grpc.max_receive_message_length';
     const options: any = isObject(this.options)
-      ? { ...this.options, loader: '' }
+      ? {
+          ...this.options,
+          loader: '',
+          [maxSendMessageLengthKey]: this.getOptionsProp<GrpcOptions>(
+            this.options,
+            'maxSendMessageLength',
+            GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
+          ),
+          [maxReceiveMessageLengthKey]: this.getOptionsProp<GrpcOptions>(
+            this.options,
+            'maxReceiveMessageLength',
+            GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+          ),
+        }
       : {};
 
     if (!this.grpcClient[name]) {
