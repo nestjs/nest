@@ -2,10 +2,14 @@ import { Scope } from '@nestjs/common';
 import { SCOPE_OPTIONS_METADATA } from '@nestjs/common/constants';
 import {
   Abstract,
+  ClassProvider,
   Controller,
   DynamicModule,
+  FactoryProvider,
   Injectable,
   NestModule,
+  Provider,
+  ValueProvider,
 } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
@@ -23,32 +27,9 @@ import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
 
-export interface CustomProvider {
-  provide: any;
-  name: string;
+interface ProviderName {
+  name?: string | symbol;
 }
-export type OpaqueToken =
-  | string
-  | symbol
-  | Type<any>
-  | Function
-  | Abstract<any>;
-
-export type CustomClass = CustomProvider & {
-  useClass: Type<any>;
-  scope?: Scope;
-};
-export type CustomFactory = CustomProvider & {
-  useFactory: (...args: any[]) => any;
-  inject?: OpaqueToken[];
-  scope?: Scope;
-};
-export type CustomValue = CustomProvider & { useValue: any };
-export type ProviderMetatype =
-  | Type<Injectable>
-  | CustomFactory
-  | CustomValue
-  | CustomClass;
 
 export class Module {
   private readonly _id: string;
@@ -186,7 +167,7 @@ export class Module {
     }
   }
 
-  public addProvider(provider: ProviderMetatype): string {
+  public addProvider(provider: Provider): string {
     if (this.isCustomProvider(provider)) {
       return this.addCustomProvider(provider, this._providers);
     }
@@ -205,13 +186,15 @@ export class Module {
   }
 
   public isCustomProvider(
-    provider: ProviderMetatype,
-  ): provider is CustomClass | CustomFactory | CustomValue {
-    return !isNil((provider as CustomProvider).provide);
+    provider: Provider,
+  ): provider is ClassProvider | FactoryProvider | ValueProvider {
+    return !isNil(
+      (provider as ClassProvider | FactoryProvider | ValueProvider).provide,
+    );
   }
 
   public addCustomProvider(
-    provider: CustomFactory | CustomValue | CustomClass,
+    provider: (ClassProvider | FactoryProvider | ValueProvider) & ProviderName,
     collection: Map<string, any>,
   ): string {
     const name = this.getProviderStaticToken(provider.provide) as string;
@@ -229,16 +212,16 @@ export class Module {
     return name;
   }
 
-  public isCustomClass(provider: any): provider is CustomClass {
-    return !isUndefined((provider as CustomClass).useClass);
+  public isCustomClass(provider: any): provider is ClassProvider {
+    return !isUndefined((provider as ClassProvider).useClass);
   }
 
-  public isCustomValue(provider: any): provider is CustomValue {
-    return !isUndefined((provider as CustomValue).useValue);
+  public isCustomValue(provider: any): provider is ValueProvider {
+    return !isUndefined((provider as ValueProvider).useValue);
   }
 
-  public isCustomFactory(provider: any): provider is CustomFactory {
-    return !isUndefined((provider as CustomFactory).useFactory);
+  public isCustomFactory(provider: any): provider is FactoryProvider {
+    return !isUndefined((provider as FactoryProvider).useFactory);
   }
 
   public isDynamicModule(exported: any): exported is DynamicModule {
@@ -246,12 +229,12 @@ export class Module {
   }
 
   public addCustomClass(
-    provider: CustomClass,
+    provider: ClassProvider & ProviderName,
     collection: Map<string, InstanceWrapper>,
   ) {
     const { name, useClass, scope } = provider;
     collection.set(
-      name,
+      name as string,
       new InstanceWrapper({
         name,
         metatype: useClass,
@@ -264,12 +247,12 @@ export class Module {
   }
 
   public addCustomValue(
-    provider: CustomValue,
+    provider: ValueProvider & ProviderName,
     collection: Map<string, InstanceWrapper>,
   ) {
     const { name, useValue: value } = provider;
     collection.set(
-      name,
+      name as string,
       new InstanceWrapper({
         name,
         metatype: null,
@@ -282,12 +265,12 @@ export class Module {
   }
 
   public addCustomFactory(
-    provider: CustomFactory,
+    provider: FactoryProvider & ProviderName,
     collection: Map<string, InstanceWrapper>,
   ) {
     const { name, useFactory: factory, inject, scope } = provider;
     collection.set(
-      name,
+      name as string,
       new InstanceWrapper({
         name,
         metatype: factory as any,
@@ -301,7 +284,7 @@ export class Module {
   }
 
   public addExportedProvider(
-    provider: ProviderMetatype | string | symbol | DynamicModule,
+    provider: Provider & ProviderName | string | symbol | DynamicModule,
   ) {
     const addExportedUnit = (token: string | symbol) =>
       this._exports.add(this.validateExportedProvider(token));
@@ -318,7 +301,7 @@ export class Module {
   }
 
   public addCustomExportedProvider(
-    provider: CustomFactory | CustomValue | CustomClass,
+    provider: FactoryProvider | ValueProvider | ClassProvider,
   ) {
     const provide = provider.provide;
     if (isString(provide) || isSymbol(provide)) {
@@ -389,7 +372,7 @@ export class Module {
   }
 
   public getProviderStaticToken(
-    provider: string | symbol | Type<any>,
+    provider: string | symbol | Type<any> | Abstract<any>,
   ): string | symbol {
     return isFunction(provider)
       ? (provider as Function).name
@@ -429,7 +412,7 @@ export class Module {
     };
   }
 
-  private getClassScope(provider: ProviderMetatype): Scope {
+  private getClassScope(provider: Provider): Scope {
     const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, provider);
     return metadata && metadata.scope;
   }
