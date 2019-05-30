@@ -37,7 +37,7 @@
     "@nestjs/microservices": "6.1.1",
     "@nestjs/testing": "6.1.1",
     "@nestjs/websockets": "6.1.1",
-    "@nuxtjs/opencollective": "0.2.1",
+    "@nuxtjs/opencollective": "0.2.2",
     "amqp-connection-manager": "2.3.2",
     "amqplib": "0.5.3",
     "apollo-server-express": "2.5.1",
