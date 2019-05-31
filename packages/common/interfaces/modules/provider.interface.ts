@@ -22,6 +22,6 @@ export interface ValueProvider<T = any> {
 export interface FactoryProvider<T = any> {
   provide: string | symbol | Type<any> | Abstract<any> | Function;
   useFactory: (...args: any[]) => T;
-  inject?: Array<Type<any> | string | any>;
+  inject?: Array<Type<any> | string | symbol | Abstract<any> | Function>;
   scope?: Scope;
 }

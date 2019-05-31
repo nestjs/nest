@@ -23,6 +23,7 @@ export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
   private readonly containerScanner: ContainerScanner;
   private readonly activeShutdownSignals: string[] = new Array<string>();
+  protected isInitialized: boolean = false;
 
   constructor(
     protected readonly container: NestContainer,
@@ -63,9 +64,20 @@ export class NestApplicationContext implements INestApplicationContext {
     );
   }
 
+  /**
+   * Initalizes the Nest application.
+   * Calls the Nest lifecycle events.
+   *
+   * @returns {Promise<this>} The NestApplicationContext instance as Promise
+   */
   public async init(): Promise<this> {
+    // Ignore if is already initialized
+    if (this.isInitialized) return;
+
     await this.callInitHook();
     await this.callBootstrapHook();
+
+    this.isInitialized = true;
     return this;
   }
 

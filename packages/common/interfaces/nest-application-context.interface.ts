@@ -1,7 +1,7 @@
+import { ShutdownSignal } from '../enums/shutdown-signal.enum';
 import { LoggerService } from '../services/logger.service';
 import { Abstract } from './abstract.interface';
 import { Type } from './type.interface';
-import { ShutdownSignal } from '../enums/shutdown-signal.enum';
 
 export interface INestApplicationContext {
   /**
@@ -39,4 +39,13 @@ export interface INestApplicationContext {
    * @returns {this} The Nest application context instance
    */
   enableShutdownHooks(signals?: ShutdownSignal[] | string[]): this;
+
+  /**
+   * Initalizes the Nest application.
+   * Calls the Nest lifecycle events.
+   * It isn't mandatory to call this method directly.
+   *
+   * @returns {Promise<this>} The NestApplicationContext instance as Promise
+   */
+  init(): Promise<this>;
 }

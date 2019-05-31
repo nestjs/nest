@@ -37,10 +37,10 @@
     "@nestjs/microservices": "6.1.1",
     "@nestjs/testing": "6.1.1",
     "@nestjs/websockets": "6.1.1",
-    "@nuxtjs/opencollective": "0.2.1",
+    "@nuxtjs/opencollective": "0.2.2",
     "amqp-connection-manager": "2.3.2",
     "amqplib": "0.5.3",
-    "apollo-server-express": "2.5.0",
+    "apollo-server-express": "2.5.1",
     "axios": "0.18.0",
     "cache-manager": "2.9.1",
     "class-transformer": "0.2.3",
@@ -73,7 +73,7 @@
     "rxjs": "6.5.2",
     "rxjs-compat": "6.5.2",
     "socket.io": "2.2.0",
-    "ts-morph": "2.0.1",
+    "ts-morph": "2.3.0",
     "uuid": "3.3.2"
   },
   "devDependencies": {
@@ -127,7 +127,7 @@
     "supertest": "4.0.2",
     "ts-node": "8.2.0",
     "tslint": "5.16.0",
-    "typescript": "3.4.5"
+    "typescript": "3.5.1"
   },
   "collective": {
     "type": "opencollective",
@@ -142,6 +142,7 @@
     ],
     "exclude": [
       "node_modules/",
+      "packages/**/test/**",
       "packages/**/*.spec.ts",
       "packages/**/adapters/*.ts",
       "packages/**/nest-*.ts",

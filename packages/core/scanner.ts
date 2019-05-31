@@ -187,14 +187,15 @@ export class DependenciesScanner {
       component.prototype,
       this.reflectKeyMetadata.bind(this, component, metadataKey),
     );
-    const flattenMethodsInjectables = methodsInjectables.reduce<any[]>(
-      (a: any[], b) => a.concat(b),
+    const flattenMethodsInjectables = methodsInjectables.reduce(
+      (a: any[], b: any[]) => a.concat(b),
       [],
-    );
-    const injectables = [
+    ) as any[];
+    const combinedInjectables = [
       ...controllerInjectables,
       ...flattenMethodsInjectables,
     ].filter(isFunction);
+    const injectables = Array.from(new Set(combinedInjectables));
 
     injectables.forEach(injectable =>
       this.insertInjectable(injectable, token, component),

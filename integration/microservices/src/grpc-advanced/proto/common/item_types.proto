@@ -1,0 +1,8 @@
+syntax = "proto3";
+package proto_example.common.items;
+
+enum ItemType {
+    DEFAULT = 0;
+    SUPERIOR = 1;
+    FLAWLESS = 2;
+}

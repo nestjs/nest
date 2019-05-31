@@ -4,7 +4,6 @@ import { share } from 'rxjs/operators';
 import { ERROR_EVENT, NATS_DEFAULT_URL } from '../constants';
 import { Client } from '../external/nats-client.interface';
 import { NatsOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
 import { CONN_ERR } from './constants';
 
@@ -16,10 +15,9 @@ export class ClientNats extends ClientProxy {
   protected natsClient: Client;
   protected connection: Promise<any>;
 
-  constructor(protected readonly options: ClientOptions['options']) {
+  constructor(protected readonly options: NatsOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
+    this.url = this.getOptionsProp(this.options, 'url') || NATS_DEFAULT_URL;
     natsPackage = loadPackage('nats', ClientNats.name, () => require('nats'));
   }
 
@@ -107,10 +105,8 @@ export class ClientNats extends ClientProxy {
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
     return new Promise((resolve, reject) =>
-      this.natsClient.publish(
-        pattern,
-        packet as any,
-        err => (err ? reject(err) : resolve()),
+      this.natsClient.publish(pattern, packet as any, err =>
+        err ? reject(err) : resolve(),
       ),
     );
   }

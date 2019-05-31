@@ -1,0 +1,11 @@
+syntax = "proto3";
+package proto_example.orders;
+
+import public "common/item_types.proto";
+import public "common/shipment_types.proto";
+
+message Order {
+    int32 id = 1;
+    repeated common.items.ItemType itemTypes = 2;
+    common.shipments.ShipmentType shipmentType = 3;
+}
