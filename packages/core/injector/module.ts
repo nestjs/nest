@@ -10,6 +10,7 @@ import {
   NestModule,
   Provider,
   ValueProvider,
+  ExistingProvider,
 } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
@@ -39,7 +40,7 @@ export class Module {
   private readonly _controllers = new Map<
     string,
     InstanceWrapper<Controller>
-  >();
+    >();
   private readonly _exports = new Set<string | symbol>();
 
   constructor(
@@ -187,14 +188,14 @@ export class Module {
 
   public isCustomProvider(
     provider: Provider,
-  ): provider is ClassProvider | FactoryProvider | ValueProvider {
+  ): provider is ClassProvider | FactoryProvider | ValueProvider | ExistingProvider {
     return !isNil(
-      (provider as ClassProvider | FactoryProvider | ValueProvider).provide,
+      (provider as ClassProvider | FactoryProvider | ValueProvider | ExistingProvider).provide,
     );
   }
 
   public addCustomProvider(
-    provider: (ClassProvider | FactoryProvider | ValueProvider) & ProviderName,
+    provider: (ClassProvider | FactoryProvider | ValueProvider | ExistingProvider) & ProviderName,
     collection: Map<string, any>,
   ): string {
     const name = this.getProviderStaticToken(provider.provide) as string;
@@ -208,6 +209,8 @@ export class Module {
       this.addCustomValue(provider, collection);
     } else if (this.isCustomFactory(provider)) {
       this.addCustomFactory(provider, collection);
+    } else if (this.isCustomUseExisting(provider)) {
+      this.addCustomUseExisting(provider, collection);
     }
     return name;
   }
@@ -222,6 +225,10 @@ export class Module {
 
   public isCustomFactory(provider: any): provider is FactoryProvider {
     return !isUndefined((provider as FactoryProvider).useFactory);
+  }
+
+  public isCustomUseExisting(provider: any): provider is ExistingProvider {
+    return !isUndefined((provider as ExistingProvider).useExisting);
   }
 
   public isDynamicModule(exported: any): exported is DynamicModule {
@@ -283,6 +290,24 @@ export class Module {
     );
   }
 
+  public addCustomUseExisting(
+    provider: ExistingProvider & ProviderName,
+    collection: Map<string, InstanceWrapper>,
+  ) {
+    const { name, useExisting } = provider;
+    collection.set(
+      name as string,
+      new InstanceWrapper({
+        name,
+        metatype: ((instance) => instance) as any,
+        instance: null,
+        isResolved: false,
+        inject: [useExisting],
+        host: this,
+      }),
+    );
+  }
+
   public addExportedProvider(
     provider: Provider & ProviderName | string | symbol | DynamicModule,
   ) {
@@ -301,7 +326,7 @@ export class Module {
   }
 
   public addCustomExportedProvider(
-    provider: FactoryProvider | ValueProvider | ClassProvider,
+    provider: FactoryProvider | ValueProvider | ClassProvider | ExistingProvider,
   ) {
     const provide = provider.provide;
     if (isString(provide) || isSymbol(provide)) {

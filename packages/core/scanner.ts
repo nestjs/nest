@@ -16,6 +16,7 @@ import {
   ClassProvider,
   FactoryProvider,
   ValueProvider,
+  ExistingProvider,
 } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
@@ -256,7 +257,11 @@ export class DependenciesScanner {
 
   public isCustomProvider(
     provider: Provider,
-  ): provider is ClassProvider | ValueProvider | FactoryProvider {
+  ): provider is
+    | ClassProvider
+    | ValueProvider
+    | FactoryProvider
+    | ExistingProvider {
     return provider && !isNil((provider as any).provide);
   }
 
@@ -267,8 +272,11 @@ export class DependenciesScanner {
     }
     const applyProvidersMap = this.getApplyProvidersMap();
     const providersKeys = Object.keys(applyProvidersMap);
-    const type = (provider as ClassProvider | ValueProvider | FactoryProvider)
-      .provide;
+    const type = (provider as
+      | ClassProvider
+      | ValueProvider
+      | FactoryProvider
+      | ExistingProvider).provide;
 
     if (!providersKeys.includes(type as string)) {
       return this.container.addProvider(provider as any, token);

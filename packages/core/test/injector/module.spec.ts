@@ -140,6 +140,16 @@ describe('Module', () => {
     expect((addCustomFactory as sinon.SinonSpy).called).to.be.true;
   });
 
+  it('should call "addCustomUseExisting" when "useExisting" property exists', () => {
+    const addCustomUseExisting = sinon.spy();
+    module.addCustomUseExisting = addCustomUseExisting;
+
+    const provider = { provide: 'test', useExisting: () => null };
+
+    module.addCustomUseExisting(provider as any, new Map());
+    expect((addCustomUseExisting as sinon.SinonSpy).called).to.be.true;
+  });
+
   describe('addCustomClass', () => {
     const type = { name: 'TypeTest' };
     const provider = { provide: type, useClass: type, name: 'test' };
@@ -226,6 +236,36 @@ describe('Module', () => {
           }),
         ),
       ).to.be.true;
+    });
+  });
+
+  describe('addCustomUseExisting', () => {
+    const type = { name: 'TypeTest' };
+    const provider = { provide: type, useExisting: type, name: 'test' };
+
+    let setSpy;
+    beforeEach(() => {
+      const collection = new Map();
+      setSpy = sinon.spy(collection, 'set');
+      (module as any)._providers = collection;
+    });
+    it('should store provider', () => {
+      module.addCustomUseExisting(provider as any, (module as any)._providers);
+      const factoryFn = (module as any)._providers.get(provider.name).metatype;
+      expect(
+        setSpy.calledWith(
+          provider.name,
+          new InstanceWrapper({
+            host: module,
+            name: provider.name,
+            metatype: factoryFn,
+            instance: null,
+            inject: [provider.useExisting as any],
+            isResolved: false,
+          }),
+        ),
+      ).to.be.true;
+      expect(factoryFn(provider.useExisting)).to.be.eql(type);
     });
   });
 
