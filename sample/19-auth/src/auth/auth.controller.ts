@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './guards/jwt-auth.guard'
 
 @Controller('auth')
 export class AuthController {
@@ -12,7 +12,7 @@ export class AuthController {
   }
 
   @Get('data')
-  @UseGuards(AuthGuard())
+  @UseGuards(JwtAuthGuard)
   findAll() {
     // this route is restricted by AuthGuard
     // JWT strategy
