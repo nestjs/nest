@@ -40,7 +40,7 @@
     "@nuxtjs/opencollective": "0.2.2",
     "amqp-connection-manager": "2.3.2",
     "amqplib": "0.5.3",
-    "apollo-server-express": "2.5.1",
+    "apollo-server-express": "2.6.1",
     "axios": "0.18.0",
     "cache-manager": "2.9.1",
     "class-transformer": "0.2.3",
