@@ -27,6 +27,6 @@
     "@types/socket.io": "2.1.2",
     "@types/ws": "6.0.1",
     "ts-node": "8.2.0",
-    "tslint": "5.16.0"
+    "tslint": "5.17.0"
   }
 }

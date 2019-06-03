@@ -24,6 +24,6 @@
     "@types/node": "10.14.7",
     "supertest": "4.0.2",
     "ts-node": "8.2.0",
-    "tslint": "5.16.0"
+    "tslint": "5.17.0"
   }
 }

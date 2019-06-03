@@ -19,7 +19,7 @@
     "@types/node": "10.14.7",
     "ts-loader": "6.0.2",
     "ts-node": "8.2.0",
-    "tslint": "5.16.0",
+    "tslint": "5.17.0",
     "webpack": "4.32.2",
     "webpack-cli": "3.3.2",
     "webpack-node-externals": "1.7.2"

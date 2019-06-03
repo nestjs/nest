@@ -126,7 +126,7 @@
     "socket.io-client": "2.2.0",
     "supertest": "4.0.2",
     "ts-node": "8.2.0",
-    "tslint": "5.16.0",
+    "tslint": "5.17.0",
     "typescript": "3.5.1"
   },
   "collective": {
