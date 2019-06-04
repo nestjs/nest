@@ -11,7 +11,7 @@
   "dependencies": {
     "@nestjs/common": "6.2.4",
     "@nestjs/core": "6.2.4",
-    "@nestjs/typeorm": "6.1.1",
+    "@nestjs/typeorm": "6.1.2",
     "mysql": "2.17.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
@@ -21,6 +21,6 @@
   "devDependencies": {
     "@types/node": "7.10.6",
     "ts-node": "8.2.0",
-    "tslint": "5.16.0"
+    "tslint": "5.17.0"
   }
 }
