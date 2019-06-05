@@ -2,12 +2,16 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { createContextId } from '@nestjs/core/helpers/context-id-factory';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
-import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
+import {
+  ContextId,
+  InstanceWrapper,
+} from '@nestjs/core/injector/instance-wrapper';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { REQUEST } from '@nestjs/core/router/request/request-constants';
 import { IClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';
 import { RpcContextCreator } from './context/rpc-context-creator';
-import { CustomTransportStrategy } from './interfaces';
+import { CustomTransportStrategy, RequestContext } from './interfaces';
 import { ListenerMetadataExplorer } from './listener-metadata-explorer';
 import { Server } from './server/server';
 
@@ -48,8 +52,10 @@ export class ListenersController {
         }
         server.addHandler(
           pattern,
-          async data => {
+          async (data: unknown) => {
             const contextId = createContextId();
+            this.registerRequestProvider({ pattern, data }, contextId);
+
             const contextInstance = await this.injector.loadPerContext(
               instance,
               module,
@@ -87,5 +93,18 @@ export class ListenersController {
     client: T,
   ) {
     Reflect.set(instance, property, client);
+  }
+
+  private registerRequestProvider(
+    request: RequestContext,
+    contextId: ContextId,
+  ) {
+    const coreModuleRef = this.container.getInternalCoreModuleRef();
+    const wrapper = coreModuleRef.getProviderByKey(REQUEST);
+
+    wrapper.setInstanceByContextId(contextId, {
+      instance: request,
+      isResolved: true,
+    });
   }
 }
