@@ -21,7 +21,7 @@
     "typescript": "3.5.1"
   },
   "devDependencies": {
-    "@types/node": "10.14.7",
+    "@types/node": "10.14.8",
     "ts-node": "8.2.0",
     "tslint": "5.17.0"
   }
