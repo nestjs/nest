@@ -5,12 +5,12 @@ import {
   ClassProvider,
   Controller,
   DynamicModule,
+  ExistingProvider,
   FactoryProvider,
   Injectable,
   NestModule,
   Provider,
   ValueProvider,
-  ExistingProvider,
 } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
@@ -40,7 +40,7 @@ export class Module {
   private readonly _controllers = new Map<
     string,
     InstanceWrapper<Controller>
-    >();
+  >();
   private readonly _exports = new Set<string | symbol>();
 
   constructor(
@@ -188,14 +188,27 @@ export class Module {
 
   public isCustomProvider(
     provider: Provider,
-  ): provider is ClassProvider | FactoryProvider | ValueProvider | ExistingProvider {
+  ): provider is
+    | ClassProvider
+    | FactoryProvider
+    | ValueProvider
+    | ExistingProvider {
     return !isNil(
-      (provider as ClassProvider | FactoryProvider | ValueProvider | ExistingProvider).provide,
+      (provider as
+        | ClassProvider
+        | FactoryProvider
+        | ValueProvider
+        | ExistingProvider).provide,
     );
   }
 
   public addCustomProvider(
-    provider: (ClassProvider | FactoryProvider | ValueProvider | ExistingProvider) & ProviderName,
+    provider: (
+      | ClassProvider
+      | FactoryProvider
+      | ValueProvider
+      | ExistingProvider) &
+      ProviderName,
     collection: Map<string, any>,
   ): string {
     const name = this.getProviderStaticToken(provider.provide) as string;
@@ -299,7 +312,7 @@ export class Module {
       name as string,
       new InstanceWrapper({
         name,
-        metatype: ((instance) => instance) as any,
+        metatype: (instance => instance) as any,
         instance: null,
         isResolved: false,
         inject: [useExisting],
@@ -326,7 +339,11 @@ export class Module {
   }
 
   public addCustomExportedProvider(
-    provider: FactoryProvider | ValueProvider | ClassProvider | ExistingProvider,
+    provider:
+      | FactoryProvider
+      | ValueProvider
+      | ClassProvider
+      | ExistingProvider,
   ) {
     const provide = provider.provide;
     if (isString(provide) || isSymbol(provide)) {
