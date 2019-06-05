@@ -14,3 +14,4 @@ export * from './interfaces';
 export * from './module';
 export * from './nest-microservice';
 export * from './server';
+export * from './tokens';
