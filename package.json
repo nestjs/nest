@@ -1,6 +1,6 @@
 {
   "name": "nestjs-monorepo",
-  "version": "6.2.4",
+  "version": "6.3.0",
   "private": true,
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
