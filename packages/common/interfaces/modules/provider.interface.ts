@@ -6,7 +6,8 @@ export type Provider<T = any> =
   | Type<any>
   | ClassProvider<T>
   | ValueProvider<T>
-  | FactoryProvider<T>;
+  | FactoryProvider<T>
+  | ExistingProvider<T>;
 
 export interface ClassProvider<T = any> {
   provide: string | symbol | Type<any> | Abstract<any> | Function;
@@ -24,4 +25,9 @@ export interface FactoryProvider<T = any> {
   useFactory: (...args: any[]) => T;
   inject?: Array<Type<any> | string | symbol | Abstract<any> | Function>;
   scope?: Scope;
+}
+
+export interface ExistingProvider<T = any> {
+  provide: string | symbol | Type<any> | Abstract<any> | Function;
+  useExisting: any;
 }
