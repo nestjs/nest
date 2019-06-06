@@ -10,9 +10,9 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.3.0",
-    "@nestjs/core": "6.3.0",
-    "@nestjs/platform-express": "6.3.0",
+    "@nestjs/common": "6.3.1",
+    "@nestjs/core": "6.3.1",
+    "@nestjs/platform-express": "6.3.1",
     "hbs": "4.0.4",
     "pug": "2.0.3",
     "reflect-metadata": "0.1.13",
