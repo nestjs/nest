@@ -1,5 +1,5 @@
 {
-  "name": "nestjs-monorepo",
+  "name": "@nestjs/core",
   "version": "6.3.0",
   "private": true,
   "description": "Modern, fast, powerful node.js web framework",
