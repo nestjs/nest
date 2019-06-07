@@ -444,12 +444,20 @@ export class Injector {
     moduleRegistry: any[] = [],
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
+    isTraversing?: boolean,
   ): Promise<any> {
     let instanceWrapperRef: InstanceWrapper = null;
 
     const imports = module.imports || new Set<Module>();
-    const children = [...imports.values()].filter(item => item);
+    const identity = (item: any) => item;
 
+    let children = [...imports.values()].filter(identity);
+    if (isTraversing) {
+      const contextModuleExports = module.exports;
+      children = children.filter(child =>
+        contextModuleExports.has(child.metatype && child.metatype.name),
+      );
+    }
     for (const relatedModule of children) {
       if (moduleRegistry.includes(relatedModule.id)) {
         continue;
@@ -464,6 +472,7 @@ export class Injector {
           moduleRegistry,
           contextId,
           inquirer,
+          true,
         );
         if (instanceRef) {
           return instanceRef;
