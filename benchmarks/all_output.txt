@@ -4,45 +4,45 @@ express
 Running 10s test @ http://localhost:3000
   8 threads and 1024 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    47.78ms   19.09ms 212.47ms   66.94%
-    Req/Sec     1.31k   268.90     2.07k    72.38%
-  104687 requests in 10.02s, 21.47MB read
-  Socket errors: connect 0, read 877, write 0, timeout 0
-Requests/sec:  10444.24
-Transfer/sec:      2.14MB
+    Latency    56.17ms   25.55ms 622.13ms   97.45%
+    Req/Sec     2.05k   521.07     3.66k    81.05%
+  162936 requests in 10.03s, 33.41MB read
+  Socket errors: connect 82, read 0, write 0, timeout 0
+Requests/sec:  16238.17
+Transfer/sec:      3.33MB
 -----------------------
 fastify
 -----------------------
 Running 10s test @ http://localhost:3000
   8 threads and 1024 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    21.80ms    8.73ms  78.12ms   55.78%
-    Req/Sec     2.99k     0.92k    5.67k    68.88%
-  238550 requests in 10.02s, 31.17MB read
-  Socket errors: connect 0, read 862, write 0, timeout 0
-Requests/sec:  23795.79
-Transfer/sec:      3.11MB
+    Latency    28.78ms   38.39ms 976.17ms   98.84%
+    Req/Sec     4.31k     1.16k   11.18k    84.12%
+  343084 requests in 10.06s, 49.73MB read
+  Socket errors: connect 82, read 0, write 0, timeout 0
+Requests/sec:  34113.46
+Transfer/sec:      4.95MB
 -----------------------
 nest
 -----------------------
 Running 10s test @ http://localhost:3000
   8 threads and 1024 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    54.00ms   22.33ms 200.25ms   62.23%
-    Req/Sec     1.15k   338.60     1.88k    66.12%
-  91348 requests in 10.05s, 18.82MB read
-  Socket errors: connect 0, read 983, write 0, timeout 0
-Requests/sec:   9093.64
-Transfer/sec:      1.87MB
+    Latency    75.69ms  100.69ms   1.89s    97.71%
+    Req/Sec     1.72k   594.52     4.42k    69.42%
+  134873 requests in 10.05s, 27.78MB read
+  Socket errors: connect 82, read 0, write 0, timeout 0
+Requests/sec:  13415.12
+Transfer/sec:      2.76MB
 -----------------------
 nest-fastify
 -----------------------
 Running 10s test @ http://localhost:3000
   8 threads and 1024 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    29.31ms   11.71ms 101.96ms   70.03%
-    Req/Sec     2.17k     0.93k    4.12k    63.13%
-  173241 requests in 10.05s, 22.80MB read
-  Socket errors: connect 0, read 934, write 0, timeout 0
-Requests/sec:  17233.87
-Transfer/sec:      2.27MB
+    Latency    37.09ms   10.87ms 317.68ms   88.21%
+    Req/Sec     3.02k     0.97k    7.67k    82.00%
+  240819 requests in 10.05s, 35.14MB read
+  Socket errors: connect 82, read 0, write 0, timeout 0
+Requests/sec:  23971.12
+Transfer/sec:      3.50MB
