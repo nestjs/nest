@@ -40,17 +40,17 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@nestjs/common@6.3.0":
-  version "6.3.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.3.0.tgz#d7b80309f7b3f2c3a74c911a6dc18e4244f17809"
+"@nestjs/common@6.3.1":
+  version "6.3.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.3.1.tgz#222f25251eb1b67c6e552e00b266048daa569bbc"
   dependencies:
     axios "0.19.0"
     cli-color "1.4.0"
     uuid "3.3.2"
 
-"@nestjs/core@6.3.0":
-  version "6.3.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.3.0.tgz#beca8ae825088716ed7ec14ef1dda3c98dcaa446"
+"@nestjs/core@6.3.1":
+  version "6.3.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.3.1.tgz#e32e76a776d0de71f218f5da582ea3ee6524b27e"
   dependencies:
     "@nuxtjs/opencollective" "0.2.2"
     fast-safe-stringify "2.0.6"
@@ -59,13 +59,13 @@
     optional "0.1.4"
     uuid "3.3.2"
 
-"@nestjs/graphql@6.2.1":
-  version "6.2.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.2.1.tgz#ee13ba05cd5178c16d5a08e2cff19fa08c13bfbf"
+"@nestjs/graphql@6.2.4":
+  version "6.2.4"
+  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.2.4.tgz#5b1d92610d2003bc8e2f0df6300f34a0f46a1bd5"
   dependencies:
     "@types/graphql" "14.2.0"
-    chokidar "3.0.0"
-    fast-glob "2.2.6"
+    chokidar "3.0.1"
+    fast-glob "2.2.7"
     graphql-tools "4.0.4"
     lodash "4.17.11"
     merge-graphql-schemas "1.5.8"
@@ -75,9 +75,9 @@
   optionalDependencies:
     type-graphql "^0.17.3"
 
-"@nestjs/platform-express@6.3.0":
-  version "6.3.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.3.0.tgz#b115ba4e393fedb6171f7dea401b3bf253564c78"
+"@nestjs/platform-express@6.3.1":
+  version "6.3.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.3.1.tgz#8adb602a5bb9571b9d58646bd52141a26ea8ba3e"
   dependencies:
     body-parser "1.19.0"
     cors "2.8.5"
@@ -749,9 +749,9 @@ chalk@^2.0.1, chalk@^2.3.0, chalk@^2.4.1:
     escape-string-regexp "^1.0.5"
     supports-color "^5.3.0"
 
-chokidar@3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-3.0.0.tgz#6b538f0fd6d5d31d5dd2b59e05426bec0f49aa40"
+chokidar@3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-3.0.1.tgz#98fe9aa476c55d9aea7841d6325ffdb30e95b40c"
   dependencies:
     anymatch "^3.0.1"
     async-each "^1.0.3"
@@ -760,7 +760,7 @@ chokidar@3.0.0:
     is-binary-path "^2.1.0"
     is-glob "^4.0.1"
     normalize-path "^3.0.0"
-    readdirp "^3.0.1"
+    readdirp "^3.0.2"
   optionalDependencies:
     fsevents "^2.0.6"
 
@@ -1317,9 +1317,9 @@ extglob@^2.0.4:
     snapdragon "^0.8.1"
     to-regex "^3.0.1"
 
-fast-glob@2.2.6:
-  version "2.2.6"
-  resolved "https://registry.yarnpkg.com/fast-glob/-/fast-glob-2.2.6.tgz#a5d5b697ec8deda468d85a74035290a025a95295"
+fast-glob@2.2.7:
+  version "2.2.7"
+  resolved "https://registry.yarnpkg.com/fast-glob/-/fast-glob-2.2.7.tgz#6953857c3afa475fff92ee6015d52da70a4cd39d"
   dependencies:
     "@mrmlnc/readdir-enhanced" "^2.2.1"
     "@nodelib/fs.stat" "^1.1.2"
@@ -2801,9 +2801,9 @@ readdirp@^2.2.1:
     micromatch "^3.1.10"
     readable-stream "^2.0.2"
 
-readdirp@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/readdirp/-/readdirp-3.0.1.tgz#14a8875883c5575c235579624a1e177cb0b1ec58"
+readdirp@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/readdirp/-/readdirp-3.0.2.tgz#cba63348e9e42fc1bd334b1d2ef895b6a043cbd6"
   dependencies:
     picomatch "^2.0.4"
 
