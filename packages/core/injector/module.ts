@@ -27,6 +27,7 @@ import { UnknownExportException } from '../errors/exceptions/unknown-export.exce
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
+import { ApplicationConfig } from '../application-config';
 
 interface ProviderName {
   name?: string | symbol;
@@ -116,6 +117,7 @@ export class Module {
   public addCoreProviders(container: NestContainer) {
     this.addModuleAsProvider();
     this.addModuleRef();
+    this.addApplicationConfig();
   }
 
   public addModuleRef() {
@@ -140,6 +142,19 @@ export class Module {
         metatype: this._metatype,
         isResolved: false,
         instance: null,
+        host: this,
+      }),
+    );
+  }
+
+  public addApplicationConfig() {
+    this._providers.set(
+      ApplicationConfig.name,
+      new InstanceWrapper({
+        name: ApplicationConfig.name,
+        metatype: null,
+        isResolved: true,
+        instance: this.container.applicationConfig,
         host: this,
       }),
     );

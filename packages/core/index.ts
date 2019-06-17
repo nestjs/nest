@@ -14,6 +14,7 @@ export * from './injector';
 export * from './middleware';
 export * from './nest-application';
 export * from './nest-application-context';
+export * from './application-config';
 export { NestFactory } from './nest-factory';
 export * from './router';
 export * from './services';
