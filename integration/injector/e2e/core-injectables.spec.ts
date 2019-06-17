@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import { CoreInjectablesModule } from '../src/core-injectables/core-injectables.module';
-import { ApplicationConfig } from '@nestjs/core';
+import { ApplicationConfig, ModuleRef } from '@nestjs/core';
 
 describe('Core Injectables', () => {
   let testingModule: TestingModule;
@@ -22,5 +22,16 @@ describe('Core Injectables', () => {
 
     expect(applicationConfig).to.not.be.undefined;
     expect(applicationConfig.getGlobalPrefix()).to.be.eq('/api');
+  });
+
+  it('should provide ModuleRef as core injectable', () => {
+    const moduleRef = testingModule.get<ModuleRef>(ModuleRef);
+    expect(moduleRef).to.not.be.undefined;
+  });
+
+  it('should provide the current Module as provider', () => {
+    const module = testingModule.get<CoreInjectablesModule>(CoreInjectablesModule);
+    expect(module).to.not.be.undefined;
+    expect(module.constructor.name).to.be.eq('CoreInjectablesModule');
   });
 });
