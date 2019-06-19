@@ -1,4 +1,5 @@
 {
+  "semanticCommits":true,
   "extends": [
     "config:base"
   ]

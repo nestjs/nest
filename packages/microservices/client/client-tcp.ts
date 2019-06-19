@@ -8,12 +8,9 @@ import {
   TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
 } from '../constants';
-import { PacketId, ReadPacket, WritePacket } from '../interfaces';
-import {
-  ClientOptions,
-  TcpClientOptions,
-} from '../interfaces/client-metadata.interface';
 import { JsonSocket } from '../helpers/json-socket';
+import { PacketId, ReadPacket, WritePacket } from '../interfaces';
+import { TcpClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 
@@ -25,14 +22,10 @@ export class ClientTCP extends ClientProxy {
   private isConnected = false;
   private socket: JsonSocket;
 
-  constructor(options: ClientOptions['options']) {
+  constructor(options: TcpClientOptions['options']) {
     super();
-    this.port =
-      this.getOptionsProp<TcpClientOptions>(options, 'port') ||
-      TCP_DEFAULT_PORT;
-    this.host =
-      this.getOptionsProp<TcpClientOptions>(options, 'host') ||
-      TCP_DEFAULT_HOST;
+    this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
+    this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
   }
 
   public connect(): Promise<any> {

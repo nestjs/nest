@@ -9,13 +9,6 @@ import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 
 export interface INestApplication extends INestApplicationContext {
   /**
-   * Initializes application. It is not mandatory to call this method directly.
-   *
-   * @returns {Promise}
-   */
-  init(): Promise<this>;
-
-  /**
    * A wrapper function around HTTP adapter method: `adapter.use()`.
    * Example `app.use(cors())`
    *

@@ -40,6 +40,12 @@ export interface ExternalHandlerMetadata {
   ) => (ParamProperties & { metatype?: any })[];
 }
 
+export interface ExternalContextOptions {
+  guards?: boolean;
+  interceptors?: boolean;
+  filters?: boolean;
+}
+
 export class ExternalContextCreator {
   private readonly contextUtils = new ContextUtils();
   private readonly externalErrorProxy = new ExternalErrorProxy();
@@ -98,6 +104,11 @@ export class ExternalContextCreator {
     paramsFactory?: ParamsFactory,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
+    options: ExternalContextOptions = {
+      interceptors: true,
+      guards: true,
+      filters: true,
+    },
   ) {
     const module = this.findContextModuleName(instance.constructor);
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
@@ -106,7 +117,6 @@ export class ExternalContextCreator {
       metadataKey,
       paramsFactory,
     );
-
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
@@ -114,15 +124,7 @@ export class ExternalContextCreator {
       contextId,
       inquirerId,
     );
-
     const guards = this.guardsContextCreator.create(
-      instance,
-      callback,
-      module,
-      contextId,
-      inquirerId,
-    );
-    const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
       module,
@@ -136,12 +138,24 @@ export class ExternalContextCreator {
       contextId,
       inquirerId,
     );
+    const interceptors = options.interceptors
+      ? this.interceptorsContextCreator.create(
+          instance,
+          callback,
+          module,
+          contextId,
+          inquirerId,
+        )
+      : [];
 
     const paramsMetadata = getParamsMetadata(module, contextId, inquirerId);
     const paramsOptions = paramsMetadata
       ? this.contextUtils.mergeParamsMetatypes(paramsMetadata, paramtypes)
       : [];
 
+    const fnCanActivate = options.guards
+      ? this.createGuardsFn(guards, instance, callback)
+      : null;
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
     const handler = (initialArgs: any[], ...args: any[]) => async () => {
       if (fnApplyPipes) {
@@ -153,15 +167,8 @@ export class ExternalContextCreator {
 
     const target = async (...args: any[]) => {
       const initialArgs = this.contextUtils.createNullArray(argsLength);
-      const canActivate = await this.guardsConsumer.tryActivate(
-        guards,
-        args,
-        instance,
-        callback,
-      );
-      if (!canActivate) {
-        throw new ForbiddenException(FORBIDDEN_MESSAGE);
-      }
+      fnCanActivate && (await fnCanActivate(args));
+
       const result = await this.interceptorsConsumer.intercept(
         interceptors,
         args,
@@ -171,7 +178,9 @@ export class ExternalContextCreator {
       );
       return this.transformToResult(result);
     };
-    return this.externalErrorProxy.createProxy(target, exceptionFilter);
+    return options.filters
+      ? this.externalErrorProxy.createProxy(target, exceptionFilter)
+      : target;
   }
 
   public getMetadata<T>(
@@ -327,5 +336,24 @@ export class ExternalContextCreator {
       return resultOrDeffered.toPromise();
     }
     return resultOrDeffered;
+  }
+
+  public createGuardsFn(
+    guards: any[],
+    instance: Controller,
+    callback: (...args: any[]) => any,
+  ): Function | null {
+    const canActivateFn = async (args: any[]) => {
+      const canActivate = await this.guardsConsumer.tryActivate(
+        guards,
+        args,
+        instance,
+        callback,
+      );
+      if (!canActivate) {
+        throw new ForbiddenException(FORBIDDEN_MESSAGE);
+      }
+    };
+    return guards.length ? canActivateFn : null;
   }
 }

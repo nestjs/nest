@@ -55,7 +55,10 @@ export class WsAdapter extends AbstractWsAdapter {
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {
-    const close$ = fromEvent(client, CLOSE_EVENT).pipe(share(), first());
+    const close$ = fromEvent(client, CLOSE_EVENT).pipe(
+      share(),
+      first(),
+    );
     const source$ = fromEvent(client, 'message').pipe(
       mergeMap(data =>
         this.bindMessageHandler(data, handlers, transform).pipe(
@@ -96,5 +99,9 @@ export class WsAdapter extends AbstractWsAdapter {
     );
     server.on(ERROR_EVENT, (err: any) => this.logger.error(err));
     return server;
+  }
+
+  public bindClientDisconnect(client: any, callback: Function) {
+    client.on(CLOSE_EVENT, callback);
   }
 }

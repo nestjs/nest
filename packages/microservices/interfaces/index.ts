@@ -6,3 +6,4 @@ export * from './message-handler.interface';
 export * from './microservice-configuration.interface';
 export * from './packet.interface';
 export * from './pattern-metadata.interface';
+export * from './request-context.interface';

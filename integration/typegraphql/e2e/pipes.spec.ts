@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { ApplicationModule } from '../src/app.module';
 
-describe('GraphQL - Pipes', () => {
+describe('GraphQL Pipes', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
@@ -32,20 +32,24 @@ describe('GraphQL - Pipes', () => {
             extensions: {
               code: 'INTERNAL_SERVER_ERROR',
               exception: {
-                message: [
-                  {
-                    children: [],
-                    constraints: {
-                      length:
-                        'description must be longer than or equal to 30 characters',
+                message: {
+                  error: 'Bad Request',
+                  message: [
+                    {
+                      children: [],
+                      constraints: {
+                        length:
+                          'description must be longer than or equal to 30 characters',
+                      },
+                      property: 'description',
+                      target: {
+                        ingredients: [],
+                        title: 'test',
+                      },
                     },
-                    property: 'description',
-                    target: {
-                      ingredients: [],
-                      title: 'test',
-                    },
-                  },
-                ],
+                  ],
+                  statusCode: 400,
+                },
                 response: {
                   error: 'Bad Request',
                   message: [
@@ -73,20 +77,24 @@ describe('GraphQL - Pipes', () => {
                 line: 2,
               },
             ],
-            message: [
-              {
-                children: [],
-                constraints: {
-                  length:
-                    'description must be longer than or equal to 30 characters',
+            message: {
+              error: 'Bad Request',
+              message: [
+                {
+                  children: [],
+                  constraints: {
+                    length:
+                      'description must be longer than or equal to 30 characters',
+                  },
+                  property: 'description',
+                  target: {
+                    ingredients: [],
+                    title: 'test',
+                  },
                 },
-                property: 'description',
-                target: {
-                  ingredients: [],
-                  title: 'test',
-                },
-              },
-            ],
+              ],
+              statusCode: 400,
+            },
             path: ['addRecipe'],
           },
         ],

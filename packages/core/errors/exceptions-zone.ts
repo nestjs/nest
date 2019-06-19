@@ -1,24 +1,31 @@
 import { ExceptionHandler } from './exception-handler';
-import { UNHANDLED_RUNTIME_EXCEPTION } from './messages';
+
+const DEFAULT_TEARDOWN = () => process.exit(1);
 
 export class ExceptionsZone {
   private static readonly exceptionHandler = new ExceptionHandler();
 
-  public static run(fn: () => void) {
+  public static run(
+    callback: () => void,
+    teardown: (err: any) => void = DEFAULT_TEARDOWN,
+  ) {
     try {
-      fn();
+      callback();
     } catch (e) {
       this.exceptionHandler.handle(e);
-      throw UNHANDLED_RUNTIME_EXCEPTION;
+      teardown(e);
     }
   }
 
-  public static async asyncRun(fn: () => Promise<void>) {
+  public static async asyncRun(
+    callback: () => Promise<void>,
+    teardown: (err: any) => void = DEFAULT_TEARDOWN,
+  ) {
     try {
-      await fn();
+      await callback();
     } catch (e) {
       this.exceptionHandler.handle(e);
-      throw UNHANDLED_RUNTIME_EXCEPTION;
+      teardown(e);
     }
   }
 }

@@ -10,7 +10,6 @@ import {
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
 import { MqttOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 
@@ -22,10 +21,9 @@ export class ClientMqtt extends ClientProxy {
   protected mqttClient: MqttClient;
   protected connection: Promise<any>;
 
-  constructor(protected readonly options: ClientOptions['options']) {
+  constructor(protected readonly options: MqttOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp<MqttOptions>(this.options, 'url') || MQTT_DEFAULT_URL;
+    this.url = this.getOptionsProp(this.options, 'url') || MQTT_DEFAULT_URL;
 
     mqttPackage = loadPackage('mqtt', ClientMqtt.name, () => require('mqtt'));
   }
