@@ -172,4 +172,27 @@ describe('ClientProxy', () => {
       expect(err$).to.be.instanceOf(Observable);
     });
   });
+
+  describe('normalizePattern', () => {
+    describe(`when gets 'string' pattern`, () => {
+      it(`should call 'transformPatternToRoute' with 'string' argument`, () => {
+        const inputPattern = 'hello';
+
+        const sandbox = sinon.createSandbox();
+        sandbox
+          .stub((client as any), 'msvcUtil')
+          .value({ transformPatternToRoute() {} });
+        const msvcUtilTransformPatternToRouteStub = sinon
+          .spy((client as any).msvcUtil, 'transformPatternToRoute');
+
+        (client as any).normalizePattern(inputPattern);
+
+        expect(msvcUtilTransformPatternToRouteStub.args[0][0])
+          .to.be.equal(inputPattern);
+
+        msvcUtilTransformPatternToRouteStub.restore();
+        sandbox.restore();
+      });
+    });
+  });
 });
