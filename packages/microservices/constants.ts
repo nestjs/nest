@@ -5,15 +5,18 @@ export const NATS_DEFAULT_URL = 'nats://localhost:4222';
 export const MQTT_DEFAULT_URL = 'mqtt://localhost:1883';
 export const GRPC_DEFAULT_URL = 'localhost:5000';
 export const RQM_DEFAULT_URL = 'amqp://localhost';
+export const KAFKA_DEFAULT_BROKER = 'localhost:9092';
 
 export const CONNECT_EVENT = 'connect';
 export const DISCONNECT_EVENT = 'disconnect';
+export const DISCONNECTED_EVENT = 'disconnected';
 export const MESSAGE_EVENT = 'message';
 export const DATA_EVENT = 'data';
 export const ERROR_EVENT = 'error';
 export const CLOSE_EVENT = 'close';
 export const SUBSCRIBE = 'subscribe';
 export const CANCEL_EVENT = 'cancelled';
+export const READY_EVENT = 'ready';
 
 export const PATTERN_METADATA = 'microservices:pattern';
 export const CLIENT_CONFIGURATION_METADATA = 'microservices:client';
@@ -32,3 +35,6 @@ export const NO_EVENT_HANDLER = `There is no matching event handler defined in t
 export const DISCONNECTED_RMQ_MESSAGE = `Disconnected from RMQ. Trying to reconnect.`;
 export const GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH = 4 * 1024 * 1024;
 export const GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH = 4 * 1024 * 1024;
+
+export const KAFKA_DEFAULT_CLIENT = 'nestjs';
+export const KAFKA_DEFAULT_GROUP = 'nestjs';

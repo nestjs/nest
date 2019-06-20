@@ -10,6 +10,7 @@ export type MicroserviceOptions =
   | NatsOptions
   | MqttOptions
   | RmqOptions
+  | KafkaOptions
   | CustomStrategy;
 
 export interface CustomStrategy {
@@ -96,4 +97,22 @@ export interface RmqOptions {
     socketOptions?: any;
     noAck?: boolean;
   };
+}
+
+export interface KafkaOptions {
+  transport?: Transport.KAFKA;
+  options?: {
+    brokers?: string[]
+    ssl?: tls.SecureContextOptions
+    sasl?: SASLOptions
+    clientId?: string
+    connectionTimeout?: number
+    authenticationTimeout?: number
+    requestTimeout?: number
+    enforceRequestTimeout?: boolean
+    retry?: RetryOptions
+    socketFactory?: ISocketFactory
+    logLevel?: logLevel
+    logCreator?: logCreator
+  }
 }

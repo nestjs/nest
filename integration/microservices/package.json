@@ -16,6 +16,7 @@
     "amqp-connection-manager": "2.3.2",
     "class-transformer": "0.2.3",
     "class-validator": "0.9.1",
+    "kafkajs": "^1.8.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.1"
