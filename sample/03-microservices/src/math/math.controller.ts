@@ -1,19 +1,11 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import {
-  ClientProxy,
-  CONTEXT,
-  MessagePattern,
-  RequestContext,
-} from '@nestjs/microservices';
+import { ClientProxy, MessagePattern } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import { MATH_SERVICE } from './math.constants';
 
 @Controller()
 export class MathController {
-  constructor(
-    @Inject(MATH_SERVICE) private readonly client: ClientProxy,
-    @Inject(CONTEXT) private readonly ctx: RequestContext<number[]>,
-  ) {}
+  constructor(@Inject(MATH_SERVICE) private readonly client: ClientProxy) {}
 
   @Get()
   execute(): Observable<number> {
@@ -24,7 +16,6 @@ export class MathController {
 
   @MessagePattern({ cmd: 'sum' })
   sum(data: number[]): number {
-    console.log(this.ctx);
     return (data || []).reduce((a, b) => a + b);
   }
 }
