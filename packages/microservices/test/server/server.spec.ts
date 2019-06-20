@@ -10,23 +10,109 @@ class TestServer extends Server {
 
 describe('Server', () => {
   const server = new TestServer();
+  const sandbox = sinon.createSandbox();
   const callback = () => {},
     pattern = { test: 'test pattern' };
 
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   describe('add', () => {
-    it(`should add handler as a stringified pattern key`, () => {
+    it(`should add handler`, () => {
+      const handlerRoute = 'hello';
+
+      const messageHandlersStub = sandbox
+        .stub((server as any), 'messageHandlers')
+        .value({ set() {} });
+      const messageHandlersSetSpy = sinon
+        .spy((server as any).messageHandlers, 'set');
+
+      const msvcUtilStub = sandbox
+        .stub((server as any), 'msvcUtil')
+        .value({ transformPatternToRoute() { return handlerRoute; } });
+      const msvcUtilTransformPatternToRouteStub = sinon
+        .stub((server as any).msvcUtil, 'transformPatternToRoute')
+        .returns(handlerRoute);
+
       server.addHandler(pattern, callback as any);
 
-      const handlers = server.getHandlers();
-      expect(handlers.get(JSON.stringify(pattern))).to.equal(callback);
-    });
+      expect(messageHandlersSetSpy.called)
+        .to.be.true;
+      expect(messageHandlersSetSpy.args[0][0])
+        .to.be.equal(handlerRoute);
+      expect(messageHandlersSetSpy.args[0][1])
+        .to.be.equal(callback);
 
-    it(`should add handler as string pattern key`, () => {
-      server.addHandler(pattern.test, callback as any);
-      const handlers = server.getHandlers();
-      expect(handlers.get(pattern.test)).to.equal(callback);
+      msvcUtilTransformPatternToRouteStub.restore();
+      messageHandlersSetSpy.restore();
     });
   });
+
+  describe('getRouteFromPattern', () => {
+    let msvcUtilTransformPatternToRouteStub: sinon.SinonSpy;
+
+    beforeEach(() => {
+      sandbox
+        .stub((server as any), 'msvcUtil')
+        .value({ transformPatternToRoute() {} });
+      msvcUtilTransformPatternToRouteStub = sinon
+        .spy((server as any).msvcUtil, 'transformPatternToRoute');
+    });
+
+    afterEach(() => {
+      msvcUtilTransformPatternToRouteStub.restore();
+    });
+
+    describe(`when gets 'string' pattern`, () => {
+      it(`should call 'transformPatternToRoute' with 'string' argument`, () => {
+        const inputServerPattern = 'hello';
+        const transformedServerPattern = inputServerPattern;
+
+        (server as any).getRouteFromPattern(inputServerPattern);
+
+        expect(msvcUtilTransformPatternToRouteStub.args[0][0])
+          .to.be.equal(transformedServerPattern);
+      });
+    });
+
+    describe(`when gets 'json' pattern as 'string'`, () => {
+      it(`should call 'transformPatternToRoute' with 'json' argument`, () => {
+        const inputServerPattern = '{"controller":"app","use":"getHello"}';
+        const transformedServerPattern = {
+          controller: 'app',
+          use: 'getHello'
+        };
+
+        (server as any).getRouteFromPattern(inputServerPattern);
+
+        expect(msvcUtilTransformPatternToRouteStub.args[0][0])
+          .to.be.deep.equal(transformedServerPattern);
+      });
+    });
+
+    describe(`when gets 'no string' and 'no json' pattern`, () => {
+      it(`should call 'transformPatternToRoute' with argument what 'getRouteFromPattern' has got`, () => {
+        const inputServerPatterns = [
+          {
+            controller: 'app',
+            use: 'getHello'
+          },
+          154,
+          Symbol('App')
+        ];
+        const transformedServerPatterns = inputServerPatterns;
+
+        inputServerPatterns.forEach((value, index) => {
+          (server as any).getRouteFromPattern(value);
+
+          expect(msvcUtilTransformPatternToRouteStub.args[index][0])
+            .to.be.deep.equal(transformedServerPatterns[index]);
+          });
+      });
+    });
+  });
+
   describe('send', () => {
     let stream$: Observable<string>;
     let sendSpy: sinon.SinonSpy;
@@ -93,20 +179,59 @@ describe('Server', () => {
       });
     });
   });
+
   describe('getHandlerByPattern', () => {
+    let messageHandlersGetSpy: sinon.SinonStub;
+    let messageHandlersHasSpy: sinon.SinonStub;
+    const handlerRoute = 'hello';
+
+    beforeEach(() => {
+      sandbox
+        .stub((server as any), 'messageHandlers')
+        .value({ get() {}, has() {} });
+      messageHandlersGetSpy = sinon
+        .stub((server as any).messageHandlers, 'get')
+        .returns(callback);
+      messageHandlersHasSpy = sinon
+        .stub((server as any).messageHandlers, 'has');
+
+      sandbox
+        .stub((server as any), 'getRouteFromPattern')
+        .returns(handlerRoute);
+    });
+
+    afterEach(() => {
+      messageHandlersGetSpy.restore();
+      messageHandlersHasSpy.restore();
+    });
+
     describe('when handler exists', () => {
       it('should return expected handler', () => {
-        const channel = 'pattern';
-        const expectedResult = {};
-        const handlers = new Map([[channel, expectedResult]]);
-        (server as any).messageHandlers = handlers;
-        expect(server.getHandlerByPattern(channel)).to.be.eql(expectedResult);
+        messageHandlersHasSpy.returns(true);
+
+        const value = server.getHandlerByPattern(handlerRoute);
+
+        expect(messageHandlersHasSpy.args[0][0])
+          .to.be.equal(handlerRoute);
+        expect(messageHandlersGetSpy.called)
+          .to.be.true;
+        expect(messageHandlersGetSpy.args[0][0])
+          .to.be.equal(handlerRoute);
+        expect(value).to.be.equal(callback);
       });
     });
+
     describe('when handler does not exists', () => {
       it('should return null', () => {
-        const channel = 'test';
-        expect(server.getHandlerByPattern(channel)).to.be.eql(null);
+        messageHandlersHasSpy.returns(false);
+
+        const value = server.getHandlerByPattern(handlerRoute);
+
+        expect(messageHandlersHasSpy.args[0][0])
+          .to.be.equal(handlerRoute);
+        expect(messageHandlersGetSpy.called)
+          .to.be.false;
+        expect(value).to.be.null;
       });
     });
   });
