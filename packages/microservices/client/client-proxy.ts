@@ -25,6 +25,7 @@ export abstract class ClientProxy {
   public abstract close(): any;
 
   protected routingMap = new Map<string, Function>();
+  protected readonly msvcUtil = Utils.MsvcUtil;
 
   public send<TResult = any, TInput = any>(
     pattern: any,
@@ -103,6 +104,6 @@ export abstract class ClientProxy {
   }
 
   protected normalizePattern<T = any>(pattern: T): string {
-    return Utils.MsvcUtil.transformPatternToRoute(pattern);
+    return this.msvcUtil.transformPatternToRoute(pattern);
   }
 }
