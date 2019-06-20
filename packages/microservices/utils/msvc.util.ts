@@ -33,7 +33,7 @@ export class MsvcUtil {
             `${key}:${MsvcUtil.transformPatternToRoute(pattern[key])}`);
 
         // Creates and returns the Route
-        const sortedPattern = sortedPatternParams.join('/');
-        return sortedPattern;
+        const route = sortedPatternParams.join('/');
+        return `{${route}}`;
     }
 }
