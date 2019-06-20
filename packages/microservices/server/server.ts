@@ -23,6 +23,7 @@ import * as Utils from '../utils';
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger = new Logger(Server.name);
+  protected readonly msvcUtil = Utils.MsvcUtil;
 
   public addHandler(
     pattern: any,
@@ -122,6 +123,6 @@ export abstract class Server {
     }
 
     // Transform the Pattern to Route
-    return Utils.MsvcUtil.transformPatternToRoute(validPattern);
+    return this.msvcUtil.transformPatternToRoute(validPattern);
   }
 }
