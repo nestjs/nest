@@ -30,8 +30,7 @@ export abstract class Server {
     callback: MessageHandler,
     isEventHandler = false,
   ) {
-    const key = isString(pattern) ? pattern : JSON.stringify(pattern);
-    const route = this.getRouteFromPattern(key);
+    const route = this.msvcUtil.transformPatternToRoute(pattern);
     callback.isEventHandler = isEventHandler;
     this.messageHandlers.set(route, callback);
   }
