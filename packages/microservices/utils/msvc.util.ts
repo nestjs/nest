@@ -30,7 +30,7 @@ export class MsvcUtil {
 
         // Creates the array of Pattern params from sorted keys and their corresponding values
         const sortedPatternParams = sortedKeys.map((key) =>
-            `${key}:${pattern[key]}`);
+            `${key}:${MsvcUtil.transformPatternToRoute(pattern[key])}`);
 
         // Creates and returns the Route
         const sortedPattern = sortedPatternParams.join('/');
