@@ -18,6 +18,8 @@ import {
   WritePacket,
 } from '../interfaces';
 
+import * as Utils from '../utils';
+
 export abstract class ClientProxy {
   public abstract connect(): Promise<any>;
   public abstract close(): any;
@@ -101,6 +103,6 @@ export abstract class ClientProxy {
   }
 
   protected normalizePattern<T = any>(pattern: T): string {
-    return (isString(pattern) ? pattern : JSON.stringify(pattern)) as string;
+    return Utils.MsvcUtil.transformPatternToRoute(pattern);
   }
 }

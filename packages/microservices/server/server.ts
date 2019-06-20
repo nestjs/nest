@@ -18,6 +18,8 @@ import {
 } from '../interfaces';
 import { NO_EVENT_HANDLER } from './../constants';
 
+import * as Utils from '../utils';
+
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger = new Logger(Server.name);
@@ -28,8 +30,9 @@ export abstract class Server {
     isEventHandler = false,
   ) {
     const key = isString(pattern) ? pattern : JSON.stringify(pattern);
+    const route = this.getRouteFromPattern(key);
     callback.isEventHandler = isEventHandler;
-    this.messageHandlers.set(key, callback);
+    this.messageHandlers.set(route, callback);
   }
 
   public getHandlers(): Map<string, MessageHandler> {
@@ -37,8 +40,9 @@ export abstract class Server {
   }
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
-    return this.messageHandlers.has(pattern)
-      ? this.messageHandlers.get(pattern)
+    const route = this.getRouteFromPattern(pattern);
+    return this.messageHandlers.has(route)
+      ? this.messageHandlers.get(route)
       : null;
   }
 
@@ -98,5 +102,26 @@ export abstract class Server {
 
   private isObservable(input: unknown): input is Observable<any> {
     return input && isFunction((input as Observable<any>).subscribe);
+  }
+
+  /**
+   * Transforms the server Pattern to valid type and returns a route for him.
+   *
+   * @param  {string} pattern - server pattern
+   * @returns string
+   */
+  private getRouteFromPattern(pattern: string): string {
+    let validPattern: any;
+
+    try {
+      // Gets the pattern in JSON format
+      validPattern = JSON.parse(pattern);
+    } catch (error) {
+      // Uses a fundamental object (`pattern` variable without any conversion)
+      validPattern = pattern;
+    }
+
+    // Transform the Pattern to Route
+    return Utils.MsvcUtil.transformPatternToRoute(validPattern);
   }
 }
