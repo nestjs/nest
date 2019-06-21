@@ -88,7 +88,7 @@
     "@types/node": "10.14.8",
     "@types/redis": "2.8.13",
     "@types/reflect-metadata": "0.0.5",
-    "@types/sinon": "7.0.12",
+    "@types/sinon": "7.0.13",
     "@types/socket.io": "2.1.2",
     "@types/ws": "6.0.1",
     "artillery": "1.6.0-28",
