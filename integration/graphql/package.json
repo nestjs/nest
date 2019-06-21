@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "7.10.6",
-    "ts-node": "8.2.0",
+    "ts-node": "8.3.0",
     "tslint": "5.17.0"
   }
 }
