@@ -1610,6 +1610,16 @@ graphql-tools@4.0.4, graphql-tools@^4.0.0:
     iterall "^1.1.3"
     uuid "^3.1.0"
 
+graphql-tools@4.0.5:
+  version "4.0.5"
+  resolved "https://registry.yarnpkg.com/graphql-tools/-/graphql-tools-4.0.5.tgz#d2b41ee0a330bfef833e5cdae7e1f0b0d86b1754"
+  dependencies:
+    apollo-link "^1.2.3"
+    apollo-utilities "^1.0.1"
+    deprecated-decorator "^0.1.6"
+    iterall "^1.1.3"
+    uuid "^3.1.0"
+
 graphql-upload@^8.0.2:
   version "8.0.4"
   resolved "https://registry.yarnpkg.com/graphql-upload/-/graphql-upload-8.0.4.tgz#ed7cbde883b5cca493de77e39f95cddf40dfd514"
