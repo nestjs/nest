@@ -14,18 +14,18 @@
     "@nestjs/core": "6.3.1",
     "@nestjs/graphql": "6.2.4",
     "@nestjs/platform-express": "6.3.1",
-    "apollo-server-express": "2.6.1",
+    "apollo-server-express": "2.6.4",
     "graphql": "14.3.1",
     "graphql-tools": "4.0.4",
     "prisma-binding": "2.3.11",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
-    "typescript": "3.5.1"
+    "typescript": "3.5.2"
   },
   "devDependencies": {
     "nodemon": "1.19.1",
     "prettier": "1.17.1",
-    "ts-node": "8.2.0",
+    "ts-node": "8.3.0",
     "tsconfig-paths": "3.8.0",
     "tslint": "5.17.0"
   }
