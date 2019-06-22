@@ -17,7 +17,7 @@
     "apollo-server-express": "2.6.4",
     "graphql": "14.3.1",
     "graphql-tools": "4.0.5",
-    "prisma-binding": "2.3.11",
+    "prisma-binding": "2.3.15",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.2"
