@@ -74,6 +74,7 @@ export interface NatsOptions {
   options?: {
     url?: string;
     name?: string;
+    user?: string;
     pass?: string;
     maxReconnectAttempts?: number;
     reconnectTimeWait?: number;
