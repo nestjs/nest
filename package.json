@@ -119,7 +119,7 @@
     "mocha": "3.5.3",
     "nodemon": "1.19.1",
     "nyc": "14.1.1",
-    "prettier": "1.17.1",
+    "prettier": "1.18.2",
     "sinon": "7.3.2",
     "sinon-chai": "3.3.0",
     "socket.io-client": "2.2.0",
