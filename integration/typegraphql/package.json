@@ -16,17 +16,17 @@
     "class-transformer": "0.2.3",
     "class-validator": "0.9.1",
     "graphql": "14.3.1",
-    "graphql-tools": "4.0.4",
+    "graphql-tools": "4.0.5",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "subscriptions-transport-ws": "0.9.16",
     "type-graphql": "0.17.4",
     "typescript": "3.5.2",
-    "ws": "7.0.0"
+    "ws": "7.0.1"
   },
   "devDependencies": {
     "@types/node": "7.10.6",
     "ts-node": "8.3.0",
-    "tslint": "5.17.0"
+    "tslint": "5.18.0"
   }
 }

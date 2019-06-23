@@ -65,9 +65,12 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     if (!this.grpcClient[name]) {
       throw new InvalidGrpcServiceException();
     }
+    const credentials =
+      options.credentials || grpcPackage.credentials.createInsecure();
+    delete options.credentials;
     const grpcClient = new this.grpcClient[name](
       this.url,
-      options.credentials || grpcPackage.credentials.createInsecure(),
+      credentials,
       options,
     );
     const protoMethods = Object.keys(this.grpcClient[name].prototype);

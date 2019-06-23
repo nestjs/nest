@@ -16,7 +16,7 @@
     "@nestjs/platform-express": "6.3.1",
     "apollo-server-express": "2.6.4",
     "graphql": "14.3.1",
-    "graphql-tools": "4.0.4",
+    "graphql-tools": "4.0.5",
     "prisma-binding": "2.3.11",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
@@ -24,9 +24,9 @@
   },
   "devDependencies": {
     "nodemon": "1.19.1",
-    "prettier": "1.17.1",
+    "prettier": "1.18.2",
     "ts-node": "8.3.0",
     "tsconfig-paths": "3.8.0",
-    "tslint": "5.17.0"
+    "tslint": "5.18.0"
   }
 }

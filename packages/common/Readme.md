@@ -72,6 +72,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://reposit.co.uk/" target="_blank"><img src="https://nestjs.com/img/reposit-logo.png" height="28" valign="middle" /></a> &nbsp; &nbsp; <a href="https://yakaz.com/" target="_blank"><img src="https://nestjs.com/img/yakaz.png" width="80" valign="middle" /></a> &nbsp;
 <a href="https://nearpod.com/" target="_blank"><img src="https://nestjs.com/img/nearpod-logo.svg" width="120" valign="middle" /></a> &nbsp;
 <a href="https://clay.global/" target="_blank"><img src="https://nestjs.com/img/clay-logo.svg" width="90" valign="middle" /></a> &nbsp;
+<a href="https://firesticktricks.com" target="_blank"><img src="https://nestjs.com/img/firesticktricks-logo.png" width="145" valign="middle" /></a> &nbsp;
   <a href="http://xtremis.com/" target="_blank"><img src="https://nestjs.com/img/logo-xtremis.svg" width="145" valign="middle" /></a>
 
 
