@@ -1,9 +1,30 @@
+import * as Interfaces from './../../interfaces';
 import { expect } from 'chai';
 import { MsvcUtil } from '../../utils/msvc.util';
+
+function equalTest<R>(testPatterns: Interfaces.MsPattern[], expectedResults: R[]) {
+  testPatterns.forEach((testPattern: Interfaces.MsPattern, index: number) => {
+    const testData = MsvcUtil.transformPatternToRoute(testPattern);
+    expect(testData).to.be.equal(expectedResults[index]);
+  });
+}
 
 describe('MsvcUtil', () => {
 
   describe('transformPatternToRoute', () => {
+    describe(`when gets 'number' value`, () => {
+      it(`should return the 'number' what is wrapped in a string`, () => {
+        const testPatterns = [
+          1, 150, 12345,
+        ];
+        const expectedResults = [
+          `1`, `150`, `12345`,
+        ];
+
+        equalTest(testPatterns, expectedResults);
+      });
+    });
+
     describe(`gets 'string' value`, () => {
       it(`should return the same string`, () => {
         const testPattern1 = `pattern1`;
@@ -101,18 +122,18 @@ describe('MsvcUtil', () => {
       });
     });
 
-    describe(`gets value with incorrect type (no string/JSON)`, () => {
+    describe(`when gets value with incorrect type (no string/number/JSON)`, () => {
       it(`should throw error`, () => {
-        const testPattern1 = 150;
-        const testPattern2 = null;
-        const testPattern3 = undefined;
-        const testPattern4 = Symbol(213);
+        const testPatterns = [
+          null,
+          undefined,
+          Symbol(213),
+        ];
         const errMsg = `The pattern must be of type 'string' or 'object'!`;
 
-        expect(MsvcUtil.transformPatternToRoute.bind(null, testPattern1)).to.throw(errMsg);
-        expect(MsvcUtil.transformPatternToRoute.bind(null, testPattern2)).to.throw(errMsg);
-        expect(MsvcUtil.transformPatternToRoute.bind(null, testPattern3)).to.throw(errMsg);
-        expect(MsvcUtil.transformPatternToRoute.bind(null, testPattern4)).to.throw(errMsg);
+        testPatterns.forEach((testPattern: any) => {
+          expect(MsvcUtil.transformPatternToRoute.bind(null, testPattern)).to.throw(errMsg);
+        });
       });
     });
   });
