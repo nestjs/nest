@@ -25,99 +25,97 @@ describe('MsvcUtil', () => {
       });
     });
 
-    describe(`gets 'string' value`, () => {
+    describe(`when gets 'string' value`, () => {
       it(`should return the same string`, () => {
-        const testPattern1 = `pattern1`;
-        const testPattern2 = 'PaTteRn2';
-        const testPattern3 = '3PaTteRn';
+        const testPatterns = [
+          `pattern1`, 'PaTteRn2', '3PaTteRn',
+        ];
 
-        const testData1 = MsvcUtil.transformPatternToRoute(testPattern1);
-        const testData2 = MsvcUtil.transformPatternToRoute(testPattern2);
-        const testData3 = MsvcUtil.transformPatternToRoute(testPattern3);
-
-        expect(testData1).to.be.equal(testPattern1);
-        expect(testData2).to.be.equal(testPattern2);
-        expect(testData3).to.be.equal(testPattern3);
+        equalTest(testPatterns, testPatterns);
       });
     });
 
-    describe(`gets 'JSON' value`, () => {
+    describe(`when gets 'JSON' value`, () => {
       describe(`without nested JSON (1 level)`, () => {
         it(`should return correct route`, () => {
-          const testPattern1 = {
-            controller: 'app',
-            use: 'getHello'
-          };
-          const testPattern2 = {
-            use: 'getHello',
-            controller: 'app'
-          };
-          const testPattern3 = {
-            service: 'one',
-            use: 'getHello',
-            controller: 'app'
-          };
+          const testPatterns = [
+            {
+              controller: 'app',
+              use: 'getHello',
+            },
+            {
+              use: 'getHello',
+              controller: 'app',
+            },
+            {
+              service: 'one',
+              use: 'getHello',
+              controller: 'app',
+              id: 150,
+            },
+          ];
 
-          const testData1 = MsvcUtil.transformPatternToRoute(testPattern1);
-          const testData2 = MsvcUtil.transformPatternToRoute(testPattern2);
-          const testData3 = MsvcUtil.transformPatternToRoute(testPattern3);
+          const expectedResults = [
+            `{controller:app/use:getHello}`,
+            `{controller:app/use:getHello}`,
+            `{controller:app/id:150/service:one/use:getHello}`,
+          ];
 
-          expect(testData1).to.be.equal(`{controller:app/use:getHello}`);
-          expect(testData2).to.be.equal(`{controller:app/use:getHello}`);
-          expect(testData3).to.be.equal(`{controller:app/service:one/use:getHello}`);
+          equalTest(testPatterns, expectedResults);
         });
       });
-      describe(`use 'JSON' value with nested JSON (2 levels)`, () => {
+      describe(`with nested JSON (2 levels)`, () => {
         it(`should return correct route`, () => {
-          const testPattern1 = {
-            controller: 'app',
-            use: { p1: 'path1', p2: 'path2' }
-          };
-          const testPattern2 = {
-            use: { p1: 'path1', p2: 'path2' },
-            controller: 'app'
-          };
-          const testPattern3 = {
-            service: 'one',
-            use: { p1: 'path1', p2: 'path2' },
-            controller: 'app'
-          };
+          const testPatterns = [
+            {
+              controller: 'app',
+              use: { p1: 'path1', p2: 'path2' },
+            },
+            {
+              use: { p1: 'path1', p2: 'path2' },
+              controller: 'app',
+            },
+            {
+              service: 'one',
+              use: { p1: 'path1', p2: 'path2', id: 160 },
+              controller: 'app',
+            },
+          ];
 
-          const testData1 = MsvcUtil.transformPatternToRoute(testPattern1);
-          const testData2 = MsvcUtil.transformPatternToRoute(testPattern2);
-          const testData3 = MsvcUtil.transformPatternToRoute(testPattern3);
+          const expectedResults = [
+            `{controller:app/use:{p1:path1/p2:path2}}`,
+            `{controller:app/use:{p1:path1/p2:path2}}`,
+            `{controller:app/service:one/use:{id:160/p1:path1/p2:path2}}`,
+          ];
 
-          expect(testData1).to.be.equal(`{controller:app/use:{p1:path1/p2:path2}}`);
-          expect(testData2).to.be.equal(`{controller:app/use:{p1:path1/p2:path2}}`);
-          expect(testData3).to.be.equal(`{controller:app/service:one/use:{p1:path1/p2:path2}}`);
+          equalTest(testPatterns, expectedResults);
         });
       });
-      describe(`use 'JSON' value with nested JSON (3 levels)`, () => {
+      describe(`with nested JSON (3 levels)`, () => {
         it(`should return correct route`, () => {
-          const testPattern1 = {
-            controller: 'app',
-            use: { p1: 'path1', p2: { pp1: 'ppath1' } }
-          };
-          const testPattern2 = {
-            use: { p1: 'path1' },
-            controller: { p2: 'path2' },
-          };
-          const testPattern3 = {
-            service: 'one',
-            use: { p1: 'path1', p2: { pp1: 'ppath1' } },
-            controller: { p1: { pp1: 'ppath1' } }
-          };
+          const testPatterns = [
+            {
+              controller: 'app',
+              use: { p1: 'path1', p2: { pp1: 'ppath1' } },
+            },
+            {
+              use: { p1: 'path1' },
+              controller: { p2: 'path2' },
+            },
+            {
+              service: 'one',
+              use: { p1: 'path1', p2: { pp1: 'ppath1' } },
+              controller: { p1: { pp1: 'ppath1', id: 180 } },
+            },
+          ];
 
-          const testData1 = MsvcUtil.transformPatternToRoute(testPattern1);
-          const testData2 = MsvcUtil.transformPatternToRoute(testPattern2);
-          const testData3 = MsvcUtil.transformPatternToRoute(testPattern3);
+          const expectedResults = [
+            `{controller:app/use:{p1:path1/p2:{pp1:ppath1}}}`,
+            `{controller:{p2:path2}/use:{p1:path1}}`,
+            `{controller:{p1:{id:180/pp1:ppath1}}/service:one/use:{p1:path1/p2:{pp1:ppath1}}}`,
+          ];
 
-          expect(testData1)
-            .to.be.equal(`{controller:app/use:{p1:path1/p2:{pp1:ppath1}}}`);
-          expect(testData2)
-            .to.be.equal(`{controller:{p2:path2}/use:{p1:path1}}`);
-          expect(testData3)
-            .to.be.equal(`{controller:{p1:{pp1:ppath1}}/service:one/use:{p1:path1/p2:{pp1:ppath1}}}`);
+          equalTest(testPatterns, expectedResults);
         });
       });
     });
