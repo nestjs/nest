@@ -18,6 +18,8 @@ import {
   WritePacket,
 } from '../interfaces';
 
+import * as Interfaces from '../interfaces';
+
 import * as Utils from '../utils';
 
 export abstract class ClientProxy {
@@ -103,7 +105,7 @@ export abstract class ClientProxy {
     return (obj && obj[prop]) || defaultValue;
   }
 
-  protected normalizePattern<T = any>(pattern: T): string {
+  protected normalizePattern(pattern: Interfaces.MsPattern): string {
     return this.msvcUtil.transformPatternToRoute(pattern);
   }
 }
