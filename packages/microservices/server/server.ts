@@ -18,6 +18,8 @@ import {
 } from '../interfaces';
 import { NO_EVENT_HANDLER } from './../constants';
 
+import * as Interfaces from '../interfaces';
+
 import * as Utils from '../utils';
 
 export abstract class Server {
@@ -111,7 +113,7 @@ export abstract class Server {
    * @returns string
    */
   private getRouteFromPattern(pattern: string): string {
-    let validPattern: any;
+    let validPattern: Interfaces.MsPattern;
 
     try {
       // Gets the pattern in JSON format

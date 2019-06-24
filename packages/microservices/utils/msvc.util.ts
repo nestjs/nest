@@ -10,10 +10,10 @@ export class MsvcUtil {
    * according to the following template:
    * <key1>:<value1>/<key2>:<value2>/.../<keyN>:<valueN>
    *
-   * @param  {any} pattern - client pattern
+   * @param  {Interfaces.MsPattern} pattern - client pattern
    * @returns string
    */
-  public static transformPatternToRoute(pattern: any): string {
+  public static transformPatternToRoute(pattern: Interfaces.MsPattern): string {
     // Returns the pattern according to the 1st
     if (isString(pattern)) {
       return pattern;
