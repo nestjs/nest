@@ -43,3 +43,11 @@ services:
       - "15672:15672"
       - "5672:5672"
     tty: true
+  kafka:
+    container_name: test-kafka
+    hostname: kafka
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+
+

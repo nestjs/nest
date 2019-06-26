@@ -1,4 +1,5 @@
 import { MqttClientOptions } from '@nestjs/common/interfaces/external/mqtt-options.interface';
+import { KafkaConfig, ConsumerConfig, ProducerConfig } from '../external/kafka.interface';
 import { Transport } from '../enums/transport.enum';
 import { Server } from './../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
@@ -102,17 +103,8 @@ export interface RmqOptions {
 export interface KafkaOptions {
   transport?: Transport.KAFKA;
   options?: {
-    brokers?: string[]
-    ssl?: tls.SecureContextOptions
-    sasl?: SASLOptions
-    clientId?: string
-    connectionTimeout?: number
-    authenticationTimeout?: number
-    requestTimeout?: number
-    enforceRequestTimeout?: boolean
-    retry?: RetryOptions
-    socketFactory?: ISocketFactory
-    logLevel?: logLevel
-    logCreator?: logCreator
-  }
+    client?: KafkaConfig,
+    consumer?: ConsumerConfig,
+    producer?: ProducerConfig
+  };
 }

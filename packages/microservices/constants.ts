@@ -36,5 +36,5 @@ export const DISCONNECTED_RMQ_MESSAGE = `Disconnected from RMQ. Trying to reconn
 export const GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH = 4 * 1024 * 1024;
 export const GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH = 4 * 1024 * 1024;
 
-export const KAFKA_DEFAULT_CLIENT = 'nestjs';
-export const KAFKA_DEFAULT_GROUP = 'nestjs';
+export const KAFKA_DEFAULT_CLIENT = 'nestjs-consumer';
+export const KAFKA_DEFAULT_GROUP = 'nestjs-group';

@@ -1,6 +1,7 @@
 import { PATTERN_HANDLER_METADATA, PATTERN_METADATA } from '../constants';
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
+import { ConsumerConfig } from '../external/kafka.interface';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',
@@ -40,7 +41,7 @@ export function GrpcMethod(service: string, method?: string): MethodDecorator {
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
-    const metadata = createMethodMetadata(target, key, service, method);
+    const metadata = createGrpcMethodMetadata(target, key, service, method);
     return MessagePattern(metadata)(target, key, descriptor);
   };
 }
@@ -62,7 +63,7 @@ export function GrpcStreamMethod(service: string, method?: string) {
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
-    const metadata = createMethodMetadata(
+    const metadata = createGrpcMethodMetadata(
       target,
       key,
       service,
@@ -90,7 +91,7 @@ export function GrpcStreamCall(service: string, method?: string) {
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
-    const metadata = createMethodMetadata(
+    const metadata = createGrpcMethodMetadata(
       target,
       key,
       service,
@@ -101,7 +102,7 @@ export function GrpcStreamCall(service: string, method?: string) {
   };
 }
 
-export function createMethodMetadata(
+export function createGrpcMethodMetadata(
   target: any,
   key: string | symbol,
   service: string | undefined,
@@ -123,4 +124,74 @@ export function createMethodMetadata(
     return { service, rpc: capitalizeFirstLetter(key as string), streaming };
   }
   return { service, rpc: method, streaming };
+}
+
+export enum KafkaConsumerHandlerType {
+  EACH_MESSAGE = 'eachMessage',
+  EACH_BATCH = 'eachBatch',
+}
+
+export interface KafkaConsumerSubscriptionOptions {
+  topic: string | RegExp;
+  fromBeginning?: boolean;
+}
+
+export interface KafkaConsumerRunOptions {
+  autoCommit?: boolean;
+  autoCommitInterval?: number | null;
+  autoCommitThreshold?: number | null;
+  eachBatchAutoResolve?: boolean;
+  partitionsConsumedConcurrently?: number;
+}
+
+/**
+ * Registers a consumer handler for processing each message of a topic individually.
+ *
+ * @param subscription The options for the subscription to the topic.
+ * @param run The options for the consumption of messages from the topic.
+ */
+export function KafkaConsumer(subscription: KafkaConsumerSubscriptionOptions): MethodDecorator;
+export function KafkaConsumer(subscription: KafkaConsumerSubscriptionOptions, run?: KafkaConsumerRunOptions): MethodDecorator;
+export function KafkaConsumer(subscription: KafkaConsumerSubscriptionOptions, run?: KafkaConsumerRunOptions): MethodDecorator {
+  return (
+    target: any,
+    key: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) => {
+    const metadata = createKafkaMethodMetadata(target, key, subscription, run);
+    return MessagePattern(metadata)(target, key, descriptor);
+  };
+}
+
+/**
+ * Registers a consumer handler for processing each message of a topic in bitch.
+ *
+ * @param subscription The options for the subscription to the topic.
+ * @param run The options for the consumption of messages from the topic.
+ */
+export function KafkaBatchConsumer(subscription: KafkaConsumerSubscriptionOptions): MethodDecorator;
+export function KafkaBatchConsumer(subscription: KafkaConsumerSubscriptionOptions, run?: KafkaConsumerRunOptions): MethodDecorator;
+export function KafkaBatchConsumer(subscription: KafkaConsumerSubscriptionOptions, run?: KafkaConsumerRunOptions): MethodDecorator {
+  return (
+    target: any,
+    key: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) => {
+    const metadata = createKafkaMethodMetadata(target, key, subscription, run, KafkaConsumerHandlerType.EACH_BATCH);
+    return MessagePattern(metadata)(target, key, descriptor);
+  };
+}
+
+export function createKafkaMethodMetadata(
+  target: any,
+  key: string | symbol,
+  subscription: KafkaConsumerSubscriptionOptions,
+  run: KafkaConsumerRunOptions | undefined,
+  handler = KafkaConsumerHandlerType.EACH_MESSAGE
+) {
+  return {
+    subscription,
+    run,
+    handler
+  };
 }

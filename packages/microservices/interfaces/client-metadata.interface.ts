@@ -1,10 +1,11 @@
 import { Transport } from './../enums/transport.enum';
 import {
   GrpcOptions,
+  KafkaOptions,
   MqttOptions,
   NatsOptions,
   RedisOptions,
-  RmqOptions,
+  RmqOptions
 } from './microservice-configuration.interface';
 
 export type ClientOptions =
@@ -12,6 +13,7 @@ export type ClientOptions =
   | NatsOptions
   | MqttOptions
   | GrpcOptions
+  | KafkaOptions
   | TcpClientOptions
   | RmqOptions;
 
