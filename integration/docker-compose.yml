@@ -23,6 +23,7 @@ services:
       - "9001:9001"
     restart: always
   mysql:
+    container_name: test-mysql
     image: mysql:5.7.26
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -31,12 +32,14 @@ services:
       - "3306:3306"
     restart: always
   mongodb:
+    container_name: test-mongodb
     image: mongo:latest
     environment:
       - MONGODB_DATABASE="test"
     ports:
       - 27017:27017
   rabbit:
+    container_name: test-rabbit
     hostname: rabbit
     image: "rabbitmq:management"
     ports:

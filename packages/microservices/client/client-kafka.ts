@@ -34,8 +34,8 @@ export class ClientKafka extends ClientProxy {
 
   constructor(protected readonly options: RmqOptions['options']) {
     super();
-    this. = this.getOptionsProp(this.options, 'urls') || [RQM_DEFAULT_URL];
-    this.groupId =
+    this.urls = this.getOptionsProp(this.options, 'urls') || [RQM_DEFAULT_URL];
+    this.queue =
       this.getOptionsProp(this.options, 'queue') || RQM_DEFAULT_QUEUE;
     this.queueOptions =
       this.getOptionsProp(this.options, 'queueOptions') ||

@@ -63,7 +63,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     registeredPatterns.forEach(pattern => {
       // const { isEventHandler } = this.messageHandlers.get(pattern);
       // consumer.subscribe(pattern as ConsumerConfig);
-      console.log(pattern);
+      this.logger.error(pattern);
     });
   }
 
