@@ -10,19 +10,19 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.3.1",
-    "@nestjs/core": "6.3.1",
-    "@nestjs/platform-express": "6.3.1",
+    "@nestjs/common": "6.3.2",
+    "@nestjs/core": "6.3.2",
+    "@nestjs/platform-express": "6.3.2",
     "@nestjs/mongoose": "6.1.2",
-    "mongoose": "5.5.13",
+    "mongoose": "5.6.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
-    "typescript": "3.5.1"
+    "typescript": "3.5.2"
   },
   "devDependencies": {
-    "@types/mongoose": "5.5.5",
-    "@types/node": "10.14.8",
-    "ts-node": "8.2.0",
-    "tslint": "5.17.0"
+    "@types/mongoose": "5.5.6",
+    "@types/node": "10.14.10",
+    "ts-node": "8.3.0",
+    "tslint": "5.18.0"
   }
 }
