@@ -76,7 +76,7 @@
     "uuid": "3.3.2"
   },
   "devDependencies": {
-    "@types/amqplib": "0.5.12",
+    "@types/amqplib": "0.5.13",
     "@types/cache-manager": "1.2.7",
     "@types/chai": "4.1.7",
     "@types/chai-as-promised": "7.1.0",
