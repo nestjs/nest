@@ -70,6 +70,9 @@ describe('WebSocketGateway (WsAdapter)', () => {
     app = await createNestApp(ApplicationGateway, CoreGateway);
     await app.listenAsync(3000);
 
+    // open websockets delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     ws = new WebSocket('ws://localhost:8080');
     ws2 = new WebSocket('ws://localhost:8090');
 
