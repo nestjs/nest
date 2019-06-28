@@ -10,12 +10,12 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.3.1",
-    "@nestjs/core": "6.3.1",
+    "@nestjs/common": "6.3.2",
+    "@nestjs/core": "6.3.2",
     "@nestjs/graphql": "6.2.4",
-    "@nestjs/platform-express": "6.3.1",
-    "apollo-server-express": "2.6.4",
-    "graphql": "14.3.1",
+    "@nestjs/platform-express": "6.3.2",
+    "apollo-server-express": "2.6.7",
+    "graphql": "14.4.0",
     "graphql-tools": "4.0.5",
     "prisma-binding": "2.3.11",
     "reflect-metadata": "0.1.13",

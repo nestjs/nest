@@ -10,11 +10,11 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.3.1",
-    "@nestjs/core": "6.3.1",
-    "@nestjs/microservices": "6.3.1",
-    "@nestjs/platform-express": "6.3.1",
-    "@nestjs/testing": "6.3.1",
+    "@nestjs/common": "6.3.2",
+    "@nestjs/core": "6.3.2",
+    "@nestjs/microservices": "6.3.2",
+    "@nestjs/platform-express": "6.3.2",
+    "@nestjs/testing": "6.3.2",
     "class-transformer": "0.2.3",
     "class-validator": "0.9.1",
     "reflect-metadata": "0.1.13",
@@ -22,7 +22,7 @@
     "typescript": "3.5.2"
   },
   "devDependencies": {
-    "@types/amqplib": "0.5.12",
+    "@types/amqplib": "0.5.13",
     "@types/node": "10.14.10",
     "ts-node": "8.3.0",
     "tslint": "5.18.0"

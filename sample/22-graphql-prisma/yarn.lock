@@ -40,21 +40,21 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@nestjs/common@6.3.1":
-  version "6.3.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.3.1.tgz#222f25251eb1b67c6e552e00b266048daa569bbc"
+"@nestjs/common@6.3.2":
+  version "6.3.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.3.2.tgz#14f2d7ea1c268ba2a3b2d11787f6351fe760ec08"
   dependencies:
     axios "0.19.0"
     cli-color "1.4.0"
     uuid "3.3.2"
 
-"@nestjs/core@6.3.1":
-  version "6.3.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.3.1.tgz#e32e76a776d0de71f218f5da582ea3ee6524b27e"
+"@nestjs/core@6.3.2":
+  version "6.3.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.3.2.tgz#13011b9dd5876781454920e57e36ed59a20ba596"
   dependencies:
     "@nuxtjs/opencollective" "0.2.2"
     fast-safe-stringify "2.0.6"
-    iterare "1.1.2"
+    iterare "1.2.0"
     object-hash "1.3.1"
     optional "0.1.4"
     uuid "3.3.2"
@@ -75,9 +75,9 @@
   optionalDependencies:
     type-graphql "^0.17.3"
 
-"@nestjs/platform-express@6.3.1":
-  version "6.3.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.3.1.tgz#8adb602a5bb9571b9d58646bd52141a26ea8ba3e"
+"@nestjs/platform-express@6.3.2":
+  version "6.3.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.3.2.tgz#2b224a87daa193ffa56ef64acd48f28b4a754060"
   dependencies:
     body-parser "1.19.0"
     cors "2.8.5"
@@ -306,12 +306,12 @@ anymatch@^3.0.1:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-apollo-cache-control@0.7.2:
-  version "0.7.2"
-  resolved "https://registry.yarnpkg.com/apollo-cache-control/-/apollo-cache-control-0.7.2.tgz#b8852422d973c582493e85c776abc9c660090162"
+apollo-cache-control@0.7.4:
+  version "0.7.4"
+  resolved "https://registry.yarnpkg.com/apollo-cache-control/-/apollo-cache-control-0.7.4.tgz#0cb5c7be0e0dd0c44b1257144cd7f9f2a3c374e6"
   dependencies:
     apollo-server-env "2.4.0"
-    graphql-extensions "0.7.2"
+    graphql-extensions "0.7.4"
 
 apollo-datasource@0.5.0:
   version "0.5.0"
@@ -326,16 +326,16 @@ apollo-engine-reporting-protobuf@0.3.1:
   dependencies:
     protobufjs "^6.8.6"
 
-apollo-engine-reporting@1.3.2:
-  version "1.3.2"
-  resolved "https://registry.yarnpkg.com/apollo-engine-reporting/-/apollo-engine-reporting-1.3.2.tgz#b2569f79eb1a7a7380f49340db61465f449284fe"
+apollo-engine-reporting@1.3.5:
+  version "1.3.5"
+  resolved "https://registry.yarnpkg.com/apollo-engine-reporting/-/apollo-engine-reporting-1.3.5.tgz#075424d39dfe77a20f96e8e33b7ae52d58c38e1e"
   dependencies:
     apollo-engine-reporting-protobuf "0.3.1"
-    apollo-graphql "^0.3.2"
-    apollo-server-core "2.6.4"
+    apollo-graphql "^0.3.3"
+    apollo-server-core "2.6.7"
     apollo-server-env "2.4.0"
     async-retry "^1.2.1"
-    graphql-extensions "0.7.3"
+    graphql-extensions "0.7.6"
 
 apollo-env@0.5.1:
   version "0.5.1"
@@ -345,9 +345,9 @@ apollo-env@0.5.1:
     node-fetch "^2.2.0"
     sha.js "^2.4.11"
 
-apollo-graphql@^0.3.2:
-  version "0.3.2"
-  resolved "https://registry.yarnpkg.com/apollo-graphql/-/apollo-graphql-0.3.2.tgz#8881a87f1d5fcf80837b34dba90737e664eabe9a"
+apollo-graphql@^0.3.3:
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/apollo-graphql/-/apollo-graphql-0.3.3.tgz#ce1df194f6e547ad3ce1e35b42f9c211766e1658"
   dependencies:
     apollo-env "0.5.1"
     lodash.sortby "^4.7.0"
@@ -397,23 +397,23 @@ apollo-server-caching@0.4.0:
   dependencies:
     lru-cache "^5.0.0"
 
-apollo-server-core@2.6.4:
-  version "2.6.4"
-  resolved "https://registry.yarnpkg.com/apollo-server-core/-/apollo-server-core-2.6.4.tgz#0372e3a28f221b9db83bdfbb0fd0b2960cd29bab"
+apollo-server-core@2.6.7:
+  version "2.6.7"
+  resolved "https://registry.yarnpkg.com/apollo-server-core/-/apollo-server-core-2.6.7.tgz#85b0310f40cfec43a702569c73af16d88776a6f0"
   dependencies:
     "@apollographql/apollo-tools" "^0.3.6"
     "@apollographql/graphql-playground-html" "1.6.20"
     "@types/ws" "^6.0.0"
-    apollo-cache-control "0.7.2"
+    apollo-cache-control "0.7.4"
     apollo-datasource "0.5.0"
-    apollo-engine-reporting "1.3.2"
+    apollo-engine-reporting "1.3.5"
     apollo-server-caching "0.4.0"
     apollo-server-env "2.4.0"
     apollo-server-errors "2.3.0"
-    apollo-server-plugin-base "0.5.3"
-    apollo-tracing "0.7.2"
+    apollo-server-plugin-base "0.5.6"
+    apollo-tracing "0.7.3"
     fast-json-stable-stringify "^2.0.0"
-    graphql-extensions "0.7.3"
+    graphql-extensions "0.7.6"
     graphql-subscriptions "^1.0.0"
     graphql-tag "^2.9.2"
     graphql-tools "^4.0.0"
@@ -433,9 +433,9 @@ apollo-server-errors@2.3.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/apollo-server-errors/-/apollo-server-errors-2.3.0.tgz#700622b66a16dffcad3b017e4796749814edc061"
 
-apollo-server-express@2.6.4:
-  version "2.6.4"
-  resolved "https://registry.yarnpkg.com/apollo-server-express/-/apollo-server-express-2.6.4.tgz#fc1d661be73fc1880aa53a56e1abe3733d08eada"
+apollo-server-express@2.6.7:
+  version "2.6.7"
+  resolved "https://registry.yarnpkg.com/apollo-server-express/-/apollo-server-express-2.6.7.tgz#22307e08b75be1553f4099d00028abe52597767d"
   dependencies:
     "@apollographql/graphql-playground-html" "1.6.20"
     "@types/accepts" "^1.3.5"
@@ -443,23 +443,23 @@ apollo-server-express@2.6.4:
     "@types/cors" "^2.8.4"
     "@types/express" "4.17.0"
     accepts "^1.3.5"
-    apollo-server-core "2.6.4"
+    apollo-server-core "2.6.7"
     body-parser "^1.18.3"
     cors "^2.8.4"
     graphql-subscriptions "^1.0.0"
     graphql-tools "^4.0.0"
     type-is "^1.6.16"
 
-apollo-server-plugin-base@0.5.3:
-  version "0.5.3"
-  resolved "https://registry.yarnpkg.com/apollo-server-plugin-base/-/apollo-server-plugin-base-0.5.3.tgz#234c6330c412a2e83ff49305a0c2f991fb40a266"
+apollo-server-plugin-base@0.5.6:
+  version "0.5.6"
+  resolved "https://registry.yarnpkg.com/apollo-server-plugin-base/-/apollo-server-plugin-base-0.5.6.tgz#3a7128437a0f845e7d873fa43ef091ff7bf27975"
 
-apollo-tracing@0.7.2:
-  version "0.7.2"
-  resolved "https://registry.yarnpkg.com/apollo-tracing/-/apollo-tracing-0.7.2.tgz#7730159a4670bca465ac1bfa01f9902610a7aba4"
+apollo-tracing@0.7.3:
+  version "0.7.3"
+  resolved "https://registry.yarnpkg.com/apollo-tracing/-/apollo-tracing-0.7.3.tgz#8533e3e2dca2d5a25e8439ce498ea33ff4d159ee"
   dependencies:
     apollo-server-env "2.4.0"
-    graphql-extensions "0.7.2"
+    graphql-extensions "0.7.4"
 
 apollo-utilities@^1.0.0, apollo-utilities@^1.0.1:
   version "1.0.21"
@@ -1559,15 +1559,15 @@ graphql-binding@2.5.1:
     ts-node "^7.0.1"
     yargs "^12.0.2"
 
-graphql-extensions@0.7.2:
-  version "0.7.2"
-  resolved "https://registry.yarnpkg.com/graphql-extensions/-/graphql-extensions-0.7.2.tgz#8711543f835661eaf24b48d6ac2aad44dbbd5506"
+graphql-extensions@0.7.4:
+  version "0.7.4"
+  resolved "https://registry.yarnpkg.com/graphql-extensions/-/graphql-extensions-0.7.4.tgz#78327712822281d5778b9210a55dc59c93a9c184"
   dependencies:
     "@apollographql/apollo-tools" "^0.3.6"
 
-graphql-extensions@0.7.3:
-  version "0.7.3"
-  resolved "https://registry.yarnpkg.com/graphql-extensions/-/graphql-extensions-0.7.3.tgz#2ab7331c72ae657e4cbfa4ff004c400b19f56cdf"
+graphql-extensions@0.7.6:
+  version "0.7.6"
+  resolved "https://registry.yarnpkg.com/graphql-extensions/-/graphql-extensions-0.7.6.tgz#80cdddf08b0af12525529d1922ee2ea0d0cc8ecf"
   dependencies:
     "@apollographql/apollo-tools" "^0.3.6"
 
@@ -1629,9 +1629,9 @@ graphql-upload@^8.0.2:
     http-errors "^1.7.1"
     object-path "^0.11.4"
 
-graphql@14.3.1:
-  version "14.3.1"
-  resolved "https://registry.yarnpkg.com/graphql/-/graphql-14.3.1.tgz#b3aa50e61a841ada3c1f9ccda101c483f8e8c807"
+graphql@14.4.0:
+  version "14.4.0"
+  resolved "https://registry.yarnpkg.com/graphql/-/graphql-14.4.0.tgz#e97086acfc0338e4fdc8f7dba519c6b8a6badfd9"
   dependencies:
     iterall "^1.2.2"
 
@@ -2004,9 +2004,9 @@ iterall@1.2.2, iterall@^1.1.3, iterall@^1.2.1, iterall@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/iterall/-/iterall-1.2.2.tgz#92d70deb8028e0c39ff3164fdbf4d8b088130cd7"
 
-iterare@1.1.2:
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/iterare/-/iterare-1.1.2.tgz#32e65fe03c72f727b1ae5fd002ed6a215f523ae8"
+iterare@1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/iterare/-/iterare-1.2.0.tgz#7427f5ed45986e4b73e2fea903579f1117f3dd15"
 
 js-tokens@^4.0.0:
   version "4.0.0"
