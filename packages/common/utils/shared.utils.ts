@@ -7,6 +7,7 @@ export const validatePath = (path?: string): string =>
 export const isFunction = (fn: any): boolean => typeof fn === 'function';
 export const isString = (fn: any): fn is string => typeof fn === 'string';
 export const isConstructor = (fn: any): boolean => fn === 'constructor';
-export const isNil = (obj: any): boolean => isUndefined(obj) || obj === null;
+export const isNil = (obj: any): obj is null | undefined =>
+  isUndefined(obj) || obj === null;
 export const isEmpty = (array: any): boolean => !(array && array.length > 0);
 export const isSymbol = (fn: any): fn is symbol => typeof fn === 'symbol';

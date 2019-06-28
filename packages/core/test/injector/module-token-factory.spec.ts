@@ -65,6 +65,13 @@ describe('ModuleTokenFactory', () => {
           JSON.stringify(metadata),
         );
       });
+      it('should return hash with class', () => {
+        class Provider {}
+        const metadata = { providers: [Provider], exports: [Provider] };
+        expect(factory.getDynamicMetadataToken(metadata)).to.be.eql(
+          '{"providers":["Provider"],"exports":["Provider"]}'
+        );
+      });
     });
     describe('when metadata does not exist', () => {
       it('should return empty string', () => {

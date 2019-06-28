@@ -1,4 +1,8 @@
-import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isObject,
+  isString,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import { EMPTY, fromEvent, Subject } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import {
@@ -11,7 +15,7 @@ import {
 import { GrpcMethodStreamingType } from '../decorators';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
-import { CustomTransportStrategy } from '../interfaces';
+import { CustomTransportStrategy, MessageHandler } from '../interfaces';
 import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
@@ -278,6 +282,16 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     } catch (e) {
       return obj;
     }
+  }
+
+  public addHandler(
+    pattern: any,
+    callback: MessageHandler,
+    isEventHandler = false,
+  ) {
+    const route = isString(pattern) ? pattern : JSON.stringify(pattern);
+    callback.isEventHandler = isEventHandler;
+    this.messageHandlers.set(route, callback);
   }
 
   public createClient(): any {
