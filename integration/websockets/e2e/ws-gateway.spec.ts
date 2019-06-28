@@ -12,7 +12,7 @@ async function createNestApp(...gateways): Promise<INestApplication> {
     providers: gateways,
   }).compile();
   const app = await testingModule.createNestApplication();
-  app.useWebSocketAdapter(new WsAdapter(app));
+  app.useWebSocketAdapter(new WsAdapter(app) as any);
   return app;
 }
 
