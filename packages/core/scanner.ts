@@ -194,6 +194,7 @@ export class DependenciesScanner {
       (a: any[], b: any[]) => a.concat(b),
       initialValue,
     ) as any[];
+
     const combinedInjectables = [
       ...controllerInjectables,
       ...flattenMethodsInjectables,
