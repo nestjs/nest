@@ -18,11 +18,16 @@ import {
   WritePacket,
 } from '../interfaces';
 
+import * as Interfaces from '../interfaces';
+
+import * as Utils from '../utils';
+
 export abstract class ClientProxy {
   public abstract connect(): Promise<any>;
   public abstract close(): any;
 
   protected routingMap = new Map<string, Function>();
+  protected readonly msvcUtil = Utils.MsvcUtil;
 
   public send<TResult = any, TInput = any>(
     pattern: any,
@@ -100,7 +105,7 @@ export abstract class ClientProxy {
     return (obj && obj[prop]) || defaultValue;
   }
 
-  protected normalizePattern<T = any>(pattern: T): string {
-    return (isString(pattern) ? pattern : JSON.stringify(pattern)) as string;
+  protected normalizePattern(pattern: Interfaces.MsPattern): string {
+    return this.msvcUtil.transformPatternToRoute(pattern);
   }
 }
