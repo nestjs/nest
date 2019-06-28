@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isFunction, isString } from '@nestjs/common/utils/shared.utils';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 import {
   ConnectableObservable,
   EMPTY as empty,
@@ -13,26 +13,23 @@ import { catchError, finalize, publish } from 'rxjs/operators';
 import {
   MessageHandler,
   MicroserviceOptions,
+  MsPattern,
   ReadPacket,
   WritePacket,
 } from '../interfaces';
+import { transformPatternToRoute } from '../utils';
 import { NO_EVENT_HANDLER } from './../constants';
-
-import * as Interfaces from '../interfaces';
-
-import * as Utils from '../utils';
 
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger = new Logger(Server.name);
-  protected readonly msvcUtil = Utils.MsvcUtil;
 
   public addHandler(
     pattern: any,
     callback: MessageHandler,
     isEventHandler = false,
   ) {
-    const route = this.msvcUtil.transformPatternToRoute(pattern);
+    const route = transformPatternToRoute(pattern);
     callback.isEventHandler = isEventHandler;
     this.messageHandlers.set(route, callback);
   }
@@ -113,17 +110,14 @@ export abstract class Server {
    * @returns string
    */
   private getRouteFromPattern(pattern: string): string {
-    let validPattern: Interfaces.MsPattern;
+    let validPattern: MsPattern;
 
     try {
-      // Gets the pattern in JSON format
       validPattern = JSON.parse(pattern);
     } catch (error) {
       // Uses a fundamental object (`pattern` variable without any conversion)
       validPattern = pattern;
     }
-
-    // Transform the Pattern to Route
-    return this.msvcUtil.transformPatternToRoute(validPattern);
+    return transformPatternToRoute(validPattern);
   }
 }

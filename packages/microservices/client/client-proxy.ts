@@ -1,5 +1,5 @@
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { isNil, isString } from '@nestjs/common/utils/shared.utils';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import {
   defer,
   fromEvent,
@@ -13,21 +13,18 @@ import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
 import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
   ClientOptions,
+  MsPattern,
   PacketId,
   ReadPacket,
   WritePacket,
 } from '../interfaces';
-
-import * as Interfaces from '../interfaces';
-
-import * as Utils from '../utils';
+import { transformPatternToRoute } from '../utils';
 
 export abstract class ClientProxy {
   public abstract connect(): Promise<any>;
   public abstract close(): any;
 
   protected routingMap = new Map<string, Function>();
-  protected readonly msvcUtil = Utils.MsvcUtil;
 
   public send<TResult = any, TInput = any>(
     pattern: any,
@@ -105,7 +102,7 @@ export abstract class ClientProxy {
     return (obj && obj[prop]) || defaultValue;
   }
 
-  protected normalizePattern(pattern: Interfaces.MsPattern): string {
-    return this.msvcUtil.transformPatternToRoute(pattern);
+  protected normalizePattern(pattern: MsPattern): string {
+    return transformPatternToRoute(pattern);
   }
 }
