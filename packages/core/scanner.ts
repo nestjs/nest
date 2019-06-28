@@ -14,9 +14,9 @@ import {
 } from '@nestjs/common/constants';
 import {
   ClassProvider,
+  ExistingProvider,
   FactoryProvider,
   ValueProvider,
-  ExistingProvider,
 } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
@@ -188,9 +188,11 @@ export class DependenciesScanner {
       component.prototype,
       this.reflectKeyMetadata.bind(this, component, metadataKey),
     );
+
+    const initialValue = [];
     const flattenMethodsInjectables = methodsInjectables.reduce(
       (a: any[], b: any[]) => a.concat(b),
-      [],
+      initialValue,
     ) as any[];
     const combinedInjectables = [
       ...controllerInjectables,
