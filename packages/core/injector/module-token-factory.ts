@@ -25,7 +25,7 @@ export class ModuleTokenFactory {
   ): string {
     // Uses safeStringify instead of JSON.stringify
     // to support circular dynamic modules
-    return dynamicModuleMetadata ? stringify(dynamicModuleMetadata) : '';
+    return dynamicModuleMetadata ? stringify(dynamicModuleMetadata, this.replacer) : '';
   }
 
   public getModuleName(metatype: Type<any>): string {
@@ -49,5 +49,13 @@ export class ModuleTokenFactory {
   private reflectScope(metatype: Type<any>) {
     const scope = Reflect.getMetadata(SHARED_MODULE_METADATA, metatype);
     return scope ? scope : 'global';
+  }
+
+  private replacer(key: string, value: any) {
+    if (typeof value === 'function') {
+      return value.name;
+    } else {
+      return value;
+    }
   }
 }
