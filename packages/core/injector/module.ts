@@ -21,13 +21,13 @@ import {
   isSymbol,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { ApplicationConfig } from '../application-config';
 import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
-import { ApplicationConfig } from '../application-config';
 
 interface ProviderName {
   name?: string | symbol;
@@ -152,7 +152,6 @@ export class Module {
       ApplicationConfig.name,
       new InstanceWrapper({
         name: ApplicationConfig.name,
-        metatype: null,
         isResolved: true,
         instance: this.container.applicationConfig,
         host: this,
