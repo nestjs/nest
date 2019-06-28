@@ -21,6 +21,7 @@ import {
   isSymbol,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { ApplicationConfig } from '../application-config';
 import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
@@ -116,6 +117,7 @@ export class Module {
   public addCoreProviders(container: NestContainer) {
     this.addModuleAsProvider();
     this.addModuleRef();
+    this.addApplicationConfig();
   }
 
   public addModuleRef() {
@@ -140,6 +142,18 @@ export class Module {
         metatype: this._metatype,
         isResolved: false,
         instance: null,
+        host: this,
+      }),
+    );
+  }
+
+  public addApplicationConfig() {
+    this._providers.set(
+      ApplicationConfig.name,
+      new InstanceWrapper({
+        name: ApplicationConfig.name,
+        isResolved: true,
+        instance: this.container.applicationConfig,
         host: this,
       }),
     );
