@@ -10,12 +10,12 @@ export class ModuleTokenFactory {
     scope: Type<any>[],
     dynamicModuleMetadata?: Partial<DynamicModule> | undefined,
   ): string {
-    const reflectedScope = this.reflectScope(metatype);
-    const isSingleScoped = reflectedScope === true;
+    const moduleScope = this.reflectScope(metatype);
+    const isSingleScoped = moduleScope === true;
     const opaqueToken = {
       module: this.getModuleName(metatype),
       dynamic: this.getDynamicMetadataToken(dynamicModuleMetadata),
-      scope: isSingleScoped ? this.getScopeStack(scope) : reflectedScope,
+      scope: isSingleScoped ? this.getScopeStack(scope) : moduleScope,
     };
     return hash(opaqueToken);
   }
@@ -23,9 +23,12 @@ export class ModuleTokenFactory {
   public getDynamicMetadataToken(
     dynamicModuleMetadata: Partial<DynamicModule> | undefined,
   ): string {
-    // Uses safeStringify instead of JSON.stringify
-    // to support circular dynamic modules
-    return dynamicModuleMetadata ? stringify(dynamicModuleMetadata) : '';
+    // Uses safeStringify instead of JSON.stringify to support circular dynamic modules
+    // The replacer function is also required in order to obtain real class names
+    // instead of the unified "Function" key
+    return dynamicModuleMetadata
+      ? stringify(dynamicModuleMetadata, this.replacer)
+      : '';
   }
 
   public getModuleName(metatype: Type<any>): string {
@@ -49,5 +52,12 @@ export class ModuleTokenFactory {
   private reflectScope(metatype: Type<any>) {
     const scope = Reflect.getMetadata(SHARED_MODULE_METADATA, metatype);
     return scope ? scope : 'global';
+  }
+
+  private replacer(key: string, value: any) {
+    if (typeof value === 'function') {
+      return value.name;
+    }
+    return value;
   }
 }
