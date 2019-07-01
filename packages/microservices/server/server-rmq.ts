@@ -86,7 +86,12 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   public async handleMessage(message: any): Promise<void> {
     const { content, properties } = message;
-    const packet = JSON.parse(content.toString());
+    let packet = JSON.parse(content.toString());
+
+    if (this.options.serializer) {
+      packet = this.options.serializer(packet);
+    }
+
     const pattern = isString(packet.pattern)
       ? packet.pattern
       : JSON.stringify(packet.pattern);
