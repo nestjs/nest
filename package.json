@@ -115,7 +115,6 @@
     "json-loader": "0.5.7",
     "lerna": "3.15.0",
     "lint-staged": "8.2.1",
-    "memory-usage": "1.2.1",
     "mocha": "3.5.3",
     "nodemon": "1.19.1",
     "nyc": "14.1.1",
