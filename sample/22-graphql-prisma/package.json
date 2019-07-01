@@ -15,7 +15,7 @@
     "@nestjs/graphql": "6.2.4",
     "@nestjs/platform-express": "6.3.2",
     "apollo-server-express": "2.6.7",
-    "graphql": "14.4.0",
+    "graphql": "14.4.1",
     "graphql-tools": "4.0.5",
     "prisma-binding": "2.3.15",
     "reflect-metadata": "0.1.13",
