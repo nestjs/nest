@@ -292,6 +292,25 @@ describe('Injector', () => {
       expect(result).to.be.equal(instance);
     });
 
+    it('should throw an exception if recursion happens', () => {
+      const name = 'RecursionService';
+      const instance = { test: 3 };
+      const collection = {
+        has: () => true,
+        get: () => instance,
+      };
+      const result = injector.lookupComponent(
+        collection as any,
+        null,
+        { name, index: 0, dependencies: [] },
+        {
+          ...wrapper,
+          name,
+        },
+      );
+      expect(result).to.eventually.be.rejected;
+    });
+
     it('should call "lookupComponentInImports" when object is not in collection', async () => {
       lookupComponentInImports.returns({});
       const collection = {

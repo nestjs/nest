@@ -401,6 +401,13 @@ export class Injector {
     inquirer?: InstanceWrapper,
   ): Promise<InstanceWrapper<T>> {
     const { name } = dependencyContext;
+    if (wrapper && wrapper.name === name) {
+      throw new UnknownDependenciesException(
+        wrapper.name,
+        dependencyContext,
+        module,
+      );
+    }
     const scanInExports = () =>
       this.lookupComponentInExports(
         dependencyContext,
