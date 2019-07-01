@@ -40,17 +40,17 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@nestjs/common@6.3.2":
-  version "6.3.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.3.2.tgz#14f2d7ea1c268ba2a3b2d11787f6351fe760ec08"
+"@nestjs/common@6.4.0":
+  version "6.4.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.4.0.tgz#d8460d107309a34f57868470248fceeb69aac75a"
   dependencies:
     axios "0.19.0"
     cli-color "1.4.0"
     uuid "3.3.2"
 
-"@nestjs/core@6.3.2":
-  version "6.3.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.3.2.tgz#13011b9dd5876781454920e57e36ed59a20ba596"
+"@nestjs/core@6.4.0":
+  version "6.4.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.4.0.tgz#e24d6f266034f528eb5ceb216d314dd989aea0f4"
   dependencies:
     "@nuxtjs/opencollective" "0.2.2"
     fast-safe-stringify "2.0.6"
@@ -75,9 +75,9 @@
   optionalDependencies:
     type-graphql "^0.17.3"
 
-"@nestjs/platform-express@6.3.2":
-  version "6.3.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.3.2.tgz#2b224a87daa193ffa56ef64acd48f28b4a754060"
+"@nestjs/platform-express@6.4.0":
+  version "6.4.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.4.0.tgz#2b7b5f888b5dcf2ccbce82093833208054b162fe"
   dependencies:
     body-parser "1.19.0"
     cors "2.8.5"
