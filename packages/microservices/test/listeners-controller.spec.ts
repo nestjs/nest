@@ -1,4 +1,5 @@
 import { Scope } from '@nestjs/common';
+import { ApplicationConfig } from '@nestjs/core';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
@@ -7,6 +8,7 @@ import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { ClientProxyFactory } from '../client';
 import { ClientsContainer } from '../container';
+import { ExceptionFiltersContext } from '../context/exception-filters-context';
 import { RpcContextCreator } from '../context/rpc-context-creator';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 import { ListenersController } from '../listeners-controller';
@@ -31,6 +33,7 @@ describe('ListenersController', () => {
       container,
       new Injector(),
       ClientProxyFactory,
+      new ExceptionFiltersContext(container, new ApplicationConfig()),
     );
     (instance as any).metadataExplorer = metadataExplorer;
     addSpy = sinon.spy();

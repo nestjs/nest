@@ -51,6 +51,9 @@ describe('ServerGrpc', () => {
   });
 
   describe('bindEvents', () => {
+    beforeEach(() => {
+      sinon.stub(server, 'loadProto').callsFake(() => ({}));
+    });
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', async () => {
         sinon.stub(server, 'lookupPackage').callsFake(() => null);
