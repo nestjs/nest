@@ -14,6 +14,7 @@ import { UnknownRequestMappingException } from '../errors/exceptions/unknown-req
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { createContextId } from '../helpers/context-id-factory';
+import { ExecutionContextHost } from '../helpers/execution-context-host';
 import { ROUTE_MAPPED_MESSAGE } from '../helpers/messages';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { STATIC_CONTEXT } from '../injector/constants';
@@ -42,6 +43,7 @@ export class RouterExplorer {
   private readonly executionContextCreator: RouterExecutionContext;
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(RouterExplorer.name, true);
+  private readonly exceptionFiltersCache = new WeakMap();
 
   constructor(
     private readonly metadataScanner: MetadataScanner,
@@ -189,24 +191,43 @@ export class RouterExplorer {
         res: TResponse,
         next: () => void,
       ) => {
-        const contextId = createContextId();
-        this.registerRequestProvider(req, contextId);
+        try {
+          const contextId = createContextId();
+          this.registerRequestProvider(req, contextId);
 
-        const contextInstance = await this.injector.loadPerContext(
-          instance,
-          module,
-          collection,
-          contextId,
-        );
-        this.createCallbackProxy(
-          contextInstance,
-          contextInstance[methodName],
-          methodName,
-          moduleKey,
-          requestMethod,
-          contextId,
-          instanceWrapper.id,
-        )(req, res, next);
+          const contextInstance = await this.injector.loadPerContext(
+            instance,
+            module,
+            collection,
+            contextId,
+          );
+          this.createCallbackProxy(
+            contextInstance,
+            contextInstance[methodName],
+            methodName,
+            moduleKey,
+            requestMethod,
+            contextId,
+            instanceWrapper.id,
+          )(req, res, next);
+        } catch (err) {
+          let exceptionFilter = this.exceptionFiltersCache.get(
+            instance[methodName],
+          );
+          if (!exceptionFilter) {
+            exceptionFilter = this.exceptionsFilter.create(
+              instance,
+              instance[methodName],
+              moduleKey,
+            );
+            this.exceptionFiltersCache.set(
+              instance[methodName],
+              exceptionFilter,
+            );
+          }
+          const host = new ExecutionContextHost([req, res, next]);
+          exceptionFilter.next(err, host);
+        }
       };
 
       paths.forEach(path => {
