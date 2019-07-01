@@ -4,7 +4,7 @@ import { CreateCatDto } from './dto/create-cat.dto';
 
 @Injectable()
 export class CatsService {
-  private readonly cats: CreateCatDto[] = [];
+  private readonly cats: Cat[] = [];
 
   create(cat: CreateCatDto): Cat {
     this.cats.push(cat);
