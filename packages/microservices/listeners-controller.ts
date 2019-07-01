@@ -7,13 +7,18 @@ import {
   ContextId,
   InstanceWrapper,
 } from '@nestjs/core/injector/instance-wrapper';
+import { Module } from '@nestjs/core/injector/module';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { REQUEST } from '@nestjs/core/router/request/request-constants';
 import { IClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { RpcContextCreator } from './context/rpc-context-creator';
-import { CustomTransportStrategy, RequestContext } from './interfaces';
+import {
+  CustomTransportStrategy,
+  PatternMetadata,
+  RequestContext,
+} from './interfaces';
 import { ListenerMetadataExplorer } from './listener-metadata-explorer';
 import { Server } from './server/server';
 
@@ -42,7 +47,6 @@ export class ListenersController {
     const isStatic = instanceWrapper.isDependencyTreeStatic();
     const patternHandlers = this.metadataExplorer.explore(instance);
     const module = this.container.getModuleByKey(moduleKey);
-    const collection = module.controllers;
 
     patternHandlers.forEach(
       ({ pattern, targetCallback, methodKey, isEventHandler }) => {
@@ -54,43 +58,13 @@ export class ListenersController {
           );
           return server.addHandler(pattern, proxy, isEventHandler);
         }
-        const asyncHandler = async (...args: unknown[]) => {
-          try {
-            const data = args[0];
-            const contextId = createContextId();
-            this.registerRequestProvider({ pattern, data }, contextId);
-
-            const contextInstance = await this.injector.loadPerContext(
-              instance,
-              module,
-              collection,
-              contextId,
-            );
-            const proxy = this.contextCreator.create(
-              contextInstance,
-              contextInstance[methodKey],
-              moduleKey,
-            );
-            return proxy(data);
-          } catch (err) {
-            let exceptionFilter = this.exceptionFiltersCache.get(
-              instance[methodKey],
-            );
-            if (!exceptionFilter) {
-              exceptionFilter = this.exceptionFiltersContext.create(
-                instance,
-                instance[methodKey],
-                moduleKey,
-              );
-              this.exceptionFiltersCache.set(
-                instance[methodKey],
-                exceptionFilter,
-              );
-            }
-            const host = new ExecutionContextHost(args);
-            exceptionFilter.handle(err, host);
-          }
-        };
+        const asyncHandler = this.createRequestScopedHandler(
+          instance,
+          pattern,
+          module,
+          moduleKey,
+          methodKey,
+        );
         server.addHandler(pattern, asyncHandler, isEventHandler);
       },
     );
@@ -114,6 +88,50 @@ export class ListenersController {
     client: T,
   ) {
     Reflect.set(instance, property, client);
+  }
+
+  public createRequestScopedHandler(
+    instance: Controller,
+    pattern: PatternMetadata,
+    module: Module,
+    moduleKey: string,
+    methodKey: string,
+  ) {
+    const collection = module.controllers;
+    return async (...args: unknown[]) => {
+      try {
+        const data = args[0];
+        const contextId = createContextId();
+        this.registerRequestProvider({ pattern, data }, contextId);
+
+        const contextInstance = await this.injector.loadPerContext(
+          instance,
+          module,
+          collection,
+          contextId,
+        );
+        const proxy = this.contextCreator.create(
+          contextInstance,
+          contextInstance[methodKey],
+          moduleKey,
+        );
+        return proxy(data);
+      } catch (err) {
+        let exceptionFilter = this.exceptionFiltersCache.get(
+          instance[methodKey],
+        );
+        if (!exceptionFilter) {
+          exceptionFilter = this.exceptionFiltersContext.create(
+            instance,
+            instance[methodKey],
+            moduleKey,
+          );
+          this.exceptionFiltersCache.set(instance[methodKey], exceptionFilter);
+        }
+        const host = new ExecutionContextHost(args);
+        exceptionFilter.handle(err, host);
+      }
+    };
   }
 
   private registerRequestProvider(

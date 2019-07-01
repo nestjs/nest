@@ -21,6 +21,7 @@ import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
+import { Module } from '../injector/module';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { MetadataScanner } from '../metadata-scanner';
@@ -183,52 +184,15 @@ export class RouterExplorer {
 
     const isRequestScoped = !instanceWrapper.isDependencyTreeStatic();
     const module = this.container.getModuleByKey(moduleKey);
-    const collection = module.controllers;
 
     if (isRequestScoped) {
-      const handler = async <TRequest, TResponse>(
-        req: TRequest,
-        res: TResponse,
-        next: () => void,
-      ) => {
-        try {
-          const contextId = createContextId();
-          this.registerRequestProvider(req, contextId);
-
-          const contextInstance = await this.injector.loadPerContext(
-            instance,
-            module,
-            collection,
-            contextId,
-          );
-          this.createCallbackProxy(
-            contextInstance,
-            contextInstance[methodName],
-            methodName,
-            moduleKey,
-            requestMethod,
-            contextId,
-            instanceWrapper.id,
-          )(req, res, next);
-        } catch (err) {
-          let exceptionFilter = this.exceptionFiltersCache.get(
-            instance[methodName],
-          );
-          if (!exceptionFilter) {
-            exceptionFilter = this.exceptionsFilter.create(
-              instance,
-              instance[methodName],
-              moduleKey,
-            );
-            this.exceptionFiltersCache.set(
-              instance[methodName],
-              exceptionFilter,
-            );
-          }
-          const host = new ExecutionContextHost([req, res, next]);
-          exceptionFilter.next(err, host);
-        }
-      };
+      const handler = this.createRequestScopedHandler(
+        instanceWrapper,
+        requestMethod,
+        module,
+        moduleKey,
+        methodName,
+      );
 
       paths.forEach(path => {
         const fullPath = stripSlash(basePath) + path;
@@ -275,6 +239,57 @@ export class RouterExplorer {
       inquirerId,
     );
     return this.routerProxy.createProxy(executionContext, exceptionFilter);
+  }
+
+  public createRequestScopedHandler(
+    instanceWrapper: InstanceWrapper,
+    requestMethod: RequestMethod,
+    module: Module,
+    moduleKey: string,
+    methodName: string,
+  ) {
+    const { instance } = instanceWrapper;
+    const collection = module.controllers;
+    return async <TRequest, TResponse>(
+      req: TRequest,
+      res: TResponse,
+      next: () => void,
+    ) => {
+      try {
+        const contextId = createContextId();
+        this.registerRequestProvider(req, contextId);
+
+        const contextInstance = await this.injector.loadPerContext(
+          instance,
+          module,
+          collection,
+          contextId,
+        );
+        this.createCallbackProxy(
+          contextInstance,
+          contextInstance[methodName],
+          methodName,
+          moduleKey,
+          requestMethod,
+          contextId,
+          instanceWrapper.id,
+        )(req, res, next);
+      } catch (err) {
+        let exceptionFilter = this.exceptionFiltersCache.get(
+          instance[methodName],
+        );
+        if (!exceptionFilter) {
+          exceptionFilter = this.exceptionsFilter.create(
+            instance,
+            instance[methodName],
+            moduleKey,
+          );
+          this.exceptionFiltersCache.set(instance[methodName], exceptionFilter);
+        }
+        const host = new ExecutionContextHost([req, res, next]);
+        exceptionFilter.next(err, host);
+      }
+    };
   }
 
   private registerRequestProvider<T = any>(request: T, contextId: ContextId) {
