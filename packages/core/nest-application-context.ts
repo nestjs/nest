@@ -71,9 +71,9 @@ export class NestApplicationContext implements INestApplicationContext {
    * @returns {Promise<this>} The NestApplicationContext instance as Promise
    */
   public async init(): Promise<this> {
-    // Ignore if is already initialized
-    if (this.isInitialized) return;
-
+    if (this.isInitialized) {
+      return this;
+    }
     await this.callInitHook();
     await this.callBootstrapHook();
 
