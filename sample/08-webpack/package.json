@@ -8,9 +8,9 @@
     "webpack": "webpack --config webpack.config.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.3.2",
-    "@nestjs/core": "6.3.2",
-    "@nestjs/platform-express": "6.3.2",
+    "@nestjs/common": "6.4.0",
+    "@nestjs/core": "6.4.0",
+    "@nestjs/platform-express": "6.4.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.2"
