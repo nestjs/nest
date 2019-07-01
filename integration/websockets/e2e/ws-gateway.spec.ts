@@ -71,7 +71,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     await app.listenAsync(3000);
 
     // open websockets delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     ws = new WebSocket('ws://localhost:8080');
     ws2 = new WebSocket('ws://localhost:8090');

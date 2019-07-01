@@ -450,4 +450,24 @@ describe('ServerGrpc', () => {
       expect(services[1].name).to.be.equal('B');
     });
   });
+
+  describe('addHandler', () => {
+    const callback = () => {},
+      pattern = { test: 'test pattern' };
+
+    it(`should add handler`, () => {
+      sinon.stub(server as any, 'messageHandlers').value({ set() {} });
+
+      const messageHandlersSetSpy = sinon.spy(
+        (server as any).messageHandlers,
+        'set',
+      );
+      server.addHandler(pattern, callback as any);
+
+      expect(messageHandlersSetSpy.called).to.be.true;
+      expect(messageHandlersSetSpy.getCall(0).args[0]).to.be.equal(
+        JSON.stringify(pattern),
+      );
+    });
+  });
 });

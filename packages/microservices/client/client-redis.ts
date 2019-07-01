@@ -102,14 +102,15 @@ export class ClientRedis extends ClientProxy {
   ): undefined | number | Error {
     if (options.error && (options.error as any).code === ECONNREFUSED) {
       error$.error(options.error);
-      return options.error;
+    }
+    if (this.isExplicitlyTerminated) {
+      return undefined;
     }
     if (
-      this.isExplicitlyTerminated ||
       !this.getOptionsProp(this.options, 'retryAttempts') ||
       options.attempt > this.getOptionsProp(this.options, 'retryAttempts')
     ) {
-      return undefined;
+      return new Error('Retry time exhausted');
     }
     return this.getOptionsProp(this.options, 'retryDelay') || 0;
   }
