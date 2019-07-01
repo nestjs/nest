@@ -133,7 +133,7 @@ export class RouterExecutionContext {
       next: Function,
     ) => {
       const args = this.contextUtils.createNullArray(argsLength);
-      fnCanActivate && (await fnCanActivate([req, res]));
+      fnCanActivate && (await fnCanActivate([req, res, next]));
 
       this.responseController.setStatus(res, httpStatusCode);
       hasCustomHeaders &&
@@ -141,7 +141,7 @@ export class RouterExecutionContext {
 
       const result = await this.interceptorsConsumer.intercept(
         interceptors,
-        [req, res],
+        [req, res, next],
         instance,
         callback,
         handler(args, req, res, next),

@@ -20,7 +20,7 @@ export class RouterProxy {
       try {
         await targetCallback(req, res, next);
       } catch (e) {
-        const host = new ExecutionContextHost([req, res]);
+        const host = new ExecutionContextHost([req, res, next]);
         exceptionsHandler.next(e, host);
       }
     };
@@ -44,7 +44,7 @@ export class RouterProxy {
       try {
         await targetCallback(err, req, res, next);
       } catch (e) {
-        const host = new ExecutionContextHost([req, res]);
+        const host = new ExecutionContextHost([req, res, next]);
         exceptionsHandler.next(e, host);
       }
     };
