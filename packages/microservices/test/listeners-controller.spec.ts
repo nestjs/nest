@@ -100,11 +100,11 @@ describe('ListenersController', () => {
         controllers: new Map(),
       } as any;
       const pattern = {};
-      const controller = { [methodKey]: {} };
+      const wrapper = new InstanceWrapper({ instance: { [methodKey]: {} } });
 
       it('should delegete error to exception filters', async () => {
         const handler = instance.createRequestScopedHandler(
-          controller,
+          wrapper,
           pattern,
           module,
           moduleKey,

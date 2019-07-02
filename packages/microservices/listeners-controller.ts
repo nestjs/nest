@@ -59,7 +59,7 @@ export class ListenersController {
           return server.addHandler(pattern, proxy, isEventHandler);
         }
         const asyncHandler = this.createRequestScopedHandler(
-          instance,
+          instanceWrapper,
           pattern,
           module,
           moduleKey,
@@ -91,13 +91,14 @@ export class ListenersController {
   }
 
   public createRequestScopedHandler(
-    instance: Controller,
+    wrapper: InstanceWrapper,
     pattern: PatternMetadata,
     module: Module,
     moduleKey: string,
     methodKey: string,
   ) {
     const collection = module.controllers;
+    const { instance } = wrapper;
     return async (...args: unknown[]) => {
       try {
         const data = args[0];
@@ -114,6 +115,8 @@ export class ListenersController {
           contextInstance,
           contextInstance[methodKey],
           moduleKey,
+          contextId,
+          wrapper.id,
         );
         return proxy(data);
       } catch (err) {
