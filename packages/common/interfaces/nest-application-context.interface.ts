@@ -12,12 +12,23 @@ export interface INestApplicationContext {
 
   /**
    * Retrieves an instance of either injectable or controller available anywhere, otherwise, throws exception.
+   * It use for singleton providers.
    * @returns {TResult}
    */
   get<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     options?: { strict: boolean },
   ): TResult;
+
+  /**
+   * Retrieves an instance of either injectable or controller available anywhere, otherwise, throws exception.
+   * It use for transient and request-scoped providers.
+   * @returns {Promise<TResult>}
+   */
+  resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
+    options?: { strict: boolean },
+  ): Promise<TResult>;
 
   /**
    * Terminates the application

@@ -437,6 +437,19 @@ export class Module {
         options: { strict: boolean } = { strict: true },
       ): TResult {
         if (!(options && options.strict)) {
+          return this.find<TInput, TResult>(typeOrToken) as TResult;
+        }
+        return this.findInstanceByPrototypeOrToken<TInput, TResult>(
+          typeOrToken,
+          self,
+        ) as TResult;
+      }
+
+      public async resolve<TInput = any, TResult = TInput>(
+        typeOrToken: Type<TInput> | string | symbol,
+        options: { strict: boolean } = { strict: true },
+      ): Promise<TResult> {
+        if (!(options && options.strict)) {
           return this.find<TInput, TResult>(typeOrToken);
         }
         return this.findInstanceByPrototypeOrToken<TInput, TResult>(

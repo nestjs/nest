@@ -142,14 +142,16 @@ export class InstanceWrapper<T = any> {
     return this[INSTANCE_METADATA_SYMBOL].dependencies;
   }
 
-  public addPropertiesMetadata(key: string, wrapper: InstanceWrapper) {
+  public addPropertiesMetadata(key?: string, wrapper?: InstanceWrapper) {
     if (!this[INSTANCE_METADATA_SYMBOL].properties) {
       this[INSTANCE_METADATA_SYMBOL].properties = [];
     }
-    this[INSTANCE_METADATA_SYMBOL].properties.push({
-      key,
-      wrapper,
-    });
+    if (key && wrapper) {
+      this[INSTANCE_METADATA_SYMBOL].properties.push({
+        key,
+        wrapper,
+      });
+    }
   }
 
   public getPropertiesMetadata(): PropertyMetadata[] {

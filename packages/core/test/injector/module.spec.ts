@@ -403,6 +403,11 @@ describe('Module', () => {
         expect(() => moduleRef.get('fail')).to.throws(UnknownElementException);
       });
     });
+    describe('resolve', () => {
+      it('should throw exception if not exists', () => {
+        expect(moduleRef.resolve('fail')).to.eventually.be.rejectedWith(UnknownElementException);
+      });
+    });
   });
   describe('validateExportedProvider', () => {
     const token = 'token';

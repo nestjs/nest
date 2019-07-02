@@ -56,6 +56,19 @@ export class NestApplicationContext implements INestApplicationContext {
     options: { strict: boolean } = { strict: false },
   ): TResult {
     if (!(options && options.strict)) {
+      return this.find<TInput, TResult>(typeOrToken) as TResult;
+    }
+    return this.findInstanceByPrototypeOrToken<TInput, TResult>(
+      typeOrToken,
+      this.contextModule,
+    ) as TResult;
+  }
+
+  public async resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
+    options: { strict: boolean } = { strict: false },
+  ): Promise<TResult> {
+    if (!(options && options.strict)) {
       return this.find<TInput, TResult>(typeOrToken);
     }
     return this.findInstanceByPrototypeOrToken<TInput, TResult>(
@@ -191,14 +204,14 @@ export class NestApplicationContext implements INestApplicationContext {
 
   protected find<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
-  ): TResult {
+  ): Promise<TResult> | TResult {
     return this.containerScanner.find<TInput, TResult>(typeOrToken);
   }
 
   protected findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
     metatypeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextModule: Partial<Module>,
-  ): TResult {
+  ): Promise<TResult> | TResult {
     return this.containerScanner.findInstanceByPrototypeOrToken<
       TInput,
       TResult

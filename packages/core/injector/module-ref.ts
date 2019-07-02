@@ -18,11 +18,16 @@ export abstract class ModuleRef {
     options?: { strict: boolean },
   ): TResult;
 
+  public abstract async resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | string | symbol,
+    options?: { strict: boolean },
+  ): Promise<TResult>;
+
   public abstract create<T = any>(type: Type<T>): Promise<T>;
 
   protected find<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | string | symbol,
-  ): TResult {
+  ): Promise<TResult> | TResult {
     return this.containerScanner.find<TInput, TResult>(typeOrToken);
   }
 
@@ -63,7 +68,7 @@ export abstract class ModuleRef {
   protected findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
     metatypeOrToken: Type<TInput> | string | symbol,
     contextModule: Partial<Module>,
-  ): TResult {
+  ): Promise<TResult> | TResult {
     return this.containerScanner.findInstanceByPrototypeOrToken<
       TInput,
       TResult
