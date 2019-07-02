@@ -1,5 +1,5 @@
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
-import { Controller } from '@nestjs/common/interfaces';
+import { ContextType, Controller } from '@nestjs/common/interfaces';
 import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards/constants';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
@@ -32,6 +32,7 @@ export class RpcContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): (...args: any[]) => Promise<Observable<any>> {
+    const contextType: ContextType = 'rpc';
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
       callback,
@@ -61,7 +62,12 @@ export class RpcContextCreator {
       contextId,
       inquirerId,
     );
-    const fnCanActivate = this.createGuardsFn(guards, instance, callback);
+    const fnCanActivate = this.createGuardsFn(
+      guards,
+      instance,
+      callback,
+      contextType,
+    );
     const handler = (args: any[]) => async () => {
       const [data, ...params] = args;
       const result = await this.pipesConsumer.applyPipes(
@@ -81,6 +87,7 @@ export class RpcContextCreator {
         instance,
         callback,
         handler(args),
+        contextType,
       );
     }, exceptionHandler);
   }
@@ -100,17 +107,19 @@ export class RpcContextCreator {
     return paramtypes && paramtypes.length ? paramtypes[0] : null;
   }
 
-  public createGuardsFn(
+  public createGuardsFn<TContext extends ContextType = ContextType>(
     guards: any[],
     instance: Controller,
     callback: (...args: any[]) => any,
+    contextType?: TContext,
   ): Function | null {
     const canActivateFn = async (args: any[]) => {
-      const canActivate = await this.guardsConsumer.tryActivate(
+      const canActivate = await this.guardsConsumer.tryActivate<TContext>(
         guards,
         args,
         instance,
         callback,
+        contextType,
       );
       if (!canActivate) {
         throw new RpcException(FORBIDDEN_MESSAGE);

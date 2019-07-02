@@ -132,6 +132,7 @@ export class ListenersController {
           this.exceptionFiltersCache.set(instance[methodKey], exceptionFilter);
         }
         const host = new ExecutionContextHost(args);
+        host.setType('rpc');
         exceptionFilter.handle(err, host);
       }
     };

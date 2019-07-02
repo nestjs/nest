@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common/constants';
 import { RouteParamsMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { Controller, Transform } from '@nestjs/common/interfaces';
+import { ContextType, Controller, Transform } from '@nestjs/common/interfaces';
 import {
   isEmpty,
   isFunction,
@@ -92,6 +92,7 @@ export class RouterExecutionContext {
       getParamsMetadata(module, contextId, inquirerId),
       paramtypes,
     );
+    const contextType: ContextType = 'http';
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
@@ -114,7 +115,12 @@ export class RouterExecutionContext {
       inquirerId,
     );
 
-    const fnCanActivate = this.createGuardsFn(guards, instance, callback);
+    const fnCanActivate = this.createGuardsFn(
+      guards,
+      instance,
+      callback,
+      contextType,
+    );
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
 
     const handler = <TRequest, TResponse>(
@@ -145,6 +151,7 @@ export class RouterExecutionContext {
         instance,
         callback,
         handler(args, req, res, next),
+        contextType,
       );
       await fnHandleResponse(result, res);
     };
@@ -302,17 +309,19 @@ export class RouterExecutionContext {
     return Promise.resolve(value);
   }
 
-  public createGuardsFn(
+  public createGuardsFn<TContext extends ContextType = ContextType>(
     guards: any[],
     instance: Controller,
     callback: (...args: any[]) => any,
+    contextType?: TContext,
   ): Function | null {
     const canActivateFn = async (args: any[]) => {
-      const canActivate = await this.guardsConsumer.tryActivate(
+      const canActivate = await this.guardsConsumer.tryActivate<TContext>(
         guards,
         args,
         instance,
         callback,
+        contextType,
       );
       if (!canActivate) {
         throw new ForbiddenException(FORBIDDEN_MESSAGE);
