@@ -114,7 +114,7 @@
     "imports-loader": "0.8.0",
     "json-loader": "0.5.7",
     "lerna": "3.15.0",
-    "lint-staged": "8.2.1",
+    "lint-staged": "9.0.0",
     "mocha": "3.5.3",
     "nodemon": "1.19.1",
     "nyc": "14.1.1",
