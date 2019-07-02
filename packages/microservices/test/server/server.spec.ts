@@ -19,7 +19,7 @@ describe('Server', () => {
     sandbox.restore();
   });
 
-  describe('add', () => {
+  describe('addHandler', () => {
     it(`should add handler`, () => {
       const handlerRoute = 'hello';
       sandbox.stub(server as any, 'messageHandlers').value({ set() {} });

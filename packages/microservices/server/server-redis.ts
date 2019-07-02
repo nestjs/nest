@@ -13,10 +13,7 @@ import {
   RetryStrategyOptions,
 } from '../external/redis.interface';
 import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
-import {
-  MicroserviceOptions,
-  RedisOptions,
-} from '../interfaces/microservice-configuration.interface';
+import { RedisOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 let redisPackage: any = {};
@@ -142,14 +139,17 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     options: RetryStrategyOptions,
   ): undefined | number | void {
     if (options.error && (options.error as any).code === 'ECONNREFUSED') {
-      return this.logger.error(`Error ECONNREFUSED: ${this.url}`);
+      this.logger.error(`Error ECONNREFUSED: ${this.url}`);
+    }
+    if (this.isExplicitlyTerminated) {
+      return undefined;
     }
     if (
-      this.isExplicitlyTerminated ||
       !this.getOptionsProp(this.options, 'retryAttempts') ||
       options.attempt > this.getOptionsProp(this.options, 'retryAttempts')
     ) {
-      return undefined;
+      this.logger.error(`Retry time exhausted: ${this.url}`);
+      throw new Error('Retry time exhausted');
     }
     return this.getOptionsProp(this.options, 'retryDelay') || 0;
   }

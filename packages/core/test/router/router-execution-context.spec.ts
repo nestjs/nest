@@ -24,6 +24,7 @@ describe('RouterExecutionContext', () => {
   let factory: RouteParamsFactory;
   let consumer: PipesConsumer;
   let guardsConsumer: GuardsConsumer;
+  let interceptorsConsumer: InterceptorsConsumer;
   let adapter: AbstractHttpAdapter;
 
   beforeEach(() => {
@@ -37,7 +38,7 @@ describe('RouterExecutionContext', () => {
     factory = new RouteParamsFactory();
     consumer = new PipesConsumer();
     guardsConsumer = new GuardsConsumer();
-
+    interceptorsConsumer = new InterceptorsConsumer();
     adapter = new NoopHttpAdapter({});
     contextCreator = new RouterExecutionContext(
       factory,
@@ -46,7 +47,7 @@ describe('RouterExecutionContext', () => {
       new GuardsContextCreator(new NestContainer()),
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
-      new InterceptorsConsumer(),
+      interceptorsConsumer,
       adapter,
     );
   });
@@ -87,9 +88,14 @@ describe('RouterExecutionContext', () => {
       describe('returns proxy function', () => {
         let proxyContext;
         let instance;
-
+        let tryActivateStub;
         beforeEach(() => {
           instance = { foo: 'bar' };
+          let canActivateFn = contextCreator.createGuardsFn([1], null, null);
+          sinon.stub(contextCreator, 'createGuardsFn').returns(canActivateFn);
+          tryActivateStub = sinon
+            .stub(guardsConsumer, 'tryActivate')
+            .callsFake(async () => true);
           proxyContext = contextCreator.create(
             instance,
             callback as any,
@@ -118,6 +124,7 @@ describe('RouterExecutionContext', () => {
             };
           });
           it('should apply expected context and arguments to callback', done => {
+            tryActivateStub.callsFake(async () => true);
             proxyContext(request, response, next).then(() => {
               const args = [next, undefined, request.body.test];
               expect(applySpy.called).to.be.true;
@@ -126,12 +133,26 @@ describe('RouterExecutionContext', () => {
             });
           });
           it('should throw exception when "tryActivate" returns false', () => {
-            sinon
-              .stub(guardsConsumer, 'tryActivate')
-              .callsFake(async () => false);
+            tryActivateStub.callsFake(async () => false);
             proxyContext(request, response, next).catch(
               error => expect(error).to.not.be.undefined,
             );
+          });
+          it('should apply expected context when "canActivateFn" apply', () => {
+            proxyContext(request, response, next).then(() => {
+              expect(tryActivateStub.args[0][1][0]).to.equals(request);
+              expect(tryActivateStub.args[0][1][1]).to.equals(response);
+              expect(tryActivateStub.args[0][1][2]).to.equals(next);
+            });
+          });
+          it('should apply expected context when "intercept" apply', () => {
+            let interceptStub = sinon
+              .stub(interceptorsConsumer, 'intercept');
+            proxyContext(request, response, next).then(() => {
+              expect(interceptStub.args[0][1][0]).to.equals(request);
+              expect(interceptStub.args[0][1][1]).to.equals(response);
+              expect(interceptStub.args[0][1][2]).to.equals(next);
+            });
           });
         });
       });
