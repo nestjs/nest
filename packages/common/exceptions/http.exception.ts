@@ -31,7 +31,7 @@ export class HttpException extends Error {
     return this.status;
   }
 
-  private getError(target) {
+  private getErrorString(target) {
     if(typeof target === 'string') {
       return target;
     }
@@ -40,7 +40,7 @@ export class HttpException extends Error {
   }
 
   public toString(): string {
-    const message = this.getError(this.message);
+    const message = this.getErrorString(this.message);
 
     return `Error: ${message}`;
   }
