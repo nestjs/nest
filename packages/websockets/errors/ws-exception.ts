@@ -11,7 +11,7 @@ export class WsException extends Error {
   }
 
   private getErrorString(target) {
-    if(typeof target === 'string') {
+    if (typeof target === 'string') {
       return target;
     }
 
