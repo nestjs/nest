@@ -44,4 +44,27 @@ describe('HttpException', () => {
       statusCode: 404,
     });
   });
+
+  it('Should inherit from error', () => {
+    const error = new HttpException('', 400);
+    expect(error instanceof Error).to.be.true;
+  });
+
+  it('Should be serializable', () => {
+    const message = 'Some Error';
+    const error = new HttpException(message, 400);
+    expect(`${error}`).to.be.eql(`Error: ${message}`);
+  });
+
+  it('Should serialize objects', () => {
+    const obj = { foo: 'bar' };
+    const error = new HttpException(obj, 400);
+    expect(`${error}`).to.be.eql(`Error: ${JSON.stringify(obj)}`);
+    expect(`${error}`.includes('[object Object]')).to.not.be.true;
+  });
+
+  it('Should serialize sub errors', () => {
+    const error = new NotFoundException();
+    expect(`${error}`.includes('Not Found')).to.be.true;
+  });
 });

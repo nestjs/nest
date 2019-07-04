@@ -30,4 +30,18 @@ export class HttpException extends Error {
   public getStatus(): number {
     return this.status;
   }
+
+  private getError(target) {
+    if(typeof target === 'string') {
+      return target;
+    }
+
+    return JSON.stringify(target);
+  }
+
+  public toString(): string {
+    const message = this.getError(this.message);
+
+    return `Error: ${message}`;
+  }
 }
