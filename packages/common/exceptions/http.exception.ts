@@ -31,7 +31,7 @@ export class HttpException extends Error {
     return this.status;
   }
 
-  private getErrorString(target: string | object) {
+  private getErrorString(target: string | object): string{
     if (typeof target === 'string') {
       return target;
     }

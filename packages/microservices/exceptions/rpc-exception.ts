@@ -9,7 +9,7 @@ export class RpcException extends Error {
     return this.error;
   }
 
-  private getErrorString(target) {
+  private getErrorString(target: string | object): string {
     if (typeof target === 'string') {
       return target;
     }
