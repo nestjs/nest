@@ -21,6 +21,8 @@ export class HttpException extends Error {
   ) {
     super();
     this.message = response;
+
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 
   public getResponse(): string | object {
