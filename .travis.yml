@@ -24,17 +24,32 @@ install:
 jobs:
   include:
     - state: "Test"
+      name: "Unit Test Node v12"
       script: npm test
       node_js: 12
       after_success: npm run coverage
 
     - state: "Test"
+      name: "Unit Test Node v10"
       script: npm test
       node_js: 10
     
     - state: "Test"
+      name: "Unit Test Node v8"
       script: npm test
       node_js: 8
+
+    - state: "Test"
+      name: "Integration Test"
+      install: skip
+      before_install: skip
+      before_script: skip
+      addons: skip
+      script:
+        sudo service mysql stop &&
+        bash ./scripts/prepare.sh &&
+        npm run integration-test
+      node_js: 12
 
     - stage: "Test"
       name: "Lint"
