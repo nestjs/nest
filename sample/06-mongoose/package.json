@@ -14,7 +14,7 @@
     "@nestjs/core": "6.4.0",
     "@nestjs/platform-express": "6.4.0",
     "@nestjs/mongoose": "6.1.2",
-    "mongoose": "5.6.2",
+    "mongoose": "5.6.3",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.2"
