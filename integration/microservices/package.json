@@ -13,7 +13,7 @@
     "@nestjs/platform-express": "6.4.0",
     "@nestjs/testing": "6.4.0",
     "@nestjs/websockets": "6.4.0",
-    "amqp-connection-manager": "2.3.3",
+    "amqp-connection-manager": "3.0.0",
     "class-transformer": "0.2.3",
     "class-validator": "0.9.1",
     "reflect-metadata": "0.1.13",
