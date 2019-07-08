@@ -20,7 +20,7 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.2",
-    "ws": "7.0.1"
+    "ws": "7.1.0"
   },
   "devDependencies": {
     "@types/node": "10.14.12",
