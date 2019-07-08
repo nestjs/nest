@@ -7,7 +7,6 @@ import {
   GrpcStreamMethod,
   Transport,
   GrpcOutOfRangeException,
-  GrpcExceptionFilter,
 } from '@nestjs/microservices';
 import { join } from 'path';
 import { Observable, of } from 'rxjs';
@@ -72,7 +71,6 @@ export class GrpcController {
     return svc.sum({ first, last });
   }
 
-  @UseFilters(new GrpcExceptionFilter())
   @GrpcMethod('Math')
   async divide({ first, last }: DivideParams): Promise<any> {
     const result = first / last;
