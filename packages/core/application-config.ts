@@ -5,13 +5,17 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
+import { InstanceWrapper } from './injector/instance-wrapper';
 
-export class ApplicationConfig implements ConfigurationProvider {
-  private globalPipes: PipeTransform<any>[] = [];
+export class ApplicationConfig {
+  private globalPipes: PipeTransform[] = [];
+  private globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
   private globalFilters: ExceptionFilter[] = [];
+  private globalRequestFilters: InstanceWrapper<ExceptionFilter>[] = [];
   private globalInterceptors: NestInterceptor[] = [];
+  private globalRequestInterceptors: InstanceWrapper<NestInterceptor>[] = [];
   private globalGuards: CanActivate[] = [];
+  private globalRequestGuards: InstanceWrapper<CanActivate>[] = [];
   private globalPrefix = '';
 
   constructor(private ioAdapter: WebSocketAdapter | null = null) {}
@@ -78,5 +82,39 @@ export class ApplicationConfig implements ConfigurationProvider {
 
   public useGlobalGuards(...guards: CanActivate[]) {
     this.globalGuards = this.globalGuards.concat(guards);
+  }
+
+  public addGlobalRequestInterceptor(
+    wrapper: InstanceWrapper<NestInterceptor>,
+  ) {
+    this.globalRequestInterceptors.push(wrapper);
+  }
+
+  public getGlobalRequestInterceptors(): InstanceWrapper<NestInterceptor>[] {
+    return this.globalRequestInterceptors;
+  }
+
+  public addGlobalRequestPipe(wrapper: InstanceWrapper<PipeTransform>) {
+    this.globalRequestPipes.push(wrapper);
+  }
+
+  public getGlobalRequestPipes(): InstanceWrapper<PipeTransform>[] {
+    return this.globalRequestPipes;
+  }
+
+  public addGlobalRequestFilter(wrapper: InstanceWrapper<ExceptionFilter>) {
+    this.globalRequestFilters.push(wrapper);
+  }
+
+  public getGlobalRequestFilters(): InstanceWrapper<ExceptionFilter>[] {
+    return this.globalRequestFilters;
+  }
+
+  public addGlobalRequestGuard(wrapper: InstanceWrapper<CanActivate>) {
+    this.globalRequestGuards.push(wrapper);
+  }
+
+  public getGlobalRequestGuards(): InstanceWrapper<CanActivate>[] {
+    return this.globalRequestGuards;
   }
 }

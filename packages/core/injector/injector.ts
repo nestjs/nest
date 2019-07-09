@@ -106,7 +106,7 @@ export class Injector {
       contextId,
       wrapper,
     );
-    await this.loadEnhancersPerContext(wrapper, module, contextId, wrapper);
+    await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
   }
 
   public async loadInjectable(
@@ -139,7 +139,7 @@ export class Injector {
       contextId,
       inquirer,
     );
-    await this.loadEnhancersPerContext(wrapper, module, contextId, wrapper);
+    await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
   }
 
   public loadPrototype<T>(
@@ -630,7 +630,7 @@ export class Injector {
       instance.constructor && instance.constructor.name,
     );
     await this.loadInstance(wrapper, collection, module, ctx, wrapper);
-    await this.loadEnhancersPerContext(wrapper, module, ctx, wrapper);
+    await this.loadEnhancersPerContext(wrapper, ctx, wrapper);
 
     const host = wrapper.getInstanceByContextId(ctx);
     return host && (host.instance as T);
@@ -638,13 +638,20 @@ export class Injector {
 
   public async loadEnhancersPerContext(
     wrapper: InstanceWrapper,
-    module: Module,
     ctx: ContextId,
     inquirer?: InstanceWrapper,
   ) {
     const enhancers = wrapper.getEnhancersMetadata() || [];
-    const loadEnhancer = (item: InstanceWrapper) =>
-      this.loadInstance(item, module.injectables, module, ctx, inquirer);
+    const loadEnhancer = (item: InstanceWrapper) => {
+      const hostModule = item.host;
+      return this.loadInstance(
+        item,
+        hostModule.injectables,
+        hostModule,
+        ctx,
+        inquirer,
+      );
+    };
     await Promise.all(enhancers.map(loadEnhancer));
   }
 

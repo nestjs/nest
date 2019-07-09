@@ -160,7 +160,7 @@ export class Module {
   }
 
   public addInjectable<T extends Injectable>(
-    injectable: Type<T>,
+    injectable: Provider,
     host?: Type<T>,
   ) {
     if (this.isCustomProvider(injectable)) {
