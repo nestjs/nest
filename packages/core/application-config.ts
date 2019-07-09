@@ -8,15 +8,19 @@ import {
 import { InstanceWrapper } from './injector/instance-wrapper';
 
 export class ApplicationConfig {
-  private globalPipes: PipeTransform[] = [];
-  private globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
-  private globalFilters: ExceptionFilter[] = [];
-  private globalRequestFilters: InstanceWrapper<ExceptionFilter>[] = [];
-  private globalInterceptors: NestInterceptor[] = [];
-  private globalRequestInterceptors: InstanceWrapper<NestInterceptor>[] = [];
-  private globalGuards: CanActivate[] = [];
-  private globalRequestGuards: InstanceWrapper<CanActivate>[] = [];
   private globalPrefix = '';
+  private globalPipes: PipeTransform[] = [];
+  private globalFilters: ExceptionFilter[] = [];
+  private globalInterceptors: NestInterceptor[] = [];
+  private globalGuards: CanActivate[] = [];
+  private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
+  private readonly globalRequestFilters: InstanceWrapper<
+    ExceptionFilter
+  >[] = [];
+  private readonly globalRequestInterceptors: InstanceWrapper<
+    NestInterceptor
+  >[] = [];
+  private readonly globalRequestGuards: InstanceWrapper<CanActivate>[] = [];
 
   constructor(private ioAdapter: WebSocketAdapter | null = null) {}
 

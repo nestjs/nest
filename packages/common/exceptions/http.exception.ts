@@ -1,3 +1,5 @@
+import { isString } from '../utils/shared.utils';
+
 export class HttpException extends Error {
   public readonly message: any;
 
@@ -31,17 +33,12 @@ export class HttpException extends Error {
     return this.status;
   }
 
-  private getErrorString(target: string | object): string{
-    if (typeof target === 'string') {
-      return target;
-    }
-
-    return JSON.stringify(target);
-  }
-
   public toString(): string {
     const message = this.getErrorString(this.message);
-
     return `Error: ${message}`;
+  }
+
+  private getErrorString(target: string | object): string {
+    return isString(target) ? target : JSON.stringify(target);
   }
 }

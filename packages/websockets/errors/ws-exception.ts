@@ -1,3 +1,5 @@
+import { isString } from '@nestjs/common/utils/shared.utils';
+
 export class WsException extends Error {
   public readonly message: any;
 
@@ -10,17 +12,12 @@ export class WsException extends Error {
     return this.error;
   }
 
-  private getErrorString(target: string | object): string {
-    if (typeof target === 'string') {
-      return target;
-    }
-
-    return JSON.stringify(target);
-  }
-
   public toString(): string {
     const message = this.getErrorString(this.message);
-
     return `Error: ${message}`;
+  }
+
+  private getErrorString(target: string | object): string {
+    return isString(target) ? target : JSON.stringify(target);
   }
 }
