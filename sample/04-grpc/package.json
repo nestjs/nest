@@ -17,7 +17,7 @@
     "@nestjs/testing": "6.4.1",
     "class-transformer": "0.2.3",
     "class-validator": "0.9.1",
-    "grpc": "1.21.1",
+    "grpc": "1.22.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.2"
