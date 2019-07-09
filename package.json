@@ -5,7 +5,7 @@
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --retries 3 --require 'node_modules/reflect-metadata/Reflect.js'",
-    "integration-test": "mocha integration/**/*.spec.ts --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js'",
+    "integration-test": "mocha \"integration/*/{,!(node_modules)/**/}/*.spec.ts\" --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js'",
     "lint": "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
     "format": "prettier **/**/*.ts --ignore-path ./.prettierignore --write && git status",
     "clean": "gulp clean:bundle",
@@ -37,7 +37,7 @@
     "@nestjs/testing": "6.1.1",
     "@nestjs/websockets": "6.1.1",
     "@nuxtjs/opencollective": "0.2.2",
-    "amqp-connection-manager": "2.3.3",
+    "amqp-connection-manager": "3.0.0",
     "amqplib": "0.5.3",
     "apollo-server-express": "2.6.7",
     "axios": "0.19.0",
@@ -55,8 +55,8 @@
     "fastify-cors": "2.1.3",
     "fastify-formbody": "3.1.0",
     "fastify-multipart": "1.0.1",
-    "graphql": "14.4.1",
-    "grpc": "1.21.1",
+    "graphql": "14.4.2",
+    "grpc": "1.22.0",
     "http2": "3.3.7",
     "iterare": "1.2.0",
     "merge-graphql-schemas": "1.5.8",
@@ -72,7 +72,7 @@
     "rxjs": "6.5.2",
     "rxjs-compat": "6.5.2",
     "socket.io": "2.2.0",
-    "ts-morph": "3.0.0",
+    "ts-morph": "3.1.0",
     "uuid": "3.3.2"
   },
   "devDependencies": {
@@ -85,7 +85,7 @@
     "@types/fastify-cors": "2.1.0",
     "@types/kafka-node": "2.0.8",
     "@types/mocha": "5.2.7",
-    "@types/node": "10.14.10",
+    "@types/node": "10.14.12",
     "@types/redis": "2.8.13",
     "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "7.0.13",
@@ -113,8 +113,8 @@
     "husky": "1.3.1",
     "imports-loader": "0.8.0",
     "json-loader": "0.5.7",
-    "lerna": "^2.11.0",
-    "lint-staged": "9.0.1",
+    "lerna": "2.11.0",
+    "lint-staged": "9.1.0",
     "mocha": "3.5.3",
     "nodemon": "1.19.1",
     "nyc": "14.1.1",
@@ -125,7 +125,7 @@
     "supertest": "4.0.2",
     "ts-node": "8.3.0",
     "tslint": "5.18.0",
-    "typescript": "3.5.2"
+    "typescript": "3.5.3"
   },
   "collective": {
     "type": "opencollective",

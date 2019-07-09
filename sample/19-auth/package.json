@@ -10,21 +10,21 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.4.0",
-    "@nestjs/core": "6.4.0",
+    "@nestjs/common": "6.4.1",
+    "@nestjs/core": "6.4.1",
     "@nestjs/jwt": "6.1.1",
-    "@nestjs/platform-express": "6.4.0",
+    "@nestjs/platform-express": "6.4.1",
     "@nestjs/passport": "6.1.0",
     "passport": "0.4.0",
     "passport-http-bearer": "1.0.1",
     "passport-jwt": "4.0.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
-    "typescript": "3.5.2"
+    "typescript": "3.5.3"
   },
   "devDependencies": {
     "@types/jest": "24.0.15",
-    "@types/node": "10.14.10",
+    "@types/node": "10.14.12",
     "jest": "24.8.0",
     "supertest": "4.0.2",
     "ts-jest": "24.0.2",

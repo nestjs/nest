@@ -10,11 +10,9 @@ const metadataKeys = [
 ];
 
 const validateKeys = (keys: string[]) => {
-  const isKeyInvalid = (key: string) =>
-    metadataKeys.findIndex(k => k === key) < 0;
 
   const validateKey = (key: string) => {
-    if (!isKeyInvalid(key)) {
+    if (metadataKeys.includes(key)) {
       return;
     }
     throw new InvalidModuleConfigException(key);
@@ -28,7 +26,7 @@ const validateKeys = (keys: string[]) => {
  * - `controllers` - the list of controllers (e.g. HTTP controllers)
  * - `providers` - the list of providers that belong to this module. They can be injected between themselves.
  * - `exports` - the set of components, which should be available for modules, which imports this module
- * @param options {ModuleMetadata} Module metadata
+ * @param metadata {ModuleMetadata} Module metadata
  */
 export function Module(metadata: ModuleMetadata): ClassDecorator {
   const propsKeys = Object.keys(metadata);
