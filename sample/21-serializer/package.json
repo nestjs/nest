@@ -10,9 +10,9 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.4.1",
-    "@nestjs/core": "6.4.1",
-    "@nestjs/platform-express": "6.4.1",
+    "@nestjs/common": "6.5.0",
+    "@nestjs/core": "6.5.0",
+    "@nestjs/platform-express": "6.5.0",
     "class-transformer": "0.2.3",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
