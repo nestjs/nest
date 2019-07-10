@@ -56,3 +56,8 @@ jobs:
       script: npm run lint
       node_js: 12
 
+    - stage: "Test"
+      name: "Build samples"
+      script: npm run build:samples
+      node_js: 12
+

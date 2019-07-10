@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "start": "node dist/server",
-    "webpack": "webpack --config webpack.config.js"
+    "dev": "webpack --config webpack.config.js --watch",
+    "build": "webpack --config webpack.config.js"
   },
   "dependencies": {
     "@nestjs/common": "6.5.2",
@@ -16,7 +17,7 @@
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "10.14.12",
+    "@types/node": "12.6.0",
     "ts-loader": "6.0.4",
     "ts-node": "8.3.0",
     "tslint": "5.18.0",
