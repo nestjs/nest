@@ -59,9 +59,9 @@
     optional "0.1.4"
     uuid "3.3.2"
 
-"@nestjs/graphql@6.2.4":
-  version "6.2.4"
-  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.2.4.tgz#5b1d92610d2003bc8e2f0df6300f34a0f46a1bd5"
+"@nestjs/graphql@6.2.5":
+  version "6.2.5"
+  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.2.5.tgz#f3f887ba1e8009b526305894da34c7ed65d2060e"
   dependencies:
     "@types/graphql" "14.2.0"
     chokidar "3.0.1"
