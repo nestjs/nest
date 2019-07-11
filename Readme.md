@@ -76,7 +76,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 ## Backers
 
-<a href="https://opencollective.com/nest" target="_blank"><img src="https://opencollective.com/nest/backers.svg?width=1600"></a>
+<a href="https://opencollective.com/nest" target="_blank"><img src="https://opencollective.com/nest/backers.svg?width=1100"></a>
 
 ## Stay in touch
 
