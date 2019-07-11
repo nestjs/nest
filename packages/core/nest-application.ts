@@ -222,7 +222,7 @@ export class NestApplication extends NestApplicationContext
 
   public async close(): Promise<any> {
     this.socketModule && (await this.socketModule.close());
-    this.httpAdapter && this.httpAdapter.close();
+    this.httpAdapter && (await this.httpAdapter.close());
 
     await Promise.all(
       iterate(this.microservices).map(async microservice => {
