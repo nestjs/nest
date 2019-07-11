@@ -7,13 +7,13 @@ export class AppController {
   constructor(private readonly authService: AuthService) {}
 
   @UseGuards(AuthGuard('local'))
-  @Post('/login')
+  @Post('login')
   async login(@Request() req) {
     return this.authService.login(req.user);
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Get('/me')
+  @Get('me')
   getProfile(@Request() req) {
     return req.user;
   }
