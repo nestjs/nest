@@ -7,7 +7,7 @@ import {
 import iterate from 'iterare';
 
 export class MetadataScanner {
-  public scanFromPrototype<T extends Injectable, R>(
+  public scanFromPrototype<T extends Injectable, R = any>(
     instance: T,
     prototype: any,
     callback: (name: string) => R,

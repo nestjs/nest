@@ -700,18 +700,22 @@ describe('Injector', () => {
   describe('loadEnhancersPerContext', () => {
     it('should load enhancers per context id', async () => {
       const wrapper = new InstanceWrapper();
-      wrapper.addEnhancerMetadata(new InstanceWrapper());
-      wrapper.addEnhancerMetadata(new InstanceWrapper());
+      wrapper.addEnhancerMetadata(
+        new InstanceWrapper({
+          host: new Module(class {}, [], new NestContainer()),
+        }),
+      );
+      wrapper.addEnhancerMetadata(
+        new InstanceWrapper({
+          host: new Module(class {}, [], new NestContainer()),
+        }),
+      );
 
       const loadInstanceStub = sinon
         .stub(injector, 'loadInstance')
         .callsFake(async () => ({} as any));
 
-      await injector.loadEnhancersPerContext(
-        wrapper,
-        new Module(class {}, [], new NestContainer()),
-        STATIC_CONTEXT,
-      );
+      await injector.loadEnhancersPerContext(wrapper, STATIC_CONTEXT);
       expect(loadInstanceStub.calledTwice).to.be.true;
     });
   });

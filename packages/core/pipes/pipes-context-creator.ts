@@ -89,11 +89,24 @@ export class PipesContextCreator extends ContextCreator {
     return module.injectables.get(metatype.name);
   }
 
-  public getGlobalMetadata<T extends any[]>(): T {
+  public getGlobalMetadata<T extends any[]>(
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
+  ): T {
     if (!this.config) {
       return [] as T;
     }
-    return this.config.getGlobalPipes() as T;
+    const globalPipes = this.config.getGlobalPipes() as T;
+    if (contextId === STATIC_CONTEXT && !inquirerId) {
+      return globalPipes;
+    }
+    const scopedPipeWrappers = this.config.getGlobalRequestPipes() as InstanceWrapper[];
+    const scopedPipes = scopedPipeWrappers
+      .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
+      .filter(host => host)
+      .map(host => host.instance);
+
+    return globalPipes.concat(scopedPipes) as T;
   }
 
   public setModuleContext(context: string) {
