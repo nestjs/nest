@@ -88,8 +88,8 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     const { content, properties } = message;
     let packet = JSON.parse(content.toString());
 
-    if (this.options.serializer) {
-      packet = this.options.serializer(packet);
+    if (this.options.serialize) {
+      packet = this.options.serialize(packet);
     }
 
     const pattern = isString(packet.pattern)
