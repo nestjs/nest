@@ -62,6 +62,7 @@ describe('HttpException', () => {
       const error = new HttpException(obj, 400);
       expect(`${error}`).to.be.eql(`Error: ${JSON.stringify(obj)}`);
       expect(`${error}`.includes('[object Object]')).to.not.be.true;
+      expect(`${error.stack}`.includes('[object Object]')).to.not.be.true;
     });
 
     it('should serialize sub errors', () => {

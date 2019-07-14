@@ -22,7 +22,9 @@ export class HttpException extends Error {
     private readonly status: number,
   ) {
     super();
-    this.message = response;
+    this.message = this.getErrorString(response);
+    this.stack = this.stack; // forcing eager serialization of the stack
+    this.message = this.response;
   }
 
   public getResponse(): string | object {
