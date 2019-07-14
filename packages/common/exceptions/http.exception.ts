@@ -23,7 +23,8 @@ export class HttpException extends Error {
   ) {
     super();
     this.message = this.getErrorString(response);
-    this.stack = this.stack;
+    this.stack = this.stack; //forcing eager serialization of the stack
+    this.message = this.response;
   }
 
   public getResponse(): string | object {
