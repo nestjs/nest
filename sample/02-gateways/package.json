@@ -24,7 +24,7 @@
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "7.10.6",
+    "@types/node": "7.10.7",
     "@types/socket.io": "2.1.2",
     "@types/socket.io-redis": "1.0.25",
     "@types/ws": "6.0.1",
