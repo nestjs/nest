@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@types/mongoose": "5.5.8",
-    "@types/node": "7.10.6",
+    "@types/node": "7.10.7",
     "ts-node": "8.3.0",
     "tslint": "5.18.0"
   }
