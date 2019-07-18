@@ -1,9 +1,5 @@
 import { PIPES_METADATA } from '@nestjs/common/constants';
-import {
-  Controller,
-  PipeTransform,
-  Transform,
-} from '@nestjs/common/interfaces';
+import { Controller, PipeTransform } from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { ApplicationConfig } from '../application-config';
@@ -28,7 +24,7 @@ export class PipesContextCreator extends ContextCreator {
     module: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
-  ): Transform<any>[] {
+  ): PipeTransform[] {
     this.moduleContext = module;
     return this.createContext(
       instance,
@@ -51,7 +47,6 @@ export class PipesContextCreator extends ContextCreator {
       .filter((pipe: any) => pipe && (pipe.name || pipe.transform))
       .map(pipe => this.getPipeInstance(pipe, contextId, inquirerId))
       .filter(pipe => pipe && pipe.transform && isFunction(pipe.transform))
-      .map(pipe => pipe.transform.bind(pipe))
       .toArray() as R;
   }
 

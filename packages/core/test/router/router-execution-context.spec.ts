@@ -91,7 +91,7 @@ describe('RouterExecutionContext', () => {
         let tryActivateStub;
         beforeEach(() => {
           instance = { foo: 'bar' };
-          let canActivateFn = contextCreator.createGuardsFn([1], null, null);
+          const canActivateFn = contextCreator.createGuardsFn([1], null, null);
           sinon.stub(contextCreator, 'createGuardsFn').returns(canActivateFn);
           tryActivateStub = sinon
             .stub(guardsConsumer, 'tryActivate')
@@ -146,8 +146,7 @@ describe('RouterExecutionContext', () => {
             });
           });
           it('should apply expected context when "intercept" apply', () => {
-            let interceptStub = sinon
-              .stub(interceptorsConsumer, 'intercept');
+            const interceptStub = sinon.stub(interceptorsConsumer, 'intercept');
             proxyContext(request, response, next).then(() => {
               expect(interceptStub.args[0][1][0]).to.equals(request);
               expect(interceptStub.args[0][1][1]).to.equals(response);
@@ -212,7 +211,7 @@ describe('RouterExecutionContext', () => {
     let consumerApplySpy: sinon.SinonSpy;
     const value = 3,
       metatype = null,
-      transforms = [];
+      transforms = [{ transform: sinon.spy() }];
 
     beforeEach(() => {
       consumerApplySpy = sinon.spy(consumer, 'apply');
