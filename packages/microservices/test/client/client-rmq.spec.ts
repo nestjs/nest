@@ -6,7 +6,7 @@ import { ClientRMQ } from '../../client/client-rmq';
 // tslint:disable:no-string-literal
 
 describe('ClientRQM', () => {
-  const client = new ClientRMQ({});
+  let client: ClientRMQ;
 
   describe('connect', () => {
     let createClientStub: sinon.SinonStub;
@@ -15,6 +15,7 @@ describe('ClientRQM', () => {
     let mergeDisconnectEvent: sinon.SinonStub;
 
     beforeEach(async () => {
+      client = new ClientRMQ({});
       createClientStub = sinon.stub(client, 'createClient').callsFake(() => ({
         addListener: () => ({}),
         removeListener: () => ({}),
@@ -32,12 +33,6 @@ describe('ClientRQM', () => {
       mergeDisconnectEvent = sinon
         .stub(client, 'mergeDisconnectEvent')
         .callsFake((_, source) => source);
-    });
-    afterEach(() => {
-      createClientStub.restore();
-      handleErrorsSpy.restore();
-      connect$Stub.restore();
-      mergeDisconnectEvent.restore();
     });
     describe('when is not connected', () => {
       beforeEach(async () => {
