@@ -96,7 +96,7 @@ export interface RmqOptions {
     queueOptions?: any;
     socketOptions?: any;
     noAck?: boolean;
-    serialize?: (packet: object) => object;
-    deserialize?: (packet: object) => object;
+    serialize?: (packet: any) => any;
+    deserialize?: (packet: any) => any;
   };
 }

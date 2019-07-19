@@ -124,6 +124,10 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     replyTo: any,
     correlationId: string,
   ): void {
+    if (this.options.deserialize) {
+      message = this.options.deserialize(message);
+    }
+
     const buffer = Buffer.from(JSON.stringify(message));
     this.channel.sendToQueue(replyTo, buffer, { correlationId });
   }

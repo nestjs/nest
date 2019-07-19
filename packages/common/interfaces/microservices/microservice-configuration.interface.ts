@@ -91,7 +91,7 @@ export interface RmqOptions {
     isGlobalPrefetchCount?: boolean;
     queueOptions?: any;
     socketOptions?: any;
-    serialize?: (packet: object) => object;
-    deserialize?: (packet: object) => object;
+    serialize?: (packet: any) => any;
+    deserialize?: (packet: any) => any;
   };
 }
