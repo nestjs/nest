@@ -175,18 +175,14 @@ export class ClientRMQ extends ClientProxy {
   }
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
-    let buffer;
-
     if (this.options.deserialize) {
-      buffer = Buffer.from(JSON.stringify(this.options.deserialize(packet)));
-    } else {
-      buffer = Buffer.from(JSON.stringify(packet));
+      packet = this.options.deserialize(packet);
     }
 
     return new Promise((resolve, reject) =>
       this.channel.sendToQueue(
         this.queue,
-        buffer,
+        Buffer.from(JSON.stringify(packet)),
         {},
         err => (err ? reject(err) : resolve()),
       ),
