@@ -3,7 +3,6 @@ import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { ApplicationConfig } from '../../application-config';
 import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
@@ -42,9 +41,7 @@ describe('ExternalContextCreator', () => {
       new ModulesContainer(),
       new PipesContextCreator(new NestContainer()),
       consumer,
-      new ExternalExceptionFilterContext(
-        new NestContainer()
-      ),
+      new ExternalExceptionFilterContext(new NestContainer()),
     );
   });
   describe('create', () => {
@@ -218,7 +215,7 @@ describe('ExternalContextCreator', () => {
     let consumerApplySpy: sinon.SinonSpy;
     const value = 3,
       metatype = null,
-      transforms = [];
+      transforms = [{ transform: sinon.spy() }];
 
     beforeEach(() => {
       consumerApplySpy = sinon.spy(consumer, 'apply');

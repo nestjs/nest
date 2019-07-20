@@ -11,9 +11,11 @@ class TestClientProxy extends ClientProxy {
   protected async dispatchEvent<T = any>(
     packet: ReadPacket<any>,
   ): Promise<any> {}
-  public async connect() {}
+  public async connect() {
+    return Promise.resolve();
+  }
   public publish(pattern, callback): any {}
-  public close() {}
+  public async close() {}
 }
 
 describe('ClientProxy', () => {
