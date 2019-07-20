@@ -26,10 +26,14 @@ export function transformPatternToRoute(pattern: MsPattern): string {
   );
 
   // Creates the array of Pattern params from sorted keys and their corresponding values
-  const sortedPatternParams = sortedKeys.map(
-    key => `${key}:${transformPatternToRoute(pattern[key])}`,
-  );
+  const sortedPatternParams = sortedKeys.map(key => {
+    let partialRoute = `"${key}":`;
+    partialRoute += isString(pattern[key])
+      ? `"${transformPatternToRoute(pattern[key])}"`
+      : transformPatternToRoute(pattern[key]);
+    return partialRoute;
+  });
 
-  const route = sortedPatternParams.join('/');
+  const route = sortedPatternParams.join(',');
   return `{${route}}`;
 }

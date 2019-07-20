@@ -5,9 +5,11 @@ import { GUARDS_METADATA } from '../../common/constants';
 import { Controller } from '../../common/decorators/core/controller.decorator';
 import { UseGuards } from '../../common/decorators/core/use-guards.decorator';
 import { Module } from '../../common/decorators/modules/module.decorator';
+import { Scope } from '../../common/interfaces';
 import { ApplicationConfig } from '../application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '../constants';
 import { NestContainer } from '../injector/container';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 import { MetadataScanner } from '../metadata-scanner';
 import { DependenciesScanner } from '../scanner';
 
@@ -214,6 +216,21 @@ describe('DependenciesScanner', () => {
           expect(applyMap[0].moduleKey).to.be.eql(token);
         });
       });
+      describe('and is global and request/transient scoped', () => {
+        const provider = {
+          provide: APP_INTERCEPTOR,
+          useValue: true,
+          scope: Scope.REQUEST,
+        };
+        it('should call container "addInjectable" with expected args', () => {
+          const expectation = mockContainer.expects('addInjectable').atLeast(1);
+
+          mockContainer.expects('addInjectable').callsFake(() => false);
+          scanner.insertProvider(provider, token);
+
+          expectation.verify();
+        });
+      });
       describe('and is not global', () => {
         const component = {
           provide: 'CUSTOM',
@@ -266,7 +283,67 @@ describe('DependenciesScanner', () => {
       expect(applySpy.called).to.be.true;
       expect(applySpy.calledWith(expectedInstance)).to.be.true;
     });
+    it('should apply each globally scoped provider', () => {
+      const provider = {
+        moduleKey: 'moduleToken',
+        providerKey: 'providerToken',
+        type: APP_GUARD,
+        scope: Scope.REQUEST,
+      };
+      (scanner as any).applicationProvidersApplyMap = [provider];
+
+      const expectedInstanceWrapper = new InstanceWrapper();
+      mockContainer.expects('getModules').callsFake(() => ({
+        get: () => ({
+          injectables: { get: () => expectedInstanceWrapper },
+        }),
+      }));
+      const applySpy = sinon.spy();
+      sinon.stub(scanner, 'getApplyRequestProvidersMap').callsFake(() => ({
+        [provider.type]: applySpy,
+      }));
+      scanner.applyApplicationProviders();
+      expect(applySpy.called).to.be.true;
+      expect(applySpy.calledWith(expectedInstanceWrapper)).to.be.true;
+    });
   });
+
+  describe('addScopedEnhancersMetadata', () => {
+    const provider = {
+      moduleKey: 'moduleToken',
+      providerKey: 'providerToken',
+      type: APP_GUARD,
+      scope: Scope.REQUEST,
+    };
+
+    it('should add enhancers metadata to every controller', () => {
+      (scanner as any).applicationProvidersApplyMap = [provider];
+
+      const instance = new InstanceWrapper({ name: 'test' });
+      const controllers = new Map();
+      const mockController = new InstanceWrapper();
+
+      controllers.set('test', mockController);
+      mockContainer.expects('getModules').callsFake(() => ({
+        get: () => ({
+          injectables: { get: () => instance },
+          controllers,
+        }),
+        values() {
+          return [this.get()];
+        },
+      }));
+      const addEnhancerMetadataSpy = sinon.spy(
+        mockController,
+        'addEnhancerMetadata',
+      );
+      scanner.addScopedEnhancersMetadata();
+
+      expect(addEnhancerMetadataSpy.called).to.be.true;
+      expect(addEnhancerMetadataSpy.calledWith(instance)).to.be.true;
+    });
+  });
+
   describe('getApplyProvidersMap', () => {
     describe(`when token is ${APP_INTERCEPTOR}`, () => {
       it('call "addGlobalInterceptor"', () => {
@@ -305,6 +382,48 @@ describe('DependenciesScanner', () => {
           'addGlobalFilter',
         );
         scanner.getApplyProvidersMap()[APP_FILTER](null);
+        expect(addSpy.called).to.be.true;
+      });
+    });
+  });
+  describe('getApplyRequestProvidersMap', () => {
+    describe(`when token is ${APP_INTERCEPTOR}`, () => {
+      it('call "addGlobalRequestInterceptor"', () => {
+        const addSpy = sinon.spy(
+          (scanner as any).applicationConfig,
+          'addGlobalRequestInterceptor',
+        );
+        scanner.getApplyRequestProvidersMap()[APP_INTERCEPTOR](null);
+        expect(addSpy.called).to.be.true;
+      });
+    });
+    describe(`when token is ${APP_GUARD}`, () => {
+      it('call "addGlobalRequestGuard"', () => {
+        const addSpy = sinon.spy(
+          (scanner as any).applicationConfig,
+          'addGlobalRequestGuard',
+        );
+        scanner.getApplyRequestProvidersMap()[APP_GUARD](null);
+        expect(addSpy.called).to.be.true;
+      });
+    });
+    describe(`when token is ${APP_PIPE}`, () => {
+      it('call "addGlobalRequestPipe"', () => {
+        const addSpy = sinon.spy(
+          (scanner as any).applicationConfig,
+          'addGlobalRequestPipe',
+        );
+        scanner.getApplyRequestProvidersMap()[APP_PIPE](null);
+        expect(addSpy.called).to.be.true;
+      });
+    });
+    describe(`when token is ${APP_FILTER}`, () => {
+      it('call "addGlobalRequestFilter"', () => {
+        const addSpy = sinon.spy(
+          (scanner as any).applicationConfig,
+          'addGlobalRequestFilter',
+        );
+        scanner.getApplyRequestProvidersMap()[APP_FILTER](null);
         expect(addSpy.called).to.be.true;
       });
     });

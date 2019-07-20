@@ -292,6 +292,25 @@ describe('Injector', () => {
       expect(result).to.be.equal(instance);
     });
 
+    it('should throw an exception if recursion happens', () => {
+      const name = 'RecursionService';
+      const instance = { test: 3 };
+      const collection = {
+        has: () => true,
+        get: () => instance,
+      };
+      const result = injector.lookupComponent(
+        collection as any,
+        null,
+        { name, index: 0, dependencies: [] },
+        {
+          ...wrapper,
+          name,
+        },
+      );
+      expect(result).to.eventually.be.rejected;
+    });
+
     it('should call "lookupComponentInImports" when object is not in collection', async () => {
       lookupComponentInImports.returns({});
       const collection = {
@@ -681,18 +700,22 @@ describe('Injector', () => {
   describe('loadEnhancersPerContext', () => {
     it('should load enhancers per context id', async () => {
       const wrapper = new InstanceWrapper();
-      wrapper.addEnhancerMetadata(new InstanceWrapper());
-      wrapper.addEnhancerMetadata(new InstanceWrapper());
+      wrapper.addEnhancerMetadata(
+        new InstanceWrapper({
+          host: new Module(class {}, [], new NestContainer()),
+        }),
+      );
+      wrapper.addEnhancerMetadata(
+        new InstanceWrapper({
+          host: new Module(class {}, [], new NestContainer()),
+        }),
+      );
 
       const loadInstanceStub = sinon
         .stub(injector, 'loadInstance')
         .callsFake(async () => ({} as any));
 
-      await injector.loadEnhancersPerContext(
-        wrapper,
-        new Module(class {}, [], new NestContainer()),
-        STATIC_CONTEXT,
-      );
+      await injector.loadEnhancersPerContext(wrapper, STATIC_CONTEXT);
       expect(loadInstanceStub.calledTwice).to.be.true;
     });
   });

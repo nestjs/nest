@@ -1,8 +1,8 @@
 import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
 import { Controller, NestInterceptor } from '@nestjs/common/interfaces';
-import { ConfigurationProvider } from '@nestjs/common/interfaces/configuration-provider.interface';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
+import { ApplicationConfig } from '../application-config';
 import { ContextCreator } from '../helpers/context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
@@ -13,7 +13,7 @@ export class InterceptorsContextCreator extends ContextCreator {
 
   constructor(
     private readonly container: NestContainer,
-    private readonly config?: ConfigurationProvider,
+    private readonly config?: ApplicationConfig,
   ) {
     super();
   }
@@ -92,10 +92,23 @@ export class InterceptorsContextCreator extends ContextCreator {
     return module.injectables.get(metatype.name);
   }
 
-  public getGlobalMetadata<T extends any[]>(): T {
+  public getGlobalMetadata<T extends any[]>(
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
+  ): T {
     if (!this.config) {
       return [] as T;
     }
-    return this.config.getGlobalInterceptors() as T;
+    const globalInterceptors = this.config.getGlobalInterceptors() as T;
+    if (contextId === STATIC_CONTEXT && !inquirerId) {
+      return globalInterceptors;
+    }
+    const scopedInterceptorWrappers = this.config.getGlobalRequestInterceptors() as InstanceWrapper[];
+    const scopedInterceptors = scopedInterceptorWrappers
+      .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
+      .filter(host => host)
+      .map(host => host.instance);
+
+    return globalInterceptors.concat(scopedInterceptors) as T;
   }
 }

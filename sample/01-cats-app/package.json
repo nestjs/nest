@@ -15,20 +15,20 @@
     "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "6.3.2",
-    "@nestjs/core": "6.3.2",
-    "@nestjs/platform-express": "6.3.2",
-    "@nestjs/testing": "6.3.2",
-    "@nestjs/websockets": "6.3.2",
+    "@nestjs/common": "6.5.3",
+    "@nestjs/core": "6.5.3",
+    "@nestjs/platform-express": "6.5.3",
+    "@nestjs/testing": "6.5.3",
+    "@nestjs/websockets": "6.5.3",
     "class-transformer": "0.2.3",
     "class-validator": "0.9.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
-    "typescript": "3.5.2"
+    "typescript": "3.5.3"
   },
   "devDependencies": {
     "@types/jest": "24.0.15",
-    "@types/node": "10.14.10",
+    "@types/node": "10.14.13",
     "jest": "24.8.0",
     "supertest": "4.0.2",
     "ts-jest": "24.0.2",

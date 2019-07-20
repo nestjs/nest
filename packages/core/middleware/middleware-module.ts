@@ -12,6 +12,7 @@ import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { createContextId } from '../helpers/context-id-factory';
+import { ExecutionContextHost } from '../helpers/execution-context-host';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
@@ -26,6 +27,8 @@ import { RoutesMapper } from './routes-mapper';
 
 export class MiddlewareModule {
   private readonly routerProxy = new RouterProxy();
+  private readonly exceptionFiltersCache = new WeakMap();
+
   private injector: Injector;
   private routerExceptionFilter: RouterExceptionFilters;
   private routesMapper: RoutesMapper;
@@ -190,18 +193,32 @@ export class MiddlewareModule {
         res: TResponse,
         next: () => void,
       ) => {
-        const contextId = createContextId();
-        const contextInstance = await this.injector.loadPerContext(
-          instance,
-          module,
-          collection,
-          contextId,
-        );
-        const proxy = await this.createProxy<TRequest, TResponse>(
-          contextInstance,
-          contextId,
-        );
-        return proxy(req, res, next);
+        try {
+          const contextId = createContextId();
+          const contextInstance = await this.injector.loadPerContext(
+            instance,
+            module,
+            collection,
+            contextId,
+          );
+          const proxy = await this.createProxy<TRequest, TResponse>(
+            contextInstance,
+            contextId,
+          );
+          return proxy(req, res, next);
+        } catch (err) {
+          let exceptionsHandler = this.exceptionFiltersCache.get(instance.use);
+          if (!exceptionsHandler) {
+            exceptionsHandler = this.routerExceptionFilter.create(
+              instance,
+              instance.use,
+              undefined,
+            );
+            this.exceptionFiltersCache.set(instance.use, exceptionsHandler);
+          }
+          const host = new ExecutionContextHost([req, res, next]);
+          exceptionsHandler.next(err, host);
+        }
       },
     );
   }

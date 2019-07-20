@@ -47,9 +47,9 @@ describe('transformPatternToRoute', () => {
         ];
 
         const expectedResults = [
-          `{controller:app/use:getHello}`,
-          `{controller:app/use:getHello}`,
-          `{controller:app/id:150/service:one/use:getHello}`,
+          JSON.stringify(testPatterns[0]),
+          `{"controller":"app","use":"getHello"}`,
+          `{"controller":"app","id":150,"service":"one","use":"getHello"}`,
         ];
 
         equalTest(testPatterns, expectedResults);
@@ -60,7 +60,7 @@ describe('transformPatternToRoute', () => {
         const testPatterns = [
           {
             controller: 'app',
-            use: { p1: 'path1', p2: 'path2' },
+            use: { p1: 'path1', p2: 'path2', p3: 10 },
           },
           {
             use: { p1: 'path1', p2: 'path2' },
@@ -74,9 +74,9 @@ describe('transformPatternToRoute', () => {
         ];
 
         const expectedResults = [
-          `{controller:app/use:{p1:path1/p2:path2}}`,
-          `{controller:app/use:{p1:path1/p2:path2}}`,
-          `{controller:app/service:one/use:{id:160/p1:path1/p2:path2}}`,
+          JSON.stringify(testPatterns[0]),
+          `{"controller":"app","use":{"p1":"path1","p2":"path2"}}`,
+          `{"controller":"app","service":"one","use":{"id":160,"p1":"path1","p2":"path2"}}`,
         ];
 
         equalTest(testPatterns, expectedResults);
@@ -101,9 +101,9 @@ describe('transformPatternToRoute', () => {
         ];
 
         const expectedResults = [
-          `{controller:app/use:{p1:path1/p2:{pp1:ppath1}}}`,
-          `{controller:{p2:path2}/use:{p1:path1}}`,
-          `{controller:{p1:{id:180/pp1:ppath1}}/service:one/use:{p1:path1/p2:{pp1:ppath1}}}`,
+          JSON.stringify(testPatterns[0]),
+          `{"controller":{"p2":"path2"},"use":{"p1":"path1"}}`,
+          `{"controller":{"p1":{"id":180,"pp1":"ppath1"}},"service":"one","use":{"p1":"path1","p2":{"pp1":"ppath1"}}}`,
         ];
 
         equalTest(testPatterns, expectedResults);

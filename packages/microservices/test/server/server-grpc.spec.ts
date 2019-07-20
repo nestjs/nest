@@ -51,6 +51,9 @@ describe('ServerGrpc', () => {
   });
 
   describe('bindEvents', () => {
+    beforeEach(() => {
+      sinon.stub(server, 'loadProto').callsFake(() => ({}));
+    });
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', async () => {
         sinon.stub(server, 'lookupPackage').callsFake(() => null);
@@ -448,6 +451,26 @@ describe('ServerGrpc', () => {
       );
       expect(services[0].name).to.be.equal('A');
       expect(services[1].name).to.be.equal('B');
+    });
+  });
+
+  describe('addHandler', () => {
+    const callback = () => {},
+      pattern = { test: 'test pattern' };
+
+    it(`should add handler`, () => {
+      sinon.stub(server as any, 'messageHandlers').value({ set() {} });
+
+      const messageHandlersSetSpy = sinon.spy(
+        (server as any).messageHandlers,
+        'set',
+      );
+      server.addHandler(pattern, callback as any);
+
+      expect(messageHandlersSetSpy.called).to.be.true;
+      expect(messageHandlersSetSpy.getCall(0).args[0]).to.be.equal(
+        JSON.stringify(pattern),
+      );
     });
   });
 });

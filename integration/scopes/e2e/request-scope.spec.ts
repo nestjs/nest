@@ -63,14 +63,17 @@ describe('Request scope', () => {
 
     it(`should create request scoped pipe for each request`, async () => {
       expect(UserByIdPipe.COUNTER).to.be.eql(3);
+      expect(UserByIdPipe.REQUEST_SCOPED_DATA).to.deep.equal([1, 1, 1]);
     });
 
     it(`should create request scoped interceptor for each request`, async () => {
       expect(Interceptor.COUNTER).to.be.eql(3);
+      expect(Interceptor.REQUEST_SCOPED_DATA).to.deep.equal([1, 1, 1]);
     });
 
     it(`should create request scoped guard for each request`, async () => {
       expect(Guard.COUNTER).to.be.eql(3);
+      expect(Guard.REQUEST_SCOPED_DATA).to.deep.equal([1, 1, 1]);
     });
   });
 

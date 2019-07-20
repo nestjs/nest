@@ -182,7 +182,9 @@ describe('ServerRedis', () => {
     it('should return options object with "retry_strategy" and call "createRetryStrategy"', () => {
       const createSpy = sinon.spy(server, 'createRetryStrategy');
       const { retry_strategy } = server.getClientOptions();
-      retry_strategy({} as any);
+      try {
+        retry_strategy({} as any);
+      } catch {}
       expect(createSpy.called).to.be.true;
     });
   });
@@ -195,27 +197,31 @@ describe('ServerRedis', () => {
       });
     });
     describe('when "retryAttempts" does not exist', () => {
-      it('should return undefined', () => {
+      it('should throw an exception', () => {
         (server as any).options.options = {};
         (server as any).options.options.retryAttempts = undefined;
-        const result = server.createRetryStrategy({} as any);
-        expect(result).to.be.undefined;
+
+        expect(() => server.createRetryStrategy({} as any)).to.throw(Error);
       });
     });
     describe('when "attempts" count is max', () => {
-      it('should return undefined', () => {
+      it('should throw an exception', () => {
         (server as any).options.options = {};
         (server as any).options.options.retryAttempts = 3;
-        const result = server.createRetryStrategy({ attempt: 4 } as any);
-        expect(result).to.be.undefined;
+
+        expect(() =>
+          server.createRetryStrategy({ attempt: 4 } as any),
+        ).to.throw(Error);
       });
     });
     describe('when ECONNREFUSED', () => {
       it('should call logger', () => {
         const loggerErrorSpy = sinon.spy((server as any).logger, 'error');
-        const result = server.createRetryStrategy({
-          error: { code: 'ECONNREFUSED' },
-        } as any);
+        try {
+          server.createRetryStrategy({
+            error: { code: 'ECONNREFUSED' },
+          } as any);
+        } catch {}
         expect(loggerErrorSpy.called).to.be.true;
       });
     });

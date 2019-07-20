@@ -340,7 +340,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         err && err.message ? err.message : invalidProtoError.message;
 
       this.logger.error(message, invalidProtoError.stack);
-      throw invalidProtoError;
+      throw err;
     }
   }
 
