@@ -5,6 +5,7 @@ import {
   ClassProvider,
   Controller,
   DynamicModule,
+  // @ts-ignore
   ExistingProvider,
   FactoryProvider,
   Injectable,
@@ -167,6 +168,7 @@ export class Module {
       return this.addCustomProvider(injectable, this._injectables);
     }
     const instanceWrapper = new InstanceWrapper({
+      // @ts-ignore
       name: injectable.name,
       metatype: injectable,
       instance: null,
@@ -174,6 +176,7 @@ export class Module {
       scope: this.getClassScope(injectable),
       host: this,
     });
+    // @ts-ignore
     this._injectables.set(injectable.name, instanceWrapper);
 
     if (host) {
