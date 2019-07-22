@@ -20,7 +20,7 @@
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/mongoose": "5.5.8",
+    "@types/mongoose": "5.5.9",
     "@types/node": "10.14.13",
     "ts-node": "8.3.0",
     "tslint": "5.18.0"
