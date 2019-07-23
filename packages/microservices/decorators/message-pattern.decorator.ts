@@ -132,7 +132,7 @@ export enum KafkaConsumerHandlerType {
 }
 
 export interface KafkaConsumerSubscriptionOptions {
-  topic: string | RegExp;
+  topic: string;
   fromBeginning?: boolean;
 }
 

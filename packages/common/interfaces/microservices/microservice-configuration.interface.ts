@@ -101,6 +101,13 @@ export interface KafkaOptions {
   options?: {
     client?: KafkaConfig,
     consumer?: ConsumerConfig,
+    run?: {
+      autoCommit?: boolean
+      autoCommitInterval?: number | null
+      autoCommitThreshold?: number | null
+      eachBatchAutoResolve?: boolean
+      partitionsConsumedConcurrently?: number
+    },
     producer?: ProducerConfig
   };
 }
