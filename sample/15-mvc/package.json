@@ -10,17 +10,17 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.3.2",
-    "@nestjs/core": "6.3.2",
-    "@nestjs/platform-express": "6.3.2",
+    "@nestjs/common": "6.5.3",
+    "@nestjs/core": "6.5.3",
+    "@nestjs/platform-express": "6.5.3",
     "hbs": "4.0.4",
     "pug": "2.0.4",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
-    "typescript": "3.5.2"
+    "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "8.10.48",
+    "@types/node": "8.10.51",
     "nodemon": "1.19.1",
     "ts-node": "8.3.0",
     "tslint": "5.18.0"

@@ -1,4 +1,4 @@
-import { DynamicModule } from '@nestjs/common';
+import { DynamicModule, Provider } from '@nestjs/common';
 import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -129,7 +129,7 @@ export class NestContainer {
     module.addRelatedModule(related);
   }
 
-  public addProvider(provider: Type<any>, token: string): string {
+  public addProvider(provider: Provider, token: string): string {
     if (!provider) {
       throw new CircularDependencyException();
     }
@@ -141,9 +141,9 @@ export class NestContainer {
   }
 
   public addInjectable(
-    injectable: Type<any>,
+    injectable: Provider,
     token: string,
-    host: Type<Injectable>,
+    host?: Type<Injectable>,
   ) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();

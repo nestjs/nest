@@ -12,7 +12,7 @@ async function createNestApp(...gateways): Promise<INestApplication> {
     providers: gateways,
   }).compile();
   const app = await testingModule.createNestApplication();
-  app.useWebSocketAdapter(new WsAdapter(app));
+  app.useWebSocketAdapter(new WsAdapter(app) as any);
   return app;
 }
 
@@ -69,6 +69,9 @@ describe('WebSocketGateway (WsAdapter)', () => {
   it(`should support 2 different gateways`, async () => {
     app = await createNestApp(ApplicationGateway, CoreGateway);
     await app.listenAsync(3000);
+
+    // open websockets delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     ws = new WebSocket('ws://localhost:8080');
     ws2 = new WebSocket('ws://localhost:8090');

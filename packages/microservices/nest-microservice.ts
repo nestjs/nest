@@ -103,6 +103,15 @@ export class NestMicroservice extends NestApplicationContext
     return this;
   }
 
+  public async init(): Promise<this> {
+    if (this.isInitialized) {
+      return this;
+    }
+    await super.init();
+    await this.registerModules();
+    return this;
+  }
+
   public listen(callback: () => void) {
     !this.isInitialized && this.registerModules();
 

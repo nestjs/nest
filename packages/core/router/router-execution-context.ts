@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common/constants';
 import { RouteParamsMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { Controller, Transform } from '@nestjs/common/interfaces';
+import { Controller } from '@nestjs/common/interfaces';
 import {
   isEmpty,
   isFunction,
@@ -133,7 +133,7 @@ export class RouterExecutionContext {
       next: Function,
     ) => {
       const args = this.contextUtils.createNullArray(argsLength);
-      fnCanActivate && (await fnCanActivate([req, res]));
+      fnCanActivate && (await fnCanActivate([req, res, next]));
 
       this.responseController.setStatus(res, httpStatusCode);
       hasCustomHeaders &&
@@ -141,7 +141,7 @@ export class RouterExecutionContext {
 
       const result = await this.interceptorsConsumer.intercept(
         interceptors,
-        [req, res],
+        [req, res, next],
         instance,
         callback,
         handler(args, req, res, next),
@@ -285,21 +285,22 @@ export class RouterExecutionContext {
       type,
       data,
     }: { metatype: any; type: RouteParamtypes; data: any },
-    transforms: Transform<any>[],
+    pipes: PipeTransform[],
   ): Promise<any> {
     if (
-      type === RouteParamtypes.BODY ||
-      type === RouteParamtypes.QUERY ||
-      type === RouteParamtypes.PARAM ||
-      isString(type)
+      (type === RouteParamtypes.BODY ||
+        type === RouteParamtypes.QUERY ||
+        type === RouteParamtypes.PARAM ||
+        isString(type)) &&
+      !isEmpty(pipes)
     ) {
       return this.pipesConsumer.apply(
         value,
         { metatype, type, data } as any,
-        transforms,
+        pipes,
       );
     }
-    return Promise.resolve(value);
+    return value;
   }
 
   public createGuardsFn(
@@ -322,7 +323,7 @@ export class RouterExecutionContext {
   }
 
   public createPipesFn(
-    pipes: any[],
+    pipes: PipeTransform[],
     paramsOptions: (ParamProperties & { metatype?: any })[],
   ) {
     const pipesFn = async <TRequest, TResponse>(

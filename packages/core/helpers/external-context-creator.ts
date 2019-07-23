@@ -1,7 +1,7 @@
 import { ForbiddenException, ParamData } from '@nestjs/common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
-import { Controller, Transform } from '@nestjs/common/interfaces';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { Controller, PipeTransform } from '@nestjs/common/interfaces';
+import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
@@ -292,7 +292,7 @@ export class ExternalContextCreator {
   }
 
   public createPipesFn(
-    pipes: any[],
+    pipes: PipeTransform[],
     paramsOptions: (ParamProperties & { metatype?: any })[],
   ) {
     const pipesFn = async (args: any[], ...params: any[]) => {
@@ -322,13 +322,11 @@ export class ExternalContextCreator {
   public async getParamValue<T>(
     value: T,
     { metatype, type, data }: { metatype: any; type: any; data: any },
-    transforms: Transform<any>[],
+    pipes: PipeTransform[],
   ): Promise<any> {
-    return this.pipesConsumer.apply(
-      value,
-      { metatype, type, data },
-      transforms,
-    );
+    return isEmpty(pipes)
+      ? value
+      : this.pipesConsumer.apply(value, { metatype, type, data }, pipes);
   }
 
   public async transformToResult(resultOrDeffered: any) {

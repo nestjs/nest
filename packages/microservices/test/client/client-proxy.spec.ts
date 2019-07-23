@@ -3,15 +3,19 @@ import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientProxy } from '../../client/client-proxy';
 import { ReadPacket } from '../../interfaces';
+import * as Utils from '../../utils';
+
 // tslint:disable:no-string-literal
 
 class TestClientProxy extends ClientProxy {
   protected async dispatchEvent<T = any>(
     packet: ReadPacket<any>,
   ): Promise<any> {}
-  public async connect() {}
+  public async connect() {
+    return Promise.resolve();
+  }
   public publish(pattern, callback): any {}
-  public close() {}
+  public async close() {}
 }
 
 describe('ClientProxy', () => {
@@ -170,6 +174,26 @@ describe('ClientProxy', () => {
     it('should return Observable with error', () => {
       const err$ = client.emit(null, null);
       expect(err$).to.be.instanceOf(Observable);
+    });
+  });
+
+  describe('normalizePattern', () => {
+    describe(`when gets 'string' pattern`, () => {
+      it(`should call 'transformPatternToRoute' with 'string' argument`, () => {
+        const inputPattern = 'hello';
+        const msvcUtilTransformPatternToRouteStub = sinon.spy(
+          Utils,
+          'transformPatternToRoute',
+        );
+
+        (client as any).normalizePattern(inputPattern);
+
+        expect(msvcUtilTransformPatternToRouteStub.args[0][0]).to.be.equal(
+          inputPattern,
+        );
+
+        msvcUtilTransformPatternToRouteStub.restore();
+      });
     });
   });
 });

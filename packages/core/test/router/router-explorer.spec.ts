@@ -7,8 +7,13 @@ import {
   Post,
 } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
+import { Injector } from '../../../core/injector/injector';
+import { ApplicationConfig } from '../../application-config';
+import { ExecutionContextHost } from '../../helpers/execution-context-host';
 import { NestContainer } from '../../injector/container';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { MetadataScanner } from '../../metadata-scanner';
+import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { RouterExplorer } from '../../router/router-explorer';
 
 describe('RouterExplorer', () => {
@@ -28,11 +33,24 @@ describe('RouterExplorer', () => {
   }
 
   let routerBuilder: RouterExplorer;
+  let injector: Injector;
+  let exceptionsFilter: RouterExceptionFilters;
 
   beforeEach(() => {
+    const container = new NestContainer();
+
+    injector = new Injector();
+    exceptionsFilter = new RouterExceptionFilters(
+      container,
+      new ApplicationConfig(),
+      null,
+    );
     routerBuilder = new RouterExplorer(
       new MetadataScanner(),
-      new NestContainer(),
+      container,
+      injector,
+      null,
+      exceptionsFilter,
     );
   });
 
@@ -113,6 +131,51 @@ describe('RouterExplorer', () => {
 
     it('should throw it a there is a bad path expected path', () => {
       expect(() => routerBuilder.validateRoutePath(undefined)).to.throw();
+    });
+  });
+
+  describe('createRequestScopedHandler', () => {
+    let nextSpy: sinon.SinonSpy;
+
+    beforeEach(() => {
+      sinon.stub(injector, 'loadPerContext').callsFake(() => {
+        throw new Error();
+      });
+      nextSpy = sinon.spy();
+      sinon.stub(exceptionsFilter, 'create').callsFake(
+        () =>
+          ({
+            next: nextSpy,
+          } as any),
+      );
+    });
+
+    describe('when "loadPerContext" throws', () => {
+      const moduleKey = 'moduleKey';
+      const methodKey = 'methodKey';
+      const module = {
+        controllers: new Map(),
+      } as any;
+      const wrapper = new InstanceWrapper({
+        instance: { [methodKey]: {} },
+      });
+
+      it('should delegete error to exception filters', async () => {
+        const handler = routerBuilder.createRequestScopedHandler(
+          wrapper,
+          RequestMethod.ALL,
+          module,
+          moduleKey,
+          methodKey,
+        );
+        await handler(null, null, null);
+
+        expect(nextSpy.called).to.be.true;
+        expect(nextSpy.getCall(0).args[0]).to.be.instanceOf(Error);
+        expect(nextSpy.getCall(0).args[1]).to.be.instanceOf(
+          ExecutionContextHost,
+        );
+      });
     });
   });
 });
