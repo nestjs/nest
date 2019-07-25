@@ -12,10 +12,10 @@
   "dependencies": {
     "@nestjs/common": "6.5.3",
     "@nestjs/core": "6.5.3",
-    "@nestjs/serve-static": "^1.0.0",
+    "@nestjs/serve-static": "1.0.1",
     "@nestjs/platform-express": "6.5.3",
-    "class-transformer": "^0.2.3",
-    "class-validator": "^0.9.1",
+    "class-transformer": "0.2.3",
+    "class-validator": "0.9.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.3"
