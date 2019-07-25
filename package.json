@@ -121,6 +121,7 @@
     "nodemon": "1.19.1",
     "nyc": "14.1.1",
     "prettier": "1.18.2",
+    "promise.series": "^0.2.0",
     "sinon": "7.3.2",
     "sinon-chai": "3.3.0",
     "socket.io-client": "2.2.0",
