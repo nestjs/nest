@@ -13,7 +13,7 @@ import {
   RedisClient,
   RetryStrategyOptions,
 } from '../external/redis.interface';
-import { PacketId, ReadPacket, RedisOptions, WritePacket } from '../interfaces';
+import { ReadPacket, RedisOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 
@@ -34,6 +34,9 @@ export class ClientRedis extends ClientProxy {
     redisPackage = loadPackage('redis', ClientRedis.name, () =>
       require('redis'),
     );
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public getAckPatternName(pattern: string): string {
@@ -117,9 +120,10 @@ export class ClientRedis extends ClientProxy {
 
   public createResponseCallback(): (channel: string, buffer: string) => void {
     return (channel: string, buffer: string) => {
-      const { err, response, isDisposed, id } = JSON.parse(
-        buffer,
-      ) as WritePacket & PacketId;
+      const packet = JSON.parse(buffer);
+      const { err, response, isDisposed, id } = this.deserializer.deserialize(
+        packet,
+      );
 
       const callback = this.routingMap.get(id);
       if (!callback) {
@@ -128,7 +132,7 @@ export class ClientRedis extends ClientProxy {
       if (isDisposed || err) {
         return callback({
           err,
-          response: null,
+          response,
           isDisposed: true,
         });
       }
@@ -146,6 +150,7 @@ export class ClientRedis extends ClientProxy {
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
+      const serializedPacket = this.serializer.serialize(packet);
       const responseChannel = this.getResPatternName(pattern);
 
       this.routingMap.set(packet.id, callback);
@@ -155,7 +160,7 @@ export class ClientRedis extends ClientProxy {
         }
         this.pubClient.publish(
           this.getAckPatternName(pattern),
-          JSON.stringify(packet),
+          JSON.stringify(serializedPacket),
         );
       });
 
@@ -170,8 +175,10 @@ export class ClientRedis extends ClientProxy {
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
+    const serializedPacket = this.serializer.serialize(packet);
+
     return new Promise((resolve, reject) =>
-      this.pubClient.publish(pattern, JSON.stringify(packet), err =>
+      this.pubClient.publish(pattern, JSON.stringify(serializedPacket), err =>
         err ? reject(err) : resolve(),
       ),
     );

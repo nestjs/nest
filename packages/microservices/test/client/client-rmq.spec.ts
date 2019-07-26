@@ -246,7 +246,7 @@ describe('ClientRQM', () => {
         expect(
           callback.calledWith({
             err: packet.err,
-            response: null,
+            response: 'test',
             isDisposed: true,
           }),
         ).to.be.true;
@@ -267,7 +267,7 @@ describe('ClientRQM', () => {
         expect(
           callback.calledWith({
             err: undefined,
-            response: null,
+            response: 'test',
             isDisposed: true,
           }),
         ).to.be.true;

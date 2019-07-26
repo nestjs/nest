@@ -12,6 +12,7 @@ import {
   RQM_DEFAULT_URL,
 } from '../constants';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
+import { OutgoingResponse } from '../interfaces/packet.interface';
 import { Server } from './server';
 
 let rqmPackage: any = {};
@@ -46,6 +47,9 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       ServerRMQ.name,
       () => require('amqp-connection-manager'),
     );
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public async listen(callback: () => void): Promise<void> {
@@ -86,7 +90,8 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   public async handleMessage(message: any): Promise<void> {
     const { content, properties } = message;
-    const packet = JSON.parse(content.toString());
+    const rawMessage = JSON.parse(content.toString());
+    const packet = this.deserializer.deserialize(rawMessage);
     const pattern = isString(packet.pattern)
       ? packet.pattern
       : JSON.stringify(packet.pattern);
@@ -98,8 +103,13 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
     if (!handler) {
       const status = 'error';
+      const noHandlerPacket = {
+        id: packet.id,
+        err: NO_MESSAGE_HANDLER,
+        status,
+      };
       return this.sendMessage(
-        { status, err: NO_MESSAGE_HANDLER },
+        noHandlerPacket,
         properties.replyTo,
         properties.correlationId,
       );
@@ -119,7 +129,10 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     replyTo: any,
     correlationId: string,
   ): void {
-    const buffer = Buffer.from(JSON.stringify(message));
+    const outgoingResponse = this.serializer.serialize(
+      (message as unknown) as OutgoingResponse,
+    );
+    const buffer = Buffer.from(JSON.stringify(outgoingResponse));
     this.channel.sendToQueue(replyTo, buffer, { correlationId });
   }
 }

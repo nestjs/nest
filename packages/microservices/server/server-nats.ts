@@ -8,10 +8,7 @@ import {
 } from '../constants';
 import { Client } from '../external/nats-client.interface';
 import { CustomTransportStrategy, PacketId } from '../interfaces';
-import {
-  MicroserviceOptions,
-  NatsOptions,
-} from '../interfaces/microservice-configuration.interface';
+import { NatsOptions } from '../interfaces/microservice-configuration.interface';
 import { ReadPacket } from '../interfaces/packet.interface';
 import { Server } from './server';
 
@@ -28,6 +25,9 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     natsPackage = this.loadPackage('nats', ServerNats.name, () =>
       require('nats'),
     );
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public listen(callback: () => void) {
@@ -81,10 +81,11 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
   public async handleMessage(
     channel: string,
-    message: ReadPacket & Partial<PacketId>,
+    rawMessage: any,
     client: Client,
     replyTo: string,
   ) {
+    const message = this.deserializer.deserialize(rawMessage);
     if (isUndefined(message.id)) {
       return this.handleEvent(channel, message);
     }
@@ -92,7 +93,12 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     const handler = this.getHandlerByPattern(channel);
     if (!handler) {
       const status = 'error';
-      return publish({ id: message.id, status, err: NO_MESSAGE_HANDLER });
+      const noHandlerPacket = {
+        id: message.id,
+        status,
+        err: NO_MESSAGE_HANDLER,
+      };
+      return publish(noHandlerPacket);
     }
     const response$ = this.transformToObservable(
       await handler(message.data),
@@ -101,13 +107,11 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public getPublisher(publisher: Client, replyTo: string, id: string) {
-    return (response: any) =>
-      publisher.publish(
-        replyTo,
-        Object.assign(response, {
-          id,
-        }),
-      );
+    return (response: any) => {
+      Object.assign(response, { id });
+      const outgoingResponse = this.serializer.serialize(response);
+      return publisher.publish(replyTo, outgoingResponse);
+    };
   }
 
   public handleError(stream: any) {

@@ -1,6 +1,8 @@
 import { Transport } from '../../enums/transport.enum';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
+import { Deserializer } from './deserializer.interface';
+import { Serializer } from './serializer.interface';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -48,6 +50,8 @@ export interface TcpOptions {
     port?: number;
     retryAttempts?: number;
     retryDelay?: number;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
   };
 }
 
@@ -57,6 +61,8 @@ export interface RedisOptions {
     url?: string;
     retryAttempts?: number;
     retryDelay?: number;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
   };
 }
 
@@ -64,6 +70,8 @@ export interface MqttOptions {
   transport?: Transport.MQTT;
   options?: MqttClientOptions & {
     url?: string;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
   };
 }
 
@@ -79,6 +87,8 @@ export interface NatsOptions {
     servers?: string[];
     tls?: any;
     queue?: string;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
   };
 }
 
@@ -91,5 +101,7 @@ export interface RmqOptions {
     isGlobalPrefetchCount?: boolean;
     queueOptions?: any;
     socketOptions?: any;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
   };
 }
