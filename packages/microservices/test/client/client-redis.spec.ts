@@ -118,8 +118,6 @@ describe('ClientRedis', () => {
     });
   });
   describe('createResponseCallback', () => {
-    const pattern = 'test';
-    const msg = { pattern, data: 'data', id: '1' };
     let callback: sinon.SinonSpy, subscription;
     const responseMessage = {
       err: null,
@@ -154,7 +152,7 @@ describe('ClientRedis', () => {
           new Buffer(
             JSON.stringify({
               ...responseMessage,
-              isDisposed: true,
+              isDisposed: responseMessage.response,
             }),
           ),
         );
@@ -165,7 +163,7 @@ describe('ClientRedis', () => {
         expect(
           callback.calledWith({
             isDisposed: true,
-            response: null,
+            response: responseMessage.response,
             err: null,
           }),
         ).to.be.true;
