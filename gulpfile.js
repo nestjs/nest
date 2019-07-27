@@ -8,6 +8,7 @@ const deleteEmpty = require('delete-empty');
 const childProcess = require('child_process');
 const log = require('fancy-log');
 const clc = require('cli-color');
+const promiseSeries = require('promise.series');
 
 const { promisify } = require('util');
 
@@ -117,39 +118,39 @@ gulp.task('install:samples', async () => {
   const directories = getDirs(SAMPLE);
 
   const promises = directories.map(async dir => {
-    log.info(
-      `Installing dependencies of ${clc.magenta(dir.replace(__dirname, ''))}`,
-    );
+    const dirName = dir.replace(__dirname, '');
+    log.info(`Installing dependencies of ${clc.magenta(dirName)}`);
     try {
       await exec(`npm install --no-shrinkwrap --prefix ${dir}`);
+      log.info(`Finished installing ${clc.magenta(dirName)}`);
     } catch (err) {
-      log.error(`Failed installing dependencies of ${dir}`);
+      log.error(`Failed installing dependencies of ${dirName}`);
       throw err;
     }
   });
 
-  await Promise.all(promises);
+  return await promiseSeries(promises);
 });
 
 gulp.task('build:samples', async () => {
   const directories = getDirs(SAMPLE);
 
   const promises = directories.map(async dir => {
-    log.info(
-      `Building ${clc.magenta(dir.replace(__dirname, ''))}`,
-    );
+    const dirName = dir.replace(__dirname, '');
+    log.info(`Building ${clc.magenta(dirName)}`);
     try {
       await exec(`npm run build --prefix ${dir}`);
+      log.info(`Finished building ${clc.magenta(dirName)}`);
     } catch (err) {
-      log.error(`Failed building ${clc.magenta(dir)}:`);
-      if(err.stdout) {
+      log.error(`Failed building ${clc.magenta(dirName)}:`);
+      if (err.stdout) {
         log.error(err.stdout);
       }
       throw err;
     }
   });
 
-  return await Promise.all(promises);
+  return await promiseSeries(promises);
 });
 
 gulp.task('move', function() {

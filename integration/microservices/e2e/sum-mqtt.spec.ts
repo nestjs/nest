@@ -62,7 +62,7 @@ describe('MQTT transport', () => {
         Array.from({ length: 10 }, (v, k) => k + 91),
       ])
       .expect(200, 'true');
-  });
+  }).timeout(5000);
 
   it(`/POST (streaming)`, () => {
     return request(server)
