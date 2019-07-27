@@ -1,5 +1,5 @@
 import { HttpServer } from '@nestjs/common';
-import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import { METHOD_METADATA, PATH_METADATA, ROUTE_SCHEMA_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -38,6 +38,7 @@ export interface RoutePathProperties {
   requestMethod: RequestMethod;
   targetCallback: RouterProxyCallback;
   methodName: string;
+  schema: object;
 }
 
 export class RouterExplorer {
@@ -131,11 +132,15 @@ export class RouterExplorer {
     const path = isString(routePath)
       ? [this.validateRoutePath(routePath)]
       : routePath.map(p => this.validateRoutePath(p));
+
+    const schema = Reflect.getMetadata(ROUTE_SCHEMA_METADATA, targetCallback) || null;
+
     return {
       path,
       requestMethod,
       targetCallback,
       methodName,
+      schema,
     };
   }
 
@@ -173,7 +178,9 @@ export class RouterExplorer {
       requestMethod,
       targetCallback,
       methodName,
+      schema
     } = pathProperties;
+
     const { instance } = instanceWrapper;
     const routerMethod = this.routerMethodFactory
       .get(router, requestMethod)
@@ -196,7 +203,11 @@ export class RouterExplorer {
 
       paths.forEach(path => {
         const fullPath = stripSlash(basePath) + path;
-        routerMethod(stripSlash(fullPath) || '/', handler);
+        if  (!schema) {
+          routerMethod(stripSlash(fullPath) || '/', handler);
+        } else {
+          routerMethod(stripSlash(fullPath) || '/', { schema }, handler);
+        }
       });
       return;
     }
@@ -209,7 +220,11 @@ export class RouterExplorer {
     );
     paths.forEach(path => {
       const fullPath = stripSlash(basePath) + path;
-      routerMethod(stripSlash(fullPath) || '/', proxy);
+      if  (!schema) {
+        routerMethod(stripSlash(fullPath) || '/', proxy);
+      } else {
+        routerMethod(stripSlash(fullPath) || '/', { schema }, proxy);
+      }
     });
   }
 

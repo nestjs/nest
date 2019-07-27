@@ -15,6 +15,7 @@ import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { MetadataScanner } from '../../metadata-scanner';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { RouterExplorer } from '../../router/router-explorer';
+import { Schema } from '../../../common/decorators/http';
 
 describe('RouterExplorer', () => {
   @Controller('global')
@@ -23,6 +24,7 @@ describe('RouterExplorer', () => {
     public getTest() {}
 
     @Post('test')
+    @Schema(getSchema())
     public postTest() {}
 
     @All('another-test')
@@ -99,6 +101,21 @@ describe('RouterExplorer', () => {
 
       expect(route.path).to.eql(['/foo', '/bar']);
       expect(route.requestMethod).to.eql(RequestMethod.GET);
+    });
+
+    it('should method return expected schema', () => {
+      const instance = new TestRoute();
+      const instanceProto = Object.getPrototypeOf(instance);
+
+      const route = routerBuilder.exploreMethodMetadata(
+        new TestRoute(),
+        instanceProto,
+        'postTest',
+      );
+
+      expect(route.path).to.eql(['/test']);
+      expect(route.requestMethod).to.eql(RequestMethod.POST);
+      expect(route.schema).to.eql(getSchema());
     });
   });
 
@@ -179,3 +196,64 @@ describe('RouterExplorer', () => {
     });
   });
 });
+
+
+function getSchema() {
+
+  const bodyJsonSchema = {
+    type: 'object',
+    required: ['requiredKey'],
+    properties: {
+      someKey: { type: 'string' },
+      someOtherKey: { type: 'number' },
+      requiredKey: {
+        type: 'array',
+        maxItems: 3,
+        items: { type: 'integer' },
+      },
+      nullableKey: { type: ['number', 'null'] }, // or { type: 'number', nullable: true }
+      multipleTypesKey: { type: ['boolean', 'number'] },
+      multipleRestrictedTypesKey: {
+        oneOf: [
+          { type: 'string', maxLength: 5 },
+          { type: 'number', minimum: 10 },
+        ],
+      },
+      enumKey: {
+        type: 'string',
+        enum: ['John', 'Foo'],
+      },
+      notTypeKey: {
+        not: { type: 'array' },
+      },
+    },
+  };
+
+  const queryStringJsonSchema = {
+    name: { type: 'string' },
+    excitement: { type: 'integer' },
+  };
+
+  const paramsJsonSchema = {
+    type: 'object',
+    properties: {
+      par1: { type: 'string' },
+      par2: { type: 'number' },
+    },
+  };
+
+  const headersJsonSchema = {
+    type: 'object',
+    properties: {
+      'x-foo': { type: 'string' },
+    },
+    required: ['x-foo'],
+  };
+
+  return {
+    body: bodyJsonSchema,
+    querystring: queryStringJsonSchema,
+    params: paramsJsonSchema,
+    headers: headersJsonSchema,
+  };
+}
