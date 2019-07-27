@@ -1,4 +1,5 @@
-import { Get, Controller, Schema, Post } from '@nestjs/common';
+import { Controller, Schema, Post, UseFilters } from '@nestjs/common';
+import { HttpErrorFilter } from './common/filters/http-exception.filter';
 
 const bodyJsonSchema = {
   type: 'object',
