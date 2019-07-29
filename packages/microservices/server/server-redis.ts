@@ -12,7 +12,7 @@ import {
   RedisClient,
   RetryStrategyOptions,
 } from '../external/redis.interface';
-import { CustomTransportStrategy } from '../interfaces';
+import { CustomTransportStrategy, IncomingRequest } from '../interfaces';
 import { RedisOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
@@ -85,18 +85,22 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     pub: RedisClient,
   ) {
     const rawMessage = this.parseMessage(buffer);
-    const packet = this.deserializer.deserialize(rawMessage);
-    if (isUndefined(packet.id)) {
+    const packet = this.deserializer.deserialize(rawMessage, { channel });
+    if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet);
     }
     const pattern = channel.replace(/_ack$/, '');
-    const publish = this.getPublisher(pub, pattern, packet.id);
+    const publish = this.getPublisher(
+      pub,
+      pattern,
+      (packet as IncomingRequest).id,
+    );
     const handler = this.getHandlerByPattern(pattern);
 
     if (!handler) {
       const status = 'error';
       const noHandlerPacket = {
-        id: packet.id,
+        id: (packet as IncomingRequest).id,
         status,
         err: NO_MESSAGE_HANDLER,
       };

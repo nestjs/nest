@@ -13,6 +13,7 @@ import {
 import { JsonSocket } from '../helpers/json-socket';
 import {
   CustomTransportStrategy,
+  IncomingRequest,
   PacketId,
   ReadPacket,
   WritePacket,
@@ -61,14 +62,14 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
       ? JSON.stringify(packet.pattern)
       : packet.pattern;
 
-    if (isUndefined(packet.id)) {
+    if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet);
     }
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
       const status = 'error';
       const noHandlerPacket = this.serializer.serialize({
-        id: packet.id,
+        id: (packet as IncomingRequest).id,
         status,
         err: NO_MESSAGE_HANDLER,
       });
@@ -80,7 +81,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
 
     response$ &&
       this.send(response$, data => {
-        Object.assign(data, { id: packet.id });
+        Object.assign(data, { id: (packet as IncomingRequest).id });
         const outgoingResponse = this.serializer.serialize(data as WritePacket &
           PacketId);
         socket.sendMessage(outgoingResponse);

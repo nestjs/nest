@@ -9,7 +9,7 @@ import {
 import { Client } from '../external/nats-client.interface';
 import { CustomTransportStrategy, PacketId } from '../interfaces';
 import { NatsOptions } from '../interfaces/microservice-configuration.interface';
-import { ReadPacket } from '../interfaces/packet.interface';
+import { IncomingRequest, ReadPacket } from '../interfaces/packet.interface';
 import { Server } from './server';
 
 let natsPackage: any = {};
@@ -85,16 +85,20 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     client: Client,
     replyTo: string,
   ) {
-    const message = this.deserializer.deserialize(rawMessage);
-    if (isUndefined(message.id)) {
+    const message = this.deserializer.deserialize(rawMessage, { channel });
+    if (isUndefined((message as IncomingRequest).id)) {
       return this.handleEvent(channel, message);
     }
-    const publish = this.getPublisher(client, replyTo, message.id);
+    const publish = this.getPublisher(
+      client,
+      replyTo,
+      (message as IncomingRequest).id,
+    );
     const handler = this.getHandlerByPattern(channel);
     if (!handler) {
       const status = 'error';
       const noHandlerPacket = {
-        id: message.id,
+        id: (message as IncomingRequest).id,
         status,
         err: NO_MESSAGE_HANDLER,
       };

@@ -10,7 +10,7 @@ import {
   Subscription,
 } from 'rxjs';
 import { catchError, finalize, publish } from 'rxjs/operators';
-import { IdentityDeserializer } from '../deserializers/identity.deserializer';
+import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
 import {
   ClientOptions,
   MessageHandler,
@@ -65,7 +65,10 @@ export abstract class Server {
     const scheduleOnNextTick = (data: WritePacket) => {
       if (!dataBuffer) {
         dataBuffer = [data];
-        process.nextTick(() => dataBuffer.forEach(buffer => respond(buffer)));
+        process.nextTick(() => {
+          dataBuffer.forEach(buffer => respond(buffer));
+          dataBuffer = null;
+        });
       } else if (!data.isDisposed) {
         dataBuffer = dataBuffer.concat(data);
       } else {
@@ -145,7 +148,7 @@ export abstract class Server {
           | MqttOptions['options']
           | TcpOptions['options']
           | RmqOptions['options']).deserializer) ||
-      new IdentityDeserializer();
+      new IncomingRequestDeserializer();
   }
 
   private isObservable(input: unknown): input is Observable<any> {

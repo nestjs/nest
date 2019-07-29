@@ -11,7 +11,7 @@ import {
 } from 'rxjs';
 import { map, mergeMap, publish, take } from 'rxjs/operators';
 import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
-import { IdentityDeserializer } from '../deserializers/identity.deserializer';
+import { IncomingResponseDeserializer } from '../deserializers/incoming-response.deserializer';
 import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
   ClientOptions,
@@ -145,6 +145,6 @@ export abstract class ClientProxy {
           | MqttOptions['options']
           | TcpClientOptions['options']
           | RmqOptions['options']).deserializer) ||
-      new IdentityDeserializer();
+      new IncomingResponseDeserializer();
   }
 }

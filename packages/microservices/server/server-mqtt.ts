@@ -8,7 +8,12 @@ import {
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
-import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
+import {
+  CustomTransportStrategy,
+  IncomingRequest,
+  PacketId,
+  ReadPacket,
+} from '../interfaces';
 import { MqttOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
@@ -72,18 +77,22 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     pub: MqttClient,
   ): Promise<any> {
     const rawPacket = this.parseMessage(buffer.toString());
-    const packet = this.deserializer.deserialize(rawPacket);
-    if (isUndefined(packet.id)) {
+    const packet = this.deserializer.deserialize(rawPacket, { channel });
+    if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet);
     }
     const pattern = channel.replace(/_ack$/, '');
-    const publish = this.getPublisher(pub, pattern, packet.id);
+    const publish = this.getPublisher(
+      pub,
+      pattern,
+      (packet as IncomingRequest).id,
+    );
     const handler = this.getHandlerByPattern(pattern);
 
     if (!handler) {
       const status = 'error';
       const noHandlerPacket = {
-        id: packet.id,
+        id: (packet as IncomingRequest).id,
         status,
         err: NO_MESSAGE_HANDLER,
       };
