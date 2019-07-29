@@ -12,7 +12,10 @@ import {
   RQM_DEFAULT_URL,
 } from '../constants';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
-import { OutgoingResponse } from '../interfaces/packet.interface';
+import {
+  IncomingRequest,
+  OutgoingResponse,
+} from '../interfaces/packet.interface';
 import { Server } from './server';
 
 let rqmPackage: any = {};
@@ -96,7 +99,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       ? packet.pattern
       : JSON.stringify(packet.pattern);
 
-    if (isUndefined(packet.id)) {
+    if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet);
     }
     const handler = this.getHandlerByPattern(pattern);
@@ -104,7 +107,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     if (!handler) {
       const status = 'error';
       const noHandlerPacket = {
-        id: packet.id,
+        id: (packet as IncomingRequest).id,
         err: NO_MESSAGE_HANDLER,
         status,
       };
