@@ -5,21 +5,15 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "start": "ts-node src/main.ts",
+    "start": "ts-node src/main",
     "prestart:prod": "npm run build",
-    "start:prod": "node dist/main.js",
-    "test": "jest --config=jest.json",
-    "test:watch": "jest --watch --config=jest.json",
-    "test:coverage": "jest --config=jest.json --coverage --coverageDirectory=coverage",
-    "e2e": "jest --config=e2e/jest-e2e.json --forceExit",
-    "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
+    "start:prod": "node dist/main.js"
   },
   "dependencies": {
     "@nestjs/common": "6.5.3",
     "@nestjs/core": "6.5.3",
+    "@nestjs/serve-static": "1.0.1",
     "@nestjs/platform-express": "6.5.3",
-    "@nestjs/testing": "6.5.3",
-    "@nestjs/websockets": "6.5.3",
     "class-transformer": "0.2.3",
     "class-validator": "0.9.1",
     "reflect-metadata": "0.1.13",
@@ -27,11 +21,7 @@
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/jest": "24.0.15",
     "@types/node": "10.14.13",
-    "jest": "24.8.0",
-    "supertest": "4.0.2",
-    "ts-jest": "24.0.2",
     "ts-node": "8.3.0",
     "tslint": "5.18.0"
   }

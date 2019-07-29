@@ -29,7 +29,7 @@ Stack Overflow is a much better place to ask questions since:
 
 To save your and our time, we will systematically close all issues that are requests for general support and redirect people to Stack Overflow.
 
-If you would like to chat about the question in real-time, you can reach out via [our gitter channel][gitter].
+If you would like to chat about the question in real-time, you can reach out via [our discord channel][discord].
 
 ## <a name="issue"></a> Found a Bug?
 
@@ -206,8 +206,7 @@ To ensure consistency throughout the source code, keep these rules in mind as yo
 
 * All features or bug fixes **must be tested** by one or more specs (unit-tests).
 * We follow [Google's JavaScript Style Guide][js-style-guide], but wrap all code at
-  **100 characters**. An automated formatter is available, see
-  [DEVELOPER.md](docs/DEVELOPER.md#clang-format).
+  **100 characters**. An automated formatter is available (`npm run format`).
 
 ## <a name="commit"></a> Commit Message Guidelines
 
@@ -320,7 +319,7 @@ changes to be accepted, the CLA must be signed. It's a quick process, we promise
 [corporate-cla]: http://code.google.com/legal/corporate-cla-v1.0.html
 [dev-doc]: https://github.com/nestjs/nest/blob/master/docs/DEVELOPER.md
 [github]: https://github.com/nestjs/nest
-[gitter]: https://gitter.im/nestjs/nestjs
+[discord]: https://discordapp.com/invite/G7Qnnhy
 [individual-cla]: http://code.google.com/legal/individual-cla-v1.0.html
 [js-style-guide]: https://google.github.io/styleguide/jsguide.html
 [jsfiddle]: http://jsfiddle.net
