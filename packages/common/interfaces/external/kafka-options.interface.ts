@@ -1,4 +1,3 @@
-
 /// <reference types="node" />
 
 import * as tls from 'tls';
@@ -51,6 +50,14 @@ export interface ProducerConfig {
   maxInFlightRequests?: number;
 }
 
+export interface Message {
+  key?: Buffer | string | null;
+  value: Buffer | string | null;
+  partition?: number;
+  headers?: IHeaders;
+  timestamp?: string;
+}
+
 export interface PartitionerArgs {
   topic: string;
   partitionMetadata: PartitionMetadata[];
@@ -65,14 +72,6 @@ export let Partitioners: {
   DefaultPartitioner: DefaultPartitioner
   JavaCompatiblePartitioner: JavaCompatiblePartitioner
 };
-
-export interface Message {
-  key?: Buffer | null;
-  value: Buffer | null;
-  partition?: number;
-  headers?: IHeaders;
-  timestamp?: string;
-}
 
 export interface PartitionMetadata {
   partitionErrorCode: number;
@@ -179,7 +178,7 @@ export interface ITopicConfig {
 }
 
 export interface ITopicMetadata {
-  topic: string;
+  name: string;
   partitions: PartitionMetadata[];
 }
 
@@ -294,7 +293,7 @@ export interface Admin {
     timeout?: number
     topics: ITopicConfig[]
   }): Promise<boolean>;
-  deleteTopics(options: { topics: string[]; timeout: number }): Promise<void>;
+  deleteTopics(options: { topics: string[]; timeout?: number }): Promise<void>;
   fetchTopicMetadata(options: { topics: string[] }): Promise<{ topics: Array<ITopicMetadata> }>;
   fetchOffsets(options: {
     groupId: string
@@ -322,8 +321,7 @@ export interface ISerializer<T> {
   decode(buffer: Buffer): T;
 }
 
-export interface MemberMetadata {
-  version: number;
+export interface MemberMetadata {  version: number;
   topics: string[];
   userData: Buffer;
 }
@@ -494,6 +492,12 @@ export interface GroupDescription {
 }
 
 export interface TopicPartitions { topic: string; partitions: number[]; }
+export interface TopicPartitionOffsetAndMedata {
+  topic: string;
+  partition: number;
+  offset: string;
+  metadata?: string | null;
+}
 
 export interface Batch {
   topic: string;
@@ -594,6 +598,18 @@ export interface EachBatchPayload {
   isStale(): boolean;
 }
 
+/**
+ * Type alias to keep compatibility with @types/kafkajs
+ * @see https://github.com/DefinitelyTyped/DefinitelyTyped/blob/712ad9d59ccca6a3cc92f347fea0d1c7b02f5eeb/types/kafkajs/index.d.ts#L321-L325
+ */
+export type ConsumerEachMessagePayload = EachMessagePayload;
+
+/**
+ * Type alias to keep compatibility with @types/kafkajs
+ * @see https://github.com/DefinitelyTyped/DefinitelyTyped/blob/712ad9d59ccca6a3cc92f347fea0d1c7b02f5eeb/types/kafkajs/index.d.ts#L327-L336
+ */
+export type ConsumerEachBatchPayload = EachBatchPayload;
+
 export interface Consumer {
   connect(): Promise<void>;
   disconnect(): Promise<void>;
@@ -608,10 +624,11 @@ export interface Consumer {
     eachBatch?: (payload: EachBatchPayload) => Promise<void>
     eachMessage?: (payload: EachMessagePayload) => Promise<void>
   }): Promise<void>;
+  commitOffsets(topicPartitions: Array<TopicPartitionOffsetAndMedata>): Promise<void>;
   seek(topicPartition: { topic: string; partition: number; offset: string }): void;
   describeGroup(): Promise<GroupDescription>;
-  pause(topics: Array<{ topic: string }>): void;
-  resume(topics: Array<{ topic: string }>): void;
+  pause(topics: Array<{ topic: string; partitions?: number[] }>): void;
+  resume(topics: Array<{ topic: string; partitions?: number[] }>): void;
   on(eventName: ValueOf<ConsumerEvents>, listener: (...args: any[]) => void): void;
   logger(): Logger;
   events: ConsumerEvents;
