@@ -110,7 +110,9 @@ describe('ClientProxy', function() {
     });
     describe('when is connected', () => {
       beforeEach(() => {
-        sinon.stub(client, 'connect').callsFake(() => Promise.resolve());
+        try {
+          sinon.stub(client, 'connect').callsFake(() => Promise.resolve());
+        } catch {}
       });
       it(`should call "publish"`, () => {
         const pattern = { test: 3 };

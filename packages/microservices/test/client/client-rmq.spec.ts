@@ -5,7 +5,9 @@ import * as sinon from 'sinon';
 import { ClientRMQ } from '../../client/client-rmq';
 // tslint:disable:no-string-literal
 
-describe('ClientRQM', () => {
+describe('ClientRMQ', function() {
+  this.retries(10);
+
   let client: ClientRMQ;
 
   describe('connect', () => {
@@ -36,8 +38,10 @@ describe('ClientRQM', () => {
     });
     describe('when is not connected', () => {
       beforeEach(async () => {
-        client['client'] = null;
-        await client.connect();
+        try {
+          client['client'] = null;
+          await client.connect();
+        } catch {}
       });
       it('should call "handleError" once', async () => {
         expect(handleErrorsSpy.called).to.be.true;
