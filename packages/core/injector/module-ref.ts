@@ -1,8 +1,9 @@
 import { Type } from '@nestjs/common';
+import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
 import { NestContainer } from './container';
 import { ContainerScanner } from './container-scanner';
 import { Injector } from './injector';
-import { InstanceWrapper } from './instance-wrapper';
+import { ContextId, InstanceWrapper } from './instance-wrapper';
 import { Module } from './module';
 
 export abstract class ModuleRef {
@@ -17,7 +18,11 @@ export abstract class ModuleRef {
     typeOrToken: Type<TInput> | string | symbol,
     options?: { strict: boolean },
   ): TResult;
-
+  public abstract resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | string | symbol,
+    contextId?: ContextId,
+    options?: { strict: boolean },
+  ): Promise<TResult>;
   public abstract create<T = any>(type: Type<T>): Promise<T>;
 
   protected find<TInput = any, TResult = TInput>(
@@ -28,21 +33,21 @@ export abstract class ModuleRef {
 
   protected async instantiateClass<T = any>(
     type: Type<T>,
-    module: Module,
+    moduleRef: Module,
   ): Promise<T> {
     const wrapper = new InstanceWrapper({
       name: type && type.name,
       metatype: type,
       instance: undefined,
       isResolved: false,
-      host: module,
+      host: moduleRef,
     });
     return new Promise<T>(async (resolve, reject) => {
       try {
         const callback = async (instances: any[]) => {
           const properties = await this.injector.resolveProperties(
             wrapper,
-            module,
+            moduleRef,
           );
           const instance = new type(...instances);
           this.injector.applyProperties(instance, properties);
@@ -50,7 +55,7 @@ export abstract class ModuleRef {
         };
         await this.injector.resolveConstructorParams<T>(
           wrapper,
-          module,
+          moduleRef,
           undefined,
           callback,
         );
@@ -60,13 +65,45 @@ export abstract class ModuleRef {
     });
   }
 
-  protected findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
+  protected findInstanceByToken<TInput = any, TResult = TInput>(
     metatypeOrToken: Type<TInput> | string | symbol,
-    contextModule: Partial<Module>,
+    contextModule: Module,
   ): TResult {
-    return this.containerScanner.findInstanceByPrototypeOrToken<
-      TInput,
-      TResult
-    >(metatypeOrToken, contextModule);
+    return this.containerScanner.findInstanceByToken<TInput, TResult>(
+      metatypeOrToken,
+      contextModule,
+    );
+  }
+
+  protected async resolvePerContext<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | string | symbol,
+    contextModule: Module,
+    contextId: ContextId,
+    options?: { strict: boolean },
+  ): Promise<TResult> {
+    let wrapper: InstanceWrapper, collection: Map<string, InstanceWrapper>;
+    if (!(options && options.strict)) {
+      [wrapper, collection] = this.containerScanner.getWrapperCollectionPair(
+        typeOrToken,
+      );
+    } else {
+      [
+        wrapper,
+        collection,
+      ] = this.containerScanner.getWrapperCollectionPairByHost(
+        typeOrToken,
+        contextModule,
+      );
+    }
+    const instance = await this.injector.loadPerContext(
+      wrapper.instance,
+      wrapper.host,
+      collection,
+      contextId,
+    );
+    if (!instance) {
+      throw new UnknownElementException();
+    }
+    return instance;
   }
 }

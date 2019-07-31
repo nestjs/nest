@@ -25,6 +25,7 @@ import { ApplicationConfig } from '../application-config';
 import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import { createContextId } from '../helpers';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
@@ -453,10 +454,15 @@ export class Module {
         if (!(options && options.strict)) {
           return this.find<TInput, TResult>(typeOrToken);
         }
-        return this.findInstanceByPrototypeOrToken<TInput, TResult>(
-          typeOrToken,
-          self,
-        );
+        return this.findInstanceByToken<TInput, TResult>(typeOrToken, self);
+      }
+
+      public resolve<TInput = any, TResult = TInput>(
+        typeOrToken: Type<TInput> | string | symbol,
+        contextId = createContextId(),
+        options: { strict: boolean } = { strict: true },
+      ): Promise<TResult> {
+        return this.resolvePerContext(typeOrToken, self, contextId, options);
       }
 
       public async create<T = any>(type: Type<T>): Promise<T> {
