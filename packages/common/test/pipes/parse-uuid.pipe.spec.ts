@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseUUIDPipe } from '../../pipes/parse-uuid.pipe';
 
@@ -56,7 +55,7 @@ describe('ParseUUIDPipe', () => {
       });
 
       it('should throw an error - v5 ', async () => {
-        target = new ParseUUIDPipe({ version: '4' });
+        target = new ParseUUIDPipe({ version: '5' });
         expect(target.transform('123a', {} as ArgumentMetadata)).to.be.rejected;
         expect(target.transform(v3, {} as ArgumentMetadata)).to.be.rejected;
         expect(target.transform(v4, {} as ArgumentMetadata)).to.be.rejected;
