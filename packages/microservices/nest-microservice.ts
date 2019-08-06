@@ -125,15 +125,19 @@ export class NestMicroservice extends NestApplicationContext
 
   public async close(): Promise<any> {
     await this.server.close();
-    !this.isTerminated && (await this.closeApplication());
+    if (this.isTerminated) {
+      return;
+    }
+    this.setIsTerminated(true);
+    await this.closeApplication();
   }
 
   public setIsInitialized(isInitialized: boolean) {
     this.isInitialized = isInitialized;
   }
 
-  public setIsTerminated(isTerminaed: boolean) {
-    this.isTerminated = isTerminaed;
+  public setIsTerminated(isTerminated: boolean) {
+    this.isTerminated = isTerminated;
   }
 
   public setIsInitHookCalled(isInitHookCalled: boolean) {
