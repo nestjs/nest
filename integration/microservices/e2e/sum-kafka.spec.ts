@@ -9,7 +9,7 @@ describe('Kafka transport', () => {
   let server;
   let app: INestApplication;
 
-  beforeEach(async () => {
+  before(`Starting Kafka app`, async () => {
     const module = await Test.createTestingModule({
       controllers: [KafkaController],
     }).compile();
@@ -53,7 +53,7 @@ describe('Kafka transport', () => {
       });
   });
 
-  afterEach(async () => {
+  after(`Stopping Kafka app`, async () => {
     await app.close();
   });
 });
