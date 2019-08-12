@@ -9,7 +9,7 @@ describe('Kafka transport', () => {
   let server;
   let app: INestApplication;
 
-  before(`Starting Kafka app`, async () => {
+  it(`Start Kafka app`, async () => {
     const module = await Test.createTestingModule({
       controllers: [KafkaController],
     }).compile();
@@ -27,7 +27,7 @@ describe('Kafka transport', () => {
     });
     await app.startAllMicroservicesAsync();
     await app.init();
-  });
+  }).timeout(30000);
 
   it(`/POST (async command sum)`, done => {
     request(server)
@@ -56,4 +56,4 @@ describe('Kafka transport', () => {
   after(`Stopping Kafka app`, async () => {
     await app.close();
   });
-});
+}).timeout(30000);
