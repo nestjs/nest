@@ -9,8 +9,8 @@ import { Observable } from 'rxjs';
 import { scan, take } from 'rxjs/operators';
 
 @Controller()
-export class NatsBroadcastController {
-  @Client({ transport: Transport.NATS })
+export class KafkaBroadcastController {
+  @Client({ transport: Transport.KAFKA })
   client: ClientProxy;
 
   @Get('broadcast')

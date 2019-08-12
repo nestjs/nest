@@ -93,23 +93,25 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
 
   public getMessageHandler(consumer: Consumer): Function {
     return async (payload: EachMessagePayload) => {
-      return this.handleMessage(consumer, payload);
+      // return this.handleMessage(consumer, payload);
+      return this.handleMessage(payload);
     };
   }
 
   public async handleMessage(
-    consumer: Consumer,
     payload: EachMessagePayload
   ) {
-    // if (isUndefined(message.id)) {
-    //   return this.handleEvent(, message);
-    // }
 
     return this.handleEvent(payload.topic, {
       pattern: payload.topic,
       data: payload
     });
+  }
 
+  // public async handleMessage(
+  //   consumer: Consumer,
+  //   payload: EachMessagePayload
+  // ) {
     // const handler = this.getHandlerByPattern(payload.topic);
 
     // if (!handler) {
@@ -142,7 +144,6 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     //     throw data.err;
     //   }
     // });
-  }
 
   // public async handleMessage(
   //   consumer: Consumer,

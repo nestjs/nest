@@ -8,30 +8,31 @@ import {
   RpcException,
   Transport,
   KafkaConsumer,
+  ClientKafka,
 } from '@nestjs/microservices';
 import { from, Observable, of, throwError } from 'rxjs';
-import { catchError, scan, delay } from 'rxjs/operators';
+import { catchError, scan, delay, map } from 'rxjs/operators';
+import { Producer } from '@nestjs/common/interfaces/external/kafka-options.interface';
 
 @Controller()
 export class KafkaController {
   static IS_NOTIFIED = false;
 
-  private consumer: any = 'hel[pp me!';
+  @Client({
+    transport: Transport.KAFKA,
+    options: {
+      client: {
+        brokers: ['localhost:9092'],
+      },
+    },
+  })
+  private readonly client: ClientProxy;
+  // private readonly client: ClientKafka;
 
-  // @KafkaConsumer({
-  //   topic: 'test.two'
-  // })
-  // public producer;
-
-  // @Client({
-  //   transport: Transport.KAFKA,
-  //   options: {
-  //     client: {
-  //       brokers: ['localhost:9092'],
-  //     },
-  //   },
-  // })
-  // client: ClientProxy;
+  private serialize(data: any) {
+    data.message.key = data.message.key.toString();
+    data.message.value = JSON.parse(data.message.value.toString());
+  }
 
   @Post()
   @HttpCode(200)
@@ -39,27 +40,47 @@ export class KafkaController {
     @Query('command') cmd,
     @Body() data: number[],
   ): Promise<Observable<number>> {
-    // await this.client.connect();
+    await this.client.connect();
     // return this.client.send<number>(cmd, data);
 
-    return from(Promise.resolve(15)).pipe(delay(500000));
+    return this.client.emit('test.one', [
+      {
+        key: 'sum',
+        value: JSON.stringify({
+          values: data,
+        }),
+        headers: {
+          'correlation-id': '2bfb68bb-893a-423b-a7fa-7b568cad5b67',
+        },
+      },
+    ]).pipe(map((result) => {
+      Logger.error(util.format('post() result %o', result));
+
+      return 15;
+    }), delay(500000));
+
+    // Logger.error(util.format('post() result %o', result));
+
+    // return from(Promise.resolve(15)).pipe(delay(500000));
   }
 
-  @MessagePattern('test.one')
+  @EventPattern('test.one')
   testOne(data: any){
+    this.serialize(data);
+
     Logger.error(util.format('testOne() data %o', data));
 
     return from(Promise.resolve(15)).pipe(delay(5000));
     // throw new Error('test');
   }
 
-  @MessagePattern(this.consumer)
-  testTo(data: any){
-    Logger.error(util.format('testOne() data %o', data));
+  // @MessagePattern(this.consumer)
+  // testTo(data: any){
+  //   Logger.error(util.format('testOne() data %o', data));
 
-    return from(Promise.resolve(15)).pipe(delay(5000));
-    // throw new Error('test');
-  }
+  //   return from(Promise.resolve(15)).pipe(delay(5000));
+  //   // throw new Error('test');
+  // }
   // testOne(...data: any){
   //   Logger.error(util.format('testOne() data %o', data));
   //   throw new Error('test');
