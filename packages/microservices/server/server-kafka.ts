@@ -97,11 +97,11 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     }));
 
     await consumer.run(Object.assign(this.options.run || {}, {
-      eachMessage: this.getMessageHandler(consumer)
+      eachMessage: this.getMessageHandler()
     }));
   }
 
-  public getMessageHandler(consumer: Consumer): Function {
+  public getMessageHandler(): Function {
     return async (payload: EachMessagePayload) => {
       return this.handleMessage(payload);
     };
@@ -110,7 +110,6 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   public async handleMessage(
     payload: EachMessagePayload
   ) {
-
     return this.handleEvent(payload.topic, {
       pattern: payload.topic,
       data: payload
