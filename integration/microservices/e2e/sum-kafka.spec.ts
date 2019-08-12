@@ -37,11 +37,11 @@ describe('Kafka transport', () => {
         setTimeout(() => {
           expect(KafkaController.MATH_SUM).to.eq(15);
           done();
-        }, 1000);
+        }, 4000);
       });
-  });
+  }).timeout(5000);
 
-  it(`/POST (event notification)`, done => {
+  it(`/POST (async event notification)`, done => {
     request(server)
       .post('/notify')
       .send([1, 2, 3, 4, 5])
@@ -49,9 +49,9 @@ describe('Kafka transport', () => {
         setTimeout(() => {
           expect(KafkaController.IS_NOTIFIED).to.be.true;
           done();
-        }, 1000);
+        }, 4000);
       });
-  });
+  }).timeout(5000);
 
   after(`Stopping Kafka app`, async () => {
     await app.close();
