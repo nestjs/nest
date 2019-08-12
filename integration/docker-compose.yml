@@ -45,11 +45,18 @@ services:
       - "15672:15672"
       - "5672:5672"
     tty: true
+  zookeeper:
+    container_name: test-zookeeper
+    hostname: zookeeper
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
   kafka:
     container_name: test-kafka
     hostname: kafka
     image: wurstmeister/kafka
     ports:
       - "9092:9092"
-
-
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: localhost
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181

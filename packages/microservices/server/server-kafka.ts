@@ -1,39 +1,23 @@
-import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
-import {
-  ConnectableObservable,
-  EMPTY,
-  from,
-  Observable,
-  of,
-  Subscription,
-  forkJoin
-} from 'rxjs';
-import {
-  map, finalize, flatMap, takeWhile, mergeMap, concatAll
-} from 'rxjs/operators';
+import { Logger } from '@nestjs/common/services/logger.service';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
-  KAFKA_DEFAULT_GROUP,
-  NO_MESSAGE_HANDLER
+  KAFKA_DEFAULT_GROUP
 } from '../constants';
 import {
   KafkaConfig,
   Kafka,
   Consumer,
-  ConsumerConfig,
-  EachBatchPayload,
   EachMessagePayload,
-  Batch
+  logLevel
 } from '../external/kafka.interface';
 import { CustomTransportStrategy, KafkaOptions } from '../interfaces';
-import { KafkaConsumerHandlerType, KafkaConsumerSubscriptionOptions, KafkaConsumerRunOptions } from '../decorators';
 import { Server } from './server';
-import * as util from 'util';
 
 let kafkaPackage: any = {};
 
 export class ServerKafka extends Server implements CustomTransportStrategy {
+  protected readonly logger = new Logger(ServerKafka.name);
   private client: Kafka = null;
   private consumer: Consumer = null;
   private readonly brokers: string[];
@@ -69,10 +53,35 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   }
 
   public createClient<T = any>(): T {
+    const kafkaLogger = kafkaLogLevel => ({namespace, level, label, log}) => {
+      let loggerMethod: string;
+
+      switch (level) {
+        case logLevel.ERROR:
+        case logLevel.NOTHING:
+          loggerMethod = 'error';
+          break;
+        case logLevel.WARN:
+          loggerMethod = 'warn';
+          break;
+        case logLevel.INFO:
+          loggerMethod = 'log';
+          break;
+        case logLevel.DEBUG:
+        default:
+          loggerMethod = 'debug';
+          break;
+      }
+
+      const { message, ...others } = log;
+      this.logger[loggerMethod](`${label} [${namespace}] ${message} ${JSON.stringify(others)}`);
+    };
+
     return new kafkaPackage.Kafka(Object.assign(this.options.client || {}, {
       clientId: this.clientId,
       brokers: this.brokers,
-      // logLevel: 5 // debug
+      logLevel: logLevel.INFO,
+      logCreator: kafkaLogger,
     }) as KafkaConfig);
   }
 
@@ -86,14 +95,12 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     }));
 
     await consumer.run(Object.assign(this.options.run || {}, {
-      // eachBatch: this.getMessageHandler(consumer).bind(this)
       eachMessage: this.getMessageHandler(consumer)
     }));
   }
 
   public getMessageHandler(consumer: Consumer): Function {
     return async (payload: EachMessagePayload) => {
-      // return this.handleMessage(consumer, payload);
       return this.handleMessage(payload);
     };
   }
@@ -107,119 +114,4 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       data: payload
     });
   }
-
-  // public async handleMessage(
-  //   consumer: Consumer,
-  //   payload: EachMessagePayload
-  // ) {
-    // const handler = this.getHandlerByPattern(payload.topic);
-
-    // if (!handler) {
-    //   this.handleError(NO_MESSAGE_HANDLER);
-    // }
-
-    // const response$ = this.transformToObservable(
-    //   await handler(payload),
-    // ) as Observable<any>;
-
-    // // const response$ = this.transformToObservable(
-    // //   await handler(payload.message),
-    // // ).pipe(map(() => {
-    // //   return payload.message;
-    // // }));
-    // // // ) as Observable<any>;
-
-    // response$ && this.send(response$, async (data) => {
-    //   this.logger.error(util.format('this.send() data %o', data));
-
-    //   if (data.isDisposed){
-    //     return;
-    //   }
-
-    //   if (!data.err) {
-    //     // await payload.resolveOffset(data.response.offset);
-    //   }
-
-    //   if (data.err) {
-    //     throw data.err;
-    //   }
-    // });
-
-  // public async handleMessage(
-  //   consumer: Consumer,
-  //   payload: EachBatchPayload
-  // ) {
-  //   // if (isUndefined(message.id)) {
-  //   //   return this.handleEvent(channel, message);
-  //   // }
-
-  //   const handler = this.getHandlerByPattern(payload.batch.topic);
-
-  //   if (!handler) {
-  //     this.handleError(NO_MESSAGE_HANDLER);
-  //   }
-
-  //   // const response$ = from(payload.batch.messages).pipe(map(async (message) => {
-  //   //   await handler(message);
-  //   // }), finalize(async () => {
-  //   //     await payload.heartbeat();
-
-  //   // }));
-
-  //   const response$ = from(payload.batch.messages).pipe(
-  //     takeWhile(() => {
-  //       return (payload.isRunning() && !payload.isStale());
-  //     }),
-  //     mergeMap((message) => {
-  //       return forkJoin(
-  //         of(message),
-  //         async () => {
-  //           return this.transformToObservable(await handler(message)) as Observable<any>;
-  //         }
-  //       );
-
-  //       // return this.transformToObservable(await handler(message)) as Observable<any>;
-  //     }),
-  //     concatAll()
-  //     // mergeMap(async (message) => {
-  //     //   return this.transformToObservable(await handler(message)) as Observable<any>;
-  //     // })
-  //   );
-
-  //   // response$.pipe(takeWhile(() => {
-  //   //   return (payload.isRunning() && !payload.isStale());
-  //   // }), map(async (message) => {
-  //   //   this.logger.error(util.format('response$.pipe() message %o', message));
-  //   //   return this.transformToObservable(await handler(message)) as Observable<any>;
-  //   // }));
-
-  //   // response$.pipe(map((message) => {
-  //   //   this.logger.error(util.format('response$.pipe() message %o', message));
-
-  //   //   return message;
-  //   //   // return this.transformToObservable(await handler(message)) as Observable<any>;
-  //   // }));
-    
-  //   // this.transformToObservable(
-  //   //   await handler(payload.batch.messages)
-  //   // );
-    
-  //   // const response$ = this.transformToObservable(
-  //   //   await handler(message.data),
-  //   // ) as Observable<any>;
-
-  //   response$ && this.send(response$, async (data) => {
-  //     this.logger.error(util.format('this.send() data %o', data));
-
-  //     if (data.isDisposed){
-  //       return;
-  //     }
-
-  //     if (!data.err) {
-  //       // await payload.resolveOffset(data.response.offset);
-  //     }
-
-  //     await payload.heartbeat();
-  //   });
-  // }
 }

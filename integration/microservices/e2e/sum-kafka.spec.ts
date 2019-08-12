@@ -29,80 +29,29 @@ describe('Kafka transport', () => {
     await app.init();
   });
 
-  it(`/POST`, () => {
-    return request(server)
+  it(`/POST (async command sum)`, done => {
+    request(server)
       .post('/?command=math.sum')
       .send([1, 2, 3, 4, 5])
-      .expect(200, '15');
+      .end(() => {
+        setTimeout(() => {
+          expect(KafkaController.MATH_SUM).to.eq(15);
+          done();
+        }, 1000);
+      });
   });
 
-  // it(`/POST`, () => {
-  //   return request(server)
-  //     .post('/?command=math.sum')
-  //     .send([1, 2, 3, 4, 5])
-  //     .expect(200, '15');
-  // });
-
-  // it(`/POST (Promise/async)`, () => {
-  //   return request(server)
-  //     .post('/?command=async.sum')
-  //     .send([1, 2, 3, 4, 5])
-  //     .expect(200)
-  //     .expect(200, '15');
-  // });
-
-  // it(`/POST (Observable stream)`, () => {
-  //   return request(server)
-  //     .post('/?command=stream.sum')
-  //     .send([1, 2, 3, 4, 5])
-  //     .expect(200, '15');
-  // });
-
-  // it(`/POST (streaming)`, () => {
-  //   return request(server)
-  //     .post('/stream')
-  //     .send([1, 2, 3, 4, 5])
-  //     .expect(200, '15');
-  // });
-
-  // it(`/POST (concurrent)`, () => {
-  //   return request(server)
-  //     .post('/concurrent')
-  //     .send([
-  //       Array.from({ length: 10 }, (v, k) => k + 1),
-  //       Array.from({ length: 10 }, (v, k) => k + 11),
-  //       Array.from({ length: 10 }, (v, k) => k + 21),
-  //       Array.from({ length: 10 }, (v, k) => k + 31),
-  //       Array.from({ length: 10 }, (v, k) => k + 41),
-  //       Array.from({ length: 10 }, (v, k) => k + 51),
-  //       Array.from({ length: 10 }, (v, k) => k + 61),
-  //       Array.from({ length: 10 }, (v, k) => k + 71),
-  //       Array.from({ length: 10 }, (v, k) => k + 81),
-  //       Array.from({ length: 10 }, (v, k) => k + 91),
-  //     ])
-  //     .expect(200, 'true');
-  // });
-
-  // it(`/GET (exception)`, () => {
-  //   return request(server)
-  //     .get('/exception')
-  //     .expect(200, {
-  //       message: 'test',
-  //       status: 'error',
-  //     });
-  // });
-
-  // it(`/POST (event notification)`, done => {
-  //   request(server)
-  //     .post('/notify')
-  //     .send([1, 2, 3, 4, 5])
-  //     .end(() => {
-  //       setTimeout(() => {
-  //         expect(KafkaController.IS_NOTIFIED).to.be.true;
-  //         done();
-  //       }, 1000);
-  //     });
-  // });
+  it(`/POST (event notification)`, done => {
+    request(server)
+      .post('/notify')
+      .send([1, 2, 3, 4, 5])
+      .end(() => {
+        setTimeout(() => {
+          expect(KafkaController.IS_NOTIFIED).to.be.true;
+          done();
+        }, 1000);
+      });
+  });
 
   afterEach(async () => {
     await app.close();
