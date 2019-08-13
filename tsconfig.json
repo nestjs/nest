@@ -1,19 +1,27 @@
 {
   "compilerOptions": {
+    "rootDir": ".",
     "module": "commonjs",
-    "declaration": false,
+    "declaration": true,
     "noImplicitAny": false,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "suppressImplicitAnyIndexErrors": true,
     "noUnusedLocals": false,
-    "removeComments": true,
-    "noLib": false,
+    "removeComments": false,
     "emitDecoratorMetadata": true,
+    "importHelpers": false,
     "experimentalDecorators": true,
-    "target": "es6",
-    "sourceMap": true,
-    "allowJs": true,
-    "outDir": "dist",
-    "lib": ["es7"]
+    "target": "es2018",
+    "sourceMap": false,
+    "allowJs": false,
+    "strict": true,
+    "strictNullChecks": false,
+    "baseUrl": ".",
+    "lib": ["esnext"],
+    "paths": {
+      "@nestjs/*": ["./packages/*"]
+    }
   },
-  "include": ["packages/**/*", "integration/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts"]
+  "exclude": ["../node_modules", "./**/*.spec.ts"]
 }
