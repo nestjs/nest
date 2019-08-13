@@ -17,5 +17,5 @@ nest_module(
 
 nest_package(
     name = "npm",
-    deps = [":platform-ws"],
+    deps = [":websockets"],
 )
