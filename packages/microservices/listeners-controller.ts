@@ -21,6 +21,7 @@ import {
 } from './interfaces';
 import { ListenerMetadataExplorer } from './listener-metadata-explorer';
 import { Server } from './server/server';
+import { Observable } from 'rxjs';
 
 export class ListenersController {
   private readonly metadataExplorer = new ListenerMetadataExplorer(
@@ -99,7 +100,7 @@ export class ListenersController {
   ) {
     const collection = module.controllers;
     const { instance } = wrapper;
-    return async (...args: unknown[]) => {
+    return async (...args: unknown[]): Promise<Observable<any>> => {
       try {
         const data = args[0];
         const contextId = createContextId();
