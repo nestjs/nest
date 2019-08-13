@@ -77,6 +77,10 @@
     "uuid": "3.3.2"
   },
   "devDependencies": {
+    "@bazel/bazel": "^0.28.1",
+    "@bazel/buildifier": "^0.26.0",
+    "@bazel/ibazel": "^0.10.3",
+    "@bazel/typescript": "^0.35.0",
     "@types/amqplib": "0.5.13",
     "@types/cache-manager": "1.2.8",
     "@types/chai": "4.2.0",

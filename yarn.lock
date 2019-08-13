@@ -102,6 +102,76 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
+"@bazel/bazel-darwin_x64@0.28.1":
+  version "0.28.1"
+  resolved "https://registry.yarnpkg.com/@bazel/bazel-darwin_x64/-/bazel-darwin_x64-0.28.1.tgz#415658785e1dbd6f7ab5c8f2b98c1c99c614e1d5"
+  integrity sha512-VDKWmplAfa4uCAbkIQ5nRn04MFQqtsPNuc2HkluJ8OIum773yC2dPR+OlLBKxrlBuKJYB27TtbOwOa6w/uK7aw==
+
+"@bazel/bazel-linux_x64@0.28.1":
+  version "0.28.1"
+  resolved "https://registry.yarnpkg.com/@bazel/bazel-linux_x64/-/bazel-linux_x64-0.28.1.tgz#f78006089e17660261088272a0e04fc886572e34"
+  integrity sha512-n4XfNxagYhejQD32V4XSxT/qzuH1l/2jxslbKSak66/uQ+wad8Ew9rjNb4JUin3xtrfFtzmxx2jpQkybZsRVGA==
+
+"@bazel/bazel-win32_x64@0.28.1":
+  version "0.28.1"
+  resolved "https://registry.yarnpkg.com/@bazel/bazel-win32_x64/-/bazel-win32_x64-0.28.1.tgz#60a2819618cf7582cc35ac16c01763a5e807b414"
+  integrity sha512-T4xksGfKikaHS4zxnGT6r5R436mz9j2lz//L1vc5sJnaEF/1e2Gv6MLl86vfZW2Xxo6iIEi6ntSzgYxP2Blohw==
+
+"@bazel/bazel@^0.28.1":
+  version "0.28.1"
+  resolved "https://registry.yarnpkg.com/@bazel/bazel/-/bazel-0.28.1.tgz#3a6b9b7a74d566c66805242ccaa2f907592b5bff"
+  integrity sha512-s4bn5/vegEec66l15ZjyUe4jNybQ5J/cg9gFzR5f8deKj8lM+2WtCfvTLO3XfUe2pbrB4BG7C31jpyFPOC+6aw==
+  dependencies:
+    "@bazel/hide-bazel-files" latest
+  optionalDependencies:
+    "@bazel/bazel-darwin_x64" "0.28.1"
+    "@bazel/bazel-linux_x64" "0.28.1"
+    "@bazel/bazel-win32_x64" "0.28.1"
+
+"@bazel/buildifier-darwin_x64@0.26.0":
+  version "0.26.0"
+  resolved "https://registry.yarnpkg.com/@bazel/buildifier-darwin_x64/-/buildifier-darwin_x64-0.26.0.tgz#0e4f5066750f7984689857e332f93368e0d782dd"
+  integrity sha512-yvlHuaP2FIMJ4Z4Ucs/R1wgwkDjhDkwvGD1eyhy9Qblqu7Ypgxtv2wz8dygrxDJVxhk3Kiwzlrp3otq6OYjv5A==
+
+"@bazel/buildifier-linux_x64@0.26.0":
+  version "0.26.0"
+  resolved "https://registry.yarnpkg.com/@bazel/buildifier-linux_x64/-/buildifier-linux_x64-0.26.0.tgz#05020641f17441145056821ec33a2c667e253a3f"
+  integrity sha512-4+ZGEVMQdJr39My2eH6GmQrBIQfuw/DWO3Vwpy5vS1p61EvV0a5+jaukRelA3p//FD0j2cAKaBvwZdsijtDsZw==
+
+"@bazel/buildifier-win32_x64@0.26.0":
+  version "0.26.0"
+  resolved "https://registry.yarnpkg.com/@bazel/buildifier-win32_x64/-/buildifier-win32_x64-0.26.0.tgz#51d983d36fd41f59063347e027487a447e4ea83e"
+  integrity sha512-S3QvjopF6cQ0rMv8zxi/SWfRBtA+oBGiTPcfpn1wJZa8Q21PdOcjH9ZgPJKpIV53x6sJ8XBVs7HSW44dPrwxQA==
+
+"@bazel/buildifier@^0.26.0":
+  version "0.26.0"
+  resolved "https://registry.yarnpkg.com/@bazel/buildifier/-/buildifier-0.26.0.tgz#65af3851f9ebe8b9ac651185d051b1a155012dbb"
+  integrity sha512-PVzkCOYhjlgcRCXUO31dy/GmtjDWzeTyVmPCFc4pxTFBvlrG7qkVlUW3DCIbBI5neTes0pY8mju837UBdK0OFQ==
+  optionalDependencies:
+    "@bazel/buildifier-darwin_x64" "0.26.0"
+    "@bazel/buildifier-linux_x64" "0.26.0"
+    "@bazel/buildifier-win32_x64" "0.26.0"
+
+"@bazel/hide-bazel-files@latest":
+  version "0.35.0"
+  resolved "https://registry.yarnpkg.com/@bazel/hide-bazel-files/-/hide-bazel-files-0.35.0.tgz#66ff148c1076534204d755024557609492718b7f"
+  integrity sha512-+96mfEfoIpo2LNyN0929IwKpn50AXO04PZfonscvu3yV+3DVG1JLyq6W63zl/yGP1DAdgCPlRg5scNhkOzNpJw==
+
+"@bazel/ibazel@^0.10.3":
+  version "0.10.3"
+  resolved "https://registry.yarnpkg.com/@bazel/ibazel/-/ibazel-0.10.3.tgz#2e2b8a1d3e885946eac41db2b1aa6801fb319887"
+  integrity sha512-v1nXbMTHVlMM4z4uWp6XiRoHAyUlYggF1SOboLLWRp0+D22kWixqArWqnozLw2mOtnxr97BdLjluWiho6A8Hjg==
+
+"@bazel/typescript@^0.35.0":
+  version "0.35.0"
+  resolved "https://registry.yarnpkg.com/@bazel/typescript/-/typescript-0.35.0.tgz#ffc69b7db0c1c7acd9dce1ecbd4381d6af2773a8"
+  integrity sha512-HklbkwL+eSLHD1Q+rQgoVMlwPpP+zdMDozqhCsFOUbR2BCU0HedASzaJ5y7wdpnVeCUXwJO5vO7JqqzfvdsBLw==
+  dependencies:
+    protobufjs "6.8.8"
+    semver "5.6.0"
+    source-map-support "0.5.9"
+    tsutils "2.27.2"
+
 "@dsherret/to-absolute-glob@^2.0.2":
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/@dsherret/to-absolute-glob/-/to-absolute-glob-2.0.2.tgz#1f6475dc8bd974cea07a2daf3864b317b1dd332c"
@@ -6428,17 +6498,7 @@ promise-breaker@^5.0.0:
   resolved "https://registry.yarnpkg.com/promise-breaker/-/promise-breaker-5.0.0.tgz#58e8541f1619554057da95a211794d7834d30c1d"
   integrity sha512-mgsWQuG4kJ1dtO6e/QlNDLFtMkMzzecsC69aI5hlLEjGHFNpHrvGhFi4LiK5jg2SMQj74/diH+wZliL9LpGsyA==
 
-protobufjs@^5.0.3:
-  version "5.0.3"
-  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-5.0.3.tgz#e4dfe9fb67c90b2630d15868249bcc4961467a17"
-  integrity sha512-55Kcx1MhPZX0zTbVosMQEO5R6/rikNXd9b6RQK4KSPcrSIIwoXTtebIczUrXlwaSrbz4x8XUVThGPob1n8I4QA==
-  dependencies:
-    ascli "~1"
-    bytebuffer "~5"
-    glob "^7.0.5"
-    yargs "^3.10.0"
-
-protobufjs@^6.8.6:
+protobufjs@6.8.8, protobufjs@^6.8.6:
   version "6.8.8"
   resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-6.8.8.tgz#c8b4f1282fd7a90e6f5b109ed11c84af82908e7c"
   integrity sha512-AAmHtD5pXgZfi7GMpllpO3q1Xw1OYldr+dMUlAnffGTAhqkg72WdmSY71uKBF/JuyiKs8psYbtKrhi0ASCD8qw==
@@ -6456,6 +6516,16 @@ protobufjs@^6.8.6:
     "@types/long" "^4.0.0"
     "@types/node" "^10.1.0"
     long "^4.0.0"
+
+protobufjs@^5.0.3:
+  version "5.0.3"
+  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-5.0.3.tgz#e4dfe9fb67c90b2630d15868249bcc4961467a17"
+  integrity sha512-55Kcx1MhPZX0zTbVosMQEO5R6/rikNXd9b6RQK4KSPcrSIIwoXTtebIczUrXlwaSrbz4x8XUVThGPob1n8I4QA==
+  dependencies:
+    ascli "~1"
+    bytebuffer "~5"
+    glob "^7.0.5"
+    yargs "^3.10.0"
 
 proxy-addr@^2.0.4, proxy-addr@~2.0.5:
   version "2.0.5"
@@ -6998,6 +7068,11 @@ semver-store@^0.3.0:
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.7.1.tgz#a954f931aeba508d307bbf069eff0c01c96116f7"
   integrity sha512-sauaDf/PZdVgrLTNYHRtpXa1iRiKcaebiKQ1BJdpQlWH2lCvexQdX55snPFyK7QzpudqbCI0qXFfOasHdyNDGQ==
 
+semver@5.6.0:
+  version "5.6.0"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-5.6.0.tgz#7e74256fbaa49c75aa7c7a205cc22799cac80004"
+  integrity sha512-RS9R6R35NYgQn++fkDWaOmqGoj4Ek9gGs+DPxNUZKuwE183xjJroKvyo1IzVFeXvUrvmALy6FWD5xrdJT25gMg==
+
 semver@^6.0.0:
   version "6.3.0"
   resolved "https://registry.yarnpkg.com/semver/-/semver-6.3.0.tgz#ee0a64c8af5e8ceea67687b133761e1becbd1d3d"
@@ -7244,6 +7319,14 @@ source-map-resolve@^0.5.0:
     resolve-url "^0.2.1"
     source-map-url "^0.4.0"
     urix "^0.1.0"
+
+source-map-support@0.5.9:
+  version "0.5.9"
+  resolved "https://registry.yarnpkg.com/source-map-support/-/source-map-support-0.5.9.tgz#41bc953b2534267ea2d605bccfa7bfa3111ced5f"
+  integrity sha512-gR6Rw4MvUlYy83vP0vxoVNzM6t8MUXqNuRsuBmBHQDu1Fh6X015FrLdgoDKcNdkwGubozq0P4N0Q37UyFVr1EA==
+  dependencies:
+    buffer-from "^1.0.0"
+    source-map "^0.6.0"
 
 source-map-support@^0.5.3, source-map-support@^0.5.6:
   version "0.5.13"
@@ -7914,6 +7997,13 @@ tslint@5.18.0:
     semver "^5.3.0"
     tslib "^1.8.0"
     tsutils "^2.29.0"
+
+tsutils@2.27.2:
+  version "2.27.2"
+  resolved "https://registry.yarnpkg.com/tsutils/-/tsutils-2.27.2.tgz#60ba88a23d6f785ec4b89c6e8179cac9b431f1c7"
+  integrity sha512-qf6rmT84TFMuxAKez2pIfR8UCai49iQsfB7YWVjV1bKpy/d0PWT5rEOSM6La9PiHZ0k1RRZQiwVdVJfQ3BPHgg==
+  dependencies:
+    tslib "^1.8.1"
 
 tsutils@^2.29.0:
   version "2.29.0"
