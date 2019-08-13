@@ -1,6 +1,6 @@
 import { Transport } from '../../enums/transport.enum';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
-import { KafkaConfig, ConsumerConfig, ProducerConfig } from '../external/kafka-options.interface';
+import { KafkaConfig, ConsumerConfig, ProducerConfig, CompressionTypes } from '../external/kafka-options.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 
 export type MicroserviceOptions =
@@ -108,6 +108,11 @@ export interface KafkaOptions {
       eachBatchAutoResolve?: boolean
       partitionsConsumedConcurrently?: number
     },
-    producer?: ProducerConfig
+    producer?: ProducerConfig,
+    send?: {
+      acks?: number;
+      timeout?: number;
+      compression?: CompressionTypes;
+    }
   };
 }

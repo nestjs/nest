@@ -85,7 +85,6 @@ export class ClientKafka extends ClientProxy {
     return new kafkaPackage.Kafka(Object.assign(this.options.client || {}, {
       clientId: this.clientId,
       brokers: this.brokers,
-      logLevel: logLevel.INFO,
       logCreator: kafkaLogger,
     }) as KafkaConfig);
   }
@@ -98,10 +97,10 @@ export class ClientKafka extends ClientProxy {
       packet.data = [packet.data];
     }
 
-    return this.producer.send({
+    return this.producer.send(Object.assign({
       topic: pattern,
       messages: packet.data
-    });
+    }, this.options.send || {}));
   }
 
   public send<TResult = any, TInput = any>(
