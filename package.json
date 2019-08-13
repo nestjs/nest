@@ -100,7 +100,7 @@
     "clang-format": "1.2.4",
     "concurrently": "4.1.1",
     "conventional-changelog": "3.1.10",
-    "core-js": "3.1.4",
+    "core-js": "3.2.1",
     "coveralls": "3.0.5",
     "csv-write-stream": "2.0.0",
     "delete-empty": "3.0.0",
