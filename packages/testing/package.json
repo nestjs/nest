@@ -8,9 +8,6 @@
     "type": "git",
     "url": "https://github.com/nestjs/nest"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "dependencies": {
     "optional": "0.1.4"
   },

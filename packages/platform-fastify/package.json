@@ -8,9 +8,6 @@
     "type": "git",
     "url": "https://github.com/nestjs/nest"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "dependencies": {
     "fastify": "2.7.1",
     "fastify-cors": "2.1.3",

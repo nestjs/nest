@@ -3,18 +3,17 @@
   "version": "6.5.3",
   "description": "Nest - modern, fast, powerful node.js web framework (@common)",
   "author": "Kamil Mysliwiec",
+  "main": "lib/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/nestjs/nest"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "license": "MIT",
   "dependencies": {
     "axios": "0.19.0",
     "cli-color": "1.4.0",
-    "uuid": "3.3.2"
+    "uuid": "3.3.2",
+    "tslib": "1.10.0"
   },
   "peerDependencies": {
     "reflect-metadata": "^0.1.12",

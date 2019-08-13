@@ -4,12 +4,10 @@
   "description": "Nest - modern, fast, powerful node.js web framework (@core)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "main": "src/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/nestjs/nest"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "scripts": {
     "postinstall": "opencollective || exit 0"
