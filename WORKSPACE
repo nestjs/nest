@@ -14,6 +14,9 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/0.34.0/rules_nodejs-0.34.0.tar.gz"],
 )
 
+# Setup the Node.js toolchain
+load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories", "yarn_install")
+
 node_repositories(
     # https://github.com/bazelbuild/rules_nodejs/blob/master/internal/node/node_repositories.bzl
     node_repositories = {
@@ -40,9 +43,17 @@ yarn_install(
 
 # Install any Bazel rules which were extracted earlier by the yarn_install rule.
 load("@npm//:install_bazel_dependencies.bzl", "install_bazel_dependencies")
+
 install_bazel_dependencies()
 
-# Setup the rules_typescript tooolchain
+http_archive(
+    name = "build_bazel_rules_typescript",
+    url = "https://github.com/bazelbuild/rules_typescript/archive/0.12.3.zip",
+    strip_prefix = "rules_typescript-0.12.3",
+    sha256 = "967068c3540f59407716fbeb49949c1600dbf387faeeab3089085784dd21f60c",
+)
+
+# Setup TypeScript toolchain
 load("@npm_bazel_typescript//:index.bzl", "ts_setup_workspace")
 ts_setup_workspace()
 
@@ -57,4 +68,5 @@ load(
     "@io_bazel_rules_docker//repositories:repositories.bzl",
     container_repositories = "repositories",
 )
+
 container_repositories()
