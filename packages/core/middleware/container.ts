@@ -35,7 +35,8 @@ export class MiddlewareContainer {
       );
     };
     configurations.forEach(config => {
-      [].concat(config.middleware).map(insertMiddleware);
+      [].concat(config.middleware).forEach(insertMiddleware);
+
       targetConfig.add(config);
     });
   }

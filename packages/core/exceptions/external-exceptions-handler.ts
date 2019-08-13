@@ -7,8 +7,8 @@ import { ExternalExceptionFilter } from './external-exception-filter';
 export class ExternalExceptionsHandler extends ExternalExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];
 
-  public next(exception: Error | any, host: ArgumentsHost): Promise<any> {
-    const result = this.invokeCustomFilters(exception, host);
+  public async next(exception: Error | any, host: ArgumentsHost): Promise<any> {
+    const result = await this.invokeCustomFilters(exception, host);
     if (result) {
       return result;
     }
@@ -22,10 +22,10 @@ export class ExternalExceptionsHandler extends ExternalExceptionFilter {
     this.filters = filters;
   }
 
-  public invokeCustomFilters<T = any>(
+  public async invokeCustomFilters<T = any>(
     exception: T,
     host: ArgumentsHost,
-  ): Promise<any> | null {
+  ): Promise<any> {
     if (isEmpty(this.filters)) {
       return null;
     }
