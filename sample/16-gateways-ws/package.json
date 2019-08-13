@@ -16,15 +16,15 @@
     "@nestjs/platform-ws": "6.5.3",
     "@nestjs/websockets": "6.5.3",
     "class-transformer": "0.2.3",
-    "class-validator": "0.9.1",
+    "class-validator": "0.10.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.3",
-    "ws": "7.1.1"
+    "ws": "7.1.2"
   },
   "devDependencies": {
     "@types/node": "10.14.13",
-    "@types/ws": "6.0.1",
+    "@types/ws": "6.0.2",
     "ts-node": "8.3.0",
     "tslint": "5.18.0"
   }

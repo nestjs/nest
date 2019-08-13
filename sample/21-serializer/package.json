@@ -19,7 +19,7 @@
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/jest": "24.0.16",
+    "@types/jest": "24.0.17",
     "@types/node": "10.14.13",
     "jest": "24.8.0",
     "supertest": "4.0.2",

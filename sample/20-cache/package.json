@@ -15,13 +15,13 @@
     "@nestjs/platform-express": "6.5.3",
     "cache-manager-redis-store": "1.5.0",
     "class-transformer": "0.2.3",
-    "class-validator": "0.9.1",
+    "class-validator": "0.10.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/jest": "24.0.16",
+    "@types/jest": "24.0.17",
     "@types/node": "10.14.13",
     "jest": "24.8.0",
     "supertest": "4.0.2",
