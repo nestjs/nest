@@ -13,7 +13,7 @@
     "@nestjs/testing": "6.5.3",
     "@nestjs/websockets": "6.5.3",
     "class-transformer": "0.2.3",
-    "class-validator": "0.9.1",
+    "class-validator": "0.10.0",
     "fastify": "2.7.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
