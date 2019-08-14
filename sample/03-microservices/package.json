@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/amqplib": "0.5.13",
-    "@types/node": "10.14.13",
+    "@types/node": "10.14.15",
     "ts-node": "8.3.0",
     "tslint": "5.18.0"
   }
