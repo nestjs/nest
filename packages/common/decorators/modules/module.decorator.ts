@@ -50,7 +50,7 @@ const validateKeys = (keys: string[]) => {
  * })
  * export class CatsModule {}
  * ```
- * 
+ *
  * @publicApi
  */
 export function Module(metadata: ModuleMetadata): ClassDecorator {
