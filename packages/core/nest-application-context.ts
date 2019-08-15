@@ -19,6 +19,9 @@ import { ContainerScanner } from './injector/container-scanner';
 import { Module } from './injector/module';
 import { ModuleTokenFactory } from './injector/module-token-factory';
 
+/**
+ * @publicApi
+ */
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
   private readonly containerScanner: ContainerScanner;
