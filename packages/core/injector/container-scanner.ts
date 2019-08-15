@@ -35,7 +35,7 @@ export class ContainerScanner {
       : metatypeOrToken;
     const instanceWrapper = dependencies.get(name as string);
     if (!instanceWrapper) {
-      throw new UnknownElementException(name.toString());
+      throw new UnknownElementException(name && name.toString());
     }
     return (instanceWrapper as InstanceWrapper).instance;
   }
