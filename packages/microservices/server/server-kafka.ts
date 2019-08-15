@@ -1,4 +1,5 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import * as util from 'util';
+import { isUndefined, isNil } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import { Logger } from '@nestjs/common/services/logger.service';
 import {
@@ -12,18 +13,16 @@ import {
   Consumer,
   Producer,
   EachMessagePayload,
-  KafkaMessage,
   Message,
   logLevel
 } from '../external/kafka.interface';
-import { CustomTransportStrategy, KafkaOptions, ReadPacket, PacketId } from '../interfaces';
+import { CustomTransportStrategy, KafkaOptions, ReadPacket, PacketId, WritePacket } from '../interfaces';
 import { KafkaHeaders } from '../enums';
 import { Server } from './server';
-import { partition } from 'rxjs/operators';
 
 interface KafkaPacket {
   replyTopic?: string;
-  replyPartition?: number;
+  replyPartition?: string;
 }
 
 let kafkaPackage: any = {};
@@ -40,8 +39,10 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   constructor(private readonly options: KafkaOptions['options']) {
     super();
     this.brokers = this.getOptionsProp(this.options.client, 'brokers') || [KAFKA_DEFAULT_BROKER];
-    this.clientId = this.getOptionsProp(this.options.client, 'clientId') || KAFKA_DEFAULT_CLIENT;
-    this.groupId = this.getOptionsProp(this.options.consumer, 'groupId') || KAFKA_DEFAULT_GROUP;
+
+    // append a unique id to the clientId and groupId so they don't collide with a microservices client
+    this.clientId = (this.getOptionsProp(this.options.client, 'clientId') || KAFKA_DEFAULT_CLIENT) + '-server';
+    this.groupId = (this.getOptionsProp(this.options.consumer, 'groupId') || KAFKA_DEFAULT_GROUP) + '-server';
 
     kafkaPackage = this.loadPackage('kafkajs', ServerKafka.name, () => require('kafkajs'));
   }
@@ -144,9 +145,9 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       await handler(packet.data),
     ) as Observable<any>;
 
-    const publish = <T>(data: T) =>
+    const publish = (data: any) =>
       this.sendMessage(
-        data as T & Message,
+        data,
         packet.replyTopic,
         packet.replyPartition,
         packet.id
@@ -179,36 +180,43 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       }
 
       if (!isUndefined(packet.data.headers[KafkaHeaders.REPLY_PARTITION])) {
-        packet.replyPartition = parseFloat(packet.data.headers[KafkaHeaders.REPLY_PARTITION].toString());
+        packet.replyPartition = packet.data.headers[KafkaHeaders.REPLY_PARTITION].toString();
       }
     }
 
     return packet;
   }
 
-  public sendMessage<T = any>(
-    message: T & Message,
+  public sendMessage(
+    packet: WritePacket & PacketId,
     replyTopic: string,
-    replyPartition: number,
+    replyPartition: string,
     correlationId: string
   ): void {
+    // do nothing when it is disposed
+    if (packet.isDisposed) {
+      return;
+    }
+
     // assign partition
-    message = Object.assign(message, {
-      partition: replyPartition || undefined
-    });
+    if (!isNil(replyPartition)) {
+      packet.response.partition = replyPartition;
+    }
 
     // create headers if they don't exist
-    if (isUndefined(message.headers)) {
-      message.headers = {};
+    if (isUndefined(packet.response.headers)) {
+      packet.response.headers = {};
     }
 
     // assign the correlation id
-    message.headers[KafkaHeaders.CORRELATION_ID] = Buffer.from(correlationId);
+    packet.response.headers[KafkaHeaders.CORRELATION_ID] = Buffer.from(correlationId);
+
+    this.logger.error(util.format('sendMessage() packet %o', packet));
 
     // send
     this.producer.send(Object.assign({
       topic: replyTopic,
-      messages: [message]
+      messages: [packet.response]
     }, this.options.send || {}));
   }
 }

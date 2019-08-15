@@ -3,6 +3,7 @@ import {
   Client,
   ClientProxy,
   EventPattern,
+  MessagePattern,
   Transport,
 } from '@nestjs/microservices';
 import { Logger } from '@nestjs/common/services/logger.service';
@@ -36,6 +37,36 @@ export class KafkaController implements OnModuleInit {
     data.value = JSON.parse(data.value.toString());
   }
 
+  // @Post()
+  // @HttpCode(200)
+  // async call(
+  //   @Query('command') cmd,
+  //   @Body() data: number[],
+  // ): Promise<Observable<any>> {
+  //   const key = uuid.v4(); // stick to a single partition
+
+  //   const result = await this.client.emit('math.sum', data.map((num) => {
+  //     return {
+  //         key,
+  //         value: num.toString(),
+  //         headers: {
+  //           'correlation-id': key,
+  //         },
+  //     };
+  //   })).toPromise();
+
+  //   this.logger.error(util.format('@Query math.sum result %o', result));
+
+  //   return result;
+  // }
+
+  // @EventPattern('math.sum')
+  // mathSum(data: any){
+  //   this.logger.error(util.format('@EventPattern math.sum data %o', data));
+
+  //   KafkaController.MATH_SUM += parseFloat(data.value);
+  // }
+
   @Post()
   @HttpCode(200)
   async call(
@@ -44,26 +75,31 @@ export class KafkaController implements OnModuleInit {
   ): Promise<Observable<any>> {
     const key = uuid.v4(); // stick to a single partition
 
-    const result = await this.client.emit('math.sum', data.map((num) => {
-      return {
-          key,
-          value: num.toString(),
-          headers: {
-            'correlation-id': key,
-          },
-      };
-    })).toPromise();
+    const result = await this.client.send('math.sum', {
+      key: '1',
+      value: JSON.stringify({
+        numbers: data,
+      }),
+    }).toPromise();
 
     this.logger.error(util.format('@Query math.sum result %o', result));
 
-    return result;
+    const sum = JSON.parse(result.value.toString());
+
+    return sum.result;
   }
 
-  @EventPattern('math.sum')
+  @MessagePattern('math.sum')
   mathSum(data: any){
-    this.logger.error(util.format('@EventPattern math.sum data %o', data));
+    this.logger.error(util.format('@MessagePattern math.sum data %o', data));
 
-    KafkaController.MATH_SUM += parseFloat(data.value);
+    const value = JSON.parse(data.value);
+
+    return {
+      value: JSON.stringify({
+        result: (value.numbers || []).reduce((a, b) => a + b),
+      }),
+    };
   }
 
   @Post('notify')

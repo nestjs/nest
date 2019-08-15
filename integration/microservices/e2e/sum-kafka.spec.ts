@@ -29,29 +29,37 @@ describe('Kafka transport', () => {
     await app.init();
   }).timeout(30000);
 
-  it(`/POST (async command sum)`, done => {
-    request(server)
+  it(`/POST (async command sum)`, () => {
+    return request(server)
       .post('/?command=math.sum')
       .send([1, 2, 3, 4, 5])
-      .end(() => {
-        setTimeout(() => {
-          expect(KafkaController.MATH_SUM).to.eq(15);
-          done();
-        }, 4000);
-      });
-  }).timeout(5000);
+      .expect(200)
+      .expect(200, '15');
+  }).timeout(50000);
 
-  it(`/POST (async event notification)`, done => {
-    request(server)
-      .post('/notify')
-      .send([1, 2, 3, 4, 5])
-      .end(() => {
-        setTimeout(() => {
-          expect(KafkaController.IS_NOTIFIED).to.be.true;
-          done();
-        }, 4000);
-      });
-  }).timeout(5000);
+  // it(`/POST (async command sum)`, done => {
+  //   request(server)
+  //     .post('/?command=math.sum')
+  //     .send([1, 2, 3, 4, 5])
+  //     .end(() => {
+  //       setTimeout(() => {
+  //         expect(KafkaController.MATH_SUM).to.eq(15);
+  //         done();
+  //       }, 4000);
+  //     });
+  // }).timeout(5000);
+
+  // it(`/POST (async event notification)`, done => {
+  //   request(server)
+  //     .post('/notify')
+  //     .send([1, 2, 3, 4, 5])
+  //     .end(() => {
+  //       setTimeout(() => {
+  //         expect(KafkaController.IS_NOTIFIED).to.be.true;
+  //         done();
+  //       }, 4000);
+  //     });
+  // }).timeout(5000);
 
   after(`Stopping Kafka app`, async () => {
     await app.close();
