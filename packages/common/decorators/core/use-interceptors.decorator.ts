@@ -12,7 +12,7 @@ import { validateEach } from '../../utils/validate-each.util';
  * When the `@UseInterceptors()` is used on the handle level:
  * - Interceptor will be registered only to the specified method
  *
- * @param  {} ...interceptors
+ * @param ...interceptors
  */
 export function UseInterceptors(
   ...interceptors: (NestInterceptor | Function)[]

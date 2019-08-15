@@ -1,10 +1,13 @@
 import { HTTP_CODE_METADATA } from '../../constants';
 
 /**
- * Defines the HTTP response status code.
- * It overrides default status code for the given request method.
+ * @publicApi
  *
- * @param  {number} statusCode
+ * @description
+ * Defines the HTTP response status code.  Overrides default status code for
+ * the decorated request method.
+ *
+ * @see [Http Status Codes](https://docs.nestjs.com/controllers#status-code)
  */
 export function HttpCode(statusCode: number): MethodDecorator {
   return (target: object, key, descriptor) => {

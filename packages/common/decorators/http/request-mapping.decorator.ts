@@ -31,41 +31,81 @@ const createMappingDecorator = (method: RequestMethod) => (
 };
 
 /**
+ * @publicApi
+ *
+ * @description
  * Routes HTTP POST requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
  */
 export const Post = createMappingDecorator(RequestMethod.POST);
 
 /**
+ * @publicApi
+ *
+ * @description
  * Routes HTTP GET requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
  */
 export const Get = createMappingDecorator(RequestMethod.GET);
 
 /**
+ * @publicApi
+ *
+ * @description
  * Routes HTTP DELETE requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
  */
 export const Delete = createMappingDecorator(RequestMethod.DELETE);
 
 /**
+ * @publicApi
+ *
+ * @description
  * Routes HTTP PUT requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
  */
 export const Put = createMappingDecorator(RequestMethod.PUT);
 
 /**
+ * @publicApi
+ *
+ * @description
  * Routes HTTP PATCH requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
  */
 export const Patch = createMappingDecorator(RequestMethod.PATCH);
 
 /**
+ * @publicApi
+ *
+ * @description
  * Routes HTTP OPTIONS requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
  */
 export const Options = createMappingDecorator(RequestMethod.OPTIONS);
 
 /**
+ * @publicApi
+ *
+ * @description
  * Routes HTTP HEAD requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
  */
 export const Head = createMappingDecorator(RequestMethod.HEAD);
 
 /**
+ * @publicApi
+ *
+ * @description
  * Routes all HTTP requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
  */
 export const All = createMappingDecorator(RequestMethod.ALL);
