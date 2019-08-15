@@ -1,6 +1,5 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { EventEmitter } from 'events';
 import { Observable } from 'rxjs';
 
 import {
@@ -23,11 +22,7 @@ export class ClientKafka extends ClientProxy {
   protected readonly logger = new Logger(ClientKafka.name);
   private client: Kafka = null;
   private producer: Producer = null;
-  protected channel: any = null;
-  protected urls: string[];
-  protected queue: string;
-  protected queueOptions: any;
-  protected responseEmitter: EventEmitter;
+  
 
   private readonly brokers: string[];
   private readonly clientId: string;

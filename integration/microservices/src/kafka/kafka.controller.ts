@@ -5,12 +5,15 @@ import {
   EventPattern,
   Transport,
 } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
+import { Logger } from '@nestjs/common/services/logger.service';
+import * as util from 'util';
 
+import { Observable } from 'rxjs';
 import * as uuid from 'uuid';
 
 @Controller()
 export class KafkaController implements OnModuleInit {
+  protected readonly logger = new Logger(KafkaController.name);
   static IS_NOTIFIED = false;
   static MATH_SUM = 0;
 
@@ -29,8 +32,8 @@ export class KafkaController implements OnModuleInit {
   }
 
   private parse(data: any) {
-    data.message.key = data.message.key.toString();
-    data.message.value = JSON.parse(data.message.value.toString());
+    data.key = data.key.toString();
+    data.value = JSON.parse(data.value.toString());
   }
 
   @Post()
@@ -39,17 +42,28 @@ export class KafkaController implements OnModuleInit {
     @Query('command') cmd,
     @Body() data: number[],
   ): Promise<Observable<any>> {
-    return this.client.emit('math.sum', data.map((num) => {
+    const key = uuid.v4(); // stick to a single partition
+
+    const result = await this.client.emit('math.sum', data.map((num) => {
       return {
-          key: uuid.v4(), // stick to a single partition
+          key,
           value: num.toString(),
+          headers: {
+            'correlation-id': key,
+          },
       };
-    }));
+    })).toPromise();
+
+    this.logger.error(util.format('@Query math.sum result %o', result));
+
+    return result;
   }
 
   @EventPattern('math.sum')
   mathSum(data: any){
-    KafkaController.MATH_SUM += parseFloat(data.message.value);
+    this.logger.error(util.format('@EventPattern math.sum data %o', data));
+
+    KafkaController.MATH_SUM += parseFloat(data.value);
   }
 
   @Post('notify')
@@ -66,6 +80,6 @@ export class KafkaController implements OnModuleInit {
   eventHandler(data: any) {
     this.parse(data);
 
-    KafkaController.IS_NOTIFIED = data.message.value.notify;
+    KafkaController.IS_NOTIFIED = data.value.notify;
   }
 }
