@@ -1,6 +1,14 @@
 import { INestApplication } from '@nestjs/common';
 import { ServeStaticOptions } from './serve-static-options.interface';
 
+/**
+ * @publicApi
+ *
+ * @description
+ * Interface describing methods on NestExpressApplication.
+ *
+ * @see [Platform](https://docs.nestjs.com/first-steps#platform)
+ */
 export interface NestExpressApplication extends INestApplication {
   /**
    * A wrapper function around native `express.set()` method.
