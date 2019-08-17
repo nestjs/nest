@@ -248,6 +248,11 @@ export class MiddlewareModule {
   ) {
     const prefix = this.config.getGlobalPrefix();
     const basePath = validatePath(prefix);
+    if (basePath && path === '/*') {
+      // strip slash when a wildcard is being used
+      // and global prefix has been set
+      path = '*';
+    }
     router(basePath + path, proxy);
   }
 }

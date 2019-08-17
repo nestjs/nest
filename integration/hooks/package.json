@@ -7,16 +7,16 @@
     "start": "ts-node src/main"
   },
   "dependencies": {
-    "@nestjs/common": "6.5.2",
-    "@nestjs/core": "6.5.2",
+    "@nestjs/common": "6.5.3",
+    "@nestjs/core": "6.5.3",
     "class-transformer": "0.2.3",
-    "class-validator": "0.9.1",
+    "class-validator": "0.10.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "7.10.6",
+    "@types/node": "7.10.7",
     "supertest": "4.0.2",
     "ts-node": "8.3.0"
   }

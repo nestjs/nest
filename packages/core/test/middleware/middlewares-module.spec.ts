@@ -81,6 +81,10 @@ describe('MiddlewareModule', () => {
       const useSpy = sinon.spy();
       const app = { use: useSpy };
 
+      const nestContainer = new NestContainer();
+      // tslint:disable-next-line:no-string-literal
+      middlewareModule['container'] = nestContainer;
+
       expect(
         middlewareModule.registerRouteMiddleware(
           new MiddlewareContainer(),
