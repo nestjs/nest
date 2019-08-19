@@ -1,5 +1,4 @@
-import * as util from 'util';
-import { isUndefined, isNil, isObject } from '@nestjs/common/utils/shared.utils';
+import { isUndefined, isNil } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import { Logger } from '@nestjs/common/services/logger.service';
 import {
@@ -208,8 +207,6 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
 
     // assign the correlation id
     packet.response.headers[KafkaHeaders.CORRELATION_ID] = Buffer.from(correlationId);
-
-    this.logger.error(util.format('sendMessage() packet %o', packet));
 
     // send
     this.producer.send(Object.assign({

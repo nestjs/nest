@@ -1,4 +1,3 @@
-import * as util from 'util';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -26,11 +25,6 @@ import {
 } from '../external/kafka.interface';
 import { KafkaHeaders } from '../enums';
 
-interface KafkaPacket {
-  replyTopic?: string;
-  replyPartition?: number;
-}
-
 let kafkaPackage: any = {};
 
 export class ClientKafka extends ClientProxy {
@@ -44,7 +38,7 @@ export class ClientKafka extends ClientProxy {
 
   private consumerAssignments: {[key: string]: number[]} = {};
 
-  private static REPLY_PATTERN_AFFIX: string = '.reply';
+  private static readonly REPLY_PATTERN_AFFIX: string = '.reply';
 
   constructor(protected readonly options: KafkaOptions['options']) {
     super();
