@@ -85,7 +85,7 @@ export class KafkaController implements OnModuleInit {
       }),
     }).toPromise();
 
-    await Bluebird.delay(30000);
+    // await Bluebird.delay(30000);
 
     // this.logger.error(util.format('@Query math.sum result %o', result));
 

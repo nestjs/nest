@@ -206,7 +206,7 @@ export class ClientKafka extends ClientProxy {
     }, this.options.send || {}));
   }
 
-  private getReplyPartition(topic: string): number {
+  private getReplyPartition(topic: string): string {
     // this.consumer.describeGroup().then((description) => {
     //   // this.logger.error(util.format('getReplyTopicPartition(): groupDescription: %o', description));
 
@@ -235,7 +235,7 @@ export class ClientKafka extends ClientProxy {
       throw new Error(`Unable to send the message request because the client consumer subscribed to the topic (${topic}) is not assigned any partitions.`);
     }
 
-    return topicAssignments[0];
+    return topicAssignments[0].toString();
   }
 
   protected publish(
