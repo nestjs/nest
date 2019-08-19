@@ -1,8 +1,7 @@
 import * as util from 'util';
-import { isUndefined, isNil } from '@nestjs/common/utils/shared.utils';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { Observable } from 'rxjs';
 
 import {
   KAFKA_DEFAULT_BROKER,
@@ -11,6 +10,8 @@ import {
 } from '../constants';
 import { ReadPacket, KafkaOptions, WritePacket, PacketId } from '../interfaces';
 import { ClientProxy } from './client-proxy';
+
+import KafkaSerializer from '../helpers/kafka-serializer';
 
 import {
   KafkaConfig,
@@ -145,7 +146,24 @@ export class ClientKafka extends ClientProxy {
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
     return (payload: EachMessagePayload) => {
-      const packet = this.deserialize(payload);
+      // create response from a deserialized payload
+      const response = KafkaSerializer.deserialize<KafkaMessage>(Object.assign(payload.message, {
+        topic: payload.topic,
+        partition: payload.partition
+      }));
+
+      // construct packet
+      const packet = {
+        id: undefined,
+        pattern: payload.topic,
+        response
+      };
+
+      // parse the correlation id
+      if (!isUndefined(packet.response.headers[KafkaHeaders.CORRELATION_ID])) {
+        // assign the correlation id as the packet id
+        packet.id = packet.response.headers[KafkaHeaders.CORRELATION_ID].toString();
+      }
 
       const callback = this.routingMap.get(packet.id);
 
@@ -165,38 +183,16 @@ export class ClientKafka extends ClientProxy {
     };
   }
 
-  private deserialize(payload: EachMessagePayload): WritePacket<Message> & PacketId {
-    // build
-    const packet = {
-      id: undefined,
-      pattern: payload.topic,
-      response: Object.assign(payload.message, {
-        topic: payload.topic,
-        partition: payload.partition
-      })
-    };
-
-    // parse the correlation id
-    if (!isUndefined(packet.response.headers[KafkaHeaders.CORRELATION_ID])) {
-      // assign the correlation id as the packet id
-      packet.id = packet.response.headers[KafkaHeaders.CORRELATION_ID].toString();
-    }
-
-    return packet;
-  }
-
   protected dispatchEvent(packet: ReadPacket & PacketId): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
 
     // assign a packet id
     packet = this.assignPacketId(packet);
 
-    // create headers if they don't exist
-    if (isUndefined(packet.data.headers)){
-      packet.data.headers = {};
-    }
+    // serialize for sanity
+    packet.data = KafkaSerializer.serialize<Message>(packet.data);
 
-    // correlate
+    // correlate via kafka headers
     packet.data.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
 
     // send
@@ -243,18 +239,17 @@ export class ClientKafka extends ClientProxy {
     callback: (packet: WritePacket) => any,
   ): Function {
     try {
+      // create packet
       const packet = this.assignPacketId(partialPacket);
+      packet.data = KafkaSerializer.serialize<Message>(packet.data);
+
+      // get the response meta
       const pattern = this.normalizePattern(partialPacket.pattern);
       const replyTopic = this.getReplyPattern(pattern, ClientKafka.REPLY_PATTERN_AFFIX);
       const replyPartition = this.getReplyPartition(replyTopic);
 
       // set the route
       this.routingMap.set(packet.id, callback);
-
-      // create headers if they don't exist
-      if (isUndefined(packet.data.headers)){
-        packet.data.headers = {};
-      }
 
       // correlate
       packet.data.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
