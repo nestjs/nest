@@ -1,5 +1,5 @@
 import * as util from 'util';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isUndefined, isNil } from '@nestjs/common/utils/shared.utils';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { Observable } from 'rxjs';
@@ -20,7 +20,8 @@ import {
   EachMessagePayload,
   Message,
   KafkaMessage,
-  logLevel
+  logLevel,
+  ConsumerGroupJoinEvent
 } from '../external/kafka.interface';
 import { KafkaHeaders } from '../enums';
 
@@ -39,6 +40,10 @@ export class ClientKafka extends ClientProxy {
   private readonly brokers: string[];
   private readonly clientId: string;
   private readonly groupId: string;
+
+  private consumerAssignments: {[key: string]: number[]} = {};
+
+  private static REPLY_PATTERN_AFFIX: string = '.reply';
 
   constructor(protected readonly options: KafkaOptions['options']) {
     super();
@@ -66,22 +71,44 @@ export class ClientKafka extends ClientProxy {
       return this.producer;
     }
     this.client = this.createClient();
+
     this.producer = this.client.producer(this.options.producer || {});
     this.consumer = this.client.consumer(Object.assign(this.options.consumer || {}, {
       groupId: this.groupId
     }));
 
+    // set member assignments on join and rebalance
+    this.consumer.on(this.consumer.events.GROUP_JOIN, (data: ConsumerGroupJoinEvent) => {
+      this.consumerAssignments = data.payload.memberAssignment;
+    });
+
+    // connect the producer and consumer
     await this.producer.connect();
     await this.consumer.connect();
 
-    // @TODO: Use descriptors to define the reply topics
-    // Run the consumer
-    await this.consumer.subscribe({topic: 'math.sum.reply'});
+    // bind the topics
+    await this.bindTopics();
+
+    return this.producer;
+  }
+
+  public async bindTopics(): Promise<void> {
+    const requestPatterns = [...this.requestMap.keys()];
+
+    await Promise.all(requestPatterns.map(async requestPattern => {
+      // get the reply pattern
+      const replyPattern = this.getReplyPattern(requestPattern, ClientKafka.REPLY_PATTERN_AFFIX);
+
+      // subscribe to the pattern of the topic
+      await this.consumer.subscribe({
+        topic: replyPattern
+      });
+    }));
+
+    // run the consumer to start listening on the reply topics
     await this.consumer.run(Object.assign(this.options.run || {}, {
       eachMessage: this.createResponseCallback()
     }));
-
-    return this.producer;
   }
 
   public createClient<T = any>(): T {
@@ -118,18 +145,9 @@ export class ClientKafka extends ClientProxy {
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
     return (payload: EachMessagePayload) => {
-      // const { err, response, isDisposed, id } = JSON.parse(
-      //   buffer.toString(),
-      // ) as WritePacket & PacketId;
-
       const packet = this.deserialize(payload);
 
-      this.logger.error(util.format('createResponseCallback() fn() packet: %o', packet));
-
       const callback = this.routingMap.get(packet.id);
-
-      this.logger.error(util.format('createResponseCallback() fn() this.routingMap: %o', this.routingMap));
-      this.logger.error(util.format('createResponseCallback() fn() callback: %o', callback));
 
       if (!callback) {
         return undefined;
@@ -188,19 +206,37 @@ export class ClientKafka extends ClientProxy {
     }, this.options.send || {}));
   }
 
-  private getReplyTopic(pattern: string): string {
-    return `${pattern}.reply`;
-  }
-
-  private getReplyPartition(topic: string): string {
+  private getReplyPartition(topic: string): number {
     // this.consumer.describeGroup().then((description) => {
-    //   this.logger.error(util.format('getReplyTopicPartition(): topic: %s groupDescription: %o', topic, description));
+    //   // this.logger.error(util.format('getReplyTopicPartition(): groupDescription: %o', description));
+
+    //   description.members.forEach((member) => {
+    //     // const memberMetadata =  kafkaPackage.AssignerProtocol.MemberMetadata.decode(member.memberMetadata);
+    //     const memberAssignment = kafkaPackage.AssignerProtocol.MemberAssignment.decode(member.memberAssignment);
+
+    //     this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i]: %o', member));
+    //     // this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i] metadata: %o', memberMetadata));
+    //     this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i] assignment: %o', memberAssignment));
+    //   });
     // });
 
-    return '0';
-  }
+    // return 0;
 
-  // private getReplyTopic
+    // get topic assignment
+    const topicAssignments = this.consumerAssignments[topic];
+
+    // throw error
+    if (isUndefined(topicAssignments)) {
+      throw new Error(`Unable to send the message request because the client consumer is not subscribed to the topic (${topic}).`);
+    }
+
+    // if the current member isn't listening to any partitions on the topic then throw an error.
+    if (isUndefined(topicAssignments[0])) {
+      throw new Error(`Unable to send the message request because the client consumer subscribed to the topic (${topic}) is not assigned any partitions.`);
+    }
+
+    return topicAssignments[0];
+  }
 
   protected publish(
     partialPacket: ReadPacket,
@@ -209,17 +245,8 @@ export class ClientKafka extends ClientProxy {
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
-      const replyTopic = this.getReplyTopic(pattern);
+      const replyTopic = this.getReplyPattern(pattern, ClientKafka.REPLY_PATTERN_AFFIX);
       const replyPartition = this.getReplyPartition(replyTopic);
-
-      // subscribe
-      // this.consumer.subscribe({
-      //   topic: replyTopic
-      // }).then(() => {
-      //   return this.consumer.run(Object.assign(this.options.run || {}, {
-      //     eachMessage: this.createResponseCallback()
-      //   }));
-      // });
 
       // set the route
       this.routingMap.set(packet.id, callback);
@@ -233,8 +260,6 @@ export class ClientKafka extends ClientProxy {
       packet.data.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
       packet.data.headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
       packet.data.headers[KafkaHeaders.REPLY_PARTITION] = replyPartition;
-
-      this.logger.error(util.format('publish() packet %o', packet));
 
       // send through unhandled promise
       this.producer.send(Object.assign({

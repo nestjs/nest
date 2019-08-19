@@ -77,7 +77,19 @@ export class ListenersController {
     } of this.metadataExplorer.scanForClientHooks(instance)) {
       const client = this.clientFactory.create(metadata);
 
+      const messageRequests = this.metadataExplorer.exploreMessageRequests(
+        instance,
+      );
+
+      messageRequests.forEach(messageRequest => {
+        client.addMessageRequest(
+          messageRequest.requestPattern,
+          messageRequest.replyPattern,
+        );
+      });
+
       this.clientsContainer.addClient(client);
+
       this.assignClientToInstance(instance, property, client);
     }
   }

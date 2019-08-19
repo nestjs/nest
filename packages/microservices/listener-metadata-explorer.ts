@@ -6,6 +6,8 @@ import {
   CLIENT_METADATA,
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
+  REQUEST_PATTERN_METADATA,
+  REPLY_PATTERN_METADATA,
 } from './constants';
 import { PatternHandler } from './enums/pattern-handler.enum';
 import { ClientOptions } from './interfaces/client-metadata.interface';
@@ -23,6 +25,11 @@ export interface PatternProperties {
   targetCallback: (...args: any[]) => any;
 }
 
+export interface MessageRequestProperties {
+  requestPattern: PatternMetadata;
+  replyPattern: PatternMetadata;
+}
+
 export class ListenerMetadataExplorer {
   constructor(private readonly metadataScanner: MetadataScanner) {}
 
@@ -32,12 +39,11 @@ export class ListenerMetadataExplorer {
       Controller,
       PatternProperties
     >(instance, instancePrototype, method =>
-      this.exploreMethodMetadata(instance, instancePrototype, method),
+      this.exploreMethodMetadata(instancePrototype, method),
     );
   }
 
   public exploreMethodMetadata(
-    instance: object,
     instancePrototype: any,
     methodKey: string,
   ): PatternProperties {
@@ -77,5 +83,42 @@ export class ListenerMetadataExplorer {
       );
       yield { property, metadata };
     }
+  }
+
+  public exploreMessageRequests(
+    instance: Controller,
+  ): MessageRequestProperties[] {
+    const instancePrototype = Object.getPrototypeOf(instance);
+    return this.metadataScanner.scanFromPrototype<
+      Controller,
+      MessageRequestProperties
+    >(instance, instancePrototype, method =>
+      this.exploreMessageRequestMethodMetadata(instancePrototype, method),
+    );
+  }
+
+  public exploreMessageRequestMethodMetadata(
+    instancePrototype: any,
+    methodKey: string,
+  ): MessageRequestProperties {
+    const targetCallback = instancePrototype[methodKey];
+
+    const requestPattern = Reflect.getMetadata(
+      REQUEST_PATTERN_METADATA,
+      targetCallback,
+    );
+    const replyPattern = Reflect.getMetadata(
+      REPLY_PATTERN_METADATA,
+      targetCallback,
+    );
+
+    if (isUndefined(requestPattern) || isUndefined(replyPattern)) {
+      return;
+    }
+
+    return {
+      requestPattern,
+      replyPattern,
+    };
   }
 }

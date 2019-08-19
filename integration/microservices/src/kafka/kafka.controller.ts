@@ -5,12 +5,14 @@ import {
   EventPattern,
   MessagePattern,
   Transport,
+  MessageRequest,
 } from '@nestjs/microservices';
 import { Logger } from '@nestjs/common/services/logger.service';
 import * as util from 'util';
 
 import { Observable } from 'rxjs';
 import * as uuid from 'uuid';
+import * as Bluebird from 'bluebird';
 
 @Controller()
 export class KafkaController implements OnModuleInit {
@@ -69,6 +71,7 @@ export class KafkaController implements OnModuleInit {
 
   @Post()
   @HttpCode(200)
+  @MessageRequest('math.sum', 'math.sum.reply')
   async call(
     @Query('command') cmd,
     @Body() data: number[],
@@ -82,7 +85,9 @@ export class KafkaController implements OnModuleInit {
       }),
     }).toPromise();
 
-    this.logger.error(util.format('@Query math.sum result %o', result));
+    await Bluebird.delay(30000);
+
+    // this.logger.error(util.format('@Query math.sum result %o', result));
 
     const sum = JSON.parse(result.value.toString());
 
@@ -91,7 +96,7 @@ export class KafkaController implements OnModuleInit {
 
   @MessagePattern('math.sum')
   mathSum(data: any){
-    this.logger.error(util.format('@MessagePattern math.sum data %o', data));
+    // this.logger.error(util.format('@MessagePattern math.sum data %o', data));
 
     const value = JSON.parse(data.value);
 
@@ -103,6 +108,7 @@ export class KafkaController implements OnModuleInit {
   }
 
   @Post('notify')
+  @MessageRequest('test.one', 'test.one.reply')
   async sendNotification(): Promise<any> {
     return this.client.emit('notification', [{
       key: 'notify',
