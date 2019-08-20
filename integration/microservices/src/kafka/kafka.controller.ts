@@ -11,7 +11,6 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import * as util from 'util';
 
 import { Observable } from 'rxjs';
-import * as uuid from 'uuid';
 import * as Bluebird from 'bluebird';
 
 @Controller()
@@ -41,8 +40,6 @@ export class KafkaController implements OnModuleInit {
     @Query('command') cmd,
     @Body() data: number[],
   ): Promise<Observable<any>> {
-    const key = uuid.v4(); // stick to a single partition
-
     const result = await this.client.send('math.sum', {
       key: '1',
       value: {
