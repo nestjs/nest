@@ -46,7 +46,7 @@
     "ts-jest": "24.0.2",
     "ts-node": "8.1.0",
     "tsconfig-paths": "3.8.0",
-    "tslint": "5.16.0",
+    "tslint": "5.19.0",
     "typescript": "3.5.3",
     "wait-on": "3.3.0"
   },
