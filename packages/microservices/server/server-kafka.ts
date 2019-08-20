@@ -20,7 +20,7 @@ import { CustomTransportStrategy, KafkaOptions, ReadPacket, PacketId, WritePacke
 import { KafkaHeaders } from '../enums';
 import { Server } from './server';
 
-import KafkaSerializer from '../helpers/kafka-serializer';
+import { KafkaSerializer } from '../helpers/kafka-serializer';
 
 interface KafkaPacket {
   replyTopic?: string;

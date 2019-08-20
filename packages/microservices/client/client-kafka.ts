@@ -1,3 +1,4 @@
+import * as util from 'util';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -10,7 +11,7 @@ import {
 import { ReadPacket, KafkaOptions, WritePacket, PacketId } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
-import KafkaSerializer from '../helpers/kafka-serializer';
+import { KafkaSerializer } from '../helpers/kafka-serializer';
 
 import {
   KafkaConfig,
@@ -201,11 +202,11 @@ export class ClientKafka extends ClientProxy {
     //   // this.logger.error(util.format('getReplyTopicPartition(): groupDescription: %o', description));
 
     //   description.members.forEach((member) => {
-    //     // const memberMetadata =  kafkaPackage.AssignerProtocol.MemberMetadata.decode(member.memberMetadata);
+    //     const memberMetadata =  kafkaPackage.AssignerProtocol.MemberMetadata.decode(member.memberMetadata);
     //     const memberAssignment = kafkaPackage.AssignerProtocol.MemberAssignment.decode(member.memberAssignment);
 
     //     this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i]: %o', member));
-    //     // this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i] metadata: %o', memberMetadata));
+    //     this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i] metadata: %o', memberMetadata));
     //     this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i] assignment: %o', memberAssignment));
     //   });
     // });

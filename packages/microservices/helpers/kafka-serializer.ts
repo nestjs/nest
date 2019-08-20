@@ -1,6 +1,6 @@
 import { isUndefined, isNil, isObject, isString, isFunction } from '@nestjs/common/utils/shared.utils';
 
-export default class KafkaSerializer {
+export class KafkaSerializer {
   public static deserialize<T>(data: any): T {
     // parse the value
     data.value = this.decode(data.value);
