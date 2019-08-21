@@ -24,6 +24,8 @@ import {
   ConsumerGroupJoinEvent
 } from '../external/kafka.interface';
 import { KafkaHeaders } from '../enums';
+import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
+import { InvalidKafkaClientTopicPartitionException } from '../errors/invalid-kafka-client-topic-partition.exception';
 
 let kafkaPackage: any = {};
 
@@ -201,39 +203,17 @@ export class ClientKafka extends ClientProxy {
   }
 
   private getReplyPartition(topic: string): string {
-    // this.consumer.describeGroup().then((description) => {
-    //   // this.logger.error(util.format('getReplyTopicPartition(): groupDescription: %o', description));
-
-    //   description.members.forEach((member) => {
-    //     const memberMetadata =  kafkaPackage.AssignerProtocol.MemberMetadata.decode(member.memberMetadata);
-    //     const memberAssignment = kafkaPackage.AssignerProtocol.MemberAssignment.decode(member.memberAssignment);
-
-    //     // this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i]: %o', member));
-    //     this.logger.error(util.format('getReplyTopicPartition(): memberId: %s metadata: %o', member.memberId, {
-    //       topics: memberMetadata.topics,
-    //       userData: memberMetadata.userData.toString()
-    //     }));
-
-    //     this.logger.error(util.format('getReplyTopicPartition(): memberId: %s assignment: %o', member.memberId, {
-    //       assignment: memberAssignment.assignment,
-    //       userData: memberAssignment.userData.toString()
-    //     }));
-    //   });
-    // });
-
-    // return 0;
-
     // get topic assignment
     const topicAssignments = this.consumerAssignments[topic];
 
     // throw error
     if (isUndefined(topicAssignments)) {
-      throw new Error(`Unable to send the message request because the client consumer is not subscribed to the topic (${topic}).`);
+      throw new InvalidKafkaClientTopicException(topic);
     }
 
     // if the current member isn't listening to any partitions on the topic then throw an error.
     if (isUndefined(topicAssignments[0])) {
-      throw new Error(`Unable to send the message request because the client consumer subscribed to the topic (${topic}) is not assigned any partitions.`);
+      throw new InvalidKafkaClientTopicPartitionException(topic);
     }
 
     return topicAssignments[0].toString();
@@ -272,7 +252,7 @@ export class ClientKafka extends ClientProxy {
         this.routingMap.delete(packet.id);
       };
     } catch (err) {
-      this.logger.error(err);
+      callback({ err });
     }
   }
 }
