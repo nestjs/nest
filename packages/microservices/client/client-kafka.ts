@@ -1,4 +1,3 @@
-import * as util from 'util';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -11,7 +10,7 @@ import {
 import { ReadPacket, KafkaOptions, WritePacket, PacketId } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
-import { KafkaSerializer } from '../helpers/kafka-serializer';
+import { KafkaSerializer, KafkaRoundRobinByTimePartitionAssigner } from '../helpers';
 
 import {
   KafkaConfig,
@@ -69,7 +68,11 @@ export class ClientKafka extends ClientProxy {
     this.client = this.createClient();
 
     this.producer = this.client.producer(this.options.producer || {});
-    this.consumer = this.client.consumer(Object.assign(this.options.consumer || {}, {
+    this.consumer = this.client.consumer(Object.assign({
+      partitionAssigners: [
+        KafkaRoundRobinByTimePartitionAssigner
+      ]
+    }, this.options.consumer || {}, {
       groupId: this.groupId
     }));
 
@@ -205,9 +208,16 @@ export class ClientKafka extends ClientProxy {
     //     const memberMetadata =  kafkaPackage.AssignerProtocol.MemberMetadata.decode(member.memberMetadata);
     //     const memberAssignment = kafkaPackage.AssignerProtocol.MemberAssignment.decode(member.memberAssignment);
 
-    //     this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i]: %o', member));
-    //     this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i] metadata: %o', memberMetadata));
-    //     this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i] assignment: %o', memberAssignment));
+    //     // this.logger.error(util.format('getReplyTopicPartition(): groupDescription.member[i]: %o', member));
+    //     this.logger.error(util.format('getReplyTopicPartition(): memberId: %s metadata: %o', member.memberId, {
+    //       topics: memberMetadata.topics,
+    //       userData: memberMetadata.userData.toString()
+    //     }));
+
+    //     this.logger.error(util.format('getReplyTopicPartition(): memberId: %s assignment: %o', member.memberId, {
+    //       assignment: memberAssignment.assignment,
+    //       userData: memberAssignment.userData.toString()
+    //     }));
     //   });
     // });
 

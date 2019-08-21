@@ -140,7 +140,7 @@ export interface Cluster {
 
 export interface Assignment { [topic: string]: number[]; }
 
-export interface GroupMember { memberId: string; }
+export interface GroupMember { memberId: string; memberMetadata: MemberMetadata; }
 
 export interface GroupMemberAssignment { memberId: string; memberAssignment: Buffer; }
 
