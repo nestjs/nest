@@ -7,6 +7,7 @@ import { UserEntity } from './entities/user.entity';
 import { BusinessEntity } from './entities/business.entity';
 import * as util from 'util';
 import { UserDto } from './dtos/user.dto';
+import { KafkaClient } from 'kafka-node';
 
 @Controller()
 export class KafkaMessagesController {
@@ -43,5 +44,8 @@ export class KafkaMessagesController {
   @MessagePattern('business.create')
   async createBusiness(params: {value: {business: BusinessDto}}) {
     return new BusinessEntity(params.value.business);
+  }
+
+  async doSomething() {
   }
 }

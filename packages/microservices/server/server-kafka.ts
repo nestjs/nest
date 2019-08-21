@@ -31,9 +31,9 @@ let kafkaPackage: any = {};
 
 export class ServerKafka extends Server implements CustomTransportStrategy {
   protected readonly logger = new Logger(ServerKafka.name);
-  private client: Kafka = null;
-  private consumer: Consumer = null;
-  private producer: Producer = null;
+  public client: Kafka = null;
+  public consumer: Consumer = null;
+  public producer: Producer = null;
   private readonly brokers: string[];
   private readonly clientId: string;
   private readonly groupId: string;
