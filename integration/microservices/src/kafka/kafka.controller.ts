@@ -1,20 +1,18 @@
-import { Body, Controller, HttpCode, Post, Query, OnModuleInit } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
   ClientProxy,
-  EventPattern,
-  MessagePattern,
   Transport,
   MessageRequest,
 } from '@nestjs/microservices';
 import { Logger } from '@nestjs/common/services/logger.service';
-import * as util from 'util';
 
 import { Observable } from 'rxjs';
-import * as Bluebird from 'bluebird';
+import { UserDto } from './dtos/user.dto';
+import { BusinessDto } from './dtos/business.dto';
 
 @Controller()
-export class KafkaController implements OnModuleInit {
+export class KafkaController {
   protected readonly logger = new Logger(KafkaController.name);
   static IS_NOTIFIED = false;
   static MATH_SUM = 0;
@@ -29,10 +27,6 @@ export class KafkaController implements OnModuleInit {
   })
   private readonly client: ClientProxy;
 
-  public async onModuleInit(){
-    await this.client.connect();
-  }
-
   @Post()
   @HttpCode(200)
   @MessageRequest('math.sum', 'math.sum.reply')
@@ -46,19 +40,7 @@ export class KafkaController implements OnModuleInit {
         numbers: data,
       },
     }).toPromise();
-
-    // await Bluebird.delay(30000);
-
-    this.logger.error(util.format('@Query math.sum result %o', result));
-
     return result.value;
-  }
-
-  @MessagePattern('math.sum')
-  mathSum(data: any){
-    this.logger.error(util.format('@MessagePattern math.sum data %o', data));
-
-    return (data.value.numbers || []).reduce((a, b) => a + b);
   }
 
   @Post('notify')
@@ -66,8 +48,31 @@ export class KafkaController implements OnModuleInit {
     return this.client.emit('notify', {notify: true});
   }
 
-  @EventPattern('notify')
-  eventHandler(data: any) {
-    KafkaController.IS_NOTIFIED = data.value.notify;
+  // Complex data to send.
+  @Post('/user')
+  @HttpCode(200)
+  @MessageRequest('user.create', 'user.create.reply')
+  async createUser(@Body() user: UserDto): Promise<Observable<any>> {
+    const result = await this.client.send('user.create', {
+      key: '1',
+      value: {
+        user,
+      },
+    }).toPromise();
+    return result.value;
+  }
+
+  // Complex data to send.
+  @Post('/business')
+  @HttpCode(200)
+  @MessageRequest('business.create', 'business.create.reply')
+  async createBusiness(@Body() business: BusinessDto) {
+    const result = await this.client.send('business.create', {
+      key: '1',
+      value: {
+        business,
+      },
+    }).toPromise();
+    return result.value;
   }
 }
