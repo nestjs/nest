@@ -18,17 +18,17 @@ import { UserDto } from '../src/kafka/dtos/user.dto';
 import { UserEntity } from '../src/kafka/entities/user.entity';
 import { BusinessDto } from '../src/kafka/dtos/business.dto';
 import { BusinessEntity } from '../src/kafka/entities/business.entity';
+import * as async from 'async';
 
 @Catch()
 class KafkaExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost): any {
-    console.log(exception);
+    throw exception;
   }
 }
 @Catch()
 class RpcErrorFilter implements RpcExceptionFilter {
   catch(exception: RpcException): Observable<any> {
-    console.log(exception);
     return throwError(exception);
   }
 }
@@ -108,11 +108,25 @@ describe('Kafka transport', () => {
   }).timeout(50000);
 
   it(`/POST (async command create business`, () => {
-    const newBusiness: BusinessEntity = new BusinessEntity(businessDto);
     return request(server)
       .post('/business')
       .send(businessDto)
       .expect(200);
+  }).timeout(50000);
+
+  it(`/POST (async command create user) Concurrency Test`, (done) => {
+    const tasks = [];
+    for (let concurrencyKey = 0; concurrencyKey < 100; concurrencyKey++) {
+      tasks.push((cb) => {
+        const innerUserDto = JSON.parse(JSON.stringify(userDto));
+        innerUserDto.name += `+${concurrencyKey}`;
+        request(server)
+          .post('/user')
+          .send(userDto)
+          .expect(200, cb);
+      });
+    }
+    async.parallel(tasks, done);
   }).timeout(50000);
 
   after(`Stopping Kafka app`, async () => {
