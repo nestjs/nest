@@ -192,8 +192,8 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     replyPartition: string,
     correlationId: string
   ): void {
-    // do nothing when it is disposed
-    if (packet.isDisposed) {
+    // do nothing when there is an error or it is disposed
+    if (packet.err || packet.isDisposed) {
       return;
     }
 
