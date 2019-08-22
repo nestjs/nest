@@ -1,12 +1,7 @@
 import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
   INestApplication,
-  RpcExceptionFilter,
 } from '@nestjs/common';
-import { RpcException, Transport } from '@nestjs/microservices';
+import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
@@ -15,7 +10,6 @@ import { KafkaMessagesController } from '../src/kafka/kafka.messages.controller'
 import { UserDto } from '../src/kafka/dtos/user.dto';
 import { UserEntity } from '../src/kafka/entities/user.entity';
 import { BusinessDto } from '../src/kafka/dtos/business.dto';
-import * as async from 'async';
 
 describe('Kafka transport', () => {
   let server;
