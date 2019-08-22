@@ -5,7 +5,7 @@ import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
  * Makes outgoing to incoming messages that fulfils the chosen patterns.
  */
 export const MessageRequest = <T = PatternMetadata | string>(
-  requestMetadata?: T,
+  requestMetadata: T,
   replyMetadata?: T
 ): MethodDecorator => {
   return (

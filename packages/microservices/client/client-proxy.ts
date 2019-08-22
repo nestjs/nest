@@ -29,10 +29,14 @@ export abstract class ClientProxy {
 
   public addMessageRequest(
     requestPattern: any,
-    replyPattern: any
+    replyPattern?: any
   ) {
     const request = this.normalizePattern(requestPattern);
-    const reply = this.normalizePattern(replyPattern);
+    let reply = null;
+
+    if (!isNil(replyPattern)) {
+      reply = this.normalizePattern(replyPattern);
+    }
 
     this.requestMap.set(request, reply);
   }
