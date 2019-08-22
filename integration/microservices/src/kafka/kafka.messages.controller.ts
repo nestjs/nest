@@ -1,4 +1,3 @@
-import * as util from 'util';
 import { Controller } from '@nestjs/common';
 import { Client, ClientProxy, EventPattern, MessagePattern, MessageRequest, Transport } from '@nestjs/microservices';
 import { Logger } from '@nestjs/common/services/logger.service';
@@ -7,7 +6,6 @@ import { BusinessDto } from './dtos/business.dto';
 import { UserEntity } from './entities/user.entity';
 import { BusinessEntity } from './entities/business.entity';
 import { UserDto } from './dtos/user.dto';
-import { KafkaClient } from 'kafka-node';
 import { map } from 'bluebird';
 
 @Controller()
