@@ -71,7 +71,9 @@ export const KafkaRoundRobinByTimePartitionAssigner: any = (config: {cluster: Cl
     }));
   },
   protocol(subscription: { topics: string[]; userData: Buffer }): GroupState {
-    subscription.userData = Buffer.from(JSON.stringify({time}));
+    subscription.userData = Buffer.from(JSON.stringify({
+      time: this.getTime()
+    }));
 
     return {
       name: this.name,
@@ -81,5 +83,8 @@ export const KafkaRoundRobinByTimePartitionAssigner: any = (config: {cluster: Cl
         userData: subscription.userData,
       }),
     };
+  },
+  getTime(): [number, number] {
+    return time;
   }
 });
