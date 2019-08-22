@@ -156,7 +156,18 @@ describe('Kafka transport', () => {
       .expect(200);
   });
 
+  it(`/POST (sync command create user) Concurrency Test`, async () => {
+    const promises = [];
+    for (let concurrencyKey = 0; concurrencyKey < 100; concurrencyKey++) {
+      const innerUserDto = JSON.parse(JSON.stringify(userDto));
+      innerUserDto.name += `+${concurrencyKey}`;
+      promises.push(request(server).post('/user').send(userDto).expect(200));
+    }
+    await Promise.all(promises);
+  });
+
   after(`Stopping Kafka app`, async () => {
     await app.close();
   });
+
 }).timeout(30000);
