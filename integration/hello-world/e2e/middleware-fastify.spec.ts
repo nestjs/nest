@@ -25,9 +25,9 @@ class TestController {
 class TestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply((req, res, next) => res.end(SCOPED_VALUE))
+      .apply((req, res, next) => res.send(SCOPED_VALUE))
       .forRoutes(TestController)
-      .apply((req, res, next) => res.end(RETURN_VALUE))
+      .apply((req, res, next) => res.send(RETURN_VALUE))
       .forRoutes('*');
   }
 }

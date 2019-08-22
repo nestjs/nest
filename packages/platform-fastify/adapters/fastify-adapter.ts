@@ -130,19 +130,19 @@ export class FastifyAdapter extends AbstractHttpAdapter {
       const re = pathToRegexp(path);
       const normalizedPath = path === '/*' ? '' : path;
 
-      this.instance.use(normalizedPath, (req, res, next) => {
-        const queryParamsIndex = req.originalUrl.indexOf('?');
+      this.instance.addHook('preHandler', (req, res, next) => {
+        const queryParamsIndex = req.raw.originalUrl.indexOf('?');
         const pathname =
           queryParamsIndex >= 0
-            ? req.originalUrl.slice(0, queryParamsIndex)
-            : req.originalUrl;
+            ? req.raw.originalUrl.slice(0, queryParamsIndex)
+            : req.raw.originalUrl;
 
         if (!re.exec(pathname + '/') && normalizedPath) {
           return next();
         }
         if (
           requestMethod === RequestMethod.ALL ||
-          req.method === RequestMethod[requestMethod]
+          req.raw.method === RequestMethod[requestMethod]
         ) {
           return callback(req, res, next);
         }
