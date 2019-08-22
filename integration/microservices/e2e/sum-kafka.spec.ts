@@ -70,23 +70,65 @@ describe('Kafka transport', () => {
     await app.init();
   }).timeout(30000);
 
-  it(`/POST (async command sum)`, () => {
+  it(`/POST (sync sum kafka message)`, () => {
     return request(server)
-      .post('/?command=math.sum')
+      .post('/mathSumSyncKafkaMessage')
       .send([1, 2, 3, 4, 5])
       .expect(200)
       .expect(200, '15');
-  }).timeout(50000);
+  });
+
+  it(`/POST (sync sum kafka(ish) message without key and only the value)`, () => {
+    return request(server)
+      .post('/mathSumSyncWithoutKey')
+      .send([1, 2, 3, 4, 5])
+      .expect(200)
+      .expect(200, '15');
+  });
+
+  it(`/POST (sync sum plain object)`, () => {
+    return request(server)
+      .post('/mathSumSyncPlainObject')
+      .send([1, 2, 3, 4, 5])
+      .expect(200)
+      .expect(200, '15');
+  });
+
+  it(`/POST (sync sum array)`, () => {
+    return request(server)
+      .post('/mathSumSyncArray')
+      .send([1, 2, 3, 4, 5])
+      .expect(200)
+      .expect(200, '15');
+  });
+
+  it(`/POST (sync sum string)`, () => {
+    return request(server)
+      .post('/mathSumSyncString')
+      .send([1, 2, 3, 4, 5])
+      .expect(200)
+      .expect(200, '15');
+  });
+
+  it(`/POST (sync sum number)`, () => {
+    return request(server)
+      .post('/mathSumSyncNumber')
+      .send([12345])
+      .expect(200)
+      .expect(200, '15');
+  });
 
   it(`/POST (async event notification)`, done => {
     request(server)
       .post('/notify')
       .send()
       .end(() => {
-        expect(KafkaController.IS_NOTIFIED).to.be.true;
-        done();
+        setTimeout(() => {
+          expect(KafkaController.IS_NOTIFIED).to.be.true;
+          done();
+        }, 1000);
       });
-  }).timeout(5000);
+  });
 
   const userDto: UserDto = {
     email: 'enriquebenavidesm@gmail.com',
@@ -100,20 +142,19 @@ describe('Kafka transport', () => {
     phone: '2233441122',
     user: newUser,
   };
-  it(`/POST (async command create user)`, () => {
+  it(`/POST (sync command create user)`, () => {
     return request(server)
       .post('/user')
       .send(userDto)
       .expect(200);
-  }).timeout(50000);
+  });
 
-  it(`/POST (async command create business`, () => {
-    const newBusiness: BusinessEntity = new BusinessEntity(businessDto);
+  it(`/POST (sync command create business`, () => {
     return request(server)
       .post('/business')
       .send(businessDto)
       .expect(200);
-  }).timeout(50000);
+  });
 
   after(`Stopping Kafka app`, async () => {
     await app.close();

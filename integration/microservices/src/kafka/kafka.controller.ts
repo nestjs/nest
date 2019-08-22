@@ -1,3 +1,4 @@
+import * as util from 'util';
 import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
@@ -27,14 +28,14 @@ export class KafkaController {
   })
   private readonly client: ClientProxy;
 
-  @Post()
+  // sync send kafka message
+  @Post('mathSumSyncKafkaMessage')
   @HttpCode(200)
-  @MessageRequest('math.sum', 'math.sum.reply')
-  async call(
-    @Query('command') cmd,
+  @MessageRequest('math.sum.sync.kafka.message', 'math.sum.sync.kafka.message.reply')
+  async mathSumSyncKafkaMessage(
     @Body() data: number[],
   ): Promise<Observable<any>> {
-    const result = await this.client.send('math.sum', {
+    const result = await this.client.send('math.sum.sync.kafka.message', {
       key: '1',
       value: {
         numbers: data,
@@ -43,6 +44,67 @@ export class KafkaController {
     return result.value;
   }
 
+  // sync send kafka(ish) message without key and only the value
+  @Post('mathSumSyncWithoutKey')
+  @HttpCode(200)
+  @MessageRequest('math.sum.sync.without.key', 'math.sum.sync.without.key.reply')
+  async mathSumSyncWithoutKey(
+    @Body() data: number[],
+  ): Promise<Observable<any>> {
+    const result = await this.client.send('math.sum.sync.without.key', {
+      value: {
+        numbers: data,
+      },
+    }).toPromise();
+    return result.value;
+  }
+
+  // sync send message without key or value
+  @Post('mathSumSyncPlainObject')
+  @HttpCode(200)
+  @MessageRequest('math.sum.sync.plain.object', 'math.sum.sync.plain.object.reply')
+  async mathSumSyncPlainObject(
+    @Body() data: number[],
+  ): Promise<Observable<any>> {
+    const result = await this.client.send('math.sum.sync.plain.object', {
+      numbers: data,
+    }).toPromise();
+    return result.value;
+  }
+
+  // sync send message without key or value
+  @Post('mathSumSyncArray')
+  @HttpCode(200)
+  @MessageRequest('math.sum.sync.array', 'math.sum.sync.array.reply')
+  async mathSumSyncArray(
+    @Body() data: number[],
+  ): Promise<Observable<any>> {
+    const result = await this.client.send('math.sum.sync.array', data).toPromise();
+    return result.value;
+  }
+
+  @Post('mathSumSyncString')
+  @HttpCode(200)
+  @MessageRequest('math.sum.sync.string', 'math.sum.sync.string.reply')
+  async mathSumSyncString(
+    @Body() data: number[],
+  ): Promise<Observable<any>> {
+    // this.logger.error(util.format('mathSumSyncString() data: %o', data));
+    const result = await this.client.send('math.sum.sync.string', data.toString()).toPromise();
+    return result.value;
+  }
+
+  @Post('mathSumSyncNumber')
+  @HttpCode(200)
+  @MessageRequest('math.sum.sync.number', 'math.sum.sync.number.reply')
+  async mathSumSyncNumber(
+    @Body() data: number[],
+  ): Promise<Observable<any>> {
+    const result = await this.client.send('math.sum.sync.number', data[0]).toPromise();
+    return result.value;
+  }
+
+  // async notify
   @Post('notify')
   async sendNotification(): Promise<any> {
     return this.client.emit('notify', {notify: true});
