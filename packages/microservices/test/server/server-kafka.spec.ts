@@ -4,7 +4,6 @@ import { ServerKafka } from '../../server';
 import { Logger } from '@nestjs/common';
 import { MessageHandler } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
-import { Consumer } from 'kafka-node';
 import { KafkaSerializer } from '../../helpers';
 import { EachMessagePayload, KafkaMessage } from '@nestjs/microservices/external/kafka.interface';
 import { KafkaHeaders } from '../../enums';
