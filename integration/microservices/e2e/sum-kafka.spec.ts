@@ -11,27 +11,11 @@ import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
 import { KafkaController } from '../src/kafka/kafka.controller';
-import { APP_FILTER } from '@nestjs/core';
-import { Observable, throwError } from 'rxjs';
 import { KafkaMessagesController } from '../src/kafka/kafka.messages.controller';
 import { UserDto } from '../src/kafka/dtos/user.dto';
 import { UserEntity } from '../src/kafka/entities/user.entity';
 import { BusinessDto } from '../src/kafka/dtos/business.dto';
-import { BusinessEntity } from '../src/kafka/entities/business.entity';
 import * as async from 'async';
-
-@Catch()
-class KafkaExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost): any {
-    throw exception;
-  }
-}
-@Catch()
-class RpcErrorFilter implements RpcExceptionFilter {
-  catch(exception: RpcException): Observable<any> {
-    return throwError(exception);
-  }
-}
 
 describe('Kafka transport', () => {
   let server;
@@ -42,16 +26,6 @@ describe('Kafka transport', () => {
       controllers: [
         KafkaController,
         KafkaMessagesController,
-      ],
-      providers: [
-        {
-          provide: APP_FILTER,
-          useClass: RpcErrorFilter,
-        },
-        {
-          provide: APP_FILTER,
-          useClass: KafkaExceptionFilter,
-        },
       ],
     }).compile();
 
