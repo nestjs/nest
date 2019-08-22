@@ -1,3 +1,4 @@
+import * as util from 'util';
 import { Controller } from '@nestjs/common';
 import { Client, ClientProxy, EventPattern, MessagePattern, MessageRequest, Transport } from '@nestjs/microservices';
 import { Logger } from '@nestjs/common/services/logger.service';
@@ -5,9 +6,9 @@ import { KafkaController } from './kafka.controller';
 import { BusinessDto } from './dtos/business.dto';
 import { UserEntity } from './entities/user.entity';
 import { BusinessEntity } from './entities/business.entity';
-import * as util from 'util';
 import { UserDto } from './dtos/user.dto';
 import { KafkaClient } from 'kafka-node';
+import { map } from 'bluebird';
 
 @Controller()
 export class KafkaMessagesController {
@@ -25,9 +26,40 @@ export class KafkaMessagesController {
   })
   private readonly client: ClientProxy;
 
-  @MessagePattern('math.sum')
-  mathSum(data: any){
+  @MessagePattern('math.sum.sync.kafka.message')
+  mathSumSyncKafkaMessage(data: any){
     return (data.value.numbers || []).reduce((a, b) => a + b);
+  }
+
+  @MessagePattern('math.sum.sync.without.key')
+  mathSumSyncWithoutKey(data: any){
+    return (data.value.numbers || []).reduce((a, b) => a + b);
+  }
+
+  @MessagePattern('math.sum.sync.plain.object')
+  mathSumSyncPlainObject(data: any){
+    return (data.value.numbers || []).reduce((a, b) => a + b);
+  }
+
+  @MessagePattern('math.sum.sync.array')
+  mathSumSyncArray(data: any){
+    return (data.value || []).reduce((a, b) => a + b);
+  }
+
+  @MessagePattern('math.sum.sync.string')
+  mathSumSyncString(data: any){
+    // this.logger.error(util.format('mathSumSyncString() data: %o', data));
+    return (data.value.split(',') || []).map((i) => {
+      return parseFloat(i);
+    }).reduce((a, b) => a + b);
+  }
+
+  @MessagePattern('math.sum.sync.number')
+  mathSumSyncNumber(data: any){
+    // this.logger.error(util.format('mathSumSyncNumber() data: %o', data));
+    return (data.value.toString().split('') || []).map((i) => {
+      return parseFloat(i);
+    }).reduce((a, b) => a + b);
   }
 
   @EventPattern('notify')

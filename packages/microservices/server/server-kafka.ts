@@ -22,11 +22,6 @@ import { Server } from './server';
 
 import { KafkaSerializer } from '../helpers/kafka-serializer';
 
-interface KafkaPacket {
-  replyTopic?: string;
-  replyPartition?: string;
-}
-
 let kafkaPackage: any = {};
 
 export class ServerKafka extends Server implements CustomTransportStrategy {
@@ -132,17 +127,21 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     payload: EachMessagePayload
   ) {
     // create data from a deserialized payload
-    const payloadData = KafkaSerializer.deserialize<KafkaMessage>(Object.assign(payload.message, {
+    const message = KafkaSerializer.deserialize<KafkaMessage>(Object.assign(payload.message, {
       topic: payload.topic,
       partition: payload.partition
     }));
 
     // construct packet
-    const packet: KafkaPacket & ReadPacket<KafkaMessage> & PacketId = {
+    const packet: ReadPacket<KafkaMessage> & PacketId = {
       id: undefined,
       pattern: payload.topic,
-      data: payloadData
+      data: message
     };
+
+    // reply variables
+    let replyTopic;
+    let replyPartition;
 
     // parse the correlation id
     if (!isUndefined(packet.data.headers[KafkaHeaders.CORRELATION_ID])) {
@@ -151,11 +150,11 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
 
       // parse the topic and partition
       if (!isUndefined(packet.data.headers[KafkaHeaders.REPLY_TOPIC])) {
-        packet.replyTopic = packet.data.headers[KafkaHeaders.REPLY_TOPIC].toString();
+        replyTopic = packet.data.headers[KafkaHeaders.REPLY_TOPIC].toString();
       }
 
       if (!isUndefined(packet.data.headers[KafkaHeaders.REPLY_PARTITION])) {
-        packet.replyPartition = packet.data.headers[KafkaHeaders.REPLY_PARTITION].toString();
+        replyPartition = packet.data.headers[KafkaHeaders.REPLY_PARTITION].toString();
       }
     }
 
@@ -167,7 +166,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     }
 
     // message handlers need at least a correlation id and a reply topic
-    if (isUndefined(packet.id) || isUndefined(packet.replyTopic)) {
+    if (isUndefined(packet.id) || isUndefined(replyTopic)) {
       throw new Error('Messaging not available');
     }
 
@@ -178,8 +177,8 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     const publish = (data: any) =>
       this.sendMessage(
         data,
-        packet.replyTopic,
-        packet.replyPartition,
+        replyTopic,
+        replyPartition,
         packet.id
       );
 
@@ -192,11 +191,6 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     replyPartition: string,
     correlationId: string
   ): void {
-    // do nothing when there is an error or it is disposed
-    if (packet.err || packet.isDisposed) {
-      return;
-    }
-
     // make sure the response is an object and if not then set the value as such
     packet.response = KafkaSerializer.serialize<Message>(packet.response);
 
@@ -205,8 +199,18 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       packet.response.partition = replyPartition;
     }
 
-    // assign the correlation id
+    // set the correlation id
     packet.response.headers[KafkaHeaders.CORRELATION_ID] = Buffer.from(correlationId);
+
+    // set the nest error headers if it exists
+    if (packet.err) {
+      packet.response.headers[KafkaHeaders.NESTJS_ERR] = Buffer.from(packet.err);
+    }
+
+    // set the nest is disposed header
+    if (packet.isDisposed) {
+      packet.response.headers[KafkaHeaders.NESTJS_IS_DISPOSED] = Buffer.alloc(1);
+    }
 
     // send
     this.producer.send(Object.assign({

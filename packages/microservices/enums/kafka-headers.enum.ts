@@ -1,4 +1,5 @@
 export enum KafkaHeaders {
+  // spring headers (see https://docs.spring.io/spring-kafka/api/org/springframework/kafka/support/KafkaHeaders.html)
   ACKNOWLEDGMENT = 'kafka_acknowledgment',
   BATCH_CONVERTED_HEADERS = 'kafka_batchConvertedHeaders',
   CONSUMER = 'kafka_consumer',
@@ -28,4 +29,7 @@ export enum KafkaHeaders {
   TIMESTAMP = 'kafka_timestamp',
   TIMESTAMP_TYPE = 'kafka_timestampType',
   TOPIC = 'kafka_topic',
+  // nestjs headers
+  NESTJS_ERR = 'kafka_nestjs-err',
+  NESTJS_IS_DISPOSED = 'kafka_nestjs-is-disposed'
 }
