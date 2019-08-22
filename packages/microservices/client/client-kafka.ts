@@ -14,6 +14,7 @@ import { KafkaSerializer, KafkaRoundRobinByTimePartitionAssigner } from '../help
 
 import {
   KafkaConfig,
+  ConsumerConfig,
   Kafka,
   Producer,
   Consumer,
@@ -44,13 +45,17 @@ export class ClientKafka extends ClientProxy {
 
   constructor(protected readonly options: KafkaOptions['options']) {
     super();
-    this.brokers = this.getOptionsProp(this.options.client, 'brokers') || [KAFKA_DEFAULT_BROKER];
+
+    // get client and consumer options
+    const clientOptions = this.getOptionsProp(this.options, 'client') || {} as KafkaConfig;
+    const consumerOptions = this.getOptionsProp(this.options, 'consumer') || {} as ConsumerConfig;
+
+    // set options
+    this.brokers = (clientOptions.brokers || [KAFKA_DEFAULT_BROKER]);
 
     // append a unique id to the clientId and groupId so they don't collide with a microservices client
-    this.clientId = (this.getOptionsProp(this.options.client, 'clientId') || KAFKA_DEFAULT_CLIENT) + '-client';
-
-    // @TODO: Fix the type for consumer options.  I don't know why I am getting type errors with this.options.consumer
-    this.groupId = (this.getOptionsProp(this.options.consumer as any, 'groupId') || KAFKA_DEFAULT_GROUP) + '-client';
+    this.clientId = (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + '-client';
+    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + '-client';
 
     kafkaPackage = loadPackage('kafkajs', ClientKafka.name, () => require('kafkajs'));
   }

@@ -24,7 +24,7 @@ export class ServerFactory {
       case Transport.GRPC:
         return new ServerGrpc(options);
       case Transport.KAFKA:
-          return new ServerKafka(options);
+        return new ServerKafka(options);
       case Transport.RMQ:
         return new ServerRMQ(options);
       default:
