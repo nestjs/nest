@@ -147,7 +147,7 @@ export class ClientKafka extends ClientProxy {
   public createResponseCallback(): (payload: EachMessagePayload) => any {
     return (payload: EachMessagePayload) => {
       // create response from a deserialized payload
-      const response = KafkaSerializer.deserialize<KafkaMessage>(Object.assign(payload.message, {
+      const message = KafkaSerializer.deserialize<KafkaMessage>(Object.assign(payload.message, {
         topic: payload.topic,
         partition: payload.partition
       }));
@@ -156,29 +156,48 @@ export class ClientKafka extends ClientProxy {
       const packet = {
         id: undefined,
         pattern: payload.topic,
-        response
+        response: message
       };
 
       // parse the correlation id
-      if (!isUndefined(packet.response.headers[KafkaHeaders.CORRELATION_ID])) {
-        // assign the correlation id as the packet id
-        packet.id = packet.response.headers[KafkaHeaders.CORRELATION_ID].toString();
+      if (isUndefined(packet.response.headers[KafkaHeaders.CORRELATION_ID])) {
+        return;
       }
 
+      // parse and assign the correlation id as the packet id
+      packet.id = packet.response.headers[KafkaHeaders.CORRELATION_ID].toString();
+
+      // find the callback
       const callback = this.routingMap.get(packet.id);
-
       if (!callback) {
-        return undefined;
+        return;
       }
 
-      // @TODO: Figure out how isDisposed is supposed to work.
-      callback({
-        err: null,
-        response: packet.response
-      });
+      // declare nestjs vars
+      let err: string = null;
+      let isDisposed: boolean;
+
+      // parse the nestjs headers
+      if (!isUndefined(packet.response.headers[KafkaHeaders.NESTJS_ERR])) {
+        err = packet.response.headers[KafkaHeaders.NESTJS_ERR].toString();
+      }
+
+      if (!isUndefined(packet.response.headers[KafkaHeaders.NESTJS_IS_DISPOSED])) {
+        isDisposed = true;
+      }
+
+      // invoke the callback
+      if (err || isDisposed) {
+        return callback({
+          err,
+          response: null,
+          isDisposed
+        });
+      }
 
       callback({
-        isDisposed: true
+        err,
+        response: packet.response
       });
     };
   }
