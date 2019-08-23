@@ -149,7 +149,7 @@ describe('ClientKafka', () => {
     // });
   });
 
-  describe('updateConsumerAssignments', () => {
+  describe('setConsumerAssignments', () => {
     it('should update consumer assignments', async () => {
       await client.connect();
 
@@ -170,7 +170,7 @@ describe('ClientKafka', () => {
         }
       };
 
-      client.updateConsumerAssignments(consumerAssignments);
+      (client as any).setConsumerAssignments(consumerAssignments);
       expect((client as any).consumerAssignments).to.deep.eq(consumerAssignments.payload.memberAssignment);
     });
   });
