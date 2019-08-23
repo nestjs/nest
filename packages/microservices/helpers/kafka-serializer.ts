@@ -1,4 +1,4 @@
-import { isUndefined, isNil, isObject, isString, isFunction } from '@nestjs/common/utils/shared.utils';
+import { isUndefined, isNil, isObject, isString, isFunction, isPlainObject } from '@nestjs/common/utils/shared.utils';
 
 export class KafkaSerializer {
   public static deserialize<T>(data: any): T {
@@ -57,13 +57,13 @@ export class KafkaSerializer {
 
   public static encode(value: any): Buffer | string | null {
     if (!isNil(value) && !isString(value) && !Buffer.isBuffer(value)) {
-      if (isObject(value) || Array.isArray(value)) {
+      if (isPlainObject(value) || Array.isArray(value)) {
         // convert to stringified object
         return JSON.stringify(value);
-      } else if (isFunction(value.toString)) {
-        // convert to string
-        return value.toString();
       }
+
+      // convert to string
+      return value.toString();
     } else if (isUndefined(value)) {
       return null;
     }
