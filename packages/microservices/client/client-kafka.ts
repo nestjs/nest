@@ -31,16 +31,16 @@ let kafkaPackage: any = {};
 
 export class ClientKafka extends ClientProxy {
   protected readonly logger = new Logger(ClientKafka.name);
-  private client: Kafka = null;
-  private consumer: Consumer = null;
-  private producer: Producer = null;
+  public client: Kafka = null;
+  public consumer: Consumer = null;
+  public producer: Producer = null;
   private readonly brokers: string[];
   private readonly clientId: string;
   private readonly groupId: string;
 
-  private consumerAssignments: {[key: string]: number[]} = {};
+  protected consumerAssignments: {[key: string]: number[]} = {};
 
-  private static readonly REPLY_PATTERN_AFFIX: string = '.reply';
+  protected static readonly REPLY_PATTERN_AFFIX: string = '.reply';
 
   constructor(protected readonly options: KafkaOptions['options']) {
     super();
@@ -83,9 +83,7 @@ export class ClientKafka extends ClientProxy {
     }));
 
     // set member assignments on join and rebalance
-    this.consumer.on(this.consumer.events.GROUP_JOIN, (data: ConsumerGroupJoinEvent) => {
-      this.consumerAssignments = data.payload.memberAssignment;
-    });
+    this.consumer.on(this.consumer.events.GROUP_JOIN, this.updateConsumerAssignments);
 
     // connect the producer and consumer
     await this.producer.connect();
@@ -95,6 +93,10 @@ export class ClientKafka extends ClientProxy {
     await this.bindTopics();
 
     return this.producer;
+  }
+
+  public updateConsumerAssignments(data: ConsumerGroupJoinEvent): void {
+    this.consumerAssignments = data.payload.memberAssignment;
   }
 
   public async bindTopics(): Promise<void> {
