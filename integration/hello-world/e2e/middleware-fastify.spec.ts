@@ -9,6 +9,7 @@ import { ApplicationModule } from '../src/app.module';
 
 const RETURN_VALUE = 'test';
 const SCOPED_VALUE = 'test_scoped';
+const PRE_HANDLER_HOOKS_VALUE = 'pre_handler_middleware';
 
 @Controller()
 class TestController {
@@ -18,16 +19,26 @@ class TestController {
   }
 }
 
+@Controller()
+class PreHandlerHooksController {
+  @Get('test2')
+  test() {
+    return '';
+  }
+}
+
 @Module({
   imports: [ApplicationModule],
-  controllers: [TestController],
+  controllers: [TestController, PreHandlerHooksController],
 })
 class TestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply((req, res, next) => res.send(SCOPED_VALUE))
+      .apply((req, res, next) => res.end(SCOPED_VALUE))
       .forRoutes(TestController)
-      .apply((req, res, next) => res.send(RETURN_VALUE))
+      .apply((req, res, next) => res.send(PRE_HANDLER_HOOKS_VALUE))
+      .forRoutes(PreHandlerHooksController)
+      .apply((req, res, next) => res.end(RETURN_VALUE))
       .forRoutes('*');
   }
 }
@@ -61,6 +72,36 @@ describe('Middleware (FastifyAdapter)', () => {
         url: '/test',
       })
       .then(({ payload }) => expect(payload).to.be.eql(SCOPED_VALUE));
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+});
+
+describe('Middleware (FastifyAdapter) with usePreHandlerHooks', () => {
+  let app: NestFastifyApplication;
+
+  beforeEach(async () => {
+    const adapter = new FastifyAdapter();
+    adapter.usePreHandlerHooks();
+
+    app = (await Test.createTestingModule({
+      imports: [TestModule],
+    }).compile()).createNestApplication<NestFastifyApplication>(
+      adapter,
+    );
+
+    await app.init();
+  });
+
+  it(`forRoutes(PreHandlerHooksController)`, () => {
+    return app
+      .inject({
+        method: 'GET',
+        url: '/test2',
+      })
+      .then(({ payload }) => expect(payload).to.be.eql(PRE_HANDLER_HOOKS_VALUE));
   });
 
   afterEach(async () => {

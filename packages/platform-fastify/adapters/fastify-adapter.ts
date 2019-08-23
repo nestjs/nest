@@ -28,6 +28,8 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     super(instance);
   }
 
+  private _usePreHandlerHooks;
+
   public listen(port: string | number, callback?: () => void);
   public listen(port: string | number, hostname: string, callback?: () => void);
   public listen(port: any, ...args: any[]) {
@@ -123,6 +125,29 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     this.register(formBody);
   }
 
+  public usePreHandlerHooks() {
+    this._usePreHandlerHooks = true;
+  }
+
+  private _shouldRunMiddleware(re: RegExp, normalizedPath: string, requestMethod: RequestMethod, req: any): boolean {
+    const queryParamsIndex = req.originalUrl.indexOf('?');
+    const pathname =
+      queryParamsIndex >= 0
+        ? req.originalUrl.slice(0, queryParamsIndex)
+        : req.originalUrl;
+
+    if (!re.exec(pathname + '/') && normalizedPath) {
+      return false;
+    }
+    if (
+      requestMethod === RequestMethod.ALL ||
+      req.method === RequestMethod[requestMethod]
+    ) {
+      return true;
+    }
+    return false;
+  }
+
   public createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): (path: string, callback: Function) => any {
@@ -130,24 +155,21 @@ export class FastifyAdapter extends AbstractHttpAdapter {
       const re = pathToRegexp(path);
       const normalizedPath = path === '/*' ? '' : path;
 
-      this.instance.addHook('preHandler', (req, res, next) => {
-        const queryParamsIndex = req.raw.originalUrl.indexOf('?');
-        const pathname =
-          queryParamsIndex >= 0
-            ? req.raw.originalUrl.slice(0, queryParamsIndex)
-            : req.raw.originalUrl;
-
-        if (!re.exec(pathname + '/') && normalizedPath) {
-          return next();
-        }
-        if (
-          requestMethod === RequestMethod.ALL ||
-          req.raw.method === RequestMethod[requestMethod]
-        ) {
-          return callback(req, res, next);
-        }
-        next();
-      });
+      if (this._usePreHandlerHooks) {
+        this.instance.addHook('preHandler', (req, res, next) => {
+          if (this._shouldRunMiddleware(re, normalizedPath, requestMethod, req.raw)) {
+            return callback(req, res, next);
+          }
+          next();
+        });
+      }else {
+        this.instance.use(normalizedPath, (req, res, next) => {
+          if (this._shouldRunMiddleware(re, normalizedPath, requestMethod, req)) {
+            return callback(req, res, next);
+          }
+          next();
+        });
+      }
     };
   }
 }
