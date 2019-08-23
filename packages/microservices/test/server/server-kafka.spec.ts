@@ -16,7 +16,6 @@ class NoopLogger extends Logger {
 
 describe('ServerKafka', () => {
   let server: ServerKafka;
-
   let callback: sinon.SinonSpy;
   let bindEventsStub: sinon.SinonStub;
   let connect: sinon.SinonSpy;
@@ -25,6 +24,7 @@ describe('ServerKafka', () => {
   let consumerStub: sinon.SinonStub;
   let producerStub: sinon.SinonStub;
   let client;
+
   beforeEach(() => {
     server = new ServerKafka({});
     callback = sinon.spy();
@@ -33,7 +33,7 @@ describe('ServerKafka', () => {
     run = sinon.spy();
 
     consumerStub = sinon.stub(server, 'consumer')
-      .callsFake( () => {
+      .callsFake(() => {
         return {
           connect,
           subscribe,
@@ -41,9 +41,9 @@ describe('ServerKafka', () => {
         };
       });
     producerStub = sinon.stub(server, 'producer')
-      .callsFake( () => {
+      .callsFake(() => {
         return {
-          connect,
+          connect
         };
       });
     client = {
@@ -78,8 +78,17 @@ describe('ServerKafka', () => {
   };
 
   describe('close', () => {
+    const consumer = {disconnect: sinon.spy()};
+    const producer = {disconnect: sinon.spy()};
+    beforeEach(() => {
+      (server as any).consumer = consumer;
+      (server as any).producer = producer;
+    });
     it('should close server', () => {
       server.close();
+
+      expect(consumer.disconnect.calledOnce).to.be.true;
+      expect(producer.disconnect.calledOnce).to.be.true;
       expect(server.consumer).to.be.null;
       expect(server.producer).to.be.null;
       expect(server.client).to.be.null;
@@ -87,7 +96,6 @@ describe('ServerKafka', () => {
   });
 
   describe('listen', () => {
-
     it('should call "bindEvents"', async () => {
       bindEventsStub = sinon
         .stub(server, 'bindEvents')

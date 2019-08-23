@@ -21,7 +21,7 @@ import { CustomTransportStrategy, KafkaOptions, ReadPacket, PacketId, WritePacke
 import { KafkaHeaders } from '../enums';
 import { Server } from './server';
 
-import { KafkaSerializer } from '../helpers/kafka-serializer';
+import { KafkaSerializer, KafkaLogger } from '../helpers';
 
 let kafkaPackage: any = {};
 
@@ -79,34 +79,10 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   }
 
   public createClient<T = any>(): T {
-    const kafkaLogger = kafkaLogLevel => ({namespace, level, label, log}) => {
-      let loggerMethod: string;
-
-      switch (level) {
-        case logLevel.ERROR:
-        case logLevel.NOTHING:
-          loggerMethod = 'error';
-          break;
-        case logLevel.WARN:
-          loggerMethod = 'warn';
-          break;
-        case logLevel.INFO:
-          loggerMethod = 'log';
-          break;
-        case logLevel.DEBUG:
-        default:
-          loggerMethod = 'debug';
-          break;
-      }
-
-      const { message, ...others } = log;
-      this.logger[loggerMethod](`${label} [${namespace}] ${message} ${JSON.stringify(others)}`);
-    };
-
     return new kafkaPackage.Kafka(Object.assign(this.options.client || {}, {
       clientId: this.clientId,
       brokers: this.brokers,
-      logCreator: kafkaLogger,
+      logCreator: KafkaLogger.bind(null, this.logger),
     }) as KafkaConfig);
   }
 

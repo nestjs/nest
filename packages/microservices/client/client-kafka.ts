@@ -10,7 +10,7 @@ import {
 import { ReadPacket, KafkaOptions, WritePacket, PacketId } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
-import { KafkaSerializer, KafkaRoundRobinByTimePartitionAssigner } from '../helpers';
+import { KafkaSerializer, KafkaRoundRobinByTimePartitionAssigner, KafkaLogger } from '../helpers';
 
 import {
   KafkaConfig,
@@ -21,7 +21,6 @@ import {
   EachMessagePayload,
   Message,
   KafkaMessage,
-  logLevel,
   ConsumerGroupJoinEvent
 } from '../external/kafka.interface';
 import { KafkaHeaders } from '../enums';
@@ -118,34 +117,10 @@ export class ClientKafka extends ClientProxy {
   }
 
   public createClient<T = any>(): T {
-    const kafkaLogger = kafkaLogLevel => ({namespace, level, label, log}) => {
-      let loggerMethod: string;
-
-      switch (level) {
-        case logLevel.ERROR:
-        case logLevel.NOTHING:
-          loggerMethod = 'error';
-          break;
-        case logLevel.WARN:
-          loggerMethod = 'warn';
-          break;
-        case logLevel.INFO:
-          loggerMethod = 'log';
-          break;
-        case logLevel.DEBUG:
-        default:
-          loggerMethod = 'debug';
-          break;
-      }
-
-      const { message, ...others } = log;
-      this.logger[loggerMethod](`${label} [${namespace}] ${message} ${JSON.stringify(others)}`);
-    };
-
     return new kafkaPackage.Kafka(Object.assign(this.options.client || {}, {
       clientId: this.clientId,
       brokers: this.brokers,
-      logCreator: kafkaLogger,
+      logCreator: KafkaLogger.bind(null, this.logger),
     }) as KafkaConfig);
   }
 
