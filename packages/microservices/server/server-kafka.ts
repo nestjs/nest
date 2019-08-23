@@ -4,7 +4,8 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
-  KAFKA_DEFAULT_GROUP
+  KAFKA_DEFAULT_GROUP,
+  NO_MESSAGE_HANDLER
 } from '../constants';
 import {
   KafkaConfig,
@@ -106,6 +107,16 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     };
   }
 
+  public getPublisher(replyTopic: string, replyPartition: string, correlationId: string): any {
+    return (data: any) =>
+      this.sendMessage(
+        data,
+        replyTopic,
+        replyPartition,
+        correlationId
+      );
+  }
+
   public async handleMessage(
     payload: EachMessagePayload
   ) {
@@ -141,29 +152,28 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       }
     }
 
-    // get the handler for more
-    const handler = this.getHandlerByPattern(packet.pattern);
-
-    if (handler.isEventHandler) {
+    // if the correlation id or reply topic is not set then this is a pattern (events could still have correlation id)
+    if (!packet.id || !replyTopic) {
       return this.handleEvent(packet.pattern, packet);
     }
 
-    // message handlers need at least a correlation id and a reply topic
-    if (isUndefined(packet.id) || isUndefined(replyTopic)) {
-      throw new Error('Messaging not available');
+    // create the publisher
+    const publish = this.getPublisher(replyTopic, replyPartition, packet.id);
+
+    // get the handler for more
+    const handler = this.getHandlerByPattern(packet.pattern);
+
+    // return an error when there isn't a handler
+    if (!handler) {
+      return publish({
+        id: packet.id,
+        err: NO_MESSAGE_HANDLER
+      });
     }
 
     const response$ = this.transformToObservable(
       await handler(packet.data),
     ) as Observable<any>;
-
-    const publish = (data: any) =>
-      this.sendMessage(
-        data,
-        replyTopic,
-        replyPartition,
-        packet.id
-      );
 
     response$ && this.send(response$, publish);
   }

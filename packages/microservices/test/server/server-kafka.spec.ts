@@ -5,7 +5,8 @@ import { Logger } from '@nestjs/common';
 import { MessageHandler } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import { KafkaSerializer } from '../../helpers';
-import { EachMessagePayload, KafkaMessage } from '@nestjs/microservices/external/kafka.interface';
+import { NO_MESSAGE_HANDLER } from '../../constants';
+import { EachMessagePayload, KafkaMessage, RecordMetadata } from '@nestjs/microservices/external/kafka.interface';
 import { KafkaHeaders } from '../../enums';
 
 class NoopLogger extends Logger {
@@ -15,12 +16,66 @@ class NoopLogger extends Logger {
 }
 
 describe('ServerKafka', () => {
+  // helpers
+  const objectToMap = obj =>
+    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+
+  // static
+  const topic = 'test.topic';
+  const replyTopic = 'test.topic';
+  const replyPartition = '0';
+  const correlationId = '696fa0a9-1827-4e59-baef-f3628173fe4f';
+  const key = '1';
+  const timestamp = (new Date()).toISOString();
+  const messageValue = 'test-message';
+
+  const eventMessage: KafkaMessage = {
+    key: Buffer.from(key),
+    offset: '0',
+    size: messageValue.length,
+    value: Buffer.from(messageValue),
+    timestamp,
+    attributes: 1
+  };
+  const eventPayload: EachMessagePayload = {
+    topic,
+    partition: 0,
+    message: Object.assign({
+      headers: {}
+    }, eventMessage)
+  };
+
+  const eventWithCorrelationIdPayload: EachMessagePayload = {
+    topic,
+    partition: 0,
+    message: Object.assign({
+      headers: {
+        [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+      }
+    }, eventMessage)
+  };
+
+  const message: KafkaMessage = Object.assign({
+    headers: {
+      [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+      [KafkaHeaders.REPLY_TOPIC]: Buffer.from(replyTopic),
+      [KafkaHeaders.REPLY_PARTITION]: Buffer.from(replyPartition),
+    }
+  }, eventMessage);
+  const payload: EachMessagePayload = {
+    topic,
+    partition: 0,
+    message
+  };
+
+  // assignable
   let server: ServerKafka;
   let callback: sinon.SinonSpy;
   let bindEventsStub: sinon.SinonStub;
   let connect: sinon.SinonSpy;
   let subscribe: sinon.SinonSpy;
   let run: sinon.SinonSpy;
+  let send: sinon.SinonSpy;
   let consumerStub: sinon.SinonStub;
   let producerStub: sinon.SinonStub;
   let client;
@@ -31,6 +86,7 @@ describe('ServerKafka', () => {
     connect = sinon.spy();
     subscribe = sinon.spy();
     run = sinon.spy();
+    send = sinon.spy();
 
     consumerStub = sinon.stub(server, 'consumer')
       .callsFake(() => {
@@ -43,7 +99,8 @@ describe('ServerKafka', () => {
     producerStub = sinon.stub(server, 'producer')
       .callsFake(() => {
         return {
-          connect
+          connect,
+          send
         };
       });
     client = {
@@ -51,48 +108,6 @@ describe('ServerKafka', () => {
       producer: producerStub,
     };
     sinon.stub(server, 'createClient').callsFake(() => client);
-  });
-
-  const messageHandler: MessageHandler = (data): Promise<Observable<any>> => {
-    Logger.log('something happened');
-    const ob = new Observable();
-    ob.subscribe(obResult => {
-      Logger.log('something happened again');
-    });
-    return Promise.resolve(ob);
-  };
-
-  const messageValue = Buffer.from('test-message');
-  const msg: KafkaMessage = {
-    key: Buffer.from('test.key'),
-    offset: '0',
-    size: messageValue.length,
-    value: messageValue,
-    timestamp: Date.now().toString(),
-    attributes: 1,
-    headers: {
-      [KafkaHeaders.CORRELATION_ID]: Buffer.from('test-id'),
-      [KafkaHeaders.REPLY_TOPIC]: Buffer.from('test.key.reply'),
-      [KafkaHeaders.REPLY_PARTITION]: Buffer.from('1'),
-    }
-  };
-
-  describe('close', () => {
-    const consumer = {disconnect: sinon.spy()};
-    const producer = {disconnect: sinon.spy()};
-    beforeEach(() => {
-      (server as any).consumer = consumer;
-      (server as any).producer = producer;
-    });
-    it('should close server', () => {
-      server.close();
-
-      expect(consumer.disconnect.calledOnce).to.be.true;
-      expect(producer.disconnect.calledOnce).to.be.true;
-      expect(server.consumer).to.be.null;
-      expect(server.producer).to.be.null;
-      expect(server.client).to.be.null;
-    });
   });
 
   describe('listen', () => {
@@ -113,6 +128,24 @@ describe('ServerKafka', () => {
     });
   });
 
+  describe('close', () => {
+    const consumer = {disconnect: sinon.spy()};
+    const producer = {disconnect: sinon.spy()};
+    beforeEach(() => {
+      (server as any).consumer = consumer;
+      (server as any).producer = producer;
+    });
+    it('should close server', () => {
+      server.close();
+
+      expect(consumer.disconnect.calledOnce).to.be.true;
+      expect(producer.disconnect.calledOnce).to.be.true;
+      expect(server.consumer).to.be.null;
+      expect(server.producer).to.be.null;
+      expect(server.client).to.be.null;
+    });
+  });
+
   describe('bindEvents', () => {
     it('should not call subscribe nor run on consumer when there are no messageHandlers', async () => {
       (server as any).logger = new NoopLogger();
@@ -125,36 +158,192 @@ describe('ServerKafka', () => {
     it('should call subscribe and run on consumer when there are messageHandlers', async () => {
       (server as any).logger = new NoopLogger();
       await server.listen(callback);
+
+      const pattern = 'test';
+      const handler = sinon.spy();
+      (server as any).messageHandlers = objectToMap({
+        [pattern]: handler,
+      });
+
       await server.bindEvents(server.consumer);
-      server.addHandler('example.pattern', messageHandler, false);
-      await server.bindEvents(server.consumer);
+
       expect(subscribe.called).to.be.true;
+      expect(subscribe.calledWith({
+        topic: pattern
+      })).to.be.true;
+
       expect(run.called).to.be.true;
       expect(connect.called).to.be.true;
     });
   });
 
-  describe('Serializer', () => {
-    it('should serialize and deserialize the payload', async () => {
-      const serializedMsg = KafkaSerializer.serialize<KafkaMessage>(msg);
-      const unserializedMsg = KafkaSerializer.deserialize<KafkaMessage>(serializedMsg);
-      expect(unserializedMsg).to.be.deep.eq(msg);
+  describe('getMessageHandler', () => {
+    it(`should return function`, () => {
+      expect(
+        typeof server.getMessageHandler()
+      ).to.be.eql('function');
+    });
+    describe('handler', () => {
+      it('should call "handleMessage"', async () => {
+        const handleMessageStub = sinon
+          .stub(server, 'handleMessage')
+          .callsFake(() => null);
+        (await server.getMessageHandler())(null);
+        expect(handleMessageStub.called).to.be.true;
+      });
     });
   });
 
-  describe('Messaging', () => {
+  describe('getPublisher', () => {
+    let sendMessageStub: sinon.SinonStub;
+    let publisher;
+
     beforeEach(() => {
-      sinon.stub(server, 'getHandlerByPattern')
-        .callsFake(() => messageHandler);
+      publisher = server.getPublisher(replyTopic, replyPartition, correlationId);
+      sendMessageStub = sinon.stub(server, 'sendMessage').callsFake(() => ({}));
     });
-    it('should handleMessage correctly', async () => {
-      await server.listen(callback);
-      const payload: EachMessagePayload = {
-        message: msg,
-        partition: 1,
-        topic: 'test-topic'
+    it(`should return function`, () => {
+      expect(typeof server.getPublisher(null, null, correlationId)).to.be.eql('function');
+    });
+    it(`should call "publish" with expected arguments`, () => {
+      const data = {
+        id: 'uuid',
+        value: 'string'
       };
-      await server.handleMessage(payload);
+      publisher(data);
+      expect(sendMessageStub.calledWith(data, replyTopic, replyPartition, correlationId)).to.be.true;
     });
+  });
+
+  describe('handleMessage', () => {
+    let getPublisherSpy: sinon.SinonSpy;
+
+    beforeEach(() => {
+      sinon.stub(server, 'sendMessage').callsFake(() => ({}));
+      getPublisherSpy = sinon.spy();
+
+      sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
+    });
+    it('should call "handleEvent" if correlation identifier is not present', () => {
+      const handleEventSpy = sinon.spy(server, 'handleEvent');
+      server.handleMessage(eventPayload);
+      expect(handleEventSpy.called).to.be.true;
+    });
+
+    it('should call "handleEvent" if correlation identifier is present by the reply topic is not present', () => {
+      const handleEventSpy = sinon.spy(server, 'handleEvent');
+      server.handleMessage(eventWithCorrelationIdPayload);
+      expect(handleEventSpy.called).to.be.true;
+    });
+
+    it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, () => {
+      server.handleMessage(payload);
+      expect(
+        getPublisherSpy.calledWith({
+          id: payload.message.headers[KafkaHeaders.CORRELATION_ID].toString(),
+          err: NO_MESSAGE_HANDLER,
+        }),
+      ).to.be.true;
+    });
+    it(`should call handler with expected arguments`, () => {
+      const handler = sinon.spy();
+      (server as any).messageHandlers = objectToMap({
+        [topic]: handler,
+      });
+
+      server.handleMessage(payload);
+      expect(handler.called).to.be.true;
+    });
+  });
+
+  describe('sendMessage', () => {
+    let sendSpy: sinon.SinonSpy;
+
+    beforeEach(() => {
+      sendSpy = sinon.spy();
+      sinon.stub(server, 'producer').value({
+        send: sendSpy
+      });
+    });
+
+    it('should send message', () => {
+      server.sendMessage({
+        id: correlationId,
+        response: messageValue
+      }, replyTopic, replyPartition, correlationId);
+
+      expect(sendSpy.calledWith({
+        topic: replyTopic,
+        messages: [
+          {
+            partition: replyPartition,
+            value: messageValue,
+            headers: {
+              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId)
+            }
+          }
+        ]
+      })).to.be.true;
+    });
+    it('should send message without reply partition', () => {
+      server.sendMessage({
+        id: correlationId,
+        response: messageValue
+      }, replyTopic, undefined, correlationId);
+
+      expect(sendSpy.calledWith({
+        topic: replyTopic,
+        messages: [
+          {
+            value: messageValue,
+            headers: {
+              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId)
+            }
+          }
+        ]
+      })).to.be.true;
+    });
+    it('should send error message', () => {
+      server.sendMessage({
+        id: correlationId,
+        err: NO_MESSAGE_HANDLER
+      }, replyTopic, replyPartition, correlationId);
+
+      expect(sendSpy.calledWith({
+        topic: replyTopic,
+        messages: [
+          {
+            value: null,
+            partition: replyPartition,
+            headers: {
+              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+              [KafkaHeaders.NESTJS_ERR]: Buffer.from(NO_MESSAGE_HANDLER)
+            }
+          }
+        ]
+      })).to.be.true;
+    });
+    it('should send `isDisposed` message', () => {
+      server.sendMessage({
+        id: correlationId,
+        isDisposed: true
+      }, replyTopic, replyPartition, correlationId);
+
+      expect(sendSpy.calledWith({
+        topic: replyTopic,
+        messages: [
+          {
+            value: null,
+            partition: replyPartition,
+            headers: {
+              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+              [KafkaHeaders.NESTJS_IS_DISPOSED]: Buffer.alloc(1)
+            }
+          }
+        ]
+      })).to.be.true;
+    });
+
+
   });
 });
