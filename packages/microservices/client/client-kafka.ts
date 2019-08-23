@@ -83,7 +83,7 @@ export class ClientKafka extends ClientProxy {
     }));
 
     // set member assignments on join and rebalance
-    this.consumer.on(this.consumer.events.GROUP_JOIN, this.updateConsumerAssignments);
+    this.consumer.on(this.consumer.events.GROUP_JOIN, this.updateConsumerAssignments.bind(this));
 
     // connect the producer and consumer
     await this.producer.connect();
@@ -95,7 +95,7 @@ export class ClientKafka extends ClientProxy {
     return this.producer;
   }
 
-  public updateConsumerAssignments(data: ConsumerGroupJoinEvent): void {
+  private updateConsumerAssignments(data: ConsumerGroupJoinEvent): void {
     this.consumerAssignments = data.payload.memberAssignment;
   }
 
