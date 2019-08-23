@@ -29,6 +29,6 @@
     "@types/socket.io-redis": "1.0.25",
     "@types/ws": "6.0.2",
     "ts-node": "8.3.0",
-    "tslint": "5.18.0"
+    "tslint": "5.19.0"
   }
 }
