@@ -92,7 +92,7 @@
     "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "7.0.13",
     "@types/socket.io": "2.1.2",
-    "@types/ws": "6.0.2",
+    "@types/ws": "6.0.3",
     "artillery": "1.6.0-28",
     "awesome-typescript-loader": "5.2.1",
     "body-parser": "1.19.0",
