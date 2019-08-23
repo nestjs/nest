@@ -57,7 +57,7 @@
     "fastify-formbody": "3.1.0",
     "fastify-multipart": "1.0.2",
     "graphql": "14.5.0",
-    "grpc": "1.22.2",
+    "grpc": "1.23.3",
     "http2": "3.3.7",
     "iterare": "1.2.0",
     "merge-graphql-schemas": "1.7.0",
