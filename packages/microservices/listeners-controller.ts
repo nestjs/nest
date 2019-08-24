@@ -118,7 +118,7 @@ export class ListenersController {
           contextId,
           wrapper.id,
         );
-        return proxy(data);
+        return proxy(...args);
       } catch (err) {
         let exceptionFilter = this.exceptionFiltersCache.get(
           instance[methodKey],
