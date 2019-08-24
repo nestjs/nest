@@ -1,5 +1,5 @@
 import { MiddlewareConsumer } from '../middleware/middleware-consumer.interface';
 
 export interface NestModule {
-  configure(consumer: MiddlewareConsumer): MiddlewareConsumer | void;
+  configure(consumer: MiddlewareConsumer): Promise<MiddlewareConsumer | void>;
 }
