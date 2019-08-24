@@ -1,15 +1,16 @@
 import {
   INestApplicationContext,
-  Logger,
   LoggerService,
   ShutdownSignal,
 } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { Abstract } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
 import {
   callAppShutdownHook,
+  callBeforeAppShutdownHook,
   callModuleBootstrapHook,
   callModuleDestroyHook,
   callModuleInitHook,
@@ -18,6 +19,7 @@ import { NestContainer } from './injector/container';
 import { ContainerScanner } from './injector/container-scanner';
 import { Module } from './injector/module';
 import { ModuleTokenFactory } from './injector/module-token-factory';
+import { MESSAGES } from './constants';
 
 export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
@@ -81,8 +83,16 @@ export class NestApplicationContext implements INestApplicationContext {
     return this;
   }
 
+  protected async dispose(): Promise<void> {
+    // Nest application context has no server
+    // to dispose, therefore just call a noop
+    return Promise.resolve();
+  }
+
   public async close(): Promise<void> {
     await this.callDestroyHook();
+    await this.callBeforeShutdownHook();
+    await this.dispose();
     await this.callShutdownHook();
   }
 
@@ -131,17 +141,27 @@ export class NestApplicationContext implements INestApplicationContext {
    * @param {string[]} signals The system signals it should listen to
    */
   protected listenToShutdownSignals(signals: string[]) {
+    const cleanup = async (signal: string) => {
+      try {
+        signals.forEach(sig => process.removeListener(sig, cleanup));
+        await this.callDestroyHook();
+        await this.callBeforeShutdownHook(signal);
+        await this.dispose();
+        await this.callShutdownHook(signal);
+        process.kill(process.pid, signal);
+      } catch (err) {
+        Logger.error(
+          MESSAGES.ERROR_DURING_SHUTDOWN,
+          (err as Error).stack,
+          NestApplicationContext.name,
+        );
+        process.exit(1);
+      }
+    };
+
     signals.forEach((signal: string) => {
       this.activeShutdownSignals.push(signal);
-
-      process.on(signal as any, async code => {
-        // Call the destroy and shutdown hook
-        // in case the process receives a shutdown signal
-        await this.callDestroyHook();
-        await this.callShutdownHook(signal);
-
-        process.exit(code || 1);
-      });
+      process.on(signal as any, cleanup);
     });
   }
 
@@ -186,6 +206,17 @@ export class NestApplicationContext implements INestApplicationContext {
     const modulesContainer = this.container.getModules();
     for (const module of [...modulesContainer.values()].reverse()) {
       await callAppShutdownHook(module, signal);
+    }
+  }
+
+  /**
+   * Calls the `beforeApplicationShutdown` function on the registered
+   * modules and children.
+   */
+  protected async callBeforeShutdownHook(signal?: string): Promise<void> {
+    const modulesContainer = this.container.getModules();
+    for (const module of [...modulesContainer.values()].reverse()) {
+      await callBeforeAppShutdownHook(module, signal);
     }
   }
 
