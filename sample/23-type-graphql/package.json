@@ -14,19 +14,19 @@
     "@nestjs/core": "6.5.3",
     "@nestjs/graphql": "6.4.2",
     "@nestjs/platform-express": "6.5.3",
-    "apollo-server-express": "2.8.1",
+    "apollo-server-express": "2.9.0",
     "class-transformer": "0.2.3",
     "class-validator": "0.10.0",
-    "graphql": "14.4.2",
+    "graphql": "14.5.3",
     "graphql-subscriptions": "1.1.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
-    "type-graphql": "0.17.4",
+    "type-graphql": "0.17.5",
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "10.14.15",
+    "@types/node": "10.14.16",
     "ts-node": "8.3.0",
-    "tslint": "5.18.0"
+    "tslint": "5.19.0"
   }
 }

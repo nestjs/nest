@@ -13,7 +13,7 @@ import {
  *
  * @param instance The instance which should be checked
  */
-function hasOnAppBootstrapHook(
+function hasOnAppShutdownHook(
   instance: unknown,
 ): instance is OnApplicationShutdown {
   return !isUndefined(
@@ -30,7 +30,7 @@ function callOperator(
 ): Promise<any>[] {
   return iterate(instances)
     .filter(instance => !isNil(instance))
-    .filter(hasOnAppBootstrapHook)
+    .filter(hasOnAppShutdownHook)
     .map(async instance =>
       ((instance as any) as OnApplicationShutdown).onApplicationShutdown(
         signal,
@@ -61,7 +61,7 @@ export async function callAppShutdownHook(
   await Promise.all(callOperator(transientInstances, signal));
 
   // Call the instance itself
-  if (moduleClassInstance && hasOnAppBootstrapHook(moduleClassInstance)) {
+  if (moduleClassInstance && hasOnAppShutdownHook(moduleClassInstance)) {
     await (moduleClassInstance as OnApplicationShutdown).onApplicationShutdown(
       signal,
     );
