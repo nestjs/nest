@@ -23,16 +23,35 @@ import { NestApplication } from './nest-application';
 import { NestApplicationContext } from './nest-application-context';
 import { DependenciesScanner } from './scanner';
 
+/**
+ * @publicApi
+ */
 export class NestFactoryStatic {
   private readonly logger = new Logger('NestFactory', true);
   /**
-   * Creates an instance of the NestApplication
-   * @returns {Promise}
+   * Creates an instance of NestApplication.
+   *
+   * @param module Entry (root) application module class
+   * @param options List of options to initialize NestApplication
+   *
+   * @returns A promise that, when resolved,
+   * contains a reference to the NestApplication instance.
    */
   public async create<T extends INestApplication = INestApplication>(
     module: any,
     options?: NestApplicationOptions,
   ): Promise<T>;
+  /**
+   * Creates an instance of NestApplication with the specified `httpAdapter`
+   *
+   * @param module Entry (root) application module class
+   * @param httpAdapter Adapter to proxy the request/response cycle to
+   *    the underlying HTTP server
+   * @param options List of options to initialize NestApplication
+   *
+   * @returns A promise that, when resolved,
+   * contains a reference to the NestApplication instance.
+   */
   public async create<T extends INestApplication = INestApplication>(
     module: any,
     httpAdapter: AbstractHttpAdapter,
@@ -65,11 +84,13 @@ export class NestFactoryStatic {
   }
 
   /**
-   * Creates an instance of the NestMicroservice
+   * Creates an instance of NestMicroservice
    *
-   * @param  {} module Entry (root) application module class
-   * @param  {NestMicroserviceOptions & MicroserviceOptions} options Optional microservice configuration
-   * @returns {Promise}
+   * @param module Entry (root) application module class
+   * @param options Optional microservice configuration
+   *
+   * @returns A promise that, when resolved,
+   * contains a reference to the NestMicroservice instance.
    */
   public async createMicroservice(
     module: any,
@@ -92,11 +113,13 @@ export class NestFactoryStatic {
   }
 
   /**
-   * Creates an instance of the NestApplicationContext
+   * Creates an instance of NestApplicationContext
    *
-   * @param  {} module Entry (root) application module class
-   * @param  {NestApplicationContextOptions} options Optional Nest application configuration
-   * @returns {Promise}
+   * @param module Entry (root) application module class
+   * @param options Optional Nest application configuration
+   *
+   * @returns A promise that, when resolved,
+   * contains a reference to the NestApplicationContext instance.
    */
   public async createApplicationContext(
     module: any,
@@ -213,4 +236,49 @@ export class NestFactoryStatic {
   }
 }
 
+/**
+ * @publicApi
+ *
+ * @description
+ *
+ * Use NestFactory to create an application instance.
+ *
+ * @usageNotes
+ *
+ * ### [Any Application] Specifying an entry module
+ * Pass the required *root module* for the application via the module parameter.
+ * By convention, it is usually called `ApplicationModule`.  Starting with this
+ * module, Nest assembles the dependency graph and begins the process of
+ * Dependency Injection and instantiates the classes needed to launch your
+ * application.
+ *
+ * ```typescript
+ * import { NestFactory } from '@nestjs/core';
+ * import { ApplicationModule } from './app.module';
+ *
+ * async function bootstrap() {
+ *   const app = await NestFactory.create(ApplicationModule);
+ *   await app.listen(3000);
+ * }
+ * bootstrap();
+ * ```
+ *
+ * ### [NestApplication only] Providing an httpAdapter object
+ * In this example, we create a NestApplication that uses the `FastifyAdapter`.
+ * Pass options to `Fastify` by passing an options object into the
+ * `FastifyAdapter()` constructor. Note that if the `httpAdapter` is not
+ * `Express`, the supporting package (e.g., `@nestjs/platform-fastify`) must be
+ * installed.
+ *
+ * ```typescript
+ * async function bootstrap() {
+ *   const app = await NestFactory.create<NestFastifyApplication>(
+ *     ApplicationModule,
+ *     new FastifyAdapter(),
+ *   );
+ *   await app.listen(3000);
+ * }
+ * bootstrap();
+ * ```
+ */
 export const NestFactory = new NestFactoryStatic();
