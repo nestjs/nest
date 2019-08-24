@@ -1,13 +1,13 @@
+import { CorsOptions } from './external/cors-options.interface';
 import { HttpsOptions } from './external/https-options.interface';
 import { NestApplicationContextOptions } from './nest-application-context-options.interface';
-import { CorsOptions } from './external/cors-options.interface';
 
 /**
  * @publicApi
  */
 export interface NestApplicationOptions extends NestApplicationContextOptions {
   /**
-   * CORS options from [Express CORS package](https://github.com/expressjs/cors#configuration-options)
+   * CORS options from [CORS package](https://github.com/expressjs/cors#configuration-options)
    */
   cors?: boolean | CorsOptions;
   /**

@@ -42,7 +42,7 @@ export interface RpcArgumentsHost {
  *
  * @description
  * Provides methods for retrieving the arguments being passed to a handler.
- * Allows choosing the appropriate execution context (e.g., Http, RPC, or
+ * Allows choosing the appropriate execution context (e.g., HTTP, RPC, or
  * WebSockets) to retrieve the arguments from.
  *
  */

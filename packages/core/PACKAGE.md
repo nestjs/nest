@@ -1,1 +1,1 @@
-Implements Nest's core functionality, low-level services, and utilities.
+Implements Nest core functionalities, low-level services, and utilities.
