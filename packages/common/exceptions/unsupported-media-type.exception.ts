@@ -1,6 +1,5 @@
 import { HttpException } from './http.exception';
 import { HttpStatus } from '../enums/http-status.enum';
-import { createHttpExceptionBody } from '../utils/http-exception-body.util';
 
 export class UnsupportedMediaTypeException extends HttpException {
   constructor(
@@ -8,7 +7,7 @@ export class UnsupportedMediaTypeException extends HttpException {
     error = 'Unsupported Media Type',
   ) {
     super(
-      createHttpExceptionBody(
+      HttpException.createBody(
         message,
         error,
         HttpStatus.UNSUPPORTED_MEDIA_TYPE,

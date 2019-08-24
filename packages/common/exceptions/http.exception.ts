@@ -1,4 +1,4 @@
-import { isString } from '../utils/shared.utils';
+import { isString, isObject } from '../utils/shared.utils';
 
 export class HttpException extends Error {
   public readonly message: any;
@@ -40,5 +40,18 @@ export class HttpException extends Error {
 
   private getErrorString(target: string | object): string {
     return isString(target) ? target : JSON.stringify(target);
+  }
+
+  public static createBody = (
+    message: object | string,
+    error?: string,
+    statusCode?: number,
+  ) => {
+    if (!message) {
+      return { statusCode, error };
+    }
+    return isObject(message) && !Array.isArray(message)
+      ? message
+      : { statusCode, error, message };
   }
 }
