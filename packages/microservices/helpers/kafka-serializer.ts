@@ -22,7 +22,7 @@ export class KafkaSerializer {
     // convert to string
     let result = value.toString();
 
-    // type to parse
+    // only try to parse objects and arrays
     try {
       result = JSON.parse(result);
     } catch (e){}

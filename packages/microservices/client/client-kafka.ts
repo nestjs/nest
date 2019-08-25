@@ -95,7 +95,7 @@ export class ClientKafka extends ClientProxy {
     return this.producer;
   }
 
-  private setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
+  protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
     this.consumerAssignments = data.payload.memberAssignment;
   }
 
@@ -162,6 +162,7 @@ export class ClientKafka extends ClientProxy {
       // parse the nestjs headers
       if (!isUndefined(packet.response.headers[KafkaHeaders.NESTJS_ERR])) {
         err = packet.response.headers[KafkaHeaders.NESTJS_ERR].toString();
+        isDisposed = true;
       }
 
       if (!isUndefined(packet.response.headers[KafkaHeaders.NESTJS_IS_DISPOSED])) {
@@ -187,14 +188,8 @@ export class ClientKafka extends ClientProxy {
   protected dispatchEvent(packet: ReadPacket & PacketId): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
 
-    // assign a packet id
-    packet = this.assignPacketId(packet);
-
     // serialize for sanity
     packet.data = KafkaSerializer.serialize<Message>(packet.data);
-
-    // correlate via kafka headers
-    packet.data.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
 
     // send
     return this.producer.send(Object.assign({
@@ -203,7 +198,7 @@ export class ClientKafka extends ClientProxy {
     }, this.options.send || {}));
   }
 
-  private getReplyPartition(topic: string): string {
+  protected getReplyPartition(topic: string): string {
     // get topic assignment
     const topicAssignments = this.consumerAssignments[topic];
 

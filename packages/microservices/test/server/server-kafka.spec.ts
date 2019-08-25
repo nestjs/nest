@@ -22,7 +22,7 @@ describe('ServerKafka', () => {
 
   // static
   const topic = 'test.topic';
-  const replyTopic = 'test.topic';
+  const replyTopic = 'test.topic.reply';
   const replyPartition = '0';
   const correlationId = '696fa0a9-1827-4e59-baef-f3628173fe4f';
   const key = '1';

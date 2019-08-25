@@ -144,6 +144,14 @@ describe('kafka serializer', () => {
       });
     });
 
+    it('buffer number', () => {
+      expect(KafkaSerializer.deserialize({
+        value: Buffer.from('12345')
+      })).to.deep.eq({
+        value: 12345
+      });
+    });
+
     it('buffer json', () => {
       expect(KafkaSerializer.deserialize({
         value: Buffer.from(JSON.stringify({prop: 'value'}))
