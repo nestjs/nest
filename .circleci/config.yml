@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/wd
+    working_directory: ~/
     docker:
       - image: circleci/node:12
     steps:
