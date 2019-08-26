@@ -148,7 +148,17 @@ describe('kafka serializer', () => {
       expect(KafkaSerializer.deserialize({
         value: Buffer.from('12345')
       })).to.deep.eq({
-        value: 12345
+        value: '12345'
+      });
+    });
+
+    it('buffer bigint', () => {
+      const long = '9007199254740992';
+
+      expect(KafkaSerializer.deserialize({
+        value: Buffer.from(long)
+      })).to.deep.eq({
+        value: long
       });
     });
 
@@ -167,7 +177,7 @@ describe('kafka serializer', () => {
         value: Buffer.from(JSON.stringify({prop: 'value'})),
         key: Buffer.from('1')
       })).to.deep.eq({
-        key: 1,
+        key: '1',
         value: {
           prop: 'value'
         }

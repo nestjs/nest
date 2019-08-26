@@ -21,11 +21,19 @@ export class KafkaSerializer {
 
     // convert to string
     let result = value.toString();
+    const startChar = result.charAt(0);
 
     // only try to parse objects and arrays
-    try {
-      result = JSON.parse(result);
-    } catch (e){}
+    if (startChar === '{' || startChar === '[') {
+      try {
+        result = JSON.parse(value.toString());
+      } catch (e){}
+    }
+
+    // // set result as a string when greater than max safe int
+    // if (typeof result === 'number' && result > Number.MAX_SAFE_INTEGER) {
+    //   result = value.toString();
+    // }
 
     return result;
   }
