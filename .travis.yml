@@ -12,7 +12,7 @@ before_install:
 
 install:
   - npm ci
-  - npm run build:dev
+  - npm run build
 
 jobs:
   include:

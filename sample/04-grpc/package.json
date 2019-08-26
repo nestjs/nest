@@ -16,15 +16,15 @@
     "@nestjs/microservices": "6.5.3",
     "@nestjs/testing": "6.5.3",
     "class-transformer": "0.2.3",
-    "class-validator": "0.9.1",
-    "grpc": "1.22.2",
+    "class-validator": "0.10.0",
+    "grpc": "1.23.3",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "10.14.13",
+    "@types/node": "10.14.16",
     "ts-node": "8.3.0",
-    "tslint": "5.18.0"
+    "tslint": "5.19.0"
   }
 }

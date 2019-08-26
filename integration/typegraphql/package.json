@@ -12,21 +12,21 @@
     "@nestjs/common": "6.5.3",
     "@nestjs/core": "6.5.3",
     "@nestjs/graphql": "6.4.2",
-    "apollo-server-express": "2.7.2",
+    "apollo-server-express": "2.9.0",
     "class-transformer": "0.2.3",
-    "class-validator": "0.9.1",
-    "graphql": "14.4.2",
+    "class-validator": "0.10.0",
+    "graphql": "14.5.3",
     "graphql-tools": "4.0.5",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "subscriptions-transport-ws": "0.9.16",
-    "type-graphql": "0.17.4",
+    "type-graphql": "0.17.5",
     "typescript": "3.5.3",
-    "ws": "7.1.1"
+    "ws": "7.1.2"
   },
   "devDependencies": {
     "@types/node": "7.10.7",
     "ts-node": "8.3.0",
-    "tslint": "5.18.0"
+    "tslint": "5.19.0"
   }
 }

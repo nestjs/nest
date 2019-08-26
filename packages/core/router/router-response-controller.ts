@@ -6,6 +6,10 @@ export interface CustomHeader {
   value: string;
 }
 
+export interface RedirectResponse {
+  url: string;
+  statusCode: number;
+}
 export class RouterResponseController {
   constructor(private readonly applicationRef: HttpServer) {}
 
@@ -17,20 +21,36 @@ export class RouterResponseController {
     return this.applicationRef.reply(response, result, httpStatusCode);
   }
 
+  public async redirect<TInput = any, TResponse = any>(
+    resultOrDeferred: TInput,
+    response: TResponse,
+    redirectResponse: RedirectResponse,
+  ) {
+    const result = await this.transformToResult(resultOrDeferred);
+    const statusCode =
+      result && result.statusCode
+        ? result.statusCode
+        : redirectResponse.statusCode
+        ? redirectResponse.statusCode
+        : HttpStatus.FOUND;
+    const url = result && result.url ? result.url : redirectResponse.url;
+    this.applicationRef.redirect(response, statusCode, url);
+  }
+
   public async render<TInput = any, TResponse = any>(
-    resultOrDeffered: TInput,
+    resultOrDeferred: TInput,
     response: TResponse,
     template: string,
   ) {
-    const result = await this.transformToResult(resultOrDeffered);
+    const result = await this.transformToResult(resultOrDeferred);
     this.applicationRef.render(response, template, result);
   }
 
-  public async transformToResult(resultOrDeffered: any) {
-    if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
-      return resultOrDeffered.toPromise();
+  public async transformToResult(resultOrDeferred: any) {
+    if (resultOrDeferred && isFunction(resultOrDeferred.subscribe)) {
+      return resultOrDeferred.toPromise();
     }
-    return resultOrDeffered;
+    return resultOrDeferred;
   }
 
   public getStatusByMethod(requestMethod: RequestMethod): number {

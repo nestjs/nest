@@ -64,7 +64,7 @@ export class ContainerScanner {
     );
     const instanceWrapper = contextModule[collectionName].get(name as string);
     if (!instanceWrapper) {
-      throw new UnknownElementException();
+      throw new UnknownElementException(name && name.toString());
     }
     return [
       instanceWrapper as InstanceWrapper<TResult>,
