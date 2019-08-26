@@ -20,7 +20,7 @@ jobs:
             - ./node_modules
       - run:
           name: Build
-          command: npm run build
+          command: npm run build:dev
   test:
     docker:
       - image: circleci/node:12
