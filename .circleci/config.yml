@@ -93,10 +93,13 @@ jobs:
     steps:
       - checkout
       - run: 
-          name: Upgrade Node.js
+          name: Prepare nvm
           command: |
             echo 'export NVM_DIR="/opt/circleci/.nvm"' >> $BASH_ENV
             echo ' [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
+      - run: 
+          name: Upgrade Node.js
+          command: |
             nvm install v12
             node -v
             nvm alias default v12
