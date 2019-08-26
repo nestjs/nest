@@ -26,6 +26,9 @@ import { Module } from './injector/module';
 import { ModuleTokenFactory } from './injector/module-token-factory';
 import { MESSAGES } from './constants';
 
+/**
+ * @publicApi
+ */
 export class NestApplicationContext implements INestApplicationContext {
   protected isInitialized: boolean = false;
   protected readonly injector = new Injector();
