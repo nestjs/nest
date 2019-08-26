@@ -17,9 +17,6 @@ export interface ControllerOptions extends ScopeOptions {
   path?: string;
 }
 
-export function Controller();
-export function Controller(prefix: string);
-export function Controller(options: ControllerOptions);
 /**
  * Decorator that marks a class as a Nest controller that can receive inbound
  * requests and produce responses.
