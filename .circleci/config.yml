@@ -28,7 +28,7 @@ jobs:
       - checkout
       - run:
           name: Test
-          command: npm test
+          command: npm run test
   lint:
     docker:
       - image: circleci/node:12
@@ -36,7 +36,7 @@ jobs:
       - checkout
       - run:
           name: Lint
-          command: npm lint
+          command: npm run lint
 workflows:
   version: 2
   build-and-test:
