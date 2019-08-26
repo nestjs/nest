@@ -14,8 +14,12 @@ import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { createContextId } from '../helpers/context-id-factory';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 import { NestContainer } from '../injector/container';
-import { InstanceWrapper } from '../injector/instance-wrapper';
+import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
+import {
+  REQUEST,
+  REQUEST_CONTEXT_ID,
+} from '../router/request/request-constants';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
 import { RouterProxy } from '../router/router-proxy';
 import { STATIC_CONTEXT } from './../injector/constants';
@@ -124,17 +128,18 @@ export class MiddlewareModule {
     applicationRef: any,
   ) {
     const { forRoutes } = config;
-    await Promise.all(
-      forRoutes.map(async (routeInfo: Type<any> | string | RouteInfo) => {
-        await this.registerRouteMiddleware(
-          middlewareContainer,
-          routeInfo as RouteInfo,
-          config,
-          module,
-          applicationRef,
-        );
-      }),
-    );
+    const registerRouteMiddleware = async (
+      routeInfo: Type<any> | string | RouteInfo,
+    ) => {
+      await this.registerRouteMiddleware(
+        middlewareContainer,
+        routeInfo as RouteInfo,
+        config,
+        module,
+        applicationRef,
+      );
+    };
+    await Promise.all(forRoutes.map(registerRouteMiddleware));
   }
 
   public async registerRouteMiddleware(
@@ -195,7 +200,16 @@ export class MiddlewareModule {
         next: () => void,
       ) => {
         try {
-          const contextId = createContextId();
+          const contextId = req[REQUEST_CONTEXT_ID] || createContextId();
+          if (!req[REQUEST_CONTEXT_ID]) {
+            Object.defineProperty(req, REQUEST_CONTEXT_ID, {
+              value: contextId,
+              enumerable: false,
+              writable: false,
+              configurable: false,
+            });
+            this.registerRequestProvider(req, contextId);
+          }
           const contextInstance = await this.injector.loadPerContext(
             instance,
             module,
@@ -255,5 +269,15 @@ export class MiddlewareModule {
       path = '*';
     }
     router(basePath + path, proxy);
+  }
+
+  private registerRequestProvider<T = any>(request: T, contextId: ContextId) {
+    const coreModuleRef = this.container.getInternalCoreModuleRef();
+    const wrapper = coreModuleRef.getProviderByKey(REQUEST);
+
+    wrapper.setInstanceByContextId(contextId, {
+      instance: request,
+      isResolved: true,
+    });
   }
 }
