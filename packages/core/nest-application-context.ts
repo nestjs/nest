@@ -7,7 +7,9 @@ import { Logger } from '@nestjs/common';
 import { Abstract } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { UnknownElementException } from './errors/exceptions/unknown-element.exception';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
+import { createContextId } from './helpers';
 import {
   callAppShutdownHook,
   callBeforeAppShutdownHook,
@@ -15,17 +17,21 @@ import {
   callModuleDestroyHook,
   callModuleInitHook,
 } from './hooks';
+import { ContextId } from './injector';
 import { NestContainer } from './injector/container';
 import { ContainerScanner } from './injector/container-scanner';
+import { Injector } from './injector/injector';
+import { InstanceWrapper } from './injector/instance-wrapper';
 import { Module } from './injector/module';
 import { ModuleTokenFactory } from './injector/module-token-factory';
 import { MESSAGES } from './constants';
 
 export class NestApplicationContext implements INestApplicationContext {
+  protected isInitialized: boolean = false;
+  protected readonly injector = new Injector();
   private readonly moduleTokenFactory = new ModuleTokenFactory();
   private readonly containerScanner: ContainerScanner;
   private readonly activeShutdownSignals: string[] = new Array<string>();
-  protected isInitialized: boolean = false;
 
   constructor(
     protected readonly container: NestContainer,
@@ -60,9 +66,22 @@ export class NestApplicationContext implements INestApplicationContext {
     if (!(options && options.strict)) {
       return this.find<TInput, TResult>(typeOrToken);
     }
-    return this.findInstanceByPrototypeOrToken<TInput, TResult>(
+    return this.findInstanceByToken<TInput, TResult>(
       typeOrToken,
       this.contextModule,
+    );
+  }
+
+  public resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | string | symbol,
+    contextId = createContextId(),
+    options: { strict: boolean } = { strict: false },
+  ): Promise<TResult> {
+    return this.resolvePerContext(
+      typeOrToken,
+      this.contextModule,
+      contextId,
+      options,
     );
   }
 
@@ -226,13 +245,45 @@ export class NestApplicationContext implements INestApplicationContext {
     return this.containerScanner.find<TInput, TResult>(typeOrToken);
   }
 
-  protected findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
+  protected findInstanceByToken<TInput = any, TResult = TInput>(
     metatypeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextModule: Partial<Module>,
   ): TResult {
-    return this.containerScanner.findInstanceByPrototypeOrToken<
-      TInput,
-      TResult
-    >(metatypeOrToken, contextModule);
+    return this.containerScanner.findInstanceByToken<TInput, TResult>(
+      metatypeOrToken,
+      contextModule,
+    );
+  }
+
+  protected async resolvePerContext<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | string | symbol,
+    contextModule: Module,
+    contextId: ContextId,
+    options?: { strict: boolean },
+  ): Promise<TResult> {
+    let wrapper: InstanceWrapper, collection: Map<string, InstanceWrapper>;
+    if (!(options && options.strict)) {
+      [wrapper, collection] = this.containerScanner.getWrapperCollectionPair(
+        typeOrToken,
+      );
+    } else {
+      [
+        wrapper,
+        collection,
+      ] = this.containerScanner.getWrapperCollectionPairByHost(
+        typeOrToken,
+        contextModule,
+      );
+    }
+    const instance = await this.injector.loadPerContext(
+      wrapper.instance,
+      wrapper.host,
+      collection,
+      contextId,
+    );
+    if (!instance) {
+      throw new UnknownElementException();
+    }
+    return instance;
   }
 }
