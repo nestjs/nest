@@ -1,6 +1,7 @@
 import { Type } from '@nestjs/common';
-import { Abstract } from '@nestjs/common/interfaces';
+import { Abstract, Scope } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { InvalidClassScopeException } from '../errors/exceptions/invalid-class-scope.exception';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
@@ -41,6 +42,12 @@ export class ContainerScanner {
       metatypeOrToken,
       contextModule,
     );
+    if (
+      instanceWrapper.scope === Scope.REQUEST ||
+      instanceWrapper.scope === Scope.TRANSIENT
+    ) {
+      throw new InvalidClassScopeException(metatypeOrToken);
+    }
     return instanceWrapper.instance;
   }
 
