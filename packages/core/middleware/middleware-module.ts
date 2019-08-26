@@ -110,7 +110,9 @@ export class MiddlewareModule {
       });
 
     await Promise.all(
-      [...configs.entries()].map(async ([module, moduleConfigs]) => {
+      [...configs.entries()].sort(([moduleA, moduleAConfigs], [moduleB, moduleBConfigs]) => {
+        return this.container.getModuleByKey(moduleB).distance - this.container.getModuleByKey(moduleA).distance;
+      }).map(async ([module, moduleConfigs]) => {
         await Promise.all(registerAllConfigs(module, [...moduleConfigs]));
       }),
     );
