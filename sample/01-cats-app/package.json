@@ -27,12 +27,12 @@
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/jest": "24.0.17",
-    "@types/node": "10.14.15",
+    "@types/jest": "24.0.18",
+    "@types/node": "10.14.16",
     "jest": "24.9.0",
     "supertest": "4.0.2",
     "ts-jest": "24.0.2",
     "ts-node": "8.3.0",
-    "tslint": "5.18.0"
+    "tslint": "5.19.0"
   }
 }
