@@ -26,9 +26,9 @@ jobs:
       - image: circleci/node:12
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: npm install
+      - restore_cache:
+          name: Restore node_modules cache
+          key: dependency-cache-{{ checksum "package.json" }}
       - run:
           name: Build (dev)
           command: npm run build:dev
@@ -40,9 +40,9 @@ jobs:
       - image: circleci/node:12
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: npm install
+      - restore_cache:
+          name: Restore node_modules cache
+          key: dependency-cache-{{ checksum "package.json" }}
       - run:
           name: Lint
           command: npm run lint
