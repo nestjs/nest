@@ -13,7 +13,7 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
       - run:
           name: Install dependencies
-          command: npm install
+          command: npm ci
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
@@ -21,6 +21,10 @@ jobs:
       - run:
           name: Build
           command: npm run build:dev
+      - store_artifacts:
+          path: packages
+          destination: packages
+        
   test:
     working_directory: ~/nest
     docker:
@@ -31,8 +35,8 @@ jobs:
           name: Restore node_modules cache
           key: dependency-cache-{{ checksum "package.json" }}
       - run:
-          name: Build (dev)
-          command: npm run build:dev
+          name: Install dependencies
+          command: npm ci
       - run:
           name: Test
           command: npm run test
@@ -45,6 +49,9 @@ jobs:
       - restore_cache:
           name: Restore node_modules cache
           key: dependency-cache-{{ checksum "package.json" }}
+      - run:
+          name: Install dependencies
+          command: npm ci
       - run:
           name: Lint
           command: npm run lint
