@@ -9,10 +9,6 @@ import { InvalidKafkaClientTopicPartitionException } from '../../errors/invalid-
 // tslint:disable:no-string-literal
 
 describe('ClientKafka', () => {
-  // helpers
-  const objectToMap = obj =>
-    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
-
   // static
   const topic = 'test.topic';
   const partition = 0;
