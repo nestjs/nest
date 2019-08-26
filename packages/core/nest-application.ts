@@ -65,6 +65,18 @@ export class NestApplication extends NestApplicationContext
     );
   }
 
+  protected async dispose(): Promise<void> {
+    this.socketModule && (await this.socketModule.close());
+    this.httpAdapter && (await this.httpAdapter.close());
+
+    await Promise.all(
+      iterate(this.microservices).map(async microservice => {
+        microservice.setIsTerminated(true);
+        await microservice.close();
+      }),
+    );
+  }
+
   public getHttpAdapter(): AbstractHttpAdapter {
     return this.httpAdapter as AbstractHttpAdapter;
   }
@@ -218,19 +230,6 @@ export class NestApplication extends NestApplicationContext
     return new Promise(resolve => {
       const server: any = this.listen(port, hostname, () => resolve(server));
     });
-  }
-
-  public async close(): Promise<any> {
-    this.socketModule && (await this.socketModule.close());
-    this.httpAdapter && (await this.httpAdapter.close());
-
-    await Promise.all(
-      iterate(this.microservices).map(async microservice => {
-        microservice.setIsTerminated(true);
-        await microservice.close();
-      }),
-    );
-    await super.close();
   }
 
   public setGlobalPrefix(prefix: string): this {

@@ -1,23 +1,23 @@
-import { OnApplicationShutdown } from '@nestjs/common';
+import { Module } from '../injector/module';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
+import { BeforeApplicationShutdown } from '@nestjs/common';
 import { InstanceWrapper } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
 import {
   getNonTransientInstances,
   getTransientInstances,
 } from '../injector/transient-instances';
 
 /**
- * Checks if the given instance has the `onApplicationShutdown` function
+ * Checks if the given instance has the `beforeApplicationShutdown` function
  *
  * @param instance The instance which should be checked
  */
-function hasOnAppShutdownHook(
+function hasBeforeApplicationShutdownHook(
   instance: unknown,
-): instance is OnApplicationShutdown {
+): instance is BeforeApplicationShutdown {
   return !isNil(
-    (instance as OnApplicationShutdown).onApplicationShutdown,
+    (instance as BeforeApplicationShutdown).beforeApplicationShutdown,
   );
 }
 
@@ -30,9 +30,9 @@ function callOperator(
 ): Promise<any>[] {
   return iterate(instances)
     .filter(instance => !isNil(instance))
-    .filter(hasOnAppShutdownHook)
+    .filter(hasBeforeApplicationShutdownHook)
     .map(async instance =>
-      ((instance as any) as OnApplicationShutdown).onApplicationShutdown(
+      ((instance as any) as BeforeApplicationShutdown).beforeApplicationShutdown(
         signal,
       ),
     )
@@ -40,18 +40,17 @@ function callOperator(
 }
 
 /**
- * Calls the `onApplicationShutdown` function on the module and its children
+ * Calls the `beforeApplicationShutdown` function on the module and its children
  * (providers / controllers).
  *
  * @param module The module which will be initialized
+ * @param signal The signal which caused the shutdown
  */
-export async function callAppShutdownHook(
+export async function callBeforeAppShutdownHook(
   module: Module,
   signal?: string,
-): Promise<any> {
+): Promise<void> {
   const providers = [...module.providers];
-  // Module (class) instance is the first element of the providers array
-  // Lifecycle hook has to be called once all classes are properly initialized
   const [_, { instance: moduleClassInstance }] = providers.shift();
   const instances = [...module.controllers, ...providers];
 
@@ -60,9 +59,8 @@ export async function callAppShutdownHook(
   const transientInstances = getTransientInstances(instances);
   await Promise.all(callOperator(transientInstances, signal));
 
-  // Call the instance itself
-  if (moduleClassInstance && hasOnAppShutdownHook(moduleClassInstance)) {
-    await (moduleClassInstance as OnApplicationShutdown).onApplicationShutdown(
+  if (moduleClassInstance && hasBeforeApplicationShutdownHook(moduleClassInstance)) {
+    await (moduleClassInstance as BeforeApplicationShutdown).beforeApplicationShutdown(
       signal,
     );
   }

@@ -20,8 +20,10 @@ describe('ListenersController', () => {
     metadataExplorer: ListenerMetadataExplorer,
     server: any,
     addSpy: sinon.SinonSpy,
+    proxySpy: sinon.SinonSpy,
     container: NestContainer,
     injector: Injector,
+    rpcContextCreator: RpcContextCreator,
     exceptionFiltersContext: ExceptionFiltersContext;
 
   before(() => {
@@ -35,9 +37,12 @@ describe('ListenersController', () => {
       container,
       new ApplicationConfig(),
     );
+    rpcContextCreator = sinon.createStubInstance(RpcContextCreator) as any;
+    proxySpy = sinon.spy();
+    (rpcContextCreator as any).create.callsFake(()=>proxySpy);
     instance = new ListenersController(
       new ClientsContainer(),
-      sinon.createStubInstance(RpcContextCreator) as any,
+      rpcContextCreator,
       container,
       injector,
       ClientProxyFactory,
@@ -81,9 +86,6 @@ describe('ListenersController', () => {
     let handleSpy: sinon.SinonSpy;
 
     beforeEach(() => {
-      sinon.stub(injector, 'loadPerContext').callsFake(() => {
-        throw new Error();
-      });
       handleSpy = sinon.spy();
       sinon.stub(exceptionFiltersContext, 'create').callsFake(
         () =>
@@ -91,6 +93,34 @@ describe('ListenersController', () => {
             handle: handleSpy,
           } as any),
       );
+      
+      sinon.stub((instance as any), 'registerRequestProvider').callsFake(() => ({} as any));
+    });
+
+    describe('when "loadPerContext" resolves', () => {
+      const moduleKey = 'moduleKey';
+      const methodKey = 'methodKey';
+      const module = {
+        controllers: new Map(),
+      } as any;
+      const pattern = {};
+      const wrapper = new InstanceWrapper({ instance: { [methodKey]: {} } });
+
+      it('should pass all arguments to the proxy chain', async () => {
+        sinon.stub(injector, 'loadPerContext').callsFake(() => Promise.resolve({}));
+        const handler = instance.createRequestScopedHandler(
+          wrapper,
+          pattern,
+          module,
+          moduleKey,
+          methodKey,
+        );
+        await handler("data", "metadata");
+
+        expect(proxySpy.called).to.be.true;
+        expect(proxySpy.getCall(0).args[0]).to.be.eql("data");
+        expect(proxySpy.getCall(0).args[1]).to.be.eql("metadata");
+      });
     });
 
     describe('when "loadPerContext" throws', () => {
@@ -103,6 +133,9 @@ describe('ListenersController', () => {
       const wrapper = new InstanceWrapper({ instance: { [methodKey]: {} } });
 
       it('should delegete error to exception filters', async () => {
+        sinon.stub(injector, 'loadPerContext').callsFake(() => {
+          throw new Error();
+        });
         const handler = instance.createRequestScopedHandler(
           wrapper,
           pattern,

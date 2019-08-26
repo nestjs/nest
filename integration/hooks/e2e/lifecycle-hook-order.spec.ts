@@ -1,5 +1,4 @@
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as Sinon from 'sinon';
 import {
   Injectable,
@@ -7,6 +6,7 @@ import {
   OnApplicationShutdown,
   OnModuleDestroy,
   OnModuleInit,
+  BeforeApplicationShutdown,
 } from '@nestjs/common';
 
 @Injectable()
@@ -15,8 +15,10 @@ class TestInjectable
     OnApplicationBootstrap,
     OnModuleInit,
     OnModuleDestroy,
-    OnApplicationShutdown {
+    OnApplicationShutdown,
+    BeforeApplicationShutdown {
   onApplicationBootstrap = Sinon.spy();
+  beforeApplicationShutdown = Sinon.spy();
   onApplicationShutdown = Sinon.spy();
   onModuleDestroy = Sinon.spy();
   onModuleInit = Sinon.spy();
@@ -37,6 +39,7 @@ describe('Lifecycle Hook Order', () => {
       instance.onModuleInit,
       instance.onApplicationBootstrap,
       instance.onModuleDestroy,
+      instance.beforeApplicationShutdown,
       instance.onApplicationShutdown,
     );
   });

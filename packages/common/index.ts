@@ -15,6 +15,7 @@ export {
   Abstract,
   ArgumentMetadata,
   ArgumentsHost,
+  BeforeApplicationShutdown,
   CallHandler,
   CanActivate,
   DynamicModule,
