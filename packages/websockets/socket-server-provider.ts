@@ -16,9 +16,11 @@ export class SocketServerProvider {
     options: T,
     port: number,
   ): SocketEventsHost {
-    const observableServer = this.socketsContainer.getServerByPort(port);
-    return observableServer
-      ? this.createWithNamespace(options, port, observableServer)
+    const socketEventsHost = this.socketsContainer.getSocketEventsHostByPort(
+      port,
+    );
+    return socketEventsHost
+      ? this.createWithNamespace(options, port, socketEventsHost)
       : this.createSocketServer(options, port);
   }
 
@@ -26,34 +28,32 @@ export class SocketServerProvider {
     options: T,
     port: number,
   ): SocketEventsHost {
-    const { namespace, server, ...opt } = options as any;
+    const { namespace, server, ...partialOptions } = options as any;
     const adapter = this.applicationConfig.getIoAdapter();
-    const ioServer = adapter.create(port, opt);
+    const ioServer = adapter.create(port, partialOptions);
     const observableSocket = SocketEventsHostFactory.create(ioServer);
 
-    this.socketsContainer.addServer(null, port, observableSocket);
+    this.socketsContainer.addSocketEventsHost(null, port, observableSocket);
     return this.createWithNamespace(options, port, observableSocket);
   }
 
   private createWithNamespace<T extends GatewayMetadata>(
     options: T,
     port: number,
-    observableSocket: SocketEventsHost,
+    socketEventsHost: SocketEventsHost,
   ): SocketEventsHost {
     const { namespace } = options;
     if (!namespace) {
-      return observableSocket;
+      return socketEventsHost;
     }
     const namespaceServer = this.getServerOfNamespace(
       options,
       port,
-      observableSocket.server,
+      socketEventsHost.server,
     );
-    const observableNamespaceSocket = SocketEventsHostFactory.create(
-      namespaceServer,
-    );
-    this.socketsContainer.addServer(namespace, port, observableNamespaceSocket);
-    return observableNamespaceSocket;
+    const eventsHost = SocketEventsHostFactory.create(namespaceServer);
+    this.socketsContainer.addSocketEventsHost(namespace, port, eventsHost);
+    return eventsHost;
   }
 
   private getServerOfNamespace<TOptions extends GatewayMetadata, TServer = any>(

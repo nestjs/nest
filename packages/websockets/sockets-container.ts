@@ -1,31 +1,31 @@
 import { SocketEventsHost } from './interfaces';
 
 export class SocketsContainer {
-  private readonly observableServers = new Map<
+  private readonly socketEventHosts = new Map<
     string | RegExp,
     SocketEventsHost
   >();
 
-  public getAllServers(): Map<string | RegExp, SocketEventsHost> {
-    return this.observableServers;
+  public getAllSocketEventHosts(): Map<string | RegExp, SocketEventsHost> {
+    return this.socketEventHosts;
   }
 
-  public getServerByPort(port: number): SocketEventsHost {
-    return this.observableServers.get(`${port}`);
+  public getSocketEventsHostByPort(port: number): SocketEventsHost {
+    return this.socketEventHosts.get(`${port}`);
   }
 
-  public addServer(
+  public addSocketEventsHost(
     namespace: string | RegExp,
     port: number,
-    server: SocketEventsHost,
+    host: SocketEventsHost,
   ) {
-    this.observableServers.set(
+    this.socketEventHosts.set(
       namespace ? `${namespace}:${port}` : `${port}`,
-      server,
+      host,
     );
   }
 
   public clear() {
-    this.observableServers.clear();
+    this.socketEventHosts.clear();
   }
 }
