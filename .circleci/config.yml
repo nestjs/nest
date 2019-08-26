@@ -20,7 +20,7 @@ jobs:
             - ./node_modules
       - run:
           name: Build
-          command: npm run build:dev
+          command: npm run build
         
   test:
     working_directory: ~/nest
@@ -36,7 +36,7 @@ jobs:
           command: npm ci
       - run:
           name: Build (dev)
-          command: npm run build:dev
+          command: npm run build
       - run:
           name: Test
           command: npm run test
