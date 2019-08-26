@@ -44,6 +44,7 @@ export {
   WebSocketAdapter,
   WsExceptionFilter,
   WsMessageHandler,
+  ScopeOptions,
 } from './interfaces';
 export * from './pipes';
 export * from './serializer';
