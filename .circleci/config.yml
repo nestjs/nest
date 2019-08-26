@@ -22,6 +22,7 @@ jobs:
           name: Build
           command: npm run build:dev
   test:
+    working_directory: ~/nest
     docker:
       - image: circleci/node:12
     steps:
@@ -36,6 +37,7 @@ jobs:
           name: Test
           command: npm run test
   lint:
+    working_directory: ~/nest
     docker:
       - image: circleci/node:12
     steps:
