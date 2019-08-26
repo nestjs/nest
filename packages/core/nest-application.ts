@@ -31,6 +31,9 @@ const { SocketModule } =
 const { MicroservicesModule } =
   optional('@nestjs/microservices/microservices-module') || ({} as any);
 
+/**
+ * @publicApi
+ */
 export class NestApplication extends NestApplicationContext
   implements INestApplication {
   private readonly logger = new Logger(NestApplication.name, true);

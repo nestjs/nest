@@ -3,6 +3,11 @@ import { LoggerService } from '../services/logger.service';
 import { Abstract } from './abstract.interface';
 import { Type } from './type.interface';
 
+/**
+ * Interface defining NestApplicationContext.
+ *
+ * @publicApi
+ */
 export interface INestApplicationContext {
   /**
    * Allows navigating through the modules tree, for example, to pull out a specific instance from the selected module.

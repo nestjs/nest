@@ -1,7 +1,9 @@
 import { REDIRECT_METADATA } from '../../constants';
 
 /**
- * Redirects request.
+ * Redirects request to the specified URL.
+ *
+ * @publicApi
  */
 export function Redirect(url: string, statusCode?: number): MethodDecorator {
   return (target: object, key, descriptor) => {
