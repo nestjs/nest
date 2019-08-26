@@ -7,19 +7,19 @@ jobs:
     steps:
       - checkout
       - run:
-          name: update-npm
+          name: Update NPM version
           command: 'sudo npm install -g npm@latest'
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run:
-          name: install-npm-wee
+          name: Install dependencies
           command: npm install
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - ./node_modules
       - run:
-          name: test
+          name: Build
           command: npm run build:dev
   test:
     docker:
