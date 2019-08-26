@@ -3,7 +3,6 @@ import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { Client } from '../decorators/client.decorator';
 import { MessagePattern } from '../decorators/message-pattern.decorator';
-import { MessageRequest } from '../decorators/message-request.decorator';
 import { Transport } from '../enums/transport.enum';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 
@@ -12,9 +11,6 @@ describe('ListenerMetadataExplorer', () => {
   const secPattern = { role: '2', cmd: 'm' };
   const clientMetadata = {};
   const clientSecMetadata = { transport: Transport.REDIS };
-
-  const requestPattern = 'request.channel';
-  const replyPattern = 'request.channel.reply';
 
   class Test {
     @Client(clientMetadata as any)
@@ -28,9 +24,6 @@ describe('ListenerMetadataExplorer', () => {
     set testSet(val) {}
 
     constructor() {}
-
-    @MessageRequest(requestPattern, replyPattern)
-    public requestExplicit() {}
 
     @MessagePattern(pattern)
     public test() {}
@@ -101,45 +94,6 @@ describe('ListenerMetadataExplorer', () => {
         property: 'redisClient',
         metadata: clientSecMetadata,
       });
-    });
-  });
-  describe('exploreMessageRequests', () => {
-    let scanFromPrototype: sinon.SinonSpy;
-    beforeEach(() => {
-      scanFromPrototype = sinon.spy(scanner, 'scanFromPrototype');
-    });
-    it(`should call "scanFromPrototype" with expected arguments`, () => {
-      const obj = new Test();
-      instance.exploreMessageRequests(obj);
-
-      const { args } = scanFromPrototype.getCall(0);
-      expect(args[0]).to.be.eql(obj);
-      expect(args[1]).to.be.eql(Object.getPrototypeOf(obj));
-    });
-  });
-  describe('exploreMessageRequestMethodMetadata', () => {
-    let test: Test;
-    beforeEach(() => {
-      test = new Test();
-    });
-    it(`should return undefined when MessageRequest metadata is undefined`, () => {
-      const metadata = instance.exploreMessageRequestMethodMetadata(
-        Object.getPrototypeOf(test),
-        'noPattern',
-      );
-      expect(metadata).to.eq(undefined);
-    });
-    it(`should return pattern properties when MessageRequest metadata is not undefined`, () => {
-      const metadata = instance.exploreMessageRequestMethodMetadata(
-        Object.getPrototypeOf(test),
-        'requestExplicit',
-      );
-      expect(metadata).to.have.keys([
-        'requestPattern',
-        'replyPattern',
-      ]);
-      expect(metadata.requestPattern).to.eql(requestPattern);
-      expect(metadata.replyPattern).to.eql(replyPattern);
     });
   });
 });

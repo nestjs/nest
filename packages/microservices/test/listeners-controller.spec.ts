@@ -147,16 +147,6 @@ describe('ListenersController', () => {
         .stub((instance as any).metadataExplorer, 'scanForClientHooks')
         .callsFake(() => metadata);
 
-      const messageRequests = [
-        {
-          requestPattern: 'request.pattern',
-          replyPattern: 'reply.pattern',
-        }
-      ];
-      sinon
-        .stub((instance as any).metadataExplorer, 'exploreMessageRequests')
-        .callsFake(() => messageRequests);
-
       const assignClientToInstanceSpy = sinon.spy(
         instance,
         'assignClientToInstance',

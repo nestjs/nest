@@ -84,41 +84,4 @@ export class ListenerMetadataExplorer {
       yield { property, metadata };
     }
   }
-
-  public exploreMessageRequests(
-    instance: Controller,
-  ): MessageRequestProperties[] {
-    const instancePrototype = Object.getPrototypeOf(instance);
-    return this.metadataScanner.scanFromPrototype<
-      Controller,
-      MessageRequestProperties
-    >(instance, instancePrototype, method =>
-      this.exploreMessageRequestMethodMetadata(instancePrototype, method),
-    );
-  }
-
-  public exploreMessageRequestMethodMetadata(
-    instancePrototype: any,
-    methodKey: string,
-  ): MessageRequestProperties {
-    const targetCallback = instancePrototype[methodKey];
-
-    const requestPattern = Reflect.getMetadata(
-      REQUEST_PATTERN_METADATA,
-      targetCallback,
-    );
-    const replyPattern = Reflect.getMetadata(
-      REPLY_PATTERN_METADATA,
-      targetCallback,
-    );
-
-    if (isUndefined(requestPattern) || isUndefined(replyPattern)) {
-      return;
-    }
-
-    return {
-      requestPattern,
-      replyPattern,
-    };
-  }
 }

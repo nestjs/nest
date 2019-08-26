@@ -39,8 +39,7 @@ export class ClientKafka extends ClientProxy {
   private readonly groupId: string;
 
   protected consumerAssignments: {[key: string]: number[]} = {};
-
-  protected static readonly REPLY_PATTERN_AFFIX: string = '.reply';
+  protected responsePatterns: string[] = [];
 
   constructor(protected readonly options: KafkaOptions['options']) {
     super();
@@ -57,6 +56,15 @@ export class ClientKafka extends ClientProxy {
     this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + '-client';
 
     kafkaPackage = loadPackage('kafkajs', ClientKafka.name, () => require('kafkajs'));
+  }
+
+  public subscribeToResponseOf(pattern: any): void {
+    const request = this.normalizePattern(pattern);
+    this.responsePatterns.push(this.getResponsePatternName(request));
+  }
+
+  protected getResponsePatternName(pattern: string): string {
+    return `${pattern}.reply`;
   }
 
   public close(): void {
@@ -100,15 +108,10 @@ export class ClientKafka extends ClientProxy {
   }
 
   public async bindTopics(): Promise<void> {
-    const requestPatterns = [...this.requestMap.keys()];
-
-    await Promise.all(requestPatterns.map(async requestPattern => {
-      // get the reply pattern
-      const replyPattern = this.getReplyPattern(requestPattern, ClientKafka.REPLY_PATTERN_AFFIX);
-
+    await Promise.all(this.responsePatterns.map(async responsePattern => {
       // subscribe to the pattern of the topic
       await this.consumer.subscribe({
-        topic: replyPattern
+        topic: responsePattern
       });
     }));
 
@@ -198,7 +201,7 @@ export class ClientKafka extends ClientProxy {
     }, this.options.send || {}));
   }
 
-  protected getReplyPartition(topic: string): string {
+  protected getReplyTopicPartition(topic: string): string {
     // get topic assignment
     const topicAssignments = this.consumerAssignments[topic];
 
@@ -226,8 +229,8 @@ export class ClientKafka extends ClientProxy {
 
       // get the response meta
       const pattern = this.normalizePattern(partialPacket.pattern);
-      const replyTopic = this.getReplyPattern(pattern, ClientKafka.REPLY_PATTERN_AFFIX);
-      const replyPartition = this.getReplyPartition(replyTopic);
+      const replyTopic = this.getResponsePatternName(pattern);
+      const replyPartition = this.getReplyTopicPartition(replyTopic);
 
       // set the route
       this.routingMap.set(packet.id, callback);

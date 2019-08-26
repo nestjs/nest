@@ -25,31 +25,6 @@ export abstract class ClientProxy {
   public abstract close(): any;
 
   protected routingMap = new Map<string, Function>();
-  protected requestMap = new Map<string, string>();
-
-  public addMessageRequest(
-    requestPattern: any,
-    replyPattern?: any
-  ) {
-    const request = this.normalizePattern(requestPattern);
-    let reply = null;
-
-    if (!isNil(replyPattern)) {
-      reply = this.normalizePattern(replyPattern);
-    }
-
-    this.requestMap.set(request, reply);
-  }
-
-  protected getReplyPattern(requestPattern: string, affix: string): string {
-    const replyPattern = this.requestMap.get(requestPattern);
-
-    if (isNil(replyPattern)) {
-      return `${requestPattern}${affix}`;
-    }
-
-    return replyPattern;
-  }
 
   public send<TResult = any, TInput = any>(
     pattern: any,

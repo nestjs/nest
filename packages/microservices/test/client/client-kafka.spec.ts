@@ -158,6 +158,29 @@ describe('ClientKafka', () => {
     createClientStub = sinon.stub(client, 'createClient').callsFake(() => kafkaClient);
   });
 
+  describe('subscribeToResponseOf', () => {
+    let normalizePatternSpy: sinon.SinonSpy;
+    let getResponsePatternNameSpy: sinon.SinonSpy;
+
+    beforeEach(() => {
+      normalizePatternSpy = sinon.spy(client as any, 'normalizePattern');
+      getResponsePatternNameSpy = sinon.spy(client as any, 'getResponsePatternName');
+    });
+
+    it(`should create an array of response patterns`, () => {
+      client.subscribeToResponseOf(topic);
+
+      expect(normalizePatternSpy.calledWith(topic)).to.be.true;
+      expect(getResponsePatternNameSpy.calledWith(topic)).to.be.true;
+      expect(client['responsePatterns']).to.not.be.empty;
+      expect(client['responsePatterns'][0]).to.eq(replyTopic);
+    });
+
+    afterEach(() => {
+      normalizePatternSpy.restore();
+    });
+  });
+
   describe('close', () => {
     const consumer = {disconnect: sinon.spy()};
     const producer = {disconnect: sinon.spy()};
@@ -246,38 +269,15 @@ describe('ClientKafka', () => {
   });
 
   describe('bindTopics', () => {
-    it('should bind explicit topics', async () => {
-      const getReplyPatternSpy = sinon.spy(client as any, 'getReplyPattern');
-
-      (client as any).requestMap = objectToMap({
-        'topic.request': 'topic.request.reply'
-      });
+    it('should bind topics from response patterns', async () => {
+      (client as any).responsePatterns = [replyTopic];
 
       client.consumer = kafkaClient.consumer();
 
-      // await client.connect();
       await client.bindTopics();
 
-      expect(getReplyPatternSpy.calledOnce).to.be.true;
       expect(subscribe.calledOnce).to.be.true;
-      expect(client['getReplyPattern']('topic.request', (ClientKafka as any).REPLY_PATTERN_AFFIX)).to.eq('topic.request.reply');
-    });
-
-    it('should bind implicit topics', async () => {
-      const getReplyPatternSpy = sinon.spy(client as any, 'getReplyPattern');
-
-      (client as any).requestMap = objectToMap({
-        'topic.request.implicit': null
-      });
-
-      client.consumer = kafkaClient.consumer();
-
-      // await client.connect();
-      await client.bindTopics();
-
-      expect(getReplyPatternSpy.calledOnce).to.be.true;
-      expect(subscribe.calledOnce).to.be.true;
-      expect(client['getReplyPattern']('topic.request.implicit', (ClientKafka as any).REPLY_PATTERN_AFFIX)).to.eq('topic.request.implicit.reply');
+      expect(run.calledOnce).to.be.true;
     });
   });
 
@@ -414,13 +414,13 @@ describe('ClientKafka', () => {
     });
   });
 
-  describe('getReplyPartition', () => {
+  describe('getReplyTopicPartition', () => {
     it('should get reply partition', () => {
       client['consumerAssignments'] = {
         [replyTopic]: [0]
       };
 
-      const result = client['getReplyPartition'](replyTopic);
+      const result = client['getReplyTopicPartition'](replyTopic);
 
       expect(result).to.eq('0');
     });
@@ -430,7 +430,7 @@ describe('ClientKafka', () => {
         [replyTopic]: []
       };
 
-      expect(() => client['getReplyPartition'](replyTopic)).to.throw(
+      expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
         InvalidKafkaClientTopicPartitionException
       );
     });
@@ -440,7 +440,7 @@ describe('ClientKafka', () => {
         [topic]: []
       };
 
-      expect(() => client['getReplyPartition'](replyTopic)).to.throw(
+      expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
         InvalidKafkaClientTopicException
       );
     });
@@ -455,16 +455,16 @@ describe('ClientKafka', () => {
     let assignPacketIdStub: sinon.SinonStub;
 
     let normalizePatternSpy: sinon.SinonSpy;
-    let getReplyPatternSpy: sinon.SinonSpy;
-    let getReplyPartitionSpy: sinon.SinonSpy;
+    let getResponsePatternNameSpy: sinon.SinonSpy;
+    let getReplyTopicPartitionSpy: sinon.SinonSpy;
     let routingMapSetSpy: sinon.SinonSpy;
     let sendSpy: sinon.SinonSpy;
 
     beforeEach(() => {
       // spy
       normalizePatternSpy = sinon.spy(client as any, 'normalizePattern');
-      getReplyPatternSpy = sinon.spy(client as any, 'getReplyPattern');
-      getReplyPartitionSpy = sinon.spy(client as any, 'getReplyPartition');
+      getResponsePatternNameSpy = sinon.spy(client as any, 'getResponsePatternName');
+      getReplyTopicPartitionSpy = sinon.spy(client as any, 'getReplyTopicPartition');
       routingMapSetSpy = sinon.spy((client as any).routingMap, 'set');
       sendSpy = sinon.spy();
 
@@ -495,12 +495,12 @@ describe('ClientKafka', () => {
 
     it('should get the reply pattern', async () => {
       await client['publish'](readPacket, callback);
-      expect(getReplyPatternSpy.calledWith(topic, (ClientKafka as any).REPLY_PATTERN_AFFIX)).to.be.true;
+      expect(getResponsePatternNameSpy.calledWith(topic)).to.be.true;
     });
 
     it('should get the reply partition', async () => {
       await client['publish'](readPacket, callback);
-      expect(getReplyPartitionSpy.calledWith(replyTopic)).to.be.true;
+      expect(getReplyTopicPartitionSpy.calledWith(replyTopic)).to.be.true;
     });
 
     it('should add the callback to the routing map', async () => {
@@ -554,25 +554,25 @@ describe('ClientKafka', () => {
 
     describe('dispose callback', () => {
       let subscription;
-      let getReplyPatternStub: sinon.SinonStub;
-      let getReplyPartitionStub: sinon.SinonStub;
+      let getResponsePatternNameStub: sinon.SinonStub;
+      let getReplyTopicPartitionStub: sinon.SinonStub;
 
       beforeEach(async () => {
         // restore
-        getReplyPatternSpy.restore();
-        getReplyPartitionSpy.restore();
+        getResponsePatternNameSpy.restore();
+        getReplyTopicPartitionSpy.restore();
 
         // return the topic instead of the reply topic
-        getReplyPatternStub = sinon.stub(client as any, 'getReplyPattern').callsFake(() => topic);
-        getReplyPartitionStub = sinon.stub(client as any, 'getReplyPartition').callsFake(() => '0');
+        getResponsePatternNameStub = sinon.stub(client as any, 'getResponsePatternName').callsFake(() => topic);
+        getReplyTopicPartitionStub = sinon.stub(client as any, 'getReplyTopicPartition').callsFake(() => '0');
 
         subscription = await client['publish'](readPacket, callback);
         subscription(payloadDisposed);
       });
 
       afterEach(() => {
-        getReplyPatternStub.restore();
-        getReplyPartitionStub.restore();
+        getResponsePatternNameStub.restore();
+        getReplyTopicPartitionStub.restore();
       });
 
       it('should remove callback from routing map', async () => {
