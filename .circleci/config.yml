@@ -20,12 +20,18 @@ jobs:
             - ./node_modules
       - run:
           name: Build
-          command: npm run build:dev
+          command: npm run build
   test:
     docker:
       - image: circleci/node:12
     steps:
       - checkout
+      - run:
+          name: Install dependencies
+          command: npm install
+      - run:
+          name: Build (dev)
+          command: npm run build:dev
       - run:
           name: Test
           command: npm run test
@@ -34,6 +40,9 @@ jobs:
       - image: circleci/node:12
     steps:
       - checkout
+      - run:
+          name: Install dependencies
+          command: npm install
       - run:
           name: Lint
           command: npm run lint
