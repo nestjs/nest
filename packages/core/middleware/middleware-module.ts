@@ -63,8 +63,9 @@ export class MiddlewareModule {
     middlewareContainer: MiddlewareContainer,
     modules: Map<string, Module>,
   ) {
+    const moduleEntries = [...modules.entries()];
     await Promise.all(
-      [...modules.entries()].map(async ([name, module]) => {
+      moduleEntries.map(async ([name, module]) => {
         const instance = module.instance;
 
         await this.loadConfiguration(middlewareContainer, instance, name);
@@ -109,11 +110,11 @@ export class MiddlewareModule {
         );
       });
 
-    await Promise.all(
-      [...configs.entries()].map(async ([module, moduleConfigs]) => {
-        await Promise.all(registerAllConfigs(module, [...moduleConfigs]));
-      }),
-    );
+    const configEntries = [...configs.entries()];
+    const registerModuleConfigs = async ([module, moduleConfigs]) => {
+      await Promise.all(registerAllConfigs(module, [...moduleConfigs]));
+    };
+    await Promise.all(configEntries.map(registerModuleConfigs));
   }
 
   public async registerMiddlewareConfig(

@@ -1,10 +1,10 @@
 import { validatePath } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { isString } from 'util';
-import { SocketsContainer } from './container';
 import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
-import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
-import { ObservableSocket } from './observable-socket';
+import { SocketEventsHost } from './interfaces/socket-events-host.interface';
+import { SocketEventsHostFactory } from './socket-events-host-factory';
+import { SocketsContainer } from './sockets-container';
 
 export class SocketServerProvider {
   constructor(
@@ -15,7 +15,7 @@ export class SocketServerProvider {
   public scanForSocketServer<T extends GatewayMetadata>(
     options: T,
     port: number,
-  ): ObservableSocketServer {
+  ): SocketEventsHost {
     const observableServer = this.socketsContainer.getServerByPort(port);
     return observableServer
       ? this.createWithNamespace(options, port, observableServer)
@@ -25,11 +25,11 @@ export class SocketServerProvider {
   private createSocketServer<T extends GatewayMetadata>(
     options: T,
     port: number,
-  ): ObservableSocketServer {
+  ): SocketEventsHost {
     const { namespace, server, ...opt } = options as any;
     const adapter = this.applicationConfig.getIoAdapter();
     const ioServer = adapter.create(port, opt);
-    const observableSocket = ObservableSocket.create(ioServer);
+    const observableSocket = SocketEventsHostFactory.create(ioServer);
 
     this.socketsContainer.addServer(null, port, observableSocket);
     return this.createWithNamespace(options, port, observableSocket);
@@ -38,8 +38,8 @@ export class SocketServerProvider {
   private createWithNamespace<T extends GatewayMetadata>(
     options: T,
     port: number,
-    observableSocket: ObservableSocketServer,
-  ): ObservableSocketServer {
+    observableSocket: SocketEventsHost,
+  ): SocketEventsHost {
     const { namespace } = options;
     if (!namespace) {
       return observableSocket;
@@ -49,7 +49,9 @@ export class SocketServerProvider {
       port,
       observableSocket.server,
     );
-    const observableNamespaceSocket = ObservableSocket.create(namespaceServer);
+    const observableNamespaceSocket = SocketEventsHostFactory.create(
+      namespaceServer,
+    );
     this.socketsContainer.addServer(namespace, port, observableNamespaceSocket);
     return observableNamespaceSocket;
   }

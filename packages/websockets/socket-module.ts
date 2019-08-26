@@ -11,12 +11,12 @@ import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
 import iterate from 'iterare';
 import { GATEWAY_METADATA } from './constants';
-import { SocketsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { WsContextCreator } from './context/ws-context-creator';
 import { WsProxy } from './context/ws-proxy';
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { SocketServerProvider } from './socket-server-provider';
+import { SocketsContainer } from './sockets-container';
 import { WebSocketsController } from './web-sockets-controller';
 
 export class SocketModule<HttpServer = any> {

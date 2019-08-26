@@ -19,15 +19,16 @@ export class MetadataScanner {
   }
 
   *getAllFilteredMethodNames(prototype: any): IterableIterator<string> {
+    const isMethod = (prop: string) => {
+      const descriptor = Object.getOwnPropertyDescriptor(prototype, prop);
+      if (descriptor.set || descriptor.get) {
+        return false;
+      }
+      return !isConstructor(prop) && isFunction(prototype[prop]);
+    };
     do {
       yield* iterate(Object.getOwnPropertyNames(prototype))
-        .filter(prop => {
-          const descriptor = Object.getOwnPropertyDescriptor(prototype, prop);
-          if (descriptor.set || descriptor.get) {
-            return false;
-          }
-          return !isConstructor(prop) && isFunction(prototype[prop]);
-        })
+        .filter(isMethod)
         .toArray();
     } while (
       // tslint:disable-next-line:no-conditional-assignment

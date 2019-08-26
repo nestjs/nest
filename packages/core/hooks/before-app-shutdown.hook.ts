@@ -1,8 +1,8 @@
-import { Module } from '../injector/module';
+import { BeforeApplicationShutdown } from '@nestjs/common';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
-import { BeforeApplicationShutdown } from '@nestjs/common';
 import { InstanceWrapper } from '../injector/instance-wrapper';
+import { Module } from '../injector/module';
 import {
   getNonTransientInstances,
   getTransientInstances,
@@ -59,7 +59,10 @@ export async function callBeforeAppShutdownHook(
   const transientInstances = getTransientInstances(instances);
   await Promise.all(callOperator(transientInstances, signal));
 
-  if (moduleClassInstance && hasBeforeApplicationShutdownHook(moduleClassInstance)) {
+  if (
+    moduleClassInstance &&
+    hasBeforeApplicationShutdownHook(moduleClassInstance)
+  ) {
     await (moduleClassInstance as BeforeApplicationShutdown).beforeApplicationShutdown(
       signal,
     );

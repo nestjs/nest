@@ -16,9 +16,7 @@ import {
 function hasOnAppBootstrapHook(
   instance: unknown,
 ): instance is OnApplicationBootstrap {
-  return !isNil(
-    (instance as OnApplicationBootstrap).onApplicationBootstrap,
-  );
+  return !isNil((instance as OnApplicationBootstrap).onApplicationBootstrap);
 }
 
 /**

@@ -37,7 +37,7 @@ export class ListenersController {
     private readonly exceptionFiltersContext: ExceptionFiltersContext,
   ) {}
 
-  public bindPatternHandlers(
+  public registerPatternHandlers(
     instanceWrapper: InstanceWrapper<Controller>,
     server: Server & CustomTransportStrategy,
     moduleKey: string,
@@ -70,7 +70,7 @@ export class ListenersController {
     );
   }
 
-  public bindClientsToProperties(instance: Controller) {
+  public assignClientsToProperties(instance: Controller) {
     for (const {
       property,
       metadata,
