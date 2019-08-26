@@ -30,6 +30,7 @@ export type ParamDecoratorEnhancer = ParameterDecorator;
 
 /**
  * Defines HTTP route param decorator
+ *
  * @param factory
  */
 export function createParamDecorator(
@@ -48,7 +49,9 @@ export function createParamDecorator(
 
     const isPipe = (pipe: any) =>
       pipe &&
-      ((isFunction(pipe) && pipe.prototype && isFunction(pipe.prototype.transform)) ||
+      ((isFunction(pipe) &&
+        pipe.prototype &&
+        isFunction(pipe.prototype.transform)) ||
         isFunction(pipe.transform));
 
     const hasParamData = isNil(data) || !isPipe(data);
