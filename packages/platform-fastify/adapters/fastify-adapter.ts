@@ -1,4 +1,4 @@
-import { RequestMethod } from '@nestjs/common';
+import { RequestMethod, HttpStatus } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -47,6 +47,11 @@ export class FastifyAdapter extends AbstractHttpAdapter {
 
   public render(response: any, view: string, options: any) {
     return response.view(view, options);
+  }
+
+  public redirect(response: any, statusCode: number, url: string) {
+    const code = statusCode ? statusCode : HttpStatus.FOUND;
+    return response.status(code).redirect(url);
   }
 
   public setErrorHandler(handler: Function) {

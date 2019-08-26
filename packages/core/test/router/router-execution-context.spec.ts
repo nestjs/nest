@@ -298,6 +298,7 @@ describe('RouterExecutionContext', () => {
         const value = 'test';
         const response = { render: sinon.spy() };
 
+        sinon.stub(contextCreator, 'reflectRedirect').returns(undefined);
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
 
@@ -312,6 +313,7 @@ describe('RouterExecutionContext', () => {
         const result = Promise.resolve('test');
         const response = { render: sinon.spy() };
 
+        sinon.stub(contextCreator, 'reflectRedirect').returns(undefined);
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
 
@@ -319,6 +321,50 @@ describe('RouterExecutionContext', () => {
         handler(result, response);
 
         expect(response.render.called).to.be.false;
+      });
+    });
+    describe('when "redirectResponse" is present', () => {
+      beforeEach(() => {
+        sinon
+          .stub(adapter, 'redirect')
+          .callsFake((response, statusCode: number, url: string) => {
+            return response.redirect(statusCode, url);
+          });
+      });
+      it('should call "res.redirect()" with expected args', async () => {
+        const redirectResponse = {
+          url: 'http://test.com',
+          statusCode: 302,
+        };
+        const response = { redirect: sinon.spy() };
+
+        sinon.stub(contextCreator, 'reflectRedirect').returns(redirectResponse);
+
+        const handler = contextCreator.createHandleResponseFn(null, true, 200);
+        await handler(redirectResponse, response);
+
+        expect(
+          response.redirect.calledWith(
+            redirectResponse.statusCode,
+            redirectResponse.url,
+          ),
+        ).to.be.true;
+      });
+    });
+
+    describe('when "redirectResponse" is undefined', () => {
+      it('should not call "res.render()"', () => {
+        const result = Promise.resolve('test');
+        const response = { redirect: sinon.spy() };
+
+        sinon.stub(contextCreator, 'reflectRedirect').returns(undefined);
+        sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+
+        const handler = contextCreator.createHandleResponseFn(null, true, 200);
+        handler(result, response);
+
+        expect(response.redirect.called).to.be.false;
       });
     });
   });

@@ -11,6 +11,7 @@ import {
   HTTP_CODE_METADATA,
   RENDER_METADATA,
   ROUTE_ARGS_METADATA,
+  REDIRECT_METADATA,
 } from '@nestjs/common/constants';
 import { RouteParamsMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
@@ -36,6 +37,7 @@ import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 import {
   CustomHeader,
+  RedirectResponse,
   RouterResponseController,
 } from './router-response-controller';
 
@@ -86,6 +88,7 @@ export class RouterExecutionContext {
       httpStatusCode,
       responseHeaders,
       hasCustomHeaders,
+      httpRedirectResponse,
     } = this.getMetadata(instance, callback, methodName, module, requestMethod);
 
     const paramsOptions = this.contextUtils.mergeParamsMetatypes(
@@ -205,6 +208,8 @@ export class RouterExecutionContext {
     const responseHeaders = this.reflectResponseHeaders(callback);
     const hasCustomHeaders = !isEmpty(responseHeaders);
 
+    const httpRedirectResponse = this.reflectRedirect(callback);
+
     const handlerMetadata: HandlerMetadata = {
       argsLength,
       fnHandleResponse,
@@ -212,10 +217,15 @@ export class RouterExecutionContext {
       getParamsMetadata,
       httpStatusCode,
       hasCustomHeaders,
+      httpRedirectResponse,
       responseHeaders,
     };
     this.handlerMetadataStorage.set(instance, methodName, handlerMetadata);
     return handlerMetadata;
+  }
+
+  public reflectRedirect(callback: (...args: any[]) => any): RedirectResponse {
+    return Reflect.getMetadata(REDIRECT_METADATA, callback);
   }
 
   public reflectHttpStatusCode(callback: (...args: any[]) => any): number {
@@ -360,6 +370,13 @@ export class RouterExecutionContext {
     isResponseHandled: boolean,
     httpStatusCode?: number,
   ) {
+    const redirectResponse = this.reflectRedirect(callback);
+    if (redirectResponse && redirectResponse.url) {
+      return async <TResult, TResponse>(result: TResult, res: TResponse) => {
+        await this.responseController.redirect(result, res, redirectResponse);
+      };
+    }
+
     const renderTemplate = this.reflectRenderTemplate(callback);
 
     if (renderTemplate) {
