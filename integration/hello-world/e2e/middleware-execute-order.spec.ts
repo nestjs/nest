@@ -8,7 +8,7 @@ const RETURN_VALUE_B = 'test_B';
 @Module({
   imports: [],
 })
-class TestAModule {
+class ModuleA {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req, res, next) => {
@@ -19,9 +19,9 @@ class TestAModule {
 }
 
 @Module({
-  imports: [TestAModule],
+  imports: [ModuleA],
 })
-class TestBModule {
+class ModuleB {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req, res, next) => {
@@ -32,12 +32,11 @@ class TestBModule {
 }
 
 @Module({
-  imports: [TestBModule],
+  imports: [ModuleB],
 })
-class TestModule {
-}
+class TestModule {}
 
-describe('Middleware Execute Order', () => {
+describe('Middleware (execution order)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
@@ -48,7 +47,7 @@ describe('Middleware Execute Order', () => {
     await app.init();
   });
 
-  it(`Execute middleware of dependent modules first `, () => {
+  it(`should execute middleware of dependent modules first `, () => {
     return request(app.getHttpServer())
       .get('/hello')
       .expect(200, RETURN_VALUE_A);
