@@ -21,9 +21,6 @@ jobs:
       - run:
           name: Build
           command: npm run build:dev
-      - store_artifacts:
-          path: packages
-          destination: packages
         
   test:
     working_directory: ~/nest
@@ -37,6 +34,9 @@ jobs:
       - run:
           name: Install dependencies
           command: npm ci
+      - run:
+          name: Build (dev)
+          command: npm run build:dev
       - run:
           name: Test
           command: npm run test
