@@ -19,6 +19,9 @@ describe('MQTT transport', () => {
 
     app.connectMicroservice({
       transport: Transport.MQTT,
+      options: {
+        url: 'mqtt://0.0.0.0:1883',
+      },
     });
     await app.startAllMicroservicesAsync();
     await app.init();

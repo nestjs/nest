@@ -1,4 +1,31 @@
 version: 2
+
+aliases:
+  - &restore-cache
+    restore_cache:
+        key: dependency-cache-{{ checksum "package.json" }}
+  - &install-deps
+    run:
+        name: Install dependencies
+        command: npm ci
+  - &build-packages
+    run:
+        name: Build
+        command: npm run build
+  - &run-unit-tests
+    run:
+        name: Test
+        command: npm run test
+
+unit-tests-template: &unit-tests-template
+  working_directory: ~/nest
+  steps:
+    - checkout
+    - *restore-cache
+    - *install-deps
+    - *build-packages
+    - *run-unit-tests
+
 jobs:
   build:
     working_directory: ~/nest
@@ -22,27 +49,31 @@ jobs:
           name: Build
           command: npm run build
         
-  test:
+  test_node_12:
     working_directory: ~/nest
     docker:
       - image: circleci/node:12
     steps:
       - checkout
-      - restore_cache:
-          name: Restore node_modules cache
-          key: dependency-cache-{{ checksum "package.json" }}
-      - run:
-          name: Install dependencies
-          command: npm ci
-      - run:
-          name: Build (dev)
-          command: npm run build
-      - run:
-          name: Test
-          command: npm run test
+      - *restore-cache
+      - *install-deps
+      - *build-packages
+      - *run-unit-tests
       - run:
           name: Collect coverage
           command: npm run coverage
+      - store_artifacts:
+          path: coverage
+
+  test_node_10:
+    <<: *unit-tests-template
+    docker:
+      - image: circleci/node:10
+
+  test_node_8:
+    <<: *unit-tests-template
+    docker:
+      - image: circleci/node:8
 
   lint:
     working_directory: ~/nest
@@ -50,25 +81,40 @@ jobs:
       - image: circleci/node:12
     steps:
       - checkout
-      - restore_cache:
-          name: Restore node_modules cache
-          key: dependency-cache-{{ checksum "package.json" }}
-      - run:
-          name: Install dependencies
-          command: npm ci
+      - *restore-cache
+      - *install-deps
       - run:
           name: Lint
           command: npm run lint
 
   integration_tests:
     working_directory: ~/nest
-    docker:
-      - image: circleci/node:12
+    machine: true
     steps:
       - checkout
+      - run: 
+          name: Upgrade Node.js
+          command: |
+            echo 'export NVM_DIR="/opt/circleci/.nvm"' >> $BASH_ENV
+            echo ' [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
+            nvm install v12
+            node -v
+            nvm alias default v12
+      - run:
+          name: Install Docker Compose
+          command: |
+            curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
+            chmod +x ~/docker-compose
+            sudo mv ~/docker-compose /usr/local/bin/docker-compose
+      - *install-deps
       - run:
           name: Prepare tests
-          command: bash ./scripts/prepare.sh
+          command: |
+            bash ./scripts/prepare.sh
+            sleep 10
+      - run:
+          name: List containers
+          command: docker ps
       - run:
           name: Integration tests
           command: npm run integration-test
@@ -79,6 +125,8 @@ jobs:
       - image: circleci/node:12
     steps:
       - checkout
+      - *restore-cache
+      - *install-deps
       - run:
           name: Build all samples
           command: npm run build:samples
@@ -88,7 +136,13 @@ workflows:
   build-and-test:
     jobs:
       - build
-      - test:
+      - test_node_12:
+          requires:
+            - build
+      - test_node_10:
+          requires:
+            - build
+      - test_node_8:
           requires:
             - build
       - lint:
