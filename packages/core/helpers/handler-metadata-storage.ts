@@ -2,7 +2,6 @@ import { Controller } from '@nestjs/common/interfaces';
 import * as hash from 'object-hash';
 import { ContextId } from './../injector/instance-wrapper';
 import { ParamProperties } from './context-utils';
-import { RedirectResponse } from '../router/router-response-controller';
 
 export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');
 
@@ -12,7 +11,6 @@ export interface HandlerMetadata {
   httpStatusCode: number;
   responseHeaders: any[];
   hasCustomHeaders: boolean;
-  httpRedirectResponse: RedirectResponse;
   getParamsMetadata: (
     moduleKey: string,
     contextId?: ContextId,

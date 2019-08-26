@@ -298,11 +298,15 @@ describe('RouterExecutionContext', () => {
         const value = 'test';
         const response = { render: sinon.spy() };
 
-        sinon.stub(contextCreator, 'reflectRedirect').returns(undefined);
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
 
-        const handler = contextCreator.createHandleResponseFn(null, true, 200);
+        const handler = contextCreator.createHandleResponseFn(
+          null,
+          true,
+          undefined,
+          200,
+        );
         await handler(value, response);
 
         expect(response.render.calledWith(template, value)).to.be.true;
@@ -313,11 +317,15 @@ describe('RouterExecutionContext', () => {
         const result = Promise.resolve('test');
         const response = { render: sinon.spy() };
 
-        sinon.stub(contextCreator, 'reflectRedirect').returns(undefined);
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
 
-        const handler = contextCreator.createHandleResponseFn(null, true, 200);
+        const handler = contextCreator.createHandleResponseFn(
+          null,
+          true,
+          undefined,
+          200,
+        );
         handler(result, response);
 
         expect(response.render.called).to.be.false;
@@ -338,9 +346,12 @@ describe('RouterExecutionContext', () => {
         };
         const response = { redirect: sinon.spy() };
 
-        sinon.stub(contextCreator, 'reflectRedirect').returns(redirectResponse);
-
-        const handler = contextCreator.createHandleResponseFn(null, true, 200);
+        const handler = contextCreator.createHandleResponseFn(
+          () => {},
+          true,
+          redirectResponse,
+          200,
+        );
         await handler(redirectResponse, response);
 
         expect(
@@ -357,11 +368,15 @@ describe('RouterExecutionContext', () => {
         const result = Promise.resolve('test');
         const response = { redirect: sinon.spy() };
 
-        sinon.stub(contextCreator, 'reflectRedirect').returns(undefined);
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
 
-        const handler = contextCreator.createHandleResponseFn(null, true, 200);
+        const handler = contextCreator.createHandleResponseFn(
+          null,
+          true,
+          undefined,
+          200,
+        );
         handler(result, response);
 
         expect(response.redirect.called).to.be.false;
