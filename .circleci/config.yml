@@ -82,7 +82,7 @@ jobs:
       - run:
           name: Build all samples
           command: npm run build:samples
-          
+
 workflows:
   version: 2
   build-and-test:
@@ -98,6 +98,6 @@ workflows:
           requires:
             - build
       - samples:
-          retuires:
+          requires:
             - build
       
