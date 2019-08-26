@@ -114,11 +114,18 @@ export class MiddlewareModule {
         );
       });
 
-    const configEntries = [...configs.entries()];
+    const entriesSortedByDistance = [...configs.entries()].sort(
+      ([moduleA], [moduleB]) => {
+        return (
+          this.container.getModuleByKey(moduleB).distance -
+          this.container.getModuleByKey(moduleA).distance
+        );
+      },
+    );
     const registerModuleConfigs = async ([module, moduleConfigs]) => {
       await Promise.all(registerAllConfigs(module, [...moduleConfigs]));
     };
-    await Promise.all(configEntries.map(registerModuleConfigs));
+    await Promise.all(entriesSortedByDistance.map(registerModuleConfigs));
   }
 
   public async registerMiddlewareConfig(

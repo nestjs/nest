@@ -481,4 +481,39 @@ describe('Module', () => {
       });
     });
   });
+
+  describe('getter "distance"', () => {
+    @ModuleDecorator({})
+    class ModuleA {}
+
+    @ModuleDecorator({})
+    class ModuleB {}
+
+    @ModuleDecorator({})
+    class ModuleC {}
+
+    let moduleA, moduleB, moduleC;
+    beforeEach(() => {
+      moduleA = new Module(ModuleA as any, [], container);
+      moduleB = new Module(ModuleB as any, [], container);
+      moduleC = new Module(ModuleC as any, [], container);
+    });
+
+    it('should get "distance" correct', () => {
+      moduleA.addRelatedModule(moduleB);
+      moduleC.addRelatedModule(moduleB);
+      moduleA.addRelatedModule(moduleC);
+
+      expect(moduleA.distance).to.be.equal(0);
+      expect(moduleB.distance).to.be.equal(2);
+      expect(moduleC.distance).to.be.equal(1);
+    });
+
+    it('should don`t throw exception when circular dependency', () => {
+      expect(() => {
+        moduleA.addRelatedModule(moduleB);
+        moduleB.addRelatedModule(moduleA);
+      }).to.not.throw;
+    });
+  });
 });

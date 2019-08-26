@@ -44,6 +44,7 @@ export class Module {
     InstanceWrapper<Controller>
   >();
   private readonly _exports = new Set<string | symbol>();
+  private _distance: number = 0;
 
   constructor(
     private readonly _metatype: Type<any>,
@@ -113,6 +114,17 @@ export class Module {
 
   get metatype(): Type<any> {
     return this._metatype;
+  }
+
+  get distance(): number {
+    return this._distance;
+  }
+
+  set distance(distance: number) {
+    this._distance = distance;
+    Array.from(this._imports)
+      .filter(module => module && !module.imports.has(this))
+      .forEach(module => (module.distance = distance + 1));
   }
 
   public addCoreProviders(container: NestContainer) {
@@ -399,8 +411,12 @@ export class Module {
     );
   }
 
-  public addRelatedModule(module: any) {
+  public addRelatedModule(module: Module) {
     this._imports.add(module);
+    module.distance =
+      this._distance + 1 > module._distance
+        ? this._distance + 1
+        : module._distance;
   }
 
   public replace(toReplace: string | symbol | Type<any>, options: any) {
