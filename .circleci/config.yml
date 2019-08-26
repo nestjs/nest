@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/
+    working_directory: ~/nest
     docker:
       - image: circleci/node:12
     steps:
