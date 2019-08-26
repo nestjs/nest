@@ -119,11 +119,11 @@ export class Module {
     return this._distance;
   }
 
-  set distance(distance: number){
+  set distance(distance: number) {
     this._distance = distance;
     Array.from(this._imports)
-      .filter((module) => !module.imports.has(this))
-      .forEach((module) => module.distance = distance + 1);
+      .filter(module => module && !module.imports.has(this))
+      .forEach(module => (module.distance = distance + 1));
   }
 
   public addCoreProviders(container: NestContainer) {
@@ -412,7 +412,10 @@ export class Module {
 
   public addRelatedModule(module: Module) {
     this._imports.add(module);
-    module.distance = this._distance + 1 > module._distance ? this._distance + 1 : module._distance;
+    module.distance =
+      this._distance + 1 > module._distance
+        ? this._distance + 1
+        : module._distance;
   }
 
   public replace(toReplace: string | symbol | Type<any>, options: any) {
