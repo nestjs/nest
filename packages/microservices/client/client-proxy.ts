@@ -1,6 +1,7 @@
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import {
+  ConnectableObservable,
   defer,
   fromEvent,
   merge,
@@ -8,7 +9,7 @@ import {
   Observer,
   throwError as _throw,
 } from 'rxjs';
-import { map, mergeMap, take } from 'rxjs/operators';
+import { map, mergeMap, publish, take } from 'rxjs/operators';
 import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
 import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
@@ -51,9 +52,12 @@ export abstract class ClientProxy {
     if (isNil(pattern) || isNil(data)) {
       return _throw(new InvalidMessageException());
     }
-    return defer(async () => this.connect()).pipe(
+    const source = defer(async () => this.connect()).pipe(
       mergeMap(() => this.dispatchEvent({ pattern, data })),
+      publish(),
     );
+    (source as ConnectableObservable<TResult>).connect();
+    return source;
   }
 
   protected abstract publish(
