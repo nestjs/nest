@@ -41,8 +41,8 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-      - build:
+      - build
       - test:
           requires:
             - build
-      - lint:
+      - lint
