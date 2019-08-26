@@ -40,6 +40,10 @@ jobs:
       - run:
           name: Test
           command: npm run test
+      - run:
+          name: Collect coverage
+          command: npm run coverage
+
   lint:
     working_directory: ~/nest
     docker:
@@ -55,6 +59,30 @@ jobs:
       - run:
           name: Lint
           command: npm run lint
+
+  integration_tests:
+    working_directory: ~/nest
+    docker:
+      - image: circleci/node:12
+    steps:
+      - checkout
+      - run:
+          name: Prepare tests
+          command: bash ./scripts/prepare.sh
+      - run:
+          name: Integration tests
+          command: npm run integration-test
+
+  samples:
+    working_directory: ~/nest
+    docker:
+      - image: circleci/node:12
+    steps:
+      - checkout
+      - run:
+          name: Build all samples
+          command: npm run build:samples
+          
 workflows:
   version: 2
   build-and-test:
@@ -66,3 +94,10 @@ workflows:
       - lint:
           requires:
             - build
+      - integration_tests:
+          requires:
+            - build
+      - samples:
+          retuires:
+            - build
+      
