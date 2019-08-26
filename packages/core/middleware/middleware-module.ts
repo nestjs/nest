@@ -67,13 +67,13 @@ export class MiddlewareModule {
       [...modules.entries()].map(async ([name, module]) => {
         const instance = module.instance;
 
-        this.loadConfiguration(middlewareContainer, instance, name);
+        await this.loadConfiguration(middlewareContainer, instance, name);
         await this.resolver.resolveInstances(module, name);
       }),
     );
   }
 
-  public loadConfiguration(
+  public async loadConfiguration(
     middlewareContainer: MiddlewareContainer,
     instance: NestModule,
     moduleKey: string,
@@ -82,7 +82,7 @@ export class MiddlewareModule {
       return;
     }
     const middlewareBuilder = new MiddlewareBuilder(this.routesMapper);
-    instance.configure(middlewareBuilder);
+    await instance.configure(middlewareBuilder);
 
     if (!(middlewareBuilder instanceof MiddlewareBuilder)) {
       return;
