@@ -50,6 +50,9 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + '-server';
 
     kafkaPackage = this.loadPackage('kafkajs', ServerKafka.name, () => require('kafkajs'));
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public async listen(callback: () => void): Promise<void> {

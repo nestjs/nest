@@ -116,20 +116,22 @@ export interface RmqOptions {
 export interface KafkaOptions {
   transport?: Transport.KAFKA;
   options?: {
-    client?: KafkaConfig,
-    consumer?: ConsumerConfig,
+    client?: KafkaConfig;
+    consumer?: ConsumerConfig;
     run?: {
-      autoCommit?: boolean
-      autoCommitInterval?: number | null
-      autoCommitThreshold?: number | null
-      eachBatchAutoResolve?: boolean
-      partitionsConsumedConcurrently?: number
-    },
-    producer?: ProducerConfig,
+      autoCommit?: boolean;
+      autoCommitInterval?: number | null;
+      autoCommitThreshold?: number | null;
+      eachBatchAutoResolve?: boolean;
+      partitionsConsumedConcurrently?: number;
+    };
+    producer?: ProducerConfig;
     send?: {
       acks?: number;
       timeout?: number;
       compression?: CompressionTypes;
-    }
+    };
+    serializer?: Serializer;
+    deserializer?: Deserializer;
   };
 }
