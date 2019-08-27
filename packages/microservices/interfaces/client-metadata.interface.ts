@@ -1,4 +1,5 @@
 import { Transport } from './../enums/transport.enum';
+import { Deserializer } from './deserializer.interface';
 import {
   GrpcOptions,
   KafkaOptions,
@@ -7,6 +8,7 @@ import {
   RedisOptions,
   RmqOptions
 } from './microservice-configuration.interface';
+import { Serializer } from './serializer.interface';
 
 export type ClientOptions =
   | RedisOptions
@@ -22,5 +24,7 @@ export interface TcpClientOptions {
   options?: {
     host?: string;
     port?: number;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
   };
 }

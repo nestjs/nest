@@ -25,6 +25,7 @@ import { ApplicationConfig } from '../application-config';
 import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import { createContextId } from '../helpers';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
@@ -43,6 +44,7 @@ export class Module {
     InstanceWrapper<Controller>
   >();
   private readonly _exports = new Set<string | symbol>();
+  private _distance: number = 0;
 
   constructor(
     private readonly _metatype: Type<any>,
@@ -112,6 +114,17 @@ export class Module {
 
   get metatype(): Type<any> {
     return this._metatype;
+  }
+
+  get distance(): number {
+    return this._distance;
+  }
+
+  set distance(distance: number) {
+    this._distance = distance;
+    Array.from(this._imports)
+      .filter(module => module && !module.imports.has(this))
+      .forEach(module => (module.distance = distance + 1));
   }
 
   public addCoreProviders(container: NestContainer) {
@@ -398,8 +411,12 @@ export class Module {
     );
   }
 
-  public addRelatedModule(module: any) {
+  public addRelatedModule(module: Module) {
     this._imports.add(module);
+    module.distance =
+      this._distance + 1 > module._distance
+        ? this._distance + 1
+        : module._distance;
   }
 
   public replace(toReplace: string | symbol | Type<any>, options: any) {
@@ -453,10 +470,15 @@ export class Module {
         if (!(options && options.strict)) {
           return this.find<TInput, TResult>(typeOrToken);
         }
-        return this.findInstanceByPrototypeOrToken<TInput, TResult>(
-          typeOrToken,
-          self,
-        );
+        return this.findInstanceByToken<TInput, TResult>(typeOrToken, self);
+      }
+
+      public resolve<TInput = any, TResult = TInput>(
+        typeOrToken: Type<TInput> | string | symbol,
+        contextId = createContextId(),
+        options: { strict: boolean } = { strict: true },
+      ): Promise<TResult> {
+        return this.resolvePerContext(typeOrToken, self, contextId, options);
       }
 
       public async create<T = any>(type: Type<T>): Promise<T> {

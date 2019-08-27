@@ -95,6 +95,7 @@ describe('ServerRMQ', () => {
       await server.handleMessage(msg);
       expect(
         sendMessageStub.calledWith({
+          id: '3',
           status: 'error',
           err: NO_MESSAGE_HANDLER,
         }),

@@ -10,19 +10,31 @@ import {
   Subscription,
 } from 'rxjs';
 import { catchError, finalize, publish } from 'rxjs/operators';
+import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
 import {
+  ClientOptions,
   MessageHandler,
   MicroserviceOptions,
+  MqttOptions,
   MsPattern,
+  NatsOptions,
   ReadPacket,
+  RedisOptions,
+  RmqOptions,
+  TcpOptions,
   WritePacket,
 } from '../interfaces';
+import { ConsumerDeserializer } from '../interfaces/deserializer.interface';
+import { ConsumerSerializer } from '../interfaces/serializer.interface';
+import { IdentitySerializer } from '../serializers/identity.serializer';
 import { transformPatternToRoute } from '../utils';
 import { NO_EVENT_HANDLER } from './../constants';
 
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger = new Logger(Server.name);
+  protected serializer: ConsumerSerializer;
+  protected deserializer: ConsumerDeserializer;
 
   public addHandler(
     pattern: any,
@@ -49,15 +61,31 @@ export abstract class Server {
     stream$: Observable<any>,
     respond: (data: WritePacket) => void,
   ): Subscription {
+    let dataBuffer: WritePacket[] = null;
+    const scheduleOnNextTick = (data: WritePacket) => {
+      if (!dataBuffer) {
+        dataBuffer = [data];
+        process.nextTick(() => {
+          dataBuffer.forEach(buffer => respond(buffer));
+          dataBuffer = null;
+        });
+      } else if (!data.isDisposed) {
+        dataBuffer = dataBuffer.concat(data);
+      } else {
+        dataBuffer[dataBuffer.length - 1].isDisposed = data.isDisposed;
+      }
+    };
     return stream$
       .pipe(
         catchError((err: any) => {
-          respond({ err, response: null });
+          scheduleOnNextTick({ err, response: null });
           return empty;
         }),
-        finalize(() => respond({ isDisposed: true })),
+        finalize(() => scheduleOnNextTick({ isDisposed: true })),
       )
-      .subscribe((response: any) => respond({ err: null, response }));
+      .subscribe((response: any) =>
+        scheduleOnNextTick({ err: null, response }),
+      );
   }
 
   public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
@@ -97,6 +125,30 @@ export abstract class Server {
     loader?: Function,
   ): T {
     return loadPackage(name, ctx, loader);
+  }
+
+  protected initializeSerializer(options: ClientOptions['options']) {
+    this.serializer =
+      (options &&
+        (options as
+          | RedisOptions['options']
+          | NatsOptions['options']
+          | MqttOptions['options']
+          | TcpOptions['options']
+          | RmqOptions['options']).serializer) ||
+      new IdentitySerializer();
+  }
+
+  protected initializeDeserializer(options: ClientOptions['options']) {
+    this.deserializer =
+      (options &&
+        (options as
+          | RedisOptions['options']
+          | NatsOptions['options']
+          | MqttOptions['options']
+          | TcpOptions['options']
+          | RmqOptions['options']).deserializer) ||
+      new IncomingRequestDeserializer();
   }
 
   private isObservable(input: unknown): input is Observable<any> {

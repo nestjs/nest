@@ -1,19 +1,22 @@
 /**
  * Options to be passed during transformation.
+ *
  * @see https://github.com/typestack/class-transformer
+ *
+ * @publicApi
  */
 export interface ClassTransformOptions {
   /**
-   * Exclusion strategy. By default exposeAll is used, which means that it will expose all properties are transformed
-   * by default.
+   * Exclusion strategy. By default exposeAll is used, which means that it will expose all properties that
+   * are transformed by default.
    */
   strategy?: 'excludeAll' | 'exposeAll';
   /**
-   * Only properties with given groups gonna be transformed.
+   * Only properties with given groups will be transformed.
    */
   groups?: string[];
   /**
-   * Only properties with "since" > version < "until" gonna be transformed.
+   * Only properties with "since" > version < "until" will be transformed.
    */
   version?: number;
   /**
@@ -23,8 +26,8 @@ export interface ClassTransformOptions {
    */
   excludePrefixes?: string[];
   /**
-   * If set to true then class transformer will ignore all @Expose and @Exclude decorators and what inside them.
-   * This option is useful if you want to kinda clone your object but do not apply decorators affects.
+   * If set to true then class transformer will ignore all @Expose and @Exclude decorators and what's inside them.
+   * This option is useful if you want to "clone" your object but not apply decorators affects.
    */
   ignoreDecorators?: boolean;
   /**
@@ -34,7 +37,7 @@ export interface ClassTransformOptions {
    */
   targetMaps?: any[];
   /**
-   * If set to true then class transformer will perform a circular check. (circular check is turned off by default)
+   * If set to true then class transformer will perform a circular check. (Circular check is turned off by default)
    * This option is useful when you know for sure that your types might have a circular dependency.
    */
   enableCircularCheck?: boolean;

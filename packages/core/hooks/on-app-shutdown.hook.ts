@@ -1,5 +1,5 @@
 import { OnApplicationShutdown } from '@nestjs/common';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
@@ -16,7 +16,7 @@ import {
 function hasOnAppShutdownHook(
   instance: unknown,
 ): instance is OnApplicationShutdown {
-  return !isUndefined(
+  return !isNil(
     (instance as OnApplicationShutdown).onApplicationShutdown,
   );
 }

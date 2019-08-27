@@ -1,5 +1,5 @@
 import { OnModuleDestroy } from '@nestjs/common';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
@@ -16,7 +16,7 @@ import {
 function hasOnModuleDestroyHook(
   instance: unknown,
 ): instance is OnModuleDestroy {
-  return !isUndefined((instance as OnModuleDestroy).onModuleDestroy);
+  return !isNil((instance as OnModuleDestroy).onModuleDestroy);
 }
 
 /**

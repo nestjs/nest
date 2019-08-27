@@ -1,12 +1,16 @@
-import { Injectable, OnApplicationShutdown, Module } from '@nestjs/common';
+import { Injectable, OnApplicationShutdown, BeforeApplicationShutdown, Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 const SIGNAL = process.argv[2];
 const SIGNAL_TO_LISTEN = process.argv[3];
 
 @Injectable()
-class TestInjectable implements OnApplicationShutdown {
+class TestInjectable implements OnApplicationShutdown, BeforeApplicationShutdown {
+  beforeApplicationShutdown(signal: string) {
+    console.log('beforeApplicationShutdown ' + signal);
+  }
+
   onApplicationShutdown(signal: string) {
-    console.log('Signal ' + signal);
+    console.log('onApplicationShutdown ' + signal);
   }
 }
 

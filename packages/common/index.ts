@@ -15,6 +15,7 @@ export {
   Abstract,
   ArgumentMetadata,
   ArgumentsHost,
+  BeforeApplicationShutdown,
   CallHandler,
   CanActivate,
   DynamicModule,
@@ -43,6 +44,7 @@ export {
   WebSocketAdapter,
   WsExceptionFilter,
   WsMessageHandler,
+  ScopeOptions,
 } from './interfaces';
 export * from './pipes';
 export * from './serializer';

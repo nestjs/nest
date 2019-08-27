@@ -1,8 +1,20 @@
 import { Logger } from './../../services/logger.service';
 
 /**
- * Assigns the metadata to the class/function under specified `key`.
- * This metadata can be reflected using `Reflector` class.
+ * Decorator that assigns metadata to the class/function using the
+ * specified `key`.
+ *
+ * Requires two parameters:
+ * - `key` - a value defining the key under which the metadata is stored
+ * - `value[]` - array of metadata values to be associated with `key`
+ *
+ * This metadata can be reflected using the `Reflector` class.
+ *
+ * Example: `@SetMetadata('roles', ['admin'])`
+ *
+ * @see [Reflection](https://docs.nestjs.com/guards#reflection)
+ *
+ * @publicApi
  */
 export const SetMetadata = <K = any, V = any>(
   metadataKey: K,
