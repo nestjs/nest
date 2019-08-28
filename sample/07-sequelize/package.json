@@ -13,7 +13,7 @@
     "@nestjs/common": "6.5.3",
     "@nestjs/core": "6.5.3",
     "@nestjs/platform-express": "6.5.3",
-    "mysql2": "1.6.5",
+    "mysql2": "1.7.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "sequelize": "5.17.0",
