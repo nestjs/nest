@@ -56,7 +56,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     subscribePatterns.forEach(pattern => {
       const { isEventHandler } = this.messageHandlers.get(pattern);
       subClient.subscribe(
-        isEventHandler ? pattern : this.getAckQueueName(pattern),
+        isEventHandler ? pattern : this.getRequestPattern(pattern),
       );
     });
   }
@@ -118,7 +118,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
       const outgoingResponse = this.serializer.serialize(response);
 
       return pub.publish(
-        this.getResQueueName(pattern),
+        this.getReplyPattern(pattern),
         JSON.stringify(outgoingResponse),
       );
     };
@@ -132,12 +132,12 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     }
   }
 
-  public getAckQueueName(pattern: string): string {
-    return `${pattern}_ack`;
+  public getRequestPattern(pattern: string): string {
+    return pattern;
   }
 
-  public getResQueueName(pattern: string): string {
-    return `${pattern}_res`;
+  public getReplyPattern(pattern: string): string {
+    return `${pattern}.reply`;
   }
 
   public handleError(stream: any) {

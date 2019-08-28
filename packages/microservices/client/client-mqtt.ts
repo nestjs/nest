@@ -31,12 +31,12 @@ export class ClientMqtt extends ClientProxy {
     this.initializeDeserializer(options);
   }
 
-  public getAckPatternName(pattern: string): string {
-    return `${pattern}_ack`;
+  public getRequestPattern(pattern: string): string {
+    return pattern;
   }
 
-  public getResPatternName(pattern: string): string {
-    return `${pattern}_res`;
+  public getResponsePattern(pattern: string): string {
+    return `${pattern}.reply`;
   }
 
   public close() {
@@ -120,7 +120,7 @@ export class ClientMqtt extends ClientProxy {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
       const serializedPacket = this.serializer.serialize(packet);
-      const responseChannel = this.getResPatternName(pattern);
+      const responseChannel = this.getResponsePattern(pattern);
 
       this.mqttClient.subscribe(responseChannel, (err: any) => {
         if (err) {
@@ -128,7 +128,7 @@ export class ClientMqtt extends ClientProxy {
         }
         this.routingMap.set(packet.id, callback);
         this.mqttClient.publish(
-          this.getAckPatternName(pattern),
+          this.getRequestPattern(pattern),
           JSON.stringify(serializedPacket),
         );
       });
