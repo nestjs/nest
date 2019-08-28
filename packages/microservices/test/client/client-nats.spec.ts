@@ -141,7 +141,7 @@ describe('ClientNats', () => {
         expect(
           callback.calledWith({
             isDisposed: true,
-            response: null,
+            response: responseMessage.response,
             err: null,
           }),
         ).to.be.true;

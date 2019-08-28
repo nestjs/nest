@@ -1,29 +1,40 @@
 import {
   INestApplicationContext,
-  Logger,
   LoggerService,
   ShutdownSignal,
 } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { Abstract } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { UnknownElementException } from './errors/exceptions/unknown-element.exception';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
+import { createContextId } from './helpers';
 import {
   callAppShutdownHook,
+  callBeforeAppShutdownHook,
   callModuleBootstrapHook,
   callModuleDestroyHook,
   callModuleInitHook,
 } from './hooks';
+import { ContextId } from './injector';
 import { NestContainer } from './injector/container';
 import { ContainerScanner } from './injector/container-scanner';
+import { Injector } from './injector/injector';
+import { InstanceWrapper } from './injector/instance-wrapper';
 import { Module } from './injector/module';
 import { ModuleTokenFactory } from './injector/module-token-factory';
+import { MESSAGES } from './constants';
 
+/**
+ * @publicApi
+ */
 export class NestApplicationContext implements INestApplicationContext {
+  protected isInitialized: boolean = false;
+  protected readonly injector = new Injector();
   private readonly moduleTokenFactory = new ModuleTokenFactory();
   private readonly containerScanner: ContainerScanner;
   private readonly activeShutdownSignals: string[] = new Array<string>();
-  protected isInitialized: boolean = false;
 
   constructor(
     protected readonly container: NestContainer,
@@ -58,9 +69,22 @@ export class NestApplicationContext implements INestApplicationContext {
     if (!(options && options.strict)) {
       return this.find<TInput, TResult>(typeOrToken);
     }
-    return this.findInstanceByPrototypeOrToken<TInput, TResult>(
+    return this.findInstanceByToken<TInput, TResult>(
       typeOrToken,
       this.contextModule,
+    );
+  }
+
+  public resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | string | symbol,
+    contextId = createContextId(),
+    options: { strict: boolean } = { strict: false },
+  ): Promise<TResult> {
+    return this.resolvePerContext(
+      typeOrToken,
+      this.contextModule,
+      contextId,
+      options,
     );
   }
 
@@ -81,8 +105,16 @@ export class NestApplicationContext implements INestApplicationContext {
     return this;
   }
 
+  protected async dispose(): Promise<void> {
+    // Nest application context has no server
+    // to dispose, therefore just call a noop
+    return Promise.resolve();
+  }
+
   public async close(): Promise<void> {
     await this.callDestroyHook();
+    await this.callBeforeShutdownHook();
+    await this.dispose();
     await this.callShutdownHook();
   }
 
@@ -131,17 +163,27 @@ export class NestApplicationContext implements INestApplicationContext {
    * @param {string[]} signals The system signals it should listen to
    */
   protected listenToShutdownSignals(signals: string[]) {
+    const cleanup = async (signal: string) => {
+      try {
+        signals.forEach(sig => process.removeListener(sig, cleanup));
+        await this.callDestroyHook();
+        await this.callBeforeShutdownHook(signal);
+        await this.dispose();
+        await this.callShutdownHook(signal);
+        process.kill(process.pid, signal);
+      } catch (err) {
+        Logger.error(
+          MESSAGES.ERROR_DURING_SHUTDOWN,
+          (err as Error).stack,
+          NestApplicationContext.name,
+        );
+        process.exit(1);
+      }
+    };
+
     signals.forEach((signal: string) => {
       this.activeShutdownSignals.push(signal);
-
-      process.on(signal as any, async code => {
-        // Call the destroy and shutdown hook
-        // in case the process receives a shutdown signal
-        await this.callDestroyHook();
-        await this.callShutdownHook(signal);
-
-        process.exit(code || 1);
-      });
+      process.on(signal as any, cleanup);
     });
   }
 
@@ -189,19 +231,62 @@ export class NestApplicationContext implements INestApplicationContext {
     }
   }
 
+  /**
+   * Calls the `beforeApplicationShutdown` function on the registered
+   * modules and children.
+   */
+  protected async callBeforeShutdownHook(signal?: string): Promise<void> {
+    const modulesContainer = this.container.getModules();
+    for (const module of [...modulesContainer.values()].reverse()) {
+      await callBeforeAppShutdownHook(module, signal);
+    }
+  }
+
   protected find<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
   ): TResult {
     return this.containerScanner.find<TInput, TResult>(typeOrToken);
   }
 
-  protected findInstanceByPrototypeOrToken<TInput = any, TResult = TInput>(
+  protected findInstanceByToken<TInput = any, TResult = TInput>(
     metatypeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextModule: Partial<Module>,
   ): TResult {
-    return this.containerScanner.findInstanceByPrototypeOrToken<
-      TInput,
-      TResult
-    >(metatypeOrToken, contextModule);
+    return this.containerScanner.findInstanceByToken<TInput, TResult>(
+      metatypeOrToken,
+      contextModule,
+    );
+  }
+
+  protected async resolvePerContext<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | string | symbol,
+    contextModule: Module,
+    contextId: ContextId,
+    options?: { strict: boolean },
+  ): Promise<TResult> {
+    let wrapper: InstanceWrapper, collection: Map<string, InstanceWrapper>;
+    if (!(options && options.strict)) {
+      [wrapper, collection] = this.containerScanner.getWrapperCollectionPair(
+        typeOrToken,
+      );
+    } else {
+      [
+        wrapper,
+        collection,
+      ] = this.containerScanner.getWrapperCollectionPairByHost(
+        typeOrToken,
+        contextModule,
+      );
+    }
+    const instance = await this.injector.loadPerContext(
+      wrapper.instance,
+      wrapper.host,
+      collection,
+      contextId,
+    );
+    if (!instance) {
+      throw new UnknownElementException();
+    }
+    return instance;
   }
 }

@@ -2,7 +2,9 @@ import { HttpServer, RequestMethod } from '@nestjs/common';
 import { RequestHandler } from '@nestjs/common/interfaces';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-
+/**
+ * @publicApi
+ */
 export abstract class AbstractHttpAdapter<
   TServer = any,
   TRequest = any,
@@ -85,6 +87,7 @@ export abstract class AbstractHttpAdapter<
   abstract status(response, statusCode: number);
   abstract reply(response, body: any, statusCode?: number);
   abstract render(response, view: string, options: any);
+  abstract redirect(response, statusCode: number, url: string);
   abstract setErrorHandler(handler: Function);
   abstract setNotFoundHandler(handler: Function);
   abstract setHeader(response, name: string, value: string);

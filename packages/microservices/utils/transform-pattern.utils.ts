@@ -18,7 +18,7 @@ export function transformPatternToRoute(pattern: MsPattern): string {
     return `${pattern}`;
   }
   if (!isObject(pattern)) {
-    throw new Error(`The pattern must be of type 'string' or 'object'!`);
+    return pattern;
   }
 
   const sortedKeys = Object.keys(pattern).sort((a, b) =>

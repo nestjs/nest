@@ -24,9 +24,11 @@ export interface MulterOptions {
     parts?: number;
     /** For multipart forms, the max number of header key=> value pairs to parse Default: 2000(same as node's http). */
     headerPairs?: number;
-    /** Keep the full path of files instead of just the base name (Default: false) */
-    preservePath?: boolean;
   };
+
+  /** Keep the full path of files instead of just the base name (Default: false) */
+  preservePath?: boolean;
+
   fileFilter?(
     req: any,
     file: {

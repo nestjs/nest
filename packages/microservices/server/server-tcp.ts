@@ -11,11 +11,14 @@ import {
   TCP_DEFAULT_PORT,
 } from '../constants';
 import { JsonSocket } from '../helpers/json-socket';
-import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
 import {
-  MicroserviceOptions,
-  TcpOptions,
-} from '../interfaces/microservice-configuration.interface';
+  CustomTransportStrategy,
+  IncomingRequest,
+  PacketId,
+  ReadPacket,
+  WritePacket,
+} from '../interfaces';
+import { TcpOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
@@ -29,10 +32,11 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   constructor(private readonly options: TcpOptions['options']) {
     super();
     this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
-    this.host =
-      this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
+    this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
 
     this.init();
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public listen(callback: () => void) {
@@ -52,34 +56,36 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     readSocket.on(ERROR_EVENT, this.handleError.bind(this));
   }
 
-  public async handleMessage(
-    socket: JsonSocket,
-    packet: ReadPacket & PacketId,
-  ) {
+  public async handleMessage(socket: JsonSocket, rawMessage: unknown) {
+    const packet = this.deserializer.deserialize(rawMessage);
     const pattern = !isString(packet.pattern)
       ? JSON.stringify(packet.pattern)
       : packet.pattern;
 
-    if (isUndefined(packet.id)) {
+    if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet);
     }
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
       const status = 'error';
-      return socket.sendMessage({
-        id: packet.id,
+      const noHandlerPacket = this.serializer.serialize({
+        id: (packet as IncomingRequest).id,
         status,
         err: NO_MESSAGE_HANDLER,
       });
+      return socket.sendMessage(noHandlerPacket);
     }
     const response$ = this.transformToObservable(
       await handler(packet.data),
     ) as Observable<any>;
 
     response$ &&
-      this.send(response$, data =>
-        socket.sendMessage(Object.assign(data, { id: packet.id })),
-      );
+      this.send(response$, data => {
+        Object.assign(data, { id: (packet as IncomingRequest).id });
+        const outgoingResponse = this.serializer.serialize(data as WritePacket &
+          PacketId);
+        socket.sendMessage(outgoingResponse);
+      });
   }
 
   public handleClose(): undefined | number | NodeJS.Timer {

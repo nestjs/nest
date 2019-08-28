@@ -1,6 +1,6 @@
 import { ReplaySubject, Subject } from 'rxjs';
 
-export interface ObservableSocketServer<T = any> {
+export interface SocketEventsHost<T = any> {
   server: T;
   init: ReplaySubject<T>;
   connection: Subject<any>;

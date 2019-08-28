@@ -79,14 +79,14 @@ export class MicroservicesModule {
     module: string,
   ) {
     controllers.forEach(wrapper =>
-      this.listenersController.bindPatternHandlers(wrapper, server, module),
+      this.listenersController.registerPatternHandlers(wrapper, server, module),
     );
   }
 
   public bindClients(items: Map<string, InstanceWrapper<Controller>>) {
     items.forEach(({ instance, isNotMetatype }) => {
       !isNotMetatype &&
-        this.listenersController.bindClientsToProperties(instance);
+        this.listenersController.assignClientsToProperties(instance);
     });
   }
 
