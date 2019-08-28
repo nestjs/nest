@@ -499,7 +499,7 @@ describe('Module', () => {
       moduleC = new Module(ModuleC as any, [], container);
     });
 
-    it('should get "distance" correct', () => {
+    it('should calculate "distance" properly', () => {
       moduleA.addRelatedModule(moduleB);
       moduleC.addRelatedModule(moduleB);
       moduleA.addRelatedModule(moduleC);
@@ -509,10 +509,15 @@ describe('Module', () => {
       expect(moduleC.distance).to.be.equal(1);
     });
 
-    it('should don`t throw exception when circular dependency', () => {
+    it('should not throw an exception when circular dependency occurs', () => {
       expect(() => {
         moduleA.addRelatedModule(moduleB);
         moduleB.addRelatedModule(moduleA);
+      }).to.not.throw;
+      expect(() => {
+        moduleA.addRelatedModule(moduleB);
+        moduleB.addRelatedModule(moduleC);
+        moduleC.addRelatedModule(moduleA);
       }).to.not.throw;
     });
   });
