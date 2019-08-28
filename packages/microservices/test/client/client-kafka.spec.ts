@@ -96,9 +96,37 @@ describe('ClientKafka', () => {
     partition,
     message: Object.assign({
       headers: {
-        [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+        [KafkaHeaders.CORRELATION_ID]: correlationId,
       }
     }, deserializedMessage)
+  };
+
+  const deserializedPayloadDisposed: EachMessagePayload = {
+    topic,
+    partition,
+    message: Object.assign({
+      headers: {
+        [KafkaHeaders.CORRELATION_ID]: correlationId,
+        [KafkaHeaders.NESTJS_IS_DISPOSED]: Buffer.alloc(1).toString()
+      }
+    }, deserializedMessage, {
+      size: 0,
+      value: null
+    })
+  };
+
+  const deserializedPayloadError: EachMessagePayload = {
+    topic,
+    partition,
+    message: Object.assign({
+      headers: {
+        [KafkaHeaders.CORRELATION_ID]: correlationId,
+        [KafkaHeaders.NESTJS_ERR]: NO_MESSAGE_HANDLER
+      }
+    }, deserializedMessage, {
+      size: 0,
+      value: null
+    })
   };
 
   // spys
@@ -292,7 +320,7 @@ describe('ClientKafka', () => {
         expect(
           callback.calledWith({
             err: null,
-            response: deserializedPayload.message,
+            response: deserializedPayload.message
           }),
         ).to.be.true;
       });
@@ -311,7 +339,7 @@ describe('ClientKafka', () => {
         expect(
           callback.calledWith({
             isDisposed: true,
-            response: null,
+            response: deserializedPayloadDisposed.message,
             err: null,
           }),
         ).to.be.true;
@@ -331,7 +359,7 @@ describe('ClientKafka', () => {
         expect(
           callback.calledWith({
             isDisposed: true,
-            response: null,
+            response: deserializedPayloadError.message,
             err: NO_MESSAGE_HANDLER,
           }),
         ).to.be.true;

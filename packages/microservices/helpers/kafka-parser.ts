@@ -1,13 +1,20 @@
-import { isUndefined, isNil, isObject, isString, isFunction, isPlainObject } from '@nestjs/common/utils/shared.utils';
+import { isUndefined, isNil, isObject, isString, isPlainObject } from '@nestjs/common/utils/shared.utils';
 
-export class KafkaSerializer {
-  public static deserialize<T>(data: any): T {
+export class KafkaParser {
+  public static parse<T = any>(data: any): T {
     // parse the value
     data.value = this.decode(data.value);
 
     // parse the key
     if (!isNil(data.key)) {
       data.key = this.decode(data.key);
+    }
+
+    // parse the headers
+    if (!isNil(data.headers)) {
+      Object.keys(data.headers).forEach((key) => {
+        data.headers[key] = this.decode(data.headers[key]);
+      });
     }
 
     return data;
@@ -30,15 +37,10 @@ export class KafkaSerializer {
       } catch (e){}
     }
 
-    // // set result as a string when greater than max safe int
-    // if (typeof result === 'number' && result > Number.MAX_SAFE_INTEGER) {
-    //   result = value.toString();
-    // }
-
     return result;
   }
 
-  public static serialize<T>(data: any): T {
+  public static stringify<T = any>(data: any): T {
     // wrap the packet in an a kafka message when data is not an object
     // when data is an object but key and value are undefined, then the user is not passing a kafka message
     if (isNil(data) || !isObject(data) || ((!('key' in data)) && (!('value' in data)))) {

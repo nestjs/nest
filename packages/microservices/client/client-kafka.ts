@@ -7,10 +7,10 @@ import {
   KAFKA_DEFAULT_CLIENT,
   KAFKA_DEFAULT_GROUP
 } from '../constants';
-import { ReadPacket, KafkaOptions, WritePacket, PacketId } from '../interfaces';
+import { KafkaOptions, WritePacket, ReadPacket, OutgoingEvent } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
-import { KafkaSerializer, KafkaRoundRobinByTimePartitionAssigner, KafkaLogger } from '../helpers';
+import { KafkaRoundRobinByTimePartitionAssigner, KafkaLogger, KafkaParser } from '../helpers';
 
 import {
   KafkaConfig,
@@ -56,6 +56,9 @@ export class ClientKafka extends ClientProxy {
     this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + '-client';
 
     kafkaPackage = loadPackage('kafkajs', ClientKafka.name, () => require('kafkajs'));
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public subscribeToResponseOf(pattern: any): void {
@@ -131,18 +134,14 @@ export class ClientKafka extends ClientProxy {
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
     return (payload: EachMessagePayload) => {
-      // create response from a deserialized payload
-      const message = KafkaSerializer.deserialize<KafkaMessage>(Object.assign(payload.message, {
+      // create response from a parsed payload
+      const rawMessage = KafkaParser.parse<KafkaMessage>(Object.assign(payload.message, {
         topic: payload.topic,
         partition: payload.partition
       }));
 
       // construct packet
-      const packet = {
-        id: undefined,
-        pattern: payload.topic,
-        response: message
-      };
+      const packet = this.deserializer.deserialize(rawMessage);
 
       // parse the correlation id
       if (isUndefined(packet.response.headers[KafkaHeaders.CORRELATION_ID])) {
@@ -150,7 +149,7 @@ export class ClientKafka extends ClientProxy {
       }
 
       // parse and assign the correlation id as the packet id
-      packet.id = packet.response.headers[KafkaHeaders.CORRELATION_ID].toString();
+      packet.id = packet.response.headers[KafkaHeaders.CORRELATION_ID];
 
       // find the callback
       const callback = this.routingMap.get(packet.id);
@@ -164,7 +163,7 @@ export class ClientKafka extends ClientProxy {
 
       // parse the nestjs headers
       if (!isUndefined(packet.response.headers[KafkaHeaders.NESTJS_ERR])) {
-        err = packet.response.headers[KafkaHeaders.NESTJS_ERR].toString();
+        err = packet.response.headers[KafkaHeaders.NESTJS_ERR];
         isDisposed = true;
       }
 
@@ -176,7 +175,7 @@ export class ClientKafka extends ClientProxy {
       if (err || isDisposed) {
         return callback({
           err,
-          response: null,
+          response: packet.response,
           isDisposed
         });
       }
@@ -188,16 +187,17 @@ export class ClientKafka extends ClientProxy {
     };
   }
 
-  protected dispatchEvent(packet: ReadPacket & PacketId): Promise<any> {
+  protected dispatchEvent(packet: OutgoingEvent): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
+    const serializedPacket = this.serializer.serialize(packet);
 
-    // serialize for sanity
-    packet.data = KafkaSerializer.serialize<Message>(packet.data);
+    // stringify
+    const outgoingEvent = KafkaParser.stringify<Message>(serializedPacket.data);
 
     // send
     return this.producer.send(Object.assign({
       topic: pattern,
-      messages: [packet.data]
+      messages: [outgoingEvent]
     }, this.options.send || {}));
   }
 
@@ -225,7 +225,8 @@ export class ClientKafka extends ClientProxy {
     try {
       // create packet
       const packet = this.assignPacketId(partialPacket);
-      packet.data = KafkaSerializer.serialize<Message>(packet.data);
+      const serializedPacket = this.serializer.serialize(packet);
+      serializedPacket.data = KafkaParser.stringify<Message>(packet.data);
 
       // get the response meta
       const pattern = this.normalizePattern(partialPacket.pattern);
@@ -243,7 +244,7 @@ export class ClientKafka extends ClientProxy {
       // send through unhandled promise
       this.producer.send(Object.assign({
         topic: pattern,
-        messages: [packet.data]
+        messages: [serializedPacket.data]
       }, this.options.send || {}));
 
       // send

@@ -126,5 +126,7 @@ export interface KafkaOptions {
       timeout?: number;
       compression?: CompressionTypes;
     }
+    serializer?: Serializer;
+    deserializer?: Deserializer;
   };
 }

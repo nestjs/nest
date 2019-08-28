@@ -2,11 +2,8 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ServerKafka } from '../../server';
 import { Logger } from '@nestjs/common';
-import { MessageHandler } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
-import { KafkaSerializer } from '../../helpers';
 import { NO_MESSAGE_HANDLER } from '../../constants';
-import { EachMessagePayload, KafkaMessage, RecordMetadata } from '@nestjs/microservices/external/kafka.interface';
+import { EachMessagePayload, KafkaMessage} from '@nestjs/microservices/external/kafka.interface';
 import { KafkaHeaders } from '../../enums';
 
 class NoopLogger extends Logger {
@@ -18,7 +15,7 @@ class NoopLogger extends Logger {
 describe('ServerKafka', () => {
   // helpers
   const objectToMap = obj =>
-    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+    new Map(Object.keys(obj).map(i => [i, obj[i]]) as any);
 
   // static
   const topic = 'test.topic';
@@ -211,6 +208,7 @@ describe('ServerKafka', () => {
         value: 'string'
       };
       publisher(data);
+
       expect(sendMessageStub.calledWith(data, replyTopic, replyPartition, correlationId)).to.be.true;
     });
   });
@@ -276,7 +274,7 @@ describe('ServerKafka', () => {
         topic: replyTopic,
         messages: [
           {
-            partition: replyPartition,
+            partition: parseFloat(replyPartition),
             value: messageValue,
             headers: {
               [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId)
@@ -314,7 +312,7 @@ describe('ServerKafka', () => {
         messages: [
           {
             value: null,
-            partition: replyPartition,
+            partition: parseFloat(replyPartition),
             headers: {
               [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
               [KafkaHeaders.NESTJS_ERR]: Buffer.from(NO_MESSAGE_HANDLER)
@@ -334,7 +332,7 @@ describe('ServerKafka', () => {
         messages: [
           {
             value: null,
-            partition: replyPartition,
+            partition: parseFloat(replyPartition),
             headers: {
               [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
               [KafkaHeaders.NESTJS_IS_DISPOSED]: Buffer.alloc(1)
@@ -343,7 +341,5 @@ describe('ServerKafka', () => {
         ]
       })).to.be.true;
     });
-
-
   });
 });
