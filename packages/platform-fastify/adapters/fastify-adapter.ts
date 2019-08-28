@@ -1,4 +1,4 @@
-import { RequestMethod, HttpStatus } from '@nestjs/common';
+import { HttpStatus, RequestMethod } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -6,6 +6,7 @@ import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import * as fastify from 'fastify';
 import * as cors from 'fastify-cors';
 import * as formBody from 'fastify-formbody';
+import * as Reply from 'fastify/lib/Reply';
 import * as pathToRegexp from 'path-to-regexp';
 
 export class FastifyAdapter extends AbstractHttpAdapter {
@@ -35,6 +36,17 @@ export class FastifyAdapter extends AbstractHttpAdapter {
   }
 
   public reply(response: any, body: any, statusCode?: number) {
+    const isNativeResponse = typeof response.status !== 'function';
+    if (isNativeResponse) {
+      const fastifyContext = {
+        preSerialization: null,
+        preValidation: [],
+        preHandler: [],
+        onSend: [],
+        onError: [],
+      };
+      response = new Reply(response, fastifyContext, {});
+    }
     if (statusCode) {
       response.status(statusCode);
     }
