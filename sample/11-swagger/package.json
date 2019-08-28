@@ -10,9 +10,9 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.5.3",
-    "@nestjs/core": "6.5.3",
-    "@nestjs/platform-express": "6.5.3",
+    "@nestjs/common": "6.6.0",
+    "@nestjs/core": "6.6.0",
+    "@nestjs/platform-express": "6.6.0",
     "@nestjs/swagger": "3.1.0",
     "class-transformer": "0.2.3",
     "class-validator": "0.10.0",
