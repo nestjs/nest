@@ -6,7 +6,7 @@ import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import * as fastify from 'fastify';
 import * as cors from 'fastify-cors';
 import * as formBody from 'fastify-formbody';
-import * as Reply from 'fastify/lib/Reply';
+import * as Reply from 'fastify/lib/reply';
 import * as pathToRegexp from 'path-to-regexp';
 
 export class FastifyAdapter extends AbstractHttpAdapter {
