@@ -221,9 +221,9 @@ export class NestApplication extends NestApplicationContext
     callback?: () => void,
   ): Promise<any>;
   public async listen(port: number | string, ...args: any[]): Promise<any> {
-    !this.isInitialized && (await this.init());
-
     this.httpAdapter.listen(port, ...args);
+
+    !this.isInitialized && (await this.init());
     return this.httpServer;
   }
 
