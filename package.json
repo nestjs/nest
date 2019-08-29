@@ -130,7 +130,8 @@
     "supertest": "4.0.2",
     "ts-node": "8.3.0",
     "tslint": "5.19.0",
-    "typescript": "3.5.3"
+    "typescript": "3.5.3",
+    "wrk": "^1.2.0"
   },
   "collective": {
     "type": "opencollective",
