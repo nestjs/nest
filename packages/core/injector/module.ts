@@ -34,6 +34,8 @@ interface ProviderName {
   name?: string | symbol;
 }
 
+const stack = new Set<Module>();
+
 export class Module {
   private readonly _id: string;
   private readonly _imports = new Set<Module>();
@@ -120,13 +122,14 @@ export class Module {
     return this._distance;
   }
 
-  public updateDistance(distance: number, stack: Module[]) {
+  public updateDistance(distance: number) {
     this._distance = distance;
-    Array.from(this._imports)
-      .filter(module => module && !stack.includes(this))
-      .forEach(module =>
-        module.updateDistance(distance + 1, stack.concat(this)),
-      );
+    if (!stack.has(this)) {
+      stack.add(this);
+    }
+    Array.from(this._imports).forEach(
+      module => module && module.updateDistance(distance + 1)
+    );
   }
 
   public addCoreProviders(container: NestContainer) {
@@ -416,7 +419,7 @@ export class Module {
   public addRelatedModule(module: Module) {
     this._imports.add(module);
     if (this._distance + 1 > module._distance) {
-      module.updateDistance(this._distance + 1, [this]);
+      module.updateDistance(this._distance + 1);
     }
   }
 
