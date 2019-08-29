@@ -7,12 +7,12 @@
     "start": "ts-node src/main"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.0",
-    "@nestjs/core": "6.6.0",
-    "@nestjs/microservices": "6.6.0",
-    "@nestjs/platform-express": "6.6.0",
-    "@nestjs/testing": "6.6.0",
-    "@nestjs/websockets": "6.6.0",
+    "@nestjs/common": "6.6.3",
+    "@nestjs/core": "6.6.3",
+    "@nestjs/microservices": "6.6.3",
+    "@nestjs/platform-express": "6.6.3",
+    "@nestjs/testing": "6.6.3",
+    "@nestjs/websockets": "6.6.3",
     "amqp-connection-manager": "3.0.0",
     "class-transformer": "0.2.3",
     "class-validator": "0.10.0",
