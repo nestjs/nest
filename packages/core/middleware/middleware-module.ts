@@ -117,8 +117,8 @@ export class MiddlewareModule {
     const entriesSortedByDistance = [...configs.entries()].sort(
       ([moduleA], [moduleB]) => {
         return (
-          this.container.getModuleByKey(moduleB).distance -
-          this.container.getModuleByKey(moduleA).distance
+          this.container.getModuleByKey(moduleA).distance -
+          this.container.getModuleByKey(moduleB).distance
         );
       },
     );

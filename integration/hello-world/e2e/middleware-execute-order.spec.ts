@@ -47,10 +47,10 @@ describe('Middleware (execution order)', () => {
     await app.init();
   });
 
-  it(`should execute middleware of dependent modules first `, () => {
+  it(`should execute middleware of modules that are closer to the root module`, () => {
     return request(app.getHttpServer())
       .get('/hello')
-      .expect(200, RETURN_VALUE_A);
+      .expect(200, RETURN_VALUE_B);
   });
 
   afterEach(async () => {
