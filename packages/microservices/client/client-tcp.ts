@@ -26,6 +26,9 @@ export class ClientTCP extends ClientProxy {
     super();
     this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
     this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public connect(): Promise<any> {
@@ -50,16 +53,18 @@ export class ClientTCP extends ClientProxy {
     return this.connection;
   }
 
-  public handleResponse(buffer: WritePacket & PacketId): void {
-    const { err, response, isDisposed, id } = buffer;
+  public handleResponse(buffer: unknown): void {
+    const { err, response, isDisposed, id } = this.deserializer.deserialize(
+      buffer,
+    );
     const callback = this.routingMap.get(id);
     if (!callback) {
       return undefined;
     }
     if (isDisposed || err) {
-      callback({
+      return callback({
         err,
-        response: null,
+        response,
         isDisposed: true,
       });
     }
@@ -101,9 +106,10 @@ export class ClientTCP extends ClientProxy {
   ): Function {
     try {
       const packet = this.assignPacketId(partialPacket);
+      const serializedPacket = this.serializer.serialize(packet);
 
       this.routingMap.set(packet.id, callback);
-      this.socket.sendMessage(packet);
+      this.socket.sendMessage(serializedPacket);
 
       return () => this.routingMap.delete(packet.id);
     } catch (err) {
@@ -112,9 +118,11 @@ export class ClientTCP extends ClientProxy {
   }
 
   protected async dispatchEvent(packet: ReadPacket): Promise<any> {
-    return this.socket.sendMessage({
+    const pattern = this.normalizePattern(packet.pattern);
+    const serializedPacket = this.serializer.serialize({
       ...packet,
-      pattern: this.normalizePattern(packet.pattern),
+      pattern,
     });
+    return this.socket.sendMessage(serializedPacket);
   }
 }

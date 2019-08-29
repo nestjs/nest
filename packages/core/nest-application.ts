@@ -20,7 +20,6 @@ import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { NestContainer } from './injector/container';
-import { Injector } from './injector/injector';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
@@ -32,10 +31,12 @@ const { SocketModule } =
 const { MicroservicesModule } =
   optional('@nestjs/microservices/microservices-module') || ({} as any);
 
+/**
+ * @publicApi
+ */
 export class NestApplication extends NestApplicationContext
   implements INestApplication {
   private readonly logger = new Logger(NestApplication.name, true);
-  private readonly injector = new Injector();
   private readonly middlewareModule = new MiddlewareModule();
   private readonly middlewareContainer = new MiddlewareContainer();
   private readonly microservicesModule = MicroservicesModule
@@ -62,6 +63,18 @@ export class NestApplication extends NestApplicationContext
       this.container,
       this.config,
       this.injector,
+    );
+  }
+
+  protected async dispose(): Promise<void> {
+    this.socketModule && (await this.socketModule.close());
+    this.httpAdapter && (await this.httpAdapter.close());
+
+    await Promise.all(
+      iterate(this.microservices).map(async microservice => {
+        microservice.setIsTerminated(true);
+        await microservice.close();
+      }),
     );
   }
 
@@ -218,19 +231,6 @@ export class NestApplication extends NestApplicationContext
     return new Promise(resolve => {
       const server: any = this.listen(port, hostname, () => resolve(server));
     });
-  }
-
-  public async close(): Promise<any> {
-    this.socketModule && (await this.socketModule.close());
-    this.httpAdapter && (await this.httpAdapter.close());
-
-    await Promise.all(
-      iterate(this.microservices).map(async microservice => {
-        microservice.setIsTerminated(true);
-        await microservice.close();
-      }),
-    );
-    await super.close();
   }
 
   public setGlobalPrefix(prefix: string): this {

@@ -76,7 +76,7 @@ describe('ClientTCP', () => {
         expect(
           callback.calledWith({
             err: undefined,
-            response: null,
+            response: undefined,
             isDisposed: true,
           }),
         ).to.be.true;

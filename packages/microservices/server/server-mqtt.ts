@@ -8,11 +8,13 @@ import {
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
-import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
 import {
-  MicroserviceOptions,
-  MqttOptions,
-} from '../interfaces/microservice-configuration.interface';
+  CustomTransportStrategy,
+  IncomingRequest,
+  PacketId,
+  ReadPacket,
+} from '../interfaces';
+import { MqttOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 let mqttPackage: any = {};
@@ -28,6 +30,9 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     mqttPackage = this.loadPackage('mqtt', ServerMqtt.name, () =>
       require('mqtt'),
     );
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public async listen(callback: () => void) {
@@ -71,17 +76,27 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     buffer: Buffer,
     pub: MqttClient,
   ): Promise<any> {
-    const packet = this.deserialize(buffer.toString());
-    if (isUndefined(packet.id)) {
+    const rawPacket = this.parseMessage(buffer.toString());
+    const packet = this.deserializer.deserialize(rawPacket, { channel });
+    if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet);
     }
     const pattern = channel.replace(/_ack$/, '');
-    const publish = this.getPublisher(pub, pattern, packet.id);
+    const publish = this.getPublisher(
+      pub,
+      pattern,
+      (packet as IncomingRequest).id,
+    );
     const handler = this.getHandlerByPattern(pattern);
 
     if (!handler) {
       const status = 'error';
-      return publish({ id: packet.id, status, err: NO_MESSAGE_HANDLER });
+      const noHandlerPacket = {
+        id: (packet as IncomingRequest).id,
+        status,
+        err: NO_MESSAGE_HANDLER,
+      };
+      return publish(noHandlerPacket);
     }
     const response$ = this.transformToObservable(
       await handler(packet.data),
@@ -90,14 +105,18 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public getPublisher(client: MqttClient, pattern: any, id: string): any {
-    return (response: any) =>
-      client.publish(
+    return (response: any) => {
+      Object.assign(response, { id });
+      const outgoingResponse = this.serializer.serialize(response);
+
+      return client.publish(
         this.getResQueueName(pattern),
-        JSON.stringify(Object.assign(response, { id })),
+        JSON.stringify(outgoingResponse),
       );
+    };
   }
 
-  public deserialize(content: any): ReadPacket & PacketId {
+  public parseMessage(content: any): ReadPacket & PacketId {
     try {
       return JSON.parse(content);
     } catch (e) {

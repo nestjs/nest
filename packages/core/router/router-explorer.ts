@@ -29,6 +29,7 @@ import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
 import { REQUEST } from './request';
+import { REQUEST_CONTEXT_ID } from './request/request-constants';
 import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
@@ -256,7 +257,7 @@ export class RouterExplorer {
       next: () => void,
     ) => {
       try {
-        const contextId = createContextId();
+        const contextId = req[REQUEST_CONTEXT_ID] || createContextId();
         this.registerRequestProvider(req, contextId);
 
         const contextInstance = await this.injector.loadPerContext(

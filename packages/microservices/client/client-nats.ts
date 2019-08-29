@@ -19,6 +19,9 @@ export class ClientNats extends ClientProxy {
     super();
     this.url = this.getOptionsProp(this.options, 'url') || NATS_DEFAULT_URL;
     natsPackage = loadPackage('nats', ClientNats.name, () => require('nats'));
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public close() {
@@ -60,7 +63,8 @@ export class ClientNats extends ClientProxy {
     packet: ReadPacket & PacketId,
     callback: (packet: WritePacket) => any,
   ): Function {
-    return (message: WritePacket & PacketId) => {
+    return (rawPacket: unknown) => {
+      const message = this.deserializer.deserialize(rawPacket);
       if (message.id !== packet.id) {
         return undefined;
       }
@@ -68,7 +72,7 @@ export class ClientNats extends ClientProxy {
       if (isDisposed || err) {
         return callback({
           err,
-          response: null,
+          response,
           isDisposed: true,
         });
       }
@@ -86,6 +90,7 @@ export class ClientNats extends ClientProxy {
     try {
       const packet = this.assignPacketId(partialPacket);
       const channel = this.normalizePattern(partialPacket.pattern);
+      const serializedPacket = this.serializer.serialize(packet);
 
       const subscriptionHandler = this.createSubscriptionHandler(
         packet,
@@ -93,7 +98,7 @@ export class ClientNats extends ClientProxy {
       );
       const subscriptionId = this.natsClient.request(
         channel,
-        packet as any,
+        serializedPacket as any,
         subscriptionHandler,
       );
       return () => this.natsClient.unsubscribe(subscriptionId);
@@ -104,8 +109,10 @@ export class ClientNats extends ClientProxy {
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
+    const serializedPacket = this.serializer.serialize(packet);
+
     return new Promise((resolve, reject) =>
-      this.natsClient.publish(pattern, packet as any, err =>
+      this.natsClient.publish(pattern, serializedPacket as any, err =>
         err ? reject(err) : resolve(),
       ),
     );

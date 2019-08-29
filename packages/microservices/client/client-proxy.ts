@@ -1,6 +1,7 @@
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import {
+  ConnectableObservable,
   defer,
   fromEvent,
   merge,
@@ -8,16 +9,25 @@ import {
   Observer,
   throwError as _throw,
 } from 'rxjs';
-import { map, mergeMap, take } from 'rxjs/operators';
+import { map, mergeMap, publish, take } from 'rxjs/operators';
 import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
+import { IncomingResponseDeserializer } from '../deserializers/incoming-response.deserializer';
 import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
   ClientOptions,
+  MqttOptions,
   MsPattern,
+  NatsOptions,
   PacketId,
   ReadPacket,
+  RedisOptions,
+  RmqOptions,
+  TcpClientOptions,
   WritePacket,
 } from '../interfaces';
+import { ProducerDeserializer } from '../interfaces/deserializer.interface';
+import { ProducerSerializer } from '../interfaces/serializer.interface';
+import { IdentitySerializer } from '../serializers/identity.serializer';
 import { transformPatternToRoute } from '../utils';
 
 export abstract class ClientProxy {
@@ -25,6 +35,8 @@ export abstract class ClientProxy {
   public abstract close(): any;
 
   protected routingMap = new Map<string, Function>();
+  protected serializer: ProducerSerializer;
+  protected deserializer: ProducerDeserializer;
 
   public send<TResult = any, TInput = any>(
     pattern: any,
@@ -51,9 +63,12 @@ export abstract class ClientProxy {
     if (isNil(pattern) || isNil(data)) {
       return _throw(new InvalidMessageException());
     }
-    return defer(async () => this.connect()).pipe(
+    const source = defer(async () => this.connect()).pipe(
       mergeMap(() => this.dispatchEvent({ pattern, data })),
+      publish(),
     );
+    (source as ConnectableObservable<TResult>).connect();
+    return source;
   }
 
   protected abstract publish(
@@ -69,6 +84,9 @@ export abstract class ClientProxy {
     return ({ err, response, isDisposed }: WritePacket) => {
       if (err) {
         return observer.error(err);
+      } else if (response && isDisposed) {
+        observer.next(response);
+        return observer.complete();
       } else if (isDisposed) {
         return observer.complete();
       }
@@ -104,5 +122,29 @@ export abstract class ClientProxy {
 
   protected normalizePattern(pattern: MsPattern): string {
     return transformPatternToRoute(pattern);
+  }
+
+  protected initializeSerializer(options: ClientOptions['options']) {
+    this.serializer =
+      (options &&
+        (options as
+          | RedisOptions['options']
+          | NatsOptions['options']
+          | MqttOptions['options']
+          | TcpClientOptions['options']
+          | RmqOptions['options']).serializer) ||
+      new IdentitySerializer();
+  }
+
+  protected initializeDeserializer(options: ClientOptions['options']) {
+    this.deserializer =
+      (options &&
+        (options as
+          | RedisOptions['options']
+          | NatsOptions['options']
+          | MqttOptions['options']
+          | TcpClientOptions['options']
+          | RmqOptions['options']).deserializer) ||
+      new IncomingResponseDeserializer();
   }
 }

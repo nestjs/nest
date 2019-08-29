@@ -112,14 +112,11 @@ describe('transformPatternToRoute', () => {
   });
 
   describe(`when gets value with incorrect type (no string/number/JSON)`, () => {
-    it(`should throw error`, () => {
+    it(`should return the value unchanged`, () => {
       const testPatterns = [null, undefined, Symbol(213)];
-      const errMsg = `The pattern must be of type 'string' or 'object'!`;
 
       testPatterns.forEach((testPattern: any) => {
-        expect(transformPatternToRoute.bind(null, testPattern)).to.throw(
-          errMsg,
-        );
+        expect(transformPatternToRoute(testPattern)).to.be.eq(testPattern);
       });
     });
   });

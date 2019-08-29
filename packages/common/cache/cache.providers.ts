@@ -4,6 +4,11 @@ import { CACHE_MANAGER, CACHE_MODULE_OPTIONS } from './cache.constants';
 import { defaultCacheOptions } from './default-options';
 import { CacheManagerOptions } from './interfaces/cache-manager.interface';
 
+/**
+ * Creates a CacheManager Provider.
+ *
+ * @publicApi
+ */
 export function createCacheManager(): Provider {
   return {
     provide: CACHE_MANAGER,
