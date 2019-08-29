@@ -15,11 +15,11 @@
     "e2e:watch": "jest --watch --config=e2e/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.0",
-    "@nestjs/core": "6.6.0",
-    "@nestjs/platform-express": "6.6.0",
-    "@nestjs/testing": "6.6.0",
-    "@nestjs/websockets": "6.6.0",
+    "@nestjs/common": "6.6.3",
+    "@nestjs/core": "6.6.3",
+    "@nestjs/platform-express": "6.6.3",
+    "@nestjs/testing": "6.6.3",
+    "@nestjs/websockets": "6.6.3",
     "class-transformer": "0.2.3",
     "class-validator": "0.10.0",
     "reflect-metadata": "0.1.13",
