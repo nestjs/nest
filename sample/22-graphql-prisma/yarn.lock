@@ -33,6 +33,16 @@
     is-absolute "^1.0.0"
     is-negated-glob "^1.0.0"
 
+"@kamilkisiela/graphql-tools@4.0.6":
+  version "4.0.6"
+  resolved "https://registry.yarnpkg.com/@kamilkisiela/graphql-tools/-/graphql-tools-4.0.6.tgz#6dcf4d18bedaf34f6ab1d5bad2414e530d0875d1"
+  dependencies:
+    apollo-link "^1.2.3"
+    apollo-utilities "^1.0.1"
+    deprecated-decorator "^0.1.6"
+    iterall "^1.1.3"
+    uuid "^3.1.0"
+
 "@nestjs/common@6.6.3":
   version "6.6.3"
   resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.6.3.tgz#b6c04cc175e17f82b9f0b404dbe4ba799b414fdc"
@@ -52,19 +62,19 @@
     optional "0.1.4"
     uuid "3.3.3"
 
-"@nestjs/graphql@6.4.2":
-  version "6.4.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.4.2.tgz#56fc55aa6d826bab1f08cb15084b9f34892a5730"
+"@nestjs/graphql@6.4.3":
+  version "6.4.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-6.4.3.tgz#416ba895e7f9e79e9d329a983d804df99cbdb8f6"
   dependencies:
-    "@types/graphql" "14.2.2"
+    "@types/graphql" "14.2.3"
     chokidar "3.0.2"
     fast-glob "3.0.4"
     graphql-tools "4.0.5"
-    lodash "4.17.14"
-    merge-graphql-schemas "1.5.8"
+    lodash "4.17.15"
+    merge-graphql-schemas "^1.7.0"
     normalize-path "3.0.0"
-    ts-morph "3.1.2"
-    uuid "3.3.2"
+    ts-morph "3.1.3"
+    uuid "3.3.3"
   optionalDependencies:
     type-graphql "^0.17.3"
 
@@ -215,7 +225,7 @@
     "@types/express-serve-static-core" "*"
     "@types/serve-static" "*"
 
-"@types/glob@^7.1.1":
+"@types/glob@7.1.1", "@types/glob@^7.1.1":
   version "7.1.1"
   resolved "https://registry.yarnpkg.com/@types/glob/-/glob-7.1.1.tgz#aa59a1c6e3fbc421e07ccd31a944c30eba521575"
   dependencies:
@@ -231,13 +241,9 @@
     "@types/graphql" "*"
     "@types/koa" "*"
 
-"@types/graphql@*":
+"@types/graphql@*", "@types/graphql@14.2.3":
   version "14.2.3"
   resolved "https://registry.yarnpkg.com/@types/graphql/-/graphql-14.2.3.tgz#cfc6420a67eb20420786f90112357921974593b9"
-
-"@types/graphql@14.2.2":
-  version "14.2.2"
-  resolved "https://registry.yarnpkg.com/@types/graphql/-/graphql-14.2.2.tgz#10f197e6f8559c11b16d630c5e9c10c3c8e61c5e"
 
 "@types/http-assert@*":
   version "1.5.0"
@@ -333,6 +339,13 @@ accepts@~1.3.7:
   dependencies:
     mime-types "~2.1.24"
     negotiator "0.6.2"
+
+aggregate-error@3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/aggregate-error/-/aggregate-error-3.0.0.tgz#5b5a3c95e9095f311c9ab16c19fb4f3527cd3f79"
+  dependencies:
+    clean-stack "^2.0.0"
+    indent-string "^3.2.0"
 
 ansi-align@^2.0.0:
   version "2.0.0"
@@ -634,6 +647,10 @@ async-retry@^1.2.1:
   dependencies:
     retry "0.12.0"
 
+asyncro@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/asyncro/-/asyncro-3.0.0.tgz#3c7a732e263bc4a42499042f48d7d858e9c0134e"
+
 atob@^2.1.1:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/atob/-/atob-2.1.2.tgz#6d9517eb9e030d2436666651e86bd9f6f13533c9"
@@ -874,6 +891,10 @@ class-validator@>=0.9.1:
     google-libphonenumber "^3.1.6"
     validator "10.4.0"
 
+clean-stack@^2.0.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/clean-stack/-/clean-stack-2.2.0.tgz#ee8472dbb129e727b31e8a10a427dee9dfe4008b"
+
 cli-boxes@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/cli-boxes/-/cli-boxes-1.0.0.tgz#4fa917c3e59c94a004cd61f8ee509da651687143"
@@ -1019,7 +1040,7 @@ cross-fetch@2.2.2:
     node-fetch "2.1.2"
     whatwg-fetch "2.0.4"
 
-cross-fetch@3.0.4:
+cross-fetch@3.0.4, cross-fetch@^3.0.4:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.0.4.tgz#7bef7020207e684a7638ef5f2f698e24d9eb283c"
   dependencies:
@@ -1088,13 +1109,13 @@ deep-extend@^0.6.0:
   version "0.6.0"
   resolved "https://registry.yarnpkg.com/deep-extend/-/deep-extend-0.6.0.tgz#c4fa7c95404a17a9c3e8ca7e1537312b736330ac"
 
+deepmerge@4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/deepmerge/-/deepmerge-4.0.0.tgz#3e3110ca29205f120d7cb064960a39c3d2087c09"
+
 deepmerge@^2.0.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/deepmerge/-/deepmerge-2.1.1.tgz#e862b4e45ea0555072bf51e7fd0d9845170ae768"
-
-deepmerge@^2.2.1:
-  version "2.2.1"
-  resolved "https://registry.yarnpkg.com/deepmerge/-/deepmerge-2.2.1.tgz#5d3ff22a01c00f645405a2fbc17d0778a1801170"
 
 define-properties@^1.1.2:
   version "1.1.3"
@@ -1551,6 +1572,17 @@ glob-parent@^5.0.0:
   dependencies:
     is-glob "^4.0.1"
 
+glob@7.1.4:
+  version "7.1.4"
+  resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.4.tgz#aa608a2f6c577ad357e1ae5a5c26d9a8d1969255"
+  dependencies:
+    fs.realpath "^1.0.0"
+    inflight "^1.0.4"
+    inherits "2"
+    minimatch "^3.0.4"
+    once "^1.3.0"
+    path-is-absolute "^1.0.0"
+
 glob@^7.0.5, glob@^7.1.1, glob@^7.1.3:
   version "7.1.3"
   resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.3.tgz#3960832d3f1574108342dafd3a67b332c0969df1"
@@ -1658,6 +1690,24 @@ graphql-subscriptions@^1.1.0:
 graphql-tag@^2.9.2:
   version "2.9.2"
   resolved "https://registry.yarnpkg.com/graphql-tag/-/graphql-tag-2.9.2.tgz#2f60a5a981375f430bf1e6e95992427dc18af686"
+
+graphql-toolkit@0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/graphql-toolkit/-/graphql-toolkit-0.5.0.tgz#7371c21809898286b2a9e164b45469586cf64498"
+  dependencies:
+    "@kamilkisiela/graphql-tools" "4.0.6"
+    "@types/glob" "7.1.1"
+    aggregate-error "3.0.0"
+    asyncro "^3.0.0"
+    cross-fetch "^3.0.4"
+    deepmerge "4.0.0"
+    glob "7.1.4"
+    graphql-import "0.7.1"
+    is-glob "4.0.1"
+    is-valid-path "0.1.1"
+    lodash "4.17.15"
+    tslib "^1.9.3"
+    valid-url "1.0.9"
 
 graphql-tools@4.0.5:
   version "4.0.5"
@@ -1806,6 +1856,10 @@ imurmurhash@^0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/imurmurhash/-/imurmurhash-0.1.4.tgz#9218b9b2b928a238b13dc4fb6b6d576f231453ea"
 
+indent-string@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/indent-string/-/indent-string-3.2.0.tgz#4a5fd6d27cc332f37e5419a504dbb837105c9289"
+
 inflight@^1.0.4:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/inflight/-/inflight-1.0.6.tgz#49bd6331d7d02d0c09bc910a1075ba8165b56df9"
@@ -1920,6 +1974,10 @@ is-extendable@^1.0.1:
   dependencies:
     is-plain-object "^2.0.4"
 
+is-extglob@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/is-extglob/-/is-extglob-1.0.0.tgz#ac468177c4943405a092fc8f29760c6ffc6206c0"
+
 is-extglob@^2.1.0, is-extglob@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/is-extglob/-/is-extglob-2.1.1.tgz#a88c02535791f02ed37c76a1b9ea9773c833f8c2"
@@ -1934,6 +1992,18 @@ is-fullwidth-code-point@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/is-fullwidth-code-point/-/is-fullwidth-code-point-2.0.0.tgz#a3b30a5c4f199183167aaab93beefae3ddfb654f"
 
+is-glob@4.0.1, is-glob@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/is-glob/-/is-glob-4.0.1.tgz#7567dbe9f2f5e2467bc77ab83c4a29482407a5dc"
+  dependencies:
+    is-extglob "^2.1.1"
+
+is-glob@^2.0.0:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/is-glob/-/is-glob-2.0.1.tgz#d096f926a3ded5600f3fdfd91198cb0888c2d863"
+  dependencies:
+    is-extglob "^1.0.0"
+
 is-glob@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/is-glob/-/is-glob-3.1.0.tgz#7ba5ae24217804ac70707b96922567486cc3e84a"
@@ -1946,18 +2016,18 @@ is-glob@^4.0.0:
   dependencies:
     is-extglob "^2.1.1"
 
-is-glob@^4.0.1:
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/is-glob/-/is-glob-4.0.1.tgz#7567dbe9f2f5e2467bc77ab83c4a29482407a5dc"
-  dependencies:
-    is-extglob "^2.1.1"
-
 is-installed-globally@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/is-installed-globally/-/is-installed-globally-0.1.0.tgz#0dfd98f5a9111716dd535dda6492f67bf3d25a80"
   dependencies:
     global-dirs "^0.1.0"
     is-path-inside "^1.0.0"
+
+is-invalid-path@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/is-invalid-path/-/is-invalid-path-0.1.0.tgz#307a855b3cf1a938b44ea70d2c61106053714f34"
+  dependencies:
+    is-glob "^2.0.0"
 
 is-negated-glob@^1.0.0:
   version "1.0.0"
@@ -2032,6 +2102,12 @@ is-unc-path@^1.0.0:
   resolved "https://registry.yarnpkg.com/is-unc-path/-/is-unc-path-1.0.0.tgz#d731e8898ed090a12c352ad2eaed5095ad322c9d"
   dependencies:
     unc-path-regex "^0.1.2"
+
+is-valid-path@0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/is-valid-path/-/is-valid-path-0.1.1.tgz#110f9ff74c37f663e1ec7915eb451f2db93ac9df"
+  dependencies:
+    is-invalid-path "^0.1.0"
 
 is-windows@^1.0.1, is-windows@^1.0.2:
   version "1.0.2"
@@ -2195,9 +2271,9 @@ lodash.sortby@^4.7.0:
   version "4.7.0"
   resolved "https://registry.yarnpkg.com/lodash.sortby/-/lodash.sortby-4.7.0.tgz#edd14c824e2cc9c1e0b0a1b42bb5210516a42438"
 
-lodash@4.17.14:
-  version "4.17.14"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.14.tgz#9ce487ae66c96254fe20b599f21b6816028078ba"
+lodash@4.17.15:
+  version "4.17.15"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
 
 lodash@^4.17.4:
   version "4.17.11"
@@ -2285,13 +2361,12 @@ merge-descriptors@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/merge-descriptors/-/merge-descriptors-1.0.1.tgz#b00aaa556dd8b44568150ec9d1b953f3f90cbb61"
 
-merge-graphql-schemas@1.5.8:
-  version "1.5.8"
-  resolved "https://registry.yarnpkg.com/merge-graphql-schemas/-/merge-graphql-schemas-1.5.8.tgz#89457b60312aabead44d5b2b7625643f8ab9e369"
+merge-graphql-schemas@^1.7.0:
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/merge-graphql-schemas/-/merge-graphql-schemas-1.7.0.tgz#bedf99b90096d4b324f8e81271e878e6b5cc930d"
   dependencies:
-    deepmerge "^2.2.1"
-    glob "^7.1.3"
-    is-glob "^4.0.0"
+    graphql-toolkit "0.5.0"
+    tslib "1.10.0"
 
 merge2@^1.2.3:
   version "1.2.3"
@@ -3339,9 +3414,9 @@ ts-invariant@^0.4.0:
   dependencies:
     tslib "^1.9.3"
 
-ts-morph@3.1.2:
-  version "3.1.2"
-  resolved "https://registry.yarnpkg.com/ts-morph/-/ts-morph-3.1.2.tgz#fc4f33a51a95a79d27cb64d00825fb72be598083"
+ts-morph@3.1.3:
+  version "3.1.3"
+  resolved "https://registry.yarnpkg.com/ts-morph/-/ts-morph-3.1.3.tgz#bbfa1d14481ee23bdd1c030340ccf4a243cfc844"
   dependencies:
     "@dsherret/to-absolute-glob" "^2.0.2"
     code-block-writer "9.4.1"
@@ -3384,6 +3459,10 @@ tsconfig-paths@3.8.0:
     json5 "^1.0.1"
     minimist "^1.2.0"
     strip-bom "^3.0.0"
+
+tslib@1.10.0:
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.10.0.tgz#c3c19f95973fb0a62973fb09d90d961ee43e5c8a"
 
 tslib@^1.8.0, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
   version "1.9.3"
@@ -3541,13 +3620,17 @@ utils-merge@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
 
-uuid@3.3.2, uuid@^3.1.0:
-  version "3.3.2"
-  resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.3.2.tgz#1b4af4955eb3077c501c23872fc6513811587131"
-
 uuid@3.3.3:
   version "3.3.3"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.3.3.tgz#4568f0216e78760ee1dbf3a4d2cf53e224112866"
+
+uuid@^3.1.0:
+  version "3.3.2"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.3.2.tgz#1b4af4955eb3077c501c23872fc6513811587131"
+
+valid-url@1.0.9:
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/valid-url/-/valid-url-1.0.9.tgz#1c14479b40f1397a75782f115e4086447433a200"
 
 validator@10.4.0:
   version "10.4.0"
