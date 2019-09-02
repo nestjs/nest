@@ -11,7 +11,7 @@
   "dependencies": {
     "@nestjs/common": "6.6.4",
     "@nestjs/core": "6.6.4",
-    "@nestjs/graphql": "6.4.3",
+    "@nestjs/graphql": "6.5.0",
     "apollo-server-express": "2.9.3",
     "class-transformer": "0.2.3",
     "class-validator": "0.10.0",
