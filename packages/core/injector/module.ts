@@ -192,7 +192,9 @@ export class Module {
     this._injectables.set(injectable.name, instanceWrapper);
 
     if (host) {
-      const hostWrapper = this._controllers.get(host && host.name);
+      const token = host && host.name;
+      const hostWrapper =
+        this._controllers.get(host && host.name) || this._providers.get(token);
       hostWrapper && hostWrapper.addEnhancerMetadata(instanceWrapper);
     }
   }
