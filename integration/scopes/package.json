@@ -7,11 +7,11 @@
     "start": "ts-node src/main"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.3",
-    "@nestjs/core": "6.6.3",
-    "@nestjs/microservices": "6.6.3",
-    "@nestjs/testing": "6.6.3",
-    "@nestjs/websockets": "6.6.3",
+    "@nestjs/common": "6.6.4",
+    "@nestjs/core": "6.6.4",
+    "@nestjs/microservices": "6.6.4",
+    "@nestjs/testing": "6.6.4",
+    "@nestjs/websockets": "6.6.4",
     "class-transformer": "0.2.3",
     "class-validator": "0.10.0",
     "fastify": "2.8.0",
