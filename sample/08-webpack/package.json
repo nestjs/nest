@@ -9,15 +9,15 @@
     "build": "webpack --config webpack.config.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.0",
-    "@nestjs/core": "6.6.0",
-    "@nestjs/platform-express": "6.6.0",
+    "@nestjs/common": "6.6.3",
+    "@nestjs/core": "6.6.3",
+    "@nestjs/platform-express": "6.6.3",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "12.7.2",
+    "@types/node": "12.7.3",
     "ts-loader": "6.0.4",
     "ts-node": "8.3.0",
     "tslint": "5.19.0",

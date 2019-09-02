@@ -10,9 +10,9 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.0",
-    "@nestjs/core": "6.6.0",
-    "@nestjs/platform-fastify": "6.6.0",
+    "@nestjs/common": "6.6.3",
+    "@nestjs/core": "6.6.3",
+    "@nestjs/platform-fastify": "6.6.3",
     "handlebars": "4.1.2",
     "point-of-view": "3.5.0",
     "reflect-metadata": "0.1.13",
@@ -20,7 +20,7 @@
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "8.10.52",
+    "@types/node": "8.10.53",
     "nodemon": "1.19.1",
     "ts-node": "8.3.0",
     "tslint": "5.19.0"

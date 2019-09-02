@@ -10,9 +10,9 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.0",
-    "@nestjs/core": "6.6.0",
-    "@nestjs/platform-express": "6.6.0",
+    "@nestjs/common": "6.6.3",
+    "@nestjs/core": "6.6.3",
+    "@nestjs/platform-express": "6.6.3",
     "cache-manager-redis-store": "1.5.0",
     "class-transformer": "0.2.3",
     "class-validator": "0.10.0",
@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@types/jest": "24.0.18",
-    "@types/node": "10.14.16",
+    "@types/node": "10.14.17",
     "jest": "24.9.0",
     "supertest": "4.0.2",
     "ts-jest": "24.0.2",

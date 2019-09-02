@@ -10,10 +10,10 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.0",
-    "@nestjs/core": "6.6.0",
+    "@nestjs/common": "6.6.3",
+    "@nestjs/core": "6.6.3",
     "@nestjs/serve-static": "1.0.1",
-    "@nestjs/platform-express": "6.6.0",
+    "@nestjs/platform-express": "6.6.3",
     "class-transformer": "0.2.3",
     "class-validator": "0.10.0",
     "reflect-metadata": "0.1.13",
@@ -21,7 +21,7 @@
     "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "10.14.16",
+    "@types/node": "10.14.17",
     "ts-node": "8.3.0",
     "tslint": "5.19.0"
   }
