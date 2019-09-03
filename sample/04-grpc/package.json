@@ -20,7 +20,7 @@
     "grpc": "1.23.3",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
-    "typescript": "3.6.2"
+    "typescript": "3.5.3"
   },
   "devDependencies": {
     "@types/node": "10.14.17",
