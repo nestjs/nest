@@ -15,7 +15,7 @@
     "@nestjs/platform-express": "6.6.6",
     "class-transformer": "0.2.3",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.2",
+    "rxjs": "6.5.3",
     "typescript": "3.5.3"
   },
   "devDependencies": {
