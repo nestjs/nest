@@ -18,7 +18,7 @@
     "class-validator": "0.10.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
-    "typescript": "3.6.2"
+    "typescript": "3.5.3"
   },
   "devDependencies": {
     "@types/jest": "24.0.18",
