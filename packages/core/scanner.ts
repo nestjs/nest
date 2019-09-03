@@ -254,9 +254,9 @@ export class DependenciesScanner {
   }
 
   public async calculateModulesDistance(modules: ModulesContainer) {
-    const modulesStack = [];
     const modulesGenerator = modules.values();
     const rootModule = modulesGenerator.next().value;
+    const modulesStack = [rootModule];
 
     const calculateDistance = (moduleRef: Module, distance = 1) => {
       if (modulesStack.includes(moduleRef)) {
