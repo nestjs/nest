@@ -1,8 +1,11 @@
-import {
-  logLevel
-} from '../external/kafka.interface';
+import { logLevel } from '../external/kafka.interface';
 
-export const KafkaLogger = (logger: any, kafkaLogLevel) => ({namespace, level, label, log}) => {
+export const KafkaLogger = (logger: any) => ({
+  namespace,
+  level,
+  label,
+  log,
+}) => {
   let loggerMethod: string;
 
   switch (level) {
@@ -23,5 +26,9 @@ export const KafkaLogger = (logger: any, kafkaLogLevel) => ({namespace, level, l
   }
 
   const { message, ...others } = log;
-  logger[loggerMethod](`${label} [${namespace}] ${message} ${JSON.stringify(others)}`);
+  if (logger[loggerMethod]) {
+    logger[loggerMethod](
+      `${label} [${namespace}] ${message} ${JSON.stringify(others)}`,
+    );
+  }
 };

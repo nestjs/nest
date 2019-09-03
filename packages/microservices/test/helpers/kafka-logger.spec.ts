@@ -1,18 +1,18 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { KafkaLogger } from '../../helpers/kafka-logger';
 import { logLevel } from '../../external/kafka.interface';
+import { KafkaLogger } from '../../helpers/kafka-logger';
 
 const namespace = 'namespace';
 const label = 'label';
 const entry = {
   message: 'message',
   other: {
-    stuff: 'here'
-  }
+    stuff: 'here',
+  },
 };
 
-describe('kafka logger', () => {
+describe('KafkaLogger', () => {
   let kafkaLogger: any;
 
   let error: sinon.SinonSpy;
@@ -31,8 +31,8 @@ describe('kafka logger', () => {
       error,
       warn,
       log,
-      debug
-    }, logLevel.DEBUG);
+      debug,
+    });
   });
 
   it('error', () => {
@@ -40,11 +40,13 @@ describe('kafka logger', () => {
       namespace,
       level: logLevel.ERROR,
       label,
-      log: entry
+      log: entry,
     });
 
     expect(error.calledOnce).to.be.true;
-    expect(error.args[0][0]).to.eq('label [namespace] message {"other":{"stuff":"here"}}');
+    expect(error.args[0][0]).to.eq(
+      'label [namespace] message {"other":{"stuff":"here"}}',
+    );
   });
 
   it('nothing', () => {
@@ -52,7 +54,7 @@ describe('kafka logger', () => {
       namespace,
       level: logLevel.NOTHING,
       label,
-      log: entry
+      log: entry,
     });
 
     expect(error.calledOnce).to.be.true;
@@ -63,7 +65,7 @@ describe('kafka logger', () => {
       namespace,
       level: logLevel.WARN,
       label,
-      log: entry
+      log: entry,
     });
 
     expect(warn.calledOnce).to.be.true;
@@ -74,7 +76,7 @@ describe('kafka logger', () => {
       namespace,
       level: logLevel.INFO,
       label,
-      log: entry
+      log: entry,
     });
 
     expect(log.calledOnce).to.be.true;
@@ -85,7 +87,7 @@ describe('kafka logger', () => {
       namespace,
       level: logLevel.DEBUG,
       label,
-      log: entry
+      log: entry,
     });
 
     expect(debug.calledOnce).to.be.true;

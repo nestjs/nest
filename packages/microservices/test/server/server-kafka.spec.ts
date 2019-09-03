@@ -1,10 +1,13 @@
+import { Logger } from '@nestjs/common';
+import {
+  EachMessagePayload,
+  KafkaMessage,
+} from '@nestjs/microservices/external/kafka.interface';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ServerKafka } from '../../server';
-import { Logger } from '@nestjs/common';
 import { NO_MESSAGE_HANDLER } from '../../constants';
-import { EachMessagePayload, KafkaMessage} from '@nestjs/microservices/external/kafka.interface';
 import { KafkaHeaders } from '../../enums';
+import { ServerKafka } from '../../server';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -13,17 +16,15 @@ class NoopLogger extends Logger {
 }
 
 describe('ServerKafka', () => {
-  // helpers
   const objectToMap = obj =>
     new Map(Object.keys(obj).map(i => [i, obj[i]]) as any);
 
-  // static
   const topic = 'test.topic';
   const replyTopic = 'test.topic.reply';
   const replyPartition = '0';
   const correlationId = '696fa0a9-1827-4e59-baef-f3628173fe4f';
   const key = '1';
-  const timestamp = (new Date()).toISOString();
+  const timestamp = new Date().toISOString();
   const messageValue = 'test-message';
 
   const eventMessage: KafkaMessage = {
@@ -32,40 +33,48 @@ describe('ServerKafka', () => {
     size: messageValue.length,
     value: Buffer.from(messageValue),
     timestamp,
-    attributes: 1
+    attributes: 1,
   };
   const eventPayload: EachMessagePayload = {
     topic,
     partition: 0,
-    message: Object.assign({
-      headers: {}
-    }, eventMessage)
+    message: Object.assign(
+      {
+        headers: {},
+      },
+      eventMessage,
+    ),
   };
 
   const eventWithCorrelationIdPayload: EachMessagePayload = {
     topic,
     partition: 0,
-    message: Object.assign({
-      headers: {
-        [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
-      }
-    }, eventMessage)
+    message: Object.assign(
+      {
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+        },
+      },
+      eventMessage,
+    ),
   };
 
-  const message: KafkaMessage = Object.assign({
-    headers: {
-      [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
-      [KafkaHeaders.REPLY_TOPIC]: Buffer.from(replyTopic),
-      [KafkaHeaders.REPLY_PARTITION]: Buffer.from(replyPartition),
-    }
-  }, eventMessage);
+  const message: KafkaMessage = Object.assign(
+    {
+      headers: {
+        [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+        [KafkaHeaders.REPLY_TOPIC]: Buffer.from(replyTopic),
+        [KafkaHeaders.REPLY_PARTITION]: Buffer.from(replyPartition),
+      },
+    },
+    eventMessage,
+  );
   const payload: EachMessagePayload = {
     topic,
     partition: 0,
-    message
+    message,
   };
 
-  // assignable
   let server: ServerKafka;
   let callback: sinon.SinonSpy;
   let bindEventsStub: sinon.SinonStub;
@@ -85,21 +94,19 @@ describe('ServerKafka', () => {
     run = sinon.spy();
     send = sinon.spy();
 
-    consumerStub = sinon.stub(server, 'consumer')
-      .callsFake(() => {
-        return {
-          connect,
-          subscribe,
-          run,
-        };
-      });
-    producerStub = sinon.stub(server, 'producer')
-      .callsFake(() => {
-        return {
-          connect,
-          send
-        };
-      });
+    consumerStub = sinon.stub(server as any, 'consumer').callsFake(() => {
+      return {
+        connect,
+        subscribe,
+        run,
+      };
+    });
+    producerStub = sinon.stub(server as any, 'producer').callsFake(() => {
+      return {
+        connect,
+        send,
+      };
+    });
     client = {
       consumer: consumerStub,
       producer: producerStub,
@@ -117,7 +124,7 @@ describe('ServerKafka', () => {
     });
     it('should call "client.start"', async () => {
       await server.listen(callback);
-      expect(client.producer.called).to.be.true;
+      expect((server as any).producer.called).to.be.true;
     });
     it('should call callback', async () => {
       await server.listen(callback);
@@ -126,8 +133,8 @@ describe('ServerKafka', () => {
   });
 
   describe('close', () => {
-    const consumer = {disconnect: sinon.spy()};
-    const producer = {disconnect: sinon.spy()};
+    const consumer = { disconnect: sinon.spy() };
+    const producer = { disconnect: sinon.spy() };
     beforeEach(() => {
       (server as any).consumer = consumer;
       (server as any).producer = producer;
@@ -137,9 +144,9 @@ describe('ServerKafka', () => {
 
       expect(consumer.disconnect.calledOnce).to.be.true;
       expect(producer.disconnect.calledOnce).to.be.true;
-      expect(server.consumer).to.be.null;
-      expect(server.producer).to.be.null;
-      expect(server.client).to.be.null;
+      expect((server as any).consumer).to.be.null;
+      expect((server as any).producer).to.be.null;
+      expect((server as any).client).to.be.null;
     });
   });
 
@@ -147,7 +154,7 @@ describe('ServerKafka', () => {
     it('should not call subscribe nor run on consumer when there are no messageHandlers', async () => {
       (server as any).logger = new NoopLogger();
       await server.listen(callback);
-      await server.bindEvents(server.consumer);
+      await server.bindEvents((server as any).consumer);
       expect(subscribe.called).to.be.false;
       expect(run.called).to.be.true;
       expect(connect.called).to.be.true;
@@ -162,12 +169,14 @@ describe('ServerKafka', () => {
         [pattern]: handler,
       });
 
-      await server.bindEvents(server.consumer);
+      await server.bindEvents((server as any).consumer);
 
       expect(subscribe.called).to.be.true;
-      expect(subscribe.calledWith({
-        topic: pattern
-      })).to.be.true;
+      expect(
+        subscribe.calledWith({
+          topic: pattern,
+        }),
+      ).to.be.true;
 
       expect(run.called).to.be.true;
       expect(connect.called).to.be.true;
@@ -176,9 +185,7 @@ describe('ServerKafka', () => {
 
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
-      expect(
-        typeof server.getMessageHandler()
-      ).to.be.eql('function');
+      expect(typeof server.getMessageHandler()).to.be.eql('function');
     });
     describe('handler', () => {
       it('should call "handleMessage"', async () => {
@@ -196,20 +203,33 @@ describe('ServerKafka', () => {
     let publisher;
 
     beforeEach(() => {
-      publisher = server.getPublisher(replyTopic, replyPartition, correlationId);
+      publisher = server.getPublisher(
+        replyTopic,
+        replyPartition,
+        correlationId,
+      );
       sendMessageStub = sinon.stub(server, 'sendMessage').callsFake(() => ({}));
     });
     it(`should return function`, () => {
-      expect(typeof server.getPublisher(null, null, correlationId)).to.be.eql('function');
+      expect(typeof server.getPublisher(null, null, correlationId)).to.be.eql(
+        'function',
+      );
     });
     it(`should call "publish" with expected arguments`, () => {
       const data = {
         id: 'uuid',
-        value: 'string'
+        value: 'string',
       };
       publisher(data);
 
-      expect(sendMessageStub.calledWith(data, replyTopic, replyPartition, correlationId)).to.be.true;
+      expect(
+        sendMessageStub.calledWith(
+          data,
+          replyTopic,
+          replyPartition,
+          correlationId,
+        ),
+      ).to.be.true;
     });
   });
 
@@ -259,87 +279,115 @@ describe('ServerKafka', () => {
 
     beforeEach(() => {
       sendSpy = sinon.spy();
-      sinon.stub(server, 'producer').value({
-        send: sendSpy
+      sinon.stub(server as any, 'producer').value({
+        send: sendSpy,
       });
     });
 
     it('should send message', () => {
-      server.sendMessage({
-        id: correlationId,
-        response: messageValue
-      }, replyTopic, replyPartition, correlationId);
+      server.sendMessage(
+        {
+          id: correlationId,
+          response: messageValue,
+        },
+        replyTopic,
+        replyPartition,
+        correlationId,
+      );
 
-      expect(sendSpy.calledWith({
-        topic: replyTopic,
-        messages: [
-          {
-            partition: parseFloat(replyPartition),
-            value: messageValue,
-            headers: {
-              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId)
-            }
-          }
-        ]
-      })).to.be.true;
+      expect(
+        sendSpy.calledWith({
+          topic: replyTopic,
+          messages: [
+            {
+              partition: parseFloat(replyPartition),
+              value: messageValue,
+              headers: {
+                [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+              },
+            },
+          ],
+        }),
+      ).to.be.true;
     });
     it('should send message without reply partition', () => {
-      server.sendMessage({
-        id: correlationId,
-        response: messageValue
-      }, replyTopic, undefined, correlationId);
+      server.sendMessage(
+        {
+          id: correlationId,
+          response: messageValue,
+        },
+        replyTopic,
+        undefined,
+        correlationId,
+      );
 
-      expect(sendSpy.calledWith({
-        topic: replyTopic,
-        messages: [
-          {
-            value: messageValue,
-            headers: {
-              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId)
-            }
-          }
-        ]
-      })).to.be.true;
+      expect(
+        sendSpy.calledWith({
+          topic: replyTopic,
+          messages: [
+            {
+              value: messageValue,
+              headers: {
+                [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+              },
+            },
+          ],
+        }),
+      ).to.be.true;
     });
     it('should send error message', () => {
-      server.sendMessage({
-        id: correlationId,
-        err: NO_MESSAGE_HANDLER
-      }, replyTopic, replyPartition, correlationId);
+      server.sendMessage(
+        {
+          id: correlationId,
+          err: NO_MESSAGE_HANDLER,
+        },
+        replyTopic,
+        replyPartition,
+        correlationId,
+      );
 
-      expect(sendSpy.calledWith({
-        topic: replyTopic,
-        messages: [
-          {
-            value: null,
-            partition: parseFloat(replyPartition),
-            headers: {
-              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
-              [KafkaHeaders.NESTJS_ERR]: Buffer.from(NO_MESSAGE_HANDLER)
-            }
-          }
-        ]
-      })).to.be.true;
+      expect(
+        sendSpy.calledWith({
+          topic: replyTopic,
+          messages: [
+            {
+              value: null,
+              partition: parseFloat(replyPartition),
+              headers: {
+                [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+                [KafkaHeaders.NEST_ERR]: Buffer.from(NO_MESSAGE_HANDLER),
+              },
+            },
+          ],
+        }),
+      ).to.be.true;
     });
     it('should send `isDisposed` message', () => {
-      server.sendMessage({
-        id: correlationId,
-        isDisposed: true
-      }, replyTopic, replyPartition, correlationId);
+      server.sendMessage(
+        {
+          id: correlationId,
+          isDisposed: true,
+        },
+        replyTopic,
+        replyPartition,
+        correlationId,
+      );
 
-      expect(sendSpy.calledWith({
-        topic: replyTopic,
-        messages: [
-          {
-            value: null,
-            partition: parseFloat(replyPartition),
-            headers: {
-              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
-              [KafkaHeaders.NESTJS_IS_DISPOSED]: Buffer.alloc(1)
-            }
-          }
-        ]
-      })).to.be.true;
+      expect(
+        sendSpy.calledWith({
+          topic: replyTopic,
+          messages: [
+            {
+              value: null,
+              partition: parseFloat(replyPartition),
+              headers: {
+                [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+                [KafkaHeaders.NEST_IS_DISPOSED]: Buffer.alloc(1),
+              },
+            },
+          ],
+        }),
+      ).to.be.true;
     });
   });
 });

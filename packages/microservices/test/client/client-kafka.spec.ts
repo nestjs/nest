@@ -1,11 +1,15 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ClientKafka } from '../../client/client-kafka';
-import { ConsumerGroupJoinEvent, EachMessagePayload, KafkaMessage } from '../../external/kafka.interface';
-import { KafkaHeaders } from '../../enums';
 import { NO_MESSAGE_HANDLER } from '../../constants';
-import { InvalidKafkaClientTopicException } from '../../errors/invalid-kafka-client-topic.exception';
+import { KafkaHeaders } from '../../enums';
 import { InvalidKafkaClientTopicPartitionException } from '../../errors/invalid-kafka-client-topic-partition.exception';
+import { InvalidKafkaClientTopicException } from '../../errors/invalid-kafka-client-topic.exception';
+import {
+  ConsumerGroupJoinEvent,
+  EachMessagePayload,
+  KafkaMessage,
+} from '../../external/kafka.interface';
 // tslint:disable:no-string-literal
 
 describe('ClientKafka', () => {
@@ -17,7 +21,7 @@ describe('ClientKafka', () => {
   const correlationId = '696fa0a9-1827-4e59-baef-f3628173fe4f';
   const key = 'test-key';
   const offset = '0';
-  const timestamp = (new Date()).toISOString();
+  const timestamp = new Date().toISOString();
   const attributes = 1;
   const messageValue = 'test-message';
 
@@ -28,7 +32,7 @@ describe('ClientKafka', () => {
     size: messageValue.length,
     value: Buffer.from(messageValue),
     timestamp,
-    attributes
+    attributes,
   };
 
   // deserialized message
@@ -40,93 +44,118 @@ describe('ClientKafka', () => {
     timestamp,
     attributes,
     topic,
-    partition
+    partition,
   };
 
   // payloads
   const payload: EachMessagePayload = {
     topic,
     partition,
-    message: Object.assign({
-      headers: {
-        [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
-      }
-    }, message)
+    message: Object.assign(
+      {
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+        },
+      },
+      message,
+    ),
   };
 
   const payloadDisposed: EachMessagePayload = {
     topic,
     partition,
-    message: Object.assign({
-      headers: {
-        [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
-        [KafkaHeaders.NESTJS_IS_DISPOSED]: Buffer.alloc(1)
-      }
-    }, message, {
-      size: 0,
-      value: null
-    })
+    message: Object.assign(
+      {
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+          [KafkaHeaders.NEST_IS_DISPOSED]: Buffer.alloc(1),
+        },
+      },
+      message,
+      {
+        size: 0,
+        value: null,
+      },
+    ),
   };
 
   const payloadError: EachMessagePayload = {
     topic,
     partition,
-    message: Object.assign({
-      headers: {
-        [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
-        [KafkaHeaders.NESTJS_ERR]: Buffer.from(NO_MESSAGE_HANDLER)
-      }
-    }, message, {
-      size: 0,
-      value: null
-    })
+    message: Object.assign(
+      {
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+          [KafkaHeaders.NEST_ERR]: Buffer.from(NO_MESSAGE_HANDLER),
+        },
+      },
+      message,
+      {
+        size: 0,
+        value: null,
+      },
+    ),
   };
 
   const payloadWithoutCorrelation: EachMessagePayload = {
     topic,
     partition,
-    message: Object.assign({
-      headers: {}
-    }, message)
+    message: Object.assign(
+      {
+        headers: {},
+      },
+      message,
+    ),
   };
 
   // deserialized payload
   const deserializedPayload: EachMessagePayload = {
     topic,
     partition,
-    message: Object.assign({
-      headers: {
-        [KafkaHeaders.CORRELATION_ID]: correlationId,
-      }
-    }, deserializedMessage)
+    message: Object.assign(
+      {
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: correlationId,
+        },
+      },
+      deserializedMessage,
+    ),
   };
 
   const deserializedPayloadDisposed: EachMessagePayload = {
     topic,
     partition,
-    message: Object.assign({
-      headers: {
-        [KafkaHeaders.CORRELATION_ID]: correlationId,
-        [KafkaHeaders.NESTJS_IS_DISPOSED]: Buffer.alloc(1).toString()
-      }
-    }, deserializedMessage, {
-      size: 0,
-      value: null
-    })
+    message: Object.assign(
+      {
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: correlationId,
+          [KafkaHeaders.NEST_IS_DISPOSED]: Buffer.alloc(1).toString(),
+        },
+      },
+      deserializedMessage,
+      {
+        size: 0,
+        value: null,
+      },
+    ),
   };
 
   const deserializedPayloadError: EachMessagePayload = {
     topic,
     partition,
-    message: Object.assign({
-      headers: {
-        [KafkaHeaders.CORRELATION_ID]: correlationId,
-        [KafkaHeaders.NESTJS_ERR]: NO_MESSAGE_HANDLER
-      }
-    }, deserializedMessage, {
-      size: 0,
-      value: null
-    })
+    message: Object.assign(
+      {
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: correlationId,
+          [KafkaHeaders.NEST_ERR]: NO_MESSAGE_HANDLER,
+        },
+      },
+      deserializedMessage,
+      {
+        size: 0,
+        value: null,
+      },
+    ),
   };
 
   // spys
@@ -155,31 +184,31 @@ describe('ClientKafka', () => {
     send = sinon.spy();
     on = sinon.spy();
 
-    consumerStub = sinon.stub(client, 'consumer')
-      .callsFake(() => {
-        return {
-          connect,
-          subscribe,
-          run,
-          events: {
-            GROUP_JOIN: 'consumer.group_join'
-          },
-          on
-        };
-      });
-    producerStub = sinon.stub(client, 'producer')
-      .callsFake(() => {
-        return {
-          connect,
-          send
-        };
-      });
+    consumerStub = sinon.stub(client as any, 'consumer').callsFake(() => {
+      return {
+        connect,
+        subscribe,
+        run,
+        events: {
+          GROUP_JOIN: 'consumer.group_join',
+        },
+        on,
+      };
+    });
+    producerStub = sinon.stub(client as any, 'producer').callsFake(() => {
+      return {
+        connect,
+        send,
+      };
+    });
     kafkaClient = {
       consumer: consumerStub,
       producer: producerStub,
     };
 
-    createClientStub = sinon.stub(client, 'createClient').callsFake(() => kafkaClient);
+    createClientStub = sinon
+      .stub(client, 'createClient')
+      .callsFake(() => kafkaClient);
   });
 
   describe('subscribeToResponseOf', () => {
@@ -188,7 +217,10 @@ describe('ClientKafka', () => {
 
     beforeEach(() => {
       normalizePatternSpy = sinon.spy(client as any, 'normalizePattern');
-      getResponsePatternNameSpy = sinon.spy(client as any, 'getResponsePatternName');
+      getResponsePatternNameSpy = sinon.spy(
+        client as any,
+        'getResponsePatternName',
+      );
     });
 
     it(`should create an array of response patterns`, () => {
@@ -206,8 +238,8 @@ describe('ClientKafka', () => {
   });
 
   describe('close', () => {
-    const consumer = {disconnect: sinon.spy()};
-    const producer = {disconnect: sinon.spy()};
+    const consumer = { disconnect: sinon.spy() };
+    const producer = { disconnect: sinon.spy() };
     beforeEach(() => {
       (client as any).consumer = consumer;
       (client as any).producer = producer;
@@ -217,9 +249,9 @@ describe('ClientKafka', () => {
 
       expect(consumer.disconnect.calledOnce).to.be.true;
       expect(producer.disconnect.calledOnce).to.be.true;
-      expect(client.consumer).to.be.null;
-      expect(client.producer).to.be.null;
-      expect(client.client).to.be.null;
+      expect((client as any).consumer).to.be.null;
+      expect((client as any).producer).to.be.null;
+      expect((client as any).client).to.be.null;
     });
   });
 
@@ -229,8 +261,13 @@ describe('ClientKafka', () => {
     // let handleErrorsSpy: sinon.SinonSpy;
 
     beforeEach(() => {
-      consumerAssignmentsStub = sinon.stub(client as any, 'consumerAssignments');
-      bindTopicsStub = sinon.stub(client, 'bindTopics').callsFake(async () => {});
+      consumerAssignmentsStub = sinon.stub(
+        client as any,
+        'consumerAssignments',
+      );
+      bindTopicsStub = sinon
+        .stub(client, 'bindTopics')
+        .callsFake(async () => {});
     });
 
     it('should expect the connection to be created', async () => {
@@ -250,7 +287,7 @@ describe('ClientKafka', () => {
     });
 
     it('should expect the connection to be reused', async () => {
-      client.client = kafkaClient;
+      (client as any).client = kafkaClient;
       await client.connect();
 
       expect(createClientStub.calledOnce).to.be.false;
@@ -282,21 +319,22 @@ describe('ClientKafka', () => {
           groupProtocol: 'RoundRobin',
           memberId: 'member-1',
           memberAssignment: {
-            'topic-a': [0, 1, 2]
-          }
-        }
+            'topic-a': [0, 1, 2],
+          },
+        },
       };
 
       client['setConsumerAssignments'](consumerAssignments);
-      expect(client['consumerAssignments']).to.deep.eq(consumerAssignments.payload.memberAssignment);
+      expect(client['consumerAssignments']).to.deep.eq(
+        consumerAssignments.payload.memberAssignment,
+      );
     });
   });
 
   describe('bindTopics', () => {
     it('should bind topics from response patterns', async () => {
       (client as any).responsePatterns = [replyTopic];
-
-      client.consumer = kafkaClient.consumer();
+      (client as any).consumer = kafkaClient.consumer();
 
       await client.bindTopics();
 
@@ -320,7 +358,7 @@ describe('ClientKafka', () => {
         expect(
           callback.calledWith({
             err: null,
-            response: deserializedPayload.message
+            response: deserializedPayload.message,
           }),
         ).to.be.true;
       });
@@ -398,22 +436,22 @@ describe('ClientKafka', () => {
     const eventMessage = {
       id: undefined,
       pattern: topic,
-      data: messageValue
+      data: messageValue,
     };
 
     let sendStub: sinon.SinonStub;
     let sendSpy: sinon.SinonSpy;
 
     beforeEach(() => {
-      sendStub = sinon.stub().callsFake(async (a) => {
+      sendStub = sinon.stub().callsFake(async a => {
         throw new Error('ERROR!');
       });
       sendSpy = sinon.spy();
     });
 
     it('should publish packet', async () => {
-      sinon.stub(client, 'producer').value({
-        send: sendSpy
+      sinon.stub(client as any, 'producer').value({
+        send: sendSpy,
       });
 
       await client['dispatchEvent'](eventMessage);
@@ -428,8 +466,8 @@ describe('ClientKafka', () => {
     });
 
     it('should throw error', async () => {
-      sinon.stub(client, 'producer').value({
-        send: sendStub
+      sinon.stub(client as any, 'producer').value({
+        send: sendStub,
       });
 
       client['dispatchEvent'](eventMessage).catch(err =>
@@ -441,7 +479,7 @@ describe('ClientKafka', () => {
   describe('getReplyTopicPartition', () => {
     it('should get reply partition', () => {
       client['consumerAssignments'] = {
-        [replyTopic]: [0]
+        [replyTopic]: [0],
       };
 
       const result = client['getReplyTopicPartition'](replyTopic);
@@ -451,21 +489,21 @@ describe('ClientKafka', () => {
 
     it('should throw error when the topic is being consumed but is not assigned partitions', () => {
       client['consumerAssignments'] = {
-        [replyTopic]: []
+        [replyTopic]: [],
       };
 
       expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
-        InvalidKafkaClientTopicPartitionException
+        InvalidKafkaClientTopicPartitionException,
       );
     });
 
     it('should throw error when the topic is not being consumer', () => {
       client['consumerAssignments'] = {
-        [topic]: []
+        [topic]: [],
       };
 
       expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
-        InvalidKafkaClientTopicException
+        InvalidKafkaClientTopicException,
       );
     });
   });
@@ -473,7 +511,7 @@ describe('ClientKafka', () => {
   describe('publish', () => {
     const readPacket = {
       pattern: topic,
-      data: messageValue
+      data: messageValue,
     };
 
     let assignPacketIdStub: sinon.SinonStub;
@@ -487,23 +525,33 @@ describe('ClientKafka', () => {
     beforeEach(() => {
       // spy
       normalizePatternSpy = sinon.spy(client as any, 'normalizePattern');
-      getResponsePatternNameSpy = sinon.spy(client as any, 'getResponsePatternName');
-      getReplyTopicPartitionSpy = sinon.spy(client as any, 'getReplyTopicPartition');
+      getResponsePatternNameSpy = sinon.spy(
+        client as any,
+        'getResponsePatternName',
+      );
+      getReplyTopicPartitionSpy = sinon.spy(
+        client as any,
+        'getReplyTopicPartition',
+      );
       routingMapSetSpy = sinon.spy((client as any).routingMap, 'set');
       sendSpy = sinon.spy();
 
       // stub
-      assignPacketIdStub = sinon.stub(client as any, 'assignPacketId').callsFake(packet => Object.assign(packet, {
-        id: correlationId
-      }));
+      assignPacketIdStub = sinon
+        .stub(client as any, 'assignPacketId')
+        .callsFake(packet =>
+          Object.assign(packet, {
+            id: correlationId,
+          }),
+        );
 
-      sinon.stub(client, 'producer').value({
-        send: sendSpy
+      sinon.stub(client as any, 'producer').value({
+        send: sendSpy,
       });
 
       // set
       client['consumerAssignments'] = {
-        [replyTopic]: [parseFloat(replyPartition)]
+        [replyTopic]: [parseFloat(replyPartition)],
       };
     });
 
@@ -545,9 +593,13 @@ describe('ClientKafka', () => {
 
       expect(sentMessage.value).to.eq(messageValue);
       expect(sentMessage.headers).to.not.be.empty;
-      expect(sentMessage.headers[KafkaHeaders.CORRELATION_ID]).to.eq(correlationId);
+      expect(sentMessage.headers[KafkaHeaders.CORRELATION_ID]).to.eq(
+        correlationId,
+      );
       expect(sentMessage.headers[KafkaHeaders.REPLY_TOPIC]).to.eq(replyTopic);
-      expect(sentMessage.headers[KafkaHeaders.REPLY_PARTITION]).to.eq(replyPartition);
+      expect(sentMessage.headers[KafkaHeaders.REPLY_PARTITION]).to.eq(
+        replyPartition,
+      );
     });
 
     describe('on error', () => {
@@ -559,8 +611,8 @@ describe('ClientKafka', () => {
           throw new Error();
         });
 
-        clientProducerStub = sinon.stub(client, 'producer').value({
-          send: sendStub
+        clientProducerStub = sinon.stub(client as any, 'producer').value({
+          send: sendStub,
         });
       });
 
@@ -587,8 +639,12 @@ describe('ClientKafka', () => {
         getReplyTopicPartitionSpy.restore();
 
         // return the topic instead of the reply topic
-        getResponsePatternNameStub = sinon.stub(client as any, 'getResponsePatternName').callsFake(() => topic);
-        getReplyTopicPartitionStub = sinon.stub(client as any, 'getReplyTopicPartition').callsFake(() => '0');
+        getResponsePatternNameStub = sinon
+          .stub(client as any, 'getResponsePatternName')
+          .callsFake(() => topic);
+        getReplyTopicPartitionStub = sinon
+          .stub(client as any, 'getReplyTopicPartition')
+          .callsFake(() => '0');
 
         subscription = await client['publish'](readPacket, callback);
         subscription(payloadDisposed);

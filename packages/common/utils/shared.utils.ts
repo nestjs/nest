@@ -6,16 +6,19 @@ export const isPlainObject = (fn: any): fn is object => {
   if (!isObject(fn)) {
     return false;
   }
-
   const proto = Object.getPrototypeOf(fn);
-
   if (proto === null) {
     return true;
   }
-
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, 'constructor') && proto.constructor;
-
-  return typeof Ctor === 'function' && Ctor instanceof Ctor && Function.prototype.toString.call(Ctor) === Function.prototype.toString.call(Object);
+  const ctor =
+    Object.prototype.hasOwnProperty.call(proto, 'constructor') &&
+    proto.constructor;
+  return (
+    typeof ctor === 'function' &&
+    ctor instanceof ctor &&
+    Function.prototype.toString.call(ctor) ===
+      Function.prototype.toString.call(Object)
+  );
 };
 export const validatePath = (path?: string): string =>
   path ? (path.charAt(0) !== '/' ? '/' + path : path) : '';

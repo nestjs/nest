@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { KafkaRoundRobinByTimePartitionAssigner } from '../../helpers/kafka-round-robin-by-time-partition-assigner';
 import * as Kafka from 'kafkajs';
+import { KafkaRoundRobinByTimePartitionAssigner } from '../../helpers/kafka-round-robin-partition-assigner';
 
 describe('kafka round robin by time', () => {
   let cluster, topics, metadata, assigner;
@@ -28,41 +28,49 @@ describe('kafka round robin by time', () => {
           memberMetadata: Kafka.AssignerProtocol.MemberMetadata.encode({
             version: assigner.version,
             topics: ['topic-A', 'topic-B'],
-            userData: Buffer.from(JSON.stringify({
-              time: [0, 0] // process.hrtime()
-            }))
-          })
+            userData: Buffer.from(
+              JSON.stringify({
+                time: [0, 0], // process.hrtime()
+              }),
+            ),
+          }),
         },
         {
           memberId: 'member-1',
           memberMetadata: Kafka.AssignerProtocol.MemberMetadata.encode({
             version: assigner.version,
             topics: ['topic-A', 'topic-B'],
-            userData: Buffer.from(JSON.stringify({
-              time: [0, 1] // process.hrtime()
-            }))
-          })
+            userData: Buffer.from(
+              JSON.stringify({
+                time: [0, 1], // process.hrtime()
+              }),
+            ),
+          }),
         },
         {
           memberId: 'member-4',
           memberMetadata: Kafka.AssignerProtocol.MemberMetadata.encode({
             version: assigner.version,
             topics: ['topic-A', 'topic-B'],
-            userData: Buffer.from(JSON.stringify({
-              time: [1, 1] // process.hrtime()
-            }))
-          })
+            userData: Buffer.from(
+              JSON.stringify({
+                time: [1, 1], // process.hrtime()
+              }),
+            ),
+          }),
         },
         {
           memberId: 'member-2',
           memberMetadata: Kafka.AssignerProtocol.MemberMetadata.encode({
             version: assigner.version,
             topics: ['topic-A', 'topic-B'],
-            userData: Buffer.from(JSON.stringify({
-              time: [2, 0] // process.hrtime()
-            }))
-          })
-        }
+            userData: Buffer.from(
+              JSON.stringify({
+                time: [2, 0], // process.hrtime()
+              }),
+            ),
+          }),
+        },
       ];
 
       const assignment = await assigner.assign({ members, topics });
@@ -76,7 +84,7 @@ describe('kafka round robin by time', () => {
               'topic-A': [0, 4, 8, 12],
               'topic-B': [0, 4],
             },
-            userData: Buffer.alloc(0)
+            userData: Buffer.alloc(0),
           }),
         },
         {
@@ -87,7 +95,7 @@ describe('kafka round robin by time', () => {
               'topic-A': [1, 5, 9, 13],
               'topic-B': [1],
             },
-            userData: Buffer.alloc(0)
+            userData: Buffer.alloc(0),
           }),
         },
         {
@@ -98,7 +106,7 @@ describe('kafka round robin by time', () => {
               'topic-A': [2, 6, 10],
               'topic-B': [2],
             },
-            userData: Buffer.alloc(0)
+            userData: Buffer.alloc(0),
           }),
         },
         {
@@ -109,7 +117,7 @@ describe('kafka round robin by time', () => {
               'topic-A': [3, 7, 11],
               'topic-B': [3],
             },
-            userData: Buffer.alloc(0)
+            userData: Buffer.alloc(0),
           }),
         },
       ]);
@@ -123,9 +131,11 @@ describe('kafka round robin by time', () => {
         metadata: Kafka.AssignerProtocol.MemberMetadata.encode({
           version: assigner.version,
           topics,
-          userData: Buffer.from(JSON.stringify({
-            time: assigner.getTime()
-          }))
+          userData: Buffer.from(
+            JSON.stringify({
+              time: assigner.getTime(),
+            }),
+          ),
         }),
       });
     });
