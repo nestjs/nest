@@ -47,7 +47,7 @@ describe('Middleware (execution order)', () => {
     await app.init();
   });
 
-  it(`should execute middleware of modules that are closer to the root module`, () => {
+  it(`should execute middleware in topological order`, () => {
     return request(app.getHttpServer())
       .get('/hello')
       .expect(200, RETURN_VALUE_B);

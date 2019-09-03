@@ -68,14 +68,15 @@ export class MiddlewareModule {
     modules: Map<string, Module>,
   ) {
     const moduleEntries = [...modules.entries()];
-    await Promise.all(
-      moduleEntries.map(async ([name, module]) => {
-        const instance = module.instance;
-
-        await this.loadConfiguration(middlewareContainer, instance, name);
-        await this.resolver.resolveInstances(module, name);
-      }),
-    );
+    const loadMiddlewareConfiguration = async ([name, module]: [
+      string,
+      Module,
+    ]) => {
+      const instance = module.instance;
+      await this.loadConfiguration(middlewareContainer, instance, name);
+      await this.resolver.resolveInstances(module, name);
+    };
+    await Promise.all(moduleEntries.map(loadMiddlewareConfiguration));
   }
 
   public async loadConfiguration(
