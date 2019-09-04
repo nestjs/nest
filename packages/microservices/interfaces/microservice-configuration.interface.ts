@@ -1,4 +1,5 @@
 import { MqttClientOptions } from '@nestjs/common/interfaces/external/mqtt-options.interface';
+import { KafkaConfig, ConsumerConfig, ProducerConfig, CompressionTypes } from '@nestjs/common/interfaces/external/kafka-options.interface';
 import { Transport } from '../enums/transport.enum';
 import { Server } from './../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
@@ -12,6 +13,7 @@ export type MicroserviceOptions =
   | NatsOptions
   | MqttOptions
   | RmqOptions
+  | KafkaOptions
   | CustomStrategy;
 
 export interface CustomStrategy {
@@ -106,6 +108,29 @@ export interface RmqOptions {
     queueOptions?: any;
     socketOptions?: any;
     noAck?: boolean;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
+  };
+}
+
+export interface KafkaOptions {
+  transport?: Transport.KAFKA;
+  options?: {
+    client?: KafkaConfig;
+    consumer?: ConsumerConfig;
+    run?: {
+      autoCommit?: boolean;
+      autoCommitInterval?: number | null;
+      autoCommitThreshold?: number | null;
+      eachBatchAutoResolve?: boolean;
+      partitionsConsumedConcurrently?: number;
+    };
+    producer?: ProducerConfig;
+    send?: {
+      acks?: number;
+      timeout?: number;
+      compression?: CompressionTypes;
+    };
     serializer?: Serializer;
     deserializer?: Deserializer;
   };

@@ -1,5 +1,6 @@
 import { Transport } from '../../enums/transport.enum';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
+import { KafkaConfig, ConsumerConfig, ProducerConfig, CompressionTypes } from '../external/kafka-options.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
@@ -11,6 +12,7 @@ export type MicroserviceOptions =
   | NatsOptions
   | MqttOptions
   | RmqOptions
+  | KafkaOptions
   | CustomStrategy;
 
 export interface CustomStrategy {
@@ -101,6 +103,29 @@ export interface RmqOptions {
     isGlobalPrefetchCount?: boolean;
     queueOptions?: any;
     socketOptions?: any;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
+  };
+}
+
+export interface KafkaOptions {
+  transport?: Transport.KAFKA;
+  options?: {
+    client?: KafkaConfig,
+    consumer?: ConsumerConfig,
+    run?: {
+      autoCommit?: boolean
+      autoCommitInterval?: number | null
+      autoCommitThreshold?: number | null
+      eachBatchAutoResolve?: boolean
+      partitionsConsumedConcurrently?: number
+    },
+    producer?: ProducerConfig,
+    send?: {
+      acks?: number;
+      timeout?: number;
+      compression?: CompressionTypes;
+    }
     serializer?: Serializer;
     deserializer?: Deserializer;
   };
