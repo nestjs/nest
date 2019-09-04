@@ -10,13 +10,13 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.4",
-    "@nestjs/core": "6.6.4",
-    "@nestjs/platform-express": "6.6.4",
+    "@nestjs/common": "6.6.6",
+    "@nestjs/core": "6.6.6",
+    "@nestjs/platform-express": "6.6.6",
     "mysql2": "1.7.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.2",
-    "sequelize": "5.18.0",
+    "sequelize": "5.18.1",
     "sequelize-typescript": "1.0.0",
     "typescript": "3.5.3"
   },

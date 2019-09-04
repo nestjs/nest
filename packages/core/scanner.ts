@@ -36,6 +36,7 @@ import {
 import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
+import { ModulesContainer } from './injector';
 import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { Module } from './injector/module';
@@ -116,6 +117,7 @@ export class DependenciesScanner {
       this.reflectControllers(metatype, token);
       this.reflectExports(metatype, token);
     }
+    this.calculateModulesDistance(modules);
   }
 
   public async reflectImports(
@@ -249,6 +251,26 @@ export class DependenciesScanner {
       prototype
     );
     return undefined;
+  }
+
+  public async calculateModulesDistance(modules: ModulesContainer) {
+    const modulesGenerator = modules.values();
+    const rootModule = modulesGenerator.next().value;
+    const modulesStack = [rootModule];
+
+    const calculateDistance = (moduleRef: Module, distance = 1) => {
+      if (modulesStack.includes(moduleRef)) {
+        return;
+      }
+      modulesStack.push(moduleRef);
+
+      const moduleImports = rootModule.relatedModules;
+      moduleImports.forEach(module => {
+        module.distance = distance;
+        calculateDistance(module, distance + 1);
+      });
+    };
+    calculateDistance(rootModule);
   }
 
   public async insertImport(related: any, token: string, context: string) {

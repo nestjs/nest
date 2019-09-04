@@ -481,44 +481,4 @@ describe('Module', () => {
       });
     });
   });
-
-  describe('getter "distance"', () => {
-    @ModuleDecorator({})
-    class ModuleA {}
-
-    @ModuleDecorator({})
-    class ModuleB {}
-
-    @ModuleDecorator({})
-    class ModuleC {}
-
-    let moduleA, moduleB, moduleC;
-    beforeEach(() => {
-      moduleA = new Module(ModuleA as any, [], container);
-      moduleB = new Module(ModuleB as any, [], container);
-      moduleC = new Module(ModuleC as any, [], container);
-    });
-
-    it('should calculate "distance" properly', () => {
-      moduleA.addRelatedModule(moduleB);
-      moduleC.addRelatedModule(moduleB);
-      moduleA.addRelatedModule(moduleC);
-
-      expect(moduleA.distance).to.be.equal(0);
-      expect(moduleB.distance).to.be.equal(2);
-      expect(moduleC.distance).to.be.equal(1);
-    });
-
-    it('should not throw an exception when circular dependency occurs', () => {
-      expect(() => {
-        moduleA.addRelatedModule(moduleB);
-        moduleB.addRelatedModule(moduleA);
-      }).to.not.throw;
-      expect(() => {
-        moduleA.addRelatedModule(moduleB);
-        moduleB.addRelatedModule(moduleC);
-        moduleC.addRelatedModule(moduleA);
-      }).to.not.throw;
-    });
-  });
 });

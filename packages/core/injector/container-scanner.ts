@@ -48,7 +48,7 @@ export class ContainerScanner {
     ) {
       throw new InvalidClassScopeException(metatypeOrToken);
     }
-    return instanceWrapper.instance;
+    return (instanceWrapper.instance as unknown) as TResult;
   }
 
   public getWrapperCollectionPairByHost<TInput = any, TResult = TInput>(
