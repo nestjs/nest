@@ -81,7 +81,7 @@
   "devDependencies": {
     "@types/amqplib": "0.5.13",
     "@types/cache-manager": "1.2.8",
-    "@types/chai": "4.2.0",
+    "@types/chai": "4.2.1",
     "@types/chai-as-promised": "7.1.2",
     "@types/cors": "2.8.6",
     "@types/express": "4.17.1",
