@@ -16,7 +16,7 @@
     "handlebars": "4.2.0",
     "point-of-view": "3.5.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.2",
+    "rxjs": "6.5.3",
     "typescript": "3.5.3"
   },
   "devDependencies": {

@@ -14,7 +14,7 @@
     "@nestjs/mongoose": "6.1.2",
     "mongoose": "5.6.11",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.2",
+    "rxjs": "6.5.3",
     "typescript": "3.5.3"
   },
   "devDependencies": {

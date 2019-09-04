@@ -18,7 +18,7 @@
     "graphql": "14.5.4",
     "graphql-tools": "4.0.5",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.2",
+    "rxjs": "6.5.3",
     "subscriptions-transport-ws": "0.9.16",
     "type-graphql": "0.17.5",
     "typescript": "3.5.3",
