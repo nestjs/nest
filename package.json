@@ -121,7 +121,7 @@
     "lerna": "2.11.0",
     "lint-staged": "9.2.5",
     "mocha": "3.5.3",
-    "nodemon": "1.19.1",
+    "nodemon": "1.19.2",
     "nyc": "14.1.1",
     "prettier": "1.18.2",
     "sinon": "7.4.2",
