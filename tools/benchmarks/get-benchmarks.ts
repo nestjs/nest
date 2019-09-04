@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import { join } from 'path';
 
 const wrk = (options: any) =>
-  new Promise((resolve, reject) =>
+  new Promise<WrkResults>((resolve, reject) =>
     wrkPkg(options, (err: any, result: any) =>
       err ? reject(err) : resolve(result),
     ),
@@ -15,7 +15,7 @@ const sleep = (time: number) =>
 const BENCHMARK_PATH = join(__dirname, '../../benchmarks');
 const LIBS = ['express', 'fastify', 'nest', 'nest-fastify'];
 
-async function runBenchmarkOfLib(lib: string) {
+async function runBenchmarkOfLib(lib: string): Promise<WrkResults> {
   const libPath = join(BENCHMARK_PATH, `${lib}.js`);
   const process = spawn('node', [libPath], {
     detached: true,
@@ -39,10 +39,30 @@ async function runBenchmarkOfLib(lib: string) {
 }
 
 export async function getBenchmarks() {
-  const results = {};
+  const results: { [lib: string]: WrkResults } = {};
   for await (const lib of LIBS) {
     const result = await runBenchmarkOfLib(lib);
     results[lib] = result;
   }
   return results;
+}
+
+interface WrkResults {
+  transferPerSec: string;
+  requestsPerSec: number;
+  connectErrors: string;
+  readErrors: string;
+  writeErrors: string;
+  timeoutErrors: string;
+  requestsTotal: number;
+  durationActual: string;
+  transferTotal: string;
+  latencyAvg: string;
+  latencyStdev: string;
+  latencyMax: string;
+  latencyStdevPerc: number;
+  rpsAvg: string;
+  rpsStdev: string;
+  rpsMax: string;
+  rpsStdevPerc: number;
 }
