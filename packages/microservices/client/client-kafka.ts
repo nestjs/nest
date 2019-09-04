@@ -6,6 +6,7 @@ import {
   KAFKA_DEFAULT_CLIENT,
   KAFKA_DEFAULT_GROUP,
 } from '../constants';
+import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deserializer';
 import { KafkaHeaders } from '../enums';
 import { InvalidKafkaClientTopicPartitionException } from '../errors/invalid-kafka-client-topic-partition.exception';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
@@ -17,7 +18,6 @@ import {
   Kafka,
   KafkaConfig,
   KafkaMessage,
-  Message,
   Producer,
 } from '../external/kafka.interface';
 import {
@@ -31,6 +31,10 @@ import {
   ReadPacket,
   WritePacket,
 } from '../interfaces';
+import {
+  KafkaRequest,
+  KafkaRequestSerializer,
+} from '../serializers/kafka-request.serializer';
 import { ClientProxy } from './client-proxy';
 
 let kafkaPackage: any = {};
@@ -92,7 +96,9 @@ export class ClientKafka extends ClientProxy {
 
     const consumerOptions = Object.assign(
       {
-        partitionAssigners: [KafkaRoundRobinPartitionAssigner],
+        partitionAssigners: [
+          (config: any) => new KafkaRoundRobinPartitionAssigner(config),
+        ],
       },
       this.options.consumer || {},
       {
@@ -144,52 +150,36 @@ export class ClientKafka extends ClientProxy {
           partition: payload.partition,
         }),
       );
-
-      const packet = this.deserializer.deserialize(rawMessage);
-      const headers = packet.response.headers;
-      if (isUndefined(headers[KafkaHeaders.CORRELATION_ID])) {
+      if (
+        !rawMessage.headers ||
+        isUndefined(rawMessage.headers[KafkaHeaders.CORRELATION_ID])
+      ) {
         return;
       }
-      // parse and assign the correlation id as the packet id
-      packet.id = headers[KafkaHeaders.CORRELATION_ID];
-
-      const callback = this.routingMap.get(packet.id);
+      const { err, response, isDisposed, id } = this.deserializer.deserialize(
+        rawMessage,
+      );
+      const callback = this.routingMap.get(id);
       if (!callback) {
         return;
-      }
-      let err: string = null;
-      let isDisposed: boolean;
-
-      if (!isUndefined(headers[KafkaHeaders.NEST_ERR])) {
-        err = headers[KafkaHeaders.NEST_ERR];
-        isDisposed = true;
-      }
-
-      if (
-        !isUndefined(packet.response.headers[KafkaHeaders.NEST_IS_DISPOSED])
-      ) {
-        isDisposed = true;
       }
       if (err || isDisposed) {
         return callback({
           err,
-          response: packet.response,
+          response,
           isDisposed,
         });
       }
-
       callback({
         err,
-        response: packet.response,
+        response,
       });
     };
   }
 
   protected dispatchEvent(packet: OutgoingEvent): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
-    const serializedPacket = this.serializer.serialize(packet);
-    const outgoingEvent = KafkaParser.stringify<Message>(serializedPacket.data);
-
+    const outgoingEvent = this.serializer.serialize(packet.data);
     const message = Object.assign(
       {
         topic: pattern,
@@ -220,31 +210,29 @@ export class ClientKafka extends ClientProxy {
   ): Function {
     try {
       const packet = this.assignPacketId(partialPacket);
-      const serializedPacket = this.serializer.serialize(packet);
-      serializedPacket.data = KafkaParser.stringify<Message>(packet.data);
-
       const pattern = this.normalizePattern(partialPacket.pattern);
       const replyTopic = this.getResponsePatternName(pattern);
       const replyPartition = this.getReplyTopicPartition(replyTopic);
 
-      this.routingMap.set(packet.id, callback);
+      const serializedPacket: KafkaRequest = this.serializer.serialize(
+        packet.data,
+      );
+      serializedPacket.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
+      serializedPacket.headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
+      serializedPacket.headers[KafkaHeaders.REPLY_PARTITION] = replyPartition;
 
-      packet.data.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
-      packet.data.headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
-      packet.data.headers[KafkaHeaders.REPLY_PARTITION] = replyPartition;
+      this.routingMap.set(packet.id, callback);
 
       const message = Object.assign(
         {
           topic: pattern,
-          messages: [serializedPacket.data],
+          messages: [serializedPacket],
         },
         this.options.send || {},
       );
       this.producer.send(message);
 
-      return () => {
-        this.routingMap.delete(packet.id);
-      };
+      return () => this.routingMap.delete(packet.id);
     } catch (err) {
       callback({ err });
     }
@@ -256,5 +244,15 @@ export class ClientKafka extends ClientProxy {
 
   protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
     this.consumerAssignments = data.payload.memberAssignment;
+  }
+
+  protected initializeSerializer(options: KafkaOptions['options']) {
+    this.serializer =
+      (options && options.serializer) || new KafkaRequestSerializer();
+  }
+
+  protected initializeDeserializer(options: KafkaOptions['options']) {
+    this.deserializer =
+      (options && options.deserializer) || new KafkaResponseDeserializer();
   }
 }

@@ -122,10 +122,6 @@ describe('ServerKafka', () => {
       await server.listen(callback);
       expect(bindEventsStub.called).to.be.true;
     });
-    it('should call "client.start"', async () => {
-      await server.listen(callback);
-      expect((server as any).producer.called).to.be.true;
-    });
     it('should call callback', async () => {
       await server.listen(callback);
       expect(callback.called).to.be.true;

@@ -74,7 +74,7 @@ describe('ClientKafka', () => {
       message,
       {
         size: 0,
-        value: null,
+        value: { test: true },
       },
     ),
   };
@@ -135,7 +135,7 @@ describe('ClientKafka', () => {
       deserializedMessage,
       {
         size: 0,
-        value: null,
+        value: { test: true },
       },
     ),
   };
@@ -158,7 +158,6 @@ describe('ClientKafka', () => {
     ),
   };
 
-  // spys
   let client: ClientKafka;
   let callback: sinon.SinonSpy;
   let connect: sinon.SinonSpy;
@@ -166,13 +165,9 @@ describe('ClientKafka', () => {
   let run: sinon.SinonSpy;
   let send: sinon.SinonSpy;
   let on: sinon.SinonSpy;
-
-  // stubs
   let consumerStub: sinon.SinonStub;
   let producerStub: sinon.SinonStub;
   let createClientStub: sinon.SinonStub;
-
-  // other
   let kafkaClient;
 
   beforeEach(() => {
@@ -357,8 +352,8 @@ describe('ClientKafka', () => {
         expect(callback.called).to.be.true;
         expect(
           callback.calledWith({
-            err: null,
-            response: deserializedPayload.message,
+            err: undefined,
+            response: messageValue,
           }),
         ).to.be.true;
       });
@@ -377,8 +372,8 @@ describe('ClientKafka', () => {
         expect(
           callback.calledWith({
             isDisposed: true,
-            response: deserializedPayloadDisposed.message,
-            err: null,
+            response: payloadDisposed.message.value,
+            err: undefined,
           }),
         ).to.be.true;
       });
@@ -397,7 +392,7 @@ describe('ClientKafka', () => {
         expect(
           callback.calledWith({
             isDisposed: true,
-            response: deserializedPayloadError.message,
+            response: undefined,
             err: NO_MESSAGE_HANDLER,
           }),
         ).to.be.true;

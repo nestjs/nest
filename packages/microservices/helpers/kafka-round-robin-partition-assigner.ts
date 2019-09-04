@@ -12,8 +12,8 @@ let kafkaPackage: any = {};
 const time = process.hrtime();
 
 export class KafkaRoundRobinPartitionAssigner {
-  readonly name: 'RoundRobinByTime';
-  readonly version: 1;
+  readonly name = 'RoundRobinByTime';
+  readonly version = 1;
 
   constructor(private readonly config: { cluster: Cluster }) {
     kafkaPackage = loadPackage(

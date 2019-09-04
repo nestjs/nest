@@ -24,6 +24,7 @@ import {
   KafkaOptions,
   OutgoingResponse,
 } from '../interfaces';
+import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
 import { Server } from './server';
 
 let kafkaPackage: any = {};
@@ -131,15 +132,10 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
         partition: payload.partition,
       }),
     );
-
-    const { headers } = rawMessage;
-    const correlationId = (headers[
-      KafkaHeaders.CORRELATION_ID
-    ] as unknown) as string;
-    const replyTopic = (headers[KafkaHeaders.REPLY_TOPIC] as unknown) as string;
-    const replyPartition = (headers[
-      KafkaHeaders.REPLY_PARTITION
-    ] as unknown) as string;
+    const headers = (rawMessage.headers as unknown) as Record<string, any>;
+    const correlationId = headers[KafkaHeaders.CORRELATION_ID];
+    const replyTopic = headers[KafkaHeaders.REPLY_TOPIC];
+    const replyPartition = headers[KafkaHeaders.REPLY_PARTITION];
 
     const packet = this.deserializer.deserialize(rawMessage, { channel });
 
@@ -168,23 +164,17 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     response$ && this.send(response$, publish);
   }
 
-  public sendMessage<T = any>(
-    message: T,
+  public sendMessage(
+    message: OutgoingResponse,
     replyTopic: string,
     replyPartition: string,
     correlationId: string,
   ): void {
-    const outgoingResponse = this.serializer.serialize(
-      (message as unknown) as OutgoingResponse,
-    );
-
-    const outgoingMessage = KafkaParser.stringify<Message>(
-      outgoingResponse.response,
-    );
+    const outgoingMessage = this.serializer.serialize(message.response);
     this.assignReplyPartition(replyPartition, outgoingMessage);
     this.assignCorrelationIdHeader(correlationId, outgoingMessage);
-    this.assignErrorHeader(outgoingResponse, outgoingMessage);
-    this.assignIsDisposedHeader(outgoingResponse, outgoingMessage);
+    this.assignErrorHeader(message, outgoingMessage);
+    this.assignIsDisposedHeader(message, outgoingMessage);
 
     const replyMessage = Object.assign(
       {
@@ -235,5 +225,10 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       return;
     }
     outgoingMessage.partition = parseFloat(replyPartition);
+  }
+
+  protected initializeSerializer(options: KafkaOptions['options']) {
+    this.serializer =
+      (options && options.serializer) || new KafkaRequestSerializer();
   }
 }

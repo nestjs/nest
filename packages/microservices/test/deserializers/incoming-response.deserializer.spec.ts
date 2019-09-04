@@ -32,6 +32,7 @@ describe('IncomingResponseDeserializer', () => {
         };
         expect(instance.deserialize(externalResponse)).to.be.deep.equal({
           id: externalResponse.id,
+          isDisposed: true,
           response: externalResponse,
         });
       });

@@ -1,15 +1,9 @@
-import * as util from 'util';
-import { Body, Controller, HttpCode, Post, OnModuleInit } from '@nestjs/common';
-import {
-  Client,
-  Transport,
-  ClientKafka,
-} from '@nestjs/microservices';
+import { Body, Controller, HttpCode, OnModuleInit, Post } from '@nestjs/common';
 import { Logger } from '@nestjs/common/services/logger.service';
-
+import { Client, ClientKafka, Transport } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
-import { UserDto } from './dtos/user.dto';
 import { BusinessDto } from './dtos/business.dto';
+import { UserDto } from './dtos/user.dto';
 
 @Controller()
 export class KafkaController implements OnModuleInit {
@@ -27,7 +21,7 @@ export class KafkaController implements OnModuleInit {
   })
   private readonly client: ClientKafka;
 
-  onModuleInit(){
+  onModuleInit() {
     const requestPatterns = [
       'math.sum.sync.kafka.message',
       'math.sum.sync.without.key',
@@ -39,7 +33,7 @@ export class KafkaController implements OnModuleInit {
       'business.create',
     ];
 
-    requestPatterns.forEach((pattern) => {
+    requestPatterns.forEach(pattern => {
       this.client.subscribeToResponseOf(pattern);
     });
   }
@@ -50,13 +44,15 @@ export class KafkaController implements OnModuleInit {
   async mathSumSyncKafkaMessage(
     @Body() data: number[],
   ): Promise<Observable<any>> {
-    const result = await this.client.send('math.sum.sync.kafka.message', {
-      key: '1',
-      value: {
-        numbers: data,
-      },
-    }).toPromise();
-    return result.value;
+    const result = await this.client
+      .send('math.sum.sync.kafka.message', {
+        key: '1',
+        value: {
+          numbers: data,
+        },
+      })
+      .toPromise();
+    return result;
   }
 
   // sync send kafka(ish) message without key and only the value
@@ -65,12 +61,14 @@ export class KafkaController implements OnModuleInit {
   async mathSumSyncWithoutKey(
     @Body() data: number[],
   ): Promise<Observable<any>> {
-    const result = await this.client.send('math.sum.sync.without.key', {
-      value: {
-        numbers: data,
-      },
-    }).toPromise();
-    return result.value;
+    const result = await this.client
+      .send('math.sum.sync.without.key', {
+        value: {
+          numbers: data,
+        },
+      })
+      .toPromise();
+    return result;
   }
 
   // sync send message without key or value
@@ -79,70 +77,76 @@ export class KafkaController implements OnModuleInit {
   async mathSumSyncPlainObject(
     @Body() data: number[],
   ): Promise<Observable<any>> {
-    const result = await this.client.send('math.sum.sync.plain.object', {
-      numbers: data,
-    }).toPromise();
-    return result.value;
+    const result = await this.client
+      .send('math.sum.sync.plain.object', {
+        numbers: data,
+      })
+      .toPromise();
+    return result;
   }
 
   // sync send message without key or value
   @Post('mathSumSyncArray')
   @HttpCode(200)
-  async mathSumSyncArray(
-    @Body() data: number[],
-  ): Promise<Observable<any>> {
-    const result = await this.client.send('math.sum.sync.array', data).toPromise();
-    return result.value;
+  async mathSumSyncArray(@Body() data: number[]): Promise<Observable<any>> {
+    const result = await this.client
+      .send('math.sum.sync.array', data)
+      .toPromise();
+    return result;
   }
 
   @Post('mathSumSyncString')
   @HttpCode(200)
-  async mathSumSyncString(
-    @Body() data: number[],
-  ): Promise<Observable<any>> {
+  async mathSumSyncString(@Body() data: number[]): Promise<Observable<any>> {
     // this.logger.error(util.format('mathSumSyncString() data: %o', data));
-    const result = await this.client.send('math.sum.sync.string', data.toString()).toPromise();
-    return result.value;
+    const result = await this.client
+      .send('math.sum.sync.string', data.toString())
+      .toPromise();
+    return result;
   }
 
   @Post('mathSumSyncNumber')
   @HttpCode(200)
-  async mathSumSyncNumber(
-    @Body() data: number[],
-  ): Promise<Observable<any>> {
-    const result = await this.client.send('math.sum.sync.number', data[0]).toPromise();
-    return result.value;
+  async mathSumSyncNumber(@Body() data: number[]): Promise<Observable<any>> {
+    const result = await this.client
+      .send('math.sum.sync.number', data[0])
+      .toPromise();
+    return result;
   }
 
   // async notify
   @Post('notify')
   async sendNotification(): Promise<any> {
-    return this.client.emit('notify', {notify: true});
+    return this.client.emit('notify', { notify: true });
   }
 
   // Complex data to send.
   @Post('/user')
   @HttpCode(200)
   async createUser(@Body() user: UserDto): Promise<Observable<any>> {
-    const result = await this.client.send('user.create', {
-      key: '1',
-      value: {
-        user,
-      },
-    }).toPromise();
-    return result.value;
+    const result = await this.client
+      .send('user.create', {
+        key: '1',
+        value: {
+          user,
+        },
+      })
+      .toPromise();
+    return result;
   }
 
   // Complex data to send.
   @Post('/business')
   @HttpCode(200)
   async createBusiness(@Body() business: BusinessDto) {
-    const result = await this.client.send('business.create', {
-      key: '1',
-      value: {
-        business,
-      },
-    }).toPromise();
-    return result.value;
+    const result = await this.client
+      .send('business.create', {
+        key: '1',
+        value: {
+          business,
+        },
+      })
+      .toPromise();
+    return result;
   }
 }

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as Kafka from 'kafkajs';
-import { KafkaRoundRobinByTimePartitionAssigner } from '../../helpers/kafka-round-robin-partition-assigner';
+import { KafkaRoundRobinPartitionAssigner } from '../../helpers/kafka-round-robin-partition-assigner';
 
 describe('kafka round robin by time', () => {
   let cluster, topics, metadata, assigner;
@@ -8,7 +8,7 @@ describe('kafka round robin by time', () => {
   beforeEach(() => {
     metadata = {};
     cluster = { findTopicPartitionMetadata: topic => metadata[topic] };
-    assigner = KafkaRoundRobinByTimePartitionAssigner({ cluster });
+    assigner = new KafkaRoundRobinPartitionAssigner({ cluster });
     topics = ['topic-A', 'topic-B'];
   });
 

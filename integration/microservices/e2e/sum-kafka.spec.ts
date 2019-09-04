@@ -1,37 +1,13 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  INestApplication,
-  RpcExceptionFilter,
-} from '@nestjs/common';
-import { RpcException, Transport } from '@nestjs/microservices';
+import { INestApplication } from '@nestjs/common';
+import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
-import { KafkaController } from '../src/kafka/kafka.controller';
-import { APP_FILTER } from '@nestjs/core';
-import { Observable, throwError } from 'rxjs';
-import { KafkaMessagesController } from '../src/kafka/kafka.messages.controller';
+import { BusinessDto } from '../src/kafka/dtos/business.dto';
 import { UserDto } from '../src/kafka/dtos/user.dto';
 import { UserEntity } from '../src/kafka/entities/user.entity';
-import { BusinessDto } from '../src/kafka/dtos/business.dto';
-import { BusinessEntity } from '../src/kafka/entities/business.entity';
-
-@Catch()
-class KafkaExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost): any {
-    console.log(exception);
-  }
-}
-@Catch()
-class RpcErrorFilter implements RpcExceptionFilter {
-  catch(exception: RpcException): Observable<any> {
-    console.log(exception);
-    return throwError(exception);
-  }
-}
+import { KafkaController } from '../src/kafka/kafka.controller';
+import { KafkaMessagesController } from '../src/kafka/kafka.messages.controller';
 
 describe('Kafka transport', () => {
   let server;
@@ -39,20 +15,7 @@ describe('Kafka transport', () => {
 
   it(`Start Kafka app`, async () => {
     const module = await Test.createTestingModule({
-      controllers: [
-        KafkaController,
-        KafkaMessagesController,
-      ],
-      providers: [
-        {
-          provide: APP_FILTER,
-          useClass: RpcErrorFilter,
-        },
-        {
-          provide: APP_FILTER,
-          useClass: KafkaExceptionFilter,
-        },
-      ],
+      controllers: [KafkaController, KafkaMessagesController],
     }).compile();
 
     app = module.createNestApplication();
@@ -161,7 +124,12 @@ describe('Kafka transport', () => {
     for (let concurrencyKey = 0; concurrencyKey < 100; concurrencyKey++) {
       const innerUserDto = JSON.parse(JSON.stringify(userDto));
       innerUserDto.name += `+${concurrencyKey}`;
-      promises.push(request(server).post('/user').send(userDto).expect(200));
+      promises.push(
+        request(server)
+          .post('/user')
+          .send(userDto)
+          .expect(200),
+      );
     }
     await Promise.all(promises);
   });
@@ -169,5 +137,4 @@ describe('Kafka transport', () => {
   after(`Stopping Kafka app`, async () => {
     await app.close();
   });
-
 }).timeout(30000);
