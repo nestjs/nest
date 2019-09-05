@@ -21,6 +21,7 @@ import {
   ReadPacket,
   RedisOptions,
   RmqOptions,
+  KafkaOptions,
   TcpOptions,
   WritePacket,
 } from '../interfaces';
@@ -135,7 +136,8 @@ export abstract class Server {
           | NatsOptions['options']
           | MqttOptions['options']
           | TcpOptions['options']
-          | RmqOptions['options']).serializer) ||
+          | RmqOptions['options']
+          | KafkaOptions['options']).serializer) ||
       new IdentitySerializer();
   }
 
@@ -147,7 +149,8 @@ export abstract class Server {
           | NatsOptions['options']
           | MqttOptions['options']
           | TcpOptions['options']
-          | RmqOptions['options']).deserializer) ||
+          | RmqOptions['options']
+          | KafkaOptions['options']).deserializer) ||
       new IncomingRequestDeserializer();
   }
 
