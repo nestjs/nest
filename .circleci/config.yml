@@ -132,6 +132,9 @@ jobs:
       - *install-deps
       - *build-packages
       - run:
+          name: Install native wrk
+          command: .circleci/install-wrk.sh
+      - run:
           name: Run codechecks with benchmarks
           command: yarn codechecks:benchmarks
 
