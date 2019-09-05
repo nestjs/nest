@@ -122,15 +122,21 @@ jobs:
           name: Integration tests
           command: npm run integration-test
           
-  codechecks_performance:
+  codechecks_benchmarks:
     working_directory: ~/nest
-    machine: true
+    docker:
+      - image: circleci/node:12
     steps:
       - checkout
       - *restore-cache
       - *install-deps
       - *build-packages
-      - yarn codechecks:benchmarks
+      - run:
+          name: Install native wrk
+          command: .circleci/install-wrk.sh
+      - run:
+          name: Run codechecks with benchmarks
+          command: yarn codechecks:benchmarks
 
   samples:
     working_directory: ~/nest
@@ -167,6 +173,6 @@ workflows:
       - samples:
           requires:
             - build
-      - codechecks_performance:
+      - codechecks_benchmarks:
           requires:
             - build
