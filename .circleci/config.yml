@@ -122,9 +122,10 @@ jobs:
           name: Integration tests
           command: npm run integration-test
           
-  codechecks_performance:
+  codechecks_benchmarks:
     working_directory: ~/nest
-    machine: true
+    docker:
+      - image: circleci/node:12
     steps:
       - checkout
       - *restore-cache
@@ -169,6 +170,6 @@ workflows:
       - samples:
           requires:
             - build
-      - codechecks_performance:
+      - codechecks_benchmarks:
           requires:
             - build
