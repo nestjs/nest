@@ -121,6 +121,16 @@ jobs:
       - run:
           name: Integration tests
           command: npm run integration-test
+          
+  codechecks_performance:
+    working_directory: ~/nest
+    machine: true
+    steps:
+      - checkout
+      - *restore-cache
+      - *install-deps
+      - *build-packages
+      - yarn codechecks:benchmarks
 
   samples:
     working_directory: ~/nest
@@ -157,4 +167,6 @@ workflows:
       - samples:
           requires:
             - build
-      
+      - codechecks_performance:
+          requires:
+            - build
