@@ -2,6 +2,8 @@ import wrkPkg = require('wrk');
 import { spawn } from 'child_process';
 import { join } from 'path';
 
+export type Benchmarks = { [lib: string]: WrkResults };
+
 const wrk = (options: any) =>
   new Promise<WrkResults>((resolve, reject) =>
     wrkPkg(options, (err: any, result: any) =>
@@ -13,13 +15,13 @@ const sleep = (time: number) =>
   new Promise(resolve => setTimeout(resolve, time));
 
 const BENCHMARK_PATH = join(__dirname, '../../benchmarks');
-const LIBS = ['express', 'fastify', 'nest', 'nest-fastify'];
+export const LIBS = ['express', 'fastify', 'nest', 'nest-fastify'];
 
 async function runBenchmarkOfLib(lib: string): Promise<WrkResults> {
   const libPath = join(BENCHMARK_PATH, `${lib}.js`);
   const process = spawn('node', [libPath], {
     detached: true,
-    stdio: 'ignore'
+    stdio: 'ignore',
   });
 
   process.unref();
@@ -39,7 +41,7 @@ async function runBenchmarkOfLib(lib: string): Promise<WrkResults> {
 }
 
 export async function getBenchmarks() {
-  const results: { [lib: string]: WrkResults } = {};
+  const results: Benchmarks = {};
   for await (const lib of LIBS) {
     const result = await runBenchmarkOfLib(lib);
     results[lib] = result;

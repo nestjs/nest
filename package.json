@@ -79,7 +79,9 @@
     "uuid": "3.3.3"
   },
   "devDependencies": {
+    "@codechecks/client": "^0.1.8",
     "@types/amqplib": "0.5.13",
+    "@types/bytes": "^3.0.0",
     "@types/cache-manager": "1.2.8",
     "@types/chai": "4.2.0",
     "@types/chai-as-promised": "7.1.2",
@@ -98,6 +100,7 @@
     "artillery": "1.6.0-28",
     "awesome-typescript-loader": "5.2.1",
     "body-parser": "1.19.0",
+    "bytes": "^3.1.0",
     "chai": "4.2.0",
     "chai-as-promised": "7.1.1",
     "clang-format": "1.2.4",
@@ -120,6 +123,7 @@
     "json-loader": "0.5.7",
     "lerna": "2.11.0",
     "lint-staged": "9.2.5",
+    "markdown-table": "^1.1.3",
     "mocha": "3.5.3",
     "nodemon": "1.19.1",
     "nyc": "14.1.1",
