@@ -471,7 +471,27 @@ export class Injector {
       }
       moduleRegistry.push(relatedModule.id);
       const { providers, exports } = relatedModule;
-      if (!exports.has(name) || !providers.has(name)) {
+
+      if (providers.has(name)) {
+        instanceWrapperRef = providers.get(name);
+
+        const inquirerId = this.getInquirerId(inquirer);
+        const instanceHost = instanceWrapperRef.getInstanceByContextId(
+          contextId,
+          inquirerId,
+        );
+        if (!instanceHost.isResolved && !instanceWrapperRef.forwardRef) {
+          await this.loadProvider(
+            instanceWrapperRef,
+            relatedModule,
+            contextId,
+            wrapper,
+          );
+          break;
+        }
+      }
+
+      if (!exports.has(name)) {
         const instanceRef = await this.lookupComponentInImports(
           relatedModule,
           name,
@@ -485,22 +505,6 @@ export class Injector {
           return instanceRef;
         }
         continue;
-      }
-      instanceWrapperRef = providers.get(name);
-
-      const inquirerId = this.getInquirerId(inquirer);
-      const instanceHost = instanceWrapperRef.getInstanceByContextId(
-        contextId,
-        inquirerId,
-      );
-      if (!instanceHost.isResolved && !instanceWrapperRef.forwardRef) {
-        await this.loadProvider(
-          instanceWrapperRef,
-          relatedModule,
-          contextId,
-          wrapper,
-        );
-        break;
       }
     }
     return instanceWrapperRef;
