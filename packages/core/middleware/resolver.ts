@@ -12,11 +12,9 @@ export class MiddlewareResolver {
     const middleware = this.middlewareContainer.getMiddlewareCollection(
       moduleName,
     );
-    await Promise.all(
-      [...middleware.values()].map(async wrapper =>
-        this.resolveMiddlewareInstance(wrapper, middleware, module),
-      ),
-    );
+    const resolveInstance = async (wrapper: InstanceWrapper) =>
+      this.resolveMiddlewareInstance(wrapper, middleware, module);
+    await Promise.all([...middleware.values()].map(resolveInstance));
   }
 
   private async resolveMiddlewareInstance(

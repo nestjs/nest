@@ -76,8 +76,8 @@ export class ListenersController {
       metadata,
     } of this.metadataExplorer.scanForClientHooks(instance)) {
       const client = this.clientFactory.create(metadata);
-
       this.clientsContainer.addClient(client);
+
       this.assignClientToInstance(instance, property, client);
     }
   }

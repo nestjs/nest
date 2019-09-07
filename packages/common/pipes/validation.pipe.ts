@@ -73,6 +73,9 @@ export class ValidationPipe implements PipeTransform<any> {
       value,
       this.transformOptions,
     );
+    if (entity.constructor !== metatype) {
+      throw this.exceptionFactory(undefined);
+    }
     const errors = await classValidator.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
       throw this.exceptionFactory(errors);

@@ -120,13 +120,8 @@ export class Module {
     return this._distance;
   }
 
-  public updateDistance(distance: number, stack: Module[]) {
-    this._distance = distance;
-    Array.from(this._imports)
-      .filter(module => module && !stack.includes(this))
-      .forEach(module =>
-        module.updateDistance(distance + 1, stack.concat(this)),
-      );
+  set distance(value: number) {
+    this._distance = value;
   }
 
   public addCoreProviders(container: NestContainer) {
@@ -192,7 +187,9 @@ export class Module {
     this._injectables.set(injectable.name, instanceWrapper);
 
     if (host) {
-      const hostWrapper = this._controllers.get(host && host.name);
+      const token = host && host.name;
+      const hostWrapper =
+        this._controllers.get(host && host.name) || this._providers.get(token);
       hostWrapper && hostWrapper.addEnhancerMetadata(instanceWrapper);
     }
   }
@@ -415,9 +412,6 @@ export class Module {
 
   public addRelatedModule(module: Module) {
     this._imports.add(module);
-    if (this._distance + 1 > module._distance) {
-      module.updateDistance(this._distance + 1, [this]);
-    }
   }
 
   public replace(toReplace: string | symbol | Type<any>, options: any) {
