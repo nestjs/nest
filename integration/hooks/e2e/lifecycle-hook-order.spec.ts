@@ -31,7 +31,7 @@ describe('Lifecycle Hook Order', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init();
+    await app.listen(3000);
     await app.close();
 
     const instance = module.get(TestInjectable);

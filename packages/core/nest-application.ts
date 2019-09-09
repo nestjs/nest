@@ -137,10 +137,8 @@ export class NestApplication extends NestApplicationContext
     await this.registerRouter();
     await this.callInitHook();
     await this.registerRouterHooks();
-    await this.callBootstrapHook();
 
     this.isInitialized = true;
-    this.logger.log(MESSAGES.APPLICATION_READY);
     return this;
   }
 
@@ -224,6 +222,8 @@ export class NestApplication extends NestApplicationContext
     !this.isInitialized && (await this.init());
 
     this.httpAdapter.listen(port, ...args);
+    await this.callBootstrapHook();
+    this.logger.log(MESSAGES.APPLICATION_READY);
     return this.httpServer;
   }
 
