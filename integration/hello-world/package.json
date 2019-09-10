@@ -17,7 +17,7 @@
     "fastify": "2.8.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
-    "typescript": "3.5.3"
+    "typescript": "3.6.3"
   },
   "devDependencies": {
     "@types/node": "7.10.7",

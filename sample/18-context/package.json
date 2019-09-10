@@ -14,7 +14,7 @@
     "@nestjs/core": "6.6.7",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
-    "typescript": "3.5.3"
+    "typescript": "3.6.3"
   },
   "devDependencies": {
     "@types/node": "10.14.17",
