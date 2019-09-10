@@ -20,6 +20,7 @@ let grpcProtoLoaderPackage: any = {};
 
 export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   protected readonly logger = new Logger(ClientProxy.name);
+  protected readonly clients = new Map<string, any>();
   protected readonly url: string;
   protected grpcClient: any;
 
@@ -38,6 +39,25 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public getService<T extends {}>(name: string): T {
+    const grpcClient = this.createClientByServiceName(name);
+    const protoMethods = Object.keys(this.grpcClient[name].prototype);
+    const grpcService = {} as T;
+
+    protoMethods.forEach(m => {
+      const key = m[0].toLowerCase() + m.slice(1, m.length);
+      grpcService[key] = this.createServiceMethod(grpcClient, m);
+    });
+    return grpcService;
+  }
+
+  public getClientByServiceName<T = any>(name: string): T {
+    return this.clients.get(name) || this.createClientByServiceName(name);
+  }
+
+  public createClientByServiceName(name: string) {
+    if (!this.grpcClient[name]) {
+      throw new InvalidGrpcServiceException();
+    }
     const maxSendMessageLengthKey = 'grpc.max_send_message_length';
     const maxReceiveMessageLengthKey = 'grpc.max_receive_message_length';
     const maxMessageLengthOptions = {
@@ -62,24 +82,17 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
           ...maxMessageLengthOptions,
         };
 
-    if (!this.grpcClient[name]) {
-      throw new InvalidGrpcServiceException();
-    }
     const credentials =
       options.credentials || grpcPackage.credentials.createInsecure();
-    delete options.credentials;
+
+    const { credentials: originalCreds, ...clientOptions } = options;
     const grpcClient = new this.grpcClient[name](
       this.url,
       credentials,
-      options,
+      clientOptions,
     );
-    const protoMethods = Object.keys(this.grpcClient[name].prototype);
-    const grpcService = {} as T;
-    protoMethods.forEach(m => {
-      const key = m[0].toLowerCase() + m.slice(1, m.length);
-      grpcService[key] = this.createServiceMethod(grpcClient, m);
-    });
-    return grpcService;
+    this.clients.set(name, grpcClient);
+    return grpcClient;
   }
 
   public createServiceMethod(
