@@ -1,5 +1,5 @@
 import { Type } from '../index';
-import { ArgumentsHost, ContextType } from './arguments-host.interface';
+import { ArgumentsHost } from './arguments-host.interface';
 
 /**
  * Interface describing details about the current request pipeline.
@@ -8,8 +8,7 @@ import { ArgumentsHost, ContextType } from './arguments-host.interface';
  *
  * @publicApi
  */
-export interface ExecutionContext<TContext extends ContextType = ContextType>
-  extends ArgumentsHost<TContext> {
+export interface ExecutionContext extends ArgumentsHost {
   /**
    * Returns the *type* of the controller class which the current handler belongs to.
    */

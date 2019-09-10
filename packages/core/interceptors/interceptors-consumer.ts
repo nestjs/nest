@@ -22,7 +22,7 @@ export class InterceptorsConsumer {
       return next();
     }
     const context = this.createContext(args, instance, callback);
-    context.setType(type);
+    context.setType<TContext>(type);
 
     const start$ = defer(() => this.transformDeffered(next));
     const nextFn = (i = 0) => async () => {

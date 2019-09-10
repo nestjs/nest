@@ -52,7 +52,7 @@ export interface RpcArgumentsHost {
  *
  * @publicApi
  */
-export interface ArgumentsHost<TContext extends string = ContextType> {
+export interface ArgumentsHost {
   /**
    * Returns the array of arguments being passed to the handler.
    */
@@ -80,5 +80,5 @@ export interface ArgumentsHost<TContext extends string = ContextType> {
   /**
    * Returns the current execution context type (string)
    */
-  getType(): TContext;
+  getType<TContext extends string = ContextType>(): TContext;
 }

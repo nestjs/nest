@@ -7,9 +7,8 @@ import {
   WsArgumentsHost,
 } from '@nestjs/common/interfaces/features/arguments-host.interface';
 
-export class ExecutionContextHost<TContext extends ContextType = ContextType>
-  implements ExecutionContext<TContext> {
-  private contextType: TContext = 'http' as TContext;
+export class ExecutionContextHost implements ExecutionContext {
+  private contextType = 'http';
 
   constructor(
     private readonly args: any[],
@@ -17,12 +16,12 @@ export class ExecutionContextHost<TContext extends ContextType = ContextType>
     private readonly handler: Function = null,
   ) {}
 
-  setType(type: TContext) {
+  setType<TContext extends string = ContextType>(type: TContext) {
     type && (this.contextType = type);
   }
 
-  getType(): TContext {
-    return this.contextType;
+  getType<TContext extends string = ContextType>(): TContext {
+    return this.contextType as TContext;
   }
 
   getClass<T = any>(): Type<T> {
