@@ -6,8 +6,6 @@ import {
   RpcArgumentsHost,
   WsArgumentsHost,
 } from '@nestjs/common/interfaces/features/arguments-host.interface';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { INVALID_EXECUTION_CONTEXT } from './messages';
 
 export class ExecutionContextHost<TContext extends ContextType = ContextType>
   implements ExecutionContext<TContext> {
@@ -44,22 +42,12 @@ export class ExecutionContextHost<TContext extends ContextType = ContextType>
   }
 
   switchToRpc(): RpcArgumentsHost {
-    if (this.contextType !== 'rpc') {
-      throw new RuntimeException(
-        INVALID_EXECUTION_CONTEXT(this.contextType, 'switchToRpc()'),
-      );
-    }
     return Object.assign(this, {
       getData: () => this.getArgByIndex(0),
     });
   }
 
   switchToHttp(): HttpArgumentsHost {
-    if (this.contextType !== 'http') {
-      throw new RuntimeException(
-        INVALID_EXECUTION_CONTEXT(this.contextType, 'switchToHttp()'),
-      );
-    }
     return Object.assign(this, {
       getRequest: () => this.getArgByIndex(0),
       getResponse: () => this.getArgByIndex(1),
@@ -68,11 +56,6 @@ export class ExecutionContextHost<TContext extends ContextType = ContextType>
   }
 
   switchToWs(): WsArgumentsHost {
-    if (this.contextType !== 'ws') {
-      throw new RuntimeException(
-        INVALID_EXECUTION_CONTEXT(this.contextType, 'switchToWs()'),
-      );
-    }
     return Object.assign(this, {
       getClient: () => this.getArgByIndex(0),
       getData: () => this.getArgByIndex(1),
