@@ -85,11 +85,11 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     const credentials =
       options.credentials || grpcPackage.credentials.createInsecure();
 
-    const { credentials: originalCreds, ...clientOptions } = options;
+    delete options.credentials;
     const grpcClient = new this.grpcClient[name](
       this.url,
       credentials,
-      clientOptions,
+      options,
     );
     this.clients.set(name, grpcClient);
     return grpcClient;
