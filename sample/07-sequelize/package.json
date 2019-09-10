@@ -10,20 +10,20 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.4.0",
-    "@nestjs/core": "6.4.0",
-    "@nestjs/platform-express": "6.4.0",
-    "mysql2": "1.6.5",
+    "@nestjs/common": "6.6.7",
+    "@nestjs/core": "6.6.7",
+    "@nestjs/platform-express": "6.6.7",
+    "mysql2": "1.7.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.2",
-    "sequelize": "5.9.0",
-    "sequelize-typescript": "0.6.11",
-    "typescript": "3.5.2"
+    "rxjs": "6.5.3",
+    "sequelize": "5.18.1",
+    "sequelize-typescript": "1.0.0",
+    "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "10.14.10",
-    "@types/sequelize": "4.28.3",
+    "@types/node": "10.14.17",
+    "@types/sequelize": "4.28.4",
     "ts-node": "8.3.0",
-    "tslint": "5.18.0"
+    "tslint": "5.19.0"
   }
 }

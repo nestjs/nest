@@ -25,6 +25,7 @@ import { ApplicationConfig } from '../application-config';
 import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import { createContextId } from '../helpers';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
@@ -43,6 +44,7 @@ export class Module {
     InstanceWrapper<Controller>
   >();
   private readonly _exports = new Set<string | symbol>();
+  private _distance: number = 0;
 
   constructor(
     private readonly _metatype: Type<any>,
@@ -114,6 +116,14 @@ export class Module {
     return this._metatype;
   }
 
+  get distance(): number {
+    return this._distance;
+  }
+
+  set distance(value: number) {
+    this._distance = value;
+  }
+
   public addCoreProviders(container: NestContainer) {
     this.addModuleAsProvider();
     this.addModuleRef();
@@ -160,7 +170,7 @@ export class Module {
   }
 
   public addInjectable<T extends Injectable>(
-    injectable: Type<T>,
+    injectable: Provider,
     host?: Type<T>,
   ) {
     if (this.isCustomProvider(injectable)) {
@@ -177,7 +187,9 @@ export class Module {
     this._injectables.set(injectable.name, instanceWrapper);
 
     if (host) {
-      const hostWrapper = this._controllers.get(host && host.name);
+      const token = host && host.name;
+      const hostWrapper =
+        this._controllers.get(host && host.name) || this._providers.get(token);
       hostWrapper && hostWrapper.addEnhancerMetadata(instanceWrapper);
     }
   }
@@ -398,7 +410,7 @@ export class Module {
     );
   }
 
-  public addRelatedModule(module: any) {
+  public addRelatedModule(module: Module) {
     this._imports.add(module);
   }
 
@@ -453,10 +465,15 @@ export class Module {
         if (!(options && options.strict)) {
           return this.find<TInput, TResult>(typeOrToken);
         }
-        return this.findInstanceByPrototypeOrToken<TInput, TResult>(
-          typeOrToken,
-          self,
-        );
+        return this.findInstanceByToken<TInput, TResult>(typeOrToken, self);
+      }
+
+      public resolve<TInput = any, TResult = TInput>(
+        typeOrToken: Type<TInput> | string | symbol,
+        contextId = createContextId(),
+        options: { strict: boolean } = { strict: true },
+      ): Promise<TResult> {
+        return this.resolvePerContext(typeOrToken, self, contextId, options);
       }
 
       public async create<T = any>(type: Type<T>): Promise<T> {

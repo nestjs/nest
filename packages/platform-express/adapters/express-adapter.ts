@@ -36,6 +36,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return response.render(view, options);
   }
 
+  public redirect(response: any, statusCode: number, url: string) {
+    return response.redirect(statusCode, url);
+  }
+
   public setErrorHandler(handler: Function) {
     return this.use(handler);
   }

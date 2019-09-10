@@ -26,7 +26,7 @@ describe('HttpException', () => {
   });
 
   it('should return an object even when the message is undefined', () => {
-    expect(new BadRequestException().message).to.be.eql({statusCode: 400, error: 'Bad Request'});
+    expect(new BadRequestException().message).to.be.eql({ statusCode: 400, error: 'Bad Request' });
   });
 
   it('should return a status code', () => {
@@ -44,4 +44,72 @@ describe('HttpException', () => {
       statusCode: 404,
     });
   });
+
+  it('should inherit from error', () => {
+    const error = new HttpException('', 400);
+    expect(error instanceof Error).to.be.true;
+  });
+
+  it('should be serializable', () => {
+    const message = 'Some Error';
+    const error = new HttpException(message, 400);
+    expect(`${error}`).to.be.eql(`Error: ${message}`);
+  });
+
+  describe('when "message" is an object', () => {
+    it('should serialize an object', () => {
+      const obj = { foo: 'bar' };
+      const error = new HttpException(obj, 400);
+      expect(`${error}`).to.be.eql(`Error: ${JSON.stringify(obj)}`);
+      expect(`${error}`.includes('[object Object]')).to.not.be.true;
+    });
+
+    it('should serialize sub errors', () => {
+      const error = new NotFoundException();
+      expect(`${error}`.includes('Not Found')).to.be.true;
+    });
+  });
+
+  describe('createBody', () => {
+    describe('when object has been passed', () => {
+      it('should return expected object', () => {
+        const object = {
+          message: 'test',
+        };
+        expect(HttpException.createBody(object)).to.be.eql(object);
+      });
+    });
+    describe('when string has been passed', () => {
+      it('should return expected object', () => {
+        const message = 'test';
+        const status = 500;
+        const error = 'error';
+        expect(HttpException.createBody(message, error, status)).to.be.eql({
+          message,
+          error,
+          statusCode: status,
+        });
+      });
+    });
+    describe('when nil has been passed', () => {
+      it('should return expected object', () => {
+        const status = 500;
+        const error = 'error';
+        expect(HttpException.createBody(null, error, status)).to.be.eql({
+          error,
+          statusCode: status,
+        });
+      });
+    });
+    it('should not override pre-defined body if message is array', () => {
+      expect(
+        HttpException.createBody(['a', 'random', 'array'], 'error', 200),
+      ).to.eql({
+        message: ['a', 'random', 'array'],
+        error: 'error',
+        statusCode: 200,
+      });
+    });
+  });
+
 });

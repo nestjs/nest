@@ -100,24 +100,32 @@ describe('Server', () => {
         beforeEach(() => {
           server.send(_throw('test') as any, sendSpy);
         });
-        it('should send error', () => {
-          expect(sendSpy.calledWith({ err: 'test', response: null })).to.be
-            .true;
-        });
-        it('should send "complete" event', () => {
-          expect(sendSpy.calledWith({ isDisposed: true })).to.be.true;
+        it('should send error and complete', () => {
+          process.nextTick(() => {
+            expect(
+              sendSpy.calledWith({
+                err: 'test',
+                response: null,
+                isDisposed: true,
+              }),
+            ).to.be.true;
+          });
         });
       });
       describe('emits response', () => {
         beforeEach(() => {
           server.send(stream$, sendSpy);
         });
-        it('should send response', () => {
-          expect(sendSpy.calledWith({ err: null, response: 'test' })).to.be
-            .true;
-        });
-        it('should send "complete" event', () => {
-          expect(sendSpy.calledWith({ isDisposed: true })).to.be.true;
+        it('should send response and "complete" event', () => {
+          process.nextTick(() => {
+            expect(
+              sendSpy.calledWith({
+                err: null,
+                response: 'test',
+                isDisposed: true,
+              }),
+            ).to.be.true;
+          });
         });
       });
     });

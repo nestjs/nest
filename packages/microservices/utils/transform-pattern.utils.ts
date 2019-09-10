@@ -18,7 +18,7 @@ export function transformPatternToRoute(pattern: MsPattern): string {
     return `${pattern}`;
   }
   if (!isObject(pattern)) {
-    throw new Error(`The pattern must be of type 'string' or 'object'!`);
+    return pattern;
   }
 
   const sortedKeys = Object.keys(pattern).sort((a, b) =>
@@ -26,10 +26,14 @@ export function transformPatternToRoute(pattern: MsPattern): string {
   );
 
   // Creates the array of Pattern params from sorted keys and their corresponding values
-  const sortedPatternParams = sortedKeys.map(
-    key => `${key}:${transformPatternToRoute(pattern[key])}`,
-  );
+  const sortedPatternParams = sortedKeys.map(key => {
+    let partialRoute = `"${key}":`;
+    partialRoute += isString(pattern[key])
+      ? `"${transformPatternToRoute(pattern[key])}"`
+      : transformPatternToRoute(pattern[key]);
+    return partialRoute;
+  });
 
-  const route = sortedPatternParams.join('/');
+  const route = sortedPatternParams.join(',');
   return `{${route}}`;
 }

@@ -6,6 +6,8 @@ import {
   CLIENT_METADATA,
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
+  REQUEST_PATTERN_METADATA,
+  REPLY_PATTERN_METADATA,
 } from './constants';
 import { PatternHandler } from './enums/pattern-handler.enum';
 import { ClientOptions } from './interfaces/client-metadata.interface';
@@ -23,6 +25,11 @@ export interface PatternProperties {
   targetCallback: (...args: any[]) => any;
 }
 
+export interface MessageRequestProperties {
+  requestPattern: PatternMetadata;
+  replyPattern: PatternMetadata;
+}
+
 export class ListenerMetadataExplorer {
   constructor(private readonly metadataScanner: MetadataScanner) {}
 
@@ -32,12 +39,11 @@ export class ListenerMetadataExplorer {
       Controller,
       PatternProperties
     >(instance, instancePrototype, method =>
-      this.exploreMethodMetadata(instance, instancePrototype, method),
+      this.exploreMethodMetadata(instancePrototype, method),
     );
   }
 
   public exploreMethodMetadata(
-    instance: object,
     instancePrototype: any,
     methodKey: string,
   ): PatternProperties {

@@ -12,7 +12,7 @@ import {
   RedisClient,
   RetryStrategyOptions,
 } from '../external/redis.interface';
-import { CustomTransportStrategy, PacketId, ReadPacket } from '../interfaces';
+import { CustomTransportStrategy, IncomingRequest } from '../interfaces';
 import { RedisOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
@@ -31,6 +31,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     redisPackage = this.loadPackage('redis', ServerRedis.name, () =>
       require('redis'),
     );
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public listen(callback: () => void) {
@@ -81,17 +84,27 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     buffer: string | any,
     pub: RedisClient,
   ) {
-    const packet = this.deserialize(buffer);
-    if (isUndefined(packet.id)) {
+    const rawMessage = this.parseMessage(buffer);
+    const packet = this.deserializer.deserialize(rawMessage, { channel });
+    if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet);
     }
     const pattern = channel.replace(/_ack$/, '');
-    const publish = this.getPublisher(pub, pattern, packet.id);
+    const publish = this.getPublisher(
+      pub,
+      pattern,
+      (packet as IncomingRequest).id,
+    );
     const handler = this.getHandlerByPattern(pattern);
 
     if (!handler) {
       const status = 'error';
-      return publish({ id: packet.id, status, err: NO_MESSAGE_HANDLER });
+      const noHandlerPacket = {
+        id: (packet as IncomingRequest).id,
+        status,
+        err: NO_MESSAGE_HANDLER,
+      };
+      return publish(noHandlerPacket);
     }
     const response$ = this.transformToObservable(
       await handler(packet.data),
@@ -100,14 +113,18 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getPublisher(pub: RedisClient, pattern: any, id: string) {
-    return (response: any) =>
-      pub.publish(
+    return (response: any) => {
+      Object.assign(response, { id });
+      const outgoingResponse = this.serializer.serialize(response);
+
+      return pub.publish(
         this.getResQueueName(pattern),
-        JSON.stringify(Object.assign(response, { id })),
+        JSON.stringify(outgoingResponse),
       );
+    };
   }
 
-  public deserialize(content: any): ReadPacket & PacketId {
+  public parseMessage(content: any): Record<string, any> {
     try {
       return JSON.parse(content);
     } catch (e) {

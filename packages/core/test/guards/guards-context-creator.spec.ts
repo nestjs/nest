@@ -1,14 +1,17 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { ApplicationConfig } from '../../application-config';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 
 class Guard {}
 
 describe('GuardsContextCreator', () => {
   let guardsContextCreator: GuardsContextCreator;
+  let applicationConfig: ApplicationConfig;
   let guards: any[];
-  let container;
-  let getSpy;
+  let container: any;
+  let getSpy: sinon.SinonSpy;
 
   beforeEach(() => {
     guards = [
@@ -37,7 +40,11 @@ describe('GuardsContextCreator', () => {
         get: getSpy,
       }),
     };
-    guardsContextCreator = new GuardsContextCreator(container as any);
+    applicationConfig = new ApplicationConfig();
+    guardsContextCreator = new GuardsContextCreator(
+      container,
+      applicationConfig,
+    );
   });
   describe('createConcreteContext', () => {
     describe('when `moduleContext` is nil', () => {
@@ -108,6 +115,40 @@ describe('GuardsContextCreator', () => {
           expect(guardsContextCreator.getInstanceByMetatype({})).to.be
             .undefined;
         });
+      });
+    });
+  });
+
+  describe('getGlobalMetadata', () => {
+    describe('when contextId is static and inquirerId is nil', () => {
+      it('should return global guards', () => {
+        const expectedResult = applicationConfig.getGlobalGuards();
+        expect(guardsContextCreator.getGlobalMetadata()).to.be.equal(
+          expectedResult,
+        );
+      });
+    });
+    describe('otherwise', () => {
+      it('should merge static global with request/transient scoped guards', () => {
+        const globalGuards: any = ['test'];
+        const instanceWrapper = new InstanceWrapper();
+        const instance = 'request-scoped';
+        const scopedGuardWrappers = [instanceWrapper];
+
+        sinon
+          .stub(applicationConfig, 'getGlobalGuards')
+          .callsFake(() => globalGuards);
+        sinon
+          .stub(applicationConfig, 'getGlobalRequestGuards')
+          .callsFake(() => scopedGuardWrappers);
+        sinon
+          .stub(instanceWrapper, 'getInstanceByContextId')
+          .callsFake(() => ({ instance } as any));
+
+        expect(guardsContextCreator.getGlobalMetadata({ id: 3 })).to.contains(
+          instance,
+          ...globalGuards,
+        );
       });
     });
   });

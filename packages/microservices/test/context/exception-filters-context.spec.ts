@@ -1,13 +1,14 @@
-import * as sinon from 'sinon';
-import { expect } from 'chai';
-import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
-import { Catch } from '../../../common/decorators/core/catch.decorator';
-import { ExceptionFiltersContext } from '../../context/exception-filters-context';
-import { ApplicationConfig } from '../../../core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
+import { expect } from 'chai';
+import * as sinon from 'sinon';
+import { Catch } from '../../../common/decorators/core/catch.decorator';
+import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
+import { ApplicationConfig } from '../../../core/application-config';
+import { InstanceWrapper } from '../../../core/injector/instance-wrapper';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context';
 
 describe('ExceptionFiltersContext', () => {
-  let moduleName: string;
+  let applicationConfig: ApplicationConfig;
   let exceptionFilter: ExceptionFiltersContext;
 
   class CustomException {}
@@ -17,10 +18,10 @@ describe('ExceptionFiltersContext', () => {
   }
 
   beforeEach(() => {
-    moduleName = 'Test';
+    applicationConfig = new ApplicationConfig();
     exceptionFilter = new ExceptionFiltersContext(
       new NestContainer(),
-      new ApplicationConfig() as any,
+      applicationConfig as any,
     );
   });
   describe('create', () => {
@@ -49,6 +50,38 @@ describe('ExceptionFiltersContext', () => {
           undefined,
         );
         expect((filter as any).filters).to.not.be.empty;
+      });
+    });
+  });
+
+  describe('getGlobalMetadata', () => {
+    describe('when contextId is static and inquirerId is nil', () => {
+      it('should return global filters', () => {
+        const expectedResult = applicationConfig.getGlobalFilters();
+        expect(exceptionFilter.getGlobalMetadata()).to.be.equal(expectedResult);
+      });
+    });
+    describe('otherwise', () => {
+      it('should merge static global with request/transient scoped filters', () => {
+        const globalFilters: any = ['test'];
+        const instanceWrapper = new InstanceWrapper();
+        const instance = 'request-scoped';
+        const scopedFilterWrappers = [instanceWrapper];
+
+        sinon
+          .stub(applicationConfig, 'getGlobalFilters')
+          .callsFake(() => globalFilters);
+        sinon
+          .stub(applicationConfig, 'getGlobalRequestFilters')
+          .callsFake(() => scopedFilterWrappers);
+        sinon
+          .stub(instanceWrapper, 'getInstanceByContextId')
+          .callsFake(() => ({ instance } as any));
+
+        expect(exceptionFilter.getGlobalMetadata({ id: 3 })).to.contains(
+          instance,
+          ...globalFilters,
+        );
       });
     });
   });

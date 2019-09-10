@@ -1,5 +1,10 @@
 /**
- * @see https://www.npmjs.com/package/@types/serve-static
+ * Interface describing options for serving static assets.
+ *
+ * @see [Serving static files in Express](https://expressjs.com/en/starter/static-files.html)
+ * @see [Model-View-Controller](https://docs.nestjs.com/techniques/mvc)
+ *
+ * @publicApi
  */
 export interface ServeStaticOptions {
   /**
@@ -60,10 +65,10 @@ export interface ServeStaticOptions {
 
   /**
    * Function to set custom headers on response. Alterations to the headers need to occur synchronously.
-   * The function is called as fn(res, path, stat), where the arguments are:
-   * res the response object
-   * path the file path that is being sent
-   * stat the stat object of the file that is being sent
+   * The function is called as `fn(res, path, stat)`, where the arguments are:
+   * `res` - the response object
+   * `path` - the file path that is being sent
+   * `stat` - the stat object of the file that is being sent
    */
   setHeaders?: (res: any, path: string, stat: any) => any;
 

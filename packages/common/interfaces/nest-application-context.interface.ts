@@ -3,6 +3,11 @@ import { LoggerService } from '../services/logger.service';
 import { Abstract } from './abstract.interface';
 import { Type } from './type.interface';
 
+/**
+ * Interface defining NestApplicationContext.
+ *
+ * @publicApi
+ */
 export interface INestApplicationContext {
   /**
    * Allows navigating through the modules tree, for example, to pull out a specific instance from the selected module.
@@ -11,13 +16,23 @@ export interface INestApplicationContext {
   select<T>(module: Type<T>): INestApplicationContext;
 
   /**
-   * Retrieves an instance of either injectable or controller available anywhere, otherwise, throws exception.
+   * Retrieves an instance of either injectable or controller, otherwise, throws exception.
    * @returns {TResult}
    */
   get<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     options?: { strict: boolean },
   ): TResult;
+
+  /**
+   * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
+   * @returns {Promise<TResult>}
+   */
+  resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
+    contextId?: { id: number },
+    options?: { strict: boolean },
+  ): Promise<TResult>;
 
   /**
    * Terminates the application

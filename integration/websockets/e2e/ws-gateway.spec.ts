@@ -17,7 +17,6 @@ async function createNestApp(...gateways): Promise<INestApplication> {
 }
 
 describe('WebSocketGateway (WsAdapter)', () => {
-  const event = 'push';
   let ws, ws2, app;
 
   it(`should handle message (2nd port)`, async () => {
@@ -66,7 +65,9 @@ describe('WebSocketGateway (WsAdapter)', () => {
     );
   });
 
-  it(`should support 2 different gateways`, async () => {
+  it(`should support 2 different gateways`, async function() {
+    this.retries(10);
+
     app = await createNestApp(ApplicationGateway, CoreGateway);
     await app.listenAsync(3000);
 

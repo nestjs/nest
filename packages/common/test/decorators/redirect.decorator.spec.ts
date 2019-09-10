@@ -1,17 +1,24 @@
 import { expect } from 'chai';
 import { Redirect } from '../../decorators/http/redirect.decorator';
 import { REDIRECT_METADATA } from '../../constants';
+import { HttpStatus } from '@nestjs/common';
 
 describe('@Redirect', () => {
   const url = 'http://test.com';
+  const statusCode = HttpStatus.FOUND;
 
   class Test {
-    @Redirect(url)
+    @Redirect(url, statusCode)
     public static test() {}
   }
 
-  it('should enhance method with expected template string', () => {
+  it('should enhance method with expected redirect url string', () => {
     const metadata = Reflect.getMetadata(REDIRECT_METADATA, Test.test);
-    expect(metadata).to.be.eql(url);
+    expect(metadata.url).to.be.eql(url);
+  });
+
+  it('should enhance method with expected response code', () => {
+    const metadata = Reflect.getMetadata(REDIRECT_METADATA, Test.test);
+    expect(metadata.statusCode).to.be.eql(statusCode);
   });
 });

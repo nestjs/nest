@@ -5,12 +5,18 @@ import { PipeTransform } from './features/pipe-transform.interface';
 import { INestApplicationContext } from './nest-application-context.interface';
 import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 
+/**
+ * Interface describing Microservice Context.
+ *
+ * @publicApi
+ */
 export interface INestMicroservice extends INestApplicationContext {
   /**
    * Starts the microservice.
    *
    * @param  {Function} callback
    * @returns {Promise}
+   *
    */
   listen(callback: () => void): any;
 

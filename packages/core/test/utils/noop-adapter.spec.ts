@@ -14,6 +14,7 @@ export class NoopHttpAdapter extends AbstractHttpAdapter {
   reply(response: any, body: any): any {}
   status(response: any, statusCode: number): any {}
   render(response: any, view: string, options: any): any {}
+  redirect(response: any, statusCode: number, url: string) {}
   setErrorHandler(handler: Function): any {}
   setNotFoundHandler(handler: Function): any {}
   setHeader(response: any, name: string, value: string): any {}

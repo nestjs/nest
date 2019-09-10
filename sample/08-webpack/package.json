@@ -5,23 +5,24 @@
   "license": "MIT",
   "scripts": {
     "start": "node dist/server",
-    "webpack": "webpack --config webpack.config.js"
+    "dev": "webpack --config webpack.config.js --watch",
+    "build": "webpack --config webpack.config.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.4.0",
-    "@nestjs/core": "6.4.0",
-    "@nestjs/platform-express": "6.4.0",
+    "@nestjs/common": "6.6.7",
+    "@nestjs/core": "6.6.7",
+    "@nestjs/platform-express": "6.6.7",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.2",
-    "typescript": "3.5.2"
+    "rxjs": "6.5.3",
+    "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "10.14.10",
+    "@types/node": "12.7.4",
     "ts-loader": "6.0.4",
     "ts-node": "8.3.0",
-    "tslint": "5.18.0",
-    "webpack": "4.35.2",
-    "webpack-cli": "3.3.5",
+    "tslint": "5.19.0",
+    "webpack": "4.39.3",
+    "webpack-cli": "3.3.7",
     "webpack-node-externals": "1.7.2"
   }
 }

@@ -177,16 +177,16 @@ describe('ServerMqtt', () => {
       expect(server.getResQueueName(test)).to.equal(expectedResult);
     });
   });
-  describe('deserialize', () => {
+  describe('parseMessage', () => {
     it(`should return parsed json`, () => {
       const obj = { test: 'test' };
-      expect(server.deserialize(obj)).to.deep.equal(
+      expect(server.parseMessage(obj)).to.deep.equal(
         JSON.parse(JSON.stringify(obj)),
       );
     });
     it(`should not parse argument if it is not an object`, () => {
       const content = 'test';
-      expect(server.deserialize(content)).to.equal(content);
+      expect(server.parseMessage(content)).to.equal(content);
     });
   });
   describe('handleEvent', () => {

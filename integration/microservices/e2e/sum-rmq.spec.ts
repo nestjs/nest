@@ -20,7 +20,7 @@ describe('RabbitMQ transport', () => {
     app.connectMicroservice({
       transport: Transport.RMQ,
       options: {
-        urls: [`amqp://localhost:5672`],
+        urls: [`amqp://0.0.0.0:5672`],
         queue: 'test',
         queueOptions: { durable: false },
         socketOptions: { noDelay: true },

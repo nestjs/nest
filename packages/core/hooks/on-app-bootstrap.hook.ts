@@ -1,5 +1,5 @@
 import { OnApplicationBootstrap } from '@nestjs/common';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
@@ -16,9 +16,7 @@ import {
 function hasOnAppBootstrapHook(
   instance: unknown,
 ): instance is OnApplicationBootstrap {
-  return !isUndefined(
-    (instance as OnApplicationBootstrap).onApplicationBootstrap,
-  );
+  return !isNil((instance as OnApplicationBootstrap).onApplicationBootstrap);
 }
 
 /**

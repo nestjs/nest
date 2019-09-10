@@ -1,6 +1,8 @@
 /**
  * Options passed to validator during validation.
  * @see https://github.com/typestack/class-validator
+ *
+ * @publicApi
  */
 export interface ValidatorOptions {
   /**
@@ -23,24 +25,24 @@ export interface ValidatorOptions {
   groups?: string[];
   /**
    * If set to true, the validation will not use default messages.
-   * Error message always will be undefined if its not explicitly set.
+   * Error message will always be undefined if it's not explicitly set.
    */
   dismissDefaultMessages?: boolean;
   /**
    * ValidationError special options.
    */
   validationError?: {
-      /**
-       * Indicates if target should be exposed in ValidationError.
-       */
-      target?: boolean;
-      /**
-       * Indicates if validated value should be exposed in ValidationError.
-       */
-      value?: boolean;
+    /**
+     * Indicates if target should be exposed in ValidationError.
+     */
+    target?: boolean;
+    /**
+     * Indicates if validated value should be exposed in ValidationError.
+     */
+    value?: boolean;
   };
   /**
-   * Setting true will cause fail validation of unknown objects.
+   * Setting true will cause failed validation of unknown objects.
    */
   forbidUnknownValues?: boolean;
 }

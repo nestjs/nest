@@ -10,11 +10,9 @@ const metadataKeys = [
 ];
 
 const validateKeys = (keys: string[]) => {
-  const isKeyInvalid = (key: string) =>
-    metadataKeys.findIndex(k => k === key) < 0;
 
   const validateKey = (key: string) => {
-    if (!isKeyInvalid(key)) {
+    if (metadataKeys.includes(key)) {
       return;
     }
     throw new InvalidModuleConfigException(key);
@@ -23,12 +21,18 @@ const validateKeys = (keys: string[]) => {
 };
 
 /**
- * Defines the module
- * - `imports` - the set of the 'imported' modules
- * - `controllers` - the list of controllers (e.g. HTTP controllers)
- * - `providers` - the list of providers that belong to this module. They can be injected between themselves.
- * - `exports` - the set of components, which should be available for modules, which imports this module
- * @param options {ModuleMetadata} Module metadata
+ * Decorator that marks a class as a [module](https://docs.nestjs.com/modules).
+ *
+ * Modules are used by Nest to organize the application structure into scopes. Controllers
+ * and Providers are scoped by the module they are declared in.  Modules and their
+ * classes (Controllers and Providers) form a graph that determines how Nest
+ * performs [Dependency Injection (DI)](https://docs.nestjs.com/providers#dependency-injection).
+ *
+ * @param metadata module configuration metadata
+ *
+ * @see [Modules](https://docs.nestjs.com/modules)
+ *
+ * @publicApi
  */
 export function Module(metadata: ModuleMetadata): ClassDecorator {
   const propsKeys = Object.keys(metadata);

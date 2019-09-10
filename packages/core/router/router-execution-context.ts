@@ -9,12 +9,13 @@ import {
   CUSTOM_ROUTE_AGRS_METADATA,
   HEADERS_METADATA,
   HTTP_CODE_METADATA,
+  REDIRECT_METADATA,
   RENDER_METADATA,
   ROUTE_ARGS_METADATA,
 } from '@nestjs/common/constants';
 import { RouteParamsMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { ContextType, Controller, Transform } from '@nestjs/common/interfaces';
+import { ContextType, Controller } from '@nestjs/common/interfaces';
 import {
   isEmpty,
   isFunction,
@@ -36,6 +37,7 @@ import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 import {
   CustomHeader,
+  RedirectResponse,
   RouterResponseController,
 } from './router-response-controller';
 
@@ -199,9 +201,11 @@ export class RouterExecutionContext {
         type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
     );
 
+    const httpRedirectResponse = this.reflectRedirect(callback);
     const fnHandleResponse = this.createHandleResponseFn(
       callback,
       isResponseHandled,
+      httpRedirectResponse,
     );
 
     const httpCode = this.reflectHttpStatusCode(callback);
@@ -211,7 +215,6 @@ export class RouterExecutionContext {
 
     const responseHeaders = this.reflectResponseHeaders(callback);
     const hasCustomHeaders = !isEmpty(responseHeaders);
-
     const handlerMetadata: HandlerMetadata = {
       argsLength,
       fnHandleResponse,
@@ -223,6 +226,10 @@ export class RouterExecutionContext {
     };
     this.handlerMetadataStorage.set(instance, methodName, handlerMetadata);
     return handlerMetadata;
+  }
+
+  public reflectRedirect(callback: (...args: any[]) => any): RedirectResponse {
+    return Reflect.getMetadata(REDIRECT_METADATA, callback);
   }
 
   public reflectHttpStatusCode(callback: (...args: any[]) => any): number {
@@ -292,21 +299,22 @@ export class RouterExecutionContext {
       type,
       data,
     }: { metatype: any; type: RouteParamtypes; data: any },
-    transforms: Transform<any>[],
+    pipes: PipeTransform[],
   ): Promise<any> {
     if (
-      type === RouteParamtypes.BODY ||
-      type === RouteParamtypes.QUERY ||
-      type === RouteParamtypes.PARAM ||
-      isString(type)
+      (type === RouteParamtypes.BODY ||
+        type === RouteParamtypes.QUERY ||
+        type === RouteParamtypes.PARAM ||
+        isString(type)) &&
+      !isEmpty(pipes)
     ) {
       return this.pipesConsumer.apply(
         value,
         { metatype, type, data } as any,
-        transforms,
+        pipes,
       );
     }
-    return Promise.resolve(value);
+    return value;
   }
 
   public createGuardsFn<TContext extends ContextType = ContextType>(
@@ -331,7 +339,7 @@ export class RouterExecutionContext {
   }
 
   public createPipesFn(
-    pipes: any[],
+    pipes: PipeTransform[],
     paramsOptions: (ParamProperties & { metatype?: any })[],
   ) {
     const pipesFn = async <TRequest, TResponse>(
@@ -366,13 +374,18 @@ export class RouterExecutionContext {
   public createHandleResponseFn(
     callback: (...args: any[]) => any,
     isResponseHandled: boolean,
+    redirectResponse?: RedirectResponse,
     httpStatusCode?: number,
   ) {
     const renderTemplate = this.reflectRenderTemplate(callback);
-
     if (renderTemplate) {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
         await this.responseController.render(result, res, renderTemplate);
+      };
+    }
+    if (redirectResponse && redirectResponse.url) {
+      return async <TResult, TResponse>(result: TResult, res: TResponse) => {
+        await this.responseController.redirect(result, res, redirectResponse);
       };
     }
     return async <TResult, TResponse>(result: TResult, res: TResponse) => {

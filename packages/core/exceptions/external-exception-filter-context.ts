@@ -2,6 +2,7 @@ import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { STATIC_CONTEXT } from '../injector/constants';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 import { RouterProxyCallback } from '../router/router-proxy';
 import { ApplicationConfig } from './../application-config';
 import { NestContainer } from './../injector/container';
@@ -40,10 +41,23 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
     return exceptionHandler;
   }
 
-  public getGlobalMetadata<T extends any[]>(): T {
+  public getGlobalMetadata<T extends any[]>(
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
+  ): T {
     if (!this.config) {
       return [] as T;
     }
-    return this.config.getGlobalFilters() as T;
+    const globalFilters = this.config.getGlobalFilters() as T;
+    if (contextId === STATIC_CONTEXT && !inquirerId) {
+      return globalFilters;
+    }
+    const scopedFilterWrappers = this.config.getGlobalRequestFilters() as InstanceWrapper[];
+    const scopedFilters = scopedFilterWrappers
+      .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
+      .filter(host => host)
+      .map(host => host.instance);
+
+    return globalFilters.concat(scopedFilters) as T;
   }
 }

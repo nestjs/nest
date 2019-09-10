@@ -10,18 +10,18 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.4.0",
-    "@nestjs/core": "6.4.0",
-    "@nestjs/platform-fastify": "6.4.0",
+    "@nestjs/common": "6.6.7",
+    "@nestjs/core": "6.6.7",
+    "@nestjs/platform-fastify": "6.6.7",
     "class-transformer": "0.2.3",
-    "class-validator": "0.9.1",
+    "class-validator": "0.10.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.2",
-    "typescript": "3.5.2"
+    "rxjs": "6.5.3",
+    "typescript": "3.5.3"
   },
   "devDependencies": {
-    "@types/node": "10.14.10",
+    "@types/node": "10.14.17",
     "ts-node": "8.3.0",
-    "tslint": "5.18.0"
+    "tslint": "5.19.0"
   }
 }

@@ -20,7 +20,7 @@ describe('NATS transport', () => {
     app.connectMicroservice({
       transport: Transport.NATS,
       options: {
-        url: 'nats://localhost:4222',
+        url: 'nats://0.0.0.0:4222',
       },
     });
     await app.startAllMicroservicesAsync();

@@ -8,7 +8,10 @@ export abstract class ContextCreator {
     contextId?: ContextId,
     inquirerId?: string,
   ): R;
-  public getGlobalMetadata?<T extends any[]>(): T;
+  public getGlobalMetadata?<T extends any[]>(
+    contextId?: ContextId,
+    inquirerId?: string,
+  ): T;
 
   public createContext<T extends any[], R extends any[]>(
     instance: Controller,
@@ -18,7 +21,8 @@ export abstract class ContextCreator {
     inquirerId?: string,
   ): R {
     const globalMetadata =
-      this.getGlobalMetadata && this.getGlobalMetadata<T>();
+      this.getGlobalMetadata &&
+      this.getGlobalMetadata<T>(contextId, inquirerId);
     const classMetadata = this.reflectClassMetadata<T>(instance, metadataKey);
     const methodMetadata = this.reflectMethodMetadata<T>(callback, metadataKey);
     return [

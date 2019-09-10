@@ -1,0 +1,67 @@
+{
+  "name": "auth-sample",
+  "version": "0.0.1",
+  "description": "",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "start": "ts-node -r tsconfig-paths/register src/main.ts",
+    "start:dev": "concurrently --handle-input \"wait-on dist/main.js && nodemon\" \"tsc -w -p tsconfig.build.json\" ",
+    "start:debug": "nodemon --config nodemon-debug.json",
+    "prestart:prod": "rimraf dist && npm run build",
+    "start:prod": "node dist/main.js",
+    "lint": "tslint -p tsconfig.json -c tslint.json",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
+  },
+  "dependencies": {
+    "@nestjs/common": "6.6.7",
+    "@nestjs/core": "6.6.7",
+    "@nestjs/jwt": "6.1.1",
+    "@nestjs/passport": "6.1.0",
+    "@nestjs/platform-express": "6.6.7",
+    "passport": "0.4.0",
+    "passport-jwt": "4.0.0",
+    "passport-local": "1.0.0",
+    "reflect-metadata": "0.1.13",
+    "rimraf": "3.0.0",
+    "rxjs": "6.5.3"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "6.6.7",
+    "@types/express": "4.17.1",
+    "@types/jest": "24.0.18",
+    "@types/node": "10.14.17",
+    "@types/supertest": "2.0.8",
+    "concurrently": "4.1.2",
+    "jest": "23.6.0",
+    "nodemon": "1.19.2",
+    "prettier": "1.18.2",
+    "supertest": "4.0.2",
+    "ts-jest": "24.0.2",
+    "ts-node": "8.1.0",
+    "tsconfig-paths": "3.8.0",
+    "tslint": "5.19.0",
+    "typescript": "3.5.3",
+    "wait-on": "3.3.0"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".spec.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  }
+}

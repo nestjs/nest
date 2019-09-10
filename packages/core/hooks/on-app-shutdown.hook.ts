@@ -1,5 +1,5 @@
 import { OnApplicationShutdown } from '@nestjs/common';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
@@ -13,10 +13,10 @@ import {
  *
  * @param instance The instance which should be checked
  */
-function hasOnAppBootstrapHook(
+function hasOnAppShutdownHook(
   instance: unknown,
 ): instance is OnApplicationShutdown {
-  return !isUndefined(
+  return !isNil(
     (instance as OnApplicationShutdown).onApplicationShutdown,
   );
 }
@@ -30,7 +30,7 @@ function callOperator(
 ): Promise<any>[] {
   return iterate(instances)
     .filter(instance => !isNil(instance))
-    .filter(hasOnAppBootstrapHook)
+    .filter(hasOnAppShutdownHook)
     .map(async instance =>
       ((instance as any) as OnApplicationShutdown).onApplicationShutdown(
         signal,
@@ -61,7 +61,7 @@ export async function callAppShutdownHook(
   await Promise.all(callOperator(transientInstances, signal));
 
   // Call the instance itself
-  if (moduleClassInstance && hasOnAppBootstrapHook(moduleClassInstance)) {
+  if (moduleClassInstance && hasOnAppShutdownHook(moduleClassInstance)) {
     await (moduleClassInstance as OnApplicationShutdown).onApplicationShutdown(
       signal,
     );
