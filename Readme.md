@@ -39,7 +39,7 @@ Nest is a framework for building efficient, scalable <a href="http://nodejs.org"
 
 ## Consulting
 
-With official support, you can get expert help straight from Nest core team. We provide dedicated technical support, migration strategies, advice on best practices (and design decisions), PR reviews, and team augmentation. Read more about [support here](https://docs.nestjs.com/enterprise).
+With official support, you can get expert help straight from Nest core team. We provide dedicated technical support, migration strategies, advice on best practices (and design decisions), PR reviews, and team augmentation. Read more about [support here](https://enterprise.nestjs.com).
 
 ## Support
 
