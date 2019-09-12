@@ -57,9 +57,6 @@ Nest是一个MIT许可的开源项目。它的发展得益于赞助商和支持�
 
 <a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="300" /></a>
 
-<a href="https://scal.io"><img src="https://nestjs.com/img/scalio-logo.svg" width="120" /></a> &nbsp; <a href="https://www.swingdev.io"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="120" /></a> &nbsp; <a href="http://angularity.io"><img src="http://angularity.io/media/logo.svg" height="32" /></a> &nbsp; <a href="http://gojob.com"><img src="https://gojob.com/w/wp-content/uploads/2017/02/cropped-Logo-web-home.png" height="44" /></a>
-
-
 ## 支持者
 
 <a href="https://opencollective.com/nest"><img src="https://opencollective.com/nest/backers.svg?width=890"></a>
