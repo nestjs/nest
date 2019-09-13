@@ -26,7 +26,7 @@
     "nodemon": "1.19.2",
     "prettier": "1.18.2",
     "ts-node": "8.3.0",
-    "tsconfig-paths": "3.8.0",
+    "tsconfig-paths": "3.9.0",
     "tslint": "5.20.0"
   }
 }
