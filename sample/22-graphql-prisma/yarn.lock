@@ -1734,9 +1734,9 @@ graphql-upload@^8.0.2:
     http-errors "^1.7.1"
     object-path "^0.11.4"
 
-graphql@14.5.4:
-  version "14.5.4"
-  resolved "https://registry.yarnpkg.com/graphql/-/graphql-14.5.4.tgz#b33fe957854e90c10d4c07c7d26b6c8e9f159a13"
+graphql@14.5.5:
+  version "14.5.5"
+  resolved "https://registry.yarnpkg.com/graphql/-/graphql-14.5.5.tgz#7ec9d4f79f4d3c95e64c7ff6727bfe7068049d43"
   dependencies:
     iterall "^1.2.2"
 
