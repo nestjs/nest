@@ -28,6 +28,7 @@ export {
   INestApplicationContext,
   INestMicroservice,
   MiddlewareConsumer,
+  NestApplicationOptions,
   NestInterceptor,
   NestMiddleware,
   NestModule,
