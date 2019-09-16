@@ -4,11 +4,11 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { join } from 'path';
-import { ApplicationModule } from './app.module';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
-    ApplicationModule,
+    AppModule,
     new FastifyAdapter(),
   );
   app.useStaticAssets({
@@ -21,6 +21,6 @@ async function bootstrap() {
     },
     templates: join(__dirname, '..', 'views'),
   });
-  await app.listen(3000);
+  await app.listen(3000, '0.0.0.0');
 }
 bootstrap();

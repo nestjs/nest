@@ -4,10 +4,13 @@
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "start": "ts-node src/main.ts",
+    "build": "rimraf dist && tsc -p tsconfig.build.json && cpx src/hero/hero.proto dist/hero",
+    "start": "ts-node -r tsconfig-paths/register src/main.ts",
+    "start:dev": "tsc-watch -p tsconfig.build.json --onSuccess \"node dist/main.js\"",
+    "start:debug": "tsc-watch -p tsconfig.build.json --onSuccess \"node --inspect-brk dist/main.js\"",
     "prestart:prod": "npm run build",
-    "start:prod": "node dist/main.js"
+    "start:prod": "node dist/main.js",
+    "lint": "tslint -p tsconfig.json -c tslint.json"
   },
   "dependencies": {
     "@grpc/proto-loader": "0.5.2",
@@ -25,6 +28,10 @@
   "devDependencies": {
     "@types/node": "10.14.18",
     "ts-node": "8.4.1",
-    "tslint": "5.20.0"
+    "tslint": "5.20.0",
+    "rimraf": "^2.6.2",
+    "tsc-watch": "2.2.1",
+    "tsconfig-paths": "3.8.0",
+    "cpx": "1.5.0"
   }
 }

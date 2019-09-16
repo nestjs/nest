@@ -6,17 +6,12 @@
   "license": "MIT",
   "scripts": {
     "build": "rimraf dist && tsc -p tsconfig.build.json",
-    "format": "prettier --write \"src/**/*.ts\"",
     "start": "ts-node -r tsconfig-paths/register src/main.ts",
     "start:dev": "tsc-watch -p tsconfig.build.json --onSuccess \"node dist/main.js\"",
     "start:debug": "tsc-watch -p tsconfig.build.json --onSuccess \"node --inspect-brk dist/main.js\"",
+    "prestart:prod": "npm run build",
     "start:prod": "node dist/main.js",
-    "lint": "tslint -p tsconfig.json -c tslint.json",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "lint": "tslint -p tsconfig.json -c tslint.json"
   },
   "dependencies": {
     "@nestjs/common": "6.6.3",
@@ -39,6 +34,7 @@
     "supertest": "4.0.2",
     "ts-jest": "24.1.0",
     "ts-node": "8.4.1",
+    "rimraf": "^2.6.2",
     "tsc-watch": "3.0.1",
     "tsconfig-paths": "3.9.0",
     "tslint": "5.16.0",
