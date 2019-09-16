@@ -17,6 +17,11 @@ module.exports = {
         use: 'ts-loader',
         exclude: /node_modules/,
       },
+      {
+        test: /\.ts$/,
+        exclude: /node_modules/,
+        loader: 'ts-loader'
+      }
     ],
   },
   mode: 'development',
