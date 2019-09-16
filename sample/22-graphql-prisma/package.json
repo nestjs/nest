@@ -12,12 +12,12 @@
   "dependencies": {
     "@nestjs/common": "6.6.7",
     "@nestjs/core": "6.6.7",
-    "@nestjs/graphql": "6.5.0",
+    "@nestjs/graphql": "6.5.1",
     "@nestjs/platform-express": "6.6.7",
     "apollo-server-express": "2.9.3",
     "graphql": "14.5.4",
     "graphql-tools": "4.0.5",
-    "prisma-binding": "2.3.15",
+    "prisma-binding": "2.3.16",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "typescript": "3.5.3"
@@ -27,6 +27,6 @@
     "prettier": "1.18.2",
     "ts-node": "8.3.0",
     "tsconfig-paths": "3.8.0",
-    "tslint": "5.19.0"
+    "tslint": "5.20.0"
   }
 }

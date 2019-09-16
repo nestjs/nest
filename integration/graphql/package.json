@@ -11,7 +11,7 @@
   "dependencies": {
     "@nestjs/common": "6.6.7",
     "@nestjs/core": "6.6.7",
-    "@nestjs/graphql": "6.5.0",
+    "@nestjs/graphql": "6.5.1",
     "apollo-server-express": "2.9.3",
     "graphql": "14.5.4",
     "graphql-tools": "4.0.5",
@@ -24,6 +24,6 @@
   "devDependencies": {
     "@types/node": "7.10.7",
     "ts-node": "8.3.0",
-    "tslint": "5.19.0"
+    "tslint": "5.20.0"
   }
 }
