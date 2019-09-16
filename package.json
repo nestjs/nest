@@ -59,7 +59,7 @@
     "fastify-cors": "2.1.3",
     "fastify-formbody": "3.1.0",
     "fastify-multipart": "1.0.2",
-    "graphql": "14.5.5",
+    "graphql": "14.5.6",
     "grpc": "1.23.3",
     "http2": "3.3.7",
     "iterare": "1.2.0",
@@ -134,7 +134,7 @@
     "sinon-chai": "3.3.0",
     "socket.io-client": "2.2.0",
     "supertest": "4.0.2",
-    "ts-node": "8.3.0",
+    "ts-node": "8.4.1",
     "tslint": "5.20.0",
     "typescript": "3.6.3",
     "wrk": "1.2.0"

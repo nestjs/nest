@@ -17,7 +17,7 @@
     "apollo-server-express": "2.9.3",
     "class-transformer": "0.2.3",
     "class-validator": "0.10.0",
-    "graphql": "14.5.5",
+    "graphql": "14.5.6",
     "graphql-subscriptions": "1.1.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "@types/node": "10.14.18",
-    "ts-node": "8.3.0",
+    "ts-node": "8.4.1",
     "tslint": "5.20.0"
   }
 }
