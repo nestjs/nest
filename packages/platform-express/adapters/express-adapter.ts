@@ -135,6 +135,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       .forEach(parserKey => this.use(parserMiddleware[parserKey]));
   }
 
+  public getType(): string {
+    return 'express';
+  }
+
   private isMiddlewareApplied(name: string): boolean {
     const app = this.getInstance();
     return (

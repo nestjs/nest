@@ -96,4 +96,5 @@ export abstract class AbstractHttpAdapter<
   abstract createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): (path: string, callback: Function) => any;
+  abstract getType(): string;
 }
