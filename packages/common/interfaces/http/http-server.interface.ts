@@ -63,4 +63,5 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   getHttpServer(): any;
   initHttpServer(options: NestApplicationOptions): void;
   close(): any;
+  getType(): string;
 }
