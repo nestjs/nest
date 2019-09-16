@@ -21,7 +21,7 @@ export interface CacheStore {
    *
    * @param key cache key
    */
-  get<T>(key: string): Promise<void> | void;
+  get<T>(key: string): Promise<T | undefined> | T | undefined;
   /**
    * Destroy a key/value pair from the cache.
    *

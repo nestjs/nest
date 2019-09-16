@@ -12,7 +12,8 @@ export class MetadataScanner {
     prototype: any,
     callback: (name: string) => R,
   ): R[] {
-    return iterate([...this.getAllFilteredMethodNames(prototype)])
+    const methodNames = new Set(this.getAllFilteredMethodNames(prototype));
+    return iterate(methodNames)
       .map(callback)
       .filter(metadata => !isNil(metadata))
       .toArray();

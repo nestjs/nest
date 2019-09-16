@@ -36,7 +36,7 @@ export interface ControllerOptions extends ScopeOptions {
  *
  * @publicApi
  */
-export function Controller();
+export function Controller(): ClassDecorator;
 
 /**
  * Decorator that marks a class as a Nest controller that can receive inbound
@@ -61,7 +61,7 @@ export function Controller();
  *
  * @publicApi
  */
-export function Controller(prefix: string);
+export function Controller(prefix: string): ClassDecorator;
 
 /**
  * Decorator that marks a class as a Nest controller that can receive inbound
@@ -91,7 +91,7 @@ export function Controller(prefix: string);
  *
  * @publicApi
  */
-export function Controller(options: ControllerOptions);
+export function Controller(options: ControllerOptions): ClassDecorator;
 
 /**
  * Decorator that marks a class as a Nest controller that can receive inbound
