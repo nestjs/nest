@@ -1,35 +1,36 @@
 import { expect } from 'chai';
 import { CacheKey, CacheInterceptor, CacheTTL } from '../../cache';
 import { CACHE_KEY_METADATA, CACHE_TTL_METADATA } from '../../cache/cache.constants';
-import { UseInterceptors, Controller } from '../../decorators';
+import { UseInterceptors } from '../../decorators';
+import { Controller } from '../../decorators/core/controller.decorator';
 
 describe('@Cache', () => {
-  class Metadata {
-    @Controller()
-    @CacheKey('/a_different_cache_key')
-    @CacheTTL(99999)
-    @UseInterceptors(CacheInterceptor)
-    public static testAll() {}
-    @Controller()
-    @UseInterceptors(CacheInterceptor)
-    @CacheKey('/a_different_cache_key')
-    public static testKey() {}
-    @Controller()
-    @UseInterceptors(CacheInterceptor)
-    @CacheTTL(99999)
-    public static testTTL() {}
-  }
+  @Controller('test')
+  @CacheKey('/a_different_cache_key')
+  @CacheTTL(99999)
+  @UseInterceptors(CacheInterceptor)
+  class TestAll {}
+
+  @Controller()
+  @UseInterceptors(CacheInterceptor)
+  @CacheKey('/a_different_cache_key')
+  class TestKey {}
+
+  @Controller()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(99999)
+  class TestTTL {}
 
   it('should override global defaults for CacheKey and CacheTTL', () => {
-    expect(Reflect.getMetadata(CACHE_KEY_METADATA, Metadata.testAll)).to.be.eql('/a_different_cache_key') &&
-    expect(Reflect.getMetadata(CACHE_TTL_METADATA, Metadata.testAll)).to.be.greaterThan(9999);
+    expect(Reflect.getMetadata(CACHE_KEY_METADATA, TestAll)).to.be.eql('/a_different_cache_key') &&
+    expect(Reflect.getMetadata(CACHE_TTL_METADATA, TestAll)).to.be.greaterThan(9999);
   });
 
   it('should override only the TTL', () => {
-    expect(Reflect.getMetadata(CACHE_TTL_METADATA, Metadata.testTTL)).to.be.greaterThan(9999);
+    expect(Reflect.getMetadata(CACHE_TTL_METADATA, TestTTL)).to.be.greaterThan(9999);
   });
 
   it('should override only the Key', () => {
-    expect(Reflect.getMetadata(CACHE_KEY_METADATA, Metadata.testKey)).to.be.eql('/a_different_cache_key');
+    expect(Reflect.getMetadata(CACHE_KEY_METADATA, TestKey)).to.be.eql('/a_different_cache_key');
   });
 });

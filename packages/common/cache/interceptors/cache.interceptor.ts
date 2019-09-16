@@ -49,7 +49,6 @@ export class CacheInterceptor implements NestInterceptor {
           const args = ttl ? [key, response, {ttl}] : [key, response];
           this.cacheManager.set.apply(this, args);
         }));
-
     } catch {
       return next.handle();
     }
@@ -58,12 +57,11 @@ export class CacheInterceptor implements NestInterceptor {
   trackBy(context: ExecutionContext): string | undefined {
     const httpAdapter = this.httpAdapterHost.httpAdapter;
     const isHttpApp = httpAdapter && !!httpAdapter.getRequestMethod;
-    // Note: Priority should be given to decorators over globals
-    const cacheMetadata = this.reflector.get(CACHE_KEY_METADATA, context.getHandler()) || null;
-    if (cacheMetadata) {
+    const cacheMetadata = this.reflector.get(CACHE_KEY_METADATA, context.getHandler());
+
+    if (!isHttpApp || cacheMetadata) {
       return cacheMetadata;
     }
-
     const request = context.getArgByIndex(0);
     if (httpAdapter.getRequestMethod(request) !== 'GET') {
       return undefined;
