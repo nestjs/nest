@@ -124,6 +124,10 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     return response.header(name, value);
   }
 
+  public getRequestHostname(request: any): string {
+    return request.hostname;
+  }
+
   public getRequestMethod(request: any): string {
     return request.raw.method;
   }

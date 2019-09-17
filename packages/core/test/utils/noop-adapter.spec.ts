@@ -9,6 +9,7 @@ export class NoopHttpAdapter extends AbstractHttpAdapter {
   initHttpServer(options: any): any {}
   useStaticAssets(...args: any[]): any {}
   setViewEngine(engine: string): any {}
+  getRequestHostname(request: any): any {}
   getRequestMethod(request: any): any {}
   getRequestUrl(request: any): any {}
   reply(response: any, body: any): any {}
