@@ -65,37 +65,22 @@ function getLongDescription(
   baseline: Benchmarks | undefined,
   diff: BenchmarksDiff,
 ): string {
+  function printTableRow(id: string, label: string): string[] {
+    return [
+      label,
+      current[id].requestsPerSec.toFixed(0),
+      current[id].transferPerSec,
+      baseline ? diff[id].requestsPerSecDuff.toFixed(2) : '-',
+      baseline ? diff[id].transferPerSecDiff.toFixed(2) : '-',
+    ];
+  }
+
   const table = [
     ['', 'Req/sec', 'Trans/sec', 'Req/sec DIFF', 'Trans/sec DIFF'],
-    [
-      'Nest-Express',
-      // tslint:disable:no-string-literal
-      current['nest'].requestsPerSec,
-      current['nest'].transferPerSec,
-      baseline ? diff['nest'].requestsPerSecDuff : '-',
-      baseline ? diff['nest'].transferPerSecDiff : '-',
-    ],
-    [
-      'Nest-Fastify',
-      current['nest-fastify'].requestsPerSec,
-      current['nest-fastify'].transferPerSec,
-      baseline ? diff['nest-fastify'].requestsPerSecDuff : '-',
-      baseline ? diff['nest-fastify'].transferPerSecDiff : '-',
-    ],
-    [
-      'Express',
-      current['express'].requestsPerSec,
-      current['express'].transferPerSec,
-      baseline ? diff.express.requestsPerSecDuff : '-',
-      baseline ? diff['express'].transferPerSecDiff : '-',
-    ],
-    [
-      'Fastify',
-      current['fastify'].requestsPerSec,
-      current['fastify'].transferPerSec,
-      baseline ? diff['fastify'].requestsPerSecDuff : '-',
-      baseline ? diff['fastify'].transferPerSecDiff : '-',
-    ],
+    printTableRow('nest', 'Nest-Express'),
+    printTableRow('nest-fastify', 'Nest-Fastify'),
+    printTableRow('express', 'Express'),
+    printTableRow('fastify', 'Fastify'),
   ];
 
   return markdownTable(table);
