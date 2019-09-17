@@ -70,8 +70,8 @@ function getLongDescription(
       label,
       current[id].requestsPerSec.toFixed(0),
       current[id].transferPerSec,
-      baseline ? diff[id].requestsPerSecDuff.toFixed(2) : '-',
-      baseline ? diff[id].transferPerSecDiff.toFixed(2) : '-',
+      baseline ? formatPerc(diff[id].requestsPerSecDiff) : '-',
+      baseline ? formatPerc(diff[id].transferPerSecDiff) : '-',
     ];
   }
 
@@ -90,7 +90,7 @@ function getDiff(
   current: Benchmarks,
   baseline: Benchmarks | undefined,
 ): BenchmarksDiff {
-  const diff = {};
+  const diff: BenchmarksDiff = {};
   for (const l of LIBS) {
     if (!baseline) {
       diff[l] = undefined;
@@ -101,7 +101,7 @@ function getDiff(
     const baselineValue = baseline[l];
 
     diff[l] = {
-      requestsPerSec: getRequestDiff(
+      requestsPerSecDiff: getRequestDiff(
         currentValue.requestsPerSec,
         baselineValue.requestsPerSec,
       ),
@@ -124,9 +124,9 @@ function getTransferDiff(
 function getAverageDiff(diff: BenchmarksDiff) {
   return (
     (diff['nest'].transferPerSecDiff +
-      diff['nest'].requestsPerSecDuff +
+      diff['nest'].requestsPerSecDiff +
       diff['nest-fastify'].transferPerSecDiff +
-      diff['nest-fastify'].requestsPerSecDuff) /
+      diff['nest-fastify'].requestsPerSecDiff) /
     4
   );
 }
@@ -137,9 +137,13 @@ function getRequestDiff(currentRequest: number, baselineRequest: number) {
 
 interface BenchmarkDiff {
   transferPerSecDiff: number | undefined;
-  requestsPerSecDuff: number | undefined;
+  requestsPerSecDiff: number | undefined;
 }
 
 interface BenchmarksDiff {
   [lib: string]: BenchmarkDiff;
+}
+
+function formatPerc(n: number) {
+  return (n > 0 ? '+' : '') + (n * 100).toFixed(2) + '%';
 }

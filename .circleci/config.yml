@@ -136,7 +136,7 @@ jobs:
           command: .circleci/install-wrk.sh
       - run:
           name: Run codechecks with benchmarks
-          command: yarn codechecks:benchmarks
+          command: DEBUG=* yarn codechecks:benchmarks
 
   samples:
     working_directory: ~/nest
