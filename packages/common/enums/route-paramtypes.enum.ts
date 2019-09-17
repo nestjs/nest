@@ -9,4 +9,5 @@ export enum RouteParamtypes {
   SESSION,
   FILE,
   FILES,
+  HOST,
 }

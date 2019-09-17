@@ -1,36 +1,37 @@
-import { Controller, Get, Header, Param } from '@nestjs/common';
+import { Controller, Get, Header, HostParam, Param } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import { HostService } from './host.service';
 import { UserByIdPipe } from './users/user-by-id.pipe';
 
 @Controller({
   path: 'host',
-  host: 'host.example.com',
+  host: ':tenant.example.com',
 })
 export class HostController {
   constructor(private readonly hostService: HostService) {}
 
   @Get()
   @Header('Authorization', 'Bearer')
-  greeting(): string {
-    return this.hostService.greeting();
+  greeting(@HostParam('tenant') tenant: string): string {
+    return `${this.hostService.greeting()} tenant=${tenant}`;
   }
 
   @Get('async')
-  async asyncGreeting(): Promise<string> {
-    return await this.hostService.greeting();
+  async asyncGreeting(@HostParam('tenant') tenant: string): Promise<string> {
+    return `${await this.hostService.greeting()} tenant=${tenant}`;
   }
 
   @Get('stream')
-  streamGreeting(): Observable<string> {
-    return of(this.hostService.greeting());
+  streamGreeting(@HostParam('tenant') tenant: string): Observable<string> {
+    return of(`${this.hostService.greeting()} tenant=${tenant}`);
   }
 
   @Get('local-pipe/:id')
   localPipe(
     @Param('id', UserByIdPipe)
     user: any,
+    @HostParam('tenant') tenant: string,
   ): any {
-    return user;
+    return { ...user, tenant };
   }
 }

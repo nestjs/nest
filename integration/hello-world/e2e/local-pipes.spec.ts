@@ -29,11 +29,12 @@ describe('Hello world (default adapter)', () => {
   it(`host=host.example.com should execute locally injected pipe by HostController`, () => {
     return request(server)
       .get('/host/local-pipe/1')
-      .set('Host', 'host.example.com')
+      .set('Host', 'acme.example.com')
       .expect(200)
       .expect({
         id: '1',
         host: true,
+        tenant: 'acme',
       });
   });
 

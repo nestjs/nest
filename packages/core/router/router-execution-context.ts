@@ -305,6 +305,7 @@ export class RouterExecutionContext {
       (type === RouteParamtypes.BODY ||
         type === RouteParamtypes.QUERY ||
         type === RouteParamtypes.PARAM ||
+        type === RouteParamtypes.HOST ||
         isString(type)) &&
       !isEmpty(pipes)
     ) {

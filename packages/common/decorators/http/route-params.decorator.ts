@@ -468,5 +468,119 @@ export function Param(
   );
 }
 
+/**
+ * Route handler parameter decorator. Extracts the `hosts`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `hosts`. May also apply pipes to the bound
+ * parameter.
+ *
+ * For example, extracting all params:
+ * ```typescript
+ * findOne(@HostParam() params: string[])
+ * ```
+ *
+ * For example, extracting a single param:
+ * ```typescript
+ * findOne(@HostParam('id') id: string)
+ * ```
+ * @param property name of single property to extract from the `req` object
+ * @param pipes one or more pipes - either instances or classes - to apply to
+ * the bound parameter.
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ * @see [Working with pipes](https://docs.nestjs.com/custom-decorators#working-with-pipes)
+ *
+ * @publicApi
+ */
+export function HostParam(): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `hosts`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `params`. May also apply pipes to the bound
+ * parameter.
+ *
+ * For example, extracting all params:
+ * ```typescript
+ * findOne(@HostParam() params: string[])
+ * ```
+ *
+ * For example, extracting a single param:
+ * ```typescript
+ * findOne(@HostParam('id') id: string)
+ * ```
+ * @param property name of single property to extract from the `req` object
+ * @param pipes one or more pipes - either instances or classes - to apply to
+ * the bound parameter.
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ * @see [Working with pipes](https://docs.nestjs.com/custom-decorators#working-with-pipes)
+ *
+ * @publicApi
+ */
+export function HostParam(
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `hosts`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `hosts`. May also apply pipes to the bound
+ * parameter.
+ *
+ * For example, extracting all params:
+ * ```typescript
+ * findOne(@HostParam() params: string[])
+ * ```
+ *
+ * For example, extracting a single param:
+ * ```typescript
+ * findOne(@HostParam('id') id: string)
+ * ```
+ * @param property name of single property to extract from the `req` object
+ * @param pipes one or more pipes - either instances or classes - to apply to
+ * the bound parameter.
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ * @see [Working with pipes](https://docs.nestjs.com/custom-decorators#working-with-pipes)
+ *
+ * @publicApi
+ */
+export function HostParam(
+  property: string,
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `hosts`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `params`. May also apply pipes to the bound
+ * parameter.
+ *
+ * For example, extracting all params:
+ * ```typescript
+ * findOne(@HostParam() params: string[])
+ * ```
+ *
+ * For example, extracting a single param:
+ * ```typescript
+ * findOne(@HostParam('id') id: string)
+ * ```
+ * @param property name of single property to extract from the `req` object
+ * @param pipes one or more pipes - either instances or classes - to apply to
+ * the bound parameter.
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ * @see [Working with pipes](https://docs.nestjs.com/custom-decorators#working-with-pipes)
+ *
+ * @publicApi
+ */
+export function HostParam(
+  property?: string | (Type<PipeTransform> | PipeTransform),
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator {
+  return createPipesRouteParamDecorator(RouteParamtypes.HOST)(
+    property,
+    ...pipes,
+  );
+}
+
 export const Req = Request;
 export const Res = Response;

@@ -30,6 +30,13 @@ describe('ParamsTokenFactory', () => {
           ).to.be.eql('param');
         });
       });
+      describe(`RouteParamtypes.HOST`, () => {
+        it('should returns params object', () => {
+          expect(
+            factory.exchangeEnumForString(RouteParamtypes.HOST),
+          ).to.be.eql('host');
+        });
+      });
       describe('not available', () => {
         it('should returns "custom"', () => {
           expect(factory.exchangeEnumForString(-1)).to.be.eql('custom');

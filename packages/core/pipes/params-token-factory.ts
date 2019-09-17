@@ -8,6 +8,8 @@ export class ParamsTokenFactory {
         return 'body';
       case RouteParamtypes.PARAM:
         return 'param';
+      case RouteParamtypes.HOST:
+        return 'host';
       case RouteParamtypes.QUERY:
         return 'query';
       default:
