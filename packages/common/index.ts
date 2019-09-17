@@ -18,6 +18,7 @@ export {
   BeforeApplicationShutdown,
   CallHandler,
   CanActivate,
+  ContextType,
   DynamicModule,
   ExceptionFilter,
   ExecutionContext,
@@ -27,6 +28,7 @@ export {
   INestApplicationContext,
   INestMicroservice,
   MiddlewareConsumer,
+  NestApplicationOptions,
   NestInterceptor,
   NestMiddleware,
   NestModule,
@@ -39,12 +41,12 @@ export {
   Provider,
   RpcExceptionFilter,
   Scope,
+  ScopeOptions,
   Type,
   ValidationError,
   WebSocketAdapter,
   WsExceptionFilter,
   WsMessageHandler,
-  ScopeOptions,
 } from './interfaces';
 export * from './pipes';
 export * from './serializer';

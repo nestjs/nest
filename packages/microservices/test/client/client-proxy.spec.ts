@@ -87,9 +87,8 @@ describe('ClientProxy', function() {
       expect(stream$ instanceof Observable).to.be.true;
     });
     it('should call "connect" on subscribe', () => {
-      const connectSpy = sinon.spy();
+      const connectSpy = sinon.spy(client, 'connect');
       const stream$ = client.send({ test: 3 }, 'test');
-      client.connect = connectSpy;
 
       stream$.subscribe();
       expect(connectSpy.calledOnce).to.be.true;
@@ -110,9 +109,7 @@ describe('ClientProxy', function() {
     });
     describe('when is connected', () => {
       beforeEach(() => {
-        try {
-          sinon.stub(client, 'connect').callsFake(() => Promise.resolve());
-        } catch {}
+        sinon.stub(client, 'connect').callsFake(() => Promise.resolve());
       });
       it(`should call "publish"`, () => {
         const pattern = { test: 3 };
@@ -138,9 +135,7 @@ describe('ClientProxy', function() {
       expect(stream$ instanceof Observable).to.be.true;
     });
     it('should call "connect" immediately', () => {
-      const connectSpy = sinon.spy();
-      client.connect = connectSpy;
-
+      const connectSpy = sinon.spy(client, 'connect');
       client.emit({ test: 3 }, 'test');
       expect(connectSpy.calledOnce).to.be.true;
     });

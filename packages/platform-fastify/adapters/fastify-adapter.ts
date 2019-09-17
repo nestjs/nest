@@ -112,7 +112,7 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     );
   }
 
-  setViewEngine(options: any) {
+  public setViewEngine(options: any) {
     return this.register(
       loadPackage('point-of-view', 'FastifyAdapter.setViewEngine()'),
       options,
@@ -166,5 +166,9 @@ export class FastifyAdapter extends AbstractHttpAdapter {
         next();
       });
     };
+  }
+
+  public getType(): string {
+    return 'fastify';
   }
 }

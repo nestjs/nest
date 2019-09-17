@@ -23,6 +23,7 @@ export * from './modules/on-destroy.interface';
 export * from './modules/on-init.interface';
 export * from './modules/provider.interface';
 export * from './nest-application-context.interface';
+export * from './nest-application-options.interface';
 export * from './nest-application.interface';
 export * from './nest-microservice.interface';
 export * from './on-application-bootstrap.interface';
