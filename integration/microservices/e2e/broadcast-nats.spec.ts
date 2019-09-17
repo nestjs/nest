@@ -38,6 +38,12 @@ describe('NATS transport', () => {
       .expect(200, '2');
   });
 
+  it(`Retrieve the message subject`, () => {
+    return request(server)
+      .get('/subject')
+      .expect(200, 'retrieve.subject.hello');
+  });
+
   afterEach(async () => {
     await app.close();
   });

@@ -24,4 +24,14 @@ export class NatsBroadcastController {
   replyBroadcast(): Observable<number> {
     return new Observable(observer => observer.next(1));
   }
+
+  @Get('subject')
+  async getSubject() {
+    return await this.client.send(`retrieve.subject.hello`, {}).toPromise();
+  }
+
+  @MessagePattern('retrieve.subject.*')
+  replySubject(data, subject): string {
+    return subject;
+  }
 }

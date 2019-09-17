@@ -105,7 +105,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
       return publish(noHandlerPacket);
     }
     const response$ = this.transformToObservable(
-      await handler(message.data),
+      await handler(message.data, message.pattern),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
   }
