@@ -40,6 +40,17 @@ describe('Hello world (express instance)', () => {
       .expect('Hello world!');
   });
 
+  it(`/GET { host: ":tenant.example.com" } not matched`, () => {
+    return request(server)
+      .get('/host')
+      .expect(404)
+      .expect({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Cannot GET /host',
+      });
+  });
+
   afterEach(async () => {
     await app.close();
   });

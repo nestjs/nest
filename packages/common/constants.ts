@@ -7,6 +7,7 @@ export const METADATA = {
 
 export const SHARED_MODULE_METADATA = '__module:shared__';
 export const GLOBAL_MODULE_METADATA = '__module:global__';
+export const HOST_METADATA = 'host';
 export const PATH_METADATA = 'path';
 export const PARAMTYPES_METADATA = 'design:paramtypes';
 export const SELF_DECLARED_DEPS_METADATA = 'self:paramtypes';

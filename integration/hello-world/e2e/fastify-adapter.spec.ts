@@ -5,6 +5,7 @@ import {
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { ApplicationModule } from '../src/app.module';
+import { fail } from 'assert';
 
 describe('Hello world (fastify adapter)', () => {
   let app: NestFastifyApplication;
@@ -45,6 +46,27 @@ describe('Hello world (fastify adapter)', () => {
         url: '/hello/stream',
       })
       .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
+  });
+
+  it(`/GET { host: ":tenant.example.com" } not matched`, () => {
+    return app
+      .inject({
+        method: 'GET',
+        url: '/host',
+      })
+      .then(
+        ({ payload }) => {
+          fail(`Unexpected success: ${payload}`);
+        },
+        err => {
+          expect(err.message).to.be.eql({
+            error: 'Internal Server Error',
+            message:
+              'HTTP Adapter does not support filtering on { host: "host.example.com" }',
+            statusCode: 500,
+          });
+        },
+      );
   });
 
   afterEach(async () => {

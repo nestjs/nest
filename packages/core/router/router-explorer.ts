@@ -1,6 +1,7 @@
 import { HttpServer } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { InternalServerErrorException } from '@nestjs/common/exceptions';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
@@ -33,6 +34,7 @@ import { REQUEST_CONTEXT_ID } from './request/request-constants';
 import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
+import * as pathToRegexp from 'path-to-regexp';
 
 export interface RoutePathProperties {
   path: string[];
@@ -72,6 +74,7 @@ export class RouterExplorer {
     module: string,
     applicationRef: T,
     basePath: string,
+    host: string,
   ) {
     const { instance } = instanceWrapper;
     const routerPaths = this.scanForPaths(instance);
@@ -81,6 +84,7 @@ export class RouterExplorer {
       instanceWrapper,
       module,
       basePath,
+      host,
     );
   }
 
@@ -146,6 +150,7 @@ export class RouterExplorer {
     instanceWrapper: InstanceWrapper,
     module: string,
     basePath: string,
+    host: string,
   ) {
     (routePaths || []).forEach(pathProperties => {
       const { path, requestMethod } = pathProperties;
@@ -155,6 +160,7 @@ export class RouterExplorer {
         instanceWrapper,
         module,
         basePath,
+        host,
       );
       path.forEach(p =>
         this.logger.log(ROUTE_MAPPED_MESSAGE(p, requestMethod)),
@@ -168,6 +174,7 @@ export class RouterExplorer {
     instanceWrapper: InstanceWrapper,
     moduleKey: string,
     basePath: string,
+    host: string,
   ) {
     const {
       path: paths,
@@ -185,33 +192,54 @@ export class RouterExplorer {
 
     const isRequestScoped = !instanceWrapper.isDependencyTreeStatic();
     const module = this.container.getModuleByKey(moduleKey);
+    const handler = isRequestScoped
+      ? this.createRequestScopedHandler(
+          instanceWrapper,
+          requestMethod,
+          module,
+          moduleKey,
+          methodName,
+        )
+      : this.createCallbackProxy(
+          instance,
+          targetCallback,
+          methodName,
+          moduleKey,
+          requestMethod,
+        );
+    const hostHandler = this.applyHostFilter(host, handler);
 
-    if (isRequestScoped) {
-      const handler = this.createRequestScopedHandler(
-        instanceWrapper,
-        requestMethod,
-        module,
-        moduleKey,
-        methodName,
-      );
-
-      paths.forEach(path => {
-        const fullPath = stripSlash(basePath) + path;
-        routerMethod(stripSlash(fullPath) || '/', handler);
-      });
-      return;
-    }
-    const proxy = this.createCallbackProxy(
-      instance,
-      targetCallback,
-      methodName,
-      moduleKey,
-      requestMethod,
-    );
     paths.forEach(path => {
       const fullPath = stripSlash(basePath) + path;
-      routerMethod(stripSlash(fullPath) || '/', proxy);
+      routerMethod(stripSlash(fullPath) || '/', hostHandler);
     });
+  }
+
+  private applyHostFilter(host, handler) {
+    if (!host) {
+      return (req, res, next) => {
+        req.hosts = {};
+        return handler(req, res, next);
+      };
+    }
+
+    const httpAdapterRef = this.container.getHttpAdapterRef();
+    const keys = [];
+    const re = pathToRegexp(host, keys);
+
+    return (req, res, next) => {
+      req.hosts = {};
+      const hostname = httpAdapterRef.getRequestHostname(req) || '';
+      const match = hostname.match(re);
+      if (match) {
+        keys.forEach((key, i) => req.hosts[key.name] = match[i + 1]);
+        return handler(req, res, next);
+      }
+      if (!next) {
+        throw new InternalServerErrorException(`HTTP Adapter does not support filtering on { host: "${host}" }`);
+      }
+      return next();
+    };
   }
 
   private createCallbackProxy(

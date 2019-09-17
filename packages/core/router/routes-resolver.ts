@@ -1,5 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { MODULE_PATH } from '@nestjs/common/constants';
+import { HOST_METADATA, MODULE_PATH } from '@nestjs/common/constants';
 import { HttpServer, Type } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
@@ -60,18 +60,19 @@ export class RoutesResolver implements Resolver {
   ) {
     routes.forEach(instanceWrapper => {
       const { metatype } = instanceWrapper;
+      const host = Reflect.getMetadata(HOST_METADATA, metatype);
       const path = this.routerBuilder.extractRouterPath(
         metatype as Type<any>,
         basePath,
       );
       const controllerName = metatype.name;
-
-      this.logger.log(CONTROLLER_MAPPING_MESSAGE(controllerName, path));
+      this.logger.log(CONTROLLER_MAPPING_MESSAGE(controllerName, host, path));
       this.routerBuilder.explore(
         instanceWrapper,
         moduleName,
         applicationRef,
         path,
+        host,
       );
     });
   }
