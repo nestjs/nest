@@ -84,7 +84,7 @@
     "@codechecks/client": "0.1.9",
     "@types/amqplib": "0.5.13",
     "@types/cache-manager": "2.10.0",
-    "@types/chai": "4.2.2",
+    "@types/chai": "4.2.3",
     "@types/bytes": "3.0.0",
     "@types/chai-as-promised": "7.1.2",
     "@types/cors": "2.8.6",
