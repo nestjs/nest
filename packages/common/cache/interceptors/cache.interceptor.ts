@@ -62,6 +62,7 @@ export class CacheInterceptor implements NestInterceptor {
     if (!isHttpApp || cacheMetadata) {
       return cacheMetadata;
     }
+
     const request = context.getArgByIndex(0);
     if (httpAdapter.getRequestMethod(request) !== 'GET') {
       return undefined;
