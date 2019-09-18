@@ -193,6 +193,9 @@ $ npm run lint
 
 # build all packages and put them near to their source .ts files
 $ npm run build:prod
+
+# build with sourceMap on common and move to "sample" and "integration" directories.
+$ gulp build:common:dev
 ```
 
 ## <a name="rules"></a> Coding Rules

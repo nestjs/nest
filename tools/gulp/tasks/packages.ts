@@ -3,6 +3,7 @@ import { task, watch, series, dest } from 'gulp';
 import { createProject } from 'gulp-typescript';
 import * as sourcemaps from 'gulp-sourcemaps';
 import * as log from 'fancy-log';
+import { move } from './move';
 
 // Has to be a hardcoded object due to build order
 const packages = {
@@ -70,6 +71,11 @@ function buildPackageDev(packageName: string) {
 modules.forEach(packageName => {
   task(packageName, () => buildPackage(packageName));
   task(`${packageName}:dev`, () => buildPackageDev(packageName));
+
+  task(`build:${packageName}:dev`, () => {
+    buildPackageDev(packageName);
+    return move();
+  });
 });
 
 task('common:dev', series(modules.map(packageName => `${packageName}:dev`)));

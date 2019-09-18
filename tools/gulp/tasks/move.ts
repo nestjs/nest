@@ -7,7 +7,7 @@ import { join } from 'path';
  * Moves the compiled nest files into the
  * `samples/*` and `integration/*` dirs.
  */
-function move() {
+export function move() {
   const samplesDirs = getDirs(samplePath);
   const integrationDirs = getDirs(integrationPath);
   const directories = samplesDirs.concat(integrationDirs);
