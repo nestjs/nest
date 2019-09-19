@@ -98,7 +98,7 @@ export class ClientRMQ extends ClientProxy {
 
   public createClient<T = any>(): T {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    return rqmPackage.connect(this.urls, socketOptions) as T;
+    return rqmPackage.connect(this.urls, { connectionOptions: socketOptions }) as T;
   }
 
   public mergeDisconnectEvent<T = any>(
