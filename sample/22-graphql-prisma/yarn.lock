@@ -43,20 +43,20 @@
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-"@nestjs/common@6.6.7":
-  version "6.6.7"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.6.7.tgz#71bb2ddf4ab891a389c8e5b70d8dedef4a9b1e83"
+"@nestjs/common@6.7.1":
+  version "6.7.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.7.1.tgz#a3ec48d0f82556f5779dac1c278633c206ee97a6"
   dependencies:
     axios "0.19.0"
     cli-color "1.4.0"
     uuid "3.3.3"
 
-"@nestjs/core@6.6.7":
-  version "6.6.7"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.6.7.tgz#a0cb16157e0c670f714d460ba4a1dde8f4162b1c"
+"@nestjs/core@6.7.1":
+  version "6.7.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.7.1.tgz#c786db762157dce7e4f72df9c2ef71693ea7361d"
   dependencies:
     "@nuxtjs/opencollective" "0.2.2"
-    fast-safe-stringify "2.0.6"
+    fast-safe-stringify "2.0.7"
     iterare "1.2.0"
     object-hash "1.3.1"
     optional "0.1.4"
@@ -78,9 +78,9 @@
   optionalDependencies:
     type-graphql "^0.17.3"
 
-"@nestjs/platform-express@6.6.7":
-  version "6.6.7"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.6.7.tgz#8258a301b1b0ac99204d3623c6431edd16619f50"
+"@nestjs/platform-express@6.7.1":
+  version "6.7.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.7.1.tgz#236681d1dc96db68db06ef4660c27028fdb2adc0"
   dependencies:
     body-parser "1.19.0"
     cors "2.8.5"
@@ -1416,9 +1416,9 @@ fast-json-stable-stringify@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/fast-json-stable-stringify/-/fast-json-stable-stringify-2.0.0.tgz#d5142c0caee6b1189f87d3a76111064f86c8bbf2"
 
-fast-safe-stringify@2.0.6:
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/fast-safe-stringify/-/fast-safe-stringify-2.0.6.tgz#04b26106cc56681f51a044cfc0d76cf0008ac2c2"
+fast-safe-stringify@2.0.7:
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/fast-safe-stringify/-/fast-safe-stringify-2.0.7.tgz#124aa885899261f68aedb42a7c080de9da608743"
 
 fastq@^1.6.0:
   version "1.6.0"
