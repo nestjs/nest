@@ -43,11 +43,12 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   unknownDependencyContext: InjectorDependencyContext,
   module: Module,
 ) => {
-  const { index, dependencies, key } = unknownDependencyContext;
-  let message = `Nest can't resolve dependencies of the ${type.toString()}`;
+  const { index, name = 'dependency', dependencies, key } = unknownDependencyContext;
+
+  let message = `\nNest can't resolve dependencies of the ${type.toString()}`;
 
   if (isNil(index)) {
-    message += `. Please make sure that the "${key.toString()}" property is available in the current context.`;
+    message += `.\nPlease make sure that the "${key.toString()}" property is available in the current context.`;
     return message;
   }
   const dependenciesName = (dependencies || []).map(getDependencyName);
@@ -55,9 +56,18 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
 
   message += ` (`;
   message += dependenciesName.join(', ');
-  message += `). Please make sure that the argument at index [${index}] is available in the ${getModuleName(
+  message += `). \nPlease make sure that the argument ${name} at index [${index}] is available in the ${getModuleName(
     module,
-  )} context.`;
+  )} context.
+
+Potential solutions:
+- If ${name} is a provider, is it part of the current ${getModuleName(module) || 'Module'}?
+- If ${name} is exported from a separate @Module, is that module imported within ${getModuleName(module) || 'Module'}?
+  @Module({
+    imports: [ /* the Module containing ${name} */ ]
+  })
+`;
+
   return message;
 };
 
@@ -70,13 +80,27 @@ export const INVALID_MODULE_MESSAGE = (
   text: TemplateStringsArray,
   scope: string,
 ) =>
-  `Nest cannot create the module instance. Often, this is because of a circular dependency between modules. Use forwardRef() to avoid it. (Read more: https://docs.nestjs.com/fundamentals/circular-dependency.) Scope [${scope}]`;
+  `
+Nest cannot create the module instance.
+Often, this is because of a circular dependency between modules.
+Use forwardRef() to avoid it.
+
+(Read more: https://docs.nestjs.com/fundamentals/circular-dependency.)
+Scope [${scope}]
+`;
 
 export const UNKNOWN_EXPORT_MESSAGE = (
-  text: TemplateStringsArray,
+  token: string,
   module: string,
-) =>
-  `Nest cannot export a provider/module that is not a part of the currently processed module (${module}). Please verify whether each exported unit is available in this particular context.`;
+) => {
+  return `
+Nest cannot export a provider/module that is not a part of the currently processed module (${module}).
+Please verify whether the exported "${token}" is available in this particular context.
+
+Possible Solutions:
+- Is "${token}" part of the relevant providers/imports within ${module}?
+`;
+};
 
 export const INVALID_CLASS_MESSAGE = (text: TemplateStringsArray, value: any) =>
   `ModuleRef cannot instantiate class (${value} is not constructable).`;
