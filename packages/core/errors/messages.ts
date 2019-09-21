@@ -90,15 +90,15 @@ Scope [${scope}]
 `;
 
 export const UNKNOWN_EXPORT_MESSAGE = (
-  token: string,
+  token: string = 'item',
   module: string,
 ) => {
   return `
 Nest cannot export a provider/module that is not a part of the currently processed module (${module}).
-Please verify whether the exported "${token}" is available in this particular context.
+Please verify whether the exported ${token} is available in this particular context.
 
 Possible Solutions:
-- Is "${token}" part of the relevant providers/imports within ${module}?
+- Is ${token} part of the relevant providers/imports within ${module}?
 `;
 };
 
