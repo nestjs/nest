@@ -81,7 +81,7 @@
     "uuid": "3.3.3"
   },
   "devDependencies": {
-    "@codechecks/client": "0.1.9",
+    "@codechecks/client": "0.1.10",
     "@types/amqplib": "0.5.13",
     "@types/cache-manager": "2.10.0",
     "@types/chai": "4.2.3",
