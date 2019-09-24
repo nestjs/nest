@@ -256,7 +256,16 @@ export class MiddlewareModule {
       undefined,
       contextId,
     );
-    const middleware = instance.use.bind(instance);
+    const middleware = (req, res, next) => {
+      const stack: Set<NestMiddleware> = req.stack || new Set();
+      if (!stack.has(instance)) {
+        stack.add(instance);
+        req.stack = stack;
+        instance.use.apply(instance, [req, res, next]);
+      } else {
+        next();
+      }
+    };
     return this.routerProxy.createProxy(middleware, exceptionsHandler);
   }
 
