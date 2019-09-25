@@ -23,7 +23,7 @@
     "ws": "7.1.2"
   },
   "devDependencies": {
-    "@types/node": "10.14.18",
+    "@types/node": "10.14.19",
     "@types/ws": "6.0.3",
     "ts-node": "8.4.1",
     "tslint": "5.20.0"
