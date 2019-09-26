@@ -1,5 +1,5 @@
-import { AxiosRequestConfig } from 'axios';
 import { ModuleMetadata, Provider, Type } from '../../interfaces';
+import { AxiosRequestConfig } from '../../interfaces/external/axios.interface';
 
 export interface HttpModuleOptions extends AxiosRequestConfig {}
 

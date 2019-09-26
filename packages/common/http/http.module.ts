@@ -1,5 +1,4 @@
-import Axios from 'axios';
-import { Module } from '../decorators/modules/module.decorator';
+import { Module } from '../decorators/modules';
 import { DynamicModule, Provider } from '../interfaces';
 import { randomStringGenerator } from '../utils/random-string-generator.util';
 import {
@@ -13,13 +12,18 @@ import {
   HttpModuleOptions,
   HttpModuleOptionsFactory,
 } from './interfaces';
+import { loadPackage } from '../utils/load-package.util';
 
 @Module({
   providers: [
     HttpService,
     {
       provide: AXIOS_INSTANCE_TOKEN,
-      useValue: Axios,
+      useFactory: () => {
+        return loadPackage('axios', HttpModule.name, () =>
+          require('axios'),
+        );
+      },
     },
   ],
   exports: [HttpService],
@@ -31,7 +35,11 @@ export class HttpModule {
       providers: [
         {
           provide: AXIOS_INSTANCE_TOKEN,
-          useValue: Axios.create(config),
+          useFactory: () => {
+            return loadPackage('axios', HttpModule.name, () =>
+              require('axios'),
+            ).create(config);
+          },
         },
         {
           provide: HTTP_MODULE_ID,
@@ -49,7 +57,11 @@ export class HttpModule {
         ...this.createAsyncProviders(options),
         {
           provide: AXIOS_INSTANCE_TOKEN,
-          useFactory: (config: HttpModuleOptions) => Axios.create(config),
+          useFactory: (config: HttpModuleOptions) => {
+            return loadPackage('axios', HttpModule.name, () =>
+              require('axios'),
+            ).create(config);
+          },
           inject: [HTTP_MODULE_OPTIONS],
         },
         {
