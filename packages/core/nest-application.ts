@@ -15,10 +15,10 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject, validatePath } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
-import * as optional from 'optional';
 import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
+import { optionalRequire } from './helpers/optional-require';
 import { NestContainer } from './injector/container';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
@@ -26,10 +26,14 @@ import { NestApplicationContext } from './nest-application-context';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
 
-const { SocketModule } =
-  optional('@nestjs/websockets/socket-module') || ({} as any);
-const { MicroservicesModule } =
-  optional('@nestjs/microservices/microservices-module') || ({} as any);
+const { SocketModule } = optionalRequire(
+  '@nestjs/websockets/socket-module',
+  () => require('@nestjs/websockets/socket-module'),
+);
+const { MicroservicesModule } = optionalRequire(
+  '@nestjs/microservices/microservices-module',
+  () => require('@nestjs/microservices/microservices-module'),
+);
 
 /**
  * @publicApi
