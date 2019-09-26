@@ -118,6 +118,7 @@ export class NestApplication extends NestApplicationContext
       this.container,
       this.config,
       this.injector,
+      this.httpAdapter,
     );
   }
 

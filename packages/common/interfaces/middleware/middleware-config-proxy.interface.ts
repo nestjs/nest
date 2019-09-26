@@ -5,7 +5,6 @@ import { MiddlewareConsumer } from './middleware-consumer.interface';
 export interface MiddlewareConfigProxy {
   /**
    * Excludes routes from the currently processed middleware.
-   * This excluded route has to use an exact same route path.
    *
    * @param  {} ...routes
    * @returns {MiddlewareConfigProxy}
