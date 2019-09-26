@@ -68,7 +68,7 @@ Potential solutions:
   message += dependenciesName.join(', ');
   message += `). \nPlease make sure that the argument ${name} at index [${index}] is available in the ${getModuleName(
     module,
-  )} context.`
+  )} context.`;
   message += potentialSolutions;
 
   return message;
