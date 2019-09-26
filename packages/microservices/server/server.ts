@@ -10,9 +10,11 @@ import {
   Subscription,
 } from 'rxjs';
 import { catchError, finalize, publish } from 'rxjs/operators';
+import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
 import {
   ClientOptions,
+  KafkaOptions,
   MessageHandler,
   MicroserviceOptions,
   MqttOptions,
@@ -21,7 +23,6 @@ import {
   ReadPacket,
   RedisOptions,
   RmqOptions,
-  KafkaOptions,
   TcpOptions,
   WritePacket,
 } from '../interfaces';
@@ -89,12 +90,16 @@ export abstract class Server {
       );
   }
 
-  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
+  public async handleEvent(
+    pattern: string,
+    packet: ReadPacket,
+    context: BaseRpcContext,
+  ): Promise<any> {
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
       return this.logger.error(NO_EVENT_HANDLER);
     }
-    const resultOrStream = await handler(packet.data);
+    const resultOrStream = await handler(packet.data, context);
     if (this.isObservable(resultOrStream)) {
       (resultOrStream.pipe(publish()) as ConnectableObservable<any>).connect();
     }

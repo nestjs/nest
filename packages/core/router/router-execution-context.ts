@@ -13,7 +13,7 @@ import {
   RENDER_METADATA,
   ROUTE_ARGS_METADATA,
 } from '@nestjs/common/constants';
-import { RouteParamsMetadata } from '@nestjs/common/decorators';
+import { RouteParamMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { ContextType, Controller } from '@nestjs/common/interfaces';
 import {
@@ -248,7 +248,7 @@ export class RouterExecutionContext {
 
   public exchangeKeysForValues(
     keys: string[],
-    metadata: RouteParamsMetadata,
+    metadata: Record<number, RouteParamMetadata>,
     moduleContext: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -284,9 +284,9 @@ export class RouterExecutionContext {
   }
 
   public getCustomFactory(
-    factory: (...args: any[]) => void,
-    data: any,
-  ): (...args: any[]) => any {
+    factory: (...args: unknown[]) => void,
+    data: unknown,
+  ): (...args: unknown[]) => unknown {
     return isFunction(factory)
       ? (req, res, next) => factory(data, req)
       : () => null;
@@ -298,9 +298,9 @@ export class RouterExecutionContext {
       metatype,
       type,
       data,
-    }: { metatype: any; type: RouteParamtypes; data: any },
+    }: { metatype: unknown; type: RouteParamtypes; data: unknown },
     pipes: PipeTransform[],
-  ): Promise<any> {
+  ): Promise<unknown> {
     if (
       (type === RouteParamtypes.BODY ||
         type === RouteParamtypes.QUERY ||
@@ -348,25 +348,26 @@ export class RouterExecutionContext {
       res: TResponse,
       next: Function,
     ) => {
-      await Promise.all(
-        paramsOptions.map(async param => {
-          const {
-            index,
-            extractValue,
-            type,
-            data,
-            metatype,
-            pipes: paramPipes,
-          } = param;
-          const value = extractValue(req, res, next);
+      const resolveParamValue = async (
+        param: ParamProperties & { metatype?: any },
+      ) => {
+        const {
+          index,
+          extractValue,
+          type,
+          data,
+          metatype,
+          pipes: paramPipes,
+        } = param;
+        const value = extractValue(req, res, next);
 
-          args[index] = await this.getParamValue(
-            value,
-            { metatype, type, data } as any,
-            pipes.concat(paramPipes),
-          );
-        }),
-      );
+        args[index] = await this.getParamValue(
+          value,
+          { metatype, type, data } as any,
+          pipes.concat(paramPipes),
+        );
+      };
+      await Promise.all(paramsOptions.map(resolveParamValue));
     };
     return paramsOptions.length ? pipesFn : null;
   }
