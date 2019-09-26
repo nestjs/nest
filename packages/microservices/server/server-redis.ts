@@ -89,13 +89,12 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet);
     }
-    const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(
       pub,
-      pattern,
+      channel,
       (packet as IncomingRequest).id,
     );
-    const handler = this.getHandlerByPattern(pattern);
+    const handler = this.getHandlerByPattern(channel);
 
     if (!handler) {
       const status = 'error';
