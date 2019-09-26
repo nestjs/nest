@@ -43,13 +43,13 @@ export class Reflector {
   }
 
   /**
-   * Retrieve metadata for a specified key for a specified set of targets and concat results.
+   * Retrieve metadata for a specified key for a specified set of targets and merge results.
    *
    * @param metadataKey lookup key for metadata to retrieve
    * @param targets context (decorated objects) to retrieve metadata from
    *
    */
-  public getAllAndConcat<TResult extends any[] = any[], TKey = any>(
+  public getAllAndMerge<TResult extends any[] = any[], TKey = any>(
     metadataKey: TKey,
     targets: (Type<any> | Function)[],
   ): TResult {
@@ -64,7 +64,7 @@ export class Reflector {
           ...b,
         };
       }
-      return b;
+      return [a, b];
     });
   }
 
