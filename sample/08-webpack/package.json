@@ -17,11 +17,11 @@
     "typescript": "3.6.3"
   },
   "devDependencies": {
-    "@types/node": "12.7.5",
+    "@types/node": "12.7.8",
     "ts-loader": "6.1.2",
     "ts-node": "8.4.1",
     "tslint": "5.20.0",
-    "webpack": "4.40.2",
+    "webpack": "4.41.0",
     "webpack-cli": "3.3.9",
     "webpack-node-externals": "1.7.2"
   }

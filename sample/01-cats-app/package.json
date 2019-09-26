@@ -21,14 +21,14 @@
     "@nestjs/testing": "6.7.2",
     "@nestjs/websockets": "6.7.2",
     "class-transformer": "0.2.3",
-    "class-validator": "0.10.0",
+    "class-validator": "0.10.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "typescript": "3.6.3"
   },
   "devDependencies": {
     "@types/jest": "24.0.18",
-    "@types/node": "10.14.18",
+    "@types/node": "10.14.19",
     "jest": "24.9.0",
     "supertest": "4.0.2",
     "ts-jest": "24.1.0",

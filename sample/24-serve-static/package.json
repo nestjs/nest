@@ -15,13 +15,13 @@
     "@nestjs/serve-static": "1.0.1",
     "@nestjs/platform-express": "6.7.2",
     "class-transformer": "0.2.3",
-    "class-validator": "0.10.0",
+    "class-validator": "0.10.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "typescript": "3.6.3"
   },
   "devDependencies": {
-    "@types/node": "10.14.18",
+    "@types/node": "10.14.19",
     "ts-node": "8.4.1",
     "tslint": "5.20.0"
   }
