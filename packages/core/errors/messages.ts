@@ -48,12 +48,17 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
 
   let message = `\nNest can't resolve dependencies of the ${type.toString()}`;
 
-  if (isNil(index)) {
-    message += `.\nPlease make sure that the "${key.toString()}" property is available in the current context.
-
+  const potentialSolutions = `\n
 Potential solutions:
 - If ${name} is a provider, is it part of the current ${moduleName}?
+- If ${name} is exported from a separate @Module, is that module imported within ${moduleName}?
+  @Module({
+    imports: [ /* the Module containing ${name} */ ]
+  })
 `;
+
+  if (isNil(index)) {
+    message += `.\nPlease make sure that the "${key.toString()}" property is available in the current context.${potentialSolutions}`;
     return message;
   }
   const dependenciesName = (dependencies || []).map(getDependencyName);
@@ -63,15 +68,8 @@ Potential solutions:
   message += dependenciesName.join(', ');
   message += `). \nPlease make sure that the argument ${name} at index [${index}] is available in the ${getModuleName(
     module,
-  )} context.
-
-Potential solutions:
-- If ${name} is a provider, is it part of the current ${moduleName}?
-- If ${name} is exported from a separate @Module, is that module imported within ${moduleName}?
-  @Module({
-    imports: [ /* the Module containing ${name} */ ]
-  })
-`;
+  )} context.`
+  message += potentialSolutions;
 
   return message;
 };
