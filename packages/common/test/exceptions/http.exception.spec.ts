@@ -62,27 +62,25 @@ describe('HttpException', () => {
   it('should be serializable', () => {
     const message = 'Some Error';
     const error = new HttpException(message, 400);
-    expect(`${error}`).to.be.eql(
-      `Error: HTTP Exception (response status code: 400) - ${message}`,
-    );
+    expect(`${error}`).to.be.eql(`Error: ${message}`);
   });
 
   describe('when "response" is an object', () => {
     it('should use default message', () => {
       const obj = { foo: 'bar' };
       const error = new HttpException(obj, 400);
-      expect(`${error}`).to.be.eql(
-        `Error: HTTP Exception (response status code: 400)`,
-      );
+      const badRequestError = new BadRequestException(obj);
+
+      expect(`${error}`).to.be.eql(`Error: Http Exception`);
+      expect(`${badRequestError}`).to.be.eql(`Error: Bad Request Exception`);
       expect(`${error}`.includes('[object Object]')).to.not.be.true;
+      expect(`${badRequestError}`.includes('[object Object]')).to.not.be.true;
     });
     describe('otherwise', () => {
       it('should concat strings', () => {
         const test = 'test message';
         const error = new HttpException(test, 400);
-        expect(`${error}`).to.be.eql(
-          `Error: HTTP Exception (response status code: 400) - ${test}`,
-        );
+        expect(`${error}`).to.be.eql(`Error: ${test}`);
         expect(`${error}`.includes('[object Object]')).to.not.be.true;
       });
     });
