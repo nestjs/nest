@@ -7,6 +7,7 @@ import {
   NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_URL,
 } from '../constants';
+import { RedisContext } from '../ctx-host';
 import {
   ClientOpts,
   RedisClient,
@@ -86,8 +87,10 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   ) {
     const rawMessage = this.parseMessage(buffer);
     const packet = this.deserializer.deserialize(rawMessage, { channel });
+    const redisCtx = new RedisContext([channel]);
+
     if (isUndefined((packet as IncomingRequest).id)) {
-      return this.handleEvent(channel, packet);
+      return this.handleEvent(channel, packet, redisCtx);
     }
     const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(
@@ -107,7 +110,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
       return publish(noHandlerPacket);
     }
     const response$ = this.transformToObservable(
-      await handler(packet.data),
+      await handler(packet.data, redisCtx),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
   }

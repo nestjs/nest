@@ -48,9 +48,15 @@ export class WebSocketsController {
   ) {
     const nativeMessageHandlers = this.metadataExplorer.explore(instance);
     const messageHandlers = nativeMessageHandlers.map(
-      ({ callback, message }) => ({
+      ({ callback, message, methodName }) => ({
         message,
-        callback: this.contextCreator.create(instance, callback, module),
+        methodName,
+        callback: this.contextCreator.create(
+          instance,
+          callback,
+          module,
+          methodName,
+        ),
       }),
     );
     const observableServer = this.socketServerProvider.scanForSocketServer(

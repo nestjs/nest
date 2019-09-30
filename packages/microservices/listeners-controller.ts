@@ -55,6 +55,7 @@ export class ListenersController {
             instance,
             targetCallback,
             moduleKey,
+            methodKey,
           );
           return server.addHandler(pattern, proxy, isEventHandler);
         }
@@ -115,6 +116,7 @@ export class ListenersController {
           contextInstance,
           contextInstance[methodKey],
           moduleKey,
+          methodKey,
           contextId,
           wrapper.id,
         );

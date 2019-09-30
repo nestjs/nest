@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { SubscribeMessage } from '../../utils/subscribe-message.decorator';
+import { MESSAGE_MAPPING_METADATA } from '../../constants';
+import { SubscribeMessage } from '../../decorators/subscribe-message.decorator';
 
 describe('@SubscribeMessage', () => {
   class TestGateway {
@@ -9,7 +10,7 @@ describe('@SubscribeMessage', () => {
 
   it('should decorate transport with expected metadata', () => {
     const isMessageMapping = Reflect.getMetadata(
-      '__isMessageMapping',
+      MESSAGE_MAPPING_METADATA,
       TestGateway.fn,
     );
     const message = Reflect.getMetadata('message', TestGateway.fn);
