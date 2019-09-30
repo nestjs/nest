@@ -46,7 +46,7 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   const { index, name = 'dependency', dependencies, key } = unknownDependencyContext;
   const moduleName = getModuleName(module) || 'Module';
 
-  let message = `\nNest can't resolve dependencies of the ${type.toString()}`;
+  let message = `Nest can't resolve dependencies of the ${type.toString()}`;
 
   const potentialSolutions = `\n
 Potential solutions:
@@ -58,7 +58,7 @@ Potential solutions:
 `;
 
   if (isNil(index)) {
-    message += `.\nPlease make sure that the "${key.toString()}" property is available in the current context.${potentialSolutions}`;
+    message += `. Please make sure that the "${key.toString()}" property is available in the current context.${potentialSolutions}`;
     return message;
   }
   const dependenciesName = (dependencies || []).map(getDependencyName);
@@ -66,7 +66,7 @@ Potential solutions:
 
   message += ` (`;
   message += dependenciesName.join(', ');
-  message += `). \nPlease make sure that the argument ${name} at index [${index}] is available in the ${getModuleName(
+  message += `). Please make sure that the argument ${name} at index [${index}] is available in the ${getModuleName(
     module,
   )} context.`;
   message += potentialSolutions;
