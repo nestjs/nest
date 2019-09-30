@@ -125,11 +125,11 @@ export class FastifyAdapter extends AbstractHttpAdapter {
   }
 
   public getRequestMethod(request: any): string {
-    return request.raw.method;
+    return request.raw ? request.raw.method : request.method;
   }
 
   public getRequestUrl(request: any): string {
-    return request.raw.url;
+    return request.raw ? request.raw.url : request.url;
   }
 
   public enableCors(options: CorsOptions) {

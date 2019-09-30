@@ -82,7 +82,7 @@ export function isRouteExcluded(
       : originalUrl;
 
   const isExcluded = excludedRoutes.some(({ method, regex }) => {
-    if (RequestMethod[method] === reqMethod) {
+    if (RequestMethod.ALL === method || RequestMethod[method] === reqMethod) {
       return regex.exec(pathname);
     }
     return false;
