@@ -2,6 +2,7 @@ import { ParamData } from '@nestjs/common';
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
 import { Controller, PipeTransform } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { ExecutionContextHost } from './execution-context-host';
 
 export interface ParamProperties<T = any, IExtractor extends Function = any> {
   index: number;
@@ -58,7 +59,7 @@ export class ContextUtils {
     data: unknown,
   ): (...args: unknown[]) => unknown {
     return isFunction(factory)
-      ? (...args: unknown[]) => factory(data, args)
+      ? (...args: unknown[]) => factory(data, new ExecutionContextHost(args))
       : () => null;
   }
 }

@@ -16,11 +16,7 @@ import {
 import { RouteParamMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { ContextType, Controller } from '@nestjs/common/interfaces';
-import {
-  isEmpty,
-  isFunction,
-  isString,
-} from '@nestjs/common/utils/shared.utils';
+import { isEmpty, isString } from '@nestjs/common/utils/shared.utils';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
@@ -265,7 +261,10 @@ export class RouterExecutionContext {
 
       if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {
         const { factory } = metadata[key];
-        const customExtractValue = this.getCustomFactory(factory, data);
+        const customExtractValue = this.contextUtils.getCustomFactory(
+          factory,
+          data,
+        );
         return { index, extractValue: customExtractValue, type, data, pipes };
       }
       const numericType = Number(type);
@@ -281,15 +280,6 @@ export class RouterExecutionContext {
         });
       return { index, extractValue, type: numericType, data, pipes };
     });
-  }
-
-  public getCustomFactory(
-    factory: (...args: unknown[]) => void,
-    data: unknown,
-  ): (...args: unknown[]) => unknown {
-    return isFunction(factory)
-      ? (req, res, next) => factory(data, req)
-      : () => null;
   }
 
   public async getParamValue<T>(
