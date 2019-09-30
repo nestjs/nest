@@ -120,7 +120,6 @@ describe('ClientRedis', () => {
   describe('createResponseCallback', () => {
     let callback: sinon.SinonSpy, subscription;
     const responseMessage = {
-      err: null,
       response: 'test',
       id: '1',
     };
@@ -136,7 +135,7 @@ describe('ClientRedis', () => {
       it('should call callback with expected arguments', () => {
         expect(
           callback.calledWith({
-            err: null,
+            err: undefined,
             response: responseMessage.response,
           }),
         ).to.be.true;
@@ -164,7 +163,7 @@ describe('ClientRedis', () => {
           callback.calledWith({
             isDisposed: true,
             response: responseMessage.response,
-            err: null,
+            err: undefined,
           }),
         ).to.be.true;
       });
