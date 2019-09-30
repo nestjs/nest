@@ -83,10 +83,7 @@ export const INVALID_MODULE_MESSAGE = (
   text: TemplateStringsArray,
   scope: string,
 ) =>
-  `
-Nest cannot create the module instance.
-Often, this is because of a circular dependency between modules.
-Use forwardRef() to avoid it.
+  `Nest cannot create the module instance. Often, this is because of a circular dependency between modules. Use forwardRef() to avoid it.
 
 (Read more: https://docs.nestjs.com/fundamentals/circular-dependency.)
 Scope [${scope}]
@@ -96,9 +93,7 @@ export const UNKNOWN_EXPORT_MESSAGE = (
   token: string = 'item',
   module: string,
 ) => {
-  return `
-Nest cannot export a provider/module that is not a part of the currently processed module (${module}).
-Please verify whether the exported ${token} is available in this particular context.
+  return `Nest cannot export a provider/module that is not a part of the currently processed module (${module}). Please verify whether the exported ${token} is available in this particular context.
 
 Possible Solutions:
 - Is ${token} part of the relevant providers/imports within ${module}?
