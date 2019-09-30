@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { RouteParamsMetadata } from '../../../common';
+import { RouteParamMetadata } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
@@ -53,7 +53,7 @@ describe('RouterExecutionContext', () => {
   });
   describe('create', () => {
     describe('when callback metadata is not undefined', () => {
-      let metadata: RouteParamsMetadata;
+      let metadata: Record<number, RouteParamMetadata>;
       let exchangeKeysForValuesSpy: sinon.SinonSpy;
       beforeEach(() => {
         metadata = {

@@ -9,9 +9,9 @@ import {
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MESSAGES } from '@nestjs/core/constants';
+import { optionalRequire } from '@nestjs/core/helpers/optional-require';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
-import * as optional from 'optional';
 import { Transport } from './enums/transport.enum';
 import { CustomTransportStrategy } from './interfaces/custom-transport-strategy.interface';
 import { MicroserviceOptions } from './interfaces/microservice-configuration.interface';
@@ -19,8 +19,10 @@ import { MicroservicesModule } from './microservices-module';
 import { Server } from './server/server';
 import { ServerFactory } from './server/server-factory';
 
-const { SocketModule } =
-  optional('@nestjs/websockets/socket-module') || ({} as any);
+const { SocketModule } = optionalRequire(
+  '@nestjs/websockets/socket-module',
+  () => require('@nestjs/websockets/socket-module'),
+);
 
 export class NestMicroservice extends NestApplicationContext
   implements INestMicroservice {

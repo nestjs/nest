@@ -13,8 +13,7 @@
   },
   "dependencies": {
     "iterare": "1.2.0",
-    "json-socket": "0.3.0",
-    "optional": "0.1.4"
+    "json-socket": "0.3.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^6.0.0",
