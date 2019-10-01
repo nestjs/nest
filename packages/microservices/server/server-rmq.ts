@@ -6,11 +6,13 @@ import {
   DISCONNECT_EVENT,
   NO_MESSAGE_HANDLER,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
+  RQM_DEFAULT_NOACK,
   RQM_DEFAULT_PREFETCH_COUNT,
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
 } from '../constants';
+import { RmqContext } from '../ctx-host';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
 import {
   IncomingRequest,
@@ -83,24 +85,35 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   }
 
   public async setupChannel(channel: any, callback: Function) {
+    const noAck =
+      this.getOptionsProp(this.options, 'noAck') || RQM_DEFAULT_NOACK;
+
     await channel.assertQueue(this.queue, this.queueOptions);
     await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
-    channel.consume(this.queue, (msg: any) => this.handleMessage(msg), {
-      noAck: true,
-    });
+    channel.consume(
+      this.queue,
+      (msg: Record<string, any>) => this.handleMessage(msg, channel),
+      {
+        noAck,
+      },
+    );
     callback();
   }
 
-  public async handleMessage(message: any): Promise<void> {
-    const { content, properties } = message;
+  public async handleMessage(
+    message: Record<string, any>,
+    channel: any,
+  ): Promise<void> {
+    const { content, properties, fields } = message;
     const rawMessage = JSON.parse(content.toString());
     const packet = this.deserializer.deserialize(rawMessage);
     const pattern = isString(packet.pattern)
       ? packet.pattern
       : JSON.stringify(packet.pattern);
 
+    const rmqContext = new RmqContext([message, channel]);
     if (isUndefined((packet as IncomingRequest).id)) {
-      return this.handleEvent(pattern, packet);
+      return this.handleEvent(pattern, packet, rmqContext);
     }
     const handler = this.getHandlerByPattern(pattern);
 
@@ -118,7 +131,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       );
     }
     const response$ = this.transformToObservable(
-      await handler(packet.data),
+      await handler(packet.data, rmqContext),
     ) as Observable<any>;
 
     const publish = <T>(data: T) =>

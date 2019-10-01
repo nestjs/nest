@@ -9,7 +9,7 @@ import { WsContextCreator } from '../context/ws-context-creator';
 import { InvalidSocketPortException } from '../errors/invalid-socket-port.exception';
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
 import { SocketServerProvider } from '../socket-server-provider';
-import { WebSocketGateway } from '../utils/socket-gateway.decorator';
+import { WebSocketGateway } from '../decorators/socket-gateway.decorator';
 import { WebSocketsController } from '../web-sockets-controller';
 
 class NoopAdapter extends AbstractWsAdapter {

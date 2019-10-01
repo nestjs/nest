@@ -1,4 +1,4 @@
-export type CustomParamFactory<TData = any, TRequest = any, TResult = any> = (
+export type CustomParamFactory<TData = any, TInput = any, TOutput = any> = (
   data: TData,
-  req: TRequest,
-) => TResult;
+  input: TInput,
+) => TOutput;
