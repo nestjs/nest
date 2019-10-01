@@ -101,9 +101,15 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   public getHandlerByPattern(pattern: string): MessageHandler | null {
     const route = this.getRouteFromPattern(pattern);
 
-    for (const [key, value] of this.messageHandlers) {
-      if (this.matchMqttPattern(key, route)) {
-        return value;
+    if (this.messageHandlers.has(route)) {
+      return this.messageHandlers.get(route);
+    }
+
+    if (pattern.indexOf(MQTT_WILDCARD_SINGLE) !== -1 || pattern.indexOf(MQTT_WILDCARD_ALL) !== -1) {
+      for (const [key, value] of this.messageHandlers) {
+        if (this.matchMqttPattern(key, route)) {
+          return value;
+        }
       }
     }
 

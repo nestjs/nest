@@ -214,7 +214,7 @@ describe('ServerMqtt', () => {
     it('should return false when topic does not matches with provided pattern', () => {
       expect(server.matchMqttPattern('root/test/+', 'root/invalid/child')).to.be.false;
       expect(server.matchMqttPattern('root/test/#', 'root/invalid/child')).to.be.false;
-      expect(server.matchMqttPattern('root/#/grandchild', 'root/test/child/grandchild')).to.be.false;
+      expect(server.matchMqttPattern('root/#/grandchild', 'root/invalid/child/grandchild')).to.be.false;
       expect(server.matchMqttPattern('root/+/grandchild', 'root/invalid/child/grandchild')).to.be.false;
     });
   });
