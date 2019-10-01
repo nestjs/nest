@@ -105,11 +105,13 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
       return this.messageHandlers.get(route);
     }
 
-    if (pattern.indexOf(MQTT_WILDCARD_SINGLE) !== -1 || pattern.indexOf(MQTT_WILDCARD_ALL) !== -1) {
-      for (const [key, value] of this.messageHandlers) {
-        if (this.matchMqttPattern(key, route)) {
-          return value;
-        }
+    for (const [key, value] of this.messageHandlers) {
+      if (key.indexOf(MQTT_WILDCARD_SINGLE) === -1 && key.indexOf(MQTT_WILDCARD_ALL) === -1) {
+        continue;
+      }
+
+      if (this.matchMqttPattern(key, route)) {
+        return value;
       }
     }
 
