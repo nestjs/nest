@@ -217,10 +217,7 @@ export class RouterExplorer {
 
   private applyHostFilter(host, handler) {
     if (!host) {
-      return (req, res, next) => {
-        req.hosts = {};
-        return handler(req, res, next);
-      };
+      return handler;
     }
 
     const httpAdapterRef = this.container.getHttpAdapterRef();
