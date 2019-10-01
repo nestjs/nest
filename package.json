@@ -63,7 +63,7 @@
     "grpc": "1.24.0",
     "http2": "3.3.7",
     "iterare": "1.2.0",
-    "kafkajs": "1.10.0",
+    "kafkajs": "1.11.0",
     "merge-graphql-schemas": "1.6.1",
     "mqtt": "3.0.0",
     "multer": "1.4.2",
