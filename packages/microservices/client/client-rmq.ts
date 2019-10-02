@@ -14,8 +14,8 @@ import {
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
-} from './../constants';
-import { WritePacket } from './../interfaces';
+} from '../constants';
+import { WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
 let rqmPackage: any = {};

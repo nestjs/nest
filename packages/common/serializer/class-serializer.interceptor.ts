@@ -8,7 +8,7 @@ import {
   CallHandler,
   ExecutionContext,
   NestInterceptor,
-} from './../interfaces';
+} from '../interfaces';
 import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants';
 
 let classTransformer: any = {};
