@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common/interfaces';
 import * as hash from 'object-hash';
-import { ContextId } from './../injector/instance-wrapper';
+import { ContextId } from '../injector/instance-wrapper';
 import { ParamProperties } from './context-utils';
 
 export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');

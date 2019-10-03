@@ -1,6 +1,6 @@
 import { RequestMethod } from '../../enums';
-import { CorsOptions } from './../../interfaces/external/cors-options.interface';
-import { NestApplicationOptions } from './../../interfaces/nest-application-options.interface';
+import { CorsOptions } from '../../interfaces/external/cors-options.interface';
+import { NestApplicationOptions } from '../../interfaces/nest-application-options.interface';
 
 export type ErrorHandler<TRequest = any, TResponse = any> = (
   error: any,

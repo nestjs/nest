@@ -30,7 +30,7 @@ import { ConsumerDeserializer } from '../interfaces/deserializer.interface';
 import { ConsumerSerializer } from '../interfaces/serializer.interface';
 import { IdentitySerializer } from '../serializers/identity.serializer';
 import { transformPatternToRoute } from '../utils';
-import { NO_EVENT_HANDLER } from './../constants';
+import { NO_EVENT_HANDLER } from '../constants';
 
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
