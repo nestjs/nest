@@ -53,7 +53,7 @@
     "cors": "2.8.5",
     "engine.io-client": "3.4.0",
     "express": "4.17.1",
-    "fast-json-stringify": "1.15.4",
+    "fast-json-stringify": "1.15.5",
     "fast-safe-stringify": "2.0.7",
     "fastify": "2.9.0",
     "fastify-cors": "2.1.3",
