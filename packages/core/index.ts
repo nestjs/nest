@@ -1,6 +1,6 @@
 /*
  * Nest @core
- * Copyright(c) 2017 - 2018 Kamil Mysliwiec
+ * Copyright(c) 2017 - 2019 Kamil Mysliwiec
  * https://nestjs.com
  * MIT Licensed
  */
@@ -14,6 +14,7 @@ export * from './injector';
 export * from './middleware';
 export * from './nest-application';
 export * from './nest-application-context';
+export * from './application-config';
 export { NestFactory } from './nest-factory';
 export * from './router';
 export * from './services';

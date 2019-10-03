@@ -9,9 +9,9 @@ import {
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MESSAGES } from '@nestjs/core/constants';
+import { optionalRequire } from '@nestjs/core/helpers/optional-require';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
-import * as optional from 'optional';
 import { Transport } from './enums/transport.enum';
 import { CustomTransportStrategy } from './interfaces/custom-transport-strategy.interface';
 import { MicroserviceOptions } from './interfaces/microservice-configuration.interface';
@@ -19,8 +19,10 @@ import { MicroservicesModule } from './microservices-module';
 import { Server } from './server/server';
 import { ServerFactory } from './server/server-factory';
 
-const { SocketModule } =
-  optional('@nestjs/websockets/socket-module') || ({} as any);
+const { SocketModule } = optionalRequire(
+  '@nestjs/websockets/socket-module',
+  () => require('@nestjs/websockets/socket-module'),
+);
 
 export class NestMicroservice extends NestApplicationContext
   implements INestMicroservice {
@@ -30,7 +32,6 @@ export class NestMicroservice extends NestApplicationContext
   private microserviceConfig: MicroserviceOptions;
   private server: Server & CustomTransportStrategy;
   private isTerminated = false;
-  private isInitialized = false;
   private isInitHookCalled = false;
 
   constructor(
@@ -104,6 +105,15 @@ export class NestMicroservice extends NestApplicationContext
     return this;
   }
 
+  public async init(): Promise<this> {
+    if (this.isInitialized) {
+      return this;
+    }
+    await super.init();
+    await this.registerModules();
+    return this;
+  }
+
   public listen(callback: () => void) {
     !this.isInitialized && this.registerModules();
 
@@ -117,15 +127,19 @@ export class NestMicroservice extends NestApplicationContext
 
   public async close(): Promise<any> {
     await this.server.close();
-    !this.isTerminated && (await this.closeApplication());
+    if (this.isTerminated) {
+      return;
+    }
+    this.setIsTerminated(true);
+    await this.closeApplication();
   }
 
   public setIsInitialized(isInitialized: boolean) {
     this.isInitialized = isInitialized;
   }
 
-  public setIsTerminated(isTerminaed: boolean) {
-    this.isTerminated = isTerminaed;
+  public setIsTerminated(isTerminated: boolean) {
+    this.isTerminated = isTerminated;
   }
 
   public setIsInitHookCalled(isInitHookCalled: boolean) {

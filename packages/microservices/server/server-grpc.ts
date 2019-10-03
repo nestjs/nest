@@ -1,6 +1,10 @@
-import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { fromEvent } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import {
+  isObject,
+  isString,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
+import { EMPTY, fromEvent, Subject } from 'rxjs';
+import { catchError, takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
   GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
@@ -8,13 +12,11 @@ import {
   GRPC_DEFAULT_PROTO_LOADER,
   GRPC_DEFAULT_URL,
 } from '../constants';
+import { GrpcMethodStreamingType } from '../decorators';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
-import { CustomTransportStrategy } from '../interfaces';
-import {
-  GrpcOptions,
-  MicroserviceOptions,
-} from '../interfaces/microservice-configuration.interface';
+import { CustomTransportStrategy, MessageHandler } from '../interfaces';
+import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 let grpcPackage: any = {};
@@ -25,19 +27,20 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   metadata: TMetadata;
   end: Function;
   write: Function;
+  on: Function;
+  emit: Function;
 }
+
 export class ServerGrpc extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private grpcClient: any;
 
-  constructor(private readonly options: MicroserviceOptions['options']) {
+  constructor(private readonly options: GrpcOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
+    this.url = this.getOptionsProp(options, 'url') || GRPC_DEFAULT_URL;
 
     const protoLoader =
-      this.getOptionsProp<GrpcOptions>(options, 'protoLoader') ||
-      GRPC_DEFAULT_PROTO_LOADER;
+      this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
 
     grpcPackage = this.loadPackage('grpc', ServerGrpc.name, () =>
       require('grpc'),
@@ -58,10 +61,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public async bindEvents() {
     const grpcContext = this.loadProto();
-    const packageOpt = this.getOptionsProp<GrpcOptions>(
-      this.options,
-      'package',
-    );
+    const packageOpt = this.getOptionsProp(this.options, 'package');
 
     // if packages more then 1
     const packageNames = Array.isArray(packageOpt) ? packageOpt : [packageOpt];
@@ -86,36 +86,110 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return services;
   }
 
+  /**
+   * Will create service mapping from gRPC generated Object to handlers
+   * defined with @GrpcMethod or @GrpcStreamMethod annotations
+   *
+   * @param grpcService
+   * @param name
+   */
   public async createService(grpcService: any, name: string) {
     const service = {};
 
     // tslint:disable-next-line:forin
     for (const methodName in grpcService.prototype) {
-      const methodHandler = this.getHandlerByPattern(
-        this.createPattern(name, methodName),
-      );
+      let pattern = '';
+      let methodHandler = null;
+      let streamingType = GrpcMethodStreamingType.NO_STREAMING;
+
+      const methodFunction = grpcService.prototype[methodName];
+      const methodReqStreaming = methodFunction.requestStream;
+
+      if (!isUndefined(methodReqStreaming) && methodReqStreaming) {
+        // Try first pattern to be presented, RX streaming pattern would be
+        // a preferable pattern to select among a few defined
+        pattern = this.createPattern(
+          name,
+          methodName,
+          GrpcMethodStreamingType.RX_STREAMING,
+        );
+        methodHandler = this.messageHandlers.get(pattern);
+        streamingType = GrpcMethodStreamingType.RX_STREAMING;
+        // If first pattern didn't match to any of handlers then try
+        // pass-through handler to be presented
+        if (!methodHandler) {
+          pattern = this.createPattern(
+            name,
+            methodName,
+            GrpcMethodStreamingType.PT_STREAMING,
+          );
+          methodHandler = this.messageHandlers.get(pattern);
+          streamingType = GrpcMethodStreamingType.PT_STREAMING;
+        }
+      } else {
+        pattern = this.createPattern(
+          name,
+          methodName,
+          GrpcMethodStreamingType.NO_STREAMING,
+        );
+        // Select handler if any presented for No-Streaming pattern
+        methodHandler = this.messageHandlers.get(pattern);
+        streamingType = GrpcMethodStreamingType.NO_STREAMING;
+      }
       if (!methodHandler) {
         continue;
       }
       service[methodName] = await this.createServiceMethod(
         methodHandler,
         grpcService.prototype[methodName],
+        streamingType,
       );
     }
     return service;
   }
 
-  public createPattern(service: string, methodName: string): string {
+  /**
+   * Will create a string of a JSON serialized format
+   *
+   * @param service name of the service which should be a match to gRPC service definition name
+   * @param methodName name of the method which is coming after rpc keyword
+   * @param streaming GrpcMethodStreamingType parameter which should correspond to
+   * stream keyword in gRPC service request part
+   */
+  public createPattern(
+    service: string,
+    methodName: string,
+    streaming: GrpcMethodStreamingType,
+  ): string {
     return JSON.stringify({
       service,
       rpc: methodName,
+      streaming,
     });
   }
 
+  /**
+   * Will return async function which will handle gRPC call
+   * with Rx streams or as a direct call passthrough
+   *
+   * @param methodHandler
+   * @param protoNativeHandler
+   */
   public createServiceMethod(
     methodHandler: Function,
     protoNativeHandler: any,
+    streamType: GrpcMethodStreamingType,
   ): Function {
+    // If proto handler has request stream as "true" then we expect it to have
+    // streaming from the side of requester
+    if (protoNativeHandler.requestStream) {
+      // If any handlers were defined with GrpcStreamMethod annotation use RX
+      if (streamType === GrpcMethodStreamingType.RX_STREAMING)
+        return this.createStreamDuplexMethod(methodHandler);
+      // If any handlers were defined with GrpcStreamCall annotation
+      else if (streamType === GrpcMethodStreamingType.PT_STREAMING)
+        return this.createStreamCallMethod(methodHandler);
+    }
     return protoNativeHandler.responseStream
       ? this.createStreamServiceMethod(methodHandler)
       : this.createUnaryServiceMethod(methodHandler);
@@ -136,9 +210,56 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(call.request, call.metadata);
       const result$ = this.transformToObservable(await handler);
       await result$
-        .pipe(takeUntil(fromEvent(call as any, CANCEL_EVENT)))
-        .forEach(data => call.write(data));
+      .pipe(
+        takeUntil(fromEvent(call as any, CANCEL_EVENT)),
+        catchError(err => {
+          call.emit('error', err);
+          return EMPTY;
+        }),
+      )
+      .forEach(data => call.write(data));
       call.end();
+    };
+  }
+
+  public createStreamDuplexMethod(methodHandler: Function) {
+    return async (call: GrpcCall) => {
+      const req = new Subject<any>();
+      call.on('data', (m: any) => req.next(m));
+      call.on('error', (e: any) => {
+        // Check if error means that stream ended on other end
+        if (
+          String(e)
+          .toLowerCase()
+          .indexOf('cancelled') > -1
+        ) {
+          call.end();
+          return;
+        }
+        // If another error then just pass it along
+        req.error(e);
+      });
+      call.on('end', () => req.complete());
+
+      const handler = methodHandler(req.asObservable());
+      const res = this.transformToObservable(await handler);
+      await res
+      .pipe(
+        takeUntil(fromEvent(call as any, CANCEL_EVENT)),
+        catchError(err => {
+          call.emit('error', err);
+          return EMPTY;
+        }),
+      )
+      .forEach(m => call.write(m));
+
+      call.end();
+    };
+  }
+
+  public createStreamCallMethod(methodHandler: Function) {
+    return async (call: GrpcCall) => {
+      methodHandler(call);
     };
   }
 
@@ -155,23 +276,30 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     }
   }
 
+  public addHandler(
+    pattern: any,
+    callback: MessageHandler,
+    isEventHandler = false,
+  ) {
+    const route = isString(pattern) ? pattern : JSON.stringify(pattern);
+    callback.isEventHandler = isEventHandler;
+    this.messageHandlers.set(route, callback);
+  }
+
   public createClient(): any {
     const server = new grpcPackage.Server({
-      'grpc.max_send_message_length': this.getOptionsProp<GrpcOptions>(
+      'grpc.max_send_message_length': this.getOptionsProp(
         this.options,
         'maxSendMessageLength',
         GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
       ),
-      'grpc.max_receive_message_length': this.getOptionsProp<GrpcOptions>(
+      'grpc.max_receive_message_length': this.getOptionsProp(
         this.options,
         'maxReceiveMessageLength',
         GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
       ),
     });
-    const credentials = this.getOptionsProp<GrpcOptions>(
-      this.options,
-      'credentials',
-    );
+    const credentials = this.getOptionsProp(this.options, 'credentials');
     server.bind(
       this.url,
       credentials || grpcPackage.ServerCredentials.createInsecure(),
@@ -190,8 +318,8 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public loadProto(): any {
     try {
-      const file = this.getOptionsProp<GrpcOptions>(this.options, 'protoPath');
-      const loader = this.getOptionsProp<GrpcOptions>(this.options, 'loader');
+      const file = this.getOptionsProp(this.options, 'protoPath');
+      const loader = this.getOptionsProp(this.options, 'loader');
 
       const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
       const packageObject = grpcPackage.loadPackageDefinition(
@@ -204,7 +332,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         err && err.message ? err.message : invalidProtoError.message;
 
       this.logger.error(message, invalidProtoError.stack);
-      throw invalidProtoError;
+      throw err;
     }
   }
 

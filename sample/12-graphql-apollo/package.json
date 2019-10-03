@@ -10,22 +10,22 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.0.1",
-    "@nestjs/core": "6.0.1",
-    "@nestjs/graphql": "6.0.1",
-    "@nestjs/platform-express": "6.0.1",
-    "apollo-server-express": "2.4.8",
-    "class-transformer": "0.2.0",
-    "class-validator": "0.9.1",
-    "graphql": "14.1.1",
-    "graphql-subscriptions": "1.0.0",
+    "@nestjs/common": "6.8.0",
+    "@nestjs/core": "6.8.0",
+    "@nestjs/graphql": "6.5.3",
+    "@nestjs/platform-express": "6.8.0",
+    "apollo-server-express": "2.9.4",
+    "class-transformer": "0.2.3",
+    "class-validator": "0.10.1",
+    "graphql": "14.5.8",
+    "graphql-subscriptions": "1.1.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.4.0",
-    "typescript": "3.2.2"
+    "rxjs": "6.5.3",
+    "typescript": "3.6.3"
   },
   "devDependencies": {
-    "@types/node": "10.14.1",
-    "ts-node": "8.0.3",
-    "tslint": "5.14.0"
+    "@types/node": "10.14.19",
+    "ts-node": "8.4.1",
+    "tslint": "5.20.0"
   }
 }

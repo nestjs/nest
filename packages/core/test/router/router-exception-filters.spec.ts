@@ -4,11 +4,12 @@ import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
 import { ApplicationConfig } from '../../application-config';
 import { NestContainer } from '../../injector/container';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('RouterExceptionFilters', () => {
-  let moduleName: string;
+  let applicationConfig: ApplicationConfig;
   let exceptionFilter: RouterExceptionFilters;
 
   class CustomException {}
@@ -18,10 +19,10 @@ describe('RouterExceptionFilters', () => {
   }
 
   beforeEach(() => {
-    moduleName = 'Test';
+    applicationConfig = new ApplicationConfig();
     exceptionFilter = new RouterExceptionFilters(
       new NestContainer(),
-      new ApplicationConfig(),
+      applicationConfig,
       new NoopHttpAdapter({}),
     );
   });
@@ -72,6 +73,37 @@ describe('RouterExceptionFilters', () => {
         CustomException,
       ]);
       expect(resolved[0].func).to.be.a('function');
+    });
+  });
+  describe('getGlobalMetadata', () => {
+    describe('when contextId is static and inquirerId is nil', () => {
+      it('should return global filters', () => {
+        const expectedResult = applicationConfig.getGlobalFilters();
+        expect(exceptionFilter.getGlobalMetadata()).to.be.equal(expectedResult);
+      });
+    });
+    describe('otherwise', () => {
+      it('should merge static global with request/transient scoped filters', () => {
+        const globalFilters: any = ['test'];
+        const instanceWrapper = new InstanceWrapper();
+        const instance = 'request-scoped';
+        const scopedFilterWrappers = [instanceWrapper];
+
+        sinon
+          .stub(applicationConfig, 'getGlobalFilters')
+          .callsFake(() => globalFilters);
+        sinon
+          .stub(applicationConfig, 'getGlobalRequestFilters')
+          .callsFake(() => scopedFilterWrappers);
+        sinon
+          .stub(instanceWrapper, 'getInstanceByContextId')
+          .callsFake(() => ({ instance } as any));
+
+        expect(exceptionFilter.getGlobalMetadata({ id: 3 })).to.contains(
+          instance,
+          ...globalFilters,
+        );
+      });
     });
   });
 });

@@ -54,7 +54,7 @@ describe('Module', () => {
     const setSpy = sinon.spy(collection, 'set');
     (module as any)._injectables = collection;
 
-    module.addInjectable(TestProvider);
+    module.addInjectable(TestProvider, TestModule);
     expect(
       setSpy.calledWith(
         'TestProvider',
@@ -138,6 +138,16 @@ describe('Module', () => {
 
     module.addCustomProvider(provider as any, new Map());
     expect((addCustomFactory as sinon.SinonSpy).called).to.be.true;
+  });
+
+  it('should call "addCustomUseExisting" when "useExisting" property exists', () => {
+    const addCustomUseExisting = sinon.spy();
+    module.addCustomUseExisting = addCustomUseExisting;
+
+    const provider = { provide: 'test', useExisting: () => null };
+
+    module.addCustomUseExisting(provider as any, new Map());
+    expect((addCustomUseExisting as sinon.SinonSpy).called).to.be.true;
   });
 
   describe('addCustomClass', () => {
@@ -229,6 +239,36 @@ describe('Module', () => {
     });
   });
 
+  describe('addCustomUseExisting', () => {
+    const type = { name: 'TypeTest' };
+    const provider = { provide: type, useExisting: type, name: 'test' };
+
+    let setSpy;
+    beforeEach(() => {
+      const collection = new Map();
+      setSpy = sinon.spy(collection, 'set');
+      (module as any)._providers = collection;
+    });
+    it('should store provider', () => {
+      module.addCustomUseExisting(provider as any, (module as any)._providers);
+      const factoryFn = (module as any)._providers.get(provider.name).metatype;
+      expect(
+        setSpy.calledWith(
+          provider.name,
+          new InstanceWrapper({
+            host: module,
+            name: provider.name,
+            metatype: factoryFn,
+            instance: null,
+            inject: [provider.useExisting as any],
+            isResolved: false,
+          }),
+        ),
+      ).to.be.true;
+      expect(factoryFn(provider.useExisting)).to.be.eql(type);
+    });
+  });
+
   describe('when get instance', () => {
     describe('when metatype does not exists in providers collection', () => {
       beforeEach(() => {
@@ -272,21 +312,28 @@ describe('Module', () => {
 
   describe('replace', () => {
     describe('when provider', () => {
-      it('should call `addProvider`', () => {
-        const addProviderSpy = sinon.spy(module, 'addProvider');
+      it('should call `mergeWith`', () => {
+        const wrapper = {
+          mergeWith: sinon.spy(),
+        };
         sinon.stub(module, 'hasProvider').callsFake(() => true);
+        sinon.stub(module.providers, 'get').callsFake(() => wrapper as any);
 
         module.replace(null, { isProvider: true });
-        expect(addProviderSpy.called).to.be.true;
+        expect(wrapper.mergeWith.called).to.be.true;
       });
     });
     describe('when guard', () => {
-      it('should call `addInjectable`', () => {
-        const addInjectableSpy = sinon.spy(module, 'addInjectable');
+      it('should call `mergeWith`', () => {
+        const wrapper = {
+          mergeWith: sinon.spy(),
+          isProvider: true,
+        };
         sinon.stub(module, 'hasInjectable').callsFake(() => true);
+        sinon.stub(module.injectables, 'get').callsFake(() => wrapper as any);
 
         module.replace(null, {});
-        expect(addInjectableSpy.called).to.be.true;
+        expect(wrapper.mergeWith.called).to.be.true;
       });
     });
   });
@@ -410,6 +457,27 @@ describe('Module', () => {
     describe('otherwise', () => {
       it('should return false', () => {
         expect(module.hasInjectable('_')).to.be.false;
+      });
+    });
+  });
+
+  describe('getter "id"', () => {
+    it('should return module id', () => {
+      // tslint:disable-next-line:no-string-literal
+      expect(module.id).to.be.equal(module['_id']);
+    });
+  });
+
+  describe('getProviderByKey', () => {
+    describe('when does not exist', () => {
+      it('should return undefined', () => {
+        expect(module.getProviderByKey('test')).to.be.undefined;
+      });
+    });
+    describe('otherwise', () => {
+      it('should return instance wrapper', () => {
+        module.addProvider(TestProvider);
+        expect(module.getProviderByKey('TestProvider')).to.not.be.undefined;
       });
     });
   });

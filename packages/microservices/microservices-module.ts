@@ -24,9 +24,14 @@ export class MicroservicesModule {
   private listenersController: ListenersController;
 
   public register(container: NestContainer, config: ApplicationConfig) {
+    const rpcProxy = new RpcProxy();
+    const exceptionFiltersContext = new ExceptionFiltersContext(
+      container,
+      config,
+    );
     const contextCreator = new RpcContextCreator(
-      new RpcProxy(),
-      new ExceptionFiltersContext(container, config),
+      rpcProxy,
+      exceptionFiltersContext,
       new PipesContextCreator(container, config),
       new PipesConsumer(),
       new GuardsContextCreator(container, config),
@@ -40,6 +45,7 @@ export class MicroservicesModule {
       container,
       new Injector(),
       ClientProxyFactory,
+      exceptionFiltersContext,
     );
   }
 
@@ -73,14 +79,14 @@ export class MicroservicesModule {
     module: string,
   ) {
     controllers.forEach(wrapper =>
-      this.listenersController.bindPatternHandlers(wrapper, server, module),
+      this.listenersController.registerPatternHandlers(wrapper, server, module),
     );
   }
 
   public bindClients(items: Map<string, InstanceWrapper<Controller>>) {
     items.forEach(({ instance, isNotMetatype }) => {
       !isNotMetatype &&
-        this.listenersController.bindClientsToProperties(instance);
+        this.listenersController.assignClientsToProperties(instance);
     });
   }
 

@@ -5,8 +5,10 @@ import * as sinon from 'sinon';
 import { ClientRMQ } from '../../client/client-rmq';
 // tslint:disable:no-string-literal
 
-describe('ClientRQM', () => {
-  const client = new ClientRMQ({});
+describe('ClientRMQ', function() {
+  this.retries(10);
+
+  let client: ClientRMQ;
 
   describe('connect', () => {
     let createClientStub: sinon.SinonStub;
@@ -15,6 +17,7 @@ describe('ClientRQM', () => {
     let mergeDisconnectEvent: sinon.SinonStub;
 
     beforeEach(async () => {
+      client = new ClientRMQ({});
       createClientStub = sinon.stub(client, 'createClient').callsFake(() => ({
         addListener: () => ({}),
         removeListener: () => ({}),
@@ -33,16 +36,12 @@ describe('ClientRQM', () => {
         .stub(client, 'mergeDisconnectEvent')
         .callsFake((_, source) => source);
     });
-    afterEach(() => {
-      createClientStub.restore();
-      handleErrorsSpy.restore();
-      connect$Stub.restore();
-      mergeDisconnectEvent.restore();
-    });
     describe('when is not connected', () => {
       beforeEach(async () => {
-        client['client'] = null;
-        await client.connect();
+        try {
+          client['client'] = null;
+          await client.connect();
+        } catch {}
       });
       it('should call "handleError" once', async () => {
         expect(handleErrorsSpy.called).to.be.true;
@@ -251,7 +250,7 @@ describe('ClientRQM', () => {
         expect(
           callback.calledWith({
             err: packet.err,
-            response: null,
+            response: 'test',
             isDisposed: true,
           }),
         ).to.be.true;
@@ -272,7 +271,7 @@ describe('ClientRQM', () => {
         expect(
           callback.calledWith({
             err: undefined,
-            response: null,
+            response: 'test',
             isDisposed: true,
           }),
         ).to.be.true;

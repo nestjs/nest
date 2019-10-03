@@ -49,13 +49,13 @@ describe('MiddlewareModule', () => {
   });
 
   describe('loadConfiguration', () => {
-    it('should call "configure" method if method is implemented', () => {
+    it('should call "configure" method if method is implemented', async () => {
       const configureSpy = sinon.spy();
       const mockModule = {
         configure: configureSpy,
       };
 
-      middlewareModule.loadConfiguration(
+      await middlewareModule.loadConfiguration(
         new MiddlewareContainer(),
         mockModule as any,
         'Test' as any,
@@ -80,6 +80,10 @@ describe('MiddlewareModule', () => {
 
       const useSpy = sinon.spy();
       const app = { use: useSpy };
+
+      const nestContainer = new NestContainer();
+      // tslint:disable-next-line:no-string-literal
+      middlewareModule['container'] = nestContainer;
 
       expect(
         middlewareModule.registerRouteMiddleware(

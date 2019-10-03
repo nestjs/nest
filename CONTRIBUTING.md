@@ -4,13 +4,14 @@ We would love for you to contribute to Nest and help make it even better than it
 today! As a contributor, here are the guidelines we would like you to follow:
 
 <!--* [Code of Conduct](#coc)-->
-* [Question or Problem?](#question)
-* [Issues and Bugs](#issue)
-* [Feature Requests](#feature)
-* [Submission Guidelines](#submit)
-* [Development Setup](#development)
-* [Coding Rules](#rules)
-* [Commit Message Guidelines](#commit)
+
+- [Question or Problem?](#question)
+- [Issues and Bugs](#issue)
+- [Feature Requests](#feature)
+- [Submission Guidelines](#submit)
+- [Development Setup](#development)
+- [Coding Rules](#rules)
+- [Commit Message Guidelines](#commit)
   <!-- - [Signing the CLA](#cla) -->
 
 <!-- ## <a name="coc"></a> Code of Conduct
@@ -24,12 +25,12 @@ Stack Overflow is a much better place to ask questions since:
 
 <!-- - there are thousands of people willing to help on Stack Overflow [maybe one day] -->
 
-* questions and answers stay available for public viewing so your question / answer might help someone else
-* Stack Overflow's voting system assures that the best answers are prominently visible.
+- questions and answers stay available for public viewing so your question / answer might help someone else
+- Stack Overflow's voting system assures that the best answers are prominently visible.
 
 To save your and our time, we will systematically close all issues that are requests for general support and redirect people to Stack Overflow.
 
-If you would like to chat about the question in real-time, you can reach out via [our gitter channel][gitter].
+If you would like to chat about the question in real-time, you can reach out via [our discord channel][discord].
 
 ## <a name="issue"></a> Found a Bug?
 
@@ -44,10 +45,10 @@ Repository. If you would like to _implement_ a new feature, please submit an iss
 a proposal for your work first, to be sure that we can use it.
 Please consider what kind of change it is:
 
-* For a **Major Feature**, first open an issue and outline your proposal so that it can be
+- For a **Major Feature**, first open an issue and outline your proposal so that it can be
   discussed. This will also allow us to better coordinate our efforts, prevent duplication of work,
   and help you to craft the change so that it is successfully accepted into the project. For your issue name, please prefix your proposal with `[discussion]`, for example "[discussion]: your feature idea".
-* **Small Features** can be crafted and directly [submitted as a Pull Request](#submit-pr).
+- **Small Features** can be crafted and directly [submitted as a Pull Request](#submit-pr).
 
 ## <a name="submit"></a> Submission Guidelines
 
@@ -57,9 +58,9 @@ Before you submit an issue, please search the issue tracker, maybe an issue for 
 
 We want to fix all the issues as soon as possible, but before fixing a bug we need to reproduce and confirm it. In order to reproduce bugs we will systematically ask you to provide a minimal reproduction scenario using a repository or [Gist](https://gist.github.com/). Having a live, reproducible scenario gives us wealth of important information without going back & forth to you with additional questions like:
 
-* version of NestJS used
-* 3rd-party libraries and their versions
-* and most importantly - a use-case that fails
+- version of NestJS used
+- 3rd-party libraries and their versions
+- and most importantly - a use-case that fails
 
 <!--
 // TODO we need to create a playground, similar to plunkr
@@ -114,11 +115,11 @@ We cannot accept code without this.
 
 1. In GitHub, send a pull request to `nestjs:master`.
 
-* If we suggest changes then:
+- If we suggest changes then:
 
-  * Make the required updates.
-  * Re-run the Nest test suites to ensure tests are still passing.
-  * Rebase your branch and force push to your GitHub repository (this will update your Pull Request):
+  - Make the required updates.
+  - Re-run the Nest test suites to ensure tests are still passing.
+  - Rebase your branch and force push to your GitHub repository (this will update your Pull Request):
 
     ```shell
     git rebase master -i
@@ -132,25 +133,25 @@ That's it! Thank you for your contribution!
 After your pull request is merged, you can safely delete your branch and pull the changes
 from the main (upstream) repository:
 
-* Delete the remote branch on GitHub either through the GitHub web UI or your local shell as follows:
+- Delete the remote branch on GitHub either through the GitHub web UI or your local shell as follows:
 
   ```shell
   git push origin --delete my-fix-branch
   ```
 
-* Check out the master branch:
+- Check out the master branch:
 
   ```shell
   git checkout master -f
   ```
 
-* Delete the local branch:
+- Delete the local branch:
 
   ```shell
   git branch -D my-fix-branch
   ```
 
-* Update your master with the latest upstream version:
+- Update your master with the latest upstream version:
 
   ```shell
   git pull --ff upstream master
@@ -177,13 +178,8 @@ That will compile fresh packages and afterward, move them to all `sample` direct
 ### <a name="common-scripts"></a>Commonly used NPM scripts
 
 ```bash
-# build all packages and put them near to their source .ts files
-$ npm run build
-
 # build all packages and move to "sample" and "integration" directories
-# if cross-packages breaking changes were performed you may face irrelevant errors
-# in order to verify the build, you can run this command again then
-$ npm run build:dev
+$ npm run build
 
 # run the full unit tests suite
 $ npm run test
@@ -194,6 +190,9 @@ $ sh scripts/run-integration.sh
 
 # run linter
 $ npm run lint
+
+# build all packages and put them near to their source .ts files
+$ npm run build:prod
 ```
 
 ## <a name="rules"></a> Coding Rules
@@ -204,10 +203,9 @@ To ensure consistency throughout the source code, keep these rules in mind as yo
 // We're working on auto-documentation.
 * All public API methods **must be documented**. (Details TBC). -->
 
-* All features or bug fixes **must be tested** by one or more specs (unit-tests).
-* We follow [Google's JavaScript Style Guide][js-style-guide], but wrap all code at
-  **100 characters**. An automated formatter is available, see
-  [DEVELOPER.md](docs/DEVELOPER.md#clang-format).
+- All features or bug fixes **must be tested** by one or more specs (unit-tests).
+- We follow [Google's JavaScript Style Guide][js-style-guide], but wrap all code at
+  **100 characters**. An automated formatter is available (`npm run format`).
 
 ## <a name="commit"></a> Commit Message Guidelines
 
@@ -250,15 +248,15 @@ If the commit reverts a previous commit, it should begin with `revert:`, followe
 
 Must be one of the following:
 
-* **build**: Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)
-* **ci**: Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)
-* **docs**: Documentation only changes
-* **feature**: A new feature
-* **bugfix**: A bug fix
-* **perf**: A code change that improves performance
-* **refactor**: A code change that neither fixes a bug nor adds a feature
-* **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
-* **test**: Adding missing tests or correcting existing tests
+- **build**: Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)
+- **ci**: Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)
+- **docs**: Documentation only changes
+- **feature**: A new feature
+- **bugfix**: A bug fix
+- **perf**: A code change that improves performance
+- **refactor**: A code change that neither fixes a bug nor adds a feature
+- **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+- **test**: Adding missing tests or correcting existing tests
 
 ### Scope
 
@@ -266,28 +264,28 @@ The scope should be the name of the npm package affected (as perceived by person
 
 The following is the list of supported scopes:
 
-* **common**
-* **core**
-* **sample**
-* **microservices**
-* **testing**
-* **websockets**
+- **common**
+- **core**
+- **sample**
+- **microservices**
+- **testing**
+- **websockets**
 
 There are currently a few exceptions to the "use package name" rule:
 
-* **packaging**: used for changes that change the npm package layout in all of our packages, e.g. public path changes, package.json changes done to all packages, d.ts file/format changes, changes to bundles, etc.
-* **changelog**: used for updating the release notes in CHANGELOG.md
-* **sample/#**: for the example apps directory, replacing # with the example app number
-* none/empty string: useful for `style`, `test` and `refactor` changes that are done across all packages (e.g. `style: add missing semicolons`)
-<!-- * **aio**: used for docs-app (angular.io) related changes within the /aio directory of the repo -->
+- **packaging**: used for changes that change the npm package layout in all of our packages, e.g. public path changes, package.json changes done to all packages, d.ts file/format changes, changes to bundles, etc.
+- **changelog**: used for updating the release notes in CHANGELOG.md
+- **sample/#**: for the example apps directory, replacing # with the example app number
+- none/empty string: useful for `style`, `test` and `refactor` changes that are done across all packages (e.g. `style: add missing semicolons`)
+  <!-- * **aio**: used for docs-app (angular.io) related changes within the /aio directory of the repo -->
 
 ### Subject
 
 The subject contains succinct description of the change:
 
-* use the imperative, present tense: "change" not "changed" nor "changes"
-* don't capitalize first letter
-* no dot (.) at the end
+- use the imperative, present tense: "change" not "changed" nor "changes"
+- don't capitalize first letter
+- no dot (.) at the end
 
 ### Body
 
@@ -320,7 +318,7 @@ changes to be accepted, the CLA must be signed. It's a quick process, we promise
 [corporate-cla]: http://code.google.com/legal/corporate-cla-v1.0.html
 [dev-doc]: https://github.com/nestjs/nest/blob/master/docs/DEVELOPER.md
 [github]: https://github.com/nestjs/nest
-[gitter]: https://gitter.im/nestjs/nest
+[discord]: https://discordapp.com/invite/G7Qnnhy
 [individual-cla]: http://code.google.com/legal/individual-cla-v1.0.html
 [js-style-guide]: https://google.github.io/styleguide/jsguide.html
 [jsfiddle]: http://jsfiddle.net

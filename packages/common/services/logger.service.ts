@@ -6,6 +6,8 @@ import { isObject } from '../utils/shared.utils';
 declare const process: any;
 const yellow = clc.xterm(3);
 
+export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose';
+
 export interface LoggerService {
   log(message: any, context?: string);
   error(message: any, trace?: string, context?: string);
@@ -16,6 +18,13 @@ export interface LoggerService {
 
 @Injectable()
 export class Logger implements LoggerService {
+  private static logLevels: LogLevel[] = [
+    'log',
+    'error',
+    'warn',
+    'debug',
+    'verbose',
+  ];
   private static lastTimestamp?: number;
   private static instance?: typeof Logger | LoggerService = Logger;
 
@@ -26,6 +35,9 @@ export class Logger implements LoggerService {
 
   error(message: any, trace = '', context?: string) {
     const instance = this.getInstance();
+    if (!this.isLogLevelEnabled('error')) {
+      return;
+    }
     instance &&
       instance.error.call(instance, message, trace, context || this.context);
   }
@@ -46,7 +58,11 @@ export class Logger implements LoggerService {
     this.callFunction('verbose', message, context);
   }
 
-  static overrideLogger(logger: LoggerService | boolean) {
+  static overrideLogger(logger: LoggerService | LogLevel[] | boolean) {
+    if (Array.isArray(logger)) {
+      this.logLevels = logger;
+      return;
+    }
     this.instance = isObject(logger) ? (logger as LoggerService) : undefined;
   }
 
@@ -81,6 +97,9 @@ export class Logger implements LoggerService {
     message: any,
     context?: string,
   ) {
+    if (!this.isLogLevelEnabled(name)) {
+      return;
+    }
     const instance = this.getInstance();
     const func = instance && (instance as typeof Logger)[name];
     func &&
@@ -97,6 +116,10 @@ export class Logger implements LoggerService {
     return instance === this ? Logger : instance;
   }
 
+  private isLogLevelEnabled(level: LogLevel): boolean {
+    return Logger.logLevels.includes(level);
+  }
+
   private static printMessage(
     message: any,
     color: (message: string) => string,
@@ -111,6 +134,7 @@ export class Logger implements LoggerService {
       year: 'numeric',
       hour: 'numeric',
       minute: 'numeric',
+      second: 'numeric',
       day: '2-digit',
       month: '2-digit',
     };

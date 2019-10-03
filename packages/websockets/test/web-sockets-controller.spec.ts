@@ -9,7 +9,7 @@ import { WsContextCreator } from '../context/ws-context-creator';
 import { InvalidSocketPortException } from '../errors/invalid-socket-port.exception';
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
 import { SocketServerProvider } from '../socket-server-provider';
-import { WebSocketGateway } from '../utils/socket-gateway.decorator';
+import { WebSocketGateway } from '../decorators/socket-gateway.decorator';
 import { WebSocketsController } from '../web-sockets-controller';
 
 class NoopAdapter extends AbstractWsAdapter {
@@ -48,7 +48,7 @@ describe('WebSocketsController', () => {
     );
   });
   describe('mergeGatewayAndServer', () => {
-    let subscribeObservableServer: sinon.SinonSpy;
+    let subscribeToServerEvents: sinon.SinonSpy;
 
     @WebSocketGateway('test' as any)
     class InvalidGateway {}
@@ -57,8 +57,8 @@ describe('WebSocketsController', () => {
     class DefaultGateway {}
 
     beforeEach(() => {
-      subscribeObservableServer = sinon.spy();
-      (instance as any).subscribeObservableServer = subscribeObservableServer;
+      subscribeToServerEvents = sinon.spy();
+      (instance as any).subscribeToServerEvents = subscribeToServerEvents;
     });
     it('should throws "InvalidSocketPortException" when port is not a number', () => {
       Reflect.defineMetadata(PORT_METADATA, 'test', InvalidGateway);
@@ -70,21 +70,20 @@ describe('WebSocketsController', () => {
         ),
       ).throws(InvalidSocketPortException);
     });
-    it('should call "subscribeObservableServer" with default values when metadata is empty', () => {
+    it('should call "subscribeToServerEvents" with default values when metadata is empty', () => {
       const gateway = new DefaultGateway();
       instance.mergeGatewayAndServer(gateway, DefaultGateway, '');
-      expect(subscribeObservableServer.calledWith(gateway, {}, 0, '')).to.be
-        .true;
+      expect(subscribeToServerEvents.calledWith(gateway, {}, 0, '')).to.be.true;
     });
-    it('should call "subscribeObservableServer" when metadata is valid', () => {
+    it('should call "subscribeToServerEvents" when metadata is valid', () => {
       const gateway = new Test();
       instance.mergeGatewayAndServer(gateway, Test, '');
       expect(
-        subscribeObservableServer.calledWith(gateway, { namespace }, port, ''),
+        subscribeToServerEvents.calledWith(gateway, { namespace }, port, ''),
       ).to.be.true;
     });
   });
-  describe('subscribeObservableServer', () => {
+  describe('subscribeToServerEvents', () => {
     let explorer: GatewayMetadataExplorer,
       mockExplorer: sinon.SinonMock,
       gateway,
@@ -112,11 +111,11 @@ describe('WebSocketsController', () => {
       (instance as any).subscribeEvents = subscribeEvents;
     });
     it('should call "hookServerToProperties" with expected arguments', () => {
-      instance.subscribeObservableServer(gateway, namespace, port, '');
+      instance.subscribeToServerEvents(gateway, namespace, port, '');
       expect(hookServerToProperties.calledWith(gateway, server.server));
     });
     it('should call "subscribeEvents" with expected arguments', () => {
-      instance.subscribeObservableServer(gateway, namespace, port, '');
+      instance.subscribeToServerEvents(gateway, namespace, port, '');
       expect(subscribeEvents.calledWith(gateway, handlers, server));
     });
   });

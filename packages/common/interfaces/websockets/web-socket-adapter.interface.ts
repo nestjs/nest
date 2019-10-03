@@ -4,6 +4,7 @@ export interface WsMessageHandler<T = string> {
   message: T;
   callback: (...args: any[]) => Observable<any> | Promise<any>;
 }
+
 export interface WebSocketAdapter<
   TServer = any,
   TClient = any,

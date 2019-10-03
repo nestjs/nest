@@ -10,21 +10,21 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.0.1",
-    "@nestjs/core": "6.0.1",
-    "@nestjs/platform-express": "6.0.1",
-    "class-transformer": "0.2.0",
+    "@nestjs/common": "6.8.0",
+    "@nestjs/core": "6.8.0",
+    "@nestjs/platform-express": "6.8.0",
+    "class-transformer": "0.2.3",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.4.0",
-    "typescript": "3.3.3333"
+    "rxjs": "6.5.3",
+    "typescript": "3.6.3"
   },
   "devDependencies": {
-    "@types/jest": "24.0.11",
-    "@types/node": "10.14.1",
-    "jest": "24.5.0",
+    "@types/jest": "24.0.18",
+    "@types/node": "10.14.19",
+    "jest": "24.9.0",
     "supertest": "4.0.2",
-    "ts-jest": "24.0.0",
-    "ts-node": "8.0.3",
-    "tslint": "5.14.0"
+    "ts-jest": "24.1.0",
+    "ts-node": "8.4.1",
+    "tslint": "5.20.0"
   }
 }

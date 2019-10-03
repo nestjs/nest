@@ -1,4 +1,4 @@
-import { RequestMethod } from '@nestjs/common';
+import { HttpStatus, RequestMethod } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -6,13 +6,19 @@ import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import * as fastify from 'fastify';
 import * as cors from 'fastify-cors';
 import * as formBody from 'fastify-formbody';
+import * as Reply from 'fastify/lib/reply';
 import * as pathToRegexp from 'path-to-regexp';
 
 export class FastifyAdapter extends AbstractHttpAdapter {
   constructor(
     instanceOrOptions:
       | fastify.FastifyInstance<any, any, any>
-      | fastify.ServerOptions = fastify(),
+      | fastify.ServerOptions
+      | fastify.ServerOptionsAsHttp
+      | fastify.ServerOptionsAsHttp2
+      | fastify.ServerOptionsAsSecure
+      | fastify.ServerOptionsAsSecureHttp
+      | fastify.ServerOptionsAsSecureHttp2 = fastify(),
   ) {
     const instance =
       instanceOrOptions &&
@@ -25,16 +31,39 @@ export class FastifyAdapter extends AbstractHttpAdapter {
 
   public listen(port: string | number, callback?: () => void);
   public listen(port: string | number, hostname: string, callback?: () => void);
-  public listen(port: any, hostname?: any, callback?: any) {
-    return this.instance.listen(port, hostname, callback);
+  public listen(port: any, ...args: any[]) {
+    return this.instance.listen(port, ...args);
   }
 
-  public reply(response: any, body: any, statusCode: number) {
-    return response.code(statusCode).send(body);
+  public reply(response: any, body: any, statusCode?: number) {
+    const isNativeResponse = typeof response.status !== 'function';
+    if (isNativeResponse) {
+      const fastifyContext = {
+        preSerialization: null,
+        preValidation: [],
+        preHandler: [],
+        onSend: [],
+        onError: [],
+      };
+      response = new Reply(response, fastifyContext, {});
+    }
+    if (statusCode) {
+      response.status(statusCode);
+    }
+    return response.send(body);
+  }
+
+  public status(response: any, statusCode: number) {
+    return response.code(statusCode);
   }
 
   public render(response: any, view: string, options: any) {
     return response.view(view, options);
+  }
+
+  public redirect(response: any, statusCode: number, url: string) {
+    const code = statusCode ? statusCode : HttpStatus.FOUND;
+    return response.status(code).redirect(url);
   }
 
   public setErrorHandler(handler: Function) {
@@ -83,7 +112,7 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     );
   }
 
-  setViewEngine(options: any) {
+  public setViewEngine(options: any) {
     return this.register(
       loadPackage('point-of-view', 'FastifyAdapter.setViewEngine()'),
       options,
@@ -104,7 +133,7 @@ export class FastifyAdapter extends AbstractHttpAdapter {
   }
 
   public enableCors(options: CorsOptions) {
-    this.register(cors, { options });
+    this.register(cors, options);
   }
 
   public registerParserMiddleware() {
@@ -137,5 +166,9 @@ export class FastifyAdapter extends AbstractHttpAdapter {
         next();
       });
     };
+  }
+
+  public getType(): string {
+    return 'fastify';
   }
 }

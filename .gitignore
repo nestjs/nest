@@ -5,6 +5,7 @@ node_modules/
 /.idea
 /.awcache
 /.vscode
+*.code-workspace
 
 # bundle
 packages/**/*.d.ts

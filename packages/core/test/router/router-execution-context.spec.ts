@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { RouteParamsMetadata } from '../../../common';
+import { RouteParamMetadata } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
@@ -24,6 +24,7 @@ describe('RouterExecutionContext', () => {
   let factory: RouteParamsFactory;
   let consumer: PipesConsumer;
   let guardsConsumer: GuardsConsumer;
+  let interceptorsConsumer: InterceptorsConsumer;
   let adapter: AbstractHttpAdapter;
 
   beforeEach(() => {
@@ -37,7 +38,7 @@ describe('RouterExecutionContext', () => {
     factory = new RouteParamsFactory();
     consumer = new PipesConsumer();
     guardsConsumer = new GuardsConsumer();
-
+    interceptorsConsumer = new InterceptorsConsumer();
     adapter = new NoopHttpAdapter({});
     contextCreator = new RouterExecutionContext(
       factory,
@@ -46,13 +47,13 @@ describe('RouterExecutionContext', () => {
       new GuardsContextCreator(new NestContainer()),
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
-      new InterceptorsConsumer(),
+      interceptorsConsumer,
       adapter,
     );
   });
   describe('create', () => {
     describe('when callback metadata is not undefined', () => {
-      let metadata: RouteParamsMetadata;
+      let metadata: Record<number, RouteParamMetadata>;
       let exchangeKeysForValuesSpy: sinon.SinonSpy;
       beforeEach(() => {
         metadata = {
@@ -87,9 +88,14 @@ describe('RouterExecutionContext', () => {
       describe('returns proxy function', () => {
         let proxyContext;
         let instance;
-
+        let tryActivateStub;
         beforeEach(() => {
           instance = { foo: 'bar' };
+          const canActivateFn = contextCreator.createGuardsFn([1], null, null);
+          sinon.stub(contextCreator, 'createGuardsFn').returns(canActivateFn);
+          tryActivateStub = sinon
+            .stub(guardsConsumer, 'tryActivate')
+            .callsFake(async () => true);
           proxyContext = contextCreator.create(
             instance,
             callback as any,
@@ -118,6 +124,7 @@ describe('RouterExecutionContext', () => {
             };
           });
           it('should apply expected context and arguments to callback', done => {
+            tryActivateStub.callsFake(async () => true);
             proxyContext(request, response, next).then(() => {
               const args = [next, undefined, request.body.test];
               expect(applySpy.called).to.be.true;
@@ -126,12 +133,25 @@ describe('RouterExecutionContext', () => {
             });
           });
           it('should throw exception when "tryActivate" returns false', () => {
-            sinon
-              .stub(guardsConsumer, 'tryActivate')
-              .callsFake(async () => false);
+            tryActivateStub.callsFake(async () => false);
             proxyContext(request, response, next).catch(
               error => expect(error).to.not.be.undefined,
             );
+          });
+          it('should apply expected context when "canActivateFn" apply', () => {
+            proxyContext(request, response, next).then(() => {
+              expect(tryActivateStub.args[0][1][0]).to.equals(request);
+              expect(tryActivateStub.args[0][1][1]).to.equals(response);
+              expect(tryActivateStub.args[0][1][2]).to.equals(next);
+            });
+          });
+          it('should apply expected context when "intercept" apply', () => {
+            const interceptStub = sinon.stub(interceptorsConsumer, 'intercept');
+            proxyContext(request, response, next).then(() => {
+              expect(interceptStub.args[0][1][0]).to.equals(request);
+              expect(interceptStub.args[0][1][1]).to.equals(response);
+              expect(interceptStub.args[0][1][2]).to.equals(next);
+            });
           });
         });
       });
@@ -191,7 +211,7 @@ describe('RouterExecutionContext', () => {
     let consumerApplySpy: sinon.SinonSpy;
     const value = 3,
       metatype = null,
-      transforms = [];
+      transforms = [{ transform: sinon.spy() }];
 
     beforeEach(() => {
       consumerApplySpy = sinon.spy(consumer, 'apply');
@@ -281,7 +301,12 @@ describe('RouterExecutionContext', () => {
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
 
-        const handler = contextCreator.createHandleResponseFn(null, true, 100);
+        const handler = contextCreator.createHandleResponseFn(
+          null,
+          true,
+          undefined,
+          200,
+        );
         await handler(value, response);
 
         expect(response.render.calledWith(template, value)).to.be.true;
@@ -295,10 +320,66 @@ describe('RouterExecutionContext', () => {
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
 
-        const handler = contextCreator.createHandleResponseFn(null, true, 100);
+        const handler = contextCreator.createHandleResponseFn(
+          null,
+          true,
+          undefined,
+          200,
+        );
         handler(result, response);
 
         expect(response.render.called).to.be.false;
+      });
+    });
+    describe('when "redirectResponse" is present', () => {
+      beforeEach(() => {
+        sinon
+          .stub(adapter, 'redirect')
+          .callsFake((response, statusCode: number, url: string) => {
+            return response.redirect(statusCode, url);
+          });
+      });
+      it('should call "res.redirect()" with expected args', async () => {
+        const redirectResponse = {
+          url: 'http://test.com',
+          statusCode: 302,
+        };
+        const response = { redirect: sinon.spy() };
+
+        const handler = contextCreator.createHandleResponseFn(
+          () => {},
+          true,
+          redirectResponse,
+          200,
+        );
+        await handler(redirectResponse, response);
+
+        expect(
+          response.redirect.calledWith(
+            redirectResponse.statusCode,
+            redirectResponse.url,
+          ),
+        ).to.be.true;
+      });
+    });
+
+    describe('when "redirectResponse" is undefined', () => {
+      it('should not call "res.render()"', () => {
+        const result = Promise.resolve('test');
+        const response = { redirect: sinon.spy() };
+
+        sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+
+        const handler = contextCreator.createHandleResponseFn(
+          null,
+          true,
+          undefined,
+          200,
+        );
+        handler(result, response);
+
+        expect(response.redirect.called).to.be.false;
       });
     });
   });

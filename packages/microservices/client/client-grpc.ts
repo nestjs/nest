@@ -2,12 +2,16 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
-import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
+import {
+  GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+  GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
+  GRPC_DEFAULT_PROTO_LOADER,
+  GRPC_DEFAULT_URL,
+} from '../constants';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { ClientGrpc, GrpcOptions } from '../interfaces';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
 import { GRPC_CANCELLED } from './constants';
 
@@ -16,17 +20,16 @@ let grpcProtoLoaderPackage: any = {};
 
 export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   protected readonly logger = new Logger(ClientProxy.name);
+  protected readonly clients = new Map<string, any>();
   protected readonly url: string;
   protected grpcClient: any;
 
-  constructor(protected readonly options: ClientOptions['options']) {
+  constructor(protected readonly options: GrpcOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp<GrpcOptions>(options, 'url') || GRPC_DEFAULT_URL;
+    this.url = this.getOptionsProp(options, 'url') || GRPC_DEFAULT_URL;
 
     const protoLoader =
-      this.getOptionsProp<GrpcOptions>(options, 'protoLoader') ||
-      GRPC_DEFAULT_PROTO_LOADER;
+      this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
 
     grpcPackage = loadPackage('grpc', ClientGrpcProxy.name, () =>
       require('grpc'),
@@ -36,25 +39,60 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public getService<T extends {}>(name: string): T {
-    const options: any = isObject(this.options)
-      ? { ...this.options, protoPath: '', loader: '' }
-      : {};
-
-    if (!this.grpcClient[name]) {
-      throw new InvalidGrpcServiceException();
-    }
-    const grpcClient = new this.grpcClient[name](
-      this.url,
-      options.credentials || grpcPackage.credentials.createInsecure(),
-      options,
-    );
+    const grpcClient = this.createClientByServiceName(name);
     const protoMethods = Object.keys(this.grpcClient[name].prototype);
     const grpcService = {} as T;
+
     protoMethods.forEach(m => {
       const key = m[0].toLowerCase() + m.slice(1, m.length);
       grpcService[key] = this.createServiceMethod(grpcClient, m);
     });
     return grpcService;
+  }
+
+  public getClientByServiceName<T = any>(name: string): T {
+    return this.clients.get(name) || this.createClientByServiceName(name);
+  }
+
+  public createClientByServiceName(name: string) {
+    if (!this.grpcClient[name]) {
+      throw new InvalidGrpcServiceException();
+    }
+    const maxSendMessageLengthKey = 'grpc.max_send_message_length';
+    const maxReceiveMessageLengthKey = 'grpc.max_receive_message_length';
+    const maxMessageLengthOptions = {
+      [maxSendMessageLengthKey]: this.getOptionsProp(
+        this.options,
+        'maxSendMessageLength',
+        GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
+      ),
+      [maxReceiveMessageLengthKey]: this.getOptionsProp(
+        this.options,
+        'maxReceiveMessageLength',
+        GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+      ),
+    };
+    const options: any = isObject(this.options)
+      ? {
+        ...this.options,
+        ...maxMessageLengthOptions,
+        loader: '',
+      }
+      : {
+        ...maxMessageLengthOptions,
+      };
+
+    const credentials =
+      options.credentials || grpcPackage.credentials.createInsecure();
+
+    delete options.credentials;
+    const grpcClient = new this.grpcClient[name](
+      this.url,
+      credentials,
+      options,
+    );
+    this.clients.set(name, grpcClient);
+    return grpcClient;
   }
 
   public createServiceMethod(
@@ -119,10 +157,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
   public createClient(): any {
     const grpcContext = this.loadProto();
-    const packageOpt = this.getOptionsProp<GrpcOptions>(
-      this.options,
-      'package',
-    );
+    const packageOpt = this.getOptionsProp(this.options, 'package');
+
     const packageNames = Array.isArray(packageOpt) ? packageOpt : [packageOpt];
 
     for (const packageName of packageNames) {
@@ -140,8 +176,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
   public loadProto(): any {
     try {
-      const file = this.getOptionsProp<GrpcOptions>(this.options, 'protoPath');
-      const loader = this.getOptionsProp<GrpcOptions>(this.options, 'loader');
+      const file = this.getOptionsProp(this.options, 'protoPath');
+      const loader = this.getOptionsProp(this.options, 'loader');
 
       const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
       const packageObject = grpcPackage.loadPackageDefinition(

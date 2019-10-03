@@ -1,0 +1,3 @@
+syntax = "proto3";
+package proto_example;
+import public "orders/service.proto";

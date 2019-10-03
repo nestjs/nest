@@ -1,6 +1,6 @@
 /*
  * Nest @common
- * Copyright(c) 2017 - 2018 Kamil Mysliwiec
+ * Copyright(c) 2017 - 2019 Kamil Mysliwiec
  * https://nestjs.com
  * MIT Licensed
  */
@@ -12,10 +12,13 @@ export * from './enums';
 export * from './exceptions';
 export * from './http';
 export {
+  Abstract,
   ArgumentMetadata,
   ArgumentsHost,
+  BeforeApplicationShutdown,
   CallHandler,
   CanActivate,
+  ContextType,
   DynamicModule,
   ExceptionFilter,
   ExecutionContext,
@@ -25,6 +28,7 @@ export {
   INestApplicationContext,
   INestMicroservice,
   MiddlewareConsumer,
+  NestApplicationOptions,
   NestInterceptor,
   NestMiddleware,
   NestModule,
@@ -37,6 +41,7 @@ export {
   Provider,
   RpcExceptionFilter,
   Scope,
+  ScopeOptions,
   Type,
   ValidationError,
   WebSocketAdapter,

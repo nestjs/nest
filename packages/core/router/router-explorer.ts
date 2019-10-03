@@ -14,12 +14,14 @@ import { UnknownRequestMappingException } from '../errors/exceptions/unknown-req
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { createContextId } from '../helpers/context-id-factory';
+import { ExecutionContextHost } from '../helpers/execution-context-host';
 import { ROUTE_MAPPED_MESSAGE } from '../helpers/messages';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
+import { Module } from '../injector/module';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { MetadataScanner } from '../metadata-scanner';
@@ -27,6 +29,7 @@ import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
 import { REQUEST } from './request';
+import { REQUEST_CONTEXT_ID } from './request/request-constants';
 import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
@@ -42,6 +45,7 @@ export class RouterExplorer {
   private readonly executionContextCreator: RouterExecutionContext;
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(RouterExplorer.name, true);
+  private readonly exceptionFiltersCache = new WeakMap();
 
   constructor(
     private readonly metadataScanner: MetadataScanner,
@@ -181,33 +185,15 @@ export class RouterExplorer {
 
     const isRequestScoped = !instanceWrapper.isDependencyTreeStatic();
     const module = this.container.getModuleByKey(moduleKey);
-    const collection = module.controllers;
 
     if (isRequestScoped) {
-      const handler = async <TRequest, TResponse>(
-        req: TRequest,
-        res: TResponse,
-        next: () => void,
-      ) => {
-        const contextId = createContextId();
-        this.registerRequestProvider(req, contextId);
-
-        const contextInstance = await this.injector.loadPerContext(
-          instance,
-          module,
-          collection,
-          contextId,
-        );
-        this.createCallbackProxy(
-          contextInstance,
-          contextInstance[methodName],
-          methodName,
-          moduleKey,
-          requestMethod,
-          contextId,
-          instanceWrapper.id,
-        )(req, res, next);
-      };
+      const handler = this.createRequestScopedHandler(
+        instanceWrapper,
+        requestMethod,
+        module,
+        moduleKey,
+        methodName,
+      );
 
       paths.forEach(path => {
         const fullPath = stripSlash(basePath) + path;
@@ -254,6 +240,57 @@ export class RouterExplorer {
       inquirerId,
     );
     return this.routerProxy.createProxy(executionContext, exceptionFilter);
+  }
+
+  public createRequestScopedHandler(
+    instanceWrapper: InstanceWrapper,
+    requestMethod: RequestMethod,
+    module: Module,
+    moduleKey: string,
+    methodName: string,
+  ) {
+    const { instance } = instanceWrapper;
+    const collection = module.controllers;
+    return async <TRequest, TResponse>(
+      req: TRequest,
+      res: TResponse,
+      next: () => void,
+    ) => {
+      try {
+        const contextId = req[REQUEST_CONTEXT_ID] || createContextId();
+        this.registerRequestProvider(req, contextId);
+
+        const contextInstance = await this.injector.loadPerContext(
+          instance,
+          module,
+          collection,
+          contextId,
+        );
+        this.createCallbackProxy(
+          contextInstance,
+          contextInstance[methodName],
+          methodName,
+          moduleKey,
+          requestMethod,
+          contextId,
+          instanceWrapper.id,
+        )(req, res, next);
+      } catch (err) {
+        let exceptionFilter = this.exceptionFiltersCache.get(
+          instance[methodName],
+        );
+        if (!exceptionFilter) {
+          exceptionFilter = this.exceptionsFilter.create(
+            instance,
+            instance[methodName],
+            moduleKey,
+          );
+          this.exceptionFiltersCache.set(instance[methodName], exceptionFilter);
+        }
+        const host = new ExecutionContextHost([req, res, next]);
+        exceptionFilter.next(err, host);
+      }
+    };
   }
 
   private registerRequestProvider<T = any>(request: T, contextId: ContextId) {

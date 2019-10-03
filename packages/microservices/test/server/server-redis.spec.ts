@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerRedis } from '../../server/server-redis';
 
 describe('ServerRedis', () => {
@@ -97,13 +98,13 @@ describe('ServerRedis', () => {
     });
     it('should call "handleEvent" if identifier is not present', () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
-      sinon.stub(server, 'deserialize').callsFake(() => ({ data } as any));
+      sinon.stub(server, 'parseMessage').callsFake(() => ({ data } as any));
 
       server.handleMessage(channel, JSON.stringify({}), null);
       expect(handleEventSpy.called).to.be.true;
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, () => {
-      sinon.stub(server, 'deserialize').callsFake(() => ({ id, data } as any));
+      sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data } as any));
       server.handleMessage(channel, JSON.stringify({ id }), null);
       expect(
         getPublisherSpy.calledWith({
@@ -118,7 +119,7 @@ describe('ServerRedis', () => {
       (server as any).messageHandlers = objectToMap({
         [channel]: handler,
       });
-      sinon.stub(server, 'deserialize').callsFake(() => ({ id, data } as any));
+      sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data } as any));
 
       server.handleMessage(channel, {}, null);
       expect(handler.calledWith(data)).to.be.true;
@@ -152,16 +153,16 @@ describe('ServerRedis', () => {
       ).to.be.true;
     });
   });
-  describe('deserialize', () => {
+  describe('parseMessage', () => {
     it(`should return parsed json`, () => {
       const obj = { test: 'test' };
-      expect(server.deserialize(obj)).to.deep.equal(
+      expect(server.parseMessage(obj)).to.deep.equal(
         JSON.parse(JSON.stringify(obj)),
       );
     });
     it(`should not parse argument if it is not an object`, () => {
       const content = 'test';
-      expect(server.deserialize(content)).to.equal(content);
+      expect(server.parseMessage(content)).to.equal(content);
     });
   });
   describe('getAckPatternName', () => {
@@ -182,7 +183,9 @@ describe('ServerRedis', () => {
     it('should return options object with "retry_strategy" and call "createRetryStrategy"', () => {
       const createSpy = sinon.spy(server, 'createRetryStrategy');
       const { retry_strategy } = server.getClientOptions();
-      retry_strategy({} as any);
+      try {
+        retry_strategy({} as any);
+      } catch {}
       expect(createSpy.called).to.be.true;
     });
   });
@@ -195,27 +198,31 @@ describe('ServerRedis', () => {
       });
     });
     describe('when "retryAttempts" does not exist', () => {
-      it('should return undefined', () => {
+      it('should throw an exception', () => {
         (server as any).options.options = {};
         (server as any).options.options.retryAttempts = undefined;
-        const result = server.createRetryStrategy({} as any);
-        expect(result).to.be.undefined;
+
+        expect(() => server.createRetryStrategy({} as any)).to.throw(Error);
       });
     });
     describe('when "attempts" count is max', () => {
-      it('should return undefined', () => {
+      it('should throw an exception', () => {
         (server as any).options.options = {};
         (server as any).options.options.retryAttempts = 3;
-        const result = server.createRetryStrategy({ attempt: 4 } as any);
-        expect(result).to.be.undefined;
+
+        expect(() =>
+          server.createRetryStrategy({ attempt: 4 } as any),
+        ).to.throw(Error);
       });
     });
     describe('when ECONNREFUSED', () => {
       it('should call logger', () => {
         const loggerErrorSpy = sinon.spy((server as any).logger, 'error');
-        const result = server.createRetryStrategy({
-          error: { code: 'ECONNREFUSED' },
-        } as any);
+        try {
+          server.createRetryStrategy({
+            error: { code: 'ECONNREFUSED' },
+          } as any);
+        } catch {}
         expect(loggerErrorSpy.called).to.be.true;
       });
     });
@@ -240,7 +247,11 @@ describe('ServerRedis', () => {
         [channel]: handler,
       });
 
-      server.handleEvent(channel, { pattern: '', data });
+      server.handleEvent(
+        channel,
+        { pattern: '', data },
+        new BaseRpcContext([]),
+      );
       expect(handler.calledWith(data)).to.be.true;
     });
   });

@@ -1,11 +1,19 @@
-import { DynamicModule, Inject, Module, Provider } from '@nestjs/common';
+import { DynamicModule, Inject, Module, Provider, Scope } from '@nestjs/common';
 import { HelloController } from './hello.controller';
 import { HelloService } from './hello.service';
 import { UsersService } from './users/users.service';
 
 @Module({
   controllers: [HelloController],
-  providers: [HelloService, UsersService],
+  providers: [
+    HelloService,
+    UsersService,
+    {
+      provide: 'REQUEST_ID',
+      useFactory: () => 1,
+      scope: Scope.REQUEST,
+    },
+  ],
 })
 export class HelloModule {
   constructor(@Inject('META') private readonly meta) {}

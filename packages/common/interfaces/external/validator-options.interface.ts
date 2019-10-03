@@ -1,10 +1,22 @@
 /**
  * Options passed to validator during validation.
  * @see https://github.com/typestack/class-validator
+ *
+ * class-validator@0.10.1
+ *
+ * @publicApi
  */
 export interface ValidatorOptions {
   /**
-   * If set to true than validator will skip validation of all properties that are missing in the validating object.
+   * If set to true then validator will skip validation of all properties that are undefined in the validating object.
+   */
+  skipUndefinedProperties?: boolean;
+  /**
+   * If set to true then validator will skip validation of all properties that are null in the validating object.
+   */
+  skipNullProperties?: boolean;
+  /**
+   * If set to true then validator will skip validation of all properties that are null or undefined in the validating object.
    */
   skipMissingProperties?: boolean;
   /**
@@ -30,17 +42,17 @@ export interface ValidatorOptions {
    * ValidationError special options.
    */
   validationError?: {
-      /**
-       * Indicates if target should be exposed in ValidationError.
-       */
-      target?: boolean;
-      /**
-       * Indicates if validated value should be exposed in ValidationError.
-       */
-      value?: boolean;
+    /**
+     * Indicates if target should be exposed in ValidationError.
+     */
+    target?: boolean;
+    /**
+     * Indicates if validated value should be exposed in ValidationError.
+     */
+    value?: boolean;
   };
   /**
-   * Setting true will cause fail validation of unknown objects.
+   * Settings true will cause fail validation of unknown objects.
    */
   forbidUnknownValues?: boolean;
 }

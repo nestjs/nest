@@ -1,6 +1,6 @@
 import { RequestMethod } from '../../enums';
-import { CorsOptions } from './../../interfaces/external/cors-options.interface';
-import { NestApplicationOptions } from './../../interfaces/nest-application-options.interface';
+import { CorsOptions } from '../../interfaces/external/cors-options.interface';
+import { NestApplicationOptions } from '../../interfaces/nest-application-options.interface';
 
 export type ErrorHandler<TRequest = any, TResponse = any> = (
   error: any,
@@ -42,8 +42,10 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   options(path: string, handler: RequestHandler<TRequest, TResponse>): any;
   listen(port: number | string, callback?: () => void): any;
   listen(port: number | string, hostname: string, callback?: () => void): any;
-  reply(response: any, body: any, statusCode: number): any;
+  reply(response: any, body: any, statusCode?: number): any;
+  status(response: any, statusCode: number): any;
   render(response: any, view: string, options: any): any;
+  redirect(response: any, statusCode: number, url: string): any;
   setHeader(response: any, name: string, value: string): any;
   setErrorHandler?(handler: Function): any;
   setNotFoundHandler?(handler: Function): any;
@@ -61,4 +63,5 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   getHttpServer(): any;
   initHttpServer(options: NestApplicationOptions): void;
   close(): any;
+  getType(): string;
 }

@@ -118,8 +118,6 @@ describe('ClientRedis', () => {
     });
   });
   describe('createResponseCallback', () => {
-    const pattern = 'test';
-    const msg = { pattern, data: 'data', id: '1' };
     let callback: sinon.SinonSpy, subscription;
     const responseMessage = {
       err: null,
@@ -128,7 +126,7 @@ describe('ClientRedis', () => {
     };
 
     describe('not completed', () => {
-      beforeEach(async () => {
+      beforeEach(() => {
         callback = sinon.spy();
 
         subscription = client.createResponseCallback();
@@ -154,7 +152,7 @@ describe('ClientRedis', () => {
           new Buffer(
             JSON.stringify({
               ...responseMessage,
-              isDisposed: true,
+              isDisposed: responseMessage.response,
             }),
           ),
         );
@@ -165,14 +163,14 @@ describe('ClientRedis', () => {
         expect(
           callback.calledWith({
             isDisposed: true,
-            response: null,
+            response: responseMessage.response,
             err: null,
           }),
         ).to.be.true;
       });
     });
     describe('disposed and "id" is incorrect', () => {
-      beforeEach(async () => {
+      beforeEach(() => {
         callback = sinon.spy();
         subscription = client.createResponseCallback();
         subscription('channel', new Buffer(JSON.stringify(responseMessage)));
@@ -218,7 +216,7 @@ describe('ClientRedis', () => {
     let createClientSpy: sinon.SinonSpy;
     let handleErrorsSpy: sinon.SinonSpy;
 
-    beforeEach(async () => {
+    beforeEach(() => {
       createClientSpy = sinon.stub(client, 'createClient').callsFake(
         () =>
           ({
@@ -256,7 +254,9 @@ describe('ClientRedis', () => {
     it('should return options object with "retry_strategy" and call "createRetryStrategy"', () => {
       const createSpy = sinon.spy(client, 'createRetryStrategy');
       const { retry_strategy } = client.getClientOptions(new Subject());
-      retry_strategy({} as any);
+      try {
+        retry_strategy({} as any);
+      } catch {}
       expect(createSpy.called).to.be.true;
     });
   });
@@ -270,29 +270,34 @@ describe('ClientRedis', () => {
       });
     });
     describe('when "retryAttempts" does not exist', () => {
-      it('should return undefined', () => {
+      it('should return an error', () => {
+        (client as any).isExplicitlyTerminated = false;
         (client as any).options.options = {};
         (client as any).options.options.retryAttempts = undefined;
         const result = client.createRetryStrategy({} as any, subject);
-        expect(result).to.be.undefined;
+        expect(result).to.be.instanceOf(Error);
       });
     });
     describe('when "attempts" count is max', () => {
-      it('should return undefined', () => {
+      it('should return an error', () => {
+        (client as any).isExplicitlyTerminated = false;
         (client as any).options.options = {};
         (client as any).options.options.retryAttempts = 3;
         const result = client.createRetryStrategy(
           { attempt: 4 } as any,
           subject,
         );
-        expect(result).to.be.undefined;
+        expect(result).to.be.instanceOf(Error);
       });
     });
     describe('when ECONNREFUSED', () => {
       it('should return error', () => {
+        (client as any).options.options = {};
+        (client as any).options.options.retryAttempts = 10;
+
         const error = { code: 'ECONNREFUSED' };
         const result = client.createRetryStrategy({ error } as any, subject);
-        expect(result).to.be.eql(error);
+        expect(result).to.be.instanceOf(Error);
       });
     });
     describe('otherwise', () => {

@@ -4,17 +4,18 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { EventEmitter } from 'events';
 import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
-import { ClientOptions, ReadPacket, RmqOptions } from '../interfaces';
+import { ReadPacket, RmqOptions } from '../interfaces';
 import {
   DISCONNECT_EVENT,
   ERROR_EVENT,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
+  RQM_DEFAULT_NOACK,
   RQM_DEFAULT_PREFETCH_COUNT,
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
-} from './../constants';
-import { WritePacket } from './../interfaces';
+} from '../constants';
+import { WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
 let rqmPackage: any = {};
@@ -31,22 +32,22 @@ export class ClientRMQ extends ClientProxy {
   protected queueOptions: any;
   protected responseEmitter: EventEmitter;
 
-  constructor(protected readonly options: ClientOptions['options']) {
+  constructor(protected readonly options: RmqOptions['options']) {
     super();
-    this.urls = this.getOptionsProp<RmqOptions>(this.options, 'urls') || [
-      RQM_DEFAULT_URL,
-    ];
+    this.urls = this.getOptionsProp(this.options, 'urls') || [RQM_DEFAULT_URL];
     this.queue =
-      this.getOptionsProp<RmqOptions>(this.options, 'queue') ||
-      RQM_DEFAULT_QUEUE;
+      this.getOptionsProp(this.options, 'queue') || RQM_DEFAULT_QUEUE;
     this.queueOptions =
-      this.getOptionsProp<RmqOptions>(this.options, 'queueOptions') ||
+      this.getOptionsProp(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
 
     loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
     rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
       require('amqp-connection-manager'),
     );
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public close(): void {
@@ -55,12 +56,16 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public consumeChannel() {
+    const noAck =
+      this.getOptionsProp(this.options, 'noAck') || RQM_DEFAULT_NOACK;
     this.channel.addSetup((channel: any) =>
       channel.consume(
         REPLY_QUEUE,
         (msg: any) =>
           this.responseEmitter.emit(msg.properties.correlationId, msg),
-        { noAck: true },
+        {
+          noAck,
+        },
       ),
     );
   }
@@ -92,7 +97,8 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public createClient<T = any>(): T {
-    return rqmPackage.connect(this.urls) as T;
+    const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
+    return rqmPackage.connect(this.urls, { connectionOptions: socketOptions }) as T;
   }
 
   public mergeDisconnectEvent<T = any>(
@@ -109,10 +115,10 @@ export class ClientRMQ extends ClientProxy {
 
   public async setupChannel(channel: any, resolve: Function) {
     const prefetchCount =
-      this.getOptionsProp<RmqOptions>(this.options, 'prefetchCount') ||
+      this.getOptionsProp(this.options, 'prefetchCount') ||
       RQM_DEFAULT_PREFETCH_COUNT;
     const isGlobalPrefetchCount =
-      this.getOptionsProp<RmqOptions>(this.options, 'isGlobalPrefetchCount') ||
+      this.getOptionsProp(this.options, 'isGlobalPrefetchCount') ||
       RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
 
     await channel.assertQueue(this.queue, this.queueOptions);
@@ -129,14 +135,14 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public handleMessage(
-    packet: WritePacket,
+    packet: unknown,
     callback: (packet: WritePacket) => any,
   ) {
-    const { err, response, isDisposed } = packet;
+    const { err, response, isDisposed } = this.deserializer.deserialize(packet);
     if (isDisposed || err) {
       callback({
         err,
-        response: null,
+        response,
         isDisposed: true,
       });
     }
@@ -156,10 +162,12 @@ export class ClientRMQ extends ClientProxy {
         this.handleMessage(JSON.parse(content.toString()), callback);
 
       Object.assign(message, { id: correlationId });
+      const serializedPacket = this.serializer.serialize(message);
+
       this.responseEmitter.on(correlationId, listener);
       this.channel.sendToQueue(
         this.queue,
-        Buffer.from(JSON.stringify(message)),
+        Buffer.from(JSON.stringify(serializedPacket)),
         {
           replyTo: REPLY_QUEUE,
           correlationId,
@@ -172,10 +180,12 @@ export class ClientRMQ extends ClientProxy {
   }
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
+    const serializedPacket = this.serializer.serialize(packet);
+
     return new Promise((resolve, reject) =>
       this.channel.sendToQueue(
         this.queue,
-        Buffer.from(JSON.stringify(packet)),
+        Buffer.from(JSON.stringify(serializedPacket)),
         {},
         err => (err ? reject(err) : resolve()),
       ),

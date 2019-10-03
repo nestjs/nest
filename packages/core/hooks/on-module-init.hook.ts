@@ -1,5 +1,5 @@
 import { OnModuleInit } from '@nestjs/common';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
@@ -14,7 +14,7 @@ import {
  * @param instance The instance which should be checked
  */
 function hasOnModuleInitHook(instance: unknown): instance is OnModuleInit {
-  return !isUndefined((instance as OnModuleInit).onModuleInit);
+  return !isNil((instance as OnModuleInit).onModuleInit);
 }
 
 /**

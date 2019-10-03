@@ -5,9 +5,10 @@ import { UseFilters } from '../../../common/decorators/core/exception-filters.de
 import { ApplicationConfig } from '../../application-config';
 import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context';
 import { NestContainer } from '../../injector/container';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
 
 describe('ExternalExceptionFilterContext', () => {
-  let moduleName: string;
+  let applicationConfig: ApplicationConfig;
   let exceptionFilter: ExternalExceptionFilterContext;
 
   class CustomException {}
@@ -17,10 +18,10 @@ describe('ExternalExceptionFilterContext', () => {
   }
 
   beforeEach(() => {
-    moduleName = 'Test';
+    applicationConfig = new ApplicationConfig();
     exceptionFilter = new ExternalExceptionFilterContext(
       new NestContainer(),
-      new ApplicationConfig(),
+      applicationConfig,
     );
   });
   describe('create', () => {
@@ -70,6 +71,38 @@ describe('ExternalExceptionFilterContext', () => {
         CustomException,
       ]);
       expect(resolved[0].func).to.be.a('function');
+    });
+  });
+
+  describe('getGlobalMetadata', () => {
+    describe('when contextId is static and inquirerId is nil', () => {
+      it('should return global filters', () => {
+        const expectedResult = applicationConfig.getGlobalFilters();
+        expect(exceptionFilter.getGlobalMetadata()).to.be.equal(expectedResult);
+      });
+    });
+    describe('otherwise', () => {
+      it('should merge static global with request/transient scoped filters', () => {
+        const globalFilters: any = ['test'];
+        const instanceWrapper = new InstanceWrapper();
+        const instance = 'request-scoped';
+        const scopedFilterWrappers = [instanceWrapper];
+
+        sinon
+          .stub(applicationConfig, 'getGlobalFilters')
+          .callsFake(() => globalFilters);
+        sinon
+          .stub(applicationConfig, 'getGlobalRequestFilters')
+          .callsFake(() => scopedFilterWrappers);
+        sinon
+          .stub(instanceWrapper, 'getInstanceByContextId')
+          .callsFake(() => ({ instance } as any));
+
+        expect(exceptionFilter.getGlobalMetadata({ id: 3 })).to.contains(
+          instance,
+          ...globalFilters,
+        );
+      });
     });
   });
 });

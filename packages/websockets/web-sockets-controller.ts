@@ -12,7 +12,7 @@ import {
   MessageMappingProperties,
 } from './gateway-metadata-explorer';
 import { NestGateway } from './interfaces/nest-gateway.interface';
-import { ObservableSocketServer } from './interfaces/observable-socket-server.interface';
+import { SocketEventsHost } from './interfaces/socket-events-host.interface';
 import { SocketServerProvider } from './socket-server-provider';
 
 export class WebSocketsController {
@@ -28,7 +28,7 @@ export class WebSocketsController {
 
   public mergeGatewayAndServer(
     instance: NestGateway,
-    metatype: Type<any>,
+    metatype: Type<any> | Function,
     module: string,
   ) {
     const options = Reflect.getMetadata(GATEWAY_OPTIONS, metatype) || {};
@@ -37,10 +37,10 @@ export class WebSocketsController {
     if (!Number.isInteger(port)) {
       throw new InvalidSocketPortException(port, metatype);
     }
-    this.subscribeObservableServer(instance, options, port, module);
+    this.subscribeToServerEvents(instance, options, port, module);
   }
 
-  public subscribeObservableServer(
+  public subscribeToServerEvents(
     instance: NestGateway,
     options: any,
     port: number,
@@ -48,23 +48,29 @@ export class WebSocketsController {
   ) {
     const nativeMessageHandlers = this.metadataExplorer.explore(instance);
     const messageHandlers = nativeMessageHandlers.map(
-      ({ callback, message }) => ({
+      ({ callback, message, methodName }) => ({
         message,
-        callback: this.contextCreator.create(instance, callback, module),
+        methodName,
+        callback: this.contextCreator.create(
+          instance,
+          callback,
+          module,
+          methodName,
+        ),
       }),
     );
     const observableServer = this.socketServerProvider.scanForSocketServer(
       options,
       port,
     );
-    this.hookServerToProperties(instance, observableServer.server);
+    this.assignServerToProperties(instance, observableServer.server);
     this.subscribeEvents(instance, messageHandlers, observableServer);
   }
 
   public subscribeEvents(
     instance: NestGateway,
     subscribersMap: MessageMappingProperties[],
-    observableServer: ObservableSocketServer,
+    observableServer: SocketEventsHost,
   ) {
     const { init, disconnect, connection, server } = observableServer;
     const adapter = this.config.getIoAdapter();
@@ -154,7 +160,10 @@ export class WebSocketsController {
     return of(result);
   }
 
-  private hookServerToProperties<T = any>(instance: NestGateway, server: any) {
+  private assignServerToProperties<T = any>(
+    instance: NestGateway,
+    server: any,
+  ) {
     for (const propertyKey of this.metadataExplorer.scanForServerHooks(
       instance,
     )) {

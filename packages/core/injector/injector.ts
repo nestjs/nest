@@ -80,8 +80,8 @@ export class Injector {
     }
     const loadInstance = (instances: any[]) => {
       targetWrapper.instance = targetWrapper.isDependencyTreeStatic()
-        ? new metatype(...instances)
-        : Object.create(metatype);
+        ? new (metatype as Type<any>)(...instances)
+        : Object.create(metatype.prototype);
     };
     await this.resolveConstructorParams(
       wrapper,
@@ -106,7 +106,7 @@ export class Injector {
       contextId,
       wrapper,
     );
-    await this.loadEnhancersPerContext(wrapper, module, contextId, wrapper);
+    await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
   }
 
   public async loadInjectable(
@@ -139,7 +139,7 @@ export class Injector {
       contextId,
       inquirer,
     );
-    await this.loadEnhancersPerContext(wrapper, module, contextId, wrapper);
+    await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
   }
 
   public loadPrototype<T>(
@@ -190,7 +190,7 @@ export class Injector {
       throw new RuntimeException();
     }
     if (instanceHost.isResolved) {
-      return;
+      return done();
     }
     const callback = async (instances: any[]) => {
       const properties = await this.resolveProperties(
@@ -235,10 +235,10 @@ export class Injector {
       return callback(deps);
     }
     const dependencies = isNil(inject)
-      ? this.reflectConstructorParams(wrapper.metatype)
+      ? this.reflectConstructorParams(wrapper.metatype as Type<any>)
       : inject;
     const optionalDependenciesIds = isNil(inject)
-      ? this.reflectOptionalParams(wrapper.metatype)
+      ? this.reflectOptionalParams(wrapper.metatype as Type<any>)
       : [];
 
     let isResolved = true;
@@ -401,6 +401,13 @@ export class Injector {
     inquirer?: InstanceWrapper,
   ): Promise<InstanceWrapper<T>> {
     const { name } = dependencyContext;
+    if (wrapper && wrapper.name === name) {
+      throw new UnknownDependenciesException(
+        wrapper.name,
+        dependencyContext,
+        module,
+      );
+    }
     const scanInExports = () =>
       this.lookupComponentInExports(
         dependencyContext,
@@ -444,12 +451,20 @@ export class Injector {
     moduleRegistry: any[] = [],
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
+    isTraversing?: boolean,
   ): Promise<any> {
     let instanceWrapperRef: InstanceWrapper = null;
 
     const imports = module.imports || new Set<Module>();
-    const children = [...imports.values()].filter(item => item);
+    const identity = (item: any) => item;
 
+    let children = [...imports.values()].filter(identity);
+    if (isTraversing) {
+      const contextModuleExports = module.exports;
+      children = children.filter(child =>
+        contextModuleExports.has(child.metatype && child.metatype.name),
+      );
+    }
     for (const relatedModule of children) {
       if (moduleRegistry.includes(relatedModule.id)) {
         continue;
@@ -464,6 +479,7 @@ export class Injector {
           moduleRegistry,
           contextId,
           inquirer,
+          true,
         );
         if (instanceRef) {
           return instanceRef;
@@ -504,7 +520,7 @@ export class Injector {
     if (metadata && contextId !== STATIC_CONTEXT) {
       return this.loadPropertiesMetadata(metadata, contextId, inquirer);
     }
-    const properties = this.reflectProperties(wrapper.metatype);
+    const properties = this.reflectProperties(wrapper.metatype as Type<any>);
     const instances = await Promise.all(
       properties.map(async (item: PropertyDependency) => {
         try {
@@ -588,14 +604,12 @@ export class Injector {
     const isInContext = isStatic || isInRequestScope || isLazyTransient;
 
     if (isNil(inject) && isInContext) {
-      const targetInstance = wrapper.getInstanceByContextId(
-        contextId,
-        inquirerId,
-      );
-
-      targetInstance.instance = wrapper.forwardRef
-        ? Object.assign(targetInstance.instance, new metatype(...instances))
-        : new metatype(...instances);
+      instanceHost.instance = wrapper.forwardRef
+        ? Object.assign(
+            instanceHost.instance,
+            new (metatype as Type<any>)(...instances),
+          )
+        : new (metatype as Type<any>)(...instances);
     } else if (isInContext) {
       const factoryReturnValue = ((targetMetatype.metatype as any) as Function)(
         ...instances,
@@ -616,7 +630,7 @@ export class Injector {
       instance.constructor && instance.constructor.name,
     );
     await this.loadInstance(wrapper, collection, module, ctx, wrapper);
-    await this.loadEnhancersPerContext(wrapper, module, ctx, wrapper);
+    await this.loadEnhancersPerContext(wrapper, ctx, wrapper);
 
     const host = wrapper.getInstanceByContextId(ctx);
     return host && (host.instance as T);
@@ -624,13 +638,20 @@ export class Injector {
 
   public async loadEnhancersPerContext(
     wrapper: InstanceWrapper,
-    module: Module,
     ctx: ContextId,
     inquirer?: InstanceWrapper,
   ) {
     const enhancers = wrapper.getEnhancersMetadata() || [];
-    const loadEnhancer = (item: InstanceWrapper) =>
-      this.loadInstance(item, module.injectables, module, ctx, inquirer);
+    const loadEnhancer = (item: InstanceWrapper) => {
+      const hostModule = item.host;
+      return this.loadInstance(
+        item,
+        hostModule.injectables,
+        hostModule,
+        ctx,
+        inquirer,
+      );
+    };
     await Promise.all(enhancers.map(loadEnhancer));
   }
 

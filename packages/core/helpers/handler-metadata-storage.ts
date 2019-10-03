@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common/interfaces';
-import { ContextId } from './../injector/instance-wrapper';
+import * as hash from 'object-hash';
+import { ContextId } from '../injector/instance-wrapper';
 import { ParamProperties } from './context-utils';
 
 export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');
@@ -7,6 +8,9 @@ export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');
 export interface HandlerMetadata {
   argsLength: number;
   paramtypes: any[];
+  httpStatusCode: number;
+  responseHeaders: any[];
+  hasCustomHeaders: boolean;
   getParamsMetadata: (
     moduleKey: string,
     contextId?: ContextId,
@@ -33,7 +37,7 @@ export class HandlerMetadataStorage<TValue = HandlerMetadata, TKey = any> {
 
   private getMetadataKey(controller: Controller, methodName: string): string {
     const ctor = controller.constructor;
-    const controllerKey = ctor && ctor.name;
+    const controllerKey = ctor && hash(ctor);
     return controllerKey + methodName;
   }
 }

@@ -3,21 +3,82 @@ import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientProxy } from '../../client/client-proxy';
 import { ReadPacket } from '../../interfaces';
+import * as Utils from '../../utils';
+
 // tslint:disable:no-string-literal
 
 class TestClientProxy extends ClientProxy {
   protected async dispatchEvent<T = any>(
     packet: ReadPacket<any>,
   ): Promise<any> {}
-  public async connect() {}
+  public async connect() {
+    return Promise.resolve();
+  }
   public publish(pattern, callback): any {}
-  public close() {}
+  public async close() {}
 }
 
-describe('ClientProxy', () => {
+describe('ClientProxy', function() {
+  this.retries(10);
+
   let client: TestClientProxy;
   beforeEach(() => {
     client = new TestClientProxy();
+  });
+
+  describe('createObserver', () => {
+    describe('returned function calls', () => {
+      it(`"error" when first parameter is not null or undefined`, () => {
+        const testClient = new TestClientProxy();
+        const err = 'test';
+        const error = sinon.spy();
+        const next = sinon.spy();
+        const complete = sinon.spy();
+        const observer = {
+          error,
+          next,
+          complete,
+        };
+        const fn = testClient['createObserver'](observer);
+
+        fn({ err });
+        expect(error.calledWith(err)).to.be.true;
+      });
+
+      it(`"next" when first parameter is null or undefined`, () => {
+        const testClient = new TestClientProxy();
+        const data = 'test';
+        const error = sinon.spy();
+        const next = sinon.spy();
+        const complete = sinon.spy();
+        const observer = {
+          error,
+          next,
+          complete,
+        };
+        const fn = testClient['createObserver'](observer);
+
+        fn({ response: data });
+        expect(next.calledWith(data)).to.be.true;
+      });
+
+      it(`"complete" when third parameter is true`, () => {
+        const testClient = new TestClientProxy();
+        const data = 'test';
+        const error = sinon.spy();
+        const next = sinon.spy();
+        const complete = sinon.spy();
+        const observer = {
+          error,
+          next,
+          complete,
+        };
+        const fn = testClient['createObserver'](observer);
+
+        fn({ data, isDisposed: true } as any);
+        expect(complete.called).to.be.true;
+      });
+    });
   });
 
   describe('send', () => {
@@ -26,9 +87,8 @@ describe('ClientProxy', () => {
       expect(stream$ instanceof Observable).to.be.true;
     });
     it('should call "connect" on subscribe', () => {
-      const connectSpy = sinon.spy();
+      const connectSpy = sinon.spy(client, 'connect');
       const stream$ = client.send({ test: 3 }, 'test');
-      client.connect = connectSpy;
 
       stream$.subscribe();
       expect(connectSpy.calledOnce).to.be.true;
@@ -74,12 +134,9 @@ describe('ClientProxy', () => {
       const stream$ = client.emit({}, '');
       expect(stream$ instanceof Observable).to.be.true;
     });
-    it('should call "connect" on subscribe', () => {
-      const connectSpy = sinon.spy();
-      const stream$ = client.emit({ test: 3 }, 'test');
-      client.connect = connectSpy;
-
-      stream$.subscribe();
+    it('should call "connect" immediately', () => {
+      const connectSpy = sinon.spy(client, 'connect');
+      client.emit({ test: 3 }, 'test');
       expect(connectSpy.calledOnce).to.be.true;
     });
     describe('when "connect" throws', () => {
@@ -103,7 +160,9 @@ describe('ClientProxy', () => {
       it(`should call "dispatchEvent"`, () => {
         const pattern = { test: 3 };
         const data = 'test';
-        const dispatchEventSpy = sinon.spy();
+        const dispatchEventSpy = sinon
+          .stub()
+          .callsFake(() => Promise.resolve(true));
         const stream$ = client.emit(pattern, data);
         client['dispatchEvent'] = dispatchEventSpy;
 
@@ -118,58 +177,22 @@ describe('ClientProxy', () => {
     });
   });
 
-  describe('createObserver', () => {
-    it(`should return function`, () => {
-      expect(typeof client['createObserver'](null)).to.be.eql('function');
-    });
+  describe('normalizePattern', () => {
+    describe(`when gets 'string' pattern`, () => {
+      it(`should call 'transformPatternToRoute' with 'string' argument`, () => {
+        const inputPattern = 'hello';
+        const msvcUtilTransformPatternToRouteStub = sinon.spy(
+          Utils,
+          'transformPatternToRoute',
+        );
 
-    describe('returned function calls', () => {
-      it(`"error" when first parameter is not null or undefined`, () => {
-        const err = 'test';
-        const error = sinon.spy();
-        const next = sinon.spy();
-        const complete = sinon.spy();
-        const observer = {
-          error,
-          next,
-          complete,
-        };
-        const fn = client['createObserver'](observer);
+        (client as any).normalizePattern(inputPattern);
 
-        fn({ err });
-        expect(error.calledWith(err)).to.be.true;
-      });
+        expect(msvcUtilTransformPatternToRouteStub.args[0][0]).to.be.equal(
+          inputPattern,
+        );
 
-      it(`"next" when first parameter is null or undefined`, () => {
-        const data = 'test';
-        const error = sinon.spy();
-        const next = sinon.spy();
-        const complete = sinon.spy();
-        const observer = {
-          error,
-          next,
-          complete,
-        };
-        const fn = client['createObserver'](observer);
-
-        fn({ response: data });
-        expect(next.calledWith(data)).to.be.true;
-      });
-
-      it(`"complete" when third parameter is true`, () => {
-        const data = 'test';
-        const error = sinon.spy();
-        const next = sinon.spy();
-        const complete = sinon.spy();
-        const observer = {
-          error,
-          next,
-          complete,
-        };
-        const fn = client['createObserver'](observer);
-
-        fn({ data, isDisposed: true } as any);
-        expect(complete.called).to.be.true;
+        msvcUtilTransformPatternToRouteStub.restore();
       });
     });
   });

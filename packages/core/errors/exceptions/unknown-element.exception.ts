@@ -1,9 +1,9 @@
 import { RuntimeException } from './runtime.exception';
 
 export class UnknownElementException extends RuntimeException {
-  constructor() {
+  constructor(name?: string) {
     super(
-      'Nest cannot find given element (it does not exist in current context)',
+      `Nest could not find ${name || 'given'} element (this provider does not exist in the current context)`,
     );
   }
 }

@@ -6,18 +6,7 @@ import { ERROR_EVENT } from '../../constants';
 
 describe('ClientTCP', () => {
   let client: ClientTCP;
-  let socket: {
-    connect: sinon.SinonStub;
-    publish: sinon.SinonSpy;
-    _socket: {
-      addListener: sinon.SinonStub;
-      removeListener: sinon.SinonSpy;
-      once: sinon.SinonStub;
-    };
-    on: sinon.SinonStub;
-    end: sinon.SinonSpy;
-    sendMessage: sinon.SinonSpy;
-  };
+  let socket;
   let createSocketStub: sinon.SinonStub;
 
   beforeEach(() => {
@@ -27,9 +16,8 @@ describe('ClientTCP', () => {
 
     socket = {
       connect: sinon.stub(),
-      publish: sinon.spy(),
       on: sinon.stub().callsFake(onFakeCallback),
-      _socket: {
+      netSocket: {
         addListener: sinon.stub().callsFake(onFakeCallback),
         removeListener: sinon.spy(),
         once: sinon.stub().callsFake(onFakeCallback),
@@ -88,7 +76,7 @@ describe('ClientTCP', () => {
         expect(
           callback.calledWith({
             err: undefined,
-            response: null,
+            response: undefined,
             isDisposed: true,
           }),
         ).to.be.true;
@@ -134,7 +122,9 @@ describe('ClientTCP', () => {
           toPromise: () => source,
           pipe: () => source,
         };
-        connect$Stub = sinon.stub(client, 'connect$' as any).callsFake(() => source);
+        connect$Stub = sinon
+          .stub(client, 'connect$' as any)
+          .callsFake(() => source);
         await client.connect();
       });
       afterEach(() => {

@@ -1,10 +1,16 @@
 import { Scope } from '@nestjs/common';
 import { SCOPE_OPTIONS_METADATA } from '@nestjs/common/constants';
 import {
+  Abstract,
+  ClassProvider,
   Controller,
   DynamicModule,
+  ExistingProvider,
+  FactoryProvider,
   Injectable,
   NestModule,
+  Provider,
+  ValueProvider,
 } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
@@ -15,33 +21,18 @@ import {
   isSymbol,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { ApplicationConfig } from '../application-config';
 import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import { createContextId } from '../helpers';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
 
-export interface CustomProvider {
-  provide: any;
-  name: string;
+interface ProviderName {
+  name?: string | symbol;
 }
-export type OpaqueToken = string | symbol | Type<any>;
-export type CustomClass = CustomProvider & {
-  useClass: Type<any>;
-  scope?: Scope;
-};
-export type CustomFactory = CustomProvider & {
-  useFactory: (...args: any[]) => any;
-  inject?: OpaqueToken[];
-  scope?: Scope;
-};
-export type CustomValue = CustomProvider & { useValue: any };
-export type ProviderMetatype =
-  | Type<Injectable>
-  | CustomFactory
-  | CustomValue
-  | CustomClass;
 
 export class Module {
   private readonly _id: string;
@@ -53,6 +44,7 @@ export class Module {
     InstanceWrapper<Controller>
   >();
   private readonly _exports = new Set<string | symbol>();
+  private _distance: number = 0;
 
   constructor(
     private readonly _metatype: Type<any>,
@@ -124,9 +116,18 @@ export class Module {
     return this._metatype;
   }
 
+  get distance(): number {
+    return this._distance;
+  }
+
+  set distance(value: number) {
+    this._distance = value;
+  }
+
   public addCoreProviders(container: NestContainer) {
     this.addModuleAsProvider();
     this.addModuleRef();
+    this.addApplicationConfig();
   }
 
   public addModuleRef() {
@@ -156,8 +157,20 @@ export class Module {
     );
   }
 
+  public addApplicationConfig() {
+    this._providers.set(
+      ApplicationConfig.name,
+      new InstanceWrapper({
+        name: ApplicationConfig.name,
+        isResolved: true,
+        instance: this.container.applicationConfig,
+        host: this,
+      }),
+    );
+  }
+
   public addInjectable<T extends Injectable>(
-    injectable: Type<T>,
+    injectable: Provider,
     host?: Type<T>,
   ) {
     if (this.isCustomProvider(injectable)) {
@@ -174,12 +187,14 @@ export class Module {
     this._injectables.set(injectable.name, instanceWrapper);
 
     if (host) {
-      const hostWrapper = this._controllers.get(host && host.name);
+      const token = host && host.name;
+      const hostWrapper =
+        this._controllers.get(host && host.name) || this._providers.get(token);
       hostWrapper && hostWrapper.addEnhancerMetadata(instanceWrapper);
     }
   }
 
-  public addProvider(provider: ProviderMetatype): string {
+  public addProvider(provider: Provider): string {
     if (this.isCustomProvider(provider)) {
       return this.addCustomProvider(provider, this._providers);
     }
@@ -198,13 +213,28 @@ export class Module {
   }
 
   public isCustomProvider(
-    provider: ProviderMetatype,
-  ): provider is CustomClass | CustomFactory | CustomValue {
-    return !isNil((provider as CustomProvider).provide);
+    provider: Provider,
+  ): provider is
+    | ClassProvider
+    | FactoryProvider
+    | ValueProvider
+    | ExistingProvider {
+    return !isNil(
+      (provider as
+        | ClassProvider
+        | FactoryProvider
+        | ValueProvider
+        | ExistingProvider).provide,
+    );
   }
 
   public addCustomProvider(
-    provider: CustomFactory | CustomValue | CustomClass,
+    provider: (
+      | ClassProvider
+      | FactoryProvider
+      | ValueProvider
+      | ExistingProvider) &
+      ProviderName,
     collection: Map<string, any>,
   ): string {
     const name = this.getProviderStaticToken(provider.provide) as string;
@@ -218,20 +248,26 @@ export class Module {
       this.addCustomValue(provider, collection);
     } else if (this.isCustomFactory(provider)) {
       this.addCustomFactory(provider, collection);
+    } else if (this.isCustomUseExisting(provider)) {
+      this.addCustomUseExisting(provider, collection);
     }
     return name;
   }
 
-  public isCustomClass(provider: any): provider is CustomClass {
-    return !isUndefined((provider as CustomClass).useClass);
+  public isCustomClass(provider: any): provider is ClassProvider {
+    return !isUndefined((provider as ClassProvider).useClass);
   }
 
-  public isCustomValue(provider: any): provider is CustomValue {
-    return !isUndefined((provider as CustomValue).useValue);
+  public isCustomValue(provider: any): provider is ValueProvider {
+    return !isUndefined((provider as ValueProvider).useValue);
   }
 
-  public isCustomFactory(provider: any): provider is CustomFactory {
-    return !isUndefined((provider as CustomFactory).useFactory);
+  public isCustomFactory(provider: any): provider is FactoryProvider {
+    return !isUndefined((provider as FactoryProvider).useFactory);
+  }
+
+  public isCustomUseExisting(provider: any): provider is ExistingProvider {
+    return !isUndefined((provider as ExistingProvider).useExisting);
   }
 
   public isDynamicModule(exported: any): exported is DynamicModule {
@@ -239,12 +275,12 @@ export class Module {
   }
 
   public addCustomClass(
-    provider: CustomClass,
+    provider: ClassProvider & ProviderName,
     collection: Map<string, InstanceWrapper>,
   ) {
     const { name, useClass, scope } = provider;
     collection.set(
-      name,
+      name as string,
       new InstanceWrapper({
         name,
         metatype: useClass,
@@ -257,12 +293,12 @@ export class Module {
   }
 
   public addCustomValue(
-    provider: CustomValue,
+    provider: ValueProvider & ProviderName,
     collection: Map<string, InstanceWrapper>,
   ) {
     const { name, useValue: value } = provider;
     collection.set(
-      name,
+      name as string,
       new InstanceWrapper({
         name,
         metatype: null,
@@ -275,12 +311,12 @@ export class Module {
   }
 
   public addCustomFactory(
-    provider: CustomFactory,
+    provider: FactoryProvider & ProviderName,
     collection: Map<string, InstanceWrapper>,
   ) {
     const { name, useFactory: factory, inject, scope } = provider;
     collection.set(
-      name,
+      name as string,
       new InstanceWrapper({
         name,
         metatype: factory as any,
@@ -293,8 +329,26 @@ export class Module {
     );
   }
 
+  public addCustomUseExisting(
+    provider: ExistingProvider & ProviderName,
+    collection: Map<string, InstanceWrapper>,
+  ) {
+    const { name, useExisting } = provider;
+    collection.set(
+      name as string,
+      new InstanceWrapper({
+        name,
+        metatype: (instance => instance) as any,
+        instance: null,
+        isResolved: false,
+        inject: [useExisting],
+        host: this,
+      }),
+    );
+  }
+
   public addExportedProvider(
-    provider: ProviderMetatype | string | symbol | DynamicModule,
+    provider: Provider & ProviderName | string | symbol | DynamicModule,
   ) {
     const addExportedUnit = (token: string | symbol) =>
       this._exports.add(this.validateExportedProvider(token));
@@ -311,7 +365,11 @@ export class Module {
   }
 
   public addCustomExportedProvider(
-    provider: CustomFactory | CustomValue | CustomClass,
+    provider:
+      | FactoryProvider
+      | ValueProvider
+      | ClassProvider
+      | ExistingProvider,
   ) {
     const provide = provider.provide;
     if (isString(provide) || isSymbol(provide)) {
@@ -333,7 +391,7 @@ export class Module {
 
     if (!importsNames.includes(token as any)) {
       const { name } = this.metatype;
-      throw new UnknownExportException(name);
+      throw new UnknownExportException(token as any, name);
     }
     return token;
   }
@@ -352,15 +410,19 @@ export class Module {
     );
   }
 
-  public addRelatedModule(module: any) {
+  public addRelatedModule(module: Module) {
     this._imports.add(module);
   }
 
   public replace(toReplace: string | symbol | Type<any>, options: any) {
     if (options.isProvider && this.hasProvider(toReplace)) {
-      return this.addProvider({ provide: toReplace, ...options });
+      const name = this.getProviderStaticToken(toReplace);
+      const originalProvider = this._providers.get(name);
+      return originalProvider.mergeWith({ provide: toReplace, ...options });
     } else if (!options.isProvider && this.hasInjectable(toReplace)) {
-      this.addInjectable({
+      const name = this.getProviderStaticToken(toReplace);
+      const originalInjectable = this._injectables.get(name);
+      return originalInjectable.mergeWith({
         provide: toReplace,
         ...options,
       });
@@ -378,7 +440,7 @@ export class Module {
   }
 
   public getProviderStaticToken(
-    provider: string | symbol | Type<any>,
+    provider: string | symbol | Type<any> | Abstract<any>,
   ): string | symbol {
     return isFunction(provider)
       ? (provider as Function).name
@@ -403,10 +465,15 @@ export class Module {
         if (!(options && options.strict)) {
           return this.find<TInput, TResult>(typeOrToken);
         }
-        return this.findInstanceByPrototypeOrToken<TInput, TResult>(
-          typeOrToken,
-          self,
-        );
+        return this.findInstanceByToken<TInput, TResult>(typeOrToken, self);
+      }
+
+      public resolve<TInput = any, TResult = TInput>(
+        typeOrToken: Type<TInput> | string | symbol,
+        contextId = createContextId(),
+        options: { strict: boolean } = { strict: true },
+      ): Promise<TResult> {
+        return this.resolvePerContext(typeOrToken, self, contextId, options);
       }
 
       public async create<T = any>(type: Type<T>): Promise<T> {
@@ -418,7 +485,7 @@ export class Module {
     };
   }
 
-  private getClassScope(provider: ProviderMetatype): Scope {
+  private getClassScope(provider: Provider): Scope {
     const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, provider);
     return metadata && metadata.scope;
   }

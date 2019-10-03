@@ -19,6 +19,9 @@ describe('REDIS transport', () => {
 
     app.connectMicroservice({
       transport: Transport.REDIS,
+      options: {
+        url: 'redis://0.0.0.0:6379',
+      },
     });
     await app.startAllMicroservicesAsync();
     await app.init();
@@ -46,7 +49,9 @@ describe('REDIS transport', () => {
       .expect(200, '15');
   });
 
-  it(`/POST (concurrent)`, () => {
+  it(`/POST (concurrent)`, function() {
+    this.retries(10);
+
     return request(server)
       .post('/concurrent')
       .send([
@@ -62,7 +67,7 @@ describe('REDIS transport', () => {
         Array.from({ length: 10 }, (v, k) => k + 91),
       ])
       .expect(200, 'true');
-  });
+  }).timeout(5000);
 
   it(`/POST (streaming)`, () => {
     return request(server)

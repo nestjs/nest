@@ -63,6 +63,7 @@ export class TestingModule extends NestApplicationContext {
     const { ExpressAdapter } = loadPackage(
       '@nestjs/platform-express',
       'NestFactory',
+      () => require('@nestjs/platform-express'),
     );
     return new ExpressAdapter(httpServer);
   }

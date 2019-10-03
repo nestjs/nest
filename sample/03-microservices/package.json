@@ -10,21 +10,21 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.0.1",
-    "@nestjs/core": "6.0.1",
-    "@nestjs/microservices": "6.0.1",
-    "@nestjs/platform-express": "6.0.1",
-    "@nestjs/testing": "6.0.1",
-    "class-transformer": "0.2.0",
-    "class-validator": "0.9.1",
+    "@nestjs/common": "6.8.0",
+    "@nestjs/core": "6.8.0",
+    "@nestjs/microservices": "6.8.0",
+    "@nestjs/platform-express": "6.8.0",
+    "@nestjs/testing": "6.8.0",
+    "class-transformer": "0.2.3",
+    "class-validator": "0.10.1",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.4.0",
-    "typescript": "3.3.3333"
+    "rxjs": "6.5.3",
+    "typescript": "3.6.3"
   },
   "devDependencies": {
-    "@types/amqplib": "0.5.11",
-    "@types/node": "10.14.1",
-    "ts-node": "8.0.3",
-    "tslint": "5.14.0"
+    "@types/amqplib": "0.5.13",
+    "@types/node": "10.14.19",
+    "ts-node": "8.4.1",
+    "tslint": "5.20.0"
   }
 }

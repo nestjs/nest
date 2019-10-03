@@ -9,7 +9,7 @@ import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
-import { ServeStaticOptions } from './../interfaces/serve-static-options.interface';
+import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
@@ -18,16 +18,26 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     super(instance || express());
   }
 
-  public reply(response, body: any, statusCode: number) {
-    const res = response.status(statusCode);
-    if (isNil(body)) {
-      return res.send();
+  public reply(response, body: any, statusCode?: number) {
+    if (statusCode) {
+      response.status(statusCode);
     }
-    return isObject(body) ? res.json(body) : res.send(String(body));
+    if (isNil(body)) {
+      return response.send();
+    }
+    return isObject(body) ? response.json(body) : response.send(String(body));
+  }
+
+  public status(response: any, statusCode: number) {
+    return response.status(statusCode);
   }
 
   public render(response: any, view: string, options: any) {
     return response.render(view, options);
+  }
+
+  public redirect(response: any, statusCode: number, url: string) {
+    return response.redirect(statusCode, url);
   }
 
   public setErrorHandler(handler: Function) {
@@ -44,8 +54,8 @@ export class ExpressAdapter extends AbstractHttpAdapter {
 
   public listen(port: string | number, callback?: () => void);
   public listen(port: string | number, hostname: string, callback?: () => void);
-  public listen(port: any, hostname?: any, callback?: any) {
-    return this.httpServer.listen(port, hostname, callback);
+  public listen(port: any, ...args: any[]) {
+    return this.httpServer.listen(port, ...args);
   }
 
   public close() {
@@ -123,6 +133,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))
       .forEach(parserKey => this.use(parserMiddleware[parserKey]));
+  }
+
+  public getType(): string {
+    return 'express';
   }
 
   private isMiddlewareApplied(name: string): boolean {

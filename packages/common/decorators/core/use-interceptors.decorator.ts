@@ -5,14 +5,25 @@ import { isFunction } from '../../utils/shared.utils';
 import { validateEach } from '../../utils/validate-each.util';
 
 /**
- * Binds interceptors to the particular context.
- * When the `@UseInterceptors()` is used on the controller level:
- * - Interceptor will be register to each handler (every method)
+ * Decorator that binds interceptors to the scope of the controller or method,
+ * depending on its context.
  *
- * When the `@UseInterceptors()` is used on the handle level:
- * - Interceptor will be registered only to the specified method
+ * When `@UseInterceptors` is used at the controller level, the interceptor will
+ * be applied to every handler (method) in the controller.
  *
- * @param  {} ...interceptors
+ * When `@UseInterceptors` is used at the individual handler level, the interceptor
+ * will apply only to that specific method.
+ *
+ * @param interceptors a single interceptor instance or class, or a list of
+ * interceptor instances or classes.
+ *
+ * @see [Interceptors](https://docs.nestjs.com/interceptors)
+ *
+ * @usageNotes
+ * Interceptors can also be set up globally for all controllers and routes
+ * using `app.useGlobalInterceptors()`.  [See here for details](https://docs.nestjs.com/interceptors#binding-interceptors)
+ *
+ * @publicApi
  */
 export function UseInterceptors(
   ...interceptors: (NestInterceptor | Function)[]

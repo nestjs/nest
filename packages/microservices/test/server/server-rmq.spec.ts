@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerRMQ } from '../../server/server-rmq';
 // tslint:disable:no-string-literal
 
@@ -88,13 +89,14 @@ describe('ServerRMQ', () => {
     });
     it('should call "handleEvent" if identifier is not present', () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
-      server.handleMessage(createMessage({ pattern: '', data: '' }));
+      server.handleMessage(createMessage({ pattern: '', data: '' }), '');
       expect(handleEventSpy.called).to.be.true;
     });
     it('should send NO_MESSAGE_HANDLER error if key does not exists in handlers object', async () => {
-      await server.handleMessage(msg);
+      await server.handleMessage(msg, '');
       expect(
         sendMessageStub.calledWith({
+          id: '3',
           status: 'error',
           err: NO_MESSAGE_HANDLER,
         }),
@@ -105,7 +107,7 @@ describe('ServerRMQ', () => {
       (server as any).messageHandlers = objectToMap({
         [pattern]: handler as any,
       });
-      await server.handleMessage(msg);
+      await server.handleMessage(msg, '');
       expect(handler.calledOnce).to.be.true;
     });
   });
@@ -185,7 +187,11 @@ describe('ServerRMQ', () => {
         [channel]: handler,
       });
 
-      server.handleEvent(channel, { pattern: '', data });
+      server.handleEvent(
+        channel,
+        { pattern: '', data },
+        new BaseRpcContext([]),
+      );
       expect(handler.calledWith(data)).to.be.true;
     });
   });

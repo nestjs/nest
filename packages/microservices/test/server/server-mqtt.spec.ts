@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerMqtt } from '../../server/server-mqtt';
 
 describe('ServerMqtt', () => {
@@ -177,16 +178,16 @@ describe('ServerMqtt', () => {
       expect(server.getResQueueName(test)).to.equal(expectedResult);
     });
   });
-  describe('deserialize', () => {
+  describe('parseMessage', () => {
     it(`should return parsed json`, () => {
       const obj = { test: 'test' };
-      expect(server.deserialize(obj)).to.deep.equal(
+      expect(server.parseMessage(obj)).to.deep.equal(
         JSON.parse(JSON.stringify(obj)),
       );
     });
     it(`should not parse argument if it is not an object`, () => {
       const content = 'test';
-      expect(server.deserialize(content)).to.equal(content);
+      expect(server.parseMessage(content)).to.equal(content);
     });
   });
   describe('handleEvent', () => {
@@ -199,7 +200,11 @@ describe('ServerMqtt', () => {
         [channel]: handler,
       });
 
-      server.handleEvent(channel, { pattern: '', data });
+      server.handleEvent(
+        channel,
+        { pattern: '', data },
+        new BaseRpcContext([]),
+      );
       expect(handler.calledWith(data)).to.be.true;
     });
   });

@@ -1,6 +1,6 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { SocketsContainer } from '../container';
+import * as sinon from 'sinon';
+import { SocketsContainer } from '../sockets-container';
 
 describe('SocketsContainer', () => {
   const namespace = 'test';
@@ -13,37 +13,37 @@ describe('SocketsContainer', () => {
     setSpy = sinon.spy();
     getSpy = sinon.spy();
     instance = new SocketsContainer();
-    (<any>instance)['observableServers'] = {
+    (instance as any).socketEventHosts = {
       get: getSpy,
       set: setSpy,
     };
   });
-  describe('getSocketServer', () => {
-    it(`should call "observableServers" get method with expected arguments`, () => {
-      instance.getServerByPort(port);
+  describe('getSocketEventsHostByPort', () => {
+    it(`should call "socketEventHosts" get method with expected arguments`, () => {
+      instance.getSocketEventsHostByPort(port);
       expect(getSpy.calledWith({ namespace, port }));
     });
   });
-  describe('storeObservableServer', () => {
-    it(`should call "observableServers" set method with expected arguments`, () => {
+  describe('addSocketEventsHost', () => {
+    it(`should call "socketEventHosts" set method with expected arguments`, () => {
       const server = {};
-      instance.addServer(namespace, port, <any>server);
+      instance.addSocketEventsHost(namespace, port, server as any);
       expect(setSpy.calledWith({ namespace, port }, server));
     });
   });
-  describe('getAllServers', () => {
-    it('should return "observableServers"', () => {
+  describe('getAllSocketEventHosts', () => {
+    it('should return "socketEventHosts"', () => {
       const collection = ['test'];
-      (instance as any).observableServers = collection;
-      expect(instance.getAllServers()).to.be.eq(collection);
+      (instance as any).socketEventHosts = collection;
+      expect(instance.getAllSocketEventHosts()).to.be.eq(collection);
     });
   });
   describe('clear', () => {
-    it('should clear servers collection', () => {
+    it('should clear hosts collection', () => {
       const collection = { clear: sinon.spy() };
-      (instance as any).observableServers = collection;
+      (instance as any).socketEventHosts = collection;
       instance.clear();
       expect(collection.clear.called).to.be.true;
     });
-  })
+  });
 });

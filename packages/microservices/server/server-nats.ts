@@ -6,13 +6,11 @@ import {
   NATS_DEFAULT_URL,
   NO_MESSAGE_HANDLER,
 } from '../constants';
+import { NatsContext } from '../ctx-host/nats.context';
 import { Client } from '../external/nats-client.interface';
 import { CustomTransportStrategy, PacketId } from '../interfaces';
-import {
-  MicroserviceOptions,
-  NatsOptions,
-} from '../interfaces/microservice-configuration.interface';
-import { ReadPacket } from '../interfaces/packet.interface';
+import { NatsOptions } from '../interfaces/microservice-configuration.interface';
+import { IncomingRequest, ReadPacket } from '../interfaces/packet.interface';
 import { Server } from './server';
 
 let natsPackage: any = {};
@@ -21,14 +19,16 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private natsClient: Client;
 
-  constructor(private readonly options: MicroserviceOptions['options']) {
+  constructor(private readonly options: NatsOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp<NatsOptions>(this.options, 'url') || NATS_DEFAULT_URL;
+    this.url = this.getOptionsProp(this.options, 'url') || NATS_DEFAULT_URL;
 
     natsPackage = this.loadPackage('nats', ServerNats.name, () =>
       require('nats'),
     );
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public listen(callback: () => void) {
@@ -43,7 +43,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public bindEvents(client: Client) {
-    const queue = this.getOptionsProp<NatsOptions>(this.options, 'queue');
+    const queue = this.getOptionsProp(this.options, 'queue');
     const subscribe = queue
       ? (channel: string) =>
           client.subscribe(
@@ -76,39 +76,52 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(channel: string, client: Client): Function {
-    return async (buffer: ReadPacket & PacketId, replyTo: string) =>
-      this.handleMessage(channel, buffer, client, replyTo);
+    return async (
+      buffer: ReadPacket & PacketId,
+      replyTo: string,
+      callerSubject: string,
+    ) => this.handleMessage(channel, buffer, client, replyTo, callerSubject);
   }
 
   public async handleMessage(
     channel: string,
-    message: ReadPacket & Partial<PacketId>,
+    rawMessage: any,
     client: Client,
     replyTo: string,
+    callerSubject: string,
   ) {
-    if (isUndefined(message.id)) {
-      return this.handleEvent(channel, message);
+    const natsCtx = new NatsContext([callerSubject]);
+    const message = this.deserializer.deserialize(rawMessage, { channel });
+    if (isUndefined((message as IncomingRequest).id)) {
+      return this.handleEvent(channel, message, natsCtx);
     }
-    const publish = this.getPublisher(client, replyTo, message.id);
+    const publish = this.getPublisher(
+      client,
+      replyTo,
+      (message as IncomingRequest).id,
+    );
     const handler = this.getHandlerByPattern(channel);
     if (!handler) {
       const status = 'error';
-      return publish({ id: message.id, status, err: NO_MESSAGE_HANDLER });
+      const noHandlerPacket = {
+        id: (message as IncomingRequest).id,
+        status,
+        err: NO_MESSAGE_HANDLER,
+      };
+      return publish(noHandlerPacket);
     }
     const response$ = this.transformToObservable(
-      await handler(message.data),
+      await handler(message.data, natsCtx),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
   }
 
   public getPublisher(publisher: Client, replyTo: string, id: string) {
-    return (response: any) =>
-      publisher.publish(
-        replyTo,
-        Object.assign(response, {
-          id,
-        }),
-      );
+    return (response: any) => {
+      Object.assign(response, { id });
+      const outgoingResponse = this.serializer.serialize(response);
+      return publisher.publish(replyTo, outgoingResponse);
+    };
   }
 
   public handleError(stream: any) {

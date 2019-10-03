@@ -9,8 +9,7 @@ import {
   MQTT_DEFAULT_URL,
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
-import { MqttOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
+import { MqttOptions, ReadPacket, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 
@@ -18,16 +17,19 @@ let mqttPackage: any = {};
 
 export class ClientMqtt extends ClientProxy {
   protected readonly logger = new Logger(ClientProxy.name);
+  protected readonly subscriptionsCount = new Map<string, number>();
   protected readonly url: string;
   protected mqttClient: MqttClient;
   protected connection: Promise<any>;
 
-  constructor(protected readonly options: ClientOptions['options']) {
+  constructor(protected readonly options: MqttOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp<MqttOptions>(this.options, 'url') || MQTT_DEFAULT_URL;
+    this.url = this.getOptionsProp(this.options, 'url') || MQTT_DEFAULT_URL;
 
     mqttPackage = loadPackage('mqtt', ClientMqtt.name, () => require('mqtt'));
+
+    this.initializeSerializer(options);
+    this.initializeDeserializer(options);
   }
 
   public getAckPatternName(pattern: string): string {
@@ -88,9 +90,10 @@ export class ClientMqtt extends ClientProxy {
 
   public createResponseCallback(): (channel: string, buffer: Buffer) => any {
     return (channel: string, buffer: Buffer) => {
-      const { err, response, isDisposed, id } = JSON.parse(
-        buffer.toString(),
-      ) as WritePacket & PacketId;
+      const packet = JSON.parse(buffer.toString());
+      const { err, response, isDisposed, id } = this.deserializer.deserialize(
+        packet,
+      );
 
       const callback = this.routingMap.get(id);
       if (!callback) {
@@ -99,7 +102,7 @@ export class ClientMqtt extends ClientProxy {
       if (isDisposed || err) {
         return callback({
           err,
-          response: null,
+          response,
           isDisposed: true,
         });
       }
@@ -117,20 +120,32 @@ export class ClientMqtt extends ClientProxy {
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
+      const serializedPacket = this.serializer.serialize(packet);
       const responseChannel = this.getResPatternName(pattern);
+      let subscriptionsCount =
+        this.subscriptionsCount.get(responseChannel) || 0;
 
-      this.mqttClient.subscribe(responseChannel, (err: any) => {
-        if (err) {
-          return;
-        }
+      const publishPacket = () => {
+        subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
+        this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
         this.routingMap.set(packet.id, callback);
         this.mqttClient.publish(
           this.getAckPatternName(pattern),
-          JSON.stringify(packet),
+          JSON.stringify(serializedPacket),
         );
-      });
+      };
+
+      if (subscriptionsCount <= 0) {
+        this.mqttClient.subscribe(
+          responseChannel,
+          (err: any) => !err && publishPacket(),
+        );
+      } else {
+        publishPacket();
+      }
+
       return () => {
-        this.mqttClient.unsubscribe(responseChannel);
+        this.unsubscribeFromChannel(responseChannel);
         this.routingMap.delete(packet.id);
       };
     } catch (err) {
@@ -140,10 +155,21 @@ export class ClientMqtt extends ClientProxy {
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
+    const serializedPacket = this.serializer.serialize(packet);
+
     return new Promise((resolve, reject) =>
-      this.mqttClient.publish(pattern, JSON.stringify(packet), err =>
+      this.mqttClient.publish(pattern, JSON.stringify(serializedPacket), err =>
         err ? reject(err) : resolve(),
       ),
     );
+  }
+
+  protected unsubscribeFromChannel(channel: string) {
+    const subscriptionCount = this.subscriptionsCount.get(channel);
+    this.subscriptionsCount.set(channel, subscriptionCount - 1);
+
+    if (subscriptionCount - 1 <= 0) {
+      this.mqttClient.unsubscribe(channel);
+    }
   }
 }

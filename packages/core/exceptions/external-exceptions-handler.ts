@@ -1,7 +1,7 @@
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
 import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
-import { InvalidExceptionFilterException } from './../errors/exceptions/invalid-exception-filter.exception';
+import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
 import { ExternalExceptionFilter } from './external-exception-filter';
 
 export class ExternalExceptionsHandler extends ExternalExceptionFilter {
@@ -29,12 +29,10 @@ export class ExternalExceptionsHandler extends ExternalExceptionFilter {
     if (isEmpty(this.filters)) {
       return null;
     }
+    const isInstanceOf = metatype => exception instanceof metatype;
     const filter = this.filters.find(({ exceptionMetatypes, func }) => {
       const hasMetatype =
-        !exceptionMetatypes.length ||
-        exceptionMetatypes.some(
-          ExceptionMetatype => exception instanceof ExceptionMetatype,
-        );
+        !exceptionMetatypes.length || exceptionMetatypes.some(isInstanceOf);
       return hasMetatype;
     });
     return filter ? filter.func(exception, host) : null;

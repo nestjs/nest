@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerTCP } from '../../server/server-tcp';
 
 describe('ServerTCP', () => {
@@ -21,9 +22,9 @@ describe('ServerTCP', () => {
         .stub(server, 'getSocketInstance' as any)
         .callsFake(() => socket);
     });
-    it('should bind message event to handler', () => {
+    it('should bind message and error events to handler', () => {
       server.bindHandler(null);
-      expect(socket.on.called).to.be.true;
+      expect(socket.on.calledTwice).to.be.true;
     });
   });
   describe('close', () => {
@@ -44,8 +45,13 @@ describe('ServerTCP', () => {
     it('should call native listen method with expected arguments', () => {
       const callback = () => {};
       server.listen(callback);
-      expect(serverMock.listen.calledWith((server as any).port, callback)).to.be
-        .true;
+      expect(
+        serverMock.listen.calledWith(
+          (server as any).port,
+          (server as any).host,
+          callback,
+        ),
+      ).to.be.true;
     });
   });
   describe('handleMessage', () => {
@@ -125,7 +131,11 @@ describe('ServerTCP', () => {
         [channel]: handler,
       });
 
-      server.handleEvent(channel, { pattern: '', data });
+      server.handleEvent(
+        channel,
+        { pattern: '', data },
+        new BaseRpcContext([]),
+      );
       expect(handler.calledWith(data)).to.be.true;
     });
   });
