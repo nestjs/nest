@@ -1,3 +1,4 @@
 syntax = "proto3";
 
-package test;
+package test2;
+

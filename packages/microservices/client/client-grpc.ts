@@ -119,17 +119,23 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
   public createClient(): any {
     const grpcContext = this.loadProto();
-    const packageName = this.getOptionsProp<GrpcOptions>(
+    const packageOpt = this.getOptionsProp<GrpcOptions>(
       this.options,
       'package',
     );
-    const grpcPkg = this.lookupPackage(grpcContext, packageName);
-    if (!grpcPkg) {
-      const invalidPackageError = new InvalidGrpcPackageException();
-      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
-      throw invalidPackageError;
+    const packageNames = Array.isArray(packageOpt) ? packageOpt : [packageOpt];
+
+    for (const packageName of packageNames) {
+      const grpcPkg = this.lookupPackage(grpcContext, packageName);
+
+      if (!grpcPkg) {
+        const invalidPackageError = new InvalidGrpcPackageException();
+        this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+        throw invalidPackageError;
+      }
+
+      return grpcPkg;
     }
-    return grpcPkg;
   }
 
   public loadProto(): any {

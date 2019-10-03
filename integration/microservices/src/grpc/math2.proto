@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-package math;
+package math2;
 
-service Math {
-  rpc Sum (RequestSum) returns (SumResult) {}
+service Math2 {
+  rpc Sum2 (RequestSum) returns (SumResult) {}
 }
 
 message SumResult {
