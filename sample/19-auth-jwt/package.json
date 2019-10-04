@@ -36,7 +36,7 @@
     "@nestjs/testing": "6.8.0",
     "@types/express": "4.17.1",
     "@types/jest": "24.0.18",
-    "@types/node": "10.14.19",
+    "@types/node": "10.14.20",
     "@types/supertest": "2.0.8",
     "concurrently": "4.1.2",
     "jest": "23.6.0",
