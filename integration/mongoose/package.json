@@ -9,8 +9,8 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.8.0",
-    "@nestjs/core": "6.8.0",
+    "@nestjs/common": "6.8.1",
+    "@nestjs/core": "6.8.1",
     "@nestjs/mongoose": "6.1.2",
     "mongoose": "5.7.3",
     "reflect-metadata": "0.1.13",
