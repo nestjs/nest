@@ -15,15 +15,14 @@ export class RedisBroadcastController {
 
   @Get('broadcast')
   multicats() {
-    return this.client.send<number>({ cmd: 'broadcast' }, {})
-      .pipe(
-        scan((a, b) => a + b),
-        take(2),
-      );
+    return this.client.send<number>({ cmd: 'broadcast' }, {}).pipe(
+      scan((a, b) => a + b),
+      take(2),
+    );
   }
 
   @MessagePattern({ cmd: 'broadcast' })
   replyBroadcast(): Observable<number> {
-    return new Observable((observer) => observer.next(1));
+    return new Observable(observer => observer.next(1));
   }
 }

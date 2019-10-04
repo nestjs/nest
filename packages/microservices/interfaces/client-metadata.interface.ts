@@ -6,7 +6,7 @@ import {
   MqttOptions,
   NatsOptions,
   RedisOptions,
-  RmqOptions
+  RmqOptions,
 } from './microservice-configuration.interface';
 import { Serializer } from './serializer.interface';
 

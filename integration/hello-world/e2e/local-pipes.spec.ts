@@ -10,8 +10,7 @@ describe('Hello world (default adapter)', () => {
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       imports: [ApplicationModule],
-    })
-      .compile();
+    }).compile();
 
     app = module.createNestApplication();
     server = app.getHttpServer();

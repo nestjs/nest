@@ -27,7 +27,7 @@ describe('Mongoose', () => {
       .post('/cats')
       .send(cat)
       .expect(201)
-      .expect(({body}) => body.name === cat.name);
+      .expect(({ body }) => body.name === cat.name);
   });
 
   afterEach(async () => {

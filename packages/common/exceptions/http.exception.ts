@@ -1,4 +1,4 @@
-import { isString, isObject } from '../utils/shared.utils';
+import { isObject, isString } from '../utils/shared.utils';
 
 /**
  * Defines the base Nest HTTP exception, which is handled by the default
@@ -60,11 +60,11 @@ export class HttpException extends Error {
     return isString(target) ? target : JSON.stringify(target);
   }
 
-  public static createBody = (
+  public static createBody(
     message: object | string,
     error?: string,
     statusCode?: number,
-  ) => {
+  ) {
     if (!message) {
       return { statusCode, error };
     }
