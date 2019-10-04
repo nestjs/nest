@@ -210,14 +210,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(call.request, call.metadata);
       const result$ = this.transformToObservable(await handler);
       await result$
-      .pipe(
-        takeUntil(fromEvent(call as any, CANCEL_EVENT)),
-        catchError(err => {
-          call.emit('error', err);
-          return EMPTY;
-        }),
-      )
-      .forEach(data => call.write(data));
+        .pipe(
+          takeUntil(fromEvent(call as any, CANCEL_EVENT)),
+          catchError(err => {
+            call.emit('error', err);
+            return EMPTY;
+          }),
+        )
+        .forEach(data => call.write(data));
       call.end();
     };
   }
@@ -230,8 +230,8 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         // Check if error means that stream ended on other end
         if (
           String(e)
-          .toLowerCase()
-          .indexOf('cancelled') > -1
+            .toLowerCase()
+            .indexOf('cancelled') > -1
         ) {
           call.end();
           return;
@@ -244,14 +244,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(req.asObservable());
       const res = this.transformToObservable(await handler);
       await res
-      .pipe(
-        takeUntil(fromEvent(call as any, CANCEL_EVENT)),
-        catchError(err => {
-          call.emit('error', err);
-          return EMPTY;
-        }),
-      )
-      .forEach(m => call.write(m));
+        .pipe(
+          takeUntil(fromEvent(call as any, CANCEL_EVENT)),
+          catchError(err => {
+            call.emit('error', err);
+            return EMPTY;
+          }),
+        )
+        .forEach(m => call.write(m));
 
       call.end();
     };

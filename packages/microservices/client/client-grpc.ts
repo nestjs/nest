@@ -74,13 +74,13 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     };
     const options: any = isObject(this.options)
       ? {
-        ...this.options,
-        ...maxMessageLengthOptions,
-        loader: '',
-      }
+          ...this.options,
+          ...maxMessageLengthOptions,
+          loader: '',
+        }
       : {
-        ...maxMessageLengthOptions,
-      };
+          ...maxMessageLengthOptions,
+        };
 
     const credentials =
       options.credentials || grpcPackage.credentials.createInsecure();

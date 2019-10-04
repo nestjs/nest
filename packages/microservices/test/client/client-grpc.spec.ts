@@ -16,15 +16,25 @@ class NoopLogger extends Logger {
 
 class GrpcService {
   test = null;
+  test2 = null;
 }
 
 describe('ClientGrpcProxy', () => {
   let client: ClientGrpcProxy;
+  let clientMulti: ClientGrpcProxy;
 
   beforeEach(() => {
     client = new ClientGrpcProxy({
       protoPath: join(__dirname, './test.proto'),
       package: 'test',
+    });
+
+    clientMulti = new ClientGrpcProxy({
+      protoPath: ['test.proto', 'test2.proto'],
+      package: ['test', 'test2'],
+      loader: {
+        includeDirs: [join(__dirname, '.')]
+      }
     });
   });
 
@@ -33,6 +43,18 @@ describe('ClientGrpcProxy', () => {
       it('should throw "InvalidGrpcServiceException"', () => {
         (client as any).grpcClient = {};
         expect(() => client.getService('test')).to.throw(
+          InvalidGrpcServiceException,
+        );
+      });
+
+      it('should throw "InvalidGrpcServiceException" (multiple proto)', () => {
+        (clientMulti as any).grpcClient = {};
+
+        expect(() => clientMulti.getService('test')).to.throw(
+          InvalidGrpcServiceException,
+        );
+
+        expect(() => clientMulti.getService('test2')).to.throw(
           InvalidGrpcServiceException,
         );
       });
@@ -45,6 +67,21 @@ describe('ClientGrpcProxy', () => {
         expect(() => client.getService('test')).to.not.throw(
           InvalidGrpcServiceException,
         );
+      });
+
+      describe('when "grpcClient[name]" is not nil (multiple proto)', () => {
+        it('should create grpcService', () => {
+          (clientMulti as any).grpcClient = {
+            test: GrpcService,
+            test2: GrpcService,
+          };
+          expect(() => clientMulti.getService('test')).to.not.throw(
+            InvalidGrpcServiceException,
+          );
+          expect(() => clientMulti.getService('test2')).to.not.throw(
+            InvalidGrpcServiceException,
+          );
+        });
       });
     });
   });
