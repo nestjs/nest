@@ -1,4 +1,3 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ExecutionContextHost } from '../../helpers/execution-context-host';
 
@@ -45,7 +44,9 @@ describe('ExecutionContextHost', () => {
     it('should return rpc proxy', () => {
       const proxy = contextHost.switchToRpc();
       expect(proxy.getData).to.be.a('function');
+      expect(proxy.getContext).to.be.a('function');
       expect(proxy.getData()).to.be.eq(args[0]);
+      expect(proxy.getContext()).to.be.eq(args[1]);
     });
   });
 
