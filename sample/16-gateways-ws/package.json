@@ -13,20 +13,20 @@
     "lint": "tslint -p tsconfig.json -c tslint.json"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.7",
-    "@nestjs/core": "6.6.7",
-    "@nestjs/platform-express": "6.6.7",
-    "@nestjs/platform-ws": "6.6.7",
-    "@nestjs/websockets": "6.6.7",
+    "@nestjs/common": "6.8.2",
+    "@nestjs/core": "6.8.2",
+    "@nestjs/platform-express": "6.8.2",
+    "@nestjs/platform-ws": "6.8.2",
+    "@nestjs/websockets": "6.8.2",
     "class-transformer": "0.2.3",
-    "class-validator": "0.10.0",
+    "class-validator": "0.10.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "typescript": "3.6.3",
     "ws": "7.1.2"
   },
   "devDependencies": {
-    "@types/node": "10.14.18",
+    "@types/node": "10.14.20",
     "@types/ws": "6.0.3",
     "ts-node": "8.4.1",
     "tslint": "5.20.0",

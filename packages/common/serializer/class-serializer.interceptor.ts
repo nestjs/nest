@@ -4,11 +4,7 @@ import { Inject, Injectable } from '../decorators/core';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
 import { loadPackage } from '../utils/load-package.util';
 import { isObject } from '../utils/shared.utils';
-import {
-  CallHandler,
-  ExecutionContext,
-  NestInterceptor,
-} from './../interfaces';
+import { CallHandler, ExecutionContext, NestInterceptor } from '../interfaces';
 import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants';
 
 let classTransformer: any = {};

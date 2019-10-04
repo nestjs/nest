@@ -14,8 +14,8 @@ import {
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
-} from './../constants';
-import { WritePacket } from './../interfaces';
+} from '../constants';
+import { WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
 let rqmPackage: any = {};
@@ -98,7 +98,9 @@ export class ClientRMQ extends ClientProxy {
 
   public createClient<T = any>(): T {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    return rqmPackage.connect(this.urls, socketOptions) as T;
+    return rqmPackage.connect(this.urls, {
+      connectionOptions: socketOptions,
+    }) as T;
   }
 
   public mergeDisconnectEvent<T = any>(

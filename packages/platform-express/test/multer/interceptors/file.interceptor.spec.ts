@@ -35,7 +35,6 @@ describe('FileInterceptor', () => {
       const target = new (FileInterceptor(fieldName))();
       const err = {};
       const callback = (req, res, next) => next(err);
-
       (target as any).multer = {
         single: () => callback,
       };

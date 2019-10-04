@@ -15,9 +15,10 @@ export class NatsBroadcastController {
 
   @Get('broadcast')
   multicats() {
-    return this.client
-      .send<number>('broadcast.test', {})
-      .pipe(scan((a, b) => a + b), take(2));
+    return this.client.send<number>('broadcast.test', {}).pipe(
+      scan((a, b) => a + b),
+      take(2),
+    );
   }
 
   @MessagePattern('broadcast.*')

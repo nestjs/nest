@@ -16,9 +16,7 @@ import {
 function hasOnAppShutdownHook(
   instance: unknown,
 ): instance is OnApplicationShutdown {
-  return !isNil(
-    (instance as OnApplicationShutdown).onApplicationShutdown,
-  );
+  return !isNil((instance as OnApplicationShutdown).onApplicationShutdown);
 }
 
 /**

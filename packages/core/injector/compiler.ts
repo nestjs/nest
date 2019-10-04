@@ -38,5 +38,4 @@ export class ModuleCompiler {
   ): module is DynamicModule {
     return !!(module as DynamicModule).module;
   }
-
 }

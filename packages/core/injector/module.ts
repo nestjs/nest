@@ -176,16 +176,18 @@ export class Module {
     if (this.isCustomProvider(injectable)) {
       return this.addCustomProvider(injectable, this._injectables);
     }
-    const instanceWrapper = new InstanceWrapper({
-      name: injectable.name,
-      metatype: injectable,
-      instance: null,
-      isResolved: false,
-      scope: this.getClassScope(injectable),
-      host: this,
-    });
-    this._injectables.set(injectable.name, instanceWrapper);
-
+    let instanceWrapper = this.injectables.get(injectable.name);
+    if (!instanceWrapper) {
+      instanceWrapper = new InstanceWrapper({
+        name: injectable.name,
+        metatype: injectable,
+        instance: null,
+        isResolved: false,
+        scope: this.getClassScope(injectable),
+        host: this,
+      });
+      this._injectables.set(injectable.name, instanceWrapper);
+    }
     if (host) {
       const token = host && host.name;
       const hostWrapper =
@@ -391,7 +393,7 @@ export class Module {
 
     if (!importsNames.includes(token as any)) {
       const { name } = this.metatype;
-      throw new UnknownExportException(name);
+      throw new UnknownExportException(token as any, name);
     }
     return token;
   }
@@ -418,10 +420,12 @@ export class Module {
     if (options.isProvider && this.hasProvider(toReplace)) {
       const name = this.getProviderStaticToken(toReplace);
       const originalProvider = this._providers.get(name);
+
       return originalProvider.mergeWith({ provide: toReplace, ...options });
     } else if (!options.isProvider && this.hasInjectable(toReplace)) {
       const name = this.getProviderStaticToken(toReplace);
       const originalInjectable = this._injectables.get(name);
+
       return originalInjectable.mergeWith({
         provide: toReplace,
         ...options,

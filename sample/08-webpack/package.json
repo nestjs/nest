@@ -9,20 +9,20 @@
     "build": "webpack --config webpack.config.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.7",
-    "@nestjs/core": "6.6.7",
-    "@nestjs/platform-express": "6.6.7",
+    "@nestjs/common": "6.8.2",
+    "@nestjs/core": "6.8.2",
+    "@nestjs/platform-express": "6.8.2",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "typescript": "3.6.3"
   },
   "devDependencies": {
-    "@types/node": "12.7.5",
-    "ts-loader": "6.1.0",
+    "@types/node": "12.7.11",
+    "ts-loader": "6.2.0",
     "ts-node": "8.4.1",
     "tslint": "5.20.0",
-    "webpack": "4.40.2",
-    "webpack-cli": "3.3.8",
+    "webpack": "4.41.0",
+    "webpack-cli": "3.3.9",
     "webpack-node-externals": "1.7.2"
   }
 }

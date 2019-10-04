@@ -19,7 +19,8 @@ describe('ParseIntPipe', () => {
     });
     describe('when validation fails', () => {
       it('should throw an error', async () => {
-        return expect(target.transform('123abc', {} as ArgumentMetadata)).to.be.rejected;
+        return expect(target.transform('123abc', {} as ArgumentMetadata)).to.be
+          .rejected;
       });
     });
   });

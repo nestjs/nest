@@ -1,4 +1,4 @@
-import { Logger } from './../../services/logger.service';
+import { Logger } from '../../services/logger.service';
 
 /**
  * Decorator that assigns metadata to the class/function using the

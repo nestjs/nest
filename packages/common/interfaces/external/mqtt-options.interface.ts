@@ -88,11 +88,7 @@ export interface MqttClientOptions extends ISecureClientOptions {
      */
     retain: boolean;
   };
-  transformWsUrl?: (
-    url: string,
-    options: any,
-    client: any,
-  ) => string;
+  transformWsUrl?: (url: string, options: any, client: any) => string;
 }
 export interface ISecureClientOptions {
   /**

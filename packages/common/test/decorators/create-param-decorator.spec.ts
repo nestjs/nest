@@ -90,19 +90,13 @@ describe('createParamDecorator', () => {
     });
 
     describe('when class type passed as data', () => {
-      class Data { }
+      class Data {}
       class Test {
-        public test(
-          @Decorator(Data) prop,
-        ) { }
+        public test(@Decorator(Data) prop) {}
       }
 
       it('should return class type as data parameter', () => {
-        const metadata = Reflect.getMetadata(
-          ROUTE_ARGS_METADATA,
-          Test,
-          'test',
-        );
+        const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
         const key = Object.keys(metadata)[0];
         expect(metadata[key].data).to.equal(Data);
       });

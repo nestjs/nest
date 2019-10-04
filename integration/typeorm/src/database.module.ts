@@ -5,7 +5,7 @@ import { Photo } from './photo/photo.entity';
 @Module({})
 export class DatabaseModule {
   static async forRoot(): Promise<DynamicModule> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     return {
       module: DatabaseModule,
       imports: [

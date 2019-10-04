@@ -22,8 +22,8 @@ import {
 } from '../router/request/request-constants';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
 import { RouterProxy } from '../router/router-proxy';
-import { STATIC_CONTEXT } from './../injector/constants';
-import { Injector } from './../injector/injector';
+import { STATIC_CONTEXT } from '../injector/constants';
+import { Injector } from '../injector/injector';
 import { MiddlewareBuilder } from './builder';
 import { MiddlewareContainer } from './container';
 import { MiddlewareResolver } from './resolver';

@@ -13,9 +13,9 @@
     "lint": "tslint -p tsconfig.json -c tslint.json"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.7",
-    "@nestjs/core": "6.6.7",
-    "@nestjs/platform-express": "6.6.7",
+    "@nestjs/common": "6.8.2",
+    "@nestjs/core": "6.8.2",
+    "@nestjs/platform-express": "6.8.2",
     "class-transformer": "0.2.3",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/jest": "24.0.18",
-    "@types/node": "10.14.18",
+    "@types/node": "10.14.20",
     "jest": "24.9.0",
     "supertest": "4.0.2",
     "ts-jest": "24.1.0",

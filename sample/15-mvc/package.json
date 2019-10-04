@@ -13,10 +13,10 @@
     "lint": "tslint -p tsconfig.json -c tslint.json"
   },
   "dependencies": {
-    "@nestjs/common": "6.6.7",
-    "@nestjs/core": "6.6.7",
-    "@nestjs/platform-express": "6.6.7",
-    "hbs": "4.0.4",
+    "@nestjs/common": "6.8.2",
+    "@nestjs/core": "6.8.2",
+    "@nestjs/platform-express": "6.8.2",
+    "hbs": "4.0.5",
     "pug": "2.0.4",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@types/node": "8.10.54",
-    "nodemon": "1.19.2",
+    "nodemon": "1.19.3",
     "ts-node": "8.4.1",
     "tslint": "5.20.0",
     "rimraf": "^2.6.2",

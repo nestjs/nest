@@ -2,8 +2,11 @@ import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
   ClientProxy,
+  Ctx,
   EventPattern,
   MessagePattern,
+  NatsContext,
+  Payload,
   RpcException,
   Transport,
 } from '@nestjs/microservices';
@@ -57,7 +60,7 @@ export class NatsController {
   }
 
   @MessagePattern('math.*')
-  sum(data: number[]): number {
+  sum(@Payload() data: number[], @Ctx() context: NatsContext): number {
     return (data || []).reduce((a, b) => a + b);
   }
 
@@ -94,7 +97,7 @@ export class NatsController {
   }
 
   @EventPattern('notification')
-  eventHandler(data: boolean) {
+  eventHandler(@Payload() data: boolean) {
     NatsController.IS_NOTIFIED = data;
   }
 }
