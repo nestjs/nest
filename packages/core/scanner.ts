@@ -370,7 +370,7 @@ export class DependenciesScanner {
       wrapper => this.isRequestOrTransient(wrapper.scope),
     );
 
-    scopedGlobalProviders.forEach(({ moduleKey, providerKey, type }) => {
+    scopedGlobalProviders.forEach(({ moduleKey, providerKey }) => {
       const modulesContainer = this.container.getModules();
       const { injectables } = modulesContainer.get(moduleKey);
       const instanceWrapper = injectables.get(providerKey);
