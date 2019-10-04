@@ -5,5 +5,5 @@ export enum Transport {
   MQTT,
   GRPC,
   RMQ,
-  KAFKA
+  KAFKA,
 }

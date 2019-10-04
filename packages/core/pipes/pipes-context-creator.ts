@@ -6,7 +6,7 @@ import { ApplicationConfig } from '../application-config';
 import { ContextCreator } from '../helpers/context-creator';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
-import { STATIC_CONTEXT } from './../injector/constants';
+import { STATIC_CONTEXT } from '../injector/constants';
 
 export class PipesContextCreator extends ContextCreator {
   private moduleContext: string;

@@ -302,6 +302,7 @@ export class InstanceWrapper<T = any> {
     if ((provider as ValueProvider).useValue) {
       this.metatype = null;
       this.inject = null;
+
       this.setInstanceByContextId(STATIC_CONTEXT, {
         instance: (provider as ValueProvider).useValue,
         isResolved: true,

@@ -11,10 +11,10 @@
   },
   "dependencies": {
     "@grpc/proto-loader": "0.5.2",
-    "@nestjs/common": "6.8.0",
-    "@nestjs/core": "6.8.0",
-    "@nestjs/microservices": "6.8.0",
-    "@nestjs/testing": "6.8.0",
+    "@nestjs/common": "6.8.2",
+    "@nestjs/core": "6.8.2",
+    "@nestjs/microservices": "6.8.2",
+    "@nestjs/testing": "6.8.2",
     "class-transformer": "0.2.3",
     "class-validator": "0.10.1",
     "grpc": "1.24.0",
@@ -23,7 +23,7 @@
     "typescript": "3.6.3"
   },
   "devDependencies": {
-    "@types/node": "10.14.19",
+    "@types/node": "10.14.20",
     "ts-node": "8.4.1",
     "tslint": "5.20.0"
   }

@@ -173,9 +173,7 @@ export class NestContainer {
   }
 
   public replace(toReplace: any, options: any & { scope: any[] | null }) {
-    [...this.modules.values()].forEach(module => {
-      module.replace(toReplace, options);
-    });
+    this.modules.forEach(module => module.replace(toReplace, options));
   }
 
   public bindGlobalScope() {

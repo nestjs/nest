@@ -31,8 +31,7 @@ describe('@UsePipes', () => {
   it('when object is invalid should throw exception', () => {
     try {
       UsePipes('test' as any)({});
-    }
-    catch (e) {
+    } catch (e) {
       expect(e).to.be.instanceof(InvalidDecoratorItemException);
     }
   });

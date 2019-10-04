@@ -43,6 +43,11 @@ export interface RpcArgumentsHost {
    * Returns the data object.
    */
   getData<T = any>(): T;
+
+  /**
+   * Returns the context object.
+   */
+  getContext<T = any>(): T;
 }
 
 /**

@@ -6,11 +6,11 @@ import * as log from 'fancy-log';
 
 // Has to be a hardcoded object due to build order
 const packages = {
-  'common': createProject('packages/common/tsconfig.json'),
-  'core': createProject('packages/core/tsconfig.json'),
-  'microservices': createProject('packages/microservices/tsconfig.json'),
-  'websockets': createProject('packages/websockets/tsconfig.json'),
-  'testing': createProject('packages/testing/tsconfig.json'),
+  common: createProject('packages/common/tsconfig.json'),
+  core: createProject('packages/core/tsconfig.json'),
+  microservices: createProject('packages/microservices/tsconfig.json'),
+  websockets: createProject('packages/websockets/tsconfig.json'),
+  testing: createProject('packages/testing/tsconfig.json'),
   'platform-express': createProject('packages/platform-express/tsconfig.json'),
   'platform-fastify': createProject('packages/platform-fastify/tsconfig.json'),
   'platform-socket.io': createProject(

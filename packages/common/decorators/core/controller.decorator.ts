@@ -1,6 +1,6 @@
 import { PATH_METADATA, SCOPE_OPTIONS_METADATA } from '../../constants';
 import { isString, isUndefined } from '../../utils/shared.utils';
-import { ScopeOptions } from './../../interfaces/scope-options.interface';
+import { ScopeOptions } from '../../interfaces/scope-options.interface';
 
 /**
  * Interface defining options that can be passed to `@Controller()` decorator
