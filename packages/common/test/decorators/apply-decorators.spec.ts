@@ -29,7 +29,7 @@ describe('applyDecorators', () => {
 
     const decoratedTarget = {};
     testDecorator1(testParams.decorator1.param)(decoratedTarget);
-    testDecorator2(testParams.decorator2.param2, testParams.decorator2.param2)(
+    testDecorator2(testParams.decorator2.param1, testParams.decorator2.param2)(
       decoratedTarget,
     );
     testDecorator3()(decoratedTarget);
