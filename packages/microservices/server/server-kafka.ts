@@ -98,7 +98,10 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   }
 
   public async bindEvents(consumer: Consumer) {
-    const registeredPatterns = [...this.messageHandlers.keys()];
+    const registeredPatterns = [
+      ...this.messageHandlers.keys(),
+      ...this.regExpMessageHandlers.map(handler => handler.pattern),
+    ];
     const subscribeToPattern = async (pattern: string) =>
       consumer.subscribe({
         topic: pattern,

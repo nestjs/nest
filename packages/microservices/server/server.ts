@@ -21,7 +21,7 @@ import {
   MsPattern,
   NatsOptions,
   ReadPacket,
-  RedisOptions,
+  RedisOptions, RegExpMessageHandler,
   RmqOptions,
   TcpOptions,
   WritePacket,
@@ -34,6 +34,7 @@ import { NO_EVENT_HANDLER } from '../constants';
 
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
+  protected readonly regExpMessageHandlers = new Array<RegExpMessageHandler>();
   protected readonly logger = new Logger(Server.name);
   protected serializer: ConsumerSerializer;
   protected deserializer: ConsumerDeserializer;
@@ -43,11 +44,14 @@ export abstract class Server {
     callback: MessageHandler,
     isEventHandler = false,
   ) {
-    const route = pattern.constructor.name === 'RegExp'
-        ? pattern
-        : transformPatternToRoute(pattern);
-    callback.isEventHandler = isEventHandler;
-    this.messageHandlers.set(route, callback);
+    if (pattern.constructor.name === 'RegExp') {
+      this.regExpMessageHandlers.push({ pattern, messageHandler: callback });
+    } else {
+      const route = transformPatternToRoute(pattern);
+      callback.isEventHandler = isEventHandler;
+      this.messageHandlers.set(route, callback);
+    }
+
   }
 
   public getHandlers(): Map<string, MessageHandler> {
@@ -56,17 +60,20 @@ export abstract class Server {
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
     const route = this.getRouteFromPattern(pattern);
-    let handler = null;
-    this.messageHandlers.forEach((value, key) => {
-      if (key.constructor.name === 'RegExp'
-          && (key as any as RegExp).exec(route) !== null){
-        handler = value;
-      }
 
-      if (key === route){
-        handler = value;
+    let handler = null;
+    // Try to find the message handler by name
+    if (this.messageHandlers.has(route)) {
+      return this.messageHandlers.get(route);
+    }
+
+    // If it was not found, iterate through the Regular Expression handlers
+    this.regExpMessageHandlers.forEach((regExpHandler) => {
+      if (regExpHandler.pattern.exec(route) !== null) {
+        handler =  regExpHandler.messageHandler;
       }
     });
+
     return handler;
   }
 

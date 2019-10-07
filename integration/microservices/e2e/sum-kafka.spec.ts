@@ -93,7 +93,7 @@ describe('Kafka transport', () => {
       });
   });
 
-  it(`/POST (async event notification with RegEx)`, done => {
+  it(`/POST (async event notification with RegExp)`, done => {
     request(server)
         .post('/notify-with-regex')
         .send()
