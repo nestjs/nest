@@ -118,7 +118,9 @@ export abstract class Server {
     T extends MicroserviceOptions['options'],
     K extends keyof T
   >(obj: T, prop: K, defaultValue: T[K] = undefined) {
-    return (obj && obj[prop]) || defaultValue;
+    return (obj && prop in obj)
+      ? obj[prop]
+      : defaultValue;
   }
 
   protected handleError(error: string) {
