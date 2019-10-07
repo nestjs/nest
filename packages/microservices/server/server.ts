@@ -43,7 +43,9 @@ export abstract class Server {
     callback: MessageHandler,
     isEventHandler = false,
   ) {
-    const route = transformPatternToRoute(pattern);
+    const route = pattern.constructor.name === 'RegExp'
+        ? pattern
+        : transformPatternToRoute(pattern);
     callback.isEventHandler = isEventHandler;
     this.messageHandlers.set(route, callback);
   }
@@ -54,9 +56,18 @@ export abstract class Server {
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
     const route = this.getRouteFromPattern(pattern);
-    return this.messageHandlers.has(route)
-      ? this.messageHandlers.get(route)
-      : null;
+    let handler = null;
+    this.messageHandlers.forEach((value, key) => {
+      if (key.constructor.name === 'RegExp'
+          && (key as any as RegExp).exec(route) !== null){
+        handler = value;
+      }
+
+      if (key === route){
+        handler = value;
+      }
+    });
+    return handler;
   }
 
   public send(
