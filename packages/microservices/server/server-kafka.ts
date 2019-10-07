@@ -102,7 +102,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       ...this.messageHandlers.keys(),
       ...this.regExpMessageHandlers.map(handler => handler.pattern),
     ];
-    const subscribeToPattern = async (pattern: string) =>
+    const subscribeToPattern = async (pattern: string | RegExp) =>
       consumer.subscribe({
         topic: pattern,
       });
