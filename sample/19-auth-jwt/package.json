@@ -38,7 +38,7 @@
     "@types/jest": "24.0.18",
     "@types/node": "10.14.20",
     "@types/supertest": "2.0.8",
-    "concurrently": "4.1.2",
+    "concurrently": "5.0.0",
     "jest": "23.6.0",
     "nodemon": "1.19.3",
     "prettier": "1.18.2",
