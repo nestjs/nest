@@ -25,6 +25,7 @@ import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
+import { platform } from 'os';
 
 const { SocketModule } = optionalRequire(
   '@nestjs/websockets/socket-module',
@@ -235,6 +236,40 @@ export class NestApplication extends NestApplicationContext
     return new Promise(resolve => {
       const server: any = this.listen(port, hostname, () => resolve(server));
     });
+  }
+
+  public url(): string {
+    const address = this.getHttpServer().address();
+    if (typeof address === 'string') {
+      if (platform() === 'win32') {
+        return address;
+      }
+      const basePath = encodeURIComponent(address);
+      return `${this.getProtocol()}+unix://${basePath}`;
+    }
+    let host = this.host();
+    if (address && address.family === 'IPv6') {
+      if (host === '::') {
+        host = '::1';
+      } else if (host === '0.0.0.0') {
+        host = '127.0.0.1';
+      }
+    } else {
+      host = '127.0.0.1';
+    }
+    return `${this.getProtocol()}://${host}`;
+  }
+
+  private host(): string | undefined {
+    const address = this.getHttpServer().address();
+    if (typeof address === 'string') {
+      return undefined;
+    }
+    return address && address.address;
+  }
+
+  private getProtocol(): 'http' | 'https' {
+    return this.appOptions && this.appOptions.httpsOptions ? 'https' : 'http';
   }
 
   public setGlobalPrefix(prefix: string): this {

@@ -44,6 +44,13 @@ export interface INestApplication extends INestApplicationContext {
   ): Promise<any>;
 
   /**
+   * Returns the url the application is listening at, based on OS and IP version. Returns as an IP value either in IPv6 or IPv4
+   *
+   * @returns The IP where the server is listening
+   */
+  url(): string;
+
+  /**
    * Starts the application (can be awaited).
    *
    * @param  {number} port
