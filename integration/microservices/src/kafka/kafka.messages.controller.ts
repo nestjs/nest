@@ -59,7 +59,7 @@ export class KafkaMessagesController {
 
   @EventPattern(/.*notify-with-regex.*/)
   eventHandlerWithRegEx(data: any) {
-    KafkaController.IS_NOTIFIED_WITH_REGEX = data.value.notify;
+    KafkaController.IS_NOTIFIED_WITH_REGEXP = data.value.notify;
   }
 
   // Complex data to send.

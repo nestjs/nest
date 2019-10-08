@@ -9,7 +9,7 @@ import { UserDto } from './dtos/user.dto';
 export class KafkaController implements OnModuleInit {
   protected readonly logger = new Logger(KafkaController.name);
   static IS_NOTIFIED = false;
-  static IS_NOTIFIED_WITH_REGEX = false;
+  static IS_NOTIFIED_WITH_REGEXP = false;
   static MATH_SUM = 0;
 
   @Client({

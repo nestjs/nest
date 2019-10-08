@@ -99,7 +99,7 @@ describe('Kafka transport', () => {
         .send()
         .end(() => {
           setTimeout(() => {
-            expect(KafkaController.IS_NOTIFIED_WITH_REGEX).to.be.true;
+            expect(KafkaController.IS_NOTIFIED_WITH_REGEXP).to.be.true;
             done();
           }, 1000);
         });
