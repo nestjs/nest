@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@types/jest": "24.0.18",
-    "@types/node": "10.14.20",
+    "@types/node": "10.14.21",
     "jest": "24.9.0",
     "supertest": "4.0.2",
     "ts-jest": "24.1.0",
