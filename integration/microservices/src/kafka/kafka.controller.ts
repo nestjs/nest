@@ -124,10 +124,9 @@ export class KafkaController implements OnModuleInit {
   // async notify to test RegExp pattern matching
   @Post('notify-with-regex')
   async sendNotificationWithRegExMatching(): Promise<any> {
-    return this.client.emit(
-        'pre-fix-notify-with-regex-post-fix',
-        { notify: true },
-    );
+    return this.client.emit('pre-fix-notify-with-regex-post-fix', {
+      notify: true,
+    });
   }
 
   // Complex data to send.
