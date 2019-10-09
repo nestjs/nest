@@ -93,6 +93,17 @@ describe('Kafka transport', () => {
       });
   });
 
+  it(`/POST (async event notification with RegExp)`, done => {
+    request(server)
+        .post('/notify-with-regex')
+        .send()
+        .end(() => {
+          setTimeout(() => {
+            expect(KafkaController.IS_NOTIFIED_WITH_REGEXP).to.be.true;
+            done();
+          }, 1500);
+        });
+  });
   const userDto: UserDto = {
     email: 'enriquebenavidesm@gmail.com',
     name: 'Ben',

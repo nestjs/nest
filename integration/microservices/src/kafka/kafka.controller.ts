@@ -9,6 +9,7 @@ import { UserDto } from './dtos/user.dto';
 export class KafkaController implements OnModuleInit {
   protected readonly logger = new Logger(KafkaController.name);
   static IS_NOTIFIED = false;
+  static IS_NOTIFIED_WITH_REGEXP = false;
   static MATH_SUM = 0;
 
   @Client({
@@ -118,6 +119,15 @@ export class KafkaController implements OnModuleInit {
   @Post('notify')
   async sendNotification(): Promise<any> {
     return this.client.emit('notify', { notify: true });
+  }
+
+  // async notify to test RegExp pattern matching
+  @Post('notify-with-regex')
+  async sendNotificationWithRegExMatching(): Promise<any> {
+    return this.client.emit(
+        'pre-fix-notify-with-regex-post-fix',
+        { notify: true },
+    );
   }
 
   // Complex data to send.
