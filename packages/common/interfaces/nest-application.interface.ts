@@ -48,7 +48,7 @@ export interface INestApplication extends INestApplicationContext {
    *
    * @returns The IP where the server is listening
    */
-  url(): string;
+  getUrl(): Promise<string>;
 
   /**
    * Starts the application (can be awaited).

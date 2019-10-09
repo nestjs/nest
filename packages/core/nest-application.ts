@@ -227,7 +227,6 @@ export class NestApplication extends NestApplicationContext
   ): Promise<any>;
   public async listen(port: number | string, ...args: any[]): Promise<any> {
     !this.isInitialized && (await this.init());
-
     this.httpAdapter.listen(port, ...args);
     return this.httpServer;
   }
@@ -238,30 +237,34 @@ export class NestApplication extends NestApplicationContext
     });
   }
 
-  public url(): string {
-    const address = this.getHttpServer().address();
-    if (typeof address === 'string') {
-      if (platform() === 'win32') {
-        return address;
-      }
-      const basePath = encodeURIComponent(address);
-      return `${this.getProtocol()}+unix://${basePath}`;
-    }
-    let host = this.host();
-    if (address && address.family === 'IPv6') {
-      if (host === '::') {
-        host = '::1';
-      } else if (host === '0.0.0.0') {
-        host = '127.0.0.1';
-      }
-    } else {
-      host = '127.0.0.1';
-    }
-    return `${this.getProtocol()}://${host}`;
+  public async getUrl(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.httpServer.on('listening', () => {
+        const address = this.httpServer.address();
+        if (typeof address === 'string') {
+          if (platform() === 'win32') {
+            return address;
+          }
+          const basePath = encodeURIComponent(address);
+          return `${this.getProtocol()}+unix://${basePath}`;
+        }
+        let host = this.host();
+        if (address && address.family === 'IPv6') {
+          if (host === '::') {
+            host = '[::1]';
+          } else {
+            host = `[${host}]`;
+          }
+        } else if (host === '0.0.0.0') {
+          host = '127.0.0.1';
+        }
+        resolve(`${this.getProtocol()}://${host}:${address.port}`);
+      });
+    });
   }
 
   private host(): string | undefined {
-    const address = this.getHttpServer().address();
+    const address = this.httpServer.address();
     if (typeof address === 'string') {
       return undefined;
     }
