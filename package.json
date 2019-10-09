@@ -48,7 +48,7 @@
     "cache-manager": "2.10.0",
     "class-transformer": "0.2.3",
     "class-validator": "0.10.1",
-    "cli-color": "1.4.0",
+    "cli-color": "2.0.0",
     "connect": "3.7.0",
     "cors": "2.8.5",
     "engine.io-client": "3.4.0",
