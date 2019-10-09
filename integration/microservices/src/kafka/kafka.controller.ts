@@ -4,6 +4,7 @@ import { Client, ClientKafka, Transport } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import { BusinessDto } from './dtos/business.dto';
 import { UserDto } from './dtos/user.dto';
+import * as util from 'util';
 
 @Controller()
 export class KafkaController implements OnModuleInit {
@@ -124,6 +125,7 @@ export class KafkaController implements OnModuleInit {
   // async notify to test RegExp pattern matching
   @Post('notify-with-regex')
   async sendNotificationWithRegExMatching(): Promise<any> {
+    this.logger.error('notify-with-regex was called.... emitting the message');
     return this.client.emit('pre-fix-notify-with-regex-post-fix', {
       notify: true,
     });

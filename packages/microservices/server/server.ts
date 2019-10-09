@@ -32,6 +32,7 @@ import { ConsumerSerializer } from '../interfaces/serializer.interface';
 import { IdentitySerializer } from '../serializers/identity.serializer';
 import { transformPatternToRoute } from '../utils';
 import { NO_EVENT_HANDLER } from '../constants';
+import * as util from 'util';
 
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
@@ -46,6 +47,7 @@ export abstract class Server {
     isEventHandler = false,
   ) {
     if (pattern.constructor.name === 'RegExp') {
+      this.logger.error(util.format('Adding handler for pattern %o', pattern));
       this.regExpMessageHandlers.push({ pattern, messageHandler: callback });
     } else {
       const route = transformPatternToRoute(pattern);
@@ -70,6 +72,9 @@ export abstract class Server {
     // If it was not found, iterate through the Regular Expression handlers
     this.regExpMessageHandlers.forEach(regExpHandler => {
       if (regExpHandler.pattern.exec(route) !== null) {
+        this.logger.error(
+          util.format('found the handler with RegExp %o', regExpHandler),
+        );
         handler = regExpHandler.messageHandler;
       }
     });
