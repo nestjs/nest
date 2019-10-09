@@ -89,9 +89,9 @@ describe('Kafka transport', () => {
         setTimeout(() => {
           expect(KafkaController.IS_NOTIFIED).to.be.true;
           done();
-        }, 1000);
+        }, 500);
       });
-  });
+  }).timeout(1000);
 
   it(`/POST (async event notification with RegExp)`, done => {
     request(server)
@@ -101,9 +101,10 @@ describe('Kafka transport', () => {
         setTimeout(() => {
           expect(KafkaController.IS_NOTIFIED_WITH_REGEXP).to.be.true;
           done();
-        }, 1500);
+        }, 500);
       });
-  });
+  }).timeout(1000);
+
   const userDto: UserDto = {
     email: 'enriquebenavidesm@gmail.com',
     name: 'Ben',
