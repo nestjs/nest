@@ -14,13 +14,13 @@
     "@nestjs/core": "6.8.2",
     "@nestjs/platform-express": "6.8.2",
     "@nestjs/mongoose": "6.1.2",
-    "mongoose": "5.7.3",
+    "mongoose": "5.7.4",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "typescript": "3.6.3"
   },
   "devDependencies": {
-    "@types/mongoose": "5.5.19",
+    "@types/mongoose": "5.5.20",
     "@types/node": "10.14.21",
     "ts-node": "8.4.1",
     "tslint": "5.20.0"
