@@ -194,7 +194,8 @@ export class NestApplication extends NestApplicationContext
     return this.httpServer;
   }
 
-  public startAllMicroservices(callback?: () => void): this {
+  public async startAllMicroservices(callback?: () => void): Promise<this> {
+    !this.isInitialized && (await this.init());
     Promise.all(this.microservices.map(this.listenToPromise)).then(
       () => callback && callback(),
     );
