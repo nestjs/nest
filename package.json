@@ -107,7 +107,7 @@
     "chai-as-promised": "7.1.1",
     "clang-format": "1.2.4",
     "concurrently": "5.0.0",
-    "conventional-changelog": "3.1.10",
+    "conventional-changelog": "3.1.12",
     "core-js": "3.2.1",
     "coveralls": "3.0.6",
     "csv-write-stream": "2.0.0",
