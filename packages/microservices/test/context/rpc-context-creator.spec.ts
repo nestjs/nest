@@ -179,6 +179,7 @@ describe('RpcContextCreator', () => {
       ];
       expect(values[0]).to.deep.include(expectedValues[0]);
       expect(values[1]).to.deep.include(expectedValues[1]);
+      expect(values[2]).to.deep.include(expectedValues[2]);
     });
   });
   describe('getParamValue', () => {

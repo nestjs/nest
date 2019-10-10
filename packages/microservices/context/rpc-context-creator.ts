@@ -27,6 +27,7 @@ import { PARAM_ARGS_METADATA } from '../constants';
 import { RpcException } from '../exceptions';
 import { RpcParamsFactory } from '../factories/rpc-params-factory';
 import { ExceptionFiltersContext } from './exception-filters-context';
+import { DEFAULT_CALLBACK_METADATA } from './rpc-metadata-constants';
 import { RpcProxy } from './rpc-proxy';
 
 type RpcParamProperties = ParamProperties & { metatype?: any };
@@ -173,8 +174,8 @@ export class RpcContextCreator {
       this.contextUtils.reflectCallbackMetadata<T>(
         instance,
         methodName,
-        PARAM_ARGS_METADATA || '',
-      ) || {};
+        PARAM_ARGS_METADATA,
+      ) || DEFAULT_CALLBACK_METADATA;
     const keys = Object.keys(metadata);
     const argsLength = this.contextUtils.getArgumentsLength(keys, metadata);
     const paramtypes = this.contextUtils.reflectCallbackParamtypes(
