@@ -102,9 +102,9 @@ describe
           setTimeout(() => {
             expect(KafkaController.IS_NOTIFIED_WITH_REGEXP).to.be.true;
             done();
-          }, 1500);
+          }, 3500);
         });
-    }).timeout(2500);
+    }).timeout(4000);
 
     const userDto: UserDto = {
       email: 'enriquebenavidesm@gmail.com',

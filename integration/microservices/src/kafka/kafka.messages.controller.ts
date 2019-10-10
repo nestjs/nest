@@ -57,7 +57,7 @@ export class KafkaMessagesController {
     KafkaController.IS_NOTIFIED = data.value.notify;
   }
 
-  @EventPattern(/.*notify-with-regex.*/)
+  @EventPattern(new RegExp(/.*notify-with-regex.*/))
   eventHandlerWithRegEx(data: any) {
     this.logger.error('got the message for notify-with-regex');
     KafkaController.IS_NOTIFIED_WITH_REGEXP = data.value.notify;
