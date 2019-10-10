@@ -7,12 +7,24 @@
  *
  * @publicApi
  */
+export declare type NestCustomDecorator = <TFunction extends Function, Y>(
+  target: TFunction | Object,
+  propertyKey?: string | symbol,
+  descriptor?: TypedPropertyDescriptor<Y>,
+) => void;
+
 export function applyDecorators(
-  ...decorators: Array<(target: object, ...params: any[]) => any>
-): (target: object, ...params: any[]) => any {
-  return (...params: [any]) => {
+  ...decorators: Array<ClassDecorator | MethodDecorator>
+): NestCustomDecorator {
+  return <TFunction extends Function, Y>(
+    target: TFunction | Object,
+    propertyKey?: string | symbol,
+    descriptor?: TypedPropertyDescriptor<Y>,
+  ) => {
     for (const decorator of decorators || []) {
-      decorator(...params);
+      target instanceof Function
+        ? (decorator as ClassDecorator)(target)
+        : (decorator as MethodDecorator)(target, propertyKey, descriptor);
     }
   };
 }
