@@ -19,7 +19,7 @@
     "class-validator": "0.10.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
-    "typescript": "3.6.3"
+    "typescript": "3.6.4"
   },
   "devDependencies": {
     "@types/amqplib": "0.5.13",
