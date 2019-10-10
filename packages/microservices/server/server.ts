@@ -65,7 +65,7 @@ export abstract class Server {
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
     if (pattern.includes('regex'))
-      this.logger.error(`getting handler for ${pattern}`);
+      this.logger.error(`getHandlerByPattern() pattern ${pattern}`);
 
     const route = this.getRouteFromPattern(pattern);
 
@@ -136,6 +136,7 @@ export abstract class Server {
     packet: ReadPacket,
     context: BaseRpcContext,
   ): Promise<any> {
+    this.logger.error(util.format('handleEvent() -> %o', pattern));
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
       return this.logger.error(NO_EVENT_HANDLER);

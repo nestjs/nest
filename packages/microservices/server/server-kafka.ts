@@ -27,6 +27,7 @@ import {
 } from '../interfaces';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
 import { Server } from './server';
+import * as util from 'util';
 
 let kafkaPackage: any = {};
 
@@ -128,6 +129,9 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   }
 
   public async handleMessage(payload: EachMessagePayload) {
+    if (payload.topic === 'pre-fix-notify-with-regex-post-fix')
+      this.logger.error(util.format('handleMessage() %o', payload.topic));
+
     const channel = payload.topic;
     const rawMessage = KafkaParser.parse<KafkaMessage>(
       Object.assign(payload.message, {
@@ -146,8 +150,18 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       payload.partition,
       payload.topic,
     ]);
+    // this.logger.error(util.format('handleMessage() correlationId  %o replyTopic %o', correlationId, replyTopic ));
     // if the correlation id or reply topic is not set
     // then this is an event (events could still have correlation id)
+
+    if (payload.topic === 'pre-fix-notify-with-regex-post-fix')
+      this.logger.error(
+        util.format(
+          'handleMessage() correlationId-> %o, replyTopic->  ',
+          correlationId,
+          replyTopic,
+        ),
+      );
     if (!correlationId || !replyTopic) {
       return this.handleEvent(packet.pattern, packet, kafkaContext);
     }
