@@ -93,17 +93,17 @@ describe('Kafka transport', () => {
       });
   }).timeout(1000);
 
-  it(`/POST (async event notification with RegExp)`, done => {
-    request(server)
-      .post('/notify-with-regex')
-      .send()
-      .end(() => {
-        setTimeout(() => {
-          expect(KafkaController.IS_NOTIFIED_WITH_REGEXP).to.be.true;
-          done();
-        }, 1500);
-      });
-  }).timeout(2500);
+  // it(`/POST (async event notification with RegExp)`, done => {
+  //   request(server)
+  //     .post('/notify-with-regex')
+  //     .send()
+  //     .end(() => {
+  //       setTimeout(() => {
+  //         expect(KafkaController.IS_NOTIFIED_WITH_REGEXP).to.be.true;
+  //         done();
+  //       }, 1500);
+  //     });
+  // }).timeout(2500);
 
   const userDto: UserDto = {
     email: 'enriquebenavidesm@gmail.com',

@@ -49,6 +49,9 @@ export abstract class Server {
     if (pattern.constructor.name === 'RegExp') {
       this.logger.error(util.format('Adding handler for pattern %o', pattern));
       this.regExpMessageHandlers.push({ pattern, messageHandler: callback });
+      this.logger.error(
+        util.format('Existing handlers %o', this.regExpMessageHandlers),
+      );
     } else {
       const route = transformPatternToRoute(pattern);
       callback.isEventHandler = isEventHandler;
