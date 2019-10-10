@@ -61,20 +61,35 @@ export abstract class Server {
   }
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
+    if (pattern.includes('regex'))
+      this.logger.error(`getting handler for ${pattern}`);
+
     const route = this.getRouteFromPattern(pattern);
 
     let handler = null;
     // Try to find the message handler by name
     if (this.messageHandlers.has(route)) {
+      if (pattern.includes('regex'))
+        this.logger.error(`found handler for route ${route}`);
       return this.messageHandlers.get(route);
     }
-
+    if (pattern.includes('regex'))
+      this.logger.error(
+        util.format('regExpMessageHandlers -> %o', this.regExpMessageHandlers),
+      );
     // If it was not found, iterate through the Regular Expression handlers
     this.regExpMessageHandlers.forEach(regExpHandler => {
+      if (pattern.includes('regex'))
+        this.logger.error(util.format('Executing pattern %o', regExpHandler));
       if (regExpHandler.pattern.exec(route) !== null) {
-        this.logger.error(
-          util.format('found the handler with RegExp %o', regExpHandler),
-        );
+        if (pattern.includes('regex'))
+          this.logger.error(
+            util.format(
+              'Found the handler %o, for route %o',
+              regExpHandler,
+              route,
+            ),
+          );
         handler = regExpHandler.messageHandler;
       }
     });
