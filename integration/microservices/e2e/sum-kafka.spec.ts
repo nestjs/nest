@@ -82,17 +82,17 @@ describe
         .expect(200, '15');
     });
 
-    it(`/POST (async event notification)`, done => {
-      request(server)
-        .post('/notify')
-        .send()
-        .end(() => {
-          setTimeout(() => {
-            expect(KafkaController.IS_NOTIFIED).to.be.true;
-            done();
-          }, 500);
-        });
-    }).timeout(1000);
+    // it(`/POST (async event notification)`, done => {
+    //   request(server)
+    //     .post('/notify')
+    //     .send()
+    //     .end(() => {
+    //       setTimeout(() => {
+    //         expect(KafkaController.IS_NOTIFIED).to.be.true;
+    //         done();
+    //       }, 500);
+    //     });
+    // }).timeout(1000);
 
     it(`/POST (async event notification with RegExp)`, done => {
       request(server)
