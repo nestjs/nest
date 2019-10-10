@@ -101,9 +101,9 @@ describe('Kafka transport', () => {
         setTimeout(() => {
           expect(KafkaController.IS_NOTIFIED_WITH_REGEXP).to.be.true;
           done();
-        }, 500);
+        }, 1500);
       });
-  }).timeout(1000);
+  }).timeout(2500);
 
   const userDto: UserDto = {
     email: 'enriquebenavidesm@gmail.com',
