@@ -3,6 +3,7 @@ import { Observable, of, throwError as _throw } from 'rxjs';
 import * as sinon from 'sinon';
 import { Server } from '../../server/server';
 import * as Utils from '../../utils';
+import { RegExpMessageHandler } from '../../interfaces';
 
 class TestServer extends Server {
   public listen(callback: () => void) {}
@@ -193,6 +194,27 @@ describe('Server', () => {
         expect(messageHandlersHasSpy.args[0][0]).to.be.equal(handlerRoute);
         expect(messageHandlersGetSpy.called).to.be.true;
         expect(messageHandlersGetSpy.args[0][0]).to.be.equal(handlerRoute);
+        expect(value).to.be.equal(callback);
+      });
+    });
+
+    describe('when handler exists and was added with a RegExp', () => {
+      beforeEach(() => {
+        sandbox.stub(server as any, 'regExpMessageHandlers').value([
+          ({
+            pattern: /.*el.*/,
+            messageHandler: callback,
+          } as unknown) as RegExpMessageHandler,
+        ]);
+      });
+
+      it('should return expected handler', () => {
+        messageHandlersHasSpy.returns(false);
+
+        const value = server.getHandlerByPattern(handlerRoute);
+
+        expect(messageHandlersHasSpy.called).to.be.true;
+        expect(messageHandlersGetSpy.called).to.be.false;
         expect(value).to.be.equal(callback);
       });
     });
