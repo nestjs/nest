@@ -13,4 +13,4 @@ import { PrismaModule } from './prisma/prisma.module';
     PostsModule,
   ],
 })
-export class ApplicationModule {}
+export class AppModule {}

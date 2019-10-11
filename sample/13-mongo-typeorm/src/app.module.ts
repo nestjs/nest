@@ -16,4 +16,4 @@ import { Photo } from './photo/photo.entity';
     PhotoModule,
   ],
 })
-export class ApplicationModule {}
+export class AppModule {}
