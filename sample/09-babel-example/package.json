@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "format": "prettier --write \"**/*.js\"",
+    "build": "babel src -d dist",
     "start": "babel-node index.js",
     "start:dev": "nodemon",
     "test": "jest",
@@ -21,6 +22,7 @@
     "rxjs": "6.5.3"
   },
   "devDependencies": {
+    "@babel/cli": "^7.6.4",
     "@babel/core": "7.6.4",
     "@babel/node": "7.6.3",
     "@babel/plugin-proposal-decorators": "7.6.0",
