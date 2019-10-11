@@ -20,11 +20,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "6.8.2",
-    "@nestjs/core": "6.8.2",
+    "@nestjs/common": "6.8.3",
+    "@nestjs/core": "6.8.3",
     "@nestjs/jwt": "6.1.1",
     "@nestjs/passport": "6.1.0",
-    "@nestjs/platform-express": "6.8.2",
+    "@nestjs/platform-express": "6.8.3",
     "passport": "0.4.0",
     "passport-jwt": "4.0.0",
     "passport-local": "1.0.0",

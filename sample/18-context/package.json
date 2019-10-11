@@ -19,8 +19,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "6.8.2",
-    "@nestjs/core": "6.8.2",
+    "@nestjs/common": "6.8.3",
+    "@nestjs/core": "6.8.3",
     "reflect-metadata": "0.1.13",
     "rimraf": "^3.0.0",
     "rxjs": "6.5.3"
