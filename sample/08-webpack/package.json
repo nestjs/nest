@@ -4,9 +4,8 @@
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
-    "start": "node dist/server",
-    "dev": "webpack --config webpack.config.js --watch",
-    "build": "webpack --config webpack.config.js"
+    "build": "nest build --watch --webpack",
+    "start": "node dist/main"
   },
   "dependencies": {
     "@nestjs/common": "6.8.2",
