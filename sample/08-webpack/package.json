@@ -4,7 +4,7 @@
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
-    "build": "nest build --webpack",
+    "build": "nest build",
     "build:dev": "nest build --watch --webpack",
     "start": "node dist/main"
   },
