@@ -4,24 +4,24 @@
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
-    "start": "node dist/server",
-    "dev": "webpack --config webpack.config.js --watch",
-    "build": "webpack --config webpack.config.js"
+    "build": "tsc -p tsconfig.build.json",
+    "build:dev": "nest build --watch --webpack",
+    "start": "node dist/main"
   },
   "dependencies": {
-    "@nestjs/common": "6.8.2",
-    "@nestjs/core": "6.8.2",
-    "@nestjs/platform-express": "6.8.2",
+    "@nestjs/common": "6.8.3",
+    "@nestjs/core": "6.8.3",
+    "@nestjs/platform-express": "6.8.3",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
-    "typescript": "3.6.3"
+    "typescript": "3.6.4"
   },
   "devDependencies": {
     "@types/node": "12.7.12",
     "ts-loader": "6.2.0",
     "ts-node": "8.4.1",
     "tslint": "5.20.0",
-    "webpack": "4.41.0",
+    "webpack": "4.41.1",
     "webpack-cli": "3.3.9",
     "webpack-node-externals": "1.7.2"
   }
