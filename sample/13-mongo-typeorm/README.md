@@ -1,4 +1,4 @@
-### Mongoose sample
+### Mongo + Typeorm sample
 
 ### Installation
 
@@ -24,3 +24,7 @@ After running the sample, you can stop the Docker container with
 Then, run Nest as usual:
 
 `npm run start`
+
+### Run the tests
+* Unit tests: `npm run test`
+* e2e tests: `npm run test:e2e` 
