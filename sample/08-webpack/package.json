@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "build:dev": "nest build --watch --webpack",
-    "start": "node dist/main"
+    "start": "node dist/main",
+    "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
     "@nestjs/common": "6.8.3",
