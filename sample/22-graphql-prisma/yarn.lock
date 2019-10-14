@@ -12,13 +12,23 @@
     rxjs "6.4.0"
     source-map "0.7.3"
 
-"@angular-devkit/schematics-cli@0.803.6":
-  version "0.803.6"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics-cli/-/schematics-cli-0.803.6.tgz#edf16a8c3b8a733f9e38d2a0b28b9e158b7a679e"
+"@angular-devkit/core@8.3.8":
+  version "8.3.8"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-8.3.8.tgz#3177abf49a4486d1287256b65638548440c5cea2"
   dependencies:
-    "@angular-devkit/core" "8.3.6"
-    "@angular-devkit/schematics" "8.3.6"
-    "@schematics/schematics" "0.803.6"
+    ajv "6.10.2"
+    fast-json-stable-stringify "2.0.0"
+    magic-string "0.25.3"
+    rxjs "6.4.0"
+    source-map "0.7.3"
+
+"@angular-devkit/schematics-cli@0.803.8":
+  version "0.803.8"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics-cli/-/schematics-cli-0.803.8.tgz#b8f2da1d5d4ad0f20c078a7defc71d7d5ab2149b"
+  dependencies:
+    "@angular-devkit/core" "8.3.8"
+    "@angular-devkit/schematics" "8.3.8"
+    "@schematics/schematics" "0.803.8"
     inquirer "6.5.1"
     minimist "1.2.0"
     rxjs "6.4.0"
@@ -29,6 +39,13 @@
   resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.6.tgz#9a21a090208398a70e87d24a66e8d147f14713e0"
   dependencies:
     "@angular-devkit/core" "8.3.6"
+    rxjs "6.4.0"
+
+"@angular-devkit/schematics@8.3.8":
+  version "8.3.8"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.8.tgz#7e4840509c2ca922b90ca2b33111c1941450aad5"
+  dependencies:
+    "@angular-devkit/core" "8.3.8"
     rxjs "6.4.0"
 
 "@apollographql/apollo-tools@^0.4.0":
@@ -323,13 +340,13 @@
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-"@nestjs/cli@6.10.1":
-  version "6.10.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.10.1.tgz#013767d0f9f1208e391892c3f076d1ddb5f2649e"
+"@nestjs/cli@6.10.2":
+  version "6.10.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.10.2.tgz#77855d250f95608582f2fc58148d53be1fac4d35"
   dependencies:
-    "@angular-devkit/core" "8.3.6"
-    "@angular-devkit/schematics" "8.3.6"
-    "@angular-devkit/schematics-cli" "0.803.6"
+    "@angular-devkit/core" "8.3.8"
+    "@angular-devkit/schematics" "8.3.8"
+    "@angular-devkit/schematics-cli" "0.803.8"
     "@nestjs/schematics" "^6.6.3"
     "@types/webpack" "4.39.2"
     chalk "2.4.2"
@@ -476,12 +493,12 @@
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.0.tgz#a777360b5b39a1a2e5106f8e858f2fd2d060c570"
 
-"@schematics/schematics@0.803.6":
-  version "0.803.6"
-  resolved "https://registry.yarnpkg.com/@schematics/schematics/-/schematics-0.803.6.tgz#628fe91dfe596945cc7f50c14b4d2f6a7dc125dd"
+"@schematics/schematics@0.803.8":
+  version "0.803.8"
+  resolved "https://registry.yarnpkg.com/@schematics/schematics/-/schematics-0.803.8.tgz#12a4ea199eeb966fe1c17650059e7ada7a321474"
   dependencies:
-    "@angular-devkit/core" "8.3.6"
-    "@angular-devkit/schematics" "8.3.6"
+    "@angular-devkit/core" "8.3.8"
+    "@angular-devkit/schematics" "8.3.8"
 
 "@types/accepts@*", "@types/accepts@^1.3.5":
   version "1.3.5"
