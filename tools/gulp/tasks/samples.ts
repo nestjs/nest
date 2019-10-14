@@ -23,7 +23,7 @@ async function installSamples() {
     const dirName = dir.replace(resolve(__dirname, '../../../'), '');
     log.info(`Installing dependencies of ${clc.magenta(dirName)}`);
     try {
-      await exec(`npm install --no-shrinkwrap --prefix ${dir}`);
+      await exec(`npm ci --no-shrinkwrap --prefix ${dir}`);
       log.info(`Finished installing ${clc.magenta(dirName)}`);
     } catch (err) {
       log.error(`Failed installing dependencies of ${dirName}`);
