@@ -40,3 +40,9 @@ export const isNil = (obj: any): obj is null | undefined =>
   isUndefined(obj) || obj === null;
 export const isEmpty = (array: any): boolean => !(array && array.length > 0);
 export const isSymbol = (fn: any): fn is symbol => typeof fn === 'symbol';
+export const getPathName = (originalUrl: string): string => {
+  const queryParamsIndex = originalUrl.indexOf('?');
+  return queryParamsIndex >= 0
+    ? originalUrl.slice(0, queryParamsIndex)
+    : originalUrl;
+};

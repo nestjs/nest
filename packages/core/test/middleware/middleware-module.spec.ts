@@ -107,6 +107,7 @@ describe('MiddlewareModule', () => {
           configuration,
           'Test',
           app,
+          []
         ),
       ).to.eventually.be.rejectedWith(RuntimeException);
     });
@@ -141,6 +142,7 @@ describe('MiddlewareModule', () => {
           configuration,
           moduleKey,
           app,
+          []
         ),
       ).to.be.rejectedWith(InvalidMiddlewareException);
     });
@@ -187,6 +189,7 @@ describe('MiddlewareModule', () => {
         configuration,
         moduleKey,
         app,
+        []
       );
       expect(createMiddlewareFactoryStub.calledOnce).to.be.true;
     });

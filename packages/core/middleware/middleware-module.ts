@@ -27,6 +27,7 @@ import { MiddlewareBuilder } from './builder';
 import { MiddlewareContainer } from './container';
 import { MiddlewareResolver } from './resolver';
 import { RoutesMapper } from './routes-mapper';
+import { getPathName } from '@nestjs/common/utils/shared.utils';
 
 export class MiddlewareModule {
   private readonly routerProxy = new RouterProxy();
@@ -117,6 +118,7 @@ export class MiddlewareModule {
           config,
           moduleKey,
           applicationRef,
+          middlewareConfig,
         );
       }
     };
@@ -139,6 +141,7 @@ export class MiddlewareModule {
     config: MiddlewareConfiguration,
     moduleKey: string,
     applicationRef: any,
+    middlewareConfig: MiddlewareConfiguration[],
   ) {
     const { forRoutes } = config;
     for (const routeInfo of forRoutes) {
@@ -148,6 +151,7 @@ export class MiddlewareModule {
         config,
         moduleKey,
         applicationRef,
+        middlewareConfig,
       );
     }
   }
@@ -158,6 +162,7 @@ export class MiddlewareModule {
     config: MiddlewareConfiguration,
     moduleKey: string,
     applicationRef: any,
+    middlewareConfig: MiddlewareConfiguration[],
   ) {
     const middlewareCollection = [].concat(config.middleware);
     const moduleRef = this.container.getModuleByKey(moduleKey);
@@ -178,6 +183,7 @@ export class MiddlewareModule {
         routeInfo.path,
         moduleRef,
         collection,
+        middlewareConfig
       );
     }
   }
@@ -189,6 +195,7 @@ export class MiddlewareModule {
     path: string,
     moduleRef: Module,
     collection: Map<string, InstanceWrapper>,
+    middlewareConfig: MiddlewareConfiguration[],
   ) {
     const { instance, metatype } = wrapper;
     if (isUndefined(instance.use)) {
@@ -197,8 +204,14 @@ export class MiddlewareModule {
     const router = await applicationRef.createMiddlewareFactory(method);
     const isStatic = wrapper.isDependencyTreeStatic();
     if (isStatic) {
-      const proxy = await this.createProxy(instance);
-      return this.registerHandler(router, path, proxy);
+      const proxy = await this.createProxy(instance, null, middlewareConfig);
+      return this.registerHandler(
+        router,
+        path,
+        proxy,
+        method,
+        middlewareConfig,
+      );
     }
     this.registerHandler(
       router,
@@ -228,6 +241,7 @@ export class MiddlewareModule {
           const proxy = await this.createProxy<TRequest, TResponse>(
             contextInstance,
             contextId,
+            middlewareConfig,
           );
           return proxy(req, res, next);
         } catch (err) {
@@ -244,12 +258,15 @@ export class MiddlewareModule {
           exceptionsHandler.next(err, host);
         }
       },
+      method,
+      middlewareConfig,
     );
   }
 
   private async createProxy<TRequest = unknown, TResponse = unknown>(
     instance: NestMiddleware,
     contextId = STATIC_CONTEXT,
+    middlewareConfig: MiddlewareConfiguration[],
   ): Promise<(req: TRequest, res: TResponse, next: () => void) => void> {
     const exceptionsHandler = this.routerExceptionFilter.create(
       instance,
@@ -269,6 +286,8 @@ export class MiddlewareModule {
       res: TResponse,
       next: () => void,
     ) => void,
+    method: RequestMethod,
+    middlewareConfig: MiddlewareConfiguration[],
   ) {
     const prefix = this.config.getGlobalPrefix();
     const basePath = addLeadingSlash(prefix);
@@ -277,6 +296,25 @@ export class MiddlewareModule {
       // and global prefix has been set
       path = '*';
     }
-    router(basePath + path, proxy);
+    const pathname = basePath + path;
+    router(pathname, (req, res, next) => {
+      const requestUrl = getPathName(req.originalUrl);
+      const isEqualMatchMiddleware = requestUrl === pathname;
+      const isEqualMatchHandler = middlewareConfig.some(
+        (config: MiddlewareConfiguration) =>
+          config.forRoutes.some(
+            route => (route as RouteInfo).path === requestUrl,
+          ),
+      );
+      if (
+        !isEqualMatchHandler ||
+        method === RequestMethod.ALL ||
+        (isEqualMatchHandler && isEqualMatchMiddleware)
+      ) {
+        proxy(req, res, next);
+      } else {
+        next();
+      }
+    });
   }
 }
