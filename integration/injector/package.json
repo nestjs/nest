@@ -13,7 +13,7 @@
     "@nestjs/testing": "6.8.3",
     "@nestjs/websockets": "6.8.3",
     "class-transformer": "0.2.3",
-    "class-validator": "0.10.1",
+    "class-validator": "0.10.2",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "typescript": "3.6.4"
