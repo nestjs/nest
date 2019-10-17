@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_MESSAGE_HANDLER } from '../../constants';
+import { NO_MESSAGE_HANDLER, RQM_DEFAULT_NOACK } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerRMQ } from '../../server/server-rmq';
 // tslint:disable:no-string-literal
@@ -140,9 +140,26 @@ describe('ServerRMQ', () => {
       expect(channel.prefetch.calledWith(prefetchCount, isGlobalPrefetchCount))
         .to.be.true;
     });
-    it('should call "consumeChannel" method', async () => {
+    it('should call "consumeChannel" method with default noAck', async () => {
       await server.setupChannel(channel, () => null);
       expect(channel.consume.called).to.be.true;
+      expect(channel.consume.args[0][2]).to.contain({
+        noAck: RQM_DEFAULT_NOACK,
+      });
+    });
+    it('should call "consumeChannel" method with noAck equal to true', async () => {
+      const noAck = true;
+      (server as any)['options']['noAck'] = noAck;
+      await server.setupChannel(channel, () => null);
+      expect(channel.consume.called).to.be.true;
+      expect(channel.consume.args[0][2]).to.contain({ noAck });
+    });
+    it('should call "consumeChannel" method with noAck equal to false', async () => {
+      const noAck = false;
+      (server as any)['options']['noAck'] = noAck;
+      await server.setupChannel(channel, () => null);
+      expect(channel.consume.called).to.be.true;
+      expect(channel.consume.args[0][2]).to.contain({ noAck });
     });
     it('should call "resolve" function', async () => {
       const resolve = sinon.spy();
