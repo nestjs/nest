@@ -345,6 +345,7 @@ export class Module {
         isResolved: false,
         inject: [useExisting],
         host: this,
+        isAlias: true,
       }),
     );
   }
@@ -453,6 +454,18 @@ export class Module {
 
   public getProviderByKey<T = any>(name: string | symbol): InstanceWrapper<T> {
     return this._providers.get(name) as InstanceWrapper<T>;
+  }
+
+  public getNonAliasProviders(): Map<string, InstanceWrapper<Injectable>> {
+    const result = new Map<string, InstanceWrapper<Injectable>>();
+
+    this._providers.forEach((wrapper, key) => {
+      if (!wrapper.isAlias) {
+        result.set(key, wrapper);
+      }
+    });
+
+    return result;
   }
 
   public createModuleReferenceType(): any {

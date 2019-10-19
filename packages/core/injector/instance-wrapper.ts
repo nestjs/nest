@@ -42,6 +42,8 @@ export class InstanceWrapper<T = any> {
   public inject?: (string | symbol | Function | Type<any>)[];
   public forwardRef?: boolean;
 
+  public isAlias: Boolean = false;
+
   private readonly values = new WeakMap<ContextId, InstancePerContext<T>>();
   private readonly [INSTANCE_METADATA_SYMBOL]: InstanceMetadataStore = {};
   private readonly [INSTANCE_ID_SYMBOL]: string;

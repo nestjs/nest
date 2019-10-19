@@ -39,7 +39,7 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
  * @param module The module which will be initialized
  */
 export async function callModuleBootstrapHook(module: Module): Promise<any> {
-  const providers = [...module.providers];
+  const providers = [...module.getNonAliasProviders()];
   // Module (class) instance is the first element of the providers array
   // Lifecycle hook has to be called once all classes are properly initialized
   const [_, { instance: moduleClassInstance }] = providers.shift();
