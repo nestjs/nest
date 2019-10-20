@@ -7,7 +7,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "ts-node src/main",
     "prestart:prod": "npm run build",
-    "start:prod": "node dist/main.js"
+    "start:prod": "node dist/main.js",
+    "start:dev": "concurrently --handle-input \"wait-on dist/main.js && nodemon\" \"tsc -w -p tsconfig.build.json\" "
   },
   "dependencies": {
     "@nestjs/common": "6.8.2",
@@ -26,7 +27,10 @@
   },
   "devDependencies": {
     "@types/node": "10.14.20",
+    "concurrently": "^5.0.0",
+    "nodemon": "^1.19.4",
     "ts-node": "8.4.1",
-    "tslint": "5.20.0"
+    "tslint": "5.20.0",
+    "wait-on": "^3.3.0"
   }
 }
