@@ -32,7 +32,7 @@
     "@babel/runtime": "7.6.3",
     "@nestjs/testing": "6.8.3",
     "jest": "24.9.0",
-    "nodemon": "1.19.3",
+    "nodemon": "1.19.4",
     "prettier": "1.18.2",
     "supertest": "4.0.2"
   },
