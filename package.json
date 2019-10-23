@@ -130,7 +130,7 @@
     "lint-staged": "9.4.2",
     "markdown-table": "1.1.3",
     "mocha": "3.5.3",
-    "nodemon": "1.19.3",
+    "nodemon": "1.19.4",
     "nyc": "14.1.1",
     "prettier": "1.18.2",
     "sinon": "7.5.0",
