@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@types/node": "12.7.12",
-    "ts-loader": "6.2.0",
+    "ts-loader": "6.2.1",
     "ts-node": "8.4.1",
     "tslint": "5.20.0",
     "webpack": "4.41.1",
