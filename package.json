@@ -95,7 +95,7 @@
     "@types/gulp": "4.0.6",
     "@types/kafka-node": "2.0.9",
     "@types/mocha": "5.2.7",
-    "@types/node": "10.14.21",
+    "@types/node": "10.14.22",
     "@types/redis": "2.8.14",
     "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "7.5.0",
