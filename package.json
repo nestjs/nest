@@ -14,7 +14,7 @@
     "postbuild": "gulp move",
     "prebuild:prod": "npm run clean",
     "build:prod": "gulp build",
-    "build:samples": "gulp install:samples && npm run build && gulp build:samples",
+    "build:samples": "gulp install:samples && npm run build && gulp build:samples && gulp test:samples && gulp test:e2e:samples",
     "postinstall": "opencollective",
     "prerelease": "gulp copy-misc && gulp build --dist node_modules/@nestjs",
     "publish": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --force-publish --access public --exact -m \"chore(@nestjs) publish %s release\"",
