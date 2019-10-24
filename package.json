@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "6.8.0",
+  "version": "6.8.4",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
@@ -35,11 +35,6 @@
   "license": "MIT",
   "dependencies": {
     "@grpc/proto-loader": "0.5.2",
-    "@nestjs/common": "6.1.1",
-    "@nestjs/core": "6.1.1",
-    "@nestjs/microservices": "6.1.1",
-    "@nestjs/testing": "6.1.1",
-    "@nestjs/websockets": "6.1.1",
     "@nuxtjs/opencollective": "0.2.2",
     "amqp-connection-manager": "3.0.0",
     "amqplib": "0.5.5",
