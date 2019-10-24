@@ -12,9 +12,9 @@
     "@nestjs/common": "6.8.3",
     "@nestjs/core": "6.8.3",
     "@nestjs/graphql": "6.5.3",
-    "apollo-server-express": "2.9.6",
+    "apollo-server-express": "2.9.7",
     "class-transformer": "0.2.3",
-    "class-validator": "0.10.1",
+    "class-validator": "0.10.2",
     "graphql": "14.5.8",
     "graphql-tools": "4.0.5",
     "reflect-metadata": "0.1.13",
@@ -22,7 +22,7 @@
     "subscriptions-transport-ws": "0.9.16",
     "type-graphql": "0.17.5",
     "typescript": "3.6.4",
-    "ws": "7.1.2"
+    "ws": "7.2.0"
   },
   "devDependencies": {
     "@types/node": "7.10.7",

@@ -12,13 +12,23 @@
     rxjs "6.4.0"
     source-map "0.7.3"
 
-"@angular-devkit/schematics-cli@0.803.6":
-  version "0.803.6"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics-cli/-/schematics-cli-0.803.6.tgz#edf16a8c3b8a733f9e38d2a0b28b9e158b7a679e"
+"@angular-devkit/core@8.3.8":
+  version "8.3.8"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-8.3.8.tgz#3177abf49a4486d1287256b65638548440c5cea2"
   dependencies:
-    "@angular-devkit/core" "8.3.6"
-    "@angular-devkit/schematics" "8.3.6"
-    "@schematics/schematics" "0.803.6"
+    ajv "6.10.2"
+    fast-json-stable-stringify "2.0.0"
+    magic-string "0.25.3"
+    rxjs "6.4.0"
+    source-map "0.7.3"
+
+"@angular-devkit/schematics-cli@0.803.8":
+  version "0.803.8"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics-cli/-/schematics-cli-0.803.8.tgz#b8f2da1d5d4ad0f20c078a7defc71d7d5ab2149b"
+  dependencies:
+    "@angular-devkit/core" "8.3.8"
+    "@angular-devkit/schematics" "8.3.8"
+    "@schematics/schematics" "0.803.8"
     inquirer "6.5.1"
     minimist "1.2.0"
     rxjs "6.4.0"
@@ -29,6 +39,13 @@
   resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.6.tgz#9a21a090208398a70e87d24a66e8d147f14713e0"
   dependencies:
     "@angular-devkit/core" "8.3.6"
+    rxjs "6.4.0"
+
+"@angular-devkit/schematics@8.3.8":
+  version "8.3.8"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.8.tgz#7e4840509c2ca922b90ca2b33111c1941450aad5"
+  dependencies:
+    "@angular-devkit/core" "8.3.8"
     rxjs "6.4.0"
 
 "@apollographql/apollo-tools@^0.4.0":
@@ -323,13 +340,13 @@
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-"@nestjs/cli@6.10.1":
-  version "6.10.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.10.1.tgz#013767d0f9f1208e391892c3f076d1ddb5f2649e"
+"@nestjs/cli@6.10.5":
+  version "6.10.5"
+  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.10.5.tgz#1fbedd739d48e78f26e00e204be126bca3447c54"
   dependencies:
-    "@angular-devkit/core" "8.3.6"
-    "@angular-devkit/schematics" "8.3.6"
-    "@angular-devkit/schematics-cli" "0.803.6"
+    "@angular-devkit/core" "8.3.8"
+    "@angular-devkit/schematics" "8.3.8"
+    "@angular-devkit/schematics-cli" "0.803.8"
     "@nestjs/schematics" "^6.6.3"
     "@types/webpack" "4.39.2"
     chalk "2.4.2"
@@ -476,12 +493,12 @@
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.0.tgz#a777360b5b39a1a2e5106f8e858f2fd2d060c570"
 
-"@schematics/schematics@0.803.6":
-  version "0.803.6"
-  resolved "https://registry.yarnpkg.com/@schematics/schematics/-/schematics-0.803.6.tgz#628fe91dfe596945cc7f50c14b4d2f6a7dc125dd"
+"@schematics/schematics@0.803.8":
+  version "0.803.8"
+  resolved "https://registry.yarnpkg.com/@schematics/schematics/-/schematics-0.803.8.tgz#12a4ea199eeb966fe1c17650059e7ada7a321474"
   dependencies:
-    "@angular-devkit/core" "8.3.6"
-    "@angular-devkit/schematics" "8.3.6"
+    "@angular-devkit/core" "8.3.8"
+    "@angular-devkit/schematics" "8.3.8"
 
 "@types/accepts@*", "@types/accepts@^1.3.5":
   version "1.3.5"
@@ -671,9 +688,9 @@
   version "10.11.3"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.11.3.tgz#c055536ac8a5e871701aa01914be5731539d01ee"
 
-"@types/node@12.7.12":
-  version "12.7.12"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.7.12.tgz#7c6c571cc2f3f3ac4a59a5f2bd48f5bdbc8653cc"
+"@types/node@12.11.6":
+  version "12.11.6"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.11.6.tgz#2f8d551aef252de78f42acdccd53f5a8ce0cac4d"
 
 "@types/node@^11.13.7":
   version "11.13.10"
@@ -1106,9 +1123,9 @@ apollo-server-caching@^0.5.0:
   dependencies:
     lru-cache "^5.0.0"
 
-apollo-server-core@^2.9.6:
-  version "2.9.6"
-  resolved "https://registry.yarnpkg.com/apollo-server-core/-/apollo-server-core-2.9.6.tgz#b6dc087200633f47ca4f08244d3e606b4d616320"
+apollo-server-core@^2.9.7:
+  version "2.9.7"
+  resolved "https://registry.yarnpkg.com/apollo-server-core/-/apollo-server-core-2.9.7.tgz#0f32344af90dec445ac780be95350bfa736fc416"
   dependencies:
     "@apollographql/apollo-tools" "^0.4.0"
     "@apollographql/graphql-playground-html" "1.6.24"
@@ -1119,7 +1136,7 @@ apollo-server-core@^2.9.6:
     apollo-engine-reporting "^1.4.7"
     apollo-server-caching "^0.5.0"
     apollo-server-env "^2.4.3"
-    apollo-server-errors "^2.3.3"
+    apollo-server-errors "^2.3.4"
     apollo-server-plugin-base "^0.6.5"
     apollo-server-types "^0.2.5"
     apollo-tracing "^0.8.5"
@@ -1139,13 +1156,13 @@ apollo-server-env@^2.4.3:
     node-fetch "^2.1.2"
     util.promisify "^1.0.0"
 
-apollo-server-errors@^2.3.3:
-  version "2.3.3"
-  resolved "https://registry.yarnpkg.com/apollo-server-errors/-/apollo-server-errors-2.3.3.tgz#83763b00352c10dc68fbb0d41744ade66de549ff"
+apollo-server-errors@^2.3.4:
+  version "2.3.4"
+  resolved "https://registry.yarnpkg.com/apollo-server-errors/-/apollo-server-errors-2.3.4.tgz#b70ef01322f616cbcd876f3e0168a1a86b82db34"
 
-apollo-server-express@2.9.6:
-  version "2.9.6"
-  resolved "https://registry.yarnpkg.com/apollo-server-express/-/apollo-server-express-2.9.6.tgz#eec2ec43b829b059278e14994d06bd23e43266f9"
+apollo-server-express@2.9.7:
+  version "2.9.7"
+  resolved "https://registry.yarnpkg.com/apollo-server-express/-/apollo-server-express-2.9.7.tgz#54fbaf93b68f0123ecb1dead26cbfda5b15bd10e"
   dependencies:
     "@apollographql/graphql-playground-html" "1.6.24"
     "@types/accepts" "^1.3.5"
@@ -1153,7 +1170,7 @@ apollo-server-express@2.9.6:
     "@types/cors" "^2.8.4"
     "@types/express" "4.17.1"
     accepts "^1.3.5"
-    apollo-server-core "^2.9.6"
+    apollo-server-core "^2.9.7"
     apollo-server-types "^0.2.5"
     body-parser "^1.18.3"
     cors "^2.8.4"
@@ -6166,9 +6183,9 @@ ts-jest@24.1.0:
     semver "^5.5"
     yargs-parser "10.x"
 
-ts-loader@6.2.0:
-  version "6.2.0"
-  resolved "https://registry.yarnpkg.com/ts-loader/-/ts-loader-6.2.0.tgz#52d3993ecbc5474c1513242388e1049da0fce880"
+ts-loader@6.2.1:
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/ts-loader/-/ts-loader-6.2.1.tgz#67939d5772e8a8c6bdaf6277ca023a4812da02ef"
   dependencies:
     chalk "^2.3.0"
     enhanced-resolve "^4.0.0"
