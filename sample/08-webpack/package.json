@@ -6,18 +6,19 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "build:dev": "nest build --watch --webpack",
-    "start": "node dist/main"
+    "start": "node dist/main",
+    "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "6.8.3",
-    "@nestjs/core": "6.8.3",
-    "@nestjs/platform-express": "6.8.3",
+    "@nestjs/common": "6.8.4",
+    "@nestjs/core": "6.8.4",
+    "@nestjs/platform-express": "6.8.4",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "typescript": "3.6.4"
   },
   "devDependencies": {
-    "@types/node": "12.11.6",
+    "@types/node": "12.11.7",
     "ts-loader": "6.2.1",
     "ts-node": "8.4.1",
     "tslint": "5.20.0",
