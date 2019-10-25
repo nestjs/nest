@@ -58,8 +58,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 #### Sponsors
 
 <a href="https://www.swingdev.io" target="_blank"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="110" valign="middle" /> </a> &nbsp; <a href="https://blueanchor.io/" target="_blank"><img src="https://nestjs.com/img/blueanchor.png" width="150" valign="middle" /></a> &nbsp;
-<a href="https://www.novologic.com/" target="_blank"><img src="https://nestjs.com/img/novologic.png" width="110" valign="middle" /></a> &nbsp;
-<a href="https://scal.io" target="_blank"><img src="https://nestjs.com/img/scalio-logo.svg" width="80" valign="middle" /></a> &nbsp; <a href="http://angularity.io" target="_blank"><img src="http://angularity.io/media/logo.svg" height="22" valign="middle" /></a> &nbsp; <!--<a href="https://keycdn.com"><img src="https://nestjs.com/img/keycdn.svg" height="30" /></a> &nbsp;--> <a href="https://hostpresto.com" target="_blank"><img src="https://nestjs.com/img/hostpresto.png" height="24" valign="middle" /></a>
+<a href="https://www.novologic.com/" target="_blank"><img src="https://nestjs.com/img/novologic.png" width="110" valign="middle" /></a> &nbsp; <a href="https://hostpresto.com" target="_blank"><img src="https://nestjs.com/img/hostpresto.png" height="24" valign="middle" /></a>
 <a href="https://ever.co/" target="_blank"><img src="https://nestjs.com/img/ever-logo.png" height="14" valign="middle" /></a>  &nbsp; 
 <a href="https://buddy.works/" target="_blank"><img src="https://nestjs.com/img/buddy-logo.svg" height="25" valign="middle" /></a> &nbsp;
 <a href="https://blokt.com" target="_blank"><img src="https://nestjs.com/img/blokt-logo.png" height="25" valign="middle" /></a>  &nbsp;  <a href="https://genuinebee.com/" target="_blank"><img src="https://nestjs.com/img/genuinebee.svg" height="24" valign="middle" /></a> &nbsp; <a href="http://architectnow.net/" target="_blank"><img src="https://nestjs.com/img/architectnow.png" height="20" valign="middle" /></a> &nbsp; <a href="https://quander.io/" target="_blank"><img src="https://nestjs.com/img/quander.png" height="22" valign="middle" /></a> &nbsp; <a href="https://mantro.net/" target="_blank"><img src="https://nestjs.com/img/mantro-logo.svg" height="19" valign="middle" /></a> &nbsp; <a href="https://triplebyte.com/" target="_blank"><img src="https://nestjs.com/img/triplebyte.png" height="20" valign="middle" /></a> &nbsp; 
@@ -69,7 +68,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://firesticktricks.com" target="_blank"><img src="https://nestjs.com/img/firesticktricks-logo.png" width="120" valign="middle" /></a> &nbsp;
 <a href="https://www.codeguesser.co.uk" target="_blank"><img src="https://nestjs.com/img/codeguesser-logo.svg" width="120" valign="middle" /></a> &nbsp;
 <a href="https://tekhattan.com" target="_blank"><img src="https://nestjs.com/img/tekhattan-logo.png" width="110" valign="middle" /></a> &nbsp;
-<a href="https://f-a.nz/" target="_blank"><img src="https://nestjs.com/img/franz.svg" width="80" valign="middle" /></a>
+<a href="https://f-a.nz/" target="_blank"><img src="https://nestjs.com/img/franz.svg" width="80" valign="middle" /></a> &nbsp;
+<a href="https://sparkfabrik.com/" target="_blank"><img src="https://nestjs.com/img/sparkfabrik-logo.png" width="120" valign="middle" /></a>
 
 
 ## Backers
