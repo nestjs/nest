@@ -111,7 +111,7 @@ export class ListenersController {
     module: Module,
     moduleKey: string,
     methodKey: string,
-    defaultCallMetadata: Record<string, any>,
+    defaultCallMetadata: Record<string, any> = DEFAULT_CALLBACK_METADATA,
   ) {
     const collection = module.controllers;
     const { instance } = wrapper;

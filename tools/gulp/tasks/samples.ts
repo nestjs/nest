@@ -1,18 +1,18 @@
+import * as childProcess from 'child_process';
+import * as clc from 'cli-color';
+import * as log from 'fancy-log';
+import { task } from 'gulp';
 import { resolve } from 'path';
 import { promisify } from 'util';
-import * as childProcess from 'child_process';
-
-import { task } from 'gulp';
-
-import * as log from 'fancy-log';
-import * as clc from 'cli-color';
-
-import { getDirs } from '../util/task-helpers';
 import { samplePath } from '../config';
+import { getDirs } from '../util/task-helpers';
 
 const exec = promisify(childProcess.exec);
 
-async function executeNpmScriptInSamples(script: string, appendScript?: string) {
+async function executeNpmScriptInSamples(
+  script: string,
+  appendScript?: string,
+) {
   const directories = getDirs(samplePath);
 
   for await (const dir of directories) {
@@ -46,7 +46,24 @@ async function executeNpmScriptInSamples(script: string, appendScript?: string) 
   }
 }
 
-task('install:samples', async () => await executeNpmScriptInSamples('npm ci --no-audit --prefer-offline --no-shrinkwrap'));
-task('build:samples', async () => await executeNpmScriptInSamples('npm run build'));
-task('test:samples', async () => await executeNpmScriptInSamples('npm run test', '--passWithNoTests'));
-task('test:e2e:samples', async () => await executeNpmScriptInSamples('npm run test:e2e', '--passWithNoTests'));
+task(
+  'install:samples',
+  async () =>
+    executeNpmScriptInSamples(
+      'npm ci --no-audit --prefer-offline --no-shrinkwrap',
+    ),
+);
+task(
+  'build:samples',
+  async () => executeNpmScriptInSamples('npm run build'),
+);
+task(
+  'test:samples',
+  async () =>
+    executeNpmScriptInSamples('npm run test', '--passWithNoTests'),
+);
+task(
+  'test:e2e:samples',
+  async () =>
+    executeNpmScriptInSamples('npm run test:e2e', '--passWithNoTests'),
+);
