@@ -2,6 +2,16 @@
 # yarn lockfile v1
 
 
+"@angular-devkit/core@8.3.14":
+  version "8.3.14"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-8.3.14.tgz#b42716a0de44c8f2785a18ae5562ec2f76543c9b"
+  dependencies:
+    ajv "6.10.2"
+    fast-json-stable-stringify "2.0.0"
+    magic-string "0.25.3"
+    rxjs "6.4.0"
+    source-map "0.7.3"
+
 "@angular-devkit/core@8.3.6":
   version "8.3.6"
   resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-8.3.6.tgz#6ad4787e3cb8b03234a194dd53e12cf054a4169c"
@@ -12,40 +22,30 @@
     rxjs "6.4.0"
     source-map "0.7.3"
 
-"@angular-devkit/core@8.3.8":
-  version "8.3.8"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-8.3.8.tgz#3177abf49a4486d1287256b65638548440c5cea2"
+"@angular-devkit/schematics-cli@0.803.14":
+  version "0.803.14"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics-cli/-/schematics-cli-0.803.14.tgz#92909e07aba945587a8a8265944f97d09255c560"
   dependencies:
-    ajv "6.10.2"
-    fast-json-stable-stringify "2.0.0"
-    magic-string "0.25.3"
-    rxjs "6.4.0"
-    source-map "0.7.3"
-
-"@angular-devkit/schematics-cli@0.803.8":
-  version "0.803.8"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics-cli/-/schematics-cli-0.803.8.tgz#b8f2da1d5d4ad0f20c078a7defc71d7d5ab2149b"
-  dependencies:
-    "@angular-devkit/core" "8.3.8"
-    "@angular-devkit/schematics" "8.3.8"
-    "@schematics/schematics" "0.803.8"
+    "@angular-devkit/core" "8.3.14"
+    "@angular-devkit/schematics" "8.3.14"
+    "@schematics/schematics" "0.803.14"
     inquirer "6.5.1"
     minimist "1.2.0"
     rxjs "6.4.0"
     symbol-observable "1.2.0"
+
+"@angular-devkit/schematics@8.3.14":
+  version "8.3.14"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.14.tgz#844573822805c2f50f513418e4850a4c28bcb91a"
+  dependencies:
+    "@angular-devkit/core" "8.3.14"
+    rxjs "6.4.0"
 
 "@angular-devkit/schematics@8.3.6":
   version "8.3.6"
   resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.6.tgz#9a21a090208398a70e87d24a66e8d147f14713e0"
   dependencies:
     "@angular-devkit/core" "8.3.6"
-    rxjs "6.4.0"
-
-"@angular-devkit/schematics@8.3.8":
-  version "8.3.8"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.8.tgz#7e4840509c2ca922b90ca2b33111c1941450aad5"
-  dependencies:
-    "@angular-devkit/core" "8.3.8"
     rxjs "6.4.0"
 
 "@apollographql/apollo-tools@^0.4.0":
@@ -340,20 +340,20 @@
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-"@nestjs/cli@6.10.5":
-  version "6.10.5"
-  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.10.5.tgz#1fbedd739d48e78f26e00e204be126bca3447c54"
+"@nestjs/cli@6.11.0":
+  version "6.11.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.11.0.tgz#c15faf5425abd9ce535404c4863ff0c1b7bfb721"
   dependencies:
-    "@angular-devkit/core" "8.3.8"
-    "@angular-devkit/schematics" "8.3.8"
-    "@angular-devkit/schematics-cli" "0.803.8"
+    "@angular-devkit/core" "8.3.14"
+    "@angular-devkit/schematics" "8.3.14"
+    "@angular-devkit/schematics-cli" "0.803.14"
     "@nestjs/schematics" "^6.6.3"
-    "@types/webpack" "4.39.2"
+    "@types/webpack" "4.39.5"
     chalk "2.4.2"
     cli-table3 "0.5.1"
     commander "3.0.2"
     copyfiles "2.1.1"
-    fork-ts-checker-webpack-plugin "1.5.0"
+    fork-ts-checker-webpack-plugin "1.6.0"
     inquirer "7.0.0"
     node-emoji "1.10.0"
     ora "4.0.2"
@@ -362,7 +362,7 @@
     rimraf "3.0.0"
     tree-kill "1.2.1"
     tsconfig-paths-webpack-plugin "3.2.0"
-    webpack "4.41.0"
+    webpack "4.41.2"
     webpack-node-externals "1.7.2"
 
 "@nestjs/common@6.8.4":
@@ -493,12 +493,12 @@
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.0.tgz#a777360b5b39a1a2e5106f8e858f2fd2d060c570"
 
-"@schematics/schematics@0.803.8":
-  version "0.803.8"
-  resolved "https://registry.yarnpkg.com/@schematics/schematics/-/schematics-0.803.8.tgz#12a4ea199eeb966fe1c17650059e7ada7a321474"
+"@schematics/schematics@0.803.14":
+  version "0.803.14"
+  resolved "https://registry.yarnpkg.com/@schematics/schematics/-/schematics-0.803.14.tgz#eedb769663ecadf97148cd29a3233392fe22cfc3"
   dependencies:
-    "@angular-devkit/core" "8.3.8"
-    "@angular-devkit/schematics" "8.3.8"
+    "@angular-devkit/core" "8.3.14"
+    "@angular-devkit/schematics" "8.3.14"
 
 "@types/accepts@*", "@types/accepts@^1.3.5":
   version "1.3.5"
@@ -750,9 +750,9 @@
     "@types/source-list-map" "*"
     source-map "^0.6.1"
 
-"@types/webpack@4.39.2":
-  version "4.39.2"
-  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.39.2.tgz#fcaa85607a9bdd0e8f86a350f239ff08aede8584"
+"@types/webpack@4.39.5":
+  version "4.39.5"
+  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.39.5.tgz#3671b65928d9e0c6fcd4adff3f8167d48b174681"
   dependencies:
     "@types/anymatch" "*"
     "@types/node" "*"
@@ -2763,9 +2763,9 @@ forever-agent@~0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/forever-agent/-/forever-agent-0.6.1.tgz#fbc71f0c41adeb37f96c577ad1ed42d8fdacca91"
 
-fork-ts-checker-webpack-plugin@1.5.0:
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/fork-ts-checker-webpack-plugin/-/fork-ts-checker-webpack-plugin-1.5.0.tgz#ce1d77190b44d81a761b10b6284a373795e41f0c"
+fork-ts-checker-webpack-plugin@1.6.0:
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/fork-ts-checker-webpack-plugin/-/fork-ts-checker-webpack-plugin-1.6.0.tgz#a81fd1c6bf5258fa5318cf3e9a7e9bac006f7917"
   dependencies:
     babel-code-frame "^6.22.0"
     chalk "^2.4.1"
@@ -6553,9 +6553,9 @@ webpack-sources@^1.4.0, webpack-sources@^1.4.1:
     source-list-map "^2.0.0"
     source-map "~0.6.1"
 
-webpack@4.41.0:
-  version "4.41.0"
-  resolved "https://registry.yarnpkg.com/webpack/-/webpack-4.41.0.tgz#db6a254bde671769f7c14e90a1a55e73602fc70b"
+webpack@4.41.2:
+  version "4.41.2"
+  resolved "https://registry.yarnpkg.com/webpack/-/webpack-4.41.2.tgz#c34ec76daa3a8468c9b61a50336d8e3303dce74e"
   dependencies:
     "@webassemblyjs/ast" "1.8.5"
     "@webassemblyjs/helper-module-context" "1.8.5"
