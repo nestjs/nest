@@ -46,24 +46,15 @@ async function executeNpmScriptInSamples(
   }
 }
 
-task(
-  'install:samples',
-  async () =>
-    executeNpmScriptInSamples(
-      'npm ci --no-audit --prefer-offline --no-shrinkwrap',
-    ),
+task('install:samples', async () =>
+  executeNpmScriptInSamples(
+    'npm ci --no-audit --prefer-offline --no-shrinkwrap',
+  ),
 );
-task(
-  'build:samples',
-  async () => executeNpmScriptInSamples('npm run build'),
+task('build:samples', async () => executeNpmScriptInSamples('npm run build'));
+task('test:samples', async () =>
+  executeNpmScriptInSamples('npm run test', '--passWithNoTests'),
 );
-task(
-  'test:samples',
-  async () =>
-    executeNpmScriptInSamples('npm run test', '--passWithNoTests'),
-);
-task(
-  'test:e2e:samples',
-  async () =>
-    executeNpmScriptInSamples('npm run test:e2e', '--passWithNoTests'),
+task('test:e2e:samples', async () =>
+  executeNpmScriptInSamples('npm run test:e2e', '--passWithNoTests'),
 );
