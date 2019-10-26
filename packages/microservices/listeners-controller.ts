@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { createContextId } from '@nestjs/core/helpers/context-id-factory';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import {
@@ -15,11 +16,16 @@ import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { RpcContextCreator } from './context/rpc-context-creator';
 import {
+  DEFAULT_CALLBACK_METADATA,
+  DEFAULT_GRPC_CALLBACK_METADATA,
+} from './context/rpc-metadata-constants';
+import {
   CustomTransportStrategy,
   PatternMetadata,
   RequestContext,
 } from './interfaces';
 import { ListenerMetadataExplorer } from './listener-metadata-explorer';
+import { ServerGrpc } from './server';
 import { Server } from './server/server';
 
 export class ListenersController {
@@ -47,6 +53,10 @@ export class ListenersController {
     const isStatic = instanceWrapper.isDependencyTreeStatic();
     const patternHandlers = this.metadataExplorer.explore(instance);
     const module = this.container.getModuleByKey(moduleKey);
+    const defaultCallMetadata =
+      server instanceof ServerGrpc
+        ? DEFAULT_GRPC_CALLBACK_METADATA
+        : DEFAULT_CALLBACK_METADATA;
 
     patternHandlers.forEach(
       ({ pattern, targetCallback, methodKey, isEventHandler }) => {
@@ -56,6 +66,9 @@ export class ListenersController {
             targetCallback,
             moduleKey,
             methodKey,
+            STATIC_CONTEXT,
+            undefined,
+            defaultCallMetadata,
           );
           return server.addHandler(pattern, proxy, isEventHandler);
         }
@@ -65,6 +78,7 @@ export class ListenersController {
           module,
           moduleKey,
           methodKey,
+          defaultCallMetadata,
         );
         server.addHandler(pattern, asyncHandler, isEventHandler);
       },
@@ -97,6 +111,7 @@ export class ListenersController {
     module: Module,
     moduleKey: string,
     methodKey: string,
+    defaultCallMetadata: Record<string, any>,
   ) {
     const collection = module.controllers;
     const { instance } = wrapper;
@@ -119,6 +134,7 @@ export class ListenersController {
           methodKey,
           contextId,
           wrapper.id,
+          defaultCallMetadata,
         );
         return proxy(...args);
       } catch (err) {

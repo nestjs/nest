@@ -62,11 +62,13 @@ export class RpcContextCreator {
     methodName: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
+    defaultCallMetadata: Record<string, any> = DEFAULT_CALLBACK_METADATA,
   ): (...args: any[]) => Promise<Observable<any>> {
     const contextType: ContextType = 'rpc';
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
       instance,
       methodName,
+      defaultCallMetadata,
     );
 
     const exceptionHandler = this.exceptionFiltersContext.create(
@@ -165,6 +167,7 @@ export class RpcContextCreator {
   public getMetadata<T>(
     instance: Controller,
     methodName: string,
+    defaultCallMetadata: Record<string, any>,
   ): RpcHandlerMetadata {
     const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
     if (cacheMetadata) {
@@ -175,7 +178,7 @@ export class RpcContextCreator {
         instance,
         methodName,
         PARAM_ARGS_METADATA,
-      ) || DEFAULT_CALLBACK_METADATA;
+      ) || defaultCallMetadata;
     const keys = Object.keys(metadata);
     const argsLength = this.contextUtils.getArgumentsLength(keys, metadata);
     const paramtypes = this.contextUtils.reflectCallbackParamtypes(

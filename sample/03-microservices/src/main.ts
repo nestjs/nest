@@ -4,8 +4,8 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   /**
-   * Hybrid application (HTTP + TCP)
-   * Switch to basic microservice with NestFactory.createMicroservice():
+   * This example contains a hybrid application (HTTP + TCP)
+   * You can switch to a microservice with NestFactory.createMicroservice() as follows:
    *
    * const app = await NestFactory.createMicroservice(AppModule, {
    *  transport: Transport.TCP,
