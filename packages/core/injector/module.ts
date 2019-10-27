@@ -26,6 +26,7 @@ import { InvalidClassException } from '../errors/exceptions/invalid-class.except
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { createContextId } from '../helpers';
+import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
@@ -410,6 +411,17 @@ export class Module {
         host: this,
       }),
     );
+
+    this.assignControllerUniqueId(controller);
+  }
+
+  public assignControllerUniqueId(controller: Type<Controller>) {
+    Object.defineProperty(controller, CONTROLLER_ID_KEY, {
+      enumerable: false,
+      writable: false,
+      configurable: true,
+      value: randomStringGenerator(),
+    });
   }
 
   public addRelatedModule(module: Module) {

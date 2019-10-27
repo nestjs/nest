@@ -1,51 +1,43 @@
+import * as childProcess from 'child_process';
+import * as clc from 'cli-color';
+import * as log from 'fancy-log';
+import { task } from 'gulp';
 import { resolve } from 'path';
 import { promisify } from 'util';
-import * as childProcess from 'child_process';
-
-import { task } from 'gulp';
-
-import * as log from 'fancy-log';
-import * as clc from 'cli-color';
-
-import { getDirs } from '../util/task-helpers';
 import { samplePath } from '../config';
+import { getDirs } from '../util/task-helpers';
 
 const exec = promisify(childProcess.exec);
 
-/**
- * Installs all the npm packages in the
- * `samples/*` folder
- */
-async function installSamples() {
+async function executeNpmScriptInSamples(
+  script: string,
+  appendScript?: string,
+) {
   const directories = getDirs(samplePath);
 
   for await (const dir of directories) {
     const dirName = dir.replace(resolve(__dirname, '../../../'), '');
-    log.info(`Installing dependencies of ${clc.magenta(dirName)}`);
+    log.info(`Running ${clc.blue(script)} in ${clc.magenta(dirName)}`);
     try {
-      await exec(`npm install --no-shrinkwrap --prefix ${dir}`);
-      log.info(`Finished installing ${clc.magenta(dirName)}`);
+      const result = await exec(
+        `${script} --prefix ${dir} ${appendScript ? '-- ' + appendScript : ''}`,
+      );
+      log.info(
+        `Finished running ${clc.blue(script)} in ${clc.magenta(dirName)}`,
+      );
+      if (result.stderr) {
+        log.error(result.stderr);
+      }
+      if (result.stdout) {
+        log.error(result.stdout);
+      }
     } catch (err) {
-      log.error(`Failed installing dependencies of ${dirName}`);
-      throw err;
-    }
-  }
-}
-
-/**
- * Builds all the `samples/*`
- */
-async function buildSamples() {
-  const directories = getDirs(samplePath);
-
-  for await (const dir of directories) {
-    const dirName = dir.replace(__dirname, '');
-    log.info(`Building ${clc.magenta(dirName)}`);
-    try {
-      await exec(`npm run build --prefix ${dir}`);
-      log.info(`Finished building ${clc.magenta(dirName)}`);
-    } catch (err) {
-      log.error(`Failed building ${clc.magenta(dirName)}:`);
+      log.error(
+        `Failed running ${clc.blue(script)} in ${clc.magenta(dirName)}`,
+      );
+      if (err.stderr) {
+        log.error(err.stderr);
+      }
       if (err.stdout) {
         log.error(err.stdout);
       }
@@ -54,5 +46,15 @@ async function buildSamples() {
   }
 }
 
-task('install:samples', async () => await installSamples());
-task('build:samples', async () => await buildSamples());
+task('install:samples', async () =>
+  executeNpmScriptInSamples(
+    'npm ci --no-audit --prefer-offline --no-shrinkwrap',
+  ),
+);
+task('build:samples', async () => executeNpmScriptInSamples('npm run build'));
+task('test:samples', async () =>
+  executeNpmScriptInSamples('npm run test', '--passWithNoTests'),
+);
+task('test:e2e:samples', async () =>
+  executeNpmScriptInSamples('npm run test:e2e', '--passWithNoTests'),
+);

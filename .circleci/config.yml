@@ -145,6 +145,8 @@ jobs:
     working_directory: ~/nest
     docker:
       - image: circleci/node:12
+    environment:
+      - DISABLE_OPENCOLLECTIVE: true
     steps:
       - checkout
       - *restore-cache

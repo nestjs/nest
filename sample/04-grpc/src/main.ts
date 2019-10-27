@@ -4,8 +4,8 @@ import { grpcClientOptions } from './grpc-client.options';
 
 async function bootstrap() {
   /**
-   * Hybrid application (HTTP + GRPC)
-   * Switch to basic microservice with NestFactory.createMicroservice():
+   * This example contains a hybrid application (HTTP + gRPC)
+   * You can switch to a microservice with NestFactory.createMicroservice() as follows:
    *
    * const app = await NestFactory.createMicroservice(AppModule, {
    *  transport: Transport.GRPC,
@@ -19,6 +19,7 @@ async function bootstrap() {
    */
   const app = await NestFactory.create(AppModule);
   app.connectMicroservice(grpcClientOptions);
+
   await app.startAllMicroservicesAsync();
   await app.listen(3001);
 }

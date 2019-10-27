@@ -1,4 +1,4 @@
 export enum RpcParamtype {
   PAYLOAD = 3,
-  CONTEXT = 4,
+  CONTEXT = 6,
 }
