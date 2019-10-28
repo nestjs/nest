@@ -10,9 +10,9 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "6.8.4",
-    "@nestjs/core": "6.8.4",
-    "@nestjs/platform-express": "6.8.4",
+    "@nestjs/common": "6.8.5",
+    "@nestjs/core": "6.8.5",
+    "@nestjs/platform-express": "6.8.5",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "typescript": "3.6.4"
