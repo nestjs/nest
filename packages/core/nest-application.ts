@@ -15,6 +15,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject, validatePath } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
+import { platform } from 'os';
 import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
@@ -25,7 +26,6 @@ import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
-import { platform } from 'os';
 
 const { SocketModule } = optionalRequire(
   '@nestjs/websockets/socket-module',
@@ -269,18 +269,6 @@ export class NestApplication extends NestApplicationContext
     });
   }
 
-  private host(): string | undefined {
-    const address = this.httpServer.address();
-    if (typeof address === 'string') {
-      return undefined;
-    }
-    return address && address.address;
-  }
-
-  private getProtocol(): 'http' | 'https' {
-    return this.appOptions && this.appOptions.httpsOptions ? 'https' : 'http';
-  }
-
   public setGlobalPrefix(prefix: string): this {
     this.config.setGlobalPrefix(prefix);
     return this;
@@ -328,6 +316,17 @@ export class NestApplication extends NestApplicationContext
     this.httpAdapter.setViewEngine &&
       this.httpAdapter.setViewEngine(engineOrOptions);
     return this;
+  }
+  private host(): string | undefined {
+    const address = this.httpServer.address();
+    if (typeof address === 'string') {
+      return undefined;
+    }
+    return address && address.address;
+  }
+
+  private getProtocol(): 'http' | 'https' {
+    return this.appOptions && this.appOptions.httpsOptions ? 'https' : 'http';
   }
 
   private async registerMiddleware(instance: any) {

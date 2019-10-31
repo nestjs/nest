@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
+import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import { AppModule } from '../src/app.module';
 import { randomPort } from './utils';
 
-describe('Get-Url (Fastify Application)', () => {
+describe('Get URL (Fastify Application)', () => {
   let testModule: TestingModule;
   let port: number;
 
@@ -35,7 +35,9 @@ describe('Get-Url (Fastify Application)', () => {
     try {
       await app.getUrl();
     } catch (err) {
-      expect(err).to.be.eql('app.listen needs to be called before calling app.getUrl');
+      expect(err).to.be.eql(
+        'app.listen needs to be called before calling app.getUrl',
+      );
     }
   });
 });
