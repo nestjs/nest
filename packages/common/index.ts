@@ -33,6 +33,7 @@ export {
   NestMiddleware,
   NestModule,
   OnApplicationBootstrap,
+  OnApplicationListen,
   OnApplicationShutdown,
   OnModuleDestroy,
   OnModuleInit,

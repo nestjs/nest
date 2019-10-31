@@ -16,6 +16,7 @@ import {
   callModuleBootstrapHook,
   callModuleDestroyHook,
   callModuleInitHook,
+  callModuleListenHook,
 } from './hooks';
 import { ContextId } from './injector';
 import { NestContainer } from './injector/container';
@@ -217,6 +218,17 @@ export class NestApplicationContext implements INestApplicationContext {
     const modulesContainer = this.container.getModules();
     for (const module of [...modulesContainer.values()].reverse()) {
       await callModuleBootstrapHook(module);
+    }
+  }
+
+  /**
+   * Calls the `OnApplicationListen` function on the registered
+   * modules and its children.
+   */
+  protected async callListenHook(): Promise<void> {
+    const modulesContainer = this.container.getModules();
+    for (const module of [...modulesContainer.values()].reverse()) {
+      await callModuleListenHook(module);
     }
   }
 

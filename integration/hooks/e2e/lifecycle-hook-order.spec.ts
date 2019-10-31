@@ -7,6 +7,7 @@ import {
   OnModuleDestroy,
   OnModuleInit,
   BeforeApplicationShutdown,
+  OnApplicationListen
 } from '@nestjs/common';
 
 @Injectable()
@@ -16,8 +17,10 @@ class TestInjectable
     OnModuleInit,
     OnModuleDestroy,
     OnApplicationShutdown,
-    BeforeApplicationShutdown {
+    BeforeApplicationShutdown,
+    OnApplicationListen {
   onApplicationBootstrap = Sinon.spy();
+  onApplicationListen = Sinon.spy();
   beforeApplicationShutdown = Sinon.spy();
   onApplicationShutdown = Sinon.spy();
   onModuleDestroy = Sinon.spy();
@@ -31,13 +34,14 @@ describe('Lifecycle Hook Order', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init();
+    await app.listen(3000);
     await app.close();
 
     const instance = module.get(TestInjectable);
     Sinon.assert.callOrder(
       instance.onModuleInit,
       instance.onApplicationBootstrap,
+      instance.onApplicationListen,
       instance.onModuleDestroy,
       instance.beforeApplicationShutdown,
       instance.onApplicationShutdown,

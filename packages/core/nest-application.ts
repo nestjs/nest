@@ -224,6 +224,7 @@ export class NestApplication extends NestApplicationContext
     !this.isInitialized && (await this.init());
 
     this.httpAdapter.listen(port, ...args);
+    await this.callListenHook();
     return this.httpServer;
   }
 

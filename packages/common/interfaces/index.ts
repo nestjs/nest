@@ -27,6 +27,7 @@ export * from './nest-application-options.interface';
 export * from './nest-application.interface';
 export * from './nest-microservice.interface';
 export * from './on-application-bootstrap.interface';
+export * from './on-application-listen.interface';
 export * from './on-application-shutdown.interface';
 export * from './before-application-shutdown.interface';
 export * from './request-mapping-metadata.interface';
