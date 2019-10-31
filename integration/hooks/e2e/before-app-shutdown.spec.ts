@@ -38,17 +38,15 @@ describe('BeforeApplicationShutdown', () => {
 
     app.close();
 
-    expect(((module as any).dispose as Sinon.SinonSpy).called, 'dispose')
-      .to.be.false;
+    expect(((module as any).dispose as Sinon.SinonSpy).called, 'dispose').to.be
+      .false;
 
     resolve();
 
     setTimeout(
       () =>
-        expect(
-          ((module as any).dispose as Sinon.SinonSpy).called,
-          'dispose',
-        ).to.be.true,
+        expect(((module as any).dispose as Sinon.SinonSpy).called, 'dispose').to
+          .be.true,
       0,
     );
   });

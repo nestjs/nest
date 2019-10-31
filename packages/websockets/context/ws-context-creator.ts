@@ -25,6 +25,7 @@ import { PARAM_ARGS_METADATA } from '../constants';
 import { WsException } from '../errors/ws-exception';
 import { WsParamsFactory } from '../factories/ws-params-factory';
 import { ExceptionFiltersContext } from './exception-filters-context';
+import { DEFAULT_CALLBACK_METADATA } from './ws-metadata-constants';
 import { WsProxy } from './ws-proxy';
 
 type WsParamProperties = ParamProperties & { metatype?: any };
@@ -153,8 +154,8 @@ export class WsContextCreator {
       this.contextUtils.reflectCallbackMetadata<T>(
         instance,
         methodName,
-        PARAM_ARGS_METADATA || '',
-      ) || {};
+        PARAM_ARGS_METADATA,
+      ) || DEFAULT_CALLBACK_METADATA;
     const keys = Object.keys(metadata);
     const argsLength = this.contextUtils.getArgumentsLength(keys, metadata);
     const paramtypes = this.contextUtils.reflectCallbackParamtypes(

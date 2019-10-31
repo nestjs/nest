@@ -258,14 +258,18 @@ describe('RouterExecutionContext', () => {
         ).to.be.true;
       });
     });
-    describe('when paramtype is not query, body and param', () => {
-      it('should not call "consumer.apply"', () => {
-        contextCreator.getParamValue(
-          value,
-          { metatype, type: RouteParamtypes.NEXT, data: null },
-          transforms,
-        );
-        expect(consumerApplySpy.called).to.be.false;
+  });
+  describe('isPipeable', () => {
+    describe('when paramtype is not query, body, param and custom', () => {
+      it('should return false', () => {
+        const result = contextCreator.isPipeable(RouteParamtypes.NEXT);
+        expect(result).to.be.false;
+      });
+      it('otherwise', () => {
+        expect(contextCreator.isPipeable(RouteParamtypes.BODY)).to.be.true;
+        expect(contextCreator.isPipeable(RouteParamtypes.QUERY)).to.be.true;
+        expect(contextCreator.isPipeable(RouteParamtypes.PARAM)).to.be.true;
+        expect(contextCreator.isPipeable('custom')).to.be.true;
       });
     });
   });

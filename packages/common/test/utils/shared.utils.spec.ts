@@ -8,7 +8,7 @@ import {
   validatePath,
   isNil,
   isEmpty,
-  isPlainObject
+  isPlainObject,
 } from '../../utils/shared.utils';
 
 function Foo(a) {
@@ -46,10 +46,12 @@ describe('Shared utils', () => {
   describe('isPlainObject', () => {
     it('should returns true when obj is plain object', () => {
       expect(isPlainObject({})).to.be.true;
-      expect(isPlainObject({prop: true})).to.be.true;
-      expect(isPlainObject({
-        constructor: Foo
-      })).to.be.true;
+      expect(isPlainObject({ prop: true })).to.be.true;
+      expect(
+        isPlainObject({
+          constructor: Foo,
+        }),
+      ).to.be.true;
       expect(isPlainObject(Object.create(null))).to.be.true;
     });
     it('should returns false when object is not object', () => {

@@ -185,7 +185,6 @@ describe('ClientProxy', function() {
           Utils,
           'transformPatternToRoute',
         );
-
         (client as any).normalizePattern(inputPattern);
 
         expect(msvcUtilTransformPatternToRouteStub.args[0][0]).to.be.equal(

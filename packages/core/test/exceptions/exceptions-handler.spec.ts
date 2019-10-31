@@ -40,7 +40,9 @@ describe('ExceptionsHandler', () => {
           if (isNil(body)) {
             return responseRef.send();
           }
-          return isObject(body) ? responseRef.json(body) : responseRef.send(String(body));
+          return isObject(body)
+            ? responseRef.json(body)
+            : responseRef.send(String(body));
         });
     });
     it('should method send expected response status code and message when exception is unknown', () => {

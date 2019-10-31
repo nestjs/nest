@@ -106,7 +106,6 @@ describe('WebSocketsController', () => {
 
       hookServerToProperties = sinon.spy();
       subscribeEvents = sinon.spy();
-
       (instance as any).hookServerToProperties = hookServerToProperties;
       (instance as any).subscribeEvents = subscribeEvents;
     });
@@ -150,7 +149,6 @@ describe('WebSocketsController', () => {
         disconnect: {},
         connection: {},
       };
-
       (instance as any).subscribeInitEvent = subscribeInitEvent;
       (instance as any).getConnectionHandler = getConnectionHandler;
       (instance as any).subscribeConnectionEvent = subscribeConnectionEvent;

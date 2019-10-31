@@ -1,6 +1,11 @@
 import { Transport } from '../../enums/transport.enum';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
-import { KafkaConfig, ConsumerConfig, ProducerConfig, CompressionTypes } from '../external/kafka-options.interface';
+import {
+  KafkaConfig,
+  ConsumerConfig,
+  ProducerConfig,
+  CompressionTypes,
+} from '../external/kafka-options.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
@@ -111,21 +116,21 @@ export interface RmqOptions {
 export interface KafkaOptions {
   transport?: Transport.KAFKA;
   options?: {
-    client?: KafkaConfig,
-    consumer?: ConsumerConfig,
+    client?: KafkaConfig;
+    consumer?: ConsumerConfig;
     run?: {
-      autoCommit?: boolean
-      autoCommitInterval?: number | null
-      autoCommitThreshold?: number | null
-      eachBatchAutoResolve?: boolean
-      partitionsConsumedConcurrently?: number
-    },
-    producer?: ProducerConfig,
+      autoCommit?: boolean;
+      autoCommitInterval?: number | null;
+      autoCommitThreshold?: number | null;
+      eachBatchAutoResolve?: boolean;
+      partitionsConsumedConcurrently?: number;
+    };
+    producer?: ProducerConfig;
     send?: {
       acks?: number;
       timeout?: number;
       compression?: CompressionTypes;
-    }
+    };
     serializer?: Serializer;
     deserializer?: Deserializer;
   };

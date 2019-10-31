@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/common",
-  "version": "6.8.0",
+  "version": "6.8.5",
   "description": "Nest - modern, fast, powerful node.js web framework (@common)",
   "author": "Kamil Mysliwiec",
   "repository": {
@@ -13,7 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "axios": "0.19.0",
-    "cli-color": "1.4.0",
+    "cli-color": "2.0.0",
     "uuid": "3.3.3"
   },
   "peerDependencies": {

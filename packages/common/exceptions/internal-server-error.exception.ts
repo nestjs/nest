@@ -39,7 +39,11 @@ export class InternalServerErrorException extends HttpException {
     error = 'Internal Server Error',
   ) {
     super(
-      HttpException.createBody(message, error, HttpStatus.INTERNAL_SERVER_ERROR),
+      HttpException.createBody(
+        message,
+        error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      ),
       HttpStatus.INTERNAL_SERVER_ERROR,
     );
   }

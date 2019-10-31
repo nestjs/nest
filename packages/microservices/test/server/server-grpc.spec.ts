@@ -121,7 +121,6 @@ describe('ServerGrpc', () => {
           test2: { service: true },
         }));
         sinon.stub(server, 'getServiceNames').callsFake(() => serviceNames);
-
         (server as any).grpcClient = { addService: sinon.spy() };
 
         await server.bindEvents();
@@ -206,7 +205,6 @@ describe('ServerGrpc', () => {
       const spy = sinon
         .stub(server, 'createServiceMethod')
         .callsFake(() => ({} as any));
-
       (server as any).messageHandlers = handlers;
       await server.createService(
         {
@@ -229,7 +227,6 @@ describe('ServerGrpc', () => {
           .returns('test2');
 
         sinon.stub(server, 'createServiceMethod').callsFake(() => ({} as any));
-
         (server as any).messageHandlers = handlers;
         await server.createService(
           {
@@ -265,7 +262,6 @@ describe('ServerGrpc', () => {
           .returns('test2');
 
         sinon.stub(server, 'createServiceMethod').callsFake(() => ({} as any));
-
         (server as any).messageHandlers = handlers;
         await server.createService(
           {
