@@ -25,7 +25,10 @@ export class GrpcController {
     transport: Transport.GRPC,
     options: {
       package: ['math', 'math2'],
-      protoPath: [join(__dirname, 'math.proto'), join(__dirname, 'math2.proto')],
+      protoPath: [
+        join(__dirname, 'math.proto'),
+        join(__dirname, 'math2.proto'),
+      ],
     },
   })
   client2: ClientGrpc;

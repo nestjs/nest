@@ -28,8 +28,8 @@ describe('ServerGrpc', () => {
       protoPath: ['test.proto', 'test2.proto'],
       package: ['test', 'test2'],
       loader: {
-        includeDirs: [join(__dirname, '.')]
-      }
+        includeDirs: [join(__dirname, '.')],
+      },
     });
   });
 
@@ -155,12 +155,15 @@ describe('ServerGrpc', () => {
         sinon.stub(serverMulti, 'lookupPackage').callsFake(() => ({
           test: { service: true },
         }));
-        sinon.stub(serverMulti, 'getServiceNames').callsFake(() => serviceNames);
+        sinon
+          .stub(serverMulti, 'getServiceNames')
+          .callsFake(() => serviceNames);
 
         (serverMulti as any).grpcClient = { addService: sinon.spy() };
 
         await serverMulti.bindEvents();
-        expect((serverMulti as any).grpcClient.addService.calledTwice).to.be.true;
+        expect((serverMulti as any).grpcClient.addService.calledTwice).to.be
+          .true;
       });
     });
   });
