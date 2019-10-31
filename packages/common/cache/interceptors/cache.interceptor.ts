@@ -7,7 +7,11 @@ import {
   HttpServer,
   NestInterceptor,
 } from '../../interfaces';
-import { CACHE_KEY_METADATA, CACHE_TTL_METADATA, CACHE_MANAGER } from '../cache.constants';
+import {
+  CACHE_KEY_METADATA,
+  CACHE_TTL_METADATA,
+  CACHE_MANAGER,
+} from '../cache.constants';
 
 const HTTP_ADAPTER_HOST = 'HttpAdapterHost';
 const REFLECTOR = 'Reflector';
@@ -32,7 +36,8 @@ export class CacheInterceptor implements NestInterceptor {
     next: CallHandler,
   ): Promise<Observable<any>> {
     const key = this.trackBy(context);
-    const ttl = this.reflector.get(CACHE_TTL_METADATA, context.getHandler()) || null;
+    const ttl =
+      this.reflector.get(CACHE_TTL_METADATA, context.getHandler()) || null;
 
     if (!key) {
       return next.handle();
@@ -43,12 +48,12 @@ export class CacheInterceptor implements NestInterceptor {
         return of(value);
       }
 
-      return next
-        .handle()
-        .pipe(tap(response => {
-          const args = ttl ? [key, response, {ttl}] : [key, response];
+      return next.handle().pipe(
+        tap(response => {
+          const args = ttl ? [key, response, { ttl }] : [key, response];
           this.cacheManager.set.apply(this.cacheManager, args);
-        }));
+        }),
+      );
     } catch {
       return next.handle();
     }
@@ -57,7 +62,10 @@ export class CacheInterceptor implements NestInterceptor {
   trackBy(context: ExecutionContext): string | undefined {
     const httpAdapter = this.httpAdapterHost.httpAdapter;
     const isHttpApp = httpAdapter && !!httpAdapter.getRequestMethod;
-    const cacheMetadata = this.reflector.get(CACHE_KEY_METADATA, context.getHandler());
+    const cacheMetadata = this.reflector.get(
+      CACHE_KEY_METADATA,
+      context.getHandler(),
+    );
 
     if (!isHttpApp || cacheMetadata) {
       return cacheMetadata;
