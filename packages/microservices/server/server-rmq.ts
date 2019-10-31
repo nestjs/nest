@@ -85,8 +85,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   }
 
   public async setupChannel(channel: any, callback: Function) {
-    const noAck =
-      this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
+    const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
 
     await channel.assertQueue(this.queue, this.queueOptions);
     await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
