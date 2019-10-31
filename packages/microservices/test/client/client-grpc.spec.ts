@@ -33,8 +33,8 @@ describe('ClientGrpcProxy', () => {
       protoPath: ['test.proto', 'test2.proto'],
       package: ['test', 'test2'],
       loader: {
-        includeDirs: [join(__dirname, '.')]
-      }
+        includeDirs: [join(__dirname, '.')],
+      },
     });
   });
 
@@ -225,14 +225,14 @@ describe('ClientGrpcProxy', () => {
     });
   });
 
-  describe('createClient', () => {
+  describe('createClients', () => {
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', () => {
         sinon.stub(client, 'lookupPackage').callsFake(() => null);
         (client as any).logger = new NoopLogger();
 
         try {
-          client.createClient();
+          client.createClients();
         } catch (err) {
           expect(err).to.be.instanceof(InvalidGrpcPackageException);
         }
