@@ -7,15 +7,9 @@
  *
  * @publicApi
  */
-export declare type NestCustomDecorator = <TFunction extends Function, Y>(
-  target: TFunction | Object,
-  propertyKey?: string | symbol,
-  descriptor?: TypedPropertyDescriptor<Y>,
-) => void;
-
 export function applyDecorators(
   ...decorators: Array<ClassDecorator | MethodDecorator>
-): NestCustomDecorator {
+) {
   return <TFunction extends Function, Y>(
     target: TFunction | Object,
     propertyKey?: string | symbol,
