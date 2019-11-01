@@ -10,7 +10,7 @@
     "@nestjs/common": "6.8.5",
     "@nestjs/core": "6.8.5",
     "class-transformer": "0.2.3",
-    "class-validator": "0.10.2",
+    "class-validator": "0.11.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "typescript": "3.6.4"
