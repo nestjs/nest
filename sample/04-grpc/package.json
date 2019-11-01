@@ -24,7 +24,7 @@
     "@nestjs/core": "6.8.5",
     "@nestjs/microservices": "6.8.5",
     "class-transformer": "0.2.3",
-    "class-validator": "0.10.2",
+    "class-validator": "0.11.0",
     "grpc": "1.24.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.0",
