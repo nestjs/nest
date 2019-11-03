@@ -4,7 +4,6 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { EventEmitter } from 'events';
 import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
-import { ReadPacket, RmqOptions } from '../interfaces';
 import {
   DISCONNECT_EVENT,
   ERROR_EVENT,
@@ -15,7 +14,7 @@ import {
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
 } from '../constants';
-import { WritePacket } from '../interfaces';
+import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
 let rqmPackage: any = {};
@@ -56,8 +55,7 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public consumeChannel() {
-    const noAck =
-      this.getOptionsProp(this.options, 'noAck') || RQM_DEFAULT_NOACK;
+    const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
     this.channel.addSetup((channel: any) =>
       channel.consume(
         REPLY_QUEUE,

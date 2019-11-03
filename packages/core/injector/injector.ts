@@ -12,6 +12,7 @@ import {
   isFunction,
   isNil,
   isObject,
+  isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
@@ -242,7 +243,7 @@ export class Injector {
       : [];
 
     let isResolved = true;
-    const resolveParam = async (param, index) => {
+    const resolveParam = async (param: unknown, index: number) => {
       try {
         const paramWrapper = await this.resolveSingleParam<T>(
           wrapper,
@@ -251,6 +252,7 @@ export class Injector {
           module,
           contextId,
           inquirer,
+          index,
         );
         const instanceHost = paramWrapper.getInstanceByContextId(
           contextId,
@@ -259,7 +261,6 @@ export class Injector {
         if (!instanceHost.isResolved && !paramWrapper.forwardRef) {
           isResolved = false;
         }
-        wrapper.addCtorMetadata(index, paramWrapper);
         return instanceHost && instanceHost.instance;
       } catch (err) {
         const isOptional = optionalDependenciesIds.includes(index);
@@ -296,6 +297,7 @@ export class Injector {
     module: Module,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
+    keyOrIndex?: string | number,
   ) {
     if (isUndefined(param)) {
       throw new UndefinedDependencyException(
@@ -312,6 +314,7 @@ export class Injector {
       wrapper,
       contextId,
       inquirer,
+      keyOrIndex,
     );
   }
 
@@ -333,6 +336,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
+    keyOrIndex?: string | number,
   ): Promise<InstanceWrapper> {
     const providers = module.providers;
     const instanceWrapper = await this.lookupComponent(
@@ -343,6 +347,10 @@ export class Injector {
       contextId,
       inquirer,
     );
+    isString(keyOrIndex)
+      ? wrapper.addPropertiesMetadata(keyOrIndex, instanceWrapper)
+      : wrapper.addCtorMetadata(keyOrIndex, instanceWrapper);
+
     return this.resolveComponentHost(
       module,
       instanceWrapper,
@@ -535,12 +543,11 @@ export class Injector {
             module,
             contextId,
             inquirer,
+            item.key,
           );
           if (!paramWrapper) {
             return undefined;
           }
-          wrapper.addPropertiesMetadata(item.key, paramWrapper);
-
           const inquirerId = this.getInquirerId(inquirer);
           const instanceHost = paramWrapper.getInstanceByContextId(
             contextId,

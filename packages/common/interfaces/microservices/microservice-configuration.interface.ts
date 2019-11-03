@@ -1,11 +1,11 @@
 import { Transport } from '../../enums/transport.enum';
-import { MqttClientOptions } from '../external/mqtt-options.interface';
 import {
-  KafkaConfig,
-  ConsumerConfig,
-  ProducerConfig,
   CompressionTypes,
+  ConsumerConfig,
+  KafkaConfig,
+  ProducerConfig,
 } from '../external/kafka-options.interface';
+import { MqttClientOptions } from '../external/mqtt-options.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
@@ -108,6 +108,7 @@ export interface RmqOptions {
     isGlobalPrefetchCount?: boolean;
     queueOptions?: any;
     socketOptions?: any;
+    noAck?: boolean;
     serializer?: Serializer;
     deserializer?: Deserializer;
   };
