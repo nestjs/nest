@@ -36,7 +36,7 @@ describe('Get URL (Fastify Application)', () => {
       await app.getUrl();
     } catch (err) {
       expect(err).to.be.eql(
-        'app.listen needs to be called before calling app.getUrl',
+        'app.listen() needs to be called before calling app.getUrl()',
       );
     }
   });
