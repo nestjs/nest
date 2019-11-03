@@ -526,54 +526,59 @@ describe('Injector', () => {
 
     describe('when instanceWrapper is not resolved and does not have forward ref', () => {
       it('should call loadProvider', async () => {
+        const wrapper = new InstanceWrapper({ isResolved: false });
+
         const loadStub = sinon
           .stub(injector, 'loadProvider')
           .callsFake(() => null);
         sinon
           .stub(injector, 'lookupComponent')
-          .returns(Promise.resolve(new InstanceWrapper({ isResolved: false })));
+          .returns(Promise.resolve(wrapper));
 
         await injector.resolveComponentInstance(
           module,
           '',
           { index: 0, dependencies: [] },
-          {} as any,
+          wrapper,
         );
         expect(loadStub.called).to.be.true;
       });
       it('should not call loadProvider (isResolved)', async () => {
+        const wrapper = new InstanceWrapper({ isResolved: true });
         const loadStub = sinon
           .stub(injector, 'loadProvider')
           .callsFake(() => null);
+
         sinon
           .stub(injector, 'lookupComponent')
-          .returns(Promise.resolve(new InstanceWrapper({ isResolved: true })));
+          .returns(Promise.resolve(wrapper));
 
         await injector.resolveComponentInstance(
           module,
           '',
           { index: 0, dependencies: [] },
-          {} as any,
+          wrapper,
         );
         expect(loadStub.called).to.be.false;
       });
       it('should not call loadProvider (forwardRef)', async () => {
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+        });
         const loadStub = sinon
           .stub(injector, 'loadProvider')
           .callsFake(() => null);
+
         sinon
           .stub(injector, 'lookupComponent')
-          .returns(
-            Promise.resolve(
-              new InstanceWrapper({ isResolved: false, forwardRef: true }),
-            ),
-          );
+          .returns(Promise.resolve(wrapper));
 
         await injector.resolveComponentInstance(
           module,
           '',
           { index: 0, dependencies: [] },
-          {} as any,
+          wrapper,
         );
         expect(loadStub.called).to.be.false;
       });
@@ -581,26 +586,24 @@ describe('Injector', () => {
 
     describe('when instanceWraper has async property', () => {
       it('should await instance', async () => {
-        const loadStub = sinon
-          .stub(injector, 'loadProvider')
-          .callsFake(() => null);
+        sinon.stub(injector, 'loadProvider').callsFake(() => null);
 
         const instance = Promise.resolve(true);
-        sinon.stub(injector, 'lookupComponent').returns(
-          Promise.resolve(
-            new InstanceWrapper({
-              isResolved: false,
-              forwardRef: true,
-              async: true,
-              instance,
-            }),
-          ),
-        );
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+          async: true,
+          instance,
+        });
+        sinon
+          .stub(injector, 'lookupComponent')
+          .returns(Promise.resolve(wrapper));
+
         const result = await injector.resolveComponentInstance(
           module,
           '',
           { index: 0, dependencies: [] },
-          {} as any,
+          wrapper,
         );
         expect(result.instance).to.be.true;
       });
