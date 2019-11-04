@@ -34,7 +34,7 @@
   "author": "Kamil Mysliwiec",
   "license": "MIT",
   "dependencies": {
-    "@grpc/proto-loader": "0.5.2",
+    "@grpc/proto-loader": "0.5.3",
     "@nuxtjs/opencollective": "0.2.2",
     "amqp-connection-manager": "3.0.0",
     "amqplib": "0.5.5",
