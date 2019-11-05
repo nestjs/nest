@@ -21,7 +21,7 @@
     "@types/node": "12.12.5",
     "ts-loader": "6.2.1",
     "ts-node": "8.4.1",
-    "tslint": "5.20.0",
+    "tslint": "5.20.1",
     "webpack": "4.41.2",
     "webpack-cli": "3.3.10",
     "webpack-node-externals": "1.7.2"
