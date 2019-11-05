@@ -147,6 +147,8 @@ export class NestApplication extends NestApplicationContext
 
     this.isInitialized = true;
     this.logger.log(MESSAGES.APPLICATION_READY);
+    const fullUrl =  await this.getUrl();
+    this.logger.log('Application running at '+fullUrl);
     return this;
   }
 
