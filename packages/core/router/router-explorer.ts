@@ -184,30 +184,22 @@ export class RouterExplorer {
       str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
 
     const isRequestScoped = !instanceWrapper.isDependencyTreeStatic();
-    const module = this.container.getModuleByKey(moduleKey);
+    const proxy = isRequestScoped
+      ? this.createRequestScopedHandler(
+          instanceWrapper,
+          requestMethod,
+          this.container.getModuleByKey(moduleKey),
+          moduleKey,
+          methodName,
+        )
+      : this.createCallbackProxy(
+          instance,
+          targetCallback,
+          methodName,
+          moduleKey,
+          requestMethod,
+        );
 
-    if (isRequestScoped) {
-      const handler = this.createRequestScopedHandler(
-        instanceWrapper,
-        requestMethod,
-        module,
-        moduleKey,
-        methodName,
-      );
-
-      paths.forEach(path => {
-        const fullPath = stripSlash(basePath) + path;
-        routerMethod(stripSlash(fullPath) || '/', handler);
-      });
-      return;
-    }
-    const proxy = this.createCallbackProxy(
-      instance,
-      targetCallback,
-      methodName,
-      moduleKey,
-      requestMethod,
-    );
     paths.forEach(path => {
       const fullPath = stripSlash(basePath) + path;
       routerMethod(stripSlash(fullPath) || '/', proxy);
