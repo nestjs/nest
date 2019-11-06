@@ -14,7 +14,12 @@ import { NestContainer } from '../../injector/container';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { MetadataScanner } from '../../metadata-scanner';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { RouterExplorer } from '../../router/router-explorer';
+import {
+  RouterExplorer,
+  RoutePathProperties,
+} from '../../router/router-explorer';
+import { Reflector } from '../../services';
+import { FULL_PATH_METADATA } from '../../../common/constants';
 
 describe('RouterExplorer', () => {
   @Controller('global')
@@ -118,6 +123,41 @@ describe('RouterExplorer', () => {
 
       expect(bindStub.calledWith(null, paths[0], null)).to.be.true;
       expect(bindStub.callCount).to.be.eql(paths.length);
+    });
+    it('should add full path metadata to the controller handler', () => {
+      sinon.stub(routerBuilder, 'createCallbackProxy' as any);
+      const instance = new TestRoute();
+      const instanceWrapper = {
+        instance,
+        isDependencyTreeStatic() {
+          return true;
+        },
+      };
+      const routePathProperties: RoutePathProperties = {
+        methodName: 'getTestUsingArray',
+        requestMethod: RequestMethod.GET,
+        path: ['foo', 'bar'],
+        targetCallback: instance.getTestUsingArray,
+      };
+      const routerPaths: string[] = [];
+      const mockRouter = {
+        get(path: string, handler: any) {
+          routerPaths.push(path);
+        },
+      };
+      routerBuilder.applyPathsToRouterProxy(
+        mockRouter as any,
+        [routePathProperties],
+        instanceWrapper as any,
+        undefined,
+        'globalPrefix/module/global',
+      );
+      const reflector = new Reflector();
+      const fullPathMetadata = reflector.get<string[], string>(
+        FULL_PATH_METADATA,
+        instance.getTestUsingArray,
+      );
+      expect(fullPathMetadata).to.be.eql(routerPaths);
     });
   });
 

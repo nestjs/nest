@@ -1,5 +1,9 @@
 import { HttpServer } from '@nestjs/common';
-import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import {
+  METHOD_METADATA,
+  PATH_METADATA,
+  FULL_PATH_METADATA,
+} from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -199,11 +203,14 @@ export class RouterExplorer {
           moduleKey,
           requestMethod,
         );
-
+    const routerPaths: string[] = [];
     paths.forEach(path => {
       const fullPath = stripSlash(basePath) + path;
-      routerMethod(stripSlash(fullPath) || '/', proxy);
+      const routerPath = stripSlash(fullPath) || '/';
+      routerPaths.push(routerPath);
+      routerMethod(routerPath, proxy);
     });
+    Reflect.defineMetadata(FULL_PATH_METADATA, routerPaths, targetCallback);
   }
 
   private createCallbackProxy(
