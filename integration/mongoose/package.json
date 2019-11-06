@@ -15,7 +15,7 @@
     "mongoose": "5.7.8",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
-    "typescript": "3.6.4"
+    "typescript": "3.7.2"
   },
   "devDependencies": {
     "@types/mongoose": "5.5.29",
