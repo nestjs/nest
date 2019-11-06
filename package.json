@@ -134,7 +134,7 @@
     "supertest": "4.0.2",
     "ts-node": "8.4.1",
     "tslint": "5.20.1",
-    "typescript": "3.6.4",
+    "typescript": "3.7.2",
     "wrk": "1.2.0"
   },
   "collective": {
