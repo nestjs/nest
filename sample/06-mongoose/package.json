@@ -29,7 +29,7 @@
     "rxjs": "6.5.3"
   },
   "devDependencies": {
-    "@types/mongoose": "5.5.29",
+    "@types/mongoose": "5.5.30",
     "@nestjs/cli": "6.11.3",
     "@nestjs/schematics": "6.7.0",
     "@nestjs/testing": "6.9.0",
