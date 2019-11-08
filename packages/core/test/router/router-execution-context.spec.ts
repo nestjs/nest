@@ -302,7 +302,6 @@ describe('RouterExecutionContext', () => {
         const value = 'test';
         const response = { render: sinon.spy() };
 
-        sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
 
         const handler = contextCreator.createHandleResponseFn(
@@ -321,7 +320,6 @@ describe('RouterExecutionContext', () => {
         const result = Promise.resolve('test');
         const response = { render: sinon.spy() };
 
-        sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
 
         const handler = contextCreator.createHandleResponseFn(
@@ -372,7 +370,6 @@ describe('RouterExecutionContext', () => {
         const result = Promise.resolve('test');
         const response = { redirect: sinon.spy() };
 
-        sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
 
         const handler = contextCreator.createHandleResponseFn(
