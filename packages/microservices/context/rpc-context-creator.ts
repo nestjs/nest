@@ -15,6 +15,7 @@ import {
   ContextUtils,
   ParamProperties,
 } from '@nestjs/core/helpers/context-utils';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { HandlerMetadataStorage } from '@nestjs/core/helpers/handler-metadata-storage';
 import { ParamsMetadata } from '@nestjs/core/helpers/interfaces';
 import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
@@ -187,13 +188,18 @@ export class RpcContextCreator {
       instance,
       methodName,
     );
+    const contextFactory = this.contextUtils.getContextFactory(
+      contextType,
+      instance,
+      instance[methodName],
+    );
     const getParamsMetadata = (moduleKey: string) =>
       this.exchangeKeysForValues(
         keys,
         metadata,
         moduleKey,
         this.rpcParamsFactory,
-        contextType,
+        contextFactory,
       );
 
     const handlerMetadata: RpcHandlerMetadata = {
@@ -205,18 +211,14 @@ export class RpcContextCreator {
     return handlerMetadata;
   }
 
-  public exchangeKeysForValues<
-    TMetadata = any,
-    TContext extends ContextType = ContextType
-  >(
+  public exchangeKeysForValues<TMetadata = any>(
     keys: string[],
     metadata: TMetadata,
     moduleContext: string,
     paramsFactory: RpcParamsFactory,
-    contextType?: TContext,
+    contextFactory: (args: unknown[]) => ExecutionContextHost,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
-    const contextFactory = this.contextUtils.getContextFactory(contextType);
 
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];

@@ -1,3 +1,4 @@
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
@@ -171,6 +172,7 @@ describe('RpcContextCreator', () => {
         metadata,
         '',
         new RpcParamsFactory(),
+        (args: unknown[]) => new ExecutionContextHost(args),
       );
       const expectedValues = [
         { index: 0, type: RpcParamtype.PAYLOAD, data: 'test' },

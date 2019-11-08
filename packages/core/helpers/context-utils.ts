@@ -4,6 +4,7 @@ import {
   ContextType,
   Controller,
   PipeTransform,
+  Type,
 } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { ExecutionContextHost } from './execution-context-host';
@@ -70,9 +71,15 @@ export class ContextUtils {
 
   public getContextFactory<TContext extends ContextType = ContextType>(
     contextType: TContext,
+    instance?: object,
+    callback?: Function,
   ): (args: unknown[]) => ExecutionContextHost {
     const contextFactory = (args: unknown[]) => {
-      const ctx = new ExecutionContextHost(args);
+      const ctx = new ExecutionContextHost(
+        args,
+        instance && (instance.constructor as Type<unknown>),
+        callback,
+      );
       ctx.setType(contextType);
       return ctx;
     };

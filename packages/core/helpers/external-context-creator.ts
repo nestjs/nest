@@ -6,9 +6,11 @@ import {
   PipeTransform,
 } from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
+import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { Module } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
@@ -16,10 +18,7 @@ import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
-import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context';
-import { STATIC_CONTEXT } from '../injector/constants';
 import { ContextUtils, ParamProperties } from './context-utils';
-import { ExecutionContextHost } from './execution-context-host';
 import { ExternalErrorProxy } from './external-proxy';
 import { HandlerMetadataStorage } from './handler-metadata-storage';
 import { ExternalHandlerMetadata } from './interfaces/external-handler-metadata.interface';
@@ -90,7 +89,7 @@ export class ExternalContextCreator {
     Context extends ContextType = ContextType
   >(
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
     methodName: string,
     metadataKey?: string,
     paramsFactory?: ParamsFactory,
@@ -109,6 +108,7 @@ export class ExternalContextCreator {
       methodName,
       metadataKey,
       paramsFactory,
+      contextType,
     );
     const pipes = this.pipesContextCreator.create(
       instance,
@@ -203,6 +203,11 @@ export class ExternalContextCreator {
       instance,
       methodName,
     );
+    const contextFactory = this.contextUtils.getContextFactory(
+      contextType,
+      instance,
+      instance[methodName],
+    );
     const getParamsMetadata = (
       moduleKey: string,
       contextId = STATIC_CONTEXT,
@@ -216,7 +221,7 @@ export class ExternalContextCreator {
             paramsFactory,
             contextId,
             inquirerId,
-            contextType,
+            contextFactory,
           )
         : null;
 
@@ -251,24 +256,16 @@ export class ExternalContextCreator {
     return hasProvider;
   }
 
-  public exchangeKeysForValues<
-    TMetadata = any,
-    TContext extends ContextType = ContextType
-  >(
+  public exchangeKeysForValues<TMetadata = any>(
     keys: string[],
     metadata: TMetadata,
     moduleContext: string,
     paramsFactory: ParamsFactory,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
-    contextType?: TContext,
+    contextFactory = this.contextUtils.getContextFactory('http'),
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
-    const contextFactory = (args: unknown[]) => {
-      const ctx = new ExecutionContextHost(args);
-      ctx.setType(contextType);
-      return ctx;
-    };
 
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];

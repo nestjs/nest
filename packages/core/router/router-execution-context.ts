@@ -21,6 +21,7 @@ import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { ContextUtils } from '../helpers/context-utils';
+import { ExecutionContextHost } from '../helpers/execution-context-host';
 import {
   HandlerMetadata,
   HandlerMetadataStorage,
@@ -186,6 +187,12 @@ export class RouterExecutionContext {
       instance,
       methodName,
     );
+
+    const contextFactory = this.contextUtils.getContextFactory(
+      contextType,
+      instance,
+      callback,
+    );
     const getParamsMetadata = (
       moduleKey: string,
       contextId = STATIC_CONTEXT,
@@ -197,7 +204,7 @@ export class RouterExecutionContext {
         moduleKey,
         contextId,
         inquirerId,
-        contextType,
+        contextFactory,
       );
 
     const paramsMetadata = getParamsMetadata(module);
@@ -251,16 +258,15 @@ export class RouterExecutionContext {
     return Reflect.getMetadata(HEADERS_METADATA, callback) || [];
   }
 
-  public exchangeKeysForValues<TContext extends ContextType = ContextType>(
+  public exchangeKeysForValues(
     keys: string[],
     metadata: Record<number, RouteParamMetadata>,
     moduleContext: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
-    contextType?: TContext,
+    contextFactory?: (args: unknown[]) => ExecutionContextHost,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
-    const contextFactory = this.contextUtils.getContextFactory(contextType);
 
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
