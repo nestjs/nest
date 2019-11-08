@@ -1,6 +1,10 @@
 import { ForbiddenException, ParamData } from '@nestjs/common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
-import { Controller, PipeTransform } from '@nestjs/common/interfaces';
+import {
+  ContextType,
+  Controller,
+  PipeTransform,
+} from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
@@ -15,6 +19,7 @@ import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { ExternalExceptionFilterContext } from './../exceptions/external-exception-filter-context';
 import { STATIC_CONTEXT } from './../injector/constants';
 import { ContextUtils, ParamProperties } from './context-utils';
+import { ExecutionContextHost } from './execution-context-host';
 import { ExternalErrorProxy } from './external-proxy';
 import { HandlerMetadataStorage } from './handler-metadata-storage';
 import { ExternalHandlerMetadata } from './interfaces/external-handler-metadata.interface';
@@ -80,7 +85,10 @@ export class ExternalContextCreator {
     );
   }
 
-  public create<T extends ParamsMetadata = ParamsMetadata>(
+  public create<
+    T extends ParamsMetadata = ParamsMetadata,
+    Context extends ContextType = ContextType
+  >(
     instance: Controller,
     callback: (...args: any[]) => any,
     methodName: string,
@@ -93,6 +101,7 @@ export class ExternalContextCreator {
       guards: true,
       filters: true,
     },
+    contextType?: Context,
   ) {
     const module = this.getContextModuleName(instance.constructor);
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
@@ -138,10 +147,13 @@ export class ExternalContextCreator {
       : [];
 
     const fnCanActivate = options.guards
-      ? this.createGuardsFn(guards, instance, callback)
+      ? this.createGuardsFn(guards, instance, callback, contextType)
       : null;
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
-    const handler = (initialArgs: any[], ...args: any[]) => async () => {
+    const handler = (
+      initialArgs: unknown[],
+      ...args: unknown[]
+    ) => async () => {
       if (fnApplyPipes) {
         await fnApplyPipes(initialArgs, ...args);
         return callback.apply(instance, initialArgs);
@@ -159,6 +171,7 @@ export class ExternalContextCreator {
         instance,
         callback,
         handler(initialArgs, ...args),
+        contextType,
       );
       return this.transformToResult(result);
     };
@@ -167,18 +180,19 @@ export class ExternalContextCreator {
       : target;
   }
 
-  public getMetadata<T>(
+  public getMetadata<TMetadata, TContext extends ContextType = ContextType>(
     instance: Controller,
     methodName: string,
     metadataKey?: string,
     paramsFactory?: ParamsFactory,
+    contextType?: TContext,
   ): ExternalHandlerMetadata {
     const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
     if (cacheMetadata) {
       return cacheMetadata;
     }
     const metadata =
-      this.contextUtils.reflectCallbackMetadata<T>(
+      this.contextUtils.reflectCallbackMetadata<TMetadata>(
         instance,
         methodName,
         metadataKey || '',
@@ -202,6 +216,7 @@ export class ExternalContextCreator {
             paramsFactory,
             contextId,
             inquirerId,
+            contextType,
           )
         : null;
 
@@ -236,15 +251,25 @@ export class ExternalContextCreator {
     return hasProvider;
   }
 
-  public exchangeKeysForValues<TMetadata = any>(
+  public exchangeKeysForValues<
+    TMetadata = any,
+    TContext extends ContextType = ContextType
+  >(
     keys: string[],
     metadata: TMetadata,
     moduleContext: string,
     paramsFactory: ParamsFactory,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
+    contextType?: TContext,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
+    const contextFactory = (args: unknown[]) => {
+      const ctx = new ExecutionContextHost(args);
+      ctx.setType(contextType);
+      return ctx;
+    };
+
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
@@ -259,6 +284,7 @@ export class ExternalContextCreator {
         const customExtractValue = this.contextUtils.getCustomFactory(
           factory,
           data,
+          contextFactory,
         );
         return { index, extractValue: customExtractValue, type, data, pipes };
       }
@@ -316,10 +342,11 @@ export class ExternalContextCreator {
     return resultOrDeffered;
   }
 
-  public createGuardsFn(
+  public createGuardsFn<TContext extends ContextType = ContextType>(
     guards: any[],
     instance: Controller,
     callback: (...args: any[]) => any,
+    contextType?: TContext,
   ): Function | null {
     const canActivateFn = async (args: any[]) => {
       const canActivate = await this.guardsConsumer.tryActivate(
@@ -327,6 +354,7 @@ export class ExternalContextCreator {
         args,
         instance,
         callback,
+        contextType,
       );
       if (!canActivate) {
         throw new ForbiddenException(FORBIDDEN_MESSAGE);

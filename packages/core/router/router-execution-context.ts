@@ -76,6 +76,7 @@ export class RouterExecutionContext {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ) {
+    const contextType: ContextType = 'http';
     const {
       argsLength,
       fnHandleResponse,
@@ -84,13 +85,19 @@ export class RouterExecutionContext {
       httpStatusCode,
       responseHeaders,
       hasCustomHeaders,
-    } = this.getMetadata(instance, callback, methodName, module, requestMethod);
+    } = this.getMetadata(
+      instance,
+      callback,
+      methodName,
+      module,
+      requestMethod,
+      contextType,
+    );
 
     const paramsOptions = this.contextUtils.mergeParamsMetatypes(
       getParamsMetadata(module, contextId, inquirerId),
       paramtypes,
     );
-    const contextType: ContextType = 'http';
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
@@ -155,12 +162,13 @@ export class RouterExecutionContext {
     };
   }
 
-  public getMetadata(
+  public getMetadata<TContext extends ContextType = ContextType>(
     instance: Controller,
     callback: (...args: any[]) => any,
     methodName: string,
     module: string,
     requestMethod: RequestMethod,
+    contextType: TContext,
   ): HandlerMetadata {
     const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
     if (cacheMetadata) {
@@ -189,6 +197,7 @@ export class RouterExecutionContext {
         moduleKey,
         contextId,
         inquirerId,
+        contextType,
       );
 
     const paramsMetadata = getParamsMetadata(module);
@@ -242,14 +251,17 @@ export class RouterExecutionContext {
     return Reflect.getMetadata(HEADERS_METADATA, callback) || [];
   }
 
-  public exchangeKeysForValues(
+  public exchangeKeysForValues<TContext extends ContextType = ContextType>(
     keys: string[],
     metadata: Record<number, RouteParamMetadata>,
     moduleContext: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
+    contextType?: TContext,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
+    const contextFactory = this.contextUtils.getContextFactory(contextType);
+
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
@@ -264,6 +276,7 @@ export class RouterExecutionContext {
         const customExtractValue = this.contextUtils.getCustomFactory(
           factory,
           data,
+          contextFactory,
         );
         return { index, extractValue: customExtractValue, type, data, pipes };
       }
