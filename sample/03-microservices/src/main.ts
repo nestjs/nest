@@ -11,7 +11,7 @@ async function bootstrap() {
    *  transport: Transport.TCP,
    *  options: { retryAttempts: 5, retryDelay: 3000 },
    * });
-   * await app.listenAsync();
+   * await app.listen();
    *
    */
   const app = await NestFactory.create(AppModule);

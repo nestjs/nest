@@ -55,15 +55,6 @@ export interface INestApplication extends INestApplicationContext {
   getUrl(): Promise<string>;
 
   /**
-   * Starts the application (can be awaited).
-   *
-   * @param {number|string} port
-   * @param {string} [hostname]
-   * @returns {Promise}
-   */
-  listenAsync(port: number | string, hostname?: string): Promise<any>;
-
-  /**
    * Registers a prefix for every HTTP route path.
    *
    * @param {string} prefix The prefix for every HTTP route path (for example `/v1/api`)

@@ -12,7 +12,7 @@ describe('ErrorGateway', () => {
       providers: [ErrorGateway],
     }).compile();
     app = await testingModule.createNestApplication();
-    await app.listenAsync(3000);
+    await app.listen(3000);
   });
 
   it(`should handle error`, async () => {

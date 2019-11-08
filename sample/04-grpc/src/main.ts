@@ -15,7 +15,7 @@ async function bootstrap() {
    *    protoPath: join(__dirname, './hero/hero.proto'),
    *  }
    * });
-   * await app.listenAsync();
+   * await app.listen();
    *
    */
   const app = await NestFactory.create(AppModule);
