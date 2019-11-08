@@ -69,6 +69,7 @@ export class RpcContextCreator {
       instance,
       methodName,
       defaultCallMetadata,
+      contextType,
     );
 
     const exceptionHandler = this.exceptionFiltersContext.create(
@@ -164,17 +165,18 @@ export class RpcContextCreator {
     return guards.length ? canActivateFn : null;
   }
 
-  public getMetadata<T>(
+  public getMetadata<TMetadata, TContext extends ContextType = ContextType>(
     instance: Controller,
     methodName: string,
     defaultCallMetadata: Record<string, any>,
+    contextType: TContext,
   ): RpcHandlerMetadata {
     const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
     if (cacheMetadata) {
       return cacheMetadata;
     }
     const metadata =
-      this.contextUtils.reflectCallbackMetadata<T>(
+      this.contextUtils.reflectCallbackMetadata<TMetadata>(
         instance,
         methodName,
         PARAM_ARGS_METADATA,
@@ -191,6 +193,7 @@ export class RpcContextCreator {
         metadata,
         moduleKey,
         this.rpcParamsFactory,
+        contextType,
       );
 
     const handlerMetadata: RpcHandlerMetadata = {
@@ -202,13 +205,19 @@ export class RpcContextCreator {
     return handlerMetadata;
   }
 
-  public exchangeKeysForValues<TMetadata = any>(
+  public exchangeKeysForValues<
+    TMetadata = any,
+    TContext extends ContextType = ContextType
+  >(
     keys: string[],
     metadata: TMetadata,
     moduleContext: string,
     paramsFactory: RpcParamsFactory,
+    contextType?: TContext,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
+    const contextFactory = this.contextUtils.getContextFactory(contextType);
+
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
@@ -221,6 +230,7 @@ export class RpcContextCreator {
         const customExtractValue = this.contextUtils.getCustomFactory(
           factory,
           data,
+          contextFactory,
         );
         return { index, extractValue: customExtractValue, type, data, pipes };
       }

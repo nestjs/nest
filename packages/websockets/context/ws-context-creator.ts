@@ -63,6 +63,7 @@ export class WsContextCreator {
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
       instance,
       methodName,
+      contextType,
     );
 
     const exceptionHandler = this.exceptionFiltersContext.create(
@@ -142,16 +143,17 @@ export class WsContextCreator {
     return guards.length ? canActivateFn : null;
   }
 
-  public getMetadata<T>(
+  public getMetadata<TMetadata, TContext extends ContextType = ContextType>(
     instance: Controller,
     methodName: string,
+    contextType: TContext,
   ): WsHandlerMetadata {
     const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
     if (cacheMetadata) {
       return cacheMetadata;
     }
     const metadata =
-      this.contextUtils.reflectCallbackMetadata<T>(
+      this.contextUtils.reflectCallbackMetadata<TMetadata>(
         instance,
         methodName,
         PARAM_ARGS_METADATA,
@@ -168,6 +170,7 @@ export class WsContextCreator {
         metadata,
         moduleKey,
         this.wsParamsFactory,
+        contextType,
       );
 
     const handlerMetadata: WsHandlerMetadata = {
@@ -179,13 +182,19 @@ export class WsContextCreator {
     return handlerMetadata;
   }
 
-  public exchangeKeysForValues<TMetadata = any>(
+  public exchangeKeysForValues<
+    TMetadata = any,
+    TContext extends ContextType = ContextType
+  >(
     keys: string[],
     metadata: TMetadata,
     moduleContext: string,
     paramsFactory: WsParamsFactory,
+    contextType?: TContext,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
+    const contextFactory = this.contextUtils.getContextFactory(contextType);
+
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
@@ -198,6 +207,7 @@ export class WsContextCreator {
         const customExtractValue = this.contextUtils.getCustomFactory(
           factory,
           data,
+          contextFactory,
         );
         return { index, extractValue: customExtractValue, type, data, pipes };
       }
