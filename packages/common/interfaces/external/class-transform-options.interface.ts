@@ -45,4 +45,9 @@ export interface ClassTransformOptions {
    * If set to true class-transformer will attempt conversion based on TS reflected type
    */
   enableImplicitConversion?: boolean;
+  /**
+   * If set to true class-transformer will exclude properties which are not part of the original class
+   * and exposing all class properties (with undefined, if nothing else is given)
+   */
+  excludeExtraneousValues?: boolean;
 }

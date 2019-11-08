@@ -304,13 +304,7 @@ export class RouterExecutionContext {
     }: { metatype: unknown; type: RouteParamtypes; data: unknown },
     pipes: PipeTransform[],
   ): Promise<unknown> {
-    if (
-      (type === RouteParamtypes.BODY ||
-        type === RouteParamtypes.QUERY ||
-        type === RouteParamtypes.PARAM ||
-        isString(type)) &&
-      !isEmpty(pipes)
-    ) {
+    if (!isEmpty(pipes)) {
       return this.pipesConsumer.apply(
         value,
         { metatype, type, data } as any,
@@ -318,6 +312,15 @@ export class RouterExecutionContext {
       );
     }
     return value;
+  }
+
+  public isPipeable(type: number | string): boolean {
+    return (
+      type === RouteParamtypes.BODY ||
+      type === RouteParamtypes.QUERY ||
+      type === RouteParamtypes.PARAM ||
+      isString(type)
+    );
   }
 
   public createGuardsFn<TContext extends ContextType = ContextType>(
@@ -364,11 +367,13 @@ export class RouterExecutionContext {
         } = param;
         const value = extractValue(req, res, next);
 
-        args[index] = await this.getParamValue(
-          value,
-          { metatype, type, data } as any,
-          pipes.concat(paramPipes),
-        );
+        args[index] = this.isPipeable(type)
+          ? await this.getParamValue(
+              value,
+              { metatype, type, data } as any,
+              pipes.concat(paramPipes),
+            )
+          : value;
       };
       await Promise.all(paramsOptions.map(resolveParamValue));
     };

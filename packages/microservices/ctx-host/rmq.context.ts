@@ -15,7 +15,7 @@ export class RmqContext extends BaseRpcContext<RmqContextArgs> {
   }
 
   /**
-   * Returns the reference to the original MQTT channel.
+   * Returns the reference to the original RMQ channel.
    */
   getChannelRef() {
     return this.args[1];

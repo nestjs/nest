@@ -1,7 +1,7 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
 import { ValueProvider } from '@nestjs/common/interfaces';
-import { requestProvider } from './../router/request/request-providers';
-import { Reflector } from './../services';
+import { requestProvider } from '../router/request/request-providers';
+import { Reflector } from '../services';
 
 @Global()
 @Module({

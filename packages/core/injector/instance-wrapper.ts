@@ -263,7 +263,7 @@ export class InstanceWrapper<T = any> {
     inquirer: InstanceWrapper | undefined,
   ): boolean {
     const isInquirerRequestScoped =
-      inquirer && inquirer.scope === Scope.REQUEST;
+      inquirer && !inquirer.isDependencyTreeStatic();
 
     return (
       this.isDependencyTreeStatic() &&
@@ -278,7 +278,7 @@ export class InstanceWrapper<T = any> {
     inquirer: InstanceWrapper | undefined,
   ): boolean {
     const isInquirerRequestScoped =
-      inquirer && inquirer.scope === Scope.REQUEST;
+      inquirer && !inquirer.isDependencyTreeStatic();
     const isStaticTransient = this.isTransient && !isInquirerRequestScoped;
 
     return (
@@ -302,6 +302,7 @@ export class InstanceWrapper<T = any> {
     if ((provider as ValueProvider).useValue) {
       this.metatype = null;
       this.inject = null;
+
       this.setInstanceByContextId(STATIC_CONTEXT, {
         instance: (provider as ValueProvider).useValue,
         isResolved: true,

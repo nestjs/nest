@@ -51,7 +51,8 @@ describe('ServerFactory', () => {
 
     it(`should return kafka server`, () => {
       expect(
-        ServerFactory.create({ transport: Transport.KAFKA }) instanceof ServerKafka,
+        ServerFactory.create({ transport: Transport.KAFKA }) instanceof
+          ServerKafka,
       ).to.be.true;
     });
 

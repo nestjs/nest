@@ -1,3 +1,5 @@
+import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+
 export const TCP_DEFAULT_PORT = 3000;
 export const TCP_DEFAULT_HOST = 'localhost';
 export const REDIS_DEFAULT_URL = 'redis://localhost:6379';
@@ -20,7 +22,7 @@ export const PATTERN_METADATA = 'microservices:pattern';
 export const CLIENT_CONFIGURATION_METADATA = 'microservices:client';
 export const PATTERN_HANDLER_METADATA = 'microservices:handler_type';
 export const CLIENT_METADATA = 'microservices:is_client_instance';
-export const PARAM_ARGS_METADATA = 'microservices:args';
+export const PARAM_ARGS_METADATA = ROUTE_ARGS_METADATA;
 
 export const REQUEST_PATTERN_METADATA = 'microservices:request_pattern';
 export const REPLY_PATTERN_METADATA = 'microservices:reply_pattern';

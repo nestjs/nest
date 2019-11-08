@@ -4,8 +4,8 @@ import { HttpException } from '../../../common/exceptions/http.exception';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
 import { RouterProxy } from '../../router/router-proxy';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
-import {SinonSpy} from "sinon";
-import {ExecutionContextHost} from "../../helpers/execution-context-host";
+import { SinonSpy } from 'sinon';
+import { ExecutionContextHost } from '../../helpers/execution-context-host';
 
 describe('RouterProxy', () => {
   let routerProxy: RouterProxy;
@@ -31,7 +31,12 @@ describe('RouterProxy', () => {
       proxy(null, null, null);
 
       expect(nextStub.calledOnce).to.be.true;
-      expect(nextStub.calledWith(httpException, new ExecutionContextHost([null, null, null]))).to.be.true;
+      expect(
+        nextStub.calledWith(
+          httpException,
+          new ExecutionContextHost([null, null, null]),
+        ),
+      ).to.be.true;
     });
 
     it('should method encapsulate async callback passed as argument', done => {
@@ -42,7 +47,12 @@ describe('RouterProxy', () => {
 
       setTimeout(() => {
         expect(nextStub.calledOnce).to.be.true;
-        expect(nextStub.calledWith(httpException, new ExecutionContextHost([null, null, null]))).to.be.true;
+        expect(
+          nextStub.calledWith(
+            httpException,
+            new ExecutionContextHost([null, null, null]),
+          ),
+        ).to.be.true;
         done();
       }, 0);
     });
@@ -64,7 +74,12 @@ describe('RouterProxy', () => {
       proxy(null, null, null, null);
 
       expect(nextStub.calledOnce).to.be.true;
-      expect(nextStub.calledWith(httpException, new ExecutionContextHost([null, null, null]))).to.be.true;
+      expect(
+        nextStub.calledWith(
+          httpException,
+          new ExecutionContextHost([null, null, null]),
+        ),
+      ).to.be.true;
     });
 
     it('should method encapsulate async callback passed as argument', done => {
@@ -78,7 +93,12 @@ describe('RouterProxy', () => {
 
       setTimeout(() => {
         expect(nextStub.calledOnce).to.be.true;
-        expect(nextStub.calledWith(httpException, new ExecutionContextHost([null, null, null]))).to.be.true;
+        expect(
+          nextStub.calledWith(
+            httpException,
+            new ExecutionContextHost([null, null, null]),
+          ),
+        ).to.be.true;
         done();
       }, 0);
     });

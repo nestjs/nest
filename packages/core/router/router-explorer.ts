@@ -266,7 +266,7 @@ export class RouterExplorer {
           collection,
           contextId,
         );
-        this.createCallbackProxy(
+        await this.createCallbackProxy(
           contextInstance,
           contextInstance[methodName],
           methodName,

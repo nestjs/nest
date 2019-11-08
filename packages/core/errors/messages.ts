@@ -89,7 +89,7 @@ export const INVALID_MODULE_MESSAGE = (
 ) =>
   `Nest cannot create the module instance. Often, this is because of a circular dependency between modules. Use forwardRef() to avoid it.
 
-(Read more: https://docs.nestjs.com/fundamentals/circular-dependency.)
+(Read more: https://docs.nestjs.com/fundamentals/circular-dependency)
 Scope [${scope}]
 `;
 

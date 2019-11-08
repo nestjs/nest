@@ -69,7 +69,7 @@ describe('ModuleTokenFactory', () => {
         class Provider {}
         const metadata = { providers: [Provider], exports: [Provider] };
         expect(factory.getDynamicMetadataToken(metadata)).to.be.eql(
-          '{"providers":["Provider"],"exports":["Provider"]}'
+          '{"providers":["Provider"],"exports":["Provider"]}',
         );
       });
     });

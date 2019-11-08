@@ -26,6 +26,7 @@ import { InvalidClassException } from '../errors/exceptions/invalid-class.except
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { createContextId } from '../helpers';
+import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
@@ -176,16 +177,18 @@ export class Module {
     if (this.isCustomProvider(injectable)) {
       return this.addCustomProvider(injectable, this._injectables);
     }
-    const instanceWrapper = new InstanceWrapper({
-      name: injectable.name,
-      metatype: injectable,
-      instance: null,
-      isResolved: false,
-      scope: this.getClassScope(injectable),
-      host: this,
-    });
-    this._injectables.set(injectable.name, instanceWrapper);
-
+    let instanceWrapper = this.injectables.get(injectable.name);
+    if (!instanceWrapper) {
+      instanceWrapper = new InstanceWrapper({
+        name: injectable.name,
+        metatype: injectable,
+        instance: null,
+        isResolved: false,
+        scope: this.getClassScope(injectable),
+        host: this,
+      });
+      this._injectables.set(injectable.name, instanceWrapper);
+    }
     if (host) {
       const token = host && host.name;
       const hostWrapper =
@@ -278,7 +281,12 @@ export class Module {
     provider: ClassProvider & ProviderName,
     collection: Map<string, InstanceWrapper>,
   ) {
-    const { name, useClass, scope } = provider;
+    const { name, useClass } = provider;
+
+    let { scope } = provider;
+    if (isUndefined(scope)) {
+      scope = this.getClassScope(useClass);
+    }
     collection.set(
       name as string,
       new InstanceWrapper({
@@ -408,6 +416,17 @@ export class Module {
         host: this,
       }),
     );
+
+    this.assignControllerUniqueId(controller);
+  }
+
+  public assignControllerUniqueId(controller: Type<Controller>) {
+    Object.defineProperty(controller, CONTROLLER_ID_KEY, {
+      enumerable: false,
+      writable: false,
+      configurable: true,
+      value: randomStringGenerator(),
+    });
   }
 
   public addRelatedModule(module: Module) {
@@ -418,10 +437,12 @@ export class Module {
     if (options.isProvider && this.hasProvider(toReplace)) {
       const name = this.getProviderStaticToken(toReplace);
       const originalProvider = this._providers.get(name);
+
       return originalProvider.mergeWith({ provide: toReplace, ...options });
     } else if (!options.isProvider && this.hasInjectable(toReplace)) {
       const name = this.getProviderStaticToken(toReplace);
       const originalInjectable = this._injectables.get(name);
+
       return originalInjectable.mergeWith({
         provide: toReplace,
         ...options,
@@ -485,7 +506,7 @@ export class Module {
     };
   }
 
-  private getClassScope(provider: Provider): Scope {
+  private getClassScope(provider: Type<unknown>): Scope {
     const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, provider);
     return metadata && metadata.scope;
   }
