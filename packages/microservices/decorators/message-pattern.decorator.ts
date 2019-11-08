@@ -1,7 +1,6 @@
 import { PATTERN_HANDLER_METADATA, PATTERN_METADATA } from '../constants';
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
-import { ConsumerConfig } from '../external/kafka.interface';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',

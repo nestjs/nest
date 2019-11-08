@@ -11,14 +11,14 @@ export class BaseRpcExceptionFilter<T = any, R = any>
   public catch(exception: T, host: ArgumentsHost): Observable<R> {
     const status = 'error';
     if (!(exception instanceof RpcException)) {
-      return this.handleUnknownError(exception);
+      return this.handleUnknownError(exception, status);
     }
     const res = exception.getError();
     const message = isObject(res) ? res : { status, message: res };
     return _throw(message);
   }
 
-  public handleUnknownError(exception: T) {
+  public handleUnknownError(exception: T, status: string) {
     const errorMessage = MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
 
     const loggerArgs = this.isError(exception)
