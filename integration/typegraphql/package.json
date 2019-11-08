@@ -9,8 +9,8 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.8.5",
-    "@nestjs/core": "6.8.5",
+    "@nestjs/common": "6.9.0",
+    "@nestjs/core": "6.9.0",
     "@nestjs/graphql": "6.5.3",
     "apollo-server-express": "2.9.7",
     "class-transformer": "0.2.3",
@@ -21,12 +21,12 @@
     "rxjs": "6.5.3",
     "subscriptions-transport-ws": "0.9.16",
     "type-graphql": "0.17.5",
-    "typescript": "3.6.4",
+    "typescript": "3.7.2",
     "ws": "7.2.0"
   },
   "devDependencies": {
     "@types/node": "7.10.9",
     "ts-node": "8.4.1",
-    "tslint": "5.20.0"
+    "tslint": "5.20.1"
   }
 }
