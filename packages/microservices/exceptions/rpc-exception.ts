@@ -2,6 +2,7 @@ import { isString } from '@nestjs/common/utils/shared.utils';
 
 export class RpcException extends Error {
   public readonly message: any;
+
   constructor(private readonly error: string | object) {
     super();
     this.message = error;

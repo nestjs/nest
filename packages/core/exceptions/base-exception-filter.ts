@@ -9,6 +9,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { isObject } from '@nestjs/common/utils/shared.utils';
+import { AbstractHttpAdapter } from '../adapters';
 import { MESSAGES } from '../constants';
 import { HttpAdapterHost } from '../helpers';
 
@@ -27,18 +28,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
       (this.httpAdapterHost && this.httpAdapterHost.httpAdapter);
 
     if (!(exception instanceof HttpException)) {
-      const body = {
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
-      };
-      applicationRef.reply(host.getArgByIndex(1), body, body.statusCode);
-      if (this.isExceptionObject(exception)) {
-        return BaseExceptionFilter.logger.error(
-          exception.message,
-          exception.stack,
-        );
-      }
-      return BaseExceptionFilter.logger.error(exception);
+      return this.handleUnknownError(exception, host, applicationRef);
     }
     const res = exception.getResponse();
     const message = isObject(res)
@@ -49,6 +39,25 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
         };
 
     applicationRef.reply(host.getArgByIndex(1), message, exception.getStatus());
+  }
+
+  public handleUnknownError(
+    exception: T,
+    host: ArgumentsHost,
+    applicationRef: AbstractHttpAdapter | HttpServer,
+  ) {
+    const body = {
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
+    };
+    applicationRef.reply(host.getArgByIndex(1), body, body.statusCode);
+    if (this.isExceptionObject(exception)) {
+      return BaseExceptionFilter.logger.error(
+        exception.message,
+        exception.stack,
+      );
+    }
+    return BaseExceptionFilter.logger.error(exception);
   }
 
   public isExceptionObject(err: any): err is Error {

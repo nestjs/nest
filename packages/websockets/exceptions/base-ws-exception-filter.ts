@@ -4,12 +4,12 @@ import { MESSAGES } from '@nestjs/core/constants';
 import { WsException } from '../errors/ws-exception';
 
 export class BaseWsExceptionFilter<T = any> implements WsExceptionFilter<T> {
-  catch(exception: T, host: ArgumentsHost) {
+  public catch(exception: T, host: ArgumentsHost) {
     const client = host.switchToWs().getClient();
     this.handleError(client, exception);
   }
 
-  handleError<IClient extends { emit: Function }>(
+  public handleError<IClient extends { emit: Function }>(
     client: IClient,
     exception: T,
   ) {

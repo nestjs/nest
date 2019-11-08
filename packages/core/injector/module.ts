@@ -281,7 +281,12 @@ export class Module {
     provider: ClassProvider & ProviderName,
     collection: Map<string, InstanceWrapper>,
   ) {
-    const { name, useClass, scope } = provider;
+    const { name, useClass } = provider;
+
+    let { scope } = provider;
+    if (isUndefined(scope)) {
+      scope = this.getClassScope(useClass);
+    }
     collection.set(
       name as string,
       new InstanceWrapper({
@@ -501,7 +506,7 @@ export class Module {
     };
   }
 
-  private getClassScope(provider: Provider): Scope {
+  private getClassScope(provider: Type<unknown>): Scope {
     const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, provider);
     return metadata && metadata.scope;
   }
