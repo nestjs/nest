@@ -38,4 +38,17 @@ describe('@UseInterceptors', () => {
     }
     expect(error).to.be.instanceof(InvalidDecoratorItemException);
   });
+  it('when object is valid should not throw exception', () => {
+    let error = undefined;
+    try {
+      UseInterceptors({
+        intercept() {
+          return null;
+        },
+      })({ name: 'target' });
+    } catch (e) {
+      error = e;
+    }
+    expect(error).to.be.undefined;
+  });
 });
