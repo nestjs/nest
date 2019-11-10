@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { RouteParamMetadata } from '../../../common';
+import { RouteParamMetadata, HttpStatus } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
@@ -15,6 +15,8 @@ import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { RouteParamsFactory } from '../../router/route-params-factory';
 import { RouterExecutionContext } from '../../router/router-execution-context';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { FORBIDDEN_MESSAGE } from '../../guards/constants';
+import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;
@@ -282,10 +284,21 @@ describe('RouterExecutionContext', () => {
     });
   });
   describe('createGuardsFn', () => {
-    it('should throw exception when "tryActivate" returns false', () => {
+    it('should throw ForbiddenException when "tryActivate" returns false', async () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
-      guardsFn([]).catch(err => expect(err).to.not.be.undefined);
+      let error: ForbiddenException;
+      try {
+        await guardsFn([]);
+      } catch (e) {
+        error = e;
+      }
+      expect(error).to.be.instanceOf(ForbiddenException);
+      expect(error.message).to.be.eql({
+        statusCode: HttpStatus.FORBIDDEN,
+        error: 'Forbidden',
+        message: FORBIDDEN_MESSAGE,
+      });
     });
   });
   describe('createHandleResponseFn', () => {
