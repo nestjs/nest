@@ -134,11 +134,20 @@ describe('RouterExecutionContext', () => {
               done();
             });
           });
-          it('should throw exception when "tryActivate" returns false', () => {
+          it('should throw ForbiddenException when "tryActivate" returns false', async () => {
             tryActivateStub.callsFake(async () => false);
-            proxyContext(request, response, next).catch(
-              error => expect(error).to.not.be.undefined,
-            );
+            let error: Error;
+            try {
+              await proxyContext(request, response, next);
+            } catch (e) {
+              error = e;
+            }
+            expect(error).to.be.instanceOf(ForbiddenException);
+            expect(error.message).to.be.eql({
+              statusCode: HttpStatus.FORBIDDEN,
+              error: 'Forbidden',
+              message: FORBIDDEN_MESSAGE,
+            });
           });
           it('should apply expected context when "canActivateFn" apply', () => {
             proxyContext(request, response, next).then(() => {
