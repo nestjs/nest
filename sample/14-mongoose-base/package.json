@@ -22,7 +22,7 @@
     "@nestjs/common": "6.9.0",
     "@nestjs/core": "6.9.0",
     "@nestjs/platform-express": "6.9.0",
-    "mongoose": "5.7.8",
+    "mongoose": "5.7.9",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.0",
     "rxjs": "6.5.3"
@@ -35,7 +35,7 @@
     "@types/node": "7.10.9",
     "@types/supertest": "2.0.8",
     "jest": "24.9.0",
-    "prettier": "1.18.2",
+    "prettier": "1.19.1",
     "supertest": "4.0.2",
     "ts-jest": "24.1.0",
     "ts-loader": "6.2.1",
