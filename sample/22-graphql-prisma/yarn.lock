@@ -2,16 +2,6 @@
 # yarn lockfile v1
 
 
-"@angular-devkit/core@8.3.18":
-  version "8.3.18"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-8.3.18.tgz#442596384965371d7c88908716bb0985f11b714d"
-  dependencies:
-    ajv "6.10.2"
-    fast-json-stable-stringify "2.0.0"
-    magic-string "0.25.3"
-    rxjs "6.4.0"
-    source-map "0.7.3"
-
 "@angular-devkit/core@8.3.19":
   version "8.3.19"
   resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-8.3.19.tgz#c3310bfdbd456c6301ed33713c7b58fea7822f5b"
@@ -32,24 +22,17 @@
     rxjs "6.4.0"
     source-map "0.7.3"
 
-"@angular-devkit/schematics-cli@0.803.18":
-  version "0.803.18"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics-cli/-/schematics-cli-0.803.18.tgz#bad945241c29d2cfce6cc7dc9b4b7b263798a5b6"
+"@angular-devkit/schematics-cli@0.803.19":
+  version "0.803.19"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics-cli/-/schematics-cli-0.803.19.tgz#b827771adaa2c87f97f99ea0f8d8922c1c2edca7"
   dependencies:
-    "@angular-devkit/core" "8.3.18"
-    "@angular-devkit/schematics" "8.3.18"
-    "@schematics/schematics" "0.803.18"
+    "@angular-devkit/core" "8.3.19"
+    "@angular-devkit/schematics" "8.3.19"
+    "@schematics/schematics" "0.803.19"
     inquirer "6.5.1"
     minimist "1.2.0"
     rxjs "6.4.0"
     symbol-observable "1.2.0"
-
-"@angular-devkit/schematics@8.3.18":
-  version "8.3.18"
-  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.18.tgz#946eedb52194cb1f29216eaf6942075d12394d11"
-  dependencies:
-    "@angular-devkit/core" "8.3.18"
-    rxjs "6.4.0"
 
 "@angular-devkit/schematics@8.3.19":
   version "8.3.19"
@@ -357,23 +340,23 @@
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-"@nestjs/cli@6.11.5":
-  version "6.11.5"
-  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.11.5.tgz#76279a09f12c7887e41f486d0f00d776bee1c32e"
+"@nestjs/cli@6.12.0":
+  version "6.12.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.12.0.tgz#7d3d15f6c3c51d5a2cbf598aa86b5753beea84d4"
   dependencies:
-    "@angular-devkit/core" "8.3.18"
-    "@angular-devkit/schematics" "8.3.18"
-    "@angular-devkit/schematics-cli" "0.803.18"
+    "@angular-devkit/core" "8.3.19"
+    "@angular-devkit/schematics" "8.3.19"
+    "@angular-devkit/schematics-cli" "0.803.19"
     "@nestjs/schematics" "^6.6.3"
     "@types/webpack" "4.39.8"
     chalk "2.4.2"
     cli-table3 "0.5.1"
-    commander "4.0.0"
+    commander "4.0.1"
     copyfiles "2.1.1"
     fork-ts-checker-webpack-plugin "3.1.0"
     inquirer "7.0.0"
     node-emoji "1.10.0"
-    ora "4.0.2"
+    ora "4.0.3"
     os-name "3.1.0"
     rimraf "3.0.0"
     tree-kill "1.2.1"
@@ -520,12 +503,12 @@
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@protobufjs/utf8/-/utf8-1.1.0.tgz#a777360b5b39a1a2e5106f8e858f2fd2d060c570"
 
-"@schematics/schematics@0.803.18":
-  version "0.803.18"
-  resolved "https://registry.yarnpkg.com/@schematics/schematics/-/schematics-0.803.18.tgz#84788fa335d1c9bf70b87c4e5f7fc2a28b599ca5"
+"@schematics/schematics@0.803.19":
+  version "0.803.19"
+  resolved "https://registry.yarnpkg.com/@schematics/schematics/-/schematics-0.803.19.tgz#e810be648e5501da55fbd8a9bfa27c8cada68cef"
   dependencies:
-    "@angular-devkit/core" "8.3.18"
-    "@angular-devkit/schematics" "8.3.18"
+    "@angular-devkit/core" "8.3.19"
+    "@angular-devkit/schematics" "8.3.19"
 
 "@types/accepts@*", "@types/accepts@^1.3.5":
   version "1.3.5"
@@ -579,6 +562,10 @@
   dependencies:
     "@types/connect" "*"
     "@types/node" "*"
+
+"@types/color-name@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@types/color-name/-/color-name-1.1.1.tgz#1c1261bbeaa10a8055bbc5d8ab84b7b2afc846a0"
 
 "@types/connect@*":
   version "3.4.32"
@@ -1042,6 +1029,10 @@ ansi-regex@^4.0.0, ansi-regex@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/ansi-regex/-/ansi-regex-4.1.0.tgz#8b9f8f08cf1acb843756a839ca8c7e3168c51997"
 
+ansi-regex@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/ansi-regex/-/ansi-regex-5.0.0.tgz#388539f55179bf39339c81af30a654d69f87cb75"
+
 ansi-styles@^2.2.1:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/ansi-styles/-/ansi-styles-2.2.1.tgz#b432dd3358b634cf75e1e4664368240533c1ddbe"
@@ -1051,6 +1042,13 @@ ansi-styles@^3.2.0, ansi-styles@^3.2.1:
   resolved "https://registry.yarnpkg.com/ansi-styles/-/ansi-styles-3.2.1.tgz#41fbb20243e50b12be0f04b8dedbf07520ce841d"
   dependencies:
     color-convert "^1.9.0"
+
+ansi-styles@^4.1.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/ansi-styles/-/ansi-styles-4.2.0.tgz#5681f0dcf7ae5880a7841d8831c4724ed9cc0172"
+  dependencies:
+    "@types/color-name" "^1.1.1"
+    color-convert "^2.0.1"
 
 anymatch@^2.0.0:
   version "2.0.0"
@@ -1756,6 +1754,13 @@ chalk@^2.0.1, chalk@^2.3.0, chalk@^2.4.1:
     escape-string-regexp "^1.0.5"
     supports-color "^5.3.0"
 
+chalk@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-3.0.0.tgz#3f73c2bf526591f574cc492c51e2456349f844e4"
+  dependencies:
+    ansi-styles "^4.1.0"
+    supports-color "^7.1.0"
+
 chardet@^0.7.0:
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/chardet/-/chardet-0.7.0.tgz#90094849f0937f2eedc2425d0d28a9e5f0cbad9e"
@@ -1916,9 +1921,19 @@ color-convert@^1.9.0:
   dependencies:
     color-name "1.1.3"
 
+color-convert@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/color-convert/-/color-convert-2.0.1.tgz#72d3a68d598c9bdb3af2ad1e84f21d896abd4de3"
+  dependencies:
+    color-name "~1.1.4"
+
 color-name@1.1.3:
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/color-name/-/color-name-1.1.3.tgz#a7d0558bd89c42f795dd42328f740831ca53bc25"
+
+color-name@~1.1.4:
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/color-name/-/color-name-1.1.4.tgz#c2a09a87acbde69543de6f63fa3995c826c536a2"
 
 colors@^1.1.2:
   version "1.4.0"
@@ -1934,9 +1949,9 @@ commander@2.20.0:
   version "2.20.0"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.20.0.tgz#d58bb2b5c1ee8f87b0d340027e9e94e222c5a422"
 
-commander@4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/commander/-/commander-4.0.0.tgz#e782b6afe6a0f1b1408be59429919e1305160e3f"
+commander@4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-4.0.1.tgz#b67622721785993182e807f4883633e6401ba53c"
 
 commander@^2.12.1:
   version "2.18.0"
@@ -3162,6 +3177,10 @@ has-ansi@^2.0.0:
 has-flag@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/has-flag/-/has-flag-3.0.0.tgz#b5d454dc2199ae225699f3467e5a07f3b955bafd"
+
+has-flag@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/has-flag/-/has-flag-4.0.0.tgz#944771fd9c81c81265c4d6941860da06bb59479b"
 
 has-symbols@^1.0.0:
   version "1.0.0"
@@ -4891,16 +4910,17 @@ optionator@^0.8.1:
     type-check "~0.3.2"
     wordwrap "~1.0.0"
 
-ora@4.0.2:
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/ora/-/ora-4.0.2.tgz#0e1e68fd45b135d28648b27cf08081fa6e8a297d"
+ora@4.0.3:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/ora/-/ora-4.0.3.tgz#752a1b7b4be4825546a7a3d59256fa523b6b6d05"
   dependencies:
-    chalk "^2.4.2"
+    chalk "^3.0.0"
     cli-cursor "^3.1.0"
     cli-spinners "^2.2.0"
     is-interactive "^1.0.0"
     log-symbols "^3.0.0"
-    strip-ansi "^5.2.0"
+    mute-stream "0.0.8"
+    strip-ansi "^6.0.0"
     wcwidth "^1.0.1"
 
 os-browserify@^0.3.0:
@@ -5969,6 +5989,12 @@ strip-ansi@^5.0.0, strip-ansi@^5.1.0, strip-ansi@^5.2.0:
   dependencies:
     ansi-regex "^4.1.0"
 
+strip-ansi@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.0.tgz#0b1571dd7669ccd4f3e06e14ef1eed26225ae532"
+  dependencies:
+    ansi-regex "^5.0.0"
+
 strip-bom@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/strip-bom/-/strip-bom-3.0.0.tgz#2334c18e9c759f7bdd56fdef7e9ae3d588e68ed3"
@@ -6038,6 +6064,12 @@ supports-color@^6.1.0:
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-6.1.0.tgz#0764abc69c63d5ac842dd4867e8d025e880df8f3"
   dependencies:
     has-flag "^3.0.0"
+
+supports-color@^7.1.0:
+  version "7.1.0"
+  resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-7.1.0.tgz#68e32591df73e25ad1c4b49108a2ec507962bfd1"
+  dependencies:
+    has-flag "^4.0.0"
 
 symbol-observable@1.2.0, symbol-observable@^1.0.4:
   version "1.2.0"
