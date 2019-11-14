@@ -12,6 +12,16 @@
     rxjs "6.4.0"
     source-map "0.7.3"
 
+"@angular-devkit/core@8.3.19":
+  version "8.3.19"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-8.3.19.tgz#c3310bfdbd456c6301ed33713c7b58fea7822f5b"
+  dependencies:
+    ajv "6.10.2"
+    fast-json-stable-stringify "2.0.0"
+    magic-string "0.25.3"
+    rxjs "6.4.0"
+    source-map "0.7.3"
+
 "@angular-devkit/core@8.3.6":
   version "8.3.6"
   resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-8.3.6.tgz#6ad4787e3cb8b03234a194dd53e12cf054a4169c"
@@ -39,6 +49,13 @@
   resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.18.tgz#946eedb52194cb1f29216eaf6942075d12394d11"
   dependencies:
     "@angular-devkit/core" "8.3.18"
+    rxjs "6.4.0"
+
+"@angular-devkit/schematics@8.3.19":
+  version "8.3.19"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.19.tgz#a3b78a90486028b86b139eff8b5e9c5f0fab6497"
+  dependencies:
+    "@angular-devkit/core" "8.3.19"
     rxjs "6.4.0"
 
 "@angular-devkit/schematics@8.3.6":
@@ -408,7 +425,17 @@
     express "4.17.1"
     multer "1.4.2"
 
-"@nestjs/schematics@6.7.0", "@nestjs/schematics@^6.6.3":
+"@nestjs/schematics@6.7.1":
+  version "6.7.1"
+  resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.7.1.tgz#0664a60ccb6ed611d1093d631810ec8dcce8403c"
+  dependencies:
+    "@angular-devkit/core" "8.3.19"
+    "@angular-devkit/schematics" "8.3.19"
+    fs-extra "^8.1.0"
+    ts-morph "^4.0.0"
+    typescript "3.4.5"
+
+"@nestjs/schematics@^6.6.3":
   version "6.7.0"
   resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.7.0.tgz#2da95fc5f1abb4a5e130bb276f74ca5321b249d2"
   dependencies:
