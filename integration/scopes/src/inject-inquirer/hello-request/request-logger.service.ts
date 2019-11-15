@@ -1,5 +1,5 @@
-import { Inject, Logger, Injectable, Scope } from '@nestjs/common';
-import { REQUEST, INQUIRER } from '@nestjs/core';
+import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
+import { INQUIRER, REQUEST } from '@nestjs/core';
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class RequestLogger {

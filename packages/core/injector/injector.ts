@@ -201,6 +201,7 @@ export class Injector {
         inject,
         contextId,
         wrapper,
+        inquirer,
       );
       const instance = await this.instantiateClass(
         instances,
@@ -531,6 +532,7 @@ export class Injector {
     inject?: InjectorDependency[],
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
+    parentInquirer?: InstanceWrapper,
   ): Promise<PropertyDependency[]> {
     if (!isNil(inject)) {
       return [];
@@ -547,6 +549,9 @@ export class Injector {
             key: item.key,
             name: item.name as string,
           };
+          if (this.isInquirer(item.name, parentInquirer)) {
+            return parentInquirer && parentInquirer.instance;
+          }
           const paramWrapper = await this.resolveSingleParam<T>(
             wrapper,
             item.name,

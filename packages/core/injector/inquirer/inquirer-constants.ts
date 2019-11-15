@@ -1,1 +1,1 @@
-export const INQUIRER = 'INQUIRER';
+export const INQUIRER = Symbol('INQUIRER');

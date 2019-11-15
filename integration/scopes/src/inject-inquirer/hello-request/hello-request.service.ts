@@ -1,11 +1,15 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
+import { INQUIRER } from '@nestjs/core';
 import { RequestLogger } from './request-logger.service';
 
 @Injectable({ scope: Scope.REQUEST })
 export class HelloRequestService {
   static logger = { feature: 'request' };
 
-  constructor(private readonly logger: RequestLogger) {}
+  constructor(
+    private readonly logger: RequestLogger,
+    @Inject(INQUIRER) private readonly inquirer,
+  ) {}
 
   greeting() {
     this.logger.log('Hello request!');
