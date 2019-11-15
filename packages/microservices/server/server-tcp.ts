@@ -84,8 +84,9 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     response$ &&
       this.send(response$, data => {
         Object.assign(data, { id: (packet as IncomingRequest).id });
-        const outgoingResponse = this.serializer.serialize(data as WritePacket &
-          PacketId);
+        const outgoingResponse = this.serializer.serialize(
+          data as WritePacket & PacketId,
+        );
         socket.sendMessage(outgoingResponse);
       });
   }

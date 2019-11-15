@@ -223,9 +223,10 @@ export class DependenciesScanner {
       component.prototype,
       method => Reflect.getMetadata(metadataKey, component, method),
     );
-    const paramsInjectables = this.flatten(paramsMetadata).map(
-      (param: Record<string, any>) =>
-        flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
+    const paramsInjectables = this.flatten(
+      paramsMetadata,
+    ).map((param: Record<string, any>) =>
+      flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
     );
     flatten(paramsInjectables).forEach((injectable: Type<Injectable>) =>
       this.insertInjectable(injectable, token, component),

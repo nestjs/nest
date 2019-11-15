@@ -236,7 +236,8 @@ export class Module {
       | ClassProvider
       | FactoryProvider
       | ValueProvider
-      | ExistingProvider) &
+      | ExistingProvider
+    ) &
       ProviderName,
     collection: Map<string, any>,
   ): string {
@@ -356,7 +357,7 @@ export class Module {
   }
 
   public addExportedProvider(
-    provider: Provider & ProviderName | string | symbol | DynamicModule,
+    provider: (Provider & ProviderName) | string | symbol | DynamicModule,
   ) {
     const addExportedUnit = (token: string | symbol) =>
       this._exports.add(this.validateExportedProvider(token));

@@ -55,10 +55,7 @@ export class WsAdapter extends AbstractWsAdapter {
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {
-    const close$ = fromEvent(client, CLOSE_EVENT).pipe(
-      share(),
-      first(),
-    );
+    const close$ = fromEvent(client, CLOSE_EVENT).pipe(share(), first());
     const source$ = fromEvent(client, 'message').pipe(
       mergeMap(data =>
         this.bindMessageHandler(data, handlers, transform).pipe(
