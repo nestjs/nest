@@ -45,6 +45,11 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   reply(response: any, body: any, statusCode?: number): any;
   status(response: any, statusCode: number): any;
   render(response: any, view: string, options: any): any;
+  renderToString?(
+    view: string,
+    options: any,
+    response: TResponse,
+  ): string | Promise<string>;
   redirect(response: any, statusCode: number, url: string): any;
   setHeader(response: any, name: string, value: string): any;
   setErrorHandler?(handler: Function): any;

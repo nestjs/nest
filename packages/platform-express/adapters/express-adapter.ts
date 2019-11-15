@@ -36,6 +36,22 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return response.render(view, options);
   }
 
+  public renderToString(view: string, options: any): Promise<string> {
+    return new Promise((resolve, reject) => {
+      (this.instance as express.Express).render(
+        view,
+        options,
+        (error: Error, html: string) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(html);
+          }
+        },
+      );
+    });
+  }
+
   public redirect(response: any, statusCode: number, url: string) {
     return response.redirect(statusCode, url);
   }

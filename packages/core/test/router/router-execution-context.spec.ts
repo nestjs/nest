@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { RouteParamMetadata, HttpStatus } from '../../../common';
+import { RouteParamMetadata, HttpStatus, HttpServer } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
@@ -17,6 +17,8 @@ import { RouterExecutionContext } from '../../router/router-execution-context';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 import { FORBIDDEN_MESSAGE } from '../../guards/constants';
 import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
+import { RouterInterceptorsConsumer } from '../../interceptors/router-interceptors-consumer';
+import { RouterRenderInterceptorsConsumer } from '../../interceptors/router-render-interceptors-consumer';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;
@@ -26,7 +28,7 @@ describe('RouterExecutionContext', () => {
   let factory: RouteParamsFactory;
   let consumer: PipesConsumer;
   let guardsConsumer: GuardsConsumer;
-  let interceptorsConsumer: InterceptorsConsumer;
+  let interceptorsConsumer: RouterInterceptorsConsumer;
   let adapter: AbstractHttpAdapter;
 
   beforeEach(() => {
@@ -40,7 +42,7 @@ describe('RouterExecutionContext', () => {
     factory = new RouteParamsFactory();
     consumer = new PipesConsumer();
     guardsConsumer = new GuardsConsumer();
-    interceptorsConsumer = new InterceptorsConsumer();
+    interceptorsConsumer = new RouterInterceptorsConsumer();
     adapter = new NoopHttpAdapter({});
     contextCreator = new RouterExecutionContext(
       factory,
@@ -156,19 +158,19 @@ describe('RouterExecutionContext', () => {
               expect(tryActivateStub.args[0][1][2]).to.equals(next);
             });
           });
-          it('should apply expected context when "intercept" apply', () => {
-            const interceptStub = sinon.stub(interceptorsConsumer, 'intercept');
-            proxyContext(request, response, next).then(() => {
-              expect(interceptStub.args[0][1][0]).to.equals(request);
-              expect(interceptStub.args[0][1][1]).to.equals(response);
-              expect(interceptStub.args[0][1][2]).to.equals(next);
-            });
+          it('should apply expected context when "intercept" apply', async () => {
+            const interceptStub = sinon
+              .stub(interceptorsConsumer, 'interceptHandlerResponse')
+              .returns(Promise.resolve({ result: '', skipRender: false }));
+            await proxyContext(request, response, next);
+            expect(interceptStub.args[0][1][0]).to.equals(request);
+            expect(interceptStub.args[0][1][1]).to.equals(response);
+            expect(interceptStub.args[0][1][2]).to.equals(next);
           });
         });
       });
     });
   });
-
   describe('exchangeKeysForValues', () => {
     const res = { body: 'res' };
     const req = { body: { test: 'req' } };
@@ -311,50 +313,254 @@ describe('RouterExecutionContext', () => {
     });
   });
   describe('createHandleResponseFn', () => {
-    describe('when "renderTemplate" is defined', () => {
+    describe('with respect to rendering', () => {
+      const renderInterceptedView = 'render intercepted view';
+      let isResponseHandled: boolean;
+      let result: any;
+      const response = {};
+      const sameResponseMatch = sinon.match.same(response);
+      let skipRender: boolean;
+      const template = 'template';
+      let renderInterceptSpy: sinon.SinonSpy;
+      let spiedAdapter: {
+        renderToStringSpy?: sinon.SinonSpy;
+        replySpy: sinon.SinonSpy;
+        setHeaderSpy: sinon.SinonSpy;
+        renderSpy: sinon.SinonSpy;
+      };
+      let interceptorsConsumerCanRenderIntercept: boolean;
+      let templateTestError: Error | undefined;
+      function setAdapter(renderedToString?: string) {
+        type RenderToString = {
+          [P in 'renderToString']-?: HttpServer['renderToString'];
+        };
+        class RenderToStringAdapter extends NoopHttpAdapter
+          implements RenderToString {
+          renderToString(
+            view: string,
+            options: any,
+            _response: any,
+          ): Promise<string> {
+            return Promise.resolve(renderedToString);
+          }
+        }
+
+        let renderToStringSpy: sinon.SinonSpy;
+        if (renderedToString) {
+          const renderToStringAdapter = new RenderToStringAdapter({});
+          renderToStringSpy = sinon
+            .stub(renderToStringAdapter, 'renderToString')
+            .returns(Promise.resolve(renderedToString));
+          adapter = renderToStringAdapter;
+        } else {
+          adapter = new NoopHttpAdapter({});
+        }
+
+        const replySpy = sinon.spy(adapter as AbstractHttpAdapter, 'reply');
+        const renderSpy = sinon.spy(adapter as AbstractHttpAdapter, 'render');
+        const setHeaderSpy = sinon.spy(adapter, 'setHeader');
+        spiedAdapter = {
+          renderToStringSpy,
+          replySpy,
+          setHeaderSpy,
+          renderSpy,
+        };
+      }
       beforeEach(() => {
-        sinon
-          .stub(adapter, 'render')
-          .callsFake((response, view: string, options: any) => {
-            return response.render(view, options);
-          });
+        // default - render interception path
+        interceptorsConsumerCanRenderIntercept = true;
+        setAdapter('_');
       });
-      it('should call "res.render()" with expected args', async () => {
-        const template = 'template';
-        const value = 'test';
-        const response = { render: sinon.spy() };
+      async function executeTemplateTest() {
+        contextCreator = new RouterExecutionContext(
+          factory,
+          new PipesContextCreator(new NestContainer(), new ApplicationConfig()),
+          consumer,
+          new GuardsContextCreator(new NestContainer()),
+          guardsConsumer,
+          new InterceptorsContextCreator(new NestContainer()),
+          interceptorsConsumer,
+          adapter,
+        );
 
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
-
+        sinon
+          .stub(interceptorsConsumer, 'canRenderIntercept')
+          .returns(interceptorsConsumerCanRenderIntercept);
+        renderInterceptSpy = sinon
+          .stub(interceptorsConsumer, 'renderIntercept')
+          .returns(Promise.resolve(renderInterceptedView));
         const handler = contextCreator.createHandleResponseFn(
           null,
-          true,
+          isResponseHandled,
           undefined,
-          200,
         );
-        await handler(value, response);
+        try {
+          await handler(result, response, skipRender);
+        } catch (e) {
+          templateTestError = e;
+        }
+      }
+      enum NoRenderInterceptionReason {
+        NoRenderInterceptors,
+        AdapterNoRenderToString,
+      }
+      function preventRenderInterception(reason: NoRenderInterceptionReason) {
+        if (reason === NoRenderInterceptionReason.AdapterNoRenderToString) {
+          setAdapter();
+        } else {
+          interceptorsConsumerCanRenderIntercept = false;
+        }
+      }
 
-        expect(response.render.calledWith(template, value)).to.be.true;
+      // isResponseHandled does not affect render processing
+      [true, false].forEach(responseHandled => {
+        describe(`and "renderTemplate" is defined ${
+          responseHandled ? 'response handled' : 'response not handled'
+        }`, () => {
+          isResponseHandled = responseHandled;
+          describe('and not overridden by interceptor', () => {
+            beforeEach(() => {
+              skipRender = false;
+            });
+            describe('and not render intercepting', () => {
+              const preventRenderInterceptions: NoRenderInterceptionReason[] = [
+                NoRenderInterceptionReason.AdapterNoRenderToString,
+                NoRenderInterceptionReason.NoRenderInterceptors,
+              ];
+              preventRenderInterceptions.forEach(reason => {
+                describe(`as ${
+                  reason === NoRenderInterceptionReason.NoRenderInterceptors
+                    ? 'no render interceptors'
+                    : 'adapter no renderToString'
+                }`, () => {
+                  it('should call "res.render()" with expected args', async () => {
+                    result = 'test';
+                    preventRenderInterception(reason);
+
+                    await executeTemplateTest();
+                    expect(
+                      spiedAdapter.renderSpy.calledOnceWithExactly(
+                        sameResponseMatch,
+                        template,
+                        'test',
+                      ),
+                    ).to.be.true;
+                  });
+                });
+              });
+            });
+            describe('and render intercepting', () => {
+              beforeEach(async () => {
+                result = 'result';
+                setAdapter('rendered view');
+                await executeTemplateTest();
+              });
+
+              describe('should call responController.renderToString with expected args', () => {
+                // this is until refactor to respone controller as ctor arg
+                it('should set content-type header to text/html', () => {
+                  expect(
+                    spiedAdapter.setHeaderSpy.calledOnceWithExactly(
+                      sameResponseMatch,
+                      'Content-Type',
+                      'text/html; charset=utf-8',
+                    ),
+                  ).to.be.true;
+                });
+                it('should renderToString on the adapter', () => {
+                  expect(
+                    spiedAdapter.renderToStringSpy!.calledOnceWithExactly(
+                      template,
+                      result,
+                      sameResponseMatch,
+                    ),
+                  ).to.be.true;
+                });
+              });
+              it('should renderIntercept the rendered view', () => {
+                expect(
+                  renderInterceptSpy.calledOnceWithExactly('rendered view'),
+                ).to.be.true;
+              });
+              it('should apply the render intercepted view', () => {
+                expect(
+                  spiedAdapter.replySpy.calledOnceWithExactly(
+                    sameResponseMatch,
+                    renderInterceptedView,
+                    undefined,
+                  ),
+                ).to.be.true;
+              });
+            });
+          });
+          describe('and overridden by interceptor', () => {
+            beforeEach(() => {
+              skipRender = true;
+            });
+            describe('with transformed result not a string', () => {
+              it('should throw error', async () => {
+                skipRender = true;
+                result = {};
+                await executeTemplateTest();
+
+                expect(templateTestError!.message).to.be.eql(
+                  'NestInterceptor.intercept rendered - result is not a string',
+                );
+              });
+            });
+            describe('with transformed result as string', () => {
+              const interceptRenderedResult = 'intercept rendered';
+              beforeEach(() => {
+                result = interceptRenderedResult;
+              });
+              it('should set content-type header to text/html', async () => {
+                await executeTemplateTest();
+                expect(
+                  spiedAdapter.setHeaderSpy.calledOnceWithExactly(
+                    sinon.match.same(response),
+                    'Content-Type',
+                    'text/html; charset=utf-8',
+                  ),
+                ).to.be.true;
+              });
+              describe('and interceptors consumer can render intercept', () => {
+                it('should apply the transformed renderIntercept to the response', async () => {
+                  await executeTemplateTest();
+                  expect(
+                    renderInterceptSpy.calledOnceWithExactly(
+                      interceptRenderedResult,
+                    ),
+                  ).to.be.true;
+                  expect(
+                    spiedAdapter.replySpy.calledOnceWithExactly(
+                      sameResponseMatch,
+                      renderInterceptedView,
+                      undefined,
+                    ),
+                  ).to.be.true;
+                });
+              });
+              describe('and interceptors consumer cannot render intercept', () => {
+                it('should call "adapter.reply()" with expected args', async () => {
+                  interceptorsConsumerCanRenderIntercept = false;
+
+                  await executeTemplateTest();
+                  expect(
+                    spiedAdapter.replySpy.calledOnceWithExactly(
+                      sameResponseMatch,
+                      interceptRenderedResult,
+                      undefined,
+                    ),
+                  ).to.be.true;
+                });
+              });
+            });
+          });
+        });
       });
     });
-    describe('when "renderTemplate" is undefined', () => {
-      it('should not call "res.render()"', async () => {
-        const result = Promise.resolve('test');
-        const response = { render: sinon.spy() };
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
-
-        const handler = contextCreator.createHandleResponseFn(
-          null,
-          true,
-          undefined,
-          200,
-        );
-        await handler(result, response);
-
-        expect(response.render.called).to.be.false;
-      });
-    });
     describe('when "redirectResponse" is present', () => {
       beforeEach(() => {
         sinon

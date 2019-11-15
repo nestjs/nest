@@ -37,13 +37,28 @@ export class RouterResponseController {
     this.applicationRef.redirect(response, statusCode, url);
   }
 
-  public async render<TInput = any, TResponse = any>(
-    resultOrDeferred: TInput,
+  public render<TInput = any, TResponse = any>(
+    result: TInput,
     response: TResponse,
     template: string,
   ) {
-    const result = await this.transformToResult(resultOrDeferred);
     this.applicationRef.render(response, template, result);
+  }
+
+  public canRenderToString(): boolean {
+    return (
+      !!this.applicationRef.renderToString &&
+      isFunction(this.applicationRef.renderToString)
+    );
+  }
+  public async renderToString(result: any, response: any, template: string) {
+    const view = await this.applicationRef.renderToString!(
+      template,
+      result,
+      response,
+    );
+    this.setContentTypeHtml(response);
+    return view;
   }
 
   public async transformToResult(resultOrDeferred: any) {
@@ -69,6 +84,12 @@ export class RouterResponseController {
     headers.forEach(({ name, value }) =>
       this.applicationRef.setHeader(response, name, value),
     );
+  }
+
+  public setContentTypeHtml(response: any) {
+    this.setHeaders(response, [
+      { name: 'Content-Type', value: 'text/html; charset=utf-8' },
+    ]);
   }
 
   public setStatus<TResponse = any>(response: TResponse, statusCode: number) {

@@ -93,6 +93,20 @@ describe('ApplicationConfig', () => {
 
       expect(appConfig.getGlobalInterceptors()).to.be.eql(interceptors);
     });
+    it('should set global router render interceptors - concat with existing', () => {
+      const interceptors = ['interceptor', 'interceptor1'];
+      const routeRenderInterceptors = [
+        'renderInterceptor',
+        'renderInterceptor2',
+      ];
+      appConfig.useGlobalInterceptors(...(interceptors as any));
+      appConfig.useGlobalRouterRenderInterceptors(
+        ...(routeRenderInterceptors as any),
+      );
+      expect(appConfig.getGlobalInterceptors()).to.be.eql(
+        interceptors.concat(routeRenderInterceptors),
+      );
+    });
     it('should add interceptor', () => {
       const interceptor = 'testOne';
       appConfig.addGlobalInterceptor(interceptor as any);

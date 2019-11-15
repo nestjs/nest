@@ -4,10 +4,13 @@ import {
   HttpServer,
   INestApplication,
   INestMicroservice,
-  NestInterceptor,
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
+import {
+  NestInterceptorType,
+  NestRouterRenderInterceptor,
+} from '@nestjs/common/interfaces';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
@@ -290,8 +293,15 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
+  public useGlobalInterceptors(...interceptors: NestInterceptorType[]): this {
     this.config.useGlobalInterceptors(...interceptors);
+    return this;
+  }
+
+  public useGlobalRouterRenderInterceptors(
+    ...interceptors: NestRouterRenderInterceptor[]
+  ): this {
+    this.config.useGlobalRouterRenderInterceptors(...interceptors);
     return this;
   }
 

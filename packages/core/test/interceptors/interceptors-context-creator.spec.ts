@@ -4,6 +4,10 @@ import * as sinon from 'sinon';
 import { ApplicationConfig } from '../../application-config';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
+import {
+  NestRouterRenderInterceptor,
+  NestInterceptorType,
+} from '../../../common/interfaces';
 
 class Interceptor {}
 
@@ -69,6 +73,78 @@ describe('InterceptorsContextCreator', () => {
           interceptorsContextCreator.createConcreteContext(interceptors),
         ).to.have.length(2);
       });
+      it('should filter out metadata without name, intercept or renderIntercept', () => {
+        const metadata = [
+          {
+            name: 'name',
+          },
+          {
+            intercept: () => {},
+          },
+          {
+            renderIntercept: () => {},
+          },
+          {},
+        ];
+        const getInterceptorInstanceSpy = sinon.spy(
+          interceptorsContextCreator,
+          'getInterceptorInstance',
+        );
+        interceptorsContextCreator.createConcreteContext(metadata);
+        expect(getInterceptorInstanceSpy.calledWith(metadata[0] as any)).to.be
+          .true;
+        expect(getInterceptorInstanceSpy.calledWith(metadata[1] as any)).to.be
+          .true;
+        expect(getInterceptorInstanceSpy.calledWith(metadata[2] as any)).to.be
+          .true;
+        expect(getInterceptorInstanceSpy.calledWith(metadata[3] as any)).to.be
+          .false;
+      });
+      it('should filter out interceptors without intercept or renderIntercept', () => {
+        const metadata = [
+          {
+            name: 'intercept',
+          },
+          {
+            name: 'renderIntercept',
+          },
+          {
+            name: 'exclude',
+          },
+        ];
+        type WithPropertiesAny<T> = {
+          [P in keyof T]: any;
+        };
+        type InterceptShape = WithPropertiesAny<NestInterceptorType>;
+        type RenderShape = WithPropertiesAny<NestRouterRenderInterceptor>;
+
+        const interceptInterceptor: InterceptShape = {
+          intercept: () => {},
+        };
+        const renderInterceptor: RenderShape = {
+          renderIntercept: () => {},
+        };
+        sinon
+          .stub(interceptorsContextCreator, 'getInterceptorInstance')
+          .callsFake(interceptor => {
+            const name = (interceptor as any).name as string;
+            switch (name) {
+              case 'intercept':
+                return interceptInterceptor;
+              case 'renderIntercept':
+                return renderInterceptor;
+              case 'exclude':
+                return {} as any;
+            }
+          });
+        const concreteContext = interceptorsContextCreator.createConcreteContext(
+          metadata,
+        );
+
+        expect(concreteContext.length).to.be.eql(2);
+        expect(concreteContext[0]).to.be.equal(interceptInterceptor);
+        expect(concreteContext[1]).to.be.equal(renderInterceptor);
+      });
     });
   });
 
@@ -79,6 +155,14 @@ describe('InterceptorsContextCreator', () => {
         expect(
           interceptorsContextCreator.getInterceptorInstance(instance),
         ).to.be.eql(instance);
+      });
+      it('should return instance when has renderIntercept', () => {
+        const renderIntercept: keyof NestRouterRenderInterceptor =
+          'renderIntercept';
+        const instance = { [renderIntercept]: () => null };
+        expect(
+          interceptorsContextCreator.getInterceptorInstance(instance),
+        ).to.be.equal(instance);
       });
     });
     describe('when param is a constructor', () => {

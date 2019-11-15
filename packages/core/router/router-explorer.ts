@@ -22,7 +22,6 @@ import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
-import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { MetadataScanner } from '../metadata-scanner';
 import { PipesConsumer } from '../pipes/pipes-consumer';
@@ -33,6 +32,7 @@ import { REQUEST_CONTEXT_ID } from './request/request-constants';
 import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
+import { RouterInterceptorsConsumer } from '../interceptors/router-interceptors-consumer';
 
 export interface RoutePathProperties {
   path: string[];
@@ -62,7 +62,7 @@ export class RouterExplorer {
       new GuardsContextCreator(container, config),
       new GuardsConsumer(),
       new InterceptorsContextCreator(container, config),
-      new InterceptorsConsumer(),
+      new RouterInterceptorsConsumer(),
       container.getHttpAdapterRef(),
     );
   }

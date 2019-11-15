@@ -19,6 +19,7 @@ export interface HandlerMetadata {
   fnHandleResponse: <TResult, TResponse>(
     result: TResult,
     res: TResponse,
+    skipRender?: boolean,
   ) => any;
 }
 

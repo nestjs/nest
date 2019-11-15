@@ -1,5 +1,10 @@
 import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
-import { Controller, NestInterceptor } from '@nestjs/common/interfaces';
+import {
+  Controller,
+  AnyNestInterceptor,
+  NestRouterRenderInterceptor,
+  NestInterceptorType,
+} from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
 import iterate from 'iterare';
 import { ApplicationConfig } from '../application-config';
@@ -24,7 +29,7 @@ export class InterceptorsContextCreator extends ContextCreator {
     module: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
-  ): NestInterceptor[] {
+  ): AnyNestInterceptor[] {
     this.moduleContext = module;
     return this.createContext(
       instance,
@@ -46,26 +51,35 @@ export class InterceptorsContextCreator extends ContextCreator {
     return iterate(metadata)
       .filter(
         (interceptor: any) =>
-          interceptor && (interceptor.name || interceptor.intercept),
+          interceptor &&
+          (interceptor.name ||
+            interceptor.intercept ||
+            interceptor.renderIntercept),
       )
       .map(interceptor =>
         this.getInterceptorInstance(interceptor, contextId, inquirerId),
       )
       .filter(
-        (interceptor: NestInterceptor) =>
-          interceptor && isFunction(interceptor.intercept),
+        (interceptor: AnyNestInterceptor) =>
+          interceptor &&
+          (isFunction((interceptor as NestInterceptorType).intercept) ||
+            isFunction(
+              (interceptor as NestRouterRenderInterceptor).renderIntercept,
+            )),
       )
       .toArray() as R;
   }
 
   public getInterceptorInstance(
-    interceptor: Function | NestInterceptor,
+    interceptor: Function | AnyNestInterceptor,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
-  ): NestInterceptor | null {
-    const isObject = (interceptor as NestInterceptor).intercept;
+  ): AnyNestInterceptor | null {
+    const isObject =
+      (interceptor as NestInterceptorType).intercept ||
+      (interceptor as NestRouterRenderInterceptor).renderIntercept;
     if (isObject) {
-      return interceptor as NestInterceptor;
+      return interceptor as AnyNestInterceptor;
     }
     const instanceWrapper = this.getInstanceByMetatype(interceptor);
     if (!instanceWrapper) {

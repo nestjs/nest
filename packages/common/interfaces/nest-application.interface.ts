@@ -1,6 +1,9 @@
 import { CorsOptions } from './external/cors-options.interface';
 import { CanActivate } from './features/can-activate.interface';
-import { NestInterceptor } from './features/nest-interceptor.interface';
+import {
+  NestInterceptorType,
+  NestRouterRenderInterceptor,
+} from './features/nest-interceptor.interface';
 import { HttpServer } from './http/http-server.interface';
 import { ExceptionFilter, INestMicroservice, PipeTransform } from './index';
 import { MicroserviceOptions } from './microservices/microservice-configuration.interface';
@@ -140,9 +143,19 @@ export interface INestApplication extends INestApplicationContext {
    * Registers interceptors as global interceptors (will be used within
    * every HTTP route handler)
    *
-   * @param  {NestInterceptor[]} ...interceptors
+   * @param  {NestInterceptorType[]} ...interceptors
    */
-  useGlobalInterceptors(...interceptors: NestInterceptor[]): this;
+  useGlobalInterceptors(...interceptors: NestInterceptorType[]): this;
+
+  /**
+   * Registers render interceptors as global interceptors (will be used within
+   * every HTTP route handler)
+   *
+   * @param  {NestRouterRenderInterceptor[]} ...interceptors
+   */
+  useGlobalRouterRenderInterceptors(
+    ...interceptors: NestRouterRenderInterceptor[]
+  ): this;
 
   /**
    * Registers guards as global guards (will be used within every HTTP route handler)

@@ -21,6 +21,8 @@
   },
   "devDependencies": {
     "@types/node": "7.10.9",
+    "hbs": "^4.0.6",
+    "point-of-view": "^3.7.0",
     "supertest": "4.0.2",
     "ts-node": "8.5.2"
   }

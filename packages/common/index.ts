@@ -30,6 +30,8 @@ export {
   MiddlewareConsumer,
   NestApplicationOptions,
   NestInterceptor,
+  NestRouterInterceptor,
+  NestRouterRenderInterceptor,
   NestMiddleware,
   NestModule,
   OnApplicationBootstrap,

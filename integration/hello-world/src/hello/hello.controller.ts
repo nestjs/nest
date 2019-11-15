@@ -1,4 +1,4 @@
-import { Controller, Get, Header, Param } from '@nestjs/common';
+import { Controller, Get, Header, Param, Render } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import { HelloService } from './hello.service';
 import { UserByIdPipe } from './users/user-by-id.pipe';
@@ -29,5 +29,12 @@ export class HelloController {
     user: any,
   ): any {
     return user;
+  }
+  @Render('helloMvc.hbs')
+  @Get('mvc')
+  mvc() {
+    return {
+      helloGreeting: this.helloService.greeting(),
+    };
   }
 }

@@ -60,6 +60,10 @@ export class FastifyAdapter extends AbstractHttpAdapter {
   public render(response: any, view: string, options: any) {
     return response.view(view, options);
   }
+  public async renderToString(view: string, options: any) {
+    const renderedString = await this.instance.view(view, options);
+    return renderedString;
+  }
 
   public redirect(response: any, statusCode: number, url: string) {
     const code = statusCode ? statusCode : HttpStatus.FOUND;

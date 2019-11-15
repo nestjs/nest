@@ -1,24 +1,28 @@
 import {
   CanActivate,
   ExceptionFilter,
-  NestInterceptor,
   PipeTransform,
   WebSocketAdapter,
+  NestRouterRenderInterceptor,
 } from '@nestjs/common';
+import {
+  AnyNestInterceptor,
+  NestInterceptorType,
+} from '@nestjs/common/interfaces';
 import { InstanceWrapper } from './injector/instance-wrapper';
 
 export class ApplicationConfig {
   private globalPrefix = '';
   private globalPipes: PipeTransform[] = [];
   private globalFilters: ExceptionFilter[] = [];
-  private globalInterceptors: NestInterceptor[] = [];
+  private globalInterceptors: AnyNestInterceptor[] = [];
   private globalGuards: CanActivate[] = [];
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
   private readonly globalRequestFilters: InstanceWrapper<
     ExceptionFilter
   >[] = [];
   private readonly globalRequestInterceptors: InstanceWrapper<
-    NestInterceptor
+    AnyNestInterceptor
   >[] = [];
   private readonly globalRequestGuards: InstanceWrapper<CanActivate>[] = [];
 
@@ -64,15 +68,20 @@ export class ApplicationConfig {
     return this.globalPipes;
   }
 
-  public getGlobalInterceptors(): NestInterceptor[] {
+  public getGlobalInterceptors(): AnyNestInterceptor[] {
     return this.globalInterceptors;
   }
 
-  public addGlobalInterceptor(interceptor: NestInterceptor) {
+  public addGlobalInterceptor(interceptor: AnyNestInterceptor) {
     this.globalInterceptors.push(interceptor);
   }
 
-  public useGlobalInterceptors(...interceptors: NestInterceptor[]) {
+  public useGlobalInterceptors(...interceptors: NestInterceptorType[]) {
+    this.globalInterceptors = this.globalInterceptors.concat(interceptors);
+  }
+  public useGlobalRouterRenderInterceptors(
+    ...interceptors: NestRouterRenderInterceptor[]
+  ) {
     this.globalInterceptors = this.globalInterceptors.concat(interceptors);
   }
 
@@ -89,12 +98,12 @@ export class ApplicationConfig {
   }
 
   public addGlobalRequestInterceptor(
-    wrapper: InstanceWrapper<NestInterceptor>,
+    wrapper: InstanceWrapper<AnyNestInterceptor>,
   ) {
     this.globalRequestInterceptors.push(wrapper);
   }
 
-  public getGlobalRequestInterceptors(): InstanceWrapper<NestInterceptor>[] {
+  public getGlobalRequestInterceptors(): InstanceWrapper<AnyNestInterceptor>[] {
     return this.globalRequestInterceptors;
   }
 

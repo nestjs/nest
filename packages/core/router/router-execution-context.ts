@@ -30,7 +30,7 @@ import {
   HandlerMetadataStorage,
 } from '../helpers/handler-metadata-storage';
 import { STATIC_CONTEXT } from '../injector/constants';
-import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
+import { RouterInterceptorsConsumer } from '../interceptors/router-interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
@@ -65,7 +65,7 @@ export class RouterExecutionContext {
     private readonly guardsContextCreator: GuardsContextCreator,
     private readonly guardsConsumer: GuardsConsumer,
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
-    private readonly interceptorsConsumer: InterceptorsConsumer,
+    private readonly interceptorsConsumer: RouterInterceptorsConsumer,
     readonly applicationRef: HttpServer,
   ) {
     this.responseController = new RouterResponseController(applicationRef);
@@ -147,15 +147,18 @@ export class RouterExecutionContext {
       hasCustomHeaders &&
         this.responseController.setHeaders(res, responseHeaders);
 
-      const result = await this.interceptorsConsumer.intercept(
+      const {
+        result,
+        skipRender,
+      } = await this.interceptorsConsumer.interceptHandlerResponse(
         interceptors,
         [req, res, next],
         instance,
         callback,
         handler(args, req, res, next),
-        contextType,
       );
-      await fnHandleResponse(result, res);
+
+      await fnHandleResponse(result, res, skipRender);
     };
   }
 
@@ -382,11 +385,43 @@ export class RouterExecutionContext {
     isResponseHandled: boolean,
     redirectResponse?: RedirectResponse,
     httpStatusCode?: number,
-  ) {
+  ): HandlerMetadata['fnHandleResponse'] {
     const renderTemplate = this.reflectRenderTemplate(callback);
     if (renderTemplate) {
-      return async <TResult, TResponse>(result: TResult, res: TResponse) => {
-        await this.responseController.render(result, res, renderTemplate);
+      return async <TResult, TResponse>(
+        result: TResult,
+        res: TResponse,
+        skipRender: boolean,
+      ) => {
+        result = await this.responseController.transformToResult(result);
+        if (skipRender) {
+          this.responseController.setContentTypeHtml(res);
+        }
+        if (skipRender && !isString(result)) {
+          throw new Error(
+            'NestInterceptor.intercept rendered - result is not a string',
+          );
+        }
+        if (
+          this.interceptorsConsumer.canRenderIntercept() &&
+          (skipRender || this.responseController.canRenderToString())
+        ) {
+          const renderedView = skipRender
+            ? ((result as unknown) as string)
+            : await this.responseController.renderToString(
+                result,
+                res,
+                renderTemplate,
+              );
+          result = await this.responseController.transformToResult(
+            await this.interceptorsConsumer.renderIntercept(renderedView),
+          );
+          await this.responseController.apply(result, res, httpStatusCode);
+        } else if (skipRender) {
+          await this.responseController.apply(result, res, httpStatusCode);
+        } else {
+          await this.responseController.render(result, res, renderTemplate);
+        }
       };
     }
     if (redirectResponse && redirectResponse.url) {

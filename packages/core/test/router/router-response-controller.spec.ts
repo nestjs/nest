@@ -126,12 +126,85 @@ describe('RouterResponseController', () => {
     });
     it('should call "res.render()" with expected args', async () => {
       const template = 'template';
-      const value = 'test';
-      const result = Promise.resolve(value);
+      const result = 'test';
       const response = { render: sinon.spy() };
 
       await routerResponseController.render(result, response, template);
-      expect(response.render.calledWith(template, value)).to.be.true;
+      expect(response.render.calledWith(template, result)).to.be.true;
+    });
+  });
+
+  describe('rendering to string', () => {
+    describe('canRenderToString', () => {
+      it('should return true if the adapter has the renderToString function', () => {
+        routerResponseController = new RouterResponseController({
+          renderToString() {},
+        } as any);
+        expect(routerResponseController.canRenderToString()).to.be.true;
+      });
+      it('should return false if the adapter does not have the renderToString function', () => {
+        routerResponseController = new RouterResponseController({
+          renderToString: true,
+        } as any);
+        expect(routerResponseController.canRenderToString()).to.be.false;
+        routerResponseController = new RouterResponseController({} as any);
+        expect(routerResponseController.canRenderToString()).to.be.false;
+      });
+    });
+    describe('renderToString', () => {
+      it('should renderToString on the adapter with expected arguments', async () => {
+        const renderToStringAdapter = {
+          renderToString: sinon
+            .stub()
+            .returns(Promise.resolve('rendered view')),
+          setHeader: () => {},
+        };
+        routerResponseController = new RouterResponseController(
+          renderToStringAdapter as any,
+        );
+        const response = {};
+        const template = 'template';
+        const renderedTemplate = await routerResponseController.renderToString(
+          'result',
+          response,
+          template,
+        );
+        expect(
+          renderToStringAdapter.renderToString.calledOnceWithExactly(
+            template,
+            'result',
+            sinon.match.same(response),
+          ),
+        ).to.be.true;
+        expect(renderedTemplate).to.eql('rendered view');
+      });
+      it('should set Content-Type text/html header', async () => {
+        const renderToStringAdapter = {
+          renderToString: sinon
+            .stub()
+            .returns(Promise.resolve('rendered view')),
+          setHeader: () => {},
+        };
+        routerResponseController = new RouterResponseController(
+          renderToStringAdapter as any,
+        );
+        const setHeadersSpy = sinon.stub(
+          routerResponseController,
+          'setHeaders',
+        );
+        sinon
+          .stub(routerResponseController, 'transformToResult')
+          .returns(Promise.resolve('transformedResult'));
+        const response = {};
+        await routerResponseController.renderToString(
+          'resultOrDeffered',
+          response,
+          undefined,
+        );
+        setHeadersSpy.calledOnceWithExactly(sinon.match.same(response), [
+          { name: 'Content-Type', value: 'text/html; charset=utf-8' },
+        ]);
+      });
     });
   });
 
@@ -153,6 +226,20 @@ describe('RouterResponseController', () => {
     });
   });
 
+  describe('setContentTypeHtml', () => {
+    it('should setHeader content type text/hmtl', () => {
+      const setHeaderSpy = sinon.spy(adapter, 'setHeader');
+      const response = {};
+      routerResponseController.setContentTypeHtml(response);
+      expect(
+        setHeaderSpy.calledOnceWithExactly(
+          sinon.match.same(response),
+          'Content-Type',
+          'text/html; charset=utf-8',
+        ),
+      ).to.be.true;
+    });
+  });
   describe('status', () => {
     let statusStub: sinon.SinonStub;
 

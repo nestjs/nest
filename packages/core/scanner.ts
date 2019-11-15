@@ -19,7 +19,7 @@ import {
   ExceptionFilter,
   ExistingProvider,
   FactoryProvider,
-  NestInterceptor,
+  AnyNestInterceptor,
   PipeTransform,
   Scope,
   ValueProvider,
@@ -425,7 +425,7 @@ export class DependenciesScanner {
 
   public getApplyProvidersMap(): { [type: string]: Function } {
     return {
-      [APP_INTERCEPTOR]: (interceptor: NestInterceptor) =>
+      [APP_INTERCEPTOR]: (interceptor: AnyNestInterceptor) =>
         this.applicationConfig.addGlobalInterceptor(interceptor),
       [APP_PIPE]: (pipe: PipeTransform) =>
         this.applicationConfig.addGlobalPipe(pipe),
@@ -438,7 +438,7 @@ export class DependenciesScanner {
 
   public getApplyRequestProvidersMap(): { [type: string]: Function } {
     return {
-      [APP_INTERCEPTOR]: (interceptor: InstanceWrapper<NestInterceptor>) =>
+      [APP_INTERCEPTOR]: (interceptor: InstanceWrapper<AnyNestInterceptor>) =>
         this.applicationConfig.addGlobalRequestInterceptor(interceptor),
       [APP_PIPE]: (pipe: InstanceWrapper<PipeTransform>) =>
         this.applicationConfig.addGlobalRequestPipe(pipe),
