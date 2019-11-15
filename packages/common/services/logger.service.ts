@@ -29,7 +29,7 @@ export class Logger implements LoggerService {
   private static instance?: typeof Logger | LoggerService = Logger;
 
   constructor(
-    @Optional() private readonly context?: string,
+    @Optional() protected readonly context?: string,
     @Optional() private readonly isTimestampEnabled = false,
   ) {}
 
