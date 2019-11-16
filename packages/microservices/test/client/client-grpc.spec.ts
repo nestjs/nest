@@ -61,7 +61,7 @@ describe('ClientGrpcProxy', () => {
     });
     describe('when "grpcClient[name]" is not nil', () => {
       it('should create grpcService', () => {
-        (client as any).grpcClient = {
+        (client as any).grpcClients[0] = {
           test: GrpcService,
         };
         expect(() => client.getService('test')).to.not.throw(
@@ -71,7 +71,7 @@ describe('ClientGrpcProxy', () => {
 
       describe('when "grpcClient[name]" is not nil (multiple proto)', () => {
         it('should create grpcService', () => {
-          (clientMulti as any).grpcClient = {
+          (clientMulti as any).grpcClients[0] = {
             test: GrpcService,
             test2: GrpcService,
           };
@@ -256,7 +256,7 @@ describe('ClientGrpcProxy', () => {
   describe('close', () => {
     it('should call "close" method', () => {
       const grpcClient = { close: sinon.spy() };
-      (client as any).grpcClient = grpcClient;
+      (client as any).grpcClients[0] = grpcClient;
 
       client.close();
       expect(grpcClient.close.called).to.be.true;
