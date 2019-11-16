@@ -11,6 +11,7 @@ describe('RouteParamsFactory', () => {
     const res = {};
     const next = () => ({});
     const req = {
+      ip: 'ip',
       session: null,
       body: {
         foo: 'bar',
@@ -71,6 +72,13 @@ describe('RouteParamsFactory', () => {
               ...args,
             ),
           ).to.be.eql(req.headers);
+        });
+      });
+      describe(`RouteParamtypes.IP`, () => {
+        it('should return ip property', () => {
+          expect(
+            (factory as any).exchangeKeyForValue(RouteParamtypes.IP, ...args),
+          ).to.be.equal(req.ip);
         });
       });
       describe(`RouteParamtypes.SESSION`, () => {

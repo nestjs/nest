@@ -107,6 +107,19 @@ export const Next: () => ParameterDecorator = createRouteParamDecorator(
 );
 
 /**
+ * Route handler parameter decorator. Extracts the `Ip` property
+ * from the `req` object and populates the decorated
+ * parameter with the value of `ip`.
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ *
+ * @publicApi
+ */
+export const Ip: () => ParameterDecorator = createRouteParamDecorator(
+  RouteParamtypes.IP,
+);
+
+/**
  * Route handler parameter decorator. Extracts the `Session` object
  * from the underlying platform and populates the decorated
  * parameter with the value of `Session`.
