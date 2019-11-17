@@ -16,45 +16,37 @@ describe('ModuleTokenFactory', () => {
       const token = factory.create(Module as any, [Module], undefined);
       expect(token).to.be.deep.eq(
         hash({
-          module: Module.name,
+          module: Module,
           dynamic: '',
           scope,
         }),
       );
     });
     it('should returns expected token', () => {
-      const token = factory.create(
-        SingleScope()(Module) as any,
-        [Module],
-        undefined,
-      );
+      const type = SingleScope()(Module) as any;
+      const token = factory.create(type, [Module], undefined);
       expect(token).to.be.deep.eq(
         hash({
-          module: Module.name,
+          module: type,
           dynamic: '',
           scope: [Module.name],
         }),
       );
     });
     it('should include dynamic metadata', () => {
-      const token = factory.create(SingleScope()(Module) as any, [Module], {
+      const type = SingleScope()(Module) as any;
+      const token = factory.create(type as any, [Module], {
         providers: [{}],
       } as any);
       expect(token).to.be.deep.eq(
         hash({
-          module: Module.name,
+          module: type,
           dynamic: safeStringify({
             providers: [{}],
           }),
           scope: [Module.name],
         }),
       );
-    });
-  });
-  describe('getModuleName', () => {
-    it('should map module metatype to name', () => {
-      const metatype = () => {};
-      expect(factory.getModuleName(metatype as any)).to.be.eql(metatype.name);
     });
   });
   describe('getDynamicMetadataToken', () => {
