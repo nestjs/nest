@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@types/ws": "6.0.3",
-    "@nestjs/cli": "6.12.1",
+    "@nestjs/cli": "6.12.2",
     "@nestjs/schematics": "6.7.3",
     "@nestjs/testing": "6.10.1",
     "@types/express": "4.17.2",
