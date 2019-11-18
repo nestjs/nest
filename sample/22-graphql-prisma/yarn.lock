@@ -340,9 +340,9 @@
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-"@nestjs/cli@6.12.1":
-  version "6.12.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.12.1.tgz#196e6aae004b8140abdf55f3d1599ecf05724672"
+"@nestjs/cli@6.12.2":
+  version "6.12.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.12.2.tgz#59a5b00a0ee8045cf8a7dae751ffd0e236b3608e"
   dependencies:
     "@angular-devkit/core" "8.3.19"
     "@angular-devkit/schematics" "8.3.19"
