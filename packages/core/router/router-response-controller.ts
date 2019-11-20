@@ -8,7 +8,7 @@ export interface CustomHeader {
 
 export interface RedirectResponse {
   url: string;
-  statusCode: number;
+  statusCode?: number;
 }
 export class RouterResponseController {
   constructor(private readonly applicationRef: HttpServer) {}
@@ -24,7 +24,7 @@ export class RouterResponseController {
   public async redirect<TInput = any, TResponse = any>(
     resultOrDeferred: TInput,
     response: TResponse,
-    redirectResponse: RedirectResponse,
+    redirectResponse?: RedirectResponse,
   ) {
     const result = await this.transformToResult(resultOrDeferred);
     const statusCode =
