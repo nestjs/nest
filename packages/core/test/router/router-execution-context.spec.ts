@@ -1,9 +1,8 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { RouteParamMetadata, HttpStatus, HttpServer } from '../../../common';
+import { RouteParamMetadata, HttpStatus } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
-import { AbstractHttpAdapter } from '../../adapters';
 import { ApplicationConfig } from '../../application-config';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
@@ -14,11 +13,11 @@ import { PipesConsumer } from '../../pipes/pipes-consumer';
 import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { RouteParamsFactory } from '../../router/route-params-factory';
 import { RouterExecutionContext } from '../../router/router-execution-context';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 import { FORBIDDEN_MESSAGE } from '../../guards/constants';
 import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
 import { RouterInterceptorsConsumer } from '../../interceptors/router-interceptors-consumer';
 import { RouterRenderInterceptorsConsumer } from '../../interceptors/router-render-interceptors-consumer';
+import { RouterResponseController } from '../../router/router-response-controller';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;
@@ -29,8 +28,15 @@ describe('RouterExecutionContext', () => {
   let consumer: PipesConsumer;
   let guardsConsumer: GuardsConsumer;
   let interceptorsConsumer: RouterInterceptorsConsumer;
-  let adapter: AbstractHttpAdapter;
 
+  let responseControllerSetStatusSpy: sinon.SinonSpy;
+  let responseControllerSetHeadersSpy: sinon.SinonSpy;
+  let responseControllerApplySpy: sinon.SinonSpy;
+  let responseControllerTransformToResultSpy: sinon.SinonSpy;
+  let awaitedTransformedResponse: any;
+  const awaitedTransformedRender = 'transformedRender';
+
+  let routerResponseController: RouterResponseController;
   beforeEach(() => {
     callback = {
       bind: () => ({}),
@@ -42,8 +48,11 @@ describe('RouterExecutionContext', () => {
     factory = new RouteParamsFactory();
     consumer = new PipesConsumer();
     guardsConsumer = new GuardsConsumer();
-    interceptorsConsumer = new RouterInterceptorsConsumer();
-    adapter = new NoopHttpAdapter({});
+    interceptorsConsumer = new RouterInterceptorsConsumer(
+      new InterceptorsConsumer(),
+      new RouterRenderInterceptorsConsumer(),
+    );
+    routerResponseController = new RouterResponseController(undefined);
     contextCreator = new RouterExecutionContext(
       factory,
       new PipesContextCreator(new NestContainer(), new ApplicationConfig()),
@@ -52,8 +61,25 @@ describe('RouterExecutionContext', () => {
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
       interceptorsConsumer,
-      adapter,
+      routerResponseController,
     );
+    responseControllerSetStatusSpy = sinon.stub(
+      routerResponseController,
+      'setStatus',
+    );
+    responseControllerSetHeadersSpy = sinon.stub(
+      routerResponseController,
+      'setHeaders',
+    );
+    responseControllerApplySpy = sinon.stub(routerResponseController, 'apply');
+
+    awaitedTransformedResponse = 'transformedResponse';
+    responseControllerTransformToResultSpy = sinon
+      .stub(routerResponseController, 'transformToResult')
+      .onFirstCall()
+      .callsFake(() => Promise.resolve(awaitedTransformedResponse))
+      .onSecondCall()
+      .callsFake(() => Promise.resolve(awaitedTransformedRender));
   });
   describe('create', () => {
     describe('when callback metadata is not undefined', () => {
@@ -127,6 +153,115 @@ describe('RouterExecutionContext', () => {
               },
             };
           });
+          interface GetMetadataStubbedTestDetails {
+            responseHeaders: any;
+            matchSameResponse: any;
+            httpStatusCode: any;
+          }
+          let responseFn: sinon.SinonSpy;
+          async function getMetadataStubbedTest(
+            interceptHandlerResponse = {
+              result: 'The result',
+              skipRender: true,
+            },
+          ): Promise<GetMetadataStubbedTestDetails> {
+            const res = {};
+            const matchSameResponse = sinon.match.same(res);
+            const responseHeaders = [
+              { name: 'header1', value: 'header1Value' },
+            ];
+
+            contextCreator = new RouterExecutionContext(
+              factory,
+              {
+                create() {
+                  return null;
+                },
+              } as any,
+              undefined,
+              {
+                create() {
+                  return null;
+                },
+              } as any,
+              undefined,
+              {
+                create() {
+                  return null;
+                },
+              } as any,
+              {
+                interceptHandlerResponse() {
+                  return interceptHandlerResponse;
+                },
+              } as any,
+              routerResponseController,
+            );
+            responseFn = sinon.stub();
+            const httpStatusCode = 999;
+            sinon.stub(contextCreator, 'getMetadata').returns({
+              httpStatusCode,
+              fnHandleResponse: responseFn,
+              getParamsMetadata() {
+                return [];
+              },
+              hasCustomHeaders: true,
+              responseHeaders,
+            } as any);
+            sinon
+              .stub(contextCreator, 'createPipesFn')
+              .returns((() => {}) as any);
+            sinon.stub(contextCreator, 'createGuardsFn').returns(undefined);
+            const proxyFunction = contextCreator.create(
+              null,
+              null,
+              '',
+              '',
+              null,
+            );
+
+            await proxyFunction(null, res, null);
+
+            return {
+              httpStatusCode,
+              responseHeaders,
+              matchSameResponse,
+            };
+          }
+          describe('sets response properties based upon getMetadata', () => {
+            let testDetails: GetMetadataStubbedTestDetails;
+            beforeEach(async () => {
+              testDetails = await getMetadataStubbedTest();
+            });
+            it('should responseController.setStatus', () => {
+              expect(
+                responseControllerSetStatusSpy.calledWithExactly(
+                  testDetails.matchSameResponse,
+                  testDetails.httpStatusCode,
+                ),
+              ).to.be.true;
+            });
+
+            it('should responseController.setHeaders if has custom headers', () => {
+              expect(
+                responseControllerSetHeadersSpy.calledWithExactly(
+                  testDetails.matchSameResponse,
+                  testDetails.responseHeaders,
+                ),
+              ).to.be.true;
+            });
+          });
+          it('should handle the response from interceptorsConsumer.interceptHandlerResponse', async () => {
+            const testDetails = await getMetadataStubbedTest();
+            expect(
+              responseFn.calledOnceWithExactly(
+                'The result',
+                testDetails.matchSameResponse,
+                true,
+              ),
+            ).to.be.true;
+          });
+
           it('should apply expected context and arguments to callback', done => {
             tryActivateStub.callsFake(async () => true);
             proxyContext(request, response, next).then(() => {
@@ -314,92 +449,68 @@ describe('RouterExecutionContext', () => {
   });
   describe('createHandleResponseFn', () => {
     describe('with respect to rendering', () => {
-      const renderInterceptedView = 'render intercepted view';
       let isResponseHandled: boolean;
-      let result: any;
+
+      const template = 'template';
+      const awaitedRenderedViewToString = '<div>Rendered to string</div>';
+      const awaitedRenderInterceptedView = 'render intercepted view';
+
+      const result = 'result';
       const response = {};
       const sameResponseMatch = sinon.match.same(response);
+
       let skipRender: boolean;
-      const template = 'template';
-      let renderInterceptSpy: sinon.SinonSpy;
-      let spiedAdapter: {
-        renderToStringSpy?: sinon.SinonSpy;
-        replySpy: sinon.SinonSpy;
-        setHeaderSpy: sinon.SinonSpy;
-        renderSpy: sinon.SinonSpy;
-      };
+
+      let interceptorsConsumerRenderInterceptSpy: sinon.SinonSpy;
       let interceptorsConsumerCanRenderIntercept: boolean;
-      let templateTestError: Error | undefined;
-      function setAdapter(renderedToString?: string) {
-        type RenderToString = {
-          [P in 'renderToString']-?: HttpServer['renderToString'];
-        };
-        class RenderToStringAdapter extends NoopHttpAdapter
-          implements RenderToString {
-          renderToString(
-            view: string,
-            options: any,
-            _response: any,
-          ): Promise<string> {
-            return Promise.resolve(renderedToString);
-          }
-        }
 
-        let renderToStringSpy: sinon.SinonSpy;
-        if (renderedToString) {
-          const renderToStringAdapter = new RenderToStringAdapter({});
-          renderToStringSpy = sinon
-            .stub(renderToStringAdapter, 'renderToString')
-            .returns(Promise.resolve(renderedToString));
-          adapter = renderToStringAdapter;
-        } else {
-          adapter = new NoopHttpAdapter({});
-        }
+      let responseControllerCanRenderToString: boolean;
+      let responseControllerSetContentTypeHtmlSpy: sinon.SinonSpy;
+      let responseControllerRenderSpy: sinon.SinonSpy;
+      let responseControllerRenderToStringSpy: sinon.SinonSpy;
 
-        const replySpy = sinon.spy(adapter as AbstractHttpAdapter, 'reply');
-        const renderSpy = sinon.spy(adapter as AbstractHttpAdapter, 'render');
-        const setHeaderSpy = sinon.spy(adapter, 'setHeader');
-        spiedAdapter = {
-          renderToStringSpy,
-          replySpy,
-          setHeaderSpy,
-          renderSpy,
-        };
-      }
       beforeEach(() => {
         // default - render interception path
         interceptorsConsumerCanRenderIntercept = true;
-        setAdapter('_');
+        responseControllerCanRenderToString = true;
+      });
+      afterEach(() => {
+        expect(responseControllerTransformToResultSpy.firstCall.args[0]).to.eql(
+          'result',
+        );
       });
       async function executeTemplateTest() {
-        contextCreator = new RouterExecutionContext(
-          factory,
-          new PipesContextCreator(new NestContainer(), new ApplicationConfig()),
-          consumer,
-          new GuardsContextCreator(new NestContainer()),
-          guardsConsumer,
-          new InterceptorsContextCreator(new NestContainer()),
-          interceptorsConsumer,
-          adapter,
-        );
-
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
+
+        sinon
+          .stub(routerResponseController, 'canRenderToString')
+          .returns(responseControllerCanRenderToString);
+        responseControllerSetContentTypeHtmlSpy = sinon.stub(
+          routerResponseController,
+          'setContentTypeHtml',
+        );
+        responseControllerRenderSpy = sinon.stub(
+          routerResponseController,
+          'render',
+        );
+        responseControllerRenderToStringSpy = sinon
+          .stub(routerResponseController, 'renderToString')
+          .returns(Promise.resolve(awaitedRenderedViewToString));
+
         sinon
           .stub(interceptorsConsumer, 'canRenderIntercept')
           .returns(interceptorsConsumerCanRenderIntercept);
-        renderInterceptSpy = sinon
+        interceptorsConsumerRenderInterceptSpy = sinon
           .stub(interceptorsConsumer, 'renderIntercept')
-          .returns(Promise.resolve(renderInterceptedView));
+          .returns(Promise.resolve(awaitedRenderInterceptedView));
+
         const handler = contextCreator.createHandleResponseFn(
           null,
           isResponseHandled,
           undefined,
         );
-        try {
-          await handler(result, response, skipRender);
-        } catch (e) {
-          templateTestError = e;
-        }
+
+        await handler(result, response, skipRender);
       }
       enum NoRenderInterceptionReason {
         NoRenderInterceptors,
@@ -407,12 +518,28 @@ describe('RouterExecutionContext', () => {
       }
       function preventRenderInterception(reason: NoRenderInterceptionReason) {
         if (reason === NoRenderInterceptionReason.AdapterNoRenderToString) {
-          setAdapter();
+          responseControllerCanRenderToString = false;
         } else {
           interceptorsConsumerCanRenderIntercept = false;
         }
       }
-
+      function expectRenderIntercepted(expectedView: string) {
+        expect(
+          interceptorsConsumerRenderInterceptSpy.calledOnceWithExactly(
+            expectedView,
+          ),
+        ).to.be.true;
+        expect(
+          responseControllerTransformToResultSpy.secondCall.args[0],
+        ).to.be.eql(awaitedRenderInterceptedView);
+        expect(
+          responseControllerApplySpy.calledOnceWithExactly(
+            awaitedTransformedRender,
+            sameResponseMatch,
+            undefined,
+          ),
+        ).to.be.true;
+      }
       // isResponseHandled does not affect render processing
       [true, false].forEach(responseHandled => {
         describe(`and "renderTemplate" is defined ${
@@ -435,15 +562,14 @@ describe('RouterExecutionContext', () => {
                     : 'adapter no renderToString'
                 }`, () => {
                   it('should call "res.render()" with expected args', async () => {
-                    result = 'test';
                     preventRenderInterception(reason);
 
                     await executeTemplateTest();
                     expect(
-                      spiedAdapter.renderSpy.calledOnceWithExactly(
+                      responseControllerRenderSpy.calledOnceWithExactly(
+                        awaitedTransformedResponse,
                         sameResponseMatch,
                         template,
-                        'test',
                       ),
                     ).to.be.true;
                   });
@@ -452,45 +578,19 @@ describe('RouterExecutionContext', () => {
             });
             describe('and render intercepting', () => {
               beforeEach(async () => {
-                result = 'result';
-                setAdapter('rendered view');
                 await executeTemplateTest();
               });
-
-              describe('should call responController.renderToString with expected args', () => {
-                // this is until refactor to respone controller as ctor arg
-                it('should set content-type header to text/html', () => {
-                  expect(
-                    spiedAdapter.setHeaderSpy.calledOnceWithExactly(
-                      sameResponseMatch,
-                      'Content-Type',
-                      'text/html; charset=utf-8',
-                    ),
-                  ).to.be.true;
-                });
-                it('should renderToString on the adapter', () => {
-                  expect(
-                    spiedAdapter.renderToStringSpy!.calledOnceWithExactly(
-                      template,
-                      result,
-                      sameResponseMatch,
-                    ),
-                  ).to.be.true;
-                });
-              });
-              it('should renderIntercept the rendered view', () => {
+              it('should call responseController.renderToString with expected args', () => {
                 expect(
-                  renderInterceptSpy.calledOnceWithExactly('rendered view'),
-                ).to.be.true;
-              });
-              it('should apply the render intercepted view', () => {
-                expect(
-                  spiedAdapter.replySpy.calledOnceWithExactly(
+                  responseControllerRenderToStringSpy!.calledOnceWithExactly(
+                    awaitedTransformedResponse,
                     sameResponseMatch,
-                    renderInterceptedView,
-                    undefined,
+                    template,
                   ),
                 ).to.be.true;
+              });
+              it('should apply the renderIntercepted view', () => {
+                expectRenderIntercepted(awaitedRenderedViewToString);
               });
             });
           });
@@ -500,9 +600,14 @@ describe('RouterExecutionContext', () => {
             });
             describe('with transformed result not a string', () => {
               it('should throw error', async () => {
-                skipRender = true;
-                result = {};
-                await executeTemplateTest();
+                awaitedTransformedResponse = {};
+
+                let templateTestError: Error;
+                try {
+                  await executeTemplateTest();
+                } catch (e) {
+                  templateTestError = e;
+                }
 
                 expect(templateTestError!.message).to.be.eql(
                   'NestInterceptor.intercept rendered - result is not a string',
@@ -510,35 +615,18 @@ describe('RouterExecutionContext', () => {
               });
             });
             describe('with transformed result as string', () => {
-              const interceptRenderedResult = 'intercept rendered';
-              beforeEach(() => {
-                result = interceptRenderedResult;
-              });
               it('should set content-type header to text/html', async () => {
                 await executeTemplateTest();
                 expect(
-                  spiedAdapter.setHeaderSpy.calledOnceWithExactly(
-                    sinon.match.same(response),
-                    'Content-Type',
-                    'text/html; charset=utf-8',
+                  responseControllerSetContentTypeHtmlSpy.calledOnceWithExactly(
+                    sameResponseMatch,
                   ),
                 ).to.be.true;
               });
               describe('and interceptors consumer can render intercept', () => {
                 it('should apply the transformed renderIntercept to the response', async () => {
                   await executeTemplateTest();
-                  expect(
-                    renderInterceptSpy.calledOnceWithExactly(
-                      interceptRenderedResult,
-                    ),
-                  ).to.be.true;
-                  expect(
-                    spiedAdapter.replySpy.calledOnceWithExactly(
-                      sameResponseMatch,
-                      renderInterceptedView,
-                      undefined,
-                    ),
-                  ).to.be.true;
+                  expectRenderIntercepted(awaitedTransformedResponse);
                 });
               });
               describe('and interceptors consumer cannot render intercept', () => {
@@ -547,9 +635,9 @@ describe('RouterExecutionContext', () => {
 
                   await executeTemplateTest();
                   expect(
-                    spiedAdapter.replySpy.calledOnceWithExactly(
+                    responseControllerApplySpy.calledOnceWithExactly(
+                      awaitedTransformedResponse,
                       sameResponseMatch,
-                      interceptRenderedResult,
                       undefined,
                     ),
                   ).to.be.true;
@@ -562,19 +650,13 @@ describe('RouterExecutionContext', () => {
     });
 
     describe('when "redirectResponse" is present', () => {
-      beforeEach(() => {
-        sinon
-          .stub(adapter, 'redirect')
-          .callsFake((response, statusCode: number, url: string) => {
-            return response.redirect(statusCode, url);
-          });
-      });
-      it('should call "res.redirect()" with expected args', async () => {
+      it('should call "responseController.redirect()" with expected args', async () => {
         const redirectResponse = {
           url: 'http://test.com',
           statusCode: 302,
         };
-        const response = { redirect: sinon.spy() };
+        const response = {};
+        const result = 'result';
 
         const handler = contextCreator.createHandleResponseFn(
           () => {},
@@ -582,24 +664,24 @@ describe('RouterExecutionContext', () => {
           redirectResponse,
           200,
         );
-        await handler(redirectResponse, response);
-
+        const redirectSpy = sinon.stub(routerResponseController, 'redirect');
+        await handler(result, response);
         expect(
-          response.redirect.calledWith(
-            redirectResponse.statusCode,
-            redirectResponse.url,
+          redirectSpy.calledOnceWithExactly(
+            'result',
+            sinon.match.same(response),
+            redirectResponse,
           ),
         ).to.be.true;
       });
     });
 
     describe('when "redirectResponse" is undefined', () => {
-      it('should not call "res.redirect()"', async () => {
+      it('should not call "responseController.redirect()"', async () => {
         const result = Promise.resolve('test');
-        const response = { redirect: sinon.spy() };
-
+        const response = {};
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
-
+        const redirectSpy = sinon.spy(routerResponseController, 'redirect');
         const handler = contextCreator.createHandleResponseFn(
           null,
           true,
@@ -608,11 +690,11 @@ describe('RouterExecutionContext', () => {
         );
         await handler(result, response);
 
-        expect(response.redirect.called).to.be.false;
+        expect(redirectSpy.called).to.be.false;
       });
     });
     describe('when replying with result', () => {
-      it('should call "adapter.reply()" with expected args', async () => {
+      it('should call "responseController.apply()" with expected args', async () => {
         const result = Promise.resolve('test');
         const response = {};
 
@@ -624,12 +706,14 @@ describe('RouterExecutionContext', () => {
           undefined,
           1234,
         );
-        const adapterReplySpy = sinon.spy(adapter, 'reply');
         await handler(result, response);
         expect(
-          adapterReplySpy.calledOnceWithExactly(
+          responseControllerTransformToResultSpy.calledOnceWithExactly(result),
+        ).to.be.true;
+        expect(
+          responseControllerApplySpy.calledOnceWithExactly(
+            awaitedTransformedResponse,
             sinon.match.same(response),
-            'test',
             1234,
           ),
         ).to.be.true;

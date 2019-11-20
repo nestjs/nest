@@ -1,6 +1,5 @@
 import {
   ForbiddenException,
-  HttpServer,
   ParamData,
   PipeTransform,
   RequestMethod,
@@ -56,7 +55,6 @@ export interface ParamProperties {
 export class RouterExecutionContext {
   private readonly handlerMetadataStorage = new HandlerMetadataStorage();
   private readonly contextUtils = new ContextUtils();
-  private readonly responseController: RouterResponseController;
 
   constructor(
     private readonly paramsFactory: IRouteParamsFactory,
@@ -66,11 +64,8 @@ export class RouterExecutionContext {
     private readonly guardsConsumer: GuardsConsumer,
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
     private readonly interceptorsConsumer: RouterInterceptorsConsumer,
-    readonly applicationRef: HttpServer,
-  ) {
-    this.responseController = new RouterResponseController(applicationRef);
-  }
-
+    private readonly responseController: RouterResponseController,
+  ) {}
   public create(
     instance: Controller,
     callback: (...args: any[]) => any,

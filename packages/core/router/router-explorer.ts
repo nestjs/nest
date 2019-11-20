@@ -33,6 +33,7 @@ import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
 import { RouterInterceptorsConsumer } from '../interceptors/router-interceptors-consumer';
+import { RouterResponseController } from './router-response-controller';
 
 export interface RoutePathProperties {
   path: string[];
@@ -63,7 +64,7 @@ export class RouterExplorer {
       new GuardsConsumer(),
       new InterceptorsContextCreator(container, config),
       new RouterInterceptorsConsumer(),
-      container.getHttpAdapterRef(),
+      new RouterResponseController(container.getHttpAdapterRef()),
     );
   }
 
