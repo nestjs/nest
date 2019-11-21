@@ -106,7 +106,7 @@
     "commitlint-circle": "1.0.0",
     "concurrently": "5.0.0",
     "conventional-changelog": "3.1.15",
-    "core-js": "3.4.1",
+    "core-js": "3.4.2",
     "coveralls": "3.0.8",
     "csv-write-stream": "2.0.0",
     "delete-empty": "3.0.0",
