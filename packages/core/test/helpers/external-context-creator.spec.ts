@@ -21,6 +21,7 @@ describe('ExternalContextCreator', () => {
   let bindSpy: sinon.SinonSpy;
   let applySpy: sinon.SinonSpy;
   let guardsConsumer: GuardsConsumer;
+  let guardsContextCreator: GuardsContextCreator;
   let pipesConsumer: PipesConsumer;
 
   beforeEach(() => {
@@ -32,9 +33,11 @@ describe('ExternalContextCreator', () => {
     applySpy = sinon.spy(callback, 'apply');
 
     guardsConsumer = new GuardsConsumer();
+    guardsContextCreator = new GuardsContextCreator(new NestContainer());
+    sinon.stub(guardsContextCreator, 'create').returns([{}] as any);
     pipesConsumer = new PipesConsumer();
     contextCreator = new ExternalContextCreator(
-      new GuardsContextCreator(new NestContainer()),
+      guardsContextCreator,
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
       new InterceptorsConsumer(),
@@ -73,11 +76,17 @@ describe('ExternalContextCreator', () => {
       });
       describe('when proxy function called', () => {
         describe('when can not activate', () => {
-          it('should throw exception when "tryActivate" returns false', () => {
+          it('should throw exception when "tryActivate" returns false', async () => {
+            let err: any;
             sinon
               .stub(guardsConsumer, 'tryActivate')
               .callsFake(async () => false);
-            proxyContext(1, 2, 3).catch(err => expect(err).to.not.be.undefined);
+            try {
+              await proxyContext(1, 2, 3);
+            } catch (e) {
+              err = e;
+            }
+            expect(err).to.be.undefined;
           });
         });
         describe('when can activate', () => {
