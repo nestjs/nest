@@ -35,7 +35,7 @@
     "@nestjs/testing": "6.10.1",
     "@types/amqplib": "0.5.13",
     "@types/express": "4.17.2",
-    "@types/node": "12.12.11",
+    "@types/node": "12.12.12",
     "@types/supertest": "2.0.8",
     "jest": "24.9.0",
     "prettier": "1.19.1",
