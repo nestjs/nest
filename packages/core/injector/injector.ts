@@ -358,10 +358,8 @@ export class Injector {
       wrapper,
       contextId,
       inquirer,
+      keyOrIndex,
     );
-    isString(keyOrIndex)
-      ? wrapper.addPropertiesMetadata(keyOrIndex, instanceWrapper)
-      : wrapper.addCtorMetadata(keyOrIndex, instanceWrapper);
 
     return this.resolveComponentHost(
       module,
@@ -419,6 +417,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
+    keyOrIndex?: string | number,
   ): Promise<InstanceWrapper<T>> {
     const { name } = dependencyContext;
     if (wrapper && wrapper.name === name) {
@@ -428,23 +427,28 @@ export class Injector {
         module,
       );
     }
-    const scanInExports = () =>
-      this.lookupComponentInExports(
-        dependencyContext,
-        module,
-        wrapper,
-        contextId,
-        inquirer,
-      );
-    return providers.has(name) ? providers.get(name) : scanInExports();
+    if (providers.has(name)) {
+      const instanceWrapper = providers.get(name);
+      this.addDependencyMetadata(keyOrIndex, wrapper, instanceWrapper);
+      return instanceWrapper;
+    }
+    return this.lookupComponentInParentModules(
+      dependencyContext,
+      module,
+      wrapper,
+      contextId,
+      inquirer,
+      keyOrIndex,
+    );
   }
 
-  public async lookupComponentInExports<T = any>(
+  public async lookupComponentInParentModules<T = any>(
     dependencyContext: InjectorDependencyContext,
     module: Module,
     wrapper: InstanceWrapper<T>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
+    keyOrIndex?: string | number,
   ) {
     const instanceWrapper = await this.lookupComponentInImports(
       module,
@@ -453,6 +457,7 @@ export class Injector {
       [],
       contextId,
       inquirer,
+      keyOrIndex,
     );
     if (isNil(instanceWrapper)) {
       throw new UnknownDependenciesException(
@@ -471,6 +476,7 @@ export class Injector {
     moduleRegistry: any[] = [],
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
+    keyOrIndex?: string | number,
     isTraversing?: boolean,
   ): Promise<any> {
     let instanceWrapperRef: InstanceWrapper = null;
@@ -499,14 +505,17 @@ export class Injector {
           moduleRegistry,
           contextId,
           inquirer,
+          keyOrIndex,
           true,
         );
         if (instanceRef) {
+          this.addDependencyMetadata(keyOrIndex, wrapper, instanceRef);
           return instanceRef;
         }
         continue;
       }
       instanceWrapperRef = providers.get(name);
+      this.addDependencyMetadata(keyOrIndex, wrapper, instanceWrapperRef);
 
       const inquirerId = this.getInquirerId(inquirer);
       const instanceHost = instanceWrapperRef.getInstanceByContextId(
@@ -751,5 +760,15 @@ export class Injector {
     parentInquirer: InstanceWrapper | undefined,
   ) {
     return param === INQUIRER && parentInquirer;
+  }
+
+  private addDependencyMetadata(
+    keyOrIndex: number | string,
+    hostWrapper: InstanceWrapper,
+    instanceWrapper: InstanceWrapper,
+  ) {
+    isString(keyOrIndex)
+      ? hostWrapper.addPropertiesMetadata(keyOrIndex, instanceWrapper)
+      : hostWrapper.addCtorMetadata(keyOrIndex, instanceWrapper);
   }
 }

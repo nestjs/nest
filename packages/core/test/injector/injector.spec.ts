@@ -266,12 +266,12 @@ describe('Injector', () => {
   describe('lookupComponent', () => {
     let lookupComponentInImports: sinon.SinonStub;
     const metatype = { name: 'test', metatype: { name: 'test' } };
-    const wrapper: any = {
+    const wrapper = new InstanceWrapper({
       name: 'Test',
-      metatype,
+      metatype: metatype as any,
       instance: null,
       isResolved: false,
-    };
+    });
     beforeEach(() => {
       lookupComponentInImports = sinon.stub();
       (injector as any).lookupComponentInImports = lookupComponentInImports;
@@ -303,10 +303,9 @@ describe('Injector', () => {
         collection as any,
         null,
         { name, index: 0, dependencies: [] },
-        {
-          ...wrapper,
+        Object.assign(wrapper, {
           name,
-        },
+        }),
       );
       expect(result).to.eventually.be.rejected;
     });
@@ -374,7 +373,7 @@ describe('Injector', () => {
       const result = await injector.lookupComponentInImports(
         module as any,
         null,
-        null,
+        new InstanceWrapper(),
       );
       expect(result).to.be.eq(null);
     });
@@ -443,7 +442,7 @@ describe('Injector', () => {
       await injector.lookupComponentInImports(
         module as any,
         metatype as any,
-        null,
+        new InstanceWrapper(),
       );
       expect(loadProvider.called).to.be.true;
     });

@@ -16,7 +16,7 @@ describe('ModuleTokenFactory', () => {
       const token = factory.create(Module as any, [Module], undefined);
       expect(token).to.be.deep.eq(
         hash({
-          module: Module,
+          module: Module.name,
           dynamic: '',
           scope,
         }),
@@ -27,7 +27,7 @@ describe('ModuleTokenFactory', () => {
       const token = factory.create(type, [Module], undefined);
       expect(token).to.be.deep.eq(
         hash({
-          module: type,
+          module: Module.name,
           dynamic: '',
           scope: [Module.name],
         }),
@@ -40,13 +40,19 @@ describe('ModuleTokenFactory', () => {
       } as any);
       expect(token).to.be.deep.eq(
         hash({
-          module: type,
+          module: Module.name,
           dynamic: safeStringify({
             providers: [{}],
           }),
           scope: [Module.name],
         }),
       );
+    });
+  });
+  describe('getModuleName', () => {
+    it('should map module metatype to name', () => {
+      const metatype = () => {};
+      expect(factory.getModuleName(metatype as any)).to.be.eql(metatype.name);
     });
   });
   describe('getDynamicMetadataToken', () => {
