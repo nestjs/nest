@@ -9,10 +9,10 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.9.0",
-    "@nestjs/core": "6.9.0",
+    "@nestjs/common": "6.10.1",
+    "@nestjs/core": "6.10.1",
     "@nestjs/graphql": "6.5.3",
-    "apollo-server-express": "2.9.9",
+    "apollo-server-express": "2.9.12",
     "class-transformer": "0.2.3",
     "class-validator": "0.11.0",
     "graphql": "14.5.8",
