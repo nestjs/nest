@@ -13,11 +13,11 @@ export class ModuleTokenFactory {
     const moduleScope = this.reflectScope(metatype);
     const isSingleScoped = moduleScope === true;
     const opaqueToken = {
-      module: metatype,
+      module: this.getModuleName(metatype),
       dynamic: this.getDynamicMetadataToken(dynamicModuleMetadata),
       scope: isSingleScoped ? this.getScopeStack(scope) : moduleScope,
     };
-    return hash(opaqueToken);
+    return hash(opaqueToken, { ignoreUnknown: true });
   }
 
   public getDynamicMetadataToken(
@@ -43,6 +43,10 @@ export class ModuleTokenFactory {
         ? scope.slice(scope.length - firstGlobalIndex - 1)
         : scope;
     return stack.map(module => module.name);
+  }
+
+  public getModuleName(metatype: Type<any>): string {
+    return metatype.name;
   }
 
   private reflectScope(metatype: Type<any>) {
