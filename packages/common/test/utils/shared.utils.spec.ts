@@ -88,10 +88,20 @@ describe('Shared utils', () => {
     it('should returns same path', () => {
       expect(validatePath('/nope')).to.be.eql('/nope');
     });
-    it('should returns empty path', () => {
-      expect(validatePath('')).to.be.eql('');
-      expect(validatePath(null)).to.be.eql('');
-      expect(validatePath(undefined)).to.be.eql('');
+    it('should remove all trailing slashes at the end of the path', () => {
+      expect(validatePath('path/')).to.be.eql('/path');
+      expect(validatePath('path///')).to.be.eql('/path');
+      expect(validatePath('/path/path///')).to.be.eql('/path/path');
+    });
+    it('should replace all slashes with only one slash', () => {
+      expect(validatePath('////path/')).to.be.eql('/path');
+      expect(validatePath('///')).to.be.eql('/');
+      expect(validatePath('/path////path///')).to.be.eql('/path/path');
+    });
+    it('should returns / for empty path', () => {
+      expect(validatePath('')).to.be.eql('/');
+      expect(validatePath(null)).to.be.eql('/');
+      expect(validatePath(undefined)).to.be.eql('/');
     });
   });
   describe('isNil', () => {

@@ -21,7 +21,11 @@ export const isPlainObject = (fn: any): fn is object => {
   );
 };
 export const validatePath = (path?: string): string =>
-  path ? (path.charAt(0) !== '/' ? '/' + path : path) : '';
+  path
+    ? path.startsWith('/')
+      ? ('/' + path.replace(/\/+$/, '')).replace(/\/+/g, '/')
+      : '/' + path.replace(/\/+$/, '')
+    : '/';
 export const isFunction = (fn: any): boolean => typeof fn === 'function';
 export const isString = (fn: any): fn is string => typeof fn === 'string';
 export const isConstructor = (fn: any): boolean => fn === 'constructor';
