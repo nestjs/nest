@@ -23,7 +23,7 @@
     "@nestjs/common": "6.10.2",
     "@nestjs/core": "6.10.2",
     "@nestjs/jwt": "6.1.1",
-    "@nestjs/passport": "6.1.0",
+    "@nestjs/passport": "6.1.1",
     "@nestjs/platform-express": "6.10.2",
     "passport": "0.4.0",
     "passport-jwt": "4.0.0",
