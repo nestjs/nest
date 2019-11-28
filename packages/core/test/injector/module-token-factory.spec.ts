@@ -23,11 +23,8 @@ describe('ModuleTokenFactory', () => {
       );
     });
     it('should returns expected token', () => {
-      const token = factory.create(
-        SingleScope()(Module) as any,
-        [Module],
-        undefined,
-      );
+      const type = SingleScope()(Module) as any;
+      const token = factory.create(type, [Module], undefined);
       expect(token).to.be.deep.eq(
         hash({
           module: Module.name,
@@ -37,7 +34,8 @@ describe('ModuleTokenFactory', () => {
       );
     });
     it('should include dynamic metadata', () => {
-      const token = factory.create(SingleScope()(Module) as any, [Module], {
+      const type = SingleScope()(Module) as any;
+      const token = factory.create(type as any, [Module], {
         providers: [{}],
       } as any);
       expect(token).to.be.deep.eq(
