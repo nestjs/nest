@@ -1,0 +1,11 @@
+{
+  "requires": true,
+  "lockfileVersion": 1,
+  "dependencies": {
+    "undefined": {
+      "version": "0.1.0",
+      "resolved": "https://registry.npmjs.org/undefined/-/undefined-0.1.0.tgz",
+      "integrity": "sha1-m3BqSzKtMMIMpP5l3cu72sMr3tA="
+    }
+  }
+}
