@@ -6341,9 +6341,9 @@ ts-morph@^4.0.0:
     multimatch "^4.0.0"
     typescript "^3.0.1"
 
-ts-node@8.5.2:
-  version "8.5.2"
-  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.5.2.tgz#434f6c893bafe501a30b32ac94ee36809ba2adce"
+ts-node@8.5.4:
+  version "8.5.4"
+  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.5.4.tgz#a152add11fa19c221d0b48962c210cf467262ab2"
   dependencies:
     arg "^4.1.0"
     diff "^4.0.1"
