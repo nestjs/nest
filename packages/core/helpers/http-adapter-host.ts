@@ -22,8 +22,10 @@ export class HttpAdapterHost<
    *
    * @param httpAdapter reference to the `HttpAdapter` to be set
    */
-  set httpAdapter(httpAdapter: T) {
-    this._httpAdapter = httpAdapter;
+  set httpAdapter(httpAdapter: T | undefined) {
+    if (httpAdapter) {
+      this._httpAdapter = httpAdapter;
+    }
   }
 
   /**
