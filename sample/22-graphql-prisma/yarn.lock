@@ -12,6 +12,16 @@
     rxjs "6.4.0"
     source-map "0.7.3"
 
+"@angular-devkit/core@8.3.20":
+  version "8.3.20"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-8.3.20.tgz#8a9e17e706905efab9875c16690e1d9328c9d5dd"
+  dependencies:
+    ajv "6.10.2"
+    fast-json-stable-stringify "2.0.0"
+    magic-string "0.25.3"
+    rxjs "6.4.0"
+    source-map "0.7.3"
+
 "@angular-devkit/core@8.3.6":
   version "8.3.6"
   resolved "https://registry.yarnpkg.com/@angular-devkit/core/-/core-8.3.6.tgz#6ad4787e3cb8b03234a194dd53e12cf054a4169c"
@@ -39,6 +49,13 @@
   resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.19.tgz#a3b78a90486028b86b139eff8b5e9c5f0fab6497"
   dependencies:
     "@angular-devkit/core" "8.3.19"
+    rxjs "6.4.0"
+
+"@angular-devkit/schematics@8.3.20":
+  version "8.3.20"
+  resolved "https://registry.yarnpkg.com/@angular-devkit/schematics/-/schematics-8.3.20.tgz#80e7c31ebfd8f7f8500bfa1cae5c39980b962d6a"
+  dependencies:
+    "@angular-devkit/core" "8.3.20"
     rxjs "6.4.0"
 
 "@angular-devkit/schematics@8.3.6":
@@ -358,20 +375,20 @@
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-"@nestjs/cli@6.12.2":
-  version "6.12.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.12.2.tgz#59a5b00a0ee8045cf8a7dae751ffd0e236b3608e"
+"@nestjs/cli@6.12.4":
+  version "6.12.4"
+  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.12.4.tgz#1d4c8c1046aa9229fa59f9cae122cd650b40533b"
   dependencies:
     "@angular-devkit/core" "8.3.19"
     "@angular-devkit/schematics" "8.3.19"
     "@angular-devkit/schematics-cli" "0.803.19"
     "@nestjs/schematics" "^6.6.3"
-    "@types/webpack" "4.39.8"
+    "@types/webpack" "4.41.0"
     chalk "2.4.2"
     cli-table3 "0.5.1"
     commander "4.0.1"
     copyfiles "2.1.1"
-    fork-ts-checker-webpack-plugin "3.1.0"
+    fork-ts-checker-webpack-plugin "3.1.1"
     inquirer "7.0.0"
     node-emoji "1.10.0"
     ora "4.0.3"
@@ -383,17 +400,17 @@
     webpack "4.41.2"
     webpack-node-externals "1.7.2"
 
-"@nestjs/common@6.10.1":
-  version "6.10.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.10.1.tgz#5df052415984e20df459f1dc3743638f5928a0d0"
+"@nestjs/common@6.10.2":
+  version "6.10.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.10.2.tgz#629329bb36dde8e9d9820de36df0b16257a1f7e0"
   dependencies:
     axios "0.19.0"
     cli-color "2.0.0"
     uuid "3.3.3"
 
-"@nestjs/core@6.10.1":
-  version "6.10.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.10.1.tgz#ffa708a2f20494d0234ad0d9c80385421bd8cfd0"
+"@nestjs/core@6.10.2":
+  version "6.10.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.10.2.tgz#51c36f66abc059a39383a97221ed5b4424b15794"
   dependencies:
     "@nuxtjs/opencollective" "0.2.2"
     fast-safe-stringify "2.0.7"
@@ -417,21 +434,21 @@
   optionalDependencies:
     type-graphql "^0.17.3"
 
-"@nestjs/platform-express@6.10.1":
-  version "6.10.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.10.1.tgz#12cfa39e0651048ac7f526c2f1b0f73171af8acb"
+"@nestjs/platform-express@6.10.2":
+  version "6.10.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.10.2.tgz#6c5599654595da73074f8c9f90ff1bb4c5bbd7c0"
   dependencies:
     body-parser "1.19.0"
     cors "2.8.5"
     express "4.17.1"
     multer "1.4.2"
 
-"@nestjs/schematics@6.7.3":
-  version "6.7.3"
-  resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.7.3.tgz#8e00c3aa86061def5abc9e37ee6f0d061fd6c3b8"
+"@nestjs/schematics@6.7.4":
+  version "6.7.4"
+  resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.7.4.tgz#55c5812b1215249f32a63c835cdc0b4f4f402b15"
   dependencies:
-    "@angular-devkit/core" "8.3.19"
-    "@angular-devkit/schematics" "8.3.19"
+    "@angular-devkit/core" "8.3.20"
+    "@angular-devkit/schematics" "8.3.20"
     fs-extra "^8.1.0"
     ts-morph "^4.0.0"
     typescript "3.4.5"
@@ -446,9 +463,9 @@
     ts-morph "^4.0.0"
     typescript "3.4.5"
 
-"@nestjs/testing@6.10.1":
-  version "6.10.1"
-  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-6.10.1.tgz#b55675ab8e76b230320248b5f32e50961d6154c3"
+"@nestjs/testing@6.10.2":
+  version "6.10.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-6.10.2.tgz#e988cecc29bf389be4f5634aef0a25f97bfe4290"
   dependencies:
     optional "0.1.4"
 
@@ -790,9 +807,9 @@
     "@types/source-list-map" "*"
     source-map "^0.6.1"
 
-"@types/webpack@4.39.8":
-  version "4.39.8"
-  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.39.8.tgz#8083a4eb850ea02961ef6161465434c9b478851f"
+"@types/webpack@4.41.0":
+  version "4.41.0"
+  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.41.0.tgz#b813a044d8b0dec7dfcd7622fdbe327bde06eb9a"
   dependencies:
     "@types/anymatch" "*"
     "@types/node" "*"
@@ -1078,6 +1095,13 @@ anymatch@^2.0.0:
 anymatch@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/anymatch/-/anymatch-3.1.0.tgz#e609350e50a9313b472789b2f14ef35808ee14d6"
+  dependencies:
+    normalize-path "^3.0.0"
+    picomatch "^2.0.4"
+
+anymatch@~3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/anymatch/-/anymatch-3.1.1.tgz#c55ecf02185e2469259399310c173ce31233b142"
   dependencies:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
@@ -1552,7 +1576,7 @@ braces@^2.3.1, braces@^2.3.2:
     split-string "^3.0.2"
     to-regex "^3.0.1"
 
-braces@^3.0.1, braces@^3.0.2:
+braces@^3.0.1, braces@^3.0.2, braces@~3.0.2:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/braces/-/braces-3.0.2.tgz#3454e1a462ee8d599e236df336cd9ea4f8afe107"
   dependencies:
@@ -1797,7 +1821,7 @@ chokidar@3.1.1:
   optionalDependencies:
     fsevents "^2.0.6"
 
-chokidar@^2.0.2, chokidar@^2.0.4:
+chokidar@^2.0.2:
   version "2.1.8"
   resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-2.1.8.tgz#804b3a7b6a99358c3c5c61e71d8728f041cff917"
   dependencies:
@@ -1814,6 +1838,20 @@ chokidar@^2.0.2, chokidar@^2.0.4:
     upath "^1.1.1"
   optionalDependencies:
     fsevents "^1.2.7"
+
+chokidar@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-3.3.0.tgz#12c0714668c55800f659e262d4962a97faf554a6"
+  dependencies:
+    anymatch "~3.1.1"
+    braces "~3.0.2"
+    glob-parent "~5.1.0"
+    is-binary-path "~2.1.0"
+    is-glob "~4.0.1"
+    normalize-path "~3.0.0"
+    readdirp "~3.2.0"
+  optionalDependencies:
+    fsevents "~2.1.1"
 
 chownr@^1.0.1:
   version "1.1.1"
@@ -2831,13 +2869,13 @@ forever-agent@~0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/forever-agent/-/forever-agent-0.6.1.tgz#fbc71f0c41adeb37f96c577ad1ed42d8fdacca91"
 
-fork-ts-checker-webpack-plugin@3.1.0:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/fork-ts-checker-webpack-plugin/-/fork-ts-checker-webpack-plugin-3.1.0.tgz#fb411a4b2c3697e1cd7f83436d4feeacbcc70c7b"
+fork-ts-checker-webpack-plugin@3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/fork-ts-checker-webpack-plugin/-/fork-ts-checker-webpack-plugin-3.1.1.tgz#a1642c0d3e65f50c2cc1742e9c0a80f441f86b19"
   dependencies:
     babel-code-frame "^6.22.0"
     chalk "^2.4.1"
-    chokidar "^2.0.4"
+    chokidar "^3.3.0"
     micromatch "^3.1.10"
     minimatch "^3.0.4"
     semver "^5.6.0"
@@ -2927,6 +2965,10 @@ fsevents@^2.0.6:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.0.6.tgz#87b19df0bfb4a1a51d7ddb51b01b5f3bedb40c33"
 
+fsevents@~2.1.1:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.1.2.tgz#4c0a1fb34bc68e543b4b82a9ec392bfbda840805"
+
 function-bind@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/function-bind/-/function-bind-1.1.1.tgz#a56899d3ea3c9bab874bb9773b7c5ede92f4895d"
@@ -2981,7 +3023,7 @@ glob-parent@^5.0.0:
   dependencies:
     is-glob "^4.0.1"
 
-glob-parent@^5.1.0:
+glob-parent@^5.1.0, glob-parent@~5.1.0:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/glob-parent/-/glob-parent-5.1.0.tgz#5f4c1d1e748d30cd73ad2944b3577a81b081e8c2"
   dependencies:
@@ -3459,7 +3501,7 @@ is-binary-path@^1.0.0:
   dependencies:
     binary-extensions "^1.0.0"
 
-is-binary-path@^2.1.0:
+is-binary-path@^2.1.0, is-binary-path@~2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/is-binary-path/-/is-binary-path-2.1.0.tgz#ea1f7f3b80f064236e83470f86c09c254fb45b09"
   dependencies:
@@ -3551,7 +3593,7 @@ is-generator-fn@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/is-generator-fn/-/is-generator-fn-2.1.0.tgz#7d140adc389aaf3011a8f2a2a4cfa6faadffb118"
 
-is-glob@4.0.1, is-glob@^4.0.1:
+is-glob@4.0.1, is-glob@^4.0.1, is-glob@~4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/is-glob/-/is-glob-4.0.1.tgz#7567dbe9f2f5e2467bc77ab83c4a29482407a5dc"
   dependencies:
@@ -4791,7 +4833,7 @@ normalize-package-data@^2.3.2:
     semver "2 || 3 || 4 || 5"
     validate-npm-package-license "^3.0.1"
 
-normalize-path@3.0.0, normalize-path@^3.0.0:
+normalize-path@3.0.0, normalize-path@^3.0.0, normalize-path@~3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/normalize-path/-/normalize-path-3.0.0.tgz#0dcd69ff23a1c9b11fd0978316644a0388216a65"
 
@@ -5380,6 +5422,12 @@ readdirp@^2.2.1:
 readdirp@^3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/readdirp/-/readdirp-3.1.1.tgz#b158123ac343c8b0f31d65680269cc0fc1025db1"
+  dependencies:
+    picomatch "^2.0.4"
+
+readdirp@~3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/readdirp/-/readdirp-3.2.0.tgz#c30c33352b12c96dfb4b895421a49fd5a9593839"
   dependencies:
     picomatch "^2.0.4"
 
@@ -6293,9 +6341,9 @@ ts-morph@^4.0.0:
     multimatch "^4.0.0"
     typescript "^3.0.1"
 
-ts-node@8.5.2:
-  version "8.5.2"
-  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.5.2.tgz#434f6c893bafe501a30b32ac94ee36809ba2adce"
+ts-node@8.5.4:
+  version "8.5.4"
+  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.5.4.tgz#a152add11fa19c221d0b48962c210cf467262ab2"
   dependencies:
     arg "^4.1.0"
     diff "^4.0.1"

@@ -9,8 +9,8 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.10.1",
-    "@nestjs/core": "6.10.1",
+    "@nestjs/common": "6.10.2",
+    "@nestjs/core": "6.10.2",
     "@nestjs/graphql": "6.5.3",
     "apollo-server-express": "2.9.12",
     "graphql": "14.5.8",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "7.10.9",
-    "ts-node": "8.5.2",
+    "ts-node": "8.5.4",
     "tslint": "5.20.1"
   }
 }
