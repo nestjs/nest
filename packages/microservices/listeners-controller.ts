@@ -14,11 +14,13 @@ import { REQUEST } from '@nestjs/core/router/request/request-constants';
 import { IClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
+import { RequestContextHost } from './context/request-context-host';
 import { RpcContextCreator } from './context/rpc-context-creator';
 import {
   DEFAULT_CALLBACK_METADATA,
   DEFAULT_GRPC_CALLBACK_METADATA,
 } from './context/rpc-metadata-constants';
+import { BaseRpcContext } from './ctx-host/base-rpc.context';
 import {
   CustomTransportStrategy,
   PatternMetadata,
@@ -117,9 +119,12 @@ export class ListenersController {
     const { instance } = wrapper;
     return async (...args: unknown[]) => {
       try {
-        const data = args[0];
+        const [data, reqCtx] = args;
         const contextId = createContextId();
-        this.registerRequestProvider({ pattern, data }, contextId);
+        this.registerRequestProvider(
+          RequestContextHost.create(pattern, data, reqCtx as BaseRpcContext),
+          contextId,
+        );
 
         const contextInstance = await this.injector.loadPerContext(
           instance,

@@ -1,4 +1,14 @@
-export interface RequestContext<T = any> {
+import { BaseRpcContext } from '../ctx-host/base-rpc.context';
+
+export interface RequestContext<
+  TData = any,
+  TContext extends BaseRpcContext = any
+> {
   pattern: string | Record<string, any>;
-  data: T;
+  data: TData;
+  context?: TContext;
+
+  getData(): TData;
+  getPattern(): string | Record<string, any>;
+  getContext(): TContext;
 }
