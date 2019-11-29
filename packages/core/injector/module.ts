@@ -1,5 +1,3 @@
-import { Scope } from '@nestjs/common';
-import { SCOPE_OPTIONS_METADATA } from '@nestjs/common/constants';
 import {
   Abstract,
   ClassProvider,
@@ -26,6 +24,7 @@ import { InvalidClassException } from '../errors/exceptions/invalid-class.except
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { createContextId } from '../helpers';
+import { getClassScope } from '../helpers/get-class-scope';
 import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
@@ -184,7 +183,7 @@ export class Module {
         metatype: injectable,
         instance: null,
         isResolved: false,
-        scope: this.getClassScope(injectable),
+        scope: getClassScope(injectable),
         host: this,
       });
       this._injectables.set(injectable.name, instanceWrapper);
@@ -208,7 +207,7 @@ export class Module {
         metatype: provider as Type<Injectable>,
         instance: null,
         isResolved: false,
-        scope: this.getClassScope(provider),
+        scope: getClassScope(provider),
         host: this,
       }),
     );
@@ -286,7 +285,7 @@ export class Module {
 
     let { scope } = provider;
     if (isUndefined(scope)) {
-      scope = this.getClassScope(useClass);
+      scope = getClassScope(useClass);
     }
     collection.set(
       name as string,
@@ -413,7 +412,7 @@ export class Module {
         metatype: controller,
         instance: null,
         isResolved: false,
-        scope: this.getClassScope(controller),
+        scope: getClassScope(controller),
         host: this,
       }),
     );
@@ -505,10 +504,5 @@ export class Module {
         return this.instantiateClass<T>(type, self);
       }
     };
-  }
-
-  private getClassScope(provider: Type<unknown>): Scope {
-    const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, provider);
-    return metadata && metadata.scope;
   }
 }

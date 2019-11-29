@@ -36,6 +36,7 @@ import {
 import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
+import { getClassScope } from './helpers/get-class-scope';
 import { ModulesContainer } from './injector';
 import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
@@ -311,21 +312,27 @@ export class DependenciesScanner {
       return this.container.addProvider(provider as any, token);
     }
     const providerToken = `${type as string} (UUID: ${randomStringGenerator()})`;
+
+    let scope = (provider as ClassProvider | FactoryProvider).scope;
+    if (isNil(scope) && (provider as ClassProvider).useClass) {
+      scope = getClassScope((provider as ClassProvider).useClass);
+    }
     this.applicationProvidersApplyMap.push({
       type,
       moduleKey: token,
       providerKey: providerToken,
-      scope: (provider as ClassProvider | FactoryProvider).scope,
+      scope,
     });
 
     const newProvider = {
       ...provider,
       provide: providerToken,
+      scope,
     } as Provider;
 
     if (
       this.isRequestOrTransient(
-        (provider as FactoryProvider | ClassProvider).scope,
+        (newProvider as FactoryProvider | ClassProvider).scope,
       )
     ) {
       return this.container.addInjectable(newProvider, token);
