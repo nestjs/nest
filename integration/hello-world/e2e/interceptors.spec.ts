@@ -72,9 +72,9 @@ describe('Interceptors', () => {
   let app: INestApplication;
 
   it(`should transform response (sync)`, async () => {
-    app = (await createTestModule(
-      new OverrideInterceptor(),
-    )).createNestApplication();
+    app = (
+      await createTestModule(new OverrideInterceptor())
+    ).createNestApplication();
 
     await app.init();
     return request(app.getHttpServer())
@@ -83,9 +83,9 @@ describe('Interceptors', () => {
   });
 
   it(`should map response`, async () => {
-    app = (await createTestModule(
-      new TransformInterceptor(),
-    )).createNestApplication();
+    app = (
+      await createTestModule(new TransformInterceptor())
+    ).createNestApplication();
 
     await app.init();
     return request(app.getHttpServer())
@@ -94,9 +94,9 @@ describe('Interceptors', () => {
   });
 
   it(`should map response (async)`, async () => {
-    app = (await createTestModule(
-      new TransformInterceptor(),
-    )).createNestApplication();
+    app = (
+      await createTestModule(new TransformInterceptor())
+    ).createNestApplication();
 
     await app.init();
     return request(app.getHttpServer())
@@ -105,9 +105,9 @@ describe('Interceptors', () => {
   });
 
   it(`should map response (stream)`, async () => {
-    app = (await createTestModule(
-      new TransformInterceptor(),
-    )).createNestApplication();
+    app = (
+      await createTestModule(new TransformInterceptor())
+    ).createNestApplication();
 
     await app.init();
     return request(app.getHttpServer())
@@ -116,9 +116,9 @@ describe('Interceptors', () => {
   });
 
   it(`should modify response status`, async () => {
-    app = (await createTestModule(
-      new StatusInterceptor(400),
-    )).createNestApplication();
+    app = (
+      await createTestModule(new StatusInterceptor(400))
+    ).createNestApplication();
 
     await app.init();
     return request(app.getHttpServer())
@@ -131,9 +131,9 @@ describe('Interceptors', () => {
       Authorization: 'jwt',
     };
 
-    app = (await createTestModule(
-      new HeaderInterceptor(customHeaders),
-    )).createNestApplication();
+    app = (
+      await createTestModule(new HeaderInterceptor(customHeaders))
+    ).createNestApplication();
 
     await app.init();
     return request(app.getHttpServer())

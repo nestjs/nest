@@ -36,11 +36,11 @@ describe('Middleware (FastifyAdapter)', () => {
   let app: NestFastifyApplication;
 
   beforeEach(async () => {
-    app = (await Test.createTestingModule({
-      imports: [TestModule],
-    }).compile()).createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
+    app = (
+      await Test.createTestingModule({
+        imports: [TestModule],
+      }).compile()
+    ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
 
     await app.init();
   });
