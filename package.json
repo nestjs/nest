@@ -6,7 +6,10 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --retries 3 --require 'node_modules/reflect-metadata/Reflect.js'",
     "integration-test": "mocha \"integration/*/{,!(node_modules)/**/}/*.spec.ts\" --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js'",
-    "lint": "tslint -p tsconfig.json -c tslint.json \"packages/**/*.ts\" -e \"*.spec.ts\"",
+    "lint": "npm run lint:packages && npm run lint:integration && npm run lint:spec",
+    "lint:packages": "tslint -p tsconfig.json \"packages/**/*.ts\" --fix",
+    "lint:integration": "tslint -p tsconfig.json -c tslint.json \"integration/*/{,!(node_modules)/**/}/*.ts\" --fix",
+    "lint:spec": "tslint -p tsconfig.spec.json \"{packages,integration}/*/{,!(node_modules)/**/}/*.spec.ts\" --fix",
     "format": "prettier \"**/*.ts\" --ignore-path ./.prettierignore --write && git status",
     "clean": "gulp clean:bundle",
     "prebuild": "rm -rf node_modules/@nestjs",
@@ -184,7 +187,8 @@
   "lint-staged": {
     "packages/**/*.{ts,json}": [
       "npm run format",
-      "git add"
+      "git add",
+      "tslint --fix"
     ]
   },
   "husky": {

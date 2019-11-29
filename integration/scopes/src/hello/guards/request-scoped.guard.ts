@@ -12,7 +12,7 @@ export class Guard implements CanActivate {
   static COUNTER = 0;
   static REQUEST_SCOPED_DATA = [];
 
-  constructor(@Inject('REQUEST_ID') private requestId: number) {
+  constructor(@Inject('REQUEST_ID') private readonly requestId: number) {
     Guard.COUNTER++;
   }
 

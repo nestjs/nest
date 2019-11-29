@@ -11,7 +11,7 @@ export class PhotoService {
   ) {}
 
   async findAll(): Promise<Photo[]> {
-    return await this.photoRepository.find();
+    return this.photoRepository.find();
   }
 
   async create(): Promise<Photo> {
@@ -20,6 +20,6 @@ export class PhotoService {
     photoEntity.description = 'Is great!';
     photoEntity.views = 6000;
 
-    return await this.photoRepository.create(photoEntity);
+    return this.photoRepository.create(photoEntity);
   }
 }
