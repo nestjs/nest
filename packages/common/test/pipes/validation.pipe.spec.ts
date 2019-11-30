@@ -174,7 +174,7 @@ describe('ValidationPipe', () => {
         });
       });
     });
-    describe("when validation doesn't transform", () => {
+    describe('when validation does not transform', () => {
       describe('when validation strips', () => {
         it('should return a plain object without extra properties', async () => {
           target = new ValidationPipe({ transform: false, whitelist: true });

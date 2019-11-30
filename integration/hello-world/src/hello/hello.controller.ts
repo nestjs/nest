@@ -15,7 +15,7 @@ export class HelloController {
 
   @Get('async')
   async asyncGreeting(): Promise<string> {
-    return await this.helloService.greeting();
+    return this.helloService.greeting();
   }
 
   @Get('stream')

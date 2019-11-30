@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import safeStringify from 'fast-safe-stringify';
+import stringify from 'fast-safe-stringify';
 import * as hash from 'object-hash';
 import { SingleScope } from '../../../common';
 import { ModuleTokenFactory } from '../../injector/module-token-factory';
@@ -41,7 +41,7 @@ describe('ModuleTokenFactory', () => {
       expect(token).to.be.deep.eq(
         hash({
           module: Module.name,
-          dynamic: safeStringify({
+          dynamic: stringify({
             providers: [{}],
           }),
           scope: [Module.name],

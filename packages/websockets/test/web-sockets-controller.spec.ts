@@ -321,9 +321,9 @@ describe('WebSocketsController', () => {
         it('should returns Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (await instance.pickResult(
-              Promise.resolve(Promise.resolve(value)),
-            )).toPromise(),
+            await (
+              await instance.pickResult(Promise.resolve(Promise.resolve(value)))
+            ).toPromise(),
           ).to.be.eq(100);
         });
       });
@@ -332,9 +332,9 @@ describe('WebSocketsController', () => {
         it('should returns Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (await instance.pickResult(
-              Promise.resolve(of(value)),
-            )).toPromise(),
+            await (
+              await instance.pickResult(Promise.resolve(of(value)))
+            ).toPromise(),
           ).to.be.eq(100);
         });
       });
@@ -343,9 +343,9 @@ describe('WebSocketsController', () => {
         it('should returns Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (await instance.pickResult(
-              Promise.resolve(value),
-            )).toPromise(),
+            await (
+              await instance.pickResult(Promise.resolve(value))
+            ).toPromise(),
           ).to.be.eq(100);
         });
       });

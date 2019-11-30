@@ -31,9 +31,10 @@ const { SocketModule } = optionalRequire(
   '@nestjs/websockets/socket-module',
   () => require('@nestjs/websockets/socket-module'),
 );
-const { MicroservicesModule } = optionalRequire(
-  '@nestjs/microservices/microservices-module',
-  () => require('@nestjs/microservices/microservices-module'),
+const {
+  MicroservicesModule,
+} = optionalRequire('@nestjs/microservices/microservices-module', () =>
+  require('@nestjs/microservices/microservices-module'),
 );
 
 /**

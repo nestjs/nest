@@ -194,7 +194,7 @@ export class Injector {
     if (instanceHost.isResolved) {
       return done();
     }
-    const callback = async (instances: any[]) => {
+    const callback = async (instances: unknown[]) => {
       const properties = await this.resolveProperties(
         wrapper,
         module,
@@ -228,7 +228,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     module: Module,
     inject: InjectorDependency[],
-    callback: (args: any[]) => void,
+    callback: (args: unknown[]) => void,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,

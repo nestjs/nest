@@ -29,7 +29,7 @@ describe('Injector', () => {
     class MainTest {
       @Inject() property: DependencyOne;
 
-      constructor(public depOne: DependencyOne, public depTwo: DependencyTwo) {}
+      constructor(public one: DependencyOne, public two: DependencyTwo) {}
     }
 
     let moduleDeps: Module;
@@ -70,8 +70,8 @@ describe('Injector', () => {
         'MainTest',
       ) as InstanceWrapper<MainTest>;
 
-      expect(instance.depOne).instanceof(DependencyOne);
-      expect(instance.depTwo).instanceof(DependencyTwo);
+      expect(instance.one).instanceof(DependencyOne);
+      expect(instance.two).instanceof(DependencyTwo);
       expect(instance).instanceof(MainTest);
     });
 
@@ -379,7 +379,7 @@ describe('Injector', () => {
     });
 
     it('should return null when related modules do not have appropriate component', () => {
-      let module = {
+      let moduleFixture = {
         relatedModules: new Map([
           [
             'key',
@@ -395,10 +395,14 @@ describe('Injector', () => {
         ] as any),
       };
       expect(
-        injector.lookupComponentInImports(module as any, metatype as any, null),
+        injector.lookupComponentInImports(
+          moduleFixture as any,
+          metatype as any,
+          null,
+        ),
       ).to.be.eventually.eq(null);
 
-      module = {
+      moduleFixture = {
         relatedModules: new Map([
           [
             'key',
@@ -414,12 +418,16 @@ describe('Injector', () => {
         ] as any),
       };
       expect(
-        injector.lookupComponentInImports(module as any, metatype as any, null),
+        injector.lookupComponentInImports(
+          moduleFixture as any,
+          metatype as any,
+          null,
+        ),
       ).to.eventually.be.eq(null);
     });
 
     it('should call "loadProvider" when component is not resolved', async () => {
-      const module = {
+      const moduleFixture = {
         imports: new Map([
           [
             'key',
@@ -440,7 +448,7 @@ describe('Injector', () => {
         ] as any),
       };
       await injector.lookupComponentInImports(
-        module as any,
+        moduleFixture as any,
         metatype as any,
         new InstanceWrapper(),
       );
@@ -448,7 +456,7 @@ describe('Injector', () => {
     });
 
     it('should not call "loadProvider" when component is resolved', async () => {
-      const module = {
+      const moduleFixture = {
         relatedModules: new Map([
           [
             'key',
@@ -468,7 +476,7 @@ describe('Injector', () => {
         ] as any),
       };
       await injector.lookupComponentInImports(
-        module as any,
+        moduleFixture as any,
         metatype as any,
         null,
       );
