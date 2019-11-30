@@ -257,7 +257,7 @@ export class RouterExplorer {
       next: () => void,
     ) => {
       try {
-        const contextId = req[REQUEST_CONTEXT_ID] || createContextId();
+        const contextId = this.getContextId(req);
         this.registerRequestProvider(req, contextId);
 
         const contextInstance = await this.injector.loadPerContext(
@@ -301,5 +301,17 @@ export class RouterExplorer {
       instance: request,
       isResolved: true,
     });
+  }
+
+  private getContextId<T extends Record<any, any> = any>(
+    request: T,
+  ): ContextId {
+    if (request[REQUEST_CONTEXT_ID as any]) {
+      return request[REQUEST_CONTEXT_ID as any];
+    }
+    if (request.raw && request.raw[REQUEST_CONTEXT_ID]) {
+      return request.raw[REQUEST_CONTEXT_ID];
+    }
+    return createContextId();
   }
 }
