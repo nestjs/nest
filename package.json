@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "6.10.4",
+  "version": "6.10.5",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
@@ -137,7 +137,7 @@
     "supertest": "4.0.2",
     "ts-node": "8.5.4",
     "tslint": "5.20.1",
-    "typescript": "3.7.2",
+    "typescript": "3.6.4",
     "wrk": "1.2.0"
   },
   "collective": {
