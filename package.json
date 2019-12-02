@@ -188,7 +188,7 @@
     "packages/**/*.{ts,json}": [
       "npm run format",
       "git add",
-      "tslint --fix"
+      "tslint --fix -e \"**/*.json\""
     ]
   },
   "husky": {
