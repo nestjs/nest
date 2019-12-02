@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "6.10.4",
+  "version": "6.10.5",
   "description": "Modern, fast, powerful node.js web framework",
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
@@ -188,7 +188,7 @@
     "packages/**/*.{ts,json}": [
       "npm run format",
       "git add",
-      "tslint --fix"
+      "tslint --fix -e \"**/*.json\""
     ]
   },
   "husky": {
