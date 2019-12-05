@@ -1,13 +1,17 @@
 import { expect } from 'chai';
 import stringify from 'fast-safe-stringify';
 import * as hash from 'object-hash';
+import * as sinon from 'sinon';
 import { SingleScope } from '../../../common';
 import { ModuleTokenFactory } from '../../injector/module-token-factory';
 
 describe('ModuleTokenFactory', () => {
+  const moduleId = 'constId';
   let factory: ModuleTokenFactory;
+
   beforeEach(() => {
     factory = new ModuleTokenFactory();
+    sinon.stub(factory, 'getModuleId').returns(moduleId);
   });
   describe('create', () => {
     class Module {}
@@ -16,6 +20,7 @@ describe('ModuleTokenFactory', () => {
       const token = factory.create(Module as any, [Module], undefined);
       expect(token).to.be.deep.eq(
         hash({
+          id: moduleId,
           module: Module.name,
           dynamic: '',
           scope,
@@ -27,6 +32,7 @@ describe('ModuleTokenFactory', () => {
       const token = factory.create(type, [Module], undefined);
       expect(token).to.be.deep.eq(
         hash({
+          id: moduleId,
           module: Module.name,
           dynamic: '',
           scope: [Module.name],
@@ -40,6 +46,7 @@ describe('ModuleTokenFactory', () => {
       } as any);
       expect(token).to.be.deep.eq(
         hash({
+          id: moduleId,
           module: Module.name,
           dynamic: stringify({
             providers: [{}],
