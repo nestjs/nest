@@ -358,9 +358,9 @@
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-"@nestjs/cli@6.12.7":
-  version "6.12.7"
-  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.12.7.tgz#a429f4f0ac7c331665409bfb4ba1a20b671284e3"
+"@nestjs/cli@6.12.9":
+  version "6.12.9"
+  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.12.9.tgz#fcceebd12930e5640ccbcced50886d28444a72d8"
   dependencies:
     "@angular-devkit/core" "8.3.20"
     "@angular-devkit/schematics" "8.3.20"
@@ -383,17 +383,17 @@
     webpack "4.41.2"
     webpack-node-externals "1.7.2"
 
-"@nestjs/common@6.10.5":
-  version "6.10.5"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.10.5.tgz#7038606785016cf60543f2b673967980e5b19426"
+"@nestjs/common@6.10.6":
+  version "6.10.6"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.10.6.tgz#e95e6c72e3e439b1c90de7cbf07c5462c397be34"
   dependencies:
     axios "0.19.0"
     cli-color "2.0.0"
     uuid "3.3.3"
 
-"@nestjs/core@6.10.5":
-  version "6.10.5"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.10.5.tgz#2cd1b16bb193a2fd173a74271b31282d951dcf6d"
+"@nestjs/core@6.10.6":
+  version "6.10.6"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.10.6.tgz#ec8907168dac968b9c6be73a2c3b750362413eb1"
   dependencies:
     "@nuxtjs/opencollective" "0.2.2"
     fast-safe-stringify "2.0.7"
@@ -417,9 +417,9 @@
   optionalDependencies:
     type-graphql "^0.17.3"
 
-"@nestjs/platform-express@6.10.5":
-  version "6.10.5"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.10.5.tgz#5dadfdf6136d4fefb0519072efabf69e42d9f135"
+"@nestjs/platform-express@6.10.6":
+  version "6.10.6"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.10.6.tgz#7c0e1af5f18c988279ca1400dbe675284fe8d423"
   dependencies:
     body-parser "1.19.0"
     cors "2.8.5"
@@ -446,9 +446,9 @@
     ts-morph "^4.0.0"
     typescript "3.4.5"
 
-"@nestjs/testing@6.10.5":
-  version "6.10.5"
-  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-6.10.5.tgz#9e7b9563b3384c56e6ae245e8d1de10bfaadd378"
+"@nestjs/testing@6.10.6":
+  version "6.10.6"
+  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-6.10.6.tgz#1cb7b2edda2bbf8db1583ee9a4688aa2bf5d3b39"
   dependencies:
     optional "0.1.4"
 

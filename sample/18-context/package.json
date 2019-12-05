@@ -19,14 +19,14 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "6.10.5",
-    "@nestjs/core": "6.10.5",
+    "@nestjs/common": "6.10.6",
+    "@nestjs/core": "6.10.6",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.0",
     "rxjs": "6.5.3"
   },
   "devDependencies": {
-    "@nestjs/cli": "6.12.7",
+    "@nestjs/cli": "6.12.9",
     "@nestjs/schematics": "6.7.5",
     "@types/node": "12.12.14",
     "@types/supertest": "2.0.8",
