@@ -93,7 +93,6 @@ export class ClientKafka extends ClientProxy {
       return this.producer;
     }
     this.client = this.createClient();
-
     const consumerOptions = Object.assign(
       {
         partitionAssigners: [
@@ -152,10 +151,7 @@ export class ClientKafka extends ClientProxy {
           partition: payload.partition,
         }),
       );
-      if (
-        !rawMessage.headers ||
-        isUndefined(rawMessage.headers[KafkaHeaders.CORRELATION_ID])
-      ) {
+      if (isUndefined(rawMessage.headers[KafkaHeaders.CORRELATION_ID])) {
         return;
       }
       const { err, response, isDisposed, id } = this.deserializer.deserialize(
