@@ -110,7 +110,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       ? packet.pattern
       : JSON.stringify(packet.pattern);
 
-    const rmqContext = new RmqContext([message, channel]);
+    const rmqContext = new RmqContext([message, channel, pattern]);
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet, rmqContext);
     }

@@ -63,7 +63,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
       ? JSON.stringify(packet.pattern)
       : packet.pattern;
 
-    const tcpContext = new TcpContext([socket]);
+    const tcpContext = new TcpContext([socket, pattern]);
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet, tcpContext);
     }
