@@ -11,7 +11,7 @@ describe('MulterModule', () => {
       };
       const dynamicModule = MulterModule.register(options as any);
 
-      expect(dynamicModule.providers).to.have.length(1);
+      expect(dynamicModule.providers).to.have.length(2);
       expect(dynamicModule.imports).to.be.undefined;
       expect(dynamicModule.exports).to.include(MULTER_MODULE_OPTIONS);
       expect(dynamicModule.providers).to.deep.include({
@@ -30,7 +30,7 @@ describe('MulterModule', () => {
         };
         const dynamicModule = MulterModule.registerAsync(asyncOptions);
 
-        expect(dynamicModule.providers).to.have.length(1);
+        expect(dynamicModule.providers).to.have.length(2);
         expect(dynamicModule.imports).to.be.undefined;
         expect(dynamicModule.exports).to.include(MULTER_MODULE_OPTIONS);
         expect(dynamicModule.providers).to.deep.include({
@@ -48,7 +48,7 @@ describe('MulterModule', () => {
         };
         const dynamicModule = MulterModule.registerAsync(asyncOptions as any);
 
-        expect(dynamicModule.providers).to.have.length(1);
+        expect(dynamicModule.providers).to.have.length(2);
         expect(dynamicModule.imports).to.be.undefined;
         expect(dynamicModule.exports).to.include(MULTER_MODULE_OPTIONS);
       });
@@ -61,7 +61,7 @@ describe('MulterModule', () => {
         };
         const dynamicModule = MulterModule.registerAsync(asyncOptions as any);
 
-        expect(dynamicModule.providers).to.have.length(2);
+        expect(dynamicModule.providers).to.have.length(3);
         expect(dynamicModule.imports).to.be.undefined;
         expect(dynamicModule.exports).to.include(MULTER_MODULE_OPTIONS);
       });

@@ -10,6 +10,7 @@ describe('KafkaParser', () => {
           value: undefined,
         }),
       ).to.deep.eq({
+        headers: {},
         value: null,
       });
     });
@@ -20,6 +21,7 @@ describe('KafkaParser', () => {
           value: null,
         }),
       ).to.deep.eq({
+        headers: {},
         value: null,
       });
     });
@@ -30,6 +32,7 @@ describe('KafkaParser', () => {
           value: Buffer.from('string'),
         }),
       ).to.deep.eq({
+        headers: {},
         value: 'string',
       });
     });
@@ -40,6 +43,7 @@ describe('KafkaParser', () => {
           value: Buffer.from('12345'),
         }),
       ).to.deep.eq({
+        headers: {},
         value: '12345',
       });
     });
@@ -52,6 +56,7 @@ describe('KafkaParser', () => {
           value: Buffer.from(long),
         }),
       ).to.deep.eq({
+        headers: {},
         value: long,
       });
     });
@@ -62,6 +67,7 @@ describe('KafkaParser', () => {
           value: Buffer.from(JSON.stringify({ prop: 'value' })),
         }),
       ).to.deep.eq({
+        headers: {},
         value: {
           prop: 'value',
         },
@@ -75,6 +81,7 @@ describe('KafkaParser', () => {
           key: Buffer.from('1'),
         }),
       ).to.deep.eq({
+        headers: {},
         key: '1',
         value: {
           prop: 'value',
