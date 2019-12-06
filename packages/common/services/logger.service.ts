@@ -29,7 +29,7 @@ export class Logger implements LoggerService {
   private static instance?: typeof Logger | LoggerService = Logger;
 
   constructor(
-    @Optional() protected readonly context?: string,
+    @Optional() protected context?: string,
     @Optional() private readonly isTimestampEnabled = false,
   ) {}
 
@@ -56,6 +56,10 @@ export class Logger implements LoggerService {
 
   verbose(message: any, context?: string) {
     this.callFunction('verbose', message, context);
+  }
+
+  setContext(context) {
+    this.context = context;
   }
 
   static overrideLogger(logger: LoggerService | LogLevel[] | boolean) {
