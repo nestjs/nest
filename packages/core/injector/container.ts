@@ -65,10 +65,11 @@ export class NestContainer {
     }
     const module = new Module(type, scope, this);
     this.modules.set(token, module);
-
     this.addDynamicMetadata(token, dynamicMetadata, [].concat(scope, type));
-    this.isGlobalModule(type) && this.addGlobalModule(module);
 
+    if (this.isGlobalModule(type, dynamicMetadata)) {
+      this.addGlobalModule(module);
+    }
     return module;
   }
 
@@ -93,7 +94,13 @@ export class NestContainer {
     modules.forEach(module => this.addModule(module, scope));
   }
 
-  public isGlobalModule(metatype: Type<any>): boolean {
+  public isGlobalModule(
+    metatype: Type<any>,
+    dynamicMetadata?: Partial<DynamicModule>,
+  ): boolean {
+    if (dynamicMetadata && dynamicMetadata.isGlobal) {
+      return true;
+    }
     return !!Reflect.getMetadata(GLOBAL_MODULE_METADATA, metatype);
   }
 
