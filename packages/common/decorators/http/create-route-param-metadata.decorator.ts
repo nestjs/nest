@@ -27,12 +27,13 @@ const assignCustomMetadata = (
 });
 
 export type ParamDecoratorEnhancer = ParameterDecorator;
+
 type Unpacked<T> = T extends (infer U)[]
   ? U
-  : T extends (...args: any[]) => infer U
-  ? U
-  : T extends Promise<infer U>
-  ? U
+  : T extends (...args: any[]) => infer A
+  ? A
+  : T extends Promise<infer B>
+  ? B
   : T;
 /**
  * Defines HTTP route param decorator
@@ -61,7 +62,7 @@ export function createParamDecorator<T>(
         isFunction(pipe.transform));
 
     const hasParamData = isNil(data) || !isPipe(data);
-    const paramData = hasParamData ? data : undefined;
+    const paramData = hasParamData ? (data as any) : undefined;
     const paramPipes = hasParamData ? pipes : [data, ...pipes];
 
     Reflect.defineMetadata(
