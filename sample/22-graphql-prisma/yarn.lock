@@ -1109,9 +1109,9 @@ apollo-engine-reporting-protobuf@^0.4.4:
   dependencies:
     "@apollo/protobufjs" "^1.0.3"
 
-apollo-engine-reporting@^1.4.10:
-  version "1.4.10"
-  resolved "https://registry.yarnpkg.com/apollo-engine-reporting/-/apollo-engine-reporting-1.4.10.tgz#cca245133906ed4ece125e48cb95dd959f3af2f6"
+apollo-engine-reporting@^1.4.11:
+  version "1.4.11"
+  resolved "https://registry.yarnpkg.com/apollo-engine-reporting/-/apollo-engine-reporting-1.4.11.tgz#ea4501925c201e62729a11ce36284a89f1eaa4f5"
   dependencies:
     apollo-engine-reporting-protobuf "^0.4.4"
     apollo-graphql "^0.3.4"
@@ -1181,9 +1181,9 @@ apollo-server-caching@^0.5.0:
   dependencies:
     lru-cache "^5.0.0"
 
-apollo-server-core@^2.9.12:
-  version "2.9.12"
-  resolved "https://registry.yarnpkg.com/apollo-server-core/-/apollo-server-core-2.9.12.tgz#c8ed48540762913242eef5fce0da8b59b131a1e8"
+apollo-server-core@^2.9.13:
+  version "2.9.13"
+  resolved "https://registry.yarnpkg.com/apollo-server-core/-/apollo-server-core-2.9.13.tgz#29fee69be56d30605b0a06cd755fd39e0409915f"
   dependencies:
     "@apollographql/apollo-tools" "^0.4.0"
     "@apollographql/graphql-playground-html" "1.6.24"
@@ -1191,7 +1191,7 @@ apollo-server-core@^2.9.12:
     "@types/ws" "^6.0.0"
     apollo-cache-control "^0.8.8"
     apollo-datasource "^0.6.3"
-    apollo-engine-reporting "^1.4.10"
+    apollo-engine-reporting "^1.4.11"
     apollo-server-caching "^0.5.0"
     apollo-server-env "^2.4.3"
     apollo-server-errors "^2.3.4"
@@ -1218,9 +1218,9 @@ apollo-server-errors@^2.3.4:
   version "2.3.4"
   resolved "https://registry.yarnpkg.com/apollo-server-errors/-/apollo-server-errors-2.3.4.tgz#b70ef01322f616cbcd876f3e0168a1a86b82db34"
 
-apollo-server-express@2.9.12:
-  version "2.9.12"
-  resolved "https://registry.yarnpkg.com/apollo-server-express/-/apollo-server-express-2.9.12.tgz#e779ea2c107fcc63b0c9b888a4cbf0f65af6d505"
+apollo-server-express@2.9.13:
+  version "2.9.13"
+  resolved "https://registry.yarnpkg.com/apollo-server-express/-/apollo-server-express-2.9.13.tgz#abb00bcf85d86a6e0e9105ce3b7fae9a7748156b"
   dependencies:
     "@apollographql/graphql-playground-html" "1.6.24"
     "@types/accepts" "^1.3.5"
@@ -1228,7 +1228,7 @@ apollo-server-express@2.9.12:
     "@types/cors" "^2.8.4"
     "@types/express" "4.17.1"
     accepts "^1.3.5"
-    apollo-server-core "^2.9.12"
+    apollo-server-core "^2.9.13"
     apollo-server-types "^0.2.8"
     body-parser "^1.18.3"
     cors "^2.8.4"
