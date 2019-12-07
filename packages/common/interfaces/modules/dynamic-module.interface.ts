@@ -23,5 +23,5 @@ export interface DynamicModule extends ModuleMetadata {
    *
    * Default: false
    */
-  isGlobal?: boolean;
+  global?: boolean;
 }
