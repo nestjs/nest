@@ -58,7 +58,7 @@ export class Logger implements LoggerService {
     this.callFunction('verbose', message, context);
   }
 
-  setContext(context) {
+  setContext(context: string) {
     this.context = context;
   }
 
