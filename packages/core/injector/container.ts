@@ -98,7 +98,7 @@ export class NestContainer {
     metatype: Type<any>,
     dynamicMetadata?: Partial<DynamicModule>,
   ): boolean {
-    if (dynamicMetadata && dynamicMetadata.isGlobal) {
+    if (dynamicMetadata && dynamicMetadata.global) {
       return true;
     }
     return !!Reflect.getMetadata(GLOBAL_MODULE_METADATA, metatype);

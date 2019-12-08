@@ -95,7 +95,7 @@ describe('NestContainer', () => {
     });
     describe('when dynamic module is globally scoped', () => {
       it('should return true', () => {
-        expect(container.isGlobalModule(TestModule, { isGlobal: true })).to.be
+        expect(container.isGlobalModule(TestModule, { global: true })).to.be
           .true;
       });
     });
