@@ -12,7 +12,7 @@
     "@nestjs/common": "6.10.8",
     "@nestjs/core": "6.10.8",
     "@nestjs/mongoose": "6.1.2",
-    "mongoose": "5.7.14",
+    "mongoose": "5.8.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "typescript": "3.7.2"
