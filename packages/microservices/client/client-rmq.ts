@@ -82,6 +82,12 @@ export class ClientRMQ extends ClientProxy {
         share(),
       )
       .toPromise();
+
+    this.client.on(DISCONNECT_EVENT, (err)=> {
+      this.close();
+      this.client = null;
+    });
+
     return this.connection;
   }
 
