@@ -89,7 +89,7 @@ describe('WebSocketsController', () => {
       gateway,
       handlers,
       server,
-      hookServerToProperties: sinon.SinonSpy,
+      assignServerToProperties: sinon.SinonSpy,
       subscribeEvents: sinon.SinonSpy;
 
     beforeEach(() => {
@@ -104,14 +104,15 @@ describe('WebSocketsController', () => {
       mockExplorer.expects('explore').returns(handlers);
       mockProvider.expects('scanForSocketServer').returns(server);
 
-      hookServerToProperties = sinon.spy();
+      assignServerToProperties = sinon.spy();
       subscribeEvents = sinon.spy();
-      (instance as any).hookServerToProperties = hookServerToProperties;
+      (instance as any).assignServerToProperties = assignServerToProperties;
       (instance as any).subscribeEvents = subscribeEvents;
     });
-    it('should call "hookServerToProperties" with expected arguments', () => {
+    it('should call "assignServerToProperties" with expected arguments', () => {
       instance.subscribeToServerEvents(gateway, namespace, port, '');
-      expect(hookServerToProperties.calledWith(gateway, server.server));
+      expect(assignServerToProperties.calledWith(gateway, server.server)).to.be
+        .true;
     });
     it('should call "subscribeEvents" with expected arguments', () => {
       instance.subscribeToServerEvents(gateway, namespace, port, '');
@@ -321,9 +322,9 @@ describe('WebSocketsController', () => {
         it('should returns Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (await instance.pickResult(
-              Promise.resolve(Promise.resolve(value)),
-            )).toPromise(),
+            await (
+              await instance.pickResult(Promise.resolve(Promise.resolve(value)))
+            ).toPromise(),
           ).to.be.eq(100);
         });
       });
@@ -332,9 +333,9 @@ describe('WebSocketsController', () => {
         it('should returns Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (await instance.pickResult(
-              Promise.resolve(of(value)),
-            )).toPromise(),
+            await (
+              await instance.pickResult(Promise.resolve(of(value)))
+            ).toPromise(),
           ).to.be.eq(100);
         });
       });
@@ -343,9 +344,9 @@ describe('WebSocketsController', () => {
         it('should returns Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (await instance.pickResult(
-              Promise.resolve(value),
-            )).toPromise(),
+            await (
+              await instance.pickResult(Promise.resolve(value))
+            ).toPromise(),
           ).to.be.eq(100);
         });
       });
