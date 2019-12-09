@@ -302,7 +302,6 @@ describe('RouterExecutionContext', () => {
         const value = 'test';
         const response = { render: sinon.spy() };
 
-        sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
 
         const handler = contextCreator.createHandleResponseFn(
