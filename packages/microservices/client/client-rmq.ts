@@ -74,6 +74,7 @@ export class ClientRMQ extends ClientProxy {
     }
     this.client = this.createClient();
     this.handleError(this.client);
+    this.handleDisconnectError(this.client);
 
     const connect$ = this.connect$(this.client);
     this.connection = this.mergeDisconnectEvent(this.client, connect$)
@@ -82,11 +83,6 @@ export class ClientRMQ extends ClientProxy {
         share(),
       )
       .toPromise();
-
-    this.client.on(DISCONNECT_EVENT, (err)=> {
-      this.close();
-      this.client = null;
-    });
 
     return this.connection;
   }
@@ -138,6 +134,14 @@ export class ClientRMQ extends ClientProxy {
 
   public handleError(client: any): void {
     client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
+  }
+
+  public handleDisconnectError(client: any): void {
+    client.addListener(DISCONNECT_EVENT, (err: any) => {
+      this.close();
+      this.client = null;
+      return this.logger.error(err);
+    });
   }
 
   public handleMessage(
