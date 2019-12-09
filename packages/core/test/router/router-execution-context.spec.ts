@@ -368,7 +368,7 @@ describe('RouterExecutionContext', () => {
     });
 
     describe('when "redirectResponse" is undefined', () => {
-      it('should not call "res.render()"', () => {
+      it('should not call "res.redirect()"', () => {
         const result = Promise.resolve('test');
         const response = { redirect: sinon.spy() };
 
