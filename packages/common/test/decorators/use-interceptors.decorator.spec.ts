@@ -30,10 +30,12 @@ describe('@UseInterceptors', () => {
   });
 
   it('when object is invalid should throw exception', () => {
+    let error = undefined;
     try {
-      UseInterceptors('test' as any)({});
+      UseInterceptors('test' as any)({ name: 'target' });
     } catch (e) {
-      expect(e).to.be.instanceof(InvalidDecoratorItemException);
+      error = e;
     }
+    expect(error).to.be.instanceof(InvalidDecoratorItemException);
   });
 });
