@@ -317,7 +317,7 @@ describe('RouterExecutionContext', () => {
       });
     });
     describe('when "renderTemplate" is undefined', () => {
-      it('should not call "res.render()"', () => {
+      it('should not call "res.render()"', async () => {
         const result = Promise.resolve('test');
         const response = { render: sinon.spy() };
 
@@ -330,7 +330,7 @@ describe('RouterExecutionContext', () => {
           undefined,
           200,
         );
-        handler(result, response);
+        await handler(result, response);
 
         expect(response.render.called).to.be.false;
       });
@@ -368,7 +368,7 @@ describe('RouterExecutionContext', () => {
     });
 
     describe('when "redirectResponse" is undefined', () => {
-      it('should not call "res.render()"', () => {
+      it('should not call "res.render()"', async () => {
         const result = Promise.resolve('test');
         const response = { redirect: sinon.spy() };
 
@@ -381,7 +381,7 @@ describe('RouterExecutionContext', () => {
           undefined,
           200,
         );
-        handler(result, response);
+        await handler(result, response);
 
         expect(response.redirect.called).to.be.false;
       });
