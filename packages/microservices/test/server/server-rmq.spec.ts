@@ -169,11 +169,11 @@ describe('ServerRMQ', () => {
       server.sendMessage(message, replyTo, correlationId);
       expect(
         channel.sendToQueue.calledWith(
-          Buffer.from(JSON.stringify(message)),
           replyTo,
+          Buffer.from(JSON.stringify(message)),
           { correlationId },
         ),
-      );
+      ).to.be.true;
     });
   });
 
