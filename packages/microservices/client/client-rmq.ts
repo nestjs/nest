@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
 import {
+  DISCONNECTED_RMQ_MESSAGE,
   DISCONNECT_EVENT,
   ERROR_EVENT,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
@@ -52,6 +53,8 @@ export class ClientRMQ extends ClientProxy {
   public close(): void {
     this.channel && this.channel.close();
     this.client && this.client.close();
+    this.channel = null;
+    this.client = null;
   }
 
   public consumeChannel() {
@@ -138,9 +141,10 @@ export class ClientRMQ extends ClientProxy {
 
   public handleDisconnectError(client: any): void {
     client.addListener(DISCONNECT_EVENT, (err: any) => {
+      this.logger.error(DISCONNECTED_RMQ_MESSAGE);
+      this.logger.error(err);
+
       this.close();
-      this.client = null;
-      return this.logger.error(err);
     });
   }
 
