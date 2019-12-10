@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { RouteParamMetadata } from '../../../common';
+import { RouteParamMetadata, HttpStatus } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
@@ -15,6 +15,8 @@ import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { RouteParamsFactory } from '../../router/route-params-factory';
 import { RouterExecutionContext } from '../../router/router-execution-context';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { FORBIDDEN_MESSAGE } from '../../guards/constants';
+import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;
@@ -91,6 +93,7 @@ describe('RouterExecutionContext', () => {
         let tryActivateStub;
         beforeEach(() => {
           instance = { foo: 'bar' };
+          
           const canActivateFn = contextCreator.createGuardsFn([1], null, null);
           sinon.stub(contextCreator, 'createGuardsFn').returns(canActivateFn);
           tryActivateStub = sinon
@@ -132,11 +135,20 @@ describe('RouterExecutionContext', () => {
               done();
             });
           });
-          it('should throw exception when "tryActivate" returns false', () => {
+          it('should throw exception when "tryActivate" returns false', async () => {
             tryActivateStub.callsFake(async () => false);
-            proxyContext(request, response, next).catch(
-              error => expect(error).to.not.be.undefined,
-            );
+            let error: Error;
+            try {
+              await proxyContext(request, response, next);
+            } catch (e) {
+              error = e;
+            }
+            expect(error).to.be.instanceOf(ForbiddenException);
+            expect(error.message).to.be.eql({
+              statusCode: HttpStatus.FORBIDDEN,
+              error: 'Forbidden',
+              message: FORBIDDEN_MESSAGE,
+            });
           });
           it('should apply expected context when "canActivateFn" apply', () => {
             proxyContext(request, response, next).then(() => {
@@ -282,10 +294,21 @@ describe('RouterExecutionContext', () => {
     });
   });
   describe('createGuardsFn', () => {
-    it('should throw exception when "tryActivate" returns false', () => {
+    it('should throw ForbiddenException when "tryActivate" returns false', async () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
-      guardsFn([]).catch(err => expect(err).to.not.be.undefined);
+      let error: ForbiddenException;
+      try {
+        await guardsFn([]);
+      } catch (e) {
+        error = e;
+      }
+      expect(error).to.be.instanceOf(ForbiddenException);
+      expect(error.message).to.be.eql({
+        statusCode: HttpStatus.FORBIDDEN,
+        error: 'Forbidden',
+        message: FORBIDDEN_MESSAGE,
+      });
     });
   });
   describe('createHandleResponseFn', () => {
@@ -317,7 +340,7 @@ describe('RouterExecutionContext', () => {
       });
     });
     describe('when "renderTemplate" is undefined', () => {
-      it('should not call "res.render()"', () => {
+      it('should not call "res.render()"', async () => {
         const result = Promise.resolve('test');
         const response = { render: sinon.spy() };
 
@@ -330,7 +353,7 @@ describe('RouterExecutionContext', () => {
           undefined,
           200,
         );
-        handler(result, response);
+        await handler(result, response);
 
         expect(response.render.called).to.be.false;
       });
@@ -381,7 +404,7 @@ describe('RouterExecutionContext', () => {
           undefined,
           200,
         );
-        handler(result, response);
+        await handler(result, response);
 
         expect(response.redirect.called).to.be.false;
       });

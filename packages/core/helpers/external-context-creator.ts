@@ -86,7 +86,7 @@ export class ExternalContextCreator {
 
   public create<
     TParamsMetadata extends ParamsMetadata = ParamsMetadata,
-    TContext extends ContextType = ContextType
+    TContext extends string = ContextType
   >(
     instance: Controller,
     callback: (...args: any[]) => any,
@@ -322,7 +322,7 @@ export class ExternalContextCreator {
     return resultOrDeffered;
   }
 
-  public createGuardsFn<TContext extends ContextType = ContextType>(
+  public createGuardsFn<TContext extends string = ContextType>(
     guards: any[],
     instance: Controller,
     callback: (...args: any[]) => any,

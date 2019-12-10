@@ -93,7 +93,6 @@ export class ClientKafka extends ClientProxy {
       return this.producer;
     }
     this.client = this.createClient();
-
     const consumerOptions = Object.assign(
       {
         partitionAssigners: [
@@ -135,11 +134,13 @@ export class ClientKafka extends ClientProxy {
   }
 
   public createClient<T = any>(): T {
-    return new kafkaPackage.Kafka(Object.assign(this.options.client || {}, {
-      clientId: this.clientId,
-      brokers: this.brokers,
-      logCreator: KafkaLogger.bind(null, this.logger),
-    }) as KafkaConfig);
+    return new kafkaPackage.Kafka(
+      Object.assign(this.options.client || {}, {
+        clientId: this.clientId,
+        brokers: this.brokers,
+        logCreator: KafkaLogger.bind(null, this.logger),
+      }) as KafkaConfig,
+    );
   }
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
@@ -150,10 +151,7 @@ export class ClientKafka extends ClientProxy {
           partition: payload.partition,
         }),
       );
-      if (
-        !rawMessage.headers ||
-        isUndefined(rawMessage.headers[KafkaHeaders.CORRELATION_ID])
-      ) {
+      if (isUndefined(rawMessage.headers[KafkaHeaders.CORRELATION_ID])) {
         return;
       }
       const { err, response, isDisposed, id } = this.deserializer.deserialize(

@@ -12,6 +12,8 @@ export class KafkaParser {
         data.headers[key] = this.decode(data.headers[key]);
       };
       Object.keys(data.headers).forEach(decodeHeaderByKey);
+    } else {
+      data.headers = {};
     }
     return data;
   }

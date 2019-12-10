@@ -3,7 +3,7 @@ import { ExternalExceptionsHandler } from '../exceptions/external-exceptions-han
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 
 export class ExternalErrorProxy {
-  public createProxy<TContext extends ContextType = ContextType>(
+  public createProxy<TContext extends string = ContextType>(
     targetCallback: (...args: any[]) => any,
     exceptionsHandler: ExternalExceptionsHandler,
     type?: TContext,

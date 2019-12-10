@@ -55,8 +55,8 @@ export class NatsController {
       return result === expected;
     };
     return data
-      .map(async tab => await send(tab))
-      .reduce(async (a, b) => (await a) && (await b));
+      .map(async tab => send(tab))
+      .reduce(async (a, b) => (await a) && b);
   }
 
   @MessagePattern('math.*')
@@ -81,7 +81,7 @@ export class NatsController {
 
   @Get('exception')
   async getError() {
-    return await this.client
+    return this.client
       .send<number>('exception', {})
       .pipe(catchError(err => of(err)));
   }

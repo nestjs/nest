@@ -273,6 +273,17 @@ export class InstanceWrapper<T = any> {
     );
   }
 
+  public isExplicitlyRequested(
+    contextId: ContextId,
+    inquirer?: InstanceWrapper,
+  ): boolean {
+    return (
+      this.isDependencyTreeStatic() &&
+      contextId !== STATIC_CONTEXT &&
+      inquirer === this
+    );
+  }
+
   public isStatic(
     contextId: ContextId,
     inquirer: InstanceWrapper | undefined,

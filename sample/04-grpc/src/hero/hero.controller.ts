@@ -27,7 +27,10 @@ export class HeroController implements OnModuleInit {
 
   @GrpcMethod('HeroService')
   findOne(data: HeroById): Hero {
-    const items: Hero[] = [{ id: 1, name: 'John' }, { id: 2, name: 'Doe' }];
+    const items: Hero[] = [
+      { id: 1, name: 'John' },
+      { id: 2, name: 'Doe' },
+    ];
     return items.find(({ id }) => id === data.id);
   }
 }

@@ -88,7 +88,10 @@ describe('ClientGrpcProxy', () => {
 
       it('should call native method', () => {
         const spy = sinon.spy(obj, methodName);
-        stream$.subscribe(() => ({}), () => ({}));
+        stream$.subscribe(
+          () => ({}),
+          () => ({}),
+        );
 
         expect(spy.called).to.be.true;
       });
@@ -181,7 +184,10 @@ describe('ClientGrpcProxy', () => {
 
       it('should call native method', () => {
         const spy = sinon.spy(obj, methodName);
-        stream$.subscribe(() => ({}), () => ({}));
+        stream$.subscribe(
+          () => ({}),
+          () => ({}),
+        );
 
         expect(spy.called).to.be.true;
       });

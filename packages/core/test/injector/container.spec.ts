@@ -83,14 +83,20 @@ describe('NestContainer', () => {
     });
   });
   describe('isGlobalModule', () => {
-    describe('when module is not global scoped', () => {
+    describe('when module is not globally scoped', () => {
       it('should return false', () => {
-        expect(container.isGlobalModule(TestModule as any)).to.be.false;
+        expect(container.isGlobalModule(TestModule)).to.be.false;
       });
     });
-    describe('when module is not global scoped', () => {
+    describe('when module is globally scoped', () => {
       it('should return true', () => {
-        expect(container.isGlobalModule(GlobalTestModule as any)).to.be.true;
+        expect(container.isGlobalModule(GlobalTestModule)).to.be.true;
+      });
+    });
+    describe('when dynamic module is globally scoped', () => {
+      it('should return true', () => {
+        expect(container.isGlobalModule(TestModule, { global: true })).to.be
+          .true;
       });
     });
   });

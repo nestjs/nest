@@ -12,11 +12,13 @@ import { ModuleCompiler } from './compiler';
 import { InternalCoreModule } from './internal-core-module';
 import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
+import { ModuleTokenFactory } from './module-token-factory';
 import { ModulesContainer } from './modules-container';
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
-  private readonly moduleCompiler = new ModuleCompiler();
+  private readonly moduleTokenFactory = new ModuleTokenFactory();
+  private readonly moduleCompiler = new ModuleCompiler(this.moduleTokenFactory);
   private readonly modules = new ModulesContainer();
   private readonly dynamicModulesMetadata = new Map<
     string,
@@ -63,10 +65,11 @@ export class NestContainer {
     }
     const module = new Module(type, scope, this);
     this.modules.set(token, module);
-
     this.addDynamicMetadata(token, dynamicMetadata, [].concat(scope, type));
-    this.isGlobalModule(type) && this.addGlobalModule(module);
 
+    if (this.isGlobalModule(type, dynamicMetadata)) {
+      this.addGlobalModule(module);
+    }
     return module;
   }
 
@@ -91,7 +94,13 @@ export class NestContainer {
     modules.forEach(module => this.addModule(module, scope));
   }
 
-  public isGlobalModule(metatype: Type<any>): boolean {
+  public isGlobalModule(
+    metatype: Type<any>,
+    dynamicMetadata?: Partial<DynamicModule>,
+  ): boolean {
+    if (dynamicMetadata && dynamicMetadata.global) {
+      return true;
+    }
     return !!Reflect.getMetadata(GLOBAL_MODULE_METADATA, metatype);
   }
 
@@ -115,8 +124,9 @@ export class NestContainer {
     relatedModule: Type<any> | DynamicModule,
     token: string,
   ) {
-    if (!this.modules.has(token)) return;
-
+    if (!this.modules.has(token)) {
+      return;
+    }
     const module = this.modules.get(token);
     const parent = module.metatype;
 
@@ -221,5 +231,9 @@ export class NestContainer {
   public registerCoreModuleRef(moduleRef: Module) {
     this.internalCoreModule = moduleRef;
     this.modules[InternalCoreModule.name] = moduleRef;
+  }
+
+  public getModuleTokenFactory(): ModuleTokenFactory {
+    return this.moduleTokenFactory;
   }
 }

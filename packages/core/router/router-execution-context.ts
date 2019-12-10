@@ -320,7 +320,7 @@ export class RouterExecutionContext {
     );
   }
 
-  public createGuardsFn<TContext extends ContextType = ContextType>(
+  public createGuardsFn<TContext extends string = ContextType>(
     guards: any[],
     instance: Controller,
     callback: (...args: any[]) => any,
