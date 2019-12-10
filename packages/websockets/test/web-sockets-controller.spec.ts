@@ -41,6 +41,7 @@ describe('WebSocketsController', () => {
     config = new ApplicationConfig(new NoopAdapter());
     provider = new SocketServerProvider(null, config);
     mockProvider = sinon.mock(provider);
+    
     const contextCreator = sinon.createStubInstance(WsContextCreator);
     contextCreator.create.returns(messageHandlerCallback);
     instance = new WebSocketsController(
