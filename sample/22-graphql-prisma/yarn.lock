@@ -426,9 +426,9 @@
     express "4.17.1"
     multer "1.4.2"
 
-"@nestjs/schematics@6.7.5":
-  version "6.7.5"
-  resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.7.5.tgz#03d7c3623de5df296d3b3334d07b4588c11a0682"
+"@nestjs/schematics@6.7.6":
+  version "6.7.6"
+  resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.7.6.tgz#2abe0726d01cfdc8e255e24a2511dc7ad24235ee"
   dependencies:
     "@angular-devkit/core" "8.3.20"
     "@angular-devkit/schematics" "8.3.20"
