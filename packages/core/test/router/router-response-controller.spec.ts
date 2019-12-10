@@ -80,10 +80,12 @@ describe('RouterResponseController', () => {
       });
 
       describe('is Observable', () => {
-        it('should returns Promise', async () => {
-          const value = 100;
+        it('should returns toPromise', async () => {
+          const lastValue = 100;
           expect(
-            await routerResponseController.transformToResult(of(value)),
+            await routerResponseController.transformToResult(
+              of(1, 2, 3, lastValue),
+            ),
           ).to.be.eq(100);
         });
       });
