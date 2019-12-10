@@ -93,6 +93,7 @@ describe('RouterExecutionContext', () => {
         let tryActivateStub;
         beforeEach(() => {
           instance = { foo: 'bar' };
+          
           const canActivateFn = contextCreator.createGuardsFn([1], null, null);
           sinon.stub(contextCreator, 'createGuardsFn').returns(canActivateFn);
           tryActivateStub = sinon
