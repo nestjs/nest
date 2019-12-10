@@ -408,5 +408,30 @@ describe('RouterExecutionContext', () => {
         expect(response.redirect.called).to.be.false;
       });
     });
+
+    describe('when replying with result', () => {
+      it('should call "adapter.reply()" with expected args', async () => {
+        const result = Promise.resolve('test');
+        const response = {};
+
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+
+        const handler = contextCreator.createHandleResponseFn(
+          null,
+          false,
+          undefined,
+          1234,
+        );
+        const adapterReplySpy = sinon.spy(adapter, 'reply');
+        await handler(result, response);
+        expect(
+          adapterReplySpy.calledOnceWithExactly(
+            sinon.match.same(response),
+            'test',
+            1234,
+          ),
+        ).to.be.true;
+      });
+    });
   });
 });
