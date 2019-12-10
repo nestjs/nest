@@ -1,10 +1,12 @@
+import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { RouteParamMetadata, HttpStatus } from '../../../common';
+import { HttpStatus, RouteParamMetadata } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
 import { ApplicationConfig } from '../../application-config';
+import { FORBIDDEN_MESSAGE } from '../../guards/constants';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { NestContainer } from '../../injector/container';
@@ -15,8 +17,6 @@ import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { RouteParamsFactory } from '../../router/route-params-factory';
 import { RouterExecutionContext } from '../../router/router-execution-context';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
-import { FORBIDDEN_MESSAGE } from '../../guards/constants';
-import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;
@@ -390,7 +390,7 @@ describe('RouterExecutionContext', () => {
     });
 
     describe('when "redirectResponse" is undefined', () => {
-      it('should not call "res.redirect()"', () => {
+      it('should not call "res.redirect()"', async () => {
         const result = Promise.resolve('test');
         const response = { redirect: sinon.spy() };
 
