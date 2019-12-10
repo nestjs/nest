@@ -383,17 +383,17 @@
     webpack "4.41.2"
     webpack-node-externals "1.7.2"
 
-"@nestjs/common@6.10.7":
-  version "6.10.7"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.10.7.tgz#d64d19fe2623f8538e77f13e3f386b4b1764107f"
+"@nestjs/common@6.10.8":
+  version "6.10.8"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.10.8.tgz#25efb8d206f544b0a61088b2c950cd24e8fa2a2c"
   dependencies:
     axios "0.19.0"
     cli-color "2.0.0"
     uuid "3.3.3"
 
-"@nestjs/core@6.10.7":
-  version "6.10.7"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.10.7.tgz#08b45fe86ddd0cafc779b3e9f439570922c4f84e"
+"@nestjs/core@6.10.8":
+  version "6.10.8"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.10.8.tgz#f26c81172702311914cd6d027d31cd111c6e005d"
   dependencies:
     "@nuxtjs/opencollective" "0.2.2"
     fast-safe-stringify "2.0.7"
@@ -417,9 +417,9 @@
   optionalDependencies:
     type-graphql "^0.17.3"
 
-"@nestjs/platform-express@6.10.7":
-  version "6.10.7"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.10.7.tgz#e1aa723c8bce48f2b75d5955fe4d3ce1220215eb"
+"@nestjs/platform-express@6.10.8":
+  version "6.10.8"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.10.8.tgz#0cdd98a0cacd78992744e95d23e713fd16590b03"
   dependencies:
     body-parser "1.19.0"
     cors "2.8.5"
@@ -446,9 +446,9 @@
     ts-morph "^4.0.0"
     typescript "3.4.5"
 
-"@nestjs/testing@6.10.7":
-  version "6.10.7"
-  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-6.10.7.tgz#0e7d782a951c5c8e9b39a8796eb645c831c9a2a6"
+"@nestjs/testing@6.10.8":
+  version "6.10.8"
+  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-6.10.8.tgz#f7d15db8143c031bb2aef95cdabff109ab9716a1"
   dependencies:
     optional "0.1.4"
 
@@ -728,9 +728,9 @@
   version "10.11.3"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.11.3.tgz#c055536ac8a5e871701aa01914be5731539d01ee"
 
-"@types/node@12.12.14":
-  version "12.12.14"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.14.tgz#1c1d6e3c75dba466e0326948d56e8bd72a1903d2"
+"@types/node@12.12.16":
+  version "12.12.16"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.16.tgz#3ebcbd7bf978fa4c5120fee8be57083271a8b3ac"
 
 "@types/node@^11.13.7":
   version "11.13.10"
