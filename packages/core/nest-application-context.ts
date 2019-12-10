@@ -104,12 +104,6 @@ export class NestApplicationContext implements INestApplicationContext {
     return this;
   }
 
-  protected async dispose(): Promise<void> {
-    // Nest application context has no server
-    // to dispose, therefore just call a noop
-    return Promise.resolve();
-  }
-
   public async close(): Promise<void> {
     await this.callDestroyHook();
     await this.callBeforeShutdownHook();
@@ -153,6 +147,12 @@ export class NestApplicationContext implements INestApplicationContext {
 
     this.listenToShutdownSignals(signals);
     return this;
+  }
+
+  protected async dispose(): Promise<void> {
+    // Nest application context has no server
+    // to dispose, therefore just call a noop
+    return Promise.resolve();
   }
 
   /**
