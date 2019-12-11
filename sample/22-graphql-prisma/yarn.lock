@@ -426,9 +426,9 @@
     express "4.17.1"
     multer "1.4.2"
 
-"@nestjs/schematics@6.7.5":
-  version "6.7.5"
-  resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.7.5.tgz#03d7c3623de5df296d3b3334d07b4588c11a0682"
+"@nestjs/schematics@6.7.6":
+  version "6.7.6"
+  resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.7.6.tgz#2abe0726d01cfdc8e255e24a2511dc7ad24235ee"
   dependencies:
     "@angular-devkit/core" "8.3.20"
     "@angular-devkit/schematics" "8.3.20"
@@ -728,9 +728,9 @@
   version "10.11.3"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.11.3.tgz#c055536ac8a5e871701aa01914be5731539d01ee"
 
-"@types/node@12.12.16":
-  version "12.12.16"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.16.tgz#3ebcbd7bf978fa4c5120fee8be57083271a8b3ac"
+"@types/node@12.12.17":
+  version "12.12.17"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.17.tgz#191b71e7f4c325ee0fb23bc4a996477d92b8c39b"
 
 "@types/node@^11.13.7":
   version "11.13.10"
