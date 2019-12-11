@@ -69,6 +69,9 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   public async start(callback?: () => void) {
     this.server = this.createClient();
     this.server.on(CONNECT_EVENT, (_: any) => {
+      if (this.channel) {
+        return;
+      }
       this.channel = this.server.createChannel({
         json: false,
         setup: (channel: any) => this.setupChannel(channel, callback),

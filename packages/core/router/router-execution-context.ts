@@ -325,7 +325,7 @@ export class RouterExecutionContext {
     instance: Controller,
     callback: (...args: any[]) => any,
     contextType?: TContext,
-  ): Function | null {
+  ): (args: any[]) => Promise<void> | null {
     const canActivateFn = async (args: any[]) => {
       const canActivate = await this.guardsConsumer.tryActivate<TContext>(
         guards,
