@@ -8,7 +8,9 @@ import { InvalidModuleException } from '../errors/exceptions/invalid-module.exce
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
 import { HttpAdapterHost } from '../helpers/http-adapter-host';
+import { REQUEST } from '../router/request/request-constants';
 import { ModuleCompiler } from './compiler';
+import { ContextId } from './instance-wrapper';
 import { InternalCoreModule } from './internal-core-module';
 import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
@@ -235,5 +237,13 @@ export class NestContainer {
 
   public getModuleTokenFactory(): ModuleTokenFactory {
     return this.moduleTokenFactory;
+  }
+
+  public registerRequestProvider<T = any>(request: T, contextId: ContextId) {
+    const wrapper = this.internalCoreModule.getProviderByKey(REQUEST);
+    wrapper.setInstanceByContextId(contextId, {
+      instance: request,
+      isResolved: true,
+    });
   }
 }

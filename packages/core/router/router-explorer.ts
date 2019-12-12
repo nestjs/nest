@@ -28,7 +28,6 @@ import { MetadataScanner } from '../metadata-scanner';
 import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
-import { REQUEST } from './request';
 import { REQUEST_CONTEXT_ID } from './request/request-constants';
 import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
@@ -250,7 +249,7 @@ export class RouterExplorer {
     ) => {
       try {
         const contextId = this.getContextId(req);
-        this.registerRequestProvider(req, contextId);
+        this.container.registerRequestProvider(req, contextId);
 
         const contextInstance = await this.injector.loadPerContext(
           instance,
@@ -283,16 +282,6 @@ export class RouterExplorer {
         exceptionFilter.next(err, host);
       }
     };
-  }
-
-  private registerRequestProvider<T = any>(request: T, contextId: ContextId) {
-    const coreModuleRef = this.container.getInternalCoreModuleRef();
-    const wrapper = coreModuleRef.getProviderByKey(REQUEST);
-
-    wrapper.setInstanceByContextId(contextId, {
-      instance: request,
-      isResolved: true,
-    });
   }
 
   private getContextId<T extends Record<any, any> = any>(

@@ -12,6 +12,7 @@ import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
+import { ContextId } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
@@ -40,6 +41,7 @@ export class ExternalContextCreator {
   private readonly handlerMetadataStorage = new HandlerMetadataStorage<
     ExternalHandlerMetadata
   >();
+  private container: NestContainer;
 
   constructor(
     private readonly guardsContextCreator: GuardsContextCreator,
@@ -72,7 +74,8 @@ export class ExternalContextCreator {
       container,
       container.applicationConfig,
     );
-    return new ExternalContextCreator(
+
+    const externalContextCreator = new ExternalContextCreator(
       guardsContextCreator,
       guardsConsumer,
       interceptorsContextCreator,
@@ -82,6 +85,8 @@ export class ExternalContextCreator {
       pipesConsumer,
       filtersContextCreator,
     );
+    externalContextCreator.container = container;
+    return externalContextCreator;
   }
 
   public create<
@@ -341,5 +346,9 @@ export class ExternalContextCreator {
       }
     };
     return guards.length ? canActivateFn : null;
+  }
+
+  public registerRequestProvider<T = any>(request: T, contextId: ContextId) {
+    this.container.registerRequestProvider<T>(request, contextId);
   }
 }
