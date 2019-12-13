@@ -1,4 +1,5 @@
 import { flatten, Injectable } from '@nestjs/common';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
 
@@ -13,7 +14,7 @@ export class DiscoveryService {
   getProviders(
     options: DiscoveryOptions = {},
     modules: Module[] = this.getModules(options),
-  ) {
+  ): InstanceWrapper[] {
     const providers = modules.map(item => [...item.providers.values()]);
     return flatten(providers);
   }
@@ -21,7 +22,7 @@ export class DiscoveryService {
   getControllers(
     options: DiscoveryOptions = {},
     modules: Module[] = this.getModules(options),
-  ) {
+  ): InstanceWrapper[] {
     const controllers = modules.map(item => [...item.controllers.values()]);
     return flatten(controllers);
   }
