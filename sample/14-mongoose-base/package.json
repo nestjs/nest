@@ -22,7 +22,7 @@
     "@nestjs/common": "6.10.9",
     "@nestjs/core": "6.10.9",
     "@nestjs/platform-express": "6.10.9",
-    "mongoose": "5.8.0",
+    "mongoose": "5.8.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.0",
     "rxjs": "6.5.3"
