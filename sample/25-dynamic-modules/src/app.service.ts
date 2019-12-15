@@ -8,6 +8,7 @@ export class AppService {
   constructor(configService: ConfigService) {
     this.helloMessage = configService.get('HELLO_MESSAGE');
   }
+
   getHello(): string {
     return this.helloMessage;
   }
