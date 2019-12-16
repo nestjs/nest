@@ -32,9 +32,14 @@ export type ParamDecoratorEnhancer = ParameterDecorator;
  * Defines HTTP route param decorator
  *
  * @param factory
+ * @param enhancers
  */
-export function createParamDecorator(
-  factory: CustomParamFactory,
+export function createParamDecorator<
+  FactoryData extends any = any,
+  FactoryInput extends any = any,
+  FactoryOutput extends any = any
+>(
+  factory: CustomParamFactory<FactoryData, FactoryInput, FactoryOutput>,
   enhancers: ParamDecoratorEnhancer[] = [],
 ): (
   ...dataOrPipes: (Type<PipeTransform> | PipeTransform | any)[]
