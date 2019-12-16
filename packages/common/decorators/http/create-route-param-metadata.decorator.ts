@@ -28,13 +28,6 @@ const assignCustomMetadata = (
 
 export type ParamDecoratorEnhancer = ParameterDecorator;
 
-type Unpacked<T> = T extends (infer U)[]
-  ? U
-  : T extends (...args: any[]) => infer A
-  ? A
-  : T extends Promise<infer B>
-  ? B
-  : T;
 /**
  * Defines HTTP route param decorator
  *
@@ -44,12 +37,12 @@ export function createParamDecorator<T>(
   factory: CustomParamFactory,
   enhancers: ParamDecoratorEnhancer[] = [],
 ): (
-  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | Unpacked<T>)[]
+  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | T)[]
 ) => ParameterDecorator {
   const paramtype = uuid();
   return (
     data?,
-    ...pipes: (Type<PipeTransform> | PipeTransform | Unpacked<T>)[]
+    ...pipes: (Type<PipeTransform> | PipeTransform | T)[]
   ): ParameterDecorator => (target, key, index) => {
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
