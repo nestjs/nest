@@ -33,7 +33,7 @@ export type ParamDecoratorEnhancer = ParameterDecorator;
  *
  * @param factory
  */
-export function createParamDecorator<T>(
+export function createParamDecorator<T = any>(
   factory: CustomParamFactory,
   enhancers: ParamDecoratorEnhancer[] = [],
 ): (
