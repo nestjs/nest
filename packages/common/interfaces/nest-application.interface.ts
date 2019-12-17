@@ -26,7 +26,7 @@ export interface INestApplication extends INestApplicationContext {
    *
    * @returns {void}
    */
-  enableCors(options?: CorsOptions): this;
+  enableCors(options?: CorsOptions): void;
 
   /**
    * Starts the application.

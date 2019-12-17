@@ -15,11 +15,11 @@ export class NoopHttpAdapter extends AbstractHttpAdapter {
   status(response: any, statusCode: number): any {}
   render(response: any, view: string, options: any): any {}
   redirect(response: any, statusCode: number, url: string) {}
-  setErrorHandler(handler: Function): any {}
-  setNotFoundHandler(handler: Function): any {}
+  setErrorHandler(handler: Function, prefix: string = '/'): any {}
+  setNotFoundHandler(handler: Function, prefix: string = '/'): any {}
   setHeader(response: any, name: string, value: string): any {}
-  registerParserMiddleware(): any {}
-  enableCors(options: any): any {}
+  registerParserMiddleware(prefix: string = '/'): any {}
+  enableCors(options: any, prefix: string = '/'): any {}
   createMiddlewareFactory(requestMethod: RequestMethod): any {}
   getType() {
     return '';
