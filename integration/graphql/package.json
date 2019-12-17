@@ -12,7 +12,7 @@
     "@nestjs/common": "6.10.11",
     "@nestjs/core": "6.10.11",
     "@nestjs/graphql": "6.5.3",
-    "apollo-server-express": "2.9.13",
+    "apollo-server-express": "2.9.14",
     "graphql": "14.5.8",
     "graphql-tools": "4.0.6",
     "reflect-metadata": "0.1.13",
