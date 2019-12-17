@@ -728,9 +728,9 @@
   version "10.11.3"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.11.3.tgz#c055536ac8a5e871701aa01914be5731539d01ee"
 
-"@types/node@12.12.18":
-  version "12.12.18"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.18.tgz#8d16634797d63c2af5bc647ce879f8de20b56469"
+"@types/node@12.12.19":
+  version "12.12.19"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.19.tgz#6133aa2a765accdec89ad7792b651a0830f7a34e"
 
 "@types/node@^11.13.7":
   version "11.13.10"
