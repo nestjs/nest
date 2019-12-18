@@ -12,7 +12,7 @@ import * as pathToRegexp from 'path-to-regexp';
 export class FastifyAdapter extends AbstractHttpAdapter {
   constructor(
     instanceOrOptions:
-      | fastify.FastifyInstance<any, any, any>
+      | any
       | fastify.ServerOptions
       | fastify.ServerOptionsAsHttp
       | fastify.ServerOptionsAsHttp2
@@ -24,7 +24,7 @@ export class FastifyAdapter extends AbstractHttpAdapter {
       instanceOrOptions &&
       (instanceOrOptions as fastify.FastifyInstance<any, any, any>).server
         ? instanceOrOptions
-        : fastify(instanceOrOptions as fastify.ServerOptions);
+        : fastify((instanceOrOptions as any) as fastify.ServerOptions);
 
     super(instance);
   }
