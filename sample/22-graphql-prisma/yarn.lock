@@ -1089,12 +1089,12 @@ anymatch@~3.1.1:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-apollo-cache-control@^0.8.8:
-  version "0.8.8"
-  resolved "https://registry.yarnpkg.com/apollo-cache-control/-/apollo-cache-control-0.8.8.tgz#c6de9ef3a154560f6cf26ce7159e62438c1ac022"
+apollo-cache-control@^0.8.9:
+  version "0.8.9"
+  resolved "https://registry.yarnpkg.com/apollo-cache-control/-/apollo-cache-control-0.8.9.tgz#1c53dcb6cc209646b73b4ba8803ff6ea50bea2a7"
   dependencies:
     apollo-server-env "^2.4.3"
-    graphql-extensions "^0.10.7"
+    graphql-extensions "^0.10.8"
 
 apollo-datasource@^0.6.3:
   version "0.6.3"
@@ -1109,17 +1109,17 @@ apollo-engine-reporting-protobuf@^0.4.4:
   dependencies:
     "@apollo/protobufjs" "^1.0.3"
 
-apollo-engine-reporting@^1.4.11:
-  version "1.4.11"
-  resolved "https://registry.yarnpkg.com/apollo-engine-reporting/-/apollo-engine-reporting-1.4.11.tgz#ea4501925c201e62729a11ce36284a89f1eaa4f5"
+apollo-engine-reporting@^1.4.12:
+  version "1.4.12"
+  resolved "https://registry.yarnpkg.com/apollo-engine-reporting/-/apollo-engine-reporting-1.4.12.tgz#b33a6eae0ffa7b827dd813bed335260e6ad012d2"
   dependencies:
     apollo-engine-reporting-protobuf "^0.4.4"
     apollo-graphql "^0.3.4"
     apollo-server-caching "^0.5.0"
     apollo-server-env "^2.4.3"
-    apollo-server-types "^0.2.8"
+    apollo-server-types "^0.2.9"
     async-retry "^1.2.1"
-    graphql-extensions "^0.10.7"
+    graphql-extensions "^0.10.8"
 
 apollo-env@0.5.1, apollo-env@^0.5.1:
   version "0.5.1"
@@ -1181,25 +1181,25 @@ apollo-server-caching@^0.5.0:
   dependencies:
     lru-cache "^5.0.0"
 
-apollo-server-core@^2.9.13:
-  version "2.9.13"
-  resolved "https://registry.yarnpkg.com/apollo-server-core/-/apollo-server-core-2.9.13.tgz#29fee69be56d30605b0a06cd755fd39e0409915f"
+apollo-server-core@^2.9.14:
+  version "2.9.14"
+  resolved "https://registry.yarnpkg.com/apollo-server-core/-/apollo-server-core-2.9.14.tgz#9f68ec605df15cbe509a1b9f384923aef63d4169"
   dependencies:
     "@apollographql/apollo-tools" "^0.4.0"
     "@apollographql/graphql-playground-html" "1.6.24"
     "@types/graphql-upload" "^8.0.0"
     "@types/ws" "^6.0.0"
-    apollo-cache-control "^0.8.8"
+    apollo-cache-control "^0.8.9"
     apollo-datasource "^0.6.3"
-    apollo-engine-reporting "^1.4.11"
+    apollo-engine-reporting "^1.4.12"
     apollo-server-caching "^0.5.0"
     apollo-server-env "^2.4.3"
     apollo-server-errors "^2.3.4"
-    apollo-server-plugin-base "^0.6.8"
-    apollo-server-types "^0.2.8"
-    apollo-tracing "^0.8.8"
+    apollo-server-plugin-base "^0.6.9"
+    apollo-server-types "^0.2.9"
+    apollo-tracing "^0.8.9"
     fast-json-stable-stringify "^2.0.0"
-    graphql-extensions "^0.10.7"
+    graphql-extensions "^0.10.8"
     graphql-tag "^2.9.2"
     graphql-tools "^4.0.0"
     graphql-upload "^8.0.2"
@@ -1218,9 +1218,9 @@ apollo-server-errors@^2.3.4:
   version "2.3.4"
   resolved "https://registry.yarnpkg.com/apollo-server-errors/-/apollo-server-errors-2.3.4.tgz#b70ef01322f616cbcd876f3e0168a1a86b82db34"
 
-apollo-server-express@2.9.13:
-  version "2.9.13"
-  resolved "https://registry.yarnpkg.com/apollo-server-express/-/apollo-server-express-2.9.13.tgz#abb00bcf85d86a6e0e9105ce3b7fae9a7748156b"
+apollo-server-express@2.9.14:
+  version "2.9.14"
+  resolved "https://registry.yarnpkg.com/apollo-server-express/-/apollo-server-express-2.9.14.tgz#32b9c46248f7f4e71d51bfbdbec34e1880f1c93b"
   dependencies:
     "@apollographql/graphql-playground-html" "1.6.24"
     "@types/accepts" "^1.3.5"
@@ -1228,8 +1228,8 @@ apollo-server-express@2.9.13:
     "@types/cors" "^2.8.4"
     "@types/express" "4.17.1"
     accepts "^1.3.5"
-    apollo-server-core "^2.9.13"
-    apollo-server-types "^0.2.8"
+    apollo-server-core "^2.9.14"
+    apollo-server-types "^0.2.9"
     body-parser "^1.18.3"
     cors "^2.8.4"
     express "^4.17.1"
@@ -1239,26 +1239,26 @@ apollo-server-express@2.9.13:
     subscriptions-transport-ws "^0.9.16"
     type-is "^1.6.16"
 
-apollo-server-plugin-base@^0.6.8:
-  version "0.6.8"
-  resolved "https://registry.yarnpkg.com/apollo-server-plugin-base/-/apollo-server-plugin-base-0.6.8.tgz#94cb9a6d806b7057d1d42202292d2adcf2cf0e7a"
+apollo-server-plugin-base@^0.6.9:
+  version "0.6.9"
+  resolved "https://registry.yarnpkg.com/apollo-server-plugin-base/-/apollo-server-plugin-base-0.6.9.tgz#0b47028f75066f2429935b0234fe58217bcc6de6"
   dependencies:
-    apollo-server-types "^0.2.8"
+    apollo-server-types "^0.2.9"
 
-apollo-server-types@^0.2.8:
-  version "0.2.8"
-  resolved "https://registry.yarnpkg.com/apollo-server-types/-/apollo-server-types-0.2.8.tgz#729208a8dd72831af3aa4f1eb584022ada146e6b"
+apollo-server-types@^0.2.9:
+  version "0.2.9"
+  resolved "https://registry.yarnpkg.com/apollo-server-types/-/apollo-server-types-0.2.9.tgz#d943817772e8712c7479be2403878be849183995"
   dependencies:
     apollo-engine-reporting-protobuf "^0.4.4"
     apollo-server-caching "^0.5.0"
     apollo-server-env "^2.4.3"
 
-apollo-tracing@^0.8.8:
-  version "0.8.8"
-  resolved "https://registry.yarnpkg.com/apollo-tracing/-/apollo-tracing-0.8.8.tgz#bfaffd76dc12ed5cc1c1198b5411864affdb1b83"
+apollo-tracing@^0.8.9:
+  version "0.8.9"
+  resolved "https://registry.yarnpkg.com/apollo-tracing/-/apollo-tracing-0.8.9.tgz#2fde222dd60d21a211ebdbe4bc8d8674fdfb5e14"
   dependencies:
     apollo-server-env "^2.4.3"
-    graphql-extensions "^0.10.7"
+    graphql-extensions "^0.10.8"
 
 apollo-utilities@^1.0.0, apollo-utilities@^1.0.1:
   version "1.0.21"
@@ -3080,13 +3080,13 @@ graphql-binding@2.5.2:
     ts-node "^7.0.1"
     yargs "^12.0.2"
 
-graphql-extensions@^0.10.7:
-  version "0.10.7"
-  resolved "https://registry.yarnpkg.com/graphql-extensions/-/graphql-extensions-0.10.7.tgz#ca9f8ec3cb0af1739b48ca42280ec9162ad116d1"
+graphql-extensions@^0.10.8:
+  version "0.10.8"
+  resolved "https://registry.yarnpkg.com/graphql-extensions/-/graphql-extensions-0.10.8.tgz#d338048dfd9f09ec7953c6da2c8c06b3520cbb20"
   dependencies:
     "@apollographql/apollo-tools" "^0.4.0"
     apollo-server-env "^2.4.3"
-    apollo-server-types "^0.2.8"
+    apollo-server-types "^0.2.9"
 
 graphql-import@0.7.1, graphql-import@^0.7.1:
   version "0.7.1"
