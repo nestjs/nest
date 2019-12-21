@@ -9,16 +9,16 @@ import * as formBody from 'fastify-formbody';
 import * as Reply from 'fastify/lib/reply';
 import * as pathToRegexp from 'path-to-regexp';
 
-export class FastifyAdapter extends AbstractHttpAdapter {
+export class FastifyAdapter<TInstance> extends AbstractHttpAdapter {
   constructor(
     instanceOrOptions:
-      | any
+      | TInstance
       | fastify.ServerOptions
       | fastify.ServerOptionsAsHttp
       | fastify.ServerOptionsAsHttp2
       | fastify.ServerOptionsAsSecure
       | fastify.ServerOptionsAsSecureHttp
-      | fastify.ServerOptionsAsSecureHttp2 = fastify(),
+      | fastify.ServerOptionsAsSecureHttp2 = fastify() as any,
   ) {
     const instance =
       instanceOrOptions &&
@@ -74,12 +74,12 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     return this.instance.setNotFoundHandler(handler);
   }
 
-  public getHttpServer<T = any>(): T {
-    return this.instance.server as T;
+  public getHttpServer<TServer = any>(): TServer {
+    return this.instance.server as TServer;
   }
 
-  public getInstance<T = any>(): T {
-    return this.instance as T;
+  public getInstance<TServer = any>(): TServer {
+    return this.instance as TServer;
   }
 
   public register(...args: any[]) {
