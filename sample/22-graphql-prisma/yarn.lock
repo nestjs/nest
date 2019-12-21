@@ -383,17 +383,17 @@
     webpack "4.41.2"
     webpack-node-externals "1.7.2"
 
-"@nestjs/common@6.10.11":
-  version "6.10.11"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.10.11.tgz#f67b5e3c2cc7677587df554ebcdc378d67839c62"
+"@nestjs/common@6.10.12":
+  version "6.10.12"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.10.12.tgz#3ac48b5ec305243802320c5c53480fab3a5c1820"
   dependencies:
     axios "0.19.0"
     cli-color "2.0.0"
     uuid "3.3.3"
 
-"@nestjs/core@6.10.11":
-  version "6.10.11"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.10.11.tgz#3189534ce19f79d54a876f9a609b3d7926903e41"
+"@nestjs/core@6.10.12":
+  version "6.10.12"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.10.12.tgz#546363837e3cf9a4467e24c4cd8902e9a492668b"
   dependencies:
     "@nuxtjs/opencollective" "0.2.2"
     fast-safe-stringify "2.0.7"
@@ -417,9 +417,9 @@
   optionalDependencies:
     type-graphql "^0.17.3"
 
-"@nestjs/platform-express@6.10.11":
-  version "6.10.11"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.10.11.tgz#d21a3620e9164e4c4469e8c7311e04841e53aa23"
+"@nestjs/platform-express@6.10.12":
+  version "6.10.12"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.10.12.tgz#e8c3189a5b3761c05ec0bbc40db0573b5070e9cc"
   dependencies:
     body-parser "1.19.0"
     cors "2.8.5"
@@ -446,9 +446,9 @@
     ts-morph "^4.0.0"
     typescript "3.4.5"
 
-"@nestjs/testing@6.10.11":
-  version "6.10.11"
-  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-6.10.11.tgz#ded7efb9a448799e4307cb95c892047c3b4c8485"
+"@nestjs/testing@6.10.12":
+  version "6.10.12"
+  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-6.10.12.tgz#146c90bf0c8b2575e5eaa11ec86007147a063cf9"
   dependencies:
     optional "0.1.4"
 
