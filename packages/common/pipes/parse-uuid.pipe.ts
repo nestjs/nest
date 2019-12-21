@@ -16,7 +16,7 @@ export class ParseUUIDPipe implements PipeTransform<string> {
   constructor(@Optional() options?: ParseUUIDPipeOptions) {
     options = options || {};
 
-    this.version = options.version;
+    this.version = options.version || '4';
     this.exceptionFactory =
       options.exceptionFactory || (error => new BadRequestException(error));
   }
