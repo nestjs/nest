@@ -134,7 +134,7 @@
     "markdown-table": "1.1.3",
     "mocha": "6.2.2",
     "nodemon": "2.0.2",
-    "nyc": "14.1.1",
+    "nyc": "15.0.0",
     "prettier": "1.19.1",
     "sinon": "8.0.0",
     "sinon-chai": "3.3.0",
