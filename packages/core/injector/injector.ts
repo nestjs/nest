@@ -55,7 +55,7 @@ export interface InjectorDependencyContext {
   /**
    * The name of the function or injection token
    */
-  name?: string;
+  name?: string | symbol;
   /**
    * The index of the dependency which gets injected
    * from the dependencies array
@@ -411,7 +411,7 @@ export class Injector {
   }
 
   public async lookupComponent<T = any>(
-    providers: Map<string, InstanceWrapper>,
+    providers: Map<string | symbol, InstanceWrapper>,
     module: Module,
     dependencyContext: InjectorDependencyContext,
     wrapper: InstanceWrapper<T>,
