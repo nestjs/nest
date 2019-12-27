@@ -20,7 +20,7 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
     "subscriptions-transport-ws": "0.9.16",
-    "type-graphql": "0.17.5",
+    "type-graphql": "0.17.6",
     "typescript": "3.7.2",
     "ws": "7.2.1"
   },
