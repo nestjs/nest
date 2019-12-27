@@ -473,16 +473,8 @@ export class Module {
     return this._providers.get(name) as InstanceWrapper<T>;
   }
 
-  public getNonAliasProviders(): Map<string, InstanceWrapper<Injectable>> {
-    const result = new Map<string, InstanceWrapper<Injectable>>();
-
-    this._providers.forEach((wrapper, key) => {
-      if (!wrapper.isAlias) {
-        result.set(key, wrapper);
-      }
-    });
-
-    return result;
+  public getNonAliasProviders(): Array<[string, InstanceWrapper<Injectable>]> {
+    return [...this._providers].filter(([_, wrapper]) => !wrapper.isAlias);
   }
 
   public createModuleReferenceType(): any {
