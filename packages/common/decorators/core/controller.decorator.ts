@@ -1,4 +1,8 @@
-import { PATH_METADATA, SCOPE_OPTIONS_METADATA } from '../../constants';
+import {
+  PATH_METADATA,
+  PATH_PREFIX_METADATA,
+  SCOPE_OPTIONS_METADATA,
+} from '../../constants';
 import { isString, isUndefined } from '../../utils/shared.utils';
 import { ScopeOptions } from '../../interfaces/scope-options.interface';
 
@@ -9,12 +13,22 @@ import { ScopeOptions } from '../../interfaces/scope-options.interface';
  */
 export interface ControllerOptions extends ScopeOptions {
   /**
-   * Specifies an optional `route path prefix`.  The prefix is pre-pended to the
+   * Specifies an optional `route path prefix`. The prefix is pre-pended to the
    * path specified in any request decorator in the class.
    *
    * @see [Routing](https://docs.nestjs.com/controllers#routing)
    */
   path?: string;
+
+  /**
+   * Specifies an optional setting for enabling/disabling the use of app's
+   * GlobalPrefix. In other words, a switch to remove the prefix set using
+   * `setGlobalPrefix()` only for this controller.
+   *
+   * @see [Routing](https://docs.nestjs.com/controllers#routing)
+   * @see [Global path prefix](https://docs.nestjs.com/faq/global-prefix)
+   */
+  useGlobalPrefix?: boolean;
 }
 
 /**
@@ -113,8 +127,10 @@ export function Controller(options: ControllerOptions): ClassDecorator;
  * - `scope` - symbol that determines the lifetime of a Controller instance.
  * [See Scope](https://docs.nestjs.com/fundamentals/injection-scopes#usage) for
  * more details.
- * - `prefix` - string that defines a `route path prefix`.  The prefix
+ * - `path` - string that defines a `route path prefix`. The prefix
  * is pre-pended to the path specified in any request decorator in the class.
+ * - `useGlobalPrefix` - a boolean value that enables/disables the setting done
+ * using `setGlobalPrefix()`.
  *
  * @see [Routing](https://docs.nestjs.com/controllers#routing)
  * @see [Controllers](https://docs.nestjs.com/controllers)
@@ -127,14 +143,22 @@ export function Controller(
   prefixOrOptions?: string | ControllerOptions,
 ): ClassDecorator {
   const defaultPath = '/';
-  const [path, scopeOptions] = isUndefined(prefixOrOptions)
-    ? [defaultPath, undefined]
+  const defaultUseGlobalPrefix = true;
+  const [path, useGlobalPrefix, scopeOptions] = isUndefined(prefixOrOptions)
+    ? [defaultPath, defaultUseGlobalPrefix, undefined]
     : isString(prefixOrOptions)
-    ? [prefixOrOptions, undefined]
-    : [prefixOrOptions.path || defaultPath, { scope: prefixOrOptions.scope }];
+    ? [prefixOrOptions, defaultUseGlobalPrefix, undefined]
+    : [
+        prefixOrOptions.path || defaultPath,
+        !isUndefined(prefixOrOptions)
+          ? Boolean(prefixOrOptions.useGlobalPrefix)
+          : defaultUseGlobalPrefix,
+        { scope: prefixOrOptions.scope },
+      ];
 
   return (target: object) => {
     Reflect.defineMetadata(PATH_METADATA, path, target);
     Reflect.defineMetadata(SCOPE_OPTIONS_METADATA, scopeOptions, target);
+    Reflect.defineMetadata(PATH_PREFIX_METADATA, useGlobalPrefix, target);
   };
 }
