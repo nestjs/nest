@@ -50,7 +50,7 @@ export async function callBeforeAppShutdownHook(
   module: Module,
   signal?: string,
 ): Promise<void> {
-  const providers = [...module.providers];
+  const providers = module.getNonAliasProviders();
   const [_, { instance: moduleClassInstance }] = providers.shift();
   const instances = [...module.controllers, ...providers];
 
