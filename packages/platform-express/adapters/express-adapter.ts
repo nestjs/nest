@@ -59,7 +59,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public close() {
-    return this.httpServer ? this.httpServer.close() : undefined;
+    if (!this.httpServer) {
+      return undefined;
+    }
+    return new Promise(resolve => this.httpServer.close(resolve));
   }
 
   public set(...args: any[]) {
