@@ -41,12 +41,12 @@ export function createParamDecorator<
   factory: CustomParamFactory<FactoryData, FactoryInput, FactoryOutput>,
   enhancers: ParamDecoratorEnhancer[] = [],
 ): (
-  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | FactoryInput)[]
+  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | FactoryData)[]
 ) => ParameterDecorator {
   const paramtype = uuid();
   return (
     data?,
-    ...pipes: (Type<PipeTransform> | PipeTransform | FactoryInput)[]
+    ...pipes: (Type<PipeTransform> | PipeTransform | FactoryData)[]
   ): ParameterDecorator => (target, key, index) => {
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
