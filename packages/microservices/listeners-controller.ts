@@ -121,10 +121,13 @@ export class ListenersController {
       try {
         const [data, reqCtx] = args;
         const contextId = createContextId();
-        this.registerRequestProvider(
-          RequestContextHost.create(pattern, data, reqCtx as BaseRpcContext),
-          contextId,
+
+        const req = RequestContextHost.create(
+          pattern,
+          data,
+          reqCtx as BaseRpcContext,
         );
+        this.container.registerRequestProvider(req, contextId);
 
         const contextInstance = await this.injector.loadPerContext(
           instance,

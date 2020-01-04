@@ -8,7 +8,9 @@ import { InvalidModuleException } from '../errors/exceptions/invalid-module.exce
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
 import { HttpAdapterHost } from '../helpers/http-adapter-host';
+import { REQUEST } from '../router/request/request-constants';
 import { ModuleCompiler } from './compiler';
+import { ContextId } from './instance-wrapper';
 import { InternalCoreModule } from './internal-core-module';
 import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
@@ -65,10 +67,11 @@ export class NestContainer {
     }
     const module = new Module(type, scope, this);
     this.modules.set(token, module);
-
     this.addDynamicMetadata(token, dynamicMetadata, [].concat(scope, type));
-    this.isGlobalModule(type) && this.addGlobalModule(module);
 
+    if (this.isGlobalModule(type, dynamicMetadata)) {
+      this.addGlobalModule(module);
+    }
     return module;
   }
 
@@ -93,7 +96,13 @@ export class NestContainer {
     modules.forEach(module => this.addModule(module, scope));
   }
 
-  public isGlobalModule(metatype: Type<any>): boolean {
+  public isGlobalModule(
+    metatype: Type<any>,
+    dynamicMetadata?: Partial<DynamicModule>,
+  ): boolean {
+    if (dynamicMetadata && dynamicMetadata.global) {
+      return true;
+    }
     return !!Reflect.getMetadata(GLOBAL_MODULE_METADATA, metatype);
   }
 
@@ -228,5 +237,13 @@ export class NestContainer {
 
   public getModuleTokenFactory(): ModuleTokenFactory {
     return this.moduleTokenFactory;
+  }
+
+  public registerRequestProvider<T = any>(request: T, contextId: ContextId) {
+    const wrapper = this.internalCoreModule.getProviderByKey(REQUEST);
+    wrapper.setInstanceByContextId(contextId, {
+      instance: request,
+      isResolved: true,
+    });
   }
 }

@@ -351,6 +351,7 @@ export class Module {
         isResolved: false,
         inject: [useExisting],
         host: this,
+        isAlias: true,
       }),
     );
   }
@@ -470,6 +471,10 @@ export class Module {
 
   public getProviderByKey<T = any>(name: string | symbol): InstanceWrapper<T> {
     return this._providers.get(name) as InstanceWrapper<T>;
+  }
+
+  public getNonAliasProviders(): Array<[string, InstanceWrapper<Injectable>]> {
+    return [...this._providers].filter(([_, wrapper]) => !wrapper.isAlias);
   }
 
   public createModuleReferenceType(): any {

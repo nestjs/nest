@@ -9,13 +9,13 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.10.7",
-    "@nestjs/core": "6.10.7",
+    "@nestjs/common": "6.10.12",
+    "@nestjs/core": "6.10.12",
     "@nestjs/typeorm": "6.2.0",
     "mysql": "2.17.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.3",
-    "typeorm": "0.2.21",
+    "typeorm": "0.2.22",
     "typescript": "3.7.2"
   },
   "devDependencies": {

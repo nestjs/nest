@@ -21,14 +21,14 @@ describe('SocketsContainer', () => {
   describe('getSocketEventsHostByPort', () => {
     it(`should call "socketEventHosts" get method with expected arguments`, () => {
       instance.getSocketEventsHostByPort(port);
-      expect(getSpy.calledWith({ namespace, port }));
+      expect(getSpy.calledWith(port.toString())).to.be.true;
     });
   });
   describe('addSocketEventsHost', () => {
     it(`should call "socketEventHosts" set method with expected arguments`, () => {
       const server = {};
       instance.addSocketEventsHost(namespace, port, server as any);
-      expect(setSpy.calledWith({ namespace, port }, server));
+      expect(setSpy.calledWith(`${namespace}:${port}`, server)).to.be.true;
     });
   });
   describe('getAllSocketEventHosts', () => {

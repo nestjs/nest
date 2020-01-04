@@ -10,7 +10,7 @@ import { Module } from '../injector/module';
  * Returns the name of an instance
  * @param instance The instance which should get the name from
  */
-const getInstanceName = (instance: unknown) =>
+const getInstanceName = (instance: unknown): string =>
   instance && (instance as Type<any>).name;
 
 /**
@@ -19,13 +19,13 @@ const getInstanceName = (instance: unknown) =>
  * (= injection token). As fallback it returns '+'
  * @param dependency The dependency whichs name should get displayed
  */
-const getDependencyName = (dependency: InjectorDependency) =>
+const getDependencyName = (dependency: InjectorDependency): string =>
   // use class name
   getInstanceName(dependency) ||
   // use injection token (symbol)
   (isSymbol(dependency) && dependency.toString()) ||
   // use string directly
-  dependency ||
+  (dependency as string) ||
   // otherwise
   '+';
 
@@ -49,15 +49,16 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
     key,
   } = unknownDependencyContext;
   const moduleName = getModuleName(module) || 'Module';
+  const dependencyName = getDependencyName(name);
 
   let message = `Nest can't resolve dependencies of the ${type.toString()}`;
 
   const potentialSolutions = `\n
 Potential solutions:
-- If ${name} is a provider, is it part of the current ${moduleName}?
-- If ${name} is exported from a separate @Module, is that module imported within ${moduleName}?
+- If ${dependencyName} is a provider, is it part of the current ${moduleName}?
+- If ${dependencyName} is exported from a separate @Module, is that module imported within ${moduleName}?
   @Module({
-    imports: [ /* the Module containing ${name} */ ]
+    imports: [ /* the Module containing ${dependencyName} */ ]
   })
 `;
 
@@ -70,7 +71,7 @@ Potential solutions:
 
   message += ` (`;
   message += dependenciesName.join(', ');
-  message += `). Please make sure that the argument ${name} at index [${index}] is available in the ${getModuleName(
+  message += `). Please make sure that the argument ${dependencyName} at index [${index}] is available in the ${getModuleName(
     module,
   )} context.`;
   message += potentialSolutions;
