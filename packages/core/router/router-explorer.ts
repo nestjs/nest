@@ -1,5 +1,9 @@
 import { HttpServer } from '@nestjs/common';
-import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import {
+  PATH_METADATA,
+  METHOD_METADATA,
+  PATH_PREFIX_METADATA,
+} from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -88,7 +92,8 @@ export class RouterExplorer {
     prefix?: string,
   ): string {
     let path = Reflect.getMetadata(PATH_METADATA, metatype);
-    if (prefix) path = prefix + this.validateRoutePath(path);
+    const usePrefix = Reflect.getMetadata(PATH_PREFIX_METADATA, metatype);
+    if (prefix && usePrefix) path = prefix + this.validateRoutePath(path);
     return this.validateRoutePath(path);
   }
 
