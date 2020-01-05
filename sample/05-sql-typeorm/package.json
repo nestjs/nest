@@ -26,7 +26,7 @@
     "mysql": "2.17.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.0",
-    "rxjs": "6.5.3",
+    "rxjs": "6.5.4",
     "typeorm": "0.2.22"
   },
   "devDependencies": {

@@ -16,7 +16,7 @@
     "class-validator": "0.10.1",
     "fastify": "2.9.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.3",
+    "rxjs": "6.5.4",
     "typescript": "3.7.2"
   },
   "devDependencies": {

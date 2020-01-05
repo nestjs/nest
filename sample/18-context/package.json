@@ -23,7 +23,7 @@
     "@nestjs/core": "6.10.12",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.0",
-    "rxjs": "6.5.3"
+    "rxjs": "6.5.4"
   },
   "devDependencies": {
     "@nestjs/cli": "6.12.9",
