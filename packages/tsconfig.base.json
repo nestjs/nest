@@ -6,6 +6,7 @@
     "skipLibCheck": true,
     "suppressImplicitAnyIndexErrors": true,
     "noUnusedLocals": false,
+    "importHelpers": true,
     "removeComments": false,
     "noLib": false,
     "emitDecoratorMetadata": true,

@@ -19,6 +19,7 @@
   "dependencies": {
     "axios": "0.19.0",
     "cli-color": "2.0.0",
+    "tslib": "^1.10.0",
     "uuid": "3.3.3"
   },
   "peerDependencies": {
