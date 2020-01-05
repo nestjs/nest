@@ -26,7 +26,7 @@
     "mongoose": "5.8.4",
     "reflect-metadata": "0.1.13",
     "rimraf": "2.7.1",
-    "rxjs": "6.5.3"
+    "rxjs": "6.5.4"
   },
   "devDependencies": {
     "@types/mongoose": "5.5.38",
