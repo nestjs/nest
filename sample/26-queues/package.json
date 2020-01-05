@@ -20,9 +20,9 @@
   },
   "dependencies": {
     "@nestjs/bull": "0.0.1-beta.4",
-    "@nestjs/common": "6.10.9",
-    "@nestjs/core": "6.10.9",
-    "@nestjs/platform-express": "6.10.9",
+    "@nestjs/common": "6.10.14",
+    "@nestjs/core": "6.10.14",
+    "@nestjs/platform-express": "6.10.14",
     "bull": "3.12.1",
     "dotenv": "8.2.0",
     "reflect-metadata": "0.1.13",
@@ -32,7 +32,7 @@
   "devDependencies": {
     "@nestjs/cli": "6.12.9",
     "@nestjs/schematics": "6.7.6",
-    "@nestjs/testing": "6.10.9",
+    "@nestjs/testing": "6.10.14",
     "@types/bull": "3.10.6",
     "@types/dotenv": "6.1.1",
     "@types/express": "4.17.2",
