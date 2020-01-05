@@ -14,7 +14,7 @@
     "@nestjs/core": "6.10.12",
     "@nestjs/platform-express": "6.10.12",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.3",
+    "rxjs": "6.5.4",
     "typescript": "3.7.2"
   },
   "devDependencies": {
@@ -22,7 +22,7 @@
     "ts-loader": "6.2.1",
     "ts-node": "8.5.4",
     "tslint": "5.20.1",
-    "webpack": "4.41.4",
+    "webpack": "4.41.5",
     "webpack-cli": "3.3.10",
     "webpack-node-externals": "1.7.2"
   }
