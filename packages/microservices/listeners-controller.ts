@@ -159,7 +159,7 @@ export class ListenersController {
         }
         const host = new ExecutionContextHost(args);
         host.setType('rpc');
-        exceptionFilter.handle(err, host);
+        return exceptionFilter.handle(err, host);
       }
     };
   }
