@@ -30,7 +30,7 @@
     "rxjs": "6.5.4"
   },
   "devDependencies": {
-    "@nestjs/cli": "6.13.1",
+    "@nestjs/cli": "6.13.2",
     "@nestjs/schematics": "6.8.0",
     "@nestjs/testing": "6.10.14",
     "@types/bull": "3.10.6",
@@ -42,7 +42,7 @@
     "jest": "24.7.1",
     "prettier": "1.19.1",
     "supertest": "4.0.2",
-    "ts-jest": "24.2.0",
+    "ts-jest": "24.3.0",
     "ts-loader": "6.2.1",
     "ts-node": "8.5.4",
     "tsconfig-paths": "3.9.0",
