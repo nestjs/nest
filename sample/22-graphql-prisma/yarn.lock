@@ -341,15 +341,15 @@
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-"@nestjs/cli@6.13.2":
-  version "6.13.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.13.2.tgz#e20618511be3cb4259830c50916dae8306d21c8b"
+"@nestjs/cli@6.13.3":
+  version "6.13.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.13.3.tgz#005de6be2ac55c07a4bdafd558c4d9e936c2b328"
   dependencies:
     "@angular-devkit/core" "7.3.8"
     "@angular-devkit/schematics" "7.3.8"
     "@angular-devkit/schematics-cli" "0.13.8"
     "@nestjs/schematics" "^6.8.0"
-    "@types/webpack" "4.41.1"
+    "@types/webpack" "4.41.2"
     chalk "2.4.2"
     cli-table3 "0.5.1"
     commander "4.1.0"
@@ -363,7 +363,7 @@
     tree-kill "1.2.2"
     tsconfig-paths "3.9.0"
     tsconfig-paths-webpack-plugin "3.2.0"
-    typescript "3.6.4"
+    typescript "^3.6.4"
     webpack "4.41.5"
     webpack-node-externals "1.7.2"
 
@@ -768,9 +768,9 @@
     "@types/source-list-map" "*"
     source-map "^0.6.1"
 
-"@types/webpack@4.41.1":
-  version "4.41.1"
-  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.41.1.tgz#571f0e137ce698710dd2637f7d222811eb83e274"
+"@types/webpack@4.41.2":
+  version "4.41.2"
+  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.41.2.tgz#c6faf0111de27afdffe1158dac559e447c273516"
   dependencies:
     "@types/anymatch" "*"
     "@types/node" "*"
@@ -6543,10 +6543,6 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
 
-typescript@3.6.4:
-  version "3.6.4"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.6.4.tgz#b18752bb3792bc1a0281335f7f6ebf1bbfc5b91d"
-
 typescript@3.7.2:
   version "3.7.2"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.7.2.tgz#27e489b95fa5909445e9fef5ee48d81697ad18fb"
@@ -6554,6 +6550,10 @@ typescript@3.7.2:
 typescript@^3.0.1:
   version "3.5.3"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.5.3.tgz#c830f657f93f1ea846819e929092f5fe5983e977"
+
+typescript@^3.6.4:
+  version "3.7.4"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.7.4.tgz#1743a5ec5fef6a1fa9f3e4708e33c81c73876c19"
 
 uglify-js@^3.1.4:
   version "3.6.1"
