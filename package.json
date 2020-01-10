@@ -140,7 +140,7 @@
     "sinon-chai": "3.4.0",
     "socket.io-client": "2.3.0",
     "supertest": "4.0.2",
-    "ts-node": "8.5.4",
+    "ts-node": "8.6.0",
     "tslint": "5.20.1",
     "typescript": "3.6.4",
     "wrk": "1.2.0"
