@@ -23,7 +23,7 @@
     "@nestjs/core": "6.10.14",
     "@nestjs/graphql": "6.5.3",
     "@nestjs/platform-express": "6.10.14",
-    "apollo-server-express": "2.9.15",
+    "apollo-server-express": "2.9.16",
     "class-transformer": "0.2.3",
     "class-validator": "0.11.0",
     "graphql": "14.5.8",
@@ -33,8 +33,8 @@
     "rxjs": "6.5.4"
   },
   "devDependencies": {
-    "@nestjs/cli": "6.13.2",
-    "@nestjs/schematics": "6.8.0",
+    "@nestjs/cli": "6.13.3",
+    "@nestjs/schematics": "6.8.2",
     "@nestjs/testing": "6.10.14",
     "@types/express": "4.17.2",
     "@types/node": "12.12.21",
@@ -44,7 +44,7 @@
     "supertest": "4.0.2",
     "ts-jest": "24.3.0",
     "ts-loader": "6.2.1",
-    "ts-node": "8.5.4",
+    "ts-node": "8.6.1",
     "tsconfig-paths": "3.9.0",
     "tslint": "5.20.1",
     "typescript": "3.7.2"
