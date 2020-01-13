@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { HTTPInjectOptions, HTTPInjectResponse } from 'fastify';
-import { NestFastifyListenCallback } from '../types/nest-fastify-listen-callback.type';
 
 export interface NestFastifyApplication extends INestApplication {
   /**
@@ -41,16 +40,19 @@ export interface NestFastifyApplication extends INestApplication {
    * Starts the application.
    * @returns A Promise that, when resolved, is a reference to the underlying HttpServer.
    */
-  listen(port: number, callback: NestFastifyListenCallback): Promise<any>;
+  listen(
+    port: number,
+    callback?: (err: Error, address: string) => void,
+  ): Promise<any>;
   listen(
     port: number,
     address: string,
-    callback: NestFastifyListenCallback,
+    callback?: (err: Error, address: string) => void,
   ): Promise<any>;
   listen(
     port: number,
     address: string,
     backlog: number,
-    callback: NestFastifyListenCallback,
+    callback?: (err: Error, address: string) => void,
   ): Promise<any>;
 }
