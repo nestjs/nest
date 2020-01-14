@@ -341,14 +341,14 @@
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-"@nestjs/cli@6.13.3":
-  version "6.13.3"
-  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.13.3.tgz#005de6be2ac55c07a4bdafd558c4d9e936c2b328"
+"@nestjs/cli@6.14.0":
+  version "6.14.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-6.14.0.tgz#27745bfdcc5aa8d4b4fbf4f9aca557031d8ced0a"
   dependencies:
     "@angular-devkit/core" "7.3.8"
     "@angular-devkit/schematics" "7.3.8"
     "@angular-devkit/schematics-cli" "0.13.8"
-    "@nestjs/schematics" "^6.8.0"
+    "@nestjs/schematics" "^6.8.2"
     "@types/webpack" "4.41.2"
     chalk "2.4.2"
     cli-table3 "0.5.1"
@@ -410,17 +410,9 @@
     express "4.17.1"
     multer "1.4.2"
 
-"@nestjs/schematics@6.8.2":
+"@nestjs/schematics@6.8.2", "@nestjs/schematics@^6.8.2":
   version "6.8.2"
   resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.8.2.tgz#0c4c6cc87dd28564bb52e6516deacad1d6ceb56c"
-  dependencies:
-    "@angular-devkit/core" "7.3.8"
-    "@angular-devkit/schematics" "7.3.8"
-    fs-extra "8.1.0"
-
-"@nestjs/schematics@^6.8.0":
-  version "6.8.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.8.0.tgz#9262ee1dc4613c6323b2efc3aa593847e631c198"
   dependencies:
     "@angular-devkit/core" "7.3.8"
     "@angular-devkit/schematics" "7.3.8"
@@ -6411,15 +6403,15 @@ ts-morph@4.0.1:
     multimatch "^4.0.0"
     typescript "^3.0.1"
 
-ts-node@8.6.1:
-  version "8.6.1"
-  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.6.1.tgz#a31838d93cb67bbe2c56026848ab6c9224564c4e"
+ts-node@8.6.2:
+  version "8.6.2"
+  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.6.2.tgz#7419a01391a818fbafa6f826a33c1a13e9464e35"
   dependencies:
     arg "^4.1.0"
     diff "^4.0.1"
     make-error "^1.1.1"
     source-map-support "^0.5.6"
-    yn "^4.0.0"
+    yn "3.1.1"
 
 ts-node@^7.0.1:
   version "7.0.1"
@@ -6957,13 +6949,13 @@ yargs@^13.2.4, yargs@^13.3.0:
     y18n "^4.0.0"
     yargs-parser "^13.1.1"
 
+yn@3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/yn/-/yn-3.1.1.tgz#1e87401a09d767c1d5eab26a6e4c185182d2eb50"
+
 yn@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/yn/-/yn-2.0.0.tgz#e5adabc8acf408f6385fc76495684c88e6af689a"
-
-yn@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/yn/-/yn-4.0.0.tgz#611480051ea43b510da1dfdbe177ed159f00a979"
 
 zen-observable-ts@^0.8.10:
   version "0.8.10"
