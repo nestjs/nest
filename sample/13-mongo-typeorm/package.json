@@ -23,7 +23,7 @@
     "@nestjs/core": "6.10.14",
     "@nestjs/platform-express": "6.10.14",
     "@nestjs/typeorm": "6.2.0",
-    "mongodb": "3.4.1",
+    "mongodb": "3.5.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "2.7.1",
     "rxjs": "6.5.4",
