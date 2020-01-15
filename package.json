@@ -103,7 +103,7 @@
     "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "7.5.1",
     "@types/socket.io": "2.1.4",
-    "@types/ws": "6.0.4",
+    "@types/ws": "7.2.0",
     "artillery": "1.6.0-29",
     "awesome-typescript-loader": "5.2.1",
     "body-parser": "1.19.0",
