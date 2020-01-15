@@ -85,7 +85,7 @@
   },
   "devDependencies": {
     "@codechecks/client": "0.1.10",
-    "@commitlint/cli": "8.3.4",
+    "@commitlint/cli": "8.3.5",
     "@commitlint/config-angular": "8.3.4",
     "@types/amqplib": "0.5.13",
     "@types/bytes": "3.1.0",
