@@ -7,11 +7,11 @@
     "start": "ts-node src/main"
   },
   "dependencies": {
-    "@nestjs/common": "6.10.12",
-    "@nestjs/core": "6.10.12",
-    "@nestjs/microservices": "6.10.12",
-    "@nestjs/testing": "6.10.12",
-    "@nestjs/websockets": "6.10.12",
+    "@nestjs/common": "6.10.14",
+    "@nestjs/core": "6.10.14",
+    "@nestjs/microservices": "6.10.14",
+    "@nestjs/testing": "6.10.14",
+    "@nestjs/websockets": "6.10.14",
     "class-transformer": "0.2.3",
     "class-validator": "0.11.0",
     "reflect-metadata": "0.1.13",
@@ -21,6 +21,6 @@
   "devDependencies": {
     "@types/node": "7.10.9",
     "supertest": "4.0.2",
-    "ts-node": "8.5.4"
+    "ts-node": "8.6.2"
   }
 }
