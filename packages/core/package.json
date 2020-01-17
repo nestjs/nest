@@ -31,7 +31,7 @@
     "fast-safe-stringify": "2.0.7",
     "iterare": "1.2.0",
     "object-hash": "2.0.1",
-    "uuid": "3.3.3"
+    "uuid": "3.4.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^6.0.0",
