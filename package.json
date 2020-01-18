@@ -81,7 +81,7 @@
     "rxjs-compat": "6.5.4",
     "socket.io": "2.3.0",
     "ts-morph": "5.0.0",
-    "uuid": "3.3.3"
+    "uuid": "3.4.0"
   },
   "devDependencies": {
     "@codechecks/client": "0.1.10",
@@ -136,7 +136,7 @@
     "nodemon": "2.0.2",
     "nyc": "15.0.0",
     "prettier": "1.19.1",
-    "sinon": "8.0.4",
+    "sinon": "8.1.0",
     "sinon-chai": "3.4.0",
     "socket.io-client": "2.3.0",
     "supertest": "4.0.2",

@@ -19,7 +19,7 @@
   "dependencies": {
     "axios": "0.19.0",
     "cli-color": "2.0.0",
-    "uuid": "3.3.3"
+    "uuid": "3.4.0"
   },
   "peerDependencies": {
     "reflect-metadata": "^0.1.12",
