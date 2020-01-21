@@ -44,7 +44,7 @@
   "dependencies": {
     "@grpc/proto-loader": "0.5.3",
     "@nuxtjs/opencollective": "0.2.2",
-    "amqp-connection-manager": "3.1.1",
+    "amqp-connection-manager": "3.2.0",
     "amqplib": "0.5.5",
     "apollo-server-express": "2.9.16",
     "axios": "0.19.0",
