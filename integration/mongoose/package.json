@@ -18,7 +18,7 @@
     "typescript": "3.7.2"
   },
   "devDependencies": {
-    "@types/mongoose": "5.5.42",
+    "@types/mongoose": "5.5.43",
     "@types/node": "7.10.9",
     "ts-node": "8.6.2",
     "tslint": "5.20.1"
