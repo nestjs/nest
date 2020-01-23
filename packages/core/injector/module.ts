@@ -39,6 +39,7 @@ export class Module {
   private readonly _imports = new Set<Module>();
   private readonly _providers = new Map<any, InstanceWrapper<Injectable>>();
   private readonly _injectables = new Map<any, InstanceWrapper<Injectable>>();
+  private readonly _middlewares = new Map<any, InstanceWrapper<Injectable>>();
   private readonly _controllers = new Map<
     string,
     InstanceWrapper<Controller>
@@ -51,7 +52,7 @@ export class Module {
     private readonly _scope: Type<any>[],
     private readonly container: NestContainer,
   ) {
-    this.addCoreProviders(container);
+    this.addCoreProviders();
     this._id = randomStringGenerator();
   }
 
@@ -65,6 +66,10 @@ export class Module {
 
   get providers(): Map<any, InstanceWrapper<Injectable>> {
     return this._providers;
+  }
+
+  get middlewares(): Map<any, InstanceWrapper<Injectable>> {
+    return this._middlewares;
   }
 
   get imports(): Set<Module> {
@@ -124,7 +129,7 @@ export class Module {
     this._distance = value;
   }
 
-  public addCoreProviders(container: NestContainer) {
+  public addCoreProviders() {
     this.addModuleAsProvider();
     this.addModuleRef();
     this.addApplicationConfig();
