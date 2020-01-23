@@ -44,11 +44,12 @@ export class NestApplication extends NestApplicationContext
   implements INestApplication {
   private readonly logger = new Logger(NestApplication.name, true);
   private readonly middlewareModule = new MiddlewareModule();
-  private readonly middlewareContainer = new MiddlewareContainer();
-  private readonly microservicesModule = MicroservicesModule
-    ? new MicroservicesModule()
-    : null;
-  private readonly socketModule = SocketModule ? new SocketModule() : null;
+  private readonly middlewareContainer = new MiddlewareContainer(
+    this.container,
+  );
+  private readonly microservicesModule =
+    MicroservicesModule && new MicroservicesModule();
+  private readonly socketModule = SocketModule && new SocketModule();
   private readonly routesResolver: Resolver;
   private readonly microservices: any[] = [];
   private httpServer: any;

@@ -56,7 +56,7 @@ describe('MiddlewareModule', () => {
       };
 
       await middlewareModule.loadConfiguration(
-        new MiddlewareContainer(),
+        new MiddlewareContainer(new NestContainer()),
         mockModule as any,
         'Test' as any,
       );
@@ -71,27 +71,35 @@ describe('MiddlewareModule', () => {
   });
 
   describe('registerRouteMiddleware', () => {
+    class TestModule {}
+
+    let nestContainer: NestContainer;
+
+    beforeEach(() => {
+      nestContainer = new NestContainer();
+      nestContainer
+        .getModules()
+        .set('Test', new Module(TestModule, [], nestContainer));
+    });
     it('should throw "RuntimeException" exception when middleware is not stored in container', () => {
       const route = { path: 'Test' };
       const configuration = {
         middleware: [TestMiddleware],
         forRoutes: [BaseController],
       };
-
       const useSpy = sinon.spy();
       const app = { use: useSpy };
 
-      const nestContainer = new NestContainer();
       // tslint:disable-next-line:no-string-literal
       middlewareModule['container'] = nestContainer;
 
       expect(
         middlewareModule.registerRouteMiddleware(
-          new MiddlewareContainer(),
+          new MiddlewareContainer(nestContainer),
           route as any,
           configuration,
-          'Test' as any,
-          app as any,
+          'Test',
+          app,
         ),
       ).to.eventually.be.rejectedWith(RuntimeException);
     });
@@ -109,8 +117,8 @@ describe('MiddlewareModule', () => {
       const useSpy = sinon.spy();
       const app = { use: useSpy };
 
-      const container = new MiddlewareContainer();
-      const moduleKey = 'Test' as any;
+      const container = new MiddlewareContainer(nestContainer);
+      const moduleKey = 'Test';
       container.insertConfig([configuration], moduleKey);
 
       const instance = new InvalidMiddleware();
@@ -125,7 +133,7 @@ describe('MiddlewareModule', () => {
           route as any,
           configuration,
           moduleKey,
-          app as any,
+          app,
         ),
       ).to.be.rejectedWith(InvalidMiddlewareException);
     });
@@ -143,7 +151,7 @@ describe('MiddlewareModule', () => {
       const app = {
         createMiddlewareFactory: createMiddlewareFactoryStub,
       };
-      const container = new MiddlewareContainer();
+      const container = new MiddlewareContainer(new NestContainer());
       const moduleKey = 'Test';
       container.insertConfig([configuration], moduleKey);
 
@@ -155,7 +163,6 @@ describe('MiddlewareModule', () => {
           instance,
         }),
       );
-      const nestContainer = new NestContainer();
       sinon
         .stub(nestContainer, 'getModuleByKey')
         .callsFake(() => new Module(class {}, [], nestContainer));
