@@ -126,7 +126,7 @@
     "gulp-sourcemaps": "2.6.5",
     "gulp-typescript": "5.0.1",
     "gulp-watch": "5.0.1",
-    "husky": "4.2.0",
+    "husky": "4.2.1",
     "imports-loader": "0.8.0",
     "json-loader": "0.5.7",
     "lerna": "2.11.0",
