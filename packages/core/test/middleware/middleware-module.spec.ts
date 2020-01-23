@@ -55,10 +55,15 @@ describe('MiddlewareModule', () => {
         configure: configureSpy,
       };
 
+      const stubContainer = new NestContainer();
+      stubContainer
+        .getModules()
+        .set('Test', new Module(class {}, [], stubContainer));
+
       await middlewareModule.loadConfiguration(
-        new MiddlewareContainer(new NestContainer()),
+        new MiddlewareContainer(stubContainer),
         mockModule as any,
-        'Test' as any,
+        'Test',
       );
 
       expect(configureSpy.calledOnce).to.be.true;
@@ -151,7 +156,13 @@ describe('MiddlewareModule', () => {
       const app = {
         createMiddlewareFactory: createMiddlewareFactoryStub,
       };
-      const container = new MiddlewareContainer(new NestContainer());
+
+      const stubContainer = new NestContainer();
+      stubContainer
+        .getModules()
+        .set('Test', new Module(TestModule, [], stubContainer));
+
+      const container = new MiddlewareContainer(stubContainer);
       const moduleKey = 'Test';
       container.insertConfig([configuration], moduleKey);
 
@@ -164,17 +175,17 @@ describe('MiddlewareModule', () => {
         }),
       );
       sinon
-        .stub(nestContainer, 'getModuleByKey')
-        .callsFake(() => new Module(class {}, [], nestContainer));
+        .stub(stubContainer, 'getModuleByKey')
+        .callsFake(() => new Module(class {}, [], stubContainer));
       // tslint:disable-next-line:no-string-literal
-      middlewareModule['container'] = nestContainer;
+      middlewareModule['container'] = stubContainer;
 
       await middlewareModule.registerRouteMiddleware(
         container,
         { path: route, method: RequestMethod.ALL },
         configuration,
         moduleKey,
-        app as any,
+        app,
       );
       expect(createMiddlewareFactoryStub.calledOnce).to.be.true;
     });
