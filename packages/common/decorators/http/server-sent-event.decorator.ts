@@ -26,7 +26,8 @@ export function ServerSentEvent<T>(path: string, retry: number = 2000): MethodDe
       const subject = new Subject<SSEMessage<T>>();
       res.write(`retry: ${retry}\n\n`);
       const stopSubject = subject.subscribe((messageData) => {
-        const message = Object.entries(messageData)
+        const {id, event, data} = messageData;
+        const message = Object.entries({id, event, data})
           .filter(([, value]) => ![undefined, null].includes(value))
           .map(([key, value]) => `${key}: ${value}`)
           .join('\n') + '\n\n';
