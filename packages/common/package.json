@@ -17,7 +17,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "axios": "0.19.0",
+    "axios": "0.19.2",
     "cli-color": "2.0.0",
     "uuid": "3.4.0"
   },
