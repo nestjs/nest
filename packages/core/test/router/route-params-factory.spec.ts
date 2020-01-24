@@ -117,10 +117,7 @@ describe('RouteParamsFactory', () => {
       describe(`RouteParamtypes.HOST`, () => {
         it('should returns hosts object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(
-              RouteParamtypes.HOST,
-              ...args,
-            ),
+            (factory as any).exchangeKeyForValue(RouteParamtypes.HOST, ...args),
           ).to.be.eql(req.hosts);
         });
       });

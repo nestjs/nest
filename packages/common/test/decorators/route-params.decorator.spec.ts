@@ -89,10 +89,18 @@ describe('@Post', () => {
   it('should set path on "/" by default', () => {
     class Test {
       @Post()
-      public static test(@Query() query, @Param() params, @HostParam() hostParams) { }
+      public static test(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
 
       @Post([])
-      public static testUsingArray(@Query() query, @Param() params, @HostParam() hostParams) { }
+      public static testUsingArray(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);

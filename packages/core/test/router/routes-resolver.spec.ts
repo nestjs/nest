@@ -117,8 +117,15 @@ describe('RoutesResolver', () => {
       routesResolver.registerRouters(routes, moduleName, '', appInstance);
 
       expect(exploreSpy.called).to.be.true;
-      expect(exploreSpy.calledWith(routeWrapper, moduleName, appInstance, '', 'api.example.com'))
-        .to.be.true;
+      expect(
+        exploreSpy.calledWith(
+          routeWrapper,
+          moduleName,
+          appInstance,
+          '',
+          'api.example.com',
+        ),
+      ).to.be.true;
     });
   });
 
