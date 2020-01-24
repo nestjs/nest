@@ -114,7 +114,14 @@ describe('RouterExplorer', () => {
         { path: ['foo', 'bar'], requestMethod: RequestMethod.GET },
       ];
 
-      routerBuilder.applyPathsToRouterProxy(null, paths as any, null, '', '');
+      routerBuilder.applyPathsToRouterProxy(
+        null,
+        paths as any,
+        null,
+        '',
+        '',
+        '',
+      );
 
       expect(bindStub.calledWith(null, paths[0], null)).to.be.true;
       expect(bindStub.callCount).to.be.eql(paths.length);

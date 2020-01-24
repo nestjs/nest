@@ -140,7 +140,8 @@ export class NestApplication extends NestApplicationContext
 
     const useBodyParser =
       this.appOptions && this.appOptions.bodyParser !== false;
-    useBodyParser && this.registerParserMiddleware(this.config.getGlobalPrefix());
+    useBodyParser &&
+      this.registerParserMiddleware(this.config.getGlobalPrefix());
 
     await this.registerModules();
     await this.registerRouter();

@@ -96,6 +96,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return this.set('view engine', engine);
   }
 
+  public getRequestHostname(request: any): string {
+    return request.hostname;
+  }
+
   public getRequestMethod(request: any): string {
     return request.method;
   }

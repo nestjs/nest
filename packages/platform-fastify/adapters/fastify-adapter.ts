@@ -9,7 +9,7 @@ import * as formBody from 'fastify-formbody';
 import * as Reply from 'fastify/lib/reply';
 import * as pathToRegexp from 'path-to-regexp';
 
-export class FastifyAdapter<TInstance> extends AbstractHttpAdapter {
+export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
   constructor(
     instanceOrOptions:
       | TInstance
@@ -71,9 +71,7 @@ export class FastifyAdapter<TInstance> extends AbstractHttpAdapter {
     prefix: string = '/',
   ) {
     return this.registerWithPrefix(
-      async (
-        instance: fastify.FastifyInstance,
-      ): Promise<void> => {
+      async (instance: fastify.FastifyInstance): Promise<void> => {
         instance.setErrorHandler(handler);
       },
       prefix,
@@ -85,9 +83,7 @@ export class FastifyAdapter<TInstance> extends AbstractHttpAdapter {
     prefix: string = '/',
   ) {
     return this.registerWithPrefix(
-      async (
-        instance: fastify.FastifyInstance,
-      ): Promise<void> => {
+      async (instance: fastify.FastifyInstance): Promise<void> => {
         instance.setNotFoundHandler(handler);
       },
       prefix,
@@ -144,6 +140,10 @@ export class FastifyAdapter<TInstance> extends AbstractHttpAdapter {
     return response.header(name, value);
   }
 
+  public getRequestHostname(request: any): string {
+    return request.hostname;
+  }
+
   public getRequestMethod(request: any): string {
     return request.raw.method;
   }
@@ -154,9 +154,7 @@ export class FastifyAdapter<TInstance> extends AbstractHttpAdapter {
 
   public enableCors(options: CorsOptions, prefix: string = '/') {
     return this.registerWithPrefix(
-      async (
-        instance: fastify.FastifyInstance,
-      ): Promise<void> => {
+      async (instance: fastify.FastifyInstance): Promise<void> => {
         instance.register(cors, (options as unknown) as {});
       },
       prefix,
@@ -165,9 +163,7 @@ export class FastifyAdapter<TInstance> extends AbstractHttpAdapter {
 
   public registerParserMiddleware(prefix: string = '/') {
     return this.registerWithPrefix(
-      async (
-        instance: fastify.FastifyInstance,
-      ): Promise<void> => {
+      async (instance: fastify.FastifyInstance): Promise<void> => {
         instance.register(formBody);
       },
       prefix,

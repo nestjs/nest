@@ -55,6 +55,7 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   createMiddlewareFactory(
     method: RequestMethod,
   ): (path: string, callback: Function) => any;
+  getRequestHostname?(request: TRequest): string;
   getRequestMethod?(request: TRequest): string;
   getRequestUrl?(request: TResponse): string;
   getInstance(): any;
