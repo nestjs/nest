@@ -61,23 +61,15 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public async bindEvents() {
     const grpcContext = this.loadProto();
-    const packageName = this.getOptionsProp(this.options, 'package');
-    const grpcPkg = this.lookupPackage(grpcContext, packageName);
-    if (!grpcPkg) {
-      const invalidPackageError = new InvalidGrpcPackageException();
-      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
-      throw invalidPackageError;
-    }
+    const packageOpt = this.getOptionsProp(this.options, 'package');
 
-    // Take all of the services defined in grpcPkg and assign them to
-    // method handlers defined in Controllers
-    for (const definition of this.getServiceNames(grpcPkg)) {
-      this.grpcClient.addService(
-        // First parameter requires exact service definition from proto
-        definition.service.service,
-        // Here full proto definition required along with namespaced pattern name
-        await this.createService(definition.service, definition.name),
-      );
+    // if packages more then 1
+    const packageNames = Array.isArray(packageOpt) ? packageOpt : [packageOpt];
+
+    for (const packageName of packageNames) {
+      const grpcPkg = this.lookupPackage(grpcContext, packageName);
+
+      await this.createServices(grpcPkg);
     }
   }
 
@@ -397,5 +389,24 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     }
     // Otherwise add next through dot syntax
     return name + '.' + key;
+  }
+
+  private async createServices(grpcPkg: any) {
+    if (!grpcPkg) {
+      const invalidPackageError = new InvalidGrpcPackageException();
+      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+      throw invalidPackageError;
+    }
+
+    // Take all of the services defined in grpcPkg and assign them to
+    // method handlers defined in Controllers
+    for (const definition of this.getServiceNames(grpcPkg)) {
+      this.grpcClient.addService(
+        // First parameter requires exact service definition from proto
+        definition.service.service,
+        // Here full proto definition required along with namespaced pattern name
+        await this.createService(definition.service, definition.name),
+      );
+    }
   }
 }

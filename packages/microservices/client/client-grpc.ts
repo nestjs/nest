@@ -22,7 +22,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly clients = new Map<string, any>();
   protected readonly url: string;
-  protected grpcClient: any;
+  protected grpcClients: any[] = [];
 
   constructor(protected readonly options: GrpcOptions['options']) {
     super();
@@ -35,12 +35,18 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       require('grpc'),
     );
     grpcProtoLoaderPackage = loadPackage(protoLoader, ClientGrpcProxy.name);
-    this.grpcClient = this.createClient();
+    this.grpcClients = this.createClients();
   }
 
   public getService<T extends {}>(name: string): T {
     const grpcClient = this.createClientByServiceName(name);
-    const protoMethods = Object.keys(this.grpcClient[name].prototype);
+    const getClient = this.getClient(name);
+
+    if (!getClient) {
+      throw new InvalidGrpcServiceException();
+    }
+
+    const protoMethods = Object.keys(getClient[name].prototype);
     const grpcService = {} as T;
 
     protoMethods.forEach(m => {
@@ -55,7 +61,9 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public createClientByServiceName(name: string) {
-    if (!this.grpcClient[name]) {
+    const getClient = this.getClient(name);
+
+    if (!getClient) {
       throw new InvalidGrpcServiceException();
     }
     const maxSendMessageLengthKey = 'grpc.max_send_message_length';
@@ -86,11 +94,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       options.credentials || grpcPackage.credentials.createInsecure();
 
     delete options.credentials;
-    const grpcClient = new this.grpcClient[name](
-      this.url,
-      credentials,
-      options,
-    );
+    const grpcClient = new getClient[name](this.url, credentials, options);
     this.clients.set(name, grpcClient);
     return grpcClient;
   }
@@ -155,16 +159,28 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     };
   }
 
-  public createClient(): any {
+  public createClients(): any[] {
     const grpcContext = this.loadProto();
-    const packageName = this.getOptionsProp(this.options, 'package');
-    const grpcPkg = this.lookupPackage(grpcContext, packageName);
-    if (!grpcPkg) {
-      const invalidPackageError = new InvalidGrpcPackageException();
-      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
-      throw invalidPackageError;
+    const packageOpt = this.getOptionsProp(this.options, 'package');
+    const grpcPkgs = [];
+    const packageNames = Array.isArray(packageOpt) ? packageOpt : [packageOpt];
+
+    for (const packageName of packageNames) {
+      const grpcPkg = this.lookupPackage(grpcContext, packageName);
+
+      if (!grpcPkg) {
+        const invalidPackageError = new InvalidGrpcPackageException();
+        this.logger.error(
+          invalidPackageError.message,
+          invalidPackageError.stack,
+        );
+        throw invalidPackageError;
+      }
+
+      grpcPkgs.push(grpcPkg);
     }
-    return grpcPkg;
+
+    return grpcPkgs;
   }
 
   public loadProto(): any {
@@ -197,8 +213,11 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public close() {
-    this.grpcClient && this.grpcClient.close();
-    this.grpcClient = null;
+    this.grpcClients.forEach(client => {
+      client.close();
+    });
+
+    this.grpcClients = [];
   }
 
   public async connect(): Promise<any> {
@@ -212,6 +231,10 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     throw new Error(
       'Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).',
     );
+  }
+
+  protected getClient(name: string): any {
+    return this.grpcClients.find(client => client.hasOwnProperty(name));
   }
 
   protected publish(packet: any, callback: (packet: any) => any): any {

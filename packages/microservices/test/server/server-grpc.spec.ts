@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { ServerGrpc } from '../../server/server-grpc';
+import { ClientGrpcProxy } from '../../client';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -15,11 +16,21 @@ class NoopLogger extends Logger {
 
 describe('ServerGrpc', () => {
   let server: ServerGrpc;
+  let serverMulti: ServerGrpc;
+
   beforeEach(() => {
     server = new ServerGrpc({
       protoPath: join(__dirname, './test.proto'),
       package: 'test',
     } as any);
+
+    serverMulti = new ServerGrpc({
+      protoPath: ['test.proto', 'test2.proto'],
+      package: ['test', 'test2'],
+      loader: {
+        includeDirs: [join(__dirname, '.')],
+      },
+    });
   });
 
   describe('listen', () => {
@@ -46,6 +57,34 @@ describe('ServerGrpc', () => {
     });
     it('should call callback', async () => {
       await server.listen(callback);
+      expect(callback.called).to.be.true;
+    });
+  });
+
+  describe('listen (multiple proto)', () => {
+    let callback: sinon.SinonSpy;
+    let bindEventsStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      callback = sinon.spy();
+      bindEventsStub = sinon
+        .stub(serverMulti, 'bindEvents')
+        .callsFake(() => ({} as any));
+    });
+
+    it('should call "bindEvents"', async () => {
+      await serverMulti.listen(callback);
+      expect(bindEventsStub.called).to.be.true;
+    });
+    it('should call "client.start"', async () => {
+      const client = { start: sinon.spy() };
+      sinon.stub(serverMulti, 'createClient').callsFake(() => client);
+
+      await serverMulti.listen(callback);
+      expect(client.start.called).to.be.true;
+    });
+    it('should call callback', async () => {
+      await serverMulti.listen(callback);
       expect(callback.called).to.be.true;
     });
   });
@@ -86,6 +125,45 @@ describe('ServerGrpc', () => {
 
         await server.bindEvents();
         expect((server as any).grpcClient.addService.calledTwice).to.be.true;
+      });
+    });
+  });
+
+  describe('bindEvents (multiple proto)', () => {
+    beforeEach(() => {
+      sinon.stub(serverMulti, 'loadProto').callsFake(() => ({}));
+    });
+    describe('when package does not exist', () => {
+      it('should throw "InvalidGrpcPackageException"', async () => {
+        sinon.stub(serverMulti, 'lookupPackage').callsFake(() => null);
+        (serverMulti as any).logger = new NoopLogger();
+        try {
+          await serverMulti.bindEvents();
+        } catch (err) {
+          expect(err).to.be.instanceOf(InvalidGrpcPackageException);
+        }
+      });
+    });
+    describe('when package exist', () => {
+      it('should call "addService"', async () => {
+        const serviceNames = [
+          {
+            name: 'test',
+            service: true,
+          },
+        ];
+        sinon.stub(serverMulti, 'lookupPackage').callsFake(() => ({
+          test: { service: true },
+        }));
+        sinon
+          .stub(serverMulti, 'getServiceNames')
+          .callsFake(() => serviceNames);
+
+        (serverMulti as any).grpcClient = { addService: sinon.spy() };
+
+        await serverMulti.bindEvents();
+        expect((serverMulti as any).grpcClient.addService.calledTwice).to.be
+          .true;
       });
     });
   });
