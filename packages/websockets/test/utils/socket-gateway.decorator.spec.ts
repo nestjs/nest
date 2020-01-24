@@ -1,13 +1,13 @@
 import { expect } from 'chai';
-import { WebSocketGateway } from '../../utils/socket-gateway.decorator';
 import { GATEWAY_METADATA, GATEWAY_OPTIONS } from '../../constants';
+import { WebSocketGateway } from '../../decorators/socket-gateway.decorator';
 
 describe('@WebSocketGateway', () => {
   @WebSocketGateway(80, { namespace: '/' })
   class TestGateway {}
 
   it('should decorate transport with expected metadata', () => {
-    const isGateway = Reflect.getMetadata('__isGateway', TestGateway);
+    const isGateway = Reflect.getMetadata(GATEWAY_METADATA, TestGateway);
     const port = Reflect.getMetadata('port', TestGateway);
     const { namespace } = Reflect.getMetadata(GATEWAY_OPTIONS, TestGateway);
 
@@ -20,7 +20,7 @@ describe('@WebSocketGateway', () => {
   class TestGateway2 {}
 
   it('should decorate transport with port: 0', () => {
-    const isGateway = Reflect.getMetadata('__isGateway', TestGateway2);
+    const isGateway = Reflect.getMetadata(GATEWAY_METADATA, TestGateway2);
     const port = Reflect.getMetadata('port', TestGateway2);
 
     expect(isGateway).to.be.eql(true);
@@ -31,7 +31,7 @@ describe('@WebSocketGateway', () => {
   class TestGateway3 {}
 
   it('should decorate transport with expected options', () => {
-    const isGateway = Reflect.getMetadata('__isGateway', TestGateway3);
+    const isGateway = Reflect.getMetadata(GATEWAY_METADATA, TestGateway3);
     const port = Reflect.getMetadata('port', TestGateway3);
     const { namespace } = Reflect.getMetadata(GATEWAY_OPTIONS, TestGateway3);
 

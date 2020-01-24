@@ -160,7 +160,9 @@ describe('ClientProxy', function() {
       it(`should call "dispatchEvent"`, () => {
         const pattern = { test: 3 };
         const data = 'test';
-        const dispatchEventSpy = sinon.spy();
+        const dispatchEventSpy = sinon
+          .stub()
+          .callsFake(() => Promise.resolve(true));
         const stream$ = client.emit(pattern, data);
         client['dispatchEvent'] = dispatchEventSpy;
 
@@ -183,7 +185,6 @@ describe('ClientProxy', function() {
           Utils,
           'transformPatternToRoute',
         );
-
         (client as any).normalizePattern(inputPattern);
 
         expect(msvcUtilTransformPatternToRouteStub.args[0][0]).to.be.equal(

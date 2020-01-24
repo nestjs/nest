@@ -33,7 +33,10 @@ describe('GuardsContextCreator', () => {
       undefined,
     ];
     getSpy = sinon.stub().returns({
-      injectables: new Map([['test', guards[0]], ['test2', guards[1]]]),
+      injectables: new Map([
+        ['test', guards[0]],
+        ['test2', guards[1]],
+      ]),
     });
     container = {
       getModules: () => ({

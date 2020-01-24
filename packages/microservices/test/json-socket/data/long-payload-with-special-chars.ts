@@ -24,19 +24,19 @@ export const longPayload = [
     friends: [
       {
         id: 0,
-        name: 'Cecelia James'
+        name: 'Cecelia James',
       },
       {
         id: 1,
-        name: 'Hilary Young'
+        name: 'Hilary Young',
       },
       {
         id: 2,
-        name: 'Sharron Goodwin'
-      }
+        name: 'Sharron Goodwin',
+      },
     ],
     greeting: 'Hello, Watson Aguilar! You have 3 unread messages.',
-    favoriteFruit: 'banana'
+    favoriteFruit: 'banana',
   },
   {
     _id: '584f1714b2e945fb30f73892',
@@ -65,24 +65,24 @@ export const longPayload = [
       'officia',
       'minim',
       'cupidatat',
-      'adipisicing'
+      'adipisicing',
     ],
     friends: [
       {
         id: 0,
-        name: 'Olson Mccall'
+        name: 'Olson Mccall',
       },
       {
         id: 1,
-        name: 'Carolina Conway'
+        name: 'Carolina Conway',
       },
       {
         id: 2,
-        name: 'Carlson Pacheco'
-      }
+        name: 'Carlson Pacheco',
+      },
     ],
     greeting: 'Hello, Aguirre Salazar! You have 9 unread messages.',
-    favoriteFruit: 'apple'
+    favoriteFruit: 'apple',
   },
   {
     _id: '584f17148282bb876fc4e9a2',
@@ -108,19 +108,19 @@ export const longPayload = [
     friends: [
       {
         id: 0,
-        name: 'Lesley Velasquez'
+        name: 'Lesley Velasquez',
       },
       {
         id: 1,
-        name: 'Natasha Simmons'
+        name: 'Natasha Simmons',
       },
       {
         id: 2,
-        name: 'Isabel Avery'
-      }
+        name: 'Isabel Avery',
+      },
     ],
     greeting: 'Hello, Hardin Grant! You have 7 unread messages.',
-    favoriteFruit: 'strawberry'
+    favoriteFruit: 'strawberry',
   },
   {
     _id: '584f1714d90ff4b8914a69e7',
@@ -149,24 +149,24 @@ export const longPayload = [
       'amet',
       'nulla',
       'consequat',
-      'nisi'
+      'nisi',
     ],
     friends: [
       {
         id: 0,
-        name: 'Barron Maynard'
+        name: 'Barron Maynard',
       },
       {
         id: 1,
-        name: 'Lynn Shepard'
+        name: 'Lynn Shepard',
       },
       {
         id: 2,
-        name: 'Robin Whitehead'
-      }
+        name: 'Robin Whitehead',
+      },
     ],
     greeting: 'Hello, Randall Roy! You have 3 unread messages.',
-    favoriteFruit: 'strawberry'
+    favoriteFruit: 'strawberry',
   },
   {
     _id: '584f17142a8f47cef0f5401a',
@@ -195,24 +195,24 @@ export const longPayload = [
       'incididunt',
       'officia',
       'amet',
-      'irure'
+      'irure',
     ],
     friends: [
       {
         id: 0,
-        name: 'Mckee Norton'
+        name: 'Mckee Norton',
       },
       {
         id: 1,
-        name: 'Durham Parrish'
+        name: 'Durham Parrish',
       },
       {
         id: 2,
-        name: 'Stewart Kramer'
-      }
+        name: 'Stewart Kramer',
+      },
     ],
     greeting: 'Hello, Chandler Vasquez! You have 3 unread messages.',
-    favoriteFruit: 'strawberry'
+    favoriteFruit: 'strawberry',
   },
   {
     _id: '584f171450a4e9dda687adc5',
@@ -241,23 +241,23 @@ export const longPayload = [
       'ut',
       'proident',
       'aliquip',
-      'labore'
+      'labore',
     ],
     friends: [
       {
         id: 0,
-        name: 'Adela Preston'
+        name: 'Adela Preston',
       },
       {
         id: 1,
-        name: 'Phillips Moses'
+        name: 'Phillips Moses',
       },
       {
         id: 2,
-        name: 'Neva Wise'
-      }
+        name: 'Neva Wise',
+      },
     ],
     greeting: 'Hello, Fernandez Caldwell! You have 10 unread messages.',
-    favoriteFruit: 'apple'
-  }
+    favoriteFruit: 'apple',
+  },
 ];

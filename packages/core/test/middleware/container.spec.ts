@@ -5,10 +5,14 @@ import { RequestMapping } from '../../../common/decorators/http/request-mapping.
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { MiddlewareConfiguration } from '../../../common/interfaces/middleware/middleware-configuration.interface';
 import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
+import { NestContainer } from '../../injector';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { Module } from '../../injector/module';
 import { MiddlewareContainer } from '../../middleware/container';
 
 describe('MiddlewareContainer', () => {
+  class ExampleModule {}
+
   @Controller('test')
   class TestRoute {
     @RequestMapping({ path: 'test' })
@@ -26,7 +30,13 @@ describe('MiddlewareContainer', () => {
   let container: MiddlewareContainer;
 
   beforeEach(() => {
-    container = new MiddlewareContainer();
+    const nestContainer = new NestContainer();
+    const modules = nestContainer.getModules();
+
+    modules.set('Module', new Module(ExampleModule, [], nestContainer));
+    modules.set('Test', new Module(ExampleModule, [], nestContainer));
+
+    container = new MiddlewareContainer(nestContainer);
   });
 
   it('should store expected configurations for given module', () => {
@@ -36,7 +46,7 @@ describe('MiddlewareContainer', () => {
         forRoutes: [TestRoute, 'test'],
       },
     ];
-    container.insertConfig(config, 'Module' as any);
+    container.insertConfig(config, 'Module');
     expect([...container.getConfigurations().get('Module')]).to.deep.equal(
       config,
     );
@@ -50,7 +60,7 @@ describe('MiddlewareContainer', () => {
       },
     ];
 
-    const key = 'Test' as any;
+    const key = 'Test';
     container.insertConfig(config, key);
 
     const collection = container.getMiddlewareCollection(key);

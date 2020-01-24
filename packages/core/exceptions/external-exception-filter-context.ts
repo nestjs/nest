@@ -4,8 +4,8 @@ import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { RouterProxyCallback } from '../router/router-proxy';
-import { ApplicationConfig } from './../application-config';
-import { NestContainer } from './../injector/container';
+import { ApplicationConfig } from '../application-config';
+import { NestContainer } from '../injector/container';
 import { BaseExceptionFilterContext } from './base-exception-filter-context';
 import { ExternalExceptionsHandler } from './external-exceptions-handler';
 

@@ -19,10 +19,10 @@ describe('@Get', () => {
   it('should enhance class with expected request metadata', () => {
     class Test {
       @Get(requestPath)
-      public static test(@Param('id') params) { }
+      public static test(@Param('id') params) {}
 
       @Get(requestPathUsingArray)
-      public static testUsingArray(@Param('id') params) { }
+      public static testUsingArray(@Param('id') params) {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -39,10 +39,10 @@ describe('@Get', () => {
   it('should set path on "/" by default', () => {
     class Test {
       @Get()
-      public static test() { }
+      public static test() {}
 
       @Get([])
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -69,10 +69,10 @@ describe('@Post', () => {
   it('should enhance class with expected request metadata', () => {
     class Test {
       @Post(requestPath)
-      public static test() { }
+      public static test() {}
 
       @Post(requestPathUsingArray)
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -119,10 +119,10 @@ describe('@Delete', () => {
   it('should enhance class with expected request metadata', () => {
     class Test {
       @Delete(requestPath)
-      public static test(@Body() body) { }
+      public static test(@Body() body) {}
 
       @Delete(requestPathUsingArray)
-      public static testUsingArray(@Body() body) { }
+      public static testUsingArray(@Body() body) {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -139,10 +139,10 @@ describe('@Delete', () => {
   it('should set path on "/" by default', () => {
     class Test {
       @Delete()
-      public static test() { }
+      public static test() {}
 
       @Delete([])
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -169,10 +169,10 @@ describe('@All', () => {
   it('should enhance class with expected request metadata', () => {
     class Test {
       @All(requestPath)
-      public static test() { }
+      public static test() {}
 
       @All(requestPathUsingArray)
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -189,10 +189,10 @@ describe('@All', () => {
   it('should set path on "/" by default', () => {
     class Test {
       @All()
-      public static test() { }
+      public static test() {}
 
       @All([])
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -219,10 +219,10 @@ describe('@Put', () => {
   it('should enhance class with expected request metadata', () => {
     class Test {
       @Put(requestPath)
-      public static test() { }
+      public static test() {}
 
       @Put(requestPathUsingArray)
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -239,10 +239,10 @@ describe('@Put', () => {
   it('should set path on "/" by default', () => {
     class Test {
       @Put()
-      public static test() { }
+      public static test() {}
 
       @Put([])
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -269,10 +269,10 @@ describe('@Patch', () => {
   it('should enhance class with expected request metadata', () => {
     class Test {
       @Patch(requestPath)
-      public static test() { }
+      public static test() {}
 
       @Patch(requestPathUsingArray)
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -289,10 +289,10 @@ describe('@Patch', () => {
   it('should set path on "/" by default', () => {
     class Test {
       @Patch()
-      public static test() { }
+      public static test() {}
 
       @Patch([])
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -319,13 +319,13 @@ describe('Inheritance', () => {
   it('should enhance subclass with expected request metadata', () => {
     class Parent {
       @Get(requestPath)
-      public static test() { }
+      public static test() {}
 
       @Get(requestPathUsingArray)
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
-    class Test extends Parent { }
+    class Test extends Parent {}
 
     const path = Reflect.getMetadata('path', Test.test);
     const method = Reflect.getMetadata('method', Test.test);

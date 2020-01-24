@@ -4,7 +4,7 @@ import * as tls from 'tls';
 import * as net from 'net';
 
 export declare class Kafka {
-  constructor(config: KafkaConfig)
+  constructor(config: KafkaConfig);
   producer(config?: ProducerConfig): Producer;
   consumer(config?: ConsumerConfig): Consumer;
   admin(config?: AdminConfig): Admin;
@@ -13,7 +13,7 @@ export declare class Kafka {
 
 export interface KafkaConfig {
   brokers: string[];
-  ssl?: tls.ConnectionOptions;
+  ssl?: tls.ConnectionOptions | boolean;
   sasl?: SASLOptions;
   clientId?: string;
   connectionTimeout?: number;
@@ -30,7 +30,7 @@ export type ISocketFactory = (
   host: string,
   port: number,
   ssl: tls.ConnectionOptions,
-  onConnect: () => void
+  onConnect: () => void,
 ) => net.Socket;
 
 export interface SASLOptions {
@@ -69,8 +69,8 @@ export type DefaultPartitioner = (args: PartitionerArgs) => number;
 export type JavaCompatiblePartitioner = (args: PartitionerArgs) => number;
 
 export let Partitioners: {
-  DefaultPartitioner: DefaultPartitioner
-  JavaCompatiblePartitioner: JavaCompatiblePartitioner
+  DefaultPartitioner: DefaultPartitioner;
+  JavaCompatiblePartitioner: JavaCompatiblePartitioner;
 };
 
 export interface PartitionMetadata {
@@ -109,9 +109,9 @@ export interface PartitionAssigner {
 export interface CoordinatorMetadata {
   errorCode: number;
   coordinator: {
-    nodeId: number
-    host: string
-    port: number
+    nodeId: number;
+    host: string;
+    port: number;
   };
 }
 
@@ -125,34 +125,53 @@ export interface Cluster {
   findBroker(node: { nodeId: string }): Promise<Broker>;
   findControllerBroker(): Promise<Broker>;
   findTopicPartitionMetadata(topic: string): PartitionMetadata[];
-  findLeaderForPartitions(topic: string, partitions: number[]): { [leader: string]: number[] };
+  findLeaderForPartitions(
+    topic: string,
+    partitions: number[],
+  ): { [leader: string]: number[] };
   findGroupCoordinator(group: { groupId: string }): Promise<Broker>;
-  findGroupCoordinatorMetadata(group: { groupId: string }): Promise<CoordinatorMetadata>;
+  findGroupCoordinatorMetadata(group: {
+    groupId: string;
+  }): Promise<CoordinatorMetadata>;
   defaultOffset(config: { fromBeginning: boolean }): number;
   fetchTopicsOffset(
     topics: Array<{
-      topic: string
-      partitions: Array<{ partition: number }>
-      fromBeginning: boolean
-    }>
-  ): Promise<{ topic: string; partitions: Array<{ partition: number; offset: string }> }>;
+      topic: string;
+      partitions: Array<{ partition: number }>;
+      fromBeginning: boolean;
+    }>,
+  ): Promise<{
+    topic: string;
+    partitions: Array<{ partition: number; offset: string }>;
+  }>;
 }
 
-export interface Assignment { [topic: string]: number[]; }
+export interface Assignment {
+  [topic: string]: number[];
+}
 
-export interface GroupMember { memberId: string; memberMetadata: MemberMetadata; }
+export interface GroupMember {
+  memberId: string;
+  memberMetadata: MemberMetadata;
+}
 
-export interface GroupMemberAssignment { memberId: string; memberAssignment: Buffer; }
+export interface GroupMemberAssignment {
+  memberId: string;
+  memberAssignment: Buffer;
+}
 
-export interface GroupState { name: string; metadata: Buffer; }
+export interface GroupState {
+  name: string;
+  metadata: Buffer;
+}
 
 export interface Assigner {
   name: string;
   version: number;
   assign(group: {
-    members: GroupMember[]
-    topics: string[]
-    userData: Buffer
+    members: GroupMember[];
+    topics: string[];
+    userData: Buffer;
   }): Promise<GroupMemberAssignment[]>;
   protocol(subscription: { topics: string[]; userData: Buffer }): GroupState;
 }
@@ -215,11 +234,11 @@ export interface ConfigSynonyms {
 
 export interface DescribeConfigResponse {
   resources: {
-    configEntries: ConfigEntries[]
-    errorCode: number
-    errorMessage: string
-    resourceName: string
-    resourceType: ResourceType
+    configEntries: ConfigEntries[];
+    errorCode: number;
+    errorMessage: string;
+    resourceName: string;
+    resourceType: ResourceType;
   }[];
   throttleTime: number;
 }
@@ -250,33 +269,33 @@ export interface InstrumentationEvent<T> {
 export type ConnectEvent = InstrumentationEvent<null>;
 export type DisconnectEvent = InstrumentationEvent<null>;
 export type RequestEvent = InstrumentationEvent<{
-  apiKey: number
-  apiName: string
-  apiVersion: number
-  broker: string
-  clientId: string
-  correlationId: number
-  createdAt: number
-  duration: number
-  pendingDuration: number
-  sentAt: number
-  size: number
+  apiKey: number;
+  apiName: string;
+  apiVersion: number;
+  broker: string;
+  clientId: string;
+  correlationId: number;
+  createdAt: number;
+  duration: number;
+  pendingDuration: number;
+  sentAt: number;
+  size: number;
 }>;
 export type RequestTimeoutEvent = InstrumentationEvent<{
-  apiKey: number
-  apiName: string
-  apiVersion: number
-  broker: string
-  clientId: string
-  correlationId: number
-  createdAt: number
-  pendingDuration: number
-  sentAt: number
+  apiKey: number;
+  apiName: string;
+  apiVersion: number;
+  broker: string;
+  clientId: string;
+  correlationId: number;
+  createdAt: number;
+  pendingDuration: number;
+  sentAt: number;
 }>;
 export type RequestQueueSizeEvent = InstrumentationEvent<{
-  broker: string
-  clientId: string
-  queueSize: number
+  broker: string;
+  clientId: string;
+  queueSize: number;
 }>;
 
 export interface SeekEntry {
@@ -288,27 +307,44 @@ export interface Admin {
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   createTopics(options: {
-    validateOnly?: boolean
-    waitForLeaders?: boolean
-    timeout?: number
-    topics: ITopicConfig[]
+    validateOnly?: boolean;
+    waitForLeaders?: boolean;
+    timeout?: number;
+    topics: ITopicConfig[];
   }): Promise<boolean>;
   deleteTopics(options: { topics: string[]; timeout?: number }): Promise<void>;
-  fetchTopicMetadata(options: { topics: string[] }): Promise<{ topics: Array<ITopicMetadata> }>;
+  fetchTopicMetadata(options: {
+    topics: string[];
+  }): Promise<{ topics: Array<ITopicMetadata> }>;
   fetchOffsets(options: {
-    groupId: string
-    topic: string
-  }): Promise<Array<{ partition: number; offset: string; metadata: string | null }>>;
+    groupId: string;
+    topic: string;
+  }): Promise<
+    Array<{ partition: number; offset: string; metadata: string | null }>
+  >;
   fetchTopicOffsets(
-    topic: string
-  ): Promise<Array<{ partition: number; offset: string; high: string; low: string }>>;
-  setOffsets(options: { groupId: string; topic: string; partitions: SeekEntry[] }): Promise<void>;
-  resetOffsets(options: { groupId: string; topic: string; earliest: boolean }): Promise<void>;
+    topic: string,
+  ): Promise<
+    Array<{ partition: number; offset: string; high: string; low: string }>
+  >;
+  setOffsets(options: {
+    groupId: string;
+    topic: string;
+    partitions: SeekEntry[];
+  }): Promise<void>;
+  resetOffsets(options: {
+    groupId: string;
+    topic: string;
+    earliest: boolean;
+  }): Promise<void>;
   describeConfigs(configs: {
-    resources: ResourceConfigQuery[]
-    includeSynonyms: boolean
+    resources: ResourceConfigQuery[];
+    includeSynonyms: boolean;
   }): Promise<DescribeConfigResponse>;
-  alterConfigs(configs: { validateOnly: boolean; resources: IResourceConfig[] }): Promise<any>;
+  alterConfigs(configs: {
+    validateOnly: boolean;
+    resources: IResourceConfig[];
+  }): Promise<any>;
   logger(): Logger;
   on(eventName: ValueOf<AdminEvents>, listener: (...args: any[]) => void): void;
   events: AdminEvents;
@@ -321,7 +357,8 @@ export interface ISerializer<T> {
   decode(buffer: Buffer): T;
 }
 
-export interface MemberMetadata {  version: number;
+export interface MemberMetadata {
+  version: number;
   topics: string[];
   userData: Buffer;
 }
@@ -333,8 +370,8 @@ export interface MemberAssignment {
 }
 
 export let AssignerProtocol: {
-  MemberMetadata: ISerializer<MemberMetadata>
-  MemberAssignment: ISerializer<MemberAssignment>
+  MemberMetadata: ISerializer<MemberMetadata>;
+  MemberAssignment: ISerializer<MemberAssignment>;
 };
 
 export enum logLevel {
@@ -366,23 +403,28 @@ export interface Broker {
   isConnected(): boolean;
   connect(): Promise<void>;
   disconnect(): Promise<void>;
-  apiVersions(): Promise<{ [apiKey: number]: { minVersion: number; maxVersion: number } }>;
+  apiVersions(): Promise<{
+    [apiKey: number]: { minVersion: number; maxVersion: number };
+  }>;
   metadata(
-    topics: string[]
+    topics: string[],
   ): Promise<{
-    brokers: Array<{ nodeId: number; host: string; port: number }>
+    brokers: Array<{ nodeId: number; host: string; port: number }>;
     topicMetadata: Array<{
-      topicErrorCode: number
-      topic: number
-      partitionMetadata: PartitionMetadata[]
-    }>
+      topicErrorCode: number;
+      topic: number;
+      partitionMetadata: PartitionMetadata[];
+    }>;
   }>;
   offsetCommit(request: {
-    groupId: string
-    groupGenerationId: number
-    memberId: string
-    retentionTime?: number
-    topics: Array<{ topic: string; partitions: Array<{ partition: number; offset: string }> }>
+    groupId: string;
+    groupGenerationId: number;
+    memberId: string;
+    retentionTime?: number;
+    topics: Array<{
+      topic: string;
+      partitions: Array<{ partition: number; offset: string }>;
+    }>;
   }): Promise<any>;
 }
 
@@ -452,20 +494,23 @@ export interface ProducerEvents {
 }
 
 export type Producer = Sender & {
-  connect(): Promise<void>
-  disconnect(): Promise<void>
-  isIdempotent(): boolean
-  events: ProducerEvents
-  on(eventName: ValueOf<ProducerEvents>, listener: (...args: any[]) => void): void
-  transaction(): Promise<Transaction>
-  logger(): Logger
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  isIdempotent(): boolean;
+  events: ProducerEvents;
+  on(
+    eventName: ValueOf<ProducerEvents>,
+    listener: (...args: any[]) => void,
+  ): void;
+  transaction(): Promise<Transaction>;
+  logger(): Logger;
 };
 
 export type Transaction = Sender & {
-  sendOffsets(offsets: Offsets & { consumerGroupId: string }): Promise<void>
-  commit(): Promise<void>
-  abort(): Promise<void>
-  isActive(): boolean
+  sendOffsets(offsets: Offsets & { consumerGroupId: string }): Promise<void>;
+  commit(): Promise<void>;
+  abort(): Promise<void>;
+  isActive(): boolean;
 };
 
 export interface ConsumerGroup {
@@ -491,7 +536,10 @@ export interface GroupDescription {
   state: string;
 }
 
-export interface TopicPartitions { topic: string; partitions: number[]; }
+export interface TopicPartitions {
+  topic: string;
+  partitions: number[];
+}
 export interface TopicPartitionOffsetAndMedata {
   topic: string;
   partition: number;
@@ -527,37 +575,37 @@ export interface ConsumerEvents {
   REQUEST_QUEUE_SIZE: 'consumer.network.request_queue_size';
 }
 export type ConsumerHeartbeatEvent = InstrumentationEvent<{
-  groupId: string
-  memberId: string
-  groupGenerationId: number
+  groupId: string;
+  memberId: string;
+  groupGenerationId: number;
 }>;
 export type ConsumerCommitOffsetsEvent = InstrumentationEvent<{
-  groupId: string
-  memberId: string
-  groupGenerationId: number
+  groupId: string;
+  memberId: string;
+  groupGenerationId: number;
   topics: {
-    topic: string
+    topic: string;
     partitions: {
-      offset: string
-      partition: string
-    }[]
-  }[]
+      offset: string;
+      partition: string;
+    }[];
+  }[];
 }>;
 export interface IMemberAssignment {
   [key: string]: number[];
 }
 export type ConsumerGroupJoinEvent = InstrumentationEvent<{
-  duration: number
-  groupId: string
-  isLeader: boolean
-  leaderId: string
-  groupProtocol: string
-  memberId: string
-  memberAssignment: IMemberAssignment
+  duration: number;
+  groupId: string;
+  isLeader: boolean;
+  leaderId: string;
+  groupProtocol: string;
+  memberId: string;
+  memberAssignment: IMemberAssignment;
 }>;
 export type ConsumerFetchEvent = InstrumentationEvent<{
-  numberOfBatches: number
-  duration: number
+  numberOfBatches: number;
+  duration: number;
 }>;
 interface IBatchProcessEvent {
   topic: string;
@@ -569,13 +617,15 @@ interface IBatchProcessEvent {
   firstOffset: string;
   lastOffset: string;
 }
-export type ConsumerStartBatchProcessEvent = InstrumentationEvent<IBatchProcessEvent>;
+export type ConsumerStartBatchProcessEvent = InstrumentationEvent<
+  IBatchProcessEvent
+>;
 export type ConsumerEndBatchProcessEvent = InstrumentationEvent<
   IBatchProcessEvent & { duration: number }
 >;
 export type ConsumerCrashEvent = InstrumentationEvent<{
-  error: Error
-  groupId: string
+  error: Error;
+  groupId: string;
 }>;
 
 export interface OffsetsByTopicPartition {
@@ -613,23 +663,35 @@ export type ConsumerEachBatchPayload = EachBatchPayload;
 export interface Consumer {
   connect(): Promise<void>;
   disconnect(): Promise<void>;
-  subscribe(topic: { topic: string | RegExp; fromBeginning?: boolean }): Promise<void>;
+  subscribe(topic: {
+    topic: string | RegExp;
+    fromBeginning?: boolean;
+  }): Promise<void>;
   stop(): Promise<void>;
   run(config?: {
-    autoCommit?: boolean
-    autoCommitInterval?: number | null
-    autoCommitThreshold?: number | null
-    eachBatchAutoResolve?: boolean
-    partitionsConsumedConcurrently?: number
-    eachBatch?: (payload: EachBatchPayload) => Promise<void>
-    eachMessage?: (payload: EachMessagePayload) => Promise<void>
+    autoCommit?: boolean;
+    autoCommitInterval?: number | null;
+    autoCommitThreshold?: number | null;
+    eachBatchAutoResolve?: boolean;
+    partitionsConsumedConcurrently?: number;
+    eachBatch?: (payload: EachBatchPayload) => Promise<void>;
+    eachMessage?: (payload: EachMessagePayload) => Promise<void>;
   }): Promise<void>;
-  commitOffsets(topicPartitions: Array<TopicPartitionOffsetAndMedata>): Promise<void>;
-  seek(topicPartition: { topic: string; partition: number; offset: string }): void;
+  commitOffsets(
+    topicPartitions: Array<TopicPartitionOffsetAndMedata>,
+  ): Promise<void>;
+  seek(topicPartition: {
+    topic: string;
+    partition: number;
+    offset: string;
+  }): void;
   describeGroup(): Promise<GroupDescription>;
   pause(topics: Array<{ topic: string; partitions?: number[] }>): void;
   resume(topics: Array<{ topic: string; partitions?: number[] }>): void;
-  on(eventName: ValueOf<ConsumerEvents>, listener: (...args: any[]) => void): void;
+  on(
+    eventName: ValueOf<ConsumerEvents>,
+    listener: (...args: any[]) => void,
+  ): void;
   logger(): Logger;
   events: ConsumerEvents;
 }
@@ -643,8 +705,8 @@ export enum CompressionTypes {
 }
 
 export let CompressionCodecs: {
-  [CompressionTypes.GZIP]: () => any
-  [CompressionTypes.Snappy]: () => any
-  [CompressionTypes.LZ4]: () => any
-  [CompressionTypes.ZSTD]: () => any
+  [CompressionTypes.GZIP]: () => any;
+  [CompressionTypes.Snappy]: () => any;
+  [CompressionTypes.LZ4]: () => any;
+  [CompressionTypes.ZSTD]: () => any;
 };

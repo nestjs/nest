@@ -14,10 +14,10 @@ export class CatsService {
     cat.breed = createCatDto.breed;
     cat.age = createCatDto.age;
 
-    return await cat.save();
+    return cat.save();
   }
 
   async findAll(): Promise<Cat[]> {
-    return await this.catsRepository.findAll<Cat>();
+    return this.catsRepository.findAll<Cat>();
   }
 }

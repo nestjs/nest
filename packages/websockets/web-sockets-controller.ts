@@ -14,6 +14,7 @@ import {
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { SocketEventsHost } from './interfaces/socket-events-host.interface';
 import { SocketServerProvider } from './socket-server-provider';
+import { compareElementAt } from './utils/compare-element.util';
 
 export class WebSocketsController {
   private readonly metadataExplorer = new GatewayMetadataExplorer(
@@ -48,9 +49,15 @@ export class WebSocketsController {
   ) {
     const nativeMessageHandlers = this.metadataExplorer.explore(instance);
     const messageHandlers = nativeMessageHandlers.map(
-      ({ callback, message }) => ({
+      ({ callback, message, methodName }) => ({
         message,
-        callback: this.contextCreator.create(instance, callback, module),
+        methodName,
+        callback: this.contextCreator.create(
+          instance,
+          callback,
+          module,
+          methodName,
+        ),
       }),
     );
     const observableServer = this.socketServerProvider.scanForSocketServer(
@@ -113,7 +120,9 @@ export class WebSocketsController {
   public subscribeConnectionEvent(instance: NestGateway, event: Subject<any>) {
     if (instance.handleConnection) {
       event
-        .pipe(distinctUntilChanged())
+        .pipe(
+          distinctUntilChanged((prev, curr) => compareElementAt(prev, curr, 0)),
+        )
         .subscribe((args: any[]) => instance.handleConnection(...args));
     }
   }

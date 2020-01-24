@@ -1,4 +1,4 @@
-import { Transport } from './../enums/transport.enum';
+import { Transport } from '../enums/transport.enum';
 import { Deserializer } from './deserializer.interface';
 import {
   GrpcOptions,
@@ -6,7 +6,7 @@ import {
   MqttOptions,
   NatsOptions,
   RedisOptions,
-  RmqOptions
+  RmqOptions,
 } from './microservice-configuration.interface';
 import { Serializer } from './serializer.interface';
 

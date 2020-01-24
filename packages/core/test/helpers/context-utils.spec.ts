@@ -93,4 +93,25 @@ describe('ContextUtils', () => {
       ).to.be.eql(paramsProperties);
     });
   });
+  describe('getCustomFactory', () => {
+    describe('when factory is function', () => {
+      it('should return curried factory', () => {
+        const data = 3;
+        const result = 10;
+        const customFactory = (_, req) => result;
+
+        expect(contextUtils.getCustomFactory(customFactory, data)()).to.be.eql(
+          result,
+        );
+      });
+    });
+    describe('when factory is undefined / is not a function', () => {
+      it('should return curried null identity', () => {
+        const customFactory = undefined;
+        expect(
+          contextUtils.getCustomFactory(customFactory, undefined)(),
+        ).to.be.eql(null);
+      });
+    });
+  });
 });

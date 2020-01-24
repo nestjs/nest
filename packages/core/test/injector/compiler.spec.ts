@@ -19,7 +19,7 @@ describe('ModuleCompiler', () => {
       });
     });
     describe('when module is a not dynamic module', () => {
-      it('should return object with "type" property', async  () => {
+      it('should return object with "type" property', async () => {
         const type = 'test';
         expect(await compiler.extractMetadata(type as any)).to.be.deep.equal({
           type,

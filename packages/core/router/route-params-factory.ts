@@ -35,6 +35,8 @@ export class RouteParamsFactory implements IRouteParamsFactory {
         return req[data || 'file'];
       case RouteParamtypes.FILES:
         return req.files;
+      case RouteParamtypes.IP:
+        return req.ip;
       default:
         return null;
     }

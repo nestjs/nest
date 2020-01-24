@@ -1,7 +1,7 @@
 import * as uuid from 'uuid/v4';
 import { ScopeOptions } from '../../interfaces/scope-options.interface';
-import { SCOPE_OPTIONS_METADATA } from './../../constants';
-import { Type } from './../../interfaces/type.interface';
+import { SCOPE_OPTIONS_METADATA } from '../../constants';
+import { Type } from '../../interfaces/type.interface';
 
 /**
  * Defines the injection scope.

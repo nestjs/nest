@@ -50,9 +50,7 @@ describe('GuardsConsumer', () => {
   describe('pickResult', () => {
     describe('when result is Observable', () => {
       it('should returns result', async () => {
-        expect(
-          await consumer.pickResult(of(true)),
-        ).to.be.true;
+        expect(await consumer.pickResult(of(true))).to.be.true;
       });
     });
     describe('when result is Promise', () => {

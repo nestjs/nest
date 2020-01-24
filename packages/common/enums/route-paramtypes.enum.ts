@@ -10,4 +10,5 @@ export enum RouteParamtypes {
   FILE,
   FILES,
   HOST,
+  IP,
 }

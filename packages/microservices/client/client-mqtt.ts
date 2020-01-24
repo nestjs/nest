@@ -17,6 +17,7 @@ let mqttPackage: any = {};
 
 export class ClientMqtt extends ClientProxy {
   protected readonly logger = new Logger(ClientProxy.name);
+  protected readonly subscriptionsCount = new Map<string, number>();
   protected readonly url: string;
   protected mqttClient: MqttClient;
   protected connection: Promise<any>;
@@ -121,19 +122,30 @@ export class ClientMqtt extends ClientProxy {
       const pattern = this.normalizePattern(partialPacket.pattern);
       const serializedPacket = this.serializer.serialize(packet);
       const responseChannel = this.getResPatternName(pattern);
+      let subscriptionsCount =
+        this.subscriptionsCount.get(responseChannel) || 0;
 
-      this.mqttClient.subscribe(responseChannel, (err: any) => {
-        if (err) {
-          return;
-        }
+      const publishPacket = () => {
+        subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
+        this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
         this.routingMap.set(packet.id, callback);
         this.mqttClient.publish(
           this.getAckPatternName(pattern),
           JSON.stringify(serializedPacket),
         );
-      });
+      };
+
+      if (subscriptionsCount <= 0) {
+        this.mqttClient.subscribe(
+          responseChannel,
+          (err: any) => !err && publishPacket(),
+        );
+      } else {
+        publishPacket();
+      }
+
       return () => {
-        this.mqttClient.unsubscribe(responseChannel);
+        this.unsubscribeFromChannel(responseChannel);
         this.routingMap.delete(packet.id);
       };
     } catch (err) {
@@ -150,5 +162,14 @@ export class ClientMqtt extends ClientProxy {
         err ? reject(err) : resolve(),
       ),
     );
+  }
+
+  protected unsubscribeFromChannel(channel: string) {
+    const subscriptionCount = this.subscriptionsCount.get(channel);
+    this.subscriptionsCount.set(channel, subscriptionCount - 1);
+
+    if (subscriptionCount - 1 <= 0) {
+      this.mqttClient.unsubscribe(channel);
+    }
   }
 }

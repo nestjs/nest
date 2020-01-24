@@ -46,9 +46,11 @@ describe('Middleware', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    app = (await Test.createTestingModule({
-      imports: [TestModule],
-    }).compile()).createNestApplication();
+    app = (
+      await Test.createTestingModule({
+        imports: [TestModule],
+      }).compile()
+    ).createNestApplication();
 
     await app.init();
   });

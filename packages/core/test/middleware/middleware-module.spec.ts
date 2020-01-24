@@ -55,10 +55,15 @@ describe('MiddlewareModule', () => {
         configure: configureSpy,
       };
 
+      const stubContainer = new NestContainer();
+      stubContainer
+        .getModules()
+        .set('Test', new Module(class {}, [], stubContainer));
+
       await middlewareModule.loadConfiguration(
-        new MiddlewareContainer(),
+        new MiddlewareContainer(stubContainer),
         mockModule as any,
-        'Test' as any,
+        'Test',
       );
 
       expect(configureSpy.calledOnce).to.be.true;
@@ -71,27 +76,35 @@ describe('MiddlewareModule', () => {
   });
 
   describe('registerRouteMiddleware', () => {
+    class TestModule {}
+
+    let nestContainer: NestContainer;
+
+    beforeEach(() => {
+      nestContainer = new NestContainer();
+      nestContainer
+        .getModules()
+        .set('Test', new Module(TestModule, [], nestContainer));
+    });
     it('should throw "RuntimeException" exception when middleware is not stored in container', () => {
       const route = { path: 'Test' };
       const configuration = {
         middleware: [TestMiddleware],
         forRoutes: [BaseController],
       };
-
       const useSpy = sinon.spy();
       const app = { use: useSpy };
 
-      const nestContainer = new NestContainer();
       // tslint:disable-next-line:no-string-literal
       middlewareModule['container'] = nestContainer;
 
       expect(
         middlewareModule.registerRouteMiddleware(
-          new MiddlewareContainer(),
+          new MiddlewareContainer(nestContainer),
           route as any,
           configuration,
-          'Test' as any,
-          app as any,
+          'Test',
+          app,
         ),
       ).to.eventually.be.rejectedWith(RuntimeException);
     });
@@ -109,8 +122,8 @@ describe('MiddlewareModule', () => {
       const useSpy = sinon.spy();
       const app = { use: useSpy };
 
-      const container = new MiddlewareContainer();
-      const moduleKey = 'Test' as any;
+      const container = new MiddlewareContainer(nestContainer);
+      const moduleKey = 'Test';
       container.insertConfig([configuration], moduleKey);
 
       const instance = new InvalidMiddleware();
@@ -125,7 +138,7 @@ describe('MiddlewareModule', () => {
           route as any,
           configuration,
           moduleKey,
-          app as any,
+          app,
         ),
       ).to.be.rejectedWith(InvalidMiddlewareException);
     });
@@ -143,7 +156,13 @@ describe('MiddlewareModule', () => {
       const app = {
         createMiddlewareFactory: createMiddlewareFactoryStub,
       };
-      const container = new MiddlewareContainer();
+
+      const stubContainer = new NestContainer();
+      stubContainer
+        .getModules()
+        .set('Test', new Module(TestModule, [], stubContainer));
+
+      const container = new MiddlewareContainer(stubContainer);
       const moduleKey = 'Test';
       container.insertConfig([configuration], moduleKey);
 
@@ -155,19 +174,18 @@ describe('MiddlewareModule', () => {
           instance,
         }),
       );
-      const nestContainer = new NestContainer();
       sinon
-        .stub(nestContainer, 'getModuleByKey')
-        .callsFake(() => new Module(class {}, [], nestContainer));
+        .stub(stubContainer, 'getModuleByKey')
+        .callsFake(() => new Module(class {}, [], stubContainer));
       // tslint:disable-next-line:no-string-literal
-      middlewareModule['container'] = nestContainer;
+      middlewareModule['container'] = stubContainer;
 
       await middlewareModule.registerRouteMiddleware(
         container,
         { path: route, method: RequestMethod.ALL },
         configuration,
         moduleKey,
-        app as any,
+        app,
       );
       expect(createMiddlewareFactoryStub.calledOnce).to.be.true;
     });

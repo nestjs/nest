@@ -1,6 +1,7 @@
 import { ParamData } from '@nestjs/common';
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
 import { Controller, PipeTransform } from '@nestjs/common/interfaces';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 
 export interface ParamProperties<T = any, IExtractor extends Function = any> {
   index: number;
@@ -50,5 +51,14 @@ export class ContextUtils {
       ...param,
       metatype: paramtypes[param.index],
     }));
+  }
+
+  public getCustomFactory(
+    factory: (...args: unknown[]) => void,
+    data: unknown,
+  ): (...args: unknown[]) => unknown {
+    return isFunction(factory)
+      ? (...args: unknown[]) => factory(data, args)
+      : () => null;
   }
 }

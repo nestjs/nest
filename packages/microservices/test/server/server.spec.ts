@@ -60,7 +60,6 @@ describe('Server', () => {
       it(`should call 'transformPatternToRoute' with 'string' argument`, () => {
         const inputServerPattern = 'hello';
         const transformedServerPattern = inputServerPattern;
-
         (server as any).getRouteFromPattern(inputServerPattern);
 
         expect(msvcUtilTransformPatternToRouteStub.args[0][0]).to.be.equal(
@@ -76,7 +75,6 @@ describe('Server', () => {
           controller: 'app',
           use: 'getHello',
         };
-
         (server as any).getRouteFromPattern(inputServerPattern);
 
         expect(msvcUtilTransformPatternToRouteStub.args[0][0]).to.be.deep.equal(

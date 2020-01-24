@@ -17,11 +17,12 @@ import { RouteParamsFactory } from '../../router/route-params-factory';
 
 describe('ExternalContextCreator', () => {
   let contextCreator: ExternalContextCreator;
-  let callback;
-  let applySpy: sinon.SinonSpy;
+  let callback: any;
   let bindSpy: sinon.SinonSpy;
+  let applySpy: sinon.SinonSpy;
   let guardsConsumer: GuardsConsumer;
-  let consumer: PipesConsumer;
+  let pipesConsumer: PipesConsumer;
+  let guardsContextCreator: GuardsContextCreator;
 
   beforeEach(() => {
     callback = {
@@ -32,26 +33,28 @@ describe('ExternalContextCreator', () => {
     applySpy = sinon.spy(callback, 'apply');
 
     guardsConsumer = new GuardsConsumer();
-    consumer = new PipesConsumer();
+    pipesConsumer = new PipesConsumer();
+    guardsContextCreator = new GuardsContextCreator(new NestContainer());
+    sinon.stub(guardsContextCreator, 'create').returns([{}] as any);
     contextCreator = new ExternalContextCreator(
-      new GuardsContextCreator(new NestContainer()),
+      guardsContextCreator,
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
       new InterceptorsConsumer(),
       new ModulesContainer(),
       new PipesContextCreator(new NestContainer()),
-      consumer,
+      pipesConsumer,
       new ExternalExceptionFilterContext(new NestContainer()),
     );
   });
   describe('create', () => {
-    it('should call "findContextModuleName" with expected argument', done => {
-      const findContextModuleNameSpy = sinon.spy(
+    it('should call "getContextModuleName" with expected argument', done => {
+      const getContextModuleNameSpy = sinon.spy(
         contextCreator,
-        'findContextModuleName',
+        'getContextModuleName',
       );
       contextCreator.create({ foo: 'bar' }, callback as any, '', '', null);
-      expect(findContextModuleNameSpy.called).to.be.true;
+      expect(getContextModuleNameSpy.called).to.be.true;
       done();
     });
     describe('returns proxy function', () => {
@@ -73,11 +76,17 @@ describe('ExternalContextCreator', () => {
       });
       describe('when proxy function called', () => {
         describe('when can not activate', () => {
-          it('should throw exception when "tryActivate" returns false', () => {
+          it('should throw exception when "tryActivate" returns false', async () => {
             sinon
               .stub(guardsConsumer, 'tryActivate')
               .callsFake(async () => false);
-            proxyContext(1, 2, 3).catch(err => expect(err).to.not.be.undefined);
+            let err: any;
+            try {
+              await proxyContext(1, 2, 3);
+            } catch (e) {
+              err = e;
+            }
+            expect(err).to.be.undefined;
           });
         });
         describe('when can activate', () => {
@@ -94,10 +103,10 @@ describe('ExternalContextCreator', () => {
       });
     });
   });
-  describe('findContextModuleName', () => {
+  describe('getContextModuleName', () => {
     describe('when constructor name is undefined', () => {
       it('should return empty string', () => {
-        expect(contextCreator.findContextModuleName({} as any)).to.be.eql('');
+        expect(contextCreator.getContextModuleName({} as any)).to.be.eql('');
       });
     });
     describe('when provider exists', () => {
@@ -109,24 +118,24 @@ describe('ExternalContextCreator', () => {
         modules.set(moduleKey, {});
         (contextCreator as any).modulesContainer = modules;
         sinon
-          .stub(contextCreator, 'findProviderByClassName')
+          .stub(contextCreator, 'getProviderByClassName')
           .callsFake(() => true);
 
         expect(
-          contextCreator.findContextModuleName({ name: providerKey } as any),
+          contextCreator.getContextModuleName({ name: providerKey } as any),
         ).to.be.eql(moduleKey);
       });
     });
     describe('when provider does not exists', () => {
       it('should return empty string', () => {
         sinon
-          .stub(contextCreator, 'findProviderByClassName')
+          .stub(contextCreator, 'getProviderByClassName')
           .callsFake(() => false);
-        expect(contextCreator.findContextModuleName({} as any)).to.be.eql('');
+        expect(contextCreator.getContextModuleName({} as any)).to.be.eql('');
       });
     });
   });
-  describe('findProviderByClassName', () => {
+  describe('getProviderByClassName', () => {
     describe('when provider exists', () => {
       it('should return true', () => {
         const providers = new Map();
@@ -134,7 +143,7 @@ describe('ExternalContextCreator', () => {
         providers.set(key, key);
 
         expect(
-          contextCreator.findProviderByClassName(
+          contextCreator.getProviderByClassName(
             {
               providers,
             } as any,
@@ -148,7 +157,7 @@ describe('ExternalContextCreator', () => {
         const providers = new Map();
         const key = 'test';
         expect(
-          contextCreator.findProviderByClassName(
+          contextCreator.getProviderByClassName(
             {
               providers,
             } as any,
@@ -159,10 +168,6 @@ describe('ExternalContextCreator', () => {
     });
   });
   describe('exchangeKeysForValues', () => {
-    const res = { body: 'res' };
-    const req = { body: { test: 'req' } };
-    const next = () => {};
-
     it('should exchange arguments keys for appropriate values', () => {
       const metadata = {
         [RouteParamtypes.REQUEST]: { index: 0, data: 'test', pipes: [] },
@@ -189,28 +194,6 @@ describe('ExternalContextCreator', () => {
       expect(values[1]).to.deep.include(expectedValues[1]);
     });
   });
-  describe('getCustomFactory', () => {
-    describe('when factory is function', () => {
-      it('should return curried factory', () => {
-        const data = 3;
-        const result = 10;
-        const customFactory = (_, req) => result;
-
-        expect(
-          contextCreator.getCustomFactory(customFactory, data)(),
-        ).to.be.eql(result);
-      });
-    });
-    describe('when factory is undefined / is not a function', () => {
-      it('should return curried null identity', () => {
-        const result = 10;
-        const customFactory = undefined;
-        expect(
-          contextCreator.getCustomFactory(customFactory, undefined)(),
-        ).to.be.eql(null);
-      });
-    });
-  });
   describe('getParamValue', () => {
     let consumerApplySpy: sinon.SinonSpy;
     const value = 3,
@@ -218,7 +201,7 @@ describe('ExternalContextCreator', () => {
       transforms = [{ transform: sinon.spy() }];
 
     beforeEach(() => {
-      consumerApplySpy = sinon.spy(consumer, 'apply');
+      consumerApplySpy = sinon.spy(pipesConsumer, 'apply');
     });
     it('should call "consumer.apply"', () => {
       contextCreator.getParamValue(

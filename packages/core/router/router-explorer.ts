@@ -29,7 +29,6 @@ import { MetadataScanner } from '../metadata-scanner';
 import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
-import { REQUEST } from './request';
 import { REQUEST_CONTEXT_ID } from './request/request-constants';
 import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
@@ -191,12 +190,11 @@ export class RouterExplorer {
       str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
 
     const isRequestScoped = !instanceWrapper.isDependencyTreeStatic();
-    const module = this.container.getModuleByKey(moduleKey);
-    const handler = isRequestScoped
+    const proxy = isRequestScoped
       ? this.createRequestScopedHandler(
           instanceWrapper,
           requestMethod,
-          module,
+          this.container.getModuleByKey(moduleKey),
           moduleKey,
           methodName,
         )
@@ -207,7 +205,7 @@ export class RouterExplorer {
           moduleKey,
           requestMethod,
         );
-    const hostHandler = this.applyHostFilter(host, handler);
+    const hostHandler = this.applyHostFilter(host, proxy);
 
     paths.forEach(path => {
       const fullPath = stripSlash(basePath) + path;
@@ -282,8 +280,8 @@ export class RouterExplorer {
       next: () => void,
     ) => {
       try {
-        const contextId = req[REQUEST_CONTEXT_ID] || createContextId();
-        this.registerRequestProvider(req, contextId);
+        const contextId = this.getContextId(req);
+        this.container.registerRequestProvider(req, contextId);
 
         const contextInstance = await this.injector.loadPerContext(
           instance,
@@ -291,7 +289,7 @@ export class RouterExplorer {
           collection,
           contextId,
         );
-        this.createCallbackProxy(
+        await this.createCallbackProxy(
           contextInstance,
           contextInstance[methodName],
           methodName,
@@ -318,13 +316,15 @@ export class RouterExplorer {
     };
   }
 
-  private registerRequestProvider<T = any>(request: T, contextId: ContextId) {
-    const coreModuleRef = this.container.getInternalCoreModuleRef();
-    const wrapper = coreModuleRef.getProviderByKey(REQUEST);
-
-    wrapper.setInstanceByContextId(contextId, {
-      instance: request,
-      isResolved: true,
-    });
+  private getContextId<T extends Record<any, any> = any>(
+    request: T,
+  ): ContextId {
+    if (request[REQUEST_CONTEXT_ID as any]) {
+      return request[REQUEST_CONTEXT_ID as any];
+    }
+    if (request.raw && request.raw[REQUEST_CONTEXT_ID]) {
+      return request.raw[REQUEST_CONTEXT_ID];
+    }
+    return createContextId();
   }
 }

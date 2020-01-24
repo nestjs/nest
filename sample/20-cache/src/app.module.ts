@@ -5,4 +5,4 @@ import { AppController } from './app.controller';
   imports: [CacheModule.register()],
   controllers: [AppController],
 })
-export class ApplicationModule {}
+export class AppModule {}

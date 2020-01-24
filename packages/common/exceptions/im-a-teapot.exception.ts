@@ -37,7 +37,7 @@ export class ImATeapotException extends HttpException {
    * @param message string or object describing the error condition.
    * @param error HTTP response status code
    */
-  constructor(message?: string | object | any, error = 'I\'m a teapot') {
+  constructor(message?: string | object | any, error = `I'm a teapot`) {
     super(
       HttpException.createBody(message, error, HttpStatus.I_AM_A_TEAPOT),
       HttpStatus.I_AM_A_TEAPOT,

@@ -5,9 +5,7 @@ export class CircularModule {
   static forRoot(): DynamicModule {
     const a = {
       module: CircularModule,
-      providers: [
-        InputService,
-      ],
+      providers: [InputService],
       b: null,
     };
     a.b = a;

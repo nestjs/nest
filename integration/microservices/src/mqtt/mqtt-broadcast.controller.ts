@@ -1,8 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import {
   Client,
-  MessagePattern,
   ClientProxy,
+  MessagePattern,
   Transport,
 } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
@@ -15,9 +15,10 @@ export class MqttBroadcastController {
 
   @Get('broadcast')
   multicats() {
-    return this.client
-      .send<number>({ cmd: 'broadcast' }, {})
-      .pipe(scan((a, b) => a + b), take(2));
+    return this.client.send<number>({ cmd: 'broadcast' }, {}).pipe(
+      scan((a, b) => a + b),
+      take(2),
+    );
   }
 
   @MessagePattern({ cmd: 'broadcast' })

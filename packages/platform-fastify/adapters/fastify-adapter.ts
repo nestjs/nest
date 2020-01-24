@@ -9,22 +9,22 @@ import * as formBody from 'fastify-formbody';
 import * as Reply from 'fastify/lib/reply';
 import * as pathToRegexp from 'path-to-regexp';
 
-export class FastifyAdapter extends AbstractHttpAdapter {
+export class FastifyAdapter<TInstance> extends AbstractHttpAdapter {
   constructor(
     instanceOrOptions:
-      | fastify.FastifyInstance<any, any, any>
+      | TInstance
       | fastify.ServerOptions
       | fastify.ServerOptionsAsHttp
       | fastify.ServerOptionsAsHttp2
       | fastify.ServerOptionsAsSecure
       | fastify.ServerOptionsAsSecureHttp
-      | fastify.ServerOptionsAsSecureHttp2 = fastify(),
+      | fastify.ServerOptionsAsSecureHttp2 = fastify() as any,
   ) {
     const instance =
       instanceOrOptions &&
       (instanceOrOptions as fastify.FastifyInstance<any, any, any>).server
         ? instanceOrOptions
-        : fastify(instanceOrOptions as fastify.ServerOptions);
+        : fastify((instanceOrOptions as any) as fastify.ServerOptions);
 
     super(instance);
   }
@@ -66,20 +66,40 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     return response.status(code).redirect(url);
   }
 
-  public setErrorHandler(handler: Function) {
-    return this.instance.setErrorHandler(handler);
+  public setErrorHandler(
+    handler: Parameters<fastify.FastifyInstance['setErrorHandler']>[0],
+    prefix: string = '/',
+  ) {
+    return this.registerWithPrefix(
+      async (
+        instance: fastify.FastifyInstance,
+      ): Promise<void> => {
+        instance.setErrorHandler(handler);
+      },
+      prefix,
+    );
   }
 
-  public setNotFoundHandler(handler: Function) {
-    return this.instance.setNotFoundHandler(handler);
+  public setNotFoundHandler(
+    handler: Parameters<fastify.FastifyInstance['setNotFoundHandler']>[0],
+    prefix: string = '/',
+  ) {
+    return this.registerWithPrefix(
+      async (
+        instance: fastify.FastifyInstance,
+      ): Promise<void> => {
+        instance.setNotFoundHandler(handler);
+      },
+      prefix,
+    );
   }
 
-  public getHttpServer<T = any>(): T {
-    return this.instance.server as T;
+  public getHttpServer<TServer = any>(): TServer {
+    return this.instance.server as TServer;
   }
 
-  public getInstance<T = any>(): T {
-    return this.instance as T;
+  public getInstance<TServer = any>(): TServer {
+    return this.instance as TServer;
   }
 
   public register(...args: any[]) {
@@ -136,12 +156,26 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     return request.raw.url;
   }
 
-  public enableCors(options: CorsOptions) {
-    this.register(cors, options);
+  public enableCors(options: CorsOptions, prefix: string = '/') {
+    return this.registerWithPrefix(
+      async (
+        instance: fastify.FastifyInstance,
+      ): Promise<void> => {
+        instance.register(cors, (options as unknown) as {});
+      },
+      prefix,
+    );
   }
 
-  public registerParserMiddleware() {
-    this.register(formBody);
+  public registerParserMiddleware(prefix: string = '/') {
+    return this.registerWithPrefix(
+      async (
+        instance: fastify.FastifyInstance,
+      ): Promise<void> => {
+        instance.register(formBody);
+      },
+      prefix,
+    );
   }
 
   public createMiddlewareFactory(
@@ -174,5 +208,12 @@ export class FastifyAdapter extends AbstractHttpAdapter {
 
   public getType(): string {
     return 'fastify';
+  }
+
+  protected registerWithPrefix<T extends fastify.Plugin<any, any, any, any>>(
+    factory: T,
+    prefix: string = '/',
+  ): ReturnType<fastify.FastifyInstance['register']> {
+    return this.instance.register(factory, { prefix });
   }
 }

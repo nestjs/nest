@@ -89,11 +89,11 @@ export abstract class AbstractHttpAdapter<
   abstract reply(response, body: any, statusCode?: number);
   abstract render(response, view: string, options: any);
   abstract redirect(response, statusCode: number, url: string);
-  abstract setErrorHandler(handler: Function);
-  abstract setNotFoundHandler(handler: Function);
+  abstract setErrorHandler(handler: Function, prefix?: string);
+  abstract setNotFoundHandler(handler: Function, prefix?: string);
   abstract setHeader(response, name: string, value: string);
-  abstract registerParserMiddleware();
-  abstract enableCors(options: CorsOptions);
+  abstract registerParserMiddleware(prefix?: string);
+  abstract enableCors(options: CorsOptions, prefix?: string);
   abstract createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): (path: string, callback: Function) => any;

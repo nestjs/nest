@@ -1,3 +1,4 @@
+import { createContextId } from '@nestjs/core';
 import { InvalidClassScopeException } from '@nestjs/core/errors/exceptions/invalid-class-scope.exception';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
@@ -16,8 +17,9 @@ describe('Scoped Instances', () => {
   });
 
   it('should dynamically resolve transient provider', async () => {
-    const transient1 = await testingModule.resolve(TransientService);
-    const transient2 = await testingModule.resolve(TransientService);
+    const contextId = createContextId();
+    const transient1 = await testingModule.resolve(TransientService, contextId);
+    const transient2 = await testingModule.resolve(TransientService, contextId);
 
     expect(transient1).to.be.instanceOf(TransientService);
     expect(transient2).to.be.instanceOf(TransientService);

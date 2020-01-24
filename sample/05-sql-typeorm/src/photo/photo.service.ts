@@ -11,6 +11,6 @@ export class PhotoService {
   ) {}
 
   async findAll(): Promise<Photo[]> {
-    return await this.photoRepository.find();
+    return this.photoRepository.find();
   }
 }

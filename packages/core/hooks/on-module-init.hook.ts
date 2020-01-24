@@ -35,11 +35,16 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
  * @param module The module which will be initialized
  */
 export async function callModuleInitHook(module: Module): Promise<void> {
-  const providers = [...module.providers];
+  const providers = module.getNonAliasProviders();
   // Module (class) instance is the first element of the providers array
   // Lifecycle hook has to be called once all classes are properly initialized
   const [_, { instance: moduleClassInstance }] = providers.shift();
-  const instances = [...module.controllers, ...providers];
+  const instances = [
+    ...module.controllers,
+    ...providers,
+    ...module.injectables,
+    ...module.middlewares,
+  ];
 
   const nonTransientInstances = getNonTransientInstances(instances);
   await Promise.all(callOperator(nonTransientInstances));

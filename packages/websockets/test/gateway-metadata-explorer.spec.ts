@@ -1,10 +1,10 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { WebSocketGateway } from '../utils/socket-gateway.decorator';
-import { WebSocketServer } from '../utils/gateway-server.decorator';
-import { SubscribeMessage } from '../utils/subscribe-message.decorator';
-import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
+import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
+import { WebSocketServer } from '../decorators/gateway-server.decorator';
+import { WebSocketGateway } from '../decorators/socket-gateway.decorator';
+import { SubscribeMessage } from '../decorators/subscribe-message.decorator';
+import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
 
 describe('GatewayMetadataExplorer', () => {
   const message = 'test';
@@ -62,7 +62,7 @@ describe('GatewayMetadataExplorer', () => {
     });
     it(`should return message mapping properties when "isMessageMapping" metadata is not undefined`, () => {
       const metadata = instance.exploreMethodMetadata(test, 'test');
-      expect(metadata).to.have.keys(['callback', 'message']);
+      expect(metadata).to.have.keys(['callback', 'message', 'methodName']);
       expect(metadata.message).to.eql(message);
     });
   });

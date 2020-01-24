@@ -12,7 +12,7 @@ export class UserByIdPipe implements PipeTransform<string> {
   static REQUEST_SCOPED_DATA = [];
 
   constructor(
-    @Inject('REQUEST_ID') private requestId: number,
+    @Inject('REQUEST_ID') private readonly requestId: number,
     private readonly usersService: UsersService,
   ) {
     UserByIdPipe.COUNTER++;

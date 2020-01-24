@@ -1,15 +1,23 @@
-import { Injectable, OnApplicationShutdown, BeforeApplicationShutdown, Module } from '@nestjs/common';
+import {
+  BeforeApplicationShutdown,
+  Injectable,
+  Module,
+  OnApplicationShutdown,
+} from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 const SIGNAL = process.argv[2];
 const SIGNAL_TO_LISTEN = process.argv[3];
 
 @Injectable()
-class TestInjectable implements OnApplicationShutdown, BeforeApplicationShutdown {
+class TestInjectable
+  implements OnApplicationShutdown, BeforeApplicationShutdown {
   beforeApplicationShutdown(signal: string) {
+    // tslint:disable-next-line:no-console
     console.log('beforeApplicationShutdown ' + signal);
   }
 
   onApplicationShutdown(signal: string) {
+    // tslint:disable-next-line:no-console
     console.log('onApplicationShutdown ' + signal);
   }
 }
@@ -17,7 +25,7 @@ class TestInjectable implements OnApplicationShutdown, BeforeApplicationShutdown
 @Module({
   providers: [TestInjectable],
 })
-class AppModule { }
+class AppModule {}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { logger: true });

@@ -5,27 +5,27 @@ import { Type } from '../../interfaces';
 import { isNil, isString } from '../../utils/shared.utils';
 
 export type ParamData = object | string | number;
-export interface RouteParamsMetadata {
-  [prop: number]: {
-    index: number;
-    data?: ParamData;
-  };
+export interface RouteParamMetadata {
+  index: number;
+  data?: ParamData;
 }
 
-const assignMetadata = (
-  args: RouteParamsMetadata,
-  paramtype: RouteParamtypes,
+export function assignMetadata<TParamtype = any, TArgs = any>(
+  args: TArgs,
+  paramtype: TParamtype,
   index: number,
   data?: ParamData,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
-) => ({
-  ...args,
-  [`${paramtype}:${index}`]: {
-    index,
-    data,
-    pipes,
-  },
-});
+) {
+  return {
+    ...args,
+    [`${paramtype}:${index}`]: {
+      index,
+      data,
+      pipes,
+    },
+  };
+}
 
 const createRouteParamDecorator = (paramtype: RouteParamtypes) => {
   return (data?: ParamData): ParameterDecorator => (target, key, index) => {
@@ -33,7 +33,12 @@ const createRouteParamDecorator = (paramtype: RouteParamtypes) => {
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
-      assignMetadata(args, paramtype, index, data),
+      assignMetadata<RouteParamtypes, Record<number, RouteParamMetadata>>(
+        args,
+        paramtype,
+        index,
+        data,
+      ),
       target.constructor,
       key,
     );
@@ -99,6 +104,19 @@ export const Response: () => ParameterDecorator = createRouteParamDecorator(
  */
 export const Next: () => ParameterDecorator = createRouteParamDecorator(
   RouteParamtypes.NEXT,
+);
+
+/**
+ * Route handler parameter decorator. Extracts the `Ip` property
+ * from the `req` object and populates the decorated
+ * parameter with the value of `ip`.
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ *
+ * @publicApi
+ */
+export const Ip: () => ParameterDecorator = createRouteParamDecorator(
+  RouteParamtypes.IP,
 );
 
 /**

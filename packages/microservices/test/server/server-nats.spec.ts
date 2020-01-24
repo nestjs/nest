@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
+import { NatsContext } from '../../ctx-host';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerNats } from '../../server/server-nats';
 
 describe('ServerNats', () => {
@@ -98,11 +100,17 @@ describe('ServerNats', () => {
     });
     it('should call "handleEvent" if identifier is not present', () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
-      server.handleMessage(channel, { pattern: '', data: '' }, null, '');
+      server.handleMessage(channel, { pattern: '', data: '' }, null, '', '');
       expect(handleEventSpy.called).to.be.true;
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, () => {
-      server.handleMessage(channel, { id, pattern: '', data: '' }, null, '');
+      server.handleMessage(
+        channel,
+        { id, pattern: '', data: '' },
+        null,
+        '',
+        '',
+      );
       expect(
         getPublisherSpy.calledWith({
           id,
@@ -117,8 +125,16 @@ describe('ServerNats', () => {
         [channel]: handler,
       });
 
-      server.handleMessage(channel, { pattern: '', data, id: '2' }, null, '');
-      expect(handler.calledWith(data)).to.be.true;
+      const callerSubject = 'subject';
+      const natsContext = new NatsContext([callerSubject]);
+      server.handleMessage(
+        channel,
+        { pattern: '', data, id: '2' },
+        null,
+        '',
+        callerSubject,
+      );
+      expect(handler.calledWith(data, natsContext)).to.be.true;
     });
   });
   describe('getPublisher', () => {
@@ -154,7 +170,11 @@ describe('ServerNats', () => {
         [channel]: handler,
       });
 
-      server.handleEvent(channel, { pattern: '', data });
+      server.handleEvent(
+        channel,
+        { pattern: '', data },
+        new BaseRpcContext([]),
+      );
       expect(handler.calledWith(data)).to.be.true;
     });
   });

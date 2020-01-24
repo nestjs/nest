@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { createContextId } from '@nestjs/core/helpers/context-id-factory';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import {
@@ -13,13 +14,20 @@ import { REQUEST } from '@nestjs/core/router/request/request-constants';
 import { IClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
+import { RequestContextHost } from './context/request-context-host';
 import { RpcContextCreator } from './context/rpc-context-creator';
+import {
+  DEFAULT_CALLBACK_METADATA,
+  DEFAULT_GRPC_CALLBACK_METADATA,
+} from './context/rpc-metadata-constants';
+import { BaseRpcContext } from './ctx-host/base-rpc.context';
 import {
   CustomTransportStrategy,
   PatternMetadata,
   RequestContext,
 } from './interfaces';
 import { ListenerMetadataExplorer } from './listener-metadata-explorer';
+import { ServerGrpc } from './server';
 import { Server } from './server/server';
 
 export class ListenersController {
@@ -47,6 +55,10 @@ export class ListenersController {
     const isStatic = instanceWrapper.isDependencyTreeStatic();
     const patternHandlers = this.metadataExplorer.explore(instance);
     const module = this.container.getModuleByKey(moduleKey);
+    const defaultCallMetadata =
+      server instanceof ServerGrpc
+        ? DEFAULT_GRPC_CALLBACK_METADATA
+        : DEFAULT_CALLBACK_METADATA;
 
     patternHandlers.forEach(
       ({ pattern, targetCallback, methodKey, isEventHandler }) => {
@@ -55,6 +67,10 @@ export class ListenersController {
             instance,
             targetCallback,
             moduleKey,
+            methodKey,
+            STATIC_CONTEXT,
+            undefined,
+            defaultCallMetadata,
           );
           return server.addHandler(pattern, proxy, isEventHandler);
         }
@@ -64,6 +80,7 @@ export class ListenersController {
           module,
           moduleKey,
           methodKey,
+          defaultCallMetadata,
         );
         server.addHandler(pattern, asyncHandler, isEventHandler);
       },
@@ -96,14 +113,21 @@ export class ListenersController {
     module: Module,
     moduleKey: string,
     methodKey: string,
+    defaultCallMetadata: Record<string, any> = DEFAULT_CALLBACK_METADATA,
   ) {
     const collection = module.controllers;
     const { instance } = wrapper;
     return async (...args: unknown[]) => {
       try {
-        const data = args[0];
+        const [data, reqCtx] = args;
         const contextId = createContextId();
-        this.registerRequestProvider({ pattern, data }, contextId);
+
+        const req = RequestContextHost.create(
+          pattern,
+          data,
+          reqCtx as BaseRpcContext,
+        );
+        this.container.registerRequestProvider(req, contextId);
 
         const contextInstance = await this.injector.loadPerContext(
           instance,
@@ -115,8 +139,10 @@ export class ListenersController {
           contextInstance,
           contextInstance[methodKey],
           moduleKey,
+          methodKey,
           contextId,
           wrapper.id,
+          defaultCallMetadata,
         );
         return proxy(...args);
       } catch (err) {
@@ -133,7 +159,7 @@ export class ListenersController {
         }
         const host = new ExecutionContextHost(args);
         host.setType('rpc');
-        exceptionFilter.handle(err, host);
+        return exceptionFilter.handle(err, host);
       }
     };
   }

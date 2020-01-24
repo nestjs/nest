@@ -262,6 +262,7 @@ describe('Module', () => {
             instance: null,
             inject: [provider.useExisting as any],
             isResolved: false,
+            isAlias: true,
           }),
         ),
       ).to.be.true;

@@ -7,10 +7,10 @@ import { PipeTransform } from '../../index';
 import { Type } from '../../interfaces';
 import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface';
 import { isFunction, isNil } from '../../utils/shared.utils';
-import { ParamData, RouteParamsMetadata } from './route-params.decorator';
+import { ParamData, RouteParamMetadata } from './route-params.decorator';
 
 const assignCustomMetadata = (
-  args: RouteParamsMetadata,
+  args: Record<number, RouteParamMetadata>,
   paramtype: number | string,
   index: number,
   factory: CustomParamFactory,
