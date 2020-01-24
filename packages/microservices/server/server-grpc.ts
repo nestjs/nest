@@ -61,14 +61,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public async bindEvents() {
     const grpcContext = this.loadProto();
-    const packageOpt = this.getOptionsProp(this.options, 'package');
-
-    // if packages more then 1
-    const packageNames = Array.isArray(packageOpt) ? packageOpt : [packageOpt];
+    const packageOption = this.getOptionsProp(this.options, 'package');
+    const packageNames = Array.isArray(packageOption)
+      ? packageOption
+      : [packageOption];
 
     for (const packageName of packageNames) {
       const grpcPkg = this.lookupPackage(grpcContext, packageName);
-
       await this.createServices(grpcPkg);
     }
   }
