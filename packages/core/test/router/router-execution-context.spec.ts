@@ -228,7 +228,7 @@ describe('RouterExecutionContext', () => {
     beforeEach(() => {
       consumerApplySpy = sinon.spy(consumer, 'apply');
     });
-    describe('when paramtype is query, body, param or host', () => {
+    describe('when paramtype is query, body or param', () => {
       it('should call "consumer.apply" with expected arguments', () => {
         contextCreator.getParamValue(
           value,
@@ -268,29 +268,6 @@ describe('RouterExecutionContext', () => {
             transforms,
           ),
         ).to.be.true;
-
-        contextCreator.getParamValue(
-          value,
-          { metatype, type: RouteParamtypes.HOST, data: null },
-          transforms,
-        );
-        expect(
-          consumerApplySpy.calledWith(
-            value,
-            { metatype, type: RouteParamtypes.HOST, data: null },
-            transforms,
-          ),
-        ).to.be.true;
-      });
-    });
-    describe('when paramtype is not query, body, param and host', () => {
-      it('should not call "consumer.apply"', () => {
-        contextCreator.getParamValue(
-          value,
-          { metatype, type: RouteParamtypes.NEXT, data: null },
-          transforms,
-        );
-        expect(consumerApplySpy.called).to.be.false;
       });
     });
   });

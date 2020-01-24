@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { ParamsTokenFactory } from '../../pipes/params-token-factory';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
+import { ParamsTokenFactory } from '../../pipes/params-token-factory';
 
 describe('ParamsTokenFactory', () => {
   let factory: ParamsTokenFactory;
@@ -28,13 +28,6 @@ describe('ParamsTokenFactory', () => {
           expect(
             factory.exchangeEnumForString(RouteParamtypes.PARAM),
           ).to.be.eql('param');
-        });
-      });
-      describe(`RouteParamtypes.HOST`, () => {
-        it('should returns params object', () => {
-          expect(
-            factory.exchangeEnumForString(RouteParamtypes.HOST),
-          ).to.be.eql('host');
         });
       });
       describe('not available', () => {

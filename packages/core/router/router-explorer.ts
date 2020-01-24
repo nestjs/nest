@@ -236,7 +236,7 @@ export class RouterExplorer {
       }
       if (!next) {
         throw new InternalServerErrorException(
-          `HTTP adapter does not support filtering on host: "${host}" }`,
+          `HTTP adapter does not support filtering on host: "${host}"`,
         );
       }
       return next();
