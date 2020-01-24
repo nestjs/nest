@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "6.11.0-next.1",
+  "version": "6.11.0",
   "description": "Nest - modern, fast, powerful node.js web framework (@core)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
