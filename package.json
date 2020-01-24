@@ -193,7 +193,6 @@
   "lint-staged": {
     "packages/**/*.{ts,json}": [
       "npm run format",
-      "git add",
       "tslint --fix -e \"**/*.json\""
     ]
   },
