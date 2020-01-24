@@ -66,12 +66,32 @@ export class FastifyAdapter<TInstance> extends AbstractHttpAdapter {
     return response.status(code).redirect(url);
   }
 
-  public setErrorHandler(handler: Function) {
-    return this.instance.setErrorHandler(handler);
+  public setErrorHandler(
+    handler: Parameters<fastify.FastifyInstance['setErrorHandler']>[0],
+    prefix: string = '/',
+  ) {
+    return this.registerWithPrefix(
+      async (
+        instance: fastify.FastifyInstance,
+      ): Promise<void> => {
+        instance.setErrorHandler(handler);
+      },
+      prefix,
+    );
   }
 
-  public setNotFoundHandler(handler: Function) {
-    return this.instance.setNotFoundHandler(handler);
+  public setNotFoundHandler(
+    handler: Parameters<fastify.FastifyInstance['setNotFoundHandler']>[0],
+    prefix: string = '/',
+  ) {
+    return this.registerWithPrefix(
+      async (
+        instance: fastify.FastifyInstance,
+      ): Promise<void> => {
+        instance.setNotFoundHandler(handler);
+      },
+      prefix,
+    );
   }
 
   public getHttpServer<TServer = any>(): TServer {
@@ -132,12 +152,26 @@ export class FastifyAdapter<TInstance> extends AbstractHttpAdapter {
     return request.raw.url;
   }
 
-  public enableCors(options: CorsOptions) {
-    this.register(cors, options);
+  public enableCors(options: CorsOptions, prefix: string = '/') {
+    return this.registerWithPrefix(
+      async (
+        instance: fastify.FastifyInstance,
+      ): Promise<void> => {
+        instance.register(cors, (options as unknown) as {});
+      },
+      prefix,
+    );
   }
 
-  public registerParserMiddleware() {
-    this.register(formBody);
+  public registerParserMiddleware(prefix: string = '/') {
+    return this.registerWithPrefix(
+      async (
+        instance: fastify.FastifyInstance,
+      ): Promise<void> => {
+        instance.register(formBody);
+      },
+      prefix,
+    );
   }
 
   public createMiddlewareFactory(
@@ -170,5 +204,12 @@ export class FastifyAdapter<TInstance> extends AbstractHttpAdapter {
 
   public getType(): string {
     return 'fastify';
+  }
+
+  protected registerWithPrefix<T extends fastify.Plugin<any, any, any, any>>(
+    factory: T,
+    prefix: string = '/',
+  ): ReturnType<fastify.FastifyInstance['register']> {
+    return this.instance.register(factory, { prefix });
   }
 }

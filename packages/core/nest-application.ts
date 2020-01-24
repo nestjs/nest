@@ -63,7 +63,6 @@ export class NestApplication extends NestApplicationContext
   ) {
     super(container);
 
-    this.applyOptions();
     this.selectContextModule();
     this.registerHttpServer();
 
@@ -106,7 +105,7 @@ export class NestApplication extends NestApplicationContext
     if (!isCorsOptionsObj) {
       return this.enableCors();
     }
-    this.enableCors(this.appOptions.cors as CorsOptions);
+    return this.enableCors(this.appOptions.cors as CorsOptions);
   }
 
   public createServer<T = any>(): T {
@@ -137,9 +136,11 @@ export class NestApplication extends NestApplicationContext
   }
 
   public async init(): Promise<this> {
+    this.applyOptions();
+
     const useBodyParser =
       this.appOptions && this.appOptions.bodyParser !== false;
-    useBodyParser && this.registerParserMiddleware();
+    useBodyParser && this.registerParserMiddleware(this.config.getGlobalPrefix());
 
     await this.registerModules();
     await this.registerRouter();
@@ -152,8 +153,8 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public registerParserMiddleware() {
-    this.httpAdapter.registerParserMiddleware();
+  public registerParserMiddleware(prefix: string = '/') {
+    this.httpAdapter.registerParserMiddleware(prefix);
   }
 
   public async registerRouter() {
@@ -214,9 +215,8 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public enableCors(options?: CorsOptions): this {
-    this.httpAdapter.enableCors(options);
-    return this;
+  public enableCors(options?: CorsOptions): void {
+    this.httpAdapter.enableCors(options, this.config.getGlobalPrefix());
   }
 
   public async listen(

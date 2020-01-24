@@ -40,12 +40,12 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return response.redirect(statusCode, url);
   }
 
-  public setErrorHandler(handler: Function) {
-    return this.use(handler);
+  public setErrorHandler(handler: Function, prefix: string = '/') {
+    return this.use(prefix, handler);
   }
 
-  public setNotFoundHandler(handler: Function) {
-    return this.use(handler);
+  public setNotFoundHandler(handler: Function, prefix: string = '/') {
+    return this.use(prefix, handler);
   }
 
   public setHeader(response: any, name: string, value: string) {
@@ -104,8 +104,8 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return request.url;
   }
 
-  public enableCors(options: CorsOptions) {
-    this.use(cors(options));
+  public enableCors(options: CorsOptions, prefix: string = '/') {
+    return this.use(prefix, cors(options));
   }
 
   public createMiddlewareFactory(
@@ -128,14 +128,14 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     this.httpServer = http.createServer(this.getInstance());
   }
 
-  public registerParserMiddleware() {
+  public registerParserMiddleware(prefix: string = '/') {
     const parserMiddleware = {
       jsonParser: bodyParser.json(),
       urlencodedParser: bodyParser.urlencoded({ extended: true }),
     };
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))
-      .forEach(parserKey => this.use(parserMiddleware[parserKey]));
+      .forEach(parserKey => this.use(prefix, parserMiddleware[parserKey]));
   }
 
   public getType(): string {
