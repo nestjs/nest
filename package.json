@@ -81,7 +81,8 @@
     "rxjs-compat": "6.5.4",
     "socket.io": "2.3.0",
     "ts-morph": "5.0.0",
-    "uuid": "3.4.0"
+    "uuid": "3.4.0",
+    "tslib": "1.10.0"
   },
   "devDependencies": {
     "@codechecks/client": "0.1.10",
