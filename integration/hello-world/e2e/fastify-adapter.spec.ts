@@ -3,9 +3,9 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
+import { fail } from 'assert';
 import { expect } from 'chai';
 import { ApplicationModule } from '../src/app.module';
-import { fail } from 'assert';
 
 describe('Hello world (fastify adapter)', () => {
   let app: NestFastifyApplication;
@@ -62,7 +62,7 @@ describe('Hello world (fastify adapter)', () => {
           expect(err.message).to.be.eql({
             error: 'Internal Server Error',
             message:
-              'HTTP Adapter does not support filtering on { host: ":tenant.example.com" }',
+              'HTTP adapter does not support filtering on host: ":tenant.example.com"',
             statusCode: 500,
           });
         },

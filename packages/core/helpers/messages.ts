@@ -8,8 +8,8 @@ export const MODULE_INIT_MESSAGE = (
 export const ROUTE_MAPPED_MESSAGE = (path: string, method: string | number) =>
   `Mapped {${path}, ${RequestMethod[method]}} route`;
 
-export const CONTROLLER_MAPPING_MESSAGE = (name: string, host: string, path: string) =>
-  `${name} {${host || '<any>'}, ${path}}:`;
+export const CONTROLLER_MAPPING_MESSAGE = (name: string, path: string) =>
+  `${name} {${path}}:`;
 
 export const INVALID_EXECUTION_CONTEXT = (
   methodName: string,

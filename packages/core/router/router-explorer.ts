@@ -10,6 +10,7 @@ import {
   isUndefined,
   validatePath,
 } from '@nestjs/common/utils/shared.utils';
+import * as pathToRegexp from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';
@@ -33,7 +34,6 @@ import { REQUEST_CONTEXT_ID } from './request/request-constants';
 import { RouteParamsFactory } from './route-params-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
-import * as pathToRegexp from 'path-to-regexp';
 
 export interface RoutePathProperties {
   path: string[];
@@ -205,15 +205,15 @@ export class RouterExplorer {
           moduleKey,
           requestMethod,
         );
-    const hostHandler = this.applyHostFilter(host, proxy);
 
+    const hostHandler = this.applyHostFilter(host, proxy);
     paths.forEach(path => {
       const fullPath = stripSlash(basePath) + path;
       routerMethod(stripSlash(fullPath) || '/', hostHandler);
     });
   }
 
-  private applyHostFilter(host, handler) {
+  private applyHostFilter(host: string, handler: Function) {
     if (!host) {
       return handler;
     }
@@ -222,16 +222,22 @@ export class RouterExplorer {
     const keys = [];
     const re = pathToRegexp(host, keys);
 
-    return (req, res, next) => {
-      req.hosts = {};
+    return <TRequest extends Record<string, any> = any, TResponse = any>(
+      req: TRequest,
+      res: TResponse,
+      next: () => void,
+    ) => {
+      (req as Record<string, any>).hosts = {};
       const hostname = httpAdapterRef.getRequestHostname(req) || '';
       const match = hostname.match(re);
       if (match) {
-        keys.forEach((key, i) => req.hosts[key.name] = match[i + 1]);
+        keys.forEach((key, i) => (req.hosts[key.name] = match[i + 1]));
         return handler(req, res, next);
       }
       if (!next) {
-        throw new InternalServerErrorException(`HTTP Adapter does not support filtering on { host: "${host}" }`);
+        throw new InternalServerErrorException(
+          `HTTP adapter does not support filtering on host: "${host}" }`,
+        );
       }
       return next();
     };

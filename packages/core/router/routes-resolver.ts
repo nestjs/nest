@@ -44,9 +44,7 @@ export class RoutesResolver implements Resolver {
   public resolve<T extends HttpServer>(applicationRef: T, basePath: string) {
     const modules = this.container.getModules();
     modules.forEach(({ controllers, metatype }, moduleName) => {
-      let path = metatype
-        ? Reflect.getMetadata(MODULE_PATH, metatype)
-        : undefined;
+      let path = metatype ? this.getModulePathMetadata(metatype) : undefined;
       path = path ? basePath + path : basePath;
       this.registerRouters(controllers, moduleName, path, applicationRef);
     });
@@ -60,13 +58,14 @@ export class RoutesResolver implements Resolver {
   ) {
     routes.forEach(instanceWrapper => {
       const { metatype } = instanceWrapper;
-      const host = Reflect.getMetadata(HOST_METADATA, metatype);
+
+      const host = this.getHostMetadata(metatype);
       const path = this.routerBuilder.extractRouterPath(
         metatype as Type<any>,
         basePath,
       );
       const controllerName = metatype.name;
-      this.logger.log(CONTROLLER_MAPPING_MESSAGE(controllerName, host, path));
+      this.logger.log(CONTROLLER_MAPPING_MESSAGE(controllerName, path));
       this.routerBuilder.explore(
         instanceWrapper,
         moduleName,
@@ -106,7 +105,8 @@ export class RoutesResolver implements Resolver {
     );
     const proxy = this.routerProxy.createExceptionLayerProxy(callback, handler);
     const applicationRef = this.container.getHttpAdapterRef();
-    applicationRef.setErrorHandler && applicationRef.setErrorHandler(proxy, this.config.getGlobalPrefix());
+    applicationRef.setErrorHandler &&
+      applicationRef.setErrorHandler(proxy, this.config.getGlobalPrefix());
   }
 
   public mapExternalException(err: any) {
@@ -116,5 +116,15 @@ export class RoutesResolver implements Resolver {
       default:
         return err;
     }
+  }
+
+  private getModulePathMetadata(metatype: Type<unknown>): string | undefined {
+    return Reflect.getMetadata(MODULE_PATH, metatype);
+  }
+
+  private getHostMetadata(
+    metatype: Type<unknown> | Function,
+  ): string | undefined {
+    return Reflect.getMetadata(HOST_METADATA, metatype);
   }
 }
