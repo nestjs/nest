@@ -41,11 +41,11 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public setErrorHandler(handler: Function, prefix: string = '/') {
-    return this.use(prefix, handler);
+    return this.use(handler);
   }
 
   public setNotFoundHandler(handler: Function, prefix: string = '/') {
-    return this.use(prefix, handler);
+    return this.use(handler);
   }
 
   public setHeader(response: any, name: string, value: string) {
@@ -109,7 +109,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public enableCors(options: CorsOptions, prefix: string = '/') {
-    return this.use(prefix, cors(options));
+    return this.use(cors(options));
   }
 
   public createMiddlewareFactory(
@@ -139,7 +139,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     };
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))
-      .forEach(parserKey => this.use(prefix, parserMiddleware[parserKey]));
+      .forEach(parserKey => this.use(parserMiddleware[parserKey]));
   }
 
   public getType(): string {
