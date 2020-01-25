@@ -22,6 +22,9 @@ describe('RouteParamsFactory', () => {
       params: {
         foo: 'bar',
       },
+      hosts: {
+        foo: 'bar',
+      },
       query: {
         foo: 'bar',
       },
@@ -109,6 +112,13 @@ describe('RouteParamsFactory', () => {
               ...args,
             ),
           ).to.be.eql(req.params);
+        });
+      });
+      describe(`RouteParamtypes.HOST`, () => {
+        it('should returns hosts object', () => {
+          expect(
+            (factory as any).exchangeKeyForValue(RouteParamtypes.HOST, ...args),
+          ).to.be.eql(req.hosts);
         });
       });
       describe(`RouteParamtypes.FILE`, () => {

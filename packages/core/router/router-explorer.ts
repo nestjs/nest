@@ -1,6 +1,7 @@
 import { HttpServer } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { InternalServerErrorException } from '@nestjs/common/exceptions';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
@@ -9,6 +10,7 @@ import {
   isUndefined,
   validatePath,
 } from '@nestjs/common/utils/shared.utils';
+import * as pathToRegexp from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';
@@ -71,6 +73,7 @@ export class RouterExplorer {
     module: string,
     applicationRef: T,
     basePath: string,
+    host: string,
   ) {
     const { instance } = instanceWrapper;
     const routerPaths = this.scanForPaths(instance);
@@ -80,6 +83,7 @@ export class RouterExplorer {
       instanceWrapper,
       module,
       basePath,
+      host,
     );
   }
 
@@ -145,6 +149,7 @@ export class RouterExplorer {
     instanceWrapper: InstanceWrapper,
     module: string,
     basePath: string,
+    host: string,
   ) {
     (routePaths || []).forEach(pathProperties => {
       const { path, requestMethod } = pathProperties;
@@ -154,6 +159,7 @@ export class RouterExplorer {
         instanceWrapper,
         module,
         basePath,
+        host,
       );
       path.forEach(p =>
         this.logger.log(ROUTE_MAPPED_MESSAGE(p, requestMethod)),
@@ -167,6 +173,7 @@ export class RouterExplorer {
     instanceWrapper: InstanceWrapper,
     moduleKey: string,
     basePath: string,
+    host: string,
   ) {
     const {
       path: paths,
@@ -199,10 +206,41 @@ export class RouterExplorer {
           requestMethod,
         );
 
+    const hostHandler = this.applyHostFilter(host, proxy);
     paths.forEach(path => {
       const fullPath = stripSlash(basePath) + path;
-      routerMethod(stripSlash(fullPath) || '/', proxy);
+      routerMethod(stripSlash(fullPath) || '/', hostHandler);
     });
+  }
+
+  private applyHostFilter(host: string, handler: Function) {
+    if (!host) {
+      return handler;
+    }
+
+    const httpAdapterRef = this.container.getHttpAdapterRef();
+    const keys = [];
+    const re = pathToRegexp(host, keys);
+
+    return <TRequest extends Record<string, any> = any, TResponse = any>(
+      req: TRequest,
+      res: TResponse,
+      next: () => void,
+    ) => {
+      (req as Record<string, any>).hosts = {};
+      const hostname = httpAdapterRef.getRequestHostname(req) || '';
+      const match = hostname.match(re);
+      if (match) {
+        keys.forEach((key, i) => (req.hosts[key.name] = match[i + 1]));
+        return handler(req, res, next);
+      }
+      if (!next) {
+        throw new InternalServerErrorException(
+          `HTTP adapter does not support filtering on host: "${host}"`,
+        );
+      }
+      return next();
+    };
   }
 
   private createCallbackProxy(

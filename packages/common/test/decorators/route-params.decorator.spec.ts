@@ -1,6 +1,5 @@
-import { Param } from '@nestjs/common';
 import { expect } from 'chai';
-import { Body, Query } from '../../decorators';
+import { Body, HostParam, Param, Query } from '../../decorators';
 import { RequestMethod } from '../../enums/request-method.enum';
 import { All, Delete, Get, Patch, Post, Put } from '../../index';
 
@@ -90,10 +89,18 @@ describe('@Post', () => {
   it('should set path on "/" by default', () => {
     class Test {
       @Post()
-      public static test(@Query() query) {}
+      public static test(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
 
       @Post([])
-      public static testUsingArray(@Query() query) {}
+      public static testUsingArray(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);

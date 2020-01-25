@@ -1,5 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { MODULE_PATH } from '@nestjs/common/constants';
+import { HOST_METADATA, MODULE_PATH } from '@nestjs/common/constants';
 import { HttpServer, Type } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
@@ -44,9 +44,7 @@ export class RoutesResolver implements Resolver {
   public resolve<T extends HttpServer>(applicationRef: T, basePath: string) {
     const modules = this.container.getModules();
     modules.forEach(({ controllers, metatype }, moduleName) => {
-      let path = metatype
-        ? Reflect.getMetadata(MODULE_PATH, metatype)
-        : undefined;
+      let path = metatype ? this.getModulePathMetadata(metatype) : undefined;
       path = path ? basePath + path : basePath;
       this.registerRouters(controllers, moduleName, path, applicationRef);
     });
@@ -60,18 +58,20 @@ export class RoutesResolver implements Resolver {
   ) {
     routes.forEach(instanceWrapper => {
       const { metatype } = instanceWrapper;
+
+      const host = this.getHostMetadata(metatype);
       const path = this.routerBuilder.extractRouterPath(
         metatype as Type<any>,
         basePath,
       );
       const controllerName = metatype.name;
-
       this.logger.log(CONTROLLER_MAPPING_MESSAGE(controllerName, path));
       this.routerBuilder.explore(
         instanceWrapper,
         moduleName,
         applicationRef,
         path,
+        host,
       );
     });
   }
@@ -86,7 +86,7 @@ export class RoutesResolver implements Resolver {
     const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);
     applicationRef.setNotFoundHandler &&
-      applicationRef.setNotFoundHandler(proxy);
+      applicationRef.setNotFoundHandler(proxy, this.config.getGlobalPrefix());
   }
 
   public registerExceptionHandler() {
@@ -105,7 +105,8 @@ export class RoutesResolver implements Resolver {
     );
     const proxy = this.routerProxy.createExceptionLayerProxy(callback, handler);
     const applicationRef = this.container.getHttpAdapterRef();
-    applicationRef.setErrorHandler && applicationRef.setErrorHandler(proxy);
+    applicationRef.setErrorHandler &&
+      applicationRef.setErrorHandler(proxy, this.config.getGlobalPrefix());
   }
 
   public mapExternalException(err: any) {
@@ -115,5 +116,15 @@ export class RoutesResolver implements Resolver {
       default:
         return err;
     }
+  }
+
+  private getModulePathMetadata(metatype: Type<unknown>): string | undefined {
+    return Reflect.getMetadata(MODULE_PATH, metatype);
+  }
+
+  private getHostMetadata(
+    metatype: Type<unknown> | Function,
+  ): string | undefined {
+    return Reflect.getMetadata(HOST_METADATA, metatype);
   }
 }

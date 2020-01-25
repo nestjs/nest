@@ -33,16 +33,20 @@ export type ParamDecoratorEnhancer = ParameterDecorator;
  *
  * @param factory
  */
-export function createParamDecorator(
-  factory: CustomParamFactory,
+export function createParamDecorator<
+  FactoryData = any,
+  FactoryInput = any,
+  FactoryOutput = any
+>(
+  factory: CustomParamFactory<FactoryData, FactoryInput, FactoryOutput>,
   enhancers: ParamDecoratorEnhancer[] = [],
 ): (
-  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | any)[]
+  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | FactoryData)[]
 ) => ParameterDecorator {
   const paramtype = uuid();
   return (
     data?,
-    ...pipes: (Type<PipeTransform> | PipeTransform)[]
+    ...pipes: (Type<PipeTransform> | PipeTransform | FactoryData)[]
   ): ParameterDecorator => (target, key, index) => {
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
@@ -55,7 +59,7 @@ export function createParamDecorator(
         isFunction(pipe.transform));
 
     const hasParamData = isNil(data) || !isPipe(data);
-    const paramData = hasParamData ? data : undefined;
+    const paramData = hasParamData ? (data as any) : undefined;
     const paramPipes = hasParamData ? pipes : [data, ...pipes];
 
     Reflect.defineMetadata(

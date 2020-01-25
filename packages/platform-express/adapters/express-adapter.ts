@@ -40,11 +40,11 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return response.redirect(statusCode, url);
   }
 
-  public setErrorHandler(handler: Function) {
+  public setErrorHandler(handler: Function, prefix: string = '/') {
     return this.use(handler);
   }
 
-  public setNotFoundHandler(handler: Function) {
+  public setNotFoundHandler(handler: Function, prefix: string = '/') {
     return this.use(handler);
   }
 
@@ -96,6 +96,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return this.set('view engine', engine);
   }
 
+  public getRequestHostname(request: any): string {
+    return request.hostname;
+  }
+
   public getRequestMethod(request: any): string {
     return request.method;
   }
@@ -104,8 +108,8 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return request.url;
   }
 
-  public enableCors(options: CorsOptions) {
-    this.use(cors(options));
+  public enableCors(options: CorsOptions, prefix: string = '/') {
+    return this.use(cors(options));
   }
 
   public createMiddlewareFactory(
@@ -128,7 +132,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     this.httpServer = http.createServer(this.getInstance());
   }
 
-  public registerParserMiddleware() {
+  public registerParserMiddleware(prefix: string = '/') {
     const parserMiddleware = {
       jsonParser: bodyParser.json(),
       urlencodedParser: bodyParser.urlencoded({ extended: true }),
