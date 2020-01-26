@@ -464,7 +464,6 @@ describe('Module', () => {
 
   describe('getter "id"', () => {
     it('should return module id', () => {
-      // tslint:disable-next-line:no-string-literal
       expect(module.id).to.be.equal(module['_id']);
     });
   });

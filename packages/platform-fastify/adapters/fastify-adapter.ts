@@ -68,7 +68,7 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
 
   public setErrorHandler(
     handler: Parameters<fastify.FastifyInstance['setErrorHandler']>[0],
-    prefix: string = '/',
+    prefix = '/',
   ) {
     return this.registerWithPrefix(
       async (instance: fastify.FastifyInstance): Promise<void> => {
@@ -80,7 +80,7 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
 
   public setNotFoundHandler(
     handler: Parameters<fastify.FastifyInstance['setNotFoundHandler']>[0],
-    prefix: string = '/',
+    prefix = '/',
   ) {
     return this.registerWithPrefix(
       async (instance: fastify.FastifyInstance): Promise<void> => {
@@ -152,7 +152,7 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     return request.raw.url;
   }
 
-  public enableCors(options: CorsOptions, prefix: string = '/') {
+  public enableCors(options: CorsOptions, prefix = '/') {
     return this.registerWithPrefix(
       async (instance: fastify.FastifyInstance): Promise<void> => {
         instance.register(cors, (options as unknown) as {});
@@ -161,7 +161,7 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     );
   }
 
-  public registerParserMiddleware(prefix: string = '/') {
+  public registerParserMiddleware(prefix = '/') {
     return this.registerWithPrefix(
       async (instance: fastify.FastifyInstance): Promise<void> => {
         instance.register(formBody);
@@ -204,7 +204,7 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
 
   protected registerWithPrefix<T extends fastify.Plugin<any, any, any, any>>(
     factory: T,
-    prefix: string = '/',
+    prefix = '/',
   ): ReturnType<fastify.FastifyInstance['register']> {
     return this.instance.register(factory, { prefix });
   }

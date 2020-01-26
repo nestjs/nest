@@ -24,7 +24,6 @@ describe('MiddlewareResolver', () => {
 
   it('should resolve middleware instances from container', () => {
     const loadMiddleware = sinon.stub(
-      // tslint:disable-next-line:no-string-literal
       resolver['instanceLoader'],
       'loadMiddleware',
     );

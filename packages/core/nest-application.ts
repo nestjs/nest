@@ -154,7 +154,7 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public registerParserMiddleware(prefix: string = '/') {
+  public registerParserMiddleware(prefix = '/') {
     this.httpAdapter.registerParserMiddleware(prefix);
   }
 
@@ -340,7 +340,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   private listenToPromise(microservice: INestMicroservice) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async resolve => {
       await microservice.listen(resolve);
     });
   }

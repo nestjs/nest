@@ -37,6 +37,7 @@ export class ContextUtils {
   }
 
   public createNullArray(length: number): any[] {
+    // eslint-disable-next-line prefer-spread
     return Array.apply(null, { length } as any).fill(undefined);
   }
 

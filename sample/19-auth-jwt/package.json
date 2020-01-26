@@ -12,7 +12,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "tslint -p tsconfig.json -c tslint.json",
+    "lint": "eslint '{src,apps,libs,test}/**/*.ts' --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -47,7 +47,11 @@
     "ts-loader": "6.2.1",
     "ts-node": "8.6.2",
     "tsconfig-paths": "3.9.0",
-    "tslint": "5.20.1",
+    "@typescript-eslint/eslint-plugin": "2.12.0",
+    "@typescript-eslint/parser": "2.12.0",
+    "eslint": "6.7.2",
+    "eslint-config-prettier": "6.7.0",
+    "eslint-plugin-import": "2.19.1",
     "typescript": "3.7.2"
   },
   "jest": {

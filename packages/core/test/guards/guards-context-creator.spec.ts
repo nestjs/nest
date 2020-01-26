@@ -58,7 +58,6 @@ describe('GuardsContextCreator', () => {
     });
     describe('when `moduleContext` is defined', () => {
       beforeEach(() => {
-        // tslint:disable-next-line:no-string-literal
         guardsContextCreator['moduleContext'] = 'test';
       });
       it('should filter metatypes', () => {

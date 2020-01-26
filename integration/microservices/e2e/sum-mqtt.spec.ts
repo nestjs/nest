@@ -49,7 +49,6 @@ describe('MQTT transport', () => {
       .expect(200, '15');
   });
 
-  // tslint:disable-next-line:only-arrow-functions
   it(`/POST (concurrent)`, function() {
     return request(server)
       .post('/concurrent')

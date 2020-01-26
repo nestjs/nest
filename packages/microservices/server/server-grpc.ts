@@ -95,7 +95,6 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   public async createService(grpcService: any, name: string) {
     const service = {};
 
-    // tslint:disable-next-line:forin
     for (const methodName in grpcService.prototype) {
       let pattern = '';
       let methodHandler = null;

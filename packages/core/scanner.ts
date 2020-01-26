@@ -247,7 +247,6 @@ export class DependenciesScanner {
       }
       return Reflect.getMetadata(key, descriptor.value);
     } while (
-      // tslint:disable-next-line:no-conditional-assignment
       (prototype = Reflect.getPrototypeOf(prototype)) &&
       prototype !== Object.prototype &&
       prototype

@@ -6,10 +6,10 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --retries 3 --require 'node_modules/reflect-metadata/Reflect.js' --exit",
     "integration-test": "mocha \"integration/*/{,!(node_modules)/**/}/*.spec.ts\" --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js' --exit",
-    "lint": "npm run lint:packages && npm run lint:integration && npm run lint:spec",
-    "lint:packages": "tslint -p tsconfig.json \"packages/**/*.ts\" --fix",
-    "lint:integration": "tslint -p tsconfig.json -c tslint.json \"integration/*/{,!(node_modules)/**/}/*.ts\" --fix",
-    "lint:spec": "tslint -p tsconfig.spec.json \"{packages,integration}/*/{,!(node_modules)/**/}/*.spec.ts\" --fix",
+    "lint": "concurrently 'npm run lint:packages' 'npm run lint:integration' 'npm run lint:spec'",
+    "lint:packages": "eslint 'packages/**/**.ts' --fix --ignore-pattern 'packages/**/*.spec.ts'",
+    "lint:integration": "eslint 'integration/*/{,!(node_modules)/**/}/*.ts' -c '.eslintrc.spec.js' --fix",
+    "lint:spec": "eslint 'packages/**/**.spec.ts' -c '.eslintrc.spec.js' --fix",
     "format": "prettier \"**/*.ts\" --ignore-path ./.prettierignore --write && git status",
     "clean": "gulp clean:bundle",
     "prebuild": "rm -rf node_modules/@nestjs",
@@ -105,6 +105,8 @@
     "@types/sinon": "7.5.1",
     "@types/socket.io": "2.1.4",
     "@types/ws": "7.2.0",
+    "@typescript-eslint/eslint-plugin": "^2.17.0",
+    "@typescript-eslint/parser": "^2.17.0",
     "artillery": "1.6.0-29",
     "awesome-typescript-loader": "5.2.1",
     "body-parser": "1.19.0",
@@ -119,6 +121,9 @@
     "coveralls": "3.0.9",
     "csv-write-stream": "2.0.0",
     "delete-empty": "3.0.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.9.0",
+    "eslint-plugin-import": "^2.20.0",
     "fancy-log": "1.3.3",
     "fastify-static": "2.5.1",
     "gulp": "4.0.1",
@@ -142,7 +147,6 @@
     "socket.io-client": "2.3.0",
     "supertest": "4.0.2",
     "ts-node": "8.6.2",
-    "tslint": "5.20.1",
     "typescript": "3.6.4",
     "wrk": "1.2.0"
   },
@@ -192,8 +196,7 @@
   },
   "lint-staged": {
     "packages/**/*.{ts,json}": [
-      "npm run format",
-      "tslint --fix -e \"**/*.json\""
+      "prettier --ignore-path ./.prettierignore --write"
     ]
   },
   "husky": {

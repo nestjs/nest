@@ -7,7 +7,7 @@ import {
 
 describe('HttpException', () => {
   it('should return a message as a string when input is a string', () => {
-    const message: string = 'My error message';
+    const message = 'My error message';
     expect(new HttpException(message, 404).message).to.be.eql(
       'My error message',
     );
@@ -23,7 +23,7 @@ describe('HttpException', () => {
   });
 
   it('should return a message from a built-in exception as an object', () => {
-    const message: string = 'My error message';
+    const message = 'My error message';
     expect(new BadRequestException(message).message).to.be.eql({
       statusCode: 400,
       error: 'Bad Request',

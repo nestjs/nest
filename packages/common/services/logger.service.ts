@@ -127,7 +127,7 @@ export class Logger implements LoggerService {
   private static printMessage(
     message: any,
     color: (message: string) => string,
-    context: string = '',
+    context = '',
     isTimeDiffEnabled?: boolean,
   ) {
     const output = isObject(message)
