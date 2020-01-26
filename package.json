@@ -125,7 +125,7 @@
     "eslint-config-prettier": "6.9.0",
     "eslint-plugin-import": "2.20.0",
     "fancy-log": "1.3.3",
-    "fastify-static": "2.5.1",
+    "fastify-static": "2.6.0",
     "gulp": "4.0.1",
     "gulp-clang-format": "1.0.27",
     "gulp-clean": "0.4.0",
