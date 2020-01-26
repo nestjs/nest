@@ -133,7 +133,7 @@
     "lerna": "2.11.0",
     "lint-staged": "10.0.2",
     "markdown-table": "2.0.0",
-    "mocha": "7.0.0",
+    "mocha": "7.0.1",
     "nodemon": "2.0.2",
     "nyc": "15.0.0",
     "prettier": "1.19.1",
