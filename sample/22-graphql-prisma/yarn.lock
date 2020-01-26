@@ -557,7 +557,15 @@
     multer "1.4.2"
     tslib "1.10.0"
 
-"@nestjs/schematics@6.8.2", "@nestjs/schematics@^6.8.2":
+"@nestjs/schematics@6.9.0":
+  version "6.9.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.9.0.tgz#d4467b7f1355f1829c1d9f7880b739c0dc41f8e4"
+  dependencies:
+    "@angular-devkit/core" "7.3.8"
+    "@angular-devkit/schematics" "7.3.8"
+    fs-extra "8.1.0"
+
+"@nestjs/schematics@^6.8.2":
   version "6.8.2"
   resolved "https://registry.yarnpkg.com/@nestjs/schematics/-/schematics-6.8.2.tgz#0c4c6cc87dd28564bb52e6516deacad1d6ceb56c"
   dependencies:
