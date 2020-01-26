@@ -26,7 +26,7 @@
     "apollo-server-express": "2.9.16",
     "class-transformer": "0.2.3",
     "class-validator": "0.11.0",
-    "graphql": "14.5.8",
+    "graphql": "14.6.0",
     "graphql-subscriptions": "1.1.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.4",
