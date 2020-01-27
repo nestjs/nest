@@ -1,6 +1,10 @@
 import { BadRequestException } from '../exceptions/bad-request.exception';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
-import { ArgumentMetadata, Injectable } from '../index';
+import { ArgumentMetadata, Injectable, Optional } from '../index';
+
+export interface ParseIntPipeOptions {
+  exceptionFactory?: (errors: any[]) => any;
+}
 
 /**
  * Defines the built-in ParseInt Pipe
@@ -11,6 +15,15 @@ import { ArgumentMetadata, Injectable } from '../index';
  */
 @Injectable()
 export class ParseIntPipe implements PipeTransform<string> {
+  protected exceptionFactory: (errors: any) => any;
+
+  constructor(@Optional() options?: ParseIntPipeOptions) {
+    options = options || {};
+    const { exceptionFactory } = options;
+    this.exceptionFactory =
+      exceptionFactory || (error => new BadRequestException(error));
+  }
+
   /**
    * Method that accesses and performs optional transformation on argument for
    * in-flight requests.
@@ -24,7 +37,7 @@ export class ParseIntPipe implements PipeTransform<string> {
       !isNaN(parseFloat(value)) &&
       isFinite(value as any);
     if (!isNumeric) {
-      throw new BadRequestException(
+      throw this.exceptionFactory(
         'Validation failed (numeric string is expected)',
       );
     }
