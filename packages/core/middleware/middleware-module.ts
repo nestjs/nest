@@ -11,7 +11,7 @@ import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { createContextId } from '../helpers/context-id-factory';
+import { ContextIdFactory } from '../helpers';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
@@ -205,7 +205,7 @@ export class MiddlewareModule {
         next: () => void,
       ) => {
         try {
-          const contextId = req[REQUEST_CONTEXT_ID] || createContextId();
+          const contextId = ContextIdFactory.getByRequest(req);
           if (!req[REQUEST_CONTEXT_ID]) {
             Object.defineProperty(req, REQUEST_CONTEXT_ID, {
               value: contextId,

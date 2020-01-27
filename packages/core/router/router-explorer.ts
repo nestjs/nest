@@ -15,7 +15,7 @@ import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
-import { createContextId } from '../helpers/context-id-factory';
+import { ContextIdFactory } from '../helpers';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 import { ROUTE_MAPPED_MESSAGE } from '../helpers/messages';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
@@ -287,8 +287,6 @@ export class RouterExplorer {
     ) => {
       try {
         const contextId = this.getContextId(req);
-        this.container.registerRequestProvider(req, contextId);
-
         const contextInstance = await this.injector.loadPerContext(
           instance,
           module,
@@ -325,12 +323,16 @@ export class RouterExplorer {
   private getContextId<T extends Record<any, any> = any>(
     request: T,
   ): ContextId {
-    if (request[REQUEST_CONTEXT_ID as any]) {
-      return request[REQUEST_CONTEXT_ID as any];
+    const contextId = ContextIdFactory.getByRequest(request);
+    if (!request[REQUEST_CONTEXT_ID as any]) {
+      Object.defineProperty(request, REQUEST_CONTEXT_ID, {
+        value: contextId,
+        enumerable: false,
+        writable: false,
+        configurable: false,
+      });
+      this.container.registerRequestProvider(request, contextId);
     }
-    if (request.raw && request.raw[REQUEST_CONTEXT_ID]) {
-      return request.raw[REQUEST_CONTEXT_ID];
-    }
-    return createContextId();
+    return contextId;
   }
 }
