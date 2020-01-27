@@ -59,8 +59,8 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   getRequestMethod?(request: TRequest): string;
   getRequestUrl?(request: TResponse): string;
   getInstance(): any;
-  registerParserMiddleware(prefix?: string): any;
-  enableCors(options: CorsOptions, prefix?: string): any;
+  registerParserMiddleware(): any;
+  enableCors(options: CorsOptions): any;
   getHttpServer(): any;
   initHttpServer(options: NestApplicationOptions): void;
   close(): any;

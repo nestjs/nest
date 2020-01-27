@@ -40,11 +40,17 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return response.redirect(statusCode, url);
   }
 
-  public setErrorHandler(handler: Function, prefix = '/') {
+  public setErrorHandler(handler: Function, prefix?: string) {
+    if (prefix) {
+      return this.use(prefix, handler);
+    }
     return this.use(handler);
   }
 
-  public setNotFoundHandler(handler: Function, prefix = '/') {
+  public setNotFoundHandler(handler: Function, prefix?: string) {
+    if (prefix) {
+      return this.use(prefix, handler);
+    }
     return this.use(handler);
   }
 
@@ -108,7 +114,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return request.url;
   }
 
-  public enableCors(options: CorsOptions, prefix = '/') {
+  public enableCors(options: CorsOptions) {
     return this.use(cors(options));
   }
 
@@ -132,7 +138,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     this.httpServer = http.createServer(this.getInstance());
   }
 
-  public registerParserMiddleware(prefix = '/') {
+  public registerParserMiddleware() {
     const parserMiddleware = {
       jsonParser: bodyParser.json(),
       urlencodedParser: bodyParser.urlencoded({ extended: true }),

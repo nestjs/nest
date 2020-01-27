@@ -19,8 +19,8 @@ export class NoopHttpAdapter extends AbstractHttpAdapter {
   setErrorHandler(handler: Function, prefix = '/'): any {}
   setNotFoundHandler(handler: Function, prefix = '/'): any {}
   setHeader(response: any, name: string, value: string): any {}
-  registerParserMiddleware(prefix = '/'): any {}
-  enableCors(options: any, prefix = '/'): any {}
+  registerParserMiddleware(): any {}
+  enableCors(options: any): any {}
   createMiddlewareFactory(requestMethod: RequestMethod): any {}
   getType() {
     return '';
