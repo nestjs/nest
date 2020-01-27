@@ -4,6 +4,12 @@ import { ArgumentMetadata } from '../../interfaces';
 import { ParseIntPipe } from '../../pipes/parse-int.pipe';
 import { HttpException } from '../../exceptions';
 
+class CustomTestError extends HttpException {
+  constructor() {
+    super('This is a TestException', 418);
+  }
+}
+
 describe('ParseIntPipe', () => {
   let target: ParseIntPipe;
   beforeEach(() => {
@@ -29,9 +35,3 @@ describe('ParseIntPipe', () => {
     });
   });
 });
-
-class CustomTestError extends HttpException {
-  constructor() {
-    super('This is a TestException', 418);
-  }
-}
