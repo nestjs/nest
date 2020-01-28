@@ -77,6 +77,11 @@ export class ValidationPipe implements PipeTransform<any> {
       this.transformOptions,
     );
 
+    if (isNil) {
+      // if the value was originally undefined or null, revert it back
+      return originalValue;
+    }
+
     const originalEntity = entity;
     const isCtorNotEqual = entity.constructor !== metatype;
 
@@ -100,10 +105,6 @@ export class ValidationPipe implements PipeTransform<any> {
     }
     if (this.isTransformEnabled) {
       return entity;
-    }
-    if (isNil) {
-      // if the value was originally undefined or null, revert it back
-      return originalValue;
     }
     return Object.keys(this.validatorOptions).length > 0
       ? classTransformer.classToPlain(entity, this.transformOptions)

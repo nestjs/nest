@@ -275,5 +275,23 @@ describe('ValidationPipe', () => {
         });
       });
     });
+    describe('when value is null', () => {
+      it('should return null', async () => {
+        target = new ValidationPipe();
+
+        const result = await target.transform(null, metadata);
+
+        expect(result).to.be.null;
+      });
+    });
+    describe('when value is undefined', () => {
+      it('should return undefined', async () => {
+        target = new ValidationPipe();
+
+        const result = await target.transform(undefined, metadata);
+
+        expect(result).to.be.undefined;
+      });
+    });
   });
 });
