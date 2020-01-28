@@ -9,8 +9,8 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.11.1",
-    "@nestjs/core": "6.11.1",
+    "@nestjs/common": "6.11.3",
+    "@nestjs/core": "6.11.3",
     "@nestjs/graphql": "6.5.3",
     "apollo-server-express": "2.9.16",
     "class-transformer": "0.2.3",
