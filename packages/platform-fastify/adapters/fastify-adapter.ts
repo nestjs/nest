@@ -159,15 +159,11 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
   }
 
   public enableCors(options: CorsOptions) {
-    try {
-      this.register(cors, options);
-    } catch {}
+    this.register(cors, options);
   }
 
   public registerParserMiddleware() {
-    try {
-      this.register(formBody);
-    } catch {}
+    this.register(formBody);
   }
 
   public createMiddlewareFactory(
