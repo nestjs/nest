@@ -662,10 +662,12 @@ export class Injector {
     module: Module,
     collection: Map<string, InstanceWrapper>,
     ctx: ContextId,
+    wrapper?: InstanceWrapper,
   ): Promise<T> {
-    const wrapper = collection.get(
-      instance.constructor && instance.constructor.name,
-    );
+    if (!wrapper) {
+      const ctor = instance.constructor;
+      wrapper = collection.get(ctor && ctor.name);
+    }
     await this.loadInstance(wrapper, collection, module, ctx, wrapper);
     await this.loadEnhancersPerContext(wrapper, ctx, wrapper);
 

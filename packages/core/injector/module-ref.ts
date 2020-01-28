@@ -100,6 +100,7 @@ export abstract class ModuleRef {
       wrapper.host,
       collection,
       contextId,
+      wrapper,
     );
     if (!instance) {
       throw new UnknownElementException();
