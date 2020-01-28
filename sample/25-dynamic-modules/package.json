@@ -24,7 +24,7 @@
     "@nestjs/platform-express": "6.11.1",
     "dotenv": "8.2.0",
     "reflect-metadata": "0.1.13",
-    "rimraf": "2.7.1",
+    "rimraf": "3.0.1",
     "rxjs": "6.5.4"
   },
   "devDependencies": {
