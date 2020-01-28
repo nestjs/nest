@@ -65,8 +65,10 @@ export class ValidationPipe implements PipeTransform<any> {
     if (!metatype || !this.toValidate(metadata)) {
       return value;
     }
+    const originalValue = value;
     value = this.toEmptyIfNil(value);
 
+    const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
     this.stripProtoKeys(value);
     let entity = classTransformer.plainToClass(
@@ -96,9 +98,14 @@ export class ValidationPipe implements PipeTransform<any> {
       // we have to revert the original value passed through the pipe
       entity = originalEntity;
     }
-    return this.isTransformEnabled
-      ? entity
-      : Object.keys(this.validatorOptions).length > 0
+    if (this.isTransformEnabled) {
+      return entity;
+    }
+    if (isNil) {
+      // if the value was originally undefined or null, revert it back
+      return originalValue;
+    }
+    return Object.keys(this.validatorOptions).length > 0
       ? classTransformer.classToPlain(entity, this.transformOptions)
       : value;
   }
