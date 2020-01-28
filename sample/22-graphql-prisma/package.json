@@ -28,7 +28,7 @@
     "graphql-tools": "4.0.6",
     "prisma-binding": "2.3.16",
     "reflect-metadata": "0.1.13",
-    "rimraf": "3.0.0",
+    "rimraf": "3.0.1",
     "rxjs": "6.5.4"
   },
   "devDependencies": {
