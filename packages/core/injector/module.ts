@@ -45,7 +45,7 @@ export class Module {
     InstanceWrapper<Controller>
   >();
   private readonly _exports = new Set<string | symbol>();
-  private _distance: number = 0;
+  private _distance = 0;
 
   constructor(
     private readonly _metatype: Type<any>,
@@ -483,6 +483,7 @@ export class Module {
   }
 
   public createModuleReferenceType(): any {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return class extends ModuleRef {
       constructor() {

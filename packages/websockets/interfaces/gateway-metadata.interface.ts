@@ -71,7 +71,7 @@ export interface GatewayMetadata {
    * Set to false to disable (engine.io)
    * @default true
    */
-  perMessageDeflate?: Object | boolean;
+  perMessageDeflate?: Record<string, any> | boolean;
 
   /**
    * Parameters of the http compression for the polling transports (see zlib).
@@ -79,7 +79,7 @@ export interface GatewayMetadata {
    * to only compress data if the byte size is above this value (1024) (engine.io)
    * @default true|1024
    */
-  httpCompression?: Object | boolean;
+  httpCompression?: Record<string, any> | boolean;
 
   /**
    * Name of the HTTP cookie that contains the client sid to send as part of

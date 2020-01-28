@@ -7,12 +7,13 @@
     "build": "tsc -p tsconfig.build.json",
     "build:dev": "nest build --watch --webpack",
     "start": "node dist/main",
+    "lint": "eslint '{src,apps,libs,test}/**/*.ts' --fix",
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "6.11.0",
-    "@nestjs/core": "6.11.0",
-    "@nestjs/platform-express": "6.11.0",
+    "@nestjs/common": "6.11.1",
+    "@nestjs/core": "6.11.1",
+    "@nestjs/platform-express": "6.11.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.4",
     "typescript": "3.7.2"
@@ -21,7 +22,11 @@
     "@types/node": "12.12.21",
     "ts-loader": "6.2.1",
     "ts-node": "8.6.2",
-    "tslint": "5.20.1",
+    "@typescript-eslint/eslint-plugin": "2.18.0",
+    "@typescript-eslint/parser": "2.18.0",
+    "eslint": "6.8.0",
+    "eslint-config-prettier": "6.9.0",
+    "eslint-plugin-import": "2.20.0",
     "webpack": "4.41.5",
     "webpack-cli": "3.3.10",
     "webpack-node-externals": "1.7.2"

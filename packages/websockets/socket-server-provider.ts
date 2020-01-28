@@ -28,6 +28,7 @@ export class SocketServerProvider {
     options: T,
     port: number,
   ): SocketEventsHost {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { namespace, server, ...partialOptions } = options as any;
     const adapter = this.applicationConfig.getIoAdapter();
     const ioServer = adapter.create(port, partialOptions);

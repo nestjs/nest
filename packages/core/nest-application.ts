@@ -140,8 +140,7 @@ export class NestApplication extends NestApplicationContext
 
     const useBodyParser =
       this.appOptions && this.appOptions.bodyParser !== false;
-    useBodyParser &&
-      this.registerParserMiddleware(this.config.getGlobalPrefix());
+    useBodyParser && this.registerParserMiddleware();
 
     await this.registerModules();
     await this.registerRouter();
@@ -154,8 +153,8 @@ export class NestApplication extends NestApplicationContext
     return this;
   }
 
-  public registerParserMiddleware(prefix: string = '/') {
-    this.httpAdapter.registerParserMiddleware(prefix);
+  public registerParserMiddleware() {
+    this.httpAdapter.registerParserMiddleware();
   }
 
   public async registerRouter() {
@@ -217,7 +216,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   public enableCors(options?: CorsOptions): void {
-    this.httpAdapter.enableCors(options, this.config.getGlobalPrefix());
+    this.httpAdapter.enableCors(options);
   }
 
   public async listen(
@@ -340,7 +339,7 @@ export class NestApplication extends NestApplicationContext
   }
 
   private listenToPromise(microservice: INestMicroservice) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async resolve => {
       await microservice.listen(resolve);
     });
   }

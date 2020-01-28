@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import { PATTERN_HANDLER_METADATA, PATTERN_METADATA } from '../constants';
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';

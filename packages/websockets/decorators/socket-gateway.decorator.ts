@@ -16,7 +16,7 @@ export function WebSocketGateway<
   T extends Record<string, any> = GatewayMetadata
 >(portOrOptions?: number | T, options?: T): ClassDecorator {
   const isPortInt = Number.isInteger(portOrOptions as number);
-  // tslint:disable-next-line:prefer-const
+  // eslint-disable-next-line prefer-const
   let [port, opt] = isPortInt ? [portOrOptions, options] : [0, portOrOptions];
 
   opt = opt || ({} as T);

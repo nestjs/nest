@@ -1,6 +1,6 @@
 /*
  * Nest @platform-ws
- * Copyright(c) 2017 - 2019 Kamil Mysliwiec
+ * Copyright(c) 2017 - 2020 Kamil Mysliwiec
  * https://nestjs.com
  * MIT Licensed
  */

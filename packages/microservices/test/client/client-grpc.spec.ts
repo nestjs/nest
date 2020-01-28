@@ -7,7 +7,7 @@ import { ClientGrpcProxy } from '../../client/client-grpc';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
-// tslint:disable:no-string-literal
+
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
   error(message: any, trace?: string, context?: string): void {}

@@ -11,7 +11,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "tslint -p tsconfig.json -c tslint.json",
+    "lint": "eslint '{src,apps,libs,test}/**/*.ts' --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -19,12 +19,12 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "6.11.0",
-    "@nestjs/core": "6.11.0",
+    "@nestjs/common": "6.11.1",
+    "@nestjs/core": "6.11.1",
     "@nestjs/graphql": "6.5.3",
-    "@nestjs/platform-express": "6.11.0",
+    "@nestjs/platform-express": "6.11.1",
     "apollo-server-express": "2.9.16",
-    "graphql": "14.5.8",
+    "graphql": "14.6.0",
     "graphql-tools": "4.0.6",
     "prisma-binding": "2.3.16",
     "reflect-metadata": "0.1.13",
@@ -33,8 +33,8 @@
   },
   "devDependencies": {
     "@nestjs/cli": "6.14.1",
-    "@nestjs/schematics": "6.8.2",
-    "@nestjs/testing": "6.11.0",
+    "@nestjs/schematics": "6.9.1",
+    "@nestjs/testing": "6.11.1",
     "@types/express": "4.17.2",
     "@types/node": "12.12.21",
     "@types/supertest": "2.0.8",
@@ -45,7 +45,11 @@
     "ts-loader": "6.2.1",
     "ts-node": "8.6.2",
     "tsconfig-paths": "3.9.0",
-    "tslint": "5.20.1",
+    "@typescript-eslint/eslint-plugin": "2.18.0",
+    "@typescript-eslint/parser": "2.18.0",
+    "eslint": "6.8.0",
+    "eslint-config-prettier": "6.9.0",
+    "eslint-plugin-import": "2.20.0",
     "typescript": "3.7.2"
   }
 }

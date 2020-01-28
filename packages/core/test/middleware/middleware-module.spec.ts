@@ -95,7 +95,6 @@ describe('MiddlewareModule', () => {
       const useSpy = sinon.spy();
       const app = { use: useSpy };
 
-      // tslint:disable-next-line:no-string-literal
       middlewareModule['container'] = nestContainer;
 
       expect(
@@ -177,7 +176,6 @@ describe('MiddlewareModule', () => {
       sinon
         .stub(stubContainer, 'getModuleByKey')
         .callsFake(() => new Module(class {}, [], stubContainer));
-      // tslint:disable-next-line:no-string-literal
       middlewareModule['container'] = stubContainer;
 
       await middlewareModule.registerRouteMiddleware(

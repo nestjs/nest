@@ -94,10 +94,7 @@ export const INVALID_MODULE_MESSAGE = (
 Scope [${scope}]
 `;
 
-export const UNKNOWN_EXPORT_MESSAGE = (
-  token: string = 'item',
-  module: string,
-) => {
+export const UNKNOWN_EXPORT_MESSAGE = (token = 'item', module: string) => {
   return `Nest cannot export a provider/module that is not a part of the currently processed module (${module}). Please verify whether the exported ${token} is available in this particular context.
 
 Possible Solutions:

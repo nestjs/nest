@@ -5,8 +5,6 @@ import { ClientProxy } from '../../client/client-proxy';
 import { ReadPacket } from '../../interfaces';
 import * as Utils from '../../utils';
 
-// tslint:disable:no-string-literal
-
 class TestClientProxy extends ClientProxy {
   protected async dispatchEvent<T = any>(
     packet: ReadPacket<any>,

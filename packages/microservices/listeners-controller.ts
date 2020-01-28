@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { createContextId } from '@nestjs/core/helpers/context-id-factory';
+import { ContextIdFactory } from '@nestjs/core';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
 import { NestContainer } from '@nestjs/core/injector/container';
@@ -120,14 +120,19 @@ export class ListenersController {
     return async (...args: unknown[]) => {
       try {
         const [data, reqCtx] = args;
-        const contextId = createContextId();
-
-        const req = RequestContextHost.create(
+        const request = RequestContextHost.create(
           pattern,
           data,
           reqCtx as BaseRpcContext,
         );
-        this.container.registerRequestProvider(req, contextId);
+        const contextId = ContextIdFactory.getByRequest(request);
+        /**Object.defineProperty(request, REQUEST_CONTEXT_ID, {
+          value: contextId,
+          enumerable: false,
+          writable: false,
+          configurable: false,
+        });*/
+        this.container.registerRequestProvider(request, contextId);
 
         const contextInstance = await this.injector.loadPerContext(
           instance,

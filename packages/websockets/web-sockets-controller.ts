@@ -105,9 +105,7 @@ export class WebSocketsController {
 
       const disconnectHook = adapter.bindClientDisconnect;
       disconnectHook &&
-        disconnectHook.call(adapter, client, (_: any) =>
-          disconnect.next(client),
-        );
+        disconnectHook.call(adapter, client, () => disconnect.next(client));
     };
   }
 
