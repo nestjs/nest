@@ -104,7 +104,7 @@
     "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "7.5.1",
     "@types/socket.io": "2.1.4",
-    "@types/ws": "7.2.0",
+    "@types/ws": "7.2.1",
     "@typescript-eslint/eslint-plugin": "2.18.0",
     "@typescript-eslint/parser": "2.18.0",
     "artillery": "1.6.0-29",
