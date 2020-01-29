@@ -182,11 +182,19 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     // streaming from the side of requester
     if (protoNativeHandler.requestStream) {
       // If any handlers were defined with GrpcStreamMethod annotation use RX
-      if (streamType === GrpcMethodStreamingType.RX_STREAMING)
-        return this.createStreamDuplexMethod(methodHandler);
+      if (streamType === GrpcMethodStreamingType.RX_STREAMING) {
+        return this.createRequestStreamMethod(
+          methodHandler,
+          protoNativeHandler.responseStream,
+        );
+      }
       // If any handlers were defined with GrpcStreamCall annotation
-      else if (streamType === GrpcMethodStreamingType.PT_STREAMING)
-        return this.createStreamCallMethod(methodHandler);
+      else if (streamType === GrpcMethodStreamingType.PT_STREAMING) {
+        return this.createStreamCallMethod(
+          methodHandler,
+          protoNativeHandler.responseStream,
+        );
+      }
     }
     return protoNativeHandler.responseStream
       ? this.createStreamServiceMethod(methodHandler)
@@ -220,17 +228,23 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     };
   }
 
-  public createStreamDuplexMethod(methodHandler: Function) {
-    return async (call: GrpcCall) => {
+  public createRequestStreamMethod(
+    methodHandler: Function,
+    isResponseStream: boolean,
+  ) {
+    return async (
+      call: GrpcCall,
+      callback: (err: unknown, value: unknown) => void,
+    ) => {
       const req = new Subject<any>();
       call.on('data', (m: any) => req.next(m));
       call.on('error', (e: any) => {
         // Check if error means that stream ended on other end
-        if (
-          String(e)
-            .toLowerCase()
-            .indexOf('cancelled') > -1
-        ) {
+        const isCancelledError = String(e)
+          .toLowerCase()
+          .indexOf('cancelled');
+
+        if (isCancelledError) {
           call.end();
           return;
         }
@@ -241,23 +255,49 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
       const handler = methodHandler(req.asObservable());
       const res = this.transformToObservable(await handler);
-      await res
-        .pipe(
-          takeUntil(fromEvent(call as any, CANCEL_EVENT)),
-          catchError(err => {
-            call.emit('error', err);
-            return EMPTY;
-          }),
-        )
-        .forEach(m => call.write(m));
+      if (isResponseStream) {
+        await res
+          .pipe(
+            takeUntil(fromEvent(call as any, CANCEL_EVENT)),
+            catchError(err => {
+              call.emit('error', err);
+              return EMPTY;
+            }),
+          )
+          .forEach(m => call.write(m));
 
-      call.end();
+        call.end();
+      } else {
+        const response = await res
+          .pipe(
+            takeUntil(fromEvent(call as any, CANCEL_EVENT)),
+            catchError(err => {
+              callback(err, null);
+              return EMPTY;
+            }),
+          )
+          .toPromise();
+
+        if (typeof response !== 'undefined') {
+          callback(null, response);
+        }
+      }
     };
   }
 
-  public createStreamCallMethod(methodHandler: Function) {
-    return async (call: GrpcCall) => {
-      methodHandler(call);
+  public createStreamCallMethod(
+    methodHandler: Function,
+    isResponseStream: boolean,
+  ) {
+    return async (
+      call: GrpcCall,
+      callback: (err: unknown, value: unknown) => void,
+    ) => {
+      if (isResponseStream) {
+        methodHandler(call);
+      } else {
+        methodHandler(call, callback);
+      }
     };
   }
 

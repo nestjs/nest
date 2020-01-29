@@ -97,4 +97,44 @@ export class AdvancedGrpcController {
       });
     });
   }
+
+  @GrpcStreamMethod('orders.OrderService')
+  async streamReq(messages: Observable<any>): Promise<any> {
+    const s = new Subject();
+    const o = s.asObservable();
+    messages.subscribe(
+      msg => {
+        s.next({
+          id: 1,
+          itemTypes: [1],
+          shipmentType: {
+            from: 'test',
+            to: 'test1',
+            carrier: 'test-carrier',
+          },
+        });
+      },
+      null,
+      () => s.complete(),
+    );
+    return o;
+  }
+
+  @GrpcStreamCall('orders.OrderService')
+  async streamReqCall(stream: any, callback: Function) {
+    stream.on('data', (msg: any) => {
+      // process msg
+    });
+    stream.on('end', () => {
+      callback(null, {
+        id: 1,
+        itemTypes: [1],
+        shipmentType: {
+          from: 'test',
+          to: 'test1',
+          carrier: 'test-carrier',
+        },
+      });
+    });
+  }
 }

@@ -166,4 +166,52 @@ describe('Advanced GRPC transport', () => {
       setTimeout(() => resolve(), 1000);
     });
   });
+
+  it('GRPC Sending Stream and receiving a single message from RX handler', async () => {
+    const callHandler = client.streamReq((err, res) => {
+      if (err) {
+        throw err;
+      }
+      expect(res).to.eql({
+        id: 1,
+        itemTypes: [1],
+        shipmentType: {
+          from: 'test',
+          to: 'test1',
+          carrier: 'test-carrier',
+        },
+      });
+    });
+
+    return new Promise((resolve, reject) => {
+      callHandler.write({
+        id: 1,
+      });
+      setTimeout(() => resolve(), 1000);
+    });
+  });
+
+  it('GRPC Sending Stream and receiving a single message from Call handler', async () => {
+    const callHandler = client.streamReqCall((err, res) => {
+      if (err) {
+        throw err;
+      }
+      expect(res).to.eql({
+        id: 1,
+        itemTypes: [1],
+        shipmentType: {
+          from: 'test',
+          to: 'test1',
+          carrier: 'test-carrier',
+        },
+      })
+    });
+
+    return new Promise((resolve, reject) => {
+      callHandler.write({
+        id: 1,
+      });
+      setTimeout(() => resolve(), 1000);
+    });
+  });
 });

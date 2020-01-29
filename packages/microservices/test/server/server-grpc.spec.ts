@@ -6,7 +6,6 @@ import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { ServerGrpc } from '../../server/server-grpc';
-import { ClientGrpcProxy } from '../../client';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -336,9 +335,9 @@ describe('ServerGrpc', () => {
     });
     describe('when request is a stream', () => {
       describe('when stream type is RX_STREAMING', () => {
-        it('should call "createStreamDuplexMethod"', () => {
+        it('should call "createRequestStreamMethod"', () => {
           const cln = sinon.spy();
-          const spy = sinon.spy(server, 'createStreamDuplexMethod');
+          const spy = sinon.spy(server, 'createRequestStreamMethod');
           server.createServiceMethod(
             cln,
             { requestStream: true } as any,
@@ -428,17 +427,17 @@ describe('ServerGrpc', () => {
     });
   });
 
-  describe('createStreamDuplexMethod', () => {
+  describe('createRequestStreamMethod', () => {
     it('should wrap call into Subject', () => {
       const handler = sinon.spy();
-      const fn = server.createStreamDuplexMethod(handler);
+      const fn = server.createRequestStreamMethod(handler, false);
       const call = {
         on: (event, callback) => callback(),
         off: sinon.spy(),
         end: sinon.spy(),
         write: sinon.spy(),
       };
-      fn(call as any);
+      fn(call as any, sinon.spy());
 
       expect(handler.called).to.be.true;
     });
@@ -447,9 +446,9 @@ describe('ServerGrpc', () => {
   describe('createStreamCallMethod', () => {
     it('should pass through to "methodHandler"', () => {
       const handler = sinon.spy();
-      const fn = server.createStreamCallMethod(handler);
+      const fn = server.createStreamCallMethod(handler, false);
       const args = [1, 2, 3];
-      fn(args as any);
+      fn(args as any, sinon.spy());
 
       expect(handler.calledWith(args)).to.be.true;
     });
