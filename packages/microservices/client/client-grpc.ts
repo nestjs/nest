@@ -1,7 +1,8 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isObject } from '@nestjs/common/utils/shared.utils';
+import { isFunction, isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import {
   GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
   GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
@@ -111,10 +112,26 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     methodName: string,
   ): (...args: any[]) => Observable<any> {
     return (...args: any[]) => {
-      return new Observable(observer => {
+      const isRequestStream = client[methodName].requestStream;
+      const stream = new Observable(observer => {
         let isClientCanceled = false;
-        const call = client[methodName](...args);
 
+        const upstreamSubjectOrData = args[0];
+        const isUpstreamSubject =
+          upstreamSubjectOrData && isFunction(upstreamSubjectOrData.subscribe);
+
+        const call =
+          isRequestStream && isUpstreamSubject
+            ? client[methodName]()
+            : client[methodName](...args);
+
+        if (isRequestStream && isUpstreamSubject) {
+          upstreamSubjectOrData.pipe(takeUntil(stream)).subscribe(
+            (val: unknown) => call.write(val),
+            (err: unknown) => call.emit('error', err),
+            () => call.end(),
+          );
+        }
         call.on('data', (data: any) => observer.next(data));
         call.on('error', (error: any) => {
           if (error.details === GRPC_CANCELLED) {
@@ -137,6 +154,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
           call.cancel();
         };
       });
+      return stream;
     };
   }
 
@@ -145,6 +163,27 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     methodName: string,
   ): (...args: any[]) => Observable<any> {
     return (...args: any[]) => {
+      const isRequestStream = client[methodName].requestStream;
+      const upstreamSubjectOrData = args[0];
+      const isUpstreamSubject =
+        upstreamSubjectOrData && isFunction(upstreamSubjectOrData.subscribe);
+
+      if (isRequestStream && isUpstreamSubject) {
+        return new Observable(observer => {
+          const call = client[methodName]((error, data) => {
+            if (error) {
+              return observer.error(error);
+            }
+            observer.next(data);
+            observer.complete();
+          });
+          upstreamSubjectOrData.subscribe(
+            (val: unknown) => call.write(val),
+            (err: unknown) => call.emit('error', err),
+            () => call.end(),
+          );
+        });
+      }
       return new Observable(observer => {
         client[methodName](...args, (error: any, data: any) => {
           if (error) {

@@ -8,7 +8,7 @@ import {
   Transport,
 } from '@nestjs/microservices';
 import { join } from 'path';
-import { Observable, of, Subject } from 'rxjs';
+import { Observable, of, ReplaySubject, Subject } from 'rxjs';
 
 @Controller()
 export class AdvancedGrpcController {
@@ -38,6 +38,28 @@ export class AdvancedGrpcController {
   call(@Body() id: number): Observable<number> {
     const svc = this.client.getService<any>('OrderService');
     return svc.find({ id });
+  }
+
+  /**
+   * HTTP Proxy entry for support client-side stream find method
+   * @param id
+   */
+  @Post('client-streaming')
+  @HttpCode(200)
+  stream(): Observable<number> {
+    const svc = this.client.getService<any>('OrderService');
+    const upstream = new ReplaySubject();
+    upstream.next({
+      id: 1,
+      itemTypes: [1],
+      shipmentType: {
+        from: 'test',
+        to: 'test1',
+        carrier: 'test-carrier',
+      },
+    });
+    upstream.complete();
+    return svc.streamReq(upstream);
   }
 
   /**
