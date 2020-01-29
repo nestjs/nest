@@ -1,8 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isObject } from '@nestjs/common/utils/shared.utils';
-import { Observable } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Observable, Subscription } from 'rxjs';
 import {
   GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
   GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
@@ -115,6 +114,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       const isRequestStream = client[methodName].requestStream;
       const stream = new Observable(observer => {
         let isClientCanceled = false;
+        let upstreamSubscription: Subscription;
 
         const upstreamSubjectOrData = args[0];
         const isUpstreamSubject =
@@ -126,7 +126,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
             : client[methodName](...args);
 
         if (isRequestStream && isUpstreamSubject) {
-          upstreamSubjectOrData.pipe(takeUntil(stream)).subscribe(
+          upstreamSubscription = upstreamSubjectOrData.subscribe(
             (val: unknown) => call.write(val),
             (err: unknown) => call.emit('error', err),
             () => call.end(),
@@ -143,10 +143,19 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
           observer.error(error);
         });
         call.on('end', () => {
+          if (upstreamSubscription) {
+            upstreamSubscription.unsubscribe();
+            upstreamSubscription = null;
+          }
           call.removeAllListeners();
           observer.complete();
         });
-        return (): any => {
+        return () => {
+          if (upstreamSubscription) {
+            upstreamSubscription.unsubscribe();
+            upstreamSubscription = null;
+          }
+
           if (call.finished) {
             return undefined;
           }
