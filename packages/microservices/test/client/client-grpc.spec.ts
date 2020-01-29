@@ -110,7 +110,11 @@ describe('ClientGrpcProxy', () => {
 
   describe('createStreamServiceMethod', () => {
     it('should return observable', () => {
-      const fn = client.createStreamServiceMethod({}, 'method');
+      const methodKey = 'method';
+      const fn = client.createStreamServiceMethod(
+        { [methodKey]: {} },
+        methodKey,
+      );
       expect(fn()).to.be.instanceof(Observable);
     });
     describe('on subscribe', () => {
@@ -206,7 +210,11 @@ describe('ClientGrpcProxy', () => {
 
   describe('createUnaryServiceMethod', () => {
     it('should return observable', () => {
-      const fn = client.createUnaryServiceMethod({}, 'method');
+      const methodKey = 'method';
+      const fn = client.createUnaryServiceMethod(
+        { [methodKey]: {} },
+        methodKey,
+      );
       expect(fn()).to.be.instanceof(Observable);
     });
     describe('on subscribe', () => {
