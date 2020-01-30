@@ -3,7 +3,7 @@ import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { ArgumentMetadata, Injectable, Optional } from '../index';
 
 export interface ParseIntPipeOptions {
-  exceptionFactory?: (error: any) => any;
+  exceptionFactory?: (error: string) => any;
 }
 
 /**
@@ -15,7 +15,7 @@ export interface ParseIntPipeOptions {
  */
 @Injectable()
 export class ParseIntPipe implements PipeTransform<string> {
-  protected exceptionFactory: (errors: any) => any;
+  protected exceptionFactory: (error: string) => any;
 
   constructor(@Optional() options?: ParseIntPipeOptions) {
     options = options || {};
