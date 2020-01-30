@@ -41,16 +41,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public setErrorHandler(handler: Function, prefix?: string) {
-    if (prefix) {
-      return this.use(prefix, handler);
-    }
     return this.use(handler);
   }
 
   public setNotFoundHandler(handler: Function, prefix?: string) {
-    if (prefix) {
-      return this.use(prefix, handler);
-    }
     return this.use(handler);
   }
 

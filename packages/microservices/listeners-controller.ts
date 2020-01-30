@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { ContextIdFactory } from '@nestjs/core';
+import { ContextIdFactory } from '@nestjs/core/helpers/context-id-factory';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
 import { NestContainer } from '@nestjs/core/injector/container';

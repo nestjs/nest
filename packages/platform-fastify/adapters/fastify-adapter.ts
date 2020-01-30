@@ -70,30 +70,14 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     handler: Parameters<fastify.FastifyInstance['setErrorHandler']>[0],
     prefix?: string,
   ) {
-    if (!prefix) {
-      return this.instance.setErrorHandler(handler);
-    }
-    return this.registerWithPrefix(
-      async (instance: fastify.FastifyInstance): Promise<void> => {
-        instance.setErrorHandler(handler);
-      },
-      prefix,
-    );
+    return this.instance.setErrorHandler(handler);
   }
 
   public setNotFoundHandler(
     handler: Parameters<fastify.FastifyInstance['setNotFoundHandler']>[0],
     prefix?: string,
   ) {
-    if (!prefix) {
-      return this.instance.setNotFoundHandler(handler);
-    }
-    return this.registerWithPrefix(
-      async (instance: fastify.FastifyInstance): Promise<void> => {
-        instance.setNotFoundHandler(handler);
-      },
-      prefix,
-    );
+    return this.instance.setNotFoundHandler(handler);
   }
 
   public getHttpServer<TServer = any>(): TServer {
@@ -159,15 +143,11 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
   }
 
   public enableCors(options: CorsOptions) {
-    try {
-      this.register(cors, options);
-    } catch {}
+    this.register(cors, options);
   }
 
   public registerParserMiddleware() {
-    try {
-      this.register(formBody);
-    } catch {}
+    this.register(formBody);
   }
 
   public createMiddlewareFactory(
