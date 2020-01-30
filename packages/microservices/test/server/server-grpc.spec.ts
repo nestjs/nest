@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { ServerGrpc } from '../../server/server-grpc';
+import { CANCEL_EVENT } from '../../constants';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -440,6 +441,48 @@ describe('ServerGrpc', () => {
       fn(call as any, sinon.spy());
 
       expect(handler.called).to.be.true;
+    });
+    describe('when response is not a stream', () => {
+      it('should call callback', async () => {
+        const handler = async () => ({ test: true });
+        const fn = server.createRequestStreamMethod(handler, false);
+        const call = {
+          on: (event, callback) => {
+            if (event !== CANCEL_EVENT) {
+              callback();
+            }
+          },
+          off: sinon.spy(),
+          end: sinon.spy(),
+          write: sinon.spy(),
+        };
+
+        const responseCallback = sinon.spy();
+        await fn(call as any, responseCallback);
+
+        expect(responseCallback.called).to.be.true;
+      });
+      describe('when response is a stream', () => {
+        it('should call write() and end()', async () => {
+          const handler = async () => ({ test: true });
+          const fn = server.createRequestStreamMethod(handler, true);
+          const call = {
+            on: (event, callback) => {
+              if (event !== CANCEL_EVENT) {
+                callback();
+              }
+            },
+            off: sinon.spy(),
+            end: sinon.spy(),
+            write: sinon.spy(),
+          };
+
+          await fn(call as any, null);
+
+          expect(call.write.called).to.be.true;
+          expect(call.end.called).to.be.true;
+        });
+      });
     });
   });
 

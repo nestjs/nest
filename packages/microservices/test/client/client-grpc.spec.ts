@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientGrpcProxy } from '../../client/client-grpc';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
@@ -110,7 +110,11 @@ describe('ClientGrpcProxy', () => {
 
   describe('createStreamServiceMethod', () => {
     it('should return observable', () => {
-      const fn = client.createStreamServiceMethod({}, 'method');
+      const methodKey = 'method';
+      const fn = client.createStreamServiceMethod(
+        { [methodKey]: {} },
+        methodKey,
+      );
       expect(fn()).to.be.instanceof(Observable);
     });
     describe('on subscribe', () => {
@@ -131,6 +135,35 @@ describe('ClientGrpcProxy', () => {
         );
 
         expect(spy.called).to.be.true;
+      });
+    });
+
+    describe('when stream request', () => {
+      const methodName = 'm';
+      const writeSpy = sinon.spy();
+      const obj = {
+        [methodName]: () => ({ on: (type, fn) => fn(), write: writeSpy }),
+      };
+
+      let stream$: Observable<any>;
+      let upstream: Subject<unknown>;
+
+      beforeEach(() => {
+        upstream = new Subject();
+        (obj[methodName] as any).requestStream = true;
+        stream$ = client.createStreamServiceMethod(obj, methodName)(upstream);
+      });
+
+      it('should subscribe to request upstream', () => {
+        const upstreamSubscribe = sinon.spy(upstream, 'subscribe');
+        stream$.subscribe(
+          () => ({}),
+          () => ({}),
+        );
+        upstream.next({ test: true });
+
+        expect(writeSpy.called).to.be.true;
+        expect(upstreamSubscribe.called).to.be.true;
       });
     });
 
@@ -206,7 +239,11 @@ describe('ClientGrpcProxy', () => {
 
   describe('createUnaryServiceMethod', () => {
     it('should return observable', () => {
-      const fn = client.createUnaryServiceMethod({}, 'method');
+      const methodKey = 'method';
+      const fn = client.createUnaryServiceMethod(
+        { [methodKey]: {} },
+        methodKey,
+      );
       expect(fn()).to.be.instanceof(Observable);
     });
     describe('on subscribe', () => {
@@ -227,6 +264,39 @@ describe('ClientGrpcProxy', () => {
         );
 
         expect(spy.called).to.be.true;
+      });
+    });
+    describe('when stream request', () => {
+      const writeSpy = sinon.spy();
+      const methodName = 'm';
+      const obj = {
+        [methodName]: callback => {
+          callback(null, {});
+          return {
+            write: writeSpy,
+          };
+        },
+      };
+
+      let stream$: Observable<any>;
+      let upstream: Subject<unknown>;
+
+      beforeEach(() => {
+        upstream = new Subject();
+        (obj[methodName] as any).requestStream = true;
+        stream$ = client.createUnaryServiceMethod(obj, methodName)(upstream);
+      });
+
+      it('should subscribe to request upstream', () => {
+        const upstreamSubscribe = sinon.spy(upstream, 'subscribe');
+        stream$.subscribe(
+          () => ({}),
+          () => ({}),
+        );
+        upstream.next({ test: true });
+
+        expect(writeSpy.called).to.be.true;
+        expect(upstreamSubscribe.called).to.be.true;
       });
     });
   });
