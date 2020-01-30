@@ -6,7 +6,7 @@ import { HeroById } from './interfaces/hero-by-id.interface';
 import { Hero } from './interfaces/hero.interface';
 
 interface HeroService {
-  findOne(data: { id: number }): Observable<any>;
+  findOne(data: HeroById): Observable<any>;
 }
 
 @Controller()
