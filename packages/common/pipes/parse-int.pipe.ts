@@ -3,7 +3,7 @@ import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import { ArgumentMetadata, Injectable, Optional } from '../index';
 
 export interface ParseIntPipeOptions {
-  exceptionFactory?: (errors: any) => any;
+  exceptionFactory?: (error: any) => any;
 }
 
 /**
