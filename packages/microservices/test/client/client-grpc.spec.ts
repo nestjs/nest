@@ -219,7 +219,8 @@ describe('ClientGrpcProxy', () => {
         const grpcServerCancelErrMock = {
           details: 'Cancelled',
         };
-        const subscription = stream$.subscribe(dataSpy, errorSpy);
+        const subscription = stream$.subscribe(dataSpy, errorSpy, completeSpy);
+
         eventCallbacks.data('a');
         eventCallbacks.data('b');
         subscription.unsubscribe();
@@ -232,6 +233,8 @@ describe('ClientGrpcProxy', () => {
           .true;
         expect(dataSpy.args).to.eql([['a'], ['b']]);
         expect(errorSpy.called, 'should not error if client canceled').to.be
+          .false;
+        expect(completeSpy.called, 'should complete if client canceled').to.be
           .false;
       });
     });

@@ -136,9 +136,6 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
         call.on('error', (error: any) => {
           if (error.details === GRPC_CANCELLED) {
             call.destroy();
-            if (isClientCanceled) {
-              return;
-            }
           }
           observer.error(error);
         });
@@ -159,7 +156,6 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
           if (call.finished) {
             return undefined;
           }
-          isClientCanceled = true;
           call.cancel();
         };
       });
