@@ -22,7 +22,11 @@
     "@nestjs/common": "6.11.5",
     "@nestjs/core": "6.11.5",
     "@nestjs/platform-express": "6.11.5",
-    "mongoose": "5.8.10",
+    "mongoose": "5.8.11",
+    "@nestjs/common": "6.11.4",
+    "@nestjs/core": "6.11.4",
+    "@nestjs/platform-express": "6.11.4",
+    "mongoose": "5.8.11",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.1",
     "rxjs": "6.5.4"
@@ -45,7 +49,7 @@
     "@typescript-eslint/parser": "2.18.0",
     "eslint": "6.8.0",
     "eslint-config-prettier": "6.10.0",
-    "eslint-plugin-import": "2.20.0",
+    "eslint-plugin-import": "2.20.1",
     "typescript": "3.7.2"
   }
 }
