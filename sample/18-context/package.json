@@ -19,8 +19,8 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "6.11.4",
-    "@nestjs/core": "6.11.4",
+    "@nestjs/common": "6.11.5",
+    "@nestjs/core": "6.11.5",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.1",
     "rxjs": "6.5.4"
@@ -33,7 +33,7 @@
     "jest": "25.1.0",
     "prettier": "1.19.1",
     "supertest": "4.0.2",
-    "ts-jest": "25.0.0",
+    "ts-jest": "25.1.0",
     "ts-loader": "6.2.1",
     "ts-node": "8.6.2",
     "tsconfig-paths": "3.9.0",
@@ -41,7 +41,7 @@
     "@typescript-eslint/parser": "2.18.0",
     "eslint": "6.8.0",
     "eslint-config-prettier": "6.10.0",
-    "eslint-plugin-import": "2.20.0",
+    "eslint-plugin-import": "2.20.1",
     "typescript": "3.7.2"
   }
 }
