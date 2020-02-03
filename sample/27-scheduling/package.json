@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@nestjs/cli": "6.14.1",
-    "@nestjs/schematics": "6.9.1",
+    "@nestjs/schematics": "6.9.3",
     "@nestjs/testing": "6.11.5",
     "@types/bull": "3.12.0",
     "@types/dotenv": "6.1.1",
