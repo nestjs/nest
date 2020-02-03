@@ -22,7 +22,7 @@
     "@nestjs/common": "6.11.5",
     "@nestjs/core": "6.11.5",
     "@nestjs/platform-express": "6.11.5",
-    "@nestjs/swagger": "4.2.3",
+    "@nestjs/swagger": "4.2.4",
     "class-transformer": "0.2.3",
     "class-validator": "0.11.0",
     "reflect-metadata": "0.1.13",
