@@ -8,7 +8,7 @@ export interface CustomHeader {
 
 export interface RedirectResponse {
   url: string;
-  statusCode: number;
+  statusCode?: number;
 }
 export class RouterResponseController {
   constructor(private readonly applicationRef: HttpServer) {}
