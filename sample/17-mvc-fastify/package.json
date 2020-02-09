@@ -25,7 +25,7 @@
     "handlebars": "4.7.3",
     "point-of-view": "3.7.1",
     "reflect-metadata": "0.1.13",
-    "rimraf": "3.0.1",
+    "rimraf": "3.0.2",
     "rxjs": "6.5.4"
   },
   "devDependencies": {

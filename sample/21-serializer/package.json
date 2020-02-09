@@ -24,7 +24,7 @@
     "@nestjs/platform-express": "6.11.6",
     "class-transformer": "0.2.3",
     "reflect-metadata": "0.1.13",
-    "rimraf": "3.0.1",
+    "rimraf": "3.0.2",
     "rxjs": "6.5.4"
   },
   "devDependencies": {

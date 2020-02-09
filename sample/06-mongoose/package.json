@@ -25,7 +25,7 @@
     "@nestjs/mongoose": "6.3.1",
     "mongoose": "5.8.11",
     "reflect-metadata": "0.1.13",
-    "rimraf": "3.0.1",
+    "rimraf": "3.0.2",
     "rxjs": "6.5.4"
   },
   "devDependencies": {
