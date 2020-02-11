@@ -9,8 +9,8 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "6.11.5",
-    "@nestjs/core": "6.11.5",
+    "@nestjs/common": "6.11.6",
+    "@nestjs/core": "6.11.6",
     "@nestjs/typeorm": "6.2.0",
     "mysql": "2.18.1",
     "reflect-metadata": "0.1.13",
