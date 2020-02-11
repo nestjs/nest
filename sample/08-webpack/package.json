@@ -28,7 +28,7 @@
     "eslint-config-prettier": "6.10.0",
     "eslint-plugin-import": "2.20.1",
     "webpack": "4.41.6",
-    "webpack-cli": "3.3.10",
+    "webpack-cli": "3.3.11",
     "webpack-node-externals": "1.7.2"
   }
 }
