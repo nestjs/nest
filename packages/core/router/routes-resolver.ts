@@ -50,6 +50,9 @@ export class RoutesResolver implements Resolver {
     });
   }
 
+  private static stripEndSlash = (str: string) =>
+    str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
+
   public registerRouters(
     routes: Map<string, InstanceWrapper<Controller>>,
     moduleName: string,
@@ -65,7 +68,12 @@ export class RoutesResolver implements Resolver {
         basePath,
       );
       const controllerName = metatype.name;
-      this.logger.log(CONTROLLER_MAPPING_MESSAGE(controllerName, path));
+      this.logger.log(
+        CONTROLLER_MAPPING_MESSAGE(
+          controllerName,
+          RoutesResolver.stripEndSlash(path),
+        ),
+      );
       this.routerBuilder.explore(
         instanceWrapper,
         moduleName,
