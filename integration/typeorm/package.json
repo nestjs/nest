@@ -11,7 +11,7 @@
   "dependencies": {
     "@nestjs/common": "6.11.6",
     "@nestjs/core": "6.11.6",
-    "@nestjs/typeorm": "6.2.0",
+    "@nestjs/typeorm": "6.3.1",
     "mysql": "2.18.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.4",
