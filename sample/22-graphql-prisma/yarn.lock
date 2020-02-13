@@ -534,23 +534,23 @@
     webpack "4.41.5"
     webpack-node-externals "1.7.2"
 
-"@nestjs/common@6.11.6":
-  version "6.11.6"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.11.6.tgz#b0bca24a30f6822c2a7e885fef699f6bac99b44f"
+"@nestjs/common@6.11.7":
+  version "6.11.7"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.11.7.tgz#59b6e4a580b61f5d4964e4fca3a0cc8d52d73c5a"
   dependencies:
     axios "0.19.2"
     cli-color "2.0.0"
     tslib "1.10.0"
     uuid "3.4.0"
 
-"@nestjs/core@6.11.6":
-  version "6.11.6"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.11.6.tgz#7a482a571f9b67e9589d60248cb2d4ef78f8dafd"
+"@nestjs/core@6.11.7":
+  version "6.11.7"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.11.7.tgz#b4e6d23674e95013eda3811f1965821c1117975a"
   dependencies:
     "@nuxtjs/opencollective" "0.2.2"
     fast-safe-stringify "2.0.7"
     iterare "1.2.0"
-    object-hash "2.0.1"
+    object-hash "2.0.2"
     path-to-regexp "3.2.0"
     tslib "1.10.0"
     uuid "3.4.0"
@@ -572,9 +572,9 @@
   optionalDependencies:
     type-graphql "^0.17.3"
 
-"@nestjs/platform-express@6.11.6":
-  version "6.11.6"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.11.6.tgz#fcb1c2a654ee0d3164fbe1bea203261c3a9a9584"
+"@nestjs/platform-express@6.11.7":
+  version "6.11.7"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.11.7.tgz#9b9990ee47f5bcefaa75e0e6a4db50298f968507"
   dependencies:
     body-parser "1.19.0"
     cors "2.8.5"
@@ -598,9 +598,9 @@
     "@angular-devkit/schematics" "7.3.8"
     fs-extra "8.1.0"
 
-"@nestjs/testing@6.11.6":
-  version "6.11.6"
-  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-6.11.6.tgz#d5c770f45a9b5bed96034cc7fe36112b35d3100d"
+"@nestjs/testing@6.11.7":
+  version "6.11.7"
+  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-6.11.7.tgz#bece1beddfb41c30baba80ba015ddfa8d401b6b6"
   dependencies:
     optional "0.1.4"
     tslib "1.10.0"
@@ -5505,9 +5505,9 @@ object-copy@^0.1.0:
     define-property "^0.2.5"
     kind-of "^3.0.3"
 
-object-hash@2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/object-hash/-/object-hash-2.0.1.tgz#cef18a0c940cc60aa27965ecf49b782cbf101d96"
+object-hash@2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/object-hash/-/object-hash-2.0.2.tgz#f7b2212dbe07d07e340ccd6004c59504fc4015cf"
 
 object-inspect@^1.7.0:
   version "1.7.0"
