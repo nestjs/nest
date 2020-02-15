@@ -31,6 +31,7 @@ import { Module } from './injector/module';
 export class NestApplicationContext implements INestApplicationContext {
   protected isInitialized = false;
   protected readonly injector = new Injector();
+  private shutdownCleanupRef?: (...args: unknown[]) => unknown;
   private readonly activeShutdownSignals = new Array<string>();
   private readonly containerScanner: ContainerScanner;
 
@@ -109,6 +110,7 @@ export class NestApplicationContext implements INestApplicationContext {
     await this.callBeforeShutdownHook();
     await this.dispose();
     await this.callShutdownHook();
+    await this.unsubscribeFromProcessSignals();
   }
 
   public useLogger(logger: LoggerService) {
@@ -179,10 +181,23 @@ export class NestApplicationContext implements INestApplicationContext {
         process.exit(1);
       }
     };
+    this.shutdownCleanupRef = cleanup as (...args: unknown[]) => unknown;
 
     signals.forEach((signal: string) => {
       this.activeShutdownSignals.push(signal);
       process.on(signal as any, cleanup);
+    });
+  }
+
+  /**
+   * Unsubscribes from shutdown signals (process events)
+   */
+  protected unsubscribeFromProcessSignals() {
+    if (!this.shutdownCleanupRef) {
+      return;
+    }
+    this.activeShutdownSignals.forEach(signal => {
+      process.removeListener(signal, this.shutdownCleanupRef);
     });
   }
 
