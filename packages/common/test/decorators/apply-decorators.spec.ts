@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { applyDecorators, UseGuards, Controller } from '../../decorators';
+import { applyDecorators, UseGuards } from '../../decorators';
 import { GUARDS_METADATA } from '../../constants';
 import { CanActivate } from '../../interfaces';
 
@@ -70,11 +70,9 @@ const GuardCompositeDecorator = () => {
 };
 
 describe('applyDecorators @GuardCompositeDecorator', () => {
-  @Controller()
   @GuardCompositeDecorator()
   class Test {}
 
-  @Controller()
   class TestWithMethod {
     @GuardCompositeDecorator()
     public test() {
@@ -82,7 +80,6 @@ describe('applyDecorators @GuardCompositeDecorator', () => {
     }
   }
 
-  @Controller()
   class TestWithStaticMethod {
     @GuardCompositeDecorator()
     public static test() {
