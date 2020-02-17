@@ -42,7 +42,7 @@ export async function callModuleDestroyHook(module: Module): Promise<any> {
   const providers = module.getNonAliasProviders();
   // Module (class) instance is the first element of the providers array
   // Lifecycle hook has to be called once all classes are properly destroyed
-  const [_, { instance: moduleClassInstance }] = providers.shift();
+  const [_, moduleClassHost] = providers.shift();
   const instances = [
     ...module.controllers,
     ...providers,
@@ -57,7 +57,12 @@ export async function callModuleDestroyHook(module: Module): Promise<any> {
   await Promise.all(callOperator(transientInstances));
 
   // Call the module instance itself
-  if (moduleClassInstance && hasOnModuleDestroyHook(moduleClassInstance)) {
+  const moduleClassInstance = moduleClassHost.instance;
+  if (
+    moduleClassInstance &&
+    hasOnModuleDestroyHook(moduleClassInstance) &&
+    moduleClassHost.isDependencyTreeStatic()
+  ) {
     await (moduleClassInstance as OnModuleDestroy).onModuleDestroy();
   }
 }

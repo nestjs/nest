@@ -50,7 +50,7 @@ export async function callAppShutdownHook(
   const providers = module.getNonAliasProviders();
   // Module (class) instance is the first element of the providers array
   // Lifecycle hook has to be called once all classes are properly initialized
-  const [_, { instance: moduleClassInstance }] = providers.shift();
+  const [_, moduleClassHost] = providers.shift();
   const instances = [
     ...module.controllers,
     ...providers,
@@ -64,7 +64,12 @@ export async function callAppShutdownHook(
   await Promise.all(callOperator(transientInstances, signal));
 
   // Call the instance itself
-  if (moduleClassInstance && hasOnAppShutdownHook(moduleClassInstance)) {
+  const moduleClassInstance = moduleClassHost.instance;
+  if (
+    moduleClassInstance &&
+    hasOnAppShutdownHook(moduleClassInstance) &&
+    moduleClassHost.isDependencyTreeStatic()
+  ) {
     await (moduleClassInstance as OnApplicationShutdown).onApplicationShutdown(
       signal,
     );

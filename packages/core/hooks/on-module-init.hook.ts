@@ -38,7 +38,7 @@ export async function callModuleInitHook(module: Module): Promise<void> {
   const providers = module.getNonAliasProviders();
   // Module (class) instance is the first element of the providers array
   // Lifecycle hook has to be called once all classes are properly initialized
-  const [_, { instance: moduleClassInstance }] = providers.shift();
+  const [_, moduleClassHost] = providers.shift();
   const instances = [
     ...module.controllers,
     ...providers,
@@ -53,7 +53,12 @@ export async function callModuleInitHook(module: Module): Promise<void> {
   await Promise.all(callOperator(transientInstances));
 
   // Call the instance itself
-  if (moduleClassInstance && hasOnModuleInitHook(moduleClassInstance)) {
+  const moduleClassInstance = moduleClassHost.instance;
+  if (
+    moduleClassInstance &&
+    hasOnModuleInitHook(moduleClassInstance) &&
+    moduleClassHost.isDependencyTreeStatic()
+  ) {
     await (moduleClassInstance as OnModuleInit).onModuleInit();
   }
 }
