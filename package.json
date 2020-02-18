@@ -59,7 +59,7 @@
     "fast-json-stringify": "1.16.3",
     "fast-safe-stringify": "2.0.7",
     "fastify": "2.10.0",
-    "fastify-cors": "3.0.1",
+    "fastify-cors": "3.0.2",
     "fastify-formbody": "3.1.0",
     "fastify-multipart": "1.0.5",
     "graphql": "14.6.0",
