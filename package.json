@@ -100,7 +100,7 @@
     "@types/kafka-node": "2.0.9",
     "@types/mocha": "7.0.1",
     "@types/node": "10.17.3",
-    "@types/redis": "2.8.15",
+    "@types/redis": "2.8.16",
     "@types/reflect-metadata": "0.0.5",
     "@types/sinon": "7.5.1",
     "@types/socket.io": "2.1.4",
