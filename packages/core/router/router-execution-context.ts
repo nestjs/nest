@@ -389,7 +389,7 @@ export class RouterExecutionContext {
         await this.responseController.render(result, res, renderTemplate);
       };
     }
-    if (redirectResponse && redirectResponse.url) {
+    if (redirectResponse && typeof redirectResponse.url === 'string') {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
         await this.responseController.redirect(result, res, redirectResponse);
       };
