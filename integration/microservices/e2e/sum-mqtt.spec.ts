@@ -88,7 +88,7 @@ describe('MQTT transport', () => {
 
   it(`/POST (wildcard EVENT #)`, done => {
     request(server)
-      .post('/wilcard-event')
+      .post('/wildcard-event')
       .send([1, 2, 3, 4, 5])
       .end(() => {
         setTimeout(() => {
@@ -96,6 +96,32 @@ describe('MQTT transport', () => {
           done();
         }, 1000);
       });
+  });
+
+  it(`/POST (wildcard MESSAGE #)`, () => {
+    return request(server)
+      .post('/wildcard-message')
+      .send([1, 2, 3, 4, 5])
+      .expect(201, '15');
+  });
+
+  it(`/POST (wildcard EVENT +)`, done => {
+    request(server)
+      .post('/wildcard-event2')
+      .send([1, 2, 3, 4, 5])
+      .end(() => {
+        setTimeout(() => {
+          expect(MqttController.IS_WILDCARD2_EVENT_RECEIVED).to.be.true;
+          done();
+        }, 1000);
+      });
+  });
+
+  it(`/POST (wildcard MESSAGE +)`, () => {
+    return request(server)
+      .post('/wildcard-message2')
+      .send([1, 2, 3, 4, 5])
+      .expect(201, '15');
   });
 
   afterEach(async () => {

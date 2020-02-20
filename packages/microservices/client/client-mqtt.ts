@@ -37,7 +37,7 @@ export class ClientMqtt extends ClientProxy {
   }
 
   public getResponsePattern(pattern: string): string {
-    return `${pattern}.reply`;
+    return `${pattern}/reply`;
   }
 
   public close() {

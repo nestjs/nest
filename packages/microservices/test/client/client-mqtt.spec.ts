@@ -14,8 +14,8 @@ describe('ClientMqtt', () => {
     });
   });
   describe('getResponsePattern', () => {
-    it(`should append ".reply" to string`, () => {
-      const expectedResult = test + '.reply';
+    it(`should append "/reply" to string`, () => {
+      const expectedResult = test + '/reply';
       expect(client.getResponsePattern(test)).to.equal(expectedResult);
     });
   });
@@ -59,7 +59,7 @@ describe('ClientMqtt', () => {
     });
     it('should subscribe to response pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`${pattern}.reply`)).to.be.true;
+      expect(subscribeSpy.calledWith(`${pattern}/reply`)).to.be.true;
     });
     it('should publish stringified message to request pattern name', async () => {
       await client['publish'](msg, () => {});

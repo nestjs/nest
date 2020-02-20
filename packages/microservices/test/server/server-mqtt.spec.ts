@@ -156,7 +156,7 @@ describe('ServerMqtt', () => {
       publisher({ respond, id });
       expect(
         publisherSpy.calledWith(
-          `${pattern}.reply`,
+          `${pattern}/reply`,
           JSON.stringify({ respond, id }),
         ),
       ).to.be.true;
@@ -170,8 +170,8 @@ describe('ServerMqtt', () => {
   });
   describe('getReplyPattern', () => {
     const test = 'test';
-    it(`should append ".reply" to string`, () => {
-      const expectedResult = test + '.reply';
+    it(`should append "/reply" to string`, () => {
+      const expectedResult = test + '/reply';
       expect(server.getReplyPattern(test)).to.equal(expectedResult);
     });
   });
@@ -207,17 +207,34 @@ describe('ServerMqtt', () => {
   });
   describe('matchMqttPattern', () => {
     it('should return true when topic matches with provided pattern', () => {
-      expect(server.matchMqttPattern('root/valid/+', 'root/valid/child')).to.be.true;
-      expect(server.matchMqttPattern('root/valid/#', 'root/valid/child')).to.be.true;
-      expect(server.matchMqttPattern('root/valid/#', 'root/valid/child/grandchild')).to.be.true;
-      expect(server.matchMqttPattern('root/+/child', 'root/valid/child')).to.be.true;
+      expect(server.matchMqttPattern('root/valid/+', 'root/valid/child')).to.be
+        .true;
+      expect(server.matchMqttPattern('root/valid/#', 'root/valid/child')).to.be
+        .true;
+      expect(
+        server.matchMqttPattern('root/valid/#', 'root/valid/child/grandchild'),
+      ).to.be.true;
+      expect(server.matchMqttPattern('root/+/child', 'root/valid/child')).to.be
+        .true;
     });
 
     it('should return false when topic does not matches with provided pattern', () => {
-      expect(server.matchMqttPattern('root/test/+', 'root/invalid/child')).to.be.false;
-      expect(server.matchMqttPattern('root/test/#', 'root/invalid/child')).to.be.false;
-      expect(server.matchMqttPattern('root/#/grandchild', 'root/invalid/child/grandchild')).to.be.false;
-      expect(server.matchMqttPattern('root/+/grandchild', 'root/invalid/child/grandchild')).to.be.false;
+      expect(server.matchMqttPattern('root/test/+', 'root/invalid/child')).to.be
+        .false;
+      expect(server.matchMqttPattern('root/test/#', 'root/invalid/child')).to.be
+        .false;
+      expect(
+        server.matchMqttPattern(
+          'root/#/grandchild',
+          'root/invalid/child/grandchild',
+        ),
+      ).to.be.false;
+      expect(
+        server.matchMqttPattern(
+          'root/+/grandchild',
+          'root/invalid/child/grandchild',
+        ),
+      ).to.be.false;
     });
   });
 });
