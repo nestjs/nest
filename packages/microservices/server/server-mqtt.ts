@@ -5,10 +5,10 @@ import {
   ERROR_EVENT,
   MESSAGE_EVENT,
   MQTT_DEFAULT_URL,
-  NO_MESSAGE_HANDLER,
   MQTT_SEPARATOR,
   MQTT_WILDCARD_ALL,
   MQTT_WILDCARD_SINGLE,
+  NO_MESSAGE_HANDLER,
 } from '../constants';
 import { MqttContext } from '../ctx-host/mqtt.context';
 import { MqttClient } from '../external/mqtt-client.interface';
@@ -71,51 +71,55 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 
-  public matchMqttPattern(pattern, topic) {
+  public matchMqttPattern(pattern: string, topic: string) {
     const patternSegments = pattern.split(MQTT_SEPARATOR);
     const topicSegments = topic.split(MQTT_SEPARATOR);
-    const patternLength = patternSegments.length;
-    const topicLength = topicSegments.length;
-    const lastIndex = patternLength - 1;
 
-    for (let i = 0; i < patternLength; i++) {
+    const patternSegmentsLength = patternSegments.length;
+    const topicSegmentsLength = topicSegments.length;
+    const lastIndex = patternSegmentsLength - 1;
+
+    for (let i = 0; i < patternSegmentsLength; i++) {
       const currentPattern = patternSegments[i];
       const patternChar = currentPattern[0];
       const currentTopic = topicSegments[i];
 
-      if (!currentTopic && !currentPattern) continue;
-
-      if (!currentTopic && currentPattern !== MQTT_WILDCARD_ALL) return false;
-
-      if (patternChar === MQTT_WILDCARD_ALL) return i === lastIndex;
-
+      if (!currentTopic && !currentPattern) {
+        continue;
+      }
+      if (!currentTopic && currentPattern !== MQTT_WILDCARD_ALL) {
+        return false;
+      }
+      if (patternChar === MQTT_WILDCARD_ALL) {
+        return i === lastIndex;
+      }
       if (
         patternChar !== MQTT_WILDCARD_SINGLE &&
         currentPattern !== currentTopic
-      )
+      ) {
         return false;
+      }
     }
-
-    return patternLength === topicLength;
+    return patternSegmentsLength === topicSegmentsLength;
   }
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
     const route = this.getRouteFromPattern(pattern);
-
     if (this.messageHandlers.has(route)) {
-      return this.messageHandlers.get(route);
+      return this.messageHandlers.get(route) || null;
     }
 
     for (const [key, value] of this.messageHandlers) {
-      if (key.indexOf(MQTT_WILDCARD_SINGLE) === -1 && key.indexOf(MQTT_WILDCARD_ALL) === -1) {
+      if (
+        key.indexOf(MQTT_WILDCARD_SINGLE) === -1 &&
+        key.indexOf(MQTT_WILDCARD_ALL) === -1
+      ) {
         continue;
       }
-
       if (this.matchMqttPattern(key, route)) {
         return value;
       }
     }
-
     return null;
   }
 
