@@ -169,7 +169,7 @@ export abstract class Server {
    * @param  {string} pattern - server pattern
    * @returns string
    */
-  private getRouteFromPattern(pattern: string): string {
+  protected getRouteFromPattern(pattern: string): string {
     let validPattern: MsPattern;
 
     try {

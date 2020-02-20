@@ -205,4 +205,19 @@ describe('ServerMqtt', () => {
       expect(handler.calledWith(data)).to.be.true;
     });
   });
+  describe('matchMqttPattern', () => {
+    it('should return true when topic matches with provided pattern', () => {
+      expect(server.matchMqttPattern('root/valid/+', 'root/valid/child')).to.be.true;
+      expect(server.matchMqttPattern('root/valid/#', 'root/valid/child')).to.be.true;
+      expect(server.matchMqttPattern('root/valid/#', 'root/valid/child/grandchild')).to.be.true;
+      expect(server.matchMqttPattern('root/+/child', 'root/valid/child')).to.be.true;
+    });
+
+    it('should return false when topic does not matches with provided pattern', () => {
+      expect(server.matchMqttPattern('root/test/+', 'root/invalid/child')).to.be.false;
+      expect(server.matchMqttPattern('root/test/#', 'root/invalid/child')).to.be.false;
+      expect(server.matchMqttPattern('root/#/grandchild', 'root/invalid/child/grandchild')).to.be.false;
+      expect(server.matchMqttPattern('root/+/grandchild', 'root/invalid/child/grandchild')).to.be.false;
+    });
+  });
 });
