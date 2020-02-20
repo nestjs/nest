@@ -86,6 +86,18 @@ describe('MQTT transport', () => {
       });
   });
 
+  it(`/POST (wildcard EVENT #)`, done => {
+    request(server)
+      .post('/wilcard-event')
+      .send([1, 2, 3, 4, 5])
+      .end(() => {
+        setTimeout(() => {
+          expect(MqttController.IS_WILDCARD_EVENT_RECEIVED).to.be.true;
+          done();
+        }, 1000);
+      });
+  });
+
   afterEach(async () => {
     await app.close();
   });

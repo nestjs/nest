@@ -12,6 +12,7 @@ import { scan } from 'rxjs/operators';
 @Controller()
 export class MqttController {
   static IS_NOTIFIED = false;
+  static IS_WILDCARD_EVENT_RECEIVED = false;
 
   @Client({ transport: Transport.MQTT })
   client: ClientProxy;
@@ -53,6 +54,16 @@ export class MqttController {
   @Post('notify')
   async sendNotification(): Promise<any> {
     return this.client.emit<number>('notification', true);
+  }
+
+  @Post('wildcard-event')
+  async sendWilcardEvent(): Promise<any> {
+    return this.client.emit<number>('wildcard-event/test', true);
+  }
+
+  @EventPattern('wildcard-event/#')
+  wildcardEventHandler(data: boolean) {
+    MqttController.IS_WILDCARD_EVENT_RECEIVED = true;
   }
 
   @EventPattern('notification')
