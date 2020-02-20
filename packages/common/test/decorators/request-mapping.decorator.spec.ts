@@ -16,10 +16,10 @@ describe('@RequestMapping', () => {
   it('should enhance class with expected request metadata', () => {
     class Test {
       @RequestMapping(requestProps)
-      public static test() { }
+      public static test() {}
 
       @RequestMapping(requestPropsUsingArray)
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
@@ -36,7 +36,7 @@ describe('@RequestMapping', () => {
   it('should set request method on GET by default', () => {
     class Test {
       @RequestMapping({ path: '' })
-      public static test() { }
+      public static test() {}
     }
 
     const method = Reflect.getMetadata('method', Test.test);
@@ -47,10 +47,10 @@ describe('@RequestMapping', () => {
   it('should set path on "/" by default', () => {
     class Test {
       @RequestMapping({})
-      public static test() { }
+      public static test() {}
 
       @RequestMapping({ path: [] })
-      public static testUsingArray() { }
+      public static testUsingArray() {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);

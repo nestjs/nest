@@ -63,7 +63,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
       ? JSON.stringify(packet.pattern)
       : packet.pattern;
 
-    const tcpContext = new TcpContext([socket]);
+    const tcpContext = new TcpContext([socket, pattern]);
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet, tcpContext);
     }
@@ -84,8 +84,9 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     response$ &&
       this.send(response$, data => {
         Object.assign(data, { id: (packet as IncomingRequest).id });
-        const outgoingResponse = this.serializer.serialize(data as WritePacket &
-          PacketId);
+        const outgoingResponse = this.serializer.serialize(
+          data as WritePacket & PacketId,
+        );
         socket.sendMessage(outgoingResponse);
       });
   }

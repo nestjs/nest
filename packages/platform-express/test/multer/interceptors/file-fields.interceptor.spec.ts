@@ -53,7 +53,6 @@ describe('FileFieldsInterceptor', () => {
       const target = new (FileFieldsInterceptor(argument))();
       const err = {};
       const callback = (req, res, next) => next(err);
-
       (target as any).fields = {
         array: () => callback,
       };

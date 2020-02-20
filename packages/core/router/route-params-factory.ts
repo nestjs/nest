@@ -22,6 +22,9 @@ export class RouteParamsFactory implements IRouteParamsFactory {
         return data && req.body ? req.body[data] : req.body;
       case RouteParamtypes.PARAM:
         return data ? req.params[data] : req.params;
+      case RouteParamtypes.HOST:
+        const hosts = req.hosts || {};
+        return data ? hosts[data] : hosts;
       case RouteParamtypes.QUERY:
         return data ? req.query[data] : req.query;
       case RouteParamtypes.HEADERS:
@@ -32,6 +35,8 @@ export class RouteParamsFactory implements IRouteParamsFactory {
         return req[data || 'file'];
       case RouteParamtypes.FILES:
         return req.files;
+      case RouteParamtypes.IP:
+        return req.ip;
       default:
         return null;
     }

@@ -1,8 +1,12 @@
-import * as request from 'supertest';
-import { Test } from '@nestjs/testing';
-import { INestApplication, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ApplicationModule } from '../src/app.module';
+import {
+  INestApplication,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { Test } from '@nestjs/testing';
+import * as request from 'supertest';
+import { ApplicationModule } from '../src/app.module';
 
 @Injectable()
 export class AuthGuard {
@@ -30,10 +34,8 @@ describe('Guards', () => {
   let app: INestApplication;
 
   it(`should prevent access (unauthorized)`, async () => {
-    app = (await createTestModule(
-      new AuthGuard(),
-    )).createNestApplication();
-  
+    app = (await createTestModule(new AuthGuard())).createNestApplication();
+
     await app.init();
     return request(app.getHttpServer())
       .get('/hello')

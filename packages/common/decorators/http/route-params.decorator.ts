@@ -107,6 +107,19 @@ export const Next: () => ParameterDecorator = createRouteParamDecorator(
 );
 
 /**
+ * Route handler parameter decorator. Extracts the `Ip` property
+ * from the `req` object and populates the decorated
+ * parameter with the value of `ip`.
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ *
+ * @publicApi
+ */
+export const Ip: () => ParameterDecorator = createRouteParamDecorator(
+  RouteParamtypes.IP,
+);
+
+/**
  * Route handler parameter decorator. Extracts the `Session` object
  * from the underlying platform and populates the decorated
  * parameter with the value of `Session`.
@@ -471,6 +484,77 @@ export function Param(
     property,
     ...pipes,
   );
+}
+
+/**
+ * Route handler parameter decorator. Extracts the `hosts`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `hosts`. May also apply pipes to the bound
+ * parameter.
+ *
+ * For example, extracting all params:
+ * ```typescript
+ * findOne(@HostParam() params: string[])
+ * ```
+ *
+ * For example, extracting a single param:
+ * ```typescript
+ * findOne(@HostParam('id') id: string)
+ * ```
+ * @param property name of single property to extract from the `req` object
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ *
+ * @publicApi
+ */
+export function HostParam(): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `hosts`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `hosts`. May also apply pipes to the bound
+ * parameter.
+ *
+ * For example, extracting all params:
+ * ```typescript
+ * findOne(@HostParam() params: string[])
+ * ```
+ *
+ * For example, extracting a single param:
+ * ```typescript
+ * findOne(@HostParam('id') id: string)
+ * ```
+ * @param property name of single property to extract from the `req` object
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ *
+ * @publicApi
+ */
+export function HostParam(property: string): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `hosts`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `params`. May also apply pipes to the bound
+ * parameter.
+ *
+ * For example, extracting all params:
+ * ```typescript
+ * findOne(@HostParam() params: string[])
+ * ```
+ *
+ * For example, extracting a single param:
+ * ```typescript
+ * findOne(@HostParam('id') id: string)
+ * ```
+ * @param property name of single property to extract from the `req` object
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ *
+ * @publicApi
+ */
+export function HostParam(
+  property?: string | (Type<PipeTransform> | PipeTransform),
+): ParameterDecorator {
+  return createRouteParamDecorator(RouteParamtypes.HOST)(property);
 }
 
 export const Req = Request;

@@ -1,4 +1,4 @@
 export enum WsParamtype {
   SOCKET = 0,
-  PAYLOAD = 1,
+  PAYLOAD = 3,
 }

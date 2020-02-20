@@ -23,22 +23,22 @@ describe('OnApplicationBootstrap', () => {
   it('should not throw an error when onApplicationBootstrap is null', async () => {
     const module = await Test.createTestingModule({
       providers: [
-        { provide: 'TEST', useValue: { onApplicationBootstrap: null } }
+        { provide: 'TEST', useValue: { onApplicationBootstrap: null } },
       ],
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then((obj) => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).to.not.be.undefined);
   });
 
   it('should not throw an error when onApplicationBootstrap is undefined', async () => {
     const module = await Test.createTestingModule({
       providers: [
-        { provide: 'TEST', useValue: { onApplicationBootstrap: undefined } }
+        { provide: 'TEST', useValue: { onApplicationBootstrap: undefined } },
       ],
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then((obj) => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).to.not.be.undefined);
   });
 });

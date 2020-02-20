@@ -8,4 +8,4 @@ import { CatsModule } from './cats/cats.module';
     CatsModule,
   ],
 })
-export class ApplicationModule {}
+export class AppModule {}

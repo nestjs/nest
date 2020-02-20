@@ -88,17 +88,13 @@ export interface MqttClientOptions extends ISecureClientOptions {
      */
     retain: boolean;
   };
-  transformWsUrl?: (
-    url: string,
-    options: any,
-    client: any,
-  ) => string;
+  transformWsUrl?: (url: string, options: any, client: any) => string;
 }
 export interface ISecureClientOptions {
   /**
    * optional private keys in PEM format
    */
-  key?: string | string[] | Buffer | Buffer[] | Object[];
+  key?: string | string[] | Buffer | Buffer[] | Record<string, any>[];
   /**
    * optional cert chains in PEM format
    */

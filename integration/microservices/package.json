@@ -7,22 +7,22 @@
     "start": "ts-node src/main"
   },
   "dependencies": {
-    "@nestjs/common": "6.7.2",
-    "@nestjs/core": "6.7.2",
-    "@nestjs/microservices": "6.7.2",
-    "@nestjs/platform-express": "6.7.2",
-    "@nestjs/testing": "6.7.2",
-    "@nestjs/websockets": "6.7.2",
-    "amqp-connection-manager": "3.0.0",
+    "@nestjs/common": "6.11.7",
+    "@nestjs/core": "6.11.7",
+    "@nestjs/microservices": "6.11.7",
+    "@nestjs/platform-express": "6.11.7",
+    "@nestjs/testing": "6.11.7",
+    "@nestjs/websockets": "6.11.7",
+    "amqp-connection-manager": "3.2.0",
     "class-transformer": "0.2.3",
-    "class-validator": "0.10.1",
+    "class-validator": "0.11.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.3",
-    "typescript": "3.6.3"
+    "rxjs": "6.5.4",
+    "typescript": "3.7.2"
   },
   "devDependencies": {
-    "@types/node": "7.10.7",
+    "@types/node": "7.10.9",
     "supertest": "4.0.2",
-    "ts-node": "8.4.1"
+    "ts-node": "8.6.2"
   }
 }

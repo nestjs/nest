@@ -1,10 +1,16 @@
 import { expect } from 'chai';
-import { BadRequestException, HttpException, NotFoundException } from '../../exceptions';
+import {
+  BadRequestException,
+  HttpException,
+  NotFoundException,
+} from '../../exceptions';
 
 describe('HttpException', () => {
   it('should return a message as a string when input is a string', () => {
-    const message: string = 'My error message';
-    expect(new HttpException(message, 404).message).to.be.eql('My error message');
+    const message = 'My error message';
+    expect(new HttpException(message, 404).message).to.be.eql(
+      'My error message',
+    );
   });
 
   it('should return a message as an object when input is an object', () => {
@@ -17,7 +23,7 @@ describe('HttpException', () => {
   });
 
   it('should return a message from a built-in exception as an object', () => {
-    const message: string = 'My error message';
+    const message = 'My error message';
     expect(new BadRequestException(message).message).to.be.eql({
       statusCode: 400,
       error: 'Bad Request',
@@ -26,7 +32,10 @@ describe('HttpException', () => {
   });
 
   it('should return an object even when the message is undefined', () => {
-    expect(new BadRequestException().message).to.be.eql({ statusCode: 400, error: 'Bad Request' });
+    expect(new BadRequestException().message).to.be.eql({
+      statusCode: 400,
+      error: 'Bad Request',
+    });
   });
 
   it('should return a status code', () => {
@@ -111,5 +120,4 @@ describe('HttpException', () => {
       });
     });
   });
-
 });

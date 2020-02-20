@@ -168,10 +168,14 @@ describe('DependenciesScanner', () => {
       expect(module.forwardRef.called).to.be.true;
     });
     describe('when "related" is nil', () => {
-      it('should throw exception', () => {
-        scanner
-          .insertImport(undefined, [] as any, 'test')
-          .catch(err => expect(err).to.not.be.undefined);
+      it('should throw exception', async () => {
+        let error;
+        try {
+          await scanner.insertImport(undefined, [] as any, 'test');
+        } catch (e) {
+          error = e;
+        }
+        expect(error).to.not.be.undefined;
       });
     });
   });

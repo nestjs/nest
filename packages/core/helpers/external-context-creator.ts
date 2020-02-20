@@ -1,19 +1,24 @@
 import { ForbiddenException, ParamData } from '@nestjs/common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
-import { Controller, PipeTransform } from '@nestjs/common/interfaces';
+import {
+  ContextType,
+  Controller,
+  PipeTransform,
+} from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
+import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
+import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
+import { ContextId } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
-import { ExternalExceptionFilterContext } from './../exceptions/external-exception-filter-context';
-import { STATIC_CONTEXT } from './../injector/constants';
 import { ContextUtils, ParamProperties } from './context-utils';
 import { ExternalErrorProxy } from './external-proxy';
 import { HandlerMetadataStorage } from './handler-metadata-storage';
@@ -36,6 +41,7 @@ export class ExternalContextCreator {
   private readonly handlerMetadataStorage = new HandlerMetadataStorage<
     ExternalHandlerMetadata
   >();
+  private container: NestContainer;
 
   constructor(
     private readonly guardsContextCreator: GuardsContextCreator,
@@ -68,7 +74,8 @@ export class ExternalContextCreator {
       container,
       container.applicationConfig,
     );
-    return new ExternalContextCreator(
+
+    const externalContextCreator = new ExternalContextCreator(
       guardsContextCreator,
       guardsConsumer,
       interceptorsContextCreator,
@@ -78,9 +85,14 @@ export class ExternalContextCreator {
       pipesConsumer,
       filtersContextCreator,
     );
+    externalContextCreator.container = container;
+    return externalContextCreator;
   }
 
-  public create<T extends ParamsMetadata = ParamsMetadata>(
+  public create<
+    TParamsMetadata extends ParamsMetadata = ParamsMetadata,
+    TContext extends string = ContextType
+  >(
     instance: Controller,
     callback: (...args: any[]) => any,
     methodName: string,
@@ -93,14 +105,12 @@ export class ExternalContextCreator {
       guards: true,
       filters: true,
     },
+    contextType: TContext = 'http' as TContext,
   ) {
     const module = this.getContextModuleName(instance.constructor);
-    const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
-      instance,
-      methodName,
-      metadataKey,
-      paramsFactory,
-    );
+    const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<
+      TParamsMetadata
+    >(instance, methodName, metadataKey, paramsFactory);
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
@@ -138,7 +148,7 @@ export class ExternalContextCreator {
       : [];
 
     const fnCanActivate = options.guards
-      ? this.createGuardsFn(guards, instance, callback)
+      ? this.createGuardsFn(guards, instance, callback, contextType)
       : null;
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
     const handler = (initialArgs: any[], ...args: any[]) => async () => {
@@ -159,6 +169,7 @@ export class ExternalContextCreator {
         instance,
         callback,
         handler(initialArgs, ...args),
+        contextType,
       );
       return this.transformToResult(result);
     };
@@ -316,22 +327,28 @@ export class ExternalContextCreator {
     return resultOrDeffered;
   }
 
-  public createGuardsFn(
+  public createGuardsFn<TContext extends string = ContextType>(
     guards: any[],
     instance: Controller,
     callback: (...args: any[]) => any,
+    contextType?: TContext,
   ): Function | null {
     const canActivateFn = async (args: any[]) => {
-      const canActivate = await this.guardsConsumer.tryActivate(
+      const canActivate = await this.guardsConsumer.tryActivate<TContext>(
         guards,
         args,
         instance,
         callback,
+        contextType,
       );
       if (!canActivate) {
         throw new ForbiddenException(FORBIDDEN_MESSAGE);
       }
     };
     return guards.length ? canActivateFn : null;
+  }
+
+  public registerRequestProvider<T = any>(request: T, contextId: ContextId) {
+    this.container.registerRequestProvider<T>(request, contextId);
   }
 }

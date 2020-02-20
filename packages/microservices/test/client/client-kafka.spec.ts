@@ -10,7 +10,6 @@ import {
   EachMessagePayload,
   KafkaMessage,
 } from '../../external/kafka.interface';
-// tslint:disable:no-string-literal
 
 describe('ClientKafka', () => {
   // static

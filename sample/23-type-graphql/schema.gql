@@ -3,7 +3,7 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
-# Date custom scalar type
+"""Date custom scalar type"""
 scalar Date
 
 type Mutation {

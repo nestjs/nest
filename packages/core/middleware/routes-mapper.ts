@@ -1,7 +1,11 @@
 import { RequestMethod } from '@nestjs/common';
 import { PATH_METADATA } from '@nestjs/common/constants';
 import { RouteInfo, Type } from '@nestjs/common/interfaces';
-import { isString, isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
+import {
+  isString,
+  isUndefined,
+  validatePath,
+} from '@nestjs/common/utils/shared.utils';
 import { NestContainer } from '../injector/container';
 import { MetadataScanner } from '../metadata-scanner';
 import { RouterExplorer } from '../router/router-explorer';
@@ -37,11 +41,19 @@ export class RoutesMapper {
       Object.create(route),
       route.prototype,
     );
-    const concatPaths = <T>(acc: T[], currentValue: T[]) => acc.concat(currentValue);
-    return paths.map(item => item.path && item.path.map(p => ({
-      path: this.validateGlobalPath(routePath) + this.validateRoutePath(p),
-      method: item.requestMethod,
-    }))).reduce(concatPaths, []);
+    const concatPaths = <T>(acc: T[], currentValue: T[]) =>
+      acc.concat(currentValue);
+    return paths
+      .map(
+        item =>
+          item.path &&
+          item.path.map(p => ({
+            path:
+              this.validateGlobalPath(routePath) + this.validateRoutePath(p),
+            method: item.requestMethod,
+          })),
+      )
+      .reduce(concatPaths, []);
   }
 
   private isRouteInfo(

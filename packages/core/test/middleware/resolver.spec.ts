@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Injectable } from '../../../common';
 import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
+import { NestContainer } from '../../injector';
 import { MiddlewareContainer } from '../../middleware/container';
 import { MiddlewareResolver } from '../../middleware/resolver';
 
@@ -16,14 +17,13 @@ describe('MiddlewareResolver', () => {
   let mockContainer: sinon.SinonMock;
 
   beforeEach(() => {
-    container = new MiddlewareContainer();
+    container = new MiddlewareContainer(new NestContainer());
     resolver = new MiddlewareResolver(container);
     mockContainer = sinon.mock(container);
   });
 
   it('should resolve middleware instances from container', () => {
     const loadMiddleware = sinon.stub(
-      // tslint:disable-next-line:no-string-literal
       resolver['instanceLoader'],
       'loadMiddleware',
     );

@@ -4,4 +4,4 @@ export type ClientProviderOptions = ClientOptions & {
   name: string;
 };
 
-export interface ClientsModuleOptions extends Array<ClientProviderOptions> {}
+export type ClientsModuleOptions = Array<ClientProviderOptions>;

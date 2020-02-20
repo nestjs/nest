@@ -1,7 +1,20 @@
 import { Module } from '@nestjs/common';
-import { CatsModule } from './cats/cats.module';
+import { SequelizeModule } from '@nestjs/sequelize';
+import { UsersModule } from './users/users.module';
 
 @Module({
-  imports: [CatsModule],
+  imports: [
+    SequelizeModule.forRoot({
+      dialect: 'mysql',
+      host: 'localhost',
+      port: 3306,
+      username: 'root',
+      password: 'root',
+      database: 'test',
+      autoLoadModels: true,
+      synchronize: true,
+    }),
+    UsersModule,
+  ],
 })
-export class ApplicationModule {}
+export class AppModule {}

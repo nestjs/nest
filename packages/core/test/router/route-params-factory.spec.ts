@@ -11,6 +11,7 @@ describe('RouteParamsFactory', () => {
     const res = {};
     const next = () => ({});
     const req = {
+      ip: 'ip',
       session: null,
       body: {
         foo: 'bar',
@@ -19,6 +20,9 @@ describe('RouteParamsFactory', () => {
         foo: 'bar',
       },
       params: {
+        foo: 'bar',
+      },
+      hosts: {
         foo: 'bar',
       },
       query: {
@@ -73,6 +77,13 @@ describe('RouteParamsFactory', () => {
           ).to.be.eql(req.headers);
         });
       });
+      describe(`RouteParamtypes.IP`, () => {
+        it('should return ip property', () => {
+          expect(
+            (factory as any).exchangeKeyForValue(RouteParamtypes.IP, ...args),
+          ).to.be.equal(req.ip);
+        });
+      });
       describe(`RouteParamtypes.SESSION`, () => {
         it('should return session object', () => {
           expect(
@@ -101,6 +112,13 @@ describe('RouteParamsFactory', () => {
               ...args,
             ),
           ).to.be.eql(req.params);
+        });
+      });
+      describe(`RouteParamtypes.HOST`, () => {
+        it('should returns hosts object', () => {
+          expect(
+            (factory as any).exchangeKeyForValue(RouteParamtypes.HOST, ...args),
+          ).to.be.eql(req.hosts);
         });
       });
       describe(`RouteParamtypes.FILE`, () => {

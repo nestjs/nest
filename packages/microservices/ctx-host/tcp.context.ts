@@ -1,7 +1,7 @@
 import { JsonSocket } from '../helpers';
 import { BaseRpcContext } from './base-rpc.context';
 
-type TcpContextArgs = [JsonSocket];
+type TcpContextArgs = [JsonSocket, string];
 
 export class TcpContext extends BaseRpcContext<TcpContextArgs> {
   constructor(args: TcpContextArgs) {
@@ -13,5 +13,12 @@ export class TcpContext extends BaseRpcContext<TcpContextArgs> {
    */
   getSocketRef() {
     return this.args[0];
+  }
+
+  /**
+   * Returns the name of the pattern.
+   */
+  getPattern() {
+    return this.args[1];
   }
 }

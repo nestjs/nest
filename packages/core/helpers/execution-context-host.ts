@@ -43,6 +43,7 @@ export class ExecutionContextHost implements ExecutionContext {
   switchToRpc(): RpcArgumentsHost {
     return Object.assign(this, {
       getData: () => this.getArgByIndex(0),
+      getContext: () => this.getArgByIndex(1),
     });
   }
 

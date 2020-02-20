@@ -27,6 +27,7 @@ import { PARAM_ARGS_METADATA } from '../constants';
 import { RpcException } from '../exceptions';
 import { RpcParamsFactory } from '../factories/rpc-params-factory';
 import { ExceptionFiltersContext } from './exception-filters-context';
+import { DEFAULT_CALLBACK_METADATA } from './rpc-metadata-constants';
 import { RpcProxy } from './rpc-proxy';
 
 type RpcParamProperties = ParamProperties & { metatype?: any };
@@ -61,11 +62,13 @@ export class RpcContextCreator {
     methodName: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
+    defaultCallMetadata: Record<string, any> = DEFAULT_CALLBACK_METADATA,
   ): (...args: any[]) => Promise<Observable<any>> {
     const contextType: ContextType = 'rpc';
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
       instance,
       methodName,
+      defaultCallMetadata,
     );
 
     const exceptionHandler = this.exceptionFiltersContext.create(
@@ -140,7 +143,7 @@ export class RpcContextCreator {
     return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
   }
 
-  public createGuardsFn<TContext extends ContextType = ContextType>(
+  public createGuardsFn<TContext extends string = ContextType>(
     guards: any[],
     instance: Controller,
     callback: (...args: any[]) => any,
@@ -164,6 +167,7 @@ export class RpcContextCreator {
   public getMetadata<T>(
     instance: Controller,
     methodName: string,
+    defaultCallMetadata: Record<string, any>,
   ): RpcHandlerMetadata {
     const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
     if (cacheMetadata) {
@@ -173,8 +177,8 @@ export class RpcContextCreator {
       this.contextUtils.reflectCallbackMetadata<T>(
         instance,
         methodName,
-        PARAM_ARGS_METADATA || '',
-      ) || {};
+        PARAM_ARGS_METADATA,
+      ) || defaultCallMetadata;
     const keys = Object.keys(metadata);
     const argsLength = this.contextUtils.getArgumentsLength(keys, metadata);
     const paramtypes = this.contextUtils.reflectCallbackParamtypes(

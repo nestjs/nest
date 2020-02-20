@@ -45,9 +45,9 @@ export class MqttController {
 
       return result === expected;
     };
-    return await data
-      .map(async tab => await send(tab))
-      .reduce(async (a, b) => (await a) && (await b));
+    return data
+      .map(async tab => send(tab))
+      .reduce(async (a, b) => (await a) && b);
   }
 
   @Post('notify')

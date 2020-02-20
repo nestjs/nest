@@ -1,7 +1,12 @@
 import { MqttClientOptions } from '@nestjs/common/interfaces/external/mqtt-options.interface';
-import { KafkaConfig, ConsumerConfig, ProducerConfig, CompressionTypes } from '@nestjs/common/interfaces/external/kafka-options.interface';
+import {
+  KafkaConfig,
+  ConsumerConfig,
+  ProducerConfig,
+  CompressionTypes,
+} from '@nestjs/common/interfaces/external/kafka-options.interface';
 import { Transport } from '../enums/transport.enum';
-import { Server } from './../server/server';
+import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
@@ -28,8 +33,8 @@ export interface GrpcOptions {
     maxSendMessageLength?: number;
     maxReceiveMessageLength?: number;
     credentials?: any;
-    protoPath: string;
-    package: string;
+    protoPath: string | string[];
+    package: string | string[];
     protoLoader?: string;
     loader?: {
       keepCase?: boolean;

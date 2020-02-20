@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package math2;
+
+service Math2 {
+  rpc Sum2 (RequestSum) returns (SumResult) {}
+}
+
+message SumResult {
+  int32 result = 1;
+}
+
+message RequestSum {
+  repeated int32 data = 1;
+}

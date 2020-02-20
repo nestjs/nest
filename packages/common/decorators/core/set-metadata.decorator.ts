@@ -1,4 +1,9 @@
-import { Logger } from './../../services/logger.service';
+import { Logger } from '../../services/logger.service';
+
+export type CustomDecorator<TKey = string> = MethodDecorator &
+  ClassDecorator & {
+    KEY: TKey;
+  };
 
 /**
  * Decorator that assigns metadata to the class/function using the
@@ -16,16 +21,20 @@ import { Logger } from './../../services/logger.service';
  *
  * @publicApi
  */
-export const SetMetadata = <K = any, V = any>(
+export const SetMetadata = <K = string, V = any>(
   metadataKey: K,
   metadataValue: V,
-) => (target: object, key?: any, descriptor?: any) => {
-  if (descriptor) {
-    Reflect.defineMetadata(metadataKey, metadataValue, descriptor.value);
-    return descriptor;
-  }
-  Reflect.defineMetadata(metadataKey, metadataValue, target);
-  return target;
+): CustomDecorator<K> => {
+  const decoratorFactory = (target: object, key?: any, descriptor?: any) => {
+    if (descriptor) {
+      Reflect.defineMetadata(metadataKey, metadataValue, descriptor.value);
+      return descriptor;
+    }
+    Reflect.defineMetadata(metadataKey, metadataValue, target);
+    return target;
+  };
+  decoratorFactory.KEY = metadataKey;
+  return decoratorFactory;
 };
 
 const logger = new Logger('ReflectMetadata');

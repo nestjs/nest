@@ -23,7 +23,7 @@ export function getTransientInstances(
  * @param instances The instances which should be checked whether they are transcient
  */
 export function getNonTransientInstances(
-  instances: [string, InstanceWrapper][]
+  instances: [string, InstanceWrapper][],
 ): InstanceWrapper[] {
   return iterate(instances)
     .filter(
