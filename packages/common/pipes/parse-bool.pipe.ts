@@ -1,6 +1,10 @@
 import { BadRequestException } from '../exceptions/bad-request.exception';
-import { ArgumentMetadata, Injectable } from '../index';
+import { ArgumentMetadata, Injectable, Optional } from '../index';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+
+export interface ParseBoolPipeOptions {
+  exceptionFactory?: (error: string) => any;
+}
 
 /**
  * Defines the built-in ParseBool Pipe
@@ -12,6 +16,15 @@ import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 @Injectable()
 export class ParseBoolPipe
   implements PipeTransform<string | boolean, Promise<boolean>> {
+  protected exceptionFactory: (error: string) => any;
+
+  constructor(@Optional() options?: ParseBoolPipeOptions) {
+    options = options || {};
+    const { exceptionFactory } = options;
+    this.exceptionFactory =
+      exceptionFactory || (error => new BadRequestException(error));
+  }
+
   /**
    * Method that accesses and performs optional transformation on argument for
    * in-flight requests.
@@ -29,7 +42,7 @@ export class ParseBoolPipe
     if (value === false || value === 'false') {
       return false;
     }
-    throw new BadRequestException(
+    throw this.exceptionFactory(
       'Validation failed (boolean string is expected)',
     );
   }

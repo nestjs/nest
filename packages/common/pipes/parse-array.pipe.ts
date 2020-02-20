@@ -15,11 +15,12 @@ const DEFAULT_ARRAY_SEPARATOR = ',';
 export interface ParseArrayOptions
   extends Omit<
     ValidationPipeOptions,
-    'transform' | 'validateCustomDecorators'
+    'transform' | 'validateCustomDecorators' | 'exceptionFactory'
   > {
   items?: Type<unknown>;
   separator?: string;
   optional?: boolean;
+  exceptionFactory?: (error: any) => any;
 }
 
 /**
@@ -32,6 +33,7 @@ export interface ParseArrayOptions
 @Injectable()
 export class ParseArrayPipe implements PipeTransform {
   protected readonly validationPipe: ValidationPipe;
+  protected exceptionFactory: (error: string) => any;
 
   constructor(@Optional() private readonly options: ParseArrayOptions = {}) {
     this.validationPipe = new ValidationPipe({
@@ -39,6 +41,10 @@ export class ParseArrayPipe implements PipeTransform {
       validateCustomDecorators: true,
       ...options,
     });
+
+    const { exceptionFactory } = options;
+    this.exceptionFactory =
+      exceptionFactory || (error => new BadRequestException(error));
   }
 
   /**
@@ -50,19 +56,19 @@ export class ParseArrayPipe implements PipeTransform {
    */
   async transform(value: any, metadata: ArgumentMetadata): Promise<any> {
     if (!value && !this.options.optional) {
-      throw new BadRequestException(VALIDATION_ERROR_MESSAGE);
+      throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
     }
 
     if (!Array.isArray(value) && !this.options.optional) {
       if (!isString(value)) {
-        throw new BadRequestException(VALIDATION_ERROR_MESSAGE);
+        throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
       } else {
         try {
           value = value
             .trim()
             .split(this.options.separator || DEFAULT_ARRAY_SEPARATOR);
         } catch {
-          throw new BadRequestException(VALIDATION_ERROR_MESSAGE);
+          throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
         }
       }
     }
