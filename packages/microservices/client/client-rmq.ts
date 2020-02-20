@@ -4,8 +4,8 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { EventEmitter } from 'events';
 import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
-import { ReadPacket, RmqOptions } from '../interfaces';
 import {
+  DISCONNECTED_RMQ_MESSAGE,
   DISCONNECT_EVENT,
   ERROR_EVENT,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
@@ -14,8 +14,8 @@ import {
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
-} from './../constants';
-import { WritePacket } from './../interfaces';
+} from '../constants';
+import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
 let rqmPackage: any = {};
@@ -53,11 +53,12 @@ export class ClientRMQ extends ClientProxy {
   public close(): void {
     this.channel && this.channel.close();
     this.client && this.client.close();
+    this.channel = null;
+    this.client = null;
   }
 
   public consumeChannel() {
-    const noAck =
-      this.getOptionsProp(this.options, 'noAck') || RQM_DEFAULT_NOACK;
+    const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
     this.channel.addSetup((channel: any) =>
       channel.consume(
         REPLY_QUEUE,
@@ -76,6 +77,7 @@ export class ClientRMQ extends ClientProxy {
     }
     this.client = this.createClient();
     this.handleError(this.client);
+    this.handleDisconnectError(this.client);
 
     const connect$ = this.connect$(this.client);
     this.connection = this.mergeDisconnectEvent(this.client, connect$)
@@ -84,6 +86,7 @@ export class ClientRMQ extends ClientProxy {
         share(),
       )
       .toPromise();
+
     return this.connection;
   }
 
@@ -98,7 +101,9 @@ export class ClientRMQ extends ClientProxy {
 
   public createClient<T = any>(): T {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    return rqmPackage.connect(this.urls, socketOptions) as T;
+    return rqmPackage.connect(this.urls, {
+      connectionOptions: socketOptions,
+    }) as T;
   }
 
   public mergeDisconnectEvent<T = any>(
@@ -132,6 +137,15 @@ export class ClientRMQ extends ClientProxy {
 
   public handleError(client: any): void {
     client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
+  }
+
+  public handleDisconnectError(client: any): void {
+    client.addListener(DISCONNECT_EVENT, (err: any) => {
+      this.logger.error(DISCONNECTED_RMQ_MESSAGE);
+      this.logger.error(err);
+
+      this.close();
+    });
   }
 
   public handleMessage(

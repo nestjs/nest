@@ -15,6 +15,7 @@ import { IncomingResponseDeserializer } from '../deserializers/incoming-response
 import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
   ClientOptions,
+  KafkaOptions,
   MqttOptions,
   MsPattern,
   NatsOptions,
@@ -84,7 +85,7 @@ export abstract class ClientProxy {
     return ({ err, response, isDisposed }: WritePacket) => {
       if (err) {
         return observer.error(err);
-      } else if (response && isDisposed) {
+      } else if (response !== undefined && isDisposed) {
         observer.next(response);
         return observer.complete();
       } else if (isDisposed) {
@@ -132,7 +133,8 @@ export abstract class ClientProxy {
           | NatsOptions['options']
           | MqttOptions['options']
           | TcpClientOptions['options']
-          | RmqOptions['options']).serializer) ||
+          | RmqOptions['options']
+          | KafkaOptions['options']).serializer) ||
       new IdentitySerializer();
   }
 
@@ -144,7 +146,8 @@ export abstract class ClientProxy {
           | NatsOptions['options']
           | MqttOptions['options']
           | TcpClientOptions['options']
-          | RmqOptions['options']).deserializer) ||
+          | RmqOptions['options']
+          | KafkaOptions['options']).deserializer) ||
       new IncomingResponseDeserializer();
   }
 }

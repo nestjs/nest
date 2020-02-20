@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import { PATTERN_HANDLER_METADATA, PATTERN_METADATA } from '../constants';
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
@@ -40,7 +41,7 @@ export function GrpcMethod(service: string, method?: string): MethodDecorator {
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
-    const metadata = createMethodMetadata(target, key, service, method);
+    const metadata = createGrpcMethodMetadata(target, key, service, method);
     return MessagePattern(metadata)(target, key, descriptor);
   };
 }
@@ -62,7 +63,7 @@ export function GrpcStreamMethod(service: string, method?: string) {
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
-    const metadata = createMethodMetadata(
+    const metadata = createGrpcMethodMetadata(
       target,
       key,
       service,
@@ -90,7 +91,7 @@ export function GrpcStreamCall(service: string, method?: string) {
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
-    const metadata = createMethodMetadata(
+    const metadata = createGrpcMethodMetadata(
       target,
       key,
       service,
@@ -101,7 +102,7 @@ export function GrpcStreamCall(service: string, method?: string) {
   };
 }
 
-export function createMethodMetadata(
+export function createGrpcMethodMetadata(
   target: any,
   key: string | symbol,
   service: string | undefined,

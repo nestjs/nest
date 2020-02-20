@@ -4,4 +4,4 @@ import { EventsModule } from './events/events.module';
 @Module({
   imports: [EventsModule],
 })
-export class ApplicationModule {}
+export class AppModule {}

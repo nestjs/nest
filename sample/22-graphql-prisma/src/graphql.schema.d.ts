@@ -1,3 +1,10 @@
+
+/** ------------------------------------------------------
+ * THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+ * -------------------------------------------------------
+ */
+
+/* tslint:disable */
 export enum MutationType {
     CREATED = "CREATED",
     UPDATED = "UPDATED",
@@ -12,27 +19,24 @@ export enum PostOrderByInput {
     title_ASC = "title_ASC",
     title_DESC = "title_DESC",
     text_ASC = "text_ASC",
-    text_DESC = "text_DESC",
-    updatedAt_ASC = "updatedAt_ASC",
-    updatedAt_DESC = "updatedAt_DESC",
-    createdAt_ASC = "createdAt_ASC",
-    createdAt_DESC = "createdAt_DESC"
+    text_DESC = "text_DESC"
 }
 
 export class PostCreateInput {
+    id?: string;
     isPublished?: boolean;
     title: string;
     text: string;
 }
 
 export class PostSubscriptionWhereInput {
-    AND: PostSubscriptionWhereInput[];
-    OR: PostSubscriptionWhereInput[];
-    NOT: PostSubscriptionWhereInput[];
-    mutation_in: MutationType[];
+    AND?: PostSubscriptionWhereInput[];
+    OR?: PostSubscriptionWhereInput[];
+    NOT?: PostSubscriptionWhereInput[];
+    mutation_in?: MutationType[];
     updatedFields_contains?: string;
-    updatedFields_contains_every: string[];
-    updatedFields_contains_some: string[];
+    updatedFields_contains_every?: string[];
+    updatedFields_contains_some?: string[];
     node?: PostWhereInput;
 }
 
@@ -42,14 +46,20 @@ export class PostUpdateInput {
     text?: string;
 }
 
+export class PostUpdateManyMutationInput {
+    isPublished?: boolean;
+    title?: string;
+    text?: string;
+}
+
 export class PostWhereInput {
-    AND: PostWhereInput[];
-    OR: PostWhereInput[];
-    NOT: PostWhereInput[];
+    AND?: PostWhereInput[];
+    OR?: PostWhereInput[];
+    NOT?: PostWhereInput[];
     id?: string;
     id_not?: string;
-    id_in: string[];
-    id_not_in: string[];
+    id_in?: string[];
+    id_not_in?: string[];
     id_lt?: string;
     id_lte?: string;
     id_gt?: string;
@@ -64,8 +74,8 @@ export class PostWhereInput {
     isPublished_not?: boolean;
     title?: string;
     title_not?: string;
-    title_in: string[];
-    title_not_in: string[];
+    title_in?: string[];
+    title_not_in?: string[];
     title_lt?: string;
     title_lte?: string;
     title_gt?: string;
@@ -78,8 +88,8 @@ export class PostWhereInput {
     title_not_ends_with?: string;
     text?: string;
     text_not?: string;
-    text_in: string[];
-    text_not_in: string[];
+    text_in?: string[];
+    text_not_in?: string[];
     text_lt?: string;
     text_lte?: string;
     text_gt?: string;
@@ -113,7 +123,7 @@ export abstract class IMutation {
     abstract updatePost(data: PostUpdateInput, where: PostWhereUniqueInput): Post | Promise<Post>;
     abstract deletePost(where: PostWhereUniqueInput): Post | Promise<Post>;
     abstract upsertPost(where: PostWhereUniqueInput, create: PostCreateInput, update: PostUpdateInput): Post | Promise<Post>;
-    abstract updateManyPosts(data: PostUpdateInput, where?: PostWhereInput): BatchPayload | Promise<BatchPayload>;
+    abstract updateManyPosts(data: PostUpdateManyMutationInput, where?: PostWhereInput): BatchPayload | Promise<BatchPayload>;
     abstract deleteManyPosts(where?: PostWhereInput): BatchPayload | Promise<BatchPayload>;
 }
 
@@ -124,7 +134,7 @@ export class PageInfo {
     endCursor?: string;
 }
 
-export class Post {
+export class Post implements Node {
     id: string;
     isPublished: boolean;
     title: string;
@@ -133,7 +143,7 @@ export class Post {
 
 export class PostConnection {
     pageInfo: PageInfo;
-    edges?: PostEdge[];
+    edges: PostEdge[];
     aggregate: AggregatePost;
 }
 
@@ -152,7 +162,7 @@ export class PostPreviousValues {
 export class PostSubscriptionPayload {
     mutation: MutationType;
     node?: Post;
-    updatedFields: string[];
+    updatedFields?: string[];
     previousValues?: PostPreviousValues;
 }
 
@@ -161,7 +171,6 @@ export abstract class IQuery {
     abstract post(where: PostWhereUniqueInput): Post | Promise<Post>;
     abstract postsConnection(where?: PostWhereInput, orderBy?: PostOrderByInput, skip?: number, after?: string, before?: string, first?: number, last?: number): PostConnection | Promise<PostConnection>;
     abstract node(id: string): Node | Promise<Node>;
-    abstract temp__(): boolean | Promise<boolean>;
 }
 
 export abstract class ISubscription {

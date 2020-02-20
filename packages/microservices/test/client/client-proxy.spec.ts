@@ -5,8 +5,6 @@ import { ClientProxy } from '../../client/client-proxy';
 import { ReadPacket } from '../../interfaces';
 import * as Utils from '../../utils';
 
-// tslint:disable:no-string-literal
-
 class TestClientProxy extends ClientProxy {
   protected async dispatchEvent<T = any>(
     packet: ReadPacket<any>,
@@ -87,9 +85,8 @@ describe('ClientProxy', function() {
       expect(stream$ instanceof Observable).to.be.true;
     });
     it('should call "connect" on subscribe', () => {
-      const connectSpy = sinon.spy();
+      const connectSpy = sinon.spy(client, 'connect');
       const stream$ = client.send({ test: 3 }, 'test');
-      client.connect = connectSpy;
 
       stream$.subscribe();
       expect(connectSpy.calledOnce).to.be.true;
@@ -110,9 +107,7 @@ describe('ClientProxy', function() {
     });
     describe('when is connected', () => {
       beforeEach(() => {
-        try {
-          sinon.stub(client, 'connect').callsFake(() => Promise.resolve());
-        } catch {}
+        sinon.stub(client, 'connect').callsFake(() => Promise.resolve());
       });
       it(`should call "publish"`, () => {
         const pattern = { test: 3 };
@@ -138,9 +133,7 @@ describe('ClientProxy', function() {
       expect(stream$ instanceof Observable).to.be.true;
     });
     it('should call "connect" immediately', () => {
-      const connectSpy = sinon.spy();
-      client.connect = connectSpy;
-
+      const connectSpy = sinon.spy(client, 'connect');
       client.emit({ test: 3 }, 'test');
       expect(connectSpy.calledOnce).to.be.true;
     });
@@ -165,7 +158,9 @@ describe('ClientProxy', function() {
       it(`should call "dispatchEvent"`, () => {
         const pattern = { test: 3 };
         const data = 'test';
-        const dispatchEventSpy = sinon.spy();
+        const dispatchEventSpy = sinon
+          .stub()
+          .callsFake(() => Promise.resolve(true));
         const stream$ = client.emit(pattern, data);
         client['dispatchEvent'] = dispatchEventSpy;
 
@@ -188,7 +183,6 @@ describe('ClientProxy', function() {
           Utils,
           'transformPatternToRoute',
         );
-
         (client as any).normalizePattern(inputPattern);
 
         expect(msvcUtilTransformPatternToRouteStub.args[0][0]).to.be.equal(

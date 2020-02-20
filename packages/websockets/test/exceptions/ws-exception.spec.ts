@@ -14,7 +14,7 @@ describe('WsException', () => {
 
   it('should serialize', () => {
     expect(`${instance}`.includes(error)).to.be.true;
-    const obj = {foo: 'bar'};
+    const obj = { foo: 'bar' };
     expect(`${new WsException(obj)}`.includes(JSON.stringify(obj))).to.be.true;
   });
 });

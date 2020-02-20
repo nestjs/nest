@@ -42,8 +42,8 @@ export class RedisController {
       return result === expected;
     };
     return data
-      .map(async tab => await send(tab))
-      .reduce(async (a, b) => (await a) && (await b));
+      .map(async tab => send(tab))
+      .reduce(async (a, b) => (await a) && b);
   }
 
   @MessagePattern({ cmd: 'sum' })

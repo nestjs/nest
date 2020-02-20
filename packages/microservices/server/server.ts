@@ -10,9 +10,11 @@ import {
   Subscription,
 } from 'rxjs';
 import { catchError, finalize, publish } from 'rxjs/operators';
+import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
 import {
   ClientOptions,
+  KafkaOptions,
   MessageHandler,
   MicroserviceOptions,
   MqttOptions,
@@ -28,7 +30,7 @@ import { ConsumerDeserializer } from '../interfaces/deserializer.interface';
 import { ConsumerSerializer } from '../interfaces/serializer.interface';
 import { IdentitySerializer } from '../serializers/identity.serializer';
 import { transformPatternToRoute } from '../utils';
-import { NO_EVENT_HANDLER } from './../constants';
+import { NO_EVENT_HANDLER } from '../constants';
 
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
@@ -88,12 +90,16 @@ export abstract class Server {
       );
   }
 
-  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
+  public async handleEvent(
+    pattern: string,
+    packet: ReadPacket,
+    context: BaseRpcContext,
+  ): Promise<any> {
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
       return this.logger.error(NO_EVENT_HANDLER);
     }
-    const resultOrStream = await handler(packet.data);
+    const resultOrStream = await handler(packet.data, context);
     if (this.isObservable(resultOrStream)) {
       (resultOrStream.pipe(publish()) as ConnectableObservable<any>).connect();
     }
@@ -112,7 +118,7 @@ export abstract class Server {
     T extends MicroserviceOptions['options'],
     K extends keyof T
   >(obj: T, prop: K, defaultValue: T[K] = undefined) {
-    return (obj && obj[prop]) || defaultValue;
+    return obj && prop in obj ? obj[prop] : defaultValue;
   }
 
   protected handleError(error: string) {
@@ -135,7 +141,8 @@ export abstract class Server {
           | NatsOptions['options']
           | MqttOptions['options']
           | TcpOptions['options']
-          | RmqOptions['options']).serializer) ||
+          | RmqOptions['options']
+          | KafkaOptions['options']).serializer) ||
       new IdentitySerializer();
   }
 
@@ -147,7 +154,8 @@ export abstract class Server {
           | NatsOptions['options']
           | MqttOptions['options']
           | TcpOptions['options']
-          | RmqOptions['options']).deserializer) ||
+          | RmqOptions['options']
+          | KafkaOptions['options']).deserializer) ||
       new IncomingRequestDeserializer();
   }
 

@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { Transport } from '../../enums/transport.enum';
 import { ServerFactory } from '../../server/server-factory';
 import { ServerGrpc } from '../../server/server-grpc';
+import { ServerKafka } from '../../server/server-kafka';
 import { ServerMqtt } from '../../server/server-mqtt';
 import { ServerNats } from '../../server/server-nats';
 import { ServerRedis } from '../../server/server-redis';
@@ -45,6 +46,13 @@ describe('ServerFactory', () => {
     it(`should return rmq server`, () => {
       expect(
         ServerFactory.create({ transport: Transport.RMQ }) instanceof ServerRMQ,
+      ).to.be.true;
+    });
+
+    it(`should return kafka server`, () => {
+      expect(
+        ServerFactory.create({ transport: Transport.KAFKA }) instanceof
+          ServerKafka,
       ).to.be.true;
     });
 

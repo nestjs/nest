@@ -14,19 +14,21 @@ export class DisconnectedClientController {
   @Post()
   call(@Body() options): Observable<number> {
     const client = ClientProxyFactory.create(options);
-    return client.send<number, number[]>({ cmd: 'none' }, [1, 2, 3]).pipe(
-      /*tap(
+    return client
+      .send<number, number[]>({ cmd: 'none' }, [1, 2, 3])
+      .pipe(
+        /*tap(
         console.log.bind(console, 'data'),
         console.error.bind(console, 'error'),
       ),*/
-      catchError(error => {
-        const { code } = error || { code: 'CONN_ERR' };
-        return throwError(
-          code === 'ECONNREFUSED' || code === 'CONN_ERR'
-            ? new RequestTimeoutException('ECONNREFUSED')
-            : new InternalServerErrorException(),
-        );
-      }),
-    );
+        catchError(error => {
+          const { code } = error || { code: 'CONN_ERR' };
+          return throwError(
+            code === 'ECONNREFUSED' || code === 'CONN_ERR'
+              ? new RequestTimeoutException('ECONNREFUSED')
+              : new InternalServerErrorException(),
+          );
+        }),
+      );
   }
 }

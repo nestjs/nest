@@ -50,7 +50,6 @@ describe('MQTT transport', () => {
   });
 
   it(`/POST (concurrent)`, function() {
-    this.retries(10);
     return request(server)
       .post('/concurrent')
       .send([

@@ -26,7 +26,7 @@ export interface INestApplication extends INestApplicationContext {
    *
    * @returns {void}
    */
-  enableCors(options?: CorsOptions): this;
+  enableCors(options?: CorsOptions): void;
 
   /**
    * Starts the application.
@@ -42,6 +42,13 @@ export interface INestApplication extends INestApplicationContext {
     hostname: string,
     callback?: () => void,
   ): Promise<any>;
+
+  /**
+   * Returns the url the application is listening at, based on OS and IP version. Returns as an IP value either in IPv6 or IPv4
+   *
+   * @returns The IP where the server is listening
+   */
+  getUrl(): Promise<string>;
 
   /**
    * Starts the application (can be awaited).

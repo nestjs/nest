@@ -7,6 +7,7 @@ import { ClientNats } from '../../client/client-nats';
 import { ClientMqtt } from '../../client/client-mqtt';
 import { ClientGrpcProxy } from '../../client/client-grpc';
 import { ClientRMQ } from '../../client/client-rmq';
+import { ClientKafka } from '../../client/client-kafka';
 import { join } from 'path';
 
 describe('ClientProxyFactory', () => {
@@ -36,7 +37,7 @@ describe('ClientProxyFactory', () => {
         transport: Transport.GRPC,
         options: {
           protoPath: join(__dirname, './test.proto'),
-          package: 'test'
+          package: 'test',
         },
       });
       expect(proxy instanceof ClientGrpcProxy).to.be.true;
@@ -45,6 +46,11 @@ describe('ClientProxyFactory', () => {
     it(`should create rmq client`, () => {
       const proxy = ClientProxyFactory.create({ transport: Transport.RMQ });
       expect(proxy instanceof ClientRMQ).to.be.true;
+    });
+
+    it(`should create kafka client`, () => {
+      const proxy = ClientProxyFactory.create({ transport: Transport.KAFKA });
+      expect(proxy instanceof ClientKafka).to.be.true;
     });
   });
 });

@@ -61,7 +61,6 @@ describe('ListenerMetadataExplorer', () => {
     });
     it(`should return undefined when "handlerType" metadata is undefined`, () => {
       const metadata = instance.exploreMethodMetadata(
-        test,
         Object.getPrototypeOf(test),
         'noPattern',
       );
@@ -69,7 +68,6 @@ describe('ListenerMetadataExplorer', () => {
     });
     it(`should return pattern properties when "handlerType" metadata is not undefined`, () => {
       const metadata = instance.exploreMethodMetadata(
-        test,
         Object.getPrototypeOf(test),
         'test',
       );

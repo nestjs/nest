@@ -62,16 +62,16 @@ describe('Transient scope', () => {
       expect(Meta.COUNTER).to.be.eql(7);
     });
 
-    it(`should create transient pipe for each controller`, async () => {
-      expect(UserByIdPipe.COUNTER).to.be.eql(2);
+    it(`should create transient pipe for each controller (3 requests, 1 static)`, async () => {
+      expect(UserByIdPipe.COUNTER).to.be.eql(4);
     });
 
-    it(`should create transient interceptor for each controller`, async () => {
-      expect(Interceptor.COUNTER).to.be.eql(2);
+    it(`should create transient interceptor for each controller (3 requests, 1 static)`, async () => {
+      expect(Interceptor.COUNTER).to.be.eql(4);
     });
 
-    it(`should create transient guard for each controller`, async () => {
-      expect(Guard.COUNTER).to.be.eql(2);
+    it(`should create transient guard for each controller (3 requests, 1 static)`, async () => {
+      expect(Guard.COUNTER).to.be.eql(4);
     });
   });
 

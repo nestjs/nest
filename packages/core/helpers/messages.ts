@@ -10,3 +10,9 @@ export const ROUTE_MAPPED_MESSAGE = (path: string, method: string | number) =>
 
 export const CONTROLLER_MAPPING_MESSAGE = (name: string, path: string) =>
   `${name} {${path}}:`;
+
+export const INVALID_EXECUTION_CONTEXT = (
+  methodName: string,
+  currentContext: string,
+) =>
+  `Calling ${methodName} is not allowed in this context. Your current execution context is "${currentContext}".`;

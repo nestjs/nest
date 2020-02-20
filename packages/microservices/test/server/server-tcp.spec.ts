@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerTCP } from '../../server/server-tcp';
 
 describe('ServerTCP', () => {
@@ -130,7 +131,11 @@ describe('ServerTCP', () => {
         [channel]: handler,
       });
 
-      server.handleEvent(channel, { pattern: '', data });
+      server.handleEvent(
+        channel,
+        { pattern: '', data },
+        new BaseRpcContext([]),
+      );
       expect(handler.calledWith(data)).to.be.true;
     });
   });

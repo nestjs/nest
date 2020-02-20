@@ -77,7 +77,7 @@ describe('RpcExceptionsHandler', () => {
       expect((handler as any).filters).to.be.eql(filters);
     });
     it('should throws exception when passed argument is not an array', () => {
-      expect(() => handler.setCustomFilters(null)).to.throw;
+      expect(() => handler.setCustomFilters(null)).to.throw();
     });
   });
   describe('invokeCustomFilters', () => {
@@ -108,8 +108,8 @@ describe('RpcExceptionsHandler', () => {
           expect(funcSpy.calledWith(exception)).to.be.true;
         });
         it('should returns stream', () => {
-          expect(handler.invokeCustomFilters(new TestException(), null)).to.be.not
-            .null;
+          expect(handler.invokeCustomFilters(new TestException(), null)).to.be
+            .not.null;
         });
       });
       describe('when filter does not exists in filters array', () => {
@@ -118,7 +118,8 @@ describe('RpcExceptionsHandler', () => {
           expect(funcSpy.notCalled).to.be.true;
         });
         it('should returns null', () => {
-          expect(handler.invokeCustomFilters(new TestException(), null)).to.be.null;
+          expect(handler.invokeCustomFilters(new TestException(), null)).to.be
+            .null;
         });
       });
     });

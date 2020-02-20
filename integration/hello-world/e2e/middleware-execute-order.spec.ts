@@ -40,17 +40,19 @@ describe('Middleware (execution order)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    app = (await Test.createTestingModule({
-      imports: [TestModule],
-    }).compile()).createNestApplication();
+    app = (
+      await Test.createTestingModule({
+        imports: [TestModule],
+      }).compile()
+    ).createNestApplication();
 
     await app.init();
   });
 
-  it(`should execute middleware of dependent modules first `, () => {
+  it(`should execute middleware in topological order`, () => {
     return request(app.getHttpServer())
       .get('/hello')
-      .expect(200, RETURN_VALUE_A);
+      .expect(200, RETURN_VALUE_B);
   });
 
   afterEach(async () => {

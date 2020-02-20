@@ -34,7 +34,7 @@ describe('ExternalExceptionsHandler', () => {
       expect((handler as any).filters).to.be.eql(filters);
     });
     it('should throws exception when passed argument is not an array', () => {
-      expect(() => handler.setCustomFilters(null)).to.throw;
+      expect(() => handler.setCustomFilters(null)).to.throw();
     });
   });
   describe('invokeCustomFilters', () => {

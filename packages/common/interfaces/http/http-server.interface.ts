@@ -1,6 +1,6 @@
 import { RequestMethod } from '../../enums';
-import { CorsOptions } from './../../interfaces/external/cors-options.interface';
-import { NestApplicationOptions } from './../../interfaces/nest-application-options.interface';
+import { CorsOptions } from '../../interfaces/external/cors-options.interface';
+import { NestApplicationOptions } from '../../interfaces/nest-application-options.interface';
 
 export type ErrorHandler<TRequest = any, TResponse = any> = (
   error: any,
@@ -47,14 +47,15 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   render(response: any, view: string, options: any): any;
   redirect(response: any, statusCode: number, url: string): any;
   setHeader(response: any, name: string, value: string): any;
-  setErrorHandler?(handler: Function): any;
-  setNotFoundHandler?(handler: Function): any;
+  setErrorHandler?(handler: Function, prefix?: string): any;
+  setNotFoundHandler?(handler: Function, prefix?: string): any;
   useStaticAssets?(...args: any[]): this;
   setBaseViewsDir?(path: string | string[]): this;
   setViewEngine?(engineOrOptions: any): this;
   createMiddlewareFactory(
     method: RequestMethod,
   ): (path: string, callback: Function) => any;
+  getRequestHostname?(request: TRequest): string;
   getRequestMethod?(request: TRequest): string;
   getRequestUrl?(request: TResponse): string;
   getInstance(): any;
@@ -63,4 +64,5 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   getHttpServer(): any;
   initHttpServer(options: NestApplicationOptions): void;
   close(): any;
+  getType(): string;
 }

@@ -1,13 +1,17 @@
 import { expect } from 'chai';
-import safeStringify from 'fast-safe-stringify';
+import stringify from 'fast-safe-stringify';
 import * as hash from 'object-hash';
+import * as sinon from 'sinon';
 import { SingleScope } from '../../../common';
 import { ModuleTokenFactory } from '../../injector/module-token-factory';
 
 describe('ModuleTokenFactory', () => {
+  const moduleId = 'constId';
   let factory: ModuleTokenFactory;
+
   beforeEach(() => {
     factory = new ModuleTokenFactory();
+    sinon.stub(factory, 'getModuleId').returns(moduleId);
   });
   describe('create', () => {
     class Module {}
@@ -16,6 +20,7 @@ describe('ModuleTokenFactory', () => {
       const token = factory.create(Module as any, [Module], undefined);
       expect(token).to.be.deep.eq(
         hash({
+          id: moduleId,
           module: Module.name,
           dynamic: '',
           scope,
@@ -23,13 +28,11 @@ describe('ModuleTokenFactory', () => {
       );
     });
     it('should returns expected token', () => {
-      const token = factory.create(
-        SingleScope()(Module) as any,
-        [Module],
-        undefined,
-      );
+      const type = SingleScope()(Module) as any;
+      const token = factory.create(type, [Module], undefined);
       expect(token).to.be.deep.eq(
         hash({
+          id: moduleId,
           module: Module.name,
           dynamic: '',
           scope: [Module.name],
@@ -37,13 +40,15 @@ describe('ModuleTokenFactory', () => {
       );
     });
     it('should include dynamic metadata', () => {
-      const token = factory.create(SingleScope()(Module) as any, [Module], {
+      const type = SingleScope()(Module) as any;
+      const token = factory.create(type as any, [Module], {
         providers: [{}],
       } as any);
       expect(token).to.be.deep.eq(
         hash({
+          id: moduleId,
           module: Module.name,
-          dynamic: safeStringify({
+          dynamic: stringify({
             providers: [{}],
           }),
           scope: [Module.name],
@@ -69,7 +74,7 @@ describe('ModuleTokenFactory', () => {
         class Provider {}
         const metadata = { providers: [Provider], exports: [Provider] };
         expect(factory.getDynamicMetadataToken(metadata)).to.be.eql(
-          '{"providers":["Provider"],"exports":["Provider"]}'
+          '{"providers":["Provider"],"exports":["Provider"]}',
         );
       });
     });

@@ -35,4 +35,24 @@ export interface NestFastifyApplication extends INestApplication {
    * @returns {void}
    */
   inject(opts: HTTPInjectOptions | string): Promise<HTTPInjectResponse>;
+
+  /**
+   * Starts the application.
+   * @returns A Promise that, when resolved, is a reference to the underlying HttpServer.
+   */
+  listen(
+    port: number,
+    callback?: (err: Error, address: string) => void,
+  ): Promise<any>;
+  listen(
+    port: number,
+    address: string,
+    callback?: (err: Error, address: string) => void,
+  ): Promise<any>;
+  listen(
+    port: number,
+    address: string,
+    backlog: number,
+    callback?: (err: Error, address: string) => void,
+  ): Promise<any>;
 }

@@ -30,7 +30,9 @@ describe('Core Injectables', () => {
   });
 
   it('should provide the current Module as provider', () => {
-    const module = testingModule.get<CoreInjectablesModule>(CoreInjectablesModule);
+    const module = testingModule.get<CoreInjectablesModule>(
+      CoreInjectablesModule,
+    );
     expect(module).to.not.be.undefined;
     expect(module.constructor.name).to.be.eq('CoreInjectablesModule');
   });

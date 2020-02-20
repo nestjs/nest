@@ -1,17 +1,28 @@
 import { ExecutionContext } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces';
 import {
+  ContextType,
+  HttpArgumentsHost,
   RpcArgumentsHost,
   WsArgumentsHost,
-  HttpArgumentsHost,
 } from '@nestjs/common/interfaces/features/arguments-host.interface';
 
 export class ExecutionContextHost implements ExecutionContext {
+  private contextType = 'http';
+
   constructor(
     private readonly args: any[],
     private readonly constructorRef: Type<any> = null,
     private readonly handler: Function = null,
   ) {}
+
+  setType<TContext extends string = ContextType>(type: TContext) {
+    type && (this.contextType = type);
+  }
+
+  getType<TContext extends string = ContextType>(): TContext {
+    return this.contextType as TContext;
+  }
 
   getClass<T = any>(): Type<T> {
     return this.constructorRef;
@@ -32,6 +43,7 @@ export class ExecutionContextHost implements ExecutionContext {
   switchToRpc(): RpcArgumentsHost {
     return Object.assign(this, {
       getData: () => this.getArgByIndex(0),
+      getContext: () => this.getArgByIndex(1),
     });
   }
 
@@ -39,7 +51,7 @@ export class ExecutionContextHost implements ExecutionContext {
     return Object.assign(this, {
       getRequest: () => this.getArgByIndex(0),
       getResponse: () => this.getArgByIndex(1),
-      getNext: () => this.getArgByIndex(2)
+      getNext: () => this.getArgByIndex(2),
     });
   }
 

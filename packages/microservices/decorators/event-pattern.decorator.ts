@@ -1,5 +1,5 @@
 import { PatternHandler } from '../enums/pattern-handler.enum';
-import { PATTERN_HANDLER_METADATA, PATTERN_METADATA } from './../constants';
+import { PATTERN_HANDLER_METADATA, PATTERN_METADATA } from '../constants';
 
 /**
  * Subscribes to incoming events which fulfils chosen pattern.

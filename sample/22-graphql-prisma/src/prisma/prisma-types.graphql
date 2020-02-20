@@ -1,5 +1,5 @@
-# source: https://eu1.prisma.sh/public-agatepuma-476/my-app/dev
-# timestamp: Mon Sep 10 2018 16:22:13 GMT+0200 (Mitteleuropäische Sommerzeit)
+# source: https://eu1.prisma.sh/adam-gajzlerowicz-1dadb3/demo/dev
+# timestamp: Sun Jan 26 2020 09:49:46 GMT+0100 (Central European Standard Time)
 
 type AggregatePost {
   count: Int!
@@ -21,7 +21,7 @@ type Mutation {
   updatePost(data: PostUpdateInput!, where: PostWhereUniqueInput!): Post
   deletePost(where: PostWhereUniqueInput!): Post
   upsertPost(where: PostWhereUniqueInput!, create: PostCreateInput!, update: PostUpdateInput!): Post!
-  updateManyPosts(data: PostUpdateInput!, where: PostWhereInput): BatchPayload!
+  updateManyPosts(data: PostUpdateManyMutationInput!, where: PostWhereInput): BatchPayload!
   deleteManyPosts(where: PostWhereInput): BatchPayload!
 }
 
@@ -70,6 +70,7 @@ type PostConnection {
 }
 
 input PostCreateInput {
+  id: ID
   isPublished: Boolean
   title: String!
   text: String!
@@ -93,10 +94,6 @@ enum PostOrderByInput {
   title_DESC
   text_ASC
   text_DESC
-  updatedAt_ASC
-  updatedAt_DESC
-  createdAt_ASC
-  createdAt_DESC
 }
 
 type PostPreviousValues {
@@ -123,9 +120,7 @@ input PostSubscriptionWhereInput {
   """Logical NOT on all given filters combined by AND."""
   NOT: [PostSubscriptionWhereInput!]
 
-  """
-  The subscription event gets dispatched when it's listed in mutation_in
-  """
+  """The subscription event gets dispatched when it's listed in mutation_in"""
   mutation_in: [MutationType!]
 
   """
@@ -146,6 +141,12 @@ input PostSubscriptionWhereInput {
 }
 
 input PostUpdateInput {
+  isPublished: Boolean
+  title: String
+  text: String
+}
+
+input PostUpdateManyMutationInput {
   isPublished: Boolean
   title: String
   text: String

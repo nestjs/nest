@@ -21,6 +21,7 @@ let redisPackage: any = {};
 
 export class ClientRedis extends ClientProxy {
   protected readonly logger = new Logger(ClientProxy.name);
+  protected readonly subscriptionsCount = new Map<string, number>();
   protected readonly url: string;
   protected pubClient: RedisClient;
   protected subClient: RedisClient;
@@ -92,9 +93,11 @@ export class ClientRedis extends ClientProxy {
   }
 
   public getClientOptions(error$: Subject<Error>): Partial<ClientOpts> {
+    // eslint-disable-next-line @typescript-eslint/camelcase
     const retry_strategy = (options: RetryStrategyOptions) =>
       this.createRetryStrategy(options, error$);
     return {
+      // eslint-disable-next-line @typescript-eslint/camelcase
       retry_strategy,
     };
   }
@@ -152,20 +155,30 @@ export class ClientRedis extends ClientProxy {
       const pattern = this.normalizePattern(partialPacket.pattern);
       const serializedPacket = this.serializer.serialize(packet);
       const responseChannel = this.getReplyPattern(pattern);
+      let subscriptionsCount =
+        this.subscriptionsCount.get(responseChannel) || 0;
 
-      this.routingMap.set(packet.id, callback);
-      this.subClient.subscribe(responseChannel, (err: any) => {
-        if (err) {
-          return;
-        }
+      const publishPacket = () => {
+        subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
+        this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
+        this.routingMap.set(packet.id, callback);
         this.pubClient.publish(
           this.getRequestPattern(pattern),
           JSON.stringify(serializedPacket),
         );
-      });
+      };
+
+      if (subscriptionsCount <= 0) {
+        this.subClient.subscribe(
+          responseChannel,
+          (err: any) => !err && publishPacket(),
+        );
+      } else {
+        publishPacket();
+      }
 
       return () => {
-        this.subClient.unsubscribe(responseChannel);
+        this.unsubscribeFromChannel(responseChannel);
         this.routingMap.delete(packet.id);
       };
     } catch (err) {
@@ -182,5 +195,14 @@ export class ClientRedis extends ClientProxy {
         err ? reject(err) : resolve(),
       ),
     );
+  }
+
+  protected unsubscribeFromChannel(channel: string) {
+    const subscriptionCount = this.subscriptionsCount.get(channel);
+    this.subscriptionsCount.set(channel, subscriptionCount - 1);
+
+    if (subscriptionCount - 1 <= 0) {
+      this.subClient.unsubscribe(channel);
+    }
   }
 }

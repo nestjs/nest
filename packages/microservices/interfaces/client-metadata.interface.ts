@@ -1,7 +1,8 @@
-import { Transport } from './../enums/transport.enum';
+import { Transport } from '../enums/transport.enum';
 import { Deserializer } from './deserializer.interface';
 import {
   GrpcOptions,
+  KafkaOptions,
   MqttOptions,
   NatsOptions,
   RedisOptions,
@@ -14,6 +15,7 @@ export type ClientOptions =
   | NatsOptions
   | MqttOptions
   | GrpcOptions
+  | KafkaOptions
   | TcpClientOptions
   | RmqOptions;
 

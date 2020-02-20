@@ -45,7 +45,7 @@ export class IoAdapter extends AbstractWsAdapter {
       const source$ = fromEvent(client, message).pipe(
         mergeMap((payload: any) => {
           const { data, ack } = this.mapPayload(payload);
-          return transform(callback(data)).pipe(
+          return transform(callback(data, ack)).pipe(
             filter((response: any) => !isNil(response)),
             map((response: any) => [response, ack]),
           );

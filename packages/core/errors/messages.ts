@@ -6,12 +6,11 @@ import {
 } from '../injector/injector';
 import { Module } from '../injector/module';
 
-// TODO: Replace `any` with `unknown` type when TS 3.0.0 is supported
 /**
  * Returns the name of an instance
  * @param instance The instance which should get the name from
  */
-const getInstanceName = (instance: unknown) =>
+const getInstanceName = (instance: unknown): string =>
   instance && (instance as Type<any>).name;
 
 /**
@@ -20,13 +19,13 @@ const getInstanceName = (instance: unknown) =>
  * (= injection token). As fallback it returns '+'
  * @param dependency The dependency whichs name should get displayed
  */
-const getDependencyName = (dependency: InjectorDependency) =>
+const getDependencyName = (dependency: InjectorDependency): string =>
   // use class name
   getInstanceName(dependency) ||
   // use injection token (symbol)
   (isSymbol(dependency) && dependency.toString()) ||
   // use string directly
-  dependency ||
+  (dependency as string) ||
   // otherwise
   '+';
 
@@ -43,11 +42,28 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   unknownDependencyContext: InjectorDependencyContext,
   module: Module,
 ) => {
-  const { index, dependencies, key } = unknownDependencyContext;
+  const {
+    index,
+    name = 'dependency',
+    dependencies,
+    key,
+  } = unknownDependencyContext;
+  const moduleName = getModuleName(module) || 'Module';
+  const dependencyName = getDependencyName(name);
+
   let message = `Nest can't resolve dependencies of the ${type.toString()}`;
 
+  const potentialSolutions = `\n
+Potential solutions:
+- If ${dependencyName} is a provider, is it part of the current ${moduleName}?
+- If ${dependencyName} is exported from a separate @Module, is that module imported within ${moduleName}?
+  @Module({
+    imports: [ /* the Module containing ${dependencyName} */ ]
+  })
+`;
+
   if (isNil(index)) {
-    message += `. Please make sure that the "${key.toString()}" property is available in the current context.`;
+    message += `. Please make sure that the "${key.toString()}" property is available in the current context.${potentialSolutions}`;
     return message;
   }
   const dependenciesName = (dependencies || []).map(getDependencyName);
@@ -55,9 +71,11 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
 
   message += ` (`;
   message += dependenciesName.join(', ');
-  message += `). Please make sure that the argument at index [${index}] is available in the ${getModuleName(
+  message += `). Please make sure that the argument ${dependencyName} at index [${index}] is available in the ${getModuleName(
     module,
   )} context.`;
+  message += potentialSolutions;
+
   return message;
 };
 
@@ -70,13 +88,19 @@ export const INVALID_MODULE_MESSAGE = (
   text: TemplateStringsArray,
   scope: string,
 ) =>
-  `Nest cannot create the module instance. Often, this is because of a circular dependency between modules. Use forwardRef() to avoid it. (Read more: https://docs.nestjs.com/fundamentals/circular-dependency.) Scope [${scope}]`;
+  `Nest cannot create the module instance. Often, this is because of a circular dependency between modules. Use forwardRef() to avoid it.
 
-export const UNKNOWN_EXPORT_MESSAGE = (
-  text: TemplateStringsArray,
-  module: string,
-) =>
-  `Nest cannot export a provider/module that is not a part of the currently processed module (${module}). Please verify whether each exported unit is available in this particular context.`;
+(Read more: https://docs.nestjs.com/fundamentals/circular-dependency)
+Scope [${scope}]
+`;
+
+export const UNKNOWN_EXPORT_MESSAGE = (token = 'item', module: string) => {
+  return `Nest cannot export a provider/module that is not a part of the currently processed module (${module}). Please verify whether the exported ${token} is available in this particular context.
+
+Possible Solutions:
+- Is ${token} part of the relevant providers/imports within ${module}?
+`;
+};
 
 export const INVALID_CLASS_MESSAGE = (text: TemplateStringsArray, value: any) =>
   `ModuleRef cannot instantiate class (${value} is not constructable).`;

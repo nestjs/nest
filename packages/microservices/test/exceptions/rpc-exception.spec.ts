@@ -14,7 +14,7 @@ describe('RpcException', () => {
 
   it('should serialize', () => {
     expect(`${instance}`.includes(error)).to.be.true;
-    const obj = {foo: 'bar'};
+    const obj = { foo: 'bar' };
     expect(`${new RpcException(obj)}`.includes(JSON.stringify(obj))).to.be.true;
   });
 });

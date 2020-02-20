@@ -9,7 +9,7 @@ import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
-import { ServeStaticOptions } from './../interfaces/serve-static-options.interface';
+import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
@@ -40,11 +40,11 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return response.redirect(statusCode, url);
   }
 
-  public setErrorHandler(handler: Function) {
+  public setErrorHandler(handler: Function, prefix?: string) {
     return this.use(handler);
   }
 
-  public setNotFoundHandler(handler: Function) {
+  public setNotFoundHandler(handler: Function, prefix?: string) {
     return this.use(handler);
   }
 
@@ -59,7 +59,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public close() {
-    return this.httpServer ? this.httpServer.close() : undefined;
+    if (!this.httpServer) {
+      return undefined;
+    }
+    return new Promise(resolve => this.httpServer.close(resolve));
   }
 
   public set(...args: any[]) {
@@ -93,6 +96,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return this.set('view engine', engine);
   }
 
+  public getRequestHostname(request: any): string {
+    return request.hostname;
+  }
+
   public getRequestMethod(request: any): string {
     return request.method;
   }
@@ -102,7 +109,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public enableCors(options: CorsOptions) {
-    this.use(cors(options));
+    return this.use(cors(options));
   }
 
   public createMiddlewareFactory(
@@ -133,6 +140,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))
       .forEach(parserKey => this.use(parserMiddleware[parserKey]));
+  }
+
+  public getType(): string {
+    return 'express';
   }
 
   private isMiddlewareApplied(name: string): boolean {

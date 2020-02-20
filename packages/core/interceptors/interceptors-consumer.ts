@@ -1,24 +1,30 @@
 import { NestInterceptor } from '@nestjs/common';
-import { CallHandler, Controller } from '@nestjs/common/interfaces';
+import {
+  CallHandler,
+  ContextType,
+  Controller,
+} from '@nestjs/common/interfaces';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { defer, from as fromPromise, Observable } from 'rxjs';
 import { mergeAll, switchMap } from 'rxjs/operators';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 
 export class InterceptorsConsumer {
-  public async intercept(
+  public async intercept<TContext extends string = ContextType>(
     interceptors: NestInterceptor[],
     args: any[],
     instance: Controller,
     callback: (...args: any[]) => any,
     next: () => Promise<any>,
+    type?: TContext,
   ): Promise<any> {
     if (isEmpty(interceptors)) {
       return next();
     }
     const context = this.createContext(args, instance, callback);
-    const start$ = defer(() => this.transformDeffered(next));
+    context.setType<TContext>(type);
 
+    const start$ = defer(() => this.transformDeffered(next));
     const nextFn = (i = 0) => async () => {
       if (i >= interceptors.length) {
         return start$;

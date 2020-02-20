@@ -6,12 +6,14 @@ import {
 import { Closeable } from '../interfaces/closeable.interface';
 import {
   GrpcOptions,
+  KafkaOptions,
   MqttOptions,
   NatsOptions,
   RedisOptions,
   RmqOptions,
 } from '../interfaces/microservice-configuration.interface';
 import { ClientGrpcProxy } from './client-grpc';
+import { ClientKafka } from './client-kafka';
 import { ClientMqtt } from './client-mqtt';
 import { ClientNats } from './client-nats';
 import { ClientProxy } from './client-proxy';
@@ -41,6 +43,8 @@ export class ClientProxyFactory {
         return new ClientGrpcProxy(options as GrpcOptions['options']);
       case Transport.RMQ:
         return new ClientRMQ(options as RmqOptions['options']);
+      case Transport.KAFKA:
+        return new ClientKafka(options as KafkaOptions['options']);
       default:
         return new ClientTCP(options as TcpClientOptions['options']);
     }

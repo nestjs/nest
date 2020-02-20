@@ -32,6 +32,7 @@ export class WsProxy {
     error: T,
   ) {
     const host = new ExecutionContextHost(args);
+    host.setType('ws');
     exceptionsHandler.handle(error, host);
   }
 

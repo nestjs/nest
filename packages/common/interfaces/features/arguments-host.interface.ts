@@ -1,3 +1,5 @@
+export type ContextType = 'http' | 'ws' | 'rpc';
+
 /**
  * Methods to obtain request and response objects.
  *
@@ -41,6 +43,11 @@ export interface RpcArgumentsHost {
    * Returns the data object.
    */
   getData<T = any>(): T;
+
+  /**
+   * Returns the context object.
+   */
+  getContext<T = any>(): T;
 }
 
 /**
@@ -75,4 +82,8 @@ export interface ArgumentsHost {
    * @returns interface with methods to retrieve WebSockets arguments
    */
   switchToWs(): WsArgumentsHost;
+  /**
+   * Returns the current execution context type (string)
+   */
+  getType<TContext extends string = ContextType>(): TContext;
 }

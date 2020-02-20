@@ -16,9 +16,7 @@ import {
 function hasOnAppShutdownHook(
   instance: unknown,
 ): instance is OnApplicationShutdown {
-  return !isNil(
-    (instance as OnApplicationShutdown).onApplicationShutdown,
-  );
+  return !isNil((instance as OnApplicationShutdown).onApplicationShutdown);
 }
 
 /**
@@ -49,11 +47,16 @@ export async function callAppShutdownHook(
   module: Module,
   signal?: string,
 ): Promise<any> {
-  const providers = [...module.providers];
+  const providers = module.getNonAliasProviders();
   // Module (class) instance is the first element of the providers array
   // Lifecycle hook has to be called once all classes are properly initialized
-  const [_, { instance: moduleClassInstance }] = providers.shift();
-  const instances = [...module.controllers, ...providers];
+  const [_, moduleClassHost] = providers.shift();
+  const instances = [
+    ...module.controllers,
+    ...providers,
+    ...module.injectables,
+    ...module.middlewares,
+  ];
 
   const nonTransientInstances = getNonTransientInstances(instances);
   await Promise.all(callOperator(nonTransientInstances, signal));
@@ -61,7 +64,12 @@ export async function callAppShutdownHook(
   await Promise.all(callOperator(transientInstances, signal));
 
   // Call the instance itself
-  if (moduleClassInstance && hasOnAppShutdownHook(moduleClassInstance)) {
+  const moduleClassInstance = moduleClassHost.instance;
+  if (
+    moduleClassInstance &&
+    hasOnAppShutdownHook(moduleClassInstance) &&
+    moduleClassHost.isDependencyTreeStatic()
+  ) {
     await (moduleClassInstance as OnApplicationShutdown).onApplicationShutdown(
       signal,
     );

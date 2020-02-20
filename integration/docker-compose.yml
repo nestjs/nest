@@ -23,7 +23,7 @@ services:
       - "9001:9001"
     restart: always
   mysql:
-    image: mysql:5.7.27
+    image: mysql:5.7.29
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: test
@@ -31,15 +31,42 @@ services:
       - "3306:3306"
     restart: always
   mongodb:
+    container_name: test-mongodb
     image: mongo:latest
     environment:
       - MONGODB_DATABASE="test"
     ports:
       - 27017:27017
   rabbit:
+    container_name: test-rabbit
     hostname: rabbit
     image: "rabbitmq:management"
     ports:
       - "15672:15672"
       - "5672:5672"
     tty: true
+  zookeeper:
+    container_name: test-zookeeper
+    hostname: zookeeper
+    image: confluentinc/cp-zookeeper:5.3.2
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+  kafka:
+    container_name: test-kafka
+    hostname: kafka
+    image: confluentinc/cp-kafka:5.3.2
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0

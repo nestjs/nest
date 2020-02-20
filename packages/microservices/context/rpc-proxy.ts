@@ -31,6 +31,7 @@ export class RpcProxy {
     error: T,
   ): Observable<any> {
     const host = new ExecutionContextHost(args);
+    host.setType('rpc');
     return exceptionsHandler.handle(error, host);
   }
 
