@@ -6,12 +6,16 @@ import {
   MESSAGE_EVENT,
   MQTT_DEFAULT_URL,
   NO_MESSAGE_HANDLER,
+  MQTT_SEPARATOR,
+  MQTT_WILDCARD_ALL,
+  MQTT_WILDCARD_SINGLE,
 } from '../constants';
 import { MqttContext } from '../ctx-host/mqtt.context';
 import { MqttClient } from '../external/mqtt-client.interface';
 import {
   CustomTransportStrategy,
   IncomingRequest,
+  MessageHandler,
   PacketId,
   ReadPacket,
 } from '../interfaces';
@@ -65,6 +69,54 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
   public createMqttClient(): MqttClient {
     return mqttPackage.connect(this.url, this.options as MqttOptions);
+  }
+
+  public matchMqttPattern(pattern, topic) {
+    const patternSegments = pattern.split(MQTT_SEPARATOR);
+    const topicSegments = topic.split(MQTT_SEPARATOR);
+    const patternLength = patternSegments.length;
+    const topicLength = topicSegments.length;
+    const lastIndex = patternLength - 1;
+
+    for (let i = 0; i < patternLength; i++) {
+      const currentPattern = patternSegments[i];
+      const patternChar = currentPattern[0];
+      const currentTopic = topicSegments[i];
+
+      if (!currentTopic && !currentPattern) continue;
+
+      if (!currentTopic && currentPattern !== MQTT_WILDCARD_ALL) return false;
+
+      if (patternChar === MQTT_WILDCARD_ALL) return i === lastIndex;
+
+      if (
+        patternChar !== MQTT_WILDCARD_SINGLE &&
+        currentPattern !== currentTopic
+      )
+        return false;
+    }
+
+    return patternLength === topicLength;
+  }
+
+  public getHandlerByPattern(pattern: string): MessageHandler | null {
+    const route = this.getRouteFromPattern(pattern);
+
+    if (this.messageHandlers.has(route)) {
+      return this.messageHandlers.get(route);
+    }
+
+    for (const [key, value] of this.messageHandlers) {
+      if (key.indexOf(MQTT_WILDCARD_SINGLE) === -1 && key.indexOf(MQTT_WILDCARD_ALL) === -1) {
+        continue;
+      }
+
+      if (this.matchMqttPattern(key, route)) {
+        return value;
+      }
+    }
+
+    return null;
   }
 
   public getMessageHandler(pub: MqttClient): Function {
