@@ -119,62 +119,6 @@ describe('ValidationPipe', () => {
           TestModel,
         );
       });
-      describe('when input is a query parameter (number)', () => {
-        it('should parse to number', async () => {
-          target = new ValidationPipe({ transform: true });
-          const value = '3.14';
-
-          expect(
-            await target.transform(value, {
-              metatype: Number,
-              data: 'test',
-              type: 'query',
-            }),
-          ).to.be.equal(+value);
-        });
-      });
-      describe('when input is a path parameter (number)', () => {
-        it('should parse to number', async () => {
-          target = new ValidationPipe({ transform: true });
-          const value = '3.14';
-
-          expect(
-            await target.transform(value, {
-              metatype: Number,
-              data: 'test',
-              type: 'param',
-            }),
-          ).to.be.equal(+value);
-        });
-      });
-      describe('when input is a query parameter (boolean)', () => {
-        it('should parse to boolean', async () => {
-          target = new ValidationPipe({ transform: true });
-          const value = 'true';
-
-          expect(
-            await target.transform(value, {
-              metatype: Boolean,
-              data: 'test',
-              type: 'query',
-            }),
-          ).to.be.true;
-        });
-      });
-      describe('when input is a path parameter (boolean)', () => {
-        it('should parse to boolean', async () => {
-          target = new ValidationPipe({ transform: true });
-          const value = 'true';
-
-          expect(
-            await target.transform(value, {
-              metatype: Boolean,
-              data: 'test',
-              type: 'param',
-            }),
-          ).to.be.true;
-        });
-      });
       describe('when validation strips', () => {
         it('should return a TestModel without extra properties', async () => {
           target = new ValidationPipe({ whitelist: true });
