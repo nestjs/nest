@@ -8,16 +8,15 @@ describe('ClientMqtt', () => {
   const test = 'test';
   const client = new ClientMqtt({});
 
-  describe('getAckPatternName', () => {
-    it(`should append _ack to string`, () => {
-      const expectedResult = test + '_ack';
-      expect(client.getAckPatternName(test)).to.equal(expectedResult);
+  describe('getRequestPattern', () => {
+    it(`should leave pattern as it is`, () => {
+      expect(client.getRequestPattern(test)).to.equal(test);
     });
   });
-  describe('getResPatternName', () => {
-    it(`should append _res to string`, () => {
-      const expectedResult = test + '_res';
-      expect(client.getResPatternName(test)).to.equal(expectedResult);
+  describe('getResponsePattern', () => {
+    it(`should append "/reply" to string`, () => {
+      const expectedResult = test + '/reply';
+      expect(client.getResponsePattern(test)).to.equal(expectedResult);
     });
   });
   describe('publish', () => {
@@ -60,12 +59,11 @@ describe('ClientMqtt', () => {
     });
     it('should subscribe to response pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`${pattern}_res`)).to.be.true;
+      expect(subscribeSpy.calledWith(`${pattern}/reply`)).to.be.true;
     });
-    it('should publish stringified message to acknowledge pattern name', async () => {
+    it('should publish stringified message to request pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(publishSpy.calledWith(`${pattern}_ack`, JSON.stringify(msg))).to.be
-        .true;
+      expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).to.be.true;
     });
     it('should add callback to routing map', async () => {
       await client['publish'](msg, () => {});
@@ -87,7 +85,7 @@ describe('ClientMqtt', () => {
       });
     });
     describe('dispose callback', () => {
-      let getResPatternStub: sinon.SinonStub;
+      let getResponsePatternStub: sinon.SinonStub;
       let callback: sinon.SinonSpy, subscription;
 
       const channel = 'channel';
@@ -95,14 +93,14 @@ describe('ClientMqtt', () => {
       beforeEach(async () => {
         callback = sinon.spy();
 
-        getResPatternStub = sinon
-          .stub(client, 'getResPatternName')
+        getResponsePatternStub = sinon
+          .stub(client, 'getResponsePattern')
           .callsFake(() => channel);
         subscription = await client['publish'](msg, callback);
         subscription(channel, JSON.stringify({ isDisposed: true, id }));
       });
       afterEach(() => {
-        getResPatternStub.restore();
+        getResponsePatternStub.restore();
       });
 
       it('should unsubscribe to response pattern name', () => {

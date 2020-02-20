@@ -6,6 +6,7 @@ import { CatsModule } from './cats/cats.module';
   imports: [
     MongooseModule.forRootAsync({
       useFactory: () => ({
+        useNewUrlParser: true,
         uri: 'mongodb://localhost:27017/test',
       }),
     }),
