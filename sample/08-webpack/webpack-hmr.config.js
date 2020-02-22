@@ -1,5 +1,6 @@
 const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
+const StartServerPlugin = require('start-server-webpack-plugin');
 
 module.exports = function(options) {
   return {
@@ -11,6 +12,10 @@ module.exports = function(options) {
         whitelist: ['webpack/hot/poll?100'],
       }),
     ],
-    plugins: [...options.plugins, new webpack.HotModuleReplacementPlugin()],
+    plugins: [
+      ...options.plugins,
+      new webpack.HotModuleReplacementPlugin(),
+      new StartServerPlugin({ name: 'main.js' }),
+    ],
   };
 };

@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "6.11.7",
+  "version": "6.11.8",
   "description": "Nest - modern, fast, powerful node.js web framework (@core)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -30,9 +30,9 @@
     "@nuxtjs/opencollective": "0.2.2",
     "fast-safe-stringify": "2.0.7",
     "iterare": "1.2.0",
-    "object-hash": "2.0.2",
+    "object-hash": "2.0.3",
     "path-to-regexp": "3.2.0",
-    "tslib": "1.10.0",
+    "tslib": "1.11.0",
     "uuid": "3.4.0"
   },
   "peerDependencies": {
