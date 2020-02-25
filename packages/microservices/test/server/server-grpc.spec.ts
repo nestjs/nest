@@ -442,6 +442,24 @@ describe('ServerGrpc', () => {
 
       expect(handler.called).to.be.true;
     });
+
+    it('should wrap call into Subject with metadata', () => {
+      const handler = sinon.spy();
+      const fn = server.createRequestStreamMethod(handler, false);
+      const call = {
+        on: (event, callback) => callback(),
+        off: sinon.spy(),
+        end: sinon.spy(),
+        write: sinon.spy(),
+        metadata: {
+          test: '123',
+        },
+      };
+      fn(call as any, sinon.spy());
+
+      expect(handler.called).to.be.true;
+      expect(handler.args[0][1]).to.eq(call.metadata);
+    });
     describe('when response is not a stream', () => {
       it('should call callback', async () => {
         const handler = async () => ({ test: true });
