@@ -34,7 +34,7 @@
   "devDependencies": {
     "@types/socket.io": "2.1.3",
     "@types/socket.io-redis": "1.0.25",
-    "@types/ws": "7.2.1",
+    "@types/ws": "7.2.2",
     "@nestjs/cli": "6.14.2",
     "@nestjs/schematics": "6.9.4",
     "@nestjs/testing": "6.11.8",
