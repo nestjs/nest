@@ -70,7 +70,7 @@
     "merge-graphql-schemas": "1.7.6",
     "mqtt": "3.0.0",
     "multer": "1.4.2",
-    "nats": "1.4.0",
+    "nats": "1.4.2",
     "object-hash": "2.0.3",
     "optional": "0.1.4",
     "path-to-regexp": "3.2.0",
