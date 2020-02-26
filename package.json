@@ -136,7 +136,7 @@
     "imports-loader": "0.8.0",
     "json-loader": "0.5.7",
     "lerna": "2.11.0",
-    "lint-staged": "10.0.7",
+    "lint-staged": "10.0.8",
     "markdown-table": "2.0.0",
     "mocha": "7.0.1",
     "nodemon": "2.0.2",
