@@ -23,7 +23,7 @@
     "@nestjs/core": "6.11.8",
     "@nestjs/platform-fastify": "6.11.8",
     "handlebars": "4.7.3",
-    "point-of-view": "3.7.1",
+    "point-of-view": "3.7.2",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "6.5.4"
