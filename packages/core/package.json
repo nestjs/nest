@@ -32,8 +32,8 @@
     "iterare": "1.2.0",
     "object-hash": "2.0.3",
     "path-to-regexp": "3.2.0",
-    "tslib": "1.11.0",
-    "uuid": "3.4.0"
+    "tslib": "1.11.1",
+    "uuid": "7.0.1"
   },
   "peerDependencies": {
     "@nestjs/common": "^6.0.0",
