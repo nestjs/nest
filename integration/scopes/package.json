@@ -14,7 +14,7 @@
     "@nestjs/websockets": "6.11.8",
     "class-transformer": "0.2.3",
     "class-validator": "0.11.0",
-    "fastify": "2.10.0",
+    "fastify": "2.12.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.4",
     "typescript": "3.7.2"
