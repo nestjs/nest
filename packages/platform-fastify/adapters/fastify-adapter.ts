@@ -9,22 +9,22 @@ import * as formBody from 'fastify-formbody';
 import * as Reply from 'fastify/lib/reply';
 import * as pathToRegexp from 'path-to-regexp';
 
-export class FastifyAdapter extends AbstractHttpAdapter {
+export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
   constructor(
     instanceOrOptions:
-      | fastify.FastifyInstance<any, any, any>
+      | TInstance
       | fastify.ServerOptions
       | fastify.ServerOptionsAsHttp
       | fastify.ServerOptionsAsHttp2
       | fastify.ServerOptionsAsSecure
       | fastify.ServerOptionsAsSecureHttp
-      | fastify.ServerOptionsAsSecureHttp2 = fastify(),
+      | fastify.ServerOptionsAsSecureHttp2 = fastify() as any,
   ) {
     const instance =
       instanceOrOptions &&
       (instanceOrOptions as fastify.FastifyInstance<any, any, any>).server
         ? instanceOrOptions
-        : fastify(instanceOrOptions as fastify.ServerOptions);
+        : fastify((instanceOrOptions as any) as fastify.ServerOptions);
 
     super(instance);
   }
@@ -66,20 +66,26 @@ export class FastifyAdapter extends AbstractHttpAdapter {
     return response.status(code).redirect(url);
   }
 
-  public setErrorHandler(handler: Function) {
+  public setErrorHandler(
+    handler: Parameters<fastify.FastifyInstance['setErrorHandler']>[0],
+    prefix?: string,
+  ) {
     return this.instance.setErrorHandler(handler);
   }
 
-  public setNotFoundHandler(handler: Function) {
+  public setNotFoundHandler(
+    handler: Parameters<fastify.FastifyInstance['setNotFoundHandler']>[0],
+    prefix?: string,
+  ) {
     return this.instance.setNotFoundHandler(handler);
   }
 
-  public getHttpServer<T = any>(): T {
-    return this.instance.server as T;
+  public getHttpServer<TServer = any>(): TServer {
+    return this.instance.server as TServer;
   }
 
-  public getInstance<T = any>(): T {
-    return this.instance as T;
+  public getInstance<TServer = any>(): TServer {
+    return this.instance as TServer;
   }
 
   public register(...args: any[]) {
@@ -122,6 +128,10 @@ export class FastifyAdapter extends AbstractHttpAdapter {
 
   public setHeader(response: any, name: string, value: string) {
     return response.header(name, value);
+  }
+
+  public getRequestHostname(request: any): string {
+    return request.hostname;
   }
 
   public getRequestMethod(request: any): string {
@@ -173,5 +183,12 @@ export class FastifyAdapter extends AbstractHttpAdapter {
 
   public getType(): string {
     return 'fastify';
+  }
+
+  protected registerWithPrefix<T extends fastify.Plugin<any, any, any, any>>(
+    factory: T,
+    prefix = '/',
+  ): ReturnType<fastify.FastifyInstance['register']> {
+    return this.instance.register(factory, { prefix });
   }
 }

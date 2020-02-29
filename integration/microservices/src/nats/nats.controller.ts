@@ -2,8 +2,11 @@ import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
   ClientProxy,
+  Ctx,
   EventPattern,
   MessagePattern,
+  NatsContext,
+  Payload,
   RpcException,
   Transport,
 } from '@nestjs/microservices';
@@ -52,12 +55,12 @@ export class NatsController {
       return result === expected;
     };
     return data
-      .map(async tab => await send(tab))
-      .reduce(async (a, b) => (await a) && (await b));
+      .map(async tab => send(tab))
+      .reduce(async (a, b) => (await a) && b);
   }
 
   @MessagePattern('math.*')
-  sum(data: number[]): number {
+  sum(@Payload() data: number[], @Ctx() context: NatsContext): number {
     return (data || []).reduce((a, b) => a + b);
   }
 
@@ -78,7 +81,7 @@ export class NatsController {
 
   @Get('exception')
   async getError() {
-    return await this.client
+    return this.client
       .send<number>('exception', {})
       .pipe(catchError(err => of(err)));
   }
@@ -94,7 +97,7 @@ export class NatsController {
   }
 
   @EventPattern('notification')
-  eventHandler(data: boolean) {
+  eventHandler(@Payload() data: boolean) {
     NatsController.IS_NOTIFIED = data;
   }
 }

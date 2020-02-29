@@ -60,7 +60,6 @@ describe('Server', () => {
       it(`should call 'transformPatternToRoute' with 'string' argument`, () => {
         const inputServerPattern = 'hello';
         const transformedServerPattern = inputServerPattern;
-
         (server as any).getRouteFromPattern(inputServerPattern);
 
         expect(msvcUtilTransformPatternToRouteStub.args[0][0]).to.be.equal(
@@ -76,7 +75,6 @@ describe('Server', () => {
           controller: 'app',
           use: 'getHello',
         };
-
         (server as any).getRouteFromPattern(inputServerPattern);
 
         expect(msvcUtilTransformPatternToRouteStub.args[0][0]).to.be.deep.equal(
@@ -105,7 +103,6 @@ describe('Server', () => {
             expect(
               sendSpy.calledWith({
                 err: 'test',
-                response: null,
                 isDisposed: true,
               }),
             ).to.be.true;
@@ -120,7 +117,6 @@ describe('Server', () => {
           process.nextTick(() => {
             expect(
               sendSpy.calledWith({
-                err: null,
                 response: 'test',
                 isDisposed: true,
               }),

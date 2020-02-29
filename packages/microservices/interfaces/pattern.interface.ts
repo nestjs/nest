@@ -1,4 +1,3 @@
-
 export type MsFundamentalPattern = string | number;
 
 export interface MsObjectPattern {

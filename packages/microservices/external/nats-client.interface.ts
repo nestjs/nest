@@ -38,11 +38,7 @@ export declare class Client extends EventEmitter {
    * ommitted, even with a callback. The Subscriber Id is returned.
    */
   subscribe(subject: string, callback: Function): number;
-  subscribe(
-    subject: string,
-    opts: any,
-    callback: Function,
-  ): number;
+  subscribe(subject: string, opts: any, callback: Function): number;
 
   /**
    * Unsubscribe to a given Subscriber Id, with optional max parameter.

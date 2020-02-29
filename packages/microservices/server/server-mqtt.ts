@@ -5,12 +5,17 @@ import {
   ERROR_EVENT,
   MESSAGE_EVENT,
   MQTT_DEFAULT_URL,
+  MQTT_SEPARATOR,
+  MQTT_WILDCARD_ALL,
+  MQTT_WILDCARD_SINGLE,
   NO_MESSAGE_HANDLER,
 } from '../constants';
+import { MqttContext } from '../ctx-host/mqtt.context';
 import { MqttClient } from '../external/mqtt-client.interface';
 import {
   CustomTransportStrategy,
   IncomingRequest,
+  MessageHandler,
   PacketId,
   ReadPacket,
 } from '../interfaces';
@@ -53,7 +58,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     registeredPatterns.forEach(pattern => {
       const { isEventHandler } = this.messageHandlers.get(pattern);
       mqttClient.subscribe(
-        isEventHandler ? pattern : this.getAckQueueName(pattern),
+        isEventHandler ? pattern : this.getRequestPattern(pattern),
       );
     });
   }
@@ -67,27 +72,31 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(pub: MqttClient): Function {
-    return async (channel: string, buffer: Buffer) =>
-      this.handleMessage(channel, buffer, pub);
+    return async (
+      channel: string,
+      buffer: Buffer,
+      originalPacket?: Record<string, any>,
+    ) => this.handleMessage(channel, buffer, pub, originalPacket);
   }
 
   public async handleMessage(
     channel: string,
     buffer: Buffer,
     pub: MqttClient,
+    originalPacket?: Record<string, any>,
   ): Promise<any> {
     const rawPacket = this.parseMessage(buffer.toString());
     const packet = this.deserializer.deserialize(rawPacket, { channel });
+    const mqttContext = new MqttContext([channel, originalPacket]);
     if (isUndefined((packet as IncomingRequest).id)) {
-      return this.handleEvent(channel, packet);
+      return this.handleEvent(channel, packet, mqttContext);
     }
-    const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(
       pub,
-      pattern,
+      channel,
       (packet as IncomingRequest).id,
     );
-    const handler = this.getHandlerByPattern(pattern);
+    const handler = this.getHandlerByPattern(channel);
 
     if (!handler) {
       const status = 'error';
@@ -99,7 +108,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
       return publish(noHandlerPacket);
     }
     const response$ = this.transformToObservable(
-      await handler(packet.data),
+      await handler(packet.data, mqttContext),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
   }
@@ -110,7 +119,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
       const outgoingResponse = this.serializer.serialize(response);
 
       return client.publish(
-        this.getResQueueName(pattern),
+        this.getReplyPattern(pattern),
         JSON.stringify(outgoingResponse),
       );
     };
@@ -124,12 +133,64 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     }
   }
 
-  public getAckQueueName(pattern: string): string {
-    return `${pattern}_ack`;
+  public matchMqttPattern(pattern: string, topic: string) {
+    const patternSegments = pattern.split(MQTT_SEPARATOR);
+    const topicSegments = topic.split(MQTT_SEPARATOR);
+
+    const patternSegmentsLength = patternSegments.length;
+    const topicSegmentsLength = topicSegments.length;
+    const lastIndex = patternSegmentsLength - 1;
+
+    for (let i = 0; i < patternSegmentsLength; i++) {
+      const currentPattern = patternSegments[i];
+      const patternChar = currentPattern[0];
+      const currentTopic = topicSegments[i];
+
+      if (!currentTopic && !currentPattern) {
+        continue;
+      }
+      if (!currentTopic && currentPattern !== MQTT_WILDCARD_ALL) {
+        return false;
+      }
+      if (patternChar === MQTT_WILDCARD_ALL) {
+        return i === lastIndex;
+      }
+      if (
+        patternChar !== MQTT_WILDCARD_SINGLE &&
+        currentPattern !== currentTopic
+      ) {
+        return false;
+      }
+    }
+    return patternSegmentsLength === topicSegmentsLength;
   }
 
-  public getResQueueName(pattern: string): string {
-    return `${pattern}_res`;
+  public getHandlerByPattern(pattern: string): MessageHandler | null {
+    const route = this.getRouteFromPattern(pattern);
+    if (this.messageHandlers.has(route)) {
+      return this.messageHandlers.get(route) || null;
+    }
+
+    for (const [key, value] of this.messageHandlers) {
+      if (
+        key.indexOf(MQTT_WILDCARD_SINGLE) === -1 &&
+        key.indexOf(MQTT_WILDCARD_ALL) === -1
+      ) {
+        continue;
+      }
+      if (this.matchMqttPattern(key, route)) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  public getRequestPattern(pattern: string): string {
+    return pattern;
+  }
+
+  public getReplyPattern(pattern: string): string {
+    return `${pattern}/reply`;
   }
 
   public handleError(stream: any) {

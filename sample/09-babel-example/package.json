@@ -4,26 +4,45 @@
   "description": "Nest Babel starter repository",
   "license": "MIT",
   "scripts": {
+    "format": "prettier --write \"**/*.js\"",
     "build": "babel src -d dist",
-    "prestart": "npm run build",
-    "start": "node index.js"
+    "start": "babel-node index.js",
+    "start:dev": "nodemon",
+    "test": "jest",
+    "test:cov": "jest --coverage",
+    "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "6.7.2",
-    "@nestjs/core": "6.7.2",
-    "@nestjs/microservices": "6.7.2",
-    "@nestjs/platform-express": "6.7.2",
-    "@nestjs/testing": "6.7.2",
-    "@nestjs/websockets": "6.7.2",
-    "babel-core": "6.26.3",
-    "babel-polyfill": "6.26.0",
+    "@nestjs/common": "6.11.7",
+    "@nestjs/core": "6.11.7",
+    "@nestjs/platform-express": "6.11.7",
+    "@nestjs/microservices": "6.11.7",
+    "@nestjs/websockets": "6.11.7",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.3"
+    "rxjs": "6.5.4"
   },
   "devDependencies": {
-    "babel-cli": "6.26.0",
-    "babel-plugin-transform-decorators-legacy": "1.3.5",
-    "babel-preset-env": "1.7.0",
-    "babel-preset-stage-0": "6.24.1"
+    "@babel/cli": "7.8.4",
+    "@babel/core": "7.8.4",
+    "@babel/node": "7.8.4",
+    "@babel/plugin-proposal-decorators": "7.8.3",
+    "@babel/plugin-transform-runtime": "7.8.3",
+    "@babel/preset-env": "7.8.4",
+    "@babel/register": "7.8.3",
+    "@babel/runtime": "7.8.4",
+    "@nestjs/testing": "6.11.7",
+    "jest": "25.1.0",
+    "nodemon": "2.0.2",
+    "prettier": "1.19.1",
+    "supertest": "4.0.2"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json"
+    ],
+    "rootDir": "src",
+    "testRegex": ".spec.js$",
+    "coverageDirectory": "../coverage"
   }
 }

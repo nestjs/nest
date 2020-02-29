@@ -95,7 +95,7 @@ describe('ListenersController', () => {
       );
 
       sinon
-        .stub(instance as any, 'registerRequestProvider')
+        .stub((instance as any).container, 'registerRequestProvider')
         .callsFake(() => ({} as any));
     });
 

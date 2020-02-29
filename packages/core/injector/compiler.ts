@@ -8,7 +8,7 @@ export interface ModuleFactory {
 }
 
 export class ModuleCompiler {
-  private readonly moduleTokenFactory = new ModuleTokenFactory();
+  constructor(private readonly moduleTokenFactory = new ModuleTokenFactory()) {}
 
   public async compile(
     metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
@@ -38,5 +38,4 @@ export class ModuleCompiler {
   ): module is DynamicModule {
     return !!(module as DynamicModule).module;
   }
-
 }

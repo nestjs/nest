@@ -13,7 +13,7 @@ import {
   RENDER_METADATA,
   ROUTE_ARGS_METADATA,
 } from '@nestjs/common/constants';
-import { RouteParamsMetadata } from '@nestjs/common/decorators';
+import { RouteParamMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { ContextType, Controller } from '@nestjs/common/interfaces';
 import {
@@ -248,7 +248,7 @@ export class RouterExecutionContext {
 
   public exchangeKeysForValues(
     keys: string[],
-    metadata: RouteParamsMetadata,
+    metadata: Record<number, RouteParamMetadata>,
     moduleContext: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -284,9 +284,9 @@ export class RouterExecutionContext {
   }
 
   public getCustomFactory(
-    factory: (...args: any[]) => void,
-    data: any,
-  ): (...args: any[]) => any {
+    factory: (...args: unknown[]) => void,
+    data: unknown,
+  ): (...args: unknown[]) => unknown {
     return isFunction(factory)
       ? (req, res, next) => factory(data, req)
       : () => null;
@@ -298,16 +298,10 @@ export class RouterExecutionContext {
       metatype,
       type,
       data,
-    }: { metatype: any; type: RouteParamtypes; data: any },
+    }: { metatype: unknown; type: RouteParamtypes; data: unknown },
     pipes: PipeTransform[],
-  ): Promise<any> {
-    if (
-      (type === RouteParamtypes.BODY ||
-        type === RouteParamtypes.QUERY ||
-        type === RouteParamtypes.PARAM ||
-        isString(type)) &&
-      !isEmpty(pipes)
-    ) {
+  ): Promise<unknown> {
+    if (!isEmpty(pipes)) {
       return this.pipesConsumer.apply(
         value,
         { metatype, type, data } as any,
@@ -317,12 +311,21 @@ export class RouterExecutionContext {
     return value;
   }
 
-  public createGuardsFn<TContext extends ContextType = ContextType>(
+  public isPipeable(type: number | string): boolean {
+    return (
+      type === RouteParamtypes.BODY ||
+      type === RouteParamtypes.QUERY ||
+      type === RouteParamtypes.PARAM ||
+      isString(type)
+    );
+  }
+
+  public createGuardsFn<TContext extends string = ContextType>(
     guards: any[],
     instance: Controller,
     callback: (...args: any[]) => any,
     contextType?: TContext,
-  ): Function | null {
+  ): (args: any[]) => Promise<void> | null {
     const canActivateFn = async (args: any[]) => {
       const canActivate = await this.guardsConsumer.tryActivate<TContext>(
         guards,
@@ -348,25 +351,28 @@ export class RouterExecutionContext {
       res: TResponse,
       next: Function,
     ) => {
-      await Promise.all(
-        paramsOptions.map(async param => {
-          const {
-            index,
-            extractValue,
-            type,
-            data,
-            metatype,
-            pipes: paramPipes,
-          } = param;
-          const value = extractValue(req, res, next);
+      const resolveParamValue = async (
+        param: ParamProperties & { metatype?: any },
+      ) => {
+        const {
+          index,
+          extractValue,
+          type,
+          data,
+          metatype,
+          pipes: paramPipes,
+        } = param;
+        const value = extractValue(req, res, next);
 
-          args[index] = await this.getParamValue(
-            value,
-            { metatype, type, data } as any,
-            pipes.concat(paramPipes),
-          );
-        }),
-      );
+        args[index] = this.isPipeable(type)
+          ? await this.getParamValue(
+              value,
+              { metatype, type, data } as any,
+              pipes.concat(paramPipes),
+            )
+          : value;
+      };
+      await Promise.all(paramsOptions.map(resolveParamValue));
     };
     return paramsOptions.length ? pipesFn : null;
   }
@@ -383,7 +389,7 @@ export class RouterExecutionContext {
         await this.responseController.render(result, res, renderTemplate);
       };
     }
-    if (redirectResponse && redirectResponse.url) {
+    if (redirectResponse && typeof redirectResponse.url === 'string') {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
         await this.responseController.redirect(result, res, redirectResponse);
       };

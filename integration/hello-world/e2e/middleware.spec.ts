@@ -21,6 +21,7 @@ class TestController {
   }
 
   @Get('tests/wildcard_nested')
+  // eslint-disable-next-line @typescript-eslint/camelcase
   wildcard_nested() {
     return RETURN_VALUE;
   }
@@ -46,9 +47,11 @@ describe('Middleware', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    app = (await Test.createTestingModule({
-      imports: [TestModule],
-    }).compile()).createNestApplication();
+    app = (
+      await Test.createTestingModule({
+        imports: [TestModule],
+      }).compile()
+    ).createNestApplication();
 
     await app.init();
   });

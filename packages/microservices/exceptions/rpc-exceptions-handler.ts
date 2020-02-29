@@ -34,7 +34,7 @@ export class RpcExceptionsHandler extends BaseRpcExceptionFilter {
     if (isEmpty(this.filters)) {
       return null;
     }
-    const filter = this.filters.find(({ exceptionMetatypes, func }) => {
+    const filter = this.filters.find(({ exceptionMetatypes }) => {
       const hasMetatype =
         !exceptionMetatypes.length ||
         exceptionMetatypes.some(

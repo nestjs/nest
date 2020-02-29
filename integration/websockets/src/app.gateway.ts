@@ -1,9 +1,13 @@
-import { WebSocketGateway, SubscribeMessage } from '@nestjs/websockets';
+import {
+  MessageBody,
+  SubscribeMessage,
+  WebSocketGateway,
+} from '@nestjs/websockets';
 
 @WebSocketGateway(8080)
 export class ApplicationGateway {
   @SubscribeMessage('push')
-  onPush(client, data) {
+  onPush(@MessageBody() data) {
     return {
       event: 'pop',
       data,

@@ -29,7 +29,7 @@ export class Logger implements LoggerService {
   private static instance?: typeof Logger | LoggerService = Logger;
 
   constructor(
-    @Optional() private readonly context?: string,
+    @Optional() protected context?: string,
     @Optional() private readonly isTimestampEnabled = false,
   ) {}
 
@@ -56,6 +56,10 @@ export class Logger implements LoggerService {
 
   verbose(message: any, context?: string) {
     this.callFunction('verbose', message, context);
+  }
+
+  setContext(context: string) {
+    this.context = context;
   }
 
   static overrideLogger(logger: LoggerService | LogLevel[] | boolean) {
@@ -123,7 +127,7 @@ export class Logger implements LoggerService {
   private static printMessage(
     message: any,
     color: (message: string) => string,
-    context: string = '',
+    context = '',
     isTimeDiffEnabled?: boolean,
   ) {
     const output = isObject(message)
@@ -142,29 +146,31 @@ export class Logger implements LoggerService {
       undefined,
       localeStringOptions,
     );
-    process.stdout.write(color(`[Nest] ${process.pid}   - `));
-    process.stdout.write(`${timestamp}   `);
 
-    context && process.stdout.write(yellow(`[${context}] `));
-    process.stdout.write(output);
+    const pidMessage = color(`[Nest] ${process.pid}   - `);
+    const contextMessage = context ? yellow(`[${context}] `) : '';
+    const timestampDiff = this.updateAndGetTimestampDiff(isTimeDiffEnabled);
 
-    this.printTimestamp(isTimeDiffEnabled);
-    process.stdout.write(`\n`);
+    process.stdout.write(
+      `${pidMessage}${timestamp}   ${contextMessage}${output}${timestampDiff}\n`,
+    );
   }
 
-  private static printTimestamp(isTimeDiffEnabled?: boolean) {
+  private static updateAndGetTimestampDiff(
+    isTimeDiffEnabled?: boolean,
+  ): string {
     const includeTimestamp = Logger.lastTimestamp && isTimeDiffEnabled;
-    if (includeTimestamp) {
-      process.stdout.write(yellow(` +${Date.now() - Logger.lastTimestamp}ms`));
-    }
+    const result = includeTimestamp
+      ? yellow(` +${Date.now() - Logger.lastTimestamp}ms`)
+      : '';
     Logger.lastTimestamp = Date.now();
+    return result;
   }
 
   private static printStackTrace(trace: string) {
     if (!trace) {
       return;
     }
-    process.stdout.write(trace);
-    process.stdout.write(`\n`);
+    process.stdout.write(`${trace}\n`);
   }
 }

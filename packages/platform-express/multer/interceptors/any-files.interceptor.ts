@@ -40,17 +40,13 @@ export function AnyFilesInterceptor(
       const ctx = context.switchToHttp();
 
       await new Promise((resolve, reject) =>
-        this.multer.any()(
-          ctx.getRequest(),
-          ctx.getResponse(),
-          (err: any) => {
-            if (err) {
-              const error = transformException(err);
-              return reject(error);
-            }
-            resolve();
-          },
-        ),
+        this.multer.any()(ctx.getRequest(), ctx.getResponse(), (err: any) => {
+          if (err) {
+            const error = transformException(err);
+            return reject(error);
+          }
+          resolve();
+        }),
       );
       return next.handle();
     }

@@ -7,6 +7,7 @@ import {
   KAFKA_DEFAULT_GROUP,
   NO_MESSAGE_HANDLER,
 } from '../constants';
+import { KafkaContext } from '../ctx-host';
 import { KafkaHeaders } from '../enums';
 import {
   Consumer,
@@ -89,11 +90,13 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   }
 
   public createClient<T = any>(): T {
-    return new kafkaPackage.Kafka(Object.assign(this.options.client || {}, {
-      clientId: this.clientId,
-      brokers: this.brokers,
-      logCreator: KafkaLogger.bind(null, this.logger),
-    }) as KafkaConfig);
+    return new kafkaPackage.Kafka(
+      Object.assign(this.options.client || {}, {
+        clientId: this.clientId,
+        brokers: this.brokers,
+        logCreator: KafkaLogger.bind(null, this.logger),
+      }) as KafkaConfig,
+    );
   }
 
   public async bindEvents(consumer: Consumer) {
@@ -102,7 +105,6 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       consumer.subscribe({
         topic: pattern,
       });
-
     await Promise.all(registeredPatterns.map(subscribeToPattern));
 
     const consumerRunOptions = Object.assign(this.options.run || {}, {
@@ -138,11 +140,15 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     const replyPartition = headers[KafkaHeaders.REPLY_PARTITION];
 
     const packet = this.deserializer.deserialize(rawMessage, { channel });
-
+    const kafkaContext = new KafkaContext([
+      rawMessage,
+      payload.partition,
+      payload.topic,
+    ]);
     // if the correlation id or reply topic is not set
     // then this is an event (events could still have correlation id)
     if (!correlationId || !replyTopic) {
-      return this.handleEvent(packet.pattern, packet);
+      return this.handleEvent(packet.pattern, packet, kafkaContext);
     }
 
     const publish = this.getPublisher(
@@ -159,7 +165,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     }
 
     const response$ = this.transformToObservable(
-      await handler(packet.data),
+      await handler(packet.data, kafkaContext),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
   }

@@ -6,8 +6,6 @@ import {
   CLIENT_METADATA,
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
-  REQUEST_PATTERN_METADATA,
-  REPLY_PATTERN_METADATA,
 } from './constants';
 import { PatternHandler } from './enums/pattern-handler.enum';
 import { ClientOptions } from './interfaces/client-metadata.interface';

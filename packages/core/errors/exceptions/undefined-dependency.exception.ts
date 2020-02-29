@@ -9,6 +9,8 @@ export class UndefinedDependencyException extends RuntimeException {
     undefinedDependencyContext: InjectorDependencyContext,
     module?: Module,
   ) {
-    super(UNKNOWN_DEPENDENCIES_MESSAGE(type, undefinedDependencyContext, module));
+    super(
+      UNKNOWN_DEPENDENCIES_MESSAGE(type, undefinedDependencyContext, module),
+    );
   }
 }

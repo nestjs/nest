@@ -7,6 +7,7 @@ import {
   NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_URL,
 } from '../constants';
+import { RedisContext } from '../ctx-host';
 import {
   ClientOpts,
   RedisClient,
@@ -56,7 +57,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     subscribePatterns.forEach(pattern => {
       const { isEventHandler } = this.messageHandlers.get(pattern);
       subClient.subscribe(
-        isEventHandler ? pattern : this.getAckQueueName(pattern),
+        isEventHandler ? pattern : this.getRequestPattern(pattern),
       );
     });
   }
@@ -86,16 +87,17 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   ) {
     const rawMessage = this.parseMessage(buffer);
     const packet = this.deserializer.deserialize(rawMessage, { channel });
+    const redisCtx = new RedisContext([channel]);
+
     if (isUndefined((packet as IncomingRequest).id)) {
-      return this.handleEvent(channel, packet);
+      return this.handleEvent(channel, packet, redisCtx);
     }
-    const pattern = channel.replace(/_ack$/, '');
     const publish = this.getPublisher(
       pub,
-      pattern,
+      channel,
       (packet as IncomingRequest).id,
     );
-    const handler = this.getHandlerByPattern(pattern);
+    const handler = this.getHandlerByPattern(channel);
 
     if (!handler) {
       const status = 'error';
@@ -107,7 +109,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
       return publish(noHandlerPacket);
     }
     const response$ = this.transformToObservable(
-      await handler(packet.data),
+      await handler(packet.data, redisCtx),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
   }
@@ -118,7 +120,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
       const outgoingResponse = this.serializer.serialize(response);
 
       return pub.publish(
-        this.getResQueueName(pattern),
+        this.getReplyPattern(pattern),
         JSON.stringify(outgoingResponse),
       );
     };
@@ -132,12 +134,12 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     }
   }
 
-  public getAckQueueName(pattern: string): string {
-    return `${pattern}_ack`;
+  public getRequestPattern(pattern: string): string {
+    return pattern;
   }
 
-  public getResQueueName(pattern: string): string {
-    return `${pattern}_res`;
+  public getReplyPattern(pattern: string): string {
+    return `${pattern}.reply`;
   }
 
   public handleError(stream: any) {
@@ -145,9 +147,11 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getClientOptions(): Partial<ClientOpts> {
+    // eslint-disable-next-line @typescript-eslint/camelcase
     const retry_strategy = (options: RetryStrategyOptions) =>
       this.createRetryStrategy(options);
     return {
+      // eslint-disable-next-line @typescript-eslint/camelcase
       retry_strategy,
     };
   }

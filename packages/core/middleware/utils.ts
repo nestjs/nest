@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import { RequestMethod } from '@nestjs/common';
 import { HttpServer, RouteInfo, Type } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
@@ -51,7 +52,7 @@ export const mapToClass = <T extends Function | Type<any>>(
           return next();
         }
         return (middleware as Function)(...params);
-      }
+      };
     },
   );
 };

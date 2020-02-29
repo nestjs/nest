@@ -77,9 +77,9 @@ describe('middleware utils', () => {
   });
   describe('assignToken', () => {
     describe('should define `name` property on metatype', () => {
-      const anonymousType = class {};
-      assignToken(anonymousType);
-      expect(anonymousType.name).to.exist;
+      const AnonymousType = class {};
+      assignToken(AnonymousType);
+      expect(AnonymousType.name).to.exist;
     });
     describe('should use passed token as `name`', () => {
       const anonymousType = class {};

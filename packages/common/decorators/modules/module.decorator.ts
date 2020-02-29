@@ -10,7 +10,6 @@ const metadataKeys = [
 ];
 
 const validateKeys = (keys: string[]) => {
-
   const validateKey = (key: string) => {
     if (metadataKeys.includes(key)) {
       return;

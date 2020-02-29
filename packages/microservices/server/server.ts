@@ -10,9 +10,11 @@ import {
   Subscription,
 } from 'rxjs';
 import { catchError, finalize, publish } from 'rxjs/operators';
+import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
 import {
   ClientOptions,
+  KafkaOptions,
   MessageHandler,
   MicroserviceOptions,
   MqttOptions,
@@ -21,7 +23,6 @@ import {
   ReadPacket,
   RedisOptions,
   RmqOptions,
-  KafkaOptions,
   TcpOptions,
   WritePacket,
 } from '../interfaces';
@@ -29,7 +30,7 @@ import { ConsumerDeserializer } from '../interfaces/deserializer.interface';
 import { ConsumerSerializer } from '../interfaces/serializer.interface';
 import { IdentitySerializer } from '../serializers/identity.serializer';
 import { transformPatternToRoute } from '../utils';
-import { NO_EVENT_HANDLER } from './../constants';
+import { NO_EVENT_HANDLER } from '../constants';
 
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
@@ -79,22 +80,24 @@ export abstract class Server {
     return stream$
       .pipe(
         catchError((err: any) => {
-          scheduleOnNextTick({ err, response: null });
+          scheduleOnNextTick({ err });
           return empty;
         }),
         finalize(() => scheduleOnNextTick({ isDisposed: true })),
       )
-      .subscribe((response: any) =>
-        scheduleOnNextTick({ err: null, response }),
-      );
+      .subscribe((response: any) => scheduleOnNextTick({ response }));
   }
 
-  public async handleEvent(pattern: string, packet: ReadPacket): Promise<any> {
+  public async handleEvent(
+    pattern: string,
+    packet: ReadPacket,
+    context: BaseRpcContext,
+  ): Promise<any> {
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
       return this.logger.error(NO_EVENT_HANDLER);
     }
-    const resultOrStream = await handler(packet.data);
+    const resultOrStream = await handler(packet.data, context);
     if (this.isObservable(resultOrStream)) {
       (resultOrStream.pipe(publish()) as ConnectableObservable<any>).connect();
     }
@@ -113,7 +116,7 @@ export abstract class Server {
     T extends MicroserviceOptions['options'],
     K extends keyof T
   >(obj: T, prop: K, defaultValue: T[K] = undefined) {
-    return (obj && obj[prop]) || defaultValue;
+    return obj && prop in obj ? obj[prop] : defaultValue;
   }
 
   protected handleError(error: string) {
@@ -164,7 +167,7 @@ export abstract class Server {
    * @param  {string} pattern - server pattern
    * @returns string
    */
-  private getRouteFromPattern(pattern: string): string {
+  protected getRouteFromPattern(pattern: string): string {
     let validPattern: MsPattern;
 
     try {

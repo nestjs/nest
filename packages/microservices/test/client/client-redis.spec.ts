@@ -3,22 +3,21 @@ import { Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientRedis } from '../../client/client-redis';
 import { ERROR_EVENT } from '../../constants';
-// tslint:disable:no-string-literal
 
 describe('ClientRedis', () => {
   const test = 'test';
   const client = new ClientRedis({});
 
-  describe('getAckPatternName', () => {
-    it(`should append _ack to string`, () => {
-      const expectedResult = test + '_ack';
-      expect(client.getAckPatternName(test)).to.equal(expectedResult);
+  describe('getRequestPattern', () => {
+    it(`should leave pattern as it is`, () => {
+      const expectedResult = test;
+      expect(client.getRequestPattern(test)).to.equal(expectedResult);
     });
   });
-  describe('getResPatternName', () => {
-    it(`should append _res to string`, () => {
-      const expectedResult = test + '_res';
-      expect(client.getResPatternName(test)).to.equal(expectedResult);
+  describe('getReplyPattern', () => {
+    it(`should append ".reply" to string`, () => {
+      const expectedResult = test + '.reply';
+      expect(client.getReplyPattern(test)).to.equal(expectedResult);
     });
   });
   describe('publish', () => {
@@ -57,12 +56,11 @@ describe('ClientRedis', () => {
     });
     it('should subscribe to response pattern name', () => {
       client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`${pattern}_res`)).to.be.true;
+      expect(subscribeSpy.calledWith(`${pattern}.reply`)).to.be.true;
     });
-    it('should publish stringified message to acknowledge pattern name', async () => {
+    it('should publish stringified message to request pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(publishSpy.calledWith(`${pattern}_ack`, JSON.stringify(msg))).to.be
-        .true;
+      expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).to.be.true;
     });
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;
@@ -86,7 +84,7 @@ describe('ClientRedis', () => {
       });
     });
     describe('dispose callback', () => {
-      let assignStub: sinon.SinonStub, getResPatternStub: sinon.SinonStub;
+      let assignStub: sinon.SinonStub, getReplyPatternStub: sinon.SinonStub;
       let callback: sinon.SinonSpy, subscription;
 
       const channel = 'channel';
@@ -98,15 +96,15 @@ describe('ClientRedis', () => {
           .stub(client, 'assignPacketId' as any)
           .callsFake(packet => Object.assign(packet, { id }));
 
-        getResPatternStub = sinon
-          .stub(client, 'getResPatternName')
+        getReplyPatternStub = sinon
+          .stub(client, 'getReplyPattern')
           .callsFake(() => channel);
         subscription = await client['publish'](msg, callback);
         subscription(channel, JSON.stringify({ isDisposed: true, id }));
       });
       afterEach(() => {
         assignStub.restore();
-        getResPatternStub.restore();
+        getReplyPatternStub.restore();
       });
 
       it('should unsubscribe to response pattern name', () => {
@@ -120,7 +118,6 @@ describe('ClientRedis', () => {
   describe('createResponseCallback', () => {
     let callback: sinon.SinonSpy, subscription;
     const responseMessage = {
-      err: null,
       response: 'test',
       id: '1',
     };
@@ -136,7 +133,7 @@ describe('ClientRedis', () => {
       it('should call callback with expected arguments', () => {
         expect(
           callback.calledWith({
-            err: null,
+            err: undefined,
             response: responseMessage.response,
           }),
         ).to.be.true;
@@ -164,7 +161,7 @@ describe('ClientRedis', () => {
           callback.calledWith({
             isDisposed: true,
             response: responseMessage.response,
-            err: null,
+            err: undefined,
           }),
         ).to.be.true;
       });
@@ -253,6 +250,7 @@ describe('ClientRedis', () => {
   describe('getClientOptions', () => {
     it('should return options object with "retry_strategy" and call "createRetryStrategy"', () => {
       const createSpy = sinon.spy(client, 'createRetryStrategy');
+      // eslint-disable-next-line @typescript-eslint/camelcase
       const { retry_strategy } = client.getClientOptions(new Subject());
       try {
         retry_strategy({} as any);

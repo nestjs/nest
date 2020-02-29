@@ -38,6 +38,8 @@ export class InstanceWrapper<T = any> {
   public readonly async?: boolean;
   public readonly host?: Module;
   public readonly scope?: Scope = Scope.DEFAULT;
+  public readonly isAlias: boolean = false;
+
   public metatype: Type<T> | Function;
   public inject?: (string | symbol | Function | Type<any>)[];
   public forwardRef?: boolean;
@@ -263,7 +265,7 @@ export class InstanceWrapper<T = any> {
     inquirer: InstanceWrapper | undefined,
   ): boolean {
     const isInquirerRequestScoped =
-      inquirer && inquirer.scope === Scope.REQUEST;
+      inquirer && !inquirer.isDependencyTreeStatic();
 
     return (
       this.isDependencyTreeStatic() &&
@@ -273,12 +275,23 @@ export class InstanceWrapper<T = any> {
     );
   }
 
+  public isExplicitlyRequested(
+    contextId: ContextId,
+    inquirer?: InstanceWrapper,
+  ): boolean {
+    return (
+      this.isDependencyTreeStatic() &&
+      contextId !== STATIC_CONTEXT &&
+      inquirer === this
+    );
+  }
+
   public isStatic(
     contextId: ContextId,
     inquirer: InstanceWrapper | undefined,
   ): boolean {
     const isInquirerRequestScoped =
-      inquirer && inquirer.scope === Scope.REQUEST;
+      inquirer && !inquirer.isDependencyTreeStatic();
     const isStaticTransient = this.isTransient && !isInquirerRequestScoped;
 
     return (
@@ -302,6 +315,7 @@ export class InstanceWrapper<T = any> {
     if ((provider as ValueProvider).useValue) {
       this.metatype = null;
       this.inject = null;
+
       this.setInstanceByContextId(STATIC_CONTEXT, {
         instance: (provider as ValueProvider).useValue,
         isResolved: true,

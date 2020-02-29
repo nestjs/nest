@@ -63,26 +63,51 @@ export class ValidationPipe implements PipeTransform<any> {
   public async transform(value: any, metadata: ArgumentMetadata) {
     const { metatype } = metadata;
     if (!metatype || !this.toValidate(metadata)) {
-      return value;
+      return this.isTransformEnabled
+        ? this.transformPrimitive(value, metadata)
+        : value;
     }
+    const originalValue = value;
     value = this.toEmptyIfNil(value);
 
+    const isNil = value !== originalValue;
+    const isPrimitive = this.isPrimitive(value);
     this.stripProtoKeys(value);
-    const entity = classTransformer.plainToClass(
+    let entity = classTransformer.plainToClass(
       metatype,
       value,
       this.transformOptions,
     );
-    if (entity.constructor !== metatype) {
-      throw this.exceptionFactory(undefined);
+
+    const originalEntity = entity;
+    const isCtorNotEqual = entity.constructor !== metatype;
+
+    if (isCtorNotEqual && !isPrimitive) {
+      entity.constructor = metatype;
+    } else if (isCtorNotEqual) {
+      // when "entity" is a primitive value, we have to temporarily
+      // replace the entity to perform the validation against the original
+      // metatype defined inside the handler
+      entity = { constructor: metatype };
     }
+
     const errors = await classValidator.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
       throw this.exceptionFactory(errors);
     }
-    return this.isTransformEnabled
-      ? entity
-      : Object.keys(this.validatorOptions).length > 0
+    if (isPrimitive) {
+      // if the value is a primitive value and the validation process has been successfully completed
+      // we have to revert the original value passed through the pipe
+      entity = originalEntity;
+    }
+    if (this.isTransformEnabled) {
+      return entity;
+    }
+    if (isNil) {
+      // if the value was originally undefined or null, revert it back
+      return originalValue;
+    }
+    return Object.keys(this.validatorOptions).length > 0
       ? classTransformer.classToPlain(entity, this.transformOptions)
       : value;
   }
@@ -96,6 +121,24 @@ export class ValidationPipe implements PipeTransform<any> {
     return !types.some(t => metatype === t) && !isNil(metatype);
   }
 
+  private transformPrimitive(value: any, metadata: ArgumentMetadata) {
+    if (!metadata.data) {
+      // leave top-level query/param objects unmodified
+      return value;
+    }
+    const { type, metatype } = metadata;
+    if (type !== 'param' && type !== 'query') {
+      return value;
+    }
+    if (metatype === Boolean) {
+      return value === true || value === 'true';
+    }
+    if (metatype === Number) {
+      return +value;
+    }
+    return value;
+  }
+
   private toEmptyIfNil<T = any, R = any>(value: T): R | {} {
     return isNil(value) ? {} : value;
   }
@@ -106,5 +149,9 @@ export class ValidationPipe implements PipeTransform<any> {
     keys
       .filter(key => typeof value[key] === 'object' && value[key])
       .forEach(key => this.stripProtoKeys(value[key]));
+  }
+
+  private isPrimitive(value: unknown): boolean {
+    return ['number', 'boolean', 'string'].includes(typeof value);
   }
 }

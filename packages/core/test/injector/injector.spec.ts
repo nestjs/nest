@@ -29,7 +29,7 @@ describe('Injector', () => {
     class MainTest {
       @Inject() property: DependencyOne;
 
-      constructor(public depOne: DependencyOne, public depTwo: DependencyTwo) {}
+      constructor(public one: DependencyOne, public two: DependencyTwo) {}
     }
 
     let moduleDeps: Module;
@@ -70,8 +70,8 @@ describe('Injector', () => {
         'MainTest',
       ) as InstanceWrapper<MainTest>;
 
-      expect(instance.depOne).instanceof(DependencyOne);
-      expect(instance.depTwo).instanceof(DependencyTwo);
+      expect(instance.one).instanceof(DependencyOne);
+      expect(instance.two).instanceof(DependencyTwo);
       expect(instance).instanceof(MainTest);
     });
 
@@ -266,12 +266,12 @@ describe('Injector', () => {
   describe('lookupComponent', () => {
     let lookupComponentInImports: sinon.SinonStub;
     const metatype = { name: 'test', metatype: { name: 'test' } };
-    const wrapper: any = {
+    const wrapper = new InstanceWrapper({
       name: 'Test',
-      metatype,
+      metatype: metatype as any,
       instance: null,
       isResolved: false,
-    };
+    });
     beforeEach(() => {
       lookupComponentInImports = sinon.stub();
       (injector as any).lookupComponentInImports = lookupComponentInImports;
@@ -303,10 +303,9 @@ describe('Injector', () => {
         collection as any,
         null,
         { name, index: 0, dependencies: [] },
-        {
-          ...wrapper,
+        Object.assign(wrapper, {
           name,
-        },
+        }),
       );
       expect(result).to.eventually.be.rejected;
     });
@@ -374,13 +373,13 @@ describe('Injector', () => {
       const result = await injector.lookupComponentInImports(
         module as any,
         null,
-        null,
+        new InstanceWrapper(),
       );
       expect(result).to.be.eq(null);
     });
 
     it('should return null when related modules do not have appropriate component', () => {
-      let module = {
+      let moduleFixture = {
         relatedModules: new Map([
           [
             'key',
@@ -396,10 +395,14 @@ describe('Injector', () => {
         ] as any),
       };
       expect(
-        injector.lookupComponentInImports(module as any, metatype as any, null),
+        injector.lookupComponentInImports(
+          moduleFixture as any,
+          metatype as any,
+          null,
+        ),
       ).to.be.eventually.eq(null);
 
-      module = {
+      moduleFixture = {
         relatedModules: new Map([
           [
             'key',
@@ -415,12 +418,16 @@ describe('Injector', () => {
         ] as any),
       };
       expect(
-        injector.lookupComponentInImports(module as any, metatype as any, null),
+        injector.lookupComponentInImports(
+          moduleFixture as any,
+          metatype as any,
+          null,
+        ),
       ).to.eventually.be.eq(null);
     });
 
     it('should call "loadProvider" when component is not resolved', async () => {
-      const module = {
+      const moduleFixture = {
         imports: new Map([
           [
             'key',
@@ -441,15 +448,15 @@ describe('Injector', () => {
         ] as any),
       };
       await injector.lookupComponentInImports(
-        module as any,
+        moduleFixture as any,
         metatype as any,
-        null,
+        new InstanceWrapper(),
       );
       expect(loadProvider.called).to.be.true;
     });
 
     it('should not call "loadProvider" when component is resolved', async () => {
-      const module = {
+      const moduleFixture = {
         relatedModules: new Map([
           [
             'key',
@@ -469,7 +476,7 @@ describe('Injector', () => {
         ] as any),
       };
       await injector.lookupComponentInImports(
-        module as any,
+        moduleFixture as any,
         metatype as any,
         null,
       );
@@ -526,54 +533,59 @@ describe('Injector', () => {
 
     describe('when instanceWrapper is not resolved and does not have forward ref', () => {
       it('should call loadProvider', async () => {
+        const wrapper = new InstanceWrapper({ isResolved: false });
+
         const loadStub = sinon
           .stub(injector, 'loadProvider')
           .callsFake(() => null);
         sinon
           .stub(injector, 'lookupComponent')
-          .returns(Promise.resolve(new InstanceWrapper({ isResolved: false })));
+          .returns(Promise.resolve(wrapper));
 
         await injector.resolveComponentInstance(
           module,
           '',
           { index: 0, dependencies: [] },
-          {} as any,
+          wrapper,
         );
         expect(loadStub.called).to.be.true;
       });
       it('should not call loadProvider (isResolved)', async () => {
+        const wrapper = new InstanceWrapper({ isResolved: true });
         const loadStub = sinon
           .stub(injector, 'loadProvider')
           .callsFake(() => null);
+
         sinon
           .stub(injector, 'lookupComponent')
-          .returns(Promise.resolve(new InstanceWrapper({ isResolved: true })));
+          .returns(Promise.resolve(wrapper));
 
         await injector.resolveComponentInstance(
           module,
           '',
           { index: 0, dependencies: [] },
-          {} as any,
+          wrapper,
         );
         expect(loadStub.called).to.be.false;
       });
       it('should not call loadProvider (forwardRef)', async () => {
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+        });
         const loadStub = sinon
           .stub(injector, 'loadProvider')
           .callsFake(() => null);
+
         sinon
           .stub(injector, 'lookupComponent')
-          .returns(
-            Promise.resolve(
-              new InstanceWrapper({ isResolved: false, forwardRef: true }),
-            ),
-          );
+          .returns(Promise.resolve(wrapper));
 
         await injector.resolveComponentInstance(
           module,
           '',
           { index: 0, dependencies: [] },
-          {} as any,
+          wrapper,
         );
         expect(loadStub.called).to.be.false;
       });
@@ -581,26 +593,24 @@ describe('Injector', () => {
 
     describe('when instanceWraper has async property', () => {
       it('should await instance', async () => {
-        const loadStub = sinon
-          .stub(injector, 'loadProvider')
-          .callsFake(() => null);
+        sinon.stub(injector, 'loadProvider').callsFake(() => null);
 
         const instance = Promise.resolve(true);
-        sinon.stub(injector, 'lookupComponent').returns(
-          Promise.resolve(
-            new InstanceWrapper({
-              isResolved: false,
-              forwardRef: true,
-              async: true,
-              instance,
-            }),
-          ),
-        );
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+          async: true,
+          instance,
+        });
+        sinon
+          .stub(injector, 'lookupComponent')
+          .returns(Promise.resolve(wrapper));
+
         const result = await injector.resolveComponentInstance(
           module,
           '',
           { index: 0, dependencies: [] },
-          {} as any,
+          wrapper,
         );
         expect(result.instance).to.be.true;
       });

@@ -36,6 +36,7 @@ import {
 import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
+import { getClassScope } from './helpers/get-class-scope';
 import { ModulesContainer } from './injector';
 import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
@@ -223,9 +224,10 @@ export class DependenciesScanner {
       component.prototype,
       method => Reflect.getMetadata(metadataKey, component, method),
     );
-    const paramsInjectables = this.flatten(paramsMetadata).map(
-      (param: Record<string, any>) =>
-        flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
+    const paramsInjectables = this.flatten(
+      paramsMetadata,
+    ).map((param: Record<string, any>) =>
+      flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
     );
     flatten(paramsInjectables).forEach((injectable: Type<Injectable>) =>
       this.insertInjectable(injectable, token, component),
@@ -245,7 +247,6 @@ export class DependenciesScanner {
       }
       return Reflect.getMetadata(key, descriptor.value);
     } while (
-      // tslint:disable-next-line:no-conditional-assignment
       (prototype = Reflect.getPrototypeOf(prototype)) &&
       prototype !== Object.prototype &&
       prototype
@@ -310,21 +311,27 @@ export class DependenciesScanner {
       return this.container.addProvider(provider as any, token);
     }
     const providerToken = `${type as string} (UUID: ${randomStringGenerator()})`;
+
+    let scope = (provider as ClassProvider | FactoryProvider).scope;
+    if (isNil(scope) && (provider as ClassProvider).useClass) {
+      scope = getClassScope((provider as ClassProvider).useClass);
+    }
     this.applicationProvidersApplyMap.push({
       type,
       moduleKey: token,
       providerKey: providerToken,
-      scope: (provider as ClassProvider | FactoryProvider).scope,
+      scope,
     });
 
     const newProvider = {
       ...provider,
       provide: providerToken,
+      scope,
     } as Provider;
 
     if (
       this.isRequestOrTransient(
-        (provider as FactoryProvider | ClassProvider).scope,
+        (newProvider as FactoryProvider | ClassProvider).scope,
       )
     ) {
       return this.container.addInjectable(newProvider, token);
@@ -370,7 +377,7 @@ export class DependenciesScanner {
       wrapper => this.isRequestOrTransient(wrapper.scope),
     );
 
-    scopedGlobalProviders.forEach(({ moduleKey, providerKey, type }) => {
+    scopedGlobalProviders.forEach(({ moduleKey, providerKey }) => {
       const modulesContainer = this.container.getModules();
       const { injectables } = modulesContainer.get(moduleKey);
       const instanceWrapper = injectables.get(providerKey);

@@ -5,7 +5,6 @@ import { JsonSocket } from '../../helpers/json-socket';
 import { longPayload } from './data/long-payload-with-special-chars';
 import * as helpers from './helpers';
 import { ip } from './helpers';
-// tslint:disable:no-string-literal
 
 describe('JsonSocket connection', () => {
   it('should connect, send and receive message', done => {

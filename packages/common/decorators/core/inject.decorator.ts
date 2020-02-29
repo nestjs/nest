@@ -34,7 +34,7 @@ import { isFunction, isUndefined } from '../../utils/shared.utils';
  * @publicApi
  */
 export function Inject<T = any>(token?: T) {
-  return (target: Object, key: string | symbol, index?: number) => {
+  return (target: object, key: string | symbol, index?: number) => {
     token = token || Reflect.getMetadata('design:type', target, key);
     const type =
       token && isFunction(token) ? ((token as any) as Function).name : token;

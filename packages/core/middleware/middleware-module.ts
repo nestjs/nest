@@ -11,19 +11,16 @@ import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { createContextId } from '../helpers/context-id-factory';
+import { ContextIdFactory } from '../helpers/context-id-factory';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
+import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
-import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
+import { Injector } from '../injector/injector';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
-import {
-  REQUEST,
-  REQUEST_CONTEXT_ID,
-} from '../router/request/request-constants';
+import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
 import { RouterProxy } from '../router/router-proxy';
-import { STATIC_CONTEXT } from './../injector/constants';
-import { Injector } from './../injector/injector';
 import { MiddlewareBuilder } from './builder';
 import { MiddlewareContainer } from './container';
 import { MiddlewareResolver } from './resolver';
@@ -214,7 +211,7 @@ export class MiddlewareModule {
         next: () => void,
       ) => {
         try {
-          const contextId = req[REQUEST_CONTEXT_ID] || createContextId();
+          const contextId = ContextIdFactory.getByRequest(req);
           if (!req[REQUEST_CONTEXT_ID]) {
             Object.defineProperty(req, REQUEST_CONTEXT_ID, {
               value: contextId,
@@ -222,7 +219,7 @@ export class MiddlewareModule {
               writable: false,
               configurable: false,
             });
-            this.registerRequestProvider(req, contextId);
+            this.container.registerRequestProvider(req, contextId);
           }
           const contextInstance = await this.injector.loadPerContext(
             instance,
@@ -283,15 +280,5 @@ export class MiddlewareModule {
       path = '*';
     }
     router(basePath + path, proxy);
-  }
-
-  private registerRequestProvider<T = any>(request: T, contextId: ContextId) {
-    const coreModuleRef = this.container.getInternalCoreModuleRef();
-    const wrapper = coreModuleRef.getProviderByKey(REQUEST);
-
-    wrapper.setInstanceByContextId(contextId, {
-      instance: request,
-      isResolved: true,
-    });
   }
 }

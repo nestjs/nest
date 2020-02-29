@@ -10,7 +10,7 @@ import { mergeAll, switchMap } from 'rxjs/operators';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 
 export class InterceptorsConsumer {
-  public async intercept<TContext extends ContextType = ContextType>(
+  public async intercept<TContext extends string = ContextType>(
     interceptors: NestInterceptor[],
     args: any[],
     instance: Controller,

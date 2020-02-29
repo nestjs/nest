@@ -236,8 +236,8 @@ Footer should contain a [closing reference to an issue](https://help.github.com/
 Samples: (even more [samples](https://github.com/nestjs/nest/commits/master))
 
 ```
-docs(changelog) update change log to beta.5
-bugfix(core) need to depend on latest rxjs and zone.js
+docs(changelog): update change log to beta.5
+bugfix(core): need to depend on latest rxjs and zone.js
 ```
 
 ### Revert
@@ -252,7 +252,7 @@ Must be one of the following:
 - **ci**: Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)
 - **docs**: Documentation only changes
 - **feature**: A new feature
-- **bugfix**: A bug fix
+- **fix**: A bug fix
 - **perf**: A code change that improves performance
 - **refactor**: A code change that neither fixes a bug nor adds a feature
 - **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)

@@ -10,7 +10,7 @@ import {
   MqttOptions,
   NatsOptions,
   RedisOptions,
-  RmqOptions
+  RmqOptions,
 } from '../interfaces/microservice-configuration.interface';
 import { ClientGrpcProxy } from './client-grpc';
 import { ClientKafka } from './client-kafka';
