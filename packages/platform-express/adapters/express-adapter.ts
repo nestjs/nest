@@ -41,11 +41,17 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public setErrorHandler(handler: Function, prefix?: string) {
-    return this.use(handler);
+    if (!prefix) {
+      return this.use(handler);
+    }
+    return this.use(prefix.charAt(0) !== '/' ? '/' + prefix : prefix, handler);
   }
 
   public setNotFoundHandler(handler: Function, prefix?: string) {
-    return this.use(handler);
+    if (!prefix) {
+      return this.use(handler);
+    }
+    return this.use(prefix.charAt(0) !== '/' ? '/' + prefix : prefix, handler);
   }
 
   public setHeader(response: any, name: string, value: string) {
@@ -108,8 +114,14 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return request.url;
   }
 
-  public enableCors(options: CorsOptions) {
-    return this.use(cors(options));
+  public enableCors(options: CorsOptions, prefix?: string) {
+    if (!prefix) {
+      return this.use(cors(options));
+    }
+    return this.use(
+      prefix.charAt(0) !== '/' ? '/' + prefix : prefix,
+      cors(options),
+    );
   }
 
   public createMiddlewareFactory(
@@ -132,14 +144,23 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     this.httpServer = http.createServer(this.getInstance());
   }
 
-  public registerParserMiddleware() {
+  public registerParserMiddleware(prefix?: string) {
     const parserMiddleware = {
       jsonParser: bodyParser.json(),
       urlencodedParser: bodyParser.urlencoded({ extended: true }),
     };
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))
-      .forEach(parserKey => this.use(parserMiddleware[parserKey]));
+      .forEach(parserKey => {
+        if (prefix) {
+          this.use(
+            prefix.charAt(0) !== '/' ? '/' + prefix : prefix,
+            parserMiddleware[parserKey],
+          );
+        } else {
+          this.use(parserMiddleware[parserKey]);
+        }
+      });
   }
 
   public getType(): string {

@@ -70,14 +70,30 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     handler: Parameters<fastify.FastifyInstance['setErrorHandler']>[0],
     prefix?: string,
   ) {
-    return this.instance.setErrorHandler(handler);
+    if (!prefix) {
+      return this.instance.setErrorHandler(handler);
+    }
+    return this.registerWithPrefix(
+      async (instance: fastify.FastifyInstance): Promise<void> => {
+        instance.setErrorHandler(handler);
+      },
+      prefix.charAt(0) !== '/' ? '/' + prefix : prefix,
+    );
   }
 
   public setNotFoundHandler(
     handler: Parameters<fastify.FastifyInstance['setNotFoundHandler']>[0],
     prefix?: string,
   ) {
-    return this.instance.setNotFoundHandler(handler);
+    if (!prefix) {
+      return this.instance.setNotFoundHandler(handler);
+    }
+    return this.registerWithPrefix(
+      async (instance: fastify.FastifyInstance): Promise<void> => {
+        instance.setNotFoundHandler(handler);
+      },
+      prefix.charAt(0) !== '/' ? '/' + prefix : prefix,
+    );
   }
 
   public getHttpServer<TServer = any>(): TServer {
@@ -142,12 +158,30 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     return request.raw.url;
   }
 
-  public enableCors(options: CorsOptions) {
-    this.register(cors, options);
+  public enableCors(options: CorsOptions, prefix?: string) {
+    if (!prefix) {
+      this.register(cors, options);
+      return;
+    }
+    this.registerWithPrefix(
+      async (instance: fastify.FastifyInstance): Promise<void> => {
+        instance.register(cors, (options as unknown) as {});
+      },
+      prefix.charAt(0) !== '/' ? '/' + prefix : prefix,
+    );
   }
 
-  public registerParserMiddleware() {
-    this.register(formBody);
+  public registerParserMiddleware(prefix?: string) {
+    if (!prefix) {
+      this.register(formBody);
+      return;
+    }
+    this.registerWithPrefix(
+      async (instance: fastify.FastifyInstance): Promise<void> => {
+        instance.register(formBody);
+      },
+      prefix.charAt(0) !== '/' ? '/' + prefix : prefix,
+    );
   }
 
   public createMiddlewareFactory(
