@@ -10,6 +10,6 @@ import { tap } from 'rxjs/operators';
 @Injectable()
 export class DataInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    return next.handle().pipe(tap(data => console.log(data)));
+    return next.handle().pipe(tap(data => data));
   }
 }

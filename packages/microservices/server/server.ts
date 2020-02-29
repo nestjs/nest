@@ -80,14 +80,12 @@ export abstract class Server {
     return stream$
       .pipe(
         catchError((err: any) => {
-          scheduleOnNextTick({ err, response: null });
+          scheduleOnNextTick({ err });
           return empty;
         }),
         finalize(() => scheduleOnNextTick({ isDisposed: true })),
       )
-      .subscribe((response: any) =>
-        scheduleOnNextTick({ err: null, response }),
-      );
+      .subscribe((response: any) => scheduleOnNextTick({ response }));
   }
 
   public async handleEvent(
@@ -169,7 +167,7 @@ export abstract class Server {
    * @param  {string} pattern - server pattern
    * @returns string
    */
-  private getRouteFromPattern(pattern: string): string {
+  protected getRouteFromPattern(pattern: string): string {
     let validPattern: MsPattern;
 
     try {

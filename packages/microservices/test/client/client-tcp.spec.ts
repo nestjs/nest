@@ -84,7 +84,7 @@ describe('ClientTCP', () => {
     describe('when not disposed', () => {
       let buffer;
       beforeEach(() => {
-        buffer = { id, err: null, response: 'res' };
+        buffer = { id, err: undefined, response: 'res' };
         callback = sinon.spy();
         client['routingMap'].set(id, callback);
         client.handleResponse(buffer);
