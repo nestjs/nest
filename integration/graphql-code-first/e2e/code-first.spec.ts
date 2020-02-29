@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { ApplicationModule } from '../src/app.module';
 
-describe('TypeGraphQL', () => {
+describe('GraphQL - Code-first', () => {
   let app: INestApplication;
 
   beforeEach(async () => {

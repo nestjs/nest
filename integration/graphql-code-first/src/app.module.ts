@@ -9,7 +9,10 @@ import { RecipesModule } from './recipes/recipes.module';
     GraphQLModule.forRoot({
       debug: false,
       installSubscriptionHandlers: true,
-      autoSchemaFile: join(process.cwd(), 'integration/typegraphql/schema.gql'),
+      autoSchemaFile: join(
+        process.cwd(),
+        'integration/graphql-code-first/schema.gql',
+      ),
     }),
   ],
 })
