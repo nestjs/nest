@@ -43,9 +43,8 @@ describe('RouterModule', () => {
       ],
     },
   ];
-
   const routes2: Routes = [
-    { path: 'v1', children: [AuthModule, PaymentsModule] },
+    { path: 'v1', children: [AuthModule, PaymentsModule, NoSlashModule] },
   ];
 
   @Module({
@@ -54,10 +53,14 @@ describe('RouterModule', () => {
   class MainModule {}
 
   @Module({
-    imports: [AuthModule, PaymentsModule, RouterModule.register(routes2)],
+    imports: [
+      AuthModule,
+      PaymentsModule,
+      NoSlashModule,
+      RouterModule.register(routes2),
+    ],
   })
   class AppModule {}
-
   it('should add Path Metadata to all Routes', () => {
     const parentPath = Reflect.getMetadata(MODULE_PATH, ParentModule);
     const childPath = Reflect.getMetadata(MODULE_PATH, ChildModule);
@@ -70,5 +73,39 @@ describe('RouterModule', () => {
     const paymentPath = Reflect.getMetadata(MODULE_PATH, PaymentsModule);
     expect(authPath).to.be.equal('/v1');
     expect(paymentPath).to.be.equal('/v1');
+  });
+
+  describe('Full Running App', async () => {
+    before(async () => {
+      const module = await Test.createTestingModule({
+        imports: [MainModule, AppModule],
+      }).compile();
+      app = module.createNestApplication();
+    });
+
+    it('should Resolve Controllers path with its Module Path if any', async () => {
+      expect(RouterModule.resolvePath(ParentController)).to.be.equal(
+        '/parent/parent-controller',
+      );
+      expect(RouterModule.resolvePath(ChildController)).to.be.equal(
+        '/parent/child/child-controller',
+      );
+    });
+
+    it('should throw error when we cannot find the controller', async () => {
+      expect(() => RouterModule.resolvePath(UnknownController)).throw(
+        'Nest could not find UnknownController element (this provider does not exist in the current context)',
+      );
+    });
+
+    it('should resolve controllers path concatinated with its module path correctly', async () => {
+      expect(RouterModule.resolvePath(NoSlashController)).to.be.equal(
+        '/v1/no-slash-controller',
+      );
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
   });
 });

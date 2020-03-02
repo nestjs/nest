@@ -91,8 +91,6 @@ export class RouterExplorer {
     let path = Reflect.getMetadata(PATH_METADATA, metatype);
     if (prefix) {
       path = prefix + this.validateRoutePath(path);
-      // Override the metadata with the new path
-      Reflect.defineMetadata(PATH_METADATA, path, metatype);
     }
     return this.validateRoutePath(path);
   }
