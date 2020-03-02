@@ -82,11 +82,11 @@ describe('middleware utils', () => {
       expect(AnonymousType.name).to.exist;
     });
     describe('should use passed token as `name`', () => {
-      const anonymousType = class {};
+      const AnonymousType = class {};
       const token = 'token';
 
-      assignToken(anonymousType, token);
-      expect(anonymousType.name).to.eq(token);
+      assignToken(AnonymousType, token);
+      expect(AnonymousType.name).to.eq(token);
     });
   });
 
