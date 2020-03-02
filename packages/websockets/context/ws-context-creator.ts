@@ -15,6 +15,7 @@ import {
   ContextUtils,
   ParamProperties,
 } from '@nestjs/core/helpers/context-utils';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { HandlerMetadataStorage } from '@nestjs/core/helpers/handler-metadata-storage';
 import { ParamsMetadata } from '@nestjs/core/helpers/interfaces';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
@@ -63,6 +64,7 @@ export class WsContextCreator {
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
       instance,
       methodName,
+      contextType,
     );
 
     const exceptionHandler = this.exceptionFiltersContext.create(
@@ -142,16 +144,17 @@ export class WsContextCreator {
     return guards.length ? canActivateFn : null;
   }
 
-  public getMetadata<T>(
+  public getMetadata<TMetadata, TContext extends ContextType = ContextType>(
     instance: Controller,
     methodName: string,
+    contextType: TContext,
   ): WsHandlerMetadata {
     const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
     if (cacheMetadata) {
       return cacheMetadata;
     }
     const metadata =
-      this.contextUtils.reflectCallbackMetadata<T>(
+      this.contextUtils.reflectCallbackMetadata<TMetadata>(
         instance,
         methodName,
         PARAM_ARGS_METADATA,
@@ -162,12 +165,18 @@ export class WsContextCreator {
       instance,
       methodName,
     );
+    const contextFactory = this.contextUtils.getContextFactory(
+      contextType,
+      instance,
+      instance[methodName],
+    );
     const getParamsMetadata = (moduleKey: string) =>
       this.exchangeKeysForValues(
         keys,
         metadata,
         moduleKey,
         this.wsParamsFactory,
+        contextFactory,
       );
 
     const handlerMetadata: WsHandlerMetadata = {
@@ -184,8 +193,10 @@ export class WsContextCreator {
     metadata: TMetadata,
     moduleContext: string,
     paramsFactory: WsParamsFactory,
+    contextFactory: (args: unknown[]) => ExecutionContextHost,
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
+
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
@@ -198,6 +209,7 @@ export class WsContextCreator {
         const customExtractValue = this.contextUtils.getCustomFactory(
           factory,
           data,
+          contextFactory,
         );
         return { index, extractValue: customExtractValue, type, data, pipes };
       }

@@ -198,28 +198,6 @@ describe('RouterExecutionContext', () => {
       expect(values[1]).to.deep.include(expectedValues[1]);
     });
   });
-  describe('getCustomFactory', () => {
-    describe('when factory is function', () => {
-      it('should return curried factory', () => {
-        const data = 3;
-        const result = 10;
-        const customFactory = (_, req) => result;
-
-        expect(
-          contextCreator.getCustomFactory(customFactory, data)(),
-        ).to.be.eql(result);
-      });
-    });
-    describe('when factory is undefined / is not a function', () => {
-      it('should return curried null identity', () => {
-        const result = 10;
-        const customFactory = undefined;
-        expect(
-          contextCreator.getCustomFactory(customFactory, undefined)(),
-        ).to.be.eql(null);
-      });
-    });
-  });
 
   describe('getParamValue', () => {
     let consumerApplySpy: sinon.SinonSpy;
