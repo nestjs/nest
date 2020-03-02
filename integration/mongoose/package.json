@@ -1,0 +1,26 @@
+{
+  "name": "nest-typescript-starter",
+  "version": "1.0.0",
+  "description": "Nest TypeScript starter repository",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node src/main",
+    "prestart:prod": "tsc",
+    "start:prod": "node dist/main.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "6.11.8",
+    "@nestjs/core": "6.11.8",
+    "@nestjs/mongoose": "6.3.1",
+    "mongoose": "5.9.2",
+    "reflect-metadata": "0.1.13",
+    "rxjs": "6.5.4",
+    "typescript": "3.7.2"
+  },
+  "devDependencies": {
+    "@types/mongoose": "5.7.3",
+    "@types/node": "7.10.9",
+    "ts-node": "8.6.2",
+    "tslint": "5.20.1"
+  }
+}
