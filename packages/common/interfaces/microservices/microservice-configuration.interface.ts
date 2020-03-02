@@ -31,6 +31,15 @@ export interface GrpcOptions {
     url?: string;
     maxSendMessageLength?: number;
     maxReceiveMessageLength?: number;
+    keepalive?: {
+      keepaliveTimeMs?: number;
+      keepaliveTimeoutMs?: number;
+      keepalivePermitWithoutCalls?: number;
+      http2MaxPingsWithoutData?: number;
+      http2MinTimeBetweenPingsMs?: number;
+      http2MinPingIntervalWithoutDataMs?: number;
+      http2MaxPingStrikes?: number;
+    };
     credentials?: any;
     protoPath: string | string[];
     package: string | string[];
