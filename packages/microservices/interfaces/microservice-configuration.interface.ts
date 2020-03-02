@@ -130,6 +130,9 @@ export interface KafkaOptions {
       eachBatchAutoResolve?: boolean;
       partitionsConsumedConcurrently?: number;
     };
+    subscribe?: {
+      fromBeginning?: boolean;
+    };
     producer?: ProducerConfig;
     send?: {
       acks?: number;
