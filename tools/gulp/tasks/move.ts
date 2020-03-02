@@ -1,20 +1,16 @@
-import { task, src, dest } from 'gulp';
-import { getDirs } from '../util/task-helpers';
-import { samplePath, integrationPath } from '../config';
+import { dest, src, task } from 'gulp';
 import { join } from 'path';
+import { samplePath } from '../config';
+import { getDirs } from '../util/task-helpers';
 
 /**
- * Moves the compiled nest files into the
- * `samples/*` and `integration/*` dirs.
+ * Moves the compiled nest files into the `samples/*` dirs.
  */
 function move() {
   const samplesDirs = getDirs(samplePath);
-  const integrationDirs = getDirs(integrationPath);
-  const directories = samplesDirs.concat(integrationDirs);
-
   const distFiles = src(['node_modules/@nestjs/**/*']);
 
-  return directories.reduce(
+  return samplesDirs.reduce(
     (distFile, dir) => distFile.pipe(dest(join(dir, '/node_modules/@nestjs'))),
     distFiles,
   );

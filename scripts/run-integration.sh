@@ -2,7 +2,7 @@
 npm run build &>/dev/null
 
 # 2. Start docker containers to perform integration tests
-cd integration && docker-compose up -d
+npm run test:docker:up
 
 # 3. Run integration tests
-npm run integration-test
+npm run test:integration

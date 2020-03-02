@@ -1,6 +1,9 @@
-import { RequestMethod } from '@nestjs/common';
 import { flatten } from '@nestjs/common/decorators/core/dependencies.decorator';
-import { MiddlewareConsumer, Type } from '@nestjs/common/interfaces';
+import {
+  HttpServer,
+  MiddlewareConsumer,
+  Type,
+} from '@nestjs/common/interfaces';
 import {
   MiddlewareConfigProxy,
   RouteInfo,
@@ -12,7 +15,10 @@ import { filterMiddleware } from './utils';
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();
 
-  constructor(private readonly routesMapper: RoutesMapper) {}
+  constructor(
+    private readonly routesMapper: RoutesMapper,
+    private readonly httpAdapter: HttpServer,
+  ) {}
 
   public apply(
     ...middleware: Array<Type<any> | Function | any>
@@ -22,6 +28,10 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
 
   public build(): MiddlewareConfiguration[] {
     return [...this.middlewareCollection];
+  }
+
+  public getHttpAdapter(): HttpServer {
+    return this.httpAdapter;
   }
 
   private static readonly ConfigProxy = class implements MiddlewareConfigProxy {
@@ -55,8 +65,12 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
         routes.map(route => routesMapper.mapRouteToRouteInfo(route)),
       );
       const configuration = {
-        middleware: filterMiddleware(this.middleware),
-        forRoutes: forRoutes.filter(route => !this.isRouteExcluded(route)),
+        middleware: filterMiddleware(
+          this.middleware,
+          this.excludedRoutes,
+          this.builder.getHttpAdapter(),
+        ),
+        forRoutes,
       };
       middlewareCollection.add(configuration);
       return this.builder;
@@ -64,25 +78,6 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
 
     private mapRoutesToFlatList(forRoutes: RouteInfo[][]): RouteInfo[] {
       return forRoutes.reduce((a, b) => a.concat(b));
-    }
-
-    private isRouteExcluded(routeInfo: RouteInfo): boolean {
-      const pathLastIndex = routeInfo.path.length - 1;
-      const validatedRoutePath =
-        routeInfo.path[pathLastIndex] === '/'
-          ? routeInfo.path.slice(0, pathLastIndex)
-          : routeInfo.path;
-
-      return this.excludedRoutes.some(excluded => {
-        const isPathEqual = validatedRoutePath === excluded.path;
-        if (!isPathEqual) {
-          return false;
-        }
-        return (
-          routeInfo.method === excluded.method ||
-          excluded.method === RequestMethod.ALL
-        );
-      });
     }
   };
 }
