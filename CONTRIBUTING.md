@@ -178,7 +178,7 @@ That will compile fresh packages and afterward, move them to all `sample` direct
 ### <a name="common-scripts"></a>Commonly used NPM scripts
 
 ```bash
-# build all packages and move to "sample" and "integration" directories
+# build all packages and move to "sample" directories
 $ npm run build
 
 # run the full unit tests suite

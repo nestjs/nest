@@ -91,7 +91,10 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     callerSubject: string,
   ) {
     const natsCtx = new NatsContext([callerSubject]);
-    const message = this.deserializer.deserialize(rawMessage, { channel, replyTo });
+    const message = this.deserializer.deserialize(rawMessage, {
+      channel,
+      replyTo,
+    });
     if (isUndefined((message as IncomingRequest).id)) {
       return this.handleEvent(channel, message, natsCtx);
     }

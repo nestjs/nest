@@ -135,11 +135,11 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
   }
 
   public getRequestMethod(request: any): string {
-    return request.raw.method;
+    return request.raw ? request.raw.method : request.method;
   }
 
   public getRequestUrl(request: any): string {
-    return request.raw.url;
+    return request.raw ? request.raw.url : request.url;
   }
 
   public enableCors(options: CorsOptions) {
@@ -157,24 +157,27 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
       const re = pathToRegexp(path);
       const normalizedPath = path === '/*' ? '' : path;
 
-      this.instance.use(normalizedPath, (req, res, next) => {
-        const queryParamsIndex = req.originalUrl.indexOf('?');
-        const pathname =
-          queryParamsIndex >= 0
-            ? req.originalUrl.slice(0, queryParamsIndex)
-            : req.originalUrl;
+      this.instance.use(
+        normalizedPath,
+        (req: any, res: any, next: Function) => {
+          const queryParamsIndex = req.originalUrl.indexOf('?');
+          const pathname =
+            queryParamsIndex >= 0
+              ? req.originalUrl.slice(0, queryParamsIndex)
+              : req.originalUrl;
 
-        if (!re.exec(pathname + '/') && normalizedPath) {
-          return next();
-        }
-        if (
-          requestMethod === RequestMethod.ALL ||
-          req.method === RequestMethod[requestMethod]
-        ) {
-          return callback(req, res, next);
-        }
-        next();
-      });
+          if (!re.exec(pathname + '/') && normalizedPath) {
+            return next();
+          }
+          if (
+            requestMethod === RequestMethod.ALL ||
+            req.method === RequestMethod[requestMethod]
+          ) {
+            return callback(req, res, next);
+          }
+          next();
+        },
+      );
     };
   }
 

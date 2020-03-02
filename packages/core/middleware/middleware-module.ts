@@ -36,12 +36,14 @@ export class MiddlewareModule {
   private resolver: MiddlewareResolver;
   private config: ApplicationConfig;
   private container: NestContainer;
+  private httpAdapter: HttpServer;
 
   public async register(
     middlewareContainer: MiddlewareContainer,
     container: NestContainer,
     config: ApplicationConfig,
     injector: Injector,
+    httpAdapter: HttpServer,
   ) {
     const appRef = container.getHttpAdapterRef();
     this.routerExceptionFilter = new RouterExceptionFilters(
@@ -55,6 +57,7 @@ export class MiddlewareModule {
     this.config = config;
     this.injector = injector;
     this.container = container;
+    this.httpAdapter = httpAdapter;
 
     const modules = container.getModules();
     await this.resolveMiddleware(middlewareContainer, modules);
@@ -84,7 +87,10 @@ export class MiddlewareModule {
     if (!instance.configure) {
       return;
     }
-    const middlewareBuilder = new MiddlewareBuilder(this.routesMapper);
+    const middlewareBuilder = new MiddlewareBuilder(
+      this.routesMapper,
+      this.httpAdapter,
+    );
     await instance.configure(middlewareBuilder);
 
     if (!(middlewareBuilder instanceof MiddlewareBuilder)) {

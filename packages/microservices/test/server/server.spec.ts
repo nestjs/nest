@@ -103,7 +103,6 @@ describe('Server', () => {
             expect(
               sendSpy.calledWith({
                 err: 'test',
-                response: null,
                 isDisposed: true,
               }),
             ).to.be.true;
@@ -118,7 +117,6 @@ describe('Server', () => {
           process.nextTick(() => {
             expect(
               sendSpy.calledWith({
-                err: null,
                 response: 'test',
                 isDisposed: true,
               }),
