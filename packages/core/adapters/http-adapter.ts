@@ -92,6 +92,7 @@ export abstract class AbstractHttpAdapter<
   abstract redirect(response, statusCode: number, url: string);
   abstract setErrorHandler(handler: Function, prefix?: string);
   abstract setNotFoundHandler(handler: Function, prefix?: string);
+  abstract setRootNotFoundHandler(handler: Function);
   abstract setHeader(response, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string);
   abstract enableCors(options: CorsOptions, prefix?: string);
@@ -99,4 +100,7 @@ export abstract class AbstractHttpAdapter<
     requestMethod: RequestMethod,
   ): (path: string, callback: Function) => any;
   abstract getType(): string;
+  abstract addNestInstanceBaseUrl(baseUrl?: string): void;
+  abstract getNotFoundCallback(baseUrl?: string);
+  abstract getRootNotFoundCallback();
 }

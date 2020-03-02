@@ -15,6 +15,9 @@ describe('Hello world (fastify adapter with multiple applications)', () => {
     const module2 = await Test.createTestingModule({
       imports: [ApplicationModule],
     }).compile();
+    const module3 = await Test.createTestingModule({
+      imports: [ApplicationModule],
+    }).compile();
 
     adapter = new FastifyAdapter();
 
@@ -25,6 +28,7 @@ describe('Hello world (fastify adapter with multiple applications)', () => {
           bodyParser: false,
         })
         .setGlobalPrefix('/app2'),
+      module3.createNestApplication<NestFastifyApplication>(adapter),
     ];
     await Promise.all(apps.map(app => app.init()));
   });
@@ -112,6 +116,23 @@ describe('Hello world (fastify adapter with multiple applications)', () => {
             statusCode: 404,
             error: 'Not Found',
             message: 'Cannot GET /app2/cats',
+          }));
+        },
+      );
+  });
+
+  it(`/GET (app3 NotFound)`, () => {
+    return adapter
+      .inject({
+        method: 'GET',
+        url: '/app3/cats',
+      })
+      .then(
+        ({ payload }) => {
+         expect(payload).to.be.eql(JSON.stringify({
+            statusCode: 404,
+            error: 'Not Found',
+            message: 'Cannot GET /app3/cats',
           }));
         },
       );

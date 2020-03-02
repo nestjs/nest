@@ -78,15 +78,25 @@ export class RoutesResolver implements Resolver {
 
   public registerNotFoundHandler() {
     const applicationRef = this.container.getHttpAdapterRef();
-    const callback = <TRequest, TResponse>(req: TRequest, res: TResponse) => {
-      const method = applicationRef.getRequestMethod(req);
-      const url = applicationRef.getRequestUrl(req);
-      throw new NotFoundException(`Cannot ${method} ${url}`);
-    };
+    applicationRef.addNestInstanceBaseUrl(this.config.getGlobalPrefix());
+
+    const callback = applicationRef.getNotFoundCallback(
+      this.config.getGlobalPrefix(),
+    );
     const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);
     applicationRef.setNotFoundHandler &&
       applicationRef.setNotFoundHandler(proxy, this.config.getGlobalPrefix());
+
+    const rootCallback = applicationRef.getRootNotFoundCallback();
+    const rootHandler = this.routerExceptionsFilter.create(
+      {},
+      rootCallback,
+      undefined,
+    );
+    const rootProxy = this.routerProxy.createProxy(rootCallback, rootHandler);
+    applicationRef.setRootNotFoundHandler &&
+      applicationRef.setRootNotFoundHandler(rootProxy);
   }
 
   public registerExceptionHandler() {

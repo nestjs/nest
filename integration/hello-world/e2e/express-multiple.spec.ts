@@ -16,12 +16,16 @@ describe('Hello world (express instance with multiple applications)', () => {
     const module2 = await Test.createTestingModule({
       imports: [ApplicationModule],
     }).compile();
+    const module3 = await Test.createTestingModule({
+      imports: [ApplicationModule],
+    }).compile();
 
     const adapter = new ExpressAdapter(express());
 
     apps = [
       module1.createNestApplication(adapter).setGlobalPrefix('app1'),
       module2.createNestApplication(adapter).setGlobalPrefix('/app2'),
+      module3.createNestApplication(adapter),
     ];
     await Promise.all(apps.map(app => app.init()));
 
@@ -89,6 +93,17 @@ describe('Hello world (express instance with multiple applications)', () => {
         statusCode: 404,
         error: 'Not Found',
         message: 'Cannot GET /cats',
+      });
+  });
+
+  it(`/GET (app3 NotFound)`, () => {
+    return request(server)
+      .get('/app3/cats')
+      .expect(404)
+      .expect({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Cannot GET /app3/cats',
       });
   });
 

@@ -251,6 +251,28 @@ describe('RoutesResolver', () => {
 
   describe('registerNotFoundHandler', () => {
     it('should register not found handler', () => {
+      let applicationRef = {
+        addNestInstanceBaseUrl: (baseUrl: string) => {
+          return;
+        },
+        getNotFoundCallback: (baseUrl?: string) => {
+          return (req, res, next) => {
+            next();
+          };
+        },
+        getRootNotFoundCallback: () => {
+          return (req, res, next) => {
+            next();
+          };
+        },
+        setNotFoundHandler: sinon.spy(),
+        setRootNotFoundHandler: sinon.spy(),
+      };
+
+      sinon
+        .stub((routesResolver as any).container, 'getHttpAdapterRef')
+        .callsFake(() => applicationRef);
+
       routesResolver.registerNotFoundHandler();
 
       expect(applicationRef.setNotFoundHandler.called).to.be.true;
