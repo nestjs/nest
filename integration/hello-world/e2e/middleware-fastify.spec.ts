@@ -9,12 +9,19 @@ import { ApplicationModule } from '../src/app.module';
 
 const RETURN_VALUE = 'test';
 const SCOPED_VALUE = 'test_scoped';
+const WILDCARD_VALUE = 'test_wildcard';
 
 @Controller()
 class TestController {
   @Get('test')
   test() {
-    return '';
+    return RETURN_VALUE;
+  }
+
+  @Get('tests/wildcard_nested')
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  wildcard_nested() {
+    return RETURN_VALUE;
   }
 }
 
@@ -25,10 +32,12 @@ class TestController {
 class TestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
+      .apply((req, res, next) => res.end(WILDCARD_VALUE))
+      .forRoutes('tests/(.*)')
       .apply((req, res, next) => res.end(SCOPED_VALUE))
       .forRoutes(TestController)
       .apply((req, res, next) => res.end(RETURN_VALUE))
-      .forRoutes('*');
+      .forRoutes('(.*)');
   }
 }
 
@@ -61,6 +70,15 @@ describe('Middleware (FastifyAdapter)', () => {
         url: '/test',
       })
       .then(({ payload }) => expect(payload).to.be.eql(SCOPED_VALUE));
+  });
+
+  it(`forRoutes(tests/*)`, () => {
+    return app
+      .inject({
+        method: 'GET',
+        url: '/tests/wildcard',
+      })
+      .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
   });
 
   afterEach(async () => {

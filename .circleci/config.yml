@@ -123,7 +123,7 @@ jobs:
           command: docker ps
       - run:
           name: Integration tests
-          command: npm run integration-test
+          command: npm run test:integration
           
   codechecks_benchmarks:
     working_directory: ~/nest

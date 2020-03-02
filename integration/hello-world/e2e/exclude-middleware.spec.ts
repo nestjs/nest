@@ -21,6 +21,11 @@ class TestController {
     return RETURN_VALUE;
   }
 
+  @Get('test2')
+  test2() {
+    return RETURN_VALUE;
+  }
+
   @Get('middleware')
   middleware() {
     return RETURN_VALUE;
@@ -58,13 +63,15 @@ class TestModule {
   }
 }
 
-describe('Middleware', () => {
+describe('Exclude middleware', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    app = (await Test.createTestingModule({
-      imports: [TestModule],
-    }).compile()).createNestApplication();
+    app = (
+      await Test.createTestingModule({
+        imports: [TestModule],
+      }).compile()
+    ).createNestApplication();
 
     await app.init();
   });
@@ -73,6 +80,12 @@ describe('Middleware', () => {
     return request(app.getHttpServer())
       .get('/test')
       .expect(200, RETURN_VALUE);
+  });
+
+  it(`should not exclude "/test2" endpoint`, () => {
+    return request(app.getHttpServer())
+      .get('/test2')
+      .expect(200, MIDDLEWARE_VALUE);
   });
 
   it(`should run middleware for "/middleware" endpoint`, () => {

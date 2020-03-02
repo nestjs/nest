@@ -25,6 +25,11 @@ class TestController {
     return RETURN_VALUE;
   }
 
+  @Get('test2')
+  test2() {
+    return RETURN_VALUE;
+  }
+
   @Get('middleware')
   middleware() {
     return RETURN_VALUE;
@@ -62,15 +67,15 @@ class TestModule {
   }
 }
 
-describe('Middleware', () => {
+describe('Exclude middleware (fastify)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    app = (await Test.createTestingModule({
-      imports: [TestModule],
-    }).compile()).createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
+    app = (
+      await Test.createTestingModule({
+        imports: [TestModule],
+      }).compile()
+    ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
 
     await app.init();
     await app
@@ -83,6 +88,12 @@ describe('Middleware', () => {
     return request(app.getHttpServer())
       .get('/test')
       .expect(200, RETURN_VALUE);
+  });
+
+  it(`should not exclude "/test2" endpoint`, () => {
+    return request(app.getHttpServer())
+      .get('/test2')
+      .expect(200, MIDDLEWARE_VALUE);
   });
 
   it(`should run middleware for "/middleware" endpoint`, () => {

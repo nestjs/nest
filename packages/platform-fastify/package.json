@@ -17,10 +17,10 @@
     "access": "public"
   },
   "dependencies": {
-    "fastify": "2.11.0",
+    "fastify": "2.12.1",
     "fastify-cors": "3.0.2",
     "fastify-formbody": "3.1.0",
-    "path-to-regexp": "0.2.5",
+    "path-to-regexp": "3.2.0",
     "tslib": "1.10.0"
   },
   "peerDependencies": {
