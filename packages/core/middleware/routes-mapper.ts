@@ -65,7 +65,7 @@ export class RoutesMapper {
 
   private validateGlobalPath(path: string): string {
     const prefix = validatePath(path);
-    return prefix === '/' ? '' : prefix;
+    return prefix;
   }
 
   private validateRoutePath(path: string): string {
