@@ -78,10 +78,34 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
         GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
       ),
     };
+
+    const keepaliveOptions = {};
+    if (isObject(this.options.keepalive)) {
+      const keepaliveKeys = {
+        keepaliveTimeMs: 'grpc.keepalive_time_ms',
+        keepaliveTimeoutMs: 'grpc.keepalive_timeout_ms',
+        keepalivePermitWithoutCalls: 'grpc.keepalive_permit_without_calls',
+        http2MaxPingsWithoutData: 'grpc.http2.max_pings_without_data',
+        http2MinTimeBetweenPingsMs: 'grpc.http2.min_time_between_pings_ms',
+        http2MinPingIntervalWithoutDataMs:
+          'grpc.http2.min_ping_interval_without_data_ms',
+        http2MaxPingStrikes: 'grpc.http2.max_ping_strikes',
+      };
+      for (const [optionKey, optionValue] of Object.entries(
+        this.options.keepalive,
+      )) {
+        const key = keepaliveKeys[optionKey];
+        if (key) {
+          keepaliveOptions[key] = optionValue;
+        }
+      }
+    }
+
     const options: any = isObject(this.options)
       ? {
           ...this.options,
           ...maxMessageLengthOptions,
+          ...keepaliveOptions,
           loader: '',
         }
       : {
@@ -92,6 +116,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       options.credentials || grpcPackage.credentials.createInsecure();
 
     delete options.credentials;
+    delete options.keepalive;
     const grpcClient = new clientRef[name](this.url, credentials, options);
     this.clients.set(name, grpcClient);
     return grpcClient;
