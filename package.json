@@ -24,6 +24,7 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "format": "prettier \"**/*.ts\" --ignore-path ./.prettierignore --write && git status",
     "postinstall": "opencollective",
+    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --retries 3 --require 'node_modules/reflect-metadata/Reflect.js' --exit",
     "test:integration": "mocha \"integration/*/{,!(node_modules)/**/}/*.spec.ts\" --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js' --exit",
     "test:docker:up": "docker-compose -f integration/docker-compose.yml up -d",
     "test:docker:down": "docker-compose -f integration/docker-compose.yml down -d",
@@ -36,8 +37,7 @@
     "publish:beta": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=beta --access public -m \"chore(@nestjs) publish %s release\"",
     "publish:next": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=next --access public --skip-git -m \"chore(@nestjs) publish %s release\"",
     "publish:rc": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=rc --access public -m \"chore(@nestjs) publish %s release\"",
-    "publish:test": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --force-publish --access public --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\"",
-    "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --retries 3 --require 'node_modules/reflect-metadata/Reflect.js' --exit"
+    "publish:test": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --force-publish --access public --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\""
   },
   "husky": {
     "hooks": {
@@ -173,5 +173,42 @@
     "donation": {
       "text": "Become a partner:"
     }
+  },
+  "nyc": {
+    "include": [
+      "packages/**/*.ts"
+    ],
+    "exclude": [
+      "node_modules/",
+      "packages/**/test/**",
+      "packages/**/*.spec.ts",
+      "packages/**/adapters/*.ts",
+      "packages/**/nest-*.ts",
+      "packages/**/test/**/*.ts",
+      "packages/core/errors/**/*",
+      "packages/common/exceptions/*.ts",
+      "packages/common/http/*.ts",
+      "packages/common/utils/load-package.util.ts",
+      "packages/microservices/exceptions/",
+      "packages/microservices/microservices-module.ts",
+      "packages/core/middleware/middleware-module.ts",
+      "packages/core/injector/module-ref.ts",
+      "packages/core/injector/container-scanner.ts",
+      "packages/common/cache/**/*",
+      "packages/common/serializer/**/*",
+      "packages/common/services/logger.service.ts"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
   }
 }

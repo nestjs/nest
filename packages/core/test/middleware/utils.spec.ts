@@ -1,6 +1,6 @@
 import { RequestMethod, Type } from '@nestjs/common';
 import { expect } from 'chai';
-import { pathToRegexp } from 'path-to-regexp';
+import * as pathToRegexp from 'path-to-regexp';
 import * as sinon from 'sinon';
 import {
   assignToken,
