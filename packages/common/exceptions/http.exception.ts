@@ -9,7 +9,6 @@ import { isObject, isString } from '../utils/shared.utils';
  * @publicApi
  */
 export class HttpException extends Error {
-  public readonly message: any;
   /**
    * Instantiate a plain HTTP Exception.
    *
@@ -36,11 +35,26 @@ export class HttpException extends Error {
    * @param status HTTP response status code
    */
   constructor(
-    private readonly response: string | object,
+    private readonly response: string | Record<string, any>,
     private readonly status: number,
   ) {
     super();
-    this.message = response;
+    this.initMessage();
+  }
+
+  public initMessage() {
+    if (isString(this.response)) {
+      this.message = this.response;
+    } else if (
+      isObject(this.response) &&
+      isString((this.response as Record<string, any>).message)
+    ) {
+      this.message = (this.response as Record<string, any>).message;
+    } else if (this.constructor) {
+      this.message = this.constructor.name
+        .match(/[A-Z][a-z]+|[0-9]+/g)
+        .join(' ');
+    }
   }
 
   public getResponse(): string | object {
@@ -49,15 +63,6 @@ export class HttpException extends Error {
 
   public getStatus(): number {
     return this.status;
-  }
-
-  public toString(): string {
-    const message = this.getErrorString(this.message);
-    return `Error: ${message}`;
-  }
-
-  private getErrorString(target: string | object): string {
-    return isString(target) ? target : JSON.stringify(target);
   }
 
   public static createBody(

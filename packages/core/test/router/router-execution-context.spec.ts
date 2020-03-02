@@ -1,7 +1,7 @@
 import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { HttpStatus, RouteParamMetadata } from '../../../common';
+import { HttpException, HttpStatus, RouteParamMetadata } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
@@ -137,14 +137,16 @@ describe('RouterExecutionContext', () => {
           });
           it('should throw exception when "tryActivate" returns false', async () => {
             tryActivateStub.callsFake(async () => false);
-            let error: Error;
+
+            let error: HttpException;
             try {
               await proxyContext(request, response, next);
             } catch (e) {
               error = e;
             }
             expect(error).to.be.instanceOf(ForbiddenException);
-            expect(error.message).to.be.eql({
+            expect(error.message).to.be.eql('Forbidden resource');
+            expect(error.getResponse()).to.be.eql({
               statusCode: HttpStatus.FORBIDDEN,
               error: 'Forbidden',
               message: FORBIDDEN_MESSAGE,
@@ -297,14 +299,17 @@ describe('RouterExecutionContext', () => {
     it('should throw ForbiddenException when "tryActivate" returns false', async () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
+
       let error: ForbiddenException;
       try {
         await guardsFn([]);
       } catch (e) {
         error = e;
       }
+
       expect(error).to.be.instanceOf(ForbiddenException);
-      expect(error.message).to.be.eql({
+      expect(error.message).to.be.eql('Forbidden resource');
+      expect(error.getResponse()).to.be.eql({
         statusCode: HttpStatus.FORBIDDEN,
         error: 'Forbidden',
         message: FORBIDDEN_MESSAGE,
