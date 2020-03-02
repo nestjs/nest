@@ -143,9 +143,6 @@ export class RouterExplorer {
     };
   }
 
-  private static stripEndSlash = (str: string) =>
-    str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
-
   public applyPathsToRouterProxy<T extends HttpServer>(
     router: T,
     routePaths: RoutePathProperties[],
@@ -164,13 +161,15 @@ export class RouterExplorer {
         basePath,
         host,
       );
-      path.forEach(p => {
-        const pathStr =
-          RouterExplorer.stripEndSlash(basePath) +
-          RouterExplorer.stripEndSlash(p);
+      path.forEach(item => {
+        const pathStr = this.stripEndSlash(basePath) + this.stripEndSlash(item);
         this.logger.log(ROUTE_MAPPED_MESSAGE(pathStr, requestMethod));
       });
     });
+  }
+
+  public stripEndSlash(str: string) {
+    return str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
   }
 
   private applyCallbackToRouter<T extends HttpServer>(
@@ -211,8 +210,8 @@ export class RouterExplorer {
 
     const hostHandler = this.applyHostFilter(host, proxy);
     paths.forEach(path => {
-      const fullPath = RouterExplorer.stripEndSlash(basePath) + path;
-      routerMethod(RouterExplorer.stripEndSlash(fullPath) || '/', hostHandler);
+      const fullPath = this.stripEndSlash(basePath) + path;
+      routerMethod(this.stripEndSlash(fullPath) || '/', hostHandler);
     });
   }
 

@@ -18,7 +18,7 @@ export class RoutesResolver implements Resolver {
   private readonly logger = new Logger(RoutesResolver.name, true);
   private readonly routerProxy = new RouterProxy();
   private readonly routerExceptionsFilter: RouterExceptionFilters;
-  private readonly routerBuilder: RouterExplorer;
+  private readonly routerExplorer: RouterExplorer;
 
   constructor(
     private readonly container: NestContainer,
@@ -31,7 +31,7 @@ export class RoutesResolver implements Resolver {
       container.getHttpAdapterRef(),
     );
     const metadataScanner = new MetadataScanner();
-    this.routerBuilder = new RouterExplorer(
+    this.routerExplorer = new RouterExplorer(
       metadataScanner,
       this.container,
       this.injector,
@@ -50,9 +50,6 @@ export class RoutesResolver implements Resolver {
     });
   }
 
-  private static stripEndSlash = (str: string) =>
-    str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
-
   public registerRouters(
     routes: Map<string, InstanceWrapper<Controller>>,
     moduleName: string,
@@ -63,7 +60,7 @@ export class RoutesResolver implements Resolver {
       const { metatype } = instanceWrapper;
 
       const host = this.getHostMetadata(metatype);
-      const path = this.routerBuilder.extractRouterPath(
+      const path = this.routerExplorer.extractRouterPath(
         metatype as Type<any>,
         basePath,
       );
@@ -71,10 +68,10 @@ export class RoutesResolver implements Resolver {
       this.logger.log(
         CONTROLLER_MAPPING_MESSAGE(
           controllerName,
-          RoutesResolver.stripEndSlash(path),
+          this.routerExplorer.stripEndSlash(path),
         ),
       );
-      this.routerBuilder.explore(
+      this.routerExplorer.explore(
         instanceWrapper,
         moduleName,
         applicationRef,
