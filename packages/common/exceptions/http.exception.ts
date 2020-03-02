@@ -71,7 +71,7 @@ export class HttpException extends Error {
     statusCode?: number,
   ) {
     if (!message) {
-      return { statusCode, error };
+      return { statusCode, message: error };
     }
     return isObject(message) && !Array.isArray(message)
       ? message
