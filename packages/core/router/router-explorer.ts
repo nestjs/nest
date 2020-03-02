@@ -143,6 +143,9 @@ export class RouterExplorer {
     };
   }
 
+  private static stripEndSlash = (str: string) =>
+    str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
+
   public applyPathsToRouterProxy<T extends HttpServer>(
     router: T,
     routePaths: RoutePathProperties[],
@@ -161,9 +164,12 @@ export class RouterExplorer {
         basePath,
         host,
       );
-      path.forEach(p =>
-        this.logger.log(ROUTE_MAPPED_MESSAGE(p, requestMethod)),
-      );
+      path.forEach(p => {
+        const pathStr =
+          RouterExplorer.stripEndSlash(basePath) +
+          RouterExplorer.stripEndSlash(p);
+        this.logger.log(ROUTE_MAPPED_MESSAGE(pathStr, requestMethod));
+      });
     });
   }
 
@@ -186,9 +192,6 @@ export class RouterExplorer {
       .get(router, requestMethod)
       .bind(router);
 
-    const stripSlash = (str: string) =>
-      str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
-
     const isRequestScoped = !instanceWrapper.isDependencyTreeStatic();
     const proxy = isRequestScoped
       ? this.createRequestScopedHandler(
@@ -208,8 +211,8 @@ export class RouterExplorer {
 
     const hostHandler = this.applyHostFilter(host, proxy);
     paths.forEach(path => {
-      const fullPath = stripSlash(basePath) + path;
-      routerMethod(stripSlash(fullPath) || '/', hostHandler);
+      const fullPath = RouterExplorer.stripEndSlash(basePath) + path;
+      routerMethod(RouterExplorer.stripEndSlash(fullPath) || '/', hostHandler);
     });
   }
 
