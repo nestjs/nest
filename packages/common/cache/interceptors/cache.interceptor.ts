@@ -9,8 +9,8 @@ import {
 } from '../../interfaces';
 import {
   CACHE_KEY_METADATA,
-  CACHE_TTL_METADATA,
   CACHE_MANAGER,
+  CACHE_TTL_METADATA,
 } from '../cache.constants';
 
 const HTTP_ADAPTER_HOST = 'HttpAdapterHost';
@@ -51,7 +51,7 @@ export class CacheInterceptor implements NestInterceptor {
       return next.handle().pipe(
         tap(response => {
           const args = ttl ? [key, response, { ttl }] : [key, response];
-          this.cacheManager.set.apply(this.cacheManager, args);
+          this.cacheManager.set(...args);
         }),
       );
     } catch {

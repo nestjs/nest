@@ -1,3 +1,4 @@
+/* eslint-disable prefer-spread */
 import { ArgumentsHost, Logger, RpcExceptionFilter } from '@nestjs/common';
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { MESSAGES } from '@nestjs/core/constants';

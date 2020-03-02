@@ -43,6 +43,7 @@ export class ContextUtils {
   }
 
   public createNullArray(length: number): any[] {
+    // eslint-disable-next-line prefer-spread
     return Array.apply(null, { length } as any).fill(undefined);
   }
 
@@ -69,7 +70,7 @@ export class ContextUtils {
       : () => null;
   }
 
-  public getContextFactory<TContext extends ContextType = ContextType>(
+  public getContextFactory<TContext extends string = ContextType>(
     contextType: TContext,
     instance?: object,
     callback?: Function,

@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { createContextId } from '@nestjs/core/helpers/context-id-factory';
+import { ContextIdFactory } from '@nestjs/core/helpers/context-id-factory';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
 import { NestContainer } from '@nestjs/core/injector/container';
@@ -14,11 +14,13 @@ import { REQUEST } from '@nestjs/core/router/request/request-constants';
 import { IClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
+import { RequestContextHost } from './context/request-context-host';
 import { RpcContextCreator } from './context/rpc-context-creator';
 import {
   DEFAULT_CALLBACK_METADATA,
   DEFAULT_GRPC_CALLBACK_METADATA,
 } from './context/rpc-metadata-constants';
+import { BaseRpcContext } from './ctx-host/base-rpc.context';
 import {
   CustomTransportStrategy,
   PatternMetadata,
@@ -117,9 +119,20 @@ export class ListenersController {
     const { instance } = wrapper;
     return async (...args: unknown[]) => {
       try {
-        const data = args[0];
-        const contextId = createContextId();
-        this.registerRequestProvider({ pattern, data }, contextId);
+        const [data, reqCtx] = args;
+        const request = RequestContextHost.create(
+          pattern,
+          data,
+          reqCtx as BaseRpcContext,
+        );
+        const contextId = ContextIdFactory.getByRequest(request);
+        /**Object.defineProperty(request, REQUEST_CONTEXT_ID, {
+          value: contextId,
+          enumerable: false,
+          writable: false,
+          configurable: false,
+        });*/
+        this.container.registerRequestProvider(request, contextId);
 
         const contextInstance = await this.injector.loadPerContext(
           instance,
@@ -151,7 +164,7 @@ export class ListenersController {
         }
         const host = new ExecutionContextHost(args);
         host.setType('rpc');
-        exceptionFilter.handle(err, host);
+        return exceptionFilter.handle(err, host);
       }
     };
   }

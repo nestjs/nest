@@ -68,13 +68,16 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   public async start(callback?: () => void) {
     this.server = this.createClient();
-    this.server.on(CONNECT_EVENT, (_: any) => {
+    this.server.on(CONNECT_EVENT, () => {
+      if (this.channel) {
+        return;
+      }
       this.channel = this.server.createChannel({
         json: false,
         setup: (channel: any) => this.setupChannel(channel, callback),
       });
     });
-    this.server.on(DISCONNECT_EVENT, (err: any) => {
+    this.server.on(DISCONNECT_EVENT, () => {
       this.logger.error(DISCONNECTED_RMQ_MESSAGE);
     });
   }
@@ -103,14 +106,14 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     message: Record<string, any>,
     channel: any,
   ): Promise<void> {
-    const { content, properties, fields } = message;
+    const { content, properties } = message;
     const rawMessage = JSON.parse(content.toString());
     const packet = this.deserializer.deserialize(rawMessage);
     const pattern = isString(packet.pattern)
       ? packet.pattern
       : JSON.stringify(packet.pattern);
 
-    const rmqContext = new RmqContext([message, channel]);
+    const rmqContext = new RmqContext([message, channel, pattern]);
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet, rmqContext);
     }

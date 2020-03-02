@@ -63,10 +63,14 @@ export class ValidationPipe implements PipeTransform<any> {
   public async transform(value: any, metadata: ArgumentMetadata) {
     const { metatype } = metadata;
     if (!metatype || !this.toValidate(metadata)) {
-      return value;
+      return this.isTransformEnabled
+        ? this.transformPrimitive(value, metadata)
+        : value;
     }
+    const originalValue = value;
     value = this.toEmptyIfNil(value);
 
+    const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
     this.stripProtoKeys(value);
     let entity = classTransformer.plainToClass(
@@ -96,9 +100,14 @@ export class ValidationPipe implements PipeTransform<any> {
       // we have to revert the original value passed through the pipe
       entity = originalEntity;
     }
-    return this.isTransformEnabled
-      ? entity
-      : Object.keys(this.validatorOptions).length > 0
+    if (this.isTransformEnabled) {
+      return entity;
+    }
+    if (isNil) {
+      // if the value was originally undefined or null, revert it back
+      return originalValue;
+    }
+    return Object.keys(this.validatorOptions).length > 0
       ? classTransformer.classToPlain(entity, this.transformOptions)
       : value;
   }
@@ -110,6 +119,24 @@ export class ValidationPipe implements PipeTransform<any> {
     }
     const types = [String, Boolean, Number, Array, Object];
     return !types.some(t => metatype === t) && !isNil(metatype);
+  }
+
+  private transformPrimitive(value: any, metadata: ArgumentMetadata) {
+    if (!metadata.data) {
+      // leave top-level query/param objects unmodified
+      return value;
+    }
+    const { type, metatype } = metadata;
+    if (type !== 'param' && type !== 'query') {
+      return value;
+    }
+    if (metatype === Boolean) {
+      return value === true || value === 'true';
+    }
+    if (metatype === Number) {
+      return +value;
+    }
+    return value;
   }
 
   private toEmptyIfNil<T = any, R = any>(value: T): R | {} {

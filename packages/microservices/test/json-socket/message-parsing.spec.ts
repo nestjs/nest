@@ -1,9 +1,8 @@
+import { expect } from 'chai';
 import { Socket } from 'net';
 import * as sinon from 'sinon';
 import { ERROR_EVENT, MESSAGE_EVENT } from '../../constants';
 import { JsonSocket } from '../../helpers/json-socket';
-import { expect } from 'chai';
-// tslint:disable:no-string-literal
 
 describe('JsonSocket message parsing', () => {
   const socket = new JsonSocket(new Socket());

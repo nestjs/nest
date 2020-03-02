@@ -1,5 +1,5 @@
 type Post {
-  id: ID! @unique
+  id: ID! @unique @id
   isPublished: Boolean! @default(value: false)
   title: String!
   text: String!

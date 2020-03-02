@@ -33,7 +33,10 @@ describe('GuardsContextCreator', () => {
       undefined,
     ];
     getSpy = sinon.stub().returns({
-      injectables: new Map([['test', guards[0]], ['test2', guards[1]]]),
+      injectables: new Map([
+        ['test', guards[0]],
+        ['test2', guards[1]],
+      ]),
     });
     container = {
       getModules: () => ({
@@ -55,7 +58,6 @@ describe('GuardsContextCreator', () => {
     });
     describe('when `moduleContext` is defined', () => {
       beforeEach(() => {
-        // tslint:disable-next-line:no-string-literal
         guardsContextCreator['moduleContext'] = 'test';
       });
       it('should filter metatypes', () => {

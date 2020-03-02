@@ -329,12 +329,12 @@ export class RouterExecutionContext {
     );
   }
 
-  public createGuardsFn<TContext extends ContextType = ContextType>(
+  public createGuardsFn<TContext extends string = ContextType>(
     guards: any[],
     instance: Controller,
     callback: (...args: any[]) => any,
     contextType?: TContext,
-  ): Function | null {
+  ): (args: any[]) => Promise<void> | null {
     const canActivateFn = async (args: any[]) => {
       const canActivate = await this.guardsConsumer.tryActivate<TContext>(
         guards,
@@ -398,7 +398,7 @@ export class RouterExecutionContext {
         await this.responseController.render(result, res, renderTemplate);
       };
     }
-    if (redirectResponse && redirectResponse.url) {
+    if (redirectResponse && typeof redirectResponse.url === 'string') {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
         await this.responseController.redirect(result, res, redirectResponse);
       };

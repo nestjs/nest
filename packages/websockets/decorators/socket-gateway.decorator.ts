@@ -2,24 +2,24 @@ import { GATEWAY_METADATA, GATEWAY_OPTIONS, PORT_METADATA } from '../constants';
 import { GatewayMetadata } from '../interfaces';
 
 /**
- * Defines the Gateway. The gateway is able to inject dependencies through constructor.
- * Those dependencies should belong to the same module. Gateway is listening on the specified port.
+ * Decorator that marks a class as a Nest gateway that enables real-time, bidirectional
+ * and event-based communication between the browser and the server.
  */
 export function WebSocketGateway(port?: number): ClassDecorator;
-export function WebSocketGateway(options?: GatewayMetadata): ClassDecorator;
-export function WebSocketGateway(
-  port?: number,
-  options?: GatewayMetadata,
-): ClassDecorator;
-export function WebSocketGateway(
-  portOrOptions?: number | GatewayMetadata,
-  options?: GatewayMetadata,
-): ClassDecorator {
+export function WebSocketGateway<
+  T extends Record<string, any> = GatewayMetadata
+>(options?: T): ClassDecorator;
+export function WebSocketGateway<
+  T extends Record<string, any> = GatewayMetadata
+>(port?: number, options?: T): ClassDecorator;
+export function WebSocketGateway<
+  T extends Record<string, any> = GatewayMetadata
+>(portOrOptions?: number | T, options?: T): ClassDecorator {
   const isPortInt = Number.isInteger(portOrOptions as number);
-  // tslint:disable-next-line:prefer-const
+  // eslint-disable-next-line prefer-const
   let [port, opt] = isPortInt ? [portOrOptions, options] : [0, portOrOptions];
 
-  opt = opt || {};
+  opt = opt || ({} as T);
   return (target: object) => {
     Reflect.defineMetadata(GATEWAY_METADATA, true, target);
     Reflect.defineMetadata(PORT_METADATA, port, target);

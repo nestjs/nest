@@ -1,10 +1,12 @@
+import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { RouteParamMetadata } from '../../../common';
+import { HttpException, HttpStatus, RouteParamMetadata } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
 import { ApplicationConfig } from '../../application-config';
+import { FORBIDDEN_MESSAGE } from '../../guards/constants';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { NestContainer } from '../../injector/container';
@@ -91,6 +93,7 @@ describe('RouterExecutionContext', () => {
         let tryActivateStub;
         beforeEach(() => {
           instance = { foo: 'bar' };
+
           const canActivateFn = contextCreator.createGuardsFn([1], null, null);
           sinon.stub(contextCreator, 'createGuardsFn').returns(canActivateFn);
           tryActivateStub = sinon
@@ -132,11 +135,22 @@ describe('RouterExecutionContext', () => {
               done();
             });
           });
-          it('should throw exception when "tryActivate" returns false', () => {
+          it('should throw exception when "tryActivate" returns false', async () => {
             tryActivateStub.callsFake(async () => false);
-            proxyContext(request, response, next).catch(
-              error => expect(error).to.not.be.undefined,
-            );
+
+            let error: HttpException;
+            try {
+              await proxyContext(request, response, next);
+            } catch (e) {
+              error = e;
+            }
+            expect(error).to.be.instanceOf(ForbiddenException);
+            expect(error.message).to.be.eql('Forbidden resource');
+            expect(error.getResponse()).to.be.eql({
+              statusCode: HttpStatus.FORBIDDEN,
+              error: 'Forbidden',
+              message: FORBIDDEN_MESSAGE,
+            });
           });
           it('should apply expected context when "canActivateFn" apply', () => {
             proxyContext(request, response, next).then(() => {
@@ -260,10 +274,24 @@ describe('RouterExecutionContext', () => {
     });
   });
   describe('createGuardsFn', () => {
-    it('should throw exception when "tryActivate" returns false', () => {
+    it('should throw ForbiddenException when "tryActivate" returns false', async () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
-      guardsFn([]).catch(err => expect(err).to.not.be.undefined);
+
+      let error: ForbiddenException;
+      try {
+        await guardsFn([]);
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).to.be.instanceOf(ForbiddenException);
+      expect(error.message).to.be.eql('Forbidden resource');
+      expect(error.getResponse()).to.be.eql({
+        statusCode: HttpStatus.FORBIDDEN,
+        error: 'Forbidden',
+        message: FORBIDDEN_MESSAGE,
+      });
     });
   });
   describe('createHandleResponseFn', () => {
@@ -280,7 +308,6 @@ describe('RouterExecutionContext', () => {
         const value = 'test';
         const response = { render: sinon.spy() };
 
-        sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
 
         const handler = contextCreator.createHandleResponseFn(
@@ -295,7 +322,7 @@ describe('RouterExecutionContext', () => {
       });
     });
     describe('when "renderTemplate" is undefined', () => {
-      it('should not call "res.render()"', () => {
+      it('should not call "res.render()"', async () => {
         const result = Promise.resolve('test');
         const response = { render: sinon.spy() };
 
@@ -308,7 +335,7 @@ describe('RouterExecutionContext', () => {
           undefined,
           200,
         );
-        handler(result, response);
+        await handler(result, response);
 
         expect(response.render.called).to.be.false;
       });
@@ -346,7 +373,7 @@ describe('RouterExecutionContext', () => {
     });
 
     describe('when "redirectResponse" is undefined', () => {
-      it('should not call "res.render()"', () => {
+      it('should not call "res.redirect()"', async () => {
         const result = Promise.resolve('test');
         const response = { redirect: sinon.spy() };
 
@@ -359,9 +386,34 @@ describe('RouterExecutionContext', () => {
           undefined,
           200,
         );
-        handler(result, response);
+        await handler(result, response);
 
         expect(response.redirect.called).to.be.false;
+      });
+    });
+
+    describe('when replying with result', () => {
+      it('should call "adapter.reply()" with expected args', async () => {
+        const result = Promise.resolve('test');
+        const response = {};
+
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+
+        const handler = contextCreator.createHandleResponseFn(
+          null,
+          false,
+          undefined,
+          1234,
+        );
+        const adapterReplySpy = sinon.spy(adapter, 'reply');
+        await handler(result, response);
+        expect(
+          adapterReplySpy.calledOnceWithExactly(
+            sinon.match.same(response),
+            'test',
+            1234,
+          ),
+        ).to.be.true;
       });
     });
   });

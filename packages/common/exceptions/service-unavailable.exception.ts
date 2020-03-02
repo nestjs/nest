@@ -10,7 +10,7 @@ import { HttpStatus } from '../enums/http-status.enum';
  */
 export class ServiceUnavailableException extends HttpException {
   /**
-   * Instnatiate a `ServiceUnavailableException` Exception.
+   * Instantiate a `ServiceUnavailableException` Exception.
    *
    * @example
    * `throw new ServiceUnavailableException()`

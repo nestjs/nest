@@ -90,11 +90,13 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   }
 
   public createClient<T = any>(): T {
-    return new kafkaPackage.Kafka(Object.assign(this.options.client || {}, {
-      clientId: this.clientId,
-      brokers: this.brokers,
-      logCreator: KafkaLogger.bind(null, this.logger),
-    }) as KafkaConfig);
+    return new kafkaPackage.Kafka(
+      Object.assign(this.options.client || {}, {
+        clientId: this.clientId,
+        brokers: this.brokers,
+        logCreator: KafkaLogger.bind(null, this.logger),
+      }) as KafkaConfig,
+    );
   }
 
   public async bindEvents(consumer: Consumer) {

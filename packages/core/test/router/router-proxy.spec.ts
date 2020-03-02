@@ -10,7 +10,7 @@ import { ExecutionContextHost } from '../../helpers/execution-context-host';
 describe('RouterProxy', () => {
   let routerProxy: RouterProxy;
   let handler: ExceptionsHandler;
-  let httpException = new HttpException('test', 500);
+  const httpException = new HttpException('test', 500);
   let nextStub: sinon.SinonStub;
   beforeEach(() => {
     handler = new ExceptionsHandler(new NoopHttpAdapter({}));

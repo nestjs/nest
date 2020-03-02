@@ -68,16 +68,14 @@ describe('ServerRedis', () => {
       server.bindEvents(sub, null);
       expect(onSpy.getCall(0).args[0]).to.be.equal('message');
     });
-    it('should subscribe each acknowledge patterns', () => {
+    it('should subscribe to each pattern', () => {
       const pattern = 'test';
       const handler = sinon.spy();
       (server as any).messageHandlers = objectToMap({
         [pattern]: handler,
       });
       server.bindEvents(sub, null);
-
-      const expectedPattern = 'test_ack';
-      expect(subscribeSpy.calledWith(expectedPattern)).to.be.true;
+      expect(subscribeSpy.calledWith(pattern)).to.be.true;
     });
   });
   describe('getMessageHandler', () => {
@@ -147,7 +145,7 @@ describe('ServerRedis', () => {
       publisher({ respond, id });
       expect(
         publisherSpy.calledWith(
-          `${pattern}_res`,
+          `${pattern}.reply`,
           JSON.stringify({ respond, id }),
         ),
       ).to.be.true;
@@ -165,23 +163,24 @@ describe('ServerRedis', () => {
       expect(server.parseMessage(content)).to.equal(content);
     });
   });
-  describe('getAckPatternName', () => {
+  describe('getRequestPattern', () => {
     const test = 'test';
-    it(`should append _ack to string`, () => {
-      const expectedResult = test + '_ack';
-      expect(server.getAckQueueName(test)).to.equal(expectedResult);
+    it(`should leave pattern as it is`, () => {
+      const expectedResult = test;
+      expect(server.getRequestPattern(test)).to.equal(expectedResult);
     });
   });
-  describe('getResPatternName', () => {
+  describe('getReplyPattern', () => {
     const test = 'test';
-    it(`should append _res to string`, () => {
-      const expectedResult = test + '_res';
-      expect(server.getResQueueName(test)).to.equal(expectedResult);
+    it(`should append ".reply" to string`, () => {
+      const expectedResult = test + '.reply';
+      expect(server.getReplyPattern(test)).to.equal(expectedResult);
     });
   });
   describe('getClientOptions', () => {
     it('should return options object with "retry_strategy" and call "createRetryStrategy"', () => {
       const createSpy = sinon.spy(server, 'createRetryStrategy');
+      // eslint-disable-next-line @typescript-eslint/camelcase
       const { retry_strategy } = server.getClientOptions();
       try {
         retry_strategy({} as any);

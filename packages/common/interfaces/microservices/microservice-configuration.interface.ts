@@ -32,8 +32,8 @@ export interface GrpcOptions {
     maxSendMessageLength?: number;
     maxReceiveMessageLength?: number;
     credentials?: any;
-    protoPath: string;
-    package: string;
+    protoPath: string | string[];
+    package: string | string[];
     loader?: {
       keepCase?: boolean;
       alternateCommentMode?: boolean;

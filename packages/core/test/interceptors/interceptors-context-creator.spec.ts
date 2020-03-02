@@ -61,7 +61,6 @@ describe('InterceptorsContextCreator', () => {
     });
     describe('when `moduleContext` is defined', () => {
       beforeEach(() => {
-        // tslint:disable-next-line:no-string-literal
         interceptorsContextCreator['moduleContext'] = 'test';
       });
       it('should filter metatypes', () => {

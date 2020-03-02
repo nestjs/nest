@@ -15,7 +15,7 @@ import { AbstractHttpAdapter } from '../adapters/http-adapter';
 export class HttpAdapterHost<
   T extends AbstractHttpAdapter = AbstractHttpAdapter
 > {
-  private _httpAdapter: T;
+  private _httpAdapter?: T;
 
   /**
    * Accessor for the underlying `HttpAdapter`
@@ -32,7 +32,7 @@ export class HttpAdapterHost<
    * @example
    * `const httpAdapter = adapterHost.httpAdapter;`
    */
-  get httpAdapter(): T | undefined {
+  get httpAdapter(): T {
     return this._httpAdapter;
   }
 }

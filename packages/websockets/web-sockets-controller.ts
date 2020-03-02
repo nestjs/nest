@@ -14,6 +14,7 @@ import {
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { SocketEventsHost } from './interfaces/socket-events-host.interface';
 import { SocketServerProvider } from './socket-server-provider';
+import { compareElementAt } from './utils/compare-element.util';
 
 export class WebSocketsController {
   private readonly metadataExplorer = new GatewayMetadataExplorer(
@@ -104,9 +105,7 @@ export class WebSocketsController {
 
       const disconnectHook = adapter.bindClientDisconnect;
       disconnectHook &&
-        disconnectHook.call(adapter, client, (_: any) =>
-          disconnect.next(client),
-        );
+        disconnectHook.call(adapter, client, () => disconnect.next(client));
     };
   }
 
@@ -119,7 +118,9 @@ export class WebSocketsController {
   public subscribeConnectionEvent(instance: NestGateway, event: Subject<any>) {
     if (instance.handleConnection) {
       event
-        .pipe(distinctUntilChanged())
+        .pipe(
+          distinctUntilChanged((prev, curr) => compareElementAt(prev, curr, 0)),
+        )
         .subscribe((args: any[]) => instance.handleConnection(...args));
     }
   }

@@ -145,7 +145,7 @@ export class RpcContextCreator {
     return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
   }
 
-  public createGuardsFn<TContext extends ContextType = ContextType>(
+  public createGuardsFn<TContext extends string = ContextType>(
     guards: any[],
     instance: Controller,
     callback: (...args: any[]) => any,

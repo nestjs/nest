@@ -62,8 +62,7 @@ export class NestFactoryStatic {
     serverOrOptions?: AbstractHttpAdapter | NestApplicationOptions,
     options?: NestApplicationOptions,
   ): Promise<T> {
-    // tslint:disable-next-line:prefer-const
-    let [httpServer, appOptions] = this.isHttpServer(serverOrOptions)
+    const [httpServer, appOptions] = this.isHttpServer(serverOrOptions)
       ? [serverOrOptions, options]
       : [this.createHttpAdapter(), serverOrOptions];
 

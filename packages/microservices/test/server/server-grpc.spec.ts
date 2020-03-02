@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { ServerGrpc } from '../../server/server-grpc';
+import { CANCEL_EVENT } from '../../constants';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -15,11 +16,21 @@ class NoopLogger extends Logger {
 
 describe('ServerGrpc', () => {
   let server: ServerGrpc;
+  let serverMulti: ServerGrpc;
+
   beforeEach(() => {
     server = new ServerGrpc({
       protoPath: join(__dirname, './test.proto'),
       package: 'test',
     } as any);
+
+    serverMulti = new ServerGrpc({
+      protoPath: ['test.proto', 'test2.proto'],
+      package: ['test', 'test2'],
+      loader: {
+        includeDirs: [join(__dirname, '.')],
+      },
+    });
   });
 
   describe('listen', () => {
@@ -46,6 +57,34 @@ describe('ServerGrpc', () => {
     });
     it('should call callback', async () => {
       await server.listen(callback);
+      expect(callback.called).to.be.true;
+    });
+  });
+
+  describe('listen (multiple proto)', () => {
+    let callback: sinon.SinonSpy;
+    let bindEventsStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      callback = sinon.spy();
+      bindEventsStub = sinon
+        .stub(serverMulti, 'bindEvents')
+        .callsFake(() => ({} as any));
+    });
+
+    it('should call "bindEvents"', async () => {
+      await serverMulti.listen(callback);
+      expect(bindEventsStub.called).to.be.true;
+    });
+    it('should call "client.start"', async () => {
+      const client = { start: sinon.spy() };
+      sinon.stub(serverMulti, 'createClient').callsFake(() => client);
+
+      await serverMulti.listen(callback);
+      expect(client.start.called).to.be.true;
+    });
+    it('should call callback', async () => {
+      await serverMulti.listen(callback);
       expect(callback.called).to.be.true;
     });
   });
@@ -86,6 +125,45 @@ describe('ServerGrpc', () => {
 
         await server.bindEvents();
         expect((server as any).grpcClient.addService.calledTwice).to.be.true;
+      });
+    });
+  });
+
+  describe('bindEvents (multiple proto)', () => {
+    beforeEach(() => {
+      sinon.stub(serverMulti, 'loadProto').callsFake(() => ({}));
+    });
+    describe('when package does not exist', () => {
+      it('should throw "InvalidGrpcPackageException"', async () => {
+        sinon.stub(serverMulti, 'lookupPackage').callsFake(() => null);
+        (serverMulti as any).logger = new NoopLogger();
+        try {
+          await serverMulti.bindEvents();
+        } catch (err) {
+          expect(err).to.be.instanceOf(InvalidGrpcPackageException);
+        }
+      });
+    });
+    describe('when package exist', () => {
+      it('should call "addService"', async () => {
+        const serviceNames = [
+          {
+            name: 'test',
+            service: true,
+          },
+        ];
+        sinon.stub(serverMulti, 'lookupPackage').callsFake(() => ({
+          test: { service: true },
+        }));
+        sinon
+          .stub(serverMulti, 'getServiceNames')
+          .callsFake(() => serviceNames);
+
+        (serverMulti as any).grpcClient = { addService: sinon.spy() };
+
+        await serverMulti.bindEvents();
+        expect((serverMulti as any).grpcClient.addService.calledTwice).to.be
+          .true;
       });
     });
   });
@@ -258,9 +336,9 @@ describe('ServerGrpc', () => {
     });
     describe('when request is a stream', () => {
       describe('when stream type is RX_STREAMING', () => {
-        it('should call "createStreamDuplexMethod"', () => {
+        it('should call "createRequestStreamMethod"', () => {
           const cln = sinon.spy();
-          const spy = sinon.spy(server, 'createStreamDuplexMethod');
+          const spy = sinon.spy(server, 'createRequestStreamMethod');
           server.createServiceMethod(
             cln,
             { requestStream: true } as any,
@@ -350,28 +428,70 @@ describe('ServerGrpc', () => {
     });
   });
 
-  describe('createStreamDuplexMethod', () => {
+  describe('createRequestStreamMethod', () => {
     it('should wrap call into Subject', () => {
       const handler = sinon.spy();
-      const fn = server.createStreamDuplexMethod(handler);
+      const fn = server.createRequestStreamMethod(handler, false);
       const call = {
         on: (event, callback) => callback(),
         off: sinon.spy(),
         end: sinon.spy(),
         write: sinon.spy(),
       };
-      fn(call as any);
+      fn(call as any, sinon.spy());
 
       expect(handler.called).to.be.true;
+    });
+    describe('when response is not a stream', () => {
+      it('should call callback', async () => {
+        const handler = async () => ({ test: true });
+        const fn = server.createRequestStreamMethod(handler, false);
+        const call = {
+          on: (event, callback) => {
+            if (event !== CANCEL_EVENT) {
+              callback();
+            }
+          },
+          off: sinon.spy(),
+          end: sinon.spy(),
+          write: sinon.spy(),
+        };
+
+        const responseCallback = sinon.spy();
+        await fn(call as any, responseCallback);
+
+        expect(responseCallback.called).to.be.true;
+      });
+      describe('when response is a stream', () => {
+        it('should call write() and end()', async () => {
+          const handler = async () => ({ test: true });
+          const fn = server.createRequestStreamMethod(handler, true);
+          const call = {
+            on: (event, callback) => {
+              if (event !== CANCEL_EVENT) {
+                callback();
+              }
+            },
+            off: sinon.spy(),
+            end: sinon.spy(),
+            write: sinon.spy(),
+          };
+
+          await fn(call as any, null);
+
+          expect(call.write.called).to.be.true;
+          expect(call.end.called).to.be.true;
+        });
+      });
     });
   });
 
   describe('createStreamCallMethod', () => {
     it('should pass through to "methodHandler"', () => {
       const handler = sinon.spy();
-      const fn = server.createStreamCallMethod(handler);
+      const fn = server.createStreamCallMethod(handler, false);
       const args = [1, 2, 3];
-      fn(args as any);
+      fn(args as any, sinon.spy());
 
       expect(handler.calledWith(args)).to.be.true;
     });

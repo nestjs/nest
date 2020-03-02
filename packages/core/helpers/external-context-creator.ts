@@ -12,6 +12,7 @@ import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
+import { ContextId } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
@@ -40,6 +41,7 @@ export class ExternalContextCreator {
   private readonly handlerMetadataStorage = new HandlerMetadataStorage<
     ExternalHandlerMetadata
   >();
+  private container: NestContainer;
 
   constructor(
     private readonly guardsContextCreator: GuardsContextCreator,
@@ -72,7 +74,8 @@ export class ExternalContextCreator {
       container,
       container.applicationConfig,
     );
-    return new ExternalContextCreator(
+
+    const externalContextCreator = new ExternalContextCreator(
       guardsContextCreator,
       guardsConsumer,
       interceptorsContextCreator,
@@ -82,11 +85,13 @@ export class ExternalContextCreator {
       pipesConsumer,
       filtersContextCreator,
     );
+    externalContextCreator.container = container;
+    return externalContextCreator;
   }
 
   public create<
-    T extends ParamsMetadata = ParamsMetadata,
-    Context extends ContextType = ContextType
+    TParamsMetadata extends ParamsMetadata = ParamsMetadata,
+    TContext extends string = ContextType
   >(
     instance: Controller,
     callback: (...args: unknown[]) => unknown,
@@ -100,16 +105,13 @@ export class ExternalContextCreator {
       guards: true,
       filters: true,
     },
-    contextType?: Context,
+    contextType: TContext = 'http' as TContext,
   ) {
     const module = this.getContextModuleName(instance.constructor);
-    const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
-      instance,
-      methodName,
-      metadataKey,
-      paramsFactory,
-      contextType,
-    );
+    const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<
+      TParamsMetadata,
+      TContext
+    >(instance, methodName, metadataKey, paramsFactory, contextType);
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
@@ -180,7 +182,7 @@ export class ExternalContextCreator {
       : target;
   }
 
-  public getMetadata<TMetadata, TContext extends ContextType = ContextType>(
+  public getMetadata<TMetadata, TContext extends string = ContextType>(
     instance: Controller,
     methodName: string,
     metadataKey?: string,
@@ -203,7 +205,7 @@ export class ExternalContextCreator {
       instance,
       methodName,
     );
-    const contextFactory = this.contextUtils.getContextFactory(
+    const contextFactory = this.contextUtils.getContextFactory<TContext>(
       contextType,
       instance,
       instance[methodName],
@@ -339,14 +341,14 @@ export class ExternalContextCreator {
     return resultOrDeffered;
   }
 
-  public createGuardsFn<TContext extends ContextType = ContextType>(
+  public createGuardsFn<TContext extends string = ContextType>(
     guards: any[],
     instance: Controller,
     callback: (...args: any[]) => any,
     contextType?: TContext,
   ): Function | null {
     const canActivateFn = async (args: any[]) => {
-      const canActivate = await this.guardsConsumer.tryActivate(
+      const canActivate = await this.guardsConsumer.tryActivate<TContext>(
         guards,
         args,
         instance,
@@ -358,5 +360,9 @@ export class ExternalContextCreator {
       }
     };
     return guards.length ? canActivateFn : null;
+  }
+
+  public registerRequestProvider<T = any>(request: T, contextId: ContextId) {
+    this.container.registerRequestProvider<T>(request, contextId);
   }
 }

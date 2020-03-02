@@ -33,7 +33,7 @@ describe('InterceptorsConsumer', () => {
     describe('when interceptors array is not empty', () => {
       let next: sinon.SinonSpy;
       beforeEach(() => {
-        next = sinon.spy();
+        next = sinon.stub().returns(Promise.resolve(''));
       });
       it('should call every `intercept` method', async () => {
         await consumer.intercept(
@@ -56,6 +56,26 @@ describe('InterceptorsConsumer', () => {
           next,
         );
         expect(next.called).to.be.false;
+      });
+      it('should call `next` when subscribe', async () => {
+        async function transformToResult(resultOrDeferred: any) {
+          if (
+            resultOrDeferred &&
+            typeof resultOrDeferred.subscribe === 'function'
+          ) {
+            return resultOrDeferred.toPromise();
+          }
+          return resultOrDeferred;
+        }
+        const intercepted = await consumer.intercept(
+          interceptors,
+          null,
+          { constructor: null },
+          null,
+          next,
+        );
+        await transformToResult(intercepted);
+        expect(next.called).to.be.true;
       });
     });
   });

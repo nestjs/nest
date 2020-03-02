@@ -1,12 +1,13 @@
 import {
   INestApplicationContext,
+  Logger,
   LoggerService,
   ShutdownSignal,
 } from '@nestjs/common';
-import { Logger } from '@nestjs/common';
 import { Abstract } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { MESSAGES } from './constants';
 import { UnknownElementException } from './errors/exceptions/unknown-element.exception';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
 import { createContextId } from './helpers';
@@ -23,22 +24,20 @@ import { ContainerScanner } from './injector/container-scanner';
 import { Injector } from './injector/injector';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { Module } from './injector/module';
-import { ModuleTokenFactory } from './injector/module-token-factory';
-import { MESSAGES } from './constants';
 
 /**
  * @publicApi
  */
 export class NestApplicationContext implements INestApplicationContext {
-  protected isInitialized: boolean = false;
+  protected isInitialized = false;
   protected readonly injector = new Injector();
-  private readonly moduleTokenFactory = new ModuleTokenFactory();
+  private shutdownCleanupRef?: (...args: unknown[]) => unknown;
+  private readonly activeShutdownSignals = new Array<string>();
   private readonly containerScanner: ContainerScanner;
-  private readonly activeShutdownSignals: string[] = new Array<string>();
 
   constructor(
     protected readonly container: NestContainer,
-    private readonly scope: Type<any>[] = [],
+    private readonly scope = new Array<Type<any>>(),
     private contextModule: Module = null,
   ) {
     this.containerScanner = new ContainerScanner(container);
@@ -53,8 +52,9 @@ export class NestApplicationContext implements INestApplicationContext {
     const modules = this.container.getModules();
     const moduleMetatype = this.contextModule.metatype;
     const scope = this.scope.concat(moduleMetatype);
+    const moduleTokenFactory = this.container.getModuleTokenFactory();
 
-    const token = this.moduleTokenFactory.create(module, scope);
+    const token = moduleTokenFactory.create(module, scope);
     const selectedModule = modules.get(token);
     if (!selectedModule) {
       throw new UnknownModuleException();
@@ -105,17 +105,12 @@ export class NestApplicationContext implements INestApplicationContext {
     return this;
   }
 
-  protected async dispose(): Promise<void> {
-    // Nest application context has no server
-    // to dispose, therefore just call a noop
-    return Promise.resolve();
-  }
-
   public async close(): Promise<void> {
     await this.callDestroyHook();
     await this.callBeforeShutdownHook();
     await this.dispose();
     await this.callShutdownHook();
+    await this.unsubscribeFromProcessSignals();
   }
 
   public useLogger(logger: LoggerService) {
@@ -156,6 +151,12 @@ export class NestApplicationContext implements INestApplicationContext {
     return this;
   }
 
+  protected async dispose(): Promise<void> {
+    // Nest application context has no server
+    // to dispose, therefore just call a noop
+    return Promise.resolve();
+  }
+
   /**
    * Listens to shutdown signals by listening to
    * process events
@@ -180,10 +181,23 @@ export class NestApplicationContext implements INestApplicationContext {
         process.exit(1);
       }
     };
+    this.shutdownCleanupRef = cleanup as (...args: unknown[]) => unknown;
 
     signals.forEach((signal: string) => {
       this.activeShutdownSignals.push(signal);
       process.on(signal as any, cleanup);
+    });
+  }
+
+  /**
+   * Unsubscribes from shutdown signals (process events)
+   */
+  protected unsubscribeFromProcessSignals() {
+    if (!this.shutdownCleanupRef) {
+      return;
+    }
+    this.activeShutdownSignals.forEach(signal => {
+      process.removeListener(signal, this.shutdownCleanupRef);
     });
   }
 

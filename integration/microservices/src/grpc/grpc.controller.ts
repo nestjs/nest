@@ -21,6 +21,18 @@ export class GrpcController {
   })
   client: ClientGrpc;
 
+  @Client({
+    transport: Transport.GRPC,
+    options: {
+      package: ['math', 'math2'],
+      protoPath: [
+        join(__dirname, 'math.proto'),
+        join(__dirname, 'math2.proto'),
+      ],
+    },
+  })
+  client2: ClientGrpc;
+
   @Post()
   @HttpCode(200)
   call(@Body() data: number[]): Observable<number> {
@@ -56,5 +68,19 @@ export class GrpcController {
     stream.on('data', (msg: any) => {
       stream.write({ result: msg.data.reduce((a, b) => a + b) });
     });
+  }
+
+  @GrpcMethod('Math2')
+  async sum2({ data }: { data: number[] }): Promise<any> {
+    return of({
+      result: data.reduce((a, b) => a + b),
+    });
+  }
+
+  @Post()
+  @HttpCode(200)
+  call2(@Body() data: number[]): Observable<number> {
+    const svc = this.client2.getService<any>('Math2');
+    return svc.sum({ data });
   }
 }

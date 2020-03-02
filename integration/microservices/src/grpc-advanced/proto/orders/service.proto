@@ -6,4 +6,6 @@ service OrderService {
     rpc Find(Order) returns (Order);
     rpc Sync(stream Order) returns (stream Order);
     rpc SyncCall(stream Order) returns (stream Order);
+    rpc StreamReq(stream Order) returns (Order);
+    rpc StreamReqCall(stream Order) returns (Order);
 }

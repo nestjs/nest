@@ -15,6 +15,7 @@ import { IncomingResponseDeserializer } from '../deserializers/incoming-response
 import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
   ClientOptions,
+  KafkaOptions,
   MqttOptions,
   MsPattern,
   NatsOptions,
@@ -22,7 +23,6 @@ import {
   ReadPacket,
   RedisOptions,
   RmqOptions,
-  KafkaOptions,
   TcpClientOptions,
   WritePacket,
 } from '../interfaces';
@@ -85,7 +85,7 @@ export abstract class ClientProxy {
     return ({ err, response, isDisposed }: WritePacket) => {
       if (err) {
         return observer.error(err);
-      } else if (response && isDisposed) {
+      } else if (response !== undefined && isDisposed) {
         observer.next(response);
         return observer.complete();
       } else if (isDisposed) {

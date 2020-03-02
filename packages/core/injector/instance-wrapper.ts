@@ -38,6 +38,8 @@ export class InstanceWrapper<T = any> {
   public readonly async?: boolean;
   public readonly host?: Module;
   public readonly scope?: Scope = Scope.DEFAULT;
+  public readonly isAlias: boolean = false;
+
   public metatype: Type<T> | Function;
   public inject?: (string | symbol | Function | Type<any>)[];
   public forwardRef?: boolean;
@@ -270,6 +272,17 @@ export class InstanceWrapper<T = any> {
       contextId !== STATIC_CONTEXT &&
       this.isTransient &&
       isInquirerRequestScoped
+    );
+  }
+
+  public isExplicitlyRequested(
+    contextId: ContextId,
+    inquirer?: InstanceWrapper,
+  ): boolean {
+    return (
+      this.isDependencyTreeStatic() &&
+      contextId !== STATIC_CONTEXT &&
+      inquirer === this
     );
   }
 
