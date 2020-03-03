@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { Transport } from '@nestjs/microservices';
+import { TcpOptions, Transport } from '@nestjs/microservices';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -7,7 +7,7 @@ async function bootstrap() {
    * This example contains a hybrid application (HTTP + TCP)
    * You can switch to a microservice with NestFactory.createMicroservice() as follows:
    *
-   * const app = await NestFactory.createMicroservice(AppModule, {
+   * const app = await NestFactory.createMicroservice<TcpOptions>(AppModule, {
    *  transport: Transport.TCP,
    *  options: { retryAttempts: 5, retryDelay: 3000 },
    * });
@@ -15,7 +15,7 @@ async function bootstrap() {
    *
    */
   const app = await NestFactory.create(AppModule);
-  app.connectMicroservice({
+  app.connectMicroservice<TcpOptions>({
     transport: Transport.TCP,
     options: { retryAttempts: 5, retryDelay: 3000 },
   });

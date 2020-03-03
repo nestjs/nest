@@ -4,7 +4,6 @@ import {
   INestApplicationContext,
   INestMicroservice,
 } from '@nestjs/common';
-import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
@@ -91,9 +90,9 @@ export class NestFactoryStatic {
    * @returns A promise that, when resolved,
    * contains a reference to the NestMicroservice instance.
    */
-  public async createMicroservice(
+  public async createMicroservice<T extends object>(
     module: any,
-    options?: NestMicroserviceOptions & MicroserviceOptions,
+    options?: NestMicroserviceOptions & T,
   ): Promise<INestMicroservice> {
     const { NestMicroservice } = loadPackage(
       '@nestjs/microservices',
