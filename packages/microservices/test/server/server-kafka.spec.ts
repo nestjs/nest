@@ -177,6 +177,31 @@ describe('ServerKafka', () => {
       expect(run.called).to.be.true;
       expect(connect.called).to.be.true;
     });
+    it('should call subscribe with options and run on consumer when there are messageHandlers', async () => {
+      (server as any).logger = new NoopLogger();
+      (server as any).options.subscribe = {};
+      (server as any).options.subscribe.fromBeginning = true;
+      await server.listen(callback);
+
+      const pattern = 'test';
+      const handler = sinon.spy();
+      (server as any).messageHandlers = objectToMap({
+        [pattern]: handler,
+      });
+
+      await server.bindEvents((server as any).consumer);
+
+      expect(subscribe.called).to.be.true;
+      expect(
+        subscribe.calledWith({
+          topic: pattern,
+          fromBeginning: true,
+        }),
+      ).to.be.true;
+
+      expect(run.called).to.be.true;
+      expect(connect.called).to.be.true;
+    });
   });
 
   describe('getMessageHandler', () => {

@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { join } from 'path';
 import { PhotoModule } from './photo/photo.module';
 import { Photo } from './photo/photo.entity';
 
