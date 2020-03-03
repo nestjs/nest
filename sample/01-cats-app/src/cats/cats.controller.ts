@@ -17,7 +17,6 @@ export class CatsController {
     this.catsService.create(createCatDto);
   }
 
-  @Roles('admin')
   @Get()
   async findAll(): Promise<Cat[]> {
     return this.catsService.findAll();
