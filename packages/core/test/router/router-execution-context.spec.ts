@@ -147,11 +147,11 @@ describe('RouterExecutionContext', () => {
               error = e;
             }
             expect(error).to.be.instanceOf(ForbiddenException);
-            expect(error.message).to.be.eql('Forbidden resource');
+            expect(error.message).to.be.eql('Forbidden');
             expect(error.getResponse()).to.be.eql({
               statusCode: HttpStatus.FORBIDDEN,
-              error: 'Forbidden',
-              message: FORBIDDEN_MESSAGE,
+              message: 'Forbidden',
+              error: FORBIDDEN_MESSAGE,
             });
           });
           it('should apply expected context when "canActivateFn" apply', () => {
@@ -284,11 +284,11 @@ describe('RouterExecutionContext', () => {
       }
 
       expect(error).to.be.instanceOf(ForbiddenException);
-      expect(error.message).to.be.eql('Forbidden resource');
+      expect(error.message).to.be.eql('Forbidden');
       expect(error.getResponse()).to.be.eql({
         statusCode: HttpStatus.FORBIDDEN,
-        error: 'Forbidden',
-        message: FORBIDDEN_MESSAGE,
+        error: FORBIDDEN_MESSAGE,
+        message: 'Forbidden',
       });
     });
   });

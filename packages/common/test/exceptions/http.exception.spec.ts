@@ -26,8 +26,8 @@ describe('HttpException', () => {
     const message = 'My error message';
     expect(new BadRequestException(message).getResponse()).to.be.eql({
       statusCode: 400,
-      error: 'Bad Request',
-      message: 'My error message',
+      message: 'Bad Request',
+      error: 'My error message',
     });
   });
 
@@ -100,7 +100,7 @@ describe('HttpException', () => {
         const message = 'test';
         const status = 500;
         const error = 'error';
-        expect(HttpException.createBody(message, error, status)).to.be.eql({
+        expect(HttpException.createBody(error, message, status)).to.be.eql({
           message,
           error,
           statusCode: status,
@@ -121,8 +121,8 @@ describe('HttpException', () => {
       expect(
         HttpException.createBody(['a', 'random', 'array'], 'error', 200),
       ).to.eql({
-        message: ['a', 'random', 'array'],
-        error: 'error',
+        error: ['a', 'random', 'array'],
+        message: 'error',
         statusCode: 200,
       });
     });

@@ -66,15 +66,15 @@ export class HttpException extends Error {
   }
 
   public static createBody(
-    message: object | string,
-    error?: string,
+    objectOrError: object | string,
+    message?: string,
     statusCode?: number,
   ) {
-    if (!message) {
-      return { statusCode, message: error };
+    if (!objectOrError) {
+      return { statusCode, message };
     }
-    return isObject(message) && !Array.isArray(message)
-      ? message
-      : { statusCode, error, message };
+    return isObject(objectOrError) && !Array.isArray(objectOrError)
+      ? objectOrError
+      : { statusCode, error: objectOrError, message };
   }
 }
