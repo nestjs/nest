@@ -123,7 +123,7 @@ export class RpcContextCreator {
       return callback.apply(instance, args);
     };
 
-    return this.rpcProxy.create(async (...args: any[]) => {
+    return this.rpcProxy.create(async (...args: unknown[]) => {
       const initialArgs = this.contextUtils.createNullArray(argsLength);
       fnCanActivate && (await fnCanActivate(args));
 
@@ -134,21 +134,21 @@ export class RpcContextCreator {
         callback,
         handler(initialArgs, args),
         contextType,
-      );
+      ) as Promise<Observable<unknown>>;
     }, exceptionHandler);
   }
 
   public reflectCallbackParamtypes(
     instance: Controller,
-    callback: (...args: any[]) => any,
-  ): any[] {
+    callback: (...args: unknown[]) => unknown,
+  ): unknown[] {
     return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
   }
 
   public createGuardsFn<TContext extends string = ContextType>(
     guards: any[],
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
     contextType?: TContext,
   ): Function | null {
     const canActivateFn = async (args: any[]) => {
@@ -237,7 +237,7 @@ export class RpcContextCreator {
         return { index, extractValue: customExtractValue, type, data, pipes };
       }
       const numericType = Number(type);
-      const extractValue = (...args: any[]) =>
+      const extractValue = (...args: unknown[]) =>
         paramsFactory.exchangeKeyForValue(numericType, args);
 
       return { index, extractValue, type: numericType, data, pipes };

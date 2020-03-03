@@ -51,10 +51,9 @@ export class InstanceLoader {
 
   private async createInstancesOfProviders(module: Module) {
     const { providers } = module;
+    const wrappers = [...providers.values()];
     await Promise.all(
-      [...providers.values()].map(async wrapper =>
-        this.injector.loadProvider(wrapper, module),
-      ),
+      wrappers.map(item => this.injector.loadProvider(item, module)),
     );
   }
 
@@ -67,26 +66,24 @@ export class InstanceLoader {
 
   private async createInstancesOfControllers(module: Module) {
     const { controllers } = module;
+    const wrappers = [...controllers.values()];
     await Promise.all(
-      [...controllers.values()].map(async wrapper =>
-        this.injector.loadController(wrapper, module),
-      ),
+      wrappers.map(item => this.injector.loadController(item, module)),
     );
   }
 
   private createPrototypesOfInjectables(module: Module) {
     const { injectables } = module;
     injectables.forEach(wrapper =>
-      this.injector.loadPrototype<Controller>(wrapper, injectables),
+      this.injector.loadPrototype(wrapper, injectables),
     );
   }
 
   private async createInstancesOfInjectables(module: Module) {
     const { injectables } = module;
+    const wrappers = [...injectables.values()];
     await Promise.all(
-      [...injectables.values()].map(async wrapper =>
-        this.injector.loadInjectable(wrapper, module),
-      ),
+      wrappers.map(item => this.injector.loadInjectable(item, module)),
     );
   }
 

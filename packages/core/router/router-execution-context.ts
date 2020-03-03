@@ -1,4 +1,5 @@
 import {
+  CanActivate,
   ForbiddenException,
   HttpServer,
   ParamData,
@@ -70,9 +71,9 @@ export class RouterExecutionContext {
 
   public create(
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: any[]) => unknown,
     methodName: string,
-    module: string,
+    moduleKey: string,
     requestMethod: RequestMethod,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -90,33 +91,33 @@ export class RouterExecutionContext {
       instance,
       callback,
       methodName,
-      module,
+      moduleKey,
       requestMethod,
       contextType,
     );
 
     const paramsOptions = this.contextUtils.mergeParamsMetatypes(
-      getParamsMetadata(module, contextId, inquirerId),
+      getParamsMetadata(moduleKey, contextId, inquirerId),
       paramtypes,
     );
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
     const guards = this.guardsContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
@@ -167,7 +168,7 @@ export class RouterExecutionContext {
     instance: Controller,
     callback: (...args: any[]) => any,
     methodName: string,
-    module: string,
+    moduleKey: string,
     requestMethod: RequestMethod,
     contextType: TContext,
   ): HandlerMetadata {
@@ -207,7 +208,7 @@ export class RouterExecutionContext {
         contextFactory,
       );
 
-    const paramsMetadata = getParamsMetadata(module);
+    const paramsMetadata = getParamsMetadata(moduleKey);
     const isResponseHandled = paramsMetadata.some(
       ({ type }) =>
         type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
@@ -240,20 +241,26 @@ export class RouterExecutionContext {
     return handlerMetadata;
   }
 
-  public reflectRedirect(callback: (...args: any[]) => any): RedirectResponse {
+  public reflectRedirect(
+    callback: (...args: unknown[]) => unknown,
+  ): RedirectResponse {
     return Reflect.getMetadata(REDIRECT_METADATA, callback);
   }
 
-  public reflectHttpStatusCode(callback: (...args: any[]) => any): number {
+  public reflectHttpStatusCode(
+    callback: (...args: unknown[]) => unknown,
+  ): number {
     return Reflect.getMetadata(HTTP_CODE_METADATA, callback);
   }
 
-  public reflectRenderTemplate(callback: (...args: any[]) => any): string {
+  public reflectRenderTemplate(
+    callback: (...args: unknown[]) => unknown,
+  ): string {
     return Reflect.getMetadata(RENDER_METADATA, callback);
   }
 
   public reflectResponseHeaders(
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
   ): CustomHeader[] {
     return Reflect.getMetadata(HEADERS_METADATA, callback) || [];
   }
@@ -330,7 +337,7 @@ export class RouterExecutionContext {
   }
 
   public createGuardsFn<TContext extends string = ContextType>(
-    guards: any[],
+    guards: CanActivate[],
     instance: Controller,
     callback: (...args: any[]) => any,
     contextType?: TContext,
@@ -387,7 +394,7 @@ export class RouterExecutionContext {
   }
 
   public createHandleResponseFn(
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
     isResponseHandled: boolean,
     redirectResponse?: RedirectResponse,
     httpStatusCode?: number,

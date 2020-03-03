@@ -27,7 +27,7 @@ export function assignMetadata<TParamtype = any, TArgs = any>(
   };
 }
 
-const createRouteParamDecorator = (paramtype: RouteParamtypes) => {
+function createRouteParamDecorator(paramtype: RouteParamtypes) {
   return (data?: ParamData): ParameterDecorator => (target, key, index) => {
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
@@ -43,7 +43,7 @@ const createRouteParamDecorator = (paramtype: RouteParamtypes) => {
       key,
     );
   };
-};
+}
 
 const createPipesRouteParamDecorator = (paramtype: RouteParamtypes) => (
   data?: any,

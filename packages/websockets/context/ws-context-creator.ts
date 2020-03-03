@@ -57,7 +57,7 @@ export class WsContextCreator {
   public create<T extends ParamsMetadata = ParamsMetadata>(
     instance: Controller,
     callback: (...args: unknown[]) => void,
-    module: string,
+    moduleKey: string,
     methodName: string,
   ): (...args: any[]) => Promise<void> {
     const contextType: ContextType = 'ws';
@@ -70,17 +70,25 @@ export class WsContextCreator {
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
       callback,
-      module,
+      moduleKey,
     );
-    const pipes = this.pipesContextCreator.create(instance, callback, module);
-    const guards = this.guardsContextCreator.create(instance, callback, module);
+    const pipes = this.pipesContextCreator.create(
+      instance,
+      callback,
+      moduleKey,
+    );
+    const guards = this.guardsContextCreator.create(
+      instance,
+      callback,
+      moduleKey,
+    );
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
     );
 
-    const paramsMetadata = getParamsMetadata(module);
+    const paramsMetadata = getParamsMetadata(moduleKey);
     const paramsOptions = paramsMetadata
       ? this.contextUtils.mergeParamsMetatypes(paramsMetadata, paramtypes)
       : [];

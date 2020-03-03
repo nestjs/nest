@@ -105,11 +105,12 @@ export class RouterExplorer {
 
   public scanForPaths(
     instance: Controller,
-    prototype?: any,
+    prototype?: object,
   ): RoutePathProperties[] {
     const instancePrototype = isUndefined(prototype)
       ? Object.getPrototypeOf(instance)
       : prototype;
+
     return this.metadataScanner.scanFromPrototype<
       Controller,
       RoutePathProperties
@@ -120,10 +121,10 @@ export class RouterExplorer {
 
   public exploreMethodMetadata(
     instance: Controller,
-    instancePrototype: any,
+    prototype: object,
     methodName: string,
   ): RoutePathProperties {
-    const targetCallback = instancePrototype[methodName];
+    const targetCallback = prototype[methodName];
     const routePath = Reflect.getMetadata(PATH_METADATA, targetCallback);
     if (isUndefined(routePath)) {
       return null;
@@ -147,7 +148,7 @@ export class RouterExplorer {
     router: T,
     routePaths: RoutePathProperties[],
     instanceWrapper: InstanceWrapper,
-    module: string,
+    moduleKey: string,
     basePath: string,
     host: string,
   ) {
@@ -157,7 +158,7 @@ export class RouterExplorer {
         router,
         pathProperties,
         instanceWrapper,
-        module,
+        moduleKey,
         basePath,
         host,
       );
@@ -249,7 +250,7 @@ export class RouterExplorer {
     instance: Controller,
     callback: RouterProxyCallback,
     methodName: string,
-    module: string,
+    moduleRef: string,
     requestMethod: RequestMethod,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -258,7 +259,7 @@ export class RouterExplorer {
       instance,
       callback,
       methodName,
-      module,
+      moduleRef,
       requestMethod,
       contextId,
       inquirerId,
@@ -266,7 +267,7 @@ export class RouterExplorer {
     const exceptionFilter = this.exceptionsFilter.create(
       instance,
       callback,
-      module,
+      moduleRef,
       contextId,
       inquirerId,
     );
@@ -276,13 +277,13 @@ export class RouterExplorer {
   public createRequestScopedHandler(
     instanceWrapper: InstanceWrapper,
     requestMethod: RequestMethod,
-    module: Module,
+    moduleRef: Module,
     moduleKey: string,
     methodName: string,
   ) {
     const { instance } = instanceWrapper;
-    const collection = module.controllers;
-    return async <TRequest, TResponse>(
+    const collection = moduleRef.controllers;
+    return async <TRequest extends Record<any, any>, TResponse>(
       req: TRequest,
       res: TResponse,
       next: () => void,
@@ -291,7 +292,7 @@ export class RouterExplorer {
         const contextId = this.getContextId(req);
         const contextInstance = await this.injector.loadPerContext(
           instance,
-          module,
+          moduleRef,
           collection,
           contextId,
         );
@@ -322,7 +323,7 @@ export class RouterExplorer {
     };
   }
 
-  private getContextId<T extends Record<any, any> = any>(
+  private getContextId<T extends Record<any, unknown> = any>(
     request: T,
   ): ContextId {
     const contextId = ContextIdFactory.getByRequest(request);

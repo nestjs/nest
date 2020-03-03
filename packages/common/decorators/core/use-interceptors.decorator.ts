@@ -27,9 +27,13 @@ import { validateEach } from '../../utils/validate-each.util';
  */
 export function UseInterceptors(
   ...interceptors: (NestInterceptor | Function)[]
-) {
-  return (target: any, key?: string, descriptor?: any) => {
-    const isValidInterceptor = <T extends Function | Record<string, any>>(
+): MethodDecorator & ClassDecorator {
+  return (
+    target: any,
+    key?: string | symbol,
+    descriptor?: TypedPropertyDescriptor<any>,
+  ) => {
+    const isInterceptorValid = <T extends Function | Record<string, any>>(
       interceptor: T,
     ) =>
       interceptor &&
@@ -40,7 +44,7 @@ export function UseInterceptors(
       validateEach(
         target.constructor,
         interceptors,
-        isValidInterceptor,
+        isInterceptorValid,
         '@UseInterceptors',
         'interceptor',
       );
@@ -54,7 +58,7 @@ export function UseInterceptors(
     validateEach(
       target,
       interceptors,
-      isValidInterceptor,
+      isInterceptorValid,
       '@UseInterceptors',
       'interceptor',
     );

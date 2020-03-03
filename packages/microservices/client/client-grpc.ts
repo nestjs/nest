@@ -55,7 +55,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     return grpcService;
   }
 
-  public getClientByServiceName<T = any>(name: string): T {
+  public getClientByServiceName<T = unknown>(name: string): T {
     return this.clients.get(name) || this.createClientByServiceName(name);
   }
 
@@ -136,14 +136,14 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   public createServiceMethod(
     client: any,
     methodName: string,
-  ): (...args: any[]) => Observable<any> {
+  ): (...args: unknown[]) => Observable<unknown> {
     return client[methodName].responseStream
       ? this.createStreamServiceMethod(client, methodName)
       : this.createUnaryServiceMethod(client, methodName);
   }
 
   public createStreamServiceMethod(
-    client: any,
+    client: unknown,
     methodName: string,
   ): (...args: any[]) => Observable<any> {
     return (...args: any[]) => {

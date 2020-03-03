@@ -199,7 +199,10 @@ export class NestContainer {
   }
 
   public bindGlobalModuleToModule(target: Module, globalModule: Module) {
-    target !== globalModule && target.addRelatedModule(globalModule);
+    if (target === globalModule) {
+      return;
+    }
+    target.addRelatedModule(globalModule);
   }
 
   public getDynamicMetadataByToken(

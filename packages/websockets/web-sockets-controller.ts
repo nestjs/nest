@@ -43,9 +43,9 @@ export class WebSocketsController {
 
   public subscribeToServerEvents(
     instance: NestGateway,
-    options: any,
+    options: object,
     port: number,
-    module: string,
+    moduleKey: string,
   ) {
     const nativeMessageHandlers = this.metadataExplorer.explore(instance);
     const messageHandlers = nativeMessageHandlers.map(
@@ -55,7 +55,7 @@ export class WebSocketsController {
         callback: this.contextCreator.create(
           instance,
           callback,
-          module,
+          moduleKey,
           methodName,
         ),
       }),
@@ -98,7 +98,7 @@ export class WebSocketsController {
     connection: Subject<any>,
   ) {
     const adapter = this.config.getIoAdapter();
-    return (...args: any[]) => {
+    return (...args: unknown[]) => {
       const [client] = args;
       connection.next(args);
       context.subscribeMessages(subscribersMap, client, instance);

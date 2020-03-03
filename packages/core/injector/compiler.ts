@@ -4,7 +4,7 @@ import { ModuleTokenFactory } from './module-token-factory';
 export interface ModuleFactory {
   type: Type<any>;
   token: string;
-  dynamicMetadata?: Partial<DynamicModule> | undefined;
+  dynamicMetadata?: Partial<DynamicModule>;
 }
 
 export class ModuleCompiler {
