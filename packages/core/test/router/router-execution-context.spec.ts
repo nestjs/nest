@@ -20,9 +20,8 @@ import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;
-  let callback;
+  let callback: any;
   let applySpy: sinon.SinonSpy;
-  let bindSpy: sinon.SinonSpy;
   let factory: RouteParamsFactory;
   let consumer: PipesConsumer;
   let guardsConsumer: GuardsConsumer;
@@ -34,7 +33,6 @@ describe('RouterExecutionContext', () => {
       bind: () => ({}),
       apply: () => ({}),
     };
-    bindSpy = sinon.spy(callback, 'bind');
     applySpy = sinon.spy(callback, 'apply');
 
     factory = new RouteParamsFactory();
@@ -94,7 +92,11 @@ describe('RouterExecutionContext', () => {
         beforeEach(() => {
           instance = { foo: 'bar' };
 
-          const canActivateFn = contextCreator.createGuardsFn([1], null, null);
+          const canActivateFn = contextCreator.createGuardsFn(
+            [1] as any,
+            null,
+            null,
+          );
           sinon.stub(contextCreator, 'createGuardsFn').returns(canActivateFn);
           tryActivateStub = sinon
             .stub(guardsConsumer, 'tryActivate')
@@ -173,10 +175,6 @@ describe('RouterExecutionContext', () => {
   });
 
   describe('exchangeKeysForValues', () => {
-    const res = { body: 'res' };
-    const req = { body: { test: 'req' } };
-    const next = () => {};
-
     it('should exchange arguments keys for appropriate values', () => {
       const metadata = {
         [RouteParamtypes.REQUEST]: { index: 0, data: 'test', pipes: [] },

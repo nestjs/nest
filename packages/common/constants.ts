@@ -4,7 +4,6 @@ export const MODULE_METADATA = {
   CONTROLLERS: 'controllers',
   EXPORTS: 'exports',
 };
-export const SHARED_MODULE_METADATA = '__module:shared__';
 export const GLOBAL_MODULE_METADATA = '__module:global__';
 export const HOST_METADATA = 'host';
 export const PATH_METADATA = 'path';

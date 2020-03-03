@@ -60,26 +60,25 @@ export class NestContainer {
     }
     const { type, dynamicMetadata, token } = await this.moduleCompiler.compile(
       metatype,
-      scope,
     );
     if (this.modules.has(token)) {
       return;
     }
-    const module = new Module(type, scope, this);
-    this.modules.set(token, module);
+    const moduleRef = new Module(type, scope, this);
+    this.modules.set(token, moduleRef);
     this.addDynamicMetadata(token, dynamicMetadata, [].concat(scope, type));
 
     if (this.isGlobalModule(type, dynamicMetadata)) {
-      this.addGlobalModule(module);
+      this.addGlobalModule(moduleRef);
     }
-    return module;
+    return moduleRef;
   }
 
   public addDynamicMetadata(
     token: string,
     dynamicModuleMetadata: Partial<DynamicModule>,
     scope: Type<any>[],
-  ): void {
+  ) {
     if (!dynamicModuleMetadata) {
       return;
     }
@@ -129,16 +128,12 @@ export class NestContainer {
     if (!this.modules.has(token)) {
       return;
     }
-    const module = this.modules.get(token);
-    const parent = module.metatype;
-
-    const scope = [].concat(module.scope, parent);
+    const moduleRef = this.modules.get(token);
     const { token: relatedModuleToken } = await this.moduleCompiler.compile(
       relatedModule,
-      scope,
     );
     const related = this.modules.get(relatedModuleToken);
-    module.addRelatedModule(related);
+    moduleRef.addRelatedModule(related);
   }
 
   public addProvider(provider: Provider, token: string): string {
@@ -148,8 +143,8 @@ export class NestContainer {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
-    const module = this.modules.get(token);
-    return module.addProvider(provider);
+    const moduleRef = this.modules.get(token);
+    return moduleRef.addProvider(provider);
   }
 
   public addInjectable(
@@ -160,24 +155,24 @@ export class NestContainer {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
-    const module = this.modules.get(token);
-    module.addInjectable(injectable, host);
+    const moduleRef = this.modules.get(token);
+    moduleRef.addInjectable(injectable, host);
   }
 
   public addExportedProvider(provider: Type<any>, token: string) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
-    const module = this.modules.get(token);
-    module.addExportedProvider(provider);
+    const moduleRef = this.modules.get(token);
+    moduleRef.addExportedProvider(provider);
   }
 
   public addController(controller: Type<any>, token: string) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
-    const module = this.modules.get(token);
-    module.addController(controller);
+    const moduleRef = this.modules.get(token);
+    moduleRef.addController(controller);
   }
 
   public clear() {
@@ -192,9 +187,9 @@ export class NestContainer {
     this.modules.forEach(module => this.bindGlobalsToImports(module));
   }
 
-  public bindGlobalsToImports(module: Module) {
+  public bindGlobalsToImports(moduleRef: Module) {
     this.globalModules.forEach(globalModule =>
-      this.bindGlobalModuleToModule(module, globalModule),
+      this.bindGlobalModuleToModule(moduleRef, globalModule),
     );
   }
 
