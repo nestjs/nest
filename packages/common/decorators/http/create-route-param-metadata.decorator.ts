@@ -1,4 +1,4 @@
-import * as uuid from 'uuid/v4';
+import { v4 as uuid } from 'uuid';
 import {
   CUSTOM_ROUTE_AGRS_METADATA,
   ROUTE_ARGS_METADATA,
