@@ -20,7 +20,7 @@
     "typescript": "3.7.2"
   },
   "devDependencies": {
-    "@types/node": "13.7.7",
+    "@types/node": "13.9.0",
     "supertest": "4.0.2",
     "ts-node": "8.6.2"
   }
