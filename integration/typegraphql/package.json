@@ -22,7 +22,7 @@
     "subscriptions-transport-ws": "0.9.16",
     "type-graphql": "0.17.6",
     "typescript": "3.7.2",
-    "ws": "7.2.1"
+    "ws": "7.2.2"
   },
   "devDependencies": {
     "@types/node": "7.10.9",
