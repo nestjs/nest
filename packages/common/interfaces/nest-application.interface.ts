@@ -94,7 +94,7 @@ export interface INestApplication extends INestApplicationContext {
   /**
    * Returns the underlying native HTTP server.
    *
-   * @returns {http.Server}
+   * @returns {any}
    */
   getHttpServer(): any;
 
