@@ -11,7 +11,7 @@ import {
 } from '@nestjs/core/injector/instance-wrapper';
 import { Module } from '@nestjs/core/injector/module';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { REQUEST } from '@nestjs/core/router/request/request-constants';
+import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants';
 import { IClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
@@ -126,7 +126,7 @@ export class ListenersController {
           data,
           reqCtx as BaseRpcContext,
         );
-        const contextId = ContextIdFactory.getByRequest(request);
+        const contextId = this.getContextId(request);
         this.container.registerRequestProvider(request, contextId);
 
         const contextInstance = await this.injector.loadPerContext(
@@ -164,16 +164,17 @@ export class ListenersController {
     };
   }
 
-  private registerRequestProvider(
-    request: RequestContext,
-    contextId: ContextId,
-  ) {
-    const coreModuleRef = this.container.getInternalCoreModuleRef();
-    const wrapper = coreModuleRef.getProviderByKey(REQUEST);
-
-    wrapper.setInstanceByContextId(contextId, {
-      instance: request,
-      isResolved: true,
-    });
+  private getContextId<T extends RequestContext = any>(request: T): ContextId {
+    const contextId = ContextIdFactory.getByRequest(request);
+    if (!request[REQUEST_CONTEXT_ID as any]) {
+      Object.defineProperty(request, REQUEST_CONTEXT_ID, {
+        value: contextId,
+        enumerable: false,
+        writable: false,
+        configurable: false,
+      });
+      this.container.registerRequestProvider(request, contextId);
+    }
+    return contextId;
   }
 }
