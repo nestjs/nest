@@ -8,20 +8,20 @@ export class MiddlewareResolver {
 
   constructor(private readonly middlewareContainer: MiddlewareContainer) {}
 
-  public async resolveInstances(module: Module, moduleName: string) {
+  public async resolveInstances(moduleRef: Module, moduleName: string) {
     const middleware = this.middlewareContainer.getMiddlewareCollection(
       moduleName,
     );
     const resolveInstance = async (wrapper: InstanceWrapper) =>
-      this.resolveMiddlewareInstance(wrapper, middleware, module);
+      this.resolveMiddlewareInstance(wrapper, middleware, moduleRef);
     await Promise.all([...middleware.values()].map(resolveInstance));
   }
 
   private async resolveMiddlewareInstance(
     wrapper: InstanceWrapper,
     middleware: Map<string, InstanceWrapper>,
-    module: Module,
+    moduleRef: Module,
   ) {
-    await this.instanceLoader.loadMiddleware(wrapper, middleware, module);
+    await this.instanceLoader.loadMiddleware(wrapper, middleware, moduleRef);
   }
 }

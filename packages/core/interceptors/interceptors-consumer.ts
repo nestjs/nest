@@ -1,4 +1,4 @@
-import { NestInterceptor } from '@nestjs/common';
+import { NestInterceptor, Type } from '@nestjs/common';
 import {
   CallHandler,
   ContextType,
@@ -12,12 +12,12 @@ import { ExecutionContextHost } from '../helpers/execution-context-host';
 export class InterceptorsConsumer {
   public async intercept<TContext extends string = ContextType>(
     interceptors: NestInterceptor[],
-    args: any[],
+    args: unknown[],
     instance: Controller,
-    callback: (...args: any[]) => any,
-    next: () => Promise<any>,
+    callback: (...args: unknown[]) => unknown,
+    next: () => Promise<unknown>,
     type?: TContext,
-  ): Promise<any> {
+  ): Promise<unknown> {
     if (isEmpty(interceptors)) {
       return next();
     }
@@ -38,13 +38,13 @@ export class InterceptorsConsumer {
   }
 
   public createContext(
-    args: any[],
+    args: unknown[],
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
   ): ExecutionContextHost {
     return new ExecutionContextHost(
       args,
-      instance.constructor as any,
+      instance.constructor as Type<unknown>,
       callback,
     );
   }

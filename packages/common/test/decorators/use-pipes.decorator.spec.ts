@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { UsePipes } from '../../decorators/core/use-pipes.decorator';
 import { PIPES_METADATA } from '../../constants';
+import { UsePipes } from '../../decorators/core/use-pipes.decorator';
 import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
 
 class Pipe {
@@ -30,7 +30,7 @@ describe('@UsePipes', () => {
 
   it('when object is invalid should throw exception', () => {
     try {
-      UsePipes('test' as any)({});
+      UsePipes('test' as any)(() => {});
     } catch (e) {
       expect(e).to.be.instanceof(InvalidDecoratorItemException);
     }

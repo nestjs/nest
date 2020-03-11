@@ -48,13 +48,13 @@ export class NestApplicationContext implements INestApplicationContext {
     this.contextModule = modules.next().value;
   }
 
-  public select<T>(module: Type<T>): INestApplicationContext {
+  public select<T>(moduleType: Type<T>): INestApplicationContext {
     const modules = this.container.getModules();
     const moduleMetatype = this.contextModule.metatype;
     const scope = this.scope.concat(moduleMetatype);
     const moduleTokenFactory = this.container.getModuleTokenFactory();
 
-    const token = moduleTokenFactory.create(module, scope);
+    const token = moduleTokenFactory.create(moduleType);
     const selectedModule = modules.get(token);
     if (!selectedModule) {
       throw new UnknownModuleException();

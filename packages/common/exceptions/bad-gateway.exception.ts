@@ -16,27 +16,26 @@ export class BadGatewayException extends HttpException {
    * `throw new BadGatewayException()`
    *
    * @usageNotes
-   * The constructor arguments define the HTTP response.
-   * - The `message` argument defines the JSON response body.
-   * - The `error` argument defines the HTTP Status Code.
+   * The HTTP response status code will be 502.
+   * - The `objectOrError` argument defines the JSON response body or the error string.
+   * - The `message` argument contains a short description of the HTTP error.
    *
    * By default, the JSON response body contains two properties:
-   * - `statusCode`: defaults to the Http Status Code provided in the `error` argument
+   * - `statusCode`: this will be the value 502.
    * - `message`: the string `'Bad Gateway'` by default; override this by supplying
    * a string in the `message` parameter.
    *
-   * To override the entire JSON response body, pass an object.  Nest will serialize
-   * the object and return it as the JSON response body.
+   * If the parameter `objectOrError` is a string, the response body will contain an
+   * additional property, `error`, containing the given string. To override the
+   * entire JSON response body, pass an object instead. Nest will serialize the object
+   * and return it as the JSON response body.
    *
-   * The `error` argument is required, and should be a valid HTTP status code.
-   * Best practice is to use the `HttpStatus` enum imported from `nestjs/common`.
-   *
-   * @param message string or object describing the error condition.
-   * @param error HTTP response status code
+   * @param objectOrError string or object describing the error condition.
+   * @param message a short description of the HTTP error.
    */
-  constructor(message?: string | object | any, error = 'Bad Gateway') {
+  constructor(objectOrError?: string | object | any, message = 'Bad Gateway') {
     super(
-      HttpException.createBody(message, error, HttpStatus.BAD_GATEWAY),
+      HttpException.createBody(objectOrError, message, HttpStatus.BAD_GATEWAY),
       HttpStatus.BAD_GATEWAY,
     );
   }

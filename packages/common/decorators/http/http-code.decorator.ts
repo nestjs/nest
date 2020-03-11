@@ -11,7 +11,11 @@ import { HTTP_CODE_METADATA } from '../../constants';
  * @publicApi
  */
 export function HttpCode(statusCode: number): MethodDecorator {
-  return (target: object, key, descriptor) => {
+  return (
+    target: object,
+    key: string | symbol,
+    descriptor: TypedPropertyDescriptor<any>,
+  ) => {
     Reflect.defineMetadata(HTTP_CODE_METADATA, statusCode, descriptor.value);
     return descriptor;
   };

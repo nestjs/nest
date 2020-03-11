@@ -16,32 +16,31 @@ export class UnsupportedMediaTypeException extends HttpException {
    * `throw new UnsupportedMediaTypeException()`
    *
    * @usageNotes
-   * The constructor arguments define the HTTP response.
-   * - The `message` argument defines the JSON response body.
-   * - The `error` argument defines the HTTP Status Code.
+   * The HTTP response status code will be 415.
+   * - The `objectOrError` argument defines the JSON response body or the error string.
+   * - The `message` argument contains a short description of the HTTP error.
    *
    * By default, the JSON response body contains two properties:
-   * - `statusCode`: defaults to the Http Status Code provided in the `error` argument
+   * - `statusCode`: this will be the value 415.
    * - `message`: the string `'Unsupported Media Type'` by default; override this by supplying
    * a string in the `message` parameter.
    *
-   * To override the entire JSON response body, pass an object.  Nest will serialize
-   * the object and return it as the JSON response body.
+   * If the parameter `objectOrError` is a string, the response body will contain an
+   * additional property, `error`, containing the given string. To override the
+   * entire JSON response body, pass an object instead. Nest will serialize the object
+   * and return it as the JSON response body.
    *
-   * The `error` argument is required, and should be a valid HTTP status code.
-   * Best practice is to use the `HttpStatus` enum imported from `nestjs/common`.
-   *
-   * @param message string or object describing the error condition.
-   * @param error HTTP response status code
+   * @param objectOrError string or object describing the error condition.
+   * @param message a short description of the HTTP error.
    */
   constructor(
-    message?: string | object | any,
-    error = 'Unsupported Media Type',
+    objectOrError?: string | object | any,
+    message = 'Unsupported Media Type',
   ) {
     super(
       HttpException.createBody(
+        objectOrError,
         message,
-        error,
         HttpStatus.UNSUPPORTED_MEDIA_TYPE,
       ),
       HttpStatus.UNSUPPORTED_MEDIA_TYPE,

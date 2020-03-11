@@ -1,5 +1,3 @@
-import { Logger } from '../../services/logger.service';
-
 export type CustomDecorator<TKey = string> = MethodDecorator &
   ClassDecorator & {
     KEY: TKey;
@@ -35,18 +33,4 @@ export const SetMetadata = <K = string, V = any>(
   };
   decoratorFactory.KEY = metadataKey;
   return decoratorFactory;
-};
-
-const logger = new Logger('ReflectMetadata');
-/**
- * @deprecated
- */
-export const ReflectMetadata = <K = any, V = any>(
-  metadataKey: K,
-  metadataValue: V,
-) => {
-  logger.warn(
-    `DEPRECATED! The @ReflectMetadata() decorator has been deprecated within the 6.0.0 release. Please, use @SetMetadata() instead.`,
-  );
-  return SetMetadata(metadataKey, metadataValue);
 };

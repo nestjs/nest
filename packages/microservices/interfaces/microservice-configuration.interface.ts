@@ -1,11 +1,11 @@
-import { MqttClientOptions } from '@nestjs/common/interfaces/external/mqtt-options.interface';
-import {
-  KafkaConfig,
-  ConsumerConfig,
-  ProducerConfig,
-  CompressionTypes,
-} from '@nestjs/common/interfaces/external/kafka-options.interface';
 import { Transport } from '../enums/transport.enum';
+import {
+  CompressionTypes,
+  ConsumerConfig,
+  KafkaConfig,
+  ProducerConfig,
+} from '../external/kafka-options.interface';
+import { MqttClientOptions } from '../external/mqtt-options.interface';
 import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';

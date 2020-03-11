@@ -1,3 +1,4 @@
+import { Type } from '@nestjs/common';
 import { Controller } from '@nestjs/common/interfaces';
 import { CONTROLLER_ID_KEY } from '../injector/constants';
 import { ContextId } from '../injector/instance-wrapper';
@@ -22,7 +23,10 @@ export interface HandlerMetadata {
   ) => any;
 }
 
-export class HandlerMetadataStorage<TValue = HandlerMetadata, TKey = any> {
+export class HandlerMetadataStorage<
+  TValue = HandlerMetadata,
+  TKey extends Type<unknown> = any
+> {
   private readonly [HANDLER_METADATA_SYMBOL] = new Map<string, TValue>();
 
   set(controller: TKey, methodName: string, metadata: TValue) {

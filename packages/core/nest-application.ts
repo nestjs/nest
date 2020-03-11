@@ -9,7 +9,6 @@ import {
   WebSocketAdapter,
 } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
-import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -125,6 +124,7 @@ export class NestApplication extends NestApplicationContext
       this.container,
       this.config,
       this.injector,
+      this.httpAdapter,
     );
   }
 
@@ -170,7 +170,7 @@ export class NestApplication extends NestApplicationContext
     this.routesResolver.registerExceptionHandler();
   }
 
-  public connectMicroservice(options: MicroserviceOptions): INestMicroservice {
+  public connectMicroservice<T extends object>(options: T): INestMicroservice {
     const { NestMicroservice } = loadPackage(
       '@nestjs/microservices',
       'NestFactory',

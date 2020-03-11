@@ -6,10 +6,10 @@ import { MetadataScanner } from '../../core/metadata-scanner';
 import { AbstractWsAdapter } from '../adapters/ws-adapter';
 import { PORT_METADATA } from '../constants';
 import { WsContextCreator } from '../context/ws-context-creator';
+import { WebSocketGateway } from '../decorators/socket-gateway.decorator';
 import { InvalidSocketPortException } from '../errors/invalid-socket-port.exception';
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
 import { SocketServerProvider } from '../socket-server-provider';
-import { WebSocketGateway } from '../decorators/socket-gateway.decorator';
 import { WebSocketsController } from '../web-sockets-controller';
 
 class NoopAdapter extends AbstractWsAdapter {
@@ -120,12 +120,12 @@ describe('WebSocketsController', () => {
       (instance as any).subscribeEvents = subscribeEvents;
     });
     it('should call "assignServerToProperties" with expected arguments', () => {
-      instance.subscribeToServerEvents(gateway, namespace, port, '');
+      instance.subscribeToServerEvents(gateway, { namespace }, port, '');
       expect(assignServerToProperties.calledWith(gateway, server.server)).to.be
         .true;
     });
     it('should call "subscribeEvents" with expected arguments', () => {
-      instance.subscribeToServerEvents(gateway, namespace, port, '');
+      instance.subscribeToServerEvents(gateway, { namespace }, port, '');
       expect(subscribeEvents.firstCall.args[0]).to.be.equal(gateway);
       expect(subscribeEvents.firstCall.args[2]).to.be.equal(server);
       expect(subscribeEvents.firstCall.args[1]).to.be.eql([

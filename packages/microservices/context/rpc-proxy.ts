@@ -6,10 +6,10 @@ import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
 
 export class RpcProxy {
   public create(
-    targetCallback: (...args: any[]) => Promise<Observable<any>>,
+    targetCallback: (...args: unknown[]) => Promise<Observable<any>>,
     exceptionsHandler: RpcExceptionsHandler,
-  ): (...args: any[]) => Promise<Observable<any>> {
-    return async (...args: any[]) => {
+  ): (...args: unknown[]) => Promise<Observable<unknown>> {
+    return async (...args: unknown[]) => {
       try {
         const result = await targetCallback(...args);
         return !this.isObservable(result)
@@ -27,9 +27,9 @@ export class RpcProxy {
 
   handleError<T>(
     exceptionsHandler: RpcExceptionsHandler,
-    args: any[],
+    args: unknown[],
     error: T,
-  ): Observable<any> {
+  ): Observable<unknown> {
     const host = new ExecutionContextHost(args);
     host.setType('rpc');
     return exceptionsHandler.handle(error, host);
