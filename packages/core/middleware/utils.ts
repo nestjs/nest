@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { Type } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
-import * as uuid from 'uuid/v4';
+import { v4 as uuid } from 'uuid';
 
 export const filterMiddleware = <T>(middleware: T[]) => {
   return []
