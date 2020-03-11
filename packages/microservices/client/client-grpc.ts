@@ -153,12 +153,14 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
         let upstreamSubscription: Subscription;
 
         const upstreamSubjectOrData = args[0];
+        const maybeMetadata = args[1];
+
         const isUpstreamSubject =
           upstreamSubjectOrData && isFunction(upstreamSubjectOrData.subscribe);
 
         const call =
           isRequestStream && isUpstreamSubject
-            ? client[methodName]()
+            ? client[methodName](maybeMetadata)
             : client[methodName](...args);
 
         if (isRequestStream && isUpstreamSubject) {
@@ -215,13 +217,20 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
       if (isRequestStream && isUpstreamSubject) {
         return new Observable(observer => {
-          const call = client[methodName]((error, data) => {
-            if (error) {
-              return observer.error(error);
-            }
-            observer.next(data);
-            observer.complete();
-          });
+          const callArgs = [
+            (error: unknown, data: unknown) => {
+              if (error) {
+                return observer.error(error);
+              }
+              observer.next(data);
+              observer.complete();
+            },
+          ];
+          const maybeMetadata = args[1];
+          if (maybeMetadata) {
+            callArgs.unshift(maybeMetadata);
+          }
+          const call = client[methodName](...callArgs);
           upstreamSubjectOrData.subscribe(
             (val: unknown) => call.write(val),
             (err: unknown) => call.emit('error', err),

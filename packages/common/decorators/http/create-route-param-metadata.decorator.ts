@@ -1,4 +1,4 @@
-import * as uuid from 'uuid/v4';
+import { v4 as uuid } from 'uuid';
 import { ROUTE_ARGS_METADATA } from '../../constants';
 import { PipeTransform } from '../../index';
 import { Type } from '../../interfaces';

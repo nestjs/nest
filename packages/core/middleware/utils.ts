@@ -3,7 +3,7 @@ import { RequestMethod } from '@nestjs/common';
 import { HttpServer, RouteInfo, Type } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import * as pathToRegexp from 'path-to-regexp';
-import * as uuid from 'uuid/v4';
+import { v4 as uuid } from 'uuid';
 
 type RouteInfoRegex = RouteInfo & { regex: RegExp };
 
