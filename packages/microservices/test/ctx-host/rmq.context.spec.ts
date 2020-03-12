@@ -10,7 +10,7 @@ describe('RmqContext', () => {
   });
   describe('getMessage', () => {
     it('should return original message', () => {
-      expect(context.getMesssage()).to.be.eql(args[0]);
+      expect(context.getMessage()).to.be.eql(args[0]);
     });
   });
   describe('getChannelRef', () => {
