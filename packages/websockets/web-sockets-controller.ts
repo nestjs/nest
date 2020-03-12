@@ -11,6 +11,7 @@ import {
   GatewayMetadataExplorer,
   MessageMappingProperties,
 } from './gateway-metadata-explorer';
+import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { SocketEventsHost } from './interfaces/socket-events-host.interface';
 import { SocketServerProvider } from './socket-server-provider';
@@ -30,7 +31,7 @@ export class WebSocketsController {
   public mergeGatewayAndServer(
     instance: NestGateway,
     metatype: Type<any> | Function,
-    module: string,
+    moduleKey: string,
   ) {
     const options = Reflect.getMetadata(GATEWAY_OPTIONS, metatype) || {};
     const port = Reflect.getMetadata(PORT_METADATA, metatype) || 0;
@@ -38,14 +39,14 @@ export class WebSocketsController {
     if (!Number.isInteger(port)) {
       throw new InvalidSocketPortException(port, metatype);
     }
-    this.subscribeToServerEvents(instance, options, port, module);
+    this.subscribeToServerEvents(instance, options, port, moduleKey);
   }
 
-  public subscribeToServerEvents(
+  public subscribeToServerEvents<T extends GatewayMetadata>(
     instance: NestGateway,
-    options: any,
+    options: T,
     port: number,
-    module: string,
+    moduleKey: string,
   ) {
     const nativeMessageHandlers = this.metadataExplorer.explore(instance);
     const messageHandlers = nativeMessageHandlers.map(
@@ -55,12 +56,12 @@ export class WebSocketsController {
         callback: this.contextCreator.create(
           instance,
           callback,
-          module,
+          moduleKey,
           methodName,
         ),
       }),
     );
-    const observableServer = this.socketServerProvider.scanForSocketServer(
+    const observableServer = this.socketServerProvider.scanForSocketServer<T>(
       options,
       port,
     );
@@ -98,7 +99,7 @@ export class WebSocketsController {
     connection: Subject<any>,
   ) {
     const adapter = this.config.getIoAdapter();
-    return (...args: any[]) => {
+    return (...args: unknown[]) => {
       const [client] = args;
       connection.next(args);
       context.subscribeMessages(subscribersMap, client, instance);

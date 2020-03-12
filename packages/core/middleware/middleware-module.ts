@@ -36,12 +36,14 @@ export class MiddlewareModule {
   private resolver: MiddlewareResolver;
   private config: ApplicationConfig;
   private container: NestContainer;
+  private httpAdapter: HttpServer;
 
   public async register(
     middlewareContainer: MiddlewareContainer,
     container: NestContainer,
     config: ApplicationConfig,
     injector: Injector,
+    httpAdapter: HttpServer,
   ) {
     const appRef = container.getHttpAdapterRef();
     this.routerExceptionFilter = new RouterExceptionFilters(
@@ -55,6 +57,7 @@ export class MiddlewareModule {
     this.config = config;
     this.injector = injector;
     this.container = container;
+    this.httpAdapter = httpAdapter;
 
     const modules = container.getModules();
     await this.resolveMiddleware(middlewareContainer, modules);
@@ -84,7 +87,10 @@ export class MiddlewareModule {
     if (!instance.configure) {
       return;
     }
-    const middlewareBuilder = new MiddlewareBuilder(this.routesMapper);
+    const middlewareBuilder = new MiddlewareBuilder(
+      this.routesMapper,
+      this.httpAdapter,
+    );
     await instance.configure(middlewareBuilder);
 
     if (!(middlewareBuilder instanceof MiddlewareBuilder)) {
@@ -100,14 +106,14 @@ export class MiddlewareModule {
   ) {
     const configs = middlewareContainer.getConfigurations();
     const registerAllConfigs = (
-      module: string,
+      moduleKey: string,
       middlewareConfig: MiddlewareConfiguration[],
     ) =>
       middlewareConfig.map(async (config: MiddlewareConfiguration) => {
         await this.registerMiddlewareConfig(
           middlewareContainer,
           config,
-          module,
+          moduleKey,
           applicationRef,
         );
       });
@@ -129,7 +135,7 @@ export class MiddlewareModule {
   public async registerMiddlewareConfig(
     middlewareContainer: MiddlewareContainer,
     config: MiddlewareConfiguration,
-    module: string,
+    moduleKey: string,
     applicationRef: any,
   ) {
     const { forRoutes } = config;
@@ -140,7 +146,7 @@ export class MiddlewareModule {
         middlewareContainer,
         routeInfo as RouteInfo,
         config,
-        module,
+        moduleKey,
         applicationRef,
       );
     };
@@ -155,7 +161,7 @@ export class MiddlewareModule {
     applicationRef: any,
   ) {
     const middlewareCollection = [].concat(config.middleware);
-    const module = this.container.getModuleByKey(moduleKey);
+    const moduleRef = this.container.getModuleByKey(moduleKey);
 
     await Promise.all(
       middlewareCollection.map(async (metatype: Type<NestMiddleware>) => {
@@ -171,7 +177,7 @@ export class MiddlewareModule {
           applicationRef,
           routeInfo.method,
           routeInfo.path,
-          module,
+          moduleRef,
           collection,
         );
       }),
@@ -183,7 +189,7 @@ export class MiddlewareModule {
     applicationRef: HttpServer,
     method: RequestMethod,
     path: string,
-    module: Module,
+    moduleRef: Module,
     collection: Map<string, InstanceWrapper>,
   ) {
     const { instance, metatype } = wrapper;
@@ -217,7 +223,7 @@ export class MiddlewareModule {
           }
           const contextInstance = await this.injector.loadPerContext(
             instance,
-            module,
+            moduleRef,
             collection,
             contextId,
           );
@@ -243,7 +249,7 @@ export class MiddlewareModule {
     );
   }
 
-  private async createProxy<TRequest = any, TResponse = any>(
+  private async createProxy<TRequest = unknown, TResponse = unknown>(
     instance: NestMiddleware,
     contextId = STATIC_CONTEXT,
   ): Promise<(req: TRequest, res: TResponse, next: () => void) => void> {

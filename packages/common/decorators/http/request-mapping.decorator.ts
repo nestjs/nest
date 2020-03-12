@@ -1,6 +1,10 @@
 import { METHOD_METADATA, PATH_METADATA } from '../../constants';
 import { RequestMethod } from '../../enums/request-method.enum';
-import { RequestMappingMetadata } from '../../interfaces/request-mapping-metadata.interface';
+
+export interface RequestMappingMetadata {
+  path?: string | string[];
+  method?: RequestMethod;
+}
 
 const defaultMetadata = {
   [PATH_METADATA]: '/',
@@ -14,7 +18,11 @@ export const RequestMapping = (
   const path = pathMetadata && pathMetadata.length ? pathMetadata : '/';
   const requestMethod = metadata[METHOD_METADATA] || RequestMethod.GET;
 
-  return (target, key, descriptor: PropertyDescriptor) => {
+  return (
+    target: object,
+    key: string | symbol,
+    descriptor: TypedPropertyDescriptor<any>,
+  ) => {
     Reflect.defineMetadata(PATH_METADATA, path, descriptor.value);
     Reflect.defineMetadata(METHOD_METADATA, requestMethod, descriptor.value);
     return descriptor;

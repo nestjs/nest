@@ -1,7 +1,7 @@
-export function extendArrayMetadata<T extends Array<any>>(
+export function extendArrayMetadata<T extends Array<unknown>>(
   key: string,
   metadata: T,
-  target,
+  target: Function,
 ) {
   const previousValue = Reflect.getMetadata(key, target) || [];
   const value = [...previousValue, ...metadata];

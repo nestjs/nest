@@ -4,7 +4,6 @@ import {
   INestMicroservice,
   Logger,
 } from '@nestjs/common';
-import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
@@ -43,8 +42,8 @@ export class TestingModule extends NestApplicationContext {
     return this.createAdapterProxy<T>(instance, httpAdapter);
   }
 
-  public createNestMicroservice(
-    options: NestMicroserviceOptions & MicroserviceOptions,
+  public createNestMicroservice<T extends object>(
+    options: NestMicroserviceOptions & T,
   ): INestMicroservice {
     const { NestMicroservice } = loadPackage(
       '@nestjs/microservices',

@@ -69,7 +69,10 @@ describe('MiddlewareModule', () => {
       expect(configureSpy.calledOnce).to.be.true;
       expect(
         configureSpy.calledWith(
-          new MiddlewareBuilder((middlewareModule as any).routesMapper),
+          new MiddlewareBuilder(
+            (middlewareModule as any).routesMapper,
+            undefined,
+          ),
         ),
       ).to.be.true;
     });

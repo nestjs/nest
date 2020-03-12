@@ -2,7 +2,7 @@ import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { RequestMethod } from '../../../common';
+import { RequestMethod, HttpStatus } from '../../../common';
 import { RouterResponseController } from '../../router/router-response-controller';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
@@ -168,6 +168,83 @@ describe('RouterResponseController', () => {
 
       routerResponseController.setStatus(response, statusCode);
       expect(statusStub.calledWith(response, statusCode)).to.be.true;
+    });
+  });
+
+  describe('redirect should HttpServer.redirect', () => {
+    it('should transformToResult', async () => {
+      const transformToResultSpy = sinon
+        .stub(routerResponseController, 'transformToResult')
+        .returns(Promise.resolve({ statusCode: 123, url: 'redirect url' }));
+      const result = {};
+      await routerResponseController.redirect(result, null, null);
+      expect(transformToResultSpy.firstCall.args[0]).to.be.equal(result);
+    });
+    it('should pass the response to redirect', async () => {
+      sinon
+        .stub(routerResponseController, 'transformToResult')
+        .returns(Promise.resolve({ statusCode: 123, url: 'redirect url' }));
+      const redirectSpy = sinon.spy(adapter, 'redirect');
+      const response = {};
+      await routerResponseController.redirect(null, response, null);
+      expect(redirectSpy.firstCall.args[0]).to.be.equal(response);
+    });
+    describe('status code', () => {
+      it('should come from the transformed result if present', async () => {
+        sinon
+          .stub(routerResponseController, 'transformToResult')
+          .returns(Promise.resolve({ statusCode: 123, url: 'redirect url' }));
+        const redirectSpy = sinon.spy(adapter, 'redirect');
+        await routerResponseController.redirect(null, null, {
+          statusCode: 999,
+          url: 'not form here',
+        });
+        expect(redirectSpy.firstCall.args[1]).to.be.eql(123);
+      });
+      it('should come from the redirectResponse if not on the transformed result', async () => {
+        sinon
+          .stub(routerResponseController, 'transformToResult')
+          .returns(Promise.resolve({}));
+        const redirectSpy = sinon.spy(adapter, 'redirect');
+        await routerResponseController.redirect(null, null, {
+          statusCode: 123,
+          url: 'redirect url',
+        });
+        expect(redirectSpy.firstCall.args[1]).to.be.eql(123);
+      });
+      it('should default to HttpStatus.FOUND', async () => {
+        sinon
+          .stub(routerResponseController, 'transformToResult')
+          .returns(Promise.resolve({}));
+        const redirectSpy = sinon.spy(adapter, 'redirect');
+        await routerResponseController.redirect(null, null, {
+          url: 'redirect url',
+        });
+        expect(redirectSpy.firstCall.args[1]).to.be.eql(HttpStatus.FOUND);
+      });
+    });
+    describe('url', () => {
+      it('should come from the transformed result if present', async () => {
+        sinon
+          .stub(routerResponseController, 'transformToResult')
+          .returns(Promise.resolve({ statusCode: 123, url: 'redirect url' }));
+        const redirectSpy = sinon.spy(adapter, 'redirect');
+        await routerResponseController.redirect(null, null, {
+          url: 'not from here',
+        });
+        expect(redirectSpy.firstCall.args[2]).to.be.eql('redirect url');
+      });
+      it('should come from the redirectResponse if not on the transformed result', async () => {
+        sinon
+          .stub(routerResponseController, 'transformToResult')
+          .returns(Promise.resolve({}));
+        const redirectSpy = sinon.spy(adapter, 'redirect');
+        await routerResponseController.redirect(null, null, {
+          statusCode: 123,
+          url: 'redirect url',
+        });
+        expect(redirectSpy.firstCall.args[2]).to.be.eql('redirect url');
+      });
     });
   });
 });

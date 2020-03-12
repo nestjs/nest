@@ -1,6 +1,6 @@
-import * as uuid from 'uuid/v4';
-import { ScopeOptions } from '../../interfaces/scope-options.interface';
+import { v4 as uuid } from 'uuid';
 import { SCOPE_OPTIONS_METADATA } from '../../constants';
+import { ScopeOptions } from '../../interfaces/scope-options.interface';
 import { Type } from '../../interfaces/type.interface';
 
 /**

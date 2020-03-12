@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { InvalidModuleConfigException } from '../../decorators/modules/exceptions/invalid-module-config.exception';
 import { Module } from '../../decorators/modules/module.decorator';
 
 describe('@Module', () => {
@@ -31,8 +30,6 @@ describe('@Module', () => {
       test: [],
     };
 
-    expect(Module.bind(null, invalidProps)).to.throw(
-      InvalidModuleConfigException,
-    );
+    expect(Module.bind(null, invalidProps)).to.throw(Error);
   });
 });

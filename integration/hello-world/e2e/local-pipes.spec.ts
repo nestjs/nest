@@ -1,6 +1,6 @@
-import * as request from 'supertest';
-import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import * as request from 'supertest';
 import { ApplicationModule } from '../src/app.module';
 
 describe('Hello world (default adapter)', () => {
@@ -43,8 +43,8 @@ describe('Hello world (default adapter)', () => {
       .get('/host/local-pipe/1')
       .expect(404)
       .expect({
-        error: 'Not Found',
-        message: 'Cannot GET /host/local-pipe/1',
+        message: 'Not Found',
+        error: 'Cannot GET /host/local-pipe/1',
         statusCode: 404,
       });
   });

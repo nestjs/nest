@@ -4,12 +4,16 @@ import { Controller, Get } from '../../../common';
 import { NestContainer } from '../../injector/container';
 import { MiddlewareBuilder } from '../../middleware/builder';
 import { RoutesMapper } from '../../middleware/routes-mapper';
+import { NoopHttpAdapter } from './../utils/noop-adapter.spec';
 
 describe('MiddlewareBuilder', () => {
   let builder: MiddlewareBuilder;
 
   beforeEach(() => {
-    builder = new MiddlewareBuilder(new RoutesMapper(new NestContainer()));
+    builder = new MiddlewareBuilder(
+      new RoutesMapper(new NestContainer()),
+      new NoopHttpAdapter({}),
+    );
   });
   describe('apply', () => {
     let configProxy;
@@ -62,69 +66,6 @@ describe('MiddlewareBuilder', () => {
           method: RequestMethod.ALL,
         },
       ]);
-    });
-  });
-
-  describe('isRouteExcluded', () => {
-    const routeInfo = { path: '/test', method: RequestMethod.POST };
-    let proxy: any;
-
-    beforeEach(() => {
-      proxy = builder.apply();
-    });
-    describe('when path is equal', () => {
-      describe('when method is ALL', () => {
-        it('should return true', () => {
-          proxy.exclude(routeInfo.path);
-
-          expect(proxy.isRouteExcluded(routeInfo)).to.be.true;
-        });
-      });
-      describe('when method is equal', () => {
-        it('should return true', () => {
-          proxy.exclude({
-            path: routeInfo.path,
-            method: RequestMethod.POST,
-          });
-
-          expect(proxy.isRouteExcluded(routeInfo)).to.be.true;
-        });
-      });
-      describe('when path has / at the end', () => {
-        it('should return true', () => {
-          proxy.exclude({
-            path: 'test',
-            method: RequestMethod.POST,
-          });
-
-          expect(
-            proxy.isRouteExcluded({
-              ...routeInfo,
-              path: '/test/',
-            }),
-          ).to.be.true;
-        });
-      });
-      describe('when method is not equal', () => {
-        it('should return false', () => {
-          proxy.exclude({
-            path: routeInfo.path,
-            method: RequestMethod.GET,
-          });
-
-          expect(proxy.isRouteExcluded(routeInfo)).to.be.false;
-        });
-      });
-    });
-    describe('when path is not equal', () => {
-      it('should return false', () => {
-        proxy.exclude({
-          path: 'testx',
-          method: RequestMethod.POST,
-        });
-
-        expect(proxy.isRouteExcluded(routeInfo)).to.be.false;
-      });
     });
   });
 });

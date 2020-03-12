@@ -16,7 +16,7 @@ export function applyDecorators(
     descriptor?: TypedPropertyDescriptor<Y>,
   ) => {
     for (const decorator of decorators) {
-      if (target instanceof Function) {
+      if (target instanceof Function && !descriptor) {
         (decorator as ClassDecorator)(target);
         continue;
       }

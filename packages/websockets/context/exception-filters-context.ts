@@ -1,5 +1,4 @@
 import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
 import { NestContainer } from '@nestjs/core/injector/container';
@@ -11,11 +10,11 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
   }
 
   public create(
-    instance: Controller,
+    instance: object,
     callback: <TClient>(client: TClient, data: any) => any,
-    module: string,
+    moduleKey: string,
   ): WsExceptionsHandler {
-    this.moduleContext = module;
+    this.moduleContext = moduleKey;
 
     const exceptionHandler = new WsExceptionsHandler();
     const filters = this.createContext(

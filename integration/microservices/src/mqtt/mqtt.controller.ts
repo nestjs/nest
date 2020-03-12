@@ -12,6 +12,8 @@ import { scan } from 'rxjs/operators';
 @Controller()
 export class MqttController {
   static IS_NOTIFIED = false;
+  static IS_WILDCARD_EVENT_RECEIVED = false;
+  static IS_WILDCARD2_EVENT_RECEIVED = false;
 
   @Client({ transport: Transport.MQTT })
   client: ClientProxy;
@@ -55,9 +57,58 @@ export class MqttController {
     return this.client.emit<number>('notification', true);
   }
 
+  @Post('wildcard-event')
+  async sendWildcardEvent(): Promise<any> {
+    return this.client.emit<number>('wildcard-event/test', true);
+  }
+
+  @Post('wildcard-message')
+  async sendWildcardMessage(
+    @Body() data: number[],
+  ): Promise<Observable<number>> {
+    await this.client.connect();
+    return this.client.send<number>('wildcard-message/test', data);
+  }
+
+  @Post('wildcard-event2')
+  async sendWildcardEvent2(): Promise<any> {
+    return this.client.emit<number>('wildcard-event2/test/test', true);
+  }
+
+  @Post('wildcard-message2')
+  async sendWildcardMessage2(
+    @Body() data: number[],
+  ): Promise<Observable<number>> {
+    await this.client.connect();
+    return this.client.send<number>('wildcard-message2/test/test', data);
+  }
+
+  @MessagePattern('wildcard-message/#')
+  wildcardMessageHandler(data: number[]): number {
+    if ((data as any).response) {
+      return;
+    }
+    return (data || []).reduce((a, b) => a + b);
+  }
+
+  @EventPattern('wildcard-event/#')
+  wildcardEventHandler(data: boolean) {
+    MqttController.IS_WILDCARD_EVENT_RECEIVED = data;
+  }
+
+  @MessagePattern('wildcard-message2/+/test')
+  wildcardMessageHandler2(data: number[]): number {
+    return (data || []).reduce((a, b) => a + b);
+  }
+
+  @EventPattern('wildcard-event2/+/test')
+  wildcardEventHandler2(data: boolean) {
+    MqttController.IS_WILDCARD2_EVENT_RECEIVED = data;
+  }
+
   @EventPattern('notification')
   eventHandler(data: boolean) {
-    MqttController.IS_NOTIFIED = true;
+    MqttController.IS_NOTIFIED = data;
   }
 
   @MessagePattern({ cmd: 'sum' })

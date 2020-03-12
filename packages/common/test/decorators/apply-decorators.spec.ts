@@ -1,5 +1,7 @@
 import { expect } from 'chai';
-import { applyDecorators } from '../../decorators';
+import { applyDecorators, UseGuards } from '../../decorators';
+import { GUARDS_METADATA } from '../../constants';
+import { CanActivate } from '../../interfaces';
 
 describe('applyDecorators', () => {
   function testDecorator1(param: number) {
@@ -54,5 +56,65 @@ describe('applyDecorators', () => {
 
     expect(decoratedTarget).to.be.deep.equal(expectedTarget);
     expect(customDecoratedTarget).to.be.deep.equal(expectedTarget);
+  });
+});
+
+class Guard implements CanActivate {
+  canActivate() {
+    return true;
+  }
+}
+
+const GuardCompositeDecorator = () => {
+  return applyDecorators(UseGuards(Guard));
+};
+
+describe('applyDecorators @GuardCompositeDecorator', () => {
+  @GuardCompositeDecorator()
+  class Test {}
+
+  class TestWithMethod {
+    @GuardCompositeDecorator()
+    public test() {
+      return true;
+    }
+  }
+
+  class TestWithStaticMethod {
+    @GuardCompositeDecorator()
+    public static test() {
+      return true;
+    }
+  }
+
+  it('should be using the guard defined on the class', () => {
+    const classMetadata = Reflect.getMetadata(GUARDS_METADATA, Test);
+    expect(classMetadata).to.deep.equal([Guard]);
+  });
+
+  it('should be using the guard defined on the prototype method', () => {
+    const instance = new TestWithMethod();
+
+    const classMetadata = Reflect.getMetadata(GUARDS_METADATA, TestWithMethod);
+    const methodMetadata = Reflect.getMetadata(GUARDS_METADATA, instance.test);
+    const instanceMetadata = Reflect.getMetadata(GUARDS_METADATA, instance);
+
+    expect(classMetadata).to.be.undefined;
+    expect(methodMetadata).to.deep.equal([Guard]);
+    expect(instanceMetadata).to.be.undefined;
+  });
+
+  it('should be using the guard defined on the static method', () => {
+    const classMetadata = Reflect.getMetadata(
+      GUARDS_METADATA,
+      TestWithStaticMethod,
+    );
+    const methodMetadata = Reflect.getMetadata(
+      GUARDS_METADATA,
+      TestWithStaticMethod.test,
+    );
+
+    expect(classMetadata).to.be.undefined;
+    expect(methodMetadata).to.deep.equal([Guard]);
   });
 });

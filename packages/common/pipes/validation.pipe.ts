@@ -1,3 +1,4 @@
+import iterate from 'iterare';
 import { Optional } from '../decorators';
 import { Injectable } from '../decorators/core';
 import {
@@ -46,11 +47,7 @@ export class ValidationPipe implements PipeTransform<any> {
     this.isDetailedOutputDisabled = disableErrorMessages;
     this.validateCustomDecorators = validateCustomDecorators || false;
     this.exceptionFactory =
-      options.exceptionFactory ||
-      (errors =>
-        new BadRequestException(
-          this.isDetailedOutputDisabled ? undefined : errors,
-        ));
+      options.exceptionFactory || this.createExceptionFactory();
 
     classValidator = loadPackage('class-validator', 'ValidationPipe', () =>
       require('class-validator'),
@@ -108,6 +105,21 @@ export class ValidationPipe implements PipeTransform<any> {
     return Object.keys(this.validatorOptions).length > 0
       ? classTransformer.classToPlain(entity, this.transformOptions)
       : value;
+  }
+
+  public createExceptionFactory() {
+    return (validationErrors: ValidationError[] = []) => {
+      if (this.isDetailedOutputDisabled) {
+        return new BadRequestException();
+      }
+      const errors = iterate(validationErrors)
+        .filter(item => !!item.constraints)
+        .map(item => Object.values(item.constraints))
+        .flatten()
+        .toArray();
+
+      return new BadRequestException(errors);
+    };
   }
 
   private toValidate(metadata: ArgumentMetadata): boolean {

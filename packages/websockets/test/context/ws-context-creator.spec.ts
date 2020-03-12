@@ -1,3 +1,4 @@
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
@@ -166,6 +167,7 @@ describe('WsContextCreator', () => {
         metadata,
         '',
         new WsParamsFactory(),
+        (args: unknown[]) => new ExecutionContextHost(args),
       );
       const expectedValues = [
         { index: 0, type: WsParamtype.SOCKET, data: 'test' },

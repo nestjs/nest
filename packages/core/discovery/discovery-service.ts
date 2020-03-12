@@ -3,10 +3,16 @@ import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
 
+/**
+ * @publicApi
+ */
 export interface DiscoveryOptions {
   include?: Function[];
 }
 
+/**
+ * @publicApi
+ */
 @Injectable()
 export class DiscoveryService {
   constructor(private readonly modulesContainer: ModulesContainer) {}

@@ -35,7 +35,7 @@ export class MiddlewareContainer {
     const targetConfig = this.getTargetConfig(moduleKey);
 
     const configurations = configList || [];
-    const insertMiddleware = <T extends Type<any>>(metatype: T) => {
+    const insertMiddleware = <T extends Type<unknown>>(metatype: T) => {
       const token = metatype.name;
       middleware.set(
         token,
@@ -52,14 +52,17 @@ export class MiddlewareContainer {
     });
   }
 
-  private getTargetConfig(module: string) {
-    if (!this.configurationSets.has(module)) {
-      this.configurationSets.set(module, new Set<MiddlewareConfiguration>());
+  private getTargetConfig(moduleName: string) {
+    if (!this.configurationSets.has(moduleName)) {
+      this.configurationSets.set(
+        moduleName,
+        new Set<MiddlewareConfiguration>(),
+      );
     }
-    return this.configurationSets.get(module);
+    return this.configurationSets.get(moduleName);
   }
 
-  private getClassScope<T = any>(type: Type<T>): Scope {
+  private getClassScope<T = unknown>(type: Type<T>): Scope {
     const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, type);
     return metadata && metadata.scope;
   }

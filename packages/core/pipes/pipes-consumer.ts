@@ -5,7 +5,7 @@ import { ParamsTokenFactory } from './params-token-factory';
 export class PipesConsumer {
   private readonly paramsTokenFactory = new ParamsTokenFactory();
 
-  public async apply<TInput = any>(
+  public async apply<TInput = unknown>(
     value: TInput,
     { metatype, type, data }: ArgumentMetadata,
     pipes: PipeTransform[],
@@ -16,7 +16,7 @@ export class PipesConsumer {
     return this.applyPipes(value, { metatype, type: token, data }, pipes);
   }
 
-  public async applyPipes<TInput = any>(
+  public async applyPipes<TInput = unknown>(
     value: TInput,
     { metatype, type, data }: { metatype: any; type?: any; data?: any },
     transforms: PipeTransform[],

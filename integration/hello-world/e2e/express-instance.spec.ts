@@ -46,8 +46,8 @@ describe('Hello world (express instance)', () => {
       .expect(404)
       .expect({
         statusCode: 404,
-        error: 'Not Found',
-        message: 'Cannot GET /host',
+        message: 'Not Found',
+        error: 'Cannot GET /host',
       });
   });
 

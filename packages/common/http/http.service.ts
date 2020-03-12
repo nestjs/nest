@@ -88,7 +88,9 @@ export class HttpService {
           subscriber.error(err);
         });
       return () => {
-        cancelSource.cancel();
+        if (config.responseType !== 'stream') {
+          cancelSource.cancel();
+        }
       };
     });
   }

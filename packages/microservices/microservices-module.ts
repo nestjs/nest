@@ -57,8 +57,8 @@ export class MicroservicesModule {
       throw new RuntimeException();
     }
     const modules = container.getModules();
-    modules.forEach(({ controllers }, module) =>
-      this.bindListeners(controllers, server, module),
+    modules.forEach(({ controllers }, moduleRef) =>
+      this.bindListeners(controllers, server, moduleRef),
     );
   }
 
@@ -83,7 +83,7 @@ export class MicroservicesModule {
     );
   }
 
-  public bindClients(items: Map<string, InstanceWrapper<Controller>>) {
+  public bindClients(items: Map<string, InstanceWrapper<unknown>>) {
     items.forEach(({ instance, isNotMetatype }) => {
       !isNotMetatype &&
         this.listenersController.assignClientsToProperties(instance);

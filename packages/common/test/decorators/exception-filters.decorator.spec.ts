@@ -33,7 +33,7 @@ describe('@UseFilters', () => {
 
   it('when object is invalid should throw exception', () => {
     try {
-      UseFilters('test' as any)({});
+      UseFilters('test' as any)(() => {});
     } catch (e) {
       expect(e).to.be.instanceof(InvalidDecoratorItemException);
     }

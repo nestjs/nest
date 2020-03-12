@@ -1,30 +1,10 @@
-import * as uuid from 'uuid/v4';
-import {
-  CUSTOM_ROUTE_AGRS_METADATA,
-  ROUTE_ARGS_METADATA,
-} from '../../constants';
+import { v4 as uuid } from 'uuid';
+import { ROUTE_ARGS_METADATA } from '../../constants';
 import { PipeTransform } from '../../index';
 import { Type } from '../../interfaces';
 import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface';
+import { assignCustomParameterMetadata } from '../../utils/assign-custom-metadata.util';
 import { isFunction, isNil } from '../../utils/shared.utils';
-import { ParamData, RouteParamMetadata } from './route-params.decorator';
-
-const assignCustomMetadata = (
-  args: Record<number, RouteParamMetadata>,
-  paramtype: number | string,
-  index: number,
-  factory: CustomParamFactory,
-  data?: ParamData,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
-) => ({
-  ...args,
-  [`${paramtype}${CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
-    index,
-    factory,
-    data,
-    pipes,
-  },
-});
 
 export type ParamDecoratorEnhancer = ParameterDecorator;
 
@@ -64,7 +44,7 @@ export function createParamDecorator<
 
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
-      assignCustomMetadata(
+      assignCustomParameterMetadata(
         args,
         paramtype,
         index,

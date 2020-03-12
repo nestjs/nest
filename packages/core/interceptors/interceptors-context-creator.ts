@@ -20,7 +20,7 @@ export class InterceptorsContextCreator extends ContextCreator {
 
   public create(
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
     module: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -45,7 +45,7 @@ export class InterceptorsContextCreator extends ContextCreator {
     }
     return iterate(metadata)
       .filter(
-        (interceptor: any) =>
+        interceptor =>
           interceptor && (interceptor.name || interceptor.intercept),
       )
       .map(interceptor =>
@@ -82,17 +82,17 @@ export class InterceptorsContextCreator extends ContextCreator {
     metatype: T,
   ): InstanceWrapper | undefined {
     if (!this.moduleContext) {
-      return undefined;
+      return;
     }
     const collection = this.container.getModules();
-    const module = collection.get(this.moduleContext);
-    if (!module) {
-      return undefined;
+    const moduleRef = collection.get(this.moduleContext);
+    if (!moduleRef) {
+      return;
     }
-    return module.injectables.get(metatype.name);
+    return moduleRef.injectables.get(metatype.name as string);
   }
 
-  public getGlobalMetadata<T extends any[]>(
+  public getGlobalMetadata<T extends unknown[]>(
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): T {

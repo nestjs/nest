@@ -253,7 +253,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       });
       call.on('end', () => req.complete());
 
-      const handler = methodHandler(req.asObservable());
+      const handler = methodHandler(req.asObservable(), call.metadata);
       const res = this.transformToObservable(await handler);
       if (isResponseStream) {
         await res
