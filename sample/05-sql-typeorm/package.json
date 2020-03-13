@@ -22,7 +22,7 @@
     "@nestjs/common": "6.11.11",
     "@nestjs/core": "6.11.11",
     "@nestjs/platform-express": "6.11.11",
-    "@nestjs/typeorm": "6.3.3",
+    "@nestjs/typeorm": "6.3.4",
     "mysql": "2.18.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
