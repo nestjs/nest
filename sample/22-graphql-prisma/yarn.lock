@@ -570,18 +570,18 @@
     webpack "4.41.5"
     webpack-node-externals "1.7.2"
 
-"@nestjs/common@6.11.11":
-  version "6.11.11"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-6.11.11.tgz#701da2462a15cc94d55ec863ddd9f2fb0bbd7136"
+"@nestjs/common@7.0.0":
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-7.0.0.tgz#618535b1cc7ce7e097b1ed2efb2d1eee79862b07"
   dependencies:
     axios "0.19.2"
     cli-color "2.0.0"
     tslib "1.11.1"
-    uuid "7.0.1"
+    uuid "7.0.2"
 
-"@nestjs/core@6.11.11":
-  version "6.11.11"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-6.11.11.tgz#2b97a3e9c2a853f5693ed84daf81c1ee3b2782b4"
+"@nestjs/core@7.0.0":
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-7.0.0.tgz#ad9e7cf2a30044ff4f1300abcb428a75343f0344"
   dependencies:
     "@nuxtjs/opencollective" "0.2.2"
     fast-safe-stringify "2.0.7"
@@ -589,7 +589,7 @@
     object-hash "2.0.3"
     path-to-regexp "3.2.0"
     tslib "1.11.1"
-    uuid "7.0.1"
+    uuid "7.0.2"
 
 "@nestjs/graphql@7.0.1":
   version "7.0.1"
@@ -610,9 +610,9 @@
     ts-morph "^7.0.0"
     type-graphql "^0.17.3"
 
-"@nestjs/platform-express@6.11.11":
-  version "6.11.11"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-6.11.11.tgz#d30ea1f39299e92e080553e893a0afac54f20c6e"
+"@nestjs/platform-express@7.0.0":
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-7.0.0.tgz#b7ed68fbf1bb5d20d06df75800a551b17f2bc5f5"
   dependencies:
     body-parser "1.19.0"
     cors "2.8.5"
@@ -636,9 +636,9 @@
     "@angular-devkit/schematics" "7.3.8"
     fs-extra "8.1.0"
 
-"@nestjs/testing@6.11.11":
-  version "6.11.11"
-  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-6.11.11.tgz#c9858e6516cccf923289919764ed9039376d9b3c"
+"@nestjs/testing@7.0.0":
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-7.0.0.tgz#b81610a4220b5a8c3f58089696640688d8664da6"
   dependencies:
     optional "0.1.4"
     tslib "1.11.1"
@@ -7683,10 +7683,6 @@ util@^0.11.0:
 utils-merge@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
-
-uuid@7.0.1:
-  version "7.0.1"
-  resolved "https://registry.yarnpkg.com/uuid/-/uuid-7.0.1.tgz#95ed6ff3d8c881cbf85f0f05cc3915ef994818ef"
 
 uuid@7.0.2:
   version "7.0.2"
