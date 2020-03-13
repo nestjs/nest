@@ -16,8 +16,8 @@
     "tslib": "1.11.1"
   },
   "peerDependencies": {
-    "@nestjs/common": "^6.0.0",
-    "@nestjs/core": "^6.0.0",
+    "@nestjs/common": "^7.0.0",
+    "@nestjs/core": "^7.0.0",
     "rxjs": "^6.0.0"
   }
 }
