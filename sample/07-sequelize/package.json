@@ -22,7 +22,7 @@
     "@nestjs/common": "7.0.1",
     "@nestjs/core": "7.0.1",
     "@nestjs/platform-express": "7.0.1",
-    "@nestjs/sequelize": "0.0.2",
+    "@nestjs/sequelize": "0.1.0",
     "mysql2": "2.1.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
