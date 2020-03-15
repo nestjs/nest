@@ -22,8 +22,8 @@
   "dependencies": {
     "@nestjs/common": "7.0.1",
     "@nestjs/core": "7.0.1",
-    "@nestjs/jwt": "6.1.2",
-    "@nestjs/passport": "6.2.0",
+    "@nestjs/jwt": "7.0.0",
+    "@nestjs/passport": "7.0.0",
     "@nestjs/platform-express": "7.0.1",
     "passport": "0.4.1",
     "passport-jwt": "4.0.0",
