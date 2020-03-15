@@ -60,8 +60,8 @@ describe('Hello world (fastify adapter)', () => {
         },
         err => {
           expect(err.getResponse()).to.be.eql({
-            message: 'Internal Server Error',
-            error:
+            error: 'Internal Server Error',
+            message:
               'HTTP adapter does not support filtering on host: ":tenant.example.com"',
             statusCode: 500,
           });

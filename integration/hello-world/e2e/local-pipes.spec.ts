@@ -43,8 +43,8 @@ describe('Hello world (default adapter)', () => {
       .get('/host/local-pipe/1')
       .expect(404)
       .expect({
-        message: 'Not Found',
-        error: 'Cannot GET /host/local-pipe/1',
+        error: 'Not Found',
+        message: 'Cannot GET /host/local-pipe/1',
         statusCode: 404,
       });
   });

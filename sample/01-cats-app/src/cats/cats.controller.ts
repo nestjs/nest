@@ -1,5 +1,13 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { Roles } from '../common/decorators/roles.decorator';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  HttpException,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { ParseIntPipe } from '../common/pipes/parse-int.pipe';
 import { CatsService } from './cats.service';
@@ -12,13 +20,42 @@ export class CatsController {
   constructor(private readonly catsService: CatsService) {}
 
   @Post()
-  @Roles('admin')
   async create(@Body() createCatDto: CreateCatDto) {
     this.catsService.create(createCatDto);
   }
 
   @Get()
   async findAll(): Promise<Cat[]> {
+    if (false) {
+      /*
+      {
+        "statusCode": 401,
+        "message": "sfafsa"
+      }
+      */
+      throw new HttpException('sfafsa', 401);
+    }
+    if (true) {
+      /**
+       * {
+        "statusCode": 403,
+        "error": "Forbidden",
+        "message": "sfafsa"
+        }
+       */
+      const err = new ForbiddenException();
+      console.log(err.message);
+      throw err;
+    }
+    if (false) {
+      /**
+       * {
+        "statusCode": 403,
+        "error": "Forbidden",
+        }
+       */
+      throw new ForbiddenException();
+    }
     return this.catsService.findAll();
   }
 
