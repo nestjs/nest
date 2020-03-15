@@ -593,9 +593,9 @@
     tslib "1.11.1"
     uuid "7.0.2"
 
-"@nestjs/graphql@7.0.4":
-  version "7.0.4"
-  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-7.0.4.tgz#63cab1756e3f9506e73462942c6f56fe5170441c"
+"@nestjs/graphql@7.0.5":
+  version "7.0.5"
+  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-7.0.5.tgz#6a9df40e39debf52ed533f08848bee81a4190387"
   dependencies:
     chokidar "3.3.1"
     fast-glob "3.2.2"
