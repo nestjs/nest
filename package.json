@@ -142,7 +142,7 @@
     "markdown-table": "2.0.0",
     "merge-graphql-schemas": "1.7.6",
     "mocha": "7.0.1",
-    "mongoose": "5.9.4",
+    "mongoose": "5.9.5",
     "mqtt": "3.0.0",
     "multer": "1.4.2",
     "mysql": "2.18.1",
