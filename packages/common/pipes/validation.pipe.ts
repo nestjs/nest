@@ -1,4 +1,4 @@
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 import { Optional } from '../decorators';
 import { Injectable } from '../decorators/core';
 import {
@@ -158,7 +158,7 @@ export class ValidationPipe implements PipeTransform<any> {
   private stripProtoKeys(value: Record<string, any>) {
     delete value.__proto__;
     const keys = Object.keys(value);
-    keys
+    iterate(keys)
       .filter(key => typeof value[key] === 'object' && value[key])
       .forEach(key => this.stripProtoKeys(value[key]));
   }
