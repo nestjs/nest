@@ -54,7 +54,7 @@ export class SocketModule<HttpServer = any> {
     providers: Map<string, InstanceWrapper<Injectable>>,
     moduleName: string,
   ) {
-    [...providers.values()]
+    iterate(providers.values())
       .filter(wrapper => wrapper && !wrapper.isNotMetatype)
       .forEach(wrapper => this.combineGatewayAndServer(wrapper, moduleName));
   }
