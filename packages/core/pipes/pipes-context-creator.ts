@@ -96,12 +96,12 @@ export class PipesContextCreator extends ContextCreator {
       return globalPipes;
     }
     const scopedPipeWrappers = this.config.getGlobalRequestPipes() as InstanceWrapper[];
-    const scopedPipes = scopedPipeWrappers
+    return iterate(scopedPipeWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
-      .filter(host => host)
-      .map(host => host.instance);
-
-    return globalPipes.concat(scopedPipes) as T;
+      .filter(host => !!host)
+      .map(host => host.instance)
+      .concat(globalPipes)
+      .toArray() as T;
   }
 
   public setModuleContext(context: string) {

@@ -42,6 +42,7 @@ import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { Module } from './injector/module';
 import { MetadataScanner } from './metadata-scanner';
+import { iterate } from 'iterare';
 
 interface ApplicationProviderWrapper {
   moduleKey: string;
@@ -376,24 +377,20 @@ export class DependenciesScanner {
    * to all controllers metadata storage
    */
   public addScopedEnhancersMetadata() {
-    const scopedGlobalProviders = this.applicationProvidersApplyMap.filter(
-      wrapper => this.isRequestOrTransient(wrapper.scope),
-    );
+    iterate(this.applicationProvidersApplyMap)
+      .filter(wrapper => this.isRequestOrTransient(wrapper.scope))
+      .forEach(({ moduleKey, providerKey }) => {
+        const modulesContainer = this.container.getModules();
+        const { injectables } = modulesContainer.get(moduleKey);
+        const instanceWrapper = injectables.get(providerKey);
 
-    scopedGlobalProviders.forEach(({ moduleKey, providerKey }) => {
-      const modulesContainer = this.container.getModules();
-      const { injectables } = modulesContainer.get(moduleKey);
-      const instanceWrapper = injectables.get(providerKey);
-
-      const modules = [...modulesContainer.values()];
-      const controllersArray = modules.map(module => [
-        ...module.controllers.values(),
-      ]);
-      const controllers = this.flatten(controllersArray);
-      controllers.forEach(controller =>
-        controller.addEnhancerMetadata(instanceWrapper),
-      );
-    });
+        iterate(modulesContainer.values())
+          .map(module => module.controllers.values())
+          .flatten()
+          .forEach(controller =>
+            controller.addEnhancerMetadata(instanceWrapper),
+          );
+      });
   }
 
   public applyApplicationProviders() {

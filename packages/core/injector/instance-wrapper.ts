@@ -8,6 +8,7 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { STATIC_CONTEXT } from './constants';
 import { Module } from './module';
+import { iterate } from 'iterare';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
@@ -306,9 +307,10 @@ export class InstanceWrapper<T = any> {
       return [];
     }
     const instances = [...this.transientMap.values()];
-    return instances
+    return iterate(instances)
       .map(item => item.get(STATIC_CONTEXT))
-      .filter(item => !!item);
+      .filter(item => !!item)
+      .toArray();
   }
 
   public mergeWith(provider: Provider) {

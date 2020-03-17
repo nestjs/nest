@@ -24,6 +24,7 @@ import { ContainerScanner } from './injector/container-scanner';
 import { Injector } from './injector/injector';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { Module } from './injector/module';
+import { iterate } from 'iterare';
 
 /**
  * @publicApi
@@ -137,7 +138,7 @@ export class NestApplicationContext implements INestApplicationContext {
       signals = Array.from(new Set(signals));
     }
 
-    signals = signals
+    signals = iterate(signals)
       .map((signal: string) =>
         signal
           .toString()
@@ -145,7 +146,8 @@ export class NestApplicationContext implements INestApplicationContext {
           .trim(),
       )
       // filter out the signals which is already listening to
-      .filter(signal => !this.activeShutdownSignals.includes(signal));
+      .filter(signal => !this.activeShutdownSignals.includes(signal))
+      .toArray();
 
     this.listenToShutdownSignals(signals);
     return this;

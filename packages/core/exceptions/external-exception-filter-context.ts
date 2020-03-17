@@ -9,6 +9,7 @@ import { InstanceWrapper } from '../injector/instance-wrapper';
 import { RouterProxyCallback } from '../router/router-proxy';
 import { BaseExceptionFilterContext } from './base-exception-filter-context';
 import { ExternalExceptionsHandler } from './external-exceptions-handler';
+import { iterate } from 'iterare';
 
 export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
   constructor(
@@ -54,11 +55,11 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
       return globalFilters;
     }
     const scopedFilterWrappers = this.config.getGlobalRequestFilters() as InstanceWrapper[];
-    const scopedFilters = scopedFilterWrappers
+    return iterate(scopedFilterWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
-      .filter(host => host)
-      .map(host => host.instance);
-
-    return globalFilters.concat(scopedFilters) as T;
+      .filter(host => !!host)
+      .map(host => host.instance)
+      .concat(globalFilters)
+      .toArray() as T;
   }
 }
