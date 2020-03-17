@@ -4,7 +4,7 @@ import {
   isFunction,
   isNil,
 } from '@nestjs/common/utils/shared.utils';
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 
 export class MetadataScanner {
   public scanFromPrototype<T extends Injectable, R = any>(

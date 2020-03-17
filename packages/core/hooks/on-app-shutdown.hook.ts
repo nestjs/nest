@@ -1,6 +1,6 @@
 import { OnApplicationShutdown } from '@nestjs/common';
 import { isNil } from '@nestjs/common/utils/shared.utils';
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
 import {
