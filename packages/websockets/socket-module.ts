@@ -9,7 +9,7 @@ import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-con
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 import { GATEWAY_METADATA } from './constants';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { WsContextCreator } from './context/ws-context-creator';
