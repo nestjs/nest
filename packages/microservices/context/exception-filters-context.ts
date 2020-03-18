@@ -54,8 +54,8 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
     return iterate(scopedFilterWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
       .filter(host => !!host)
-      .concat(globalFilters)
       .map(host => host.instance)
+      .concat(globalFilters)
       .toArray() as T;
   }
 }
