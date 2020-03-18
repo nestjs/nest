@@ -7326,9 +7326,9 @@ ts-morph@^7.0.0:
     "@ts-morph/common" "~0.4.0"
     code-block-writer "^10.1.0"
 
-ts-node@8.6.2:
-  version "8.6.2"
-  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.6.2.tgz#7419a01391a818fbafa6f826a33c1a13e9464e35"
+ts-node@8.7.0:
+  version "8.7.0"
+  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.7.0.tgz#266186947596bef9f3a034687595b30e31b20976"
   dependencies:
     arg "^4.1.0"
     diff "^4.0.1"
