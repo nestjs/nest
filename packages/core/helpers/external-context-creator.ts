@@ -94,7 +94,7 @@ export class ExternalContextCreator {
     TContext extends string = ContextType
   >(
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
     methodName: string,
     metadataKey?: string,
     paramsFactory?: ParamsFactory,
@@ -109,8 +109,9 @@ export class ExternalContextCreator {
   ) {
     const module = this.getContextModuleName(instance.constructor);
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<
-      TParamsMetadata
-    >(instance, methodName, metadataKey, paramsFactory);
+      TParamsMetadata,
+      TContext
+    >(instance, methodName, metadataKey, paramsFactory, contextType);
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
@@ -151,7 +152,10 @@ export class ExternalContextCreator {
       ? this.createGuardsFn(guards, instance, callback, contextType)
       : null;
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
-    const handler = (initialArgs: any[], ...args: any[]) => async () => {
+    const handler = (
+      initialArgs: unknown[],
+      ...args: unknown[]
+    ) => async () => {
       if (fnApplyPipes) {
         await fnApplyPipes(initialArgs, ...args);
         return callback.apply(instance, initialArgs);
@@ -178,18 +182,19 @@ export class ExternalContextCreator {
       : target;
   }
 
-  public getMetadata<T>(
+  public getMetadata<TMetadata, TContext extends string = ContextType>(
     instance: Controller,
     methodName: string,
     metadataKey?: string,
     paramsFactory?: ParamsFactory,
+    contextType?: TContext,
   ): ExternalHandlerMetadata {
     const cacheMetadata = this.handlerMetadataStorage.get(instance, methodName);
     if (cacheMetadata) {
       return cacheMetadata;
     }
     const metadata =
-      this.contextUtils.reflectCallbackMetadata<T>(
+      this.contextUtils.reflectCallbackMetadata<TMetadata>(
         instance,
         methodName,
         metadataKey || '',
@@ -199,6 +204,11 @@ export class ExternalContextCreator {
     const paramtypes = this.contextUtils.reflectCallbackParamtypes(
       instance,
       methodName,
+    );
+    const contextFactory = this.contextUtils.getContextFactory<TContext>(
+      contextType,
+      instance,
+      instance[methodName],
     );
     const getParamsMetadata = (
       moduleKey: string,
@@ -213,6 +223,7 @@ export class ExternalContextCreator {
             paramsFactory,
             contextId,
             inquirerId,
+            contextFactory,
           )
         : null;
 
@@ -254,8 +265,10 @@ export class ExternalContextCreator {
     paramsFactory: ParamsFactory,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
+    contextFactory = this.contextUtils.getContextFactory('http'),
   ): ParamProperties[] {
     this.pipesContextCreator.setModuleContext(moduleContext);
+
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
@@ -270,6 +283,7 @@ export class ExternalContextCreator {
         const customExtractValue = this.contextUtils.getCustomFactory(
           factory,
           data,
+          contextFactory,
         );
         return { index, extractValue: customExtractValue, type, data, pipes };
       }

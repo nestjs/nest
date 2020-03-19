@@ -16,7 +16,7 @@ export const MessagePattern = <T = PatternMetadata | string>(
   metadata?: T,
 ): MethodDecorator => {
   return (
-    target: any,
+    target: object,
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
@@ -37,7 +37,7 @@ export function GrpcMethod(service?: string): MethodDecorator;
 export function GrpcMethod(service: string, method?: string): MethodDecorator;
 export function GrpcMethod(service: string, method?: string): MethodDecorator {
   return (
-    target: any,
+    target: object,
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
@@ -51,15 +51,21 @@ export function GrpcMethod(service: string, method?: string): MethodDecorator {
  *
  * @param service String parameter reflecting the name of service definition from proto file
  */
-export function GrpcStreamMethod(service?: string);
+export function GrpcStreamMethod(service?: string): MethodDecorator;
 /**
  * @param service String parameter reflecting the name of service definition from proto file
  * @param method Optional string parameter reflecting the name of method inside of a service definition coming after rpc keyword
  */
-export function GrpcStreamMethod(service: string, method?: string);
-export function GrpcStreamMethod(service: string, method?: string) {
+export function GrpcStreamMethod(
+  service: string,
+  method?: string,
+): MethodDecorator;
+export function GrpcStreamMethod(
+  service: string,
+  method?: string,
+): MethodDecorator {
   return (
-    target: any,
+    target: object,
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
@@ -79,15 +85,21 @@ export function GrpcStreamMethod(service: string, method?: string) {
  *
  * @param service String parameter reflecting the name of service definition from proto file
  */
-export function GrpcStreamCall(service?: string);
+export function GrpcStreamCall(service?: string): MethodDecorator;
 /**
  * @param service String parameter reflecting the name of service definition from proto file
  * @param method Optional string parameter reflecting the name of method inside of a service definition coming after rpc keyword
  */
-export function GrpcStreamCall(service: string, method?: string);
-export function GrpcStreamCall(service: string, method?: string) {
+export function GrpcStreamCall(
+  service: string,
+  method?: string,
+): MethodDecorator;
+export function GrpcStreamCall(
+  service: string,
+  method?: string,
+): MethodDecorator {
   return (
-    target: any,
+    target: object,
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
@@ -103,7 +115,7 @@ export function GrpcStreamCall(service: string, method?: string) {
 }
 
 export function createGrpcMethodMetadata(
-  target: any,
+  target: object,
   key: string | symbol,
   service: string | undefined,
   method: string | undefined,

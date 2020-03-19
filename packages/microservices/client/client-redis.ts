@@ -40,12 +40,12 @@ export class ClientRedis extends ClientProxy {
     this.initializeDeserializer(options);
   }
 
-  public getAckPatternName(pattern: string): string {
-    return `${pattern}_ack`;
+  public getRequestPattern(pattern: string): string {
+    return pattern;
   }
 
-  public getResPatternName(pattern: string): string {
-    return `${pattern}_res`;
+  public getReplyPattern(pattern: string): string {
+    return `${pattern}.reply`;
   }
 
   public close() {
@@ -154,7 +154,7 @@ export class ClientRedis extends ClientProxy {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
       const serializedPacket = this.serializer.serialize(packet);
-      const responseChannel = this.getResPatternName(pattern);
+      const responseChannel = this.getReplyPattern(pattern);
       let subscriptionsCount =
         this.subscriptionsCount.get(responseChannel) || 0;
 
@@ -163,7 +163,7 @@ export class ClientRedis extends ClientProxy {
         this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
         this.routingMap.set(packet.id, callback);
         this.pubClient.publish(
-          this.getAckPatternName(pattern),
+          this.getRequestPattern(pattern),
           JSON.stringify(serializedPacket),
         );
       };

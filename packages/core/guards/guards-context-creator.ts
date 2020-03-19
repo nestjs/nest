@@ -21,7 +21,7 @@ export class GuardsContextCreator extends ContextCreator {
 
   public create(
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
     module: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -36,7 +36,7 @@ export class GuardsContextCreator extends ContextCreator {
     );
   }
 
-  public createConcreteContext<T extends any[], R extends any[]>(
+  public createConcreteContext<T extends unknown[], R extends unknown[]>(
     metadata: T,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -46,7 +46,9 @@ export class GuardsContextCreator extends ContextCreator {
     }
     return iterate(metadata)
       .filter((guard: any) => guard && (guard.name || guard.canActivate))
-      .map(guard => this.getGuardInstance(guard, contextId, inquirerId))
+      .map(guard =>
+        this.getGuardInstance(guard as Function, contextId, inquirerId),
+      )
       .filter((guard: CanActivate) => guard && isFunction(guard.canActivate))
       .toArray() as R;
   }
@@ -71,22 +73,22 @@ export class GuardsContextCreator extends ContextCreator {
     return instanceHost && instanceHost.instance;
   }
 
-  public getInstanceByMetatype<T extends Record<string, any>>(
+  public getInstanceByMetatype<T extends Record<string, any> | Function>(
     guard: T,
   ): InstanceWrapper | undefined {
     if (!this.moduleContext) {
-      return undefined;
+      return;
     }
     const collection = this.container.getModules();
-    const module = collection.get(this.moduleContext);
-    if (!module) {
-      return undefined;
+    const moduleRef = collection.get(this.moduleContext);
+    if (!moduleRef) {
+      return;
     }
-    const injectables = module.injectables;
-    return injectables.get(guard.name);
+    const injectables = moduleRef.injectables;
+    return injectables.get(guard.name as string);
   }
 
-  public getGlobalMetadata<T extends any[]>(
+  public getGlobalMetadata<T extends unknown[]>(
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): T {

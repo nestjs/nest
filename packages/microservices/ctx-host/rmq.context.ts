@@ -10,7 +10,7 @@ export class RmqContext extends BaseRpcContext<RmqContextArgs> {
   /**
    * Returns the original message (with properties, fields, and content).
    */
-  getMesssage() {
+  getMessage() {
     return this.args[0];
   }
 

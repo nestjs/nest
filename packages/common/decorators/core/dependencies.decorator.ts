@@ -7,6 +7,9 @@ export function flatten<T extends Array<unknown> = any>(
   return flat.some(Array.isArray) ? flatten(flat) : flat;
 }
 
+/**
+ * Decorator that sets required dependencies (required with a vanilla JavaScript pjects)
+ */
 export const Dependencies = (
   ...dependencies: Array<unknown>
 ): ClassDecorator => {

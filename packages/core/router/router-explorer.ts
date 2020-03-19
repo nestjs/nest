@@ -105,11 +105,12 @@ export class RouterExplorer {
 
   public scanForPaths(
     instance: Controller,
-    prototype?: any,
+    prototype?: object,
   ): RoutePathProperties[] {
     const instancePrototype = isUndefined(prototype)
       ? Object.getPrototypeOf(instance)
       : prototype;
+
     return this.metadataScanner.scanFromPrototype<
       Controller,
       RoutePathProperties
@@ -120,10 +121,10 @@ export class RouterExplorer {
 
   public exploreMethodMetadata(
     instance: Controller,
-    instancePrototype: any,
+    prototype: object,
     methodName: string,
   ): RoutePathProperties {
-    const targetCallback = instancePrototype[methodName];
+    const targetCallback = prototype[methodName];
     const routePath = Reflect.getMetadata(PATH_METADATA, targetCallback);
     if (isUndefined(routePath)) {
       return null;
@@ -147,7 +148,7 @@ export class RouterExplorer {
     router: T,
     routePaths: RoutePathProperties[],
     instanceWrapper: InstanceWrapper,
-    module: string,
+    moduleKey: string,
     basePath: string,
     host: string,
   ) {
@@ -157,14 +158,19 @@ export class RouterExplorer {
         router,
         pathProperties,
         instanceWrapper,
-        module,
+        moduleKey,
         basePath,
         host,
       );
-      path.forEach(p =>
-        this.logger.log(ROUTE_MAPPED_MESSAGE(p, requestMethod)),
-      );
+      path.forEach(item => {
+        const pathStr = this.stripEndSlash(basePath) + this.stripEndSlash(item);
+        this.logger.log(ROUTE_MAPPED_MESSAGE(pathStr, requestMethod));
+      });
     });
+  }
+
+  public stripEndSlash(str: string) {
+    return str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
   }
 
   private applyCallbackToRouter<T extends HttpServer>(
@@ -186,9 +192,6 @@ export class RouterExplorer {
       .get(router, requestMethod)
       .bind(router);
 
-    const stripSlash = (str: string) =>
-      str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
-
     const isRequestScoped = !instanceWrapper.isDependencyTreeStatic();
     const proxy = isRequestScoped
       ? this.createRequestScopedHandler(
@@ -208,8 +211,8 @@ export class RouterExplorer {
 
     const hostHandler = this.applyHostFilter(host, proxy);
     paths.forEach(path => {
-      const fullPath = stripSlash(basePath) + path;
-      routerMethod(stripSlash(fullPath) || '/', hostHandler);
+      const fullPath = this.stripEndSlash(basePath) + path;
+      routerMethod(this.stripEndSlash(fullPath) || '/', hostHandler);
     });
   }
 
@@ -247,7 +250,7 @@ export class RouterExplorer {
     instance: Controller,
     callback: RouterProxyCallback,
     methodName: string,
-    module: string,
+    moduleRef: string,
     requestMethod: RequestMethod,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -256,7 +259,7 @@ export class RouterExplorer {
       instance,
       callback,
       methodName,
-      module,
+      moduleRef,
       requestMethod,
       contextId,
       inquirerId,
@@ -264,7 +267,7 @@ export class RouterExplorer {
     const exceptionFilter = this.exceptionsFilter.create(
       instance,
       callback,
-      module,
+      moduleRef,
       contextId,
       inquirerId,
     );
@@ -274,13 +277,13 @@ export class RouterExplorer {
   public createRequestScopedHandler(
     instanceWrapper: InstanceWrapper,
     requestMethod: RequestMethod,
-    module: Module,
+    moduleRef: Module,
     moduleKey: string,
     methodName: string,
   ) {
     const { instance } = instanceWrapper;
-    const collection = module.controllers;
-    return async <TRequest, TResponse>(
+    const collection = moduleRef.controllers;
+    return async <TRequest extends Record<any, any>, TResponse>(
       req: TRequest,
       res: TResponse,
       next: () => void,
@@ -289,7 +292,7 @@ export class RouterExplorer {
         const contextId = this.getContextId(req);
         const contextInstance = await this.injector.loadPerContext(
           instance,
-          module,
+          moduleRef,
           collection,
           contextId,
         );
@@ -320,7 +323,7 @@ export class RouterExplorer {
     };
   }
 
-  private getContextId<T extends Record<any, any> = any>(
+  private getContextId<T extends Record<any, unknown> = any>(
     request: T,
   ): ContextId {
     const contextId = ContextIdFactory.getByRequest(request);

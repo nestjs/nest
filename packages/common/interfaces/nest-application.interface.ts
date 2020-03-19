@@ -3,7 +3,6 @@ import { CanActivate } from './features/can-activate.interface';
 import { NestInterceptor } from './features/nest-interceptor.interface';
 import { HttpServer } from './http/http-server.interface';
 import { ExceptionFilter, INestMicroservice, PipeTransform } from './index';
-import { MicroserviceOptions } from './microservices/microservice-configuration.interface';
 import { INestApplicationContext } from './nest-application-context.interface';
 import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 
@@ -80,10 +79,10 @@ export interface INestApplication extends INestApplicationContext {
    * Connects microservice to the NestApplication instance. Transforms application
    * to a hybrid instance.
    *
-   * @param  {MicroserviceOptions} options Microservice options object
+   * @param  {T} options Microservice options object
    * @returns {INestMicroservice}
    */
-  connectMicroservice(options: MicroserviceOptions): INestMicroservice;
+  connectMicroservice<T extends object = any>(options: T): INestMicroservice;
 
   /**
    * Returns array of the microservices connected to the NestApplication.
@@ -95,7 +94,7 @@ export interface INestApplication extends INestApplicationContext {
   /**
    * Returns the underlying native HTTP server.
    *
-   * @returns {http.Server}
+   * @returns {any}
    */
   getHttpServer(): any;
 

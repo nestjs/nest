@@ -9,7 +9,7 @@ import {
   EXCEPTION_FILTERS_METADATA,
   GUARDS_METADATA,
   INTERCEPTORS_METADATA,
-  METADATA,
+  MODULE_METADATA,
   PIPES_METADATA,
   ROUTE_ARGS_METADATA,
 } from '@nestjs/common/constants';
@@ -69,9 +69,9 @@ export class DependenciesScanner {
   }
 
   public async scanForModules(
-    module: ForwardReference | Type<any> | DynamicModule,
-    scope: Type<any>[] = [],
-    ctxRegistry: (ForwardReference | DynamicModule | Type<any>)[] = [],
+    module: ForwardReference | Type<unknown> | DynamicModule,
+    scope: Type<unknown>[] = [],
+    ctxRegistry: (ForwardReference | DynamicModule | Type<unknown>)[] = [],
   ): Promise<Module> {
     const moduleInstance = await this.insertModule(module, scope);
     ctxRegistry.push(module);
@@ -80,11 +80,11 @@ export class DependenciesScanner {
       module = (module as ForwardReference).forwardRef();
     }
     const modules = !this.isDynamicModule(module as Type<any> | DynamicModule)
-      ? this.reflectMetadata(module as Type<any>, METADATA.IMPORTS)
+      ? this.reflectMetadata(module as Type<any>, MODULE_METADATA.IMPORTS)
       : [
           ...this.reflectMetadata(
             (module as DynamicModule).module,
-            METADATA.IMPORTS,
+            MODULE_METADATA.IMPORTS,
           ),
           ...((module as DynamicModule).imports || []),
         ];
@@ -102,7 +102,10 @@ export class DependenciesScanner {
     return moduleInstance;
   }
 
-  public async insertModule(module: any, scope: Type<any>[]): Promise<Module> {
+  public async insertModule(
+    module: any,
+    scope: Type<unknown>[],
+  ): Promise<Module> {
     if (module && module.forwardRef) {
       return this.container.addModule(module.forwardRef(), scope);
     }
@@ -122,15 +125,15 @@ export class DependenciesScanner {
   }
 
   public async reflectImports(
-    module: Type<any>,
+    module: Type<unknown>,
     token: string,
     context: string,
   ) {
     const modules = [
-      ...this.reflectMetadata(module, METADATA.IMPORTS),
+      ...this.reflectMetadata(module, MODULE_METADATA.IMPORTS),
       ...this.container.getDynamicMetadataByToken(
         token,
-        METADATA.IMPORTS as 'imports',
+        MODULE_METADATA.IMPORTS as 'imports',
       ),
     ];
     for (const related of modules) {
@@ -140,10 +143,10 @@ export class DependenciesScanner {
 
   public reflectProviders(module: Type<any>, token: string) {
     const providers = [
-      ...this.reflectMetadata(module, METADATA.PROVIDERS),
+      ...this.reflectMetadata(module, MODULE_METADATA.PROVIDERS),
       ...this.container.getDynamicMetadataByToken(
         token,
-        METADATA.PROVIDERS as 'providers',
+        MODULE_METADATA.PROVIDERS as 'providers',
       ),
     ];
     providers.forEach(provider => {
@@ -154,10 +157,10 @@ export class DependenciesScanner {
 
   public reflectControllers(module: Type<any>, token: string) {
     const controllers = [
-      ...this.reflectMetadata(module, METADATA.CONTROLLERS),
+      ...this.reflectMetadata(module, MODULE_METADATA.CONTROLLERS),
       ...this.container.getDynamicMetadataByToken(
         token,
-        METADATA.CONTROLLERS as 'controllers',
+        MODULE_METADATA.CONTROLLERS as 'controllers',
       ),
     ];
     controllers.forEach(item => {
@@ -177,12 +180,12 @@ export class DependenciesScanner {
     this.reflectParamInjectables(obj, token, ROUTE_ARGS_METADATA);
   }
 
-  public reflectExports(module: Type<any>, token: string) {
+  public reflectExports(module: Type<unknown>, token: string) {
     const exports = [
-      ...this.reflectMetadata(module, METADATA.EXPORTS),
+      ...this.reflectMetadata(module, MODULE_METADATA.EXPORTS),
       ...this.container.getDynamicMetadataByToken(
         token,
-        METADATA.EXPORTS as 'exports',
+        MODULE_METADATA.EXPORTS as 'exports',
       ),
     ];
     exports.forEach(exportedProvider =>

@@ -22,11 +22,11 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
   public create(
     instance: Controller,
     callback: RouterProxyCallback,
-    module: string,
+    moduleKey: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): ExceptionsHandler {
-    this.moduleContext = module;
+    this.moduleContext = moduleKey;
 
     const exceptionHandler = new ExceptionsHandler(this.applicationRef);
     const filters = this.createContext(
@@ -43,7 +43,7 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
     return exceptionHandler;
   }
 
-  public getGlobalMetadata<T extends any[]>(
+  public getGlobalMetadata<T extends unknown[]>(
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): T {

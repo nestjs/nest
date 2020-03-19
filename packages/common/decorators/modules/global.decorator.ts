@@ -12,7 +12,7 @@ import { GLOBAL_MODULE_METADATA } from '../../constants';
  * @publicApi
  */
 export function Global(): ClassDecorator {
-  return (target: any) => {
+  return (target: Function) => {
     Reflect.defineMetadata(GLOBAL_MODULE_METADATA, true, target);
   };
 }

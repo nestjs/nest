@@ -105,7 +105,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public getRequestUrl(request: any): string {
-    return request.url;
+    return request.originalUrl;
   }
 
   public enableCors(options: CorsOptions) {

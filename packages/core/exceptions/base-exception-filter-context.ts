@@ -60,14 +60,14 @@ export class BaseExceptionFilterContext extends ContextCreator {
     filter: T,
   ): InstanceWrapper | undefined {
     if (!this.moduleContext) {
-      return undefined;
+      return;
     }
     const collection = this.container.getModules();
-    const module = collection.get(this.moduleContext);
-    if (!module) {
-      return undefined;
+    const moduleRef = collection.get(this.moduleContext);
+    if (!moduleRef) {
+      return;
     }
-    return module.injectables.get(filter.name);
+    return moduleRef.injectables.get(filter.name);
   }
 
   public reflectCatchExceptions(instance: ExceptionFilter): Type<any>[] {

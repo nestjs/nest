@@ -72,17 +72,17 @@ export class ContainerScanner {
     ];
   }
 
-  private initFlatContainer(): void {
+  private initFlatContainer() {
     if (this.flatContainer) {
       return;
     }
     const modules = this.container.getModules();
-    const initialValue: any = {
+    const initialValue: Record<string, any[]> = {
       providers: [],
       controllers: [],
       injectables: [],
     };
-    const merge = <T = any>(
+    const merge = <T = unknown>(
       initial: Map<string, T> | T[],
       arr: Map<string, T>,
     ) => [...initial, ...arr];

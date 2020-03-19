@@ -26,8 +26,14 @@ import { validateEach } from '../../utils/validate-each.util';
  * @publicApi
  */
 
-export function UsePipes(...pipes: (PipeTransform | Function)[]) {
-  return (target: any, key?: string, descriptor?: any) => {
+export function UsePipes(
+  ...pipes: (PipeTransform | Function)[]
+): ClassDecorator & MethodDecorator {
+  return (
+    target: any,
+    key?: string | symbol,
+    descriptor?: TypedPropertyDescriptor<any>,
+  ) => {
     const isPipeValid = <T extends Function | Record<string, any>>(pipe: T) =>
       pipe &&
       (isFunction(pipe) || isFunction((pipe as Record<string, any>).transform));

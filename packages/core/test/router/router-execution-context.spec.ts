@@ -1,7 +1,7 @@
 import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { HttpStatus, RouteParamMetadata } from '../../../common';
+import { HttpException, HttpStatus, RouteParamMetadata } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
@@ -20,9 +20,8 @@ import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;
-  let callback;
+  let callback: any;
   let applySpy: sinon.SinonSpy;
-  let bindSpy: sinon.SinonSpy;
   let factory: RouteParamsFactory;
   let consumer: PipesConsumer;
   let guardsConsumer: GuardsConsumer;
@@ -34,7 +33,6 @@ describe('RouterExecutionContext', () => {
       bind: () => ({}),
       apply: () => ({}),
     };
-    bindSpy = sinon.spy(callback, 'bind');
     applySpy = sinon.spy(callback, 'apply');
 
     factory = new RouteParamsFactory();
@@ -94,7 +92,11 @@ describe('RouterExecutionContext', () => {
         beforeEach(() => {
           instance = { foo: 'bar' };
 
-          const canActivateFn = contextCreator.createGuardsFn([1], null, null);
+          const canActivateFn = contextCreator.createGuardsFn(
+            [1] as any,
+            null,
+            null,
+          );
           sinon.stub(contextCreator, 'createGuardsFn').returns(canActivateFn);
           tryActivateStub = sinon
             .stub(guardsConsumer, 'tryActivate')
@@ -137,14 +139,16 @@ describe('RouterExecutionContext', () => {
           });
           it('should throw exception when "tryActivate" returns false', async () => {
             tryActivateStub.callsFake(async () => false);
-            let error: Error;
+
+            let error: HttpException;
             try {
               await proxyContext(request, response, next);
             } catch (e) {
               error = e;
             }
             expect(error).to.be.instanceOf(ForbiddenException);
-            expect(error.message).to.be.eql({
+            expect(error.message).to.be.eql('Forbidden resource');
+            expect(error.getResponse()).to.be.eql({
               statusCode: HttpStatus.FORBIDDEN,
               error: 'Forbidden',
               message: FORBIDDEN_MESSAGE,
@@ -171,10 +175,6 @@ describe('RouterExecutionContext', () => {
   });
 
   describe('exchangeKeysForValues', () => {
-    const res = { body: 'res' };
-    const req = { body: { test: 'req' } };
-    const next = () => {};
-
     it('should exchange arguments keys for appropriate values', () => {
       const metadata = {
         [RouteParamtypes.REQUEST]: { index: 0, data: 'test', pipes: [] },
@@ -194,28 +194,6 @@ describe('RouterExecutionContext', () => {
       ];
       expect(values[0]).to.deep.include(expectedValues[0]);
       expect(values[1]).to.deep.include(expectedValues[1]);
-    });
-  });
-  describe('getCustomFactory', () => {
-    describe('when factory is function', () => {
-      it('should return curried factory', () => {
-        const data = 3;
-        const result = 10;
-        const customFactory = (_, req) => result;
-
-        expect(
-          contextCreator.getCustomFactory(customFactory, data)(),
-        ).to.be.eql(result);
-      });
-    });
-    describe('when factory is undefined / is not a function', () => {
-      it('should return curried null identity', () => {
-        const result = 10;
-        const customFactory = undefined;
-        expect(
-          contextCreator.getCustomFactory(customFactory, undefined)(),
-        ).to.be.eql(null);
-      });
     });
   });
 
@@ -297,17 +275,20 @@ describe('RouterExecutionContext', () => {
     it('should throw ForbiddenException when "tryActivate" returns false', async () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
+
       let error: ForbiddenException;
       try {
         await guardsFn([]);
       } catch (e) {
         error = e;
       }
+
       expect(error).to.be.instanceOf(ForbiddenException);
-      expect(error.message).to.be.eql({
+      expect(error.message).to.be.eql('Forbidden resource');
+      expect(error.getResponse()).to.be.eql({
         statusCode: HttpStatus.FORBIDDEN,
-        error: 'Forbidden',
         message: FORBIDDEN_MESSAGE,
+        error: 'Forbidden',
       });
     });
   });

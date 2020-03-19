@@ -13,9 +13,9 @@ export abstract class ContextCreator {
     inquirerId?: string,
   ): T;
 
-  public createContext<T extends any[], R extends any[]>(
+  public createContext<T extends unknown[] = any, R extends unknown[] = any>(
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: any[]) => void,
     metadataKey: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -46,7 +46,7 @@ export abstract class ContextCreator {
   }
 
   public reflectMethodMetadata<T>(
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
     metadataKey: string,
   ): T {
     return Reflect.getMetadata(metadataKey, callback);

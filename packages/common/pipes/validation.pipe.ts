@@ -1,3 +1,4 @@
+import iterate from 'iterare';
 import { Optional } from '../decorators';
 import { Injectable } from '../decorators/core';
 import {
@@ -46,11 +47,7 @@ export class ValidationPipe implements PipeTransform<any> {
     this.isDetailedOutputDisabled = disableErrorMessages;
     this.validateCustomDecorators = validateCustomDecorators || false;
     this.exceptionFactory =
-      options.exceptionFactory ||
-      (errors =>
-        new BadRequestException(
-          this.isDetailedOutputDisabled ? undefined : errors,
-        ));
+      options.exceptionFactory || this.createExceptionFactory();
 
     classValidator = loadPackage('class-validator', 'ValidationPipe', () =>
       require('class-validator'),
@@ -63,7 +60,9 @@ export class ValidationPipe implements PipeTransform<any> {
   public async transform(value: any, metadata: ArgumentMetadata) {
     const { metatype } = metadata;
     if (!metatype || !this.toValidate(metadata)) {
-      return value;
+      return this.isTransformEnabled
+        ? this.transformPrimitive(value, metadata)
+        : value;
     }
     const originalValue = value;
     value = this.toEmptyIfNil(value);
@@ -110,6 +109,21 @@ export class ValidationPipe implements PipeTransform<any> {
       : value;
   }
 
+  public createExceptionFactory() {
+    return (validationErrors: ValidationError[] = []) => {
+      if (this.isDetailedOutputDisabled) {
+        return new BadRequestException();
+      }
+      const errors = iterate(validationErrors)
+        .filter(item => !!item.constraints)
+        .map(item => Object.values(item.constraints))
+        .flatten()
+        .toArray();
+
+      return new BadRequestException(errors);
+    };
+  }
+
   private toValidate(metadata: ArgumentMetadata): boolean {
     const { metatype, type } = metadata;
     if (type === 'custom' && !this.validateCustomDecorators) {
@@ -117,6 +131,24 @@ export class ValidationPipe implements PipeTransform<any> {
     }
     const types = [String, Boolean, Number, Array, Object];
     return !types.some(t => metatype === t) && !isNil(metatype);
+  }
+
+  private transformPrimitive(value: any, metadata: ArgumentMetadata) {
+    if (!metadata.data) {
+      // leave top-level query/param objects unmodified
+      return value;
+    }
+    const { type, metatype } = metadata;
+    if (type !== 'param' && type !== 'query') {
+      return value;
+    }
+    if (metatype === Boolean) {
+      return value === true || value === 'true';
+    }
+    if (metatype === Number) {
+      return +value;
+    }
+    return value;
   }
 
   private toEmptyIfNil<T = any, R = any>(value: T): R | {} {

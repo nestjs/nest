@@ -1,11 +1,9 @@
-export const METADATA = {
+export const MODULE_METADATA = {
   IMPORTS: 'imports',
   PROVIDERS: 'providers',
   CONTROLLERS: 'controllers',
   EXPORTS: 'exports',
 };
-
-export const SHARED_MODULE_METADATA = '__module:shared__';
 export const GLOBAL_MODULE_METADATA = '__module:global__';
 export const HOST_METADATA = 'host';
 export const PATH_METADATA = 'path';
@@ -15,7 +13,6 @@ export const OPTIONAL_DEPS_METADATA = 'optional:paramtypes';
 export const PROPERTY_DEPS_METADATA = 'self:properties_metadata';
 export const OPTIONAL_PROPERTY_DEPS_METADATA = 'optional:properties_metadata';
 export const SCOPE_OPTIONS_METADATA = 'scope:options';
-
 export const METHOD_METADATA = 'method';
 export const ROUTE_ARGS_METADATA = '__routeArguments__';
 export const CUSTOM_ROUTE_AGRS_METADATA = '__customRouteArgs__';
