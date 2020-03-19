@@ -30,7 +30,7 @@
     "rxjs": "6.5.4"
   },
   "devDependencies": {
-    "@nestjs/cli": "7.0.0",
+    "@nestjs/cli": "7.0.2",
     "@nestjs/schematics": "7.0.0",
     "@nestjs/testing": "7.0.3",
     "@types/amqplib": "0.5.13",
