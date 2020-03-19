@@ -24,7 +24,7 @@
     "@nestjs/platform-express": "7.0.3",
     "cache-manager-redis-store": "2.0.0",
     "class-transformer": "0.2.3",
-    "class-validator": "0.11.0",
+    "class-validator": "0.11.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.4"
   },
