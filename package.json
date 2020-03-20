@@ -112,7 +112,7 @@
     "concurrently": "5.1.0",
     "conventional-changelog": "3.1.18",
     "core-js": "3.6.4",
-    "coveralls": "3.0.9",
+    "coveralls": "3.0.11",
     "delete-empty": "3.0.0",
     "engine.io-client": "3.4.0",
     "eslint": "6.8.0",
