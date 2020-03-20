@@ -110,16 +110,33 @@ export class ValidationPipe implements PipeTransform<any> {
   }
 
   public createExceptionFactory() {
+    const prependConstraintsWithParentProp = (
+      parentError: ValidationError,
+      error: ValidationError,
+    ) => {
+      const newConstraints = Object.keys(error.constraints).reduce(
+        (acc, k) => ({
+          ...acc,
+          [k]: `${parentError.property} ${error.constraints[k]}`,
+        }),
+        {},
+      );
+      return {
+        ...error,
+        constraints: newConstraints,
+      };
+    };
+
     const mapChildrenToValidationErrors = (error: ValidationError) => {
       if (!error.children || !error.children.length) {
         return error;
       }
       return iterate(error.children).reduce(
-        (acc, val) => [
+        (acc, childError) => [
           ...acc,
-          ...(val.children && val.children.length
-            ? mapChildrenToValidationErrors(val)
-            : [val]),
+          ...(childError.children && childError.children.length
+            ? mapChildrenToValidationErrors(childError)
+            : [prependConstraintsWithParentProp(error, childError)]),
         ],
         [],
       );
