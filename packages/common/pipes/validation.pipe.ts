@@ -110,15 +110,36 @@ export class ValidationPipe implements PipeTransform<any> {
   }
 
   public createExceptionFactory() {
-    return (validationErrors: ValidationError[] = []) => {
-      if (this.isDetailedOutputDisabled) {
-        return new BadRequestException();
+    const mapChildrenToValidationErrors = (error: ValidationError) => {
+      if (!error.children || !error.children.length) {
+        return error;
       }
-      const errors = iterate(validationErrors)
+      return iterate(error.children).reduce(
+        (acc, val) => [
+          ...acc,
+          ...(val.children && val.children.length
+            ? mapChildrenToValidationErrors(val)
+            : [val]),
+        ],
+        [],
+      );
+    };
+
+    const mapValidationErrors = (validationErrors: ValidationError[] = []) => {
+      return iterate(validationErrors)
+        .map(mapChildrenToValidationErrors)
+        .flatten()
         .filter(item => !!item.constraints)
         .map(item => Object.values(item.constraints))
         .flatten()
         .toArray();
+    };
+
+    return (validationErrors: ValidationError[] = []) => {
+      if (this.isDetailedOutputDisabled) {
+        return new BadRequestException();
+      }
+      const errors = mapValidationErrors(validationErrors);
 
       return new BadRequestException(errors);
     };
