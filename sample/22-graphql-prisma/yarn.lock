@@ -545,9 +545,9 @@
     iterall "^1.1.3"
     uuid "^3.1.0"
 
-"@nestjs/cli@7.0.0":
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-7.0.0.tgz#46357944e2640f2211c6966e8131c995f80adbd6"
+"@nestjs/cli@7.0.2":
+  version "7.0.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-7.0.2.tgz#7c43b5acf42fffc1adba9d1653309d93cd04667b"
   dependencies:
     "@angular-devkit/core" "9.0.6"
     "@angular-devkit/schematics" "9.0.6"
@@ -572,18 +572,18 @@
     webpack "4.42.0"
     webpack-node-externals "1.7.2"
 
-"@nestjs/common@7.0.2":
-  version "7.0.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-7.0.2.tgz#7f065551a9156d0491aee4d135540e974b8c638e"
+"@nestjs/common@7.0.3":
+  version "7.0.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-7.0.3.tgz#89258b411b2f1a1704ba0289473f2ed8e32423db"
   dependencies:
     axios "0.19.2"
     cli-color "2.0.0"
     tslib "1.11.1"
     uuid "7.0.2"
 
-"@nestjs/core@7.0.2":
-  version "7.0.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-7.0.2.tgz#aee9808d9fd513f3a83e9661959f039fdc06670f"
+"@nestjs/core@7.0.3":
+  version "7.0.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/core/-/core-7.0.3.tgz#4e2e653d640b9dff4d0574cb7147f12c1322bbd8"
   dependencies:
     "@nuxtjs/opencollective" "0.2.2"
     fast-safe-stringify "2.0.7"
@@ -593,9 +593,9 @@
     tslib "1.11.1"
     uuid "7.0.2"
 
-"@nestjs/graphql@7.0.6":
-  version "7.0.6"
-  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-7.0.6.tgz#2f4335526d6897617ad47278e204b2840cc407a8"
+"@nestjs/graphql@7.0.10":
+  version "7.0.10"
+  resolved "https://registry.yarnpkg.com/@nestjs/graphql/-/graphql-7.0.10.tgz#e1a5b7503da95ef395a189d88d6c2b18cc1e3e35"
   dependencies:
     chokidar "3.3.1"
     fast-glob "3.2.2"
@@ -612,9 +612,9 @@
     ts-morph "^7.0.0"
     type-graphql "^0.17.3"
 
-"@nestjs/platform-express@7.0.2":
-  version "7.0.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-7.0.2.tgz#396131676f658c6f19dd728680f7464b03fc623d"
+"@nestjs/platform-express@7.0.3":
+  version "7.0.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/platform-express/-/platform-express-7.0.3.tgz#319a672343f389d04a2e5e975d2f159d96e03b5e"
   dependencies:
     body-parser "1.19.0"
     cors "2.8.5"
@@ -630,9 +630,9 @@
     "@angular-devkit/schematics" "9.0.6"
     fs-extra "8.1.0"
 
-"@nestjs/testing@7.0.2":
-  version "7.0.2"
-  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-7.0.2.tgz#f4b88248498642366ff8dced5645e787e92bd046"
+"@nestjs/testing@7.0.3":
+  version "7.0.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-7.0.3.tgz#a53a8e56e59d6d5036ab427cd35db305abb0b9a4"
   dependencies:
     optional "0.1.4"
     tslib "1.11.1"
@@ -7326,9 +7326,9 @@ ts-morph@^7.0.0:
     "@ts-morph/common" "~0.4.0"
     code-block-writer "^10.1.0"
 
-ts-node@8.6.2:
-  version "8.6.2"
-  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.6.2.tgz#7419a01391a818fbafa6f826a33c1a13e9464e35"
+ts-node@8.7.0:
+  version "8.7.0"
+  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.7.0.tgz#266186947596bef9f3a034687595b30e31b20976"
   dependencies:
     arg "^4.1.0"
     diff "^4.0.1"
