@@ -13,8 +13,11 @@ describe('ExternalExceptionsHandler', () => {
   describe('next', () => {
     it('should method returns expected stream with message when exception is unknown', async () => {
       const error = new Error();
-      const result = await handler.next(error, null);
-      expect(result).to.be.eql(error);
+      try {
+        await handler.next(error, null);
+      } catch (err) {
+        expect(err).to.be.eql(error);
+      }
     });
     describe('when "invokeCustomFilters" returns value', () => {
       const observable$ = of(true);

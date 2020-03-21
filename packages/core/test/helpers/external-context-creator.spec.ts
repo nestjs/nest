@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { expect } from 'chai';
@@ -86,7 +87,7 @@ describe('ExternalContextCreator', () => {
             } catch (e) {
               err = e;
             }
-            expect(err).to.be.undefined;
+            expect(err).to.be.instanceOf(ForbiddenException);
           });
         });
         describe('when can activate', () => {
