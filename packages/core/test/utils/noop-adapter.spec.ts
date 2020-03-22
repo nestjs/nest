@@ -1,5 +1,6 @@
 import { RequestMethod } from '@nestjs/common';
 import { AbstractHttpAdapter } from '../../adapters';
+import { Func } from 'mocha';
 
 export class NoopHttpAdapter extends AbstractHttpAdapter {
   constructor(instance: any) {
@@ -18,11 +19,15 @@ export class NoopHttpAdapter extends AbstractHttpAdapter {
   redirect(response: any, statusCode: number, url: string) {}
   setErrorHandler(handler: Function, prefix = '/'): any {}
   setNotFoundHandler(handler: Function, prefix = '/'): any {}
+  setRootNotFoundHandler(handler: Function): any {}
   setHeader(response: any, name: string, value: string): any {}
-  registerParserMiddleware(): any {}
-  enableCors(options: any): any {}
+  registerParserMiddleware(prefix?: string): any {}
+  enableCors(options: any, prefix?: string): any {}
   createMiddlewareFactory(requestMethod: RequestMethod): any {}
   getType() {
     return '';
   }
+  addNestInstanceBaseUrl(baseUrl?: string): void {}
+  getNotFoundCallback(baseUrl?: string) {}
+  getRootNotFoundCallback() {}
 }

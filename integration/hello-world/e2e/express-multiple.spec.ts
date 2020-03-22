@@ -16,21 +16,25 @@ describe('Hello world (express instance with multiple applications)', () => {
     const module2 = await Test.createTestingModule({
       imports: [ApplicationModule],
     }).compile();
+    const module3 = await Test.createTestingModule({
+      imports: [ApplicationModule],
+    }).compile();
 
     const adapter = new ExpressAdapter(express());
 
     apps = [
-      module1.createNestApplication(adapter),
+      module1.createNestApplication(adapter).setGlobalPrefix('app1'),
       module2.createNestApplication(adapter).setGlobalPrefix('/app2'),
+      module3.createNestApplication(adapter),
     ];
     await Promise.all(apps.map(app => app.init()));
 
     server = adapter.getInstance();
   });
 
-  it(`/GET`, () => {
+  it(`/GET (app1)`, () => {
     return request(server)
-      .get('/hello')
+      .get('/app1/hello')
       .expect(200)
       .expect('Hello world!');
   });
@@ -42,9 +46,9 @@ describe('Hello world (express instance with multiple applications)', () => {
       .expect('Hello world!');
   });
 
-  it(`/GET (Promise/async)`, () => {
+  it(`/GET (app1 Promise/async)`, () => {
     return request(server)
-      .get('/hello/async')
+      .get('/app1/hello/async')
       .expect(200)
       .expect('Hello world!');
   });
@@ -56,9 +60,9 @@ describe('Hello world (express instance with multiple applications)', () => {
       .expect('Hello world!');
   });
 
-  it(`/GET (Observable stream)`, () => {
+  it(`/GET (app1 Observable stream)`, () => {
     return request(server)
-      .get('/hello/stream')
+      .get('/app1/hello/stream')
       .expect(200)
       .expect('Hello world!');
   });
@@ -68,6 +72,39 @@ describe('Hello world (express instance with multiple applications)', () => {
       .get('/app2/hello/stream')
       .expect(200)
       .expect('Hello world!');
+  });
+
+  it(`/GET (app1 NotFound)`, () => {
+    return request(server)
+      .get('/app1/cats')
+      .expect(404)
+      .expect({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Cannot GET /cats',
+      });
+  });
+
+  it(`/GET (app2 NotFound)`, () => {
+    return request(server)
+      .get('/app2/cats')
+      .expect(404)
+      .expect({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Cannot GET /cats',
+      });
+  });
+
+  it(`/GET (app3 NotFound)`, () => {
+    return request(server)
+      .get('/app3/cats')
+      .expect(404)
+      .expect({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Cannot GET /app3/cats',
+      });
   });
 
   afterEach(async () => {

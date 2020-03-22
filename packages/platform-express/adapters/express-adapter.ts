@@ -1,4 +1,4 @@
-import { RequestMethod } from '@nestjs/common';
+import { RequestMethod, NotFoundException } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { isFunction, isNil, isObject } from '@nestjs/common/utils/shared.utils';
@@ -13,6 +13,7 @@ import { ServeStaticOptions } from '../interfaces/serve-static-options.interface
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
+  private nestInstanceBaseUrlMap: string[] = [];
 
   constructor(instance?: any) {
     super(instance || express());
@@ -41,11 +42,19 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public setErrorHandler(handler: Function, prefix?: string) {
-    return this.use(handler);
+    if (!prefix) {
+      return this.use(handler);
+    }
+    return this.use(prefix.charAt(0) !== '/' ? '/' + prefix : prefix, handler);
   }
 
-  public setNotFoundHandler(handler: Function, prefix?: string) {
-    return this.use(handler);
+  public setNotFoundHandler(handler: Function, prefix = '/') {
+    const baseUrl = prefix.charAt(0) !== '/' ? '/' + prefix : prefix;
+    return this.use(baseUrl, handler);
+  }
+
+  public setRootNotFoundHandler(handler: Function) {
+    return this.use('/', handler);
   }
 
   public setHeader(response: any, name: string, value: string) {
@@ -108,8 +117,18 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return request.originalUrl;
   }
 
-  public enableCors(options: CorsOptions) {
-    return this.use(cors(options));
+  private getRequestOriginalUrl(request: any): string {
+    return request.originalUrl;
+  }
+
+  public enableCors(options: CorsOptions, prefix?: string) {
+    if (!prefix) {
+      return this.use(cors(options));
+    }
+    return this.use(
+      prefix.charAt(0) !== '/' ? '/' + prefix : prefix,
+      cors(options),
+    );
   }
 
   public createMiddlewareFactory(
@@ -132,18 +151,77 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     this.httpServer = http.createServer(this.getInstance());
   }
 
-  public registerParserMiddleware() {
+  public registerParserMiddleware(prefix?: string) {
     const parserMiddleware = {
       jsonParser: bodyParser.json(),
       urlencodedParser: bodyParser.urlencoded({ extended: true }),
     };
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))
-      .forEach(parserKey => this.use(parserMiddleware[parserKey]));
+      .forEach(parserKey => {
+        if (prefix) {
+          this.use(
+            prefix.charAt(0) !== '/' ? '/' + prefix : prefix,
+            parserMiddleware[parserKey],
+          );
+        } else {
+          this.use(parserMiddleware[parserKey]);
+        }
+      });
   }
 
   public getType(): string {
     return 'express';
+  }
+
+  public addNestInstanceBaseUrl(baseUrl?: string) {
+    if (!baseUrl) {
+      this.nestInstanceBaseUrlMap.push('/');
+      return;
+    }
+    this.nestInstanceBaseUrlMap.push(
+      baseUrl.charAt(0) !== '/' ? '/' + baseUrl : baseUrl,
+    );
+  }
+
+  public getNotFoundCallback(baseUrl = '/') {
+    const prefix = baseUrl.charAt(0) !== '/' ? '/' + baseUrl : baseUrl;
+    return <TRequest, TResponse>(
+      req: TRequest,
+      res: TResponse,
+      next: Function,
+    ) => {
+      const method = this.getRequestMethod(req);
+      const url = this.getRequestUrl(req);
+      const originalUrl = this.getRequestOriginalUrl(req);
+      const matchBaseUrl = this.nestInstanceBaseUrlMap
+        .filter(
+          nestInstanceBaseUrl => originalUrl.indexOf(nestInstanceBaseUrl) == 0,
+        )
+        .reduce((a, b) => (a.length > b.length ? a : b));
+
+      if (matchBaseUrl === prefix) {
+        throw new NotFoundException(`Cannot ${method} ${url}`);
+      }
+      next();
+    };
+  }
+
+  public getRootNotFoundCallback() {
+    const thisInstanceNo = this.nestInstanceBaseUrlMap.length;
+    return <TRequest, TResponse>(
+      req: TRequest,
+      res: TResponse,
+      next: Function,
+    ) => {
+      const method = this.getRequestMethod(req);
+      const url = this.getRequestUrl(req);
+
+      if (thisInstanceNo === this.nestInstanceBaseUrlMap.length) {
+        throw new NotFoundException(`Cannot ${method} ${url}`);
+      }
+      next();
+    };
   }
 
   private isMiddlewareApplied(name: string): boolean {

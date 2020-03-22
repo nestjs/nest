@@ -1,4 +1,4 @@
-import { HttpStatus, RequestMethod } from '@nestjs/common';
+import { HttpStatus, RequestMethod, NotFoundException } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -10,6 +10,9 @@ import * as Reply from 'fastify/lib/reply';
 import * as pathToRegexp from 'path-to-regexp';
 
 export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
+  private nestInstanceCount;
+  private nestInstanceBaseUrlMap: string[];
+
   constructor(
     instanceOrOptions:
       | TInstance
@@ -27,6 +30,7 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
         : fastify((instanceOrOptions as any) as fastify.ServerOptions);
 
     super(instance);
+    this.nestInstanceBaseUrlMap = [];
   }
 
   public listen(port: string | number, callback?: () => void);
@@ -70,14 +74,41 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     handler: Parameters<fastify.FastifyInstance['setErrorHandler']>[0],
     prefix?: string,
   ) {
-    return this.instance.setErrorHandler(handler);
+    if (!prefix) {
+      return this.instance.setErrorHandler(handler);
+    }
+    return this.registerWithPrefix(
+      async (instance: fastify.FastifyInstance): Promise<void> => {
+        instance.setErrorHandler(handler);
+      },
+      prefix.charAt(0) !== '/' ? '/' + prefix : prefix,
+    );
   }
 
   public setNotFoundHandler(
     handler: Parameters<fastify.FastifyInstance['setNotFoundHandler']>[0],
-    prefix?: string,
+    prefix = '/',
   ) {
-    return this.instance.setNotFoundHandler(handler);
+    const baseUrl = prefix.charAt(0) !== '/' ? '/' + prefix : prefix;
+    return this.instance.register(
+      (instance, options, done) => {
+        instance.setNotFoundHandler(handler);
+        done();
+      },
+      { prefix: baseUrl },
+    );
+  }
+
+  public setRootNotFoundHandler(handler: Function) {
+    if (!this.nestInstanceBaseUrlMap.includes('/')) {
+      return this.instance.register(
+        (instance, options, done) => {
+          instance.setNotFoundHandler(handler);
+          done();
+        },
+        { prefix: '/' },
+      );
+    }
   }
 
   public getHttpServer<TServer = any>(): TServer {
@@ -142,12 +173,30 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     return request.raw ? request.raw.url : request.url;
   }
 
-  public enableCors(options: CorsOptions) {
-    this.register(cors, options);
+  public enableCors(options: CorsOptions, prefix?: string) {
+    if (!prefix) {
+      this.register(cors, options);
+      return;
+    }
+    this.registerWithPrefix(
+      async (instance: fastify.FastifyInstance): Promise<void> => {
+        instance.register(cors, (options as unknown) as {});
+      },
+      prefix.charAt(0) !== '/' ? '/' + prefix : prefix,
+    );
   }
 
-  public registerParserMiddleware() {
-    this.register(formBody);
+  public registerParserMiddleware(prefix?: string) {
+    if (!prefix) {
+      this.register(formBody);
+      return;
+    }
+    this.registerWithPrefix(
+      async (instance: fastify.FastifyInstance): Promise<void> => {
+        instance.register(formBody);
+      },
+      prefix.charAt(0) !== '/' ? '/' + prefix : prefix,
+    );
   }
 
   public createMiddlewareFactory(
@@ -185,10 +234,42 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     return 'fastify';
   }
 
+  public addNestInstanceBaseUrl(baseUrl?: string) {
+    if (!baseUrl) {
+      this.nestInstanceBaseUrlMap.push('/');
+      return;
+    }
+    this.nestInstanceBaseUrlMap.push(
+      baseUrl.charAt(0) !== '/' ? '/' + baseUrl : baseUrl,
+    );
+  }
+
+  public getNotFoundCallback(baseUrl?: string): Function {
+    return (req, res, next) => {
+      const method = this.getRequestMethod(req);
+      const url = this.getRequestUrl(req);
+      throw new NotFoundException(`Cannot ${method} ${url}`);
+    };
+  }
+
+  public getRootNotFoundCallback() {
+    return (req, res, next) => {
+      const method = this.getRequestMethod(req);
+      const url = this.getRequestUrl(req);
+      throw new NotFoundException(`Cannot ${method} ${url}`);
+    };
+  }
+
   protected registerWithPrefix<T extends fastify.Plugin<any, any, any, any>>(
     factory: T,
     prefix = '/',
   ): ReturnType<fastify.FastifyInstance['register']> {
-    return this.instance.register(factory, { prefix });
+    return this.instance.register(
+      (instance, options, done) => {
+        factory;
+        done();
+      },
+      { prefix },
+    );
   }
 }
