@@ -20,9 +20,9 @@
   },
   "dependencies": {
     "@grpc/proto-loader": "0.5.3",
-    "@nestjs/common": "7.0.3",
-    "@nestjs/core": "7.0.3",
-    "@nestjs/microservices": "7.0.3",
+    "@nestjs/common": "7.0.5",
+    "@nestjs/core": "7.0.5",
+    "@nestjs/microservices": "7.0.5",
     "class-transformer": "0.2.3",
     "class-validator": "0.11.1",
     "grpc": "1.24.2",
@@ -33,7 +33,7 @@
   "devDependencies": {
     "@nestjs/cli": "7.0.2",
     "@nestjs/schematics": "7.0.0",
-    "@nestjs/testing": "7.0.3",
+    "@nestjs/testing": "7.0.5",
     "@types/express": "4.17.3",
     "@types/node": "10.17.3",
     "@types/supertest": "2.0.8",
