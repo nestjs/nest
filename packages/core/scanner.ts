@@ -313,7 +313,9 @@ export class DependenciesScanner {
     if (!providersKeys.includes(type as string)) {
       return this.container.addProvider(provider as any, token);
     }
-    const providerToken = `${type as string} (UUID: ${randomStringGenerator()})`;
+    const providerToken = `${
+      type as string
+    } (UUID: ${randomStringGenerator()})`;
 
     let scope = (provider as ClassProvider | FactoryProvider).scope;
     if (isNil(scope) && (provider as ClassProvider).useClass) {

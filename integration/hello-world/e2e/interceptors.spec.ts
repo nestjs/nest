@@ -77,9 +77,7 @@ describe('Interceptors', () => {
     ).createNestApplication();
 
     await app.init();
-    return request(app.getHttpServer())
-      .get('/hello')
-      .expect(200, RETURN_VALUE);
+    return request(app.getHttpServer()).get('/hello').expect(200, RETURN_VALUE);
   });
 
   it(`should map response`, async () => {

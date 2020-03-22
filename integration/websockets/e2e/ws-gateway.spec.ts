@@ -65,7 +65,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     );
   });
 
-  it(`should support 2 different gateways`, async function() {
+  it(`should support 2 different gateways`, async function () {
     this.retries(10);
 
     app = await createNestApp(ApplicationGateway, CoreGateway);

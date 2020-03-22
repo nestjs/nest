@@ -29,10 +29,7 @@ describe('Hello world (express instance with multiple applications)', () => {
   });
 
   it(`/GET`, () => {
-    return request(server)
-      .get('/hello')
-      .expect(200)
-      .expect('Hello world!');
+    return request(server).get('/hello').expect(200).expect('Hello world!');
   });
 
   it(`/GET (app2)`, () => {

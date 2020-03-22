@@ -37,8 +37,6 @@ describe('Guards', () => {
     app = (await createTestModule(new AuthGuard())).createNestApplication();
 
     await app.init();
-    return request(app.getHttpServer())
-      .get('/hello')
-      .expect(401);
+    return request(app.getHttpServer()).get('/hello').expect(401);
   });
 });
