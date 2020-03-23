@@ -5,7 +5,7 @@ import { HttpServer } from './http/http-server.interface';
 import {
   ExceptionFilter,
   INestMicroservice,
-  NestHybridOptions,
+  NestHybridApplicationOptions,
   PipeTransform,
 } from './index';
 import { INestApplicationContext } from './nest-application-context.interface';
@@ -85,12 +85,12 @@ export interface INestApplication extends INestApplicationContext {
    * to a hybrid instance.
    *
    * @param  {T} options Microservice options object
-   * @param  {NestHybridOptions} hybridOptions Hybrid options object
+   * @param  {NestHybridApplicationOptions} hybridOptions Hybrid options object
    * @returns {INestMicroservice}
    */
   connectMicroservice<T extends object = any>(
     options: T,
-    hybridOptions?: NestHybridOptions,
+    hybridOptions?: NestHybridApplicationOptions,
   ): INestMicroservice;
 
   /**

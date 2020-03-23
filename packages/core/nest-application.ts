@@ -7,7 +7,7 @@ import {
   NestInterceptor,
   PipeTransform,
   WebSocketAdapter,
-  NestHybridOptions,
+  NestHybridApplicationOptions,
 } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
@@ -173,7 +173,7 @@ export class NestApplication extends NestApplicationContext
 
   public connectMicroservice<T extends object>(
     options: T,
-    hybridOptions: NestHybridOptions = {},
+    hybridOptions: NestHybridApplicationOptions = {},
   ): INestMicroservice {
     const { NestMicroservice } = loadPackage(
       '@nestjs/microservices',
