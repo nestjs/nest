@@ -104,11 +104,12 @@ export class InterceptorsContextCreator extends ContextCreator {
       return globalInterceptors;
     }
     const scopedInterceptorWrappers = this.config.getGlobalRequestInterceptors() as InstanceWrapper[];
-    return iterate(scopedInterceptorWrappers)
+    const scopedInterceptors = iterate(scopedInterceptorWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
       .filter(host => !!host)
       .map(host => host.instance)
-      .concat(globalInterceptors)
-      .toArray() as T;
+      .toArray();
+
+    return globalInterceptors.concat(scopedInterceptors) as T;
   }
 }

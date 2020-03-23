@@ -55,11 +55,12 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
       return globalFilters;
     }
     const scopedFilterWrappers = this.config.getGlobalRequestFilters() as InstanceWrapper[];
-    return iterate(scopedFilterWrappers)
+    const scopedFilters = iterate(scopedFilterWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
       .filter(host => !!host)
       .map(host => host.instance)
-      .concat(globalFilters)
-      .toArray() as T;
+      .toArray();
+
+    return globalFilters.concat(scopedFilters) as T;
   }
 }
