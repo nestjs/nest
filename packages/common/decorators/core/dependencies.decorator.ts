@@ -8,7 +8,7 @@ export function flatten<T extends Array<unknown> = any>(
 }
 
 /**
- * Decorator that sets required dependencies (required with a vanilla JavaScript pjects)
+ * Decorator that sets required dependencies (required with a vanilla JavaScript objects)
  */
 export const Dependencies = (
   ...dependencies: Array<unknown>
