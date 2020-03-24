@@ -64,6 +64,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     if (!clientRef) {
       throw new InvalidGrpcServiceException();
     }
+
     const maxSendMessageLengthKey = 'grpc.max_send_message_length';
     const maxReceiveMessageLengthKey = 'grpc.max_receive_message_length';
     const maxMessageLengthOptions = {
@@ -78,6 +79,14 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
         GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
       ),
     };
+    const maxMetadataSize = this.getOptionsProp(
+      this.options,
+      'maxMetadataSize',
+      -1,
+    );
+    if (maxMetadataSize > 0) {
+      maxMessageLengthOptions['grpc.max_metadata_size'] = maxMetadataSize;
+    }
 
     const keepaliveOptions = this.getKeepaliveOptions();
     const options: Record<string, unknown> = isObject(this.options)
