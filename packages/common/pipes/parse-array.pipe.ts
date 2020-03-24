@@ -1,6 +1,7 @@
 import {
   ArgumentMetadata,
-  BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   Optional,
 } from '../index';
@@ -42,9 +43,13 @@ export class ParseArrayPipe implements PipeTransform {
       ...options,
     });
 
-    const { exceptionFactory } = options;
+    const {
+      exceptionFactory,
+      exceptionCode = HttpStatus.BAD_REQUEST,
+    } = options;
     this.exceptionFactory =
-      exceptionFactory || (error => new BadRequestException(error));
+      exceptionFactory ||
+      (error => HttpException.createException(error, exceptionCode));
   }
 
   /**
