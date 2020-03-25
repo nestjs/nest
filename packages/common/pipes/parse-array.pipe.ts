@@ -1,12 +1,7 @@
-import {
-  ArgumentMetadata,
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Optional,
-} from '../index';
+import { ArgumentMetadata, HttpStatus, Injectable, Optional } from '../index';
 import { Type } from '../interfaces';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import { HttpErrorByCode } from '../utils/http-error-by-code.util';
 import { isNil, isString } from '../utils/shared.utils';
 import { ValidationPipe, ValidationPipeOptions } from './validation.pipe';
 
@@ -48,8 +43,7 @@ export class ParseArrayPipe implements PipeTransform {
       exceptionCode = HttpStatus.BAD_REQUEST,
     } = options;
     this.exceptionFactory =
-      exceptionFactory ||
-      (error => HttpException.createException(error, exceptionCode));
+      exceptionFactory || (error => new HttpErrorByCode[exceptionCode](error));
   }
 
   /**

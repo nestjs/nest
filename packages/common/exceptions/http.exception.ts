@@ -1,5 +1,4 @@
 import { isObject, isString } from '../utils/shared.utils';
-import { HttpStatusMessage } from '../enums';
 
 /**
  * Defines the base Nest HTTP exception, which is handled by the default
@@ -77,17 +76,5 @@ export class HttpException extends Error {
     return isObject(objectOrError) && !Array.isArray(objectOrError)
       ? objectOrError
       : { statusCode, message: objectOrError, error: message };
-  }
-
-  public static createException(
-    objectOrError: object | string | string[],
-    statusCode?: number,
-  ) {
-    const response = this.createBody(
-      objectOrError,
-      HttpStatusMessage[statusCode],
-      statusCode,
-    );
-    return new HttpException(response, statusCode);
   }
 }

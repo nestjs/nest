@@ -1,14 +1,12 @@
+import { ArgumentMetadata, HttpStatus, Injectable, Optional } from '../index';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import {
-  ArgumentMetadata,
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Optional,
-} from '../index';
+  ErrorHttpStatusCode,
+  HttpErrorByCode,
+} from '../utils/http-error-by-code.util';
 
 export interface ParseIntPipeOptions {
-  exceptionCode?: HttpStatus;
+  exceptionCode?: ErrorHttpStatusCode;
   exceptionFactory?: (error: string) => any;
 }
 
@@ -31,8 +29,7 @@ export class ParseIntPipe implements PipeTransform<string> {
     } = options;
 
     this.exceptionFactory =
-      exceptionFactory ||
-      (error => HttpException.createException(error, exceptionCode));
+      exceptionFactory || (error => new HttpErrorByCode[exceptionCode](error));
   }
 
   /**

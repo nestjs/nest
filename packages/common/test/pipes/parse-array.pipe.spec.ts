@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { HttpException } from '../../exceptions';
+import { BadRequestException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces/features/pipe-transform.interface';
 import { ParseArrayPipe } from '../../pipes/parse-array.pipe';
 
@@ -14,7 +14,7 @@ describe('ParseArrayPipe', () => {
 
           return expect(
             target.transform(undefined, {} as ArgumentMetadata),
-          ).to.to.be.rejectedWith(HttpException);
+          ).to.to.be.rejectedWith(BadRequestException);
         });
       });
       describe('and optional enabled', () => {
@@ -34,17 +34,17 @@ describe('ParseArrayPipe', () => {
       it('should throw an exception (boolean)', async () => {
         return expect(
           target.transform(true, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(HttpException);
+        ).to.be.rejectedWith(BadRequestException);
       });
       it('should throw an exception (number)', async () => {
         return expect(
           target.transform(3, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(HttpException);
+        ).to.be.rejectedWith(BadRequestException);
       });
       it('should throw an exception (object)', async () => {
         return expect(
           target.transform({}, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(HttpException);
+        ).to.be.rejectedWith(BadRequestException);
       });
 
       describe('and "optional" is enabled', () => {
@@ -56,7 +56,7 @@ describe('ParseArrayPipe', () => {
           });
           return expect(
             pipe.transform({}, {} as ArgumentMetadata),
-          ).to.be.rejectedWith(HttpException);
+          ).to.be.rejectedWith(BadRequestException);
         });
       });
     });

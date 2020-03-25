@@ -32,7 +32,7 @@ describe('GraphQL Pipes', () => {
             extensions: {
               code: 'INTERNAL_SERVER_ERROR',
               exception: {
-                message: 'Http Exception',
+                message: 'Bad Request Exception',
                 response: {
                   message: [
                     'description must be longer than or equal to 30 characters',
@@ -49,7 +49,7 @@ describe('GraphQL Pipes', () => {
                 line: 2,
               },
             ],
-            message: 'Http Exception',
+            message: 'Bad Request Exception',
             path: ['addRecipe'],
           },
         ],
