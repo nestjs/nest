@@ -19,7 +19,7 @@
     "typescript": "3.7.2"
   },
   "devDependencies": {
-    "@types/node": "12.12.21",
+    "@types/node": "12.12.31",
     "@typescript-eslint/eslint-plugin": "2.25.0",
     "@typescript-eslint/parser": "2.25.0",
     "eslint": "6.8.0",
