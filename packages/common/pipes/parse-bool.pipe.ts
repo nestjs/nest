@@ -1,8 +1,12 @@
-import { BadRequestException } from '../exceptions/bad-request.exception';
-import { ArgumentMetadata, Injectable, Optional } from '../index';
+import { ArgumentMetadata, HttpStatus, Injectable, Optional } from '../index';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import {
+  ErrorHttpStatusCode,
+  HttpErrorByCode,
+} from '../utils/http-error-by-code.util';
 
 export interface ParseBoolPipeOptions {
+  errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (error: string) => any;
 }
 
@@ -20,9 +24,13 @@ export class ParseBoolPipe
 
   constructor(@Optional() options?: ParseBoolPipeOptions) {
     options = options || {};
-    const { exceptionFactory } = options;
+    const {
+      exceptionFactory,
+      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
+    } = options;
     this.exceptionFactory =
-      exceptionFactory || (error => new BadRequestException(error));
+      exceptionFactory ||
+      (error => new HttpErrorByCode[errorHttpStatusCode](error));
   }
 
   /**

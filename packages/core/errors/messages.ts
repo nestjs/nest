@@ -109,8 +109,9 @@ export const INVALID_CLASS_SCOPE_MESSAGE = (
   text: TemplateStringsArray,
   name: string | undefined,
 ) =>
-  `${name ||
-    'This class'} is marked as a scoped provider. Request and transient-scoped providers can't be used in combination with "get()" method. Please, use "resolve()" instead.`;
+  `${
+    name || 'This class'
+  } is marked as a scoped provider. Request and transient-scoped providers can't be used in combination with "get()" method. Please, use "resolve()" instead.`;
 
 export const INVALID_MIDDLEWARE_CONFIGURATION = `An invalid middleware configuration has been passed inside the module 'configure()' method.`;
 export const UNKNOWN_REQUEST_MAPPING = `An invalid controller has been detected. Perhaps, one of your controllers is missing @Controller() decorator.`;

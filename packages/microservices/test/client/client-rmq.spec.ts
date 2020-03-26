@@ -4,7 +4,7 @@ import { empty } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientRMQ } from '../../client/client-rmq';
 
-describe('ClientRMQ', function() {
+describe('ClientRMQ', function () {
   this.retries(10);
 
   let client: ClientRMQ;

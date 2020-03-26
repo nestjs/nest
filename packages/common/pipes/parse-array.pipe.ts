@@ -1,12 +1,8 @@
-import {
-  ArgumentMetadata,
-  BadRequestException,
-  Injectable,
-  Optional,
-} from '../index';
+import { ArgumentMetadata, HttpStatus, Injectable, Optional } from '../index';
 import { Type } from '../interfaces';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
-import { isString } from '../utils/shared.utils';
+import { HttpErrorByCode } from '../utils/http-error-by-code.util';
+import { isNil, isString } from '../utils/shared.utils';
 import { ValidationPipe, ValidationPipeOptions } from './validation.pipe';
 
 const VALIDATION_ERROR_MESSAGE = 'Validation failed (parsable array expected)';
@@ -42,9 +38,13 @@ export class ParseArrayPipe implements PipeTransform {
       ...options,
     });
 
-    const { exceptionFactory } = options;
+    const {
+      exceptionFactory,
+      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
+    } = options;
     this.exceptionFactory =
-      exceptionFactory || (error => new BadRequestException(error));
+      exceptionFactory ||
+      (error => new HttpErrorByCode[errorHttpStatusCode](error));
   }
 
   /**
@@ -57,9 +57,11 @@ export class ParseArrayPipe implements PipeTransform {
   async transform(value: any, metadata: ArgumentMetadata): Promise<any> {
     if (!value && !this.options.optional) {
       throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
+    } else if (isNil(value) && this.options.optional) {
+      return value;
     }
 
-    if (!Array.isArray(value) && !this.options.optional) {
+    if (!Array.isArray(value)) {
       if (!isString(value)) {
         throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
       } else {
@@ -84,7 +86,7 @@ export class ParseArrayPipe implements PipeTransform {
         } catch {}
         return this.validationPipe.transform(item, validationMetadata);
       };
-      value = await Promise.all((value as unknown[]).map(toClassInstance));
+      value = await Promise.all(value.map(toClassInstance));
     }
     return value;
   }

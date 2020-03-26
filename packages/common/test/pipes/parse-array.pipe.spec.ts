@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { BadRequestException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces/features/pipe-transform.interface';
 import { ParseArrayPipe } from '../../pipes/parse-array.pipe';
 
@@ -11,8 +12,9 @@ describe('ParseArrayPipe', () => {
         it('should throw an exception', async () => {
           target = new ParseArrayPipe({ optional: false });
 
-          return expect(target.transform(undefined, {} as ArgumentMetadata)).to
-            .be.rejected;
+          return expect(
+            target.transform(undefined, {} as ArgumentMetadata),
+          ).to.to.be.rejectedWith(BadRequestException);
         });
       });
       describe('and optional enabled', () => {
@@ -30,16 +32,32 @@ describe('ParseArrayPipe', () => {
         target = new ParseArrayPipe();
       });
       it('should throw an exception (boolean)', async () => {
-        return expect(target.transform(true, {} as ArgumentMetadata)).to.be
-          .rejected;
+        return expect(
+          target.transform(true, {} as ArgumentMetadata),
+        ).to.be.rejectedWith(BadRequestException);
       });
       it('should throw an exception (number)', async () => {
-        return expect(target.transform(3, {} as ArgumentMetadata)).to.be
-          .rejected;
+        return expect(
+          target.transform(3, {} as ArgumentMetadata),
+        ).to.be.rejectedWith(BadRequestException);
       });
       it('should throw an exception (object)', async () => {
-        return expect(target.transform({}, {} as ArgumentMetadata)).to.be
-          .rejected;
+        return expect(
+          target.transform({}, {} as ArgumentMetadata),
+        ).to.be.rejectedWith(BadRequestException);
+      });
+
+      describe('and "optional" is enabled', () => {
+        it('should throw an exception', async () => {
+          const pipe = new ParseArrayPipe({
+            optional: true,
+            items: String,
+            separator: ',',
+          });
+          return expect(
+            pipe.transform({}, {} as ArgumentMetadata),
+          ).to.be.rejectedWith(BadRequestException);
+        });
       });
     });
 

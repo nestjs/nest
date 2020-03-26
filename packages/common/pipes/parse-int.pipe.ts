@@ -1,8 +1,12 @@
-import { BadRequestException } from '../exceptions/bad-request.exception';
+import { ArgumentMetadata, HttpStatus, Injectable, Optional } from '../index';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
-import { ArgumentMetadata, Injectable, Optional } from '../index';
+import {
+  ErrorHttpStatusCode,
+  HttpErrorByCode,
+} from '../utils/http-error-by-code.util';
 
 export interface ParseIntPipeOptions {
+  errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (error: string) => any;
 }
 
@@ -19,9 +23,14 @@ export class ParseIntPipe implements PipeTransform<string> {
 
   constructor(@Optional() options?: ParseIntPipeOptions) {
     options = options || {};
-    const { exceptionFactory } = options;
+    const {
+      exceptionFactory,
+      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
+    } = options;
+
     this.exceptionFactory =
-      exceptionFactory || (error => new BadRequestException(error));
+      exceptionFactory ||
+      (error => new HttpErrorByCode[errorHttpStatusCode](error));
   }
 
   /**

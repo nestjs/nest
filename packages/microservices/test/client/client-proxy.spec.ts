@@ -16,7 +16,7 @@ class TestClientProxy extends ClientProxy {
   public async close() {}
 }
 
-describe('ClientProxy', function() {
+describe('ClientProxy', function () {
   this.retries(10);
 
   let client: TestClientProxy;

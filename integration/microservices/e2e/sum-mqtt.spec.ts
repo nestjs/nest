@@ -49,7 +49,7 @@ describe('MQTT transport', () => {
       .expect(200, '15');
   });
 
-  it(`/POST (concurrent)`, function() {
+  it(`/POST (concurrent)`, function () {
     return request(server)
       .post('/concurrent')
       .send([

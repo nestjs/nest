@@ -178,7 +178,11 @@ export class ExternalContextCreator {
       return this.transformToResult(result);
     };
     return options.filters
-      ? this.externalErrorProxy.createProxy(target, exceptionFilter)
+      ? this.externalErrorProxy.createProxy(
+          target,
+          exceptionFilter,
+          contextType,
+        )
       : target;
   }
 

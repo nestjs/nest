@@ -78,16 +78,11 @@ describe('Exclude middleware (fastify)', () => {
     ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
 
     await app.init();
-    await app
-      .getHttpAdapter()
-      .getInstance()
-      .ready();
+    await app.getHttpAdapter().getInstance().ready();
   });
 
   it(`should exclude "/test" endpoint`, () => {
-    return request(app.getHttpServer())
-      .get('/test')
-      .expect(200, RETURN_VALUE);
+    return request(app.getHttpServer()).get('/test').expect(200, RETURN_VALUE);
   });
 
   it(`should not exclude "/test2" endpoint`, () => {

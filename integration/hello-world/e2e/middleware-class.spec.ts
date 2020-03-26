@@ -51,9 +51,7 @@ describe('Middleware (class)', () => {
   });
 
   it(`forRoutes(*)`, () => {
-    return request(app.getHttpServer())
-      .get('/hello')
-      .expect(200, RETURN_VALUE);
+    return request(app.getHttpServer()).get('/hello').expect(200, RETURN_VALUE);
   });
 
   afterEach(async () => {

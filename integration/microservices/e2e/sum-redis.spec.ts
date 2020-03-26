@@ -49,7 +49,7 @@ describe('REDIS transport', () => {
       .expect(200, '15');
   });
 
-  it(`/POST (concurrent)`, function() {
+  it(`/POST (concurrent)`, function () {
     this.retries(10);
 
     return request(server)

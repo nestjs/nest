@@ -76,9 +76,7 @@ describe('RPC transport', () => {
   });
 
   it(`/POST (pattern not found)`, () => {
-    return request(server)
-      .post('/?command=test')
-      .expect(500);
+    return request(server).post('/?command=test').expect(500);
   });
 
   it(`/POST (event notification)`, done => {

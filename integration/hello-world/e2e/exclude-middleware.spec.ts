@@ -77,9 +77,7 @@ describe('Exclude middleware', () => {
   });
 
   it(`should exclude "/test" endpoint`, () => {
-    return request(app.getHttpServer())
-      .get('/test')
-      .expect(200, RETURN_VALUE);
+    return request(app.getHttpServer()).get('/test').expect(200, RETURN_VALUE);
   });
 
   it(`should not exclude "/test2" endpoint`, () => {
