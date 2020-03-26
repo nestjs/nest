@@ -27,6 +27,7 @@ import {
   PropertyMetadata,
 } from './instance-wrapper';
 import { Module } from './module';
+import { iterate } from 'iterare';
 
 /**
  * The type of an injectable dependency
@@ -612,7 +613,7 @@ export class Injector {
     if (!isObject(instance)) {
       return undefined;
     }
-    properties
+    iterate(properties)
       .filter(item => !isNil(item.instance))
       .forEach(item => (instance[item.key] = item.instance));
   }

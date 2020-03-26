@@ -1,7 +1,7 @@
 import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
 import { Controller, NestInterceptor } from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
 import { ContextCreator } from '../helpers/context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
@@ -104,10 +104,11 @@ export class InterceptorsContextCreator extends ContextCreator {
       return globalInterceptors;
     }
     const scopedInterceptorWrappers = this.config.getGlobalRequestInterceptors() as InstanceWrapper[];
-    const scopedInterceptors = scopedInterceptorWrappers
+    const scopedInterceptors = iterate(scopedInterceptorWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
-      .filter(host => host)
-      .map(host => host.instance);
+      .filter(host => !!host)
+      .map(host => host.instance)
+      .toArray();
 
     return globalInterceptors.concat(scopedInterceptors) as T;
   }

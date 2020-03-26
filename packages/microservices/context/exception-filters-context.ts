@@ -8,6 +8,7 @@ import { NestContainer } from '@nestjs/core/injector/container';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { Observable } from 'rxjs';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
+import { iterate } from 'iterare';
 
 export class ExceptionFiltersContext extends BaseExceptionFilterContext {
   constructor(
@@ -50,10 +51,11 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
       return globalFilters;
     }
     const scopedFilterWrappers = this.config.getGlobalRequestFilters() as InstanceWrapper[];
-    const scopedFilters = scopedFilterWrappers
+    const scopedFilters = iterate(scopedFilterWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
-      .filter(host => host)
-      .map(host => host.instance);
+      .filter(host => !!host)
+      .map(host => host.instance)
+      .toArray();
 
     return globalFilters.concat(scopedFilters) as T;
   }
