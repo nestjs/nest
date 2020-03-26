@@ -1,14 +1,16 @@
 import iterate from 'iterare';
+
+import { ArgumentMetadata, ValidationError } from '../index';
 import { Optional } from '../decorators';
 import { Injectable } from '../decorators/core';
-import {
-  ArgumentMetadata,
-  BadRequestException,
-  ValidationError,
-} from '../index';
+import { HttpStatus } from '../enums/http-status.enum';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import {
+  ErrorHttpStatusCode,
+  HttpErrorByCode,
+} from '../utils/http-error-by-code.util';
 import { loadPackage } from '../utils/load-package.util';
 import { isNil } from '../utils/shared.utils';
 
@@ -16,6 +18,7 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
   disableErrorMessages?: boolean;
   transformOptions?: ClassTransformOptions;
+  exceptionCode?: ErrorHttpStatusCode;
   exceptionFactory?: (errors: ValidationError[]) => any;
   validateCustomDecorators?: boolean;
 }
@@ -29,6 +32,7 @@ export class ValidationPipe implements PipeTransform<any> {
   protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
   protected transformOptions: ClassTransformOptions;
+  protected exceptionCode: ErrorHttpStatusCode;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
 
@@ -37,6 +41,7 @@ export class ValidationPipe implements PipeTransform<any> {
     const {
       transform,
       disableErrorMessages,
+      exceptionCode,
       transformOptions,
       validateCustomDecorators,
       ...validatorOptions
@@ -46,6 +51,7 @@ export class ValidationPipe implements PipeTransform<any> {
     this.transformOptions = transformOptions;
     this.isDetailedOutputDisabled = disableErrorMessages;
     this.validateCustomDecorators = validateCustomDecorators || false;
+    this.exceptionCode = exceptionCode || HttpStatus.BAD_REQUEST;
     this.exceptionFactory =
       options.exceptionFactory || this.createExceptionFactory();
 
@@ -112,7 +118,7 @@ export class ValidationPipe implements PipeTransform<any> {
   public createExceptionFactory() {
     return (validationErrors: ValidationError[] = []) => {
       if (this.isDetailedOutputDisabled) {
-        return new BadRequestException();
+        return new HttpErrorByCode[this.exceptionCode]();
       }
       const errors = iterate(validationErrors)
         .filter(item => !!item.constraints)
@@ -120,7 +126,7 @@ export class ValidationPipe implements PipeTransform<any> {
         .flatten()
         .toArray();
 
-      return new BadRequestException(errors);
+      return new HttpErrorByCode[this.exceptionCode](errors);
     };
   }
 
