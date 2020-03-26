@@ -120,12 +120,7 @@ export class ValidationPipe implements PipeTransform<any> {
       if (this.isDetailedOutputDisabled) {
         return new HttpErrorByCode[this.errorHttpStatusCode]();
       }
-      const errors = iterate(validationErrors)
-        .filter(item => !!item.constraints)
-        .map(item => Object.values(item.constraints))
-        .flatten()
-        .toArray();
-
+      const errors = this.flattenValidationErrors(validationErrors);
       return new HttpErrorByCode[this.errorHttpStatusCode](errors);
     };
   }
@@ -171,5 +166,47 @@ export class ValidationPipe implements PipeTransform<any> {
 
   private isPrimitive(value: unknown): boolean {
     return ['number', 'boolean', 'string'].includes(typeof value);
+  }
+
+  private flattenValidationErrors(
+    validationErrors: ValidationError[],
+  ): string[] {
+    return iterate(validationErrors)
+      .map(error => this.mapChildrenToValidationErrors(error))
+      .flatten()
+      .filter(item => !!item.constraints)
+      .map(item => Object.values(item.constraints))
+      .flatten()
+      .toArray();
+  }
+
+  private mapChildrenToValidationErrors(
+    error: ValidationError,
+  ): ValidationError[] {
+    if (!(error.children && error.children.length)) {
+      return [error];
+    }
+    const validationErrors = [];
+    for (const item of error.children) {
+      if (item.children && item.children.length) {
+        validationErrors.push(...this.mapChildrenToValidationErrors(item));
+      }
+      validationErrors.push(this.prependConstraintsWithParentProp(error, item));
+    }
+    return validationErrors;
+  }
+
+  private prependConstraintsWithParentProp(
+    parentError: ValidationError,
+    error: ValidationError,
+  ): ValidationError {
+    const constraints = {};
+    for (const key in error.constraints) {
+      constraints[key] = `${parentError.property}.${error.constraints[key]}`;
+    }
+    return {
+      ...error,
+      constraints,
+    };
   }
 }
