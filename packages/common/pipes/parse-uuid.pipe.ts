@@ -1,5 +1,5 @@
-import { ArgumentMetadata, HttpStatus, Injectable } from '../index';
 import { Optional } from '../decorators';
+import { ArgumentMetadata, HttpStatus, Injectable } from '../index';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import {
   ErrorHttpStatusCode,
@@ -9,7 +9,7 @@ import { isUUID } from '../utils/is-uuid';
 
 export interface ParseUUIDPipeOptions {
   version?: '3' | '4' | '5';
-  exceptionCode?: ErrorHttpStatusCode;
+  errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (errors: string) => any;
 }
 
@@ -22,13 +22,14 @@ export class ParseUUIDPipe implements PipeTransform<string> {
     options = options || {};
     const {
       exceptionFactory,
-      exceptionCode = HttpStatus.BAD_REQUEST,
+      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
       version,
     } = options;
 
     this.version = version;
     this.exceptionFactory =
-      exceptionFactory || (error => new HttpErrorByCode[exceptionCode](error));
+      exceptionFactory ||
+      (error => new HttpErrorByCode[errorHttpStatusCode](error));
   }
   async transform(value: string, metadata: ArgumentMetadata): Promise<string> {
     if (!isUUID(value, this.version)) {

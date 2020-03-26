@@ -3,6 +3,8 @@ import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import { Exclude, Expose } from 'class-transformer';
 import { IsOptional, IsString } from 'class-validator';
+import { HttpStatus } from '../../enums';
+import { UnprocessableEntityException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ValidationPipe } from '../../pipes/validation.pipe';
 chai.use(chaiAsPromised);
@@ -329,6 +331,24 @@ describe('ValidationPipe', () => {
           expect(await target.transform(3, objMetadata)).to.be.eql(3);
           expect(await target.transform(true, objMetadata)).to.be.eql(true);
         });
+      });
+    });
+  });
+
+  describe('option: "errorHttpStatusCode"', () => {
+    describe('when validation fails', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        });
+      });
+      it('should throw an error', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          expect(err).to.be.instanceOf(UnprocessableEntityException);
+        }
       });
     });
   });

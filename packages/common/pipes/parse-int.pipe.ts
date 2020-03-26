@@ -6,7 +6,7 @@ import {
 } from '../utils/http-error-by-code.util';
 
 export interface ParseIntPipeOptions {
-  exceptionCode?: ErrorHttpStatusCode;
+  errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (error: string) => any;
 }
 
@@ -25,11 +25,12 @@ export class ParseIntPipe implements PipeTransform<string> {
     options = options || {};
     const {
       exceptionFactory,
-      exceptionCode = HttpStatus.BAD_REQUEST,
+      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
     } = options;
 
     this.exceptionFactory =
-      exceptionFactory || (error => new HttpErrorByCode[exceptionCode](error));
+      exceptionFactory ||
+      (error => new HttpErrorByCode[errorHttpStatusCode](error));
   }
 
   /**
