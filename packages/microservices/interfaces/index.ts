@@ -10,3 +10,4 @@ export * from './pattern-metadata.interface';
 export * from './pattern.interface';
 export * from './request-context.interface';
 export * from './serializer.interface';
+export * from './transport-adapter.interface';

@@ -13,7 +13,7 @@ import {
   RQM_DEFAULT_URL,
 } from '../constants';
 import { RmqContext } from '../ctx-host';
-import { CustomTransportStrategy, RmqOptions } from '../interfaces';
+import { CustomTransportStrategy, RmqOptions, TransportAdapter } from '../interfaces';
 import {
   IncomingRequest,
   OutgoingResponse,
@@ -30,6 +30,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   private readonly prefetchCount: number;
   private readonly queueOptions: any;
   private readonly isGlobalPrefetchCount: boolean;
+  private transportAdapter: TransportAdapter<Buffer>;
 
   constructor(private readonly options: RmqOptions['options']) {
     super();
@@ -55,6 +56,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+    this.initializeTransportAdapter(options);
   }
 
   public async listen(callback: () => void): Promise<void> {
@@ -107,7 +109,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     channel: any,
   ): Promise<void> {
     const { content, properties } = message;
-    const rawMessage = JSON.parse(content.toString());
+    const rawMessage = this.transportAdapter.decode(content);
     const packet = this.deserializer.deserialize(rawMessage);
     const pattern = isString(packet.pattern)
       ? packet.pattern
@@ -150,7 +152,17 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     const outgoingResponse = this.serializer.serialize(
       (message as unknown) as OutgoingResponse,
     );
-    const buffer = Buffer.from(JSON.stringify(outgoingResponse));
-    this.channel.sendToQueue(replyTo, buffer, { correlationId });
+    this.channel.sendToQueue(
+      replyTo,
+      this.transportAdapter.encode(outgoingResponse),
+      { correlationId }
+    );
+  }
+
+  initializeTransportAdapter(options: RmqOptions['options'] = {}): void {
+    this.transportAdapter = options.transportAdapter || {
+      encode: value => Buffer.from(JSON.stringify(value)),
+      decode: value => JSON.parse(value.toString())
+    }
   }
 }

@@ -70,9 +70,7 @@ describe('ServerRMQ', () => {
 
   describe('handleMessage', () => {
     const createMessage = payload => ({
-      content: {
-        toString: () => JSON.stringify(payload),
-      },
+      content: Buffer.from(JSON.stringify(payload)),
       properties: { correlationId: 1 },
     });
     const pattern = 'test';

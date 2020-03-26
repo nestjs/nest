@@ -15,7 +15,7 @@ import {
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
 } from '../constants';
-import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
+import { ReadPacket, RmqOptions, WritePacket, TransportAdapter } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
 let rqmPackage: any = {};
@@ -31,6 +31,7 @@ export class ClientRMQ extends ClientProxy {
   protected queue: string;
   protected queueOptions: any;
   protected responseEmitter: EventEmitter;
+  private transportAdapter: TransportAdapter<Buffer>;
 
   constructor(protected readonly options: RmqOptions['options']) {
     super();
@@ -48,6 +49,7 @@ export class ClientRMQ extends ClientProxy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+    this.initializeTransportAdapter(options);
   }
 
   public close(): void {
@@ -172,8 +174,10 @@ export class ClientRMQ extends ClientProxy {
   ): Function {
     try {
       const correlationId = randomStringGenerator();
-      const listener = ({ content }: { content: any }) =>
-        this.handleMessage(JSON.parse(content.toString()), callback);
+      const listener = ({ content }: { content: any }) => {
+        const msgJson = this.transportAdapter.decode(content);
+        this.handleMessage(msgJson, callback);
+      }
 
       Object.assign(message, { id: correlationId });
       const serializedPacket = this.serializer.serialize(message);
@@ -181,7 +185,7 @@ export class ClientRMQ extends ClientProxy {
       this.responseEmitter.on(correlationId, listener);
       this.channel.sendToQueue(
         this.queue,
-        Buffer.from(JSON.stringify(serializedPacket)),
+        this.transportAdapter.encode(serializedPacket),
         {
           replyTo: REPLY_QUEUE,
           correlationId,
@@ -199,10 +203,17 @@ export class ClientRMQ extends ClientProxy {
     return new Promise((resolve, reject) =>
       this.channel.sendToQueue(
         this.queue,
-        Buffer.from(JSON.stringify(serializedPacket)),
+        this.transportAdapter.encode(serializedPacket),
         {},
-        err => (err ? reject(err) : resolve()),
+        (err: any) => (err ? reject(err) : resolve()),
       ),
     );
+  }
+
+  initializeTransportAdapter(options: RmqOptions['options'] = {}): void {
+    this.transportAdapter = options.transportAdapter || {
+      encode: value => Buffer.from(JSON.stringify(value)),
+      decode: value => JSON.parse(value.toString())
+    }
   }
 }

@@ -10,6 +10,7 @@ import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
+import { TransportAdapter } from './transport-adapter.interface';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -125,6 +126,7 @@ export interface RmqOptions {
     noAck?: boolean;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    transportAdapter?: TransportAdapter<Buffer, any>;
   };
 }
 
