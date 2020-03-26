@@ -19,6 +19,7 @@ import {
   UnprocessableEntityException,
   UnsupportedMediaTypeException,
 } from '../exceptions';
+import { Type } from '../interfaces';
 
 export type ErrorHttpStatusCode =
   | HttpStatus.BAD_GATEWAY
@@ -40,7 +41,7 @@ export type ErrorHttpStatusCode =
   | HttpStatus.UNPROCESSABLE_ENTITY
   | HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
-export const HttpErrorByCode = {
+export const HttpErrorByCode: Record<ErrorHttpStatusCode, Type<unknown>> = {
   [HttpStatus.BAD_GATEWAY]: BadGatewayException,
   [HttpStatus.BAD_REQUEST]: BadRequestException,
   [HttpStatus.CONFLICT]: ConflictException,

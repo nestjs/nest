@@ -40,10 +40,11 @@ export class ParseArrayPipe implements PipeTransform {
 
     const {
       exceptionFactory,
-      exceptionCode = HttpStatus.BAD_REQUEST,
+      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
     } = options;
     this.exceptionFactory =
-      exceptionFactory || (error => new HttpErrorByCode[exceptionCode](error));
+      exceptionFactory ||
+      (error => new HttpErrorByCode[errorHttpStatusCode](error));
   }
 
   /**
