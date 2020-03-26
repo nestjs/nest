@@ -13,7 +13,7 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject, validatePath } from '@nestjs/common/utils/shared.utils';
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 import { platform } from 'os';
 import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';

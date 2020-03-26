@@ -4,6 +4,7 @@ import { HttpServer, RouteInfo, Type } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import * as pathToRegexp from 'path-to-regexp';
 import { v4 as uuid } from 'uuid';
+import { iterate } from 'iterare';
 
 type RouteInfoRegex = RouteInfo & { regex: RegExp };
 
@@ -16,10 +17,11 @@ export const filterMiddleware = <T extends Function | Type<any> = any>(
     ...route,
     regex: pathToRegexp(route.path),
   }));
-  return []
+  return iterate([])
     .concat(middleware)
     .filter(isFunction)
-    .map((item: T) => mapToClass(item, excluded, httpAdapter));
+    .map((item: T) => mapToClass(item, excluded, httpAdapter))
+    .toArray();
 };
 
 export const mapToClass = <T extends Function | Type<any>>(

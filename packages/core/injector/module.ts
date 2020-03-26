@@ -29,6 +29,7 @@ import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
+import { iterate } from 'iterare';
 
 interface ProviderName {
   name?: string | symbol;
@@ -397,11 +398,12 @@ export class Module {
       return token;
     }
     const importsArray = [...this._imports.values()];
-    const importsNames = importsArray
-      .filter(item => item)
+    const importsNames = iterate(importsArray)
+      .filter(item => !!item)
       .map(({ metatype }) => metatype)
-      .filter(metatype => metatype)
-      .map(({ name }) => name);
+      .filter(metatype => !!metatype)
+      .map(({ name }) => name)
+      .toArray();
 
     if (!importsNames.includes(token as any)) {
       const { name } = this.metatype;

@@ -11,6 +11,7 @@ import {
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { RoutesMapper } from './routes-mapper';
 import { filterMiddleware } from './utils';
+import { iterate } from 'iterare';
 
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();
@@ -49,21 +50,16 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     public exclude(
       ...routes: Array<string | RouteInfo>
     ): MiddlewareConfigProxy {
-      const { routesMapper } = this.builder;
-      this.excludedRoutes = this.mapRoutesToFlatList(
-        routes.map(route => routesMapper.mapRouteToRouteInfo(route)),
-      );
+      this.excludedRoutes = this.getRoutesFlatList(routes);
       return this;
     }
 
     public forRoutes(
       ...routes: Array<string | Type<any> | RouteInfo>
     ): MiddlewareConsumer {
-      const { middlewareCollection, routesMapper } = this.builder;
+      const { middlewareCollection } = this.builder;
 
-      const forRoutes = this.mapRoutesToFlatList(
-        routes.map(route => routesMapper.mapRouteToRouteInfo(route)),
-      );
+      const forRoutes = this.getRoutesFlatList(routes);
       const configuration = {
         middleware: filterMiddleware(
           this.middleware,
@@ -76,8 +72,15 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
       return this.builder;
     }
 
-    private mapRoutesToFlatList(forRoutes: RouteInfo[][]): RouteInfo[] {
-      return forRoutes.reduce((a, b) => a.concat(b));
+    private getRoutesFlatList(
+      routes: Array<string | Type<any> | RouteInfo>,
+    ): RouteInfo[] {
+      const { routesMapper } = this.builder;
+
+      return iterate(routes)
+        .map(route => routesMapper.mapRouteToRouteInfo(route))
+        .flatten()
+        .toArray();
     }
   };
 }
