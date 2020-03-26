@@ -18,12 +18,9 @@ describe('Hello world (default adapter)', () => {
   });
 
   it(`host=example.com should execute locally injected pipe by HelloController`, () => {
-    return request(server)
-      .get('/hello/local-pipe/1')
-      .expect(200)
-      .expect({
-        id: '1',
-      });
+    return request(server).get('/hello/local-pipe/1').expect(200).expect({
+      id: '1',
+    });
   });
 
   it(`host=host.example.com should execute locally injected pipe by HostController`, () => {
@@ -39,14 +36,11 @@ describe('Hello world (default adapter)', () => {
   });
 
   it(`should return 404 for mismatched host`, () => {
-    return request(server)
-      .get('/host/local-pipe/1')
-      .expect(404)
-      .expect({
-        error: 'Not Found',
-        message: 'Cannot GET /host/local-pipe/1',
-        statusCode: 404,
-      });
+    return request(server).get('/host/local-pipe/1').expect(404).expect({
+      error: 'Not Found',
+      message: 'Cannot GET /host/local-pipe/1',
+      statusCode: 404,
+    });
   });
 
   afterEach(async () => {

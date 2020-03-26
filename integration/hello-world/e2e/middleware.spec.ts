@@ -57,15 +57,11 @@ describe('Middleware', () => {
   });
 
   it(`forRoutes(*)`, () => {
-    return request(app.getHttpServer())
-      .get('/hello')
-      .expect(200, RETURN_VALUE);
+    return request(app.getHttpServer()).get('/hello').expect(200, RETURN_VALUE);
   });
 
   it(`forRoutes(TestController)`, () => {
-    return request(app.getHttpServer())
-      .get('/test')
-      .expect(200, SCOPED_VALUE);
+    return request(app.getHttpServer()).get('/test').expect(200, SCOPED_VALUE);
   });
 
   it(`forRoutes(tests/*)`, () => {

@@ -18,25 +18,19 @@ describe('Error messages', () => {
   });
 
   it(`/GET`, () => {
-    return request(server)
-      .get('/sync')
-      .expect(HttpStatus.BAD_REQUEST)
-      .expect({
-        statusCode: 400,
-        error: 'Bad Request',
-        message: 'Integration test',
-      });
+    return request(server).get('/sync').expect(HttpStatus.BAD_REQUEST).expect({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: 'Integration test',
+    });
   });
 
   it(`/GET (Promise/async)`, () => {
-    return request(server)
-      .get('/async')
-      .expect(HttpStatus.BAD_REQUEST)
-      .expect({
-        statusCode: 400,
-        error: 'Bad Request',
-        message: 'Integration test',
-      });
+    return request(server).get('/async').expect(HttpStatus.BAD_REQUEST).expect({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: 'Integration test',
+    });
   });
 
   afterEach(async () => {

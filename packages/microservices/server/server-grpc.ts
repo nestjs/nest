@@ -240,9 +240,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       call.on('data', (m: any) => req.next(m));
       call.on('error', (e: any) => {
         // Check if error means that stream ended on other end
-        const isCancelledError = String(e)
-          .toLowerCase()
-          .indexOf('cancelled');
+        const isCancelledError = String(e).toLowerCase().indexOf('cancelled');
 
         if (isCancelledError) {
           call.end();
