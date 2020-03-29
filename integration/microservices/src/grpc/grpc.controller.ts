@@ -31,9 +31,9 @@ export class GrpcController {
       ],
     },
   })
-  client2: ClientGrpc;
+  clientMulti: ClientGrpc;
 
-  @Post()
+  @Post('sum')
   @HttpCode(200)
   call(@Body() data: number[]): Observable<number> {
     const svc = this.client.getService<any>('Math');
@@ -77,10 +77,17 @@ export class GrpcController {
     });
   }
 
-  @Post()
+  @Post('multi/sum')
   @HttpCode(200)
-  call2(@Body() data: number[]): Observable<number> {
-    const svc = this.client2.getService<any>('Math2');
+  callMultiSum(@Body() data: number[]): Observable<number> {
+    const svc = this.clientMulti.getService<any>('Math');
     return svc.sum({ data });
+  }
+
+  @Post('multi/sum2')
+  @HttpCode(200)
+  callMultiSum2(@Body() data: number[]): Observable<number> {
+    const svc = this.clientMulti.getService<any>('Math2');
+    return svc.sum2({ data });
   }
 }
