@@ -117,7 +117,7 @@
     "engine.io-client": "3.4.0",
     "eslint": "6.8.0",
     "eslint-config-prettier": "6.10.1",
-    "eslint-plugin-import": "2.20.1",
+    "eslint-plugin-import": "2.20.2",
     "fancy-log": "1.3.3",
     "fastify": "2.13.0",
     "fastify-cors": "3.0.2",
