@@ -1,14 +1,15 @@
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 import { Optional } from '../decorators';
 import { Injectable } from '../decorators/core';
-import {
-  ArgumentMetadata,
-  BadRequestException,
-  ValidationError,
-} from '../index';
+import { HttpStatus } from '../enums/http-status.enum';
+import { ArgumentMetadata, ValidationError } from '../index';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import {
+  ErrorHttpStatusCode,
+  HttpErrorByCode,
+} from '../utils/http-error-by-code.util';
 import { loadPackage } from '../utils/load-package.util';
 import { isNil } from '../utils/shared.utils';
 
@@ -16,6 +17,7 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
   disableErrorMessages?: boolean;
   transformOptions?: ClassTransformOptions;
+  errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (errors: ValidationError[]) => any;
   validateCustomDecorators?: boolean;
 }
@@ -29,6 +31,7 @@ export class ValidationPipe implements PipeTransform<any> {
   protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
   protected transformOptions: ClassTransformOptions;
+  protected errorHttpStatusCode: ErrorHttpStatusCode;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
 
@@ -37,15 +40,18 @@ export class ValidationPipe implements PipeTransform<any> {
     const {
       transform,
       disableErrorMessages,
+      errorHttpStatusCode,
       transformOptions,
       validateCustomDecorators,
       ...validatorOptions
     } = options;
+
     this.isTransformEnabled = !!transform;
     this.validatorOptions = validatorOptions;
     this.transformOptions = transformOptions;
     this.isDetailedOutputDisabled = disableErrorMessages;
     this.validateCustomDecorators = validateCustomDecorators || false;
+    this.errorHttpStatusCode = errorHttpStatusCode || HttpStatus.BAD_REQUEST;
     this.exceptionFactory =
       options.exceptionFactory || this.createExceptionFactory();
 
@@ -112,15 +118,10 @@ export class ValidationPipe implements PipeTransform<any> {
   public createExceptionFactory() {
     return (validationErrors: ValidationError[] = []) => {
       if (this.isDetailedOutputDisabled) {
-        return new BadRequestException();
+        return new HttpErrorByCode[this.errorHttpStatusCode]();
       }
-      const errors = iterate(validationErrors)
-        .filter(item => !!item.constraints)
-        .map(item => Object.values(item.constraints))
-        .flatten()
-        .toArray();
-
-      return new BadRequestException(errors);
+      const errors = this.flattenValidationErrors(validationErrors);
+      return new HttpErrorByCode[this.errorHttpStatusCode](errors);
     };
   }
 
@@ -158,12 +159,54 @@ export class ValidationPipe implements PipeTransform<any> {
   private stripProtoKeys(value: Record<string, any>) {
     delete value.__proto__;
     const keys = Object.keys(value);
-    keys
+    iterate(keys)
       .filter(key => typeof value[key] === 'object' && value[key])
       .forEach(key => this.stripProtoKeys(value[key]));
   }
 
   private isPrimitive(value: unknown): boolean {
     return ['number', 'boolean', 'string'].includes(typeof value);
+  }
+
+  private flattenValidationErrors(
+    validationErrors: ValidationError[],
+  ): string[] {
+    return iterate(validationErrors)
+      .map(error => this.mapChildrenToValidationErrors(error))
+      .flatten()
+      .filter(item => !!item.constraints)
+      .map(item => Object.values(item.constraints))
+      .flatten()
+      .toArray();
+  }
+
+  private mapChildrenToValidationErrors(
+    error: ValidationError,
+  ): ValidationError[] {
+    if (!(error.children && error.children.length)) {
+      return [error];
+    }
+    const validationErrors = [];
+    for (const item of error.children) {
+      if (item.children && item.children.length) {
+        validationErrors.push(...this.mapChildrenToValidationErrors(item));
+      }
+      validationErrors.push(this.prependConstraintsWithParentProp(error, item));
+    }
+    return validationErrors;
+  }
+
+  private prependConstraintsWithParentProp(
+    parentError: ValidationError,
+    error: ValidationError,
+  ): ValidationError {
+    const constraints = {};
+    for (const key in error.constraints) {
+      constraints[key] = `${parentError.property}.${error.constraints[key]}`;
+    }
+    return {
+      ...error,
+      constraints,
+    };
   }
 }

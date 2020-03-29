@@ -1,8 +1,16 @@
 import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-import { Exclude, Expose } from 'class-transformer';
-import { IsOptional, IsString } from 'class-validator';
+import { Exclude, Expose, Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsDefined,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { HttpStatus } from '../../enums';
+import { UnprocessableEntityException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ValidationPipe } from '../../pipes/validation.pipe';
 chai.use(chaiAsPromised);
@@ -25,10 +33,11 @@ class TestModelInternal {
 }
 
 class TestModel {
-  constructor() {}
-  @IsString() public prop1: string;
+  @IsString()
+  public prop1: string;
 
-  @IsString() public prop2: string;
+  @IsString()
+  public prop2: string;
 
   @IsOptional()
   @IsString()
@@ -109,6 +118,43 @@ describe('ValidationPipe', () => {
       it('should throw an error', async () => {
         const testObj = { prop1: 'value1' };
         return expect(target.transform(testObj, metadata)).to.be.rejected;
+      });
+
+      class TestModel2 {
+        @IsString()
+        public prop1: string;
+
+        @IsBoolean()
+        public prop2: string;
+
+        @IsOptional()
+        @IsString()
+        public optionalProp: string;
+      }
+      class TestModelWithNested {
+        @IsString()
+        prop: string;
+
+        @IsDefined()
+        @Type(() => TestModel2)
+        @ValidateNested()
+        test: TestModel2;
+      }
+      it('should flatten nested errors', async () => {
+        try {
+          const model = new TestModelWithNested();
+          model.test = new TestModel2();
+          await target.transform(model, {
+            type: 'body',
+            metatype: TestModelWithNested,
+          });
+        } catch (err) {
+          expect(err.getResponse().message).to.be.eql([
+            'prop must be a string',
+            'test.prop1 must be a string',
+            'test.prop2 must be a boolean value',
+          ]);
+        }
       });
     });
     describe('when validation transforms', () => {
@@ -329,6 +375,24 @@ describe('ValidationPipe', () => {
           expect(await target.transform(3, objMetadata)).to.be.eql(3);
           expect(await target.transform(true, objMetadata)).to.be.eql(true);
         });
+      });
+    });
+  });
+
+  describe('option: "errorHttpStatusCode"', () => {
+    describe('when validation fails', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        });
+      });
+      it('should throw an error', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          expect(err).to.be.instanceOf(UnprocessableEntityException);
+        }
       });
     });
   });

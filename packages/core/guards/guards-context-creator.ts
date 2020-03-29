@@ -2,7 +2,7 @@ import { CanActivate } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
 import { ContextCreator } from '../helpers/context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
@@ -100,10 +100,11 @@ export class GuardsContextCreator extends ContextCreator {
       return globalGuards;
     }
     const scopedGuardWrappers = this.config.getGlobalRequestGuards() as InstanceWrapper[];
-    const scopedGuards = scopedGuardWrappers
+    const scopedGuards = iterate(scopedGuardWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
-      .filter(host => host)
-      .map(host => host.instance);
+      .filter(host => !!host)
+      .map(host => host.instance)
+      .toArray();
 
     return globalGuards.concat(scopedGuards) as T;
   }

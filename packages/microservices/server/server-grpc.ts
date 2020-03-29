@@ -240,7 +240,9 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       call.on('data', (m: any) => req.next(m));
       call.on('error', (e: any) => {
         // Check if error means that stream ended on other end
-        const isCancelledError = String(e).toLowerCase().indexOf('cancelled');
+        const isCancelledError = String(e)
+          .toLowerCase()
+          .indexOf('cancelled');
 
         if (isCancelledError) {
           call.end();
@@ -323,7 +325,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public createClient(): any {
-    const server = new grpcPackage.Server({
+    const grpcOptions = {
       'grpc.max_send_message_length': this.getOptionsProp(
         this.options,
         'maxSendMessageLength',
@@ -334,7 +336,16 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         'maxReceiveMessageLength',
         GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
       ),
-    });
+    };
+    const maxMetadataSize = this.getOptionsProp(
+      this.options,
+      'maxMetadataSize',
+      -1,
+    );
+    if (maxMetadataSize > 0) {
+      grpcOptions['grpc.max_metadata_size'] = maxMetadataSize;
+    }
+    const server = new grpcPackage.Server(grpcOptions);
     const credentials = this.getOptionsProp(this.options, 'credentials');
     server.bind(
       this.url,
