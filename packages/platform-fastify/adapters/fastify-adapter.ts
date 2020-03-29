@@ -58,7 +58,10 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
   }
 
   public render(response: any, view: string, options: any) {
-    return response.view(view, options);
+    const renderFn =
+      typeof response.render === 'function' ? response.render : response.view;
+
+    return renderFn(view, options);
   }
 
   public redirect(response: any, statusCode: number, url: string) {
