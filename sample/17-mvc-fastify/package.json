@@ -19,11 +19,11 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "7.0.6",
-    "@nestjs/core": "7.0.6",
-    "@nestjs/platform-fastify": "7.0.6",
+    "@nestjs/common": "7.0.7",
+    "@nestjs/core": "7.0.7",
+    "@nestjs/platform-fastify": "7.0.7",
     "handlebars": "4.7.3",
-    "point-of-view": "3.7.2",
+    "point-of-view": "3.8.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "6.5.4"
@@ -34,14 +34,14 @@
     "@types/ws": "7.2.3",
     "@nestjs/cli": "7.1.1",
     "@nestjs/schematics": "7.0.0",
-    "@nestjs/testing": "7.0.6",
+    "@nestjs/testing": "7.0.7",
     "@types/express": "4.17.3",
     "@types/node": "8.10.58",
     "@types/supertest": "2.0.8",
-    "jest": "25.2.3",
+    "jest": "25.2.4",
     "prettier": "2.0.2",
     "supertest": "4.0.2",
-    "ts-jest": "25.2.1",
+    "ts-jest": "25.3.0",
     "ts-loader": "6.2.2",
     "ts-node": "8.8.1",
     "tsconfig-paths": "3.9.0",
@@ -49,7 +49,7 @@
     "@typescript-eslint/parser": "2.25.0",
     "eslint": "6.8.0",
     "eslint-config-prettier": "6.10.1",
-    "eslint-plugin-import": "2.20.1",
+    "eslint-plugin-import": "2.20.2",
     "typescript": "3.7.2"
   }
 }
