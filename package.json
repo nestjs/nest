@@ -138,7 +138,7 @@
     "json-loader": "0.5.7",
     "kafkajs": "1.12.0",
     "lerna": "2.11.0",
-    "lint-staged": "10.1.0",
+    "lint-staged": "10.1.1",
     "markdown-table": "2.0.0",
     "merge-graphql-schemas": "1.7.6",
     "mocha": "7.1.1",
