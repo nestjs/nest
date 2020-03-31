@@ -4,6 +4,7 @@
     "declaration": false,
     "noImplicitAny": false,
     "noUnusedLocals": false,
+    "esModuleInterop": true,
     "removeComments": true,
     "noLib": false,
     "emitDecoratorMetadata": true,
