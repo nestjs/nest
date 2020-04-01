@@ -1,4 +1,5 @@
 import * as clc from 'cli-color';
+import * as asciify from 'asciify-image';
 import { Injectable } from '../decorators/core/injectable.decorator';
 import { Optional } from '../decorators/core/optional.decorator';
 import { isObject } from '../utils/shared.utils';
@@ -151,8 +152,37 @@ export class Logger implements LoggerService {
     const contextMessage = context ? yellow(`[${context}] `) : '';
     const timestampDiff = this.updateAndGetTimestampDiff(isTimeDiffEnabled);
 
-    process.stdout.write(
-      `${pidMessage}${timestamp}   ${contextMessage}${output}${timestampDiff}\n`,
+    const cats = [
+      'https://media.discordapp.net/attachments/679231901109714945/694913437012328498/IMG_20200401_104255.jpg?width=786&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/694390661159452712/unknown.png',
+      'https://media.discordapp.net/attachments/679231901109714945/693915212558106704/IMG_20200327_131103658.jpg?width=510&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/693046214463062097/WhatsApp_Image_2020-03-26_at_20.12.26.jpeg?width=786&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/686478269629202444/unknown.png?width=507&height=589',
+      'https://media.discordapp.net/attachments/679231901109714945/686333237135671332/IMG_20180818_145914733_LL.jpg?width=649&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/686257945092423722/P1001056.JPG?width=393&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/686257851814903812/P1001050-2.jpg?width=439&height=589',
+      'https://media.discordapp.net/attachments/679231901109714945/680836016004661258/202002097464249616562669692.jpg?width=303&height=589',
+      'https://media.discordapp.net/attachments/679231901109714945/680339240894464001/IMG_20200102_162210.jpg?width=786&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/680337515080581147/received_1772439086220969.jpeg?width=786&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/680176398186577979/IMG_20200216_202636.jpg?width=332&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/680098182625361951/IMG_20180907_142158.jpg?width=332&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/679965910127345712/unknown.png?width=787&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/679392244238909451/IMG_6932.jpeg?width=442&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/679250502789234708/IMG_20191127_094910337.jpg?width=786&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/679250226384601098/IMG_20190408_131906409.jpg?width=442&height=590',
+      'https://media.discordapp.net/attachments/679231901109714945/679232485074272256/image0.png?width=465&height=590',
+    ];
+    const randomIndex = Math.round(Math.random() * (cats.length - 1));
+
+    asciify(
+      cats[randomIndex],
+      { fit: 'box', width: 50, height: 50 },
+      (_, converted) => {
+        process.stdout.write(converted + '\n');
+        process.stdout.write(
+          `${pidMessage}${timestamp}   ${contextMessage}${output}${timestampDiff}\n`,
+        );
+      },
     );
   }
 

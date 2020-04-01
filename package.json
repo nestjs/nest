@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "@nuxtjs/opencollective": "0.2.2",
+    "asciify-image": "^0.1.5",
     "axios": "0.19.2",
     "class-transformer": "0.2.3",
     "class-validator": "0.11.1",
@@ -66,8 +67,8 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.4",
     "socket.io": "2.3.0",
-    "uuid": "7.0.3",
-    "tslib": "1.11.1"
+    "tslib": "1.11.1",
+    "uuid": "7.0.3"
   },
   "devDependencies": {
     "@codechecks/client": "0.1.10",
