@@ -140,7 +140,7 @@
     "lerna": "2.11.0",
     "lint-staged": "10.1.1",
     "markdown-table": "2.0.0",
-    "merge-graphql-schemas": "1.7.6",
+    "merge-graphql-schemas": "1.7.7",
     "mocha": "7.1.1",
     "mongoose": "5.9.7",
     "mqtt": "3.0.0",
