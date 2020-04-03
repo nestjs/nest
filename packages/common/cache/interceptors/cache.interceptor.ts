@@ -50,7 +50,8 @@ export class CacheInterceptor implements NestInterceptor {
 
       return next.handle().pipe(
         tap(response => {
-          const args = ttl ? [key, response, { ttl }] : [key, response];
+          const args =
+            ttl || ttl === 0 ? [key, response, { ttl }] : [key, response];
           this.cacheManager.set(...args);
         }),
       );
