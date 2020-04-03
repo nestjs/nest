@@ -151,7 +151,7 @@
     "nyc": "15.0.0",
     "prettier": "2.0.2",
     "redis": "3.0.2",
-    "rxjs-compat": "6.5.4",
+    "rxjs-compat": "6.5.5",
     "sinon": "9.0.1",
     "sinon-chai": "3.5.0",
     "socket.io-client": "2.3.0",
