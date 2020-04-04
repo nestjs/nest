@@ -124,7 +124,7 @@
     "fastify-formbody": "3.1.0",
     "fastify-multipart": "1.0.5",
     "fastify-static": "2.6.0",
-    "graphql": "14.6.0",
+    "graphql": "15.0.0",
     "graphql-tools": "4.0.7",
     "grpc": "1.24.2",
     "gulp": "4.0.2",
