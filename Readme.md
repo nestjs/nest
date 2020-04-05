@@ -46,6 +46,11 @@ With official support, you can get expert help straight from Nest core team. We 
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
+[![NestJS](https://img.shields.io/badge/made%20with-NestJS-red.svg)](https://github.com/nestjs/nest)
+```
+[![NestJS](https://img.shields.io/badge/made%20with-NestJS-red.svg)](https://github.com/nestjs/nest)
+```
+
 #### Principal Sponsor
 
 <a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="320" /></a>
