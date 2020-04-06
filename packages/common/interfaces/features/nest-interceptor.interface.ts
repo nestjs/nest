@@ -10,7 +10,7 @@ import { ExecutionContext } from './execution-context.interface';
  */
 export interface CallHandler<T = any> {
   /**
-   * Returns an `Observable` reprsenting the response stream from the route
+   * Returns an `Observable` representing the response stream from the route
    * handler.
    */
   handle(): Observable<T>;
