@@ -7,6 +7,7 @@ import {
   HttpServer,
   NestInterceptor,
 } from '../../interfaces';
+import { isNil } from '../../utils/shared.utils';
 import {
   CACHE_KEY_METADATA,
   CACHE_MANAGER,
@@ -51,7 +52,7 @@ export class CacheInterceptor implements NestInterceptor {
       return next.handle().pipe(
         tap(response => {
           const args =
-            ttl || ttl === 0 ? [key, response, { ttl }] : [key, response];
+            isNil(ttl) ? [key, response] : [key, response, { ttl }];
           this.cacheManager.set(...args);
         }),
       );
