@@ -152,7 +152,7 @@
     "prettier": "2.0.4",
     "redis": "3.0.2",
     "rxjs-compat": "6.5.5",
-    "sinon": "9.0.1",
+    "sinon": "9.0.2",
     "sinon-chai": "3.5.0",
     "socket.io-client": "2.3.0",
     "subscriptions-transport-ws": "0.9.16",
