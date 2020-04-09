@@ -83,7 +83,7 @@
     "@types/chai": "4.2.10",
     "@types/chai-as-promised": "7.1.2",
     "@types/cors": "2.8.6",
-    "@types/express": "4.17.4",
+    "@types/express": "4.17.5",
     "@types/fastify-cors": "2.1.0",
     "@types/gulp": "4.0.6",
     "@types/kafka-node": "2.0.9",
