@@ -190,7 +190,7 @@ export class NestFactoryStatic {
     prop: string,
   ): Function {
     return (...args: unknown[]) => {
-      let result;
+      let result: unknown;
       ExceptionsZone.run(() => {
         result = receiver[prop](...args);
       });
