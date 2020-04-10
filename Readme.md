@@ -48,7 +48,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 #### Principal Sponsor
 
-<a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="320" /></a>
+<a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="220" /></a>
 
 #### Silver Sponsors
 <a href="https://neoteric.eu/" target="_blank"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" valign="middle" /></a> &nbsp;
