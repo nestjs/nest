@@ -51,25 +51,32 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="220" /></a>
 
 #### Silver Sponsors
-<a href="https://neoteric.eu/" target="_blank"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" valign="middle" /></a> &nbsp;
-  <a href="http://gojob.com" target="_blank"><img src="http://nestjs.com/img/gojob-logo.png" valign="middle" height="95" /></a> &nbsp; 
-    <a href="https://trilon.io" target="_blank"><img src="https://nestjs.com/img/trilon.svg" width="150" valign="middle" /></a> &nbsp;
-<a href="http://www.leogistics.com" target="_blank"><img src="https://nestjs.com/img/leogistics-logo.jpeg" width="150" valign="middle" /></a>
+
+<table style="text-align:center;"><tr><td>
+<a href="https://neoteric.eu/" target="_blank"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" valign="middle" /></a> </td><td>
+  <a href="http://gojob.com" target="_blank"><img src="http://nestjs.com/img/gojob-logo.png" valign="middle" height="95" /></a> </td><td>
+    <a href="https://trilon.io" target="_blank"><img src="https://nestjs.com/img/trilon.svg" width="150" valign="middle" /></a> </td><td>
+<a href="http://www.leogistics.com" target="_blank"><img src="https://nestjs.com/img/leogistics-logo.jpeg" width="150" valign="middle" /></td></tr></table>
 
 #### Sponsors
 
-<a href="https://www.swingdev.io" target="_blank"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="110" valign="middle" /> </a> &nbsp; 
-<a href="https://www.novologic.com/" target="_blank"><img src="https://nestjs.com/img/novologic.png" width="110" valign="middle" /></a> &nbsp;
-<a href="https://ever.co/" target="_blank"><img src="https://nestjs.com/img/ever-logo.png" height="14" valign="middle" /></a>  &nbsp; 
-<a href="https://blokt.com" target="_blank"><img src="https://nestjs.com/img/blokt-logo.png" height="25" valign="middle" /></a>  &nbsp;   <a href="http://architectnow.net/" target="_blank"><img src="https://nestjs.com/img/architectnow.png" height="20" valign="middle" /></a> &nbsp; <a href="https://quander.io/" target="_blank"><img src="https://nestjs.com/img/quander.png" height="22" valign="middle" /></a> &nbsp; <a href="https://mantro.net/" target="_blank"><img src="https://nestjs.com/img/mantro-logo.svg" height="19" valign="middle" /></a> &nbsp; <a href="https://triplebyte.com/" target="_blank"><img src="https://nestjs.com/img/triplebyte.png" height="20" valign="middle" /></a> &nbsp; 
-<a href="https://reposit.co.uk/" target="_blank"><img src="https://nestjs.com/img/reposit-logo.png" height="18" valign="middle" /></a> &nbsp; &nbsp;
-<a href="https://nearpod.com/" target="_blank"><img src="https://nestjs.com/img/nearpod-logo.svg" width="100" valign="middle" /></a> &nbsp;
-<a href="https://clay.global/" target="_blank"><img src="https://nestjs.com/img/clay-logo.svg" width="75" valign="middle" /></a> &nbsp;
-<a href="https://firesticktricks.com" target="_blank"><img src="https://nestjs.com/img/firesticktricks-logo.png" width="120" valign="middle" /></a> &nbsp;
-<a href="https://www.codeguesser.co.uk" target="_blank"><img src="https://nestjs.com/img/codeguesser-logo.svg" width="120" valign="middle" /></a> &nbsp;
-<a href="https://tekhattan.com" target="_blank"><img src="https://nestjs.com/img/tekhattan-logo.png" width="110" valign="middle" /></a> &nbsp;
-<a href="https://f-a.nz/" target="_blank"><img src="https://nestjs.com/img/franz.svg" width="80" valign="middle" /></a> &nbsp;
-<a href="https://sparkfabrik.com/" target="_blank"><img src="https://nestjs.com/img/sparkfabrik-logo.png" width="120" valign="middle" /></a>
+<table><tr><td align="center" valign="middle">
+<a href="https://www.swingdev.io" target="_blank"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="110" valign="middle" /> </a></td><td align="center" valign="middle">
+<a href="https://www.novologic.com/" target="_blank"><img src="https://nestjs.com/img/novologic.png" width="110" valign="middle" /></a> </td><td align="center" valign="middle">
+<a href="https://ever.co/" target="_blank"><img src="https://nestjs.com/img/ever-logo.png" height="14" valign="middle" /></a>  </td><td align="center" valign="middle">
+<a href="https://blokt.com" target="_blank"><img src="https://nestjs.com/img/blokt-logo.png" height="25" valign="middle" /></a>  </td><td align="center" valign="middle"> 
+  <a href="http://architectnow.net/" target="_blank"><img src="https://nestjs.com/img/architectnow.png" height="20" valign="middle" /></a> </td></tr><tr><td align="center" valign="middle">
+  <a href="https://quander.io/" target="_blank"><img src="https://nestjs.com/img/quander.png" height="22" valign="middle" /></a> </td><td align="center" valign="middle">
+  <a href="https://mantro.net/" target="_blank"><img src="https://nestjs.com/img/mantro-logo.svg" height="19" valign="middle" /></a> </td><td align="center" valign="middle">
+  <a href="https://triplebyte.com/" target="_blank"><img src="https://nestjs.com/img/triplebyte.png" height="20" valign="middle" /></a> </td><td align="center" valign="middle">
+<a href="https://reposit.co.uk/" target="_blank"><img src="https://nestjs.com/img/reposit-logo.png" height="18" valign="middle" /></a></td><td align="center" valign="middle">
+<a href="https://nearpod.com/" target="_blank"><img src="https://nestjs.com/img/nearpod-logo.svg" width="100" valign="middle" /></a> </td></tr><tr><td align="center" valign="middle">
+<a href="https://clay.global/" target="_blank"><img src="https://nestjs.com/img/clay-logo.svg" width="75" valign="middle" /></a> </td><td align="center" valign="middle">
+<a href="https://firesticktricks.com" target="_blank"><img src="https://nestjs.com/img/firesticktricks-logo.png" width="120" valign="middle" /></a></td><td align="center" valign="middle">
+<a href="https://www.codeguesser.co.uk" target="_blank"><img src="https://nestjs.com/img/codeguesser-logo.svg" width="120" valign="middle" /></a> </td><td align="center" valign="middle">
+<a href="https://tekhattan.com" target="_blank"><img src="https://nestjs.com/img/tekhattan-logo.png" width="110" valign="middle" /></a> </td><td align="center" valign="middle">
+<a href="https://f-a.nz/" target="_blank"><img src="https://nestjs.com/img/franz.svg" width="80" valign="middle" /></a> </td></tr><tr><td align="center" valign="middle">
+<a href="https://sparkfabrik.com/" target="_blank"><img src="https://nestjs.com/img/sparkfabrik-logo.png" width="120" valign="middle" /></a></td></tr></table>
 
 
 ## Backers
