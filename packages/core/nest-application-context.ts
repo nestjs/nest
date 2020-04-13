@@ -139,12 +139,7 @@ export class NestApplicationContext implements INestApplicationContext {
     }
 
     signals = iterate(signals)
-      .map((signal: string) =>
-        signal
-          .toString()
-          .toUpperCase()
-          .trim(),
-      )
+      .map((signal: string) => signal.toString().toUpperCase().trim())
       // filter out the signals which is already listening to
       .filter(signal => !this.activeShutdownSignals.includes(signal))
       .toArray();

@@ -168,7 +168,9 @@ export class ValidationPipe implements PipeTransform<any> {
     return ['number', 'boolean', 'string'].includes(typeof value);
   }
 
-  private flattenValidationErrors(validationErrors: ValidationError[]): ValidationError[] {
+  private flattenValidationErrors(
+    validationErrors: ValidationError[],
+  ): ValidationError[] {
     return iterate(validationErrors)
       .map(error => this.mapChildrenToValidationErrors(error))
       .flatten()

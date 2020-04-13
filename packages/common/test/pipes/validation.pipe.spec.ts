@@ -155,19 +155,13 @@ describe('ValidationPipe', () => {
         } catch (err) {
           expect(err.getResponse().message).to.be.eql([
             {
-              'prop': [
-                'prop must be a string',
-              ],
+              prop: ['prop must be a string'],
             },
             {
-              'test.0.prop1': [
-                'prop1 must be a string',
-              ],
+              'test.0.prop1': ['prop1 must be a string'],
             },
             {
-              'test.0.prop2': [
-                'prop2 must be a boolean value',
-              ]
+              'test.0.prop2': ['prop2 must be a boolean value'],
             },
           ]);
         }
