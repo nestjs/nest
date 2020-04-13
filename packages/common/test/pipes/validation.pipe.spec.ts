@@ -17,7 +17,7 @@ chai.use(chaiAsPromised);
 
 @Exclude()
 class TestModelInternal {
-  constructor() {}
+  constructor() { }
   @Expose()
   @IsString()
   public prop1: string;
@@ -45,7 +45,7 @@ class TestModel {
 }
 
 class TestModelNoValidaton {
-  constructor() {}
+  constructor() { }
 
   public prop1: string;
   public prop2: string;
@@ -136,23 +136,33 @@ describe('ValidationPipe', () => {
         prop: string;
 
         @IsDefined()
+        @IsDefined({ each: true })
         @Type(() => TestModel2)
         @ValidateNested()
-        test: TestModel2;
+        test: TestModel2[];
       }
       it('should flatten nested errors', async () => {
         try {
           const model = new TestModelWithNested();
-          model.test = new TestModel2();
+          const nestedModel = new TestModel2();
+          nestedModel.prop1 = 1 as any;
+          nestedModel.prop2 = {} as any;
+          model.test = [nestedModel];
           await target.transform(model, {
             type: 'body',
             metatype: TestModelWithNested,
           });
         } catch (err) {
           expect(err.getResponse().message).to.be.eql([
-            'prop must be a string',
-            'test.prop1 must be a string',
-            'test.prop2 must be a boolean value',
+            {
+              prop: ['prop must be a string'],
+            },
+            {
+              'test.0.prop1': ['prop1 must be a string'],
+            },
+            {
+              'test.0.prop2': ['prop2 must be a boolean value'],
+            },
           ]);
         }
       });

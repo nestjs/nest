@@ -170,14 +170,13 @@ export class ValidationPipe implements PipeTransform<any> {
 
   private flattenValidationErrors(
     validationErrors: ValidationError[],
-  ): string[] {
+  ): ValidationError[] {
     return iterate(validationErrors)
       .map(error => this.mapChildrenToValidationErrors(error))
       .flatten()
       .filter(item => !!item.constraints)
-      .map(item => Object.values(item.constraints))
-      .flatten()
-      .toArray();
+      .map(item => ({ [item.property]: Object.values(item.constraints) }))
+      .toArray() as any;
   }
 
   private mapChildrenToValidationErrors(
@@ -189,6 +188,7 @@ export class ValidationPipe implements PipeTransform<any> {
     const validationErrors = [];
     for (const item of error.children) {
       if (item.children && item.children.length) {
+        item.property = `${error.property}.${item.property}`;
         validationErrors.push(...this.mapChildrenToValidationErrors(item));
       }
       validationErrors.push(this.prependConstraintsWithParentProp(error, item));
@@ -200,13 +200,7 @@ export class ValidationPipe implements PipeTransform<any> {
     parentError: ValidationError,
     error: ValidationError,
   ): ValidationError {
-    const constraints = {};
-    for (const key in error.constraints) {
-      constraints[key] = `${parentError.property}.${error.constraints[key]}`;
-    }
-    return {
-      ...error,
-      constraints,
-    };
+    error.property = `${parentError.property}.${error.property}`;
+    return error;
   }
 }
