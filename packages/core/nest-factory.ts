@@ -161,7 +161,8 @@ export class NestFactoryStatic {
         dependenciesScanner.applyApplicationProviders();
       });
     } catch (e) {
-      process.abort();
+      console.error(e);
+      process.exit(1);
     }
   }
 
