@@ -1,83 +1,53 @@
-import { Type } from '@nestjs/common';
-import { isNil, isSymbol } from '@nestjs/common/utils/shared.utils';
-import {
-  InjectorDependency,
-  InjectorDependencyContext,
-} from '../injector/injector';
+import { isNil } from '@nestjs/common/utils/shared.utils';
+
+import { InjectorDependencyContext } from '../injector/injector';
 import { Module } from '../injector/module';
+import { InstanceWrapper } from '../injector/instance-wrapper';
+import {
+  getClassCodeExcerpt,
+  getUseFactoryCodeExcerpt,
+  getPropertyCodeExcerpt,
+} from './code-excerpt';
+import { getInstanceName, getModuleName } from './utils';
 
-/**
- * Returns the name of an instance
- * @param instance The instance which should get the name from
- */
-const getInstanceName = (instance: unknown): string =>
-  instance && (instance as Type<any>).name;
+export function UNKNOWN_DEPENDENCIES_MESSAGE(
+  instanceWrapper: InstanceWrapper,
+  dependencyContext: InjectorDependencyContext,
+  module?: Module,
+) {
+  const { index, name = 'dependency', dependencies, key } = dependencyContext;
 
-/**
- * Returns the name of the dependency
- * Tries to get the class name, otherwise the string value
- * (= injection token). As fallback it returns '+'
- * @param dependency The dependency whichs name should get displayed
- */
-const getDependencyName = (dependency: InjectorDependency): string =>
-  // use class name
-  getInstanceName(dependency) ||
-  // use injection token (symbol)
-  (isSymbol(dependency) && dependency.toString()) ||
-  // use string directly
-  (dependency as string) ||
-  // otherwise
-  '+';
+  const instanceName = getInstanceName(instanceWrapper);
+  const moduleName = getModuleName(module);
+  const dependencyName = getInstanceName(name);
 
-/**
- * Returns the name of the module
- * Tries to get the class name. As fallback it returns 'current'.
- * @param module The module which should get displayed
- */
-const getModuleName = (module: Module) =>
-  (module && getInstanceName(module.metatype)) || 'current';
+  let message = `Nest can't resolve dependencies of the ${instanceName}.\n\n`;
 
-export const UNKNOWN_DEPENDENCIES_MESSAGE = (
-  type: string | symbol,
-  unknownDependencyContext: InjectorDependencyContext,
-  module: Module,
-) => {
-  const {
-    index,
-    name = 'dependency',
-    dependencies,
-    key,
-  } = unknownDependencyContext;
-  const moduleName = getModuleName(module) || 'Module';
-  const dependencyName = getDependencyName(name);
+  if (isNil(index)) {
+    // Is injected via property
+    message += getPropertyCodeExcerpt(instanceWrapper, dependencyContext);
+    message += `\n\nPlease make sure that the "${key.toString()}" property is available in the current context.`;
+  } else {
+    if (instanceWrapper.metatype.name === 'useFactory') {
+      message += getUseFactoryCodeExcerpt(instanceWrapper, dependencyContext);
+    } else {
+      message += getClassCodeExcerpt(instanceWrapper, dependencyContext);
+    }
 
-  let message = `Nest can't resolve dependencies of the ${type.toString()}`;
+    message += `\n\nPlease make sure that the argument ${dependencyName} at index [${index}] is available in the ${moduleName} context.`;
+  }
 
-  const potentialSolutions = `\n
+  message += `\n
 Potential solutions:
 - If ${dependencyName} is a provider, is it part of the current ${moduleName}?
 - If ${dependencyName} is exported from a separate @Module, is that module imported within ${moduleName}?
   @Module({
     imports: [ /* the Module containing ${dependencyName} */ ]
   })
-`;
-
-  if (isNil(index)) {
-    message += `. Please make sure that the "${key.toString()}" property is available in the current context.${potentialSolutions}`;
-    return message;
-  }
-  const dependenciesName = (dependencies || []).map(getDependencyName);
-  dependenciesName[index] = '?';
-
-  message += ` (`;
-  message += dependenciesName.join(', ');
-  message += `). Please make sure that the argument ${dependencyName} at index [${index}] is available in the ${getModuleName(
-    module,
-  )} context.`;
-  message += potentialSolutions;
+  `;
 
   return message;
-};
+}
 
 export const INVALID_MIDDLEWARE_MESSAGE = (
   text: TemplateStringsArray,

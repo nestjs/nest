@@ -1,16 +1,17 @@
-import { InjectorDependencyContext } from '../../injector/injector';
 import { UNKNOWN_DEPENDENCIES_MESSAGE } from '../messages';
 import { RuntimeException } from './runtime.exception';
+import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { InjectorDependencyContext } from '../../injector/injector';
 import { Module } from '../../injector/module';
 
 export class UndefinedDependencyException extends RuntimeException {
   constructor(
-    type: string,
-    undefinedDependencyContext: InjectorDependencyContext,
+    instanceWrapper: InstanceWrapper,
+    dependencyContext: InjectorDependencyContext,
     module?: Module,
   ) {
     super(
-      UNKNOWN_DEPENDENCIES_MESSAGE(type, undefinedDependencyContext, module),
+      UNKNOWN_DEPENDENCIES_MESSAGE(instanceWrapper, dependencyContext, module),
     );
   }
 }

@@ -314,7 +314,7 @@ export class Injector {
   ) {
     if (isUndefined(param)) {
       throw new UndefinedDependencyException(
-        wrapper.name,
+        wrapper,
         dependencyContext,
         moduleRef,
       );
@@ -421,9 +421,9 @@ export class Injector {
     keyOrIndex?: string | number,
   ): Promise<InstanceWrapper<T>> {
     const { name } = dependencyContext;
-    if (wrapper && wrapper.name === name) {
+    if (wrapper?.name === name) {
       throw new UnknownDependenciesException(
-        wrapper.name,
+        wrapper,
         dependencyContext,
         moduleRef,
       );
@@ -462,7 +462,7 @@ export class Injector {
     );
     if (isNil(instanceWrapper)) {
       throw new UnknownDependenciesException(
-        wrapper.name,
+        wrapper,
         dependencyContext,
         moduleRef,
       );
