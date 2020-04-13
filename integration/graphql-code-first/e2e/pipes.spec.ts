@@ -37,7 +37,7 @@ describe('GraphQL Pipes', () => {
                   message: [
                     {
                       "description": [
-                        "description must be longer than or equal to 30 characiters"
+                        "description must be longer than or equal to 30 characters"
                       ]
                     }
                   ],
