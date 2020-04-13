@@ -159,10 +159,10 @@ describe('ValidationPipe', () => {
                 'prop must be a string',
               ],
               'test.0.prop1': [
-                'test.prop1 must be a string',
+                'prop1 must be a string',
               ],
               'test.0.prop2': [
-                'test.prop2 must be a boolean value',
+                'prop2 must be a boolean value',
               ]
             },
           ]);
