@@ -42,6 +42,7 @@ export interface GrpcOptions {
       http2MinPingIntervalWithoutDataMs?: number;
       http2MaxPingStrikes?: number;
     };
+    arguments?:any;
     credentials?: any;
     protoPath: string | string[];
     package: string | string[];

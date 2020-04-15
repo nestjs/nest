@@ -90,12 +90,13 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
     const keepaliveOptions = this.getKeepaliveOptions();
     const options: Record<string, string | number> = {
+      ...this.options.arguments,
       ...maxMessageLengthOptions,
       ...keepaliveOptions,
     };
 
     const credentials =
-      options.credentials || grpcPackage.credentials.createInsecure();
+      this.options.credentials || grpcPackage.credentials.createInsecure();
 
     delete options.credentials;
     delete options.keepalive;
