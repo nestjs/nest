@@ -101,7 +101,7 @@ export interface FactoryProvider<T = any> {
   /**
    * Factory function that returns an instance of the provider to be injected.
    */
-  useFactory: (...args: any[]) => T;
+  useFactory: (...args: any[]) => T | Promise<T>;
   /**
    * Optional list of providers to be injected into the context of the Factory function.
    */
