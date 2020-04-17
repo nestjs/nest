@@ -78,10 +78,21 @@ export interface ValueProvider<T = any> {
  *
  * For example:
  * ```typescript
- * const connectionFactory = {
+ * const connectionFactory = FactoryProvider<DatabaseConnection> {
  *   provide: 'CONNECTION',
  *   useFactory: (optionsProvider: OptionsProvider) => {
  *     const options = optionsProvider.get();
+ *     return new DatabaseConnection(options);
+ *   },
+ *   inject: [OptionsProvider],
+ * };
+ * ```
+ * or using async factory
+ * ```typescript
+ * const connectionFactory: FactoryProvider<Promise<DatabaseConnection>> = {
+ *   provide: 'CONNECTION',
+ *   useFactory: async (optionsProvider: OptionsProvider) => {
+ *     const options = await optionsProvider.get();
  *     return new DatabaseConnection(options);
  *   },
  *   inject: [OptionsProvider],
