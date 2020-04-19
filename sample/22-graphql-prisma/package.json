@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "7.0.8",
     "@nestjs/core": "7.0.8",
-    "@nestjs/graphql": "7.3.0",
+    "@nestjs/graphql": "7.3.1",
     "@nestjs/platform-express": "7.0.8",
     "apollo-server-express": "2.12.0",
     "graphql": "14.6.0",
@@ -41,7 +41,7 @@
     "jest": "25.3.0",
     "prettier": "2.0.4",
     "supertest": "4.0.2",
-    "ts-jest": "25.3.1",
+    "ts-jest": "25.4.0",
     "ts-loader": "7.0.0",
     "ts-node": "8.8.2",
     "tsconfig-paths": "3.9.0",
