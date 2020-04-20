@@ -25,7 +25,7 @@
     "@nestjs/platform-ws": "7.0.8",
     "@nestjs/websockets": "7.0.8",
     "class-transformer": "0.2.3",
-    "class-validator": "0.11.1",
+    "class-validator": "0.12.1",
     "rimraf": "3.0.2",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.5",
