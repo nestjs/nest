@@ -1,12 +1,12 @@
 import { Logger } from '@nestjs/common';
-import {
-  EachMessagePayload,
-  KafkaMessage,
-} from '@nestjs/microservices/external/kafka.interface';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaHeaders } from '../../enums';
+import {
+  EachMessagePayload,
+  KafkaMessage,
+} from '../../external/kafka.interface';
 import { ServerKafka } from '../../server';
 
 class NoopLogger extends Logger {

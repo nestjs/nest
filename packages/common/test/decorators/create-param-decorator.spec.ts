@@ -1,7 +1,7 @@
-import { ParseIntPipe } from '@nestjs/common';
-import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import { expect } from 'chai';
+import { ROUTE_ARGS_METADATA } from '../../constants';
 import { createParamDecorator } from '../../decorators/http/create-route-param-metadata.decorator';
+import { ParseIntPipe } from '../../index';
 
 describe('createParamDecorator', () => {
   let result;

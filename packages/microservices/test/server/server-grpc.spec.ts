@@ -1,12 +1,12 @@
 import { Logger } from '@nestjs/common';
-import { GrpcMethodStreamingType } from '@nestjs/microservices';
 import { expect } from 'chai';
 import { join } from 'path';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
-import { ServerGrpc } from '../../server/server-grpc';
 import { CANCEL_EVENT } from '../../constants';
+import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
+import { GrpcMethodStreamingType } from '../../index';
+import { ServerGrpc } from '../../server/server-grpc';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
