@@ -1,4 +1,5 @@
-import Axios, {
+import * as AxiosModule from 'axios';
+import {
   AxiosInstance,
   AxiosRequestConfig,
   AxiosResponse,
@@ -6,12 +7,14 @@ import Axios, {
 } from 'axios';
 import { Observable } from 'rxjs';
 import { Inject } from '../decorators';
-import { AXIOS_INSTANCE_TOKEN } from './http.constants';
+import { AXIOS_INSTANCE_TOKEN, AXIOS_MODULE_TOKEN } from './http.constants';
 
 export class HttpService {
   constructor(
     @Inject(AXIOS_INSTANCE_TOKEN)
-    private readonly instance: AxiosInstance = Axios,
+    private readonly instance: AxiosInstance,
+    @Inject(AXIOS_MODULE_TOKEN)
+    private readonly axiosModule: typeof AxiosModule,
   ) {}
 
   request<T = any>(config: AxiosRequestConfig): Observable<AxiosResponse<T>> {
@@ -72,6 +75,7 @@ export class HttpService {
     ...args: any[]
   ) {
     return new Observable<AxiosResponse<T>>(subscriber => {
+      const { default: Axios } = this.axiosModule;
       let config = args[args.length - 1];
       if (!config) {
         config = {};
