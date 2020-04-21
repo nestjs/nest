@@ -27,7 +27,7 @@
     "eslint-plugin-import": "2.20.2",
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "7.0.1",
-    "ts-node": "8.8.2",
+    "ts-node": "8.9.0",
     "webpack": "4.42.1",
     "webpack-cli": "3.3.11",
     "webpack-node-externals": "1.7.2"
