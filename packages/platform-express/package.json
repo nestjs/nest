@@ -23,6 +23,10 @@
     "multer": "1.4.2",
     "tslib": "1.11.1"
   },
+  "devDependencies": {
+    "@nestjs/common": "^7.0.0",
+    "@nestjs/core": "^7.0.0"
+  },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",
     "@nestjs/core": "^7.0.0"
