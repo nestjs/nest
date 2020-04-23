@@ -23,12 +23,12 @@
     "@typescript-eslint/eslint-plugin": "2.29.0",
     "@typescript-eslint/parser": "2.29.0",
     "eslint": "6.8.0",
-    "eslint-config-prettier": "6.10.1",
+    "eslint-config-prettier": "6.11.0",
     "eslint-plugin-import": "2.20.2",
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "7.0.1",
     "ts-node": "8.9.0",
-    "webpack": "4.42.1",
+    "webpack": "4.43.0",
     "webpack-cli": "3.3.11",
     "webpack-node-externals": "1.7.2"
   }
