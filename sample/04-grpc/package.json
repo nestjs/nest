@@ -39,7 +39,7 @@
     "@types/supertest": "2.0.8",
     "@types/ws": "7.2.4",
     "jest": "25.4.0",
-    "prettier": "2.0.4",
+    "prettier": "2.0.5",
     "supertest": "4.0.2",
     "ts-jest": "25.4.0",
     "ts-loader": "7.0.1",
