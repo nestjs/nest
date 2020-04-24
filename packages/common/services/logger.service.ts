@@ -38,6 +38,9 @@ export class Logger implements LoggerService {
     if (!this.isLogLevelEnabled('error')) {
       return;
     }
+    if (message instanceof TypeError || message instanceof Error) {
+      message = message.message;
+    }
     instance &&
       instance.error.call(instance, message, trace, context || this.context);
   }
