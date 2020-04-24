@@ -1,6 +1,6 @@
 import { expect } from 'chai';
+import { ROUTE_ARGS_METADATA } from '../../constants';
 import { Bind } from '../../decorators/core/bind.decorator';
-import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import { Req } from '../../decorators/http/route-params.decorator';
 
 describe('@Bind', () => {
