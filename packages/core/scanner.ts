@@ -33,6 +33,7 @@ import {
   isNil,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { iterate } from 'iterare';
 import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
@@ -42,7 +43,6 @@ import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { Module } from './injector/module';
 import { MetadataScanner } from './metadata-scanner';
-import { iterate } from 'iterare';
 
 interface ApplicationProviderWrapper {
   moduleKey: string;
@@ -260,7 +260,7 @@ export class DependenciesScanner {
 
   public async calculateModulesDistance(modules: ModulesContainer) {
     const modulesGenerator = modules.values();
-    const rootModule = modulesGenerator.next().value;
+    const rootModule = modulesGenerator.next().value as Module;
     const modulesStack = [rootModule];
 
     const calculateDistance = (moduleRef: Module, distance = 1) => {

@@ -19,14 +19,14 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "7.0.8",
-    "@nestjs/core": "7.0.8",
+    "@nestjs/common": "7.0.9",
+    "@nestjs/core": "7.0.9",
     "@nestjs/graphql": "7.3.4",
-    "@nestjs/platform-express": "7.0.8",
+    "@nestjs/platform-express": "7.0.9",
     "apollo-server": "2.12.0",
     "apollo-server-express": "2.12.0",
     "class-transformer": "0.2.3",
-    "class-validator": "0.12.1",
+    "class-validator": "0.12.2",
     "graphql": "14.6.0",
     "graphql-subscriptions": "1.1.0",
     "reflect-metadata": "0.1.13",
@@ -36,7 +36,7 @@
   "devDependencies": {
     "@nestjs/cli": "7.1.2",
     "@nestjs/schematics": "7.0.0",
-    "@nestjs/testing": "7.0.8",
+    "@nestjs/testing": "7.0.9",
     "@types/express": "4.17.6",
     "@types/node": "12.12.31",
     "@types/supertest": "2.0.8",
