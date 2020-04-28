@@ -3,6 +3,7 @@ import Axios, {
   AxiosRequestConfig,
   AxiosResponse,
   AxiosPromise,
+  CancelTokenSource,
 } from 'axios';
 import { Observable } from 'rxjs';
 import { Inject } from '../decorators';
@@ -72,13 +73,18 @@ export class HttpService {
     ...args: any[]
   ) {
     return new Observable<AxiosResponse<T>>(subscriber => {
-      let config = args[args.length - 1];
+      let config: AxiosRequestConfig = args[args.length - 1];
       if (!config) {
         config = {};
         args[args.length - 1] = config;
       }
-      const cancelSource = Axios.CancelToken.source();
-      config.cancelToken = cancelSource.token;
+
+      let cancelSource: CancelTokenSource;
+      if (!config.cancelToken) {
+        cancelSource = Axios.CancelToken.source();
+        config.cancelToken = cancelSource.token;
+      }
+
       axios(...args)
         .then(res => {
           subscriber.next(res);
@@ -88,7 +94,11 @@ export class HttpService {
           subscriber.error(err);
         });
       return () => {
-        if (config.responseType !== 'stream') {
+        if (config.responseType === 'stream') {
+          return;
+        }
+
+        if (cancelSource) {
           cancelSource.cancel();
         }
       };
