@@ -33,7 +33,7 @@
     "rxjs": "6.5.5"
   },
   "devDependencies": {
-    "@nestjs/cli": "7.1.2",
+    "@nestjs/cli": "7.1.4",
     "@nestjs/schematics": "7.0.0",
     "@nestjs/testing": "7.0.9",
     "@types/express": "4.17.6",
@@ -45,10 +45,10 @@
     "supertest": "4.0.2",
     "ts-jest": "25.4.0",
     "ts-loader": "7.0.1",
-    "ts-node": "8.9.0",
+    "ts-node": "8.9.1",
     "tsconfig-paths": "3.9.0",
-    "@typescript-eslint/eslint-plugin": "2.29.0",
-    "@typescript-eslint/parser": "2.29.0",
+    "@typescript-eslint/eslint-plugin": "2.30.0",
+    "@typescript-eslint/parser": "2.30.0",
     "eslint": "6.8.0",
     "eslint-config-prettier": "6.11.0",
     "eslint-plugin-import": "2.20.2",
