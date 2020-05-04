@@ -34,7 +34,7 @@
     "@types/express": "4.17.6",
     "@types/node": "12.12.31",
     "@types/supertest": "2.0.8",
-    "jest": "25.5.0",
+    "jest": "25.5.4",
     "prettier": "2.0.5",
     "supertest": "4.0.2",
     "ts-jest": "25.4.0",
