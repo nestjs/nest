@@ -33,7 +33,7 @@
     "@nestjs/testing": "7.0.9",
     "@types/express": "4.17.6",
     "@types/node": "7.10.9",
-    "@types/supertest": "2.0.8",
+    "@types/supertest": "2.0.9",
     "jest": "25.5.4",
     "prettier": "2.0.5",
     "supertest": "4.0.2",
