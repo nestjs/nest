@@ -6,7 +6,7 @@
 
 ### Running
 
-This example requires docker or a local MySQL installation.  If using a local MySQL database, see `database/database.providers.ts` for credentials, and make sure there are matching credentials in the database and the source code.
+This example requires docker or a local MySQL installation.  If using a local MySQL database, see `app.module.ts` for credentials, and make sure there are matching credentials in the database and the source code.
 
 #### Docker
 
