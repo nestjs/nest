@@ -1,4 +1,5 @@
 import { CorsOptions } from './external/cors-options.interface';
+import { BodyParserOptions } from './external/body-parser-options.interface';
 import { HttpsOptions } from './external/https-options.interface';
 import { NestApplicationContextOptions } from './nest-application-context-options.interface';
 
@@ -13,7 +14,7 @@ export interface NestApplicationOptions extends NestApplicationContextOptions {
   /**
    * Whether to use underlying platform body parser.
    */
-  bodyParser?: boolean;
+  bodyParser?: boolean | BodyParserOptions;
   /**
    * Set of configurable HTTPS options
    */

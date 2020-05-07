@@ -1,5 +1,6 @@
 import { HttpStatus, RequestMethod } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { BodyParserOptions } from '@nestjs/common/interfaces/external/body-parser-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
@@ -146,7 +147,12 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     this.register(cors, options);
   }
 
-  public registerParserMiddleware() {
+  public registerParserMiddleware(options: BodyParserOptions) {
+    if (options && options.limit) {
+      return this.register(formBody, {
+        bodyLimit: options.limit,
+      });
+    }
     this.register(formBody);
   }
 

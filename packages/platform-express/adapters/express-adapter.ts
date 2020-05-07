@@ -1,5 +1,6 @@
 import { RequestMethod } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { BodyParserOptions } from '@nestjs/common/interfaces/external/body-parser-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { isFunction, isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
@@ -132,10 +133,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     this.httpServer = http.createServer(this.getInstance());
   }
 
-  public registerParserMiddleware() {
+  public registerParserMiddleware(options: BodyParserOptions) {
     const parserMiddleware = {
-      jsonParser: bodyParser.json(),
-      urlencodedParser: bodyParser.urlencoded({ extended: true }),
+      jsonParser: bodyParser.json(options),
+      urlencodedParser: bodyParser.urlencoded({ extended: true, ...options }),
     };
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))

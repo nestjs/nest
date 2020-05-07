@@ -9,6 +9,7 @@ import {
   WebSocketAdapter,
 } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { BodyParserOptions } from '@nestjs/common/interfaces/external/body-parser-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -137,10 +138,7 @@ export class NestApplication extends NestApplicationContext
 
   public async init(): Promise<this> {
     this.applyOptions();
-
-    const useBodyParser =
-      this.appOptions && this.appOptions.bodyParser !== false;
-    useBodyParser && this.registerParserMiddleware();
+    this.registerParserMiddleware();
 
     await this.registerModules();
     await this.registerRouter();
@@ -154,7 +152,13 @@ export class NestApplication extends NestApplicationContext
   }
 
   public registerParserMiddleware() {
-    this.httpAdapter.registerParserMiddleware();
+    if (!this.appOptions || !this.appOptions.bodyParser) {
+      return undefined;
+    }
+    const options = isObject(this.appOptions.bodyParser)
+      ? this.appOptions.bodyParser
+      : {};
+    this.httpAdapter.registerParserMiddleware(options as BodyParserOptions);
   }
 
   public async registerRouter() {
