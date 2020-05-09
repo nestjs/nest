@@ -12,6 +12,7 @@ import { CustomTransportStrategy, PacketId } from '../interfaces';
 import { NatsOptions } from '../interfaces/microservice-configuration.interface';
 import { IncomingRequest, ReadPacket } from '../interfaces/packet.interface';
 import { Server } from './server';
+import { Transport } from '../enums';
 
 let natsPackage: any = {};
 
@@ -29,6 +30,10 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+  }
+
+  public getTransport(): number {
+    return Transport.NATS;
   }
 
   public listen(callback: () => void) {

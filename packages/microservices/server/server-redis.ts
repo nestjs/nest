@@ -16,6 +16,7 @@ import {
 import { CustomTransportStrategy, IncomingRequest } from '../interfaces';
 import { RedisOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import { Transport } from '../enums';
 
 let redisPackage: any = {};
 
@@ -35,6 +36,10 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+  }
+
+  public getTransport(): number {
+    return Transport.REDIS;
   }
 
   public listen(callback: () => void) {

@@ -21,6 +21,7 @@ import {
 } from '../interfaces';
 import { TcpOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import { Transport } from '../enums';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
   private readonly port: number;
@@ -38,6 +39,10 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     this.init();
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+  }
+
+  public getTransport(): number {
+    return Transport.TCP;
   }
 
   public listen(callback: () => void) {

@@ -19,6 +19,7 @@ import {
   OutgoingResponse,
 } from '../interfaces/packet.interface';
 import { Server } from './server';
+import { Transport } from '../enums';
 
 let rqmPackage: any = {};
 
@@ -55,6 +56,10 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+  }
+
+  public getTransport(): number {
+    return Transport.RMQ;
   }
 
   public async listen(callback: () => void): Promise<void> {

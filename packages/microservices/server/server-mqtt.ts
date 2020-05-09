@@ -21,6 +21,7 @@ import {
 } from '../interfaces';
 import { MqttOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import { Transport } from '../enums';
 
 let mqttPackage: any = {};
 
@@ -38,6 +39,10 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+  }
+
+  public getTransport(): number {
+    return Transport.MQTT;
   }
 
   public async listen(callback: () => void) {

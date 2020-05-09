@@ -8,7 +8,7 @@ import {
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { KafkaContext } from '../ctx-host';
-import { KafkaHeaders } from '../enums';
+import { KafkaHeaders, Transport } from '../enums';
 import {
   Consumer,
   ConsumerConfig,
@@ -61,6 +61,10 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+  }
+
+  public getTransport(): number {
+    return Transport.KAFKA;
   }
 
   public async listen(callback: () => void): Promise<void> {
