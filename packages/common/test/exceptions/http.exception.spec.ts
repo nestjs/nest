@@ -35,6 +35,7 @@ describe('HttpException', () => {
     expect(new BadRequestException().message).to.be.eql({
       statusCode: 400,
       error: 'Bad Request',
+      message: 'Bad Request',
     });
   });
 
@@ -45,10 +46,12 @@ describe('HttpException', () => {
 
   it('should return a response', () => {
     expect(new BadRequestException().getResponse()).to.be.eql({
+      message: 'Bad Request',
       error: 'Bad Request',
       statusCode: 400,
     });
     expect(new NotFoundException().getResponse()).to.be.eql({
+      message: 'Not Found',
       error: 'Not Found',
       statusCode: 404,
     });
@@ -105,6 +108,7 @@ describe('HttpException', () => {
         const status = 500;
         const error = 'error';
         expect(HttpException.createBody(null, error, status)).to.be.eql({
+          message: 'error',
           error,
           statusCode: status,
         });
