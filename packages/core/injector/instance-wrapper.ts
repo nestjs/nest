@@ -256,9 +256,11 @@ export class InstanceWrapper<T = any> {
   ): boolean {
     const isDependencyTreeStatic = this.isDependencyTreeStatic();
 
-    return ((!isDependencyTreeStatic &&
+    return (
+      !isDependencyTreeStatic &&
       contextId !== STATIC_CONTEXT &&
-      (!this.isTransient || (this.isTransient && inquirer))) as any) as boolean;
+      (!this.isTransient || (this.isTransient && !!inquirer))
+    );
   }
 
   public isLazyTransient(
@@ -299,7 +301,8 @@ export class InstanceWrapper<T = any> {
     return (
       this.isDependencyTreeStatic() &&
       contextId === STATIC_CONTEXT &&
-      (!this.isTransient || (isStaticTransient && !!inquirer))
+      (!this.isTransient ||
+        (isStaticTransient && !!inquirer && !inquirer.isTransient))
     );
   }
 
