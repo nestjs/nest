@@ -17,8 +17,8 @@
     "access": "public"
   },
   "dependencies": {
-    "tslib": "1.11.1",
-    "ws": "7.2.3"
+    "tslib": "1.11.2",
+    "ws": "7.3.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",
