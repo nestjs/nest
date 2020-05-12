@@ -4,7 +4,6 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { ApplicationConfig } from '../application-config';
 import { CircularDependencyException } from '../errors/exceptions/circular-dependency.exception';
-import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
 import { HttpAdapterHost } from '../helpers/http-adapter-host';
@@ -16,6 +15,7 @@ import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
 import { ModuleTokenFactory } from './module-token-factory';
 import { ModulesContainer } from './modules-container';
+import { UndefinedForwardRefException } from '../errors/exceptions/undefined-forwardref.exception';
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
@@ -55,8 +55,10 @@ export class NestContainer {
     metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
     scope: Type<any>[],
   ): Promise<Module> {
+    // In DependenciesScanner#scanForModules we already check for undefined or invalid modules
+    // We sill need to catch the edge-case of `forwardRef(() => undefined)`
     if (!metatype) {
-      throw new InvalidModuleException(scope);
+      throw new UndefinedForwardRefException(scope);
     }
     const { type, dynamicMetadata, token } = await this.moduleCompiler.compile(
       metatype,
