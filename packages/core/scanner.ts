@@ -43,6 +43,8 @@ import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { Module } from './injector/module';
 import { MetadataScanner } from './metadata-scanner';
+import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
+import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 
 interface ApplicationProviderWrapper {
   moduleKey: string;
@@ -90,7 +92,14 @@ export class DependenciesScanner {
           ...((module as DynamicModule).imports || []),
         ];
 
-    for (const innerModule of modules) {
+    for (const [index, innerModule] of modules.entries()) {
+      // In case of a circular dependency (ES module system), JavaScript will resolve the type to `undefined`.
+      if (innerModule === undefined) {
+        throw new UndefinedModuleException(module, index, scope);
+      }
+      if (!innerModule) {
+        throw new InvalidModuleException(module, index, scope);
+      }
       if (ctxRegistry.includes(innerModule)) {
         continue;
       }

@@ -37,6 +37,9 @@ const getDependencyName = (dependency: InjectorDependency): string =>
 const getModuleName = (module: Module) =>
   (module && getInstanceName(module.metatype)) || 'current';
 
+const stringifyScope = (scope: any[]): string =>
+  (scope || []).map(getInstanceName).join(' -> ');
+
 export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   type: string | symbol,
   unknownDependencyContext: InjectorDependencyContext,
@@ -84,15 +87,43 @@ export const INVALID_MIDDLEWARE_MESSAGE = (
   name: string,
 ) => `The middleware doesn't provide the 'use' method (${name})`;
 
-export const INVALID_MODULE_MESSAGE = (
-  text: TemplateStringsArray,
-  scope: string,
-) =>
-  `Nest cannot create the module instance. Often, this is because of a circular dependency between modules. Use forwardRef() to avoid it.
+export const UNDEFINED_FORWARDREF_MESSAGE = (
+  scope: Type<any>[],
+) => `Nest cannot create the module instance. Often, this is because of a circular dependency between modules. Use forwardRef() to avoid it.
 
 (Read more: https://docs.nestjs.com/fundamentals/circular-dependency)
-Scope [${scope}]
-`;
+Scope [${stringifyScope(scope)}]
+  `;
+
+export const INVALID_MODULE_MESSAGE = (
+  parentModule: any,
+  index: number,
+  scope: any[],
+) => {
+  const parentModuleName = parentModule?.name || 'module';
+
+  return `Nest cannot create the ${parentModuleName} instance.
+Received an unexpected value at index [${index}] of the ${parentModuleName} "imports" array. 
+
+Scope [${stringifyScope(scope)}]`;
+};
+
+export const UNDEFINED_MODULE_MESSAGE = (
+  parentModule: any,
+  index: number,
+  scope: any[],
+) => {
+  const parentModuleName = parentModule?.name || 'module';
+
+  return `Nest cannot create the ${parentModuleName} instance.
+The module at index [${index}] of the ${parentModuleName} "imports" array is undefined.
+
+Potential causes:
+- A circular dependency between modules. Use forwardRef() to avoid it. Read more: https://docs.nestjs.com/fundamentals/circular-dependency
+- The module at index [${index}] is of type "undefined". Check your import statements and the type of the module.
+
+Scope [${stringifyScope(scope)}]`;
+};
 
 export const UNKNOWN_EXPORT_MESSAGE = (token = 'item', module: string) => {
   return `Nest cannot export a provider/module that is not a part of the currently processed module (${module}). Please verify whether the exported ${token} is available in this particular context.
