@@ -15,7 +15,7 @@ import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
 import { ModuleTokenFactory } from './module-token-factory';
 import { ModulesContainer } from './modules-container';
-import { UndefinedForwardrefException } from '../errors/exceptions/undefined-forwardref.exception';
+import { UndefinedForwardRefException } from '../errors/exceptions/undefined-forwardref.exception';
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
