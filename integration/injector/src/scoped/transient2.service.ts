@@ -1,4 +1,6 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { Injectable, Logger, Scope } from '@nestjs/common';
 
 @Injectable({ scope: Scope.TRANSIENT })
-export class Transient2Service {}
+export class Transient2Service {
+  logger = new Logger();
+}

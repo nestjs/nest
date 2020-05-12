@@ -6,6 +6,7 @@ import { ScopedController } from '../src/scoped/scoped.controller';
 import { ScopedModule } from '../src/scoped/scoped.module';
 import { ScopedService } from '../src/scoped/scoped.service';
 import { TransientService } from '../src/scoped/transient.service';
+import { Transient3Service } from '../src/scoped/transient3.service';
 
 describe('Scoped Instances', () => {
   let testingModule: TestingModule;
@@ -24,6 +25,21 @@ describe('Scoped Instances', () => {
     expect(transient1).to.be.instanceOf(TransientService);
     expect(transient2).to.be.instanceOf(TransientService);
     expect(transient1).to.be.equal(transient2);
+  });
+
+  it('should dynamically resolve nested transient provider', async () => {
+    const contextId = createContextId();
+    const transientTwoDepthLevel = await testingModule.resolve(
+      TransientService,
+      contextId,
+    );
+    const transientThreeDepthLevel = await testingModule.resolve(
+      Transient3Service,
+      contextId,
+    );
+
+    expect(transientTwoDepthLevel.svc.logger).to.not.be.undefined;
+    expect(transientThreeDepthLevel.svc.svc.logger).to.not.be.undefined;
   });
 
   it('should dynamically resolve request-scoped provider', async () => {
