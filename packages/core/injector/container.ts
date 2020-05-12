@@ -58,7 +58,7 @@ export class NestContainer {
     // In DependenciesScanner#scanForModules we already check for undefined or invalid modules
     // We sill need to catch the edge-case of `forwardRef(() => undefined)`
     if (!metatype) {
-      throw new UndefinedForwardrefException(scope);
+      throw new UndefinedForwardRefException(scope);
     }
     const { type, dynamicMetadata, token } = await this.moduleCompiler.compile(
       metatype,
