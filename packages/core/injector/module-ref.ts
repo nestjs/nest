@@ -1,5 +1,6 @@
 import { Type } from '@nestjs/common';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
+import { getClassScope } from '../helpers/get-class-scope';
 import { NestContainer } from './container';
 import { ContainerScanner } from './container-scanner';
 import { Injector } from './injector';
@@ -38,8 +39,8 @@ export abstract class ModuleRef {
     const wrapper = new InstanceWrapper({
       name: type && type.name,
       metatype: type,
-      instance: undefined,
       isResolved: false,
+      scope: getClassScope(type),
       host: moduleRef,
     });
     return new Promise<T>(async (resolve, reject) => {

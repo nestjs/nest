@@ -1,10 +1,18 @@
 {
+  "extends": ["config:base"],
   "semanticCommits": true,
-  "packageRules": [{
-    "depTypeList": ["devDependencies"],
-    "automerge": true
-  }],
-  "extends": [
-    "config:base"
-  ]
+  "packageRules": [
+    {
+      "depTypeList": ["devDependencies"],
+      "automerge": true
+    },
+    {
+      "packagePatterns": ["*"],
+      "minor": {
+        "groupName": "all non-major dependencies",
+        "groupSlug": "all-minor-patch"
+      }
+    }
+  ],
+  "schedule": ["every weekday"]
 }

@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common/interfaces';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { iterate } from 'iterare';
 import { STATIC_CONTEXT } from './constants';
 import { Module } from './module';
-import { iterate } from 'iterare';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
@@ -256,9 +256,11 @@ export class InstanceWrapper<T = any> {
   ): boolean {
     const isDependencyTreeStatic = this.isDependencyTreeStatic();
 
-    return ((!isDependencyTreeStatic &&
+    return (
+      !isDependencyTreeStatic &&
       contextId !== STATIC_CONTEXT &&
-      (!this.isTransient || (this.isTransient && inquirer))) as any) as boolean;
+      (!this.isTransient || (this.isTransient && !!inquirer))
+    );
   }
 
   public isLazyTransient(
@@ -280,10 +282,11 @@ export class InstanceWrapper<T = any> {
     contextId: ContextId,
     inquirer?: InstanceWrapper,
   ): boolean {
+    const isSelfRequested = inquirer === this;
     return (
       this.isDependencyTreeStatic() &&
       contextId !== STATIC_CONTEXT &&
-      inquirer === this
+      (isSelfRequested || (inquirer && inquirer.scope === Scope.TRANSIENT))
     );
   }
 
@@ -298,7 +301,8 @@ export class InstanceWrapper<T = any> {
     return (
       this.isDependencyTreeStatic() &&
       contextId === STATIC_CONTEXT &&
-      (!this.isTransient || (isStaticTransient && !!inquirer))
+      (!this.isTransient ||
+        (isStaticTransient && !!inquirer && !inquirer.isTransient))
     );
   }
 
