@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { ApplicationConfig } from '../application-config';
 import { CircularDependencyException } from '../errors/exceptions/circular-dependency.exception';
+import { UndefinedForwardRefException } from '../errors/exceptions/undefined-forwardref.exception';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
 import { HttpAdapterHost } from '../helpers/http-adapter-host';
@@ -15,7 +16,6 @@ import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
 import { ModuleTokenFactory } from './module-token-factory';
 import { ModulesContainer } from './modules-container';
-import { UndefinedForwardRefException } from '../errors/exceptions/undefined-forwardref.exception';
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
@@ -182,11 +182,11 @@ export class NestContainer {
   }
 
   public replace(toReplace: any, options: any & { scope: any[] | null }) {
-    this.modules.forEach(module => module.replace(toReplace, options));
+    this.modules.forEach(moduleRef => moduleRef.replace(toReplace, options));
   }
 
   public bindGlobalScope() {
-    this.modules.forEach(module => this.bindGlobalsToImports(module));
+    this.modules.forEach(moduleRef => this.bindGlobalsToImports(moduleRef));
   }
 
   public bindGlobalsToImports(moduleRef: Module) {
