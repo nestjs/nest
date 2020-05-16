@@ -38,6 +38,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   private readonly brokers: string[];
   private readonly clientId: string;
   private readonly groupId: string;
+  public readonly transportId: Transport = Transport.KAFKA;
 
   constructor(private readonly options: KafkaOptions['options']) {
     super();
@@ -61,10 +62,6 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
-  }
-
-  public getTransport(): number {
-    return Transport.KAFKA;
   }
 
   public async listen(callback: () => void): Promise<void> {

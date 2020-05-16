@@ -35,6 +35,7 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
 export class ServerGrpc extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private grpcClient: any;
+  public readonly transportId: Transport = Transport.GRPC;
 
   constructor(private readonly options: GrpcOptions['options']) {
     super();
@@ -47,10 +48,6 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       require('grpc'),
     );
     grpcProtoLoaderPackage = this.loadPackage(protoLoader, ServerGrpc.name);
-  }
-
-  public getTransport(): number {
-    return Transport.GRPC;
   }
 
   public async listen(callback: () => void) {

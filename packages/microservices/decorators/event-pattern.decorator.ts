@@ -4,13 +4,14 @@ import {
   TRANSPORT_METADATA,
 } from '../constants';
 import { PatternHandler } from '../enums/pattern-handler.enum';
+import { Transport } from '../enums';
 
 /**
  * Subscribes to incoming events which fulfils chosen pattern.
  */
 export const EventPattern = <T = string>(
   metadata?: T,
-  transport?: number,
+  transport?: Transport,
 ): MethodDecorator => {
   return (
     target: object,

@@ -30,6 +30,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   private server: NetSocket;
   private isExplicitlyTerminated = false;
   private retryAttemptsCount = 0;
+  public readonly transportId: Transport = Transport.TCP;
 
   constructor(private readonly options: TcpOptions['options']) {
     super();
@@ -39,10 +40,6 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     this.init();
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
-  }
-
-  public getTransport(): number {
-    return Transport.TCP;
   }
 
   public listen(callback: () => void) {

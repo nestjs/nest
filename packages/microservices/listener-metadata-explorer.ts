@@ -9,6 +9,7 @@ import {
   TRANSPORT_METADATA,
 } from './constants';
 import { PatternHandler } from './enums/pattern-handler.enum';
+import { Transport } from './enums';
 import { ClientOptions } from './interfaces/client-metadata.interface';
 import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 
@@ -19,7 +20,7 @@ export interface ClientProperties {
 
 export interface PatternProperties {
   pattern: PatternMetadata;
-  transport: number;
+  transport?: Transport;
   methodKey: string;
   isEventHandler: boolean;
   targetCallback: (...args: any[]) => any;

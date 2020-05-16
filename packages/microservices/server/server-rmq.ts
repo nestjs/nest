@@ -31,6 +31,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   private readonly prefetchCount: number;
   private readonly queueOptions: any;
   private readonly isGlobalPrefetchCount: boolean;
+  public readonly transportId: Transport = Transport.RMQ;
 
   constructor(private readonly options: RmqOptions['options']) {
     super();
@@ -56,10 +57,6 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
-  }
-
-  public getTransport(): number {
-    return Transport.RMQ;
   }
 
   public async listen(callback: () => void): Promise<void> {

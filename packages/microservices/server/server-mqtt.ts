@@ -28,6 +28,7 @@ let mqttPackage: any = {};
 export class ServerMqtt extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private mqttClient: MqttClient;
+  public readonly transportId: Transport = Transport.MQTT;
 
   constructor(private readonly options: MqttOptions['options']) {
     super();
@@ -39,10 +40,6 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
-  }
-
-  public getTransport(): number {
-    return Transport.MQTT;
   }
 
   public async listen(callback: () => void) {

@@ -19,7 +19,7 @@ export enum GrpcMethodStreamingType {
  */
 export const MessagePattern = <T = PatternMetadata | string>(
   metadata?: T,
-  transport?: number,
+  transport?: Transport,
 ): MethodDecorator => {
   return (
     target: object,

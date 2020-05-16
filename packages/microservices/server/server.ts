@@ -38,10 +38,6 @@ export abstract class Server {
   protected serializer: ConsumerSerializer;
   protected deserializer: ConsumerDeserializer;
 
-  public getTransport(): number {
-    return -1;
-  }
-
   public addHandler(
     pattern: any,
     callback: MessageHandler,

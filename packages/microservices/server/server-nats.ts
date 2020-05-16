@@ -19,6 +19,7 @@ let natsPackage: any = {};
 export class ServerNats extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private natsClient: Client;
+  public readonly transportId: Transport = Transport.NATS;
 
   constructor(private readonly options: NatsOptions['options']) {
     super();
@@ -30,10 +31,6 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
-  }
-
-  public getTransport(): number {
-    return Transport.NATS;
   }
 
   public listen(callback: () => void) {

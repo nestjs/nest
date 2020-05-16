@@ -64,7 +64,7 @@ export class ListenersController {
 
     patternHandlers.forEach(
       ({ pattern, targetCallback, methodKey, transport, isEventHandler }) => {
-        if (isUndefined(transport) || transport === server.getTransport()) {
+        if (isUndefined(transport) || isUndefined(server.transportId) || transport === server.transportId) {
           if (isStatic) {
             const proxy = this.contextCreator.create(
               instance as object,

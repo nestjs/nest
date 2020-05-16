@@ -25,6 +25,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   private subClient: RedisClient;
   private pubClient: RedisClient;
   private isExplicitlyTerminated = false;
+  public readonly transportId: Transport = Transport.REDIS;
 
   constructor(private readonly options: RedisOptions['options']) {
     super();
@@ -36,10 +37,6 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
-  }
-
-  public getTransport(): number {
-    return Transport.REDIS;
   }
 
   public listen(callback: () => void) {
