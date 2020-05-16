@@ -13,13 +13,16 @@ import { ExceptionFiltersContext } from '../context/exception-filters-context';
 import { RpcContextCreator } from '../context/rpc-context-creator';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 import { ListenersController } from '../listeners-controller';
+import { Transport } from '../enums/transport.enum';
 
 describe('ListenersController', () => {
   let instance: ListenersController,
     explorer: sinon.SinonMock,
     metadataExplorer: ListenerMetadataExplorer,
     server: any,
+    serverTCP: any,
     addSpy: sinon.SinonSpy,
+    addSpyTCP: sinon.SinonSpy,
     proxySpy: sinon.SinonSpy,
     container: NestContainer,
     injector: Injector,
@@ -53,6 +56,11 @@ describe('ListenersController', () => {
     server = {
       addHandler: addSpy,
     };
+    addSpyTCP = sinon.spy();
+    serverTCP = {
+      addHandler: addSpyTCP,
+      transportId: Transport.TCP,
+    };
   });
 
   describe('registerPatternHandlers', () => {
@@ -68,6 +76,39 @@ describe('ListenersController', () => {
       explorer.expects('explore').returns(handlers);
       instance.registerPatternHandlers(new InstanceWrapper(), server, '');
       expect(addSpy.calledTwice).to.be.true;
+    });
+    it(`should call "addHandler" method of server for each pattern handler with same transport`, () => {
+      const serverHandlers = [
+        { pattern: { cmd: 'test'}, targetCallback: 'tt', transport: Transport.TCP },
+        { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
+      ];
+      explorer.expects('explore').returns(serverHandlers);
+      instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
+      expect(addSpyTCP.calledOnce).to.be.true;
+    });
+    it(`should call "addHandler" method of server without transportID for each pattern handler with any transport value`, () => {
+      const serverHandlers = [
+        { pattern: { cmd: 'test'}, targetCallback: 'tt' },
+        { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
+      ];
+      explorer.expects('explore').returns(serverHandlers);
+      instance.registerPatternHandlers(new InstanceWrapper(), server, '');
+      expect(addSpy.calledTwice).to.be.true;
+    });
+    it(`should call "addHandler" method of server with transportID for each pattern handler with self transport and without transport`, () => {
+      const serverHandlers = [
+        { pattern: 'test', targetCallback: 'tt' },
+        { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
+        { pattern: { cmd: 'test3'}, targetCallback: '3', transport: Transport.TCP },
+      ];
+      explorer.expects('explore').returns(serverHandlers);
+      instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
+      expect(addSpyTCP.calledTwice).to.be.true;
+    });
+    it(`should call "addHandler" method of server with transportID for each pattern handler without transport`, () => {
+      explorer.expects('explore').returns(handlers);
+      instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
+      expect(addSpyTCP.calledTwice).to.be.true;
     });
     describe('when request scoped', () => {
       it(`should call "addHandler" with deffered proxy`, () => {
