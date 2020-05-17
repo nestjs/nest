@@ -20,7 +20,7 @@ const REFLECTOR = 'Reflector';
 
 @Injectable()
 export class ClassSerializerInterceptor implements NestInterceptor {
-  constructor(@Inject(REFLECTOR) protected readonly reflector: any) {
+  constructor(@Inject(REFLECTOR) protected readonly reflector: any, protected readonly defaultOptions: ClassTransformOptions = {}) {
     classTransformer = loadPackage(
       'class-transformer',
       'ClassSerializerInterceptor',
@@ -30,7 +30,11 @@ export class ClassSerializerInterceptor implements NestInterceptor {
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const options = this.getContextOptions(context);
+    const contextOptions = this.getContextOptions(context);
+    const options = {
+      ...this.defaultOptions,
+      ...contextOptions
+    }
     return next
       .handle()
       .pipe(
