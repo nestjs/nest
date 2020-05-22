@@ -1,8 +1,8 @@
 import Axios, {
   AxiosInstance,
+  AxiosPromise,
   AxiosRequestConfig,
   AxiosResponse,
-  AxiosPromise,
   CancelTokenSource,
 } from 'axios';
 import { Observable } from 'rxjs';
@@ -73,11 +73,7 @@ export class HttpService {
     ...args: any[]
   ) {
     return new Observable<AxiosResponse<T>>(subscriber => {
-      let config: AxiosRequestConfig = args[args.length - 1];
-      if (!config) {
-        config = {};
-        args[args.length - 1] = config;
-      }
+      const config: AxiosRequestConfig = args[args.length - 1] || {};
 
       let cancelSource: CancelTokenSource;
       if (!config.cancelToken) {

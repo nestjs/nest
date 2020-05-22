@@ -38,9 +38,9 @@ export class InstanceWrapper<T = any> {
   public readonly name: any;
   public readonly async?: boolean;
   public readonly host?: Module;
-  public readonly scope?: Scope = Scope.DEFAULT;
   public readonly isAlias: boolean = false;
 
+  public scope?: Scope = Scope.DEFAULT;
   public metatype: Type<T> | Function;
   public inject?: (string | symbol | Function | Type<any>)[];
   public forwardRef?: boolean;
@@ -321,6 +321,7 @@ export class InstanceWrapper<T = any> {
     if ((provider as ValueProvider).useValue) {
       this.metatype = null;
       this.inject = null;
+      this.scope = Scope.DEFAULT;
 
       this.setInstanceByContextId(STATIC_CONTEXT, {
         instance: (provider as ValueProvider).useValue,
