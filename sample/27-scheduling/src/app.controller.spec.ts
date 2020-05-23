@@ -11,7 +11,7 @@ describe('AppController', () => {
   let appService: AppService;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+    const moduleRef: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
       providers: [
         {
@@ -21,8 +21,8 @@ describe('AppController', () => {
       ],
     }).compile();
 
-    appService = app.get<AppService>(AppService);
-    appController = app.get<AppController>(AppController);
+    appService = moduleRef.get<AppService>(AppService);
+    appController = moduleRef.get<AppController>(AppController);
   });
 
   describe('root', () => {

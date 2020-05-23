@@ -1,16 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from './config.service';
+import { CONFIG_OPTIONS } from './constants';
 
 jest.mock('dotenv');
 jest.mock('fs');
-
-import { ConfigService } from './config.service';
-import { CONFIG_OPTIONS } from './constants';
 
 describe('ConfigService', () => {
   let service: ConfigService;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
         ConfigService,
         {
@@ -22,7 +21,7 @@ describe('ConfigService', () => {
       ],
     }).compile();
 
-    service = module.get<ConfigService>(ConfigService);
+    service = moduleRef.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {

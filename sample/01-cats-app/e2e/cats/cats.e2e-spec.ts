@@ -11,21 +11,24 @@ describe('Cats', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    const module = await Test.createTestingModule({
+    const moduleRef = await Test.createTestingModule({
       imports: [CatsModule, CoreModule],
     })
       .overrideProvider(CatsService)
       .useValue(catsService)
       .compile();
 
-    app = module.createNestApplication();
+    app = moduleRef.createNestApplication();
     await app.init();
   });
 
   it(`/GET cats`, () => {
-    return request(app.getHttpServer()).get('/cats').expect(200).expect({
-      data: catsService.findAll(),
-    });
+    return request(app.getHttpServer())
+      .get('/cats')
+      .expect(200)
+      .expect({
+        data: catsService.findAll(),
+      });
   });
 
   afterAll(async () => {
