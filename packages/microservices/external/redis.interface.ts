@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/adjacent-overload-signatures */
-/* eslint-disable @typescript-eslint/camelcase */
 
 export interface RetryStrategyOptions {
   error: Error;

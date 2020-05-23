@@ -147,11 +147,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getClientOptions(): Partial<ClientOpts> {
-    // eslint-disable-next-line @typescript-eslint/camelcase
     const retry_strategy = (options: RetryStrategyOptions) =>
       this.createRetryStrategy(options);
     return {
-      // eslint-disable-next-line @typescript-eslint/camelcase
       retry_strategy,
     };
   }

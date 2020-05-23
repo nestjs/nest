@@ -3,7 +3,7 @@ import { DefaultValuePipe } from '../../pipes/default-value.pipe';
 
 describe('DefaultValuePipe', () => {
   const defaultValue = 'default';
-  let target = new DefaultValuePipe(defaultValue);
+  const target = new DefaultValuePipe(defaultValue);
 
   describe('transform', () => {
     it('should return original value if one was provided', () => {

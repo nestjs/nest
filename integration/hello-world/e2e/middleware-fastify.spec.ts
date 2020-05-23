@@ -19,7 +19,6 @@ class TestController {
   }
 
   @Get('tests/wildcard_nested')
-  // eslint-disable-next-line @typescript-eslint/camelcase
   wildcard_nested() {
     return RETURN_VALUE;
   }

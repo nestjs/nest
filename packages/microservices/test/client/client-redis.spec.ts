@@ -250,7 +250,6 @@ describe('ClientRedis', () => {
   describe('getClientOptions', () => {
     it('should return options object with "retry_strategy" and call "createRetryStrategy"', () => {
       const createSpy = sinon.spy(client, 'createRetryStrategy');
-      // eslint-disable-next-line @typescript-eslint/camelcase
       const { retry_strategy } = client.getClientOptions(new Subject());
       try {
         retry_strategy({} as any);
