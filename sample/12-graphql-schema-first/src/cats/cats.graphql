@@ -11,10 +11,18 @@ type Subscription {
   catCreated: Cat
 }
 
+type Owner {
+  id: Int!
+  name: String!
+  age: Int
+  cats: [Cat!]!
+}
+
 type Cat {
   id: Int
   name: String
   age: Int
+  owner: Owner!
 }
 
 input CreateCatInput {
