@@ -1,4 +1,5 @@
 import { Transport } from '../enums/transport.enum';
+import { ChannelOptions } from '../external/grpc-options.interface';
 import {
   CompressionTypes,
   ConsumerConfig,
@@ -42,6 +43,7 @@ export interface GrpcOptions {
       http2MinPingIntervalWithoutDataMs?: number;
       http2MaxPingStrikes?: number;
     };
+    channelOptions?: ChannelOptions;
     credentials?: any;
     protoPath: string | string[];
     package: string | string[];
