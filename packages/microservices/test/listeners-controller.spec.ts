@@ -11,9 +11,9 @@ import { ClientProxyFactory } from '../client';
 import { ClientsContainer } from '../container';
 import { ExceptionFiltersContext } from '../context/exception-filters-context';
 import { RpcContextCreator } from '../context/rpc-context-creator';
+import { Transport } from '../enums/transport.enum';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 import { ListenersController } from '../listeners-controller';
-import { Transport } from '../enums/transport.enum';
 
 describe('ListenersController', () => {
   let instance: ListenersController,
@@ -79,7 +79,11 @@ describe('ListenersController', () => {
     });
     it(`should call "addHandler" method of server for each pattern handler with same transport`, () => {
       const serverHandlers = [
-        { pattern: { cmd: 'test'}, targetCallback: 'tt', transport: Transport.TCP },
+        {
+          pattern: { cmd: 'test' },
+          targetCallback: 'tt',
+          transport: Transport.TCP,
+        },
         { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
       ];
       explorer.expects('explore').returns(serverHandlers);
@@ -88,7 +92,7 @@ describe('ListenersController', () => {
     });
     it(`should call "addHandler" method of server without transportID for each pattern handler with any transport value`, () => {
       const serverHandlers = [
-        { pattern: { cmd: 'test'}, targetCallback: 'tt' },
+        { pattern: { cmd: 'test' }, targetCallback: 'tt' },
         { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
       ];
       explorer.expects('explore').returns(serverHandlers);
@@ -99,7 +103,11 @@ describe('ListenersController', () => {
       const serverHandlers = [
         { pattern: 'test', targetCallback: 'tt' },
         { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
-        { pattern: { cmd: 'test3'}, targetCallback: '3', transport: Transport.TCP },
+        {
+          pattern: { cmd: 'test3' },
+          targetCallback: '3',
+          transport: Transport.TCP,
+        },
       ];
       explorer.expects('explore').returns(serverHandlers);
       instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');

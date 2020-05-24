@@ -8,8 +8,8 @@ import {
   PATTERN_METADATA,
   TRANSPORT_METADATA,
 } from './constants';
-import { PatternHandler } from './enums/pattern-handler.enum';
 import { Transport } from './enums';
+import { PatternHandler } from './enums/pattern-handler.enum';
 import { ClientOptions } from './interfaces/client-metadata.interface';
 import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 
@@ -20,10 +20,10 @@ export interface ClientProperties {
 
 export interface PatternProperties {
   pattern: PatternMetadata;
-  transport?: Transport;
   methodKey: string;
   isEventHandler: boolean;
   targetCallback: (...args: any[]) => any;
+  transport?: Transport;
 }
 
 export interface MessageRequestProperties {

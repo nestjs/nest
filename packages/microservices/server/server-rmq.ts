@@ -13,17 +13,19 @@ import {
   RQM_DEFAULT_URL,
 } from '../constants';
 import { RmqContext } from '../ctx-host';
+import { Transport } from '../enums';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
 import {
   IncomingRequest,
   OutgoingResponse,
 } from '../interfaces/packet.interface';
 import { Server } from './server';
-import { Transport } from '../enums';
 
 let rqmPackage: any = {};
 
 export class ServerRMQ extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.RMQ;
+
   private server: any = null;
   private channel: any = null;
   private readonly urls: string[];
@@ -31,7 +33,6 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   private readonly prefetchCount: number;
   private readonly queueOptions: any;
   private readonly isGlobalPrefetchCount: boolean;
-  public readonly transportId: Transport = Transport.RMQ;
 
   constructor(private readonly options: RmqOptions['options']) {
     super();

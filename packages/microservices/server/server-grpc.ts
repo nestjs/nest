@@ -13,12 +13,12 @@ import {
   GRPC_DEFAULT_URL,
 } from '../constants';
 import { GrpcMethodStreamingType } from '../decorators';
+import { Transport } from '../enums';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { CustomTransportStrategy, MessageHandler } from '../interfaces';
 import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
-import { Transport } from '../enums';
 
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
@@ -33,9 +33,10 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
 }
 
 export class ServerGrpc extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.GRPC;
+
   private readonly url: string;
   private grpcClient: any;
-  public readonly transportId: Transport = Transport.GRPC;
 
   constructor(private readonly options: GrpcOptions['options']) {
     super();

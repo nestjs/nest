@@ -11,6 +11,7 @@ import {
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { MqttContext } from '../ctx-host/mqtt.context';
+import { Transport } from '../enums';
 import { MqttClient } from '../external/mqtt-client.interface';
 import {
   CustomTransportStrategy,
@@ -21,14 +22,14 @@ import {
 } from '../interfaces';
 import { MqttOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
-import { Transport } from '../enums';
 
 let mqttPackage: any = {};
 
 export class ServerMqtt extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.MQTT;
+
   private readonly url: string;
   private mqttClient: MqttClient;
-  public readonly transportId: Transport = Transport.MQTT;
 
   constructor(private readonly options: MqttOptions['options']) {
     super();

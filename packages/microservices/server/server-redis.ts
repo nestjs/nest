@@ -8,6 +8,7 @@ import {
   REDIS_DEFAULT_URL,
 } from '../constants';
 import { RedisContext } from '../ctx-host';
+import { Transport } from '../enums';
 import {
   ClientOpts,
   RedisClient,
@@ -16,16 +17,16 @@ import {
 import { CustomTransportStrategy, IncomingRequest } from '../interfaces';
 import { RedisOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
-import { Transport } from '../enums';
 
 let redisPackage: any = {};
 
 export class ServerRedis extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.REDIS;
+
   private readonly url: string;
   private subClient: RedisClient;
   private pubClient: RedisClient;
   private isExplicitlyTerminated = false;
-  public readonly transportId: Transport = Transport.REDIS;
 
   constructor(private readonly options: RedisOptions['options']) {
     super();

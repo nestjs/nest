@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { ContextIdFactory } from '@nestjs/core/helpers/context-id-factory';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
@@ -30,7 +31,6 @@ import {
 import { ListenerMetadataExplorer } from './listener-metadata-explorer';
 import { ServerGrpc } from './server';
 import { Server } from './server/server';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
 
 export class ListenersController {
   private readonly metadataExplorer = new ListenerMetadataExplorer(
@@ -62,9 +62,15 @@ export class ListenersController {
         ? DEFAULT_GRPC_CALLBACK_METADATA
         : DEFAULT_CALLBACK_METADATA;
 
-    patternHandlers.forEach(
-      ({ pattern, targetCallback, methodKey, transport, isEventHandler }) => {
-        if (isUndefined(transport) || isUndefined(server.transportId) || transport === server.transportId) {
+    patternHandlers
+      .filter(
+        ({ transport }) =>
+          isUndefined(transport) ||
+          isUndefined(server.transportId) ||
+          transport === server.transportId,
+      )
+      .forEach(
+        ({ pattern, targetCallback, methodKey, transport, isEventHandler }) => {
           if (isStatic) {
             const proxy = this.contextCreator.create(
               instance as object,
@@ -86,9 +92,8 @@ export class ListenersController {
             defaultCallMetadata,
           );
           server.addHandler(pattern, asyncHandler, isEventHandler);
-        }
-      },
-    );
+        },
+      );
   }
 
   public assignClientsToProperties(instance: Controller | Injectable) {

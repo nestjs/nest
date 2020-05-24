@@ -31,6 +31,8 @@ import { Server } from './server';
 let kafkaPackage: any = {};
 
 export class ServerKafka extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.KAFKA;
+
   protected readonly logger = new Logger(ServerKafka.name);
   protected client: Kafka = null;
   protected consumer: Consumer = null;
@@ -38,7 +40,6 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   private readonly brokers: string[];
   private readonly clientId: string;
   private readonly groupId: string;
-  public readonly transportId: Transport = Transport.KAFKA;
 
   constructor(private readonly options: KafkaOptions['options']) {
     super();

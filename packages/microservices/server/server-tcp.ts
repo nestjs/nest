@@ -11,6 +11,7 @@ import {
   TCP_DEFAULT_PORT,
 } from '../constants';
 import { TcpContext } from '../ctx-host/tcp.context';
+import { Transport } from '../enums';
 import { JsonSocket } from '../helpers/json-socket';
 import {
   CustomTransportStrategy,
@@ -21,16 +22,15 @@ import {
 } from '../interfaces';
 import { TcpOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
-import { Transport } from '../enums';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.TCP;
+
   private readonly port: number;
   private readonly host: string;
-
   private server: NetSocket;
   private isExplicitlyTerminated = false;
   private retryAttemptsCount = 0;
-  public readonly transportId: Transport = Transport.TCP;
 
   constructor(private readonly options: TcpOptions['options']) {
     super();
