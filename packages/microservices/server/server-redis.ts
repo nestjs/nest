@@ -16,6 +16,7 @@ import {
 import { CustomTransportStrategy, IncomingRequest } from '../interfaces';
 import { RedisOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import { Transport } from '../enums';
 
 let redisPackage: any = {};
 
@@ -24,6 +25,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   private subClient: RedisClient;
   private pubClient: RedisClient;
   private isExplicitlyTerminated = false;
+  public readonly transportId: Transport = Transport.REDIS;
 
   constructor(private readonly options: RedisOptions['options']) {
     super();

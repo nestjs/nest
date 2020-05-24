@@ -18,6 +18,7 @@ import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definit
 import { CustomTransportStrategy, MessageHandler } from '../interfaces';
 import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import { Transport } from '../enums';
 
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
@@ -34,6 +35,7 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
 export class ServerGrpc extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private grpcClient: any;
+  public readonly transportId: Transport = Transport.GRPC;
 
   constructor(private readonly options: GrpcOptions['options']) {
     super();
@@ -240,9 +242,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       call.on('data', (m: any) => req.next(m));
       call.on('error', (e: any) => {
         // Check if error means that stream ended on other end
-        const isCancelledError = String(e)
-          .toLowerCase()
-          .indexOf('cancelled');
+        const isCancelledError = String(e).toLowerCase().indexOf('cancelled');
 
         if (isCancelledError) {
           call.end();

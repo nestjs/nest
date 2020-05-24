@@ -21,12 +21,14 @@ import {
 } from '../interfaces';
 import { MqttOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import { Transport } from '../enums';
 
 let mqttPackage: any = {};
 
 export class ServerMqtt extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private mqttClient: MqttClient;
+  public readonly transportId: Transport = Transport.MQTT;
 
   constructor(private readonly options: MqttOptions['options']) {
     super();

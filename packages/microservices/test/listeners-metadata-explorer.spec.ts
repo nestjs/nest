@@ -76,6 +76,7 @@ describe('ListenerMetadataExplorer', () => {
         'methodKey',
         'targetCallback',
         'pattern',
+        'transport',
       ]);
       expect(metadata.pattern).to.eql(pattern);
     });

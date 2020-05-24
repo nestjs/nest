@@ -12,12 +12,14 @@ import { CustomTransportStrategy, PacketId } from '../interfaces';
 import { NatsOptions } from '../interfaces/microservice-configuration.interface';
 import { IncomingRequest, ReadPacket } from '../interfaces/packet.interface';
 import { Server } from './server';
+import { Transport } from '../enums';
 
 let natsPackage: any = {};
 
 export class ServerNats extends Server implements CustomTransportStrategy {
   private readonly url: string;
   private natsClient: Client;
+  public readonly transportId: Transport = Transport.NATS;
 
   constructor(private readonly options: NatsOptions['options']) {
     super();

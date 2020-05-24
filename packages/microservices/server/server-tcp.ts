@@ -21,6 +21,7 @@ import {
 } from '../interfaces';
 import { TcpOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import { Transport } from '../enums';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {
   private readonly port: number;
@@ -29,6 +30,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   private server: NetSocket;
   private isExplicitlyTerminated = false;
   private retryAttemptsCount = 0;
+  public readonly transportId: Transport = Transport.TCP;
 
   constructor(private readonly options: TcpOptions['options']) {
     super();

@@ -8,7 +8,7 @@ import {
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { KafkaContext } from '../ctx-host';
-import { KafkaHeaders } from '../enums';
+import { KafkaHeaders, Transport } from '../enums';
 import {
   Consumer,
   ConsumerConfig,
@@ -38,6 +38,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   private readonly brokers: string[];
   private readonly clientId: string;
   private readonly groupId: string;
+  public readonly transportId: Transport = Transport.KAFKA;
 
   constructor(private readonly options: KafkaOptions['options']) {
     super();

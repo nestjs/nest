@@ -30,6 +30,7 @@ import {
 import { ListenerMetadataExplorer } from './listener-metadata-explorer';
 import { ServerGrpc } from './server';
 import { Server } from './server/server';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 
 export class ListenersController {
   private readonly metadataExplorer = new ListenerMetadataExplorer(
@@ -62,28 +63,30 @@ export class ListenersController {
         : DEFAULT_CALLBACK_METADATA;
 
     patternHandlers.forEach(
-      ({ pattern, targetCallback, methodKey, isEventHandler }) => {
-        if (isStatic) {
-          const proxy = this.contextCreator.create(
-            instance as object,
-            targetCallback,
+      ({ pattern, targetCallback, methodKey, transport, isEventHandler }) => {
+        if (isUndefined(transport) || isUndefined(server.transportId) || transport === server.transportId) {
+          if (isStatic) {
+            const proxy = this.contextCreator.create(
+              instance as object,
+              targetCallback,
+              moduleKey,
+              methodKey,
+              STATIC_CONTEXT,
+              undefined,
+              defaultCallMetadata,
+            );
+            return server.addHandler(pattern, proxy, isEventHandler);
+          }
+          const asyncHandler = this.createRequestScopedHandler(
+            instanceWrapper,
+            pattern,
+            moduleRef,
             moduleKey,
             methodKey,
-            STATIC_CONTEXT,
-            undefined,
             defaultCallMetadata,
           );
-          return server.addHandler(pattern, proxy, isEventHandler);
+          server.addHandler(pattern, asyncHandler, isEventHandler);
         }
-        const asyncHandler = this.createRequestScopedHandler(
-          instanceWrapper,
-          pattern,
-          moduleRef,
-          moduleKey,
-          methodKey,
-          defaultCallMetadata,
-        );
-        server.addHandler(pattern, asyncHandler, isEventHandler);
       },
     );
   }
