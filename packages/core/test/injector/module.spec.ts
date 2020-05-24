@@ -22,7 +22,7 @@ describe('Module', () => {
 
   beforeEach(() => {
     container = new NestContainer();
-    module = new Module(TestModule as any, [], container);
+    module = new Module(TestModule, container);
   });
 
   it('should add controller', () => {
@@ -418,7 +418,7 @@ describe('Module', () => {
       it('should behave as identity', () => {
         const metatype = { name: token };
         (module as any)._imports = new Set([
-          new Module(metatype as any, [], new NestContainer()),
+          new Module(metatype as any, new NestContainer()),
         ]);
         expect(module.validateExportedProvider(token)).to.be.eql(token);
       });

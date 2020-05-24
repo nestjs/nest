@@ -33,8 +33,8 @@ describe('MiddlewareContainer', () => {
     const nestContainer = new NestContainer();
     const modules = nestContainer.getModules();
 
-    modules.set('Module', new Module(ExampleModule, [], nestContainer));
-    modules.set('Test', new Module(ExampleModule, [], nestContainer));
+    modules.set('Module', new Module(ExampleModule, nestContainer));
+    modules.set('Test', new Module(ExampleModule, nestContainer));
 
     container = new MiddlewareContainer(nestContainer);
   });

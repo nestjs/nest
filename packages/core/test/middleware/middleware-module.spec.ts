@@ -58,7 +58,7 @@ describe('MiddlewareModule', () => {
       const stubContainer = new NestContainer();
       stubContainer
         .getModules()
-        .set('Test', new Module(class {}, [], stubContainer));
+        .set('Test', new Module(class {}, stubContainer));
 
       await middlewareModule.loadConfiguration(
         new MiddlewareContainer(stubContainer),
@@ -87,7 +87,7 @@ describe('MiddlewareModule', () => {
       nestContainer = new NestContainer();
       nestContainer
         .getModules()
-        .set('Test', new Module(TestModule, [], nestContainer));
+        .set('Test', new Module(TestModule, nestContainer));
     });
     it('should throw "RuntimeException" exception when middleware is not stored in container', () => {
       const route = { path: 'Test' };
@@ -162,7 +162,7 @@ describe('MiddlewareModule', () => {
       const stubContainer = new NestContainer();
       stubContainer
         .getModules()
-        .set('Test', new Module(TestModule, [], stubContainer));
+        .set('Test', new Module(TestModule, stubContainer));
 
       const container = new MiddlewareContainer(stubContainer);
       const moduleKey = 'Test';
@@ -178,7 +178,7 @@ describe('MiddlewareModule', () => {
       );
       sinon
         .stub(stubContainer, 'getModuleByKey')
-        .callsFake(() => new Module(class {}, [], stubContainer));
+        .callsFake(() => new Module(class {}, stubContainer));
       middlewareModule['container'] = stubContainer;
 
       await middlewareModule.registerRouteMiddleware(

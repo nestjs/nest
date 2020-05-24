@@ -36,7 +36,7 @@ describe('Injector', () => {
     let mainTest, depOne, depTwo;
 
     beforeEach(() => {
-      moduleDeps = new Module(DependencyTwo as any, [], new NestContainer());
+      moduleDeps = new Module(DependencyTwo, new NestContainer());
       mainTest = new InstanceWrapper({
         name: 'MainTest',
         metatype: MainTest,
@@ -133,7 +133,7 @@ describe('Injector', () => {
     let test;
 
     beforeEach(() => {
-      moduleDeps = new Module(Test as any, [], new NestContainer());
+      moduleDeps = new Module(Test, new NestContainer());
       test = new InstanceWrapper({
         name: 'Test',
         metatype: Test,
@@ -712,12 +712,12 @@ describe('Injector', () => {
       const wrapper = new InstanceWrapper();
       wrapper.addEnhancerMetadata(
         new InstanceWrapper({
-          host: new Module(class {}, [], new NestContainer()),
+          host: new Module(class {}, new NestContainer()),
         }),
       );
       wrapper.addEnhancerMetadata(
         new InstanceWrapper({
-          host: new Module(class {}, [], new NestContainer()),
+          host: new Module(class {}, new NestContainer()),
         }),
       );
 

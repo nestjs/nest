@@ -4,10 +4,10 @@ import {
   HttpServer,
   INestApplication,
   INestMicroservice,
+  NestHybridApplicationOptions,
   NestInterceptor,
   PipeTransform,
   WebSocketAdapter,
-  NestHybridApplicationOptions,
 } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
@@ -172,21 +172,22 @@ export class NestApplication extends NestApplicationContext
   }
 
   public connectMicroservice<T extends object>(
-    options: T,
-    hybridOptions: NestHybridApplicationOptions = {},
+    microserviceOptions: T,
+    hybridAppOptions: NestHybridApplicationOptions = {},
   ): INestMicroservice {
     const { NestMicroservice } = loadPackage(
       '@nestjs/microservices',
       'NestFactory',
       () => require('@nestjs/microservices'),
     );
-    const { inheritAppConfig } = hybridOptions;
+    const { inheritAppConfig } = hybridAppOptions;
     const applicationConfig = inheritAppConfig
       ? this.config
       : new ApplicationConfig();
+
     const instance = new NestMicroservice(
       this.container,
-      options,
+      microserviceOptions,
       applicationConfig,
     );
     instance.registerListeners();
