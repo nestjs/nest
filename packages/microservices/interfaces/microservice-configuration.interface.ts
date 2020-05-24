@@ -1,4 +1,5 @@
 import { Transport } from '../enums/transport.enum';
+import { ChannelOptions } from '../external/grpc-options.interface';
 import {
   CompressionTypes,
   ConsumerConfig,
@@ -10,7 +11,6 @@ import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
-import {ChannelOptions} from '../external/grpc-options.interface';
 
 export type MicroserviceOptions =
   | GrpcOptions
