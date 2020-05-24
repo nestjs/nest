@@ -35,6 +35,7 @@ export {
   NestInterceptor,
   NestMiddleware,
   NestModule,
+  NestHybridApplicationOptions,
   OnApplicationBootstrap,
   OnApplicationShutdown,
   OnModuleDestroy,

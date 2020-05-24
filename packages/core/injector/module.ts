@@ -19,6 +19,7 @@ import {
   isSymbol,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
 import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
@@ -29,7 +30,6 @@ import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
-import { iterate } from 'iterare';
 
 interface ProviderName {
   name?: string | symbol;
@@ -50,7 +50,6 @@ export class Module {
 
   constructor(
     private readonly _metatype: Type<any>,
-    private readonly _scope: Type<any>[],
     private readonly container: NestContainer,
   ) {
     this.addCoreProviders();
@@ -59,10 +58,6 @@ export class Module {
 
   get id(): string {
     return this._id;
-  }
-
-  get scope(): Type<any>[] {
-    return this._scope;
   }
 
   get providers(): Map<any, InstanceWrapper<Injectable>> {

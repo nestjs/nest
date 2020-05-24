@@ -66,7 +66,7 @@ export class NestContainer {
     if (this.modules.has(token)) {
       return;
     }
-    const moduleRef = new Module(type, scope, this);
+    const moduleRef = new Module(type, this);
     this.modules.set(token, moduleRef);
     this.addDynamicMetadata(token, dynamicMetadata, [].concat(scope, type));
 
