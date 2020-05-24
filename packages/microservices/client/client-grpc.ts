@@ -90,6 +90,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
     const keepaliveOptions = this.getKeepaliveOptions();
     const options: Record<string, string | number> = {
+      ...this.options.channelOptions,
       ...maxMessageLengthOptions,
       ...keepaliveOptions,
     };

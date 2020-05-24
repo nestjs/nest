@@ -10,6 +10,7 @@ import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
+import {ChannelOptions} from '../external/grpc-options.interface';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -42,6 +43,7 @@ export interface GrpcOptions {
       http2MinPingIntervalWithoutDataMs?: number;
       http2MaxPingStrikes?: number;
     };
+    channelOptions?: ChannelOptions;
     credentials?: any;
     protoPath: string | string[];
     package: string | string[];
