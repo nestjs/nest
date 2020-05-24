@@ -134,7 +134,7 @@ export class WsContextCreator {
   public createGuardsFn<TContext extends string = ContextType>(
     guards: any[],
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => any,
     contextType?: TContext,
   ): Function | null {
     const canActivateFn = async (args: any[]) => {

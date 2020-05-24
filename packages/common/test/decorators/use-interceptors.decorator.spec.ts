@@ -8,11 +8,11 @@ class Interceptor {}
 describe('@UseInterceptors', () => {
   const interceptors = [Interceptor, Interceptor];
 
-  @UseInterceptors(...(interceptors as any))
+  @UseInterceptors(...interceptors)
   class Test {}
 
   class TestWithMethod {
-    @UseInterceptors(...(interceptors as any))
+    @UseInterceptors(...interceptors)
     public static test() {}
   }
 
