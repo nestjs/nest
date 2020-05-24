@@ -13,6 +13,7 @@ import {
   GRPC_DEFAULT_URL,
 } from '../constants';
 import { GrpcMethodStreamingType } from '../decorators';
+import { Transport } from '../enums';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { CustomTransportStrategy, MessageHandler } from '../interfaces';
@@ -32,6 +33,8 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
 }
 
 export class ServerGrpc extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.GRPC;
+
   private readonly url: string;
   private grpcClient: any;
 
@@ -240,9 +243,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       call.on('data', (m: any) => req.next(m));
       call.on('error', (e: any) => {
         // Check if error means that stream ended on other end
-        const isCancelledError = String(e)
-          .toLowerCase()
-          .indexOf('cancelled');
+        const isCancelledError = String(e).toLowerCase().indexOf('cancelled');
 
         if (isCancelledError) {
           call.end();

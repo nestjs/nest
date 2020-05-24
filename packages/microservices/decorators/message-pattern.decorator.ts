@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { PATTERN_HANDLER_METADATA, PATTERN_METADATA } from '../constants';
+import {
+  PATTERN_HANDLER_METADATA,
+  PATTERN_METADATA,
+  TRANSPORT_METADATA,
+} from '../constants';
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
+import { Transport } from '../enums';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',
@@ -14,6 +19,7 @@ export enum GrpcMethodStreamingType {
  */
 export const MessagePattern = <T = PatternMetadata | string>(
   metadata?: T,
+  transport?: Transport,
 ): MethodDecorator => {
   return (
     target: object,
@@ -26,6 +32,7 @@ export const MessagePattern = <T = PatternMetadata | string>(
       PatternHandler.MESSAGE,
       descriptor.value,
     );
+    Reflect.defineMetadata(TRANSPORT_METADATA, transport, descriptor.value);
     return descriptor;
   };
 };
@@ -42,7 +49,7 @@ export function GrpcMethod(service: string, method?: string): MethodDecorator {
     descriptor: PropertyDescriptor,
   ) => {
     const metadata = createGrpcMethodMetadata(target, key, service, method);
-    return MessagePattern(metadata)(target, key, descriptor);
+    return MessagePattern(metadata, Transport.GRPC)(target, key, descriptor);
   };
 }
 
@@ -76,7 +83,7 @@ export function GrpcStreamMethod(
       method,
       GrpcMethodStreamingType.RX_STREAMING,
     );
-    return MessagePattern(metadata)(target, key, descriptor);
+    return MessagePattern(metadata, Transport.GRPC)(target, key, descriptor);
   };
 }
 
@@ -110,7 +117,7 @@ export function GrpcStreamCall(
       method,
       GrpcMethodStreamingType.PT_STREAMING,
     );
-    return MessagePattern(metadata)(target, key, descriptor);
+    return MessagePattern(metadata, Transport.GRPC)(target, key, descriptor);
   };
 }
 
