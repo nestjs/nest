@@ -17,9 +17,10 @@ export interface HandlerMetadata {
     contextId?: ContextId,
     inquirerId?: string,
   ) => (ParamProperties & { metatype?: any })[];
-  fnHandleResponse: <TResult, TResponse>(
+  fnHandleResponse: <TResult, TResponse, TRequest>(
     result: TResult,
     res: TResponse,
+    req?: TRequest,
   ) => any;
 }
 

@@ -1,5 +1,12 @@
-import { HttpServer, HttpStatus, RequestMethod } from '@nestjs/common';
+import {
+  HttpServer,
+  HttpStatus,
+  RequestMethod,
+  SseStream,
+  MessageEvent,
+} from '@nestjs/common';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { Observable } from 'rxjs';
 
 export interface CustomHeader {
   name: string;
@@ -77,5 +84,29 @@ export class RouterResponseController {
     statusCode: number,
   ) {
     this.applicationRef.status(response, statusCode);
+  }
+
+  public async sse<TInput = unknown, TResponse = unknown, TRequest = unknown>(
+    result: any,
+    response: any,
+    request: any,
+  ) {
+    if (!isFunction(result.subscribe)) {
+      throw new ReferenceError(
+        'You should use an observable to use server-sent events.',
+      );
+    }
+
+    const stream = new SseStream(request);
+    stream.pipe(response);
+
+    const subscription = result.subscribe((message: MessageEvent) => {
+      stream.writeMessage(message);
+    });
+
+    request.on('close', () => {
+      response.end();
+      subscription.unsubscribe();
+    });
   }
 }

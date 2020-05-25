@@ -13,6 +13,7 @@ import {
   REDIRECT_METADATA,
   RENDER_METADATA,
   ROUTE_ARGS_METADATA,
+  SSE_METADATA,
 } from '@nestjs/common/constants';
 import { RouteParamMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
@@ -160,7 +161,7 @@ export class RouterExecutionContext {
         handler(args, req, res, next),
         contextType,
       );
-      await fnHandleResponse(result, res);
+      await fnHandleResponse(result, res, req);
     };
   }
 
@@ -263,6 +264,10 @@ export class RouterExecutionContext {
     callback: (...args: unknown[]) => unknown,
   ): CustomHeader[] {
     return Reflect.getMetadata(HEADERS_METADATA, callback) || [];
+  }
+
+  public reflectSse(callback: (...args: unknown[]) => unknown): string {
+    return Reflect.getMetadata(SSE_METADATA, callback);
   }
 
   public exchangeKeysForValues(
@@ -408,6 +413,16 @@ export class RouterExecutionContext {
     if (redirectResponse && typeof redirectResponse.url === 'string') {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
         await this.responseController.redirect(result, res, redirectResponse);
+      };
+    }
+    const isSse = !!this.reflectSse(callback);
+    if (isSse) {
+      return async <TResult, TResponse, TRequest>(
+        result: TResult,
+        res: TResponse,
+        req: TRequest,
+      ) => {
+        await this.responseController.sse(result, res, req);
       };
     }
     return async <TResult, TResponse>(result: TResult, res: TResponse) => {

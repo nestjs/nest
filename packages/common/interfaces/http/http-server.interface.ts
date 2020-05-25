@@ -69,3 +69,10 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   getType(): string;
   init?(): Promise<void>;
 }
+
+export interface MessageEvent {
+  data: string | object;
+  id?: string;
+  type?: string;
+  retry?: number;
+}
