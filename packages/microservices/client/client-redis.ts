@@ -93,11 +93,9 @@ export class ClientRedis extends ClientProxy {
   }
 
   public getClientOptions(error$: Subject<Error>): Partial<ClientOpts> {
-    // eslint-disable-next-line @typescript-eslint/camelcase
     const retry_strategy = (options: RetryStrategyOptions) =>
       this.createRetryStrategy(options, error$);
     return {
-      // eslint-disable-next-line @typescript-eslint/camelcase
       retry_strategy,
     };
   }

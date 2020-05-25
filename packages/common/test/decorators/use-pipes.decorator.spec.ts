@@ -10,11 +10,11 @@ class Pipe {
 describe('@UsePipes', () => {
   const pipes = [new Pipe(), new Pipe()];
 
-  @UsePipes(...(pipes as any))
+  @UsePipes(...pipes)
   class Test {}
 
   class TestWithMethod {
-    @UsePipes(...(pipes as any))
+    @UsePipes(...pipes)
     public static test() {}
   }
 

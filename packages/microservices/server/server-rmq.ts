@@ -13,6 +13,7 @@ import {
   RQM_DEFAULT_URL,
 } from '../constants';
 import { RmqContext } from '../ctx-host';
+import { Transport } from '../enums';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
 import {
   IncomingRequest,
@@ -23,6 +24,8 @@ import { Server } from './server';
 let rqmPackage: any = {};
 
 export class ServerRMQ extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.RMQ;
+
   private server: any = null;
   private channel: any = null;
   private readonly urls: string[];

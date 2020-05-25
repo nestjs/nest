@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { ContextIdFactory } from '@nestjs/core/helpers/context-id-factory';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
@@ -61,31 +62,38 @@ export class ListenersController {
         ? DEFAULT_GRPC_CALLBACK_METADATA
         : DEFAULT_CALLBACK_METADATA;
 
-    patternHandlers.forEach(
-      ({ pattern, targetCallback, methodKey, isEventHandler }) => {
-        if (isStatic) {
-          const proxy = this.contextCreator.create(
-            instance as object,
-            targetCallback,
+    patternHandlers
+      .filter(
+        ({ transport }) =>
+          isUndefined(transport) ||
+          isUndefined(server.transportId) ||
+          transport === server.transportId,
+      )
+      .forEach(
+        ({ pattern, targetCallback, methodKey, transport, isEventHandler }) => {
+          if (isStatic) {
+            const proxy = this.contextCreator.create(
+              instance as object,
+              targetCallback,
+              moduleKey,
+              methodKey,
+              STATIC_CONTEXT,
+              undefined,
+              defaultCallMetadata,
+            );
+            return server.addHandler(pattern, proxy, isEventHandler);
+          }
+          const asyncHandler = this.createRequestScopedHandler(
+            instanceWrapper,
+            pattern,
+            moduleRef,
             moduleKey,
             methodKey,
-            STATIC_CONTEXT,
-            undefined,
             defaultCallMetadata,
           );
-          return server.addHandler(pattern, proxy, isEventHandler);
-        }
-        const asyncHandler = this.createRequestScopedHandler(
-          instanceWrapper,
-          pattern,
-          moduleRef,
-          moduleKey,
-          methodKey,
-          defaultCallMetadata,
-        );
-        server.addHandler(pattern, asyncHandler, isEventHandler);
-      },
-    );
+          server.addHandler(pattern, asyncHandler, isEventHandler);
+        },
+      );
   }
 
   public assignClientsToProperties(instance: Controller | Injectable) {

@@ -7,6 +7,7 @@ import {
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { NatsContext } from '../ctx-host/nats.context';
+import { Transport } from '../enums';
 import { Client } from '../external/nats-client.interface';
 import { CustomTransportStrategy, PacketId } from '../interfaces';
 import { NatsOptions } from '../interfaces/microservice-configuration.interface';
@@ -16,6 +17,8 @@ import { Server } from './server';
 let natsPackage: any = {};
 
 export class ServerNats extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.NATS;
+
   private readonly url: string;
   private natsClient: Client;
 

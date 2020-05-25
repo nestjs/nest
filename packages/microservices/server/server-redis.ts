@@ -8,6 +8,7 @@ import {
   REDIS_DEFAULT_URL,
 } from '../constants';
 import { RedisContext } from '../ctx-host';
+import { Transport } from '../enums';
 import {
   ClientOpts,
   RedisClient,
@@ -20,6 +21,8 @@ import { Server } from './server';
 let redisPackage: any = {};
 
 export class ServerRedis extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.REDIS;
+
   private readonly url: string;
   private subClient: RedisClient;
   private pubClient: RedisClient;
@@ -147,11 +150,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getClientOptions(): Partial<ClientOpts> {
-    // eslint-disable-next-line @typescript-eslint/camelcase
     const retry_strategy = (options: RetryStrategyOptions) =>
       this.createRetryStrategy(options);
     return {
-      // eslint-disable-next-line @typescript-eslint/camelcase
       retry_strategy,
     };
   }

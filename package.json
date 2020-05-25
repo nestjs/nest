@@ -67,7 +67,7 @@
     "rxjs": "6.5.5",
     "socket.io": "2.3.0",
     "uuid": "8.0.0",
-    "tslib": "1.11.2"
+    "tslib": "2.0.0"
   },
   "devDependencies": {
     "@codechecks/client": "0.1.10",
@@ -94,8 +94,8 @@
     "@types/sinon": "9.0.0",
     "@types/socket.io": "2.1.4",
     "@types/ws": "7.2.4",
-    "@typescript-eslint/eslint-plugin": "2.32.0",
-    "@typescript-eslint/parser": "2.32.0",
+    "@typescript-eslint/eslint-plugin": "3.0.0",
+    "@typescript-eslint/parser": "3.0.0",
     "amqp-connection-manager": "3.2.0",
     "amqplib": "0.5.5",
     "apollo-server-express": "2.13.1",
@@ -124,7 +124,7 @@
     "fastify-multipart": "1.0.6",
     "fastify-static": "2.7.0",
     "graphql": "15.0.0",
-    "graphql-tools": "4.0.7",
+    "graphql-tools": "6.0.0",
     "grpc": "1.24.2",
     "gulp": "4.0.2",
     "gulp-clang-format": "1.0.27",

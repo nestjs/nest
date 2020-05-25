@@ -8,17 +8,17 @@ class Guard {}
 describe('@UseGuards', () => {
   const guards = [Guard, Guard];
 
-  @UseGuards(...(guards as any))
+  @UseGuards(...guards)
   class Test {}
 
   class TestWithMethod {
-    @UseGuards(...(guards as any))
+    @UseGuards(...guards)
     public static test() {}
   }
 
   class Test2 {
-    @UseGuards(...(guards as any))
-    @UseGuards(...(guards as any))
+    @UseGuards(...guards)
+    @UseGuards(...guards)
     public static test() {}
   }
 

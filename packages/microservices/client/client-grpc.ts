@@ -90,6 +90,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
     const keepaliveOptions = this.getKeepaliveOptions();
     const options: Record<string, string | number> = {
+      ...(this.options.channelOptions || {}),
       ...maxMessageLengthOptions,
       ...keepaliveOptions,
     };
@@ -125,7 +126,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       this.options.keepalive,
     )) {
       const key = keepaliveKeys[optionKey];
-      if (!key) {
+      if (key === undefined) {
         continue;
       }
       keepaliveOptions[key] = optionValue;

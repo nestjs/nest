@@ -8,7 +8,7 @@ import {
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { KafkaContext } from '../ctx-host';
-import { KafkaHeaders } from '../enums';
+import { KafkaHeaders, Transport } from '../enums';
 import {
   Consumer,
   ConsumerConfig,
@@ -31,6 +31,8 @@ import { Server } from './server';
 let kafkaPackage: any = {};
 
 export class ServerKafka extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.KAFKA;
+
   protected readonly logger = new Logger(ServerKafka.name);
   protected client: Kafka = null;
   protected consumer: Consumer = null;

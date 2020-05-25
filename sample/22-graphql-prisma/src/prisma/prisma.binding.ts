@@ -1,7 +1,7 @@
 import { GraphQLResolveInfo, GraphQLSchema } from 'graphql';
-import { IResolvers } from 'graphql-tools/dist/Interfaces';
 import { Options } from 'graphql-binding';
-import { makePrismaBindingClass, BasePrismaOptions } from 'prisma-binding';
+import { IResolvers } from 'graphql-tools';
+import { BasePrismaOptions, makePrismaBindingClass } from 'prisma-binding';
 
 export interface Query {
   posts: <T = Post[]>(

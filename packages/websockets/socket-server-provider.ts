@@ -64,7 +64,7 @@ export class SocketServerProvider {
   ) {
     const adapter = this.applicationConfig.getIoAdapter();
     return adapter.create(port, {
-      ...(options as any),
+      ...options,
       namespace: this.validateNamespace(options.namespace || ''),
       server,
     });

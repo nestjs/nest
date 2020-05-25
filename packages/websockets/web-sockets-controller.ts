@@ -30,7 +30,7 @@ export class WebSocketsController {
 
   public mergeGatewayAndServer(
     instance: NestGateway,
-    metatype: Type<any> | Function,
+    metatype: Type<unknown> | Function,
     moduleKey: string,
   ) {
     const options = Reflect.getMetadata(GATEWAY_OPTIONS, metatype) || {};
@@ -122,7 +122,7 @@ export class WebSocketsController {
         .pipe(
           distinctUntilChanged((prev, curr) => compareElementAt(prev, curr, 0)),
         )
-        .subscribe((args: any[]) => instance.handleConnection(...args));
+        .subscribe((args: unknown[]) => instance.handleConnection(...args));
     }
   }
 
@@ -164,7 +164,7 @@ export class WebSocketsController {
 
   private assignServerToProperties<T = any>(
     instance: NestGateway,
-    server: any,
+    server: object,
   ) {
     for (const propertyKey of this.metadataExplorer.scanForServerHooks(
       instance,
