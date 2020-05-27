@@ -20,6 +20,7 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (errors: ValidationError[]) => any;
   validateCustomDecorators?: boolean;
+  customTypesToNotValidate: any[],
 }
 
 let classValidator: any = {};
@@ -34,6 +35,7 @@ export class ValidationPipe implements PipeTransform<any> {
   protected errorHttpStatusCode: ErrorHttpStatusCode;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
+  protected customTypesToNotValidate: any[];
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
@@ -43,6 +45,7 @@ export class ValidationPipe implements PipeTransform<any> {
       errorHttpStatusCode,
       transformOptions,
       validateCustomDecorators,
+      customTypesToNotValidate,
       ...validatorOptions
     } = options;
 
@@ -51,6 +54,10 @@ export class ValidationPipe implements PipeTransform<any> {
     this.transformOptions = transformOptions;
     this.isDetailedOutputDisabled = disableErrorMessages;
     this.validateCustomDecorators = validateCustomDecorators || false;
+    this.customTypesToNotValidate = 
+      Array.isArray(customTypesToNotValidate) && customTypesToNotValidate.length 
+      ? customTypesToNotValidate
+      : [];
     this.errorHttpStatusCode = errorHttpStatusCode || HttpStatus.BAD_REQUEST;
     this.exceptionFactory =
       options.exceptionFactory || this.createExceptionFactory();
@@ -130,7 +137,7 @@ export class ValidationPipe implements PipeTransform<any> {
     if (type === 'custom' && !this.validateCustomDecorators) {
       return false;
     }
-    const types = [String, Boolean, Number, Array, Object];
+    const types = [String, Boolean, Number, Array, Object, ...this.customTypesToNotValidate];
     return !types.some(t => metatype === t) && !isNil(metatype);
   }
 
