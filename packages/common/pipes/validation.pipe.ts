@@ -20,7 +20,7 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (errors: ValidationError[]) => any;
   validateCustomDecorators?: boolean;
-  customTypesToNotValidate: any[],
+  customTypesToNotValidate: any[];
 }
 
 let classValidator: any = {};
