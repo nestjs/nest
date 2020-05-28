@@ -53,7 +53,9 @@ export class Reflector {
     metadataKey: TKey,
     targets: (Type<any> | Function)[],
   ): TResult {
-    const metadataCollection = this.getAll(metadataKey, targets);
+    const metadataCollection = this.getAll(metadataKey, targets).filter(
+      item => item !== undefined,
+    );
     return metadataCollection.reduce((a, b) => {
       if (Array.isArray(a)) {
         return a.concat(b);
