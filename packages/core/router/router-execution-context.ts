@@ -27,6 +27,7 @@ import { ExecutionContextHost } from '../helpers/execution-context-host';
 import {
   HandlerMetadata,
   HandlerMetadataStorage,
+  HandleResponseFn,
 } from '../helpers/handler-metadata-storage';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
@@ -403,7 +404,7 @@ export class RouterExecutionContext {
     isResponseHandled: boolean,
     redirectResponse?: RedirectResponse,
     httpStatusCode?: number,
-  ) {
+  ): HandleResponseFn {
     const renderTemplate = this.reflectRenderTemplate(callback);
     if (renderTemplate) {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
@@ -420,7 +421,7 @@ export class RouterExecutionContext {
       return async <TResult, TResponse, TRequest>(
         result: TResult,
         res: TResponse,
-        req: TRequest,
+        req?: TRequest,
       ) => {
         await this.responseController.sse(result, res, req);
       };

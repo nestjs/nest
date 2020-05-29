@@ -1,6 +1,6 @@
 import { Transform } from 'stream';
 import { IncomingMessage, OutgoingHttpHeaders } from 'http';
-import { MessageEvent } from '../interfaces';
+import { MessageEvent } from '@nestjs/common/interfaces';
 
 function toDataString(data: string | object): string {
   if (typeof data === 'object') return toDataString(JSON.stringify(data));
@@ -11,7 +11,12 @@ function toDataString(data: string | object): string {
 }
 
 interface WriteHeaders {
-  writeHead?(statusCode: number, headers?: OutgoingHttpHeaders): WriteHeaders;
+  writeHead?(
+    statusCode: number,
+    reasonPhrase?: string,
+    headers?: OutgoingHttpHeaders,
+  ): void;
+  writeHead?(statusCode: number, headers?: OutgoingHttpHeaders): void;
   flushHeaders?(): void;
 }
 
@@ -35,7 +40,7 @@ export class SseStream extends Transform {
 
   constructor(req?: IncomingMessage) {
     super({ objectMode: true });
-    if (req) {
+    if (req && req.socket) {
       req.socket.setKeepAlive(true);
       req.socket.setNoDelay(true);
       req.socket.setTimeout(0);
@@ -45,15 +50,22 @@ export class SseStream extends Transform {
   pipe<T extends HeaderStream>(destination: T, options?: { end?: boolean }): T {
     if (destination.writeHead) {
       destination.writeHead(200, {
-        'Content-Type': 'text/event-stream; charset=utf-8',
-        'Transfer-Encoding': 'identity',
-        'Cache-Control': 'no-cache',
+        // See https://github.com/dunglas/mercure/blob/master/hub/subscribe.go#L124-L130 
+        'Content-Type': 'text/event-stream',
         Connection: 'keep-alive',
+        // Disable cache, even for old browsers and proxies
+        'Cache-Control':
+          'private, no-cache, no-store, must-revalidate, max-age=0',
+        'Transfer-Encoding': 'identity',
+        Pragma: 'no-cache',
+        Expire: '0',
+        // NGINX support https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/#x-accel-buffering
+        'X-Accel-Buffering': 'no',
       });
       destination.flushHeaders();
     }
 
-    destination.write(':ok\n');
+    destination.write(':\n');
     return super.pipe(destination, options);
   }
 
@@ -76,12 +88,8 @@ export class SseStream extends Transform {
     cb?: (error: Error | null | undefined) => void,
   ): boolean {
     if (!message.id) {
-      this.lastEventId = this.lastEventId === null ? 0 : this.lastEventId + 1;
-      message.id = '' + this.lastEventId;
-    }
-
-    if (!message.type) {
-      message.type = 'message';
+      this.lastEventId++;
+      message.id = this.lastEventId.toString();
     }
 
     return this.write(message, encoding, cb);

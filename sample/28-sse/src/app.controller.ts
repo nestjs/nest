@@ -1,12 +1,11 @@
 import { Controller, Get, MessageEvent, Sse } from '@nestjs/common';
-import { AppService } from './app.service';
 import { Observable, interval } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @Controller()
 export class AppController {
   @Get()
-  getHello(): string {
+  index(): string {
     return `
     <script type="text/javascript">
       const ee = new EventSource('/sse')

@@ -6,6 +6,12 @@ import { ParamProperties } from './context-utils';
 
 export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');
 
+export type HandleResponseFn = <TResult, TResponse, TRequest>(
+  result: TResult,
+  res: TResponse,
+  req?: TRequest,
+) => any;
+
 export interface HandlerMetadata {
   argsLength: number;
   paramtypes: any[];
@@ -17,11 +23,7 @@ export interface HandlerMetadata {
     contextId?: ContextId,
     inquirerId?: string,
   ) => (ParamProperties & { metatype?: any })[];
-  fnHandleResponse: <TResult, TResponse, TRequest>(
-    result: TResult,
-    res: TResponse,
-    req?: TRequest,
-  ) => any;
+  fnHandleResponse: HandleResponseFn;
 }
 
 export class HandlerMetadataStorage<

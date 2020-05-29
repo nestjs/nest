@@ -2,11 +2,12 @@ import {
   HttpServer,
   HttpStatus,
   RequestMethod,
-  SseStream,
   MessageEvent,
 } from '@nestjs/common';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
+import { SseStream, HeaderStream } from '../services';
+import { IncomingMessage, ServerResponse } from 'http';
 
 export interface CustomHeader {
   name: string;
@@ -86,21 +87,14 @@ export class RouterResponseController {
     this.applicationRef.status(response, statusCode);
   }
 
-  public async sse<TInput = unknown, TResponse = unknown, TRequest = unknown>(
-    result: any,
-    response: any,
-    request: any,
-  ) {
-    if (!isFunction(result.subscribe)) {
-      throw new ReferenceError(
-        'You should use an observable to use server-sent events.',
-      );
-    }
+  public async sse<TInput>(result: TInput, response: any, request: any) {
+    const observable = this.assertObservable(result);
 
     const stream = new SseStream(request);
     stream.pipe(response);
 
-    const subscription = result.subscribe((message: MessageEvent) => {
+    const subscription = observable.subscribe((message: any) => {
+      if (typeof message !== 'object') message = { data: message };
       stream.writeMessage(message);
     });
 
@@ -108,5 +102,15 @@ export class RouterResponseController {
       response.end();
       subscription.unsubscribe();
     });
+  }
+
+  private assertObservable(result: any): Observable<unknown> {
+    if (!isFunction(result.subscribe)) {
+      throw new ReferenceError(
+        'You should use an observable to use server-sent events.',
+      );
+    }
+
+    return result;
   }
 }
