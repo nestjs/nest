@@ -21,14 +21,14 @@
   "dependencies": {
     "@nestjs/common": "7.0.11",
     "@nestjs/core": "7.0.11",
-    "@nestjs/graphql": "^7.4.1",
+    "@nestjs/graphql": "7.4.1",
     "@nestjs/platform-express": "7.0.11",
     "apollo-server": "2.13.1",
     "apollo-server-express": "2.13.1",
     "class-transformer": "0.2.3",
     "class-validator": "0.12.2",
     "graphql": "14.6.0",
-    "graphql-query-complexity": "^0.6.0",
+    "graphql-query-complexity": "0.6.0",
     "graphql-subscriptions": "1.1.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.5.5"
