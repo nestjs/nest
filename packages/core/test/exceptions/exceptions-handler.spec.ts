@@ -1,4 +1,4 @@
-import { HttpException } from '@nestjs/common';
+import { HttpException, RedirectionException } from '@nestjs/common';
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
@@ -13,6 +13,7 @@ describe('ExceptionsHandler', () => {
   let handler: ExceptionsHandler;
   let statusStub: sinon.SinonStub;
   let jsonStub: sinon.SinonStub;
+  let redirectStub: sinon.SinonStub;
   let response;
 
   beforeEach(() => {
@@ -20,11 +21,15 @@ describe('ExceptionsHandler', () => {
     handler = new ExceptionsHandler(adapter);
     statusStub = sinon.stub();
     jsonStub = sinon.stub();
+    redirectStub = sinon.stub();
+
+    adapter.redirect = redirectStub;
 
     response = {
       status: statusStub,
       json: jsonStub,
     };
+
     response.status.returns(response);
     response.json.returns(response);
   });
@@ -81,6 +86,32 @@ describe('ExceptionsHandler', () => {
 
         expect(statusStub.calledWith(status)).to.be.true;
         expect(jsonStub.calledWith({ message, statusCode: status })).to.be.true;
+      });
+    });
+    describe('when exception is instance of RedirectionException', () => {
+      it('should send expected redirect response', () => {
+        const message = 'Found';
+        const status = 302;
+        const location = 'http://uri/path';
+        handler.next(
+          new RedirectionException(message, location, status),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(redirectStub.calledWith(message, status, location)).to.be.true;
+      });
+
+      it('should not call status and json stubs', () => {
+        const message = 'Found';
+        const status = 302;
+        const location = 'http://uri/path';
+        handler.next(
+          new RedirectionException(message, location, status),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub.notCalled).to.be.true;
+        expect(jsonStub.notCalled).to.be.true;
       });
     });
     describe('when "invokeCustomFilters" returns true', () => {

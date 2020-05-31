@@ -17,3 +17,8 @@ export * from './bad-gateway.exception';
 export * from './service-unavailable.exception';
 export * from './gateway-timeout.exception';
 export * from './im-a-teapot.exception';
+export * from './redirection.exception';
+export * from './found.exception';
+export * from './moved-permanently.exception';
+export * from './see-other.exception';
+export * from './temporary-redirect.exception';
