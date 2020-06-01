@@ -15,6 +15,7 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { iterate } from 'iterare';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
@@ -27,7 +28,6 @@ import {
   PropertyMetadata,
 } from './instance-wrapper';
 import { Module } from './module';
-import { iterate } from 'iterare';
 
 /**
  * The type of an injectable dependency
@@ -666,8 +666,11 @@ export class Injector {
     wrapper?: InstanceWrapper,
   ): Promise<T> {
     if (!wrapper) {
-      const ctor = instance.constructor;
-      wrapper = collection.get(ctor && ctor.name);
+      const providerCtor = instance.constructor;
+      const injectionToken =
+        (providerCtor && providerCtor.name) ||
+        ((providerCtor as unknown) as string);
+      wrapper = collection.get(injectionToken);
     }
     await this.loadInstance(wrapper, collection, moduleRef, ctx, wrapper);
     await this.loadEnhancersPerContext(wrapper, ctx, wrapper);

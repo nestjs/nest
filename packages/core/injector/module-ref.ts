@@ -1,4 +1,5 @@
 import { Type } from '@nestjs/common';
+import { InvalidClassScopeException } from '../errors/exceptions/invalid-class-scope.exception';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
 import { getClassScope } from '../helpers/get-class-scope';
 import { NestContainer } from './container';
@@ -83,7 +84,9 @@ export abstract class ModuleRef {
     options?: { strict: boolean },
   ): Promise<TResult> {
     let wrapper: InstanceWrapper, collection: Map<string, InstanceWrapper>;
-    if (!(options && options.strict)) {
+
+    const isStrictModeEnabled = options && options.strict;
+    if (!isStrictModeEnabled) {
       [wrapper, collection] = this.containerScanner.getWrapperCollectionPair(
         typeOrToken,
       );
@@ -96,8 +99,13 @@ export abstract class ModuleRef {
         contextModule,
       );
     }
+    if (wrapper.isDependencyTreeStatic() && !wrapper.isTransient) {
+      throw new InvalidClassScopeException(typeOrToken);
+    }
+
+    const ctorHost = wrapper.instance || { constructor: typeOrToken };
     const instance = await this.injector.loadPerContext(
-      wrapper.instance,
+      ctorHost,
       wrapper.host,
       collection,
       contextId,

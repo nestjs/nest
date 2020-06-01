@@ -9,6 +9,7 @@ import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { MESSAGES } from './constants';
+import { InvalidClassScopeException } from './errors/exceptions/invalid-class-scope.exception';
 import { UnknownElementException } from './errors/exceptions/unknown-element.exception';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
 import { createContextId } from './helpers';
@@ -291,10 +292,11 @@ export class NestApplicationContext implements INestApplicationContext {
         contextModule,
       );
     }
+    if (wrapper.isDependencyTreeStatic() && !wrapper.isTransient) {
+      throw new InvalidClassScopeException(typeOrToken);
+    }
 
-    const ctorHost = wrapper.instance
-      ? wrapper.instance
-      : { constructor: typeOrToken };
+    const ctorHost = wrapper.instance || { constructor: typeOrToken };
     const instance = await this.injector.loadPerContext(
       ctorHost,
       wrapper.host,
