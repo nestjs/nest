@@ -84,8 +84,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://www.codeguesser.co.uk" target="_blank"><img src="https://nestjs.com/img/codeguesser-logo.svg" width="120" valign="middle" /></a> </td><td align="center" valign="middle">
 <a href="https://tekhattan.com" target="_blank"><img src="https://nestjs.com/img/tekhattan-logo.png" width="110" valign="middle" /></a> </td><td align="center" valign="middle">
 <a href="https://f-a.nz/" target="_blank"><img src="https://nestjs.com/img/franz.svg" width="80" valign="middle" /></a> </td><td align="center" valign="middle">
-<a href="https://sparkfabrik.com/" target="_blank"><img src="https://nestjs.com/img/sparkfabrik-logo.png" width="120" valign="middle" /></a></td></tr></table>
-
+<a href="https://sparkfabrik.com/" target="_blank"><img src="https://nestjs.com/img/sparkfabrik-logo.png" width="120" valign="middle" /></a></td><td align="center" valign="middle"><a href="https://www.thebigphonestore.co.uk/" target="_blank"><img src="https://nestjs.com/img/the-big-phone-store-logo.png" width="70" valign="middle" /></a></td></tr></table>
 
 ## Backers
 
