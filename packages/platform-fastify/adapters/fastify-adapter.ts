@@ -54,6 +54,11 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
   }
 
   public status(response: any, statusCode: number) {
+    const isNativeResponse = typeof response.code !== 'function';
+    if (isNativeResponse) {
+      response.statusCode = statusCode;
+      return response;
+    }
     return response.code(statusCode);
   }
 
