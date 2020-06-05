@@ -126,12 +126,13 @@ describe('ServerNats', () => {
       });
 
       const callerSubject = 'subject';
-      const natsContext = new NatsContext([callerSubject]);
+      const replyTo = 'message-id';
+      const natsContext = new NatsContext([callerSubject, replyTo]);
       server.handleMessage(
         channel,
         { pattern: '', data, id: '2' },
         null,
-        '',
+        replyTo,
         callerSubject,
       );
       expect(handler.calledWith(data, natsContext)).to.be.true;

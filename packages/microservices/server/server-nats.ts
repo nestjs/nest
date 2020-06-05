@@ -93,7 +93,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     replyTo: string,
     callerSubject: string,
   ) {
-    const natsCtx = new NatsContext([callerSubject]);
+    const natsCtx = new NatsContext([callerSubject, replyTo]);
     const message = this.deserializer.deserialize(rawMessage, {
       channel,
       replyTo,
