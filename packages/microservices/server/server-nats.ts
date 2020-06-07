@@ -72,9 +72,9 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   public createNatsClient(): Client {
     const options = this.options || ({} as NatsOptions);
     return natsPackage.connect({
+      json: true,
       ...options,
       url: this.url,
-      json: true,
     });
   }
 

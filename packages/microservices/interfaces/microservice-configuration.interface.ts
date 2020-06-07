@@ -103,6 +103,7 @@ export interface NatsOptions {
     name?: string;
     user?: string;
     pass?: string;
+    json?: boolean;
     maxReconnectAttempts?: number;
     reconnectTimeWait?: number;
     servers?: string[];
