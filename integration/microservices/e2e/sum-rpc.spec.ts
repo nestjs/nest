@@ -50,6 +50,20 @@ describe('RPC transport', () => {
       .expect(200, '15');
   });
 
+  it(`/POST (useFactory client)`, () => {
+    return request(server)
+      .post('/useFactory?command=sum')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, '15');
+  });
+
+  it(`/POST (useClass client)`, () => {
+    return request(server)
+      .post('/useClass?command=sum')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, '15');
+  });
+
   it(`/POST (concurrent)`, () => {
     return request(server)
       .post('/concurrent')
