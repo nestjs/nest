@@ -84,6 +84,7 @@ export interface RedisOptions {
     retryDelay?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    authPass?: string;
   };
 }
 

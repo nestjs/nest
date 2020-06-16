@@ -24,6 +24,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.REDIS;
 
   private readonly url: string;
+  private readonly authPass: string;
   private subClient: RedisClient;
   private pubClient: RedisClient;
   private isExplicitlyTerminated = false;
@@ -31,6 +32,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   constructor(private readonly options: RedisOptions['options']) {
     super();
     this.url = this.getOptionsProp(this.options, 'url') || REDIS_DEFAULT_URL;
+    this.authPass = this.getOptionsProp(this.options, 'authPass') || null;
 
     redisPackage = this.loadPackage('redis', ServerRedis.name, () =>
       require('redis'),
@@ -75,6 +77,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     return redisPackage.createClient({
       ...this.getClientOptions(),
       url: this.url,
+      ...(this.authPass && { auth_pass: this.authPass }),
     });
   }
 
