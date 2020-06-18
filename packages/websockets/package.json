@@ -12,7 +12,7 @@
     "access": "public"
   },
   "dependencies": {
-    "iterare": "1.2.0",
+    "iterare": "1.2.1",
     "tslib": "2.0.0"
   },
   "devDependencies": {
