@@ -98,6 +98,9 @@ export abstract class ModuleRef {
         contextModule,
       );
     }
+    if (wrapper.isDependencyTreeStatic() && !wrapper.isTransient) {
+      return this.get(typeOrToken);
+    }
 
     const ctorHost = wrapper.instance || { constructor: typeOrToken };
     const instance = await this.injector.loadPerContext(
