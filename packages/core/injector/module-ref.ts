@@ -1,5 +1,4 @@
 import { Type } from '@nestjs/common';
-import { InvalidClassScopeException } from '../errors/exceptions/invalid-class-scope.exception';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
 import { getClassScope } from '../helpers/get-class-scope';
 import { NestContainer } from './container';
@@ -98,9 +97,6 @@ export abstract class ModuleRef {
         typeOrToken,
         contextModule,
       );
-    }
-    if (wrapper.isDependencyTreeStatic() && !wrapper.isTransient) {
-      throw new InvalidClassScopeException(typeOrToken);
     }
 
     const ctorHost = wrapper.instance || { constructor: typeOrToken };
