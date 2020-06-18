@@ -93,11 +93,18 @@ export class ClientKafka extends ClientProxy {
       return this.producer;
     }
     this.client = this.createClient();
+
+    const partitionAssigners = [
+      (
+        config: ConstructorParameters<
+          typeof KafkaRoundRobinPartitionAssigner
+        >[0],
+      ) => new KafkaRoundRobinPartitionAssigner(config),
+    ] as any[];
+
     const consumerOptions = Object.assign(
       {
-        partitionAssigners: [
-          (config: any) => new KafkaRoundRobinPartitionAssigner(config),
-        ],
+        partitionAssigners,
       },
       this.options.consumer || {},
       {
