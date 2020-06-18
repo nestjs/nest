@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Inject, Injectable } from '../decorators/core';
+import { Inject, Injectable, Optional } from '../decorators/core';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
 import { loadPackage } from '../utils/load-package.util';
 import { isObject } from '../utils/shared.utils';
@@ -20,7 +20,9 @@ const REFLECTOR = 'Reflector';
 
 @Injectable()
 export class ClassSerializerInterceptor implements NestInterceptor {
-  constructor(@Inject(REFLECTOR) protected readonly reflector: any) {
+  constructor(
+    @Inject(REFLECTOR) protected readonly reflector: any,
+    @Optional() protected readonly defaultOptions: ClassTransformOptions = {}) {
     classTransformer = loadPackage(
       'class-transformer',
       'ClassSerializerInterceptor',
@@ -30,7 +32,11 @@ export class ClassSerializerInterceptor implements NestInterceptor {
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const options = this.getContextOptions(context);
+    const contextOptions = this.getContextOptions(context);
+    const options = {
+      ...this.defaultOptions,
+      ...contextOptions
+    }
     return next
       .handle()
       .pipe(
