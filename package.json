@@ -87,7 +87,7 @@
     "@types/fastify-cors": "2.1.0",
     "@types/gulp": "4.0.6",
     "@types/mocha": "7.0.2",
-    "@types/mongoose": "5.7.26",
+    "@types/mongoose": "5.7.27",
     "@types/node": "10.17.3",
     "@types/redis": "2.8.22",
     "@types/reflect-metadata": "0.0.5",
