@@ -7,6 +7,7 @@ import {
   ProducerConfig,
 } from '../external/kafka-options.interface';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
+import { ClientOpts } from '../external/redis.interface';
 import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
@@ -84,7 +85,7 @@ export interface RedisOptions {
     retryDelay?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
-  };
+  } & ClientOpts;
 }
 
 export interface MqttOptions {

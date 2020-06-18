@@ -117,7 +117,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     await consumer.run(consumerRunOptions);
   }
 
-  public getMessageHandler(): Function {
+  public getMessageHandler() {
     return async (payload: EachMessagePayload) => this.handleMessage(payload);
   }
 

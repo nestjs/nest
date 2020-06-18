@@ -152,7 +152,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   public getClientOptions(): Partial<ClientOpts> {
     const retry_strategy = (options: RetryStrategyOptions) =>
       this.createRetryStrategy(options);
+
     return {
+      ...(this.options || {}),
       retry_strategy,
     };
   }
