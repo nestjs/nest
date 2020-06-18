@@ -5,13 +5,6 @@
     {
       "depTypeList": ["devDependencies"],
       "automerge": true
-    },
-    {
-      "packagePatterns": ["*"],
-      "minor": {
-        "groupName": "all non-major dependencies",
-        "groupSlug": "all-minor-patch"
-      }
     }
   ],
   "schedule": ["every weekday"]

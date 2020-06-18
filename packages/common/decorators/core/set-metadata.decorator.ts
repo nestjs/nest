@@ -9,7 +9,7 @@ export type CustomDecorator<TKey = string> = MethodDecorator &
  *
  * Requires two parameters:
  * - `key` - a value defining the key under which the metadata is stored
- * - `value[]` - array of metadata values to be associated with `key`
+ * - `value` - metadata to be associated with `key`
  *
  * This metadata can be reflected using the `Reflector` class.
  *

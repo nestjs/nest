@@ -400,9 +400,9 @@ export class Module {
       .map(({ name }) => name)
       .toArray();
 
-    if (!importsNames.includes(token as any)) {
+    if (!importsNames.includes(token as string)) {
       const { name } = this.metatype;
-      throw new UnknownExportException(token as any, name);
+      throw new UnknownExportException(token, name);
     }
     return token;
   }

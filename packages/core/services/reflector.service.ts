@@ -1,5 +1,5 @@
 import { Type } from '@nestjs/common';
-import { isObject } from '@nestjs/common/utils/shared.utils';
+import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
 
 /**
  * Helper class providing Nest reflection capabilities.
@@ -53,7 +53,14 @@ export class Reflector {
     metadataKey: TKey,
     targets: (Type<any> | Function)[],
   ): TResult {
-    const metadataCollection = this.getAll(metadataKey, targets);
+    const metadataCollection = this.getAll<TResult, TKey>(
+      metadataKey,
+      targets,
+    ).filter(item => item !== undefined);
+
+    if (isEmpty(metadataCollection)) {
+      return metadataCollection as TResult;
+    }
     return metadataCollection.reduce((a, b) => {
       if (Array.isArray(a)) {
         return a.concat(b);
