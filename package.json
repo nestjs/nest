@@ -133,7 +133,7 @@
     "gulp-typescript": "5.0.1",
     "gulp-watch": "5.0.1",
     "husky": "4.2.5",
-    "imports-loader": "1.0.0",
+    "imports-loader": "1.1.0",
     "json-loader": "0.5.7",
     "kafkajs": "1.12.0",
     "lerna": "2.11.0",
