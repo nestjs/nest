@@ -99,7 +99,7 @@
     "amqp-connection-manager": "3.2.0",
     "amqplib": "0.5.6",
     "apollo-server-express": "2.15.0",
-    "artillery": "1.6.0",
+    "artillery": "1.6.1",
     "awesome-typescript-loader": "5.2.1",
     "body-parser": "1.19.0",
     "bytes": "3.1.0",
