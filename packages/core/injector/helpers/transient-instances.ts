@@ -1,6 +1,5 @@
 import { iterate } from 'iterare';
-
-import { InstanceWrapper } from './instance-wrapper';
+import { InstanceWrapper } from '../instance-wrapper';
 
 /**
  * Returns the instances which are transient
