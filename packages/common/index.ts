@@ -32,6 +32,7 @@ export {
   INestMicroservice,
   IntrospectionResult,
   MiddlewareConsumer,
+  ModuleMetadata,
   NestApplicationOptions,
   NestHybridApplicationOptions,
   NestInterceptor,
