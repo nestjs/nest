@@ -26,7 +26,7 @@
     "point-of-view": "3.8.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "6.5.5"
+    "rxjs": "6.6.0"
   },
   "devDependencies": {
     "@types/socket.io": "2.1.8",

@@ -26,7 +26,7 @@
     "class-validator": "0.12.2",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "6.5.5"
+    "rxjs": "6.6.0"
   },
   "devDependencies": {
     "@nestjs/cli": "7.4.1",
