@@ -141,7 +141,7 @@
     "markdown-table": "2.0.0",
     "merge-graphql-schemas": "1.7.8",
     "mocha": "8.0.1",
-    "mongoose": "5.9.20",
+    "mongoose": "5.9.21",
     "mqtt": "4.1.0",
     "multer": "1.4.2",
     "mysql": "2.18.1",
