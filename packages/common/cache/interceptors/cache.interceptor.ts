@@ -45,7 +45,7 @@ export class CacheInterceptor implements NestInterceptor {
     }
     try {
       const value = await this.cacheManager.get(key);
-      if (typeof value !== 'undefined') {
+      if (!isNil(value)) {
         return of(value);
       }
 
