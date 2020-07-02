@@ -19,13 +19,13 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.1.1",
     "@grpc/proto-loader": "0.5.4",
     "@nestjs/common": "7.2.0",
     "@nestjs/core": "7.2.0",
     "@nestjs/microservices": "7.2.0",
     "class-transformer": "0.2.3",
     "class-validator": "0.12.2",
-    "grpc": "1.24.3",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "6.6.0"
