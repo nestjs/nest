@@ -479,7 +479,7 @@ export class Module {
     return [...this._providers].filter(([_, wrapper]) => !wrapper.isAlias);
   }
 
-  public createModuleReferenceType(): any {
+  public createModuleReferenceType(): Type<ModuleRef> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return class extends ModuleRef {
@@ -491,10 +491,9 @@ export class Module {
         typeOrToken: Type<TInput> | string | symbol,
         options: { strict: boolean } = { strict: true },
       ): TResult {
-        if (!(options && options.strict)) {
-          return this.find<TInput, TResult>(typeOrToken);
-        }
-        return this.findInstanceByToken<TInput, TResult>(typeOrToken, self);
+        return !(options && options.strict)
+          ? this.find<TInput, TResult>(typeOrToken)
+          : this.find<TInput, TResult>(typeOrToken, self);
       }
 
       public resolve<TInput = any, TResult = TInput>(

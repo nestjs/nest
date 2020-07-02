@@ -4,11 +4,12 @@ import {
   LoggerService,
   ShutdownSignal,
 } from '@nestjs/common';
-import { Abstract } from '@nestjs/common/interfaces';
+import { Abstract, Scope } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { MESSAGES } from './constants';
+import { InvalidClassScopeException } from './errors/exceptions/invalid-class-scope.exception';
 import { UnknownElementException } from './errors/exceptions/unknown-element.exception';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
 import { createContextId } from './helpers';
@@ -21,9 +22,8 @@ import {
 } from './hooks';
 import { ContextId } from './injector';
 import { NestContainer } from './injector/container';
-import { ContainerScanner } from './injector/container-scanner';
 import { Injector } from './injector/injector';
-import { InstanceWrapper } from './injector/instance-wrapper';
+import { InstanceLinksHost } from './injector/instance-links-host';
 import { Module } from './injector/module';
 
 /**
@@ -34,15 +34,20 @@ export class NestApplicationContext implements INestApplicationContext {
   protected readonly injector = new Injector();
   private shutdownCleanupRef?: (...args: unknown[]) => unknown;
   private readonly activeShutdownSignals = new Array<string>();
-  private readonly containerScanner: ContainerScanner;
+  private _instanceLinksHost: InstanceLinksHost;
+
+  private get instanceLinksHost() {
+    if (!this._instanceLinksHost) {
+      this._instanceLinksHost = new InstanceLinksHost(this.container);
+    }
+    return this._instanceLinksHost;
+  }
 
   constructor(
     protected readonly container: NestContainer,
     private readonly scope = new Array<Type<any>>(),
     private contextModule: Module = null,
-  ) {
-    this.containerScanner = new ContainerScanner(container);
-  }
+  ) {}
 
   public selectContextModule() {
     const modules = this.container.getModules().values();
@@ -67,13 +72,9 @@ export class NestApplicationContext implements INestApplicationContext {
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     options: { strict: boolean } = { strict: false },
   ): TResult {
-    if (!(options && options.strict)) {
-      return this.find<TInput, TResult>(typeOrToken);
-    }
-    return this.findInstanceByToken<TInput, TResult>(
-      typeOrToken,
-      this.contextModule,
-    );
+    return !(options && options.strict)
+      ? this.find<TInput, TResult>(typeOrToken)
+      : this.find<TInput, TResult>(typeOrToken, this.contextModule);
   }
 
   public resolve<TInput = any, TResult = TInput>(
@@ -87,6 +88,10 @@ export class NestApplicationContext implements INestApplicationContext {
       contextId,
       options,
     );
+  }
+
+  public registerRequestByContextId<T = any>(request: T, contextId: ContextId) {
+    this.container.registerRequestProvider(request, contextId);
   }
 
   /**
@@ -111,7 +116,7 @@ export class NestApplicationContext implements INestApplicationContext {
     await this.callBeforeShutdownHook();
     await this.dispose();
     await this.callShutdownHook();
-    await this.unsubscribeFromProcessSignals();
+    this.unsubscribeFromProcessSignals();
   }
 
   public useLogger(logger: LoggerService) {
@@ -255,18 +260,20 @@ export class NestApplicationContext implements INestApplicationContext {
 
   protected find<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
+    contextModule?: Module,
   ): TResult {
-    return this.containerScanner.find<TInput, TResult>(typeOrToken);
-  }
-
-  protected findInstanceByToken<TInput = any, TResult = TInput>(
-    metatypeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
-    contextModule: Partial<Module>,
-  ): TResult {
-    return this.containerScanner.findInstanceByToken<TInput, TResult>(
-      metatypeOrToken,
-      contextModule,
+    const moduleId = contextModule && contextModule.id;
+    const { wrapperRef } = this.instanceLinksHost.get<TResult>(
+      typeOrToken,
+      moduleId,
     );
+    if (
+      wrapperRef.scope === Scope.REQUEST ||
+      wrapperRef.scope === Scope.TRANSIENT
+    ) {
+      throw new InvalidClassScopeException(typeOrToken);
+    }
+    return wrapperRef.instance;
   }
 
   protected async resolvePerContext<TInput = any, TResult = TInput>(
@@ -275,30 +282,20 @@ export class NestApplicationContext implements INestApplicationContext {
     contextId: ContextId,
     options?: { strict: boolean },
   ): Promise<TResult> {
-    let wrapper: InstanceWrapper, collection: Map<string, InstanceWrapper>;
-
     const isStrictModeEnabled = options && options.strict;
-    if (!isStrictModeEnabled) {
-      [wrapper, collection] = this.containerScanner.getWrapperCollectionPair(
-        typeOrToken,
-      );
-    } else {
-      [
-        wrapper,
-        collection,
-      ] = this.containerScanner.getWrapperCollectionPairByHost(
-        typeOrToken,
-        contextModule,
-      );
-    }
-    if (wrapper.isDependencyTreeStatic() && !wrapper.isTransient) {
+    const instanceLink = isStrictModeEnabled
+      ? this.instanceLinksHost.get(typeOrToken, contextModule.id)
+      : this.instanceLinksHost.get(typeOrToken);
+
+    const { wrapperRef, collection } = instanceLink;
+    if (wrapperRef.isDependencyTreeStatic() && !wrapperRef.isTransient) {
       return this.get(typeOrToken);
     }
 
-    const ctorHost = wrapper.instance || { constructor: typeOrToken };
+    const ctorHost = wrapperRef.instance || { constructor: typeOrToken };
     const instance = await this.injector.loadPerContext(
       ctorHost,
-      wrapper.host,
+      wrapperRef.host,
       collection,
       contextId,
     );

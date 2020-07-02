@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Inject,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   Client,
   ClientProxy,
@@ -11,6 +18,10 @@ import { scan } from 'rxjs/operators';
 
 @Controller()
 export class AppController {
+  constructor(
+    @Inject('USE_CLASS_CLIENT') private useClassClient: ClientProxy,
+    @Inject('USE_FACTORY_CLIENT') private useFactoryClient: ClientProxy,
+  ) {}
   static IS_NOTIFIED = false;
 
   @Client({ transport: Transport.TCP })
@@ -20,6 +31,24 @@ export class AppController {
   @HttpCode(200)
   call(@Query('command') cmd, @Body() data: number[]): Observable<number> {
     return this.client.send<number>({ cmd }, data);
+  }
+
+  @Post('useFactory')
+  @HttpCode(200)
+  callWithClientUseFactory(
+    @Query('command') cmd,
+    @Body() data: number[],
+  ): Observable<number> {
+    return this.useFactoryClient.send<number>({ cmd }, data);
+  }
+
+  @Post('useClass')
+  @HttpCode(200)
+  callWithClientUseClass(
+    @Query('command') cmd,
+    @Body() data: number[],
+  ): Observable<number> {
+    return this.useClassClient.send<number>({ cmd }, data);
   }
 
   @Post('stream')

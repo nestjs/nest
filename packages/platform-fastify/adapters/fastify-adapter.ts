@@ -101,8 +101,16 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     return this.instance.inject(...args);
   }
 
-  public close() {
-    return this.instance.close();
+  public async close() {
+    try {
+      return await this.instance.close();
+    } catch (err) {
+      // Check if server is still running
+      if (err.code !== 'ERR_SERVER_NOT_RUNNING') {
+        throw err;
+      }
+      return;
+    }
   }
 
   public initHttpServer(options: NestApplicationOptions) {
