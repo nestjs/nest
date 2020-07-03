@@ -159,7 +159,7 @@
     "ts-morph": "7.1.2",
     "ts-node": "8.10.2",
     "typeorm": "0.2.25",
-    "typescript": "3.9.5",
+    "typescript": "3.9.6",
     "wrk": "1.2.0",
     "ws": "7.3.0"
   },
