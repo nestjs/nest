@@ -29,7 +29,7 @@
     "rimraf": "3.0.2",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.6.0",
-    "ws": "7.3.0"
+    "ws": "7.3.1"
   },
   "devDependencies": {
     "@types/ws": "7.2.6",
