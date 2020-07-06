@@ -31,6 +31,7 @@ export class ClientRMQ extends ClientProxy {
   protected queue: string;
   protected queueOptions: any;
   protected responseEmitter: EventEmitter;
+  protected replyQueue: string;
 
   constructor(protected readonly options: RmqOptions['options']) {
     super();
@@ -40,7 +41,8 @@ export class ClientRMQ extends ClientProxy {
     this.queueOptions =
       this.getOptionsProp(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
-
+    this.replyQueue =
+      this.getOptionsProp(this.options, 'replyQueue') || REPLY_QUEUE;
     loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
     rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
       require('amqp-connection-manager'),
@@ -61,7 +63,7 @@ export class ClientRMQ extends ClientProxy {
     const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
     this.channel.addSetup((channel: any) =>
       channel.consume(
-        REPLY_QUEUE,
+        this.replyQueue,
         (msg: any) =>
           this.responseEmitter.emit(msg.properties.correlationId, msg),
         {
@@ -183,7 +185,7 @@ export class ClientRMQ extends ClientProxy {
         this.queue,
         Buffer.from(JSON.stringify(serializedPacket)),
         {
-          replyTo: REPLY_QUEUE,
+          replyTo: this.replyQueue,
           correlationId,
         },
       );
