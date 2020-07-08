@@ -30,6 +30,6 @@
     "ts-node": "8.10.2",
     "webpack": "4.43.0",
     "webpack-cli": "3.3.12",
-    "webpack-node-externals": "1.7.2"
+    "webpack-node-externals": "2.3.0"
   }
 }
