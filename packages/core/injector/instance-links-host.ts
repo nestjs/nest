@@ -33,7 +33,7 @@ export class InstanceLinksHost {
     }
     const instanceLink = moduleId
       ? modulesMap.find(item => item.moduleId === moduleId)
-      : modulesMap[0];
+      : modulesMap[modulesMap.length - 1];
 
     if (!instanceLink) {
       throw new UnknownElementException(name);
