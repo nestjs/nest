@@ -14,7 +14,10 @@ export class DefaultValuePipe<T = any, R = any>
   constructor(private readonly defaultValue: R) {}
 
   transform(value?: T, _metadata?: ArgumentMetadata): T | R {
-    if (isNil(value)) {
+    if (
+      isNil(value) ||
+      (typeof value === 'number' && isNaN((value as unknown) as number))
+    ) {
       return this.defaultValue;
     }
     return value;
