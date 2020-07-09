@@ -3,13 +3,17 @@ import {
   INestApplication,
   INestMicroservice,
   Logger,
+  NestApplicationOptions,
+  Type,
 } from '@nestjs/common';
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import { Type } from '@nestjs/common/interfaces/type.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { NestApplication, NestApplicationContext } from '@nestjs/core';
+import {
+  AbstractHttpAdapter,
+  NestApplication,
+  NestApplicationContext,
+} from '@nestjs/core';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Module } from '@nestjs/core/injector/module';
@@ -25,7 +29,7 @@ export class TestingModule extends NestApplicationContext {
   }
 
   public createNestApplication<T extends INestApplication = INestApplication>(
-    httpAdapter?: HttpServer,
+    httpAdapter?: HttpServer | AbstractHttpAdapter,
     options?: NestApplicationOptions,
   ): T {
     httpAdapter = httpAdapter || this.createHttpAdapter();
@@ -58,7 +62,7 @@ export class TestingModule extends NestApplicationContext {
     );
   }
 
-  private createHttpAdapter<T = any>(httpServer?: T): HttpServer {
+  private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
     const { ExpressAdapter } = loadPackage(
       '@nestjs/platform-express',
       'NestFactory',

@@ -128,6 +128,7 @@ export interface RmqOptions {
     noAck?: boolean;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    replyQueue?: string;
   };
 }
 
