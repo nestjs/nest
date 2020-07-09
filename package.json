@@ -74,7 +74,7 @@
     "@commitlint/cli": "9.0.1",
     "@commitlint/config-angular": "9.0.1",
     "@grpc/proto-loader": "0.5.4",
-    "@nestjs/graphql": "7.5.1",
+    "@nestjs/graphql": "7.5.3",
     "@nestjs/mongoose": "7.0.2",
     "@nestjs/typeorm": "7.1.0",
     "@types/amqplib": "0.5.13",
