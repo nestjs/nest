@@ -45,7 +45,9 @@ export class FastifyAdapter<
   >;
 
   constructor(
-    instanceOrOptions: FastifyInstance<TServer> | FastifyServerOptions<TServer>,
+    instanceOrOptions:
+      | FastifyInstance<TServer>
+      | FastifyServerOptions<TServer> = fastify() as any,
   ) {
     const instance =
       instanceOrOptions &&
