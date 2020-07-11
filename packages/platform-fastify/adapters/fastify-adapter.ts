@@ -16,14 +16,40 @@ import {
   RawServerBase,
   RawServerDefault,
   RequestGenericInterface,
+  FastifyLoggerInstance,
 } from 'fastify';
-import cors from 'fastify-cors';
-import formBody from 'fastify-formbody';
+import * as cors from 'fastify-cors';
+import * as formBodyPlugin from 'fastify-formbody';
 import { FastifyStaticOptions } from 'fastify-static';
 import { Reply } from 'fastify/lib/reply';
 import { InjectOptions } from 'light-my-request';
 import { PointOfViewOptions } from 'point-of-view';
 import * as pathToRegexp from 'path-to-regexp';
+import * as http2 from 'http2';
+import * as https from 'https';
+
+type FastifyHttp2SecureOptions<
+  Server extends http2.Http2SecureServer,
+  Logger extends FastifyLoggerInstance = FastifyLoggerInstance
+> = FastifyServerOptions<Server, Logger> & {
+  http2: true;
+  https: http2.SecureServerOptions;
+};
+
+type FastifyHttp2Options<
+  Server extends http2.Http2Server,
+  Logger extends FastifyLoggerInstance = FastifyLoggerInstance
+> = FastifyServerOptions<Server, Logger> & {
+  http2: true;
+  http2SessionTimeout?: number;
+};
+
+type FastifyHttpsOptions<
+  Server extends https.Server,
+  Logger extends FastifyLoggerInstance = FastifyLoggerInstance
+> = FastifyServerOptions<Server, Logger> & {
+  https: https.ServerOptions;
+};
 
 export class FastifyAdapter<
   TServer extends RawServerBase = RawServerDefault,
@@ -47,7 +73,13 @@ export class FastifyAdapter<
   constructor(
     instanceOrOptions:
       | FastifyInstance<TServer>
-      | FastifyServerOptions<TServer> = fastify() as any,
+      | (TServer extends http2.Http2Server
+          ? FastifyHttp2Options<TServer>
+          : TServer extends http2.Http2SecureServer
+          ? FastifyHttp2SecureOptions<TServer>
+          : TServer extends https.Server
+          ? FastifyHttpsOptions<TServer>
+          : FastifyServerOptions<TServer>) = fastify() as any,
   ) {
     const instance =
       instanceOrOptions &&
@@ -209,11 +241,19 @@ export class FastifyAdapter<
   }
 
   public enableCors(options: CorsOptions) {
-    this.register(cors, options);
+    this.register(
+      loadPackage('fastify-cors', 'FastifyAdapter.enableCors()'),
+      options,
+    );
   }
 
   public registerParserMiddleware() {
-    this.register(formBody);
+    this.register(
+      loadPackage(
+        'fastify-formbody',
+        'FastifyAdapter.registerParserMiddleware()',
+      ),
+    );
   }
 
   public createMiddlewareFactory(
