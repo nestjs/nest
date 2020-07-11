@@ -20,6 +20,7 @@
     "fastify": "3.0.1",
     "fastify-cors": "4.0.0",
     "fastify-formbody": "4.0.3",
+    "fastify-express": "0.1.0",
     "path-to-regexp": "3.2.0",
     "tslib": "2.0.0"
   },
