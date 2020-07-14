@@ -29,7 +29,7 @@ export interface CustomStrategy {
 }
 
 export interface GrpcOptions {
-  transport?: Transport.GRPC;
+  transport: Transport.GRPC;
   options: {
     url?: string;
     maxSendMessageLength?: number;
