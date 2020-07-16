@@ -2,7 +2,7 @@ import { ClientOptions } from '../../interfaces';
 import { Type, Provider, ModuleMetadata } from '@nestjs/common/interfaces';
 
 export type ClientProviderOptions = ClientOptions & {
-  name: string;
+  name: string | Symbol;
 };
 
 export type ClientsModuleOptions = Array<ClientProviderOptions>;
