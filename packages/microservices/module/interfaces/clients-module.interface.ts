@@ -18,7 +18,7 @@ export interface ClientsProviderAsyncOptions
   useFactory?: (...args: any[]) => Promise<ClientOptions> | ClientOptions;
   inject?: any[];
   extraProviders?: Provider[];
-  name: string;
+  name: string | symbol;
 }
 
 export type ClientsModuleAsyncOptions = Array<ClientsProviderAsyncOptions>;
