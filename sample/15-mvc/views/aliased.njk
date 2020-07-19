@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>App</title>
+</head>
+
+<body>
+  <h1>{{ message }}</h1>
+  <div>
+    <a href="{{ getUrl('aliased') }}">Aliased 'aliased' to {{ getUrl('aliased') }}</a>
+  </div>
+  <div>
+    <a href="{{ getUrl('aliased_id', { id: 5 }) }}">Aliased 'aliased_id' With ID: {{ getUrl('aliased_id', { id: 5 }) }}</a>
+  </div>
+</body>
+
+</html>

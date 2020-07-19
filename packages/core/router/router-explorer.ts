@@ -1,5 +1,5 @@
 import { HttpServer } from '@nestjs/common';
-import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import { METHOD_METADATA, PATH_METADATA, ROUTE_ALIAS_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { InternalServerErrorException } from '@nestjs/common/exceptions';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
@@ -40,6 +40,7 @@ export interface RoutePathProperties {
   requestMethod: RequestMethod;
   targetCallback: RouterProxyCallback;
   methodName: string;
+  routeAlias?: string | Symbol;
 }
 
 export class RouterExplorer {
@@ -133,6 +134,10 @@ export class RouterExplorer {
       METHOD_METADATA,
       targetCallback,
     );
+    const routeAlias: string | Symbol = Reflect.getMetadata(
+      ROUTE_ALIAS_METADATA,
+      targetCallback,
+    );
     const path = isString(routePath)
       ? [this.validateRoutePath(routePath)]
       : routePath.map(p => this.validateRoutePath(p));
@@ -141,6 +146,7 @@ export class RouterExplorer {
       requestMethod,
       targetCallback,
       methodName,
+      routeAlias,
     };
   }
 
@@ -153,7 +159,7 @@ export class RouterExplorer {
     host: string,
   ) {
     (routePaths || []).forEach(pathProperties => {
-      const { path, requestMethod } = pathProperties;
+      const { path, requestMethod, routeAlias } = pathProperties;
       this.applyCallbackToRouter(
         router,
         pathProperties,
@@ -162,6 +168,7 @@ export class RouterExplorer {
         basePath,
         host,
       );
+      routeAlias && this.executionContextCreator.registerAlias(routeAlias, basePath, path);
       path.forEach(item => {
         const pathStr = this.stripEndSlash(basePath) + this.stripEndSlash(item);
         this.logger.log(ROUTE_MAPPED_MESSAGE(pathStr, requestMethod));

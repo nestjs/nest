@@ -38,6 +38,7 @@ import {
   RedirectResponse,
   RouterResponseController,
 } from './router-response-controller';
+import { RouteAliasResolver } from './route-alias-resolver';
 
 export interface ParamProperties {
   index: number;
@@ -55,6 +56,7 @@ export class RouterExecutionContext {
   private readonly handlerMetadataStorage = new HandlerMetadataStorage();
   private readonly contextUtils = new ContextUtils();
   private readonly responseController: RouterResponseController;
+  private readonly aliasResolver: RouteAliasResolver;
 
   constructor(
     private readonly paramsFactory: IRouteParamsFactory,
@@ -67,6 +69,7 @@ export class RouterExecutionContext {
     readonly applicationRef: HttpServer,
   ) {
     this.responseController = new RouterResponseController(applicationRef);
+    this.aliasResolver = new RouteAliasResolver();
   }
 
   public create(
@@ -162,6 +165,11 @@ export class RouterExecutionContext {
       );
       await fnHandleResponse(result, res);
     };
+  }
+
+  public bindResponseLocals(response) {
+    response.locals = response.locals || {};
+    response.locals.getUrl = this.aliasResolver.createResolveFn()
   }
 
   public getMetadata<TContext extends ContextType = ContextType>(
@@ -263,6 +271,14 @@ export class RouterExecutionContext {
     callback: (...args: unknown[]) => unknown,
   ): CustomHeader[] {
     return Reflect.getMetadata(HEADERS_METADATA, callback) || [];
+  }
+
+  public registerAlias(
+    alias: string | Symbol,
+    basePath: string,
+    path: string[]
+  ): void {
+    this.aliasResolver.register(alias, basePath, path);
   }
 
   public exchangeKeysForValues(
@@ -402,6 +418,7 @@ export class RouterExecutionContext {
     const renderTemplate = this.reflectRenderTemplate(callback);
     if (renderTemplate) {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
+        this.bindResponseLocals(res);
         await this.responseController.render(result, res, renderTemplate);
       };
     }

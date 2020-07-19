@@ -1,4 +1,4 @@
-import { Controller, Get, Header, Param } from '@nestjs/common';
+import { Controller, Get, Header, Param, Render, WithAlias } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import { HelloService } from './hello.service';
 import { UserByIdPipe } from './users/user-by-id.pipe';
@@ -29,5 +29,25 @@ export class HelloController {
     user: any,
   ): any {
     return user;
+  }
+
+  @Get('mvc')
+  @Render('mvc')
+  mvc() {
+    return { message: 'Hello World!' }
+  }
+
+  @Get('mvc-alias')
+  @WithAlias('mvc')
+  @Render('mvc')
+  mvcAliased() {
+    return { message: 'Hello World!' }
+  }
+
+  @Get('mvc/:id')
+  @WithAlias('mvc-id')
+  @Render('mvc-id')
+  mvcAliasedWithId(@Param('id') id) {
+    return { message: 'Hello World!', id }
   }
 }
