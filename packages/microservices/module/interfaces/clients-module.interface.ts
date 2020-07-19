@@ -2,7 +2,7 @@ import { ClientOptions } from '../../interfaces';
 import { Type, Provider, ModuleMetadata } from '@nestjs/common/interfaces';
 
 export type ClientProviderOptions = ClientOptions & {
-  name: string;
+  name: string | symbol;
 };
 
 export type ClientsModuleOptions = Array<ClientProviderOptions>;
@@ -18,7 +18,7 @@ export interface ClientsProviderAsyncOptions
   useFactory?: (...args: any[]) => Promise<ClientOptions> | ClientOptions;
   inject?: any[];
   extraProviders?: Provider[];
-  name: string;
+  name: string | symbol;
 }
 
 export type ClientsModuleAsyncOptions = Array<ClientsProviderAsyncOptions>;

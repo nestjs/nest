@@ -23,7 +23,7 @@
     "@nestjs/common": "7.3.2",
     "@nestjs/core": "7.3.2",
     "@nestjs/platform-express": "7.3.2",
-    "bull": "3.15.0",
+    "bull": "3.16.0",
     "dotenv": "8.2.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
@@ -42,16 +42,16 @@
     "jest": "26.1.0",
     "prettier": "2.0.5",
     "supertest": "4.0.2",
-    "ts-jest": "26.1.1",
-    "ts-loader": "8.0.0",
+    "ts-jest": "26.1.3",
+    "ts-loader": "8.0.1",
     "ts-node": "8.10.2",
     "tsconfig-paths": "3.9.0",
-    "@typescript-eslint/eslint-plugin": "3.6.0",
-    "@typescript-eslint/parser": "3.6.0",
+    "@typescript-eslint/eslint-plugin": "3.6.1",
+    "@typescript-eslint/parser": "3.6.1",
     "eslint": "7.4.0",
     "eslint-config-prettier": "6.11.0",
     "eslint-plugin-import": "2.22.0",
-    "typescript": "3.9.6"
+    "typescript": "3.9.7"
   },
   "jest": {
     "moduleFileExtensions": [

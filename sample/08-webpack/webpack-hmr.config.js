@@ -9,7 +9,7 @@ module.exports = function(options) {
     watch: true,
     externals: [
       nodeExternals({
-        whitelist: ['webpack/hot/poll?100'],
+        allowlist: ['webpack/hot/poll?100'],
       }),
     ],
     plugins: [
