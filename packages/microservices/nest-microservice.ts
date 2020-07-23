@@ -115,14 +115,14 @@ export class NestMicroservice extends NestApplicationContext
   }
 
   public listen(callback: () => void) {
-    !this.isInitialized && this.registerModules();
-
-    this.logger.log(MESSAGES.MICROSERVICE_READY);
-    this.server.listen(callback);
+    this.listenAsync().then(callback);
   }
 
   public async listenAsync(): Promise<any> {
-    return new Promise(resolve => this.listen(resolve));
+    !this.isInitialized && (await this.registerModules());
+
+    this.logger.log(MESSAGES.MICROSERVICE_READY);
+    return await new Promise(resolve => this.server.listen(resolve));
   }
 
   public async close(): Promise<any> {
