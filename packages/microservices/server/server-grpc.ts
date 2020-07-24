@@ -3,6 +3,7 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { Metadata } from 'grpc';
 import { EMPTY, fromEvent, Subject } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import {
@@ -26,6 +27,7 @@ let grpcProtoLoaderPackage: any = {};
 interface GrpcCall<TRequest = any, TMetadata = any> {
   request: TRequest;
   metadata: TMetadata;
+  sendMetadata: Function;
   end: Function;
   write: Function;
   on: Function;
@@ -206,7 +208,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public createUnaryServiceMethod(methodHandler: Function): Function {
     return async (call: GrpcCall, callback: Function) => {
-      const handler = methodHandler(call.request, call.metadata);
+      const handler = methodHandler(call.request, call.metadata, (meta: Metadata) => call.sendMetadata(meta));
       this.transformToObservable(await handler).subscribe(
         data => callback(null, data),
         (err: any) => callback(err),
@@ -216,7 +218,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public createStreamServiceMethod(methodHandler: Function): Function {
     return async (call: GrpcCall, callback: Function) => {
-      const handler = methodHandler(call.request, call.metadata);
+      const handler = methodHandler(call.request, call.metadata, (meta: Metadata) => call.sendMetadata(meta));
       const result$ = this.transformToObservable(await handler);
       await result$
         .pipe(
@@ -254,7 +256,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       });
       call.on('end', () => req.complete());
 
-      const handler = methodHandler(req.asObservable(), call.metadata);
+      const handler = methodHandler(req.asObservable(), call.metadata, (meta: Metadata) => call.sendMetadata(meta));
       const res = this.transformToObservable(await handler);
       if (isResponseStream) {
         await res

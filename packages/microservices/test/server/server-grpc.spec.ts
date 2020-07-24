@@ -9,9 +9,14 @@ import { GrpcMethodStreamingType } from '../../index';
 import { ServerGrpc } from '../../server/server-grpc';
 
 class NoopLogger extends Logger {
-  log(message: any, context?: string): void {}
-  error(message: any, trace?: string, context?: string): void {}
-  warn(message: any, context?: string): void {}
+  log(message: any, context?: string): void {
+  }
+
+  error(message: any, trace?: string, context?: string): void {
+  }
+
+  warn(message: any, context?: string): void {
+  }
 }
 
 describe('ServerGrpc', () => {
@@ -454,11 +459,13 @@ describe('ServerGrpc', () => {
         metadata: {
           test: '123',
         },
+        sendMetadata: sinon.spy(),
       };
       fn(call as any, sinon.spy());
 
       expect(handler.called).to.be.true;
-      expect(handler.args[0][1]).to.eq(call.metadata);
+      expect(handler.args[0][1]).to.eql(call.metadata);
+      expect(handler.args[0][2]).to.be.an.instanceof(Function);
     });
     describe('when response is not a stream', () => {
       it('should call callback', async () => {
@@ -589,11 +596,15 @@ describe('ServerGrpc', () => {
   });
 
   describe('addHandler', () => {
-    const callback = () => {},
+    const callback = () => {
+      },
       pattern = { test: 'test pattern' };
 
     it(`should add handler`, () => {
-      sinon.stub(server as any, 'messageHandlers').value({ set() {} });
+      sinon.stub(server as any, 'messageHandlers').value({
+        set() {
+        },
+      });
 
       const messageHandlersSetSpy = sinon.spy(
         (server as any).messageHandlers,
