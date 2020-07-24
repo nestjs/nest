@@ -113,6 +113,11 @@ describe('Advanced GRPC transport', () => {
   it('GRPC Sending and receiving Stream from RX handler', async () => {
     const callHandler = client.sync();
 
+    // Get Set-Cookie from Metadata
+    callHandler.on('metadata', (metadata: GRPC.Metadata) => {
+      expect(metadata.get('Set-Cookie')[0]).to.eq('test_cookie=abcd')
+    });
+
     callHandler.on('data', (msg: number) => {
       // Do deep comparison (to.eql)
       expect(msg).to.eql({

@@ -9,6 +9,7 @@ import {
 } from '@nestjs/microservices';
 import { join } from 'path';
 import { Observable, of, ReplaySubject, Subject } from 'rxjs';
+import { Metadata } from 'grpc';
 
 @Controller()
 export class AdvancedGrpcController {
@@ -84,7 +85,12 @@ export class AdvancedGrpcController {
    * @param messages
    */
   @GrpcStreamMethod('orders.OrderService')
-  async sync(messages: Observable<any>): Promise<any> {
+  async sync(messages: Observable<any>, metadata: Metadata, sendMetadata: Function): Promise<any> {
+    // Set Set-Cookie from Metadata
+    const srvMetadata = new Metadata();
+    srvMetadata.add('Set-Cookie', 'test_cookie=abcd');
+    sendMetadata(srvMetadata);
+
     const s = new Subject();
     const o = s.asObservable();
     messages.subscribe(msg => {
