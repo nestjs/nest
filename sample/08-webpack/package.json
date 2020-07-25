@@ -20,9 +20,9 @@
   },
   "devDependencies": {
     "@types/node": "12.12.31",
-    "@typescript-eslint/eslint-plugin": "3.6.1",
-    "@typescript-eslint/parser": "3.6.1",
-    "eslint": "7.4.0",
+    "@typescript-eslint/eslint-plugin": "3.7.0",
+    "@typescript-eslint/parser": "3.7.0",
+    "eslint": "7.5.0",
     "eslint-config-prettier": "6.11.0",
     "eslint-plugin-import": "2.22.0",
     "start-server-webpack-plugin": "2.2.5",
