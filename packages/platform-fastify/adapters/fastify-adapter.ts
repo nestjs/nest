@@ -1,104 +1,191 @@
-import { HttpStatus, RequestMethod } from '@nestjs/common';
+import { HttpStatus, RequestMethod, Logger } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
-import * as fastify from 'fastify';
+import {
+  fastify,
+  FastifyInstance,
+  FastifyPlugin,
+  FastifyPluginOptions,
+  FastifyRegisterOptions,
+  FastifyReply,
+  FastifyRequest,
+  FastifyServerOptions,
+  RawReplyDefaultExpression,
+  RawRequestDefaultExpression,
+  RawServerBase,
+  RawServerDefault,
+  RequestGenericInterface,
+  FastifyLoggerInstance,
+} from 'fastify';
 import * as cors from 'fastify-cors';
-import * as formBody from 'fastify-formbody';
-import * as Reply from 'fastify/lib/reply';
+import * as formBodyPlugin from 'fastify-formbody';
+import { FastifyStaticOptions } from 'fastify-static';
+import { Reply } from 'fastify/lib/reply';
+import { InjectOptions } from 'light-my-request';
+import { PointOfViewOptions } from 'point-of-view';
 import * as pathToRegexp from 'path-to-regexp';
+import * as http2 from 'http2';
+import * as https from 'https';
 
-export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
+type FastifyHttp2SecureOptions<
+  Server extends http2.Http2SecureServer,
+  Logger extends FastifyLoggerInstance = FastifyLoggerInstance
+> = FastifyServerOptions<Server, Logger> & {
+  http2: true;
+  https: http2.SecureServerOptions;
+};
+
+type FastifyHttp2Options<
+  Server extends http2.Http2Server,
+  Logger extends FastifyLoggerInstance = FastifyLoggerInstance
+> = FastifyServerOptions<Server, Logger> & {
+  http2: true;
+  http2SessionTimeout?: number;
+};
+
+type FastifyHttpsOptions<
+  Server extends https.Server,
+  Logger extends FastifyLoggerInstance = FastifyLoggerInstance
+> = FastifyServerOptions<Server, Logger> & {
+  https: https.ServerOptions;
+};
+
+export class FastifyAdapter<
+  TServer extends RawServerBase = RawServerDefault,
+  TRawRequest extends RawRequestDefaultExpression<
+    TServer
+  > = RawRequestDefaultExpression<TServer>,
+  TRawResponse extends RawReplyDefaultExpression<
+    TServer
+  > = RawReplyDefaultExpression<TServer>
+> extends AbstractHttpAdapter<
+  TServer,
+  FastifyRequest<RequestGenericInterface, TServer, TRawRequest>,
+  FastifyReply<TServer, TRawRequest, TRawResponse>
+> {
+  protected readonly instance: FastifyInstance<
+    TServer,
+    TRawRequest,
+    TRawResponse
+  >;
+
   constructor(
     instanceOrOptions:
-      | TInstance
-      | fastify.ServerOptions
-      | fastify.ServerOptionsAsHttp
-      | fastify.ServerOptionsAsHttp2
-      | fastify.ServerOptionsAsSecure
-      | fastify.ServerOptionsAsSecureHttp
-      | fastify.ServerOptionsAsSecureHttp2 = fastify() as any,
+      | FastifyInstance<TServer>
+      | (TServer extends http2.Http2Server
+          ? FastifyHttp2Options<TServer>
+          : TServer extends http2.Http2SecureServer
+          ? FastifyHttp2SecureOptions<TServer>
+          : TServer extends https.Server
+          ? FastifyHttpsOptions<TServer>
+          : FastifyServerOptions<TServer>) = fastify() as any,
   ) {
     const instance =
       instanceOrOptions &&
-      (instanceOrOptions as fastify.FastifyInstance<any, any, any>).server
+      (instanceOrOptions as FastifyInstance<TServer>).server
         ? instanceOrOptions
-        : fastify((instanceOrOptions as any) as fastify.ServerOptions);
+        : fastify(instanceOrOptions as FastifyServerOptions);
 
     super(instance);
   }
 
-  public listen(port: string | number, callback?: () => void);
-  public listen(port: string | number, hostname: string, callback?: () => void);
-  public listen(port: any, ...args: any[]) {
+  private isNativeResponse(
+    response: TRawResponse | FastifyReply,
+  ): response is TRawResponse {
+    return !('status' in response);
+  }
+
+  public listen(port: string | number, callback?: () => void): void;
+  public listen(
+    port: string | number,
+    hostname: string,
+    callback?: () => void,
+  ): void;
+  public listen(port: string | number, ...args: any[]): Promise<string> {
+    if (typeof port === 'string') {
+      port = parseInt(port);
+    }
     return this.instance.listen(port, ...args);
   }
 
-  public reply(response: any, body: any, statusCode?: number) {
-    const isNativeResponse = typeof response.status !== 'function';
-    if (isNativeResponse) {
-      const fastifyContext = {
-        preSerialization: null,
-        preValidation: [],
-        preHandler: [],
-        onSend: [],
-        onError: [],
-      };
-      response = new Reply(response, fastifyContext, {});
-    }
+  public reply(
+    response: TRawResponse | FastifyReply,
+    body: any,
+    statusCode?: number,
+  ) {
+    const fastifyReply: FastifyReply = this.isNativeResponse
+      ? new Reply(
+          response,
+          {
+            preSerialization: null,
+            preValidation: [],
+            preHandler: [],
+            onSend: [],
+            onError: [],
+          },
+          {},
+        )
+      : response;
+
     if (statusCode) {
-      response.status(statusCode);
+      fastifyReply.status(statusCode);
     }
-    return response.send(body);
+    return fastifyReply.send(body);
   }
 
-  public status(response: any, statusCode: number) {
-    const isNativeResponse = typeof response.code !== 'function';
-    if (isNativeResponse) {
+  public status(response: TRawResponse | FastifyReply, statusCode: number) {
+    if (this.isNativeResponse(response)) {
       response.statusCode = statusCode;
       return response;
     }
     return response.code(statusCode);
   }
 
-  public render(response: any, view: string, options: any) {
+  public render(response: FastifyReply, view: string, options: any) {
     return response.view(view, options);
   }
 
-  public redirect(response: any, statusCode: number, url: string) {
-    const code = statusCode ? statusCode : HttpStatus.FOUND;
+  public redirect(response: FastifyReply, statusCode: number, url: string) {
+    const code = statusCode ?? HttpStatus.FOUND;
     return response.status(code).redirect(url);
   }
 
   public setErrorHandler(
-    handler: Parameters<fastify.FastifyInstance['setErrorHandler']>[0],
-    prefix?: string,
+    handler: Parameters<
+      FastifyInstance<TServer, TRawRequest, TRawResponse>['setErrorHandler']
+    >[0],
   ) {
     return this.instance.setErrorHandler(handler);
   }
 
   public setNotFoundHandler(
-    handler: Parameters<fastify.FastifyInstance['setNotFoundHandler']>[0],
-    prefix?: string,
+    handler: Parameters<
+      FastifyInstance<TServer, TRawRequest, TRawResponse>['setNotFoundHandler']
+    >[0],
   ) {
     return this.instance.setNotFoundHandler(handler);
   }
 
-  public getHttpServer<TServer = any>(): TServer {
-    return this.instance.server as TServer;
+  public getHttpServer<T = TServer>(): T {
+    return (this.instance.server as unknown) as T;
   }
 
-  public getInstance<TServer = any>(): TServer {
-    return this.instance as TServer;
+  public getInstance<
+    T = FastifyInstance<TServer, TRawRequest, TRawResponse>
+  >(): T {
+    return (this.instance as unknown) as T;
   }
 
-  public register(...args: any[]) {
-    return this.instance.register(...args);
+  public register<Options extends FastifyPluginOptions>(
+    plugin: FastifyPlugin<Options>,
+    opts?: FastifyRegisterOptions<Options>,
+  ) {
+    return this.instance.register(plugin, opts);
   }
 
-  public inject(...args: any[]) {
-    return this.instance.inject(...args);
+  public async inject(opts: InjectOptions | string) {
+    return await this.instance.inject(opts);
   }
 
   public async close() {
@@ -113,54 +200,60 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     }
   }
 
-  public initHttpServer(options: NestApplicationOptions) {
+  public initHttpServer() {
     this.httpServer = this.instance.server;
   }
 
-  public useStaticAssets(options: {
-    root: string;
-    prefix?: string;
-    setHeaders?: Function;
-    send?: any;
-  }) {
+  public useStaticAssets(options: FastifyStaticOptions) {
     return this.register(
-      loadPackage('fastify-static', 'FastifyAdapter.useStaticAssets()', () =>
-        require('fastify-static'),
-      ),
+      loadPackage('fastify-static', 'FastifyAdapter.useStaticAssets()'),
       options,
     );
   }
 
-  public setViewEngine(options: any) {
+  public setViewEngine(options: PointOfViewOptions | string) {
+    if (typeof options === 'string') {
+      new Logger('FastifyAdapter').error(
+        "setViewEngine() doesn't support a string argument.",
+      );
+      process.exit(1);
+    }
     return this.register(
       loadPackage('point-of-view', 'FastifyAdapter.setViewEngine()'),
       options,
-      () => require('point-of-view'),
     );
   }
 
-  public setHeader(response: any, name: string, value: string) {
+  public setHeader(response: FastifyReply, name: string, value: string) {
     return response.header(name, value);
   }
 
-  public getRequestHostname(request: any): string {
+  public getRequestHostname(request: FastifyRequest): string {
     return request.hostname;
   }
 
-  public getRequestMethod(request: any): string {
+  public getRequestMethod(request: FastifyRequest): string {
     return request.raw ? request.raw.method : request.method;
   }
 
-  public getRequestUrl(request: any): string {
+  public getRequestUrl(request: FastifyRequest): string {
     return request.raw ? request.raw.url : request.url;
   }
 
   public enableCors(options: CorsOptions) {
-    this.register(cors, options);
+    this.register(
+      loadPackage('fastify-cors', 'FastifyAdapter.enableCors()'),
+      options,
+    );
   }
 
   public registerParserMiddleware() {
-    this.register(formBody);
+    this.register(
+      loadPackage(
+        'fastify-formbody',
+        'FastifyAdapter.registerParserMiddleware()',
+      ),
+    );
   }
 
   public createMiddlewareFactory(
@@ -169,6 +262,13 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     return (path: string, callback: Function) => {
       const re = pathToRegexp(path);
       const normalizedPath = path === '/*' ? '' : path;
+
+      this.instance.register(
+        loadPackage(
+          'fastify-express',
+          'FastifyAdapter.createMiddlewareFactory()',
+        ),
+      );
 
       this.instance.use(
         normalizedPath,
@@ -198,10 +298,7 @@ export class FastifyAdapter<TInstance = any> extends AbstractHttpAdapter {
     return 'fastify';
   }
 
-  protected registerWithPrefix<T extends fastify.Plugin<any, any, any, any>>(
-    factory: T,
-    prefix = '/',
-  ): ReturnType<fastify.FastifyInstance['register']> {
+  protected registerWithPrefix(factory: FastifyPlugin, prefix = '/') {
     return this.instance.register(factory, { prefix });
   }
 }

@@ -1,5 +1,15 @@
 import { INestApplication } from '@nestjs/common';
-import { HTTPInjectOptions, HTTPInjectResponse } from 'fastify';
+import {
+  InjectOptions,
+  Response as LightMyRequestResponse,
+} from 'light-my-request';
+import {
+  FastifyPluginOptions,
+  FastifyPlugin,
+  FastifyRegisterOptions,
+} from 'fastify';
+import { FastifyStaticOptions } from 'fastify-static';
+import { PointOfViewOptions } from 'point-of-view';
 
 export interface NestFastifyApplication extends INestApplication {
   /**
@@ -8,7 +18,10 @@ export interface NestFastifyApplication extends INestApplication {
    *
    * @returns {this}
    */
-  register(...args: any[]): this;
+  register<Options extends FastifyPluginOptions>(
+    plugin: FastifyPlugin<Options>,
+    opts?: FastifyRegisterOptions<Options>,
+  ): this;
 
   /**
    * Sets a base directory for public assets.
@@ -16,25 +29,21 @@ export interface NestFastifyApplication extends INestApplication {
    *
    * @returns {this}
    */
-  useStaticAssets(options: {
-    root: string;
-    prefix?: string;
-    setHeaders?: Function;
-    send?: any;
-  }): this;
+  useStaticAssets(options: FastifyStaticOptions): this;
 
   /**
    * Sets a view engine for templates (views), for example: `pug`, `handlebars`, or `ejs`.
    *
+   * Don't pass in a string. The string type in the argument is for compatibilility reason and will cause an exception.
    * @returns {this}
    */
-  setViewEngine(options: any): this;
+  setViewEngine(options: PointOfViewOptions | string): this;
 
   /**
    * A wrapper function around native `fastify.inject()` method.
    * @returns {void}
    */
-  inject(opts: HTTPInjectOptions | string): Promise<HTTPInjectResponse>;
+  inject(opts: InjectOptions | string): Promise<LightMyRequestResponse>;
 
   /**
    * Starts the application.
