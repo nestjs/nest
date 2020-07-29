@@ -15,6 +15,8 @@ export abstract class AbstractHttpAdapter<
 
   constructor(protected readonly instance: any) {}
 
+  public async init() {}
+
   public use(...args: any[]) {
     return this.instance.use(...args);
   }
@@ -97,6 +99,8 @@ export abstract class AbstractHttpAdapter<
   abstract enableCors(options: CorsOptions, prefix?: string);
   abstract createMiddlewareFactory(
     requestMethod: RequestMethod,
-  ): (path: string, callback: Function) => any;
+  ):
+    | ((path: string, callback: Function) => any)
+    | Promise<(path: string, callback: Function) => any>;
   abstract getType(): string;
 }
