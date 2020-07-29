@@ -138,6 +138,7 @@ export class NestApplication extends NestApplicationContext
 
   public async init(): Promise<this> {
     this.applyOptions();
+    await this.httpAdapter?.init();
 
     const useBodyParser =
       this.appOptions && this.appOptions.bodyParser !== false;

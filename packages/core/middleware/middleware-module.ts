@@ -196,7 +196,7 @@ export class MiddlewareModule {
     if (isUndefined(instance.use)) {
       throw new InvalidMiddlewareException(metatype.name);
     }
-    const router = applicationRef.createMiddlewareFactory(method);
+    const router = await applicationRef.createMiddlewareFactory(method);
     const isStatic = wrapper.isDependencyTreeStatic();
     if (isStatic) {
       const proxy = await this.createProxy(instance);

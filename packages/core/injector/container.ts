@@ -196,7 +196,7 @@ export class NestContainer {
   }
 
   public bindGlobalModuleToModule(target: Module, globalModule: Module) {
-    if (target === globalModule) {
+    if (target === globalModule || target === this.internalCoreModule) {
       return;
     }
     target.addRelatedModule(globalModule);
@@ -205,7 +205,7 @@ export class NestContainer {
   public getDynamicMetadataByToken(
     token: string,
     metadataKey: keyof DynamicModule,
-  ): any[] {
+  ) {
     const metadata = this.dynamicModulesMetadata.get(token);
     if (metadata && metadata[metadataKey]) {
       return metadata[metadataKey] as any[];

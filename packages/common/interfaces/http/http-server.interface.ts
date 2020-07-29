@@ -54,7 +54,9 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   setViewEngine?(engineOrOptions: any): this;
   createMiddlewareFactory(
     method: RequestMethod,
-  ): (path: string, callback: Function) => any;
+  ):
+    | ((path: string, callback: Function) => any)
+    | Promise<(path: string, callback: Function) => any>;
   getRequestHostname?(request: TRequest): string;
   getRequestMethod?(request: TRequest): string;
   getRequestUrl?(request: TResponse): string;
@@ -65,4 +67,5 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   initHttpServer(options: NestApplicationOptions): void;
   close(): any;
   getType(): string;
+  init?(): Promise<void>;
 }
