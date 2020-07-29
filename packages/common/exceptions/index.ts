@@ -18,3 +18,4 @@ export * from './bad-gateway.exception';
 export * from './service-unavailable.exception';
 export * from './gateway-timeout.exception';
 export * from './im-a-teapot.exception';
+export * from './precondition-failed.exception';
