@@ -154,5 +154,9 @@ export class NestMicroservice extends NestApplicationContext
 
   protected async dispose(): Promise<void> {
     await this.server.close();
+    if (this.isTerminated) {
+      return;
+    }
+    this.socketModule && (await this.socketModule.close());
   }
 }
