@@ -396,4 +396,31 @@ describe('ValidationPipe', () => {
       });
     });
   });
+
+  describe('option: "expectedType"', () => {
+    class TestModel2 {
+      @IsString()
+      public prop1: string;
+
+      @IsBoolean()
+      public prop2: string;
+
+      @IsOptional()
+      @IsString()
+      public optionalProp: string;
+    }
+
+    it('should validate against the expected type if presented', async () => {
+      const m: ArgumentMetadata = {
+        type: 'body',
+        metatype: TestModel2,
+        data: '',
+      };
+
+      target = new ValidationPipe({ expectedType: TestModel });
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+
+      expect(await target.transform(testObj, m)).to.equal(testObj);
+    });
+  });
 });
