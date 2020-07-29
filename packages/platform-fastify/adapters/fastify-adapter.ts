@@ -306,6 +306,7 @@ export class FastifyAdapter<
 
   private async registerMiddie() {
     this.isMiddieRegistered = true;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     await this.register(require('middie'));
   }
 }
