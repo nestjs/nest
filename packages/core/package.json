@@ -33,7 +33,7 @@
     "object-hash": "2.0.3",
     "path-to-regexp": "3.2.0",
     "tslib": "2.0.0",
-    "uuid": "8.2.0"
+    "uuid": "8.3.0"
   },
   "devDependencies": {
     "@nestjs/common": "7.3.2"
