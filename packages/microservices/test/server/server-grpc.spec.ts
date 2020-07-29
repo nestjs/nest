@@ -454,13 +454,11 @@ describe('ServerGrpc', () => {
         metadata: {
           test: '123',
         },
-        sendMetadata: sinon.spy(),
       };
       fn(call as any, sinon.spy());
 
       expect(handler.called).to.be.true;
       expect(handler.args[0][1]).to.eq(call.metadata);
-      expect(handler.args[0][2]).to.be.an.instanceof(Function);
     });
     describe('when response is not a stream', () => {
       it('should call callback', async () => {
