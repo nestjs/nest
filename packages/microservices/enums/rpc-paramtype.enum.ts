@@ -1,5 +1,5 @@
 export enum RpcParamtype {
   PAYLOAD = 3,
   CONTEXT = 6,
-  GRPCCALL = 9,
+  GRPC_CALL = 9,
 }
