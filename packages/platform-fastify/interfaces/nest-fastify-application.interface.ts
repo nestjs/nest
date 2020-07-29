@@ -1,15 +1,14 @@
 import { INestApplication } from '@nestjs/common';
 import {
+  FastifyPlugin,
+  FastifyPluginOptions,
+  FastifyRegisterOptions,
+} from 'fastify';
+import {
   InjectOptions,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
-import {
-  FastifyPluginOptions,
-  FastifyPlugin,
-  FastifyRegisterOptions,
-} from 'fastify';
-import { FastifyStaticOptions } from 'fastify-static';
-import { PointOfViewOptions } from 'point-of-view';
+import { FastifyStaticOptions, PointOfViewOptions } from './external';
 
 export interface NestFastifyApplication extends INestApplication {
   /**

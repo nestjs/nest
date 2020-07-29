@@ -147,12 +147,15 @@ export class NestFactoryStatic {
     httpServer: HttpServer = null,
   ) {
     const instanceLoader = new InstanceLoader(container);
+    const metadataScanner = new MetadataScanner();
     const dependenciesScanner = new DependenciesScanner(
       container,
-      new MetadataScanner(),
+      metadataScanner,
       config,
     );
     container.setHttpAdapter(httpServer);
+
+    await httpServer?.init();
     try {
       this.logger.log(MESSAGES.APPLICATION_START);
       await ExceptionsZone.asyncRun(async () => {

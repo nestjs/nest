@@ -20,19 +20,13 @@
     "fastify": "3.0.1",
     "fastify-cors": "4.0.0",
     "fastify-formbody": "4.0.3",
-    "fastify-express": "0.1.0",
+    "light-my-request": "4.0.1",
+    "middie": "5.1.0",
     "path-to-regexp": "3.2.0",
     "tslib": "2.0.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",
     "@nestjs/core": "^7.0.0"
-  },
-  "devDependencies": {
-    "@nestjs/common": "^7.3.2",
-    "@nestjs/core": "^7.3.2",
-    "fastify-static": "^3.1.0",
-    "light-my-request": "^4.0.1",
-    "point-of-view": "^4.2.0"
   }
 }

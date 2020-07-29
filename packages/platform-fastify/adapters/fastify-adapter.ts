@@ -1,10 +1,11 @@
-import { HttpStatus, RequestMethod, Logger } from '@nestjs/common';
+import { HttpStatus, Logger, RequestMethod } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   fastify,
   FastifyInstance,
+  FastifyLoggerInstance,
   FastifyPlugin,
   FastifyPluginOptions,
   FastifyRegisterOptions,
@@ -16,17 +17,14 @@ import {
   RawServerBase,
   RawServerDefault,
   RequestGenericInterface,
-  FastifyLoggerInstance,
 } from 'fastify';
-import * as cors from 'fastify-cors';
-import * as formBodyPlugin from 'fastify-formbody';
 import { FastifyStaticOptions } from 'fastify-static';
 import { Reply } from 'fastify/lib/reply';
-import { InjectOptions } from 'light-my-request';
-import { PointOfViewOptions } from 'point-of-view';
-import * as pathToRegexp from 'path-to-regexp';
 import * as http2 from 'http2';
 import * as https from 'https';
+import { InjectOptions } from 'light-my-request';
+import * as pathToRegexp from 'path-to-regexp';
+import { PointOfViewOptions } from 'point-of-view';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -69,6 +67,7 @@ export class FastifyAdapter<
     TRawRequest,
     TRawResponse
   >;
+  private isMiddieRegistered: boolean;
 
   constructor(
     instanceOrOptions:
@@ -90,10 +89,11 @@ export class FastifyAdapter<
     super(instance);
   }
 
-  private isNativeResponse(
-    response: TRawResponse | FastifyReply,
-  ): response is TRawResponse {
-    return !('status' in response);
+  public async init() {
+    if (this.isMiddieRegistered) {
+      return;
+    }
+    await this.registerMiddie();
   }
 
   public listen(port: string | number, callback?: () => void): void;
@@ -114,7 +114,7 @@ export class FastifyAdapter<
     body: any,
     statusCode?: number,
   ) {
-    const fastifyReply: FastifyReply = this.isNativeResponse
+    const fastifyReply: FastifyReply = this.isNativeResponse(response)
       ? new Reply(
           response,
           {
@@ -256,19 +256,15 @@ export class FastifyAdapter<
     );
   }
 
-  public createMiddlewareFactory(
+  public async createMiddlewareFactory(
     requestMethod: RequestMethod,
-  ): (path: string, callback: Function) => any {
+  ): Promise<(path: string, callback: Function) => any> {
+    if (!this.isMiddieRegistered) {
+      await this.registerMiddie();
+    }
     return (path: string, callback: Function) => {
       const re = pathToRegexp(path);
       const normalizedPath = path === '/*' ? '' : path;
-
-      this.instance.register(
-        loadPackage(
-          'fastify-express',
-          'FastifyAdapter.createMiddlewareFactory()',
-        ),
-      );
 
       this.instance.use(
         normalizedPath,
@@ -300,5 +296,16 @@ export class FastifyAdapter<
 
   protected registerWithPrefix(factory: FastifyPlugin, prefix = '/') {
     return this.instance.register(factory, { prefix });
+  }
+
+  private isNativeResponse(
+    response: TRawResponse | FastifyReply,
+  ): response is TRawResponse {
+    return !('status' in response);
+  }
+
+  private async registerMiddie() {
+    this.isMiddieRegistered = true;
+    await this.register(require('middie'));
   }
 }
