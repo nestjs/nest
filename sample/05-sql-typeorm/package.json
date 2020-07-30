@@ -37,7 +37,7 @@
     "@types/node": "7.10.9",
     "@types/supertest": "2.0.10",
     "@types/ws": "7.2.6",
-    "jest": "26.1.0",
+    "jest": "26.2.1",
     "prettier": "2.0.5",
     "supertest": "4.0.2",
     "ts-jest": "26.1.4",
