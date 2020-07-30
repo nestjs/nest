@@ -22,7 +22,7 @@
     "@nestjs/common": "7.3.2",
     "@nestjs/core": "7.3.2",
     "@nestjs/platform-express": "7.3.2",
-    "class-transformer": "0.2.3",
+    "class-transformer": "0.3.1",
     "class-validator": "0.12.2",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
