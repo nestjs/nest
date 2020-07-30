@@ -6,7 +6,7 @@ import { isObject } from '../utils/shared.utils';
 declare const process: any;
 const yellow = clc.xterm(3);
 
-export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose';
+export type LogLevel = 'log' | 'info' | 'error' | 'warn' | 'debug' | 'verbose';
 
 export interface LoggerService {
   log(message: any, context?: string);
@@ -20,6 +20,7 @@ export interface LoggerService {
 export class Logger implements LoggerService {
   private static logLevels: LogLevel[] = [
     'log',
+    'info',
     'error',
     'warn',
     'debug',
