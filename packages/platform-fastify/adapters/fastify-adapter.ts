@@ -74,13 +74,10 @@ export class FastifyAdapter<
   constructor(
     instanceOrOptions:
       | FastifyInstance<TServer>
-      | (TServer extends http2.Http2Server
-          ? FastifyHttp2Options<TServer>
-          : TServer extends http2.Http2SecureServer
-          ? FastifyHttp2SecureOptions<TServer>
-          : TServer extends https.Server
-          ? FastifyHttpsOptions<TServer>
-          : FastifyServerOptions<TServer>) = fastify() as any,
+      | FastifyHttp2Options<TServer>
+      | FastifyHttp2SecureOptions<any>
+      | FastifyHttpsOptions<any>
+      | FastifyServerOptions<TServer> = fastify() as any,
   ) {
     const instance =
       instanceOrOptions &&
