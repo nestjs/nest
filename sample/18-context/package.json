@@ -19,8 +19,8 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "7.3.2",
-    "@nestjs/core": "7.3.2",
+    "@nestjs/common": "7.4.1",
+    "@nestjs/core": "7.4.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "6.6.0"
@@ -30,7 +30,7 @@
     "@nestjs/schematics": "7.0.1",
     "@types/node": "12.12.31",
     "@types/supertest": "2.0.10",
-    "jest": "26.1.0",
+    "jest": "26.2.1",
     "prettier": "2.0.5",
     "supertest": "4.0.2",
     "ts-jest": "26.1.4",

@@ -18,13 +18,15 @@ import {
   RawServerDefault,
   RequestGenericInterface,
 } from 'fastify';
-import { FastifyStaticOptions } from 'fastify-static';
 import { Reply } from 'fastify/lib/reply';
 import * as http2 from 'http2';
 import * as https from 'https';
 import { InjectOptions } from 'light-my-request';
 import * as pathToRegexp from 'path-to-regexp';
-import { PointOfViewOptions } from 'point-of-view';
+import {
+  FastifyStaticOptions,
+  PointOfViewOptions,
+} from '../interfaces/external';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -72,13 +74,10 @@ export class FastifyAdapter<
   constructor(
     instanceOrOptions:
       | FastifyInstance<TServer>
-      | (TServer extends http2.Http2Server
-          ? FastifyHttp2Options<TServer>
-          : TServer extends http2.Http2SecureServer
-          ? FastifyHttp2SecureOptions<TServer>
-          : TServer extends https.Server
-          ? FastifyHttpsOptions<TServer>
-          : FastifyServerOptions<TServer>) = fastify() as any,
+      | FastifyHttp2Options<TServer>
+      | FastifyHttp2SecureOptions<any>
+      | FastifyHttpsOptions<any>
+      | FastifyServerOptions<TServer> = fastify() as any,
   ) {
     const instance =
       instanceOrOptions &&
@@ -142,8 +141,12 @@ export class FastifyAdapter<
     return response.code(statusCode);
   }
 
-  public render(response: FastifyReply, view: string, options: any) {
-    return response.view(view, options);
+  public render(
+    response: FastifyReply & { view: Function },
+    view: string,
+    options: any,
+  ) {
+    return response && response.view(view, options);
   }
 
   public redirect(response: FastifyReply, statusCode: number, url: string) {
