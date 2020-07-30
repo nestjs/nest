@@ -20,11 +20,11 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "7.3.2",
-    "@nestjs/core": "7.3.2",
+    "@nestjs/common": "7.4.1",
+    "@nestjs/core": "7.4.1",
     "@nestjs/jwt": "7.1.0",
     "@nestjs/passport": "7.1.0",
-    "@nestjs/platform-express": "7.3.2",
+    "@nestjs/platform-express": "7.4.1",
     "passport": "0.4.1",
     "passport-jwt": "4.0.0",
     "passport-local": "1.0.0",
@@ -35,7 +35,7 @@
   "devDependencies": {
     "@nestjs/cli": "7.4.1",
     "@nestjs/schematics": "7.0.1",
-    "@nestjs/testing": "7.3.2",
+    "@nestjs/testing": "7.4.1",
     "@types/express": "4.17.7",
     "@types/jest": "26.0.7",
     "@types/node": "12.12.31",
