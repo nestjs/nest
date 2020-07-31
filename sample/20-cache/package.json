@@ -26,7 +26,7 @@
     "class-transformer": "0.3.1",
     "class-validator": "0.12.2",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.6.0"
+    "rxjs": "6.6.2"
   },
   "devDependencies": {
     "@nestjs/cli": "7.4.1",
