@@ -47,7 +47,7 @@ export class ModuleTokenFactory {
 
   private replacer(key: string, value: any) {
     if (typeof value === 'function') {
-      return value.name;
+      return value.toString();
     }
     return value;
   }
