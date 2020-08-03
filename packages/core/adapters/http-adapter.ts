@@ -86,6 +86,7 @@ export abstract class AbstractHttpAdapter<
   abstract initHttpServer(options: NestApplicationOptions);
   abstract useStaticAssets(...args: any[]);
   abstract setViewEngine(engine: string);
+  abstract setLocals(source: object);
   abstract getRequestHostname(request);
   abstract getRequestMethod(request);
   abstract getRequestUrl(request);

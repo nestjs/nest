@@ -38,6 +38,15 @@ export interface NestExpressApplication extends INestApplication {
   enable(...args: any[]): this;
 
   /**
+   * A wrapper function around native `express.locals` property.
+   * @example
+   * app.setLocals({title: 'My App'})
+   *
+   * @returns {this}
+   */
+  setLocals(source: object): this;
+
+  /**
    * A wrapper function around native `express.disable()` method.
    *
    * @example

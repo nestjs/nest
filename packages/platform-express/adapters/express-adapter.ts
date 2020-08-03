@@ -77,6 +77,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return this.instance.disable(...args);
   }
 
+  public setLocals(source: object) {
+    return (this.instance.locals = { ...this.instance.locals, ...source });
+  }
+
   public engine(...args: any[]) {
     return this.instance.engine(...args);
   }
