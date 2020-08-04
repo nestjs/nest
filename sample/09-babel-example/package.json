@@ -13,25 +13,25 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "7.4.1",
-    "@nestjs/core": "7.4.1",
-    "@nestjs/platform-express": "7.4.1",
-    "@nestjs/microservices": "7.4.1",
-    "@nestjs/websockets": "7.4.1",
+    "@nestjs/common": "7.4.2",
+    "@nestjs/core": "7.4.2",
+    "@nestjs/platform-express": "7.4.2",
+    "@nestjs/microservices": "7.4.2",
+    "@nestjs/websockets": "7.4.2",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.6.0"
+    "rxjs": "6.6.2"
   },
   "devDependencies": {
     "@babel/cli": "7.10.5",
-    "@babel/core": "7.10.5",
+    "@babel/core": "7.11.0",
     "@babel/node": "7.10.5",
     "@babel/plugin-proposal-decorators": "7.10.5",
-    "@babel/plugin-transform-runtime": "7.10.5",
-    "@babel/preset-env": "7.10.4",
+    "@babel/plugin-transform-runtime": "7.11.0",
+    "@babel/preset-env": "7.11.0",
     "@babel/register": "7.10.5",
-    "@babel/runtime": "7.10.5",
-    "@nestjs/testing": "7.4.1",
-    "jest": "26.2.1",
+    "@babel/runtime": "7.11.0",
+    "@nestjs/testing": "7.4.2",
+    "jest": "26.2.2",
     "nodemon": "2.0.4",
     "prettier": "2.0.5",
     "supertest": "4.0.2"
