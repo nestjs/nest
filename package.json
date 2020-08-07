@@ -67,7 +67,7 @@
     "rxjs": "6.6.2",
     "socket.io": "2.3.0",
     "uuid": "8.3.0",
-    "tslib": "2.0.0"
+    "tslib": "2.0.1"
   },
   "devDependencies": {
     "@codechecks/client": "0.1.10",
