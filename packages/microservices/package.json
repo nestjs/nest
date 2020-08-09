@@ -19,7 +19,7 @@
   "dependencies": {
     "iterare": "1.2.1",
     "json-socket": "0.3.0",
-    "tslib": "2.0.0"
+    "tslib": "2.0.1"
   },
   "devDependencies": {
     "@nestjs/common": "7.4.2",
