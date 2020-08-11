@@ -30,7 +30,7 @@
     "rxjs": "6.6.2"
   },
   "devDependencies": {
-    "@types/socket.io": "2.1.10",
+    "@types/socket.io": "2.1.11",
     "@types/socket.io-redis": "1.0.26",
     "@types/ws": "7.2.6",
     "@nestjs/cli": "7.4.1",
