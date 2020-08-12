@@ -108,7 +108,7 @@
     "clang-format": "1.4.0",
     "commitlint-circle": "1.0.0",
     "concurrently": "5.3.0",
-    "conventional-changelog": "3.1.21",
+    "conventional-changelog": "3.1.23",
     "core-js": "3.6.5",
     "coveralls": "3.1.0",
     "delete-empty": "3.0.0",
