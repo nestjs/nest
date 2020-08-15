@@ -13,6 +13,7 @@ import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
+import { Readable } from 'stream';
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
@@ -27,6 +28,17 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     }
     if (isNil(body)) {
       return response.send();
+    }
+    if (body.pipe) {
+      response.setHeader('Content-Type', 'application/octet-stream');
+      return body.pipe(response);
+    }
+    if (Buffer.isBuffer(body)) {
+      response.setHeader('Content-Type', 'application/octet-stream');
+      const readable = new Readable();
+      readable.push(body);
+      readable.push(null);
+      return readable.pipe(response);
     }
     return isObject(body) ? response.json(body) : response.send(String(body));
   }
