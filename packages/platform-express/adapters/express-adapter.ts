@@ -29,7 +29,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     if (isNil(body)) {
       return response.send();
     }
-    if (body.pipe) {
+    if (body.pipe && typeof body.pipe === 'function') {
       response.setHeader('Content-Type', 'application/octet-stream');
       return body.pipe(response);
     }
