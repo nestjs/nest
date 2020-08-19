@@ -10,6 +10,7 @@ import {
   WebSocketAdapter,
 } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { GlobalPrefixOptions } from '@nestjs/common/interfaces/global-prefix-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -279,8 +280,14 @@ export class NestApplication extends NestApplicationContext
     });
   }
 
-  public setGlobalPrefix(prefix: string): this {
+  public setGlobalPrefix(
+    prefix: string,
+    globalPrefixOptions?: GlobalPrefixOptions,
+  ): this {
     this.config.setGlobalPrefix(prefix);
+    if (globalPrefixOptions) {
+      this.config.setGlobalPrefixOptions(globalPrefixOptions);
+    }
     return this;
   }
 

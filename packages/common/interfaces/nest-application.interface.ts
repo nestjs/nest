@@ -10,6 +10,7 @@ import {
 } from './index';
 import { INestApplicationContext } from './nest-application-context.interface';
 import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
+import { GlobalPrefixOptions } from './global-prefix-options.interface';
 
 /**
  * Interface defining the core NestApplication object.
@@ -67,9 +68,13 @@ export interface INestApplication extends INestApplicationContext {
    * Registers a prefix for every HTTP route path.
    *
    * @param  {string} prefix The prefix for every HTTP route path (for example `/v1/api`)
+   * @param  {NestApplicationGlobalPrefixOptions} globalPrefixOptions GlobalPrefix options object
    * @returns {void}
    */
-  setGlobalPrefix(prefix: string): this;
+  setGlobalPrefix(
+    prefix: string,
+    globalPrefixOptions?: GlobalPrefixOptions,
+  ): this;
 
   /**
    * Setup Ws Adapter which will be used inside Gateways.

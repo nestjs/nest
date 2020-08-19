@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import { ApplicationConfig } from '../application-config';
+import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
+import { RequestMethod } from '@nestjs/common';
 
 describe('ApplicationConfig', () => {
   let appConfig: ApplicationConfig;
@@ -14,8 +16,19 @@ describe('ApplicationConfig', () => {
 
       expect(appConfig.getGlobalPrefix()).to.be.eql(path);
     });
+    it('should set global path options', () => {
+      const options: GlobalPrefixOptions = {
+        exclude: [{ path: 'health', method: RequestMethod.GET }],
+      };
+      appConfig.setGlobalPrefixOptions(options);
+
+      expect(appConfig.getGlobalPrefixOptions()).to.be.eql(options);
+    });
     it('should has empty string as a global path by default', () => {
       expect(appConfig.getGlobalPrefix()).to.be.eql('');
+    });
+    it('should has empty string as a global path option by default', () => {
+      expect(appConfig.getGlobalPrefixOptions()).to.be.eql({});
     });
   });
   describe('IOAdapter', () => {

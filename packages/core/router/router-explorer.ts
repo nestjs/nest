@@ -54,7 +54,7 @@ export class RouterExplorer {
     private readonly injector?: Injector,
     private readonly routerProxy?: RouterProxy,
     private readonly exceptionsFilter?: ExceptionsFilter,
-    config?: ApplicationConfig,
+    private readonly config?: ApplicationConfig,
   ) {
     this.executionContextCreator = new RouterExecutionContext(
       new RouteParamsFactory(),
@@ -162,10 +162,6 @@ export class RouterExplorer {
         basePath,
         host,
       );
-      path.forEach(item => {
-        const pathStr = this.stripEndSlash(basePath) + this.stripEndSlash(item);
-        this.logger.log(ROUTE_MAPPED_MESSAGE(pathStr, requestMethod));
-      });
     });
   }
 
@@ -211,8 +207,58 @@ export class RouterExplorer {
 
     const hostHandler = this.applyHostFilter(host, proxy);
     paths.forEach(path => {
-      const fullPath = this.stripEndSlash(basePath) + path;
-      routerMethod(this.stripEndSlash(fullPath) || '/', hostHandler);
+      const fullPath = this.stripEndSlash(basePath) + this.stripEndSlash(path);
+      const unprefixedFullPath = this.removeGlobalPrefixFromPath(fullPath);
+
+      const isExcludedOfGlobalPrefix = this.isExcludedOfGlobalPrefix(
+        unprefixedFullPath,
+        requestMethod,
+      );
+      const finalPath = isExcludedOfGlobalPrefix
+        ? unprefixedFullPath
+        : fullPath;
+
+      this.logger.log(ROUTE_MAPPED_MESSAGE(finalPath, requestMethod));
+      routerMethod(finalPath || '/', hostHandler);
+    });
+  }
+
+  public removeGlobalPrefixFromPath(path: string) {
+    const globalPrefix = validatePath(this.config.getGlobalPrefix());
+    return path.replace(globalPrefix, '');
+  }
+
+  private isExcludedOfGlobalPrefix(path: string, requestMethod: RequestMethod) {
+    const options = this.config.getGlobalPrefixOptions();
+    if (!options.exclude) {
+      return false;
+    }
+
+    const excludedRouteInfos = options.exclude.map(route => {
+      if (isString(route)) {
+        return {
+          path: this.validateRoutePath(route),
+          method: RequestMethod.ALL,
+        };
+      }
+      return {
+        path: this.validateRoutePath(route.path),
+        method: route.method,
+      };
+    });
+
+    return excludedRouteInfos.some(route => {
+      if (route.path !== path) {
+        return false;
+      }
+      if (
+        route.method &&
+        route.method !== RequestMethod.ALL &&
+        route.method !== requestMethod
+      ) {
+        return false;
+      }
+      return true;
     });
   }
 

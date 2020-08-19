@@ -35,14 +35,16 @@ describe('RouterExplorer', () => {
   let routerBuilder: RouterExplorer;
   let injector: Injector;
   let exceptionsFilter: RouterExceptionFilters;
+  let applicationConfig: ApplicationConfig;
 
   beforeEach(() => {
     const container = new NestContainer();
 
+    applicationConfig = new ApplicationConfig();
     injector = new Injector();
     exceptionsFilter = new RouterExceptionFilters(
       container,
-      new ApplicationConfig(),
+      applicationConfig,
       null,
     );
     routerBuilder = new RouterExplorer(
@@ -51,6 +53,7 @@ describe('RouterExplorer', () => {
       injector,
       null,
       exceptionsFilter,
+      applicationConfig,
     );
   });
 
@@ -125,6 +128,23 @@ describe('RouterExplorer', () => {
 
       expect(bindStub.calledWith(null, paths[0], null)).to.be.true;
       expect(bindStub.callCount).to.be.eql(paths.length);
+    });
+  });
+
+  describe('removeGlobalPrefixFromPath', () => {
+    it('should remove global prefix from path', () => {
+      sinon
+        .stub(applicationConfig, 'getGlobalPrefix')
+        .returns('/some/prefixed');
+      console.log(applicationConfig.getGlobalPrefix());
+
+      expect(
+        routerBuilder.removeGlobalPrefixFromPath('/some/prefixed/cats'),
+      ).be.eql('/cats');
+    });
+    it('should not change path when there is no GlobalPrefix', () => {
+      sinon.stub(applicationConfig, 'getGlobalPrefix').returns('');
+      expect(routerBuilder.removeGlobalPrefixFromPath('/cats')).be.eql('/cats');
     });
   });
 
