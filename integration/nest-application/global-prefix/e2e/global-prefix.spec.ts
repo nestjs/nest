@@ -15,7 +15,7 @@ describe('Global prefix', () => {
       app = module.createNestApplication();
     });
 
-    it.only(`should use the global prefix`, async () => {
+    it(`should use the global prefix`, async () => {
       app.setGlobalPrefix('/api/v1')
 
       server = app.getHttpServer();
@@ -30,7 +30,7 @@ describe('Global prefix', () => {
         .expect(200)
     });
 
-    it.only(`should exclude the path as string`, async () => {
+    it(`should exclude the path as string`, async () => {
       app.setGlobalPrefix('/api/v1', {exclude: ['/test']})
 
       server = app.getHttpServer();
@@ -51,7 +51,7 @@ describe('Global prefix', () => {
         .expect(404)
     });
 
-    it.only(`should exclude the path as RouteInfo`, async () => {
+    it(`should exclude the path as RouteInfo`, async () => {
       app.setGlobalPrefix('/api/v1', {exclude: [{path: '/health', method: RequestMethod.GET}]})
 
       server = app.getHttpServer();
@@ -66,7 +66,26 @@ describe('Global prefix', () => {
         .expect(404)
     });
 
-    it.only(`should exclude the path as a mix of string and RouteInfo`, async () => {
+    it(`should only exclude the GET RequestMethod`, async () => {
+      app.setGlobalPrefix('/api/v1', {exclude: [{path: '/test', method: RequestMethod.GET}]})
+
+      server = app.getHttpServer();
+      await app.init();
+
+      await request(server)
+        .get('/test')
+        .expect(200)
+
+      await request(server)
+        .post('/test')
+        .expect(404)
+
+      await request(server)
+        .post('/api/v1/test')
+        .expect(201)
+    });
+
+    it(`should exclude the path as a mix of string and RouteInfo`, async () => {
       app.setGlobalPrefix('/api/v1', {exclude: ["test", {path: '/health', method: RequestMethod.GET}]})
 
       server = app.getHttpServer();
@@ -81,7 +100,7 @@ describe('Global prefix', () => {
         .expect(200)
     });
 
-    it.only(`should exclude the path with route param`, async () => {
+    it(`should exclude the path with route param`, async () => {
       app.setGlobalPrefix('/api/v1', {exclude: ['/hello/:name']})
 
       server = app.getHttpServer();

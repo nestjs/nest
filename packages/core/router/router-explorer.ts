@@ -252,7 +252,6 @@ export class RouterExplorer {
         return false;
       }
       if (
-        route.method &&
         route.method !== RequestMethod.ALL &&
         route.method !== requestMethod
       ) {
