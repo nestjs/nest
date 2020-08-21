@@ -17,7 +17,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "axios": "0.19.2",
+    "axios": "0.20.0",
     "cli-color": "2.0.0",
     "iterare": "1.2.1",
     "tslib": "2.0.1",
