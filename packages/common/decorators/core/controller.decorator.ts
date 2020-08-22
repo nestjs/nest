@@ -18,7 +18,7 @@ export interface ControllerOptions extends ScopeOptions {
    *
    * @see [Routing](https://docs.nestjs.com/controllers#routing)
    */
-  path?: string;
+  path?: string | string[];
 
   /**
    * Specifies an optional HTTP Request host filter.  When configured, methods
@@ -65,7 +65,7 @@ export function Controller(): ClassDecorator;
  * It defines a class that provides a context for one or more message or event
  * handlers.
  *
- * @param {string} prefix string that defines a `route path prefix`.  The prefix
+ * @param {string, Array} prefix string that defines a `route path prefix`.  The prefix
  * is pre-pended to the path specified in any request decorator in the class.
  *
  * @see [Routing](https://docs.nestjs.com/controllers#routing)
@@ -74,7 +74,7 @@ export function Controller(): ClassDecorator;
  *
  * @publicApi
  */
-export function Controller(prefix: string): ClassDecorator;
+export function Controller(prefix: string | string[]): ClassDecorator;
 
 /**
  * Decorator that marks a class as a Nest controller that can receive inbound
@@ -137,12 +137,13 @@ export function Controller(options: ControllerOptions): ClassDecorator;
  * @publicApi
  */
 export function Controller(
-  prefixOrOptions?: string | ControllerOptions,
+  prefixOrOptions?: string | string[] | ControllerOptions,
 ): ClassDecorator {
   const defaultPath = '/';
+
   const [path, host, scopeOptions] = isUndefined(prefixOrOptions)
     ? [defaultPath, undefined, undefined]
-    : isString(prefixOrOptions)
+    : isString(prefixOrOptions) || Array.isArray(prefixOrOptions)
     ? [prefixOrOptions, undefined, undefined]
     : [
         prefixOrOptions.path || defaultPath,

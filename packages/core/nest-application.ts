@@ -1,3 +1,6 @@
+import { iterate } from 'iterare';
+import { platform } from 'os';
+
 import {
   CanActivate,
   ExceptionFilter,
@@ -13,9 +16,8 @@ import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.int
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isObject, validatePath } from '@nestjs/common/utils/shared.utils';
-import { iterate } from 'iterare';
-import { platform } from 'os';
+import { addLeadingSlash, isObject } from '@nestjs/common/utils/shared.utils';
+
 import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
@@ -164,7 +166,7 @@ export class NestApplication
     await this.registerMiddleware(this.httpAdapter);
 
     const prefix = this.config.getGlobalPrefix();
-    const basePath = validatePath(prefix);
+    const basePath = addLeadingSlash(prefix);
     this.routesResolver.resolve(this.httpAdapter, basePath);
   }
 
