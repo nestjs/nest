@@ -22,7 +22,7 @@
     "fastify-formbody": "4.0.3",
     "light-my-request": "4.0.2",
     "middie": "5.1.0",
-    "path-to-regexp": "3.2.0",
+    "path-to-regexp": "6.1.0",
     "tslib": "2.0.1"
   },
   "peerDependencies": {
