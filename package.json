@@ -158,7 +158,7 @@
     "socket.io-client": "2.3.0",
     "subscriptions-transport-ws": "0.9.18",
     "supertest": "4.0.2",
-    "ts-morph": "7.3.0",
+    "ts-morph": "8.0.0",
     "ts-node": "9.0.0",
     "typeorm": "0.2.25",
     "typescript": "4.0.2",
