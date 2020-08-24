@@ -29,7 +29,7 @@
     "rxjs": "6.6.2"
   },
   "devDependencies": {
-    "@nestjs/cli": "7.4.1",
+    "@nestjs/cli": "7.5.1",
     "@nestjs/schematics": "7.1.1",
     "@nestjs/testing": "7.4.2",
     "@types/express": "4.17.7",
