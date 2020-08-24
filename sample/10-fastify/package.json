@@ -36,7 +36,7 @@
     "@types/node": "12.12.31",
     "@types/supertest": "2.0.10",
     "@types/ws": "7.2.6",
-    "jest": "26.4.1",
+    "jest": "26.4.2",
     "prettier": "2.0.5",
     "supertest": "4.0.2",
     "ts-jest": "26.2.0",
