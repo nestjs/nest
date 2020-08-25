@@ -128,6 +128,33 @@ describe('RouterExplorer', () => {
     });
   });
 
+  describe('applyPathsToRouterProxyWithDisableLogger', () => {
+    it('should method return expected object which represent single route', () => {
+      const bindStub = sinon.stub(
+        routerBuilder,
+        'applyCallbackToRouter' as any,
+      );
+      const paths = [
+        { path: [''], requestMethod: RequestMethod.GET },
+        { path: ['test'], requestMethod: RequestMethod.GET },
+        { path: ['foo', 'bar'], requestMethod: RequestMethod.GET },
+      ];
+
+      routerBuilder.applyPathsToRouterProxy(
+        null,
+        paths as any,
+        null,
+        '',
+        '',
+        '',
+        true,
+      );
+
+      expect(bindStub.calledWith(null, paths[0], null)).to.be.true;
+      expect(bindStub.callCount).to.be.eql(paths.length);
+    });
+  });
+
   describe('extractRouterPath', () => {
     it('should return expected path', () => {
       expect(routerBuilder.extractRouterPath(TestRoute)).to.be.eql('/global');

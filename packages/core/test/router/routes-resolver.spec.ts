@@ -231,6 +231,107 @@ describe('RoutesResolver', () => {
     });
   });
 
+  describe('resolveWithDisableLogger', () => {
+    it('should call "registerRouters" for each module', () => {
+      const routes = new Map();
+      routes.set(
+        'TestRoute',
+        new InstanceWrapper({
+          instance: new TestRoute(),
+          metatype: TestRoute,
+        }),
+      );
+      modules.set('TestModule', { routes });
+      modules.set('TestModule2', { routes });
+
+      const registerRoutersStub = sinon
+        .stub(routesResolver, 'registerRouters')
+        .callsFake(() => undefined);
+
+      routesResolver.resolve({ use: sinon.spy() } as any, 'basePath', true);
+      expect(registerRoutersStub.calledTwice).to.be.true;
+    });
+
+    describe('registerRouters', () => {
+      it('should register each module with the base path and append the module path if present ', () => {
+        const routes = new Map();
+        routes.set('TestRoute', {
+          instance: new TestRoute(),
+          metatype: TestRoute,
+        });
+
+        Reflect.defineMetadata(MODULE_PATH, '/test', TestModule);
+        modules.set('TestModule', { routes, metatype: TestModule });
+        modules.set('TestModule2', { routes, metatype: TestModule2 });
+
+        const spy = sinon
+          .stub(routesResolver, 'registerRouters')
+          .callsFake(() => undefined);
+
+        routesResolver.resolve(applicationRef, 'api/v1', true);
+
+        // with module path
+        expect(
+          spy
+            .getCall(0)
+            .calledWith(
+              sinon.match.any,
+              sinon.match.any,
+              'api/v1/test',
+              sinon.match.any,
+            ),
+        ).to.be.true;
+        // without module path
+        expect(
+          spy
+            .getCall(1)
+            .calledWith(
+              sinon.match.any,
+              sinon.match.any,
+              'api/v1',
+              sinon.match.any,
+            ),
+        ).to.be.true;
+      });
+
+      it('should register each module with the module path if present', () => {
+        const routes = new Map();
+        routes.set('TestRoute', {
+          instance: new TestRoute(),
+          metatype: TestRoute,
+        });
+
+        Reflect.defineMetadata(MODULE_PATH, '/test', TestModule);
+        modules.set('TestModule', { routes, metatype: TestModule });
+        modules.set('TestModule2', { routes, metatype: TestModule2 });
+
+        const spy = sinon
+          .stub(routesResolver, 'registerRouters')
+          .callsFake(() => undefined);
+
+        routesResolver.resolve(applicationRef, '', true);
+
+        // with module path
+        expect(
+          spy
+            .getCall(0)
+            .calledWith(
+              sinon.match.any,
+              sinon.match.any,
+              '/test',
+              sinon.match.any,
+            ),
+        ).to.be.true;
+        // without module path
+        expect(
+          spy
+            .getCall(1)
+            .calledWith(sinon.match.any, sinon.match.any, '', sinon.match.any),
+        ).to.be.true;
+      });
+    });
+  });
+
   describe('mapExternalExceptions', () => {
     describe('when exception prototype is', () => {
       describe('SyntaxError', () => {
