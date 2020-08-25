@@ -22,11 +22,15 @@ import { NestApplication } from './nest-application';
 import { NestApplicationContext } from './nest-application-context';
 import { DependenciesScanner } from './scanner';
 
+const rethrow = err => {
+  throw err;
+};
 /**
  * @publicApi
  */
 export class NestFactoryStatic {
   private readonly logger = new Logger('NestFactory', true);
+  private abortOnError = true;
   /**
    * Creates an instance of NestApplication.
    *
@@ -67,7 +71,7 @@ export class NestFactoryStatic {
 
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
-
+    this.setAbortOnError(serverOrOptions, options);
     this.applyLogger(appOptions);
     await this.initialize(module, container, applicationConfig, httpServer);
 
@@ -101,7 +105,7 @@ export class NestFactoryStatic {
     );
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
-
+    this.setAbortOnError(options);
     this.applyLogger(options);
 
     await this.initialize(module, container, applicationConfig);
@@ -124,10 +128,9 @@ export class NestFactoryStatic {
     options?: NestApplicationContextOptions,
   ): Promise<INestApplicationContext> {
     const container = new NestContainer();
-
+    this.setAbortOnError(options);
     this.applyLogger(options);
     await this.initialize(module, container);
-
     const modules = container.getModules().values();
     const root = modules.next().value;
     const context = this.createNestInstance<NestApplicationContext>(
@@ -154,7 +157,7 @@ export class NestFactoryStatic {
       config,
     );
     container.setHttpAdapter(httpServer);
-
+    const teardown = this.abortOnError === false ? rethrow : undefined;
     await httpServer?.init();
     try {
       this.logger.log(MESSAGES.APPLICATION_START);
@@ -162,10 +165,17 @@ export class NestFactoryStatic {
         await dependenciesScanner.scan(module);
         await instanceLoader.createInstancesOfDependencies();
         dependenciesScanner.applyApplicationProviders();
-      });
+      }, teardown);
     } catch (e) {
+      this.handleErrorInInitialization(e);
+    }
+  }
+
+  private handleErrorInInitialization(e): void {
+    if (this.abortOnError) {
       process.abort();
     }
+    rethrow(e);
   }
 
   private createProxy(target: any) {
@@ -192,11 +202,12 @@ export class NestFactoryStatic {
     receiver: Record<string, any>,
     prop: string,
   ): Function {
+    const teardown = this.abortOnError === false ? rethrow : undefined;
     return (...args: unknown[]) => {
       let result: unknown;
       ExceptionsZone.run(() => {
         result = receiver[prop](...args);
-      });
+      }, teardown);
       return result;
     };
   }
@@ -223,6 +234,15 @@ export class NestFactoryStatic {
     return !!(
       serverOrOptions && (serverOrOptions as AbstractHttpAdapter).patch
     );
+  }
+
+  private setAbortOnError(
+    serverOrOptions?: AbstractHttpAdapter | NestApplicationOptions,
+    options?: NestApplicationContextOptions | NestApplicationOptions,
+  ): void {
+    this.abortOnError = this.isHttpServer(serverOrOptions)
+      ? !(options && options.abortOnError === false)
+      : !(serverOrOptions && serverOrOptions.abortOnError === false);
   }
 
   private createAdapterProxy<T>(app: NestApplication, adapter: HttpServer): T {
