@@ -40,7 +40,8 @@ const {
 /**
  * @publicApi
  */
-export class NestApplication extends NestApplicationContext
+export class NestApplication
+  extends NestApplicationContext
   implements INestApplication {
   private readonly logger = new Logger(NestApplication.name, true);
   private readonly middlewareModule = new MiddlewareModule();
@@ -54,6 +55,7 @@ export class NestApplication extends NestApplicationContext
   private readonly microservices: any[] = [];
   private httpServer: any;
   private isListening = false;
+  private isDisableRouterLog = false;
 
   constructor(
     container: NestContainer,
@@ -164,7 +166,11 @@ export class NestApplication extends NestApplicationContext
 
     const prefix = this.config.getGlobalPrefix();
     const basePath = validatePath(prefix);
-    this.routesResolver.resolve(this.httpAdapter, basePath);
+    this.routesResolver.resolve(
+      this.httpAdapter,
+      basePath,
+      this.isDisableRouterLog,
+    );
   }
 
   public async registerRouterHooks() {
@@ -225,6 +231,10 @@ export class NestApplication extends NestApplicationContext
 
   public enableCors(options?: CorsOptions): void {
     this.httpAdapter.enableCors(options);
+  }
+
+  public disableRouterLog() {
+    this.isDisableRouterLog = true;
   }
 
   public async listen(

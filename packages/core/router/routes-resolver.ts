@@ -41,12 +41,22 @@ export class RoutesResolver implements Resolver {
     );
   }
 
-  public resolve<T extends HttpServer>(applicationRef: T, basePath: string) {
+  public resolve<T extends HttpServer>(
+    applicationRef: T,
+    basePath: string,
+    isDisableRouterLog?: boolean,
+  ) {
     const modules = this.container.getModules();
     modules.forEach(({ controllers, metatype }, moduleName) => {
       let path = metatype ? this.getModulePathMetadata(metatype) : undefined;
       path = path ? basePath + path : basePath;
-      this.registerRouters(controllers, moduleName, path, applicationRef);
+      this.registerRouters(
+        controllers,
+        moduleName,
+        path,
+        applicationRef,
+        isDisableRouterLog,
+      );
     });
   }
 
@@ -55,6 +65,7 @@ export class RoutesResolver implements Resolver {
     moduleName: string,
     basePath: string,
     applicationRef: HttpServer,
+    isDisableRouterLog?: boolean,
   ) {
     routes.forEach(instanceWrapper => {
       const { metatype } = instanceWrapper;
@@ -65,18 +76,23 @@ export class RoutesResolver implements Resolver {
         basePath,
       );
       const controllerName = metatype.name;
-      this.logger.log(
-        CONTROLLER_MAPPING_MESSAGE(
-          controllerName,
-          this.routerExplorer.stripEndSlash(path),
-        ),
-      );
+
+      if (isDisableRouterLog) {
+        this.logger.log(
+          CONTROLLER_MAPPING_MESSAGE(
+            controllerName,
+            this.routerExplorer.stripEndSlash(path),
+          ),
+        );
+      }
+
       this.routerExplorer.explore(
         instanceWrapper,
         moduleName,
         applicationRef,
         path,
         host,
+        isDisableRouterLog,
       );
     });
   }

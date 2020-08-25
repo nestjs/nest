@@ -74,6 +74,7 @@ export class RouterExplorer {
     applicationRef: T,
     basePath: string,
     host: string,
+    isDisableRouterLog?: boolean,
   ) {
     const { instance } = instanceWrapper;
     const routerPaths = this.scanForPaths(instance);
@@ -84,6 +85,7 @@ export class RouterExplorer {
       module,
       basePath,
       host,
+      isDisableRouterLog,
     );
   }
 
@@ -151,6 +153,7 @@ export class RouterExplorer {
     moduleKey: string,
     basePath: string,
     host: string,
+    isDisableRouterLog?: boolean,
   ) {
     (routePaths || []).forEach(pathProperties => {
       const { path, requestMethod } = pathProperties;
@@ -162,10 +165,14 @@ export class RouterExplorer {
         basePath,
         host,
       );
-      path.forEach(item => {
-        const pathStr = this.stripEndSlash(basePath) + this.stripEndSlash(item);
-        this.logger.log(ROUTE_MAPPED_MESSAGE(pathStr, requestMethod));
-      });
+
+      if (isDisableRouterLog) {
+        path.forEach(item => {
+          const pathStr =
+            this.stripEndSlash(basePath) + this.stripEndSlash(item);
+          this.logger.log(ROUTE_MAPPED_MESSAGE(pathStr, requestMethod));
+        });
+      }
     });
   }
 
