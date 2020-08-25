@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@babel/cli": "7.10.5",
-    "@babel/core": "7.11.1",
+    "@babel/core": "7.11.4",
     "@babel/node": "7.10.5",
     "@babel/plugin-proposal-decorators": "7.10.5",
     "@babel/plugin-transform-runtime": "7.11.0",
@@ -31,9 +31,9 @@
     "@babel/register": "7.10.5",
     "@babel/runtime": "7.11.2",
     "@nestjs/testing": "7.4.2",
-    "jest": "26.4.1",
+    "jest": "26.4.2",
     "nodemon": "2.0.4",
-    "prettier": "2.0.5",
+    "prettier": "2.1.0",
     "supertest": "4.0.2"
   },
   "jest": {
