@@ -33,7 +33,7 @@
     "@nestjs/testing": "7.4.2",
     "jest": "26.4.2",
     "nodemon": "2.0.4",
-    "prettier": "2.1.0",
+    "prettier": "2.1.1",
     "supertest": "4.0.2"
   },
   "jest": {
