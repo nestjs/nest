@@ -30,8 +30,9 @@ export class KafkaParser {
     if (startChar === '{' || startChar === '[') {
       try {
         result = JSON.parse(value.toString());
+        return result;
       } catch (e) {}
     }
-    return result;
+    return value;
   }
 }
