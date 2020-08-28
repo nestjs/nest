@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-socket.io",
-  "version": "7.4.2",
+  "version": "7.4.3",
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-socket.io)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
