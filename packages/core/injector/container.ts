@@ -68,7 +68,12 @@ export class NestContainer {
     }
     const moduleRef = new Module(type, this);
     this.modules.set(token, moduleRef);
-    this.addDynamicMetadata(token, dynamicMetadata, [].concat(scope, type));
+
+    await this.addDynamicMetadata(
+      token,
+      dynamicMetadata,
+      [].concat(scope, type),
+    );
 
     if (this.isGlobalModule(type, dynamicMetadata)) {
       this.addGlobalModule(moduleRef);
@@ -76,7 +81,7 @@ export class NestContainer {
     return moduleRef;
   }
 
-  public addDynamicMetadata(
+  public async addDynamicMetadata(
     token: string,
     dynamicModuleMetadata: Partial<DynamicModule>,
     scope: Type<any>[],
@@ -87,14 +92,14 @@ export class NestContainer {
     this.dynamicModulesMetadata.set(token, dynamicModuleMetadata);
 
     const { imports } = dynamicModuleMetadata;
-    this.addDynamicModules(imports, scope);
+    await this.addDynamicModules(imports, scope);
   }
 
-  public addDynamicModules(modules: any[], scope: Type<any>[]) {
+  public async addDynamicModules(modules: any[], scope: Type<any>[]) {
     if (!modules) {
       return;
     }
-    modules.forEach(module => this.addModule(module, scope));
+    await Promise.all(modules.map(module => this.addModule(module, scope)));
   }
 
   public isGlobalModule(
