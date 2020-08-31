@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { HttpStatus, Logger, RequestMethod } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -244,19 +245,11 @@ export class FastifyAdapter<
   }
 
   public enableCors(options: CorsOptions) {
-    this.register(
-      loadPackage('fastify-cors', 'FastifyAdapter.enableCors()'),
-      options,
-    );
+    this.register(require('fastify-cors'), options);
   }
 
   public registerParserMiddleware() {
-    this.register(
-      loadPackage(
-        'fastify-formbody',
-        'FastifyAdapter.registerParserMiddleware()',
-      ),
-    );
+    this.register(require('fastify-formbody'));
   }
 
   public async createMiddlewareFactory(
@@ -309,7 +302,6 @@ export class FastifyAdapter<
 
   private async registerMiddie() {
     this.isMiddieRegistered = true;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     await this.register(require('middie'));
   }
 }
