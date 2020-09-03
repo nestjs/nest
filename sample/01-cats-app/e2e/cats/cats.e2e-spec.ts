@@ -22,13 +22,13 @@ describe('Cats', () => {
     await app.init();
   });
 
-  it(`/GET cats`, () => {
-    return request(app.getHttpServer())
-      .get('/cats')
-      .expect(200)
-      .expect({
+  it(`/GET cats`, done => {
+    return request(app.getHttpServer()).get('/cats').expect(200).expect(
+      {
         data: catsService.findAll(),
-      });
+      },
+      done,
+    );
   });
 
   afterAll(async () => {
