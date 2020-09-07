@@ -26,15 +26,15 @@ let rqmPackage: any = {};
 export class ServerRMQ extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.RMQ;
 
-  private server: any = null;
-  private channel: any = null;
-  private readonly urls: string[];
-  private readonly queue: string;
-  private readonly prefetchCount: number;
-  private readonly queueOptions: any;
-  private readonly isGlobalPrefetchCount: boolean;
+  protected server: any = null;
+  protected channel: any = null;
+  protected readonly urls: string[];
+  protected readonly queue: string;
+  protected readonly prefetchCount: number;
+  protected readonly queueOptions: any;
+  protected readonly isGlobalPrefetchCount: boolean;
 
-  constructor(private readonly options: RmqOptions['options']) {
+  constructor(protected readonly options: RmqOptions['options']) {
     super();
     this.urls = this.getOptionsProp(this.options, 'urls') || [RQM_DEFAULT_URL];
     this.queue =
