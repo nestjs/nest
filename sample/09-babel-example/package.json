@@ -19,7 +19,7 @@
     "@nestjs/microservices": "7.4.4",
     "@nestjs/websockets": "7.4.4",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.6.2"
+    "rxjs": "6.6.3"
   },
   "devDependencies": {
     "@babel/cli": "7.10.5",
