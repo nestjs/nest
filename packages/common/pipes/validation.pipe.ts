@@ -135,7 +135,7 @@ export class ValidationPipe implements PipeTransform<any> {
     if (type === 'custom' && !this.validateCustomDecorators) {
       return false;
     }
-    const types = [String, Boolean, Number, Array, Object];
+    const types = [String, Boolean, Number, Array, Object, Buffer];
     return !types.some(t => metatype === t) && !isNil(metatype);
   }
 
