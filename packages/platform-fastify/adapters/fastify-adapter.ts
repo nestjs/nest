@@ -19,7 +19,7 @@ import {
   RawServerDefault,
   RequestGenericInterface,
 } from 'fastify';
-import { Reply } from 'fastify/lib/reply';
+import * as Reply from 'fastify/lib/reply';
 import * as http2 from 'http2';
 import * as https from 'https';
 import { InjectOptions } from 'light-my-request';
@@ -118,11 +118,13 @@ export class FastifyAdapter<
       ? new Reply(
           response,
           {
-            preSerialization: null,
-            preValidation: [],
-            preHandler: [],
-            onSend: [],
-            onError: [],
+            context: {
+              preSerialization: null,
+              preValidation: [],
+              preHandler: [],
+              onSend: [],
+              onError: [],
+            },
           },
           {},
         )
