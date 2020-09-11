@@ -1,3 +1,4 @@
+import { Client as NatsClient } from 'external/nats-client.interface';
 import { Transport } from '../enums/transport.enum';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import {
@@ -161,19 +162,40 @@ export interface KafkaOptions {
 
 export interface StanOptions {
   transport?: Transport.STAN;
-  options?: {
-    url?: string;
-    name?: string;
-    user?: string;
-    pass?: string;
-    maxReconnectAttempts?: number;
-    reconnectTimeWait?: number;
-    servers?: string[];
-    reconnect?: boolean;
-    pedantic?: boolean;
-    tls?: any;
-    queue?: string;
-    serializer?: Serializer;
-    deserializer?: Deserializer;
+  options?: NatsOptions['options'] & {
+    // encoding?: BufferEncoding;
+    // maxPingOut?: number;
+    // nkey?: string;
+    // noRandomize?: boolean;
+    // nonceSigner?: Function;
+    // pingInterval?: number;
+    // token?: string;
+    // tokenHandler?: Function;
+    // useOldRequestStyle?: boolean;
+    // userCreds?: string;
+    // userJWT?: string | Function;
+    // verbose?: boolean;
+    // waitOnFirstConnect?: boolean;
+    // yieldTime?: number;
+    //-----
+    clusterId: string;
+    clientId: string;
+    connectTimeout?: number;
+    ackTimeout?: number;
+    discoverPrefix?: string;
+    maxPubAcksInflight?: number;
+    stanEncoding?: string;
+    stanMaxPingOut?: number;
+    stanPingInterval?: number;
+    nc?: NatsClient;
+    subscriptionOptions?: {
+      durableName?: string;
+      maxInFlight?: number;
+      ackWait?: number;
+      startAtPosition?: number;
+      startAtSequence?: number;
+      startAtTime?: Date;
+      noAck?: boolean;
+    };
   };
 }

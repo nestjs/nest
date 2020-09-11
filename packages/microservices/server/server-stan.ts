@@ -1,32 +1,40 @@
+import { Logger } from '@nestjs/common/services/logger.service';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
-  NATS_DEFAULT_URL,
+  MESSAGE_EVENT,
   NO_MESSAGE_HANDLER,
+  STAN_DEFAULT_URL,
 } from '../constants';
-import { NatsContext } from '../ctx-host/nats.context';
+import { StanContext } from '../ctx-host/stan.context';
 import { Transport } from '../enums';
-import { Client } from '../external/nats-client.interface';
+import {
+  Client,
+  Message,
+  SubscriptionOptions,
+} from '../external/stan-client.interface';
 import { CustomTransportStrategy, PacketId } from '../interfaces';
-import { NatsOptions } from '../interfaces/microservice-configuration.interface';
+import { StanOptions } from '../interfaces/microservice-configuration.interface';
 import { IncomingRequest, ReadPacket } from '../interfaces/packet.interface';
 import { Server } from './server';
 
-let natsPackage: any = {};
+let stanPackage: any = {};
 
 export class ServerStan extends Server implements CustomTransportStrategy {
-  public readonly transportId = Transport.NATS;
+  public readonly transportId = Transport.STAN;
+
+  protected logger = new Logger(ServerStan.name);
 
   private readonly url: string;
-  private natsClient: Client;
+  private stanClient: Client;
 
-  constructor(private readonly options: NatsOptions['options']) {
+  constructor(private readonly options: StanOptions['options']) {
     super();
-    this.url = this.getOptionsProp(this.options, 'url') || NATS_DEFAULT_URL;
+    this.url = this.getOptionsProp(this.options, 'url') || STAN_DEFAULT_URL;
 
-    natsPackage = this.loadPackage('node-nats-streaming', ServerStan.name, () =>
+    stanPackage = this.loadPackage('node-nats-streaming', ServerStan.name, () =>
       require('node-nats-streaming'),
     );
 
@@ -35,77 +43,92 @@ export class ServerStan extends Server implements CustomTransportStrategy {
   }
 
   public listen(callback: () => void) {
-    this.natsClient = this.createNatsClient();
-    this.handleError(this.natsClient);
+    this.stanClient = this.createStanClient();
+    this.handleError(this.stanClient);
     this.start(callback);
   }
 
   public start(callback?: () => void) {
-    this.bindEvents(this.natsClient);
-    this.natsClient.on(CONNECT_EVENT, callback);
+    this.stanClient.on(CONNECT_EVENT, () => {
+      this.bindEvents(this.stanClient);
+      this.stanClient.on(CONNECT_EVENT, callback);
+    });
   }
 
   public bindEvents(client: Client) {
     const queue = this.getOptionsProp(this.options, 'queue');
     const subscribe = queue
-      ? (channel: string) =>
-          client.subscribe(
-            channel,
-            { queue },
-            this.getMessageHandler(channel, client).bind(this),
-          )
-      : (channel: string) =>
-          client.subscribe(
-            channel,
-            this.getMessageHandler(channel, client).bind(this),
-          );
+      ? (channel: string, opts: SubscriptionOptions) =>
+          client.subscribe(channel, queue, opts)
+      : (channel: string, opts: SubscriptionOptions) =>
+          client.subscribe(channel, opts);
 
     const registeredPatterns = [...this.messageHandlers.keys()];
-    registeredPatterns.forEach(channel => subscribe(channel));
+
+    registeredPatterns.forEach(channel => {
+      const handler = this.getMessageHandler(channel, client).bind(this);
+      const subOpts = this.buildSubscriptionOptions(client);
+
+      const sub = subscribe(this.getRequestPattern(channel), subOpts);
+      sub.on('ready', () => {
+        this.logger.debug(`subscription ${channel} is ready`);
+        sub.on(MESSAGE_EVENT, handler);
+      });
+      sub.on('error', err => this.logger.error('subscription error: ', err));
+      sub.on('timeout', err =>
+        this.logger.error('subscription timeout: ', err),
+      );
+      sub.on('unsubscribed', () =>
+        this.logger.debug(`subscription ${channel} unsubscribed`),
+      );
+      sub.on('closed', () =>
+        this.logger.debug(`subscription ${channel} closed`),
+      );
+    });
   }
 
   public close() {
-    this.natsClient && this.natsClient.close();
-    this.natsClient = null;
+    this.stanClient && this.stanClient.close();
+    this.stanClient = null;
   }
 
-  public createNatsClient(): Client {
-    const options = this.options || ({} as NatsOptions);
-    return natsPackage.connect({
-      ...options,
+  public createStanClient(): Client {
+    const options = this.options || ({} as StanOptions['options']);
+    const { clusterId, clientId, ...rest } = options;
+    return stanPackage.connect(clusterId, clientId, {
+      ...rest,
       url: this.url,
-      json: true,
+      // json: true,
     });
   }
 
   public getMessageHandler(channel: string, client: Client): Function {
-    return async (
-      buffer: ReadPacket & PacketId,
-      replyTo: string,
-      callerSubject: string,
-    ) => this.handleMessage(channel, buffer, client, replyTo, callerSubject);
+    return async (buffer: Message) =>
+      this.handleMessage(channel, buffer, client);
   }
 
   public async handleMessage(
     channel: string,
-    rawMessage: any,
+    rawMessage: Message,
     client: Client,
-    replyTo: string,
-    callerSubject: string,
   ) {
-    const natsCtx = new NatsContext([callerSubject]);
-    const message = this.deserializer.deserialize(rawMessage, {
+    const dataStr = rawMessage.getRawData().toString();
+    const message = this.deserializer.deserialize(this.parseMessage(dataStr), {
       channel,
-      replyTo,
     });
+
+    const stanCtx = new StanContext([channel, rawMessage]);
+
     if (isUndefined((message as IncomingRequest).id)) {
-      return this.handleEvent(channel, message, natsCtx);
+      return this.handleEvent(channel, message, stanCtx);
     }
+
     const publish = this.getPublisher(
       client,
-      replyTo,
+      channel,
       (message as IncomingRequest).id,
     );
+
     const handler = this.getHandlerByPattern(channel);
     if (!handler) {
       const status = 'error';
@@ -117,20 +140,80 @@ export class ServerStan extends Server implements CustomTransportStrategy {
       return publish(noHandlerPacket);
     }
     const response$ = this.transformToObservable(
-      await handler(message.data, natsCtx),
+      await handler(message.data, stanCtx),
     ) as Observable<any>;
     response$ && this.send(response$, publish);
   }
 
-  public getPublisher(publisher: Client, replyTo: string, id: string) {
+  public getPublisher(publisher: Client, channel: string, id: string) {
     return (response: any) => {
       Object.assign(response, { id });
       const outgoingResponse = this.serializer.serialize(response);
-      return publisher.publish(replyTo, outgoingResponse);
+      return publisher.publish(
+        this.getReplyPattern(channel),
+        JSON.stringify(outgoingResponse),
+      );
     };
   }
 
   public handleError(stream: any) {
     stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
+  }
+
+  public parseMessage(content: string): ReadPacket & PacketId {
+    try {
+      return JSON.parse(content);
+    } catch (e) {
+      return content as any;
+    }
+  }
+
+  public getRequestPattern(pattern: string): string {
+    return pattern;
+  }
+
+  public getReplyPattern(pattern: string): string {
+    return `${pattern}.reply`;
+  }
+
+  public buildSubscriptionOptions(
+    channel: string,
+    client: Client,
+    options: StanOptions['options'],
+  ): SubscriptionOptions {
+    const subOpts = client.subscriptionOptions();
+    const { subscriptionOptions } = options;
+
+    if (!isUndefined(subscriptionOptions)) {
+      if (!isUndefined(subscriptionOptions.durableName)) {
+        subOpts.setDurableName(subscriptionOptions.durableName + '-' + channel); // 'durable-' + channel
+      }
+
+      if (!isUndefined(subscriptionOptions.maxInFlight)) {
+        subOpts.setMaxInFlight(subscriptionOptions.maxInFlight);
+      }
+
+      if (!isUndefined(subscriptionOptions.ackWait)) {
+        subOpts.setAckWait(subscriptionOptions.ackWait);
+      }
+
+      if (!isUndefined(subscriptionOptions.startAtPosition)) {
+        subOpts.setStartAt(subscriptionOptions.startAtPosition);
+      }
+
+      if (!isUndefined(subscriptionOptions.startAtSequence)) {
+        subOpts.setStartAtSequence(subscriptionOptions.startAtSequence);
+      }
+
+      if (!isUndefined(subscriptionOptions.startAtTime)) {
+        subOpts.setStartTime(subscriptionOptions.startAtTime);
+      }
+
+      if (!isUndefined(subscriptionOptions.noAck)) {
+        subOpts.setManualAckMode(subscriptionOptions.noAck);
+      }
+    }
+
+    return subOpts;
   }
 }

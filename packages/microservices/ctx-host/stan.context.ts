@@ -1,8 +1,8 @@
 import { BaseRpcContext } from './base-rpc.context';
 
-type StanContextArgs = [string];
+type StanContextArgs = [string, any];
 
-export class NatsContext extends BaseRpcContext<StanContextArgs> {
+export class StanContext extends BaseRpcContext<StanContextArgs> {
   constructor(args: StanContextArgs) {
     super(args);
   }
@@ -12,5 +12,12 @@ export class NatsContext extends BaseRpcContext<StanContextArgs> {
    */
   getSubject() {
     return this.args[0];
+  }
+
+  /**
+   * Returns the original message.
+   */
+  getMessage() {
+    return this.args[1];
   }
 }
