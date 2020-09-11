@@ -21,6 +21,7 @@ export type MicroserviceOptions =
   | MqttOptions
   | RmqOptions
   | KafkaOptions
+  | StanOptions
   | CustomStrategy;
 
 export interface CustomStrategy {
@@ -153,6 +154,25 @@ export interface KafkaOptions {
       timeout?: number;
       compression?: CompressionTypes;
     };
+    serializer?: Serializer;
+    deserializer?: Deserializer;
+  };
+}
+
+export interface StanOptions {
+  transport?: Transport.STAN;
+  options?: {
+    url?: string;
+    name?: string;
+    user?: string;
+    pass?: string;
+    maxReconnectAttempts?: number;
+    reconnectTimeWait?: number;
+    servers?: string[];
+    reconnect?: boolean;
+    pedantic?: boolean;
+    tls?: any;
+    queue?: string;
     serializer?: Serializer;
     deserializer?: Deserializer;
   };

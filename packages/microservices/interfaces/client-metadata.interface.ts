@@ -7,6 +7,7 @@ import {
   NatsOptions,
   RedisOptions,
   RmqOptions,
+  StanOptions,
 } from './microservice-configuration.interface';
 import { Serializer } from './serializer.interface';
 
@@ -17,7 +18,8 @@ export type ClientOptions =
   | GrpcOptions
   | KafkaOptions
   | TcpClientOptions
-  | RmqOptions;
+  | RmqOptions
+  | StanOptions;
 
 export interface TcpClientOptions {
   transport: Transport.TCP;

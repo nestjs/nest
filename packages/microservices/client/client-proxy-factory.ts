@@ -11,6 +11,7 @@ import {
   NatsOptions,
   RedisOptions,
   RmqOptions,
+  StanOptions,
 } from '../interfaces/microservice-configuration.interface';
 import { ClientGrpcProxy } from './client-grpc';
 import { ClientKafka } from './client-kafka';
@@ -19,6 +20,7 @@ import { ClientNats } from './client-nats';
 import { ClientProxy } from './client-proxy';
 import { ClientRedis } from './client-redis';
 import { ClientRMQ } from './client-rmq';
+import { ClientStan } from './client-stan';
 import { ClientTCP } from './client-tcp';
 
 export interface IClientProxyFactory {
@@ -45,6 +47,8 @@ export class ClientProxyFactory {
         return new ClientRMQ(options as RmqOptions['options']);
       case Transport.KAFKA:
         return new ClientKafka(options as KafkaOptions['options']);
+      case Transport.STAN:
+        return new ClientStan(options as StanOptions['options']);
       default:
         return new ClientTCP(options as TcpClientOptions['options']);
     }
