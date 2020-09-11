@@ -50,7 +50,7 @@ export class SseStream extends Transform {
   pipe<T extends HeaderStream>(destination: T, options?: { end?: boolean }): T {
     if (destination.writeHead) {
       destination.writeHead(200, {
-        // See https://github.com/dunglas/mercure/blob/master/hub/subscribe.go#L124-L130 
+        // See https://github.com/dunglas/mercure/blob/master/hub/subscribe.go#L124-L130
         'Content-Type': 'text/event-stream',
         Connection: 'keep-alive',
         // Disable cache, even for old browsers and proxies
@@ -74,24 +74,31 @@ export class SseStream extends Transform {
     encoding: string,
     callback: (error?: Error | null, data?: any) => void,
   ) {
-    if (message.type) this.push(`event: ${message.type}\n`);
-    if (message.id) this.push(`id: ${message.id}\n`);
-    if (message.retry) this.push(`retry: ${message.retry}\n`);
-    if (message.data) this.push(toDataString(message.data));
-    this.push('\n');
+    let data = message.type ? `event: ${message.type}\n` : '';
+    data += message.id ? `id: ${message.id}\n` : '';
+    data += message.retry ? `retry: ${message.retry}\n` : '';
+    data += message.data ? toDataString(message.data) : '';
+    data += '\n';
+    this.push(data);
     callback();
   }
 
+  /**
+   * Calls `.write` but handles the drain if needed
+   */
   writeMessage(
     message: MessageEvent,
-    encoding?: string,
-    cb?: (error: Error | null | undefined) => void,
-  ): boolean {
+    cb: (error: Error | null | undefined) => void,
+  ) {
     if (!message.id) {
       this.lastEventId++;
       message.id = this.lastEventId.toString();
     }
 
-    return this.write(message, encoding, cb);
+    if (!this.write(message, 'utf-8', cb)) {
+      this.once('drain', cb);
+    } else {
+      process.nextTick(cb);
+    }
   }
 }

@@ -8,6 +8,7 @@ import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import { SseStream, HeaderStream } from '../services';
 import { IncomingMessage, ServerResponse } from 'http';
+import { debounce } from 'rxjs/operators';
 
 export interface CustomHeader {
   name: string;
@@ -93,10 +94,16 @@ export class RouterResponseController {
     const stream = new SseStream(request);
     stream.pipe(response);
 
-    const subscription = observable.subscribe((message: any) => {
-      if (typeof message !== 'object') message = { data: message };
-      stream.writeMessage(message);
-    });
+    const subscription = observable
+      .pipe(
+        debounce((message: any) => {
+          return new Promise(resolve => {
+            if (typeof message !== 'object') message = { data: message };
+            stream.writeMessage(message, resolve);
+          });
+        }),
+      )
+      .subscribe();
 
     request.on('close', () => {
       response.end();

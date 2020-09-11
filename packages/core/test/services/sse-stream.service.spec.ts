@@ -5,6 +5,8 @@ import * as EventSource from 'eventsource';
 import { SseStream, HeaderStream } from '../../services/sse-stream.service';
 import { AddressInfo } from 'net';
 
+const noop = () => {};
+
 const written = (stream: Writable) =>
   new Promise((resolve, reject) =>
     stream.on('error', reject).on('finish', resolve),
@@ -41,12 +43,18 @@ describe('SseStream', () => {
     const sse = new SseStream();
     const sink = new Sink();
     sse.pipe(sink);
-    sse.writeMessage({
-      data: 'hello\nworld',
-    });
-    sse.write({
-      data: 'bonjour\nmonde',
-    });
+    sse.writeMessage(
+      {
+        data: 'hello\nworld',
+      },
+      noop,
+    );
+    sse.writeMessage(
+      {
+        data: 'bonjour\nmonde',
+      },
+      noop,
+    );
     sse.end();
     await written(sink);
     expect(sink.content).to.equal(
@@ -55,6 +63,7 @@ id: 1
 data: hello
 data: world
 
+id: 2
 data: bonjour
 data: monde
 
@@ -66,9 +75,12 @@ data: monde
     const sse = new SseStream();
     const sink = new Sink();
     sse.pipe(sink);
-    sse.writeMessage({
-      data: { hello: 'world' },
-    });
+    sse.writeMessage(
+      {
+        data: { hello: 'world' },
+      },
+      noop,
+    );
     sse.end();
     await written(sink);
     expect(sink.content).to.equal(
@@ -84,12 +96,15 @@ data: {"hello":"world"}
     const sse = new SseStream();
     const sink = new Sink();
     sse.pipe(sink);
-    sse.writeMessage({
-      type: 'tea-time',
-      id: 'the-id',
-      retry: 222,
-      data: 'hello',
-    });
+    sse.writeMessage(
+      {
+        type: 'tea-time',
+        id: 'the-id',
+        retry: 222,
+        data: 'hello',
+      },
+      noop,
+    );
     sse.end();
     await written(sink);
     expect(sink.content).to.equal(
@@ -137,7 +152,7 @@ data: hello
         es.close();
         server.close(callback);
       };
-      es.onopen = () => sse.writeMessage({ data: 'hello' });
+      es.onopen = () => sse.writeMessage({ data: 'hello' }, noop);
       es.onerror = e =>
         callback(new Error(`Error from EventSource: ${JSON.stringify(e)}`));
     });
