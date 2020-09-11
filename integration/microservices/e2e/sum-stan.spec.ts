@@ -1,0 +1,99 @@
+import { INestApplication } from '@nestjs/common';
+import { Transport } from '@nestjs/microservices';
+import { Test } from '@nestjs/testing';
+import { expect } from 'chai';
+import * as request from 'supertest';
+import { StanController } from '../src/stan/stan.controller';
+
+describe('STAN transport', () => {
+  let server;
+  let app: INestApplication;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      controllers: [StanController],
+    }).compile();
+
+    app = module.createNestApplication();
+    server = app.getHttpAdapter().getInstance();
+
+    app.connectMicroservice({
+      transport: Transport.STAN,
+      options: {
+        url: 'nats://0.0.0.0:4223',
+      },
+    });
+    await app.startAllMicroservicesAsync();
+    await app.init();
+  });
+
+  it(`/POST`, () => {
+    return request(server)
+      .post('/?command=math.sum')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, '15');
+  });
+
+  it(`/POST (Promise/async)`, () => {
+    return request(server)
+      .post('/?command=async.sum')
+      .send([1, 2, 3, 4, 5])
+      .expect(200)
+      .expect(200, '15');
+  });
+
+  it(`/POST (Observable stream)`, () => {
+    return request(server)
+      .post('/?command=stream.sum')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, '15');
+  });
+
+  it(`/POST (streaming)`, () => {
+    return request(server)
+      .post('/stream')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, '15');
+  });
+
+  it(`/POST (concurrent)`, () => {
+    return request(server)
+      .post('/concurrent')
+      .send([
+        Array.from({ length: 10 }, (v, k) => k + 1),
+        Array.from({ length: 10 }, (v, k) => k + 11),
+        Array.from({ length: 10 }, (v, k) => k + 21),
+        Array.from({ length: 10 }, (v, k) => k + 31),
+        Array.from({ length: 10 }, (v, k) => k + 41),
+        Array.from({ length: 10 }, (v, k) => k + 51),
+        Array.from({ length: 10 }, (v, k) => k + 61),
+        Array.from({ length: 10 }, (v, k) => k + 71),
+        Array.from({ length: 10 }, (v, k) => k + 81),
+        Array.from({ length: 10 }, (v, k) => k + 91),
+      ])
+      .expect(200, 'true');
+  });
+
+  it(`/GET (exception)`, () => {
+    return request(server).get('/exception').expect(200, {
+      message: 'test',
+      status: 'error',
+    });
+  });
+
+  it(`/POST (event notification)`, done => {
+    request(server)
+      .post('/notify')
+      .send([1, 2, 3, 4, 5])
+      .end(() => {
+        setTimeout(() => {
+          expect(StanController.IS_NOTIFIED).to.be.true;
+          done();
+        }, 1000);
+      });
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+});
