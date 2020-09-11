@@ -8,6 +8,7 @@ import { ClientMqtt } from '../../client/client-mqtt';
 import { ClientGrpcProxy } from '../../client/client-grpc';
 import { ClientRMQ } from '../../client/client-rmq';
 import { ClientKafka } from '../../client/client-kafka';
+import { ClientStan } from '../../client/client-stan';
 import { join } from 'path';
 
 describe('ClientProxyFactory', () => {
@@ -25,6 +26,11 @@ describe('ClientProxyFactory', () => {
     it(`should create nats client`, () => {
       const proxy = ClientProxyFactory.create({ transport: Transport.NATS });
       expect(proxy instanceof ClientNats).to.be.true;
+    });
+
+    it(`should create stan client`, () => {
+      const proxy = ClientProxyFactory.create({ transport: Transport.STAN });
+      expect(proxy instanceof ClientStan).to.be.true;
     });
 
     it(`should create mqtt client`, () => {

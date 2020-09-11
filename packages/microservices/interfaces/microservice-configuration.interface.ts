@@ -1,4 +1,3 @@
-import { Client as NatsClient } from 'external/nats-client.interface';
 import { Transport } from '../enums/transport.enum';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import {
@@ -8,6 +7,7 @@ import {
   ProducerConfig,
 } from '../external/kafka-options.interface';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
+import { Client as NatsClient } from '../external/nats-client.interface';
 import { ClientOpts } from '../external/redis.interface';
 import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';

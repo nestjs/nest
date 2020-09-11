@@ -15,6 +15,15 @@ services:
       - "4222:4222"
       - "6222:6222"
     restart: always
+  nats-streaming:
+    container_name: test-nats-streaming
+    image: nats-streaming
+    command: nats-streaming-server -cid "nestjs"
+    ports:
+      - "8223:8222"
+      - "4223:4222"
+      - "6223:6222"
+    restart: always
   mqtt:
     container_name: test-mqtt
     image: toke/mosquitto

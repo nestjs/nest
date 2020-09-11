@@ -52,6 +52,18 @@ describe('Disconnected client', () => {
       .expect(408);
   });
 
+  it(`STAN`, () => {
+    return request(server)
+      .post('/')
+      .send({
+        transport: Transport.STAN,
+        options: {
+          url: 'nats://localhost:4224',
+        },
+      })
+      .expect(408);
+  });
+
   it(`MQTT`, () => {
     return request(server)
       .post('/')
