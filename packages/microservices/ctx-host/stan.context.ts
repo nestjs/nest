@@ -1,6 +1,6 @@
 import { BaseRpcContext } from './base-rpc.context';
 
-type StanContextArgs = [string, any];
+type StanContextArgs = [string, Record<string, any>];
 
 export class StanContext extends BaseRpcContext<StanContextArgs> {
   constructor(args: StanContextArgs) {

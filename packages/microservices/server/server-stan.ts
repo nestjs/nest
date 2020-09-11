@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
+import { v4 as uuidv4 } from 'uuid';
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
@@ -51,7 +52,7 @@ export class ServerStan extends Server implements CustomTransportStrategy {
   public start(callback?: () => void) {
     this.stanClient.on(CONNECT_EVENT, () => {
       this.bindEvents(this.stanClient);
-      this.stanClient.on(CONNECT_EVENT, callback);
+      callback();
     });
   }
 
@@ -67,22 +68,28 @@ export class ServerStan extends Server implements CustomTransportStrategy {
 
     registeredPatterns.forEach(channel => {
       const handler = this.getMessageHandler(channel, client).bind(this);
-      const subOpts = this.buildSubscriptionOptions(client);
+      const subOpts = this.buildSubscriptionOptions(
+        channel,
+        client,
+        this.options,
+      );
 
       const sub = subscribe(this.getRequestPattern(channel), subOpts);
       sub.on('ready', () => {
-        this.logger.debug(`subscription ${channel} is ready`);
+        this.logger.debug(`Subscription '${channel}' is ready`);
         sub.on(MESSAGE_EVENT, handler);
       });
-      sub.on('error', err => this.logger.error('subscription error: ', err));
+      sub.on('error', err =>
+        this.logger.error(`Subscription error on '${channel}': `, err),
+      );
       sub.on('timeout', err =>
-        this.logger.error('subscription timeout: ', err),
+        this.logger.error(`Subscription timeout on '${channel}': `, err),
       );
       sub.on('unsubscribed', () =>
-        this.logger.debug(`subscription ${channel} unsubscribed`),
+        this.logger.debug(`Subscription ${channel} unsubscribed`),
       );
       sub.on('closed', () =>
-        this.logger.debug(`subscription ${channel} closed`),
+        this.logger.debug(`Subscription ${channel} closed`),
       );
     });
   }
@@ -95,10 +102,9 @@ export class ServerStan extends Server implements CustomTransportStrategy {
   public createStanClient(): Client {
     const options = this.options || ({} as StanOptions['options']);
     const { clusterId, clientId, ...rest } = options;
-    return stanPackage.connect(clusterId, clientId, {
+    return stanPackage.connect(clusterId, `${clientId}-server-${uuidv4()}`, {
       ...rest,
       url: this.url,
-      // json: true,
     });
   }
 

@@ -1,24 +1,32 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { share } from 'rxjs/operators';
-import { ERROR_EVENT, NATS_DEFAULT_URL } from '../constants';
-import { Client } from '../external/nats-client.interface';
-import { NatsOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
+import { v4 as uuidv4 } from 'uuid';
+import { ERROR_EVENT, MESSAGE_EVENT, STAN_DEFAULT_URL } from '../constants';
+import {
+  Client,
+  Message,
+  Subscription,
+} from '../external/stan-client.interface';
+import { PacketId, ReadPacket, StanOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 import { CONN_ERR } from './constants';
 
-let natsPackage: any = {};
+let stanPackage: any = {};
 
 export class ClientStan extends ClientProxy {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly url: string;
-  protected natsClient: Client;
+  protected stanClient: Client;
   protected connection: Promise<any>;
 
-  constructor(protected readonly options: NatsOptions['options']) {
+  protected readonly subscriptionsCount = new Map<string, number>();
+  protected readonly subscriptions = new Map<string, Subscription>();
+
+  constructor(protected readonly options: StanOptions['options']) {
     super();
-    this.url = this.getOptionsProp(this.options, 'url') || NATS_DEFAULT_URL;
-    natsPackage = loadPackage('node-nats-streaming', ClientStan.name, () =>
+    this.url = this.getOptionsProp(this.options, 'url') || STAN_DEFAULT_URL;
+    stanPackage = loadPackage('node-nats-streaming', ClientStan.name, () =>
       require('node-nats-streaming'),
     );
 
@@ -27,30 +35,32 @@ export class ClientStan extends ClientProxy {
   }
 
   public close() {
-    this.natsClient && this.natsClient.close();
-    this.natsClient = null;
+    this.stanClient && this.stanClient.close();
+    this.stanClient = null;
     this.connection = null;
   }
 
   public async connect(): Promise<any> {
-    if (this.natsClient) {
+    if (this.stanClient) {
       return this.connection;
     }
-    this.natsClient = this.createClient();
-    this.handleError(this.natsClient);
+    this.stanClient = this.createClient();
+    this.handleError(this.stanClient);
 
-    this.connection = await this.connect$(this.natsClient)
+    this.connection = await this.connect$(this.stanClient)
       .pipe(share())
       .toPromise();
     return this.connection;
   }
 
   public createClient(): Client {
-    const options: any = this.options || ({} as NatsOptions);
-    return natsPackage.connect({
-      ...options,
+    const options: any = this.options || ({} as StanOptions);
+    const { clusterId, clientId, ...rest } = options;
+
+    return stanPackage.connect(clusterId, `${clientId}-client-${uuidv4()}`, {
+      ...rest,
       url: this.url,
-      json: true,
+      // json: true,
     });
   }
 
@@ -94,16 +104,47 @@ export class ClientStan extends ClientProxy {
       const channel = this.normalizePattern(partialPacket.pattern);
       const serializedPacket = this.serializer.serialize(packet);
 
-      const subscriptionHandler = this.createSubscriptionHandler(
-        packet,
-        callback,
-      );
-      const subscriptionId = this.natsClient.request(
-        channel,
-        serializedPacket as any,
-        subscriptionHandler,
-      );
-      return () => this.natsClient.unsubscribe(subscriptionId);
+      const responseChannel = this.getReplyPattern(channel);
+      const subscription = this.subscriptions.get(responseChannel);
+
+      const publishPacket = () => {
+        const subscriptionsCount =
+          this.subscriptionsCount.get(responseChannel) || 0;
+        this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
+        this.routingMap.set(packet.id, callback);
+        this.stanClient.publish(
+          this.getRequestPattern(channel),
+          JSON.stringify(serializedPacket),
+        );
+      };
+
+      if (!subscription) {
+        const subOpts = this.stanClient.subscriptionOptions();
+        subOpts.setDurableName('durable-' + channel);
+
+        const sub = this.options.queue
+          ? this.stanClient.subscribe(
+              responseChannel,
+              this.options.queue,
+              subOpts,
+            )
+          : this.stanClient.subscribe(responseChannel, subOpts);
+
+        sub.on('ready', () => {
+          // avoid "NATS: Subject must be supplied" error
+          sub.on(MESSAGE_EVENT, this.createResponseCallback());
+
+          this.subscriptions.set(responseChannel, sub);
+          publishPacket();
+        });
+      } else {
+        publishPacket();
+      }
+
+      return () => {
+        this.unsubscribeFromChannel(responseChannel);
+        this.routingMap.delete(packet.id);
+      };
     } catch (err) {
       callback({ err });
     }
@@ -114,9 +155,53 @@ export class ClientStan extends ClientProxy {
     const serializedPacket = this.serializer.serialize(packet);
 
     return new Promise((resolve, reject) =>
-      this.natsClient.publish(pattern, serializedPacket as any, err =>
+      this.stanClient.publish(pattern, JSON.stringify(serializedPacket), err =>
         err ? reject(err) : resolve(),
       ),
     );
+  }
+
+  protected unsubscribeFromChannel(channel: string) {
+    const subscriptionCount = this.subscriptionsCount.get(channel);
+    this.subscriptionsCount.set(channel, subscriptionCount - 1);
+
+    if (subscriptionCount - 1 <= 0) {
+      this.subscriptions.get(channel).unsubscribe();
+      this.subscriptions.delete(channel);
+      this.subscriptionsCount.delete(channel);
+    }
+  }
+
+  public getReplyPattern(pattern: string): string {
+    return `${pattern}.reply`;
+  }
+
+  public getRequestPattern(pattern: string): string {
+    return pattern;
+  }
+
+  public createResponseCallback(): (msg: Message) => any {
+    return (msg: Message) => {
+      const packet = JSON.parse(msg.getData() as string);
+      const { err, response, isDisposed, id } = this.deserializer.deserialize(
+        packet,
+      );
+
+      const callback = this.routingMap.get(id);
+      if (!callback) {
+        return undefined;
+      }
+      if (isDisposed || err) {
+        return callback({
+          err,
+          response,
+          isDisposed: true,
+        });
+      }
+      callback({
+        err,
+        response,
+      });
+    };
   }
 }

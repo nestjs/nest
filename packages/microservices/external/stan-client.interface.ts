@@ -41,7 +41,7 @@ export declare class Client extends EventEmitter {
   subscriptionOptions(): SubscriptionOptions;
 }
 
-declare class Subscription extends EventEmitter {
+export declare class Subscription extends EventEmitter {
   /**
    * Returns true if the subscription has been closed or unsubscribed from.
    */
