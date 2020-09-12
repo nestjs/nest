@@ -131,7 +131,6 @@ export class ClientStan extends ClientProxy {
           : this.stanClient.subscribe(responseChannel, subOpts);
 
         sub.on('ready', () => {
-          // avoid "NATS: Subject must be supplied" error
           sub.on(MESSAGE_EVENT, this.createResponseCallback());
 
           this.subscriptions.set(responseChannel, sub);
