@@ -29,14 +29,14 @@ describe('STAN transport', () => {
 
   it(`/POST`, () => {
     return request(server)
-      .post('/?command=math.sum')
+      .post('/?command=math')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
   });
 
   it(`/POST (Promise/async)`, () => {
     return request(server)
-      .post('/?command=async.sum')
+      .post('/?command=async')
       .send([1, 2, 3, 4, 5])
       .expect(200)
       .expect(200, '15');
@@ -44,7 +44,7 @@ describe('STAN transport', () => {
 
   it(`/POST (Observable stream)`, () => {
     return request(server)
-      .post('/?command=stream.sum')
+      .post('/?command=stream')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
   });

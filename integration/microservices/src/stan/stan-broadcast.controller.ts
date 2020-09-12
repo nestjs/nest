@@ -15,13 +15,13 @@ export class StanBroadcastController {
 
   @Get('broadcast')
   multicats() {
-    return this.client.send<number>('broadcast.test', {}).pipe(
+    return this.client.send<number>('broadcast', {}).pipe(
       scan((a, b) => a + b),
       take(2),
     );
   }
 
-  @MessagePattern('broadcast.*')
+  @MessagePattern('broadcast')
   replyBroadcast(): Observable<number> {
     return new Observable(observer => observer.next(1));
   }

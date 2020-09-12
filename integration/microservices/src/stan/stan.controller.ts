@@ -39,7 +39,7 @@ export class StanController {
   @HttpCode(200)
   stream(@Body() data: number[]): Observable<number> {
     return this.client
-      .send<number>('streaming.sum', data)
+      .send<number>('streaming', data)
       .pipe(scan((a, b) => a + b));
   }
 
@@ -48,9 +48,7 @@ export class StanController {
   concurrent(@Body() data: number[][]): Promise<boolean> {
     const send = async (tab: number[]) => {
       const expected = tab.reduce((a, b) => a + b);
-      const result = await this.client
-        .send<number>('math.sum', tab)
-        .toPromise();
+      const result = await this.client.send<number>('math', tab).toPromise();
 
       return result === expected;
     };
@@ -59,22 +57,22 @@ export class StanController {
       .reduce(async (a, b) => (await a) && b);
   }
 
-  @MessagePattern('math.*')
+  @MessagePattern('math')
   sum(@Payload() data: number[], @Ctx() context: StanContext): number {
     return (data || []).reduce((a, b) => a + b);
   }
 
-  @MessagePattern('async.*')
+  @MessagePattern('async')
   async asyncSum(data: number[]): Promise<number> {
     return (data || []).reduce((a, b) => a + b);
   }
 
-  @MessagePattern('stream.*')
+  @MessagePattern('stream')
   streamSum(data: number[]): Observable<number> {
     return of((data || []).reduce((a, b) => a + b));
   }
 
-  @MessagePattern('streaming.*')
+  @MessagePattern('streaming')
   streaming(data: number[]): Observable<number> {
     return from(data);
   }

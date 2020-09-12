@@ -1,15 +1,15 @@
 import { expect } from 'chai';
+import { join } from 'path';
+import { ClientGrpcProxy } from '../../client/client-grpc';
+import { ClientKafka } from '../../client/client-kafka';
+import { ClientMqtt } from '../../client/client-mqtt';
+import { ClientNats } from '../../client/client-nats';
 import { ClientProxyFactory } from '../../client/client-proxy-factory';
+import { ClientRedis } from '../../client/client-redis';
+import { ClientRMQ } from '../../client/client-rmq';
+import { ClientStan } from '../../client/client-stan';
 import { ClientTCP } from '../../client/client-tcp';
 import { Transport } from '../../enums/transport.enum';
-import { ClientRedis } from '../../client/client-redis';
-import { ClientNats } from '../../client/client-nats';
-import { ClientMqtt } from '../../client/client-mqtt';
-import { ClientGrpcProxy } from '../../client/client-grpc';
-import { ClientRMQ } from '../../client/client-rmq';
-import { ClientKafka } from '../../client/client-kafka';
-import { ClientStan } from '../../client/client-stan';
-import { join } from 'path';
 
 describe('ClientProxyFactory', () => {
   describe('create', () => {
