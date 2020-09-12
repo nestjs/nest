@@ -100,17 +100,11 @@ describe('ServerStan', () => {
     });
     it('should call "handleEvent" if identifier is not present', () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
-      server.handleMessage(channel, { pattern: '', data: '' }, null, '', '');
+      server.handleMessage(channel, { pattern: '', data: '' } as any, null);
       expect(handleEventSpy.called).to.be.true;
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, () => {
-      server.handleMessage(
-        channel,
-        { id, pattern: '', data: '' },
-        null,
-        '',
-        '',
-      );
+      server.handleMessage(channel, { id, pattern: '', data: '' } as any, null);
       expect(
         getPublisherSpy.calledWith({
           id,
@@ -126,13 +120,11 @@ describe('ServerStan', () => {
       });
 
       const callerSubject = 'subject';
-      const stanContext = new StanContext([callerSubject]);
+      const stanContext = new StanContext([callerSubject, {}]);
       server.handleMessage(
         channel,
-        { pattern: '', data, id: '2' },
+        { pattern: '', data, id: '2' } as any,
         null,
-        '',
-        callerSubject,
       );
       expect(handler.calledWith(data, stanContext)).to.be.true;
     });
