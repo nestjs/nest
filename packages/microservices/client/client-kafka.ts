@@ -80,9 +80,9 @@ export class ClientKafka extends ClientProxy {
     this.responsePatterns.push(this.getResponsePatternName(request));
   }
 
-  public close(): void {
-    this.producer && this.producer.disconnect();
-    this.consumer && this.consumer.disconnect();
+  public async close(): Promise<void> {
+    this.producer && (await this.producer.disconnect());
+    this.consumer && (await this.consumer.disconnect());
     this.producer = null;
     this.consumer = null;
     this.client = null;
