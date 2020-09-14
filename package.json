@@ -71,8 +71,8 @@
   },
   "devDependencies": {
     "@codechecks/client": "0.1.10",
-    "@commitlint/cli": "9.1.2",
-    "@commitlint/config-angular": "9.1.2",
+    "@commitlint/cli": "11.0.0",
+    "@commitlint/config-angular": "11.0.0",
     "@grpc/proto-loader": "0.5.5",
     "@nestjs/graphql": "7.6.0",
     "@nestjs/mongoose": "7.0.2",
