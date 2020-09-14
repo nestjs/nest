@@ -22,7 +22,7 @@
     "@nestjs/common": "7.4.4",
     "@nestjs/core": "7.4.4",
     "@nestjs/platform-express": "7.4.4",
-    "mongoose": "5.10.4",
+    "mongoose": "5.10.5",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "6.6.3"
@@ -43,7 +43,7 @@
     "tsconfig-paths": "3.9.0",
     "@typescript-eslint/eslint-plugin": "4.1.0",
     "@typescript-eslint/parser": "4.1.0",
-    "eslint": "7.8.1",
+    "eslint": "7.9.0",
     "eslint-config-prettier": "6.11.0",
     "eslint-plugin-import": "2.22.0",
     "typescript": "4.0.2"
