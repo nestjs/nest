@@ -36,7 +36,7 @@
     "@types/bull": "3.14.2",
     "@types/dotenv": "6.1.1",
     "@types/express": "4.17.8",
-    "@types/jest": "26.0.13",
+    "@types/jest": "26.0.14",
     "@types/node": "11.15.2",
     "@types/supertest": "2.0.10",
     "jest": "26.4.2",
