@@ -41,7 +41,7 @@
     "prettier": "2.1.2",
     "supertest": "4.0.2",
     "ts-jest": "26.3.0",
-    "ts-loader": "8.0.3",
+    "ts-loader": "8.0.4",
     "ts-node": "9.0.0",
     "tsconfig-paths": "3.9.0",
     "@typescript-eslint/eslint-plugin": "4.1.0",
