@@ -3,11 +3,11 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
-  ApiTags,
+  ApiTags
 } from '@nestjs/swagger';
 import { CatsService } from './cats.service';
-import { Cat } from './classes/cat.class';
 import { CreateCatDto } from './dto/create-cat.dto';
+import { Cat } from './entities/cat.entity';
 
 @ApiBearerAuth()
 @ApiTags('cats')
