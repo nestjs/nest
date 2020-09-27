@@ -9,8 +9,8 @@ describe('Photo Service', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
-      controllers: [PhotoService],
       providers: [
+        PhotoService,
         {
           provide: getRepositoryToken(Photo),
           useFactory: jest.fn(() => ({
