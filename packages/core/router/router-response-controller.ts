@@ -8,8 +8,9 @@ export interface CustomHeader {
 
 export interface RedirectResponse {
   url: string;
-  statusCode: number;
+  statusCode?: number;
 }
+
 export class RouterResponseController {
   constructor(private readonly applicationRef: HttpServer) {}
 
@@ -37,7 +38,7 @@ export class RouterResponseController {
     this.applicationRef.redirect(response, statusCode, url);
   }
 
-  public async render<TInput = any, TResponse = any>(
+  public async render<TInput = unknown, TResponse = unknown>(
     resultOrDeferred: TInput,
     response: TResponse,
     template: string,
@@ -62,7 +63,7 @@ export class RouterResponseController {
     }
   }
 
-  public setHeaders<TResponse = any>(
+  public setHeaders<TResponse = unknown>(
     response: TResponse,
     headers: CustomHeader[],
   ) {
@@ -71,7 +72,10 @@ export class RouterResponseController {
     );
   }
 
-  public setStatus<TResponse = any>(response: TResponse, statusCode: number) {
+  public setStatus<TResponse = unknown>(
+    response: TResponse,
+    statusCode: number,
+  ) {
     this.applicationRef.status(response, statusCode);
   }
 }

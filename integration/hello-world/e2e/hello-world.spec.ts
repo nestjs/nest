@@ -17,34 +17,53 @@ describe('Hello world (default adapter)', () => {
     await app.init();
   });
 
-  describe('/GET', () => {
-    it(`should return "Hello world!"`, () => {
-      return request(server)
-        .get('/hello')
-        .expect(200)
-        .expect('Hello world!');
+  [
+    {
+      host: 'example.com',
+      path: '/hello',
+      greeting: 'Hello world!',
+    },
+    {
+      host: 'acme.example.com',
+      path: '/host',
+      greeting: 'Host Greeting! tenant=acme',
+    },
+  ].forEach(({ host, path, greeting }) => {
+    describe(`host=${host}`, () => {
+      describe('/GET', () => {
+        it(`should return "${greeting}"`, () => {
+          return request(server)
+            .get(path)
+            .set('Host', host)
+            .expect(200)
+            .expect(greeting);
+        });
+
+        it(`should attach response header`, () => {
+          return request(server)
+            .get(path)
+            .set('Host', host)
+            .expect(200)
+            .expect('Authorization', 'Bearer');
+        });
+      });
+
+      it(`/GET (Promise/async) returns "${greeting}"`, () => {
+        return request(server)
+          .get(`${path}/async`)
+          .set('Host', host)
+          .expect(200)
+          .expect(greeting);
+      });
+
+      it(`/GET (Observable stream) "${greeting}"`, () => {
+        return request(server)
+          .get(`${path}/stream`)
+          .set('Host', host)
+          .expect(200)
+          .expect(greeting);
+      });
     });
-
-    it(`should attach response header`, () => {
-      return request(server)
-        .get('/hello')
-        .expect(200)
-        .expect('Authorization', 'Bearer');
-    });
-  });
-
-  it(`/GET (Promise/async)`, () => {
-    return request(server)
-      .get('/hello/async')
-      .expect(200)
-      .expect('Hello world!');
-  });
-
-  it(`/GET (Observable stream)`, () => {
-    return request(server)
-      .get('/hello/stream')
-      .expect(200)
-      .expect('Hello world!');
   });
 
   afterEach(async () => {

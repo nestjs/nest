@@ -47,6 +47,22 @@ describe('Hello world (fastify adapter)', () => {
       .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
   });
 
+  it(`/GET { host: ":tenant.example.com" } not matched`, () => {
+    return app
+      .inject({
+        method: 'GET',
+        url: '/host',
+      })
+      .then(({ payload }) => {
+        expect(JSON.parse(payload)).to.be.eql({
+          error: 'Internal Server Error',
+          message:
+            'HTTP adapter does not support filtering on host: ":tenant.example.com"',
+          statusCode: 500,
+        });
+      });
+  });
+
   afterEach(async () => {
     await app.close();
   });

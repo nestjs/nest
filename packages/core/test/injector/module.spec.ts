@@ -22,7 +22,7 @@ describe('Module', () => {
 
   beforeEach(() => {
     container = new NestContainer();
-    module = new Module(TestModule as any, [], container);
+    module = new Module(TestModule, container);
   });
 
   it('should add controller', () => {
@@ -262,6 +262,7 @@ describe('Module', () => {
             instance: null,
             inject: [provider.useExisting as any],
             isResolved: false,
+            isAlias: true,
           }),
         ),
       ).to.be.true;
@@ -417,7 +418,7 @@ describe('Module', () => {
       it('should behave as identity', () => {
         const metatype = { name: token };
         (module as any)._imports = new Set([
-          new Module(metatype as any, [], new NestContainer()),
+          new Module(metatype as any, new NestContainer()),
         ]);
         expect(module.validateExportedProvider(token)).to.be.eql(token);
       });
@@ -463,7 +464,6 @@ describe('Module', () => {
 
   describe('getter "id"', () => {
     it('should return module id', () => {
-      // tslint:disable-next-line:no-string-literal
       expect(module.id).to.be.equal(module['_id']);
     });
   });

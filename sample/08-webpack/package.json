@@ -5,25 +5,31 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "build:dev": "nest build --watch --webpack",
+    "build:dev": "nest build --watch --webpack --webpackPath webpack-hmr.config.js",
     "start": "node dist/main",
+    "lint": "eslint '{src,apps,libs,test}/**/*.ts' --fix",
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "6.8.5",
-    "@nestjs/core": "6.8.5",
-    "@nestjs/platform-express": "6.8.5",
+    "@nestjs/common": "7.4.4",
+    "@nestjs/core": "7.4.4",
+    "@nestjs/platform-express": "7.4.4",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.3",
-    "typescript": "3.6.4"
+    "rxjs": "6.6.3",
+    "typescript": "4.0.3"
   },
   "devDependencies": {
-    "@types/node": "12.12.5",
-    "ts-loader": "6.2.1",
-    "ts-node": "8.4.1",
-    "tslint": "5.20.0",
-    "webpack": "4.41.2",
-    "webpack-cli": "3.3.10",
+    "@types/node": "12.12.31",
+    "@typescript-eslint/eslint-plugin": "4.2.0",
+    "@typescript-eslint/parser": "4.2.0",
+    "eslint": "7.9.0",
+    "eslint-config-prettier": "6.11.0",
+    "eslint-plugin-import": "2.22.0",
+    "start-server-webpack-plugin": "2.2.5",
+    "ts-loader": "8.0.4",
+    "ts-node": "9.0.0",
+    "webpack": "4.44.2",
+    "webpack-cli": "3.3.12",
     "webpack-node-externals": "1.7.2"
   }
 }

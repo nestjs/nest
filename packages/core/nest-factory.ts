@@ -4,7 +4,6 @@ import {
   INestApplicationContext,
   INestMicroservice,
 } from '@nestjs/common';
-import { MicroserviceOptions } from '@nestjs/common/interfaces/microservices/microservice-configuration.interface';
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
@@ -62,8 +61,7 @@ export class NestFactoryStatic {
     serverOrOptions?: AbstractHttpAdapter | NestApplicationOptions,
     options?: NestApplicationOptions,
   ): Promise<T> {
-    // tslint:disable-next-line:prefer-const
-    let [httpServer, appOptions] = this.isHttpServer(serverOrOptions)
+    const [httpServer, appOptions] = this.isHttpServer(serverOrOptions)
       ? [serverOrOptions, options]
       : [this.createHttpAdapter(), serverOrOptions];
 
@@ -92,9 +90,9 @@ export class NestFactoryStatic {
    * @returns A promise that, when resolved,
    * contains a reference to the NestMicroservice instance.
    */
-  public async createMicroservice(
+  public async createMicroservice<T extends object>(
     module: any,
-    options?: NestMicroserviceOptions & MicroserviceOptions,
+    options?: NestMicroserviceOptions & T,
   ): Promise<INestMicroservice> {
     const { NestMicroservice } = loadPackage(
       '@nestjs/microservices',
@@ -149,12 +147,15 @@ export class NestFactoryStatic {
     httpServer: HttpServer = null,
   ) {
     const instanceLoader = new InstanceLoader(container);
+    const metadataScanner = new MetadataScanner();
     const dependenciesScanner = new DependenciesScanner(
       container,
-      new MetadataScanner(),
+      metadataScanner,
       config,
     );
     container.setHttpAdapter(httpServer);
+
+    await httpServer?.init();
     try {
       this.logger.log(MESSAGES.APPLICATION_START);
       await ExceptionsZone.asyncRun(async () => {
@@ -192,7 +193,7 @@ export class NestFactoryStatic {
     prop: string,
   ): Function {
     return (...args: unknown[]) => {
-      let result;
+      let result: unknown;
       ExceptionsZone.run(() => {
         result = receiver[prop](...args);
       });

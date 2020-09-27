@@ -9,4 +9,3 @@ services:
       MYSQL_DATABASE: test
     ports:
       - "3306:3306"
-    restart: always

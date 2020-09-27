@@ -1,6 +1,7 @@
 import { Scope, Type } from '@nestjs/common';
 import { SCOPE_OPTIONS_METADATA } from '@nestjs/common/constants';
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
+import { NestContainer } from '../injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 
 export class MiddlewareContainer {
@@ -10,20 +11,31 @@ export class MiddlewareContainer {
     Set<MiddlewareConfiguration>
   >();
 
-  public getMiddlewareCollection(module: string): Map<string, InstanceWrapper> {
-    return this.middleware.get(module) || new Map();
+  constructor(private readonly container: NestContainer) {}
+
+  public getMiddlewareCollection(
+    moduleKey: string,
+  ): Map<string, InstanceWrapper> {
+    if (!this.middleware.has(moduleKey)) {
+      const moduleRef = this.container.getModuleByKey(moduleKey);
+      this.middleware.set(moduleKey, moduleRef.middlewares);
+    }
+    return this.middleware.get(moduleKey);
   }
 
   public getConfigurations(): Map<string, Set<MiddlewareConfiguration>> {
     return this.configurationSets;
   }
 
-  public insertConfig(configList: MiddlewareConfiguration[], module: string) {
-    const middleware = this.getTargetMiddleware(module);
-    const targetConfig = this.getTargetConfig(module);
+  public insertConfig(
+    configList: MiddlewareConfiguration[],
+    moduleKey: string,
+  ) {
+    const middleware = this.getMiddlewareCollection(moduleKey);
+    const targetConfig = this.getTargetConfig(moduleKey);
 
     const configurations = configList || [];
-    const insertMiddleware = <T extends Type<any>>(metatype: T) => {
+    const insertMiddleware = <T extends Type<unknown>>(metatype: T) => {
       const token = metatype.name;
       middleware.set(
         token,
@@ -40,21 +52,17 @@ export class MiddlewareContainer {
     });
   }
 
-  private getTargetMiddleware(module: string) {
-    if (!this.middleware.has(module)) {
-      this.middleware.set(module, new Map<string, InstanceWrapper>());
+  private getTargetConfig(moduleName: string) {
+    if (!this.configurationSets.has(moduleName)) {
+      this.configurationSets.set(
+        moduleName,
+        new Set<MiddlewareConfiguration>(),
+      );
     }
-    return this.middleware.get(module);
+    return this.configurationSets.get(moduleName);
   }
 
-  private getTargetConfig(module: string) {
-    if (!this.configurationSets.has(module)) {
-      this.configurationSets.set(module, new Set<MiddlewareConfiguration>());
-    }
-    return this.configurationSets.get(module);
-  }
-
-  private getClassScope<T = any>(type: Type<T>): Scope {
+  private getClassScope<T = unknown>(type: Type<T>): Scope {
     const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, type);
     return metadata && metadata.scope;
   }

@@ -9,6 +9,7 @@ import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { RouterProxyCallback } from './router-proxy';
+import { iterate } from 'iterare';
 
 export class RouterExceptionFilters extends BaseExceptionFilterContext {
   constructor(
@@ -22,11 +23,11 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
   public create(
     instance: Controller,
     callback: RouterProxyCallback,
-    module: string,
+    moduleKey: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): ExceptionsHandler {
-    this.moduleContext = module;
+    this.moduleContext = moduleKey;
 
     const exceptionHandler = new ExceptionsHandler(this.applicationRef);
     const filters = this.createContext(
@@ -43,7 +44,7 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
     return exceptionHandler;
   }
 
-  public getGlobalMetadata<T extends any[]>(
+  public getGlobalMetadata<T extends unknown[]>(
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): T {
@@ -52,10 +53,11 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
       return globalFilters;
     }
     const scopedFilterWrappers = this.config.getGlobalRequestFilters() as InstanceWrapper[];
-    const scopedFilters = scopedFilterWrappers
+    const scopedFilters = iterate(scopedFilterWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
-      .filter(host => host)
-      .map(host => host.instance);
+      .filter(host => !!host)
+      .map(host => host.instance)
+      .toArray();
 
     return globalFilters.concat(scopedFilters) as T;
   }

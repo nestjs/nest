@@ -1,1 +1,1 @@
-export interface Controller {}
+export type Controller = object;

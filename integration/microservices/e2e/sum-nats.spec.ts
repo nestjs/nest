@@ -75,12 +75,10 @@ describe('NATS transport', () => {
   });
 
   it(`/GET (exception)`, () => {
-    return request(server)
-      .get('/exception')
-      .expect(200, {
-        message: 'test',
-        status: 'error',
-      });
+    return request(server).get('/exception').expect(200, {
+      message: 'test',
+      status: 'error',
+    });
   });
 
   it(`/POST (event notification)`, done => {

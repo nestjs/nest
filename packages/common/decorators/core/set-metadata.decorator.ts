@@ -1,4 +1,7 @@
-import { Logger } from '../../services/logger.service';
+export type CustomDecorator<TKey = string> = MethodDecorator &
+  ClassDecorator & {
+    KEY: TKey;
+  };
 
 /**
  * Decorator that assigns metadata to the class/function using the
@@ -6,7 +9,7 @@ import { Logger } from '../../services/logger.service';
  *
  * Requires two parameters:
  * - `key` - a value defining the key under which the metadata is stored
- * - `value[]` - array of metadata values to be associated with `key`
+ * - `value` - metadata to be associated with `key`
  *
  * This metadata can be reflected using the `Reflector` class.
  *
@@ -16,28 +19,18 @@ import { Logger } from '../../services/logger.service';
  *
  * @publicApi
  */
-export const SetMetadata = <K = any, V = any>(
+export const SetMetadata = <K = string, V = any>(
   metadataKey: K,
   metadataValue: V,
-) => (target: object, key?: any, descriptor?: any) => {
-  if (descriptor) {
-    Reflect.defineMetadata(metadataKey, metadataValue, descriptor.value);
-    return descriptor;
-  }
-  Reflect.defineMetadata(metadataKey, metadataValue, target);
-  return target;
-};
-
-const logger = new Logger('ReflectMetadata');
-/**
- * @deprecated
- */
-export const ReflectMetadata = <K = any, V = any>(
-  metadataKey: K,
-  metadataValue: V,
-) => {
-  logger.warn(
-    `DEPRECATED! The @ReflectMetadata() decorator has been deprecated within the 6.0.0 release. Please, use @SetMetadata() instead.`,
-  );
-  return SetMetadata(metadataKey, metadataValue);
+): CustomDecorator<K> => {
+  const decoratorFactory = (target: object, key?: any, descriptor?: any) => {
+    if (descriptor) {
+      Reflect.defineMetadata(metadataKey, metadataValue, descriptor.value);
+      return descriptor;
+    }
+    Reflect.defineMetadata(metadataKey, metadataValue, target);
+    return target;
+  };
+  decoratorFactory.KEY = metadataKey;
+  return decoratorFactory;
 };

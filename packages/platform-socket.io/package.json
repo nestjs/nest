@@ -1,9 +1,14 @@
 {
   "name": "@nestjs/platform-socket.io",
-  "version": "6.9.0",
+  "version": "7.4.4",
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-socket.io)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "homepage": "https://nestjs.com",
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/nest"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/nestjs/nest"
@@ -12,11 +17,12 @@
     "access": "public"
   },
   "dependencies": {
-    "socket.io": "2.3.0"
+    "socket.io": "2.3.0",
+    "tslib": "2.0.1"
   },
   "peerDependencies": {
-    "@nestjs/common": "^6.0.0",
-    "@nestjs/websockets": "^6.0.0",
+    "@nestjs/common": "^7.0.0",
+    "@nestjs/websockets": "^7.0.0",
     "rxjs": "^6.0.0"
   }
 }

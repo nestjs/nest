@@ -12,6 +12,8 @@ import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { MetadataScanner } from '../metadata-scanner';
 import { DependenciesScanner } from '../scanner';
+import { UndefinedModuleException } from '../errors/exceptions/undefined-module.exception';
+import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
 
 describe('DependenciesScanner', () => {
   class Guard {}
@@ -35,6 +37,16 @@ describe('DependenciesScanner', () => {
     controllers: [TestController],
   })
   class TestModule {}
+
+  @Module({
+    imports: [undefined],
+  })
+  class UndefinedModule {}
+
+  @Module({
+    imports: [null],
+  })
+  class InvalidModule {}
 
   let scanner: DependenciesScanner;
   let mockContainer: sinon.SinonMock;
@@ -168,10 +180,14 @@ describe('DependenciesScanner', () => {
       expect(module.forwardRef.called).to.be.true;
     });
     describe('when "related" is nil', () => {
-      it('should throw exception', () => {
-        scanner
-          .insertImport(undefined, [] as any, 'test')
-          .catch(err => expect(err).to.not.be.undefined);
+      it('should throw exception', async () => {
+        let error;
+        try {
+          await scanner.insertImport(undefined, [] as any, 'test');
+        } catch (e) {
+          error = e;
+        }
+        expect(error).to.not.be.undefined;
       });
     });
   });
@@ -426,6 +442,22 @@ describe('DependenciesScanner', () => {
         scanner.getApplyRequestProvidersMap()[APP_FILTER](null);
         expect(addSpy.called).to.be.true;
       });
+    });
+  });
+  describe('scanForModules', () => {
+    it('should throw an exception when the imports array includes undefined', () => {
+      try {
+        scanner.scanForModules(UndefinedModule, [UndefinedModule]);
+      } catch (exception) {
+        expect(exception instanceof UndefinedModuleException).to.be.true;
+      }
+    });
+    it('should throw an exception when the imports array includes an invalid value', () => {
+      try {
+        scanner.scanForModules(InvalidModule, [InvalidModule]);
+      } catch (exception) {
+        expect(exception instanceof InvalidModuleException).to.be.true;
+      }
     });
   });
 });

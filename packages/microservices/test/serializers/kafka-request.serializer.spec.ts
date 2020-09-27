@@ -63,7 +63,7 @@ describe('KafkaRequestSerializer', () => {
 
     it('complex object with .toString()', () => {
       class Complex {
-        private name = 'complex';
+        private readonly name = 'complex';
         public toString(): string {
           return this.name;
         }
@@ -77,7 +77,7 @@ describe('KafkaRequestSerializer', () => {
 
     it('complex object without .toString()', () => {
       class ComplexWithOutToString {
-        private name = 'complex';
+        private readonly name = 'complex';
       }
 
       expect(instance.serialize(new ComplexWithOutToString())).to.deep.eq({

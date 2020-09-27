@@ -2,7 +2,7 @@ import { FILTER_CATCH_EXCEPTIONS } from '@nestjs/common/constants';
 import { Type } from '@nestjs/common/interfaces';
 import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 import { ContextCreator } from '../helpers/context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
@@ -60,14 +60,14 @@ export class BaseExceptionFilterContext extends ContextCreator {
     filter: T,
   ): InstanceWrapper | undefined {
     if (!this.moduleContext) {
-      return undefined;
+      return;
     }
     const collection = this.container.getModules();
-    const module = collection.get(this.moduleContext);
-    if (!module) {
-      return undefined;
+    const moduleRef = collection.get(this.moduleContext);
+    if (!moduleRef) {
+      return;
     }
-    return module.injectables.get(filter.name);
+    return moduleRef.injectables.get(filter.name);
   }
 
   public reflectCatchExceptions(instance: ExceptionFilter): Type<any>[] {

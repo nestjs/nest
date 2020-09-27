@@ -1,11 +1,13 @@
-import { MqttClientOptions } from '@nestjs/common/interfaces/external/mqtt-options.interface';
-import {
-  KafkaConfig,
-  ConsumerConfig,
-  ProducerConfig,
-  CompressionTypes,
-} from '@nestjs/common/interfaces/external/kafka-options.interface';
 import { Transport } from '../enums/transport.enum';
+import { ChannelOptions } from '../external/grpc-options.interface';
+import {
+  CompressionTypes,
+  ConsumerConfig,
+  KafkaConfig,
+  ProducerConfig,
+} from '../external/kafka-options.interface';
+import { MqttClientOptions } from '../external/mqtt-options.interface';
+import { ClientOpts } from '../external/redis.interface';
 import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
@@ -32,9 +34,20 @@ export interface GrpcOptions {
     url?: string;
     maxSendMessageLength?: number;
     maxReceiveMessageLength?: number;
+    maxMetadataSize?: number;
+    keepalive?: {
+      keepaliveTimeMs?: number;
+      keepaliveTimeoutMs?: number;
+      keepalivePermitWithoutCalls?: number;
+      http2MaxPingsWithoutData?: number;
+      http2MinTimeBetweenPingsMs?: number;
+      http2MinPingIntervalWithoutDataMs?: number;
+      http2MaxPingStrikes?: number;
+    };
+    channelOptions?: ChannelOptions;
     credentials?: any;
-    protoPath: string;
-    package: string;
+    protoPath: string | string[];
+    package: string | string[];
     protoLoader?: string;
     loader?: {
       keepCase?: boolean;
@@ -72,7 +85,7 @@ export interface RedisOptions {
     retryDelay?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
-  };
+  } & ClientOpts;
 }
 
 export interface MqttOptions {
@@ -115,6 +128,7 @@ export interface RmqOptions {
     noAck?: boolean;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    replyQueue?: string;
   };
 }
 
@@ -129,6 +143,9 @@ export interface KafkaOptions {
       autoCommitThreshold?: number | null;
       eachBatchAutoResolve?: boolean;
       partitionsConsumedConcurrently?: number;
+    };
+    subscribe?: {
+      fromBeginning?: boolean;
     };
     producer?: ProducerConfig;
     send?: {

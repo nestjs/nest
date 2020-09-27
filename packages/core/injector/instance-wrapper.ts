@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common/interfaces';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { iterate } from 'iterare';
 import { STATIC_CONTEXT } from './constants';
 import { Module } from './module';
 
@@ -37,7 +38,9 @@ export class InstanceWrapper<T = any> {
   public readonly name: any;
   public readonly async?: boolean;
   public readonly host?: Module;
-  public readonly scope?: Scope = Scope.DEFAULT;
+  public readonly isAlias: boolean = false;
+
+  public scope?: Scope = Scope.DEFAULT;
   public metatype: Type<T> | Function;
   public inject?: (string | symbol | Function | Type<any>)[];
   public forwardRef?: boolean;
@@ -253,9 +256,11 @@ export class InstanceWrapper<T = any> {
   ): boolean {
     const isDependencyTreeStatic = this.isDependencyTreeStatic();
 
-    return ((!isDependencyTreeStatic &&
+    return (
+      !isDependencyTreeStatic &&
       contextId !== STATIC_CONTEXT &&
-      (!this.isTransient || (this.isTransient && inquirer))) as any) as boolean;
+      (!this.isTransient || (this.isTransient && !!inquirer))
+    );
   }
 
   public isLazyTransient(
@@ -273,6 +278,18 @@ export class InstanceWrapper<T = any> {
     );
   }
 
+  public isExplicitlyRequested(
+    contextId: ContextId,
+    inquirer?: InstanceWrapper,
+  ): boolean {
+    const isSelfRequested = inquirer === this;
+    return (
+      this.isDependencyTreeStatic() &&
+      contextId !== STATIC_CONTEXT &&
+      (isSelfRequested || (inquirer && inquirer.scope === Scope.TRANSIENT))
+    );
+  }
+
   public isStatic(
     contextId: ContextId,
     inquirer: InstanceWrapper | undefined,
@@ -284,7 +301,8 @@ export class InstanceWrapper<T = any> {
     return (
       this.isDependencyTreeStatic() &&
       contextId === STATIC_CONTEXT &&
-      (!this.isTransient || (isStaticTransient && !!inquirer))
+      (!this.isTransient ||
+        (isStaticTransient && !!inquirer && !inquirer.isTransient))
     );
   }
 
@@ -293,15 +311,17 @@ export class InstanceWrapper<T = any> {
       return [];
     }
     const instances = [...this.transientMap.values()];
-    return instances
+    return iterate(instances)
       .map(item => item.get(STATIC_CONTEXT))
-      .filter(item => !!item);
+      .filter(item => !!item)
+      .toArray();
   }
 
   public mergeWith(provider: Provider) {
     if ((provider as ValueProvider).useValue) {
       this.metatype = null;
       this.inject = null;
+      this.scope = Scope.DEFAULT;
 
       this.setInstanceByContextId(STATIC_CONTEXT, {
         instance: (provider as ValueProvider).useValue,

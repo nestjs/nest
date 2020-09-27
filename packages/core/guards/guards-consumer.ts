@@ -5,11 +5,11 @@ import { Observable } from 'rxjs';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 
 export class GuardsConsumer {
-  public async tryActivate<TContext extends ContextType = ContextType>(
+  public async tryActivate<TContext extends string = ContextType>(
     guards: CanActivate[],
-    args: any[],
+    args: unknown[],
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
     type?: TContext,
   ): Promise<boolean> {
     if (!guards || isEmpty(guards)) {
@@ -29,9 +29,9 @@ export class GuardsConsumer {
   }
 
   public createContext(
-    args: any[],
+    args: unknown[],
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
   ): ExecutionContextHost {
     return new ExecutionContextHost(
       args,

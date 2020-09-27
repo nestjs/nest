@@ -10,7 +10,6 @@ import {
   EachMessagePayload,
   KafkaMessage,
 } from '../../external/kafka.interface';
-// tslint:disable:no-string-literal
 
 describe('ClientKafka', () => {
   // static
@@ -334,6 +333,29 @@ describe('ClientKafka', () => {
       await client.bindTopics();
 
       expect(subscribe.calledOnce).to.be.true;
+      expect(
+        subscribe.calledWith({
+          topic: replyTopic,
+        }),
+      ).to.be.true;
+      expect(run.calledOnce).to.be.true;
+    });
+
+    it('should bind topics from response patterns with options', async () => {
+      (client as any).responsePatterns = [replyTopic];
+      (client as any).consumer = kafkaClient.consumer();
+      (client as any).options.subscribe = {};
+      (client as any).options.subscribe.fromBeginning = true;
+
+      await client.bindTopics();
+
+      expect(subscribe.calledOnce).to.be.true;
+      expect(
+        subscribe.calledWith({
+          topic: replyTopic,
+          fromBeginning: true,
+        }),
+      ).to.be.true;
       expect(run.calledOnce).to.be.true;
     });
   });

@@ -1,7 +1,12 @@
-import { PATTERN_HANDLER_METADATA, PATTERN_METADATA } from '../constants';
+/* eslint-disable @typescript-eslint/no-use-before-define */
+import {
+  PATTERN_HANDLER_METADATA,
+  PATTERN_METADATA,
+  TRANSPORT_METADATA,
+} from '../constants';
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
-import { ConsumerConfig } from '../external/kafka.interface';
+import { Transport } from '../enums';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',
@@ -14,9 +19,10 @@ export enum GrpcMethodStreamingType {
  */
 export const MessagePattern = <T = PatternMetadata | string>(
   metadata?: T,
+  transport?: Transport,
 ): MethodDecorator => {
   return (
-    target: any,
+    target: object,
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
@@ -26,6 +32,7 @@ export const MessagePattern = <T = PatternMetadata | string>(
       PatternHandler.MESSAGE,
       descriptor.value,
     );
+    Reflect.defineMetadata(TRANSPORT_METADATA, transport, descriptor.value);
     return descriptor;
   };
 };
@@ -37,12 +44,12 @@ export function GrpcMethod(service?: string): MethodDecorator;
 export function GrpcMethod(service: string, method?: string): MethodDecorator;
 export function GrpcMethod(service: string, method?: string): MethodDecorator {
   return (
-    target: any,
+    target: object,
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
     const metadata = createGrpcMethodMetadata(target, key, service, method);
-    return MessagePattern(metadata)(target, key, descriptor);
+    return MessagePattern(metadata, Transport.GRPC)(target, key, descriptor);
   };
 }
 
@@ -51,15 +58,21 @@ export function GrpcMethod(service: string, method?: string): MethodDecorator {
  *
  * @param service String parameter reflecting the name of service definition from proto file
  */
-export function GrpcStreamMethod(service?: string);
+export function GrpcStreamMethod(service?: string): MethodDecorator;
 /**
  * @param service String parameter reflecting the name of service definition from proto file
  * @param method Optional string parameter reflecting the name of method inside of a service definition coming after rpc keyword
  */
-export function GrpcStreamMethod(service: string, method?: string);
-export function GrpcStreamMethod(service: string, method?: string) {
+export function GrpcStreamMethod(
+  service: string,
+  method?: string,
+): MethodDecorator;
+export function GrpcStreamMethod(
+  service: string,
+  method?: string,
+): MethodDecorator {
   return (
-    target: any,
+    target: object,
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
@@ -70,7 +83,7 @@ export function GrpcStreamMethod(service: string, method?: string) {
       method,
       GrpcMethodStreamingType.RX_STREAMING,
     );
-    return MessagePattern(metadata)(target, key, descriptor);
+    return MessagePattern(metadata, Transport.GRPC)(target, key, descriptor);
   };
 }
 
@@ -79,15 +92,21 @@ export function GrpcStreamMethod(service: string, method?: string) {
  *
  * @param service String parameter reflecting the name of service definition from proto file
  */
-export function GrpcStreamCall(service?: string);
+export function GrpcStreamCall(service?: string): MethodDecorator;
 /**
  * @param service String parameter reflecting the name of service definition from proto file
  * @param method Optional string parameter reflecting the name of method inside of a service definition coming after rpc keyword
  */
-export function GrpcStreamCall(service: string, method?: string);
-export function GrpcStreamCall(service: string, method?: string) {
+export function GrpcStreamCall(
+  service: string,
+  method?: string,
+): MethodDecorator;
+export function GrpcStreamCall(
+  service: string,
+  method?: string,
+): MethodDecorator {
   return (
-    target: any,
+    target: object,
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
@@ -98,12 +117,12 @@ export function GrpcStreamCall(service: string, method?: string) {
       method,
       GrpcMethodStreamingType.PT_STREAMING,
     );
-    return MessagePattern(metadata)(target, key, descriptor);
+    return MessagePattern(metadata, Transport.GRPC)(target, key, descriptor);
   };
 }
 
 export function createGrpcMethodMetadata(
-  target: any,
+  target: object,
   key: string | symbol,
   service: string | undefined,
   method: string | undefined,

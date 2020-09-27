@@ -1,12 +1,12 @@
 import { PIPES_METADATA } from '@nestjs/common/constants';
 import { Controller, PipeTransform } from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
 import { ContextCreator } from '../helpers/context-creator';
+import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
-import { STATIC_CONTEXT } from '../injector/constants';
 
 export class PipesContextCreator extends ContextCreator {
   private moduleContext: string;
@@ -20,12 +20,12 @@ export class PipesContextCreator extends ContextCreator {
 
   public create(
     instance: Controller,
-    callback: (...args: any[]) => any,
-    module: string,
+    callback: (...args: unknown[]) => unknown,
+    moduleKey: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): PipeTransform[] {
-    this.moduleContext = module;
+    this.moduleContext = moduleKey;
     return this.createContext(
       instance,
       callback,
@@ -70,21 +70,21 @@ export class PipesContextCreator extends ContextCreator {
     return instanceHost && instanceHost.instance;
   }
 
-  public getInstanceByMetatype<T extends { name: string } = any>(
+  public getInstanceByMetatype<T extends Record<'name', string> = any>(
     metatype: T,
   ): InstanceWrapper | undefined {
     if (!this.moduleContext) {
-      return undefined;
+      return;
     }
     const collection = this.container.getModules();
-    const module = collection.get(this.moduleContext);
-    if (!module) {
-      return undefined;
+    const moduleRef = collection.get(this.moduleContext);
+    if (!moduleRef) {
+      return;
     }
-    return module.injectables.get(metatype.name);
+    return moduleRef.injectables.get(metatype.name);
   }
 
-  public getGlobalMetadata<T extends any[]>(
+  public getGlobalMetadata<T extends unknown[]>(
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): T {
@@ -96,10 +96,11 @@ export class PipesContextCreator extends ContextCreator {
       return globalPipes;
     }
     const scopedPipeWrappers = this.config.getGlobalRequestPipes() as InstanceWrapper[];
-    const scopedPipes = scopedPipeWrappers
+    const scopedPipes = iterate(scopedPipeWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
-      .filter(host => host)
-      .map(host => host.instance);
+      .filter(host => !!host)
+      .map(host => host.instance)
+      .toArray();
 
     return globalPipes.concat(scopedPipes) as T;
   }

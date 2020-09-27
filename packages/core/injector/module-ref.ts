@@ -1,18 +1,25 @@
-import { Type } from '@nestjs/common';
+import { IntrospectionResult, Scope, Type } from '@nestjs/common';
+import { InvalidClassScopeException } from '../errors/exceptions/invalid-class-scope.exception';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
+import { getClassScope } from '../helpers/get-class-scope';
 import { NestContainer } from './container';
-import { ContainerScanner } from './container-scanner';
 import { Injector } from './injector';
+import { InstanceLinksHost } from './instance-links-host';
 import { ContextId, InstanceWrapper } from './instance-wrapper';
 import { Module } from './module';
 
 export abstract class ModuleRef {
   private readonly injector = new Injector();
-  private readonly containerScanner: ContainerScanner;
+  private _instanceLinksHost: InstanceLinksHost;
 
-  constructor(protected readonly container: NestContainer) {
-    this.containerScanner = new ContainerScanner(container);
+  private get instanceLinksHost() {
+    if (!this._instanceLinksHost) {
+      this._instanceLinksHost = new InstanceLinksHost(this.container);
+    }
+    return this._instanceLinksHost;
   }
+
+  constructor(protected readonly container: NestContainer) {}
 
   public abstract get<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | string | symbol,
@@ -25,10 +32,70 @@ export abstract class ModuleRef {
   ): Promise<TResult>;
   public abstract create<T = any>(type: Type<T>): Promise<T>;
 
+  public introspect<T = any>(
+    token: Type<T> | string | symbol,
+  ): IntrospectionResult {
+    const { wrapperRef } = this.instanceLinksHost.get(token);
+
+    let scope = Scope.DEFAULT;
+    if (!wrapperRef.isDependencyTreeStatic()) {
+      scope = Scope.REQUEST;
+    } else if (wrapperRef.isTransient) {
+      scope = Scope.TRANSIENT;
+    }
+    return { scope };
+  }
+
+  public registerRequestByContextId<T = any>(request: T, contextId: ContextId) {
+    this.container.registerRequestProvider(request, contextId);
+  }
+
   protected find<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | string | symbol,
+    contextModule?: Module,
   ): TResult {
-    return this.containerScanner.find<TInput, TResult>(typeOrToken);
+    const moduleId = contextModule && contextModule.id;
+    const { wrapperRef } = this.instanceLinksHost.get<TResult>(
+      typeOrToken,
+      moduleId,
+    );
+    if (
+      wrapperRef.scope === Scope.REQUEST ||
+      wrapperRef.scope === Scope.TRANSIENT
+    ) {
+      throw new InvalidClassScopeException(typeOrToken);
+    }
+    return wrapperRef.instance;
+  }
+
+  protected async resolvePerContext<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | string | symbol,
+    contextModule: Module,
+    contextId: ContextId,
+    options?: { strict: boolean },
+  ): Promise<TResult> {
+    const isStrictModeEnabled = options && options.strict;
+    const instanceLink = isStrictModeEnabled
+      ? this.instanceLinksHost.get(typeOrToken, contextModule.id)
+      : this.instanceLinksHost.get(typeOrToken);
+
+    const { wrapperRef, collection } = instanceLink;
+    if (wrapperRef.isDependencyTreeStatic() && !wrapperRef.isTransient) {
+      return this.get(typeOrToken);
+    }
+
+    const ctorHost = wrapperRef.instance || { constructor: typeOrToken };
+    const instance = await this.injector.loadPerContext(
+      ctorHost,
+      wrapperRef.host,
+      collection,
+      contextId,
+      wrapperRef,
+    );
+    if (!instance) {
+      throw new UnknownElementException();
+    }
+    return instance;
   }
 
   protected async instantiateClass<T = any>(
@@ -38,8 +105,8 @@ export abstract class ModuleRef {
     const wrapper = new InstanceWrapper({
       name: type && type.name,
       metatype: type,
-      instance: undefined,
       isResolved: false,
+      scope: getClassScope(type),
       host: moduleRef,
     });
     return new Promise<T>(async (resolve, reject) => {
@@ -63,47 +130,5 @@ export abstract class ModuleRef {
         reject(err);
       }
     });
-  }
-
-  protected findInstanceByToken<TInput = any, TResult = TInput>(
-    metatypeOrToken: Type<TInput> | string | symbol,
-    contextModule: Module,
-  ): TResult {
-    return this.containerScanner.findInstanceByToken<TInput, TResult>(
-      metatypeOrToken,
-      contextModule,
-    );
-  }
-
-  protected async resolvePerContext<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | string | symbol,
-    contextModule: Module,
-    contextId: ContextId,
-    options?: { strict: boolean },
-  ): Promise<TResult> {
-    let wrapper: InstanceWrapper, collection: Map<string, InstanceWrapper>;
-    if (!(options && options.strict)) {
-      [wrapper, collection] = this.containerScanner.getWrapperCollectionPair(
-        typeOrToken,
-      );
-    } else {
-      [
-        wrapper,
-        collection,
-      ] = this.containerScanner.getWrapperCollectionPairByHost(
-        typeOrToken,
-        contextModule,
-      );
-    }
-    const instance = await this.injector.loadPerContext(
-      wrapper.instance,
-      wrapper.host,
-      collection,
-      contextId,
-    );
-    if (!instance) {
-      throw new UnknownElementException();
-    }
-    return instance;
   }
 }

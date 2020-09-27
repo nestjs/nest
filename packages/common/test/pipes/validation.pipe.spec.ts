@@ -1,8 +1,16 @@
 import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-import { Exclude, Expose } from 'class-transformer';
-import { IsOptional, IsString } from 'class-validator';
+import { Exclude, Expose, Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsDefined,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { HttpStatus } from '../../enums';
+import { UnprocessableEntityException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ValidationPipe } from '../../pipes/validation.pipe';
 chai.use(chaiAsPromised);
@@ -25,10 +33,11 @@ class TestModelInternal {
 }
 
 class TestModel {
-  constructor() {}
-  @IsString() public prop1: string;
+  @IsString()
+  public prop1: string;
 
-  @IsString() public prop2: string;
+  @IsString()
+  public prop2: string;
 
   @IsOptional()
   @IsString()
@@ -110,6 +119,43 @@ describe('ValidationPipe', () => {
         const testObj = { prop1: 'value1' };
         return expect(target.transform(testObj, metadata)).to.be.rejected;
       });
+
+      class TestModel2 {
+        @IsString()
+        public prop1: string;
+
+        @IsBoolean()
+        public prop2: string;
+
+        @IsOptional()
+        @IsString()
+        public optionalProp: string;
+      }
+      class TestModelWithNested {
+        @IsString()
+        prop: string;
+
+        @IsDefined()
+        @Type(() => TestModel2)
+        @ValidateNested()
+        test: TestModel2;
+      }
+      it('should flatten nested errors', async () => {
+        try {
+          const model = new TestModelWithNested();
+          model.test = new TestModel2();
+          await target.transform(model, {
+            type: 'body',
+            metatype: TestModelWithNested,
+          });
+        } catch (err) {
+          expect(err.getResponse().message).to.be.eql([
+            'prop must be a string',
+            'test.prop1 must be a string',
+            'test.prop2 must be a boolean value',
+          ]);
+        }
+      });
     });
     describe('when validation transforms', () => {
       it('should return a TestModel instance', async () => {
@@ -118,6 +164,62 @@ describe('ValidationPipe', () => {
         expect(await target.transform(testObj, metadata)).to.be.instanceOf(
           TestModel,
         );
+      });
+      describe('when input is a query parameter (number)', () => {
+        it('should parse to number', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = '3.14';
+
+          expect(
+            await target.transform(value, {
+              metatype: Number,
+              data: 'test',
+              type: 'query',
+            }),
+          ).to.be.equal(+value);
+        });
+      });
+      describe('when input is a path parameter (number)', () => {
+        it('should parse to number', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = '3.14';
+
+          expect(
+            await target.transform(value, {
+              metatype: Number,
+              data: 'test',
+              type: 'param',
+            }),
+          ).to.be.equal(+value);
+        });
+      });
+      describe('when input is a query parameter (boolean)', () => {
+        it('should parse to boolean', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = 'true';
+
+          expect(
+            await target.transform(value, {
+              metatype: Boolean,
+              data: 'test',
+              type: 'query',
+            }),
+          ).to.be.true;
+        });
+      });
+      describe('when input is a path parameter (boolean)', () => {
+        it('should parse to boolean', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = 'true';
+
+          expect(
+            await target.transform(value, {
+              metatype: Boolean,
+              data: 'test',
+              type: 'param',
+            }),
+          ).to.be.true;
+        });
       });
       describe('when validation strips', () => {
         it('should return a TestModel without extra properties', async () => {
@@ -174,7 +276,7 @@ describe('ValidationPipe', () => {
         });
       });
     });
-    describe("when validation doesn't transform", () => {
+    describe('when validation does not transform', () => {
       describe('when validation strips', () => {
         it('should return a plain object without extra properties', async () => {
           target = new ValidationPipe({ transform: false, whitelist: true });
@@ -274,6 +376,51 @@ describe('ValidationPipe', () => {
           expect(await target.transform(true, objMetadata)).to.be.eql(true);
         });
       });
+    });
+  });
+
+  describe('option: "errorHttpStatusCode"', () => {
+    describe('when validation fails', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        });
+      });
+      it('should throw an error', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          expect(err).to.be.instanceOf(UnprocessableEntityException);
+        }
+      });
+    });
+  });
+
+  describe('option: "expectedType"', () => {
+    class TestModel2 {
+      @IsString()
+      public prop1: string;
+
+      @IsBoolean()
+      public prop2: string;
+
+      @IsOptional()
+      @IsString()
+      public optionalProp: string;
+    }
+
+    it('should validate against the expected type if presented', async () => {
+      const m: ArgumentMetadata = {
+        type: 'body',
+        metatype: TestModel2,
+        data: '',
+      };
+
+      target = new ValidationPipe({ expectedType: TestModel });
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+
+      expect(await target.transform(testObj, m)).to.equal(testObj);
     });
   });
 });

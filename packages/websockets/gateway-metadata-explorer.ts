@@ -28,7 +28,7 @@ export class GatewayMetadataExplorer {
   }
 
   public exploreMethodMetadata(
-    instancePrototype: any,
+    instancePrototype: object,
     methodName: string,
   ): MessageMappingProperties {
     const callback = instancePrototype[methodName];

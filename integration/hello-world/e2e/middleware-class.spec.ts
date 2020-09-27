@@ -41,17 +41,17 @@ describe('Middleware (class)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
-    app = (await Test.createTestingModule({
-      imports: [TestModule],
-    }).compile()).createNestApplication();
+    app = (
+      await Test.createTestingModule({
+        imports: [TestModule],
+      }).compile()
+    ).createNestApplication();
 
     await app.init();
   });
 
   it(`forRoutes(*)`, () => {
-    return request(app.getHttpServer())
-      .get('/hello')
-      .expect(200, RETURN_VALUE);
+    return request(app.getHttpServer()).get('/hello').expect(200, RETURN_VALUE);
   });
 
   afterEach(async () => {

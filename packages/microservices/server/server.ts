@@ -10,6 +10,7 @@ import {
   Subscription,
 } from 'rxjs';
 import { catchError, finalize, publish } from 'rxjs/operators';
+import { NO_EVENT_HANDLER } from '../constants';
 import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
 import {
@@ -30,7 +31,6 @@ import { ConsumerDeserializer } from '../interfaces/deserializer.interface';
 import { ConsumerSerializer } from '../interfaces/serializer.interface';
 import { IdentitySerializer } from '../serializers/identity.serializer';
 import { transformPatternToRoute } from '../utils';
-import { NO_EVENT_HANDLER } from '../constants';
 
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
@@ -43,7 +43,7 @@ export abstract class Server {
     callback: MessageHandler,
     isEventHandler = false,
   ) {
-    const route = transformPatternToRoute(pattern);
+    const route = this.normalizePattern(pattern);
     callback.isEventHandler = isEventHandler;
     this.messageHandlers.set(route, callback);
   }
@@ -80,14 +80,12 @@ export abstract class Server {
     return stream$
       .pipe(
         catchError((err: any) => {
-          scheduleOnNextTick({ err, response: null });
+          scheduleOnNextTick({ err });
           return empty;
         }),
         finalize(() => scheduleOnNextTick({ isDisposed: true })),
       )
-      .subscribe((response: any) =>
-        scheduleOnNextTick({ err: null, response }),
-      );
+      .subscribe((response: any) => scheduleOnNextTick({ response }));
   }
 
   public async handleEvent(
@@ -169,7 +167,7 @@ export abstract class Server {
    * @param  {string} pattern - server pattern
    * @returns string
    */
-  private getRouteFromPattern(pattern: string): string {
+  protected getRouteFromPattern(pattern: string): string {
     let validPattern: MsPattern;
 
     try {
@@ -178,6 +176,10 @@ export abstract class Server {
       // Uses a fundamental object (`pattern` variable without any conversion)
       validPattern = pattern;
     }
-    return transformPatternToRoute(validPattern);
+    return this.normalizePattern(validPattern);
+  }
+
+  protected normalizePattern(pattern: MsPattern): string {
+    return transformPatternToRoute(pattern);
   }
 }

@@ -106,17 +106,11 @@ describe('Kafka transport', () => {
     user: newUser,
   };
   it(`/POST (sync command create user)`, () => {
-    return request(server)
-      .post('/user')
-      .send(userDto)
-      .expect(200);
+    return request(server).post('/user').send(userDto).expect(200);
   });
 
   it(`/POST (sync command create business`, () => {
-    return request(server)
-      .post('/business')
-      .send(businessDto)
-      .expect(200);
+    return request(server).post('/business').send(businessDto).expect(200);
   });
 
   it(`/POST (sync command create user) Concurrency Test`, async () => {
@@ -124,12 +118,7 @@ describe('Kafka transport', () => {
     for (let concurrencyKey = 0; concurrencyKey < 100; concurrencyKey++) {
       const innerUserDto = JSON.parse(JSON.stringify(userDto));
       innerUserDto.name += `+${concurrencyKey}`;
-      promises.push(
-        request(server)
-          .post('/user')
-          .send(userDto)
-          .expect(200),
-      );
+      promises.push(request(server).post('/user').send(userDto).expect(200));
     }
     await Promise.all(promises);
   });

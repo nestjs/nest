@@ -19,6 +19,7 @@ export const SUBSCRIBE = 'subscribe';
 export const CANCEL_EVENT = 'cancelled';
 
 export const PATTERN_METADATA = 'microservices:pattern';
+export const TRANSPORT_METADATA = 'microservices:transport';
 export const CLIENT_CONFIGURATION_METADATA = 'microservices:client';
 export const PATTERN_HANDLER_METADATA = 'microservices:handler_type';
 export const CLIENT_METADATA = 'microservices:is_client_instance';
@@ -42,3 +43,7 @@ export const GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH = 4 * 1024 * 1024;
 
 export const KAFKA_DEFAULT_CLIENT = 'nestjs-consumer';
 export const KAFKA_DEFAULT_GROUP = 'nestjs-group';
+
+export const MQTT_SEPARATOR = '/';
+export const MQTT_WILDCARD_SINGLE = '+';
+export const MQTT_WILDCARD_ALL = '#';

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { UseGuards } from '../../decorators/core/use-guards.decorator';
 import { GUARDS_METADATA } from '../../constants';
+import { UseGuards } from '../../decorators/core/use-guards.decorator';
 import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
 
 class Guard {}
@@ -8,17 +8,17 @@ class Guard {}
 describe('@UseGuards', () => {
   const guards = [Guard, Guard];
 
-  @UseGuards(...(guards as any))
+  @UseGuards(...guards)
   class Test {}
 
   class TestWithMethod {
-    @UseGuards(...(guards as any))
+    @UseGuards(...guards)
     public static test() {}
   }
 
   class Test2 {
-    @UseGuards(...(guards as any))
-    @UseGuards(...(guards as any))
+    @UseGuards(...guards)
+    @UseGuards(...guards)
     public static test() {}
   }
 
@@ -39,7 +39,7 @@ describe('@UseGuards', () => {
 
   it('when object is invalid should throw exception', () => {
     try {
-      UseGuards('test' as any)({});
+      UseGuards('test' as any)(() => {});
     } catch (e) {
       expect(e).to.be.instanceof(InvalidDecoratorItemException);
     }

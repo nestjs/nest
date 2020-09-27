@@ -20,10 +20,7 @@ describe('Hello world (express instance)', () => {
   });
 
   it(`/GET`, () => {
-    return request(server)
-      .get('/hello')
-      .expect(200)
-      .expect('Hello world!');
+    return request(server).get('/hello').expect(200).expect('Hello world!');
   });
 
   it(`/GET (Promise/async)`, () => {
@@ -38,6 +35,14 @@ describe('Hello world (express instance)', () => {
       .get('/hello/stream')
       .expect(200)
       .expect('Hello world!');
+  });
+
+  it(`/GET { host: ":tenant.example.com" } not matched`, () => {
+    return request(server).get('/host').expect(404).expect({
+      statusCode: 404,
+      error: 'Not Found',
+      message: 'Cannot GET /host',
+    });
   });
 
   afterEach(async () => {

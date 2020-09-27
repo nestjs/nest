@@ -1,12 +1,12 @@
 import { Logger } from '@nestjs/common';
-import {
-  EachMessagePayload,
-  KafkaMessage,
-} from '@nestjs/microservices/external/kafka.interface';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaHeaders } from '../../enums';
+import {
+  EachMessagePayload,
+  KafkaMessage,
+} from '../../external/kafka.interface';
 import { ServerKafka } from '../../server';
 
 class NoopLogger extends Logger {
@@ -171,6 +171,31 @@ describe('ServerKafka', () => {
       expect(
         subscribe.calledWith({
           topic: pattern,
+        }),
+      ).to.be.true;
+
+      expect(run.called).to.be.true;
+      expect(connect.called).to.be.true;
+    });
+    it('should call subscribe with options and run on consumer when there are messageHandlers', async () => {
+      (server as any).logger = new NoopLogger();
+      (server as any).options.subscribe = {};
+      (server as any).options.subscribe.fromBeginning = true;
+      await server.listen(callback);
+
+      const pattern = 'test';
+      const handler = sinon.spy();
+      (server as any).messageHandlers = objectToMap({
+        [pattern]: handler,
+      });
+
+      await server.bindEvents((server as any).consumer);
+
+      expect(subscribe.called).to.be.true;
+      expect(
+        subscribe.calledWith({
+          topic: pattern,
+          fromBeginning: true,
         }),
       ).to.be.true;
 

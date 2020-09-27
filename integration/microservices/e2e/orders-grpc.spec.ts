@@ -69,6 +69,21 @@ describe('Advanced GRPC transport', () => {
       });
   });
 
+  it(`GRPC Streaming and Receiving HTTP POST`, () => {
+    return request(server)
+      .post('/client-streaming')
+      .send('1')
+      .expect(200, {
+        id: 1,
+        itemTypes: [1],
+        shipmentType: {
+          from: 'test',
+          to: 'test1',
+          carrier: 'test-carrier',
+        },
+      });
+  });
+
   it('GRPC Sending and receiving message', async () => {
     // Execute find in Promise
     return new Promise(resolve => {
@@ -114,11 +129,7 @@ describe('Advanced GRPC transport', () => {
     callHandler.on('error', (err: any) => {
       // We want to fail only on real errors while Cancellation error
       // is expected
-      if (
-        String(err)
-          .toLowerCase()
-          .indexOf('cancelled') === -1
-      ) {
+      if (String(err).toLowerCase().indexOf('cancelled') === -1) {
         fail('gRPC Stream error happened, error: ' + err);
       }
     });
@@ -150,13 +161,57 @@ describe('Advanced GRPC transport', () => {
     callHandler.on('error', (err: any) => {
       // We want to fail only on real errors while Cancellation error
       // is expected
-      if (
-        String(err)
-          .toLowerCase()
-          .indexOf('cancelled') === -1
-      ) {
+      if (String(err).toLowerCase().indexOf('cancelled') === -1) {
         fail('gRPC Stream error happened, error: ' + err);
       }
+    });
+
+    return new Promise((resolve, reject) => {
+      callHandler.write({
+        id: 1,
+      });
+      setTimeout(() => resolve(), 1000);
+    });
+  });
+
+  it('GRPC Sending Stream and receiving a single message from RX handler', async () => {
+    const callHandler = client.streamReq((err, res) => {
+      if (err) {
+        throw err;
+      }
+      expect(res).to.eql({
+        id: 1,
+        itemTypes: [1],
+        shipmentType: {
+          from: 'test',
+          to: 'test1',
+          carrier: 'test-carrier',
+        },
+      });
+    });
+
+    return new Promise((resolve, reject) => {
+      callHandler.write({
+        id: 1,
+      });
+      setTimeout(() => resolve(), 1000);
+    });
+  });
+
+  it('GRPC Sending Stream and receiving a single message from Call handler', async () => {
+    const callHandler = client.streamReqCall((err, res) => {
+      if (err) {
+        throw err;
+      }
+      expect(res).to.eql({
+        id: 1,
+        itemTypes: [1],
+        shipmentType: {
+          from: 'test',
+          to: 'test1',
+          carrier: 'test-carrier',
+        },
+      });
     });
 
     return new Promise((resolve, reject) => {

@@ -13,6 +13,7 @@ import {
   RQM_DEFAULT_URL,
 } from '../constants';
 import { RmqContext } from '../ctx-host';
+import { Transport } from '../enums';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
 import {
   IncomingRequest,
@@ -23,15 +24,17 @@ import { Server } from './server';
 let rqmPackage: any = {};
 
 export class ServerRMQ extends Server implements CustomTransportStrategy {
-  private server: any = null;
-  private channel: any = null;
-  private readonly urls: string[];
-  private readonly queue: string;
-  private readonly prefetchCount: number;
-  private readonly queueOptions: any;
-  private readonly isGlobalPrefetchCount: boolean;
+  public readonly transportId = Transport.RMQ;
 
-  constructor(private readonly options: RmqOptions['options']) {
+  protected server: any = null;
+  protected channel: any = null;
+  protected readonly urls: string[];
+  protected readonly queue: string;
+  protected readonly prefetchCount: number;
+  protected readonly queueOptions: any;
+  protected readonly isGlobalPrefetchCount: boolean;
+
+  constructor(protected readonly options: RmqOptions['options']) {
     super();
     this.urls = this.getOptionsProp(this.options, 'urls') || [RQM_DEFAULT_URL];
     this.queue =
@@ -68,7 +71,10 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   public async start(callback?: () => void) {
     this.server = this.createClient();
-    this.server.on(CONNECT_EVENT, (_: any) => {
+    this.server.on(CONNECT_EVENT, () => {
+      if (this.channel) {
+        return;
+      }
       this.channel = this.server.createChannel({
         json: false,
         setup: (channel: any) => this.setupChannel(channel, callback),
@@ -76,6 +82,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     });
     this.server.on(DISCONNECT_EVENT, (err: any) => {
       this.logger.error(DISCONNECTED_RMQ_MESSAGE);
+      this.logger.error(err);
     });
   }
 
@@ -103,14 +110,14 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     message: Record<string, any>,
     channel: any,
   ): Promise<void> {
-    const { content, properties, fields } = message;
+    const { content, properties } = message;
     const rawMessage = JSON.parse(content.toString());
     const packet = this.deserializer.deserialize(rawMessage);
     const pattern = isString(packet.pattern)
       ? packet.pattern
       : JSON.stringify(packet.pattern);
 
-    const rmqContext = new RmqContext([message, channel]);
+    const rmqContext = new RmqContext([message, channel, pattern]);
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet, rmqContext);
     }

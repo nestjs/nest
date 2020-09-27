@@ -8,7 +8,7 @@ export interface ValidationError {
   /**
    * Object that was validated.
    */
-  target: Object;
+  target: Record<string, any>;
   /**
    * Object's property that hasn't passed validation.
    */

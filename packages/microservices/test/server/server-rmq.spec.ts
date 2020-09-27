@@ -3,7 +3,6 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerRMQ } from '../../server/server-rmq';
-// tslint:disable:no-string-literal
 
 describe('ServerRMQ', () => {
   let server: ServerRMQ;
@@ -169,11 +168,11 @@ describe('ServerRMQ', () => {
       server.sendMessage(message, replyTo, correlationId);
       expect(
         channel.sendToQueue.calledWith(
-          Buffer.from(JSON.stringify(message)),
           replyTo,
+          Buffer.from(JSON.stringify(message)),
           { correlationId },
         ),
-      );
+      ).to.be.true;
     });
   });
 

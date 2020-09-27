@@ -9,7 +9,7 @@ import {
   EXCEPTION_FILTERS_METADATA,
   GUARDS_METADATA,
   INTERCEPTORS_METADATA,
-  METADATA,
+  MODULE_METADATA,
   PIPES_METADATA,
   ROUTE_ARGS_METADATA,
 } from '@nestjs/common/constants';
@@ -33,14 +33,18 @@ import {
   isNil,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { iterate } from 'iterare';
 import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
+import { getClassScope } from './helpers/get-class-scope';
 import { ModulesContainer } from './injector';
 import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { Module } from './injector/module';
 import { MetadataScanner } from './metadata-scanner';
+import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
+import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 
 interface ApplicationProviderWrapper {
   moduleKey: string;
@@ -68,9 +72,9 @@ export class DependenciesScanner {
   }
 
   public async scanForModules(
-    module: ForwardReference | Type<any> | DynamicModule,
-    scope: Type<any>[] = [],
-    ctxRegistry: (ForwardReference | DynamicModule | Type<any>)[] = [],
+    module: ForwardReference | Type<unknown> | DynamicModule,
+    scope: Type<unknown>[] = [],
+    ctxRegistry: (ForwardReference | DynamicModule | Type<unknown>)[] = [],
   ): Promise<Module> {
     const moduleInstance = await this.insertModule(module, scope);
     ctxRegistry.push(module);
@@ -79,16 +83,23 @@ export class DependenciesScanner {
       module = (module as ForwardReference).forwardRef();
     }
     const modules = !this.isDynamicModule(module as Type<any> | DynamicModule)
-      ? this.reflectMetadata(module as Type<any>, METADATA.IMPORTS)
+      ? this.reflectMetadata(module as Type<any>, MODULE_METADATA.IMPORTS)
       : [
           ...this.reflectMetadata(
             (module as DynamicModule).module,
-            METADATA.IMPORTS,
+            MODULE_METADATA.IMPORTS,
           ),
           ...((module as DynamicModule).imports || []),
         ];
 
-    for (const innerModule of modules) {
+    for (const [index, innerModule] of modules.entries()) {
+      // In case of a circular dependency (ES module system), JavaScript will resolve the type to `undefined`.
+      if (innerModule === undefined) {
+        throw new UndefinedModuleException(module, index, scope);
+      }
+      if (!innerModule) {
+        throw new InvalidModuleException(module, index, scope);
+      }
       if (ctxRegistry.includes(innerModule)) {
         continue;
       }
@@ -101,7 +112,10 @@ export class DependenciesScanner {
     return moduleInstance;
   }
 
-  public async insertModule(module: any, scope: Type<any>[]): Promise<Module> {
+  public async insertModule(
+    module: any,
+    scope: Type<unknown>[],
+  ): Promise<Module> {
     if (module && module.forwardRef) {
       return this.container.addModule(module.forwardRef(), scope);
     }
@@ -121,15 +135,15 @@ export class DependenciesScanner {
   }
 
   public async reflectImports(
-    module: Type<any>,
+    module: Type<unknown>,
     token: string,
     context: string,
   ) {
     const modules = [
-      ...this.reflectMetadata(module, METADATA.IMPORTS),
+      ...this.reflectMetadata(module, MODULE_METADATA.IMPORTS),
       ...this.container.getDynamicMetadataByToken(
         token,
-        METADATA.IMPORTS as 'imports',
+        MODULE_METADATA.IMPORTS as 'imports',
       ),
     ];
     for (const related of modules) {
@@ -139,10 +153,10 @@ export class DependenciesScanner {
 
   public reflectProviders(module: Type<any>, token: string) {
     const providers = [
-      ...this.reflectMetadata(module, METADATA.PROVIDERS),
+      ...this.reflectMetadata(module, MODULE_METADATA.PROVIDERS),
       ...this.container.getDynamicMetadataByToken(
         token,
-        METADATA.PROVIDERS as 'providers',
+        MODULE_METADATA.PROVIDERS as 'providers',
       ),
     ];
     providers.forEach(provider => {
@@ -153,10 +167,10 @@ export class DependenciesScanner {
 
   public reflectControllers(module: Type<any>, token: string) {
     const controllers = [
-      ...this.reflectMetadata(module, METADATA.CONTROLLERS),
+      ...this.reflectMetadata(module, MODULE_METADATA.CONTROLLERS),
       ...this.container.getDynamicMetadataByToken(
         token,
-        METADATA.CONTROLLERS as 'controllers',
+        MODULE_METADATA.CONTROLLERS as 'controllers',
       ),
     ];
     controllers.forEach(item => {
@@ -176,12 +190,12 @@ export class DependenciesScanner {
     this.reflectParamInjectables(obj, token, ROUTE_ARGS_METADATA);
   }
 
-  public reflectExports(module: Type<any>, token: string) {
+  public reflectExports(module: Type<unknown>, token: string) {
     const exports = [
-      ...this.reflectMetadata(module, METADATA.EXPORTS),
+      ...this.reflectMetadata(module, MODULE_METADATA.EXPORTS),
       ...this.container.getDynamicMetadataByToken(
         token,
-        METADATA.EXPORTS as 'exports',
+        MODULE_METADATA.EXPORTS as 'exports',
       ),
     ];
     exports.forEach(exportedProvider =>
@@ -223,9 +237,10 @@ export class DependenciesScanner {
       component.prototype,
       method => Reflect.getMetadata(metadataKey, component, method),
     );
-    const paramsInjectables = this.flatten(paramsMetadata).map(
-      (param: Record<string, any>) =>
-        flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
+    const paramsInjectables = this.flatten(
+      paramsMetadata,
+    ).map((param: Record<string, any>) =>
+      flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
     );
     flatten(paramsInjectables).forEach((injectable: Type<Injectable>) =>
       this.insertInjectable(injectable, token, component),
@@ -245,7 +260,6 @@ export class DependenciesScanner {
       }
       return Reflect.getMetadata(key, descriptor.value);
     } while (
-      // tslint:disable-next-line:no-conditional-assignment
       (prototype = Reflect.getPrototypeOf(prototype)) &&
       prototype !== Object.prototype &&
       prototype
@@ -255,7 +269,7 @@ export class DependenciesScanner {
 
   public async calculateModulesDistance(modules: ModulesContainer) {
     const modulesGenerator = modules.values();
-    const rootModule = modulesGenerator.next().value;
+    const rootModule = modulesGenerator.next().value as Module;
     const modulesStack = [rootModule];
 
     const calculateDistance = (moduleRef: Module, distance = 1) => {
@@ -309,22 +323,30 @@ export class DependenciesScanner {
     if (!providersKeys.includes(type as string)) {
       return this.container.addProvider(provider as any, token);
     }
-    const providerToken = `${type as string} (UUID: ${randomStringGenerator()})`;
+    const providerToken = `${
+      type as string
+    } (UUID: ${randomStringGenerator()})`;
+
+    let scope = (provider as ClassProvider | FactoryProvider).scope;
+    if (isNil(scope) && (provider as ClassProvider).useClass) {
+      scope = getClassScope((provider as ClassProvider).useClass);
+    }
     this.applicationProvidersApplyMap.push({
       type,
       moduleKey: token,
       providerKey: providerToken,
-      scope: (provider as ClassProvider | FactoryProvider).scope,
+      scope,
     });
 
     const newProvider = {
       ...provider,
       provide: providerToken,
+      scope,
     } as Provider;
 
     if (
       this.isRequestOrTransient(
-        (provider as FactoryProvider | ClassProvider).scope,
+        (newProvider as FactoryProvider | ClassProvider).scope,
       )
     ) {
       return this.container.addInjectable(newProvider, token);
@@ -366,24 +388,20 @@ export class DependenciesScanner {
    * to all controllers metadata storage
    */
   public addScopedEnhancersMetadata() {
-    const scopedGlobalProviders = this.applicationProvidersApplyMap.filter(
-      wrapper => this.isRequestOrTransient(wrapper.scope),
-    );
+    iterate(this.applicationProvidersApplyMap)
+      .filter(wrapper => this.isRequestOrTransient(wrapper.scope))
+      .forEach(({ moduleKey, providerKey }) => {
+        const modulesContainer = this.container.getModules();
+        const { injectables } = modulesContainer.get(moduleKey);
+        const instanceWrapper = injectables.get(providerKey);
 
-    scopedGlobalProviders.forEach(({ moduleKey, providerKey }) => {
-      const modulesContainer = this.container.getModules();
-      const { injectables } = modulesContainer.get(moduleKey);
-      const instanceWrapper = injectables.get(providerKey);
-
-      const modules = [...modulesContainer.values()];
-      const controllersArray = modules.map(module => [
-        ...module.controllers.values(),
-      ]);
-      const controllers = this.flatten(controllersArray);
-      controllers.forEach(controller =>
-        controller.addEnhancerMetadata(instanceWrapper),
-      );
-    });
+        iterate(modulesContainer.values())
+          .map(module => module.controllers.values())
+          .flatten()
+          .forEach(controller =>
+            controller.addEnhancerMetadata(instanceWrapper),
+          );
+      });
   }
 
   public applyApplicationProviders() {

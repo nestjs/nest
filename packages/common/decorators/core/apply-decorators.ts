@@ -8,17 +8,23 @@
  * @publicApi
  */
 export function applyDecorators(
-  ...decorators: Array<ClassDecorator | MethodDecorator>
+  ...decorators: Array<ClassDecorator | MethodDecorator | PropertyDecorator>
 ) {
   return <TFunction extends Function, Y>(
-    target: TFunction | Object,
+    target: TFunction | object,
     propertyKey?: string | symbol,
     descriptor?: TypedPropertyDescriptor<Y>,
   ) => {
-    for (const decorator of decorators || []) {
-      target instanceof Function
-        ? (decorator as ClassDecorator)(target)
-        : (decorator as MethodDecorator)(target, propertyKey, descriptor);
+    for (const decorator of decorators) {
+      if (target instanceof Function && !descriptor) {
+        (decorator as ClassDecorator)(target);
+        continue;
+      }
+      (decorator as MethodDecorator | PropertyDecorator)(
+        target,
+        propertyKey,
+        descriptor,
+      );
     }
   };
 }

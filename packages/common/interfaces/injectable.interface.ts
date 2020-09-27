@@ -1,1 +1,1 @@
-export interface Injectable {}
+export type Injectable = unknown;

@@ -178,7 +178,7 @@ That will compile fresh packages and afterward, move them to all `sample` direct
 ### <a name="common-scripts"></a>Commonly used NPM scripts
 
 ```bash
-# build all packages and move to "sample" and "integration" directories
+# build all packages and move to "sample" directories
 $ npm run build
 
 # run the full unit tests suite
@@ -236,8 +236,8 @@ Footer should contain a [closing reference to an issue](https://help.github.com/
 Samples: (even more [samples](https://github.com/nestjs/nest/commits/master))
 
 ```
-docs(changelog) update change log to beta.5
-bugfix(core) need to depend on latest rxjs and zone.js
+docs(changelog): update change log to beta.5
+bugfix(core): need to depend on latest rxjs and zone.js
 ```
 
 ### Revert

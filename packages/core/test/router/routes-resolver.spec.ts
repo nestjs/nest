@@ -5,6 +5,7 @@ import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { Get } from '../../../common/decorators/http/request-mapping.decorator';
 import { ApplicationConfig } from '../../application-config';
+import { NestContainer } from '../../injector';
 import { Injector } from '../../injector/injector';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { RoutesResolver } from '../../router/routes-resolver';
@@ -20,6 +21,12 @@ describe('RoutesResolver', () => {
     public anotherTest() {}
   }
 
+  @Controller({ host: 'api.example.com' })
+  class TestHostRoute {
+    @Get()
+    public getTest() {}
+  }
+
   @Module({
     controllers: [TestRoute],
   })
@@ -30,11 +37,11 @@ describe('RoutesResolver', () => {
   })
   class TestModule2 {}
 
-  let router;
+  let router: any;
   let routesResolver: RoutesResolver;
-  let container;
+  let container: NestContainer;
   let modules: Map<string, any>;
-  let applicationRef;
+  let applicationRef: any;
 
   beforeEach(() => {
     modules = new Map();
@@ -42,12 +49,12 @@ describe('RoutesResolver', () => {
       use: () => ({}),
       setNotFoundHandler: sinon.spy(),
       setErrorHandler: sinon.spy(),
-    };
+    } as any;
     container = {
       getModules: () => modules,
       getModuleByKey: (key: string) => modules.get(key),
       getHttpAdapterRef: () => applicationRef,
-    };
+    } as any;
     router = {
       get() {},
       post() {},
@@ -63,7 +70,7 @@ describe('RoutesResolver', () => {
   });
 
   describe('registerRouters', () => {
-    it('should method register controllers to router instance', () => {
+    it('should register controllers to router instance', () => {
       const routes = new Map();
       const routeWrapper = new InstanceWrapper({
         instance: new TestRoute(),
@@ -73,20 +80,53 @@ describe('RoutesResolver', () => {
 
       const appInstance = new NoopHttpAdapter(router);
       const exploreSpy = sinon.spy(
-        (routesResolver as any).routerBuilder,
+        (routesResolver as any).routerExplorer,
         'explore',
       );
       const moduleName = '';
       modules.set(moduleName, {});
 
       sinon
-        .stub((routesResolver as any).routerBuilder, 'extractRouterPath')
+        .stub((routesResolver as any).routerExplorer, 'extractRouterPath')
         .callsFake(() => '');
       routesResolver.registerRouters(routes, moduleName, '', appInstance);
 
       expect(exploreSpy.called).to.be.true;
       expect(exploreSpy.calledWith(routeWrapper, moduleName, appInstance, ''))
         .to.be.true;
+    });
+
+    it('should register with host when specified', () => {
+      const routes = new Map();
+      const routeWrapper = new InstanceWrapper({
+        instance: new TestHostRoute(),
+        metatype: TestHostRoute,
+      });
+      routes.set('TestHostRoute', routeWrapper);
+
+      const appInstance = new NoopHttpAdapter(router);
+      const exploreSpy = sinon.spy(
+        (routesResolver as any).routerExplorer,
+        'explore',
+      );
+      const moduleName = '';
+      modules.set(moduleName, {});
+
+      sinon
+        .stub((routesResolver as any).routerExplorer, 'extractRouterPath')
+        .callsFake(() => '');
+      routesResolver.registerRouters(routes, moduleName, '', appInstance);
+
+      expect(exploreSpy.called).to.be.true;
+      expect(
+        exploreSpy.calledWith(
+          routeWrapper,
+          moduleName,
+          appInstance,
+          '',
+          'api.example.com',
+        ),
+      ).to.be.true;
     });
   });
 

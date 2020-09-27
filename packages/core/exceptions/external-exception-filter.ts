@@ -7,6 +7,6 @@ export class ExternalExceptionFilter<T = any, R = any> {
     if (exception instanceof Error && !(exception instanceof HttpException)) {
       ExternalExceptionFilter.logger.error(exception.message, exception.stack);
     }
-    return (exception as any) as R;
+    throw exception;
   }
 }

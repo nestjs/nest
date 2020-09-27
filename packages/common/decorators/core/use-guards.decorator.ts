@@ -25,9 +25,15 @@ import { validateEach } from '../../utils/validate-each.util';
  *
  * @publicApi
  */
-export function UseGuards(...guards: (CanActivate | Function)[]) {
-  return (target: any, key?: string, descriptor?: any) => {
-    const isValidGuard = <T extends Function | Record<string, any>>(guard: T) =>
+export function UseGuards(
+  ...guards: (CanActivate | Function)[]
+): MethodDecorator & ClassDecorator {
+  return (
+    target: any,
+    key?: string | symbol,
+    descriptor?: TypedPropertyDescriptor<any>,
+  ) => {
+    const isGuardValid = <T extends Function | Record<string, any>>(guard: T) =>
       guard &&
       (isFunction(guard) ||
         isFunction((guard as Record<string, any>).canActivate));
@@ -36,14 +42,14 @@ export function UseGuards(...guards: (CanActivate | Function)[]) {
       validateEach(
         target.constructor,
         guards,
-        isValidGuard,
+        isGuardValid,
         '@UseGuards',
         'guard',
       );
       extendArrayMetadata(GUARDS_METADATA, guards, descriptor.value);
       return descriptor;
     }
-    validateEach(target, guards, isValidGuard, '@UseGuards', 'guard');
+    validateEach(target, guards, isGuardValid, '@UseGuards', 'guard');
     extendArrayMetadata(GUARDS_METADATA, guards, target);
     return target;
   };

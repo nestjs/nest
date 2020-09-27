@@ -4,18 +4,17 @@ import { ModuleTokenFactory } from './module-token-factory';
 export interface ModuleFactory {
   type: Type<any>;
   token: string;
-  dynamicMetadata?: Partial<DynamicModule> | undefined;
+  dynamicMetadata?: Partial<DynamicModule>;
 }
 
 export class ModuleCompiler {
-  private readonly moduleTokenFactory = new ModuleTokenFactory();
+  constructor(private readonly moduleTokenFactory = new ModuleTokenFactory()) {}
 
   public async compile(
     metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
-    scope: Type<any>[],
   ): Promise<ModuleFactory> {
     const { type, dynamicMetadata } = await this.extractMetadata(metatype);
-    const token = this.moduleTokenFactory.create(type, scope, dynamicMetadata);
+    const token = this.moduleTokenFactory.create(type, dynamicMetadata);
     return { type, dynamicMetadata, token };
   }
 

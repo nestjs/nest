@@ -4,12 +4,12 @@ import {
   isFunction,
   isNil,
 } from '@nestjs/common/utils/shared.utils';
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 
 export class MetadataScanner {
   public scanFromPrototype<T extends Injectable, R = any>(
     instance: T,
-    prototype: any,
+    prototype: object,
     callback: (name: string) => R,
   ): R[] {
     const methodNames = new Set(this.getAllFilteredMethodNames(prototype));
@@ -19,7 +19,7 @@ export class MetadataScanner {
       .toArray();
   }
 
-  *getAllFilteredMethodNames(prototype: any): IterableIterator<string> {
+  *getAllFilteredMethodNames(prototype: object): IterableIterator<string> {
     const isMethod = (prop: string) => {
       const descriptor = Object.getOwnPropertyDescriptor(prototype, prop);
       if (descriptor.set || descriptor.get) {
@@ -32,7 +32,6 @@ export class MetadataScanner {
         .filter(isMethod)
         .toArray();
     } while (
-      // tslint:disable-next-line:no-conditional-assignment
       (prototype = Reflect.getPrototypeOf(prototype)) &&
       prototype !== Object.prototype
     );

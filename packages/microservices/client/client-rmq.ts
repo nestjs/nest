@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
 import {
+  DISCONNECTED_RMQ_MESSAGE,
   DISCONNECT_EVENT,
   ERROR_EVENT,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
@@ -30,6 +31,7 @@ export class ClientRMQ extends ClientProxy {
   protected queue: string;
   protected queueOptions: any;
   protected responseEmitter: EventEmitter;
+  protected replyQueue: string;
 
   constructor(protected readonly options: RmqOptions['options']) {
     super();
@@ -39,7 +41,8 @@ export class ClientRMQ extends ClientProxy {
     this.queueOptions =
       this.getOptionsProp(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
-
+    this.replyQueue =
+      this.getOptionsProp(this.options, 'replyQueue') || REPLY_QUEUE;
     loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
     rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
       require('amqp-connection-manager'),
@@ -52,13 +55,15 @@ export class ClientRMQ extends ClientProxy {
   public close(): void {
     this.channel && this.channel.close();
     this.client && this.client.close();
+    this.channel = null;
+    this.client = null;
   }
 
   public consumeChannel() {
     const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
     this.channel.addSetup((channel: any) =>
       channel.consume(
-        REPLY_QUEUE,
+        this.replyQueue,
         (msg: any) =>
           this.responseEmitter.emit(msg.properties.correlationId, msg),
         {
@@ -74,6 +79,7 @@ export class ClientRMQ extends ClientProxy {
     }
     this.client = this.createClient();
     this.handleError(this.client);
+    this.handleDisconnectError(this.client);
 
     const connect$ = this.connect$(this.client);
     this.connection = this.mergeDisconnectEvent(this.client, connect$)
@@ -82,6 +88,7 @@ export class ClientRMQ extends ClientProxy {
         share(),
       )
       .toPromise();
+
     return this.connection;
   }
 
@@ -134,6 +141,15 @@ export class ClientRMQ extends ClientProxy {
     client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 
+  public handleDisconnectError(client: any): void {
+    client.addListener(DISCONNECT_EVENT, (err: any) => {
+      this.logger.error(DISCONNECTED_RMQ_MESSAGE);
+      this.logger.error(err);
+
+      this.close();
+    });
+  }
+
   public handleMessage(
     packet: unknown,
     callback: (packet: WritePacket) => any,
@@ -169,7 +185,7 @@ export class ClientRMQ extends ClientProxy {
         this.queue,
         Buffer.from(JSON.stringify(serializedPacket)),
         {
-          replyTo: REPLY_QUEUE,
+          replyTo: this.replyQueue,
           correlationId,
         },
       );

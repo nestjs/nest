@@ -13,6 +13,7 @@ import {
   GRPC_DEFAULT_URL,
 } from '../constants';
 import { GrpcMethodStreamingType } from '../decorators';
+import { Transport } from '../enums';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { CustomTransportStrategy, MessageHandler } from '../interfaces';
@@ -32,6 +33,8 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
 }
 
 export class ServerGrpc extends Server implements CustomTransportStrategy {
+  public readonly transportId = Transport.GRPC;
+
   private readonly url: string;
   private grpcClient: any;
 
@@ -61,23 +64,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public async bindEvents() {
     const grpcContext = this.loadProto();
-    const packageName = this.getOptionsProp(this.options, 'package');
-    const grpcPkg = this.lookupPackage(grpcContext, packageName);
-    if (!grpcPkg) {
-      const invalidPackageError = new InvalidGrpcPackageException();
-      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
-      throw invalidPackageError;
-    }
+    const packageOption = this.getOptionsProp(this.options, 'package');
+    const packageNames = Array.isArray(packageOption)
+      ? packageOption
+      : [packageOption];
 
-    // Take all of the services defined in grpcPkg and assign them to
-    // method handlers defined in Controllers
-    for (const definition of this.getServiceNames(grpcPkg)) {
-      this.grpcClient.addService(
-        // First parameter requires exact service definition from proto
-        definition.service.service,
-        // Here full proto definition required along with namespaced pattern name
-        await this.createService(definition.service, definition.name),
-      );
+    for (const packageName of packageNames) {
+      const grpcPkg = this.lookupPackage(grpcContext, packageName);
+      await this.createServices(grpcPkg);
     }
   }
 
@@ -104,7 +98,6 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   public async createService(grpcService: any, name: string) {
     const service = {};
 
-    // tslint:disable-next-line:forin
     for (const methodName in grpcService.prototype) {
       let pattern = '';
       let methodHandler = null;
@@ -192,11 +185,19 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     // streaming from the side of requester
     if (protoNativeHandler.requestStream) {
       // If any handlers were defined with GrpcStreamMethod annotation use RX
-      if (streamType === GrpcMethodStreamingType.RX_STREAMING)
-        return this.createStreamDuplexMethod(methodHandler);
+      if (streamType === GrpcMethodStreamingType.RX_STREAMING) {
+        return this.createRequestStreamMethod(
+          methodHandler,
+          protoNativeHandler.responseStream,
+        );
+      }
       // If any handlers were defined with GrpcStreamCall annotation
-      else if (streamType === GrpcMethodStreamingType.PT_STREAMING)
-        return this.createStreamCallMethod(methodHandler);
+      else if (streamType === GrpcMethodStreamingType.PT_STREAMING) {
+        return this.createStreamCallMethod(
+          methodHandler,
+          protoNativeHandler.responseStream,
+        );
+      }
     }
     return protoNativeHandler.responseStream
       ? this.createStreamServiceMethod(methodHandler)
@@ -230,17 +231,21 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     };
   }
 
-  public createStreamDuplexMethod(methodHandler: Function) {
-    return async (call: GrpcCall) => {
+  public createRequestStreamMethod(
+    methodHandler: Function,
+    isResponseStream: boolean,
+  ) {
+    return async (
+      call: GrpcCall,
+      callback: (err: unknown, value: unknown) => void,
+    ) => {
       const req = new Subject<any>();
       call.on('data', (m: any) => req.next(m));
       call.on('error', (e: any) => {
         // Check if error means that stream ended on other end
-        if (
-          String(e)
-            .toLowerCase()
-            .indexOf('cancelled') > -1
-        ) {
+        const isCancelledError = String(e).toLowerCase().indexOf('cancelled');
+
+        if (isCancelledError) {
           call.end();
           return;
         }
@@ -249,25 +254,51 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       });
       call.on('end', () => req.complete());
 
-      const handler = methodHandler(req.asObservable());
+      const handler = methodHandler(req.asObservable(), call.metadata);
       const res = this.transformToObservable(await handler);
-      await res
-        .pipe(
-          takeUntil(fromEvent(call as any, CANCEL_EVENT)),
-          catchError(err => {
-            call.emit('error', err);
-            return EMPTY;
-          }),
-        )
-        .forEach(m => call.write(m));
+      if (isResponseStream) {
+        await res
+          .pipe(
+            takeUntil(fromEvent(call as any, CANCEL_EVENT)),
+            catchError(err => {
+              call.emit('error', err);
+              return EMPTY;
+            }),
+          )
+          .forEach(m => call.write(m));
 
-      call.end();
+        call.end();
+      } else {
+        const response = await res
+          .pipe(
+            takeUntil(fromEvent(call as any, CANCEL_EVENT)),
+            catchError(err => {
+              callback(err, null);
+              return EMPTY;
+            }),
+          )
+          .toPromise();
+
+        if (typeof response !== 'undefined') {
+          callback(null, response);
+        }
+      }
     };
   }
 
-  public createStreamCallMethod(methodHandler: Function) {
-    return async (call: GrpcCall) => {
-      methodHandler(call);
+  public createStreamCallMethod(
+    methodHandler: Function,
+    isResponseStream: boolean,
+  ) {
+    return async (
+      call: GrpcCall,
+      callback: (err: unknown, value: unknown) => void,
+    ) => {
+      if (isResponseStream) {
+        methodHandler(call);
+      } else {
+        methodHandler(call, callback);
+      }
     };
   }
 
@@ -295,7 +326,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public createClient(): any {
-    const server = new grpcPackage.Server({
+    const grpcOptions = {
       'grpc.max_send_message_length': this.getOptionsProp(
         this.options,
         'maxSendMessageLength',
@@ -306,7 +337,16 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         'maxReceiveMessageLength',
         GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
       ),
-    });
+    };
+    const maxMetadataSize = this.getOptionsProp(
+      this.options,
+      'maxMetadataSize',
+      -1,
+    );
+    if (maxMetadataSize > 0) {
+      grpcOptions['grpc.max_metadata_size'] = maxMetadataSize;
+    }
+    const server = new grpcPackage.Server(grpcOptions);
     const credentials = this.getOptionsProp(this.options, 'credentials');
     server.bind(
       this.url,
@@ -397,5 +437,24 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     }
     // Otherwise add next through dot syntax
     return name + '.' + key;
+  }
+
+  private async createServices(grpcPkg: any) {
+    if (!grpcPkg) {
+      const invalidPackageError = new InvalidGrpcPackageException();
+      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+      throw invalidPackageError;
+    }
+
+    // Take all of the services defined in grpcPkg and assign them to
+    // method handlers defined in Controllers
+    for (const definition of this.getServiceNames(grpcPkg)) {
+      this.grpcClient.addService(
+        // First parameter requires exact service definition from proto
+        definition.service.service,
+        // Here full proto definition required along with namespaced pattern name
+        await this.createService(definition.service, definition.name),
+      );
+    }
   }
 }

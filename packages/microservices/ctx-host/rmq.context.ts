@@ -1,6 +1,6 @@
 import { BaseRpcContext } from './base-rpc.context';
 
-type RmqContextArgs = [Record<string, any>, any];
+type RmqContextArgs = [Record<string, any>, any, string];
 
 export class RmqContext extends BaseRpcContext<RmqContextArgs> {
   constructor(args: RmqContextArgs) {
@@ -10,7 +10,7 @@ export class RmqContext extends BaseRpcContext<RmqContextArgs> {
   /**
    * Returns the original message (with properties, fields, and content).
    */
-  getMesssage() {
+  getMessage() {
     return this.args[0];
   }
 
@@ -19,5 +19,12 @@ export class RmqContext extends BaseRpcContext<RmqContextArgs> {
    */
   getChannelRef() {
     return this.args[1];
+  }
+
+  /**
+   * Returns the name of the pattern.
+   */
+  getPattern() {
+    return this.args[2];
   }
 }

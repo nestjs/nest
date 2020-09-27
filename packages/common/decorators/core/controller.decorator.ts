@@ -1,4 +1,8 @@
-import { PATH_METADATA, SCOPE_OPTIONS_METADATA } from '../../constants';
+import {
+  HOST_METADATA,
+  PATH_METADATA,
+  SCOPE_OPTIONS_METADATA,
+} from '../../constants';
 import { isString, isUndefined } from '../../utils/shared.utils';
 import { ScopeOptions } from '../../interfaces/scope-options.interface';
 
@@ -15,6 +19,15 @@ export interface ControllerOptions extends ScopeOptions {
    * @see [Routing](https://docs.nestjs.com/controllers#routing)
    */
   path?: string;
+
+  /**
+   * Specifies an optional HTTP Request host filter.  When configured, methods
+   * within the controller will only be routed if the request host matches the
+   * specified value.
+   *
+   * @see [Routing](https://docs.nestjs.com/controllers#routing)
+   */
+  host?: string;
 }
 
 /**
@@ -127,14 +140,19 @@ export function Controller(
   prefixOrOptions?: string | ControllerOptions,
 ): ClassDecorator {
   const defaultPath = '/';
-  const [path, scopeOptions] = isUndefined(prefixOrOptions)
-    ? [defaultPath, undefined]
+  const [path, host, scopeOptions] = isUndefined(prefixOrOptions)
+    ? [defaultPath, undefined, undefined]
     : isString(prefixOrOptions)
-    ? [prefixOrOptions, undefined]
-    : [prefixOrOptions.path || defaultPath, { scope: prefixOrOptions.scope }];
+    ? [prefixOrOptions, undefined, undefined]
+    : [
+        prefixOrOptions.path || defaultPath,
+        prefixOrOptions.host,
+        { scope: prefixOrOptions.scope },
+      ];
 
   return (target: object) => {
     Reflect.defineMetadata(PATH_METADATA, path, target);
+    Reflect.defineMetadata(HOST_METADATA, host, target);
     Reflect.defineMetadata(SCOPE_OPTIONS_METADATA, scopeOptions, target);
   };
 }

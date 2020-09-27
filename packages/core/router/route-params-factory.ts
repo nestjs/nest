@@ -22,10 +22,13 @@ export class RouteParamsFactory implements IRouteParamsFactory {
         return data && req.body ? req.body[data] : req.body;
       case RouteParamtypes.PARAM:
         return data ? req.params[data] : req.params;
+      case RouteParamtypes.HOST:
+        const hosts = req.hosts || {};
+        return data ? hosts[data] : hosts;
       case RouteParamtypes.QUERY:
         return data ? req.query[data] : req.query;
       case RouteParamtypes.HEADERS:
-        return data ? req.headers[data] : req.headers;
+        return data ? req.headers[data.toLowerCase()] : req.headers;
       case RouteParamtypes.SESSION:
         return req.session;
       case RouteParamtypes.FILE:

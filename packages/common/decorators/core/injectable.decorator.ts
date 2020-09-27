@@ -1,6 +1,6 @@
-import * as uuid from 'uuid/v4';
-import { ScopeOptions } from '../../interfaces/scope-options.interface';
+import { v4 as uuid } from 'uuid';
 import { SCOPE_OPTIONS_METADATA } from '../../constants';
+import { ScopeOptions } from '../../interfaces/scope-options.interface';
 import { Type } from '../../interfaces/type.interface';
 
 /**
@@ -10,7 +10,7 @@ import { Type } from '../../interfaces/type.interface';
  *
  * @publicApi
  */
-export interface InjectableOptions extends ScopeOptions {}
+export type InjectableOptions = ScopeOptions;
 
 /**
  * Decorator that marks a class as a [provider](https://docs.nestjs.com/providers).

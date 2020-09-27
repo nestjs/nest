@@ -33,9 +33,7 @@ describe('NATS transport', () => {
   });
 
   it(`Broadcast (2 subscribers)`, () => {
-    return request(server)
-      .get('/broadcast')
-      .expect(200, '2');
+    return request(server).get('/broadcast').expect(200, '2');
   });
 
   afterEach(async () => {

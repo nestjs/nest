@@ -70,10 +70,10 @@ jobs:
     docker:
       - image: circleci/node:10
 
-  test_node_8:
+  test_node_14:
     <<: *unit-tests-template
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:14
 
   lint:
     working_directory: ~/nest
@@ -123,7 +123,7 @@ jobs:
           command: docker ps
       - run:
           name: Integration tests
-          command: npm run integration-test
+          command: npm run test:integration
           
   codechecks_benchmarks:
     working_directory: ~/nest
@@ -160,13 +160,13 @@ workflows:
   build-and-test:
     jobs:
       - build
+      - test_node_14:
+          requires:
+            - build
       - test_node_12:
           requires:
             - build
       - test_node_10:
-          requires:
-            - build
-      - test_node_8:
           requires:
             - build
       - lint:

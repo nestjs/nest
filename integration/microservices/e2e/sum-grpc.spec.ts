@@ -25,8 +25,11 @@ describe('GRPC transport', () => {
     app.connectMicroservice({
       transport: Transport.GRPC,
       options: {
-        package: 'math',
-        protoPath: join(__dirname, '../src/grpc/math.proto'),
+        package: ['math', 'math2'],
+        protoPath: [
+          join(__dirname, '../src/grpc/math.proto'),
+          join(__dirname, '../src/grpc/math2.proto'),
+        ],
       },
     });
     // Start gRPC microservice
@@ -47,7 +50,19 @@ describe('GRPC transport', () => {
 
   it(`GRPC Sending and Receiving HTTP POST`, () => {
     return request(server)
-      .post('/')
+      .post('/sum')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, { result: 15 });
+  });
+
+  it(`GRPC Sending and Receiving HTTP POST (multiple proto)`, async () => {
+    await request(server)
+      .post('/multi/sum')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, { result: 15 });
+
+    await request(server)
+      .post('/multi/sum2')
       .send([1, 2, 3, 4, 5])
       .expect(200, { result: 15 });
   });
@@ -63,11 +78,7 @@ describe('GRPC transport', () => {
     callHandler.on('error', (err: any) => {
       // We want to fail only on real errors while Cancellation error
       // is expected
-      if (
-        String(err)
-          .toLowerCase()
-          .indexOf('cancelled') === -1
-      ) {
+      if (String(err).toLowerCase().indexOf('cancelled') === -1) {
         fail('gRPC Stream error happened, error: ' + err);
       }
     });
@@ -89,11 +100,7 @@ describe('GRPC transport', () => {
     callHandler.on('error', (err: any) => {
       // We want to fail only on real errors while Cancellation error
       // is expected
-      if (
-        String(err)
-          .toLowerCase()
-          .indexOf('cancelled') === -1
-      ) {
+      if (String(err).toLowerCase().indexOf('cancelled') === -1) {
         fail('gRPC Stream error happened, error: ' + err);
       }
     });

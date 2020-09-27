@@ -50,6 +50,20 @@ describe('RPC transport', () => {
       .expect(200, '15');
   });
 
+  it(`/POST (useFactory client)`, () => {
+    return request(server)
+      .post('/useFactory?command=sum')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, '15');
+  });
+
+  it(`/POST (useClass client)`, () => {
+    return request(server)
+      .post('/useClass?command=sum')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, '15');
+  });
+
   it(`/POST (concurrent)`, () => {
     return request(server)
       .post('/concurrent')
@@ -76,9 +90,7 @@ describe('RPC transport', () => {
   });
 
   it(`/POST (pattern not found)`, () => {
-    return request(server)
-      .post('/?command=test')
-      .expect(500);
+    return request(server).post('/?command=test').expect(500);
   });
 
   it(`/POST (event notification)`, done => {

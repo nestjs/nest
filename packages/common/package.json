@@ -1,8 +1,13 @@
 {
   "name": "@nestjs/common",
-  "version": "6.9.0",
+  "version": "7.4.4",
   "description": "Nest - modern, fast, powerful node.js web framework (@common)",
   "author": "Kamil Mysliwiec",
+  "homepage": "https://nestjs.com",
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/nest"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/nestjs/nest"
@@ -12,9 +17,11 @@
   },
   "license": "MIT",
   "dependencies": {
-    "axios": "0.19.0",
+    "axios": "0.20.0",
     "cli-color": "2.0.0",
-    "uuid": "3.3.3"
+    "iterare": "1.2.1",
+    "tslib": "2.0.1",
+    "uuid": "8.3.0"
   },
   "peerDependencies": {
     "reflect-metadata": "^0.1.12",

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { Redirect } from '../../decorators/http/redirect.decorator';
 import { REDIRECT_METADATA } from '../../constants';
-import { HttpStatus } from '@nestjs/common';
+import { Redirect } from '../../decorators/http/redirect.decorator';
+import { HttpStatus } from '../../index';
 
 describe('@Redirect', () => {
   const url = 'http://test.com';

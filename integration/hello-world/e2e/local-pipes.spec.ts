@@ -1,6 +1,6 @@
-import * as request from 'supertest';
-import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import * as request from 'supertest';
 import { ApplicationModule } from '../src/app.module';
 
 describe('Hello world (default adapter)', () => {
@@ -17,13 +17,30 @@ describe('Hello world (default adapter)', () => {
     await app.init();
   });
 
-  it(`should execute locally injected pipe`, () => {
+  it(`host=example.com should execute locally injected pipe by HelloController`, () => {
+    return request(server).get('/hello/local-pipe/1').expect(200).expect({
+      id: '1',
+    });
+  });
+
+  it(`host=host.example.com should execute locally injected pipe by HostController`, () => {
     return request(server)
-      .get('/hello/local-pipe/1')
+      .get('/host/local-pipe/1')
+      .set('Host', 'acme.example.com')
       .expect(200)
       .expect({
         id: '1',
+        host: true,
+        tenant: 'acme',
       });
+  });
+
+  it(`should return 404 for mismatched host`, () => {
+    return request(server).get('/host/local-pipe/1').expect(404).expect({
+      error: 'Not Found',
+      message: 'Cannot GET /host/local-pipe/1',
+      statusCode: 404,
+    });
   });
 
   afterEach(async () => {

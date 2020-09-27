@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isObject } from '@nestjs/common/utils/shared.utils';
-import { Observable } from 'rxjs';
+import { isFunction, isObject } from '@nestjs/common/utils/shared.utils';
+import { Observable, Subscription } from 'rxjs';
 import {
   GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
   GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
@@ -22,7 +22,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly clients = new Map<string, any>();
   protected readonly url: string;
-  protected grpcClient: any;
+  protected grpcClients = [];
 
   constructor(protected readonly options: GrpcOptions['options']) {
     super();
@@ -35,12 +35,17 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       require('grpc'),
     );
     grpcProtoLoaderPackage = loadPackage(protoLoader, ClientGrpcProxy.name);
-    this.grpcClient = this.createClient();
+    this.grpcClients = this.createClients();
   }
 
   public getService<T extends {}>(name: string): T {
     const grpcClient = this.createClientByServiceName(name);
-    const protoMethods = Object.keys(this.grpcClient[name].prototype);
+    const clientRef = this.getClient(name);
+    if (!clientRef) {
+      throw new InvalidGrpcServiceException();
+    }
+
+    const protoMethods = Object.keys(clientRef[name].prototype);
     const grpcService = {} as T;
 
     protoMethods.forEach(m => {
@@ -50,14 +55,16 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     return grpcService;
   }
 
-  public getClientByServiceName<T = any>(name: string): T {
+  public getClientByServiceName<T = unknown>(name: string): T {
     return this.clients.get(name) || this.createClientByServiceName(name);
   }
 
   public createClientByServiceName(name: string) {
-    if (!this.grpcClient[name]) {
+    const clientRef = this.getClient(name);
+    if (!clientRef) {
       throw new InvalidGrpcServiceException();
     }
+
     const maxSendMessageLengthKey = 'grpc.max_send_message_length';
     const maxReceiveMessageLengthKey = 'grpc.max_receive_message_length';
     const maxMessageLengthOptions = {
@@ -72,47 +79,98 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
         GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
       ),
     };
-    const options: any = isObject(this.options)
-      ? {
-          ...this.options,
-          ...maxMessageLengthOptions,
-          loader: '',
-        }
-      : {
-          ...maxMessageLengthOptions,
-        };
+    const maxMetadataSize = this.getOptionsProp(
+      this.options,
+      'maxMetadataSize',
+      -1,
+    );
+    if (maxMetadataSize > 0) {
+      maxMessageLengthOptions['grpc.max_metadata_size'] = maxMetadataSize;
+    }
+
+    const keepaliveOptions = this.getKeepaliveOptions();
+    const options: Record<string, string | number> = {
+      ...(this.options.channelOptions || {}),
+      ...maxMessageLengthOptions,
+      ...keepaliveOptions,
+    };
 
     const credentials =
-      options.credentials || grpcPackage.credentials.createInsecure();
+      this.options.credentials || grpcPackage.credentials.createInsecure();
 
-    delete options.credentials;
-    const grpcClient = new this.grpcClient[name](
-      this.url,
-      credentials,
-      options,
-    );
+    const grpcClient = new clientRef[name](this.url, credentials, options);
     this.clients.set(name, grpcClient);
     return grpcClient;
+  }
+
+  public getKeepaliveOptions() {
+    if (!isObject(this.options.keepalive)) {
+      return {};
+    }
+    const keepaliveKeys: Record<
+      keyof GrpcOptions['options']['keepalive'],
+      string
+    > = {
+      keepaliveTimeMs: 'grpc.keepalive_time_ms',
+      keepaliveTimeoutMs: 'grpc.keepalive_timeout_ms',
+      keepalivePermitWithoutCalls: 'grpc.keepalive_permit_without_calls',
+      http2MaxPingsWithoutData: 'grpc.http2.max_pings_without_data',
+      http2MinTimeBetweenPingsMs: 'grpc.http2.min_time_between_pings_ms',
+      http2MinPingIntervalWithoutDataMs:
+        'grpc.http2.min_ping_interval_without_data_ms',
+      http2MaxPingStrikes: 'grpc.http2.max_ping_strikes',
+    };
+
+    const keepaliveOptions = {};
+    for (const [optionKey, optionValue] of Object.entries(
+      this.options.keepalive,
+    )) {
+      const key = keepaliveKeys[optionKey];
+      if (key === undefined) {
+        continue;
+      }
+      keepaliveOptions[key] = optionValue;
+    }
+    return keepaliveOptions;
   }
 
   public createServiceMethod(
     client: any,
     methodName: string,
-  ): (...args: any[]) => Observable<any> {
+  ): (...args: unknown[]) => Observable<unknown> {
     return client[methodName].responseStream
       ? this.createStreamServiceMethod(client, methodName)
       : this.createUnaryServiceMethod(client, methodName);
   }
 
   public createStreamServiceMethod(
-    client: any,
+    client: unknown,
     methodName: string,
   ): (...args: any[]) => Observable<any> {
     return (...args: any[]) => {
-      return new Observable(observer => {
+      const isRequestStream = client[methodName].requestStream;
+      const stream = new Observable(observer => {
         let isClientCanceled = false;
-        const call = client[methodName](...args);
+        let upstreamSubscription: Subscription;
 
+        const upstreamSubjectOrData = args[0];
+        const maybeMetadata = args[1];
+
+        const isUpstreamSubject =
+          upstreamSubjectOrData && isFunction(upstreamSubjectOrData.subscribe);
+
+        const call =
+          isRequestStream && isUpstreamSubject
+            ? client[methodName](maybeMetadata)
+            : client[methodName](...args);
+
+        if (isRequestStream && isUpstreamSubject) {
+          upstreamSubscription = upstreamSubjectOrData.subscribe(
+            (val: unknown) => call.write(val),
+            (err: unknown) => call.emit('error', err),
+            () => call.end(),
+          );
+        }
         call.on('data', (data: any) => observer.next(data));
         call.on('error', (error: any) => {
           if (error.details === GRPC_CANCELLED) {
@@ -124,10 +182,19 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
           observer.error(error);
         });
         call.on('end', () => {
+          if (upstreamSubscription) {
+            upstreamSubscription.unsubscribe();
+            upstreamSubscription = null;
+          }
           call.removeAllListeners();
           observer.complete();
         });
-        return (): any => {
+        return () => {
+          if (upstreamSubscription) {
+            upstreamSubscription.unsubscribe();
+            upstreamSubscription = null;
+          }
+
           if (call.finished) {
             return undefined;
           }
@@ -135,6 +202,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
           call.cancel();
         };
       });
+      return stream;
     };
   }
 
@@ -143,6 +211,34 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     methodName: string,
   ): (...args: any[]) => Observable<any> {
     return (...args: any[]) => {
+      const isRequestStream = client[methodName].requestStream;
+      const upstreamSubjectOrData = args[0];
+      const isUpstreamSubject =
+        upstreamSubjectOrData && isFunction(upstreamSubjectOrData.subscribe);
+
+      if (isRequestStream && isUpstreamSubject) {
+        return new Observable(observer => {
+          const callArgs = [
+            (error: unknown, data: unknown) => {
+              if (error) {
+                return observer.error(error);
+              }
+              observer.next(data);
+              observer.complete();
+            },
+          ];
+          const maybeMetadata = args[1];
+          if (maybeMetadata) {
+            callArgs.unshift(maybeMetadata);
+          }
+          const call = client[methodName](...callArgs);
+          upstreamSubjectOrData.subscribe(
+            (val: unknown) => call.write(val),
+            (err: unknown) => call.emit('error', err),
+            () => call.end(),
+          );
+        });
+      }
       return new Observable(observer => {
         client[methodName](...args, (error: any, data: any) => {
           if (error) {
@@ -155,16 +251,28 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     };
   }
 
-  public createClient(): any {
+  public createClients(): any[] {
     const grpcContext = this.loadProto();
-    const packageName = this.getOptionsProp(this.options, 'package');
-    const grpcPkg = this.lookupPackage(grpcContext, packageName);
-    if (!grpcPkg) {
-      const invalidPackageError = new InvalidGrpcPackageException();
-      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
-      throw invalidPackageError;
+    const packageOption = this.getOptionsProp(this.options, 'package');
+    const grpcPackages = [];
+    const packageNames = Array.isArray(packageOption)
+      ? packageOption
+      : [packageOption];
+
+    for (const packageName of packageNames) {
+      const grpcPkg = this.lookupPackage(grpcContext, packageName);
+
+      if (!grpcPkg) {
+        const invalidPackageError = new InvalidGrpcPackageException();
+        this.logger.error(
+          invalidPackageError.message,
+          invalidPackageError.stack,
+        );
+        throw invalidPackageError;
+      }
+      grpcPackages.push(grpcPkg);
     }
-    return grpcPkg;
+    return grpcPackages;
   }
 
   public loadProto(): any {
@@ -197,8 +305,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public close() {
-    this.grpcClient && this.grpcClient.close();
-    this.grpcClient = null;
+    this.grpcClients.forEach(client => client.close());
+    this.grpcClients = [];
   }
 
   public async connect(): Promise<any> {
@@ -212,6 +320,10 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     throw new Error(
       'Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).',
     );
+  }
+
+  protected getClient(name: string): any {
+    return this.grpcClients.find(client => client.hasOwnProperty(name));
   }
 
   protected publish(packet: any, callback: (packet: any) => any): any {

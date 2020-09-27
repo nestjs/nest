@@ -6,10 +6,10 @@ import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
 
 export class WsProxy {
   public create(
-    targetCallback: (...args: any[]) => Promise<any>,
+    targetCallback: (...args: unknown[]) => Promise<any>,
     exceptionsHandler: WsExceptionsHandler,
-  ): (...args: any[]) => Promise<any> {
-    return async (...args: any[]) => {
+  ): (...args: unknown[]) => Promise<any> {
+    return async (...args: unknown[]) => {
       try {
         const result = await targetCallback(...args);
         return !this.isObservable(result)
@@ -28,7 +28,7 @@ export class WsProxy {
 
   handleError<T>(
     exceptionsHandler: WsExceptionsHandler,
-    args: any[],
+    args: unknown[],
     error: T,
   ) {
     const host = new ExecutionContextHost(args);

@@ -1,8 +1,8 @@
 import {
-  Injectable,
-  OnApplicationShutdown,
   BeforeApplicationShutdown,
+  Injectable,
   Module,
+  OnApplicationShutdown,
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 const SIGNAL = process.argv[2];

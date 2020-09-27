@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { UseInterceptors } from '../../decorators/core/use-interceptors.decorator';
 import { INTERCEPTORS_METADATA } from '../../constants';
+import { UseInterceptors } from '../../decorators/core/use-interceptors.decorator';
 import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
 
 class Interceptor {}
@@ -8,11 +8,11 @@ class Interceptor {}
 describe('@UseInterceptors', () => {
   const interceptors = [Interceptor, Interceptor];
 
-  @UseInterceptors(...(interceptors as any))
+  @UseInterceptors(...interceptors)
   class Test {}
 
   class TestWithMethod {
-    @UseInterceptors(...(interceptors as any))
+    @UseInterceptors(...interceptors)
     public static test() {}
   }
 
@@ -30,10 +30,26 @@ describe('@UseInterceptors', () => {
   });
 
   it('when object is invalid should throw exception', () => {
+    let error = undefined;
     try {
-      UseInterceptors('test' as any)({});
+      UseInterceptors('test' as any)({ name: 'target' } as any);
     } catch (e) {
-      expect(e).to.be.instanceof(InvalidDecoratorItemException);
+      error = e;
     }
+    expect(error).to.be.instanceof(InvalidDecoratorItemException);
+  });
+
+  it('when object is valid should not throw exception', () => {
+    let error = undefined;
+    try {
+      UseInterceptors({
+        intercept() {
+          return null;
+        },
+      })({ name: 'target' } as any);
+    } catch (e) {
+      error = e;
+    }
+    expect(error).to.be.undefined;
   });
 });

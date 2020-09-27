@@ -6,7 +6,7 @@ import { ClientOptions } from '../interfaces/client-metadata.interface';
  *
  * @param  {ClientOptions} metadata optional client metadata
  */
-export const Client = (metadata?: ClientOptions) => {
+export function Client(metadata?: ClientOptions): PropertyDecorator {
   return (target: object, propertyKey: string | symbol): void => {
     Reflect.set(target, propertyKey, null);
     Reflect.defineMetadata(CLIENT_METADATA, true, target, propertyKey);
@@ -17,4 +17,4 @@ export const Client = (metadata?: ClientOptions) => {
       propertyKey,
     );
   };
-};
+}

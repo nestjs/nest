@@ -35,6 +35,15 @@ export interface INestApplicationContext {
   ): Promise<TResult>;
 
   /**
+   * Registers the request/context object for a given context ID (DI container sub-tree).
+   * @returns {void}
+   */
+  registerRequestByContextId<T = any>(
+    request: T,
+    contextId: { id: number },
+  ): void;
+
+  /**
    * Terminates the application
    * @returns {Promise<void>}
    */

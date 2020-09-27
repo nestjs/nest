@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DependencyService } from './dependency.service';
-import { PropertiesService } from './properties.service';
+import { PropertiesService, SYMBOL_TOKEN } from './properties.service';
 
 @Module({
   providers: [
@@ -8,6 +8,10 @@ import { PropertiesService } from './properties.service';
     PropertiesService,
     {
       provide: 'token',
+      useValue: true,
+    },
+    {
+      provide: SYMBOL_TOKEN,
       useValue: true,
     },
   ],

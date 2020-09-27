@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { expect } from 'chai';
@@ -22,6 +23,7 @@ describe('ExternalContextCreator', () => {
   let applySpy: sinon.SinonSpy;
   let guardsConsumer: GuardsConsumer;
   let pipesConsumer: PipesConsumer;
+  let guardsContextCreator: GuardsContextCreator;
 
   beforeEach(() => {
     callback = {
@@ -33,8 +35,10 @@ describe('ExternalContextCreator', () => {
 
     guardsConsumer = new GuardsConsumer();
     pipesConsumer = new PipesConsumer();
+    guardsContextCreator = new GuardsContextCreator(new NestContainer());
+    sinon.stub(guardsContextCreator, 'create').returns([{}] as any);
     contextCreator = new ExternalContextCreator(
-      new GuardsContextCreator(new NestContainer()),
+      guardsContextCreator,
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
       new InterceptorsConsumer(),
@@ -73,11 +77,17 @@ describe('ExternalContextCreator', () => {
       });
       describe('when proxy function called', () => {
         describe('when can not activate', () => {
-          it('should throw exception when "tryActivate" returns false', () => {
+          it('should throw exception when "tryActivate" returns false', async () => {
             sinon
               .stub(guardsConsumer, 'tryActivate')
               .callsFake(async () => false);
-            proxyContext(1, 2, 3).catch(err => expect(err).to.not.be.undefined);
+            let err: any;
+            try {
+              await proxyContext(1, 2, 3);
+            } catch (e) {
+              err = e;
+            }
+            expect(err).to.be.instanceOf(ForbiddenException);
           });
         });
         describe('when can activate', () => {

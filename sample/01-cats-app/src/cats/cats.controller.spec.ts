@@ -8,13 +8,13 @@ describe('CatsController', () => {
   let catsService: CatsService;
 
   beforeEach(async () => {
-    const module = await Test.createTestingModule({
+    const moduleRef = await Test.createTestingModule({
       controllers: [CatsController],
       providers: [CatsService],
     }).compile();
 
-    catsService = module.get<CatsService>(CatsService);
-    catsController = module.get<CatsController>(CatsController);
+    catsService = moduleRef.get<CatsService>(CatsService);
+    catsController = moduleRef.get<CatsController>(CatsController);
   });
 
   describe('findAll', () => {

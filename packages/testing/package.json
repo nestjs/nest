@@ -1,9 +1,14 @@
 {
   "name": "@nestjs/testing",
-  "version": "6.9.0",
+  "version": "7.4.4",
   "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "homepage": "https://nestjs.com",
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/nest"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/nestjs/nest"
@@ -12,10 +17,11 @@
     "access": "public"
   },
   "dependencies": {
-    "optional": "0.1.4"
+    "optional": "0.1.4",
+    "tslib": "2.0.1"
   },
   "peerDependencies": {
-    "@nestjs/common": "^6.0.0",
-    "@nestjs/core": "^6.0.0"
+    "@nestjs/common": "^7.0.0",
+    "@nestjs/core": "^7.0.0"
   }
 }

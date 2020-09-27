@@ -3,25 +3,20 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
-  ApiUseTags,
+  ApiTags
 } from '@nestjs/swagger';
 import { CatsService } from './cats.service';
 import { CreateCatDto } from './dto/create-cat.dto';
-import { Cat } from './classes/cat.class';
+import { Cat } from './entities/cat.entity';
 
 @ApiBearerAuth()
-@ApiUseTags('cats')
+@ApiTags('cats')
 @Controller('cats')
 export class CatsController {
   constructor(private readonly catsService: CatsService) {}
 
   @Post()
-  @ApiOperation({ title: 'Create cat' })
-  @ApiResponse({
-    status: 201,
-    description: 'The record has been successfully created.',
-    type: Cat,
-  })
+  @ApiOperation({ summary: 'Create cat' })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   async create(@Body() createCatDto: CreateCatDto): Promise<Cat> {
     return this.catsService.create(createCatDto);

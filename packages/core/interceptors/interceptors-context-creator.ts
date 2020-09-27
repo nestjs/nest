@@ -1,7 +1,7 @@
 import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
 import { Controller, NestInterceptor } from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
-import iterate from 'iterare';
+import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
 import { ContextCreator } from '../helpers/context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
@@ -20,7 +20,7 @@ export class InterceptorsContextCreator extends ContextCreator {
 
   public create(
     instance: Controller,
-    callback: (...args: any[]) => any,
+    callback: (...args: unknown[]) => unknown,
     module: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -45,7 +45,7 @@ export class InterceptorsContextCreator extends ContextCreator {
     }
     return iterate(metadata)
       .filter(
-        (interceptor: any) =>
+        interceptor =>
           interceptor && (interceptor.name || interceptor.intercept),
       )
       .map(interceptor =>
@@ -82,17 +82,17 @@ export class InterceptorsContextCreator extends ContextCreator {
     metatype: T,
   ): InstanceWrapper | undefined {
     if (!this.moduleContext) {
-      return undefined;
+      return;
     }
     const collection = this.container.getModules();
-    const module = collection.get(this.moduleContext);
-    if (!module) {
-      return undefined;
+    const moduleRef = collection.get(this.moduleContext);
+    if (!moduleRef) {
+      return;
     }
-    return module.injectables.get(metatype.name);
+    return moduleRef.injectables.get(metatype.name as string);
   }
 
-  public getGlobalMetadata<T extends any[]>(
+  public getGlobalMetadata<T extends unknown[]>(
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): T {
@@ -104,10 +104,11 @@ export class InterceptorsContextCreator extends ContextCreator {
       return globalInterceptors;
     }
     const scopedInterceptorWrappers = this.config.getGlobalRequestInterceptors() as InstanceWrapper[];
-    const scopedInterceptors = scopedInterceptorWrappers
+    const scopedInterceptors = iterate(scopedInterceptorWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
-      .filter(host => host)
-      .map(host => host.instance);
+      .filter(host => !!host)
+      .map(host => host.instance)
+      .toArray();
 
     return globalInterceptors.concat(scopedInterceptors) as T;
   }

@@ -7,10 +7,11 @@ import {
   HttpServer,
   NestInterceptor,
 } from '../../interfaces';
+import { isNil } from '../../utils/shared.utils';
 import {
   CACHE_KEY_METADATA,
-  CACHE_TTL_METADATA,
   CACHE_MANAGER,
+  CACHE_TTL_METADATA,
 } from '../cache.constants';
 
 const HTTP_ADAPTER_HOST = 'HttpAdapterHost';
@@ -44,14 +45,14 @@ export class CacheInterceptor implements NestInterceptor {
     }
     try {
       const value = await this.cacheManager.get(key);
-      if (value) {
+      if (!isNil(value)) {
         return of(value);
       }
 
       return next.handle().pipe(
         tap(response => {
-          const args = ttl ? [key, response, { ttl }] : [key, response];
-          this.cacheManager.set.apply(this.cacheManager, args);
+          const args = isNil(ttl) ? [key, response] : [key, response, { ttl }];
+          this.cacheManager.set(...args);
         }),
       );
     } catch {

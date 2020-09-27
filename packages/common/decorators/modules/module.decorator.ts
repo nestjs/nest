@@ -1,23 +1,5 @@
-import { METADATA as metadataConstants } from '../../constants';
 import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface';
-import { InvalidModuleConfigException } from './exceptions/invalid-module-config.exception';
-
-const metadataKeys = [
-  metadataConstants.IMPORTS,
-  metadataConstants.EXPORTS,
-  metadataConstants.CONTROLLERS,
-  metadataConstants.PROVIDERS,
-];
-
-const validateKeys = (keys: string[]) => {
-  const validateKey = (key: string) => {
-    if (metadataKeys.includes(key)) {
-      return;
-    }
-    throw new InvalidModuleConfigException(key);
-  };
-  keys.forEach(validateKey);
-};
+import { validateModuleKeys } from '../../utils/validate-module-keys.util';
 
 /**
  * Decorator that marks a class as a [module](https://docs.nestjs.com/modules).
@@ -35,9 +17,9 @@ const validateKeys = (keys: string[]) => {
  */
 export function Module(metadata: ModuleMetadata): ClassDecorator {
   const propsKeys = Object.keys(metadata);
-  validateKeys(propsKeys);
+  validateModuleKeys(propsKeys);
 
-  return (target: object) => {
+  return (target: Function) => {
     for (const property in metadata) {
       if (metadata.hasOwnProperty(property)) {
         Reflect.defineMetadata(property, (metadata as any)[property], target);

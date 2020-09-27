@@ -1,30 +1,10 @@
-import * as uuid from 'uuid/v4';
-import {
-  CUSTOM_ROUTE_AGRS_METADATA,
-  ROUTE_ARGS_METADATA,
-} from '../../constants';
+import { v4 as uuid } from 'uuid';
+import { ROUTE_ARGS_METADATA } from '../../constants';
 import { PipeTransform } from '../../index';
 import { Type } from '../../interfaces';
 import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface';
+import { assignCustomParameterMetadata } from '../../utils/assign-custom-metadata.util';
 import { isFunction, isNil } from '../../utils/shared.utils';
-import { ParamData, RouteParamMetadata } from './route-params.decorator';
-
-const assignCustomMetadata = (
-  args: Record<number, RouteParamMetadata>,
-  paramtype: number | string,
-  index: number,
-  factory: CustomParamFactory,
-  data?: ParamData,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
-) => ({
-  ...args,
-  [`${paramtype}${CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
-    index,
-    factory,
-    data,
-    pipes,
-  },
-});
 
 export type ParamDecoratorEnhancer = ParameterDecorator;
 
@@ -33,16 +13,20 @@ export type ParamDecoratorEnhancer = ParameterDecorator;
  *
  * @param factory
  */
-export function createParamDecorator(
-  factory: CustomParamFactory,
+export function createParamDecorator<
+  FactoryData = any,
+  FactoryInput = any,
+  FactoryOutput = any
+>(
+  factory: CustomParamFactory<FactoryData, FactoryInput, FactoryOutput>,
   enhancers: ParamDecoratorEnhancer[] = [],
 ): (
-  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | any)[]
+  ...dataOrPipes: (Type<PipeTransform> | PipeTransform | FactoryData)[]
 ) => ParameterDecorator {
   const paramtype = uuid();
   return (
     data?,
-    ...pipes: (Type<PipeTransform> | PipeTransform)[]
+    ...pipes: (Type<PipeTransform> | PipeTransform | FactoryData)[]
   ): ParameterDecorator => (target, key, index) => {
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
@@ -55,12 +39,12 @@ export function createParamDecorator(
         isFunction(pipe.transform));
 
     const hasParamData = isNil(data) || !isPipe(data);
-    const paramData = hasParamData ? data : undefined;
+    const paramData = hasParamData ? (data as any) : undefined;
     const paramPipes = hasParamData ? pipes : [data, ...pipes];
 
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
-      assignCustomMetadata(
+      assignCustomParameterMetadata(
         args,
         paramtype,
         index,

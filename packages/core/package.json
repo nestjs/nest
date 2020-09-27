@@ -1,9 +1,14 @@
 {
   "name": "@nestjs/core",
-  "version": "6.9.0",
+  "version": "7.4.4",
   "description": "Nest - modern, fast, powerful node.js web framework (@core)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "homepage": "https://nestjs.com",
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/nest"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/nestjs/nest"
@@ -24,12 +29,17 @@
   "dependencies": {
     "@nuxtjs/opencollective": "0.2.2",
     "fast-safe-stringify": "2.0.7",
-    "iterare": "1.2.0",
-    "object-hash": "2.0.0",
-    "uuid": "3.3.3"
+    "iterare": "1.2.1",
+    "object-hash": "2.0.3",
+    "path-to-regexp": "3.2.0",
+    "tslib": "2.0.1",
+    "uuid": "8.3.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "7.4.4"
   },
   "peerDependencies": {
-    "@nestjs/common": "^6.0.0",
+    "@nestjs/common": "^7.0.0",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0"
   }

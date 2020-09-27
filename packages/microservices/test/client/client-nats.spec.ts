@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ClientNats } from '../../client/client-nats';
 import { ERROR_EVENT } from '../../constants';
-// tslint:disable:no-string-literal
 
 describe('ClientNats', () => {
   const client = new ClientNats({});
@@ -105,7 +104,6 @@ describe('ClientNats', () => {
     const msg = { pattern, data: 'data', id: '1' };
     let callback: sinon.SinonSpy, subscription;
     const responseMessage = {
-      err: null,
       response: 'test',
       id: '1',
     };
@@ -120,7 +118,7 @@ describe('ClientNats', () => {
       it('should call callback with expected arguments', () => {
         expect(
           callback.calledWith({
-            err: null,
+            err: undefined,
             response: responseMessage.response,
           }),
         ).to.be.true;
@@ -142,7 +140,7 @@ describe('ClientNats', () => {
           callback.calledWith({
             isDisposed: true,
             response: responseMessage.response,
-            err: null,
+            err: undefined,
           }),
         ).to.be.true;
       });

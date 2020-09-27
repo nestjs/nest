@@ -27,10 +27,10 @@ describe('@Cache', () => {
   it('should override global defaults for CacheKey and CacheTTL', () => {
     expect(Reflect.getMetadata(CACHE_KEY_METADATA, TestAll)).to.be.eql(
       '/a_different_cache_key',
-    ) &&
-      expect(
-        Reflect.getMetadata(CACHE_TTL_METADATA, TestAll),
-      ).to.be.greaterThan(9999);
+    );
+    expect(Reflect.getMetadata(CACHE_TTL_METADATA, TestAll)).to.be.greaterThan(
+      9999,
+    );
   });
 
   it('should override only the TTL', () => {
