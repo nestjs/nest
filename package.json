@@ -113,7 +113,7 @@
     "coveralls": "3.1.0",
     "delete-empty": "3.0.0",
     "engine.io-client": "3.4.3",
-    "eslint": "7.9.0",
+    "eslint": "7.10.0",
     "eslint-config-prettier": "6.11.0",
     "eslint-plugin-import": "2.22.0",
     "fancy-log": "1.3.3",
