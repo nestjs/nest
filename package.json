@@ -123,7 +123,7 @@
     "fastify-multipart": "3.2.0",
     "fastify-static": "3.2.0",
     "graphql": "15.3.0",
-    "graphql-tools": "6.2.3",
+    "graphql-tools": "6.2.4",
     "grpc": "1.24.3",
     "gulp": "4.0.2",
     "gulp-clang-format": "1.0.27",
