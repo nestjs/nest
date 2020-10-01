@@ -2,7 +2,7 @@ import { HttpStatus } from '../enums/http-status.enum';
 import { HttpException } from './http.exception';
 
 /**
- * Defines an HTTP exception for *Gatway Timeout* type errors.
+ * Defines an HTTP exception for *Gateway Timeout* type errors.
  *
  * @see [Base Exceptions](https://docs.nestjs.com/exception-filters#base-exceptions)
  *
