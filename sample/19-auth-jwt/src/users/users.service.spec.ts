@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { expect } from 'chai';
 import { User, UsersService } from './users.service';
 
 describe('UsersService', () => {
@@ -18,7 +17,7 @@ describe('UsersService', () => {
   });
   it.each`
     name      | returnVal
-    ${'john'} | ${{ userId: 3, username: 'john', password: 'changeme' }}
+    ${'john'} | ${{ userId: 1, username: 'john', password: 'changeme' }}
   `(
     'should call findOne for $name and return $returnVal',
     async ({ name, returnVal }: { name: string; returnVal: User }) => {
