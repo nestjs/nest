@@ -9,15 +9,11 @@ describe('E2E FileTest', () => {
   let app: INestApplication;
 
   beforeAll(async() => {
-    const modRef = await Test.createTestingModule({
+    const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
-    app = modRef.createNestApplication();
+    app = moduleRef.createNestApplication();
     await app.init();
-  });
-
-  afterAll(async () => {
-    await app.close();
   });
 
   it('should allow for file uploads', async () => {
@@ -32,5 +28,9 @@ describe('E2E FileTest', () => {
         },
         file: readFileSync('./package.json').toString(),
       })
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 });
