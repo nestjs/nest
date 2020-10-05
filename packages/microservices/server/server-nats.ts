@@ -123,11 +123,17 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public getPublisher(publisher: Client, replyTo: string, id: string) {
-    return (response: any) => {
-      Object.assign(response, { id });
-      const outgoingResponse = this.serializer.serialize(response);
-      return publisher.publish(replyTo, outgoingResponse);
-    };
+    if (replyTo) {
+      return (response: any) => {
+        Object.assign(response, { id });
+        const outgoingResponse = this.serializer.serialize(response);
+        return publisher.publish(replyTo, outgoingResponse);
+      };
+    }
+
+    // request doesn't need reply, return noop function
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    return () => {};
   }
 
   public handleError(stream: any) {

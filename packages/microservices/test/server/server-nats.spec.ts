@@ -142,22 +142,30 @@ describe('ServerNats', () => {
     let pub, publisher;
 
     const id = '1';
-    const replyTo = 'test';
-
     beforeEach(() => {
       publisherSpy = sinon.spy();
       pub = {
         publish: publisherSpy,
       };
-      publisher = server.getPublisher(pub, replyTo, id);
     });
     it(`should return function`, () => {
       expect(typeof server.getPublisher(null, null, id)).to.be.eql('function');
     });
-    it(`should call "publish" with expected arguments`, () => {
+    it(`should call "publish" when replyTo provided`, () => {
+      const replyTo = 'test';
+      publisher = server.getPublisher(pub, replyTo, id);
+
       const respond = 'test';
       publisher({ respond, id });
       expect(publisherSpy.calledWith(replyTo, { respond, id })).to.be.true;
+    });
+    it(`should not call "publish" when replyTo NOT provided`, () => {
+      const replyTo = undefined;
+      publisher = server.getPublisher(pub, replyTo, id);
+
+      const respond = 'test';
+      publisher({ respond, id });
+      expect(publisherSpy.notCalled);
     });
   });
   describe('handleEvent', () => {
