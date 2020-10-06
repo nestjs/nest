@@ -21,7 +21,7 @@
     "cli-color": "2.0.0",
     "iterare": "1.2.1",
     "tslib": "2.0.1",
-    "uuid": "8.3.0"
+    "uuid": "8.3.1"
   },
   "peerDependencies": {
     "reflect-metadata": "^0.1.12",
