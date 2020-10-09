@@ -60,10 +60,18 @@ export class ValidationPipe implements PipeTransform<any> {
     this.exceptionFactory =
       options.exceptionFactory || this.createExceptionFactory();
 
-    classValidator = loadPackage('class-validator', 'ValidationPipe', () =>
+    classValidator = this.loadValidator();
+    classTransformer = this.loadTransformer();
+  }
+
+  protected loadValidator() {
+    return loadPackage('class-validator', 'ValidationPipe', () =>
       require('class-validator'),
     );
-    classTransformer = loadPackage('class-transformer', 'ValidationPipe', () =>
+  }
+
+  protected loadTransformer() {
+    return loadPackage('class-transformer', 'ValidationPipe', () =>
       require('class-transformer'),
     );
   }
