@@ -30,7 +30,7 @@ export class CacheInterceptor implements NestInterceptor {
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
     @Inject(REFLECTOR) protected readonly reflector: any,
-  ) {}
+  ) { }
 
   async intercept(
     context: ExecutionContext,
@@ -55,7 +55,7 @@ export class CacheInterceptor implements NestInterceptor {
           this.cacheManager.set(...args);
         }),
       );
-    } catch {
+    } catch (error) {
       return next.handle();
     }
   }

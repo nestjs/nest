@@ -183,7 +183,7 @@ describe('ServerRedis', () => {
       const { retry_strategy } = server.getClientOptions();
       try {
         retry_strategy({} as any);
-      } catch {}
+      } catch (error) { }
       expect(createSpy.called).to.be.true;
     });
   });
@@ -220,7 +220,7 @@ describe('ServerRedis', () => {
           server.createRetryStrategy({
             error: { code: 'ECONNREFUSED' },
           } as any);
-        } catch {}
+        } catch (error) { }
         expect(loggerErrorSpy.called).to.be.true;
       });
     });

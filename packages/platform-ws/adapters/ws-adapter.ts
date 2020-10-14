@@ -43,11 +43,11 @@ export class WsAdapter extends AbstractWsAdapter {
     return server
       ? server
       : this.bindErrorHandler(
-          new wsPackage.Server({
-            port,
-            ...wsOptions,
-          }),
-        );
+        new wsPackage.Server({
+          port,
+          ...wsOptions,
+        }),
+      );
   }
 
   public bindMessageHandlers(
@@ -85,7 +85,7 @@ export class WsAdapter extends AbstractWsAdapter {
       );
       const { callback } = messageHandler;
       return transform(callback(message.data));
-    } catch {
+    } catch (error) {
       return empty;
     }
   }

@@ -55,11 +55,11 @@ describe('ClientRedis', () => {
       connectSpy.restore();
     });
     it('should subscribe to response pattern name', () => {
-      client['publish'](msg, () => {});
+      client['publish'](msg, () => { });
       expect(subscribeSpy.calledWith(`${pattern}.reply`)).to.be.true;
     });
     it('should publish stringified message to request pattern name', async () => {
-      await client['publish'](msg, () => {});
+      await client['publish'](msg, () => { });
       expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).to.be.true;
     });
     describe('on error', () => {
@@ -253,7 +253,7 @@ describe('ClientRedis', () => {
       const { retry_strategy } = client.getClientOptions(new Subject());
       try {
         retry_strategy({} as any);
-      } catch {}
+      } catch (error) { }
       expect(createSpy.called).to.be.true;
     });
   });
