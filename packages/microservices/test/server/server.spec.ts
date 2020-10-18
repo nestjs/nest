@@ -123,7 +123,7 @@ describe('Server', () => {
     });
   });
   describe('transformToObservable', () => {
-    describe('when resultOrDeffered', () => {
+    describe('when resultOrDeferred', () => {
       describe('is Promise', () => {
         it('should returns Observable', async () => {
           const value = 100;
