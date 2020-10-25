@@ -10,7 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { HttpStatus } from '../../enums';
-import { UnprocessableEntityException } from '../../exceptions';
+import { BadRequestException, UnprocessableEntityException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ValidationPipe } from '../../pipes/validation.pipe';
 chai.use(chaiAsPromised);
@@ -418,9 +418,22 @@ describe('ValidationPipe', () => {
       };
 
       target = new ValidationPipe({ expectedType: TestModel });
-      const testObj = { prop1: 'value1', prop2: 'value2' };
+      const testObj = { prop1: 'value1', prop2: 1 };
 
-      expect(await target.transform(testObj, m)).to.equal(testObj);
+      await expect(target.transform(testObj, m)).rejectedWith(BadRequestException);
+    });
+
+    it('should validate against the expected type if presented and metatype is primitive type', async () => {
+      const m: ArgumentMetadata = {
+        type: 'body',
+        metatype: String,
+        data: '',
+      };
+
+      target = new ValidationPipe({ expectedType: TestModel });
+      const testObj = { prop1: 'value1', prop2: 1 };
+
+      await expect(target.transform(testObj, m)).rejectedWith(BadRequestException);
     });
   });
 });
