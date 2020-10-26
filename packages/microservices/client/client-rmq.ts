@@ -17,6 +17,7 @@ import {
 } from '../constants';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
+import {RmqUrl} from "../external/rmq-url.interface";
 
 let rqmPackage: any = {};
 
@@ -27,7 +28,7 @@ export class ClientRMQ extends ClientProxy {
   protected connection: Promise<any>;
   protected client: any = null;
   protected channel: any = null;
-  protected urls: string[];
+  protected urls: string[] | RmqUrl[];
   protected queue: string;
   protected queueOptions: any;
   protected responseEmitter: EventEmitter;
