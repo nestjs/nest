@@ -103,13 +103,13 @@ export abstract class Server {
     }
   }
 
-  public transformToObservable<T = any>(resultOrDeffered: any): Observable<T> {
-    if (resultOrDeffered instanceof Promise) {
-      return fromPromise(resultOrDeffered);
-    } else if (!this.isObservable(resultOrDeffered)) {
-      return of(resultOrDeffered);
+  public transformToObservable<T = any>(resultOrDeferred: any): Observable<T> {
+    if (resultOrDeferred instanceof Promise) {
+      return fromPromise(resultOrDeferred);
+    } else if (!this.isObservable(resultOrDeferred)) {
+      return of(resultOrDeferred);
     }
-    return resultOrDeffered;
+    return resultOrDeferred;
   }
 
   public getOptionsProp<
