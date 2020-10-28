@@ -2,27 +2,27 @@ import { HttpStatus } from '../enums/http-status.enum';
 import { HttpException } from './http.exception';
 
 /**
- * Defines an HTTP exception for *Gateway Timeout* type errors.
+ * Defines an HTTP exception for *Precondition Failed* type errors.
  *
  * @see [Base Exceptions](https://docs.nestjs.com/exception-filters#base-exceptions)
  *
  * @publicApi
  */
-export class GatewayTimeoutException extends HttpException {
+export class PreconditionFailedException extends HttpException {
   /**
-   * Instantiate a `GatewayTimeoutException` Exception.
+   * Instantiate a `PreconditionFailedException` Exception.
    *
    * @example
-   * `throw new GatewayTimeoutException()`
+   * `throw new PreconditionFailedException()`
    *
    * @usageNotes
-   * The HTTP response status code will be 504.
+   * The HTTP response status code will be 412.
    * - The `objectOrError` argument defines the JSON response body or the message string.
    * - The `description` argument contains a short description of the HTTP error.
    *
    * By default, the JSON response body contains two properties:
-   * - `statusCode`: this will be the value 504.
-   * - `message`: the string `'Gateway Timeout'` by default; override this by supplying
+   * - `statusCode`: this will be the value 412.
+   * - `message`: the string `'Precondition Failed'` by default; override this by supplying
    * a string in the `objectOrError` parameter.
    *
    * If the parameter `objectOrError` is a string, the response body will contain an
@@ -35,15 +35,15 @@ export class GatewayTimeoutException extends HttpException {
    */
   constructor(
     objectOrError?: string | object | any,
-    description = 'Gateway Timeout',
+    description = 'Precondition Failed',
   ) {
     super(
       HttpException.createBody(
         objectOrError,
         description,
-        HttpStatus.GATEWAY_TIMEOUT,
+        HttpStatus.PRECONDITION_FAILED,
       ),
-      HttpStatus.GATEWAY_TIMEOUT,
+      HttpStatus.PRECONDITION_FAILED,
     );
   }
 }

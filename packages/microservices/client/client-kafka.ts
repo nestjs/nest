@@ -43,13 +43,13 @@ export class ClientKafka extends ClientProxy {
   protected client: Kafka = null;
   protected consumer: Consumer = null;
   protected producer: Producer = null;
-  protected readonly logger = new Logger(ClientKafka.name);
-  protected readonly responsePatterns: string[] = [];
+  protected logger = new Logger(ClientKafka.name);
+  protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number[] } = {};
 
-  private readonly brokers: string[];
-  private readonly clientId: string;
-  private readonly groupId: string;
+  protected brokers: string[];
+  protected clientId: string;
+  protected groupId: string;
 
   constructor(protected readonly options: KafkaOptions['options']) {
     super();

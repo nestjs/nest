@@ -28,7 +28,7 @@ export class RouteParamsFactory implements IRouteParamsFactory {
       case RouteParamtypes.QUERY:
         return data ? req.query[data] : req.query;
       case RouteParamtypes.HEADERS:
-        return data ? req.headers[data] : req.headers;
+        return data ? req.headers[data.toLowerCase()] : req.headers;
       case RouteParamtypes.SESSION:
         return req.session;
       case RouteParamtypes.FILE:

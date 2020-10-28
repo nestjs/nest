@@ -6,6 +6,7 @@ import { ArgumentMetadata, ValidationError } from '../index';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import { Type } from '../interfaces/type.interface';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
@@ -20,6 +21,7 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (errors: ValidationError[]) => any;
   validateCustomDecorators?: boolean;
+  expectedType?: Type<any>;
 }
 
 let classValidator: any = {};
@@ -32,6 +34,7 @@ export class ValidationPipe implements PipeTransform<any> {
   protected validatorOptions: ValidatorOptions;
   protected transformOptions: ClassTransformOptions;
   protected errorHttpStatusCode: ErrorHttpStatusCode;
+  protected expectedType: Type<any>;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
 
@@ -41,6 +44,7 @@ export class ValidationPipe implements PipeTransform<any> {
       transform,
       disableErrorMessages,
       errorHttpStatusCode,
+      expectedType,
       transformOptions,
       validateCustomDecorators,
       ...validatorOptions
@@ -52,6 +56,7 @@ export class ValidationPipe implements PipeTransform<any> {
     this.isDetailedOutputDisabled = disableErrorMessages;
     this.validateCustomDecorators = validateCustomDecorators || false;
     this.errorHttpStatusCode = errorHttpStatusCode || HttpStatus.BAD_REQUEST;
+    this.expectedType = expectedType;
     this.exceptionFactory =
       options.exceptionFactory || this.createExceptionFactory();
 
@@ -64,7 +69,7 @@ export class ValidationPipe implements PipeTransform<any> {
   }
 
   public async transform(value: any, metadata: ArgumentMetadata) {
-    const { metatype } = metadata;
+    const metatype = this.expectedType || metadata.metatype;
     if (!metatype || !this.toValidate(metadata)) {
       return this.isTransformEnabled
         ? this.transformPrimitive(value, metadata)
@@ -130,7 +135,7 @@ export class ValidationPipe implements PipeTransform<any> {
     if (type === 'custom' && !this.validateCustomDecorators) {
       return false;
     }
-    const types = [String, Boolean, Number, Array, Object];
+    const types = [String, Boolean, Number, Array, Object, Buffer];
     return !types.some(t => metatype === t) && !isNil(metatype);
   }
 

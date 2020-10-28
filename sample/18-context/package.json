@@ -19,29 +19,29 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "7.3.2",
-    "@nestjs/core": "7.3.2",
+    "@nestjs/common": "7.4.4",
+    "@nestjs/core": "7.4.4",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "6.6.0"
+    "rxjs": "6.6.3"
   },
   "devDependencies": {
-    "@nestjs/cli": "7.4.1",
-    "@nestjs/schematics": "7.0.1",
+    "@nestjs/cli": "7.5.1",
+    "@nestjs/schematics": "7.1.2",
     "@types/node": "12.12.31",
     "@types/supertest": "2.0.10",
-    "jest": "26.1.0",
-    "prettier": "2.0.5",
-    "supertest": "4.0.2",
-    "ts-jest": "26.1.1",
-    "ts-loader": "8.0.0",
-    "ts-node": "8.10.2",
+    "jest": "26.5.0",
+    "prettier": "2.1.2",
+    "supertest": "5.0.0",
+    "ts-jest": "26.4.1",
+    "ts-loader": "8.0.4",
+    "ts-node": "9.0.0",
     "tsconfig-paths": "3.9.0",
-    "@typescript-eslint/eslint-plugin": "3.6.0",
-    "@typescript-eslint/parser": "3.6.0",
-    "eslint": "7.4.0",
+    "@typescript-eslint/eslint-plugin": "4.2.0",
+    "@typescript-eslint/parser": "4.2.0",
+    "eslint": "7.10.0",
     "eslint-config-prettier": "6.11.0",
-    "eslint-plugin-import": "2.22.0",
-    "typescript": "3.9.6"
+    "eslint-plugin-import": "2.22.1",
+    "typescript": "4.0.3"
   }
 }

@@ -115,14 +115,14 @@ export class NestMicroservice extends NestApplicationContext
   }
 
   public listen(callback: () => void) {
-    !this.isInitialized && this.registerModules();
-
-    this.logger.log(MESSAGES.MICROSERVICE_READY);
-    this.server.listen(callback);
+    this.listenAsync().then(callback);
   }
 
   public async listenAsync(): Promise<any> {
-    return new Promise(resolve => this.listen(resolve));
+    !this.isInitialized && (await this.registerModules());
+
+    this.logger.log(MESSAGES.MICROSERVICE_READY);
+    return new Promise(resolve => this.server.listen(resolve));
   }
 
   public async close(): Promise<any> {
@@ -150,5 +150,13 @@ export class NestMicroservice extends NestApplicationContext
     this.socketModule && (await this.socketModule.close());
     await super.close();
     this.setIsTerminated(true);
+  }
+
+  protected async dispose(): Promise<void> {
+    await this.server.close();
+    if (this.isTerminated) {
+      return;
+    }
+    this.socketModule && (await this.socketModule.close());
   }
 }
