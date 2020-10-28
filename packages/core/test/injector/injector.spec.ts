@@ -44,20 +44,20 @@ describe('Injector', () => {
         isResolved: false,
       });
       depOne = new InstanceWrapper({
-        name: 'DependencyOne',
+        name: DependencyOne,
         metatype: DependencyOne,
         instance: Object.create(DependencyOne.prototype),
         isResolved: false,
       });
       depTwo = new InstanceWrapper({
-        name: 'DependencyTwo',
+        name: DependencyTwo,
         metatype: DependencyTwo,
         instance: Object.create(DependencyOne.prototype),
         isResolved: false,
       });
       moduleDeps.providers.set('MainTest', mainTest);
-      moduleDeps.providers.set('DependencyOne', depOne);
-      moduleDeps.providers.set('DependencyTwo', depTwo);
+      moduleDeps.providers.set(DependencyOne, depOne);
+      moduleDeps.providers.set(DependencyTwo, depTwo);
       moduleDeps.providers.set('MainTestResolved', {
         ...mainTest,
         isResolved: true,
@@ -616,6 +616,7 @@ describe('Injector', () => {
       });
     });
   });
+
   describe('applyProperties', () => {
     describe('when instance is not an object', () => {
       it('should return undefined', () => {

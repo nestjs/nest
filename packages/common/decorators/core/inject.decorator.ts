@@ -2,7 +2,7 @@ import {
   PROPERTY_DEPS_METADATA,
   SELF_DECLARED_DEPS_METADATA,
 } from '../../constants';
-import { isFunction, isUndefined } from '../../utils/shared.utils';
+import { isUndefined } from '../../utils/shared.utils';
 
 /**
  * Decorator that marks a constructor parameter as a target for
@@ -35,9 +35,7 @@ import { isFunction, isUndefined } from '../../utils/shared.utils';
  */
 export function Inject<T = any>(token?: T) {
   return (target: object, key: string | symbol, index?: number) => {
-    token = token || Reflect.getMetadata('design:type', target, key);
-    const type =
-      token && isFunction(token) ? ((token as any) as Function).name : token;
+    const type = token || Reflect.getMetadata('design:type', target, key);
 
     if (!isUndefined(index)) {
       let dependencies =
