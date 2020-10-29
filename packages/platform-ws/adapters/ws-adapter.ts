@@ -86,6 +86,7 @@ export class WsAdapter extends AbstractWsAdapter {
       const { callback } = messageHandler;
       return transform(callback(message.data));
     } catch (error) {
+      console.log(error);
       return empty;
     }
   }
