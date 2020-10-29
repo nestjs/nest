@@ -10,9 +10,9 @@ export class NestApplicationContextOptions {
   logger?: LoggerService | LogLevel[] | boolean;
 
   /**
-   * Whether to abort the process on Error. By default the process is exited.
-   * Pass `false` to override default behaviour. If `false` is passed nest will not exit
-   * the application on an exception and instead, will throw the exception.
+   * Whether to abort the process on Error. By default, the process is exited.
+   * Pass `false` to override the default behavior. If `false` is passed, Nest will not exit
+   * the application and instead will rethrow the exception.
    */
   abortOnError?: boolean | null;
 }
