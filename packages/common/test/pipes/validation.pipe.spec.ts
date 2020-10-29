@@ -10,7 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { HttpStatus } from '../../enums';
-import { BadRequestException, UnprocessableEntityException } from '../../exceptions';
+import { UnprocessableEntityException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ValidationPipe } from '../../pipes/validation.pipe';
 chai.use(chaiAsPromised);
