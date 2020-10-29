@@ -15,14 +15,10 @@ describe('E2E JWT Sample', () => {
     await app.init();
   });
 
-  afterAll(async() => {
-    await app.close();
-  });
-
   it('should get a JWT then successfully make a call', async () => {
     const loginReq = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({username: 'john', password: 'changeme'})
+      .send({ username: 'john', password: 'changeme' })
       .expect(201);
     const token = loginReq.body.access_token;
     return request(app.getHttpServer())
@@ -30,5 +26,9 @@ describe('E2E JWT Sample', () => {
       .set('Authorization', 'Bearer ' + token)
       .expect(200)
       .expect({ userId: 1, username: 'john'})
+  });
+
+  afterAll(async() => {
+    await app.close();
   });
 });
