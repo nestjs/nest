@@ -183,7 +183,9 @@ describe('ServerRedis', () => {
       const { retry_strategy } = server.getClientOptions();
       try {
         retry_strategy({} as any);
-      } catch (error) { }
+      } catch (error) { 
+        console.log(error);
+      }
       expect(createSpy.called).to.be.true;
     });
   });
