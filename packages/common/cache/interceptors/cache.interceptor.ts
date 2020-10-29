@@ -56,6 +56,7 @@ export class CacheInterceptor implements NestInterceptor {
         }),
       );
     } catch (error) {
+      console.log(error);
       return next.handle();
     }
   }
