@@ -25,6 +25,20 @@
   },
   "peerDependencies": {
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0"
+    "rxjs": "^6.0.0",
+    "cache-manager": "*",
+    "class-validator": "*",
+    "class-transformer": "*"
+  },
+  "peerDependenciesMeta": {
+    "cache-manager": {
+      "optional": true
+    },
+    "class-validator": {
+      "optional": true
+    },
+    "class-transformer": {
+      "optional": true
+    }
   }
 }
