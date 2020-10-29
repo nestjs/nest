@@ -70,6 +70,7 @@ export class ParseArrayPipe implements PipeTransform {
             .trim()
             .split(this.options.separator || DEFAULT_ARRAY_SEPARATOR);
         } catch (error) {
+          console.log(error);
           throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
         }
       }
@@ -83,7 +84,9 @@ export class ParseArrayPipe implements PipeTransform {
       const toClassInstance = (item: any) => {
         try {
           item = JSON.parse(item);
-        } catch (error) { }
+        } catch (error) {
+          console.log(error);
+         }
         return this.validationPipe.transform(item, validationMetadata);
       };
       value = await Promise.all(value.map(toClassInstance));
