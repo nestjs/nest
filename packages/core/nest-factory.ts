@@ -15,6 +15,7 @@ import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { ExceptionsZone } from './errors/exceptions-zone';
 import { loadAdapter } from './helpers/load-adapter';
+import { rethrow } from './helpers/rethrow';
 import { NestContainer } from './injector/container';
 import { InstanceLoader } from './injector/instance-loader';
 import { MetadataScanner } from './metadata-scanner';
@@ -22,9 +23,6 @@ import { NestApplication } from './nest-application';
 import { NestApplicationContext } from './nest-application-context';
 import { DependenciesScanner } from './scanner';
 
-const rethrow = err => {
-  throw err;
-};
 /**
  * @publicApi
  */
@@ -157,25 +155,27 @@ export class NestFactoryStatic {
       config,
     );
     container.setHttpAdapter(httpServer);
+
     const teardown = this.abortOnError === false ? rethrow : undefined;
     await httpServer?.init();
     try {
       this.logger.log(MESSAGES.APPLICATION_START);
+
       await ExceptionsZone.asyncRun(async () => {
         await dependenciesScanner.scan(module);
         await instanceLoader.createInstancesOfDependencies();
         dependenciesScanner.applyApplicationProviders();
       }, teardown);
     } catch (e) {
-      this.handleErrorInInitialization(e);
+      this.handleInitializationError(e);
     }
   }
 
-  private handleErrorInInitialization(e): void {
+  private handleInitializationError(err: unknown) {
     if (this.abortOnError) {
       process.abort();
     }
-    rethrow(e);
+    rethrow(err);
   }
 
   private createProxy(target: any) {
@@ -203,11 +203,13 @@ export class NestFactoryStatic {
     prop: string,
   ): Function {
     const teardown = this.abortOnError === false ? rethrow : undefined;
+
     return (...args: unknown[]) => {
       let result: unknown;
       ExceptionsZone.run(() => {
         result = receiver[prop](...args);
       }, teardown);
+
       return result;
     };
   }
@@ -239,7 +241,7 @@ export class NestFactoryStatic {
   private setAbortOnError(
     serverOrOptions?: AbstractHttpAdapter | NestApplicationOptions,
     options?: NestApplicationContextOptions | NestApplicationOptions,
-  ): void {
+  ) {
     this.abortOnError = this.isHttpServer(serverOrOptions)
       ? !(options && options.abortOnError === false)
       : !(serverOrOptions && serverOrOptions.abortOnError === false);
