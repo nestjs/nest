@@ -403,7 +403,7 @@ describe('ValidationPipe', () => {
       public prop1: string;
 
       @IsBoolean()
-      public prop2: string;
+      public prop2: boolean;
 
       @IsOptional()
       @IsString()
@@ -418,9 +418,9 @@ describe('ValidationPipe', () => {
       };
 
       target = new ValidationPipe({ expectedType: TestModel });
-      const testObj = { prop1: 'value1', prop2: 1 };
+      const testObj = { prop1: 'value1', prop2: 'value2' };
 
-      await expect(target.transform(testObj, m)).rejectedWith(BadRequestException);
+      expect(await target.transform(testObj, m)).to.equal(testObj);
     });
 
     it('should validate against the expected type if presented and metatype is primitive type', async () => {
@@ -431,9 +431,9 @@ describe('ValidationPipe', () => {
       };
 
       target = new ValidationPipe({ expectedType: TestModel });
-      const testObj = { prop1: 'value1', prop2: 1 };
+      const testObj = { prop1: 'value1', prop2: 'value2' };
 
-      await expect(target.transform(testObj, m)).rejectedWith(BadRequestException);
+      expect(await target.transform(testObj, m)).to.equal(testObj);
     });
   });
 });
