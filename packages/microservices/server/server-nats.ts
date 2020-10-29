@@ -131,7 +131,8 @@ export class ServerNats extends Server implements CustomTransportStrategy {
       };
     }
 
-    // request doesn't need reply, return noop function
+    // In case "replyTo" topic is not provided, there's no need for a reply.
+    // Method returns a noop function instead
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     return () => {};
   }
