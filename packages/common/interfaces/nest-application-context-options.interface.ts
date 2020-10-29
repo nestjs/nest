@@ -14,5 +14,5 @@ export class NestApplicationContextOptions {
    * Pass `false` to override the default behavior. If `false` is passed, Nest will not exit
    * the application and instead will rethrow the exception.
    */
-  abortOnError?: boolean | null;
+  abortOnError?: boolean | undefined;
 }
