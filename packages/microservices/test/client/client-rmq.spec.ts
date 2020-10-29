@@ -40,7 +40,9 @@ describe('ClientRMQ', function () {
         try {
           client['client'] = null;
           await client.connect();
-        } catch (error) { }
+        } catch (error) { 
+          console.log(error);
+        }
       });
       it('should call "handleError" once', async () => {
         expect(handleErrorsSpy.called).to.be.true;
