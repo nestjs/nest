@@ -20,6 +20,7 @@ import {
   OutgoingResponse,
 } from '../interfaces/packet.interface';
 import { Server } from './server';
+import {RmqUrl} from "../external/rmq-url.interface";
 
 let rqmPackage: any = {};
 
@@ -28,7 +29,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   protected server: any = null;
   protected channel: any = null;
-  protected readonly urls: string[];
+  protected readonly urls: string[] | RmqUrl[];
   protected readonly queue: string;
   protected readonly prefetchCount: number;
   protected readonly queueOptions: any;
