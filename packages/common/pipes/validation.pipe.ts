@@ -138,7 +138,7 @@ export class ValidationPipe implements PipeTransform<any> {
     };
   }
 
-  private toValidate(metadata: ArgumentMetadata): boolean {
+  protected toValidate(metadata: ArgumentMetadata): boolean {
     const { metatype, type } = metadata;
     if (type === 'custom' && !this.validateCustomDecorators) {
       return false;
@@ -147,7 +147,7 @@ export class ValidationPipe implements PipeTransform<any> {
     return !types.some(t => metatype === t) && !isNil(metatype);
   }
 
-  private transformPrimitive(value: any, metadata: ArgumentMetadata) {
+  protected transformPrimitive(value: any, metadata: ArgumentMetadata) {
     if (!metadata.data) {
       // leave top-level query/param objects unmodified
       return value;
@@ -165,11 +165,11 @@ export class ValidationPipe implements PipeTransform<any> {
     return value;
   }
 
-  private toEmptyIfNil<T = any, R = any>(value: T): R | {} {
+  protected toEmptyIfNil<T = any, R = any>(value: T): R | {} {
     return isNil(value) ? {} : value;
   }
 
-  private stripProtoKeys(value: Record<string, any>) {
+  protected stripProtoKeys(value: Record<string, any>) {
     delete value.__proto__;
     const keys = Object.keys(value);
     iterate(keys)
@@ -177,11 +177,11 @@ export class ValidationPipe implements PipeTransform<any> {
       .forEach(key => this.stripProtoKeys(value[key]));
   }
 
-  private isPrimitive(value: unknown): boolean {
+  protected isPrimitive(value: unknown): boolean {
     return ['number', 'boolean', 'string'].includes(typeof value);
   }
 
-  private flattenValidationErrors(
+  protected flattenValidationErrors(
     validationErrors: ValidationError[],
   ): string[] {
     return iterate(validationErrors)
@@ -193,7 +193,7 @@ export class ValidationPipe implements PipeTransform<any> {
       .toArray();
   }
 
-  private mapChildrenToValidationErrors(
+  protected mapChildrenToValidationErrors(
     error: ValidationError,
   ): ValidationError[] {
     if (!(error.children && error.children.length)) {
@@ -209,7 +209,7 @@ export class ValidationPipe implements PipeTransform<any> {
     return validationErrors;
   }
 
-  private prependConstraintsWithParentProp(
+  protected prependConstraintsWithParentProp(
     parentError: ValidationError,
     error: ValidationError,
   ): ValidationError {
