@@ -220,7 +220,9 @@ describe('ServerRedis', () => {
           server.createRetryStrategy({
             error: { code: 'ECONNREFUSED' },
           } as any);
-        } catch (error) { }
+        } catch (error) { 
+          console.log(error);
+        }
         expect(loggerErrorSpy.called).to.be.true;
       });
     });
