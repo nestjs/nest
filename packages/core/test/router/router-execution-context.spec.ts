@@ -1,6 +1,8 @@
 import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
 import { expect } from 'chai';
+import { of } from 'rxjs';
 import * as sinon from 'sinon';
+import { PassThrough } from 'stream';
 import { HttpException, HttpStatus, RouteParamMetadata } from '../../../common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
@@ -326,6 +328,7 @@ describe('RouterExecutionContext', () => {
 
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined);
 
         const handler = contextCreator.createHandleResponseFn(
           null,
@@ -377,6 +380,7 @@ describe('RouterExecutionContext', () => {
 
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined);
 
         const handler = contextCreator.createHandleResponseFn(
           null,
@@ -396,6 +400,7 @@ describe('RouterExecutionContext', () => {
         const response = {};
 
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined);
 
         const handler = contextCreator.createHandleResponseFn(
           null,
@@ -412,6 +417,55 @@ describe('RouterExecutionContext', () => {
             1234,
           ),
         ).to.be.true;
+      });
+    });
+
+    describe('when "isSse" is enabled', () => {
+      it('should delegate result to SseStream', async () => {
+        const result = of('test');
+        const response = new PassThrough();
+        response.write = sinon.spy();
+
+        const request = new PassThrough();
+        request.on = sinon.spy();
+
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectSse').returns('/');
+
+        const handler = contextCreator.createHandleResponseFn(
+          null,
+          true,
+          undefined,
+          200,
+        );
+        await handler(result, response, request);
+
+        expect((response.write as any).called).to.be.true;
+        expect((request.on as any).called).to.be.true;
+      });
+
+      it('should not allow a non-observable result', async () => {
+        const result = Promise.resolve('test');
+        const response = new PassThrough();
+        const request = new PassThrough();
+
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectSse').returns('/');
+
+        const handler = contextCreator.createHandleResponseFn(
+          null,
+          true,
+          undefined,
+          200,
+        );
+
+        try {
+          await handler(result, response, request);
+        } catch (e) {
+          expect(e.message).to.equal(
+            'You must return an Observable stream to use Server-Sent Events (SSE).',
+          );
+        }
       });
     });
   });

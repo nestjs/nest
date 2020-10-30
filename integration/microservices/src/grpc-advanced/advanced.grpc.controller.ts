@@ -85,7 +85,11 @@ export class AdvancedGrpcController {
    * @param messages
    */
   @GrpcStreamMethod('orders.OrderService')
-  async sync(messages: Observable<any>, metadata: Metadata, call: any): Promise<any> {
+  async sync(
+    messages: Observable<any>,
+    metadata: Metadata,
+    call: any,
+  ): Promise<any> {
     // Set Set-Cookie from Metadata
     const srvMetadata = new Metadata();
     srvMetadata.add('Set-Cookie', 'test_cookie=abcd');

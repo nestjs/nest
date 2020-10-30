@@ -115,7 +115,7 @@ describe('Advanced GRPC transport', () => {
 
     // Get Set-Cookie from Metadata
     callHandler.on('metadata', (metadata: GRPC.Metadata) => {
-      expect(metadata.get('Set-Cookie')[0]).to.eq('test_cookie=abcd')
+      expect(metadata.get('Set-Cookie')[0]).to.eq('test_cookie=abcd');
     });
 
     callHandler.on('data', (msg: number) => {
