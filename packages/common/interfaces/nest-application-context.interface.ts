@@ -1,5 +1,5 @@
 import { ShutdownSignal } from '../enums/shutdown-signal.enum';
-import { LoggerService } from '../services/logger.service';
+import { LoggerService, LogLevel } from '../services/logger.service';
 import { Abstract } from './abstract.interface';
 import { Type } from './type.interface';
 
@@ -53,7 +53,7 @@ export interface INestApplicationContext {
    * Sets custom logger service
    * @returns {void}
    */
-  useLogger(logger: LoggerService): void;
+  useLogger(logger: LoggerService | LogLevel[] | false): void;
 
   /**
    * Enables the usage of shutdown hooks. Will call the

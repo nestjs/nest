@@ -129,6 +129,7 @@ export interface RmqOptions {
     serializer?: Serializer;
     deserializer?: Deserializer;
     replyQueue?: string;
+    persistent?: boolean;
   };
 }
 

@@ -123,11 +123,18 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   public getPublisher(publisher: Client, replyTo: string, id: string) {
-    return (response: any) => {
-      Object.assign(response, { id });
-      const outgoingResponse = this.serializer.serialize(response);
-      return publisher.publish(replyTo, outgoingResponse);
-    };
+    if (replyTo) {
+      return (response: any) => {
+        Object.assign(response, { id });
+        const outgoingResponse = this.serializer.serialize(response);
+        return publisher.publish(replyTo, outgoingResponse);
+      };
+    }
+
+    // In case "replyTo" topic is not provided, there's no need for a reply.
+    // Method returns a noop function instead
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    return () => {};
   }
 
   public handleError(stream: any) {

@@ -232,14 +232,14 @@ describe('ClientKafka', () => {
   });
 
   describe('close', () => {
-    const consumer = { disconnect: sinon.spy() };
-    const producer = { disconnect: sinon.spy() };
+    const consumer = { disconnect: sinon.stub().resolves() };
+    const producer = { disconnect: sinon.stub().resolves() };
     beforeEach(() => {
       (client as any).consumer = consumer;
       (client as any).producer = producer;
     });
-    it('should close server', () => {
-      client.close();
+    it('should close server', async () => {
+      await client.close();
 
       expect(consumer.disconnect.calledOnce).to.be.true;
       expect(producer.disconnect.calledOnce).to.be.true;

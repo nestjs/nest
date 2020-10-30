@@ -1,8 +1,10 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
+import { IncomingMessage, ServerResponse } from 'http';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { RequestMethod, HttpStatus } from '../../../common';
+import { PassThrough, Writable } from 'stream';
+import { HttpStatus, RequestMethod } from '../../../common';
 import { RouterResponseController } from '../../router/router-response-controller';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
@@ -245,6 +247,81 @@ describe('RouterResponseController', () => {
         });
         expect(redirectSpy.firstCall.args[2]).to.be.eql('redirect url');
       });
+    });
+  });
+  describe('Server-Sent-Events', () => {
+    it('should accept only observables', async () => {
+      const result = Promise.resolve('test');
+      try {
+        await routerResponseController.sse(
+          (result as unknown) as any,
+          ({} as unknown) as ServerResponse,
+          ({} as unknown) as IncomingMessage,
+        );
+      } catch (e) {
+        expect(e.message).to.eql(
+          'You must return an Observable stream to use Server-Sent Events (SSE).',
+        );
+      }
+    });
+
+    it('should write string', async () => {
+      class Sink extends Writable {
+        private readonly chunks: string[] = [];
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          this.chunks.push(chunk);
+          callback();
+        }
+
+        get content() {
+          return this.chunks.join('');
+        }
+      }
+
+      const written = (stream: Writable) =>
+        new Promise((resolve, reject) =>
+          stream.on('error', reject).on('finish', resolve),
+        );
+
+      const result = of('test');
+      const response = new Sink();
+      const request = new PassThrough();
+      routerResponseController.sse(
+        result,
+        (response as unknown) as ServerResponse,
+        (request as unknown) as IncomingMessage,
+      );
+      request.destroy();
+      await written(response);
+      expect(response.content).to.eql(
+        `:
+id: 1
+data: test
+
+`,
+      );
+    });
+
+    it('should close on request close', done => {
+      const result = of('test');
+      const response = new Writable();
+      response.end = () => done();
+      response._write = () => {};
+
+      const request = new Writable();
+      request._write = () => {};
+
+      routerResponseController.sse(
+        result,
+        (response as unknown) as ServerResponse,
+        (request as unknown) as IncomingMessage,
+      );
+      request.emit('close');
     });
   });
 });
