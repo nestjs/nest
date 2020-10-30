@@ -191,7 +191,7 @@ export class FastifyAdapter<
   }
 
   public inject(opts?: InjectOptions | string) {
-    return (opts) ? this.instance.inject(opts) : this.instance.inject();
+    return this.instance.inject(opts);
   }
 
   public async close() {
