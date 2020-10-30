@@ -116,6 +116,7 @@
     "eslint": "7.10.0",
     "eslint-config-prettier": "6.11.0",
     "eslint-plugin-import": "2.22.1",
+    "eventsource": "1.0.7",
     "fancy-log": "1.3.3",
     "fastify": "3.5.1",
     "fastify-cors": "4.1.0",
