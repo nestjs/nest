@@ -17,7 +17,7 @@ import {
 } from '../constants';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
-import { RmqUrl } from "../external/rmq-url.interface";
+import { RmqUrl } from '../external/rmq-url.interface';
 
 let rqmPackage: any = {};
 

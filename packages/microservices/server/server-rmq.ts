@@ -20,7 +20,7 @@ import {
   OutgoingResponse,
 } from '../interfaces/packet.interface';
 import { Server } from './server';
-import { RmqUrl } from "../external/rmq-url.interface";
+import { RmqUrl } from '../external/rmq-url.interface';
 
 let rqmPackage: any = {};
 
