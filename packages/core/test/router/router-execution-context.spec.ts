@@ -11,6 +11,7 @@ import { ApplicationConfig } from '../../application-config';
 import { FORBIDDEN_MESSAGE } from '../../guards/constants';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
+import { HandlerResponseBasicFn } from '../../helpers/handler-metadata-storage';
 import { NestContainer } from '../../injector/container';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
@@ -315,7 +316,7 @@ describe('RouterExecutionContext', () => {
           true,
           undefined,
           200,
-        );
+        ) as HandlerResponseBasicFn;
         await handler(value, response);
 
         expect(response.render.calledWith(template, value)).to.be.true;
@@ -335,7 +336,7 @@ describe('RouterExecutionContext', () => {
           true,
           undefined,
           200,
-        );
+        ) as HandlerResponseBasicFn;
         await handler(result, response);
 
         expect(response.render.called).to.be.false;
@@ -361,7 +362,7 @@ describe('RouterExecutionContext', () => {
           true,
           redirectResponse,
           200,
-        );
+        ) as HandlerResponseBasicFn;
         await handler(redirectResponse, response);
 
         expect(
@@ -387,7 +388,7 @@ describe('RouterExecutionContext', () => {
           true,
           undefined,
           200,
-        );
+        ) as HandlerResponseBasicFn;
         await handler(result, response);
 
         expect(response.redirect.called).to.be.false;
@@ -407,7 +408,7 @@ describe('RouterExecutionContext', () => {
           false,
           undefined,
           1234,
-        );
+        ) as HandlerResponseBasicFn;
         const adapterReplySpy = sinon.spy(adapter, 'reply');
         await handler(result, response);
         expect(
@@ -437,7 +438,7 @@ describe('RouterExecutionContext', () => {
           true,
           undefined,
           200,
-        );
+        ) as HandlerResponseBasicFn;
         await handler(result, response, request);
 
         expect((response.write as any).called).to.be.true;
@@ -457,7 +458,7 @@ describe('RouterExecutionContext', () => {
           true,
           undefined,
           200,
-        );
+        ) as HandlerResponseBasicFn;
 
         try {
           await handler(result, response, request);
