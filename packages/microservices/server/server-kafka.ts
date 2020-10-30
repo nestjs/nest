@@ -52,8 +52,8 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     // append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
     this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + '-server';
-    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + '-server';
+      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + (clientOptions.clientIdPostfix || '-server');
+    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + (clientOptions.clientIdPostfix || '-server');
 
     kafkaPackage = this.loadPackage('kafkajs', ServerKafka.name, () =>
       require('kafkajs'),
