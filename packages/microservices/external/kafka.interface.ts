@@ -34,10 +34,17 @@ export type ISocketFactory = (
   onConnect: () => void,
 ) => net.Socket;
 
+export type SASLMechanism = 'plain' | 'scram-sha-256' | 'scram-sha-512' | 'aws' | 'oauthbearer'
+
+export interface OauthbearerProviderResponse {
+  value: string
+}
+
 export interface SASLOptions {
-  mechanism: 'plain' | 'scram-sha-256' | 'scram-sha-512' | 'aws';
-  username: string;
-  password: string;
+  mechanism: SASLMechanism
+  username?: string
+  password?: string
+  oauthBearerProvider?: () => Promise<OauthbearerProviderResponse>
 }
 
 export interface ProducerConfig {
