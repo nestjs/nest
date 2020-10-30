@@ -11,6 +11,7 @@ import { KafkaHeaders } from '../enums';
 import { InvalidKafkaClientTopicPartitionException } from '../errors/invalid-kafka-client-topic-partition.exception';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
 import {
+  BrokersFunction,
   Consumer,
   ConsumerConfig,
   ConsumerGroupJoinEvent,
@@ -47,7 +48,7 @@ export class ClientKafka extends ClientProxy {
   protected readonly responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number[] } = {};
 
-  private readonly brokers: string[];
+  private readonly brokers: string[] | BrokersFunction;
   private readonly clientId: string;
   private readonly groupId: string;
 

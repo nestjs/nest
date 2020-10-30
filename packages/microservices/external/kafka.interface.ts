@@ -12,13 +12,16 @@ export declare class Kafka {
   logger(): Logger;
 }
 
+export type BrokersFunction = () => string[] | Promise<string[]>
+
 export interface KafkaConfig {
-  brokers: string[];
+  brokers: string[] | BrokersFunction;
   ssl?: tls.ConnectionOptions | boolean;
   sasl?: SASLOptions;
   clientId?: string;
   connectionTimeout?: number;
   authenticationTimeout?: number;
+  reauthenticationThreshold?: number
   requestTimeout?: number;
   enforceRequestTimeout?: boolean;
   retry?: RetryOptions;
