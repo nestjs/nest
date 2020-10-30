@@ -78,7 +78,7 @@ export class ValidationPipe implements PipeTransform<any> {
 
   public async transform(value: any, metadata: ArgumentMetadata) {
     const metatype = this.expectedType || metadata.metatype;
-    if (!metatype || !this.toValidate(metadata)) {
+    if (!metatype || !this.toValidate({ ...metadata, metatype })) {
       return this.isTransformEnabled
         ? this.transformPrimitive(value, metadata)
         : value;
