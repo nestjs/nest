@@ -71,9 +71,9 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     await this.start(callback);
   }
 
-  public close(): void {
-    this.consumer && this.consumer.disconnect();
-    this.producer && this.producer.disconnect();
+  public async close(): Promise<void> {
+    this.consumer && (await this.consumer.disconnect());
+    this.producer && (await this.producer.disconnect());
     this.consumer = null;
     this.producer = null;
     this.client = null;

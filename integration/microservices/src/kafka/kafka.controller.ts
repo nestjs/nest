@@ -36,6 +36,8 @@ export class KafkaController implements OnModuleInit {
     requestPatterns.forEach(pattern => {
       this.client.subscribeToResponseOf(pattern);
     });
+
+    await this.client.connect();
   }
 
   // sync send kafka message

@@ -66,8 +66,8 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "6.6.3",
     "socket.io": "2.3.0",
-    "uuid": "8.3.1",
-    "tslib": "2.0.3"
+    "tslib": "2.0.3",
+    "uuid": "8.3.1"
   },
   "devDependencies": {
     "@codechecks/client": "0.1.10",
@@ -134,7 +134,7 @@
     "husky": "4.3.0",
     "imports-loader": "1.2.0",
     "json-loader": "0.5.7",
-    "kafkajs": "1.12.0",
+    "kafkajs": "1.14.0",
     "lerna": "2.11.0",
     "light-my-request": "4.2.1",
     "lint-staged": "10.4.0",
