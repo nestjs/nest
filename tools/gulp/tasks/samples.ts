@@ -48,7 +48,7 @@ async function executeNpmScriptInSamples(
 
 task('install:samples', async () =>
   executeNpmScriptInSamples(
-    'npm ci --no-audit --prefer-offline --no-shrinkwrap --no-optional',
+    'npm ci --no-audit --no-shrinkwrap --no-optional',
   ),
 );
 task('build:samples', async () => executeNpmScriptInSamples('npm run build'));
