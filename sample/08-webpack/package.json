@@ -22,7 +22,7 @@
     "@types/node": "12.12.31",
     "@typescript-eslint/eslint-plugin": "4.5.0",
     "@typescript-eslint/parser": "4.5.0",
-    "eslint": "7.10.0",
+    "eslint": "7.12.1",
     "eslint-config-prettier": "6.11.0",
     "eslint-plugin-import": "2.22.1",
     "start-server-webpack-plugin": "2.2.5",
