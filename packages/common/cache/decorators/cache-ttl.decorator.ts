@@ -1,6 +1,6 @@
 import { SetMetadata } from '../../decorators';
-import { CACHE_TTL_METADATA } from '../cache.constants';
 import { ExecutionContext } from '../../interfaces/features/execution-context.interface';
+import { CACHE_TTL_METADATA } from '../cache.constants';
 
 /**
  * Decorator that sets the cache ttl setting the duration for cache expiration.
@@ -13,6 +13,6 @@ import { ExecutionContext } from '../../interfaces/features/execution-context.in
  *
  * @publicApi
  */
-type CacheTTLHandler<T> = (ctx: T) => Promise<number> | number;
-export const CacheTTL = (ttl: number | CacheTTLHandler<ExecutionContext>) =>
+type CacheTTLFactory = (ctx: ExecutionContext) => Promise<number> | number;
+export const CacheTTL = (ttl: number | CacheTTLFactory) =>
   SetMetadata(CACHE_TTL_METADATA, ttl);
