@@ -188,7 +188,7 @@ export class FastifyAdapter<
     return (this.instance as unknown) as T;
   }
 
-  public register<Options extends FastifyPluginOptions>(
+  public register<Options extends FastifyPluginOptions = any>(
     plugin:
       | FastifyPluginCallback<Options>
       | FastifyPluginAsync<Options>

@@ -1,32 +1,36 @@
 import { INestApplication } from '@nestjs/common';
 import {
-  FastifyPlugin,
+  FastifyInstance,
+  FastifyPluginAsync,
+  FastifyPluginCallback,
   FastifyPluginOptions,
   FastifyRegisterOptions,
 } from 'fastify';
 import {
+  Chain as LightMyRequestChain,
   InjectOptions,
   Response as LightMyRequestResponse,
-  Chain as LightMyRequestChain,
 } from 'light-my-request';
 import { FastifyStaticOptions, PointOfViewOptions } from './external';
 
 export interface NestFastifyApplication extends INestApplication {
   /**
    * A wrapper function around native `fastify.register()` method.
-   * Example `app.register(require('fastify-formbody'))`
-   *
-   * @returns {this}
+   * Example `app.register(require('fastify-formbody'))
+   * @returns {Promise<FastifyInstance>}
    */
-  register<Options extends FastifyPluginOptions>(
-    plugin: FastifyPlugin<Options>,
+  register<Options extends FastifyPluginOptions = any>(
+    plugin:
+      | FastifyPluginCallback<Options>
+      | FastifyPluginAsync<Options>
+      | Promise<{ default: FastifyPluginCallback<Options> }>
+      | Promise<{ default: FastifyPluginAsync<Options> }>,
     opts?: FastifyRegisterOptions<Options>,
-  ): this;
+  ): Promise<FastifyInstance>;
 
   /**
    * Sets a base directory for public assets.
    * Example `app.useStaticAssets({ root: 'public' })`
-   *
    * @returns {this}
    */
   useStaticAssets(options: FastifyStaticOptions): this;
