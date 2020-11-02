@@ -201,7 +201,9 @@ export class FastifyAdapter<
 
   public inject(): LightMyRequestChain;
   public inject(opts: InjectOptions | string): Promise<LightMyRequestResponse>;
-  public inject(opts?: InjectOptions | string) {
+  public inject(
+    opts?: InjectOptions | string,
+  ): LightMyRequestChain | Promise<LightMyRequestResponse> {
     return this.instance.inject(opts);
   }
 
@@ -313,7 +315,7 @@ export class FastifyAdapter<
     factory:
       | FastifyPluginCallback<any>
       | FastifyPluginAsync<any>
-      | Promise<{ default: FastifyPluginCallback<Options> }>
+      | Promise<{ default: FastifyPluginCallback<any> }>
       | Promise<{ default: FastifyPluginAsync<any> }>,
     prefix = '/',
   ) {
