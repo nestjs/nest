@@ -190,8 +190,8 @@ export class FastifyAdapter<
     return this.instance.register(plugin, opts);
   }
 
-  public async inject(opts: InjectOptions | string) {
-    return await this.instance.inject(opts);
+  public inject(opts?: InjectOptions | string) {
+    return this.instance.inject(opts);
   }
 
   public async close() {
