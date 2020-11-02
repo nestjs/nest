@@ -1,50 +1,50 @@
 version: "3"
 
 services:
-  # redis:
-  #   container_name: test-redis
-  #   image: redis
-  #   ports:
-  #     - "6379:6379"
-  #   restart: always
-  # nats:
-  #   container_name: test-nats
-  #   image: nats
-  #   ports:
-  #     - "8222:8222"
-  #     - "4222:4222"
-  #     - "6222:6222"
-  #   restart: always
-  # mqtt:
-  #   container_name: test-mqtt
-  #   image: toke/mosquitto
-  #   ports:
-  #     - "1883:1883"
-  #     - "9001:9001"
-  #   restart: always
-  # mysql:
-  #   image: mysql:5.7.31
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: root
-  #     MYSQL_DATABASE: test
-  #   ports:
-  #     - "3306:3306"
-  #   restart: always
-  # mongodb:
-  #   container_name: test-mongodb
-  #   image: mongo:latest
-  #   environment:
-  #     - MONGODB_DATABASE="test"
-  #   ports:
-  #     - 27017:27017
-  # rabbit:
-  #   container_name: test-rabbit
-  #   hostname: rabbit
-  #   image: "rabbitmq:management"
-  #   ports:
-  #     - "15672:15672"
-  #     - "5672:5672"
-  #   tty: true
+  redis:
+    container_name: test-redis
+    image: redis
+    ports:
+      - "6379:6379"
+    restart: always
+  nats:
+    container_name: test-nats
+    image: nats
+    ports:
+      - "8222:8222"
+      - "4222:4222"
+      - "6222:6222"
+    restart: always
+  mqtt:
+    container_name: test-mqtt
+    image: toke/mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    restart: always
+  mysql:
+    image: mysql:5.7.31
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test
+    ports:
+      - "3306:3306"
+    restart: always
+  mongodb:
+    container_name: test-mongodb
+    image: mongo:latest
+    environment:
+      - MONGODB_DATABASE="test"
+    ports:
+      - 27017:27017
+  rabbit:
+    container_name: test-rabbit
+    hostname: rabbit
+    image: "rabbitmq:management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    tty: true
   zookeeper:
     container_name: test-zookeeper
     hostname: zookeeper
