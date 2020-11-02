@@ -13,7 +13,7 @@ export * from './features/nest-interceptor.interface';
 export * from './features/paramtype.interface';
 export * from './features/pipe-transform.interface';
 export * from './hooks';
-export * from './http/http-server.interface';
+export * from './http';
 export * from './injectable.interface';
 export * from './microservices/nest-hybrid-application-options.interface';
 export * from './middleware';

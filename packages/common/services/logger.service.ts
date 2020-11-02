@@ -1,10 +1,9 @@
-import * as clc from 'cli-color';
 import { Injectable } from '../decorators/core/injectable.decorator';
 import { Optional } from '../decorators/core/optional.decorator';
+import { clc, yellow } from '../utils/cli-colors.util';
 import { isObject } from '../utils/shared.utils';
 
 declare const process: any;
-const yellow = clc.xterm(3);
 
 export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose';
 

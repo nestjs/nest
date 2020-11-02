@@ -7,6 +7,7 @@ import {
 import {
   InjectOptions,
   Response as LightMyRequestResponse,
+  Chain as LightMyRequestChain,
 } from 'light-my-request';
 import { FastifyStaticOptions, PointOfViewOptions } from './external';
 
@@ -42,6 +43,7 @@ export interface NestFastifyApplication extends INestApplication {
    * A wrapper function around native `fastify.inject()` method.
    * @returns {void}
    */
+  inject(): LightMyRequestChain;
   inject(opts: InjectOptions | string): Promise<LightMyRequestResponse>;
 
   /**

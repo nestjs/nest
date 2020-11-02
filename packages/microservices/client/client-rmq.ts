@@ -10,6 +10,7 @@ import {
   ERROR_EVENT,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
   RQM_DEFAULT_NOACK,
+  RQM_DEFAULT_PERSISTENT,
   RQM_DEFAULT_PREFETCH_COUNT,
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
@@ -17,6 +18,7 @@ import {
 } from '../constants';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
+import { RmqUrl } from '../external/rmq-url.interface';
 
 let rqmPackage: any = {};
 
@@ -27,11 +29,12 @@ export class ClientRMQ extends ClientProxy {
   protected connection: Promise<any>;
   protected client: any = null;
   protected channel: any = null;
-  protected urls: string[];
+  protected urls: string[] | RmqUrl[];
   protected queue: string;
   protected queueOptions: any;
   protected responseEmitter: EventEmitter;
   protected replyQueue: string;
+  protected persistent: boolean;
 
   constructor(protected readonly options: RmqOptions['options']) {
     super();
@@ -43,6 +46,8 @@ export class ClientRMQ extends ClientProxy {
       RQM_DEFAULT_QUEUE_OPTIONS;
     this.replyQueue =
       this.getOptionsProp(this.options, 'replyQueue') || REPLY_QUEUE;
+    this.persistent =
+      this.getOptionsProp(this.options, 'persistent') || RQM_DEFAULT_PERSISTENT;
     loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
     rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
       require('amqp-connection-manager'),
@@ -187,6 +192,7 @@ export class ClientRMQ extends ClientProxy {
         {
           replyTo: this.replyQueue,
           correlationId,
+          persistent: this.persistent,
         },
       );
       return () => this.responseEmitter.removeListener(correlationId, listener);
@@ -202,7 +208,9 @@ export class ClientRMQ extends ClientProxy {
       this.channel.sendToQueue(
         this.queue,
         Buffer.from(JSON.stringify(serializedPacket)),
-        {},
+        {
+          persistent: this.persistent,
+        },
         err => (err ? reject(err) : resolve()),
       ),
     );

@@ -20,15 +20,15 @@
   },
   "devDependencies": {
     "@types/node": "12.12.31",
-    "@typescript-eslint/eslint-plugin": "4.2.0",
-    "@typescript-eslint/parser": "4.2.0",
+    "@typescript-eslint/eslint-plugin": "4.5.0",
+    "@typescript-eslint/parser": "4.5.0",
     "eslint": "7.10.0",
     "eslint-config-prettier": "6.11.0",
     "eslint-plugin-import": "2.22.1",
     "start-server-webpack-plugin": "2.2.5",
-    "ts-loader": "8.0.4",
+    "ts-loader": "8.0.7",
     "ts-node": "9.0.0",
-    "webpack": "4.44.2",
+    "webpack": "5.2.0",
     "webpack-cli": "3.3.12",
     "webpack-node-externals": "1.7.2"
   }

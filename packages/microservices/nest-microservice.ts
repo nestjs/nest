@@ -24,7 +24,8 @@ const { SocketModule } = optionalRequire(
   () => require('@nestjs/websockets/socket-module'),
 );
 
-export class NestMicroservice extends NestApplicationContext
+export class NestMicroservice
+  extends NestApplicationContext
   implements INestMicroservice {
   private readonly logger = new Logger(NestMicroservice.name, true);
   private readonly microservicesModule = new MicroservicesModule();

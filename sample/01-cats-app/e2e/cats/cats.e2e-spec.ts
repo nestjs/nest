@@ -23,12 +23,9 @@ describe('Cats', () => {
   });
 
   it(`/GET cats`, () => {
-    return request(app.getHttpServer())
-      .get('/cats')
-      .expect(200)
-      .expect({
-        data: catsService.findAll(),
-      });
+    return request(app.getHttpServer()).get('/cats').expect(200).expect({
+      data: catsService.findAll(),
+    });
   });
 
   afterAll(async () => {

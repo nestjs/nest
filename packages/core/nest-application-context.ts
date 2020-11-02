@@ -2,6 +2,7 @@ import {
   INestApplicationContext,
   Logger,
   LoggerService,
+  LogLevel,
   ShutdownSignal,
 } from '@nestjs/common';
 import { Abstract, Scope } from '@nestjs/common/interfaces';
@@ -119,7 +120,7 @@ export class NestApplicationContext implements INestApplicationContext {
     this.unsubscribeFromProcessSignals();
   }
 
-  public useLogger(logger: LoggerService) {
+  public useLogger(logger: LoggerService | LogLevel[] | false) {
     Logger.overrideLogger(logger);
   }
 
