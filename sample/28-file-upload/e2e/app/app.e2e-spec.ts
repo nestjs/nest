@@ -8,7 +8,7 @@ import { AppModule } from '../../src/app.module';
 describe('E2E FileTest', () => {
   let app: INestApplication;
 
-  beforeAll(async() => {
+  beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -27,7 +27,7 @@ describe('E2E FileTest', () => {
           name: 'test',
         },
         file: readFileSync('./package.json').toString(),
-      })
+      });
   });
 
   afterAll(async () => {
