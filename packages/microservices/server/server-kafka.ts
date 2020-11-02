@@ -10,6 +10,7 @@ import {
 import { KafkaContext } from '../ctx-host';
 import { KafkaHeaders, Transport } from '../enums';
 import {
+  BrokersFunction,
   Consumer,
   ConsumerConfig,
   EachMessagePayload,
@@ -38,7 +39,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   protected consumer: Consumer = null;
   protected producer: Producer = null;
 
-  protected brokers: string[];
+  protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
 
