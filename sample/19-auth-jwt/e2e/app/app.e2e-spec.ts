@@ -20,6 +20,7 @@ describe('E2E JWT Sample', () => {
       .post('/auth/login')
       .send({ username: 'john', password: 'changeme' })
       .expect(201);
+      
     const token = loginReq.body.access_token;
     return request(app.getHttpServer())
       .get('/profile')
