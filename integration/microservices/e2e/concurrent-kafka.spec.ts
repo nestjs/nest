@@ -17,8 +17,8 @@ describe('Kafka concurrent', function() {
   const responseTopic = 'math.sum.sync.number.wait.reply';
 
   let admin: Admin;
-  let servers: any[] = [];
-  let apps: INestApplication[] = [];
+  const servers: any[] = [];
+  const apps: INestApplication[] = [];
 
     // set timeout to be longer
   this.timeout(30000);
