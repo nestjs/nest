@@ -43,7 +43,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   protected clientId: string;
   protected groupId: string;
 
-  constructor(private readonly options: KafkaOptions['options']) {
+  constructor(protected readonly options: KafkaOptions['options']) {
     super();
 
     const clientOptions =
