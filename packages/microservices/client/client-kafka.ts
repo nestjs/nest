@@ -11,6 +11,7 @@ import { KafkaHeaders } from '../enums';
 import { InvalidKafkaClientTopicPartitionException } from '../errors/invalid-kafka-client-topic-partition.exception';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
 import {
+  BrokersFunction,
   Consumer,
   ConsumerConfig,
   ConsumerGroupJoinEvent,
@@ -23,8 +24,7 @@ import {
 import {
   KafkaLogger,
   KafkaParser,
-  KafkaReplyPartitionAssigner,
-  KafkaAssignmentStore,
+  KafkaRoundRobinPartitionAssigner,
 } from '../helpers';
 import {
   KafkaOptions,
@@ -48,9 +48,7 @@ export class ClientKafka extends ClientProxy {
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number[] } = {};
 
-  private readonly kafkaAssignmentStore = KafkaAssignmentStore.Instance;
-
-  protected brokers: string[];
+  protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
 
@@ -67,8 +65,11 @@ export class ClientKafka extends ClientProxy {
     // Append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
     this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + '-client';
-    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + '-client';
+      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) +
+      (clientOptions.clientIdPostfix || '-client');
+    this.groupId =
+      (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) +
+      (clientOptions.clientIdPostfix || '-client');
 
     kafkaPackage = loadPackage('kafkajs', ClientKafka.name, () =>
       require('kafkajs'),
@@ -98,8 +99,11 @@ export class ClientKafka extends ClientProxy {
     this.client = this.createClient();
 
     const partitionAssigners = [
-      (config: ConstructorParameters<typeof KafkaReplyPartitionAssigner>[0]) =>
-        new KafkaReplyPartitionAssigner(config),
+      (
+        config: ConstructorParameters<
+          typeof KafkaRoundRobinPartitionAssigner
+        >[0],
+      ) => new KafkaRoundRobinPartitionAssigner(config),
     ] as any[];
 
     const consumerOptions = Object.assign(
@@ -250,11 +254,7 @@ export class ClientKafka extends ClientProxy {
   }
 
   protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
-    const { groupId, memberId, memberAssignment } = data.payload;
-
-    this.consumerAssignments = memberAssignment;
-
-    this.kafkaAssignmentStore.put(groupId, memberId, memberAssignment);
+    this.consumerAssignments = data.payload.memberAssignment;
   }
 
   protected initializeSerializer(options: KafkaOptions['options']) {

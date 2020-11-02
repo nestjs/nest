@@ -1,0 +1,7 @@
+nyc --require ts-node/register mocha packages/microservices/test/helpers/kafka-round-robin-by-time-partition-assigner.spec.ts --reporter spec --retries 3 --require 'node_modules/reflect-metadata/Reflect.js' --exit
+
+
+./node_modules/.bin/nyc --require ts-node/register ./node_modules/.bin/mocha packages/microservices/test/helpers/kafka-round-robin-by-time-partition-assigner.spec.ts --reporter spec --retries 3 --require './node_modules/reflect-metadata/Reflect.js' --exit
+
+
+./node_modules/.bin/mocha \"integration/microservices/e2e/sum-kafka.spec.ts\" --reporter spec --require ts-node/register --require './node_modules/reflect-metadata/Reflect.js' --exit
