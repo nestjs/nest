@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
 import { AppService } from './app.service';
@@ -15,10 +22,13 @@ export class AppController {
 
   @UseInterceptors(FileInterceptor('file'))
   @Post('file')
-  uploadFile(@Body() body: SampleDto, @UploadedFile() file: Express.Multer.File) {
-    return { 
+  uploadFile(
+    @Body() body: SampleDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return {
       body,
       file: file.buffer.toString(),
-    }
+    };
   }
 }
