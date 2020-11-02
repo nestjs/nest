@@ -24,7 +24,8 @@ import {
 import {
   KafkaLogger,
   KafkaParser,
-  KafkaRoundRobinPartitionAssigner,
+  KafkaReplyPartitionAssigner,
+  KafkaAssignmentStore,
 } from '../helpers';
 import {
   KafkaOptions,
@@ -47,6 +48,8 @@ export class ClientKafka extends ClientProxy {
   protected logger = new Logger(ClientKafka.name);
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number[] } = {};
+
+  private readonly kafkaAssignmentStore = KafkaAssignmentStore.Instance;
 
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
@@ -99,11 +102,8 @@ export class ClientKafka extends ClientProxy {
     this.client = this.createClient();
 
     const partitionAssigners = [
-      (
-        config: ConstructorParameters<
-          typeof KafkaRoundRobinPartitionAssigner
-        >[0],
-      ) => new KafkaRoundRobinPartitionAssigner(config),
+      (config: ConstructorParameters<typeof KafkaReplyPartitionAssigner>[0]) =>
+        new KafkaReplyPartitionAssigner(config),
     ] as any[];
 
     const consumerOptions = Object.assign(
@@ -254,7 +254,11 @@ export class ClientKafka extends ClientProxy {
   }
 
   protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
-    this.consumerAssignments = data.payload.memberAssignment;
+    const { groupId, memberId, memberAssignment } = data.payload;
+
+    this.consumerAssignments = memberAssignment;
+
+    this.kafkaAssignmentStore.put(groupId, memberId, memberAssignment);
   }
 
   protected initializeSerializer(options: KafkaOptions['options']) {
