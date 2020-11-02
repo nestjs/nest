@@ -23,6 +23,7 @@ export interface KafkaConfig {
   ssl?: tls.ConnectionOptions | boolean;
   sasl?: SASLOptions;
   clientId?: string;
+  clientIdPostfix?: string;
   connectionTimeout?: number;
   authenticationTimeout?: number;
   reauthenticationThreshold?: number;
