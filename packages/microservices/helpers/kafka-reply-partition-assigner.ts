@@ -93,8 +93,11 @@ export class KafkaReplyPartitionAssigner {
           previousAssignment[assignee][topic] &&
           previousAssignment[assignee][topic].length > 0
         ) {
-          // take only the first partition since replies will be sent to the first partition
-          const firstPartition = previousAssignment[assignee][topic][0];
+          // take the minimum partition since replies will be sent to the minimum partition
+          // const firstPartition = previousAssignment[assignee][topic][0];
+          const firstPartition = Math.min(
+            ...previousAssignment[assignee][topic],
+          );
 
           // create the assignment with the first partition
           assignment[assignee][topic].push(firstPartition);
@@ -114,15 +117,22 @@ export class KafkaReplyPartitionAssigner {
             // remove inline
             topicsPartitions.splice(topicsPartitionsIndex, 1);
           }
-        } else if (topicsPartitions.length > 0) {
-          // find the first partition for this topic the is available
+        }
+      });
+    });
+
+    // check for member topics that have a partition length of 0
+    sortedMemberIds.forEach(assignee => {
+      group.topics.forEach(topic => {
+        // only continue if there are no partitions for assignee's topic
+        if (assignment[assignee][topic].length === 0) {
+          // find the first partition for this topic
           const topicsPartitionsIndex = topicsPartitions.findIndex(
             topicPartition => {
               return topicPartition.topic === topic;
             },
           );
 
-          // only continue if we found a partition matching this topic
           if (topicsPartitionsIndex !== -1) {
             // find and set the topic partition
             const partition =

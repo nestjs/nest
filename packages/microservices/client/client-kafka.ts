@@ -210,10 +210,12 @@ export class ClientKafka extends ClientProxy {
 
     // if the current member isn't listening to
     // any partitions on the topic then throw an error.
-    if (isUndefined(topicAssignments[0])) {
+    if (topicAssignments.length === 0) {
       throw new InvalidKafkaClientTopicPartitionException(topic);
     }
-    return topicAssignments[0].toString();
+
+    // get the minimum partition
+    return Math.min(...topicAssignments).toString();
   }
 
   protected publish(
