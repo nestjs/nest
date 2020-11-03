@@ -1,7 +1,7 @@
 /// <reference types="node" />
 
-import * as tls from 'tls';
 import * as net from 'net';
+import * as tls from 'tls';
 
 type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
 type XOR<T, U> = T | U extends object
@@ -16,11 +16,14 @@ export declare class Kafka {
   logger(): Logger;
 }
 
+export type BrokersFunction = () => string[] | Promise<string[]>;
+
 export interface KafkaConfig {
-  brokers: string[];
+  brokers: string[] | BrokersFunction;
   ssl?: tls.ConnectionOptions | boolean;
   sasl?: SASLOptions;
   clientId?: string;
+  clientIdPostfix?: string;
   connectionTimeout?: number;
   authenticationTimeout?: number;
   reauthenticationThreshold?: number;

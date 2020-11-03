@@ -1,4 +1,5 @@
 import { SetMetadata } from '../../decorators';
+import { ExecutionContext } from '../../interfaces/features/execution-context.interface';
 import { CACHE_TTL_METADATA } from '../cache.constants';
 
 /**
@@ -12,4 +13,6 @@ import { CACHE_TTL_METADATA } from '../cache.constants';
  *
  * @publicApi
  */
-export const CacheTTL = (ttl: number) => SetMetadata(CACHE_TTL_METADATA, ttl);
+type CacheTTLFactory = (ctx: ExecutionContext) => Promise<number> | number;
+export const CacheTTL = (ttl: number | CacheTTLFactory) =>
+  SetMetadata(CACHE_TTL_METADATA, ttl);
