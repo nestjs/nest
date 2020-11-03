@@ -1,4 +1,5 @@
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { ClientKafka } from '../client/client-kafka';
 import {
   Cluster,
   GroupMember,
@@ -7,17 +8,14 @@ import {
   MemberMetadata,
 } from '../external/kafka.interface';
 
-import { KafkaAssignmentStore } from './kafka-assignment-store';
-
 let kafkaPackage: any = {};
 
 export class KafkaReplyPartitionAssigner {
   readonly name = 'NestjsReplyPartitionAssigner';
   readonly version = 1;
 
-  private readonly kafkaAssignmentStore = KafkaAssignmentStore.Instance;
-
   constructor(
+    private readonly clientKafka: ClientKafka,
     private readonly config: {
       groupId: string;
       cluster: Cluster;
@@ -181,7 +179,7 @@ export class KafkaReplyPartitionAssigner {
   }
 
   public getPreviousAssignment() {
-    return this.kafkaAssignmentStore.get(this.config.groupId);
+    return this.clientKafka.getConsumerAssignments();
   }
 
   public decodeMember(member: GroupMember) {
@@ -190,21 +188,9 @@ export class KafkaReplyPartitionAssigner {
     ) as MemberMetadata;
     const memberUserData = JSON.parse(memberMetadata.userData.toString());
 
-    // This should really be done while constructing userData within the protocol method
-    // but the protocol method doesn't know anything about it's current member id.
-    // only return the previous assignment for this user
-    let previousAssignment = {};
-
-    if (
-      memberUserData.previousAssignment &&
-      memberUserData.previousAssignment[member.memberId]
-    ) {
-      previousAssignment = memberUserData.previousAssignment[member.memberId];
-    }
-
     return {
       memberId: member.memberId,
-      previousAssignment,
+      previousAssignment: memberUserData.previousAssignment,
     };
   }
 }

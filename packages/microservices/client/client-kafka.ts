@@ -25,7 +25,6 @@ import {
   KafkaLogger,
   KafkaParser,
   KafkaReplyPartitionAssigner,
-  KafkaAssignmentStore,
 } from '../helpers';
 import {
   KafkaOptions,
@@ -48,8 +47,6 @@ export class ClientKafka extends ClientProxy {
   protected logger = new Logger(ClientKafka.name);
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number[] } = {};
-
-  private readonly kafkaAssignmentStore = KafkaAssignmentStore.Instance;
 
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
@@ -102,8 +99,8 @@ export class ClientKafka extends ClientProxy {
     this.client = this.createClient();
 
     const partitionAssigners = [
-      (config: ConstructorParameters<typeof KafkaReplyPartitionAssigner>[0]) =>
-        new KafkaReplyPartitionAssigner(config),
+      (config: ConstructorParameters<typeof KafkaReplyPartitionAssigner>[1]) =>
+        new KafkaReplyPartitionAssigner(this, config),
     ] as any[];
 
     const consumerOptions = Object.assign(
@@ -188,6 +185,10 @@ export class ClientKafka extends ClientProxy {
     };
   }
 
+  public getConsumerAssignments() {
+    return this.consumerAssignments;
+  }
+
   protected dispatchEvent(packet: OutgoingEvent): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
     const outgoingEvent = this.serializer.serialize(packet.data);
@@ -254,11 +255,7 @@ export class ClientKafka extends ClientProxy {
   }
 
   protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
-    const { groupId, memberId, memberAssignment } = data.payload;
-
-    this.consumerAssignments = memberAssignment;
-
-    this.kafkaAssignmentStore.put(groupId, memberId, memberAssignment);
+    this.consumerAssignments = data.payload.memberAssignment;
   }
 
   protected initializeSerializer(options: KafkaOptions['options']) {

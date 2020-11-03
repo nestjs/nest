@@ -8,7 +8,7 @@ import * as request from 'supertest';
 import { KafkaConcurrentController } from '../src/kafka-concurrent/kafka-concurrent.controller';
 import { KafkaConcurrentMessagesController } from '../src/kafka-concurrent/kafka-concurrent.messages.controller';
 
-import { ITopicMetadata, Kafka, Admin, logLevel } from 'kafkajs';
+import { ITopicMetadata, Kafka, Admin } from 'kafkajs';
 
 describe('Kafka concurrent', function() {
   const numbersOfServers = 3;
@@ -20,7 +20,7 @@ describe('Kafka concurrent', function() {
   const servers: any[] = [];
   const apps: INestApplication[] = [];
 
-    // set timeout to be longer
+  // set timeout to be longer (especially for the after hook)
   this.timeout(30000);
 
   const startServer = async () => {
@@ -38,8 +38,14 @@ describe('Kafka concurrent', function() {
         client: {
           brokers: ['localhost:9092']
         },
-        consumer: {
-          maxWaitTimeInMs: 1
+        // consumer: {
+        //   maxWaitTimeInMs: 1
+        // },
+        producer: {
+          retry: {
+            initialRetryTime: 100,
+            retries: 8
+          }
         },
         run: {
           partitionsConsumedConcurrently: numbersOfServers
@@ -52,7 +58,7 @@ describe('Kafka concurrent', function() {
     // push to the collection
     servers.push(server);
     apps.push(app);
-  
+
     // await the start
     await app.startAllMicroservicesAsync();
     await app.init();
@@ -148,32 +154,28 @@ describe('Kafka concurrent', function() {
 
   it(`Start Kafka apps`, async () => {
     // start all at once
-    await Promise.all(Array(numbersOfServers).fill(1).map(async () => {
-      return startServer();
-    }));
-
-      // wait in intervals so that we starts the consumers async but in order
-      // return new Promise((resolve) => {
-      //   setTimeout(async () => {
-      //     await startServer();
+    await Promise.all(Array(numbersOfServers).fill(1).map(async (v, i) => {
+      // return startServer();
+      
+      // wait in intervals so the consumers start in order
+      return new Promise((resolve) => {
+        setTimeout(async () => {
+          await startServer();
     
-      //     return resolve();
-      //   }, 250 * i);
-      // });
-      // }));
+          return resolve();
+        }, 1000 * i);
+      });
+    }));
   }).timeout(30000);
 
-  it(`/POST (sync sum number wait and force a consumer rebalance)`, async () => {
-    return Promise.all(servers.map(async (server, index) => {
-      // we are going to be shutting off server #1 and checking the response of #2 and #3
+  it(`/POST (sync sum number wait and remove consumer)`, async () => {
+    await Promise.all(servers.map(async (server, index) => {
+      // shut off and delete the leader
       if (index === 0) {
         return new Promise((resolve) => {
           // wait .5 of a second before closing so the consumers can re-balance
           setTimeout(async () => {
-            console.log('Closing #1 Server');
             await apps[index].close();
-            console.log('Closed #1 Server');
-            
             return resolve();
           }, 500);
         });
@@ -194,36 +196,33 @@ describe('Kafka concurrent', function() {
     }));
   }).timeout(60000);
 
-  // it(`/POST (sync sum number wait and force a consumer rebalance)`, async () => {
-  //   return Promise.all(servers.map(async (server, index) => {
-  //     // we are going to be shutting off server #1 and checking the response of #2 and #3
-  //     if (index === 0) {
-  //       return new Promise((resolve) => {
-  //         // wait .5 of a second before closing so the consumers can re-balance
-  //         setTimeout(async () => {
-  //           console.log('Closing #1 Server');
-  //           await apps[index].close();
-  //           console.log('Closed #1 Server');
-            
-  //           return resolve();
-  //         }, 500);
-  //       });
-  //     }
+  it(`/POST (sync sum number wait and start consumer)`, async () => {
+    await Promise.all(servers.map(async (server, index) => {
+      // shut off and delete the leader
+      if (index === 0) {
+        return new Promise((resolve) => {
+          // wait .5 of a second before starting a new so the consumers can re-balance
+          setTimeout(async () => {
+            await startServer();
+            return resolve();
+          }, 500);
+        });
+      }
 
-  //     // send requests
-  //     const payload = {
-  //       key: index,
-  //       numbers: [1, index]
-  //     };
-  //     const result = (1 + index).toString();
+      // send requests
+      const payload = {
+        key: index,
+        numbers: [1, index]
+      };
+      const result = (1 + index).toString();
 
-  //     return request(server)
-  //         .post('/mathSumSyncNumberWait')
-  //         .send(payload)
-  //         .expect(200)
-  //         .expect(200, result);
-  //   }));
-  // }).timeout(60000);
+      return request(server)
+          .post('/mathSumSyncNumberWait')
+          .send(payload)
+          .expect(200)
+          .expect(200, result);
+    }));
+  }).timeout(60000);
 
   after(`Stopping Kafka app`, async () => {
     // close all concurrently

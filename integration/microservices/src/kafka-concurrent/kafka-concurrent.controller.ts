@@ -1,3 +1,5 @@
+import * as util from 'util';
+
 import { PartitionerArgs } from 'kafkajs';
 
 import { Body, Controller, HttpCode, OnModuleInit, OnModuleDestroy, Post, Scope } from '@nestjs/common';
@@ -54,12 +56,16 @@ export class KafkaConcurrentController implements OnModuleInit, OnModuleDestroy 
   @Post('mathSumSyncNumberWait')
   @HttpCode(200)
   async mathSumSyncNumberWait(@Body() data: SumDto): Promise<Observable<any>> {
+    this.logger.error(util.format('KafkaConcurrentController mathSumSyncNumberWait() data: %o', data));
+
     const result = await this.client
       .send('math.sum.sync.number.wait', {
         key: data.key,
         value: data.numbers
       })
       .toPromise();
+
+    this.logger.error(util.format('KafkaConcurrentController mathSumSyncNumberWait() result: %o', result));
 
     return result;
   }
