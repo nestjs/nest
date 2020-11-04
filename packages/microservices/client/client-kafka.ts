@@ -46,7 +46,7 @@ export class ClientKafka extends ClientProxy {
   protected producer: Producer = null;
   protected logger = new Logger(ClientKafka.name);
   protected responsePatterns: string[] = [];
-  protected consumerAssignments: { [key: string]: number[] } = {};
+  protected consumerAssignments: { [key: string]: number } = {};
 
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
@@ -203,19 +203,13 @@ export class ClientKafka extends ClientProxy {
   }
 
   protected getReplyTopicPartition(topic: string): string {
-    const topicAssignments = this.consumerAssignments[topic];
-    if (isUndefined(topicAssignments)) {
+    const minimumPartition = this.consumerAssignments[topic];
+    if (isUndefined(minimumPartition)) {
       throw new InvalidKafkaClientTopicException(topic);
     }
 
-    // if the current member isn't listening to
-    // any partitions on the topic then throw an error.
-    if (topicAssignments.length === 0) {
-      throw new InvalidKafkaClientTopicPartitionException(topic);
-    }
-
     // get the minimum partition
-    return Math.min(...topicAssignments).toString();
+    return minimumPartition.toString();
   }
 
   protected publish(
@@ -257,7 +251,18 @@ export class ClientKafka extends ClientProxy {
   }
 
   protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
-    this.consumerAssignments = data.payload.memberAssignment;
+    const consumerAssignments: { [key: string]: number } = {};
+
+    // only need to set the minimum
+    Object.keys(data.payload.memberAssignment).forEach(memberId => {
+      const minimumPartition = Math.min(
+        ...data.payload.memberAssignment[memberId],
+      );
+
+      consumerAssignments[memberId] = minimumPartition;
+    });
+
+    this.consumerAssignments = consumerAssignments;
   }
 
   protected initializeSerializer(options: KafkaOptions['options']) {

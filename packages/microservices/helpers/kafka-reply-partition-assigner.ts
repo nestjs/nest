@@ -1,4 +1,5 @@
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { ClientKafka } from '../client/client-kafka';
 import {
   Cluster,
@@ -90,14 +91,10 @@ export class KafkaReplyPartitionAssigner {
         // see if the topic and partition belong to a previous assignment
         if (
           previousAssignment[assignee] &&
-          previousAssignment[assignee][topic] &&
-          previousAssignment[assignee][topic].length > 0
+          !isUndefined(previousAssignment[assignee][topic])
         ) {
           // take the minimum partition since replies will be sent to the minimum partition
-          // const firstPartition = previousAssignment[assignee][topic][0];
-          const firstPartition = Math.min(
-            ...previousAssignment[assignee][topic],
-          );
+          const firstPartition = previousAssignment[assignee][topic];
 
           // create the assignment with the first partition
           assignment[assignee][topic].push(firstPartition);
