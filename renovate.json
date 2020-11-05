@@ -6,6 +6,5 @@
       "depTypeList": ["devDependencies"],
       "automerge": true
     }
-  ],
-  "schedule": ["every weekday"]
+  ]
 }
