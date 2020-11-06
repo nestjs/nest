@@ -63,6 +63,14 @@ describe('Hello world (fastify adapter)', () => {
       });
   });
 
+  it(`/GET inject with LightMyRequest chaining API`, () => {
+    return app
+      .inject()
+      .get('/hello')
+      .end()
+      .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
+  });
+
   afterEach(async () => {
     await app.close();
   });
