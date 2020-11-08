@@ -40,7 +40,8 @@ const {
 /**
  * @publicApi
  */
-export class NestApplication extends NestApplicationContext
+export class NestApplication
+  extends NestApplicationContext
   implements INestApplication {
   private readonly logger = new Logger(NestApplication.name, true);
   private readonly middlewareModule = new MiddlewareModule();

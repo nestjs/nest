@@ -1,9 +1,9 @@
-import Axios from 'axios';
-import { Module } from '../decorators/modules/module.decorator';
+import got from 'got';
 import { DynamicModule, Provider } from '../interfaces';
+import { Module } from '../decorators/modules/module.decorator';
 import { randomStringGenerator } from '../utils/random-string-generator.util';
 import {
-  AXIOS_INSTANCE_TOKEN,
+  GOT_INSTANCE_TOKEN,
   HTTP_MODULE_ID,
   HTTP_MODULE_OPTIONS,
 } from './http.constants';
@@ -13,14 +13,18 @@ import {
   HttpModuleOptions,
   HttpModuleOptionsFactory,
 } from './interfaces';
+import { StreamService } from './stream.service';
+import { PaginateService } from './paginate.service';
 
 @Module({
   providers: [
     HttpService,
     {
-      provide: AXIOS_INSTANCE_TOKEN,
-      useValue: Axios,
+      provide: GOT_INSTANCE_TOKEN,
+      useValue: got,
     },
+    StreamService,
+    PaginateService,
   ],
   exports: [HttpService],
 })
@@ -30,8 +34,8 @@ export class HttpModule {
       module: HttpModule,
       providers: [
         {
-          provide: AXIOS_INSTANCE_TOKEN,
-          useValue: Axios.create(config),
+          provide: GOT_INSTANCE_TOKEN,
+          useValue: got.extend(config),
         },
         {
           provide: HTTP_MODULE_ID,
@@ -48,8 +52,8 @@ export class HttpModule {
       providers: [
         ...this.createAsyncProviders(options),
         {
-          provide: AXIOS_INSTANCE_TOKEN,
-          useFactory: (config: HttpModuleOptions) => Axios.create(config),
+          provide: GOT_INSTANCE_TOKEN,
+          useFactory: (config: HttpModuleOptions) => got.extend(config),
           inject: [HTTP_MODULE_OPTIONS],
         },
         {

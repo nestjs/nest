@@ -1,7 +1,7 @@
-import { AxiosRequestConfig } from 'axios';
+import { ExtendOptions } from 'got';
 import { ModuleMetadata, Provider, Type } from '../../interfaces';
 
-export type HttpModuleOptions = AxiosRequestConfig;
+export type HttpModuleOptions = ExtendOptions;
 
 export interface HttpModuleOptionsFactory {
   createHttpOptions(): Promise<HttpModuleOptions> | HttpModuleOptions;
