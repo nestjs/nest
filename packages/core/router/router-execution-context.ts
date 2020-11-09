@@ -13,19 +13,24 @@ import {
   REDIRECT_METADATA,
   RENDER_METADATA,
   ROUTE_ARGS_METADATA,
+  SSE_METADATA,
 } from '@nestjs/common/constants';
 import { RouteParamMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { ContextType, Controller } from '@nestjs/common/interfaces';
 import { isEmpty, isString } from '@nestjs/common/utils/shared.utils';
+import { IncomingMessage } from 'http';
+import { Observable } from 'rxjs';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { ContextUtils } from '../helpers/context-utils';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 import {
+  HandleResponseFn,
   HandlerMetadata,
   HandlerMetadataStorage,
+  HandlerResponseBasicFn,
 } from '../helpers/handler-metadata-storage';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
@@ -38,6 +43,7 @@ import {
   RedirectResponse,
   RouterResponseController,
 } from './router-response-controller';
+import { HeaderStream } from './sse-stream';
 
 export interface ParamProperties {
   index: number;
@@ -160,7 +166,7 @@ export class RouterExecutionContext {
         handler(args, req, res, next),
         contextType,
       );
-      await fnHandleResponse(result, res);
+      await (fnHandleResponse as HandlerResponseBasicFn)(result, res, req);
     };
   }
 
@@ -263,6 +269,10 @@ export class RouterExecutionContext {
     callback: (...args: unknown[]) => unknown,
   ): CustomHeader[] {
     return Reflect.getMetadata(HEADERS_METADATA, callback) || [];
+  }
+
+  public reflectSse(callback: (...args: unknown[]) => unknown): string {
+    return Reflect.getMetadata(SSE_METADATA, callback);
   }
 
   public exchangeKeysForValues(
@@ -398,7 +408,7 @@ export class RouterExecutionContext {
     isResponseHandled: boolean,
     redirectResponse?: RedirectResponse,
     httpStatusCode?: number,
-  ) {
+  ): HandleResponseFn {
     const renderTemplate = this.reflectRenderTemplate(callback);
     if (renderTemplate) {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
@@ -408,6 +418,20 @@ export class RouterExecutionContext {
     if (redirectResponse && typeof redirectResponse.url === 'string') {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
         await this.responseController.redirect(result, res, redirectResponse);
+      };
+    }
+    const isSseHandler = !!this.reflectSse(callback);
+    if (isSseHandler) {
+      return async <
+        TResult extends Observable<unknown> = any,
+        TResponse extends HeaderStream = any,
+        TRequest extends IncomingMessage = any
+      >(
+        result: TResult,
+        res: TResponse,
+        req: TRequest,
+      ) => {
+        await this.responseController.sse(result, res, req);
       };
     }
     return async <TResult, TResponse>(result: TResult, res: TResponse) => {

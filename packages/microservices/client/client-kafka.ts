@@ -11,6 +11,7 @@ import { KafkaHeaders } from '../enums';
 import { InvalidKafkaClientTopicPartitionException } from '../errors/invalid-kafka-client-topic-partition.exception';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
 import {
+  BrokersFunction,
   Consumer,
   ConsumerConfig,
   ConsumerGroupJoinEvent,
@@ -47,7 +48,7 @@ export class ClientKafka extends ClientProxy {
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number[] } = {};
 
-  protected brokers: string[];
+  protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
 
@@ -64,8 +65,11 @@ export class ClientKafka extends ClientProxy {
     // Append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
     this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + '-client';
-    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + '-client';
+      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) +
+      (clientOptions.clientIdPostfix || '-client');
+    this.groupId =
+      (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) +
+      (clientOptions.clientIdPostfix || '-client');
 
     kafkaPackage = loadPackage('kafkajs', ClientKafka.name, () =>
       require('kafkajs'),
@@ -80,9 +84,9 @@ export class ClientKafka extends ClientProxy {
     this.responsePatterns.push(this.getResponsePatternName(request));
   }
 
-  public close(): void {
-    this.producer && this.producer.disconnect();
-    this.consumer && this.consumer.disconnect();
+  public async close(): Promise<void> {
+    this.producer && (await this.producer.disconnect());
+    this.consumer && (await this.consumer.disconnect());
     this.producer = null;
     this.consumer = null;
     this.client = null;

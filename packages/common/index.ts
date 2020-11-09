@@ -31,6 +31,7 @@ export {
   INestApplicationContext,
   INestMicroservice,
   IntrospectionResult,
+  MessageEvent,
   MiddlewareConsumer,
   ModuleMetadata,
   NestApplicationOptions,

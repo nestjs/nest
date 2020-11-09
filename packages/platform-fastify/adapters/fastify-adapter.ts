@@ -7,7 +7,8 @@ import {
   fastify,
   FastifyInstance,
   FastifyLoggerInstance,
-  FastifyPlugin,
+  FastifyPluginAsync,
+  FastifyPluginCallback,
   FastifyPluginOptions,
   FastifyRegisterOptions,
   FastifyReply,
@@ -22,7 +23,11 @@ import {
 import * as Reply from 'fastify/lib/reply';
 import * as http2 from 'http2';
 import * as https from 'https';
-import { InjectOptions } from 'light-my-request';
+import {
+  Chain as LightMyRequestChain,
+  InjectOptions,
+  Response as LightMyRequestResponse,
+} from 'light-my-request';
 import * as pathToRegexp from 'path-to-regexp';
 import {
   FastifyStaticOptions,
@@ -183,15 +188,23 @@ export class FastifyAdapter<
     return (this.instance as unknown) as T;
   }
 
-  public register<Options extends FastifyPluginOptions>(
-    plugin: FastifyPlugin<Options>,
+  public register<Options extends FastifyPluginOptions = any>(
+    plugin:
+      | FastifyPluginCallback<Options>
+      | FastifyPluginAsync<Options>
+      | Promise<{ default: FastifyPluginCallback<Options> }>
+      | Promise<{ default: FastifyPluginAsync<Options> }>,
     opts?: FastifyRegisterOptions<Options>,
   ) {
     return this.instance.register(plugin, opts);
   }
 
-  public async inject(opts: InjectOptions | string) {
-    return await this.instance.inject(opts);
+  public inject(): LightMyRequestChain;
+  public inject(opts: InjectOptions | string): Promise<LightMyRequestResponse>;
+  public inject(
+    opts?: InjectOptions | string,
+  ): LightMyRequestChain | Promise<LightMyRequestResponse> {
+    return this.instance.inject(opts);
   }
 
   public async close() {
@@ -264,7 +277,13 @@ export class FastifyAdapter<
       const re = pathToRegexp(path);
       const normalizedPath = path === '/*' ? '' : path;
 
-      this.instance.use(
+      // The following type assertion is valid as we enforce "middie" plugin registration
+      // which enhances the FastifyInstance with the "use()" method.
+      // ref https://github.com/fastify/middie/pull/55
+      const instanceWithUseFn = (this
+        .instance as unknown) as FastifyInstance & { use: Function };
+
+      instanceWithUseFn.use(
         normalizedPath,
         (req: any, res: any, next: Function) => {
           const queryParamsIndex = req.originalUrl.indexOf('?');
@@ -292,7 +311,14 @@ export class FastifyAdapter<
     return 'fastify';
   }
 
-  protected registerWithPrefix(factory: FastifyPlugin, prefix = '/') {
+  protected registerWithPrefix(
+    factory:
+      | FastifyPluginCallback<any>
+      | FastifyPluginAsync<any>
+      | Promise<{ default: FastifyPluginCallback<any> }>
+      | Promise<{ default: FastifyPluginAsync<any> }>,
+    prefix = '/',
+  ) {
     return this.instance.register(factory, { prefix });
   }
 
