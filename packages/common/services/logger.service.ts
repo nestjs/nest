@@ -150,7 +150,9 @@ export class Logger implements LoggerService {
     const contextMessage = context ? yellow(`[${context}] `) : '';
     const timestampDiff = this.updateAndGetTimestampDiff(isTimeDiffEnabled);
     process.stdout.write(
-      `${pidMessage}${this.instance?.getTimestamp()}   ${contextMessage}${output}${timestampDiff}\n`,
+      `${pidMessage}${
+        this.instance.getTimestamp?.() || this.getTimestamp()
+      }   ${contextMessage}${output}${timestampDiff}\n`,
     );
   }
 
