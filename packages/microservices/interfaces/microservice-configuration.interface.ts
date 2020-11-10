@@ -12,6 +12,7 @@ import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
+import { RmqUrl } from '../external/rmq-url.interface';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -119,7 +120,7 @@ export interface NatsOptions {
 export interface RmqOptions {
   transport?: Transport.RMQ;
   options?: {
-    urls?: string[];
+    urls?: string[] | RmqUrl[];
     queue?: string;
     prefetchCount?: number;
     isGlobalPrefetchCount?: boolean;
@@ -129,6 +130,7 @@ export interface RmqOptions {
     serializer?: Serializer;
     deserializer?: Deserializer;
     replyQueue?: string;
+    persistent?: boolean;
   };
 }
 

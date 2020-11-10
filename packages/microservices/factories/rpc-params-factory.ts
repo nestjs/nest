@@ -10,6 +10,8 @@ export class RpcParamsFactory {
         return args[0];
       case RpcParamtype.CONTEXT:
         return args[1];
+      case RpcParamtype.GRPC_CALL:
+        return args[2];
       default:
         return null;
     }
