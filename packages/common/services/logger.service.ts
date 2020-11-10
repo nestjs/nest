@@ -13,6 +13,7 @@ export interface LoggerService {
   warn(message: any, context?: string);
   debug?(message: any, context?: string);
   verbose?(message: any, context?: string);
+  getTimestamp?(): string;
 }
 
 @Injectable()
@@ -95,6 +96,18 @@ export class Logger implements LoggerService {
     this.printMessage(message, clc.cyanBright, context, isTimeDiffEnabled);
   }
 
+  static getTimestamp() {
+    const localeStringOptions = {
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      day: '2-digit',
+      month: '2-digit',
+    };
+    return new Date(Date.now()).toLocaleString(undefined, localeStringOptions);
+  }
+
   private callFunction(
     name: 'log' | 'warn' | 'debug' | 'verbose',
     message: any,
@@ -123,18 +136,6 @@ export class Logger implements LoggerService {
     return Logger.logLevels.includes(level);
   }
 
-  private static getTimestamp() {
-    const localeStringOptions = {
-      year: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-      day: '2-digit',
-      month: '2-digit',
-    };
-    return new Date(Date.now()).toLocaleString(undefined, localeStringOptions);
-  }
-
   private static printMessage(
     message: any,
     color: (message: string) => string,
@@ -148,9 +149,8 @@ export class Logger implements LoggerService {
     const pidMessage = color(`[Nest] ${process.pid}   - `);
     const contextMessage = context ? yellow(`[${context}] `) : '';
     const timestampDiff = this.updateAndGetTimestampDiff(isTimeDiffEnabled);
-
     process.stdout.write(
-      `${pidMessage}${this.getTimestamp()}   ${contextMessage}${output}${timestampDiff}\n`,
+      `${pidMessage}${this.instance?.getTimestamp()}   ${contextMessage}${output}${timestampDiff}\n`,
     );
   }
 
