@@ -13,7 +13,6 @@ export interface LoggerService {
   warn(message: any, context?: string);
   debug?(message: any, context?: string);
   verbose?(message: any, context?: string);
-  getTimestamp?(): string;
 }
 
 @Injectable()
@@ -60,6 +59,10 @@ export class Logger implements LoggerService {
 
   setContext(context: string) {
     this.context = context;
+  }
+
+  getTimestamp() {
+    return Logger.getTimestamp();
   }
 
   static overrideLogger(logger: LoggerService | LogLevel[] | boolean) {
@@ -149,10 +152,9 @@ export class Logger implements LoggerService {
     const pidMessage = color(`[Nest] ${process.pid}   - `);
     const contextMessage = context ? yellow(`[${context}] `) : '';
     const timestampDiff = this.updateAndGetTimestampDiff(isTimeDiffEnabled);
+    const instance = this.instance as typeof Logger;
     process.stdout.write(
-      `${pidMessage}${
-        this.instance.getTimestamp?.() || this.getTimestamp()
-      }   ${contextMessage}${output}${timestampDiff}\n`,
+      `${pidMessage}${instance.getTimestamp()}   ${contextMessage}${output}${timestampDiff}\n`,
     );
   }
 
