@@ -178,7 +178,7 @@ export class NestApplicationContext implements INestApplicationContext {
       } catch (err) {
         Logger.error(
           MESSAGES.ERROR_DURING_SHUTDOWN,
-          (err as Error).stack,
+          (err as Error)?.stack,
           NestApplicationContext.name,
         );
         process.exit(1);
