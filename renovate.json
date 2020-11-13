@@ -1,11 +1,11 @@
 {
-  "extends": ["config:base"],
+  "labels": ["dependencies"],
   "semanticCommits": true,
-  "packageRules": [
-    {
-      "depTypeList": ["devDependencies"],
-      "automerge": true
-    }
-  ],
-  "schedule": ["every weekday"]
+  "packageRules": [{
+    "depTypeList": ["devDependencies"],
+    "automerge": true
+  }],
+  "extends": [
+    "config:base"
+  ]
 }
