@@ -431,7 +431,11 @@ export class RouterExecutionContext {
         res: TResponse,
         req: TRequest,
       ) => {
-        await this.responseController.sse(result, res, req);
+        await this.responseController.sse(
+          result,
+          (res as any).raw || res,
+          (req as any).raw || req,
+        );
       };
     }
     return async <TResult, TResponse>(result: TResult, res: TResponse) => {
