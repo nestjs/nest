@@ -4,6 +4,7 @@ import {
   INestMicroservice,
   Logger,
   NestApplicationOptions,
+  Scope,
   Type,
 } from '@nestjs/common';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
@@ -12,6 +13,7 @@ import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-ap
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import {
   AbstractHttpAdapter,
+  ModuleRef,
   NestApplication,
   NestApplicationContext,
 } from '@nestjs/core';
@@ -110,8 +112,13 @@ export class TestingModule extends NestApplicationContext {
       }
     };
 
-    const createContext = () =>
-      this.get(ExternalContextCreator).create(
+    const createContext = () => {
+      const { scope } = this.get(ModuleRef).introspect(params.class);
+      if (scope === Scope.REQUEST) {
+        // TODO: Kamil's gonna do something here, for Request-scoped instances
+      }
+
+      return this.get(ExternalContextCreator).create(
         this.get(params.class),
         this.get(params.class)[params.methodName] as any,
         params.methodName as string,
@@ -122,6 +129,7 @@ export class TestingModule extends NestApplicationContext {
         undefined,
         'http',
       );
+    };
 
     return HttpTestingHandler.create<TOutput>(createContext);
   }
@@ -143,8 +151,13 @@ export class TestingModule extends NestApplicationContext {
     class: Type<TClass>;
     methodName: MethodProperty<TClass>;
   }) {
-    const createContext = () =>
-      this.get(ExternalContextCreator).create(
+    const createContext = () => {
+      const { scope } = this.get(ModuleRef).introspect(params.class);
+      if (scope === Scope.REQUEST) {
+        // TODO: Kamil's gonna do something here, for Request-scoped instances
+      }
+
+      return this.get(ExternalContextCreator).create(
         this.get(params.class),
         this.get(params.class)[params.methodName] as any,
         params.methodName as string,
@@ -155,6 +168,7 @@ export class TestingModule extends NestApplicationContext {
         undefined,
         'rpc',
       );
+    };
 
     return RpcTestingHandler.create<TOutput>(createContext);
   }
@@ -176,8 +190,13 @@ export class TestingModule extends NestApplicationContext {
     class: Type<TClass>;
     methodName: MethodProperty<TClass>;
   }) {
-    const createContext = () =>
-      this.get(ExternalContextCreator).create(
+    const createContext = () => {
+      const { scope } = this.get(ModuleRef).introspect(params.class);
+      if (scope === Scope.REQUEST) {
+        // TODO: Kamil's gonna do something here, for Request-scoped instances
+      }
+
+      return this.get(ExternalContextCreator).create(
         this.get(params.class),
         this.get(params.class)[params.methodName] as any,
         params.methodName as string,
@@ -188,6 +207,7 @@ export class TestingModule extends NestApplicationContext {
         undefined,
         'ws',
       );
+    };
 
     return WsTestingHandler.create<TOutput>(createContext);
   }
