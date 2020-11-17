@@ -75,7 +75,12 @@ export class FastifyAdapter<
     TRawRequest,
     TRawResponse
   >;
+  private _isParserRegistered: boolean;
   private isMiddieRegistered: boolean;
+
+  get isParserRegistered(): boolean {
+    return !!this._isParserRegistered;
+  }
 
   constructor(
     instanceOrOptions:
@@ -264,7 +269,11 @@ export class FastifyAdapter<
   }
 
   public registerParserMiddleware() {
+    if (this._isParserRegistered) {
+      return;
+    }
     this.register(require('fastify-formbody'));
+    this._isParserRegistered = true;
   }
 
   public async createMiddlewareFactory(
