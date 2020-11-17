@@ -3,7 +3,7 @@ import {
   Logger,
   LoggerService,
   LogLevel,
-  ShutdownSignal
+  ShutdownSignal,
 } from '@nestjs/common';
 import { Abstract, Scope } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
@@ -19,7 +19,7 @@ import {
   callBeforeAppShutdownHook,
   callModuleBootstrapHook,
   callModuleDestroyHook,
-  callModuleInitHook
+  callModuleInitHook,
 } from './hooks';
 import { ContextId } from './injector';
 import { NestContainer } from './injector/container';
@@ -278,7 +278,7 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   protected async resolvePerContext<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | string | symbol,
+    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextModule: Module,
     contextId: ContextId,
     options?: { strict: boolean },
