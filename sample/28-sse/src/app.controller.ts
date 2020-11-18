@@ -8,11 +8,10 @@ import { map } from 'rxjs/operators';
 @Controller()
 export class AppController {
   @Get()
-  index(@Res({ passthrough: true }) response: Response) {
+  index(@Res() response: Response) {
     response
       .type('text/html')
       .send(readFileSync(join(__dirname, 'index.html')).toString());
-    return 'xddd';
   }
 
   @Sse('sse')
