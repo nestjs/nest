@@ -63,6 +63,9 @@ export class IoAdapter extends AbstractWsAdapter {
 
   public mapPayload(payload: any): { data: any; ack?: Function } {
     if (!Array.isArray(payload)) {
+      if (isFunction(payload)) {
+        return { data: undefined, ack: payload };
+      }
       return { data: payload };
     }
     const lastElement = payload[payload.length - 1];
