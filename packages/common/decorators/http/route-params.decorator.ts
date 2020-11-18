@@ -1,8 +1,25 @@
-import { ROUTE_ARGS_METADATA } from '../../constants';
+import {
+  RESPONSE_PASSTHROUGH_METADATA,
+  ROUTE_ARGS_METADATA,
+} from '../../constants';
 import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
 import { PipeTransform } from '../../index';
 import { Type } from '../../interfaces';
 import { isNil, isString } from '../../utils/shared.utils';
+
+/**
+ * The `@Response()`/`@Res` parameter decorator options.
+ */
+export interface ResponseDecoratorOptions {
+  /**
+   * Determines whether the response will be sent manually within the route handler,
+   * with the use of native response handling methods exposed by the platform-specific response object,
+   * or if it should passthrough Nest response processing pipeline.
+   *
+   * @default false
+   */
+  passthrough: boolean;
+}
 
 export type ParamData = object | string | number;
 export interface RouteParamMetadata {
@@ -85,20 +102,34 @@ export const Request: () => ParameterDecorator = createRouteParamDecorator(
  *
  * Example: `logout(@Response() res)`
  *
- * @see [Request object](https://docs.nestjs.com/controllers#request-object)
- *
  * @publicApi
  */
-export const Response: () => ParameterDecorator = createRouteParamDecorator(
-  RouteParamtypes.RESPONSE,
-);
+export const Response: (
+  options?: ResponseDecoratorOptions,
+) => ParameterDecorator = (options?: ResponseDecoratorOptions) => (
+  target,
+  key,
+  index,
+) => {
+  if (options?.passthrough) {
+    Reflect.defineMetadata(
+      RESPONSE_PASSTHROUGH_METADATA,
+      options?.passthrough,
+      target.constructor,
+      key,
+    );
+  }
+  return createRouteParamDecorator(RouteParamtypes.RESPONSE)()(
+    target,
+    key,
+    index,
+  );
+};
 
 /**
  * Route handler parameter decorator. Extracts reference to the `Next` function
  * from the underlying platform and populates the decorated
  * parameter with the value of `Next`.
- *
- * @see [Request object](https://docs.nestjs.com/controllers#request-object)
  *
  * @publicApi
  */

@@ -26,4 +26,5 @@ export const HTTP_CODE_METADATA = '__httpCode__';
 export const MODULE_PATH = '__module_path__';
 export const HEADERS_METADATA = '__headers__';
 export const REDIRECT_METADATA = '__redirect__';
+export const RESPONSE_PASSTHROUGH_METADATA = '__responsePassthrough__';
 export const SSE_METADATA = '__sse__';
