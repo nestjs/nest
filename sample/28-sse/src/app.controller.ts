@@ -1,21 +1,17 @@
-import { Controller, Get, MessageEvent, Sse } from '@nestjs/common';
+import { Controller, Get, MessageEvent, Res, Sse } from '@nestjs/common';
+import { Response } from 'express';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { interval, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @Controller()
 export class AppController {
   @Get()
-  index(): string {
-    return `
-      <script type="text/javascript">
-        const eventSource = new EventSource('/sse');
-        eventSource.onmessage = ({ data }) => {
-          const message = document.createElement('li');
-          message.innerText = 'New message: ' + data;
-          document.body.appendChild(message);
-        }
-      </script>
-    `;
+  index(@Res() response: Response) {
+    response
+      .type('text/html')
+      .send(readFileSync(join(__dirname, 'index.html')).toString());
   }
 
   @Sse('sse')

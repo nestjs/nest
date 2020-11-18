@@ -28,5 +28,18 @@ describe('WebSocketGateway (ack)', () => {
     );
   });
 
+  it(`should handle message with ack & without data (http)`, async () => {
+    app = await createNestApp(AckGateway);
+    await app.listenAsync(3000);
+
+    ws = io.connect('http://localhost:8080');
+    await new Promise(resolve =>
+      ws.emit('push', data => {
+        expect(data).to.be.eql('pong');
+        resolve();
+      }),
+    );
+  });
+
   afterEach(() => app.close());
 });

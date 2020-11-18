@@ -79,7 +79,7 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   public resolve<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | string | symbol,
+    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextId = createContextId(),
     options: { strict: boolean } = { strict: false },
   ): Promise<TResult> {
@@ -178,7 +178,7 @@ export class NestApplicationContext implements INestApplicationContext {
       } catch (err) {
         Logger.error(
           MESSAGES.ERROR_DURING_SHUTDOWN,
-          (err as Error).stack,
+          (err as Error)?.stack,
           NestApplicationContext.name,
         );
         process.exit(1);
@@ -278,7 +278,7 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   protected async resolvePerContext<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | string | symbol,
+    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextModule: Module,
     contextId: ContextId,
     options?: { strict: boolean },
