@@ -51,7 +51,7 @@
     ]
   },
   "dependencies": {
-    "@nuxtjs/opencollective": "0.2.2",
+    "@nuxtjs/opencollective": "0.3.2",
     "axios": "0.21.0",
     "class-transformer": "0.3.1",
     "class-validator": "0.12.2",
