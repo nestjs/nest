@@ -20,7 +20,7 @@
     "fastify": "3.7.0",
     "fastify-cors": "4.1.0",
     "fastify-formbody": "5.0.0",
-    "light-my-request": "4.2.1",
+    "light-my-request": "4.3.0",
     "middie": "5.1.0",
     "path-to-regexp": "3.2.0",
     "tslib": "2.0.3"
