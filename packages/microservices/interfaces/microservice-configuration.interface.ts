@@ -114,6 +114,9 @@ export interface NatsOptions {
     queue?: string;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    userJWT?: string;
+    nonceSigner?: any;
+    userCreds?: any;
   };
 }
 
