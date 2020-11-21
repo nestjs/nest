@@ -59,17 +59,16 @@ export class ClientKafka extends ClientProxy {
       this.getOptionsProp(this.options, 'client') || ({} as KafkaConfig);
     const consumerOptions =
       this.getOptionsProp(this.options, 'consumer') || ({} as ConsumerConfig);
+    const postfixId =
+      this.getOptionsProp(this.options, 'postfixId') || '-client';
 
     this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
 
     // Append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
     this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) +
-      (clientOptions.clientIdPostfix || '-client');
-    this.groupId =
-      (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) +
-      (clientOptions.clientIdPostfix || '-client');
+      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
+    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
 
     kafkaPackage = loadPackage('kafkajs', ClientKafka.name, () =>
       require('kafkajs'),

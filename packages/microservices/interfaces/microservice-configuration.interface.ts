@@ -5,7 +5,7 @@ import {
   ConsumerConfig,
   KafkaConfig,
   ProducerConfig,
-} from '../external/kafka-options.interface';
+} from '../external/kafka.interface';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
 import { ClientOpts } from '../external/redis.interface';
 import { Server } from '../server/server';
@@ -137,6 +137,7 @@ export interface RmqOptions {
 export interface KafkaOptions {
   transport?: Transport.KAFKA;
   options?: {
+    postfixId?: string;
     client?: KafkaConfig;
     consumer?: ConsumerConfig;
     run?: {

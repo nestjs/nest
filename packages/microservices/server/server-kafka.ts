@@ -50,17 +50,16 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       this.getOptionsProp(this.options, 'client') || ({} as KafkaConfig);
     const consumerOptions =
       this.getOptionsProp(this.options, 'consumer') || ({} as ConsumerConfig);
+    const postfixId =
+      this.getOptionsProp(this.options, 'postfixId') || '-server';
 
     this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
 
     // append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
     this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) +
-      (clientOptions.clientIdPostfix || '-server');
-    this.groupId =
-      (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) +
-      (clientOptions.clientIdPostfix || '-server');
+      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
+    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
 
     kafkaPackage = this.loadPackage('kafkajs', ServerKafka.name, () =>
       require('kafkajs'),
