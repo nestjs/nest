@@ -1,25 +1,37 @@
-import * as util from 'util';
-
-import { Controller } from '@nestjs/common';
-import { Logger } from '@nestjs/common/services/logger.service';
+import { Controller, HttpCode, Post } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { first, map, skipWhile } from 'rxjs/operators';
 
 @Controller()
 export class KafkaConcurrentMessagesController {
-  protected readonly logger = new Logger(KafkaConcurrentMessagesController.name);
+  public waiting = new BehaviorSubject<boolean>(false);
+
+  @Post('go')
+  @HttpCode(200)
+  async go() {
+    // no longer waiting
+    this.waiting.next(false);
+
+    return;
+  }
 
   @MessagePattern('math.sum.sync.number.wait')
-  async mathSumSyncNumberWait(data: any) {
-    // debug
-    this.logger.error(util.format('KafkaConcurrentMessagesController mathSumSyncNumberWait() partition: %o replyPartition: %o', data.partition, data.headers.kafka_replyPartition));
-    // this.logger.error(util.format('KafkaConcurrentMessagesController mathSumSyncNumberWait() data: %o', data));
+  public mathSumSyncNumberWait(data: any): Observable<number> {
+    // start waiting
+    this.waiting.next(true);
 
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const result = data.value[0] + data.value[1];
+    // find sum
+    const sum = data.value[0] + data.value[1];
 
-        return resolve(result);
-      }, 5000);
-    });
+    return this.waiting.asObservable().pipe(
+      skipWhile((isWaiting) => {
+        return isWaiting;
+      }),
+      map(() => {
+        return sum;
+      }),
+      first()
+    );
   }
 }

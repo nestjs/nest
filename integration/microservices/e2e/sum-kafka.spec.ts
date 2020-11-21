@@ -29,6 +29,7 @@ describe('Kafka transport', () => {
         },
       },
     });
+    app.enableShutdownHooks();
     await app.startAllMicroservicesAsync();
     await app.init();
   }).timeout(30000);

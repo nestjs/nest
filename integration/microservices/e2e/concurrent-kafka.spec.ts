@@ -1,14 +1,14 @@
 import * as util from 'util';
+import * as request from 'supertest';
 
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as request from 'supertest';
 import { KafkaConcurrentController } from '../src/kafka-concurrent/kafka-concurrent.controller';
 import { KafkaConcurrentMessagesController } from '../src/kafka-concurrent/kafka-concurrent.messages.controller';
 
 import { ITopicMetadata, Kafka, Admin } from 'kafkajs';
+// import { ITopicMetadata, Kafka, Admin } from '@nestjs/microservices/external/kafka.interface';
 
 describe('Kafka concurrent', function() {
   const numbersOfServers = 3;
@@ -20,6 +20,8 @@ describe('Kafka concurrent', function() {
   const servers: any[] = [];
   const apps: INestApplication[] = [];
 
+  const logger = new Logger('concurrent-kafka.spec.ts');
+
   // set timeout to be longer (especially for the after hook)
   this.timeout(30000);
 
@@ -27,25 +29,19 @@ describe('Kafka concurrent', function() {
     const module = await Test.createTestingModule({
       controllers: [KafkaConcurrentController, KafkaConcurrentMessagesController],
     }).compile();
-  
+
+    // use our own logger for a little
+    // Logger.overrideLogger(new Logger());
+    
     const app = module.createNestApplication();
     
     const server = app.getHttpAdapter().getInstance();
-  
+
     app.connectMicroservice({
       transport: Transport.KAFKA,
       options: {
         client: {
-          brokers: ['localhost:9092']
-        },
-        // consumer: {
-        //   maxWaitTimeInMs: 1
-        // },
-        producer: {
-          retry: {
-            initialRetryTime: 100,
-            retries: 8
-          }
+          brokers: ['localhost:9092'],
         },
         run: {
           partitionsConsumedConcurrently: numbersOfServers
@@ -53,6 +49,7 @@ describe('Kafka concurrent', function() {
       },
     });
 
+    // enable these for clean shutdown
     app.enableShutdownHooks();
 
     // push to the collection
@@ -84,8 +81,6 @@ describe('Kafka concurrent', function() {
           responseTopic
         ]
       });
-
-      // console.log(util.format('Topic Metadata %o', topicMetadata));
     }  catch (e) {
       // create with number of servers
       try {
@@ -104,7 +99,7 @@ describe('Kafka concurrent', function() {
           ]
         });
       } catch (e) {
-        console.error(util.format('Create topics error: %o', e));
+        logger.error(util.format('Create topics error: %o', e));
       }  
     }
 
@@ -122,7 +117,7 @@ describe('Kafka concurrent', function() {
               ]
             });
           } catch (e) {
-            console.error(util.format('Create partitions error: %o', e));
+            logger.error(util.format('Create partitions error: %o', e));
           }
         }
       }
@@ -145,7 +140,7 @@ describe('Kafka concurrent', function() {
         ]
       });
     } catch (e) {
-      console.error(util.format('Create topics error: %o', e));
+      logger.error(util.format('Create topics error: %o', e));
     }
 
     // disconnect
@@ -168,16 +163,57 @@ describe('Kafka concurrent', function() {
     }));
   }).timeout(30000);
 
-  it(`/POST (sync sum number wait and remove consumer)`, async () => {
+  it(`Concurrent messages without forcing a rebalance.`, async () => {
+    // wait a second before notifying the servers to respond
+    setTimeout(async () => {
+      // notify the other servers that it is time to respond
+      await Promise.all(servers.map(async (server) => {
+        // send to all servers since indexes don't necessarily align with server consumers
+        return request(server)
+          .post('/go')
+          .send();
+      }));
+    }, 1000);
+
+    await Promise.all(servers.map(async (server, index) => {
+      // send requests
+      const payload = {
+        key: index,
+        numbers: [1, index]
+      };
+      const result = (1 + index).toString();
+
+      return request(server)
+          .post('/mathSumSyncNumberWait')
+          .send(payload)
+          .expect(200)
+          .expect(200, result);
+    }));
+  });
+
+  it(`Close kafka client consumer while waiting for message pattern response.`, async () => {
     await Promise.all(servers.map(async (server, index) => {
       // shut off and delete the leader
       if (index === 0) {
         return new Promise((resolve) => {
-          // wait .5 of a second before closing so the consumers can re-balance
+          // wait a second before closing so the producers can send the message to the server consumers
           setTimeout(async () => {
-            await apps[index].close();
+            // get the controller
+            const controller = apps[index].get(KafkaConcurrentController);
+
+            // close the controller clients
+            await controller.client.close();
+
+            // notify the other servers that we have stopped
+            await Promise.all(servers.map(async (server) => {
+              // send to all servers since indexes don't necessarily align with server consumers
+              return request(server)
+                .post('/go')
+                .send();
+            }));
+
             return resolve();
-          }, 500);
+          }, 1000);
         });
       }
 
@@ -194,18 +230,31 @@ describe('Kafka concurrent', function() {
           .expect(200)
           .expect(200, result);
     }));
-  }).timeout(60000);
+  });
 
-  it(`/POST (sync sum number wait and start consumer)`, async () => {
+  it(`Start kafka client consumer while waiting for message pattern response.`, async () => {
     await Promise.all(servers.map(async (server, index) => {
       // shut off and delete the leader
       if (index === 0) {
         return new Promise((resolve) => {
-          // wait .5 of a second before starting a new so the consumers can re-balance
+          // wait a second before closing so the producers can send the message to the server consumers
           setTimeout(async () => {
-            await startServer();
+            // get the controller
+            const controller = apps[index].get(KafkaConcurrentController);
+
+            // connect the controller client
+            await controller.client.connect();
+
+            // notify the servers that we have started
+            await Promise.all(servers.map(async (server) => {
+              // send to all servers since indexes don't necessarily align with server consumers
+              return request(server)
+                .post('/go')
+                .send();
+            }));
+
             return resolve();
-          }, 500);
+          }, 1000);
         });
       }
 
@@ -222,7 +271,7 @@ describe('Kafka concurrent', function() {
           .expect(200)
           .expect(200, result);
     }));
-  }).timeout(60000);
+  });
 
   after(`Stopping Kafka app`, async () => {
     // close all concurrently

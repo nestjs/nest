@@ -1,11 +1,9 @@
-import * as util from 'util';
+import { Observable } from 'rxjs';
 
-import { PartitionerArgs } from 'kafkajs';
-
-import { Body, Controller, HttpCode, OnModuleInit, OnModuleDestroy, Post, Scope } from '@nestjs/common';
+import { Body, Controller, HttpCode, OnModuleInit, OnModuleDestroy, Post } from '@nestjs/common';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { Client, ClientKafka, Transport } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
+import { PartitionerArgs } from '@nestjs/microservices/external/kafka-options.interface';
 
 import { SumDto } from './dtos/sum.dto';
 
@@ -16,7 +14,7 @@ const explicitPartitioner = () => {
   return ({
     message
   }: PartitionerArgs) => {
-    return parseFloat(message.key.toString());
+    return parseFloat(message.headers.toPartition.toString());
   };
 }
 
@@ -30,12 +28,15 @@ export class KafkaConcurrentController implements OnModuleInit, OnModuleDestroy 
       client: {
         brokers: ['localhost:9092'],
       },
+      run: {
+        partitionsConsumedConcurrently: 3
+      },
       producer: {
         createPartitioner: explicitPartitioner
       }
     },
   })
-  private readonly client: ClientKafka;
+  public readonly client: ClientKafka;
 
   async onModuleInit() {
     const requestPatterns = [
@@ -55,18 +56,14 @@ export class KafkaConcurrentController implements OnModuleInit, OnModuleDestroy 
 
   @Post('mathSumSyncNumberWait')
   @HttpCode(200)
-  async mathSumSyncNumberWait(@Body() data: SumDto): Promise<Observable<any>> {
-    this.logger.error(util.format('KafkaConcurrentController mathSumSyncNumberWait() data: %o', data));
-
-    const result = await this.client
+  public mathSumSyncNumberWait(@Body() data: SumDto): Observable<string> {
+    return this.client
       .send('math.sum.sync.number.wait', {
-        key: data.key,
+        headers: {
+          toPartition: data.key.toString(),
+        },
+        key: data.key.toString(),
         value: data.numbers
-      })
-      .toPromise();
-
-    this.logger.error(util.format('KafkaConcurrentController mathSumSyncNumberWait() result: %o', result));
-
-    return result;
+      });
   }
 }
