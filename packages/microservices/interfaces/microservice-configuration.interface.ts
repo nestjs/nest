@@ -3,8 +3,11 @@ import { ChannelOptions } from '../external/grpc-options.interface';
 import {
   CompressionTypes,
   ConsumerConfig,
+  ConsumerRunConfig,
+  ConsumerSubscribeTopic,
   KafkaConfig,
   ProducerConfig,
+  ProducerRecord,
 } from '../external/kafka.interface';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
 import { ClientOpts } from '../external/redis.interface';
@@ -140,22 +143,10 @@ export interface KafkaOptions {
     postfixId?: string;
     client?: KafkaConfig;
     consumer?: ConsumerConfig;
-    run?: {
-      autoCommit?: boolean;
-      autoCommitInterval?: number | null;
-      autoCommitThreshold?: number | null;
-      eachBatchAutoResolve?: boolean;
-      partitionsConsumedConcurrently?: number;
-    };
-    subscribe?: {
-      fromBeginning?: boolean;
-    };
+    run?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;
+    subscribe?: Omit<ConsumerSubscribeTopic, 'topic'>;
     producer?: ProducerConfig;
-    send?: {
-      acks?: number;
-      timeout?: number;
-      compression?: CompressionTypes;
-    };
+    send?: Omit<ProducerRecord, 'topics' | 'messages'>;
     serializer?: Serializer;
     deserializer?: Deserializer;
   };
