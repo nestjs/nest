@@ -112,7 +112,7 @@
     "core-js": "3.7.0",
     "coveralls": "3.1.0",
     "delete-empty": "3.0.0",
-    "engine.io-client": "4.0.1",
+    "engine.io-client": "4.0.4",
     "eslint": "7.10.0",
     "eslint-config-prettier": "6.11.0",
     "eslint-plugin-import": "2.22.1",
@@ -125,7 +125,7 @@
     "fastify-static": "3.2.1",
     "graphql": "15.3.0",
     "graphql-tools": "6.2.4",
-    "grpc": "1.24.3",
+    "grpc": "1.24.4",
     "gulp": "4.0.2",
     "gulp-clang-format": "1.0.27",
     "gulp-clean": "0.4.0",
@@ -141,9 +141,9 @@
     "lint-staged": "10.5.1",
     "markdown-table": "2.0.0",
     "merge-graphql-schemas": "1.7.8",
-    "middie": "5.1.0",
+    "middie": "5.2.0",
     "mocha": "8.2.1",
-    "mongoose": "5.10.10",
+    "mongoose": "5.10.15",
     "mqtt": "4.2.1",
     "multer": "1.4.2",
     "mysql": "2.18.1",
@@ -164,7 +164,7 @@
     "typeorm": "0.2.28",
     "typescript": "4.0.3",
     "wrk": "1.2.1",
-    "ws": "7.3.1"
+    "ws": "7.4.0"
   },
   "engines": {
     "node": ">= 10.13.0"
