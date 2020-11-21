@@ -7,7 +7,7 @@ import { Test } from '@nestjs/testing';
 import { KafkaConcurrentController } from '../src/kafka-concurrent/kafka-concurrent.controller';
 import { KafkaConcurrentMessagesController } from '../src/kafka-concurrent/kafka-concurrent.messages.controller';
 
-import { ITopicMetadata, Kafka, Admin } from '@nestjs/microservices/external/kafka.interface';
+import { ITopicMetadata, Kafka, Admin } from 'kafkajs';
 
 describe('Kafka concurrent', function() {
   const numbersOfServers = 3;
