@@ -8,7 +8,6 @@ import {
 } from '../constants';
 import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deserializer';
 import { KafkaHeaders } from '../enums';
-import { InvalidKafkaClientTopicPartitionException } from '../errors/invalid-kafka-client-topic-partition.exception';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
 import {
   BrokersFunction,

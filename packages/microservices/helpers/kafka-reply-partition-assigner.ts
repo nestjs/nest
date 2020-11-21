@@ -18,7 +18,6 @@ export class KafkaReplyPartitionAssigner {
   constructor(
     private readonly clientKafka: ClientKafka,
     private readonly config: {
-      groupId: string;
       cluster: Cluster;
     },
   ) {
