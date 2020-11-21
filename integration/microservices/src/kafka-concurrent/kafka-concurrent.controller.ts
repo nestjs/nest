@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { Body, Controller, HttpCode, OnModuleInit, OnModuleDestroy, Post } from '@nestjs/common';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { Client, ClientKafka, Transport } from '@nestjs/microservices';
-import { PartitionerArgs } from '@nestjs/microservices/external/kafka-options.interface';
+import { PartitionerArgs } from '@nestjs/microservices/external/kafka.interface';
 
 import { SumDto } from './dtos/sum.dto';
 
