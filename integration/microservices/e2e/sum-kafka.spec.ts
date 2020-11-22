@@ -9,9 +9,12 @@ import { UserEntity } from '../src/kafka/entities/user.entity';
 import { KafkaController } from '../src/kafka/kafka.controller';
 import { KafkaMessagesController } from '../src/kafka/kafka.messages.controller';
 
-describe('Kafka transport', () => {
+describe('Kafka transport', function() {
   let server;
   let app: INestApplication;
+
+  // set timeout to be longer (especially for the after hook)
+  this.timeout(30000);
 
   it(`Start Kafka app`, async () => {
     const module = await Test.createTestingModule({
