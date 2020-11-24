@@ -89,7 +89,7 @@
     "@types/mongoose": "5.7.36",
     "@types/node": "14.14.9",
     "@types/redis": "2.8.28",
-    "@types/reflect-metadata": "0.0.5",
+    "@types/reflect-metadata": "0.1.0",
     "@types/sinon": "9.0.8",
     "@types/socket.io": "2.1.11",
     "@types/ws": "7.2.9",
