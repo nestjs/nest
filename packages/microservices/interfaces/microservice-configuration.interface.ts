@@ -12,7 +12,7 @@ import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
-import { AmqpConnectionManagerSocketOptions, RmqUrl } from '../external/rmq-url.interface';
+import { AmqpConnectionManagerSocketOptions, AmqplibQueueOptions, RmqUrl } from '../external/rmq-url.interface';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -127,7 +127,7 @@ export interface RmqOptions {
     queue?: string;
     prefetchCount?: number;
     isGlobalPrefetchCount?: boolean;
-    queueOptions?: any;
+    queueOptions?: AmqplibQueueOptions;
     socketOptions?: AmqpConnectionManagerSocketOptions;
     noAck?: boolean;
     serializer?: Serializer;

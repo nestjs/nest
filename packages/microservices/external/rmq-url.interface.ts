@@ -16,3 +16,15 @@ export interface AmqpConnectionManagerSocketOptions {
   findServers?: () => string | string[]
   connectionOptions?: any
 }
+
+export interface AmqplibQueueOptions{
+  exclusive?: boolean
+  durable?: boolean
+  autoDelete?: boolean
+  arugments?: any
+  messageTtl?: number
+  expires?: number
+  deadLetterExchange?: string
+  maxLength?: number
+  maxPriority?: number
+}
