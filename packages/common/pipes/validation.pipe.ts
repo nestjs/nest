@@ -113,7 +113,7 @@ export class ValidationPipe implements PipeTransform<any> {
 
     const errors = await classValidator.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
-      throw this.exceptionFactory(errors);
+      throw await this.exceptionFactory(errors);
     }
     if (isPrimitive) {
       // if the value is a primitive value and the validation process has been successfully completed
