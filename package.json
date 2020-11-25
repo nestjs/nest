@@ -129,7 +129,7 @@
     "gulp": "4.0.2",
     "gulp-clang-format": "1.0.27",
     "gulp-clean": "0.4.0",
-    "gulp-sourcemaps": "2.6.5",
+    "gulp-sourcemaps": "3.0.0",
     "gulp-typescript": "5.0.1",
     "gulp-watch": "5.0.1",
     "husky": "4.3.0",
