@@ -91,6 +91,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
     /**
      * Expected footprint for amqp-connection-manager options
+     * https://github.com/jwalton/node-amqp-connection-manager
      * {
      *  connectionOptions: any,
      *  heartbeatIntervalInSeconds: number,
