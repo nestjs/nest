@@ -9,3 +9,10 @@ export interface RmqUrl {
   heartbeat?: number;
   vhost?: string;
 }
+
+export interface AmqpConnectionManagerSocketOptions {
+  reconnectTimeInSeconds?: number
+  heartbeatIntervalInSeconds?: number
+  findServers?: () => string | string[]
+  connectionOptions?: any
+}
