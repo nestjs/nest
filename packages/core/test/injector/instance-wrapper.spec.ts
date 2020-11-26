@@ -21,7 +21,7 @@ describe('InstanceWrapper', () => {
       expect(instance.scope).to.be.eql(partial.scope);
       expect(instance.metatype).to.be.eql(partial.metatype);
     });
-    it('should set intance by context id', () => {
+    it('should set instance by context id', () => {
       const instance = new InstanceWrapper(partial);
 
       expect(
