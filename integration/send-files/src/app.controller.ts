@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { Readable } from 'stream';
 import { AppService } from './app.service';
+import { NonFile } from './non-file';
 
 @Controller()
 export class AppController {
@@ -14,5 +15,10 @@ export class AppController {
   @Get('file/buffer')
   getBuffer(): Buffer {
     return this.appService.getBuffer();
+  }
+
+  @Get('non-file/pipe-method')
+  getNonFile(): NonFile {
+    return this.appService.getNonFile();
   }
 }

@@ -35,4 +35,12 @@ describe('Fastify FileSend', () => {
       expect(payload.toString()).to.be.eq(readmeString);
     });
   });
+  it('should not stream a non-file', async () => {
+    return app.inject({
+      url: '/non-file/pipe-method',
+      method: 'get'
+    }).then(({ payload }) => {
+      expect(payload).to.be.eq({ value: 'Hello world' });
+    });
+  });
 });

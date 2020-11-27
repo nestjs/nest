@@ -36,4 +36,10 @@ describe('Express FileSend', () => {
         expect(res.body.toString()).to.be.eq(readmeString);
       });
   });
+  it('should not stream a non-file', async () => {
+    return request(app.getHttpServer())
+      .get('/non-file/pipe-method')
+      .expect(200)
+      .expect({ value: 'Hello world' });
+  });
 });
