@@ -143,7 +143,7 @@
     "merge-graphql-schemas": "1.7.8",
     "middie": "5.2.0",
     "mocha": "8.2.1",
-    "mongoose": "5.10.15",
+    "mongoose": "5.10.16",
     "mqtt": "4.2.6",
     "multer": "1.4.2",
     "mysql": "2.18.1",
