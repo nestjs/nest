@@ -96,7 +96,7 @@ export abstract class Server {
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
       return this.logger.error(
-        `${NO_EVENT_HANDLER} Event pattern is ${JSON.stringify(pattern)}.`,
+        `${NO_EVENT_HANDLER} Event pattern: ${JSON.stringify(pattern)}.`,
       );
     }
     const resultOrStream = await handler(packet.data, context);
