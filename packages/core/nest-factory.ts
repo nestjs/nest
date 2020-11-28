@@ -218,7 +218,7 @@ export class NestFactoryStatic {
     if (!options) {
       return;
     }
-    !isNil(options.logger) && Logger.overrideLogger(options.logger);
+    !options.logger && Logger.overrideLogger(options.logger);
   }
 
   private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
