@@ -40,12 +40,7 @@ export interface INestApplication extends INestApplicationContext {
    * @param  {Function} callback Optional callback
    * @returns A Promise that, when resolved, is a reference to the underlying HttpServer.
    */
-  listen(port: number | string, callback?: () => void): Promise<any>;
-  listen(
-    port: number | string,
-    hostname: string,
-    callback?: () => void,
-  ): Promise<any>;
+  listen(port: number | string, hostname: string, callback?: () => void): Promise<any>;
 
   /**
    * Returns the url the application is listening at, based on OS and IP version. Returns as an IP value either in IPv6 or IPv4
