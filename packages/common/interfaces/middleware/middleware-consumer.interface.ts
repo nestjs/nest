@@ -10,7 +10,7 @@ import { MiddlewareConfigProxy } from './middleware-config-proxy.interface';
  */
 export interface MiddlewareConsumer {
   /**
-   * @param  middleware middleware class/function or array of classes/functions
+   * @param {...(Type | Function)} middleware middleware class/function or array of classes/functions
    * to be attached to the passed routes.
    *
    * @returns {MiddlewareConfigProxy}
