@@ -23,7 +23,7 @@ describe('RabbitMQ transport', () => {
         urls: [`amqp://0.0.0.0:5672`],
         queue: 'test',
         queueOptions: { durable: false },
-        socketOptions: { connectionOptions: {noDelay: true }},
+        socketOptions: { noDelay: true },
       },
     });
     await app.startAllMicroservicesAsync();
