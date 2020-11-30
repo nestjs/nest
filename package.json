@@ -150,7 +150,7 @@
     "nats": "1.4.12",
     "nodemon": "2.0.6",
     "nyc": "15.1.0",
-    "point-of-view": "4.6.0",
+    "point-of-view": "4.7.0",
     "prettier": "2.2.0",
     "redis": "3.0.2",
     "rxjs-compat": "6.6.3",
