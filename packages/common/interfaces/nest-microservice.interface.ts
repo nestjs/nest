@@ -18,7 +18,7 @@ export interface INestMicroservice extends INestApplicationContext {
    * @returns {Promise}
    *
    */
-  listen(callback: () => void): any;
+  listen(callback: () => void): void;
 
   /**
    * Starts the microservice (can be awaited).
