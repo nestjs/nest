@@ -115,7 +115,7 @@ export class NestMicroservice
     return this;
   }
 
-  public listen(callback: () => void): void {
+  public listen(callback: () => void) {
     this.listenAsync().then(callback);
   }
 
