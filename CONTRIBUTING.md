@@ -237,7 +237,7 @@ Samples: (even more [samples](https://github.com/nestjs/nest/commits/master))
 
 ```
 docs(changelog): update change log to beta.5
-bugfix(core): need to depend on latest rxjs and zone.js
+fix(core): need to depend on latest rxjs and zone.js
 ```
 
 ### Revert
