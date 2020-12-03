@@ -114,7 +114,7 @@ export class Logger implements LoggerService {
       );
   }
 
-  private getInstance(): typeof Logger | LoggerService {
+  protected getInstance(): typeof Logger | LoggerService {
     const { instance } = Logger;
     return instance === this ? Logger : instance;
   }
