@@ -52,7 +52,7 @@ export class NestApplication
     MicroservicesModule && new MicroservicesModule();
   private readonly socketModule = SocketModule && new SocketModule();
   private readonly routesResolver: Resolver;
-  private readonly microservices: any[] = [];
+  private readonly microservices: INestMicroservice[] = [];
   private httpServer: any;
   private isListening = false;
 
@@ -80,7 +80,6 @@ export class NestApplication
 
     await Promise.all(
       iterate(this.microservices).map(async microservice => {
-        microservice.setIsTerminated(true);
         await microservice.close();
       }),
     );
@@ -192,9 +191,6 @@ export class NestApplication
       microserviceOptions,
       applicationConfig,
     );
-    instance.registerListeners();
-    instance.setIsInitialized(true);
-    instance.setIsInitHookCalled(true);
 
     this.microservices.push(instance);
     return instance;
@@ -209,7 +205,7 @@ export class NestApplication
   }
 
   public startAllMicroservices(callback?: () => void): this {
-    Promise.all(this.microservices.map(this.listenToPromise)).then(
+    Promise.all(this.microservices.map(m => m.listenAsync())).then(
       () => callback && callback(),
     );
     return this;
@@ -345,11 +341,5 @@ export class NestApplication
       this.middlewareContainer,
       instance,
     );
-  }
-
-  private listenToPromise(microservice: INestMicroservice) {
-    return new Promise(async resolve => {
-      await microservice.listen(resolve);
-    });
   }
 }
