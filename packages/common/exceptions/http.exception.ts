@@ -40,7 +40,7 @@ export class HttpException extends Error {
   ) {
     super();
     this.initMessage();
-    this.setName();
+    this.initName();
   }
 
   public initMessage() {
@@ -79,7 +79,7 @@ export class HttpException extends Error {
       : { statusCode, message: objectOrError, error: description };
   }
 
-  public setName(): void {
+  public initName(): void {
     this.name = this.constructor.name;
   }
 }
