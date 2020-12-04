@@ -11,6 +11,7 @@ import {
   ClientProxy,
   EventPattern,
   MessagePattern,
+  RpcException,
   Transport,
 } from '@nestjs/microservices';
 import { from, Observable, of } from 'rxjs';
@@ -78,6 +79,11 @@ export class AppController {
   @MessagePattern({ cmd: 'sum' })
   sum(data: number[]): number {
     return (data || []).reduce((a, b) => a + b);
+  }
+
+  @MessagePattern({ cmd: 'exception' })
+  exception(data: unknown): never {
+    throw new RpcException({ data });
   }
 
   @MessagePattern({ cmd: 'asyncSum' })
