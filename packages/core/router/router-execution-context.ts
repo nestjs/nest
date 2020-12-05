@@ -14,6 +14,7 @@ import {
   RENDER_METADATA,
   ROUTE_ARGS_METADATA,
   SSE_METADATA,
+  ACCEPT_METADATA,
 } from '@nestjs/common/constants';
 import { RouteParamMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
@@ -39,6 +40,7 @@ import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
 import {
+  CustomAccept,
   CustomHeader,
   RedirectResponse,
   RouterResponseController,
@@ -270,6 +272,12 @@ export class RouterExecutionContext {
     callback: (...args: unknown[]) => unknown,
   ): CustomHeader[] {
     return Reflect.getMetadata(HEADERS_METADATA, callback) || [];
+  }
+
+  public reflectAccept(
+    callback: (...args: unknown[]) => unknown,
+  ): CustomAccept[] {
+    return Reflect.getMetadata(ACCEPT_METADATA, callback) || [];
   }
 
   public reflectSse(callback: (...args: unknown[]) => unknown): string {

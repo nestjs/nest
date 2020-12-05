@@ -28,3 +28,4 @@ export const HEADERS_METADATA = '__headers__';
 export const REDIRECT_METADATA = '__redirect__';
 export const RESPONSE_PASSTHROUGH_METADATA = '__responsePassthrough__';
 export const SSE_METADATA = '__sse__';
+export const ACCEPT_METADATA = '__accept__';

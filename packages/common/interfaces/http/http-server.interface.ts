@@ -47,6 +47,7 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   render(response: any, view: string, options: any): any;
   redirect(response: any, statusCode: number, url: string): any;
   setHeader(response: any, name: string, value: string): any;
+  setAccept(response: any, heading: string): any;
   setErrorHandler?(handler: Function, prefix?: string): any;
   setNotFoundHandler?(handler: Function, prefix?: string): any;
   useStaticAssets?(...args: any[]): this;

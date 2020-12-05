@@ -59,12 +59,8 @@ type FastifyHttpsOptions<
 
 export class FastifyAdapter<
   TServer extends RawServerBase = RawServerDefault,
-  TRawRequest extends RawRequestDefaultExpression<
-    TServer
-  > = RawRequestDefaultExpression<TServer>,
-  TRawResponse extends RawReplyDefaultExpression<
-    TServer
-  > = RawReplyDefaultExpression<TServer>
+  TRawRequest extends RawRequestDefaultExpression<TServer> = RawRequestDefaultExpression<TServer>,
+  TRawResponse extends RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>
 > extends AbstractHttpAdapter<
   TServer,
   FastifyRequest<RequestGenericInterface, TServer, TRawRequest>,
@@ -250,6 +246,11 @@ export class FastifyAdapter<
 
   public setHeader(response: FastifyReply, name: string, value: string) {
     return response.header(name, value);
+  }
+
+  public setAccept(response: FastifyReply, heading: string) {
+    this.register(require('fastify-accepts'));
+    return response.type(heading);
   }
 
   public getRequestHostname(request: FastifyRequest): string {

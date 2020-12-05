@@ -6,3 +6,4 @@ export * from './render.decorator';
 export * from './header.decorator';
 export * from './redirect.decorator';
 export * from './sse.decorator';
+export * from './accept.decorator';

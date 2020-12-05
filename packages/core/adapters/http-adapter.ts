@@ -96,6 +96,7 @@ export abstract class AbstractHttpAdapter<
   abstract setErrorHandler(handler: Function, prefix?: string);
   abstract setNotFoundHandler(handler: Function, prefix?: string);
   abstract setHeader(response, name: string, value: string);
+  abstract setAccept(response, heading: string);
   abstract registerParserMiddleware(prefix?: string);
   abstract enableCors(options: CorsOptions, prefix?: string);
   abstract createMiddlewareFactory(

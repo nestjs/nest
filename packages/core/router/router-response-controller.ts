@@ -15,6 +15,9 @@ export interface RedirectResponse {
   statusCode?: number;
 }
 
+export interface CustomAccept {
+  heading: string;
+}
 export class RouterResponseController {
   constructor(private readonly applicationRef: HttpServer) {}
 
@@ -73,6 +76,15 @@ export class RouterResponseController {
   ) {
     headers.forEach(({ name, value }) =>
       this.applicationRef.setHeader(response, name, value),
+    );
+  }
+
+  public setAccept<TResponse = unknown>(
+    response: TResponse,
+    accepts: CustomAccept[],
+  ) {
+    accepts.forEach(({ heading }) =>
+      this.applicationRef.setAccept(response, heading),
     );
   }
 
