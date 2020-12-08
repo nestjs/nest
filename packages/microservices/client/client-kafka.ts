@@ -8,7 +8,6 @@ import {
 } from '../constants';
 import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deserializer';
 import { KafkaHeaders } from '../enums';
-import { InvalidKafkaClientTopicPartitionException } from '../errors/invalid-kafka-client-topic-partition.exception';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
 import {
   BrokersFunction,
@@ -24,7 +23,7 @@ import {
 import {
   KafkaLogger,
   KafkaParser,
-  KafkaRoundRobinPartitionAssigner,
+  KafkaReplyPartitionAssigner,
 } from '../helpers';
 import {
   KafkaOptions,
@@ -46,7 +45,7 @@ export class ClientKafka extends ClientProxy {
   protected producer: Producer = null;
   protected logger = new Logger(ClientKafka.name);
   protected responsePatterns: string[] = [];
-  protected consumerAssignments: { [key: string]: number[] } = {};
+  protected consumerAssignments: { [key: string]: number } = {};
 
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
@@ -59,17 +58,16 @@ export class ClientKafka extends ClientProxy {
       this.getOptionsProp(this.options, 'client') || ({} as KafkaConfig);
     const consumerOptions =
       this.getOptionsProp(this.options, 'consumer') || ({} as ConsumerConfig);
+    const postfixId =
+      this.getOptionsProp(this.options, 'postfixId') || '-client';
 
     this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
 
     // Append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
     this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) +
-      (clientOptions.clientIdPostfix || '-client');
-    this.groupId =
-      (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) +
-      (clientOptions.clientIdPostfix || '-client');
+      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
+    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
 
     kafkaPackage = loadPackage('kafkajs', ClientKafka.name, () =>
       require('kafkajs'),
@@ -99,11 +97,8 @@ export class ClientKafka extends ClientProxy {
     this.client = this.createClient();
 
     const partitionAssigners = [
-      (
-        config: ConstructorParameters<
-          typeof KafkaRoundRobinPartitionAssigner
-        >[0],
-      ) => new KafkaRoundRobinPartitionAssigner(config),
+      (config: ConstructorParameters<typeof KafkaReplyPartitionAssigner>[1]) =>
+        new KafkaReplyPartitionAssigner(this, config),
     ] as any[];
 
     const consumerOptions = Object.assign(
@@ -188,6 +183,10 @@ export class ClientKafka extends ClientProxy {
     };
   }
 
+  public getConsumerAssignments() {
+    return this.consumerAssignments;
+  }
+
   protected dispatchEvent(packet: OutgoingEvent): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
     const outgoingEvent = this.serializer.serialize(packet.data);
@@ -202,17 +201,13 @@ export class ClientKafka extends ClientProxy {
   }
 
   protected getReplyTopicPartition(topic: string): string {
-    const topicAssignments = this.consumerAssignments[topic];
-    if (isUndefined(topicAssignments)) {
+    const minimumPartition = this.consumerAssignments[topic];
+    if (isUndefined(minimumPartition)) {
       throw new InvalidKafkaClientTopicException(topic);
     }
 
-    // if the current member isn't listening to
-    // any partitions on the topic then throw an error.
-    if (isUndefined(topicAssignments[0])) {
-      throw new InvalidKafkaClientTopicPartitionException(topic);
-    }
-    return topicAssignments[0].toString();
+    // get the minimum partition
+    return minimumPartition.toString();
   }
 
   protected publish(
@@ -254,7 +249,18 @@ export class ClientKafka extends ClientProxy {
   }
 
   protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
-    this.consumerAssignments = data.payload.memberAssignment;
+    const consumerAssignments: { [key: string]: number } = {};
+
+    // only need to set the minimum
+    Object.keys(data.payload.memberAssignment).forEach(memberId => {
+      const minimumPartition = Math.min(
+        ...data.payload.memberAssignment[memberId],
+      );
+
+      consumerAssignments[memberId] = minimumPartition;
+    });
+
+    this.consumerAssignments = consumerAssignments;
   }
 
   protected initializeSerializer(options: KafkaOptions['options']) {

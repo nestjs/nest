@@ -125,7 +125,7 @@ data: hello
         'Content-Type': 'text/event-stream',
         Connection: 'keep-alive',
         'Cache-Control':
-          'private, no-cache, no-store, must-revalidate, max-age=0',
+          'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
         'Transfer-Encoding': 'identity',
         Pragma: 'no-cache',
         Expire: '0',

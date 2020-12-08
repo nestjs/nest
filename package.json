@@ -66,8 +66,8 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "6.6.3",
     "socket.io": "2.3.0",
-    "uuid": "8.3.1",
-    "tslib": "2.0.3"
+    "tslib": "2.0.3",
+    "uuid": "8.3.1"
   },
   "devDependencies": {
     "@codechecks/client": "0.1.10",
@@ -135,7 +135,7 @@
     "husky": "4.3.5",
     "imports-loader": "1.2.0",
     "json-loader": "0.5.7",
-    "kafkajs": "1.12.0",
+    "kafkajs": "1.14.0",
     "lerna": "2.11.0",
     "light-my-request": "4.3.0",
     "lint-staged": "10.5.3",
@@ -162,7 +162,7 @@
     "ts-morph": "9.1.0",
     "ts-node": "9.1.1",
     "typeorm": "0.2.29",
-    "typescript": "4.0.3",
+    "typescript": "4.1.2",
     "wrk": "1.2.1",
     "ws": "7.4.1"
   },

@@ -111,7 +111,7 @@ export class ClientNats extends ClientProxy {
     const pattern = this.normalizePattern(packet.pattern);
     const serializedPacket = this.serializer.serialize(packet);
 
-    return new Promise((resolve, reject) =>
+    return new Promise<void>((resolve, reject) =>
       this.natsClient.publish(pattern, serializedPacket as any, err =>
         err ? reject(err) : resolve(),
       ),
