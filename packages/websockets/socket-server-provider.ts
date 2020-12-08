@@ -1,4 +1,4 @@
-import { validatePath } from '@nestjs/common/utils/shared.utils';
+import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { isString } from 'util';
 import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
@@ -74,6 +74,6 @@ export class SocketServerProvider {
     if (!isString(namespace)) {
       return namespace;
     }
-    return validatePath(namespace);
+    return addLeadingSlash(namespace);
   }
 }
