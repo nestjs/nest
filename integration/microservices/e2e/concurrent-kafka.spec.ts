@@ -6,7 +6,6 @@ import * as request from 'supertest';
 import * as util from 'util';
 import { KafkaConcurrentController } from '../src/kafka-concurrent/kafka-concurrent.controller';
 import { KafkaConcurrentMessagesController } from '../src/kafka-concurrent/kafka-concurrent.messages.controller';
-import { Test } from '@nestjs/testing';
 
 describe('Kafka concurrent', function () {
   const numbersOfServers = 3;
@@ -154,7 +153,7 @@ describe('Kafka concurrent', function () {
           // return startServer();
 
           // wait in intervals so the consumers start in order
-          return new Promise(resolve => {
+          return new Promise<void>(resolve => {
             setTimeout(async () => {
               await startServer();
 
@@ -200,7 +199,7 @@ describe('Kafka concurrent', function () {
       servers.map(async (server, index) => {
         // shut off and delete the leader
         if (index === 0) {
-          return new Promise(resolve => {
+          return new Promise<void>(resolve => {
             // wait a second before closing so the producers can send the message to the server consumers
             setTimeout(async () => {
               // get the controller
@@ -243,7 +242,7 @@ describe('Kafka concurrent', function () {
       servers.map(async (server, index) => {
         // shut off and delete the leader
         if (index === 0) {
-          return new Promise(resolve => {
+          return new Promise<void>(resolve => {
             // wait a second before closing so the producers can send the message to the server consumers
             setTimeout(async () => {
               // get the controller
