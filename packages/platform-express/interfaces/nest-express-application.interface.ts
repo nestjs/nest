@@ -77,7 +77,7 @@ export interface NestExpressApplication extends INestApplication {
   setViewEngine(engine: string): this;
 
   /**
-   * Sets app-level globals for view templates
+   * Sets app-level globals for view templates.
    *
    * @example
    * app.setLocal('title', 'My Site')
