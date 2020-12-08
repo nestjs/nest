@@ -91,7 +91,7 @@
     "@types/redis": "2.8.28",
     "@types/reflect-metadata": "0.1.0",
     "@types/sinon": "9.0.9",
-    "@types/socket.io": "2.1.11",
+    "@types/socket.io": "2.1.12",
     "@types/ws": "7.4.0",
     "@typescript-eslint/eslint-plugin": "4.9.0",
     "@typescript-eslint/parser": "4.9.0",
