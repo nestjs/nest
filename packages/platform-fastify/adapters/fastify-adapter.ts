@@ -59,12 +59,8 @@ type FastifyHttpsOptions<
 
 export class FastifyAdapter<
   TServer extends RawServerBase = RawServerDefault,
-  TRawRequest extends RawRequestDefaultExpression<
-    TServer
-  > = RawRequestDefaultExpression<TServer>,
-  TRawResponse extends RawReplyDefaultExpression<
-    TServer
-  > = RawReplyDefaultExpression<TServer>
+  TRawRequest extends RawRequestDefaultExpression<TServer> = RawRequestDefaultExpression<TServer>,
+  TRawResponse extends RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>
 > extends AbstractHttpAdapter<
   TServer,
   FastifyRequest<RequestGenericInterface, TServer, TRawRequest>,
@@ -113,9 +109,6 @@ export class FastifyAdapter<
     callback?: () => void,
   ): void;
   public listen(port: string | number, ...args: any[]): Promise<string> {
-    if (typeof port === 'string') {
-      port = parseInt(port);
-    }
     return this.instance.listen(port, ...args);
   }
 

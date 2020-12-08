@@ -34,7 +34,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
         },
       }),
     );
-    await new Promise(resolve =>
+    await new Promise<void>(resolve =>
       ws.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
         resolve();
@@ -57,7 +57,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
         },
       }),
     );
-    await new Promise(resolve =>
+    await new Promise<void>(resolve =>
       ws.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
         resolve();
@@ -77,7 +77,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     ws = new WebSocket('ws://localhost:8080');
     ws2 = new WebSocket('ws://localhost:8090');
 
-    await new Promise(resolve =>
+    await new Promise<void>(resolve =>
       ws.on('open', () => {
         ws.on('message', data => {
           expect(JSON.parse(data).data.test).to.be.eql('test');
@@ -94,7 +94,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
       }),
     );
 
-    await new Promise(resolve => {
+    await new Promise<void>(resolve => {
       ws2.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
         resolve();

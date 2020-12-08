@@ -6,9 +6,9 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import {
+  addLeadingSlash,
   isString,
   isUndefined,
-  validatePath,
 } from '@nestjs/common/utils/shared.utils';
 import * as pathToRegexp from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config';
@@ -87,20 +87,20 @@ export class RouterExplorer {
     );
   }
 
-  public extractRouterPath(
-    metatype: Type<Controller>,
-    prefix?: string,
-  ): string {
+  public extractRouterPath(metatype: Type<Controller>, prefix = ''): string[] {
     let path = Reflect.getMetadata(PATH_METADATA, metatype);
-    if (prefix) path = prefix + this.validateRoutePath(path);
-    return this.validateRoutePath(path);
-  }
 
-  public validateRoutePath(path: string): string {
     if (isUndefined(path)) {
       throw new UnknownRequestMappingException();
     }
-    return validatePath(path);
+
+    if (Array.isArray(path)) {
+      path = path.map(p => prefix + addLeadingSlash(p));
+    } else {
+      path = [prefix + addLeadingSlash(path)];
+    }
+
+    return path.map(p => addLeadingSlash(p));
   }
 
   public scanForPaths(
@@ -134,8 +134,8 @@ export class RouterExplorer {
       targetCallback,
     );
     const path = isString(routePath)
-      ? [this.validateRoutePath(routePath)]
-      : routePath.map(p => this.validateRoutePath(p));
+      ? [addLeadingSlash(routePath)]
+      : routePath.map(p => addLeadingSlash(p));
     return {
       path,
       requestMethod,

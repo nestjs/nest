@@ -24,7 +24,7 @@ export const isPlainObject = (fn: any): fn is object => {
   );
 };
 
-export const validatePath = (path?: string): string =>
+export const addLeadingSlash = (path?: string): string =>
   path ? (path.charAt(0) !== '/' ? '/' + path : path) : '';
 
 export const isFunction = (fn: any): boolean => typeof fn === 'function';

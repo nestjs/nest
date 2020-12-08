@@ -199,27 +199,35 @@ export class ValidationPipe implements PipeTransform<any> {
 
   protected mapChildrenToValidationErrors(
     error: ValidationError,
+    parentPath?: string,
   ): ValidationError[] {
     if (!(error.children && error.children.length)) {
       return [error];
     }
     const validationErrors = [];
+    parentPath = parentPath
+      ? `${parentPath}.${error.property}`
+      : error.property;
     for (const item of error.children) {
       if (item.children && item.children.length) {
-        validationErrors.push(...this.mapChildrenToValidationErrors(item));
+        validationErrors.push(
+          ...this.mapChildrenToValidationErrors(item, parentPath),
+        );
       }
-      validationErrors.push(this.prependConstraintsWithParentProp(error, item));
+      validationErrors.push(
+        this.prependConstraintsWithParentProp(parentPath, item),
+      );
     }
     return validationErrors;
   }
 
   protected prependConstraintsWithParentProp(
-    parentError: ValidationError,
+    parentPath: string,
     error: ValidationError,
   ): ValidationError {
     const constraints = {};
     for (const key in error.constraints) {
-      constraints[key] = `${parentError.property}.${error.constraints[key]}`;
+      constraints[key] = `${parentPath}.${error.constraints[key]}`;
     }
     return {
       ...error,

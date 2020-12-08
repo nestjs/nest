@@ -16,9 +16,9 @@ import {
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
 } from '../constants';
+import { RmqUrl } from '../external/rmq-url.interface';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
-import { RmqUrl } from '../external/rmq-url.interface';
 
 let rqmPackage: any = {};
 
@@ -204,14 +204,14 @@ export class ClientRMQ extends ClientProxy {
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const serializedPacket = this.serializer.serialize(packet);
 
-    return new Promise((resolve, reject) =>
+    return new Promise<void>((resolve, reject) =>
       this.channel.sendToQueue(
         this.queue,
         Buffer.from(JSON.stringify(serializedPacket)),
         {
           persistent: this.persistent,
         },
-        err => (err ? reject(err) : resolve()),
+        (err: unknown) => (err ? reject(err) : resolve()),
       ),
     );
   }
