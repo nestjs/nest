@@ -1,5 +1,3 @@
-import * as pathToRegexp from 'path-to-regexp';
-
 import { HttpServer } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
@@ -12,7 +10,7 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-
+import * as pathToRegexp from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';

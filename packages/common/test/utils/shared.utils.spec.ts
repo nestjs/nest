@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 import {
-  isUndefined,
-  isFunction,
-  isObject,
-  isString,
-  isConstructor,
   addLeadingSlash,
-  isNil,
+  isConstructor,
   isEmpty,
+  isFunction,
+  isNil,
+  isObject,
   isPlainObject,
+  isString,
+  isUndefined,
 } from '../../utils/shared.utils';
 
 function Foo(a) {
