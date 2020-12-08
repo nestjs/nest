@@ -37,6 +37,13 @@ describe('Get URL (Express Application)', () => {
     expect(await app.getUrl()).to.be.eql(`http://127.0.0.1:${port}`);
     await app.close();
   });
+  it('should return 127.0.0.1 even in a callback', () => {
+    const app = testModule.createNestApplication(new ExpressAdapter(express()));
+    return app.listen(port, async () => {
+      expect(await app.getUrl()).to.be.eql(`http://127.0.0.1:${port}`);
+      await app.close();
+    });
+  });
   it('should throw an error for calling getUrl before listen', async () => {
     const app = testModule.createNestApplication(new ExpressAdapter(express()));
     try {
