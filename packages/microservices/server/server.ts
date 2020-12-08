@@ -95,7 +95,9 @@ export abstract class Server {
   ): Promise<any> {
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
-      return this.logger.error(NO_EVENT_HANDLER);
+      return this.logger.error(
+        `${NO_EVENT_HANDLER} Event pattern: ${JSON.stringify(pattern)}.`,
+      );
     }
     const resultOrStream = await handler(packet.data, context);
     if (this.isObservable(resultOrStream)) {
