@@ -348,7 +348,7 @@ export class NestApplication
   }
 
   private listenToPromise(microservice: INestMicroservice) {
-    return new Promise(async resolve => {
+    return new Promise<void>(async resolve => {
       await microservice.listen(resolve);
     });
   }

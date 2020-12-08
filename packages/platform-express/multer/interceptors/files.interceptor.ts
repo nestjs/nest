@@ -41,7 +41,7 @@ export function FilesInterceptor(
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
 
-      await new Promise((resolve, reject) =>
+      await new Promise<void>((resolve, reject) =>
         this.multer.array(fieldName, maxCount)(
           ctx.getRequest(),
           ctx.getResponse(),
