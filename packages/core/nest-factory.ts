@@ -215,10 +215,10 @@ export class NestFactoryStatic {
   }
 
   private applyLogger(options: NestApplicationContextOptions | undefined) {
-    if (!options) {
+    if (!options || options?.logger === true || isNil(options?.logger)) {
       return;
     }
-    !isNil(options.logger) && Logger.overrideLogger(options.logger);
+    Logger.overrideLogger(options.logger);
   }
 
   private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
