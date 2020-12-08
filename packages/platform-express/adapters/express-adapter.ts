@@ -142,6 +142,11 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       .forEach(parserKey => this.use(parserMiddleware[parserKey]));
   }
 
+  public setLocal(key: string, value: any) {
+    this.instance.locals[key] = value;
+    return this;
+  }
+
   public getType(): string {
     return 'express';
   }
