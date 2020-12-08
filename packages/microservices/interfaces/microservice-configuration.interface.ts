@@ -1,18 +1,20 @@
 import { Transport } from '../enums/transport.enum';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import {
-  CompressionTypes,
   ConsumerConfig,
+  ConsumerRunConfig,
+  ConsumerSubscribeTopic,
   KafkaConfig,
   ProducerConfig,
-} from '../external/kafka-options.interface';
+  ProducerRecord,
+} from '../external/kafka.interface';
 import { MqttClientOptions } from '../external/mqtt-options.interface';
 import { ClientOpts } from '../external/redis.interface';
+import { RmqUrl } from '../external/rmq-url.interface';
 import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
-import { RmqUrl } from '../external/rmq-url.interface';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -140,24 +142,13 @@ export interface RmqOptions {
 export interface KafkaOptions {
   transport?: Transport.KAFKA;
   options?: {
+    postfixId?: string;
     client?: KafkaConfig;
     consumer?: ConsumerConfig;
-    run?: {
-      autoCommit?: boolean;
-      autoCommitInterval?: number | null;
-      autoCommitThreshold?: number | null;
-      eachBatchAutoResolve?: boolean;
-      partitionsConsumedConcurrently?: number;
-    };
-    subscribe?: {
-      fromBeginning?: boolean;
-    };
+    run?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;
+    subscribe?: Omit<ConsumerSubscribeTopic, 'topic'>;
     producer?: ProducerConfig;
-    send?: {
-      acks?: number;
-      timeout?: number;
-      compression?: CompressionTypes;
-    };
+    send?: Omit<ProducerRecord, 'topics' | 'messages'>;
     serializer?: Serializer;
     deserializer?: Deserializer;
   };
