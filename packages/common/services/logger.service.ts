@@ -25,7 +25,7 @@ export class Logger implements LoggerService {
     'verbose',
   ];
   private static lastTimestamp?: number;
-  private static instance?: typeof Logger | LoggerService = Logger;
+  protected static instance?: typeof Logger | LoggerService = Logger;
 
   constructor(
     @Optional() protected context?: string,
@@ -114,7 +114,7 @@ export class Logger implements LoggerService {
       );
   }
 
-  private getInstance(): typeof Logger | LoggerService {
+  protected getInstance(): typeof Logger | LoggerService {
     const { instance } = Logger;
     return instance === this ? Logger : instance;
   }
