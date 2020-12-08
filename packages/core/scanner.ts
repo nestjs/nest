@@ -37,14 +37,14 @@ import { iterate } from 'iterare';
 import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
+import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
+import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 import { getClassScope } from './helpers/get-class-scope';
 import { ModulesContainer } from './injector';
 import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { Module } from './injector/module';
 import { MetadataScanner } from './metadata-scanner';
-import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
-import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 
 interface ApplicationProviderWrapper {
   moduleKey: string;
@@ -72,40 +72,53 @@ export class DependenciesScanner {
   }
 
   public async scanForModules(
-    module: ForwardReference | Type<unknown> | DynamicModule,
+    moduleDefinition:
+      | ForwardReference
+      | Type<unknown>
+      | DynamicModule
+      | Promise<DynamicModule>,
     scope: Type<unknown>[] = [],
     ctxRegistry: (ForwardReference | DynamicModule | Type<unknown>)[] = [],
   ): Promise<Module> {
-    const moduleInstance = await this.insertModule(module, scope);
-    ctxRegistry.push(module);
+    const moduleInstance = await this.insertModule(moduleDefinition, scope);
+    moduleDefinition =
+      moduleDefinition instanceof Promise
+        ? await moduleDefinition
+        : moduleDefinition;
+    ctxRegistry.push(moduleDefinition);
 
-    if (this.isForwardReference(module)) {
-      module = (module as ForwardReference).forwardRef();
+    if (this.isForwardReference(moduleDefinition)) {
+      moduleDefinition = (moduleDefinition as ForwardReference).forwardRef();
     }
-    const modules = !this.isDynamicModule(module as Type<any> | DynamicModule)
-      ? this.reflectMetadata(module as Type<any>, MODULE_METADATA.IMPORTS)
+    const modules = !this.isDynamicModule(
+      moduleDefinition as Type<any> | DynamicModule,
+    )
+      ? this.reflectMetadata(
+          moduleDefinition as Type<any>,
+          MODULE_METADATA.IMPORTS,
+        )
       : [
           ...this.reflectMetadata(
-            (module as DynamicModule).module,
+            (moduleDefinition as DynamicModule).module,
             MODULE_METADATA.IMPORTS,
           ),
-          ...((module as DynamicModule).imports || []),
+          ...((moduleDefinition as DynamicModule).imports || []),
         ];
 
     for (const [index, innerModule] of modules.entries()) {
       // In case of a circular dependency (ES module system), JavaScript will resolve the type to `undefined`.
       if (innerModule === undefined) {
-        throw new UndefinedModuleException(module, index, scope);
+        throw new UndefinedModuleException(moduleDefinition, index, scope);
       }
       if (!innerModule) {
-        throw new InvalidModuleException(module, index, scope);
+        throw new InvalidModuleException(moduleDefinition, index, scope);
       }
       if (ctxRegistry.includes(innerModule)) {
         continue;
       }
       await this.scanForModules(
         innerModule,
-        [].concat(scope, module),
+        [].concat(scope, moduleDefinition),
         ctxRegistry,
       );
     }
