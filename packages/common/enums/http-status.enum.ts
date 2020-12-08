@@ -2,6 +2,7 @@ export enum HttpStatus {
   CONTINUE = 100,
   SWITCHING_PROTOCOLS = 101,
   PROCESSING = 102,
+  EARLYHINTS = 103,
   OK = 200,
   CREATED = 201,
   ACCEPTED = 202,

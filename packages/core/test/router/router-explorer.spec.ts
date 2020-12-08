@@ -32,6 +32,21 @@ describe('RouterExplorer', () => {
     public getTestUsingArray() {}
   }
 
+  @Controller(['global', 'global-alias'])
+  class TestRouteAlias {
+    @Get('test')
+    public getTest() {}
+
+    @Post('test')
+    public postTest() {}
+
+    @All('another-test')
+    public anotherTest() {}
+
+    @Get(['foo', 'bar'])
+    public getTestUsingArray() {}
+  }
+
   let routerBuilder: RouterExplorer;
   let injector: Injector;
   let exceptionsFilter: RouterExceptionFilters;
@@ -70,6 +85,22 @@ describe('RouterExplorer', () => {
       expect(paths[2].requestMethod).to.eql(RequestMethod.ALL);
       expect(paths[3].requestMethod).to.eql(RequestMethod.GET);
     });
+
+    it('should method return expected list of route paths alias', () => {
+      const paths = routerBuilder.scanForPaths(new TestRouteAlias());
+
+      expect(paths).to.have.length(4);
+
+      expect(paths[0].path).to.eql(['/test']);
+      expect(paths[1].path).to.eql(['/test']);
+      expect(paths[2].path).to.eql(['/another-test']);
+      expect(paths[3].path).to.eql(['/foo', '/bar']);
+
+      expect(paths[0].requestMethod).to.eql(RequestMethod.GET);
+      expect(paths[1].requestMethod).to.eql(RequestMethod.POST);
+      expect(paths[2].requestMethod).to.eql(RequestMethod.ALL);
+      expect(paths[3].requestMethod).to.eql(RequestMethod.GET);
+    });
   });
 
   describe('exploreMethodMetadata', () => {
@@ -87,12 +118,40 @@ describe('RouterExplorer', () => {
       expect(route.requestMethod).to.eql(RequestMethod.GET);
     });
 
+    it('should method return expected object which represent single route with alias', () => {
+      const instance = new TestRouteAlias();
+      const instanceProto = Object.getPrototypeOf(instance);
+
+      const route = routerBuilder.exploreMethodMetadata(
+        new TestRouteAlias(),
+        instanceProto,
+        'getTest',
+      );
+
+      expect(route.path).to.eql(['/test']);
+      expect(route.requestMethod).to.eql(RequestMethod.GET);
+    });
+
     it('should method return expected object which represent multiple routes', () => {
       const instance = new TestRoute();
       const instanceProto = Object.getPrototypeOf(instance);
 
       const route = routerBuilder.exploreMethodMetadata(
         new TestRoute(),
+        instanceProto,
+        'getTestUsingArray',
+      );
+
+      expect(route.path).to.eql(['/foo', '/bar']);
+      expect(route.requestMethod).to.eql(RequestMethod.GET);
+    });
+
+    it('should method return expected object which represent multiple routes with alias', () => {
+      const instance = new TestRouteAlias();
+      const instanceProto = Object.getPrototypeOf(instance);
+
+      const route = routerBuilder.exploreMethodMetadata(
+        new TestRouteAlias(),
         instanceProto,
         'getTestUsingArray',
       );
@@ -130,14 +189,20 @@ describe('RouterExplorer', () => {
 
   describe('extractRouterPath', () => {
     it('should return expected path', () => {
-      expect(routerBuilder.extractRouterPath(TestRoute)).to.be.eql('/global');
-      expect(routerBuilder.extractRouterPath(TestRoute, '/module')).to.be.eql(
+      expect(routerBuilder.extractRouterPath(TestRoute)).to.be.eql(['/global']);
+      expect(routerBuilder.extractRouterPath(TestRoute, '/module')).to.be.eql([
         '/module/global',
-      );
+      ]);
     });
 
-    it('should throw it a there is a bad path expected path', () => {
-      expect(() => routerBuilder.validateRoutePath(undefined)).to.throw();
+    it('should return expected path with alias', () => {
+      expect(routerBuilder.extractRouterPath(TestRouteAlias)).to.be.eql([
+        '/global',
+        '/global-alias',
+      ]);
+      expect(
+        routerBuilder.extractRouterPath(TestRouteAlias, '/module'),
+      ).to.be.eql(['/module/global', '/module/global-alias']);
     });
   });
 

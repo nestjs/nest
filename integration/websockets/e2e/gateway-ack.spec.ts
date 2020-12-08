@@ -20,7 +20,7 @@ describe('WebSocketGateway (ack)', () => {
     await app.listenAsync(3000);
 
     ws = io.connect('http://localhost:8080');
-    await new Promise(resolve =>
+    await new Promise<void>(resolve =>
       ws.emit('push', { test: 'test' }, data => {
         expect(data).to.be.eql('pong');
         resolve();
@@ -33,7 +33,7 @@ describe('WebSocketGateway (ack)', () => {
     await app.listenAsync(3000);
 
     ws = io.connect('http://localhost:8080');
-    await new Promise(resolve =>
+    await new Promise<void>(resolve =>
       ws.emit('push', data => {
         expect(data).to.be.eql('pong');
         resolve();
