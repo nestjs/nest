@@ -2,10 +2,11 @@ import { RequestMethod } from '@nestjs/common';
 import { PATH_METADATA } from '@nestjs/common/constants';
 import { RouteInfo, Type } from '@nestjs/common/interfaces';
 import {
+  addLeadingSlash,
   isString,
   isUndefined,
-  validatePath,
 } from '@nestjs/common/utils/shared.utils';
+
 import { NestContainer } from '../injector/container';
 import { MetadataScanner } from '../metadata-scanner';
 import { RouterExplorer } from '../router/router-explorer';
@@ -64,11 +65,11 @@ export class RoutesMapper {
   }
 
   private validateGlobalPath(path: string): string {
-    const prefix = validatePath(path);
+    const prefix = addLeadingSlash(path);
     return prefix === '/' ? '' : prefix;
   }
 
   private validateRoutePath(path: string): string {
-    return validatePath(path);
+    return addLeadingSlash(path);
   }
 }

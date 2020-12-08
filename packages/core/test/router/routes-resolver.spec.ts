@@ -88,7 +88,7 @@ describe('RoutesResolver', () => {
 
       sinon
         .stub((routesResolver as any).routerExplorer, 'extractRouterPath')
-        .callsFake(() => '');
+        .callsFake(() => ['']);
       routesResolver.registerRouters(routes, moduleName, '', appInstance);
 
       expect(exploreSpy.called).to.be.true;
@@ -114,7 +114,7 @@ describe('RoutesResolver', () => {
 
       sinon
         .stub((routesResolver as any).routerExplorer, 'extractRouterPath')
-        .callsFake(() => '');
+        .callsFake(() => ['']);
       routesResolver.registerRouters(routes, moduleName, '', appInstance);
 
       expect(exploreSpy.called).to.be.true;

@@ -60,24 +60,27 @@ export class RoutesResolver implements Resolver {
       const { metatype } = instanceWrapper;
 
       const host = this.getHostMetadata(metatype);
-      const path = this.routerExplorer.extractRouterPath(
+      const paths = this.routerExplorer.extractRouterPath(
         metatype as Type<any>,
         basePath,
       );
       const controllerName = metatype.name;
-      this.logger.log(
-        CONTROLLER_MAPPING_MESSAGE(
-          controllerName,
-          this.routerExplorer.stripEndSlash(path),
-        ),
-      );
-      this.routerExplorer.explore(
-        instanceWrapper,
-        moduleName,
-        applicationRef,
-        path,
-        host,
-      );
+
+      paths.forEach(path => {
+        this.logger.log(
+          CONTROLLER_MAPPING_MESSAGE(
+            controllerName,
+            this.routerExplorer.stripEndSlash(path),
+          ),
+        );
+        this.routerExplorer.explore(
+          instanceWrapper,
+          moduleName,
+          applicationRef,
+          path,
+          host,
+        );
+      });
     });
   }
 
