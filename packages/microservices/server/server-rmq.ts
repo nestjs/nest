@@ -18,13 +18,13 @@ import {
 } from '../constants';
 import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
+import { AmqplibQueueOptions, RmqUrl } from '../external/rmq-url.interface';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
 import {
   IncomingRequest,
   OutgoingResponse,
 } from '../interfaces/packet.interface';
 import { Server } from './server';
-import { AmqplibQueueOptions, RmqUrl } from '../external/rmq-url.interface';
 
 let rqmPackage: any = {};
 
@@ -93,7 +93,10 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   public createClient<T = any>(): T {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    const options: RmqOptions["options"]["socketOptions"] = Object.assign({}, socketOptions);
+    const options: RmqOptions['options']['socketOptions'] = Object.assign(
+      {},
+      socketOptions,
+    );
     options.connectionOptions = socketOptions;
     return rqmPackage.connect(this.urls, options);
   }
