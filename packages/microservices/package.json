@@ -26,8 +26,47 @@
     "@nestjs/core": "7.5.5"
   },
   "peerDependencies": {
+    "reflect-metadata": "^0.1.12",
     "@nestjs/common": "^7.0.0",
     "@nestjs/core": "^7.0.0",
-    "rxjs": "^6.0.0"
+    "@nestjs/websockets": "^7.0.0",
+    "rxjs": "^6.0.0",
+    "cache-manager": "*",
+    "grpc": "*",
+    "kafkajs": "*",
+    "mqtt": "*",
+    "nats": "*",
+    "redis": "*",
+    "amqplib": "*",
+    "amqp-connection-manager": "*"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/websockets": {
+      "optional": true
+    },
+    "cache-manager": {
+      "optional": true
+    },
+    "grpc": {
+      "optional": true
+    },
+    "kafkajs": {
+      "optional": true
+    },
+    "mqtt": {
+      "optional": true
+    },
+    "nats": {
+      "optional": true
+    },
+    "redis": {
+      "optional": true
+    },
+    "amqplib": {
+      "optional": true
+    },
+    "amqp-connection-manager": {
+      "optional": true
+    }
   }
 }
