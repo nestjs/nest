@@ -85,7 +85,7 @@
     "@types/cors": "2.8.8",
     "@types/express": "4.17.9",
     "@types/gulp": "4.0.7",
-    "@types/mocha": "8.0.4",
+    "@types/mocha": "8.2.0",
     "@types/mongoose": "5.10.2",
     "@types/node": "14.14.11",
     "@types/redis": "2.8.28",
