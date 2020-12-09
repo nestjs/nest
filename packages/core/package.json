@@ -39,8 +39,22 @@
     "@nestjs/common": "7.5.5"
   },
   "peerDependencies": {
+    "@nestjs/websockets": "^7.0.0",
+    "@nestjs/microservices": "^7.0.0",
+    "@nestjs/platform-express": "^7.0.0",
     "@nestjs/common": "^7.0.0",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/websockets": {
+      "optional": true
+    },
+    "@nestjs/microservices": {
+      "optional": true
+    },
+    "@nestjs/platform-express": {
+      "optional": true
+    }
   }
 }
