@@ -18,7 +18,7 @@ import {
 } from '../constants';
 import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
-import { AmqplibQueueOptions, RmqUrl } from '../external/rmq-url.interface';
+import { RmqUrl } from '../external/rmq-url.interface';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
 import {
   IncomingRequest,
@@ -36,7 +36,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   protected readonly urls: string[] | RmqUrl[];
   protected readonly queue: string;
   protected readonly prefetchCount: number;
-  protected readonly queueOptions: AmqplibQueueOptions;
+  protected readonly queueOptions: any;
   protected readonly isGlobalPrefetchCount: boolean;
 
   constructor(protected readonly options: RmqOptions['options']) {
@@ -93,12 +93,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   public createClient<T = any>(): T {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    const options: RmqOptions['options']['socketOptions'] = Object.assign(
-      {},
-      socketOptions,
-    );
-    options.connectionOptions = socketOptions;
-    return rqmPackage.connect(this.urls, options);
+    return rqmPackage.connect(this.urls, { connectionOptions: socketOptions });
   }
 
   public async setupChannel(channel: any, callback: Function) {
