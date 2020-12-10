@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/microservices",
-  "version": "7.5.5",
+  "version": "7.6.0",
   "description": "Nest - modern, fast, powerful node.js web framework (@microservices)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -22,23 +22,23 @@
     "tslib": "2.0.3"
   },
   "devDependencies": {
-    "@nestjs/common": "7.5.5",
-    "@nestjs/core": "7.5.5"
+    "@nestjs/common": "7.6.0",
+    "@nestjs/core": "7.6.0"
   },
   "peerDependencies": {
-    "reflect-metadata": "^0.1.12",
     "@nestjs/common": "^7.0.0",
     "@nestjs/core": "^7.0.0",
     "@nestjs/websockets": "^7.0.0",
-    "rxjs": "^6.0.0",
+    "amqp-connection-manager": "*",
+    "amqplib": "*",
     "cache-manager": "*",
     "grpc": "*",
     "kafkajs": "*",
     "mqtt": "*",
     "nats": "*",
     "redis": "*",
-    "amqplib": "*",
-    "amqp-connection-manager": "*"
+    "reflect-metadata": "^0.1.12",
+    "rxjs": "^6.0.0"
   },
   "peerDependenciesMeta": {
     "@nestjs/websockets": {
