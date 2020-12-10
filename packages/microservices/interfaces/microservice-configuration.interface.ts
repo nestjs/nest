@@ -129,8 +129,8 @@ export interface RmqOptions {
     queue?: string;
     prefetchCount?: number;
     isGlobalPrefetchCount?: boolean;
-    queueOptions?: any;
-    socketOptions?: any;
+    queueOptions?: any; // AmqplibQueueOptions;
+    socketOptions?: any; // AmqpConnectionManagerSocketOptions;
     noAck?: boolean;
     serializer?: Serializer;
     deserializer?: Deserializer;

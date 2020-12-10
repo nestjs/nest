@@ -18,13 +18,13 @@ import {
 } from '../constants';
 import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
+import { RmqUrl } from '../external/rmq-url.interface';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
 import {
   IncomingRequest,
   OutgoingResponse,
 } from '../interfaces/packet.interface';
 import { Server } from './server';
-import { RmqUrl } from '../external/rmq-url.interface';
 
 let rqmPackage: any = {};
 
