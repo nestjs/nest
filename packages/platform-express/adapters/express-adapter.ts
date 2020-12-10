@@ -1,4 +1,4 @@
-import { RequestMethod } from '@nestjs/common';
+import { RequestMethod, StreamableFile } from '@nestjs/common';
 import {
   CorsOptions,
   CorsOptionsDelegate,
@@ -29,16 +29,9 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     if (isNil(body)) {
       return response.send();
     }
-    if (body.pipe && typeof body.pipe === 'function') {
+    if (body instanceof StreamableFile) {
       response.setHeader('Content-Type', 'application/octet-stream');
-      return body.pipe(response);
-    }
-    if (Buffer.isBuffer(body)) {
-      response.setHeader('Content-Type', 'application/octet-stream');
-      const readable = new Readable();
-      readable.push(body);
-      readable.push(null);
-      return readable.pipe(response);
+      return body.getStream().pipe(response);
     }
     return isObject(body) ? response.json(body) : response.send(String(body));
   }

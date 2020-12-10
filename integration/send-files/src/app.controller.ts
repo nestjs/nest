@@ -1,5 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
-import { Readable } from 'stream';
+import { Controller, Get, StreamableFile } from '@nestjs/common';
 import { AppService } from './app.service';
 import { NonFile } from './non-file';
 
@@ -8,12 +7,12 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get('file/stream')
-  getFile(): Readable {
+  getFile(): StreamableFile {
     return this.appService.getReadStream();
   }
 
   @Get('file/buffer')
-  getBuffer(): Buffer {
+  getBuffer(): StreamableFile {
     return this.appService.getBuffer();
   }
 
