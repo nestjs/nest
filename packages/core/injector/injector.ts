@@ -229,7 +229,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     moduleRef: Module,
     inject: InjectorDependency[],
-    callback: (args: unknown[]) => void,
+    callback: (args: unknown[]) => void | Promise<void>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
@@ -274,7 +274,7 @@ export class Injector {
         if (!instanceHost.isResolved && !paramWrapper.forwardRef) {
           isResolved = false;
         }
-        return instanceHost && instanceHost.instance;
+        return instanceHost?.instance;
       } catch (err) {
         const isOptional = optionalDependenciesIds.includes(index);
         if (!isOptional) {
@@ -372,7 +372,7 @@ export class Injector {
 
   public async resolveComponentHost<T>(
     moduleRef: Module,
-    instanceWrapper: InstanceWrapper<T>,
+    instanceWrapper: InstanceWrapper<T | Promise<T>>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
   ): Promise<InstanceWrapper> {
