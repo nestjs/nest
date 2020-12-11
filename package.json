@@ -135,7 +135,7 @@
     "husky": "4.3.5",
     "imports-loader": "1.2.0",
     "json-loader": "0.5.7",
-    "kafkajs": "1.14.0",
+    "kafkajs": "1.15.0",
     "lerna": "2.11.0",
     "light-my-request": "4.3.0",
     "lint-staged": "10.5.3",
