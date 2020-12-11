@@ -168,6 +168,9 @@ export class MiddlewareModule {
       if (isUndefined(instanceWrapper)) {
         throw new RuntimeException();
       }
+      if (instanceWrapper.isTransient) {
+        return;
+      }
       await this.bindHandler(
         instanceWrapper,
         applicationRef,
