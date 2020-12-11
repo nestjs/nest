@@ -567,7 +567,7 @@ describe('ClientKafka', () => {
         'getReplyTopicPartition',
       );
       routingMapSetSpy = sinon.spy((client as any).routingMap, 'set');
-      sendSpy = sinon.spy();
+      sendSpy = sinon.spy(() => Promise.resolve());
 
       // stub
       assignPacketIdStub = sinon
