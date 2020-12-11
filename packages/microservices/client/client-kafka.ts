@@ -236,7 +236,7 @@ export class ClientKafka extends ClientProxy {
         },
         this.options.send || {},
       );
-      this.producer.send(message);
+      this.producer.send(message).catch(err => callback({ err }));
 
       return () => this.routingMap.delete(packet.id);
     } catch (err) {

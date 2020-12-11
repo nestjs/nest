@@ -11,15 +11,15 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "7.5.5",
-    "@nestjs/core": "7.5.5",
-    "@nestjs/platform-express": "7.5.5",
+    "@nestjs/common": "7.6.1",
+    "@nestjs/core": "7.6.1",
+    "@nestjs/platform-express": "7.6.1",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.6.3",
     "typescript": "4.1.2"
   },
   "devDependencies": {
-    "@nestjs/cli": "7.5.3",
+    "@nestjs/cli": "7.5.4",
     "@nestjs/schematics": "7.2.5",
     "@types/node": "14.14.11",
     "@typescript-eslint/eslint-plugin": "4.9.1",
@@ -28,7 +28,7 @@
     "eslint-config-prettier": "7.0.0",
     "eslint-plugin-import": "2.22.1",
     "start-server-webpack-plugin": "2.2.5",
-    "ts-loader": "8.0.11",
+    "ts-loader": "8.0.12",
     "ts-node": "9.1.1",
     "webpack": "5.10.0",
     "webpack-cli": "4.2.0",
