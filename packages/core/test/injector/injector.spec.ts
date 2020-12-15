@@ -189,28 +189,28 @@ describe('Injector', () => {
   });
 
   describe('loadMiddleware', () => {
-    let resolveConstructorParams: sinon.SinonSpy;
+    let loadInstanceSpy: sinon.SinonSpy;
 
     beforeEach(() => {
-      resolveConstructorParams = sinon.spy();
-      injector.resolveConstructorParams = resolveConstructorParams;
+      loadInstanceSpy = sinon.spy();
+      injector.loadInstance = loadInstanceSpy;
     });
 
-    it('should call "resolveConstructorParams" when instance is not resolved', () => {
+    it('should call "loadInstance" when instance is not resolved', () => {
       const collection = {
         get: (...args) => ({}),
         set: (...args) => {},
       };
 
       injector.loadMiddleware(
-        { metatype: { name: '' } } as any,
+        { metatype: { name: '', prototype: {} } } as any,
         collection as any,
         null,
       );
-      expect(resolveConstructorParams.called).to.be.true;
+      expect(loadInstanceSpy.called).to.be.true;
     });
 
-    it('should not call "resolveConstructorParams" when instance is not resolved', () => {
+    it('should not call "loadInstanceSpy" when instance is not resolved', () => {
       const collection = {
         get: (...args) => ({
           instance: {},
@@ -223,7 +223,7 @@ describe('Injector', () => {
         collection as any,
         null,
       );
-      expect(resolveConstructorParams.called).to.be.false;
+      expect(loadInstanceSpy.called).to.be.false;
     });
   });
 
