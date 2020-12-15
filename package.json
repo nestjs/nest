@@ -162,7 +162,7 @@
     "ts-morph": "9.1.0",
     "ts-node": "9.1.1",
     "typeorm": "0.2.29",
-    "typescript": "4.1.2",
+    "typescript": "4.1.3",
     "wrk": "1.2.1",
     "ws": "7.4.1"
   },
