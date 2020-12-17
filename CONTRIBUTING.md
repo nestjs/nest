@@ -159,7 +159,7 @@ from the main (upstream) repository:
 
 ## <a name="development"></a> Development Setup
 
-You will need Node.js version 8.9.0+.
+You will need Node.js version 8.9.0+ but not v14 as currently this breaks one of the dependencies (fsevents v1).
 
 1. After cloning the repo, run:
 
