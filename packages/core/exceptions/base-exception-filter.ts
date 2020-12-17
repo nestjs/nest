@@ -9,7 +9,6 @@ import {
   Optional,
 } from '@nestjs/common';
 import { isObject } from '@nestjs/common/utils/shared.utils';
-import { AbstractHttpAdapter } from '../adapters';
 import { MESSAGES } from '../constants';
 import { HttpAdapterHost } from '../helpers';
 
@@ -27,30 +26,39 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
       this.applicationRef ||
       (this.httpAdapterHost && this.httpAdapterHost.httpAdapter);
 
-    if (!(exception instanceof HttpException)) {
-      return this.handleUnknownError(exception, host, applicationRef);
+    const { statusCode, message } = this.buildResponse(exception);
+    if (host.getType() == 'http') {
+      const ctx = host.switchToHttp();
+      applicationRef.reply(ctx.getResponse(), message, statusCode);
+    } else {
+      // Let the RPC / GraphQL framework handle building the response.
+      throw exception;
     }
-    const res = exception.getResponse();
-    const message = isObject(res)
-      ? res
-      : {
-          statusCode: exception.getStatus(),
-          message: res,
-        };
-
-    applicationRef.reply(host.getArgByIndex(1), message, exception.getStatus());
   }
 
-  public handleUnknownError(
-    exception: T,
-    host: ArgumentsHost,
-    applicationRef: AbstractHttpAdapter | HttpServer,
-  ) {
-    const body = {
-      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
-    };
-    applicationRef.reply(host.getArgByIndex(1), body, body.statusCode);
+  public buildResponse(exception: T) {
+    if (exception instanceof HttpException) {
+      const res = exception.getResponse();
+      const message = isObject(res)
+        ? res
+        : {
+            statusCode: exception.getStatus(),
+            message: res,
+          };
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: message,
+      };
+    } else {
+      this.logUnknownError(exception);
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
+      };
+    }
+  }
+
+  public logUnknownError(exception: T) {
     if (this.isExceptionObject(exception)) {
       return BaseExceptionFilter.logger.error(
         exception.message,
