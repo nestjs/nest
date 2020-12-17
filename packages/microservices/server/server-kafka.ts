@@ -19,6 +19,7 @@ import {
   KafkaMessage,
   Message,
   Producer,
+  RecordMetadata,
 } from '../external/kafka.interface';
 import { KafkaLogger, KafkaParser } from '../helpers';
 import {
@@ -129,7 +130,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     replyTopic: string,
     replyPartition: string,
     correlationId: string,
-  ): (data: any) => any {
+  ): (data: any) => Promise<RecordMetadata[]> {
     return (data: any) =>
       this.sendMessage(data, replyTopic, replyPartition, correlationId);
   }
@@ -183,7 +184,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     replyTopic: string,
     replyPartition: string,
     correlationId: string,
-  ): void {
+  ): Promise<RecordMetadata[]> {
     const outgoingMessage = this.serializer.serialize(message.response);
     this.assignReplyPartition(replyPartition, outgoingMessage);
     this.assignCorrelationIdHeader(correlationId, outgoingMessage);
@@ -197,7 +198,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       },
       this.options.send || {},
     );
-    this.producer.send(replyMessage);
+    return this.producer.send(replyMessage);
   }
 
   public assignIsDisposedHeader(
