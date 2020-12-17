@@ -1,7 +1,7 @@
 import { WsParamtype } from '../enums/ws-paramtype.enum';
 
 export class WsParamsFactory {
-  public exchangeKeyForValue(type: number, args: unknown[]) {
+  public exchangeKeyForValue(type: number, data: string, args: unknown[]) {
     if (!args) {
       return null;
     }
@@ -9,7 +9,7 @@ export class WsParamsFactory {
       case WsParamtype.SOCKET:
         return args[0];
       case WsParamtype.PAYLOAD:
-        return args[1];
+        return data ? args[1][data] : args[1];
       default:
         return null;
     }
