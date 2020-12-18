@@ -152,7 +152,7 @@ export class Logger implements LoggerService {
     const pidMessage = color(`[Nest] ${process.pid}   - `);
     const contextMessage = context ? yellow(`[${context}] `) : '';
     const timestampDiff = this.updateAndGetTimestampDiff(isTimeDiffEnabled);
-    const instance = this.instance as typeof Logger;
+    const instance = (this.instance as typeof Logger) ?? Logger;
     process.stdout.write(
       `${pidMessage}${instance.getTimestamp()}   ${contextMessage}${output}${timestampDiff}\n`,
     );
