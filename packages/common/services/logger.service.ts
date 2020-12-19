@@ -74,7 +74,7 @@ export class Logger implements LoggerService {
   }
 
   static log(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(message, clc.green, context, isTimeDiffEnabled);
+    this.printMessage(message, clc.green, context, isTimeDiffEnabled, 'stdout');
   }
 
   static error(
@@ -83,20 +83,38 @@ export class Logger implements LoggerService {
     context = '',
     isTimeDiffEnabled = true,
   ) {
-    this.printMessage(message, clc.red, context, isTimeDiffEnabled);
+    this.printMessage(message, clc.red, context, isTimeDiffEnabled, 'stderr');
     this.printStackTrace(trace);
   }
 
   static warn(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(message, clc.yellow, context, isTimeDiffEnabled);
+    this.printMessage(
+      message,
+      clc.yellow,
+      context,
+      isTimeDiffEnabled,
+      'stdout',
+    );
   }
 
   static debug(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(message, clc.magentaBright, context, isTimeDiffEnabled);
+    this.printMessage(
+      message,
+      clc.magentaBright,
+      context,
+      isTimeDiffEnabled,
+      'stdout',
+    );
   }
 
   static verbose(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(message, clc.cyanBright, context, isTimeDiffEnabled);
+    this.printMessage(
+      message,
+      clc.cyanBright,
+      context,
+      isTimeDiffEnabled,
+      'stdout',
+    );
   }
 
   static getTimestamp() {
@@ -144,6 +162,7 @@ export class Logger implements LoggerService {
     color: (message: string) => string,
     context = '',
     isTimeDiffEnabled?: boolean,
+    writeStreamType?: 'stdout' | 'stderr',
   ) {
     const output = isObject(message)
       ? `${color('Object:')}\n${JSON.stringify(message, null, 2)}\n`
@@ -152,10 +171,10 @@ export class Logger implements LoggerService {
     const pidMessage = color(`[Nest] ${process.pid}   - `);
     const contextMessage = context ? yellow(`[${context}] `) : '';
     const timestampDiff = this.updateAndGetTimestampDiff(isTimeDiffEnabled);
-    const instance = this.instance as typeof Logger;
-    process.stdout.write(
-      `${pidMessage}${instance.getTimestamp()}   ${contextMessage}${output}${timestampDiff}\n`,
-    );
+    const instance = (this.instance as typeof Logger) ?? Logger;
+    const computedMessage = `${pidMessage}${instance.getTimestamp()}   ${contextMessage}${output}${timestampDiff}\n`;
+
+    process[writeStreamType ?? 'stdout'].write(computedMessage);
   }
 
   private static updateAndGetTimestampDiff(
@@ -173,6 +192,6 @@ export class Logger implements LoggerService {
     if (!trace) {
       return;
     }
-    process.stdout.write(`${trace}\n`);
+    process.stderr.write(`${trace}\n`);
   }
 }
