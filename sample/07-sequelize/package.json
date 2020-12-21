@@ -19,9 +19,9 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "7.6.3",
-    "@nestjs/core": "7.6.3",
-    "@nestjs/platform-express": "7.6.3",
+    "@nestjs/common": "7.6.4",
+    "@nestjs/core": "7.6.4",
+    "@nestjs/platform-express": "7.6.4",
     "@nestjs/sequelize": "0.1.1",
     "mysql2": "2.2.5",
     "reflect-metadata": "0.1.13",
@@ -35,7 +35,7 @@
     "@types/sequelize": "4.28.9",
     "@nestjs/cli": "7.5.4",
     "@nestjs/schematics": "7.2.5",
-    "@nestjs/testing": "7.6.3",
+    "@nestjs/testing": "7.6.4",
     "@types/express": "4.17.9",
     "@types/node": "14.14.14",
     "@types/supertest": "2.0.10",
