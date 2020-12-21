@@ -74,7 +74,7 @@ export class Logger implements LoggerService {
   }
 
   static log(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(message, clc.green, context, isTimeDiffEnabled, 'stdout');
+    this.printMessage(message, clc.green, context, isTimeDiffEnabled);
   }
 
   static error(
@@ -88,33 +88,15 @@ export class Logger implements LoggerService {
   }
 
   static warn(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(
-      message,
-      clc.yellow,
-      context,
-      isTimeDiffEnabled,
-      'stdout',
-    );
+    this.printMessage(message, clc.yellow, context, isTimeDiffEnabled);
   }
 
   static debug(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(
-      message,
-      clc.magentaBright,
-      context,
-      isTimeDiffEnabled,
-      'stdout',
-    );
+    this.printMessage(message, clc.magentaBright, context, isTimeDiffEnabled);
   }
 
   static verbose(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(
-      message,
-      clc.cyanBright,
-      context,
-      isTimeDiffEnabled,
-      'stdout',
-    );
+    this.printMessage(message, clc.cyanBright, context, isTimeDiffEnabled);
   }
 
   static getTimestamp() {
