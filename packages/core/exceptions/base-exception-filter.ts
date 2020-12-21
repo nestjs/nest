@@ -46,10 +46,15 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     host: ArgumentsHost,
     applicationRef: AbstractHttpAdapter | HttpServer,
   ) {
-    const body = {
-      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
-    };
+    const body = this.isHttpError(exception)
+      ? {
+          statusCode: exception.statusCode,
+          message: exception.message,
+        }
+      : {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
+        };
     applicationRef.reply(host.getArgByIndex(1), body, body.statusCode);
     if (this.isExceptionObject(exception)) {
       return BaseExceptionFilter.logger.error(
@@ -62,5 +67,13 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
 
   public isExceptionObject(err: any): err is Error {
     return isObject(err) && !!(err as Error).message;
+  }
+
+  /**
+   * This method checks if thrown error comes from the common "http-errors" library
+   * @param err error object
+   */
+  public isHttpError(err: any): err is { statusCode: number; message: string } {
+    return err?.statusCode && err?.message;
   }
 }
