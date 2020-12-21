@@ -148,7 +148,7 @@ export interface KafkaOptions {
     run?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;
     subscribe?: Omit<ConsumerSubscribeTopic, 'topic'>;
     producer?: ProducerConfig;
-    send?: Omit<ProducerRecord, 'topics' | 'messages'>;
+    send?: Omit<ProducerRecord, 'topic' | 'messages'>;
     serializer?: Serializer;
     deserializer?: Deserializer;
   };
