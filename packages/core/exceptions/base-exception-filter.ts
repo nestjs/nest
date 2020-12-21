@@ -70,7 +70,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
   }
 
   /**
-   * This method checks if thrown error comes from the common "http-errors" library
+   * Checks if the thrown error comes from the "http-errors" library.
    * @param err error object
    */
   public isHttpError(err: any): err is { statusCode: number; message: string } {
