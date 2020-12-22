@@ -71,7 +71,7 @@ export class ClassSerializerInterceptor implements NestInterceptor {
       : plainOrClass;
   }
 
-  private getContextOptions(
+  protected getContextOptions(
     context: ExecutionContext,
   ): ClassTransformOptions | undefined {
     return (
