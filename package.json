@@ -97,7 +97,7 @@
     "@typescript-eslint/parser": "4.11.0",
     "amqp-connection-manager": "3.2.1",
     "amqplib": "0.6.0",
-    "apollo-server-express": "2.19.0",
+    "apollo-server-express": "2.19.1",
     "artillery": "1.6.1",
     "awesome-typescript-loader": "5.2.1",
     "body-parser": "1.19.0",
