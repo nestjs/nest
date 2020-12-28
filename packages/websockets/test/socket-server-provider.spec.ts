@@ -1,9 +1,9 @@
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { AbstractWsAdapter } from '../adapters/ws-adapter';
 import { SocketServerProvider } from '../socket-server-provider';
 import { SocketsContainer } from '../sockets-container';
-import { AbstractWsAdapter } from '../adapters/ws-adapter';
 
 class NoopAdapter extends AbstractWsAdapter {
   public create(port: number, options?: any) {}
@@ -33,7 +33,7 @@ describe('SocketServerProvider', () => {
     afterEach(() => {
       mockContainer.restore();
     });
-    it(`should returns stored server`, () => {
+    it(`should return stored server`, () => {
       const server = { test: 'test' };
       mockContainer.expects('getSocketEventsHostByPort').returns(server);
 

@@ -51,7 +51,7 @@ describe('GuardsContextCreator', () => {
   });
   describe('createConcreteContext', () => {
     describe('when `moduleContext` is nil', () => {
-      it('should returns empty array', () => {
+      it('should return empty array', () => {
         const result = guardsContextCreator.createConcreteContext(guards);
         expect(result).to.be.empty;
       });

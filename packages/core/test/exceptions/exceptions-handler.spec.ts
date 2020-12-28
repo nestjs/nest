@@ -107,7 +107,7 @@ describe('ExceptionsHandler', () => {
   });
   describe('invokeCustomFilters', () => {
     describe('when filters array is empty', () => {
-      it('should returns false', () => {
+      it('should return false', () => {
         expect(handler.invokeCustomFilters(null, null)).to.be.false;
       });
     });
@@ -134,7 +134,7 @@ describe('ExceptionsHandler', () => {
           handler.invokeCustomFilters(exception, res as any);
           expect(funcSpy.calledWith(exception, res)).to.be.true;
         });
-        it('should returns true', () => {
+        it('should return true', () => {
           expect(handler.invokeCustomFilters(new TestException(), null)).to.be
             .true;
         });
@@ -144,7 +144,7 @@ describe('ExceptionsHandler', () => {
           handler.invokeCustomFilters(new TestException(), null);
           expect(funcSpy.notCalled).to.be.true;
         });
-        it('should returns false', () => {
+        it('should return false', () => {
           expect(handler.invokeCustomFilters(new TestException(), null)).to.be
             .false;
         });

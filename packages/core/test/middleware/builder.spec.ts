@@ -10,9 +10,11 @@ describe('MiddlewareBuilder', () => {
   let builder: MiddlewareBuilder;
 
   beforeEach(() => {
+    const container = new NestContainer();
     builder = new MiddlewareBuilder(
-      new RoutesMapper(new NestContainer()),
+      new RoutesMapper(container),
       new NoopHttpAdapter({}),
+      container,
     );
   });
   describe('apply', () => {
