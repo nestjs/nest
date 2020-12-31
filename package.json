@@ -93,7 +93,7 @@
     "@types/sinon": "9.0.10",
     "@types/socket.io": "2.1.12",
     "@types/ws": "7.4.0",
-    "@typescript-eslint/eslint-plugin": "4.11.0",
+    "@typescript-eslint/eslint-plugin": "4.11.1",
     "@typescript-eslint/parser": "4.11.1",
     "amqp-connection-manager": "3.2.1",
     "amqplib": "0.6.0",
@@ -164,7 +164,7 @@
     "typeorm": "0.2.29",
     "typescript": "4.1.3",
     "wrk": "1.2.1",
-    "ws": "7.4.1"
+    "ws": "7.4.2"
   },
   "engines": {
     "node": ">= 10.13.0"
