@@ -136,6 +136,7 @@ export interface NatsOptions {
     token?: string;
     yieldTime?: number;
     tokenHandler?: any;
+    [key: string]: any;
   };
 }
 
