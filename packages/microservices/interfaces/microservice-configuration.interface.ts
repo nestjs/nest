@@ -103,13 +103,19 @@ export interface MqttOptions {
 export interface NatsOptions {
   transport?: Transport.NATS;
   options?: {
+    encoding?: string;
     url?: string;
     name?: string;
     user?: string;
     pass?: string;
+    maxPingOut?: number;
     maxReconnectAttempts?: number;
     reconnectTimeWait?: number;
+    reconnectJitter?: number;
+    reconnectJitterTLS?: number;
+    reconnectDelayHandler?: any;
     servers?: string[];
+    nkey?: any;
     reconnect?: boolean;
     pedantic?: boolean;
     tls?: any;
@@ -119,6 +125,17 @@ export interface NatsOptions {
     userJWT?: string;
     nonceSigner?: any;
     userCreds?: any;
+    useOldRequestStyle?: boolean;
+    pingInterval?: number;
+    preserveBuffers?: boolean;
+    waitOnFirstConnect?: boolean;
+    verbose?: boolean;
+    noEcho?: boolean;
+    noRandomize?: boolean;
+    timeout?: number;
+    token?: string;
+    yieldTime?: number;
+    tokenHandler?: any;
   };
 }
 
