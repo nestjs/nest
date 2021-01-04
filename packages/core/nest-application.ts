@@ -241,6 +241,7 @@ export class NestApplication
     !this.isInitialized && (await this.init());
     this.isListening = true;
     this.httpAdapter.listen(port, ...args);
+    this.logger.log(MESSAGES.APPLICATION_LISTENING(port));
     return this.httpServer;
   }
 

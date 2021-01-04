@@ -1,6 +1,8 @@
 export const MESSAGES = {
   APPLICATION_START: `Starting Nest application...`,
   APPLICATION_READY: `Nest application successfully started`,
+  APPLICATION_LISTENING: port =>
+    `Nest application is listening on port: ${port}`,
   MICROSERVICE_READY: `Nest microservice successfully started`,
   UNKNOWN_EXCEPTION_MESSAGE: 'Internal server error',
   ERROR_DURING_SHUTDOWN: 'Error happened during shutdown',
