@@ -16,6 +16,7 @@ export class TestingModuleBuilder {
   private readonly scanner: DependenciesScanner;
   private readonly instanceLoader = new InstanceLoader(this.container);
   private readonly module: any;
+  private testingLogger: Logger = null;
 
   constructor(metadataScanner: MetadataScanner, metadata: ModuleMetadata) {
     this.scanner = new DependenciesScanner(
@@ -24,6 +25,11 @@ export class TestingModuleBuilder {
       this.applicationConfig,
     );
     this.module = this.createModule(metadata);
+  }
+
+  public setLogger(testingLogger: Logger) {
+    this.testingLogger = testingLogger;
+    return this;
   }
 
   public overridePipe<T = any>(typeOrToken: T): OverrideBy {
@@ -98,6 +104,6 @@ export class TestingModuleBuilder {
   }
 
   private applyLogger() {
-    Logger.overrideLogger(new TestingLogger());
+    Logger.overrideLogger(this.testingLogger || new TestingLogger());
   }
 }
