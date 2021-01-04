@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
+import { Logger, LoggerService, Module } from '@nestjs/common';
 import { ModuleMetadata } from '@nestjs/common/interfaces';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
@@ -16,7 +16,7 @@ export class TestingModuleBuilder {
   private readonly scanner: DependenciesScanner;
   private readonly instanceLoader = new InstanceLoader(this.container);
   private readonly module: any;
-  private testingLogger: Logger = null;
+  private testingLogger: LoggerService = null;
 
   constructor(metadataScanner: MetadataScanner, metadata: ModuleMetadata) {
     this.scanner = new DependenciesScanner(
@@ -27,7 +27,7 @@ export class TestingModuleBuilder {
     this.module = this.createModule(metadata);
   }
 
-  public setLogger(testingLogger: Logger) {
+  public setLogger(testingLogger: LoggerService) {
     this.testingLogger = testingLogger;
     return this;
   }
