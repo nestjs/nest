@@ -65,7 +65,7 @@
     "path-to-regexp": "3.2.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.6.3",
-    "socket.io": "2.3.0",
+    "socket.io": "2.4.0",
     "tslib": "2.0.3",
     "uuid": "8.3.2"
   },
@@ -156,7 +156,7 @@
     "rxjs-compat": "6.6.3",
     "sinon": "9.2.2",
     "sinon-chai": "3.5.0",
-    "socket.io-client": "2.3.1",
+    "socket.io-client": "2.4.0",
     "subscriptions-transport-ws": "0.9.18",
     "supertest": "6.0.1",
     "ts-morph": "9.1.0",
