@@ -17,7 +17,7 @@
     "access": "public"
   },
   "dependencies": {
-    "tslib": "2.0.3",
+    "tslib": "2.1.0",
     "ws": "7.4.2"
   },
   "peerDependencies": {
