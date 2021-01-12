@@ -9,7 +9,6 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import {
-  isFunction,
   isNil,
   isObject,
   isString,
@@ -54,9 +53,9 @@ export interface InjectorDependencyContext {
    */
   key?: string | symbol;
   /**
-   * The name of the function or injection token
+   * The function itself, the name of the function, or injection token.
    */
-  name?: string | symbol;
+  name?: Function | string | symbol;
   /**
    * The index of the dependency which gets injected
    * from the dependencies array
@@ -317,7 +316,7 @@ export class Injector {
     const token = this.resolveParamToken(wrapper, param);
     return this.resolveComponentInstance<T>(
       moduleRef,
-      isFunction(token) ? (token as Type<any>).name : token,
+      token,
       dependencyContext,
       wrapper,
       contextId,
@@ -407,7 +406,7 @@ export class Injector {
   }
 
   public async lookupComponent<T = any>(
-    providers: Map<string | symbol, InstanceWrapper>,
+    providers: Map<Function | string | symbol, InstanceWrapper>,
     moduleRef: Module,
     dependencyContext: InjectorDependencyContext,
     wrapper: InstanceWrapper<T>,
@@ -552,7 +551,7 @@ export class Injector {
         try {
           const dependencyContext = {
             key: item.key,
-            name: item.name as string,
+            name: item.name as Function | string | symbol,
           };
           if (this.isInquirer(item.name, parentInquirer)) {
             return parentInquirer && parentInquirer.instance;
