@@ -33,7 +33,7 @@ export interface ValidationError {
    * Contains all nested validation errors of the property.
    */
   children?: ValidationError[];
-  /*
+  /**
    * A transient set of data passed through to the validation result for response mapping
    */
   contexts?: {
