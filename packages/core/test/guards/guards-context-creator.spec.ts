@@ -112,7 +112,7 @@ describe('GuardsContextCreator', () => {
         (guardsContextCreator as any).moduleContext = 'test';
       });
 
-      describe('bud module does not exist', () => {
+      describe('but module does not exist', () => {
         it('should return undefined', () => {
           expect(
             guardsContextCreator.getInstanceByMetatype(class RandomModule {}),
