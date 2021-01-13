@@ -191,7 +191,7 @@ export class MiddlewareModule {
     collection: Map<InstanceToken, InstanceWrapper>,
   ) {
     const { instance, metatype } = wrapper;
-    if (isUndefined(instance.use)) {
+    if (isUndefined(instance?.use)) {
       throw new InvalidMiddlewareException(metatype.name);
     }
     const router = await applicationRef.createMiddlewareFactory(method);

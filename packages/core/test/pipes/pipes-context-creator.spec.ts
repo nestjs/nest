@@ -81,7 +81,7 @@ describe('PipesContextCreator', () => {
           sinon
             .stub(container.getModules(), 'get')
             .callsFake(() => module as any);
-          expect(creator.getInstanceByMetatype({ name: 'test' })).to.be.eql(
+          expect(creator.getInstanceByMetatype(class Test {})).to.be.eql(
             instance,
           );
         });
