@@ -39,18 +39,21 @@ describe('Injector', () => {
       moduleDeps = new Module(DependencyTwo, new NestContainer());
       mainTest = new InstanceWrapper({
         name: 'MainTest',
+        token: 'MainTest',
         metatype: MainTest,
         instance: Object.create(MainTest.prototype),
         isResolved: false,
       });
       depOne = new InstanceWrapper({
         name: DependencyOne,
+        token: DependencyOne,
         metatype: DependencyOne,
         instance: Object.create(DependencyOne.prototype),
         isResolved: false,
       });
       depTwo = new InstanceWrapper({
         name: DependencyTwo,
+        token: DependencyTwo,
         metatype: DependencyTwo,
         instance: Object.create(DependencyOne.prototype),
         isResolved: false,
@@ -110,7 +113,6 @@ describe('Injector', () => {
     });
 
     it('should return undefined when metatype is resolved', async () => {
-      const value = 'test';
       const result = await injector.loadInstance(
         new InstanceWrapper({
           name: 'MainTestResolved',
@@ -136,6 +138,7 @@ describe('Injector', () => {
       moduleDeps = new Module(Test, new NestContainer());
       test = new InstanceWrapper({
         name: 'Test',
+        token: 'Test',
         metatype: Test,
         instance: null,
         isResolved: false,
@@ -694,10 +697,10 @@ describe('Injector', () => {
       const module = await container.addModule(moduleCtor, []);
 
       module.addProvider({
-        name: 'TestClass',
         provide: TestClass,
         useClass: TestClass,
       });
+
       const instance = await injector.loadPerContext(
         new TestClass(),
         module,

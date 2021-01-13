@@ -13,7 +13,6 @@ import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { ContextId } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
@@ -38,9 +37,7 @@ export interface ExternalContextOptions {
 export class ExternalContextCreator {
   private readonly contextUtils = new ContextUtils();
   private readonly externalErrorProxy = new ExternalErrorProxy();
-  private readonly handlerMetadataStorage = new HandlerMetadataStorage<
-    ExternalHandlerMetadata
-  >();
+  private readonly handlerMetadataStorage = new HandlerMetadataStorage<ExternalHandlerMetadata>();
   private container: NestContainer;
 
   constructor(
@@ -107,7 +104,7 @@ export class ExternalContextCreator {
     },
     contextType: TContext = 'http' as TContext,
   ) {
-    const module = this.getContextModuleName(instance.constructor);
+    const module = this.getContextModuleKey(instance.constructor);
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<
       TParamsMetadata,
       TContext
@@ -240,26 +237,18 @@ export class ExternalContextCreator {
     return handlerMetadata;
   }
 
-  public getContextModuleName(constructor: Function): string {
-    const defaultModuleName = '';
-    const className = constructor.name;
-    if (!className) {
-      return defaultModuleName;
+  public getContextModuleKey(moduleCtor: Function | undefined): string {
+    const emptyModuleKey = '';
+    if (!moduleCtor) {
+      return emptyModuleKey;
     }
-    for (const [key, module] of [...this.modulesContainer.entries()]) {
-      if (this.getProviderByClassName(module, className)) {
+    const moduleContainerEntries = this.modulesContainer.entries();
+    for (const [key, moduleRef] of moduleContainerEntries) {
+      if (moduleRef.hasProvider(moduleCtor)) {
         return key;
       }
     }
-    return defaultModuleName;
-  }
-
-  public getProviderByClassName(module: Module, className: string): boolean {
-    const { providers } = module;
-    const hasProvider = [...providers.keys()].some(
-      provider => provider === className,
-    );
-    return hasProvider;
+    return emptyModuleKey;
   }
 
   public exchangeKeysForValues<TMetadata = any>(

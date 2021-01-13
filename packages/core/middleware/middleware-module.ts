@@ -19,7 +19,7 @@ import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
+import { InstanceToken, Module } from '../injector/module';
 import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
 import { RouterProxy } from '../router/router-proxy';
@@ -70,13 +70,13 @@ export class MiddlewareModule {
     modules: Map<string, Module>,
   ) {
     const moduleEntries = [...modules.entries()];
-    const loadMiddlewareConfiguration = async ([name, module]: [
+    const loadMiddlewareConfiguration = async ([moduleName, moduleRef]: [
       string,
       Module,
     ]) => {
-      const instance = module.instance;
-      await this.loadConfiguration(middlewareContainer, instance, name);
-      await this.resolver.resolveInstances(module, name);
+      const instance = moduleRef.instance;
+      await this.loadConfiguration(middlewareContainer, instance, moduleName);
+      await this.resolver.resolveInstances(moduleRef, moduleName);
     };
     await Promise.all(moduleEntries.map(loadMiddlewareConfiguration));
   }
@@ -164,7 +164,7 @@ export class MiddlewareModule {
 
     for (const metatype of middlewareCollection) {
       const collection = middlewareContainer.getMiddlewareCollection(moduleKey);
-      const instanceWrapper = collection.get(metatype.name);
+      const instanceWrapper = collection.get(metatype);
       if (isUndefined(instanceWrapper)) {
         throw new RuntimeException();
       }
@@ -188,7 +188,7 @@ export class MiddlewareModule {
     method: RequestMethod,
     path: string,
     moduleRef: Module,
-    collection: Map<string, InstanceWrapper>,
+    collection: Map<InstanceToken, InstanceWrapper>,
   ) {
     const { instance, metatype } = wrapper;
     if (isUndefined(instance.use)) {
