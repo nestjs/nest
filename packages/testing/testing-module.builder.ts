@@ -16,7 +16,7 @@ export class TestingModuleBuilder {
   private readonly scanner: DependenciesScanner;
   private readonly instanceLoader = new InstanceLoader(this.container);
   private readonly module: any;
-  private testingLogger: LoggerService = null;
+  private testingLogger: LoggerService;
 
   constructor(metadataScanner: MetadataScanner, metadata: ModuleMetadata) {
     this.scanner = new DependenciesScanner(
