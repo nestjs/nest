@@ -27,7 +27,7 @@ export type MicroserviceOptions =
   | CustomStrategy;
 
 export interface CustomStrategy {
-  strategy: Server & CustomTransportStrategy;
+  strategy: CustomTransportStrategy;
   options?: {};
 }
 
