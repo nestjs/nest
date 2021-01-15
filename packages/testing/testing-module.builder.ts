@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
+import { Logger, LoggerService, Module } from '@nestjs/common';
 import { ModuleMetadata } from '@nestjs/common/interfaces';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
@@ -16,6 +16,7 @@ export class TestingModuleBuilder {
   private readonly scanner: DependenciesScanner;
   private readonly instanceLoader = new InstanceLoader(this.container);
   private readonly module: any;
+  private testingLogger: LoggerService;
 
   constructor(metadataScanner: MetadataScanner, metadata: ModuleMetadata) {
     this.scanner = new DependenciesScanner(
@@ -24,6 +25,11 @@ export class TestingModuleBuilder {
       this.applicationConfig,
     );
     this.module = this.createModule(metadata);
+  }
+
+  public setLogger(testingLogger: LoggerService) {
+    this.testingLogger = testingLogger;
+    return this;
   }
 
   public overridePipe<T = any>(typeOrToken: T): OverrideBy {
@@ -98,6 +104,6 @@ export class TestingModuleBuilder {
   }
 
   private applyLogger() {
-    Logger.overrideLogger(new TestingLogger());
+    Logger.overrideLogger(this.testingLogger || new TestingLogger());
   }
 }
