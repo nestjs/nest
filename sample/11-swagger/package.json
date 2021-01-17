@@ -46,7 +46,7 @@
     "tsconfig-paths": "3.9.0",
     "@typescript-eslint/eslint-plugin": "4.13.0",
     "@typescript-eslint/parser": "4.13.0",
-    "eslint": "7.17.0",
+    "eslint": "7.18.0",
     "eslint-config-prettier": "7.1.0",
     "eslint-plugin-import": "2.22.1",
     "typescript": "4.1.3"
