@@ -33,7 +33,7 @@ import { transformPatternToRoute } from '../utils';
 
 export abstract class ClientProxy {
   public abstract connect(): Promise<any>;
-  public abstract close(): any;
+  public abstract close(): any | Promise<any>;
 
   protected routingMap = new Map<string, Function>();
   protected serializer: ProducerSerializer;

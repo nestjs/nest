@@ -84,6 +84,8 @@ export class NestApplication
         await microservice.close();
       }),
     );
+
+    await this.microservicesModule.close();
   }
 
   public getHttpAdapter(): AbstractHttpAdapter {

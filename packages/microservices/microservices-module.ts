@@ -17,7 +17,7 @@ import { RpcContextCreator } from './context/rpc-context-creator';
 import { RpcProxy } from './context/rpc-proxy';
 import { CustomTransportStrategy } from './interfaces';
 import { ListenersController } from './listeners-controller';
-import { Server } from './server/server';
+import { Server } from './server';
 
 export class MicroservicesModule {
   private readonly clientsContainer = new ClientsContainer();
@@ -90,9 +90,9 @@ export class MicroservicesModule {
     });
   }
 
-  public close() {
+  public async close() {
     const clients = this.clientsContainer.getAllClients();
-    clients.forEach(client => client.close());
+    await Promise.all(clients.map(client => client.close()));
     this.clientsContainer.clear();
   }
 }

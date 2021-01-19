@@ -128,6 +128,7 @@ export class NestMicroservice
 
   public async close(): Promise<any> {
     await this.server.close();
+    await this.microservicesModule.close();
     if (this.isTerminated) {
       return;
     }
@@ -155,6 +156,7 @@ export class NestMicroservice
 
   protected async dispose(): Promise<void> {
     await this.server.close();
+    await this.microservicesModule.close();
     if (this.isTerminated) {
       return;
     }
