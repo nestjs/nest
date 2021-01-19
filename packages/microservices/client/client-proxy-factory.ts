@@ -1,9 +1,10 @@
-import { Transport } from '../enums/transport.enum';
+import { Transport } from '../enums';
 import {
   ClientOptions,
+  GCPubSubOptions,
   TcpClientOptions,
-} from '../interfaces/client-metadata.interface';
-import { Closeable } from '../interfaces/closeable.interface';
+} from '../interfaces';
+import { Closeable } from '../interfaces';
 import {
   GrpcOptions,
   KafkaOptions,
@@ -11,7 +12,7 @@ import {
   NatsOptions,
   RedisOptions,
   RmqOptions,
-} from '../interfaces/microservice-configuration.interface';
+} from '../interfaces';
 import { ClientGrpcProxy } from './client-grpc';
 import { ClientKafka } from './client-kafka';
 import { ClientMqtt } from './client-mqtt';
@@ -20,6 +21,7 @@ import { ClientProxy } from './client-proxy';
 import { ClientRedis } from './client-redis';
 import { ClientRMQ } from './client-rmq';
 import { ClientTCP } from './client-tcp';
+import { ClientGCPubSub } from './client-gc-pubsub';
 
 export interface IClientProxyFactory {
   create(clientOptions: ClientOptions): ClientProxy & Closeable;
@@ -45,6 +47,8 @@ export class ClientProxyFactory {
         return new ClientRMQ(options as RmqOptions['options']);
       case Transport.KAFKA:
         return new ClientKafka(options as KafkaOptions['options']);
+      case Transport.GC_PUBSUB:
+        return new ClientGCPubSub(options as GCPubSubOptions['options']);
       default:
         return new ClientTCP(options as TcpClientOptions['options']);
     }

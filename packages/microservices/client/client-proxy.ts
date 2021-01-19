@@ -15,6 +15,7 @@ import { IncomingResponseDeserializer } from '../deserializers/incoming-response
 import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
   ClientOptions,
+  GCPubSubOptions,
   KafkaOptions,
   MqttOptions,
   MsPattern,
@@ -26,8 +27,7 @@ import {
   TcpClientOptions,
   WritePacket,
 } from '../interfaces';
-import { ProducerDeserializer } from '../interfaces/deserializer.interface';
-import { ProducerSerializer } from '../interfaces/serializer.interface';
+import { ProducerDeserializer, ProducerSerializer } from '../interfaces';
 import { IdentitySerializer } from '../serializers/identity.serializer';
 import { transformPatternToRoute } from '../utils';
 
@@ -134,6 +134,7 @@ export abstract class ClientProxy {
           | MqttOptions['options']
           | TcpClientOptions['options']
           | RmqOptions['options']
+          | GCPubSubOptions['options']
           | KafkaOptions['options']).serializer) ||
       new IdentitySerializer();
   }
@@ -147,6 +148,7 @@ export abstract class ClientProxy {
           | MqttOptions['options']
           | TcpClientOptions['options']
           | RmqOptions['options']
+          | GCPubSubOptions['options']
           | KafkaOptions['options']).deserializer) ||
       new IncomingResponseDeserializer();
   }

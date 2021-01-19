@@ -1,4 +1,4 @@
-import { Transport } from '../enums/transport.enum';
+import { Transport } from '../enums';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import {
   ConsumerConfig,
@@ -11,10 +11,14 @@ import {
 import { MqttClientOptions } from '../external/mqtt-options.interface';
 import { ClientOpts } from '../external/redis.interface';
 import { RmqUrl } from '../external/rmq-url.interface';
-import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
+import {
+  PubSubConfig,
+  PublishConfig,
+  SubscriberConfig,
+} from '../external/gc-pubsub.interface';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -24,6 +28,7 @@ export type MicroserviceOptions =
   | MqttOptions
   | RmqOptions
   | KafkaOptions
+  | GCPubSubOptions
   | CustomStrategy;
 
 export interface CustomStrategy {
@@ -167,6 +172,21 @@ export interface KafkaOptions {
     subscribe?: Omit<ConsumerSubscribeTopic, 'topic'>;
     producer?: ProducerConfig;
     send?: Omit<ProducerRecord, 'topic' | 'messages'>;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
+  };
+}
+
+export interface GCPubSubOptions {
+  transport?: Transport.GC_PUBSUB;
+  options?: {
+    client?: PubSubConfig;
+    topic?: string;
+    replyTopic?: string;
+    subscription?: string;
+    replySubscription?: string;
+    publisher?: PublishConfig;
+    subscriber?: SubscriberConfig;
     serializer?: Serializer;
     deserializer?: Deserializer;
   };

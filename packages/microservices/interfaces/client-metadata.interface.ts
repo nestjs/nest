@@ -1,6 +1,7 @@
-import { Transport } from '../enums/transport.enum';
+import { Transport } from '../enums';
 import { Deserializer } from './deserializer.interface';
 import {
+  GCPubSubOptions,
   GrpcOptions,
   KafkaOptions,
   MqttOptions,
@@ -17,7 +18,8 @@ export type ClientOptions =
   | GrpcOptions
   | KafkaOptions
   | TcpClientOptions
-  | RmqOptions;
+  | RmqOptions
+  | GCPubSubOptions;
 
 export interface TcpClientOptions {
   transport: Transport.TCP;

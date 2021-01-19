@@ -6,3 +6,4 @@ export * from './server-nats';
 export * from './server-redis';
 export * from './server-rmq';
 export * from './server-tcp';
+export * from './server-gc-pubsub';

@@ -6,4 +6,5 @@ export enum Transport {
   GRPC,
   RMQ,
   KAFKA,
+  GC_PUBSUB,
 }

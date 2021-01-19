@@ -1,13 +1,16 @@
 import { expect } from 'chai';
-import { ClientProxyFactory } from '../../client/client-proxy-factory';
-import { ClientTCP } from '../../client/client-tcp';
-import { Transport } from '../../enums/transport.enum';
-import { ClientRedis } from '../../client/client-redis';
-import { ClientNats } from '../../client/client-nats';
-import { ClientMqtt } from '../../client/client-mqtt';
-import { ClientGrpcProxy } from '../../client/client-grpc';
-import { ClientRMQ } from '../../client/client-rmq';
-import { ClientKafka } from '../../client/client-kafka';
+import {
+  ClientGCPubSub,
+  ClientGrpcProxy,
+  ClientKafka,
+  ClientMqtt,
+  ClientNats,
+  ClientProxyFactory,
+  ClientRedis,
+  ClientRMQ,
+  ClientTCP,
+} from '../../client';
+import { Transport } from '../../enums';
 import { join } from 'path';
 
 describe('ClientProxyFactory', () => {
@@ -51,6 +54,13 @@ describe('ClientProxyFactory', () => {
     it(`should create kafka client`, () => {
       const proxy = ClientProxyFactory.create({ transport: Transport.KAFKA });
       expect(proxy instanceof ClientKafka).to.be.true;
+    });
+
+    it(`should create google pubsub client`, () => {
+      const proxy = ClientProxyFactory.create({
+        transport: Transport.GC_PUBSUB,
+      });
+      expect(proxy instanceof ClientGCPubSub).to.be.true;
     });
   });
 });

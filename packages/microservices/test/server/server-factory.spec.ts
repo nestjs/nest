@@ -1,25 +1,21 @@
 import { expect } from 'chai';
-import { Transport } from '../../enums/transport.enum';
 import { ServerFactory } from '../../server/server-factory';
-import { ServerGrpc } from '../../server/server-grpc';
-import { ServerKafka } from '../../server/server-kafka';
-import { ServerMqtt } from '../../server/server-mqtt';
-import { ServerNats } from '../../server/server-nats';
-import { ServerRedis } from '../../server/server-redis';
-import { ServerRMQ } from '../../server/server-rmq';
-import { ServerTCP } from '../../server/server-tcp';
+import {
+  ServerGCPubSub,
+  ServerGrpc,
+  ServerKafka,
+  ServerMqtt,
+  ServerNats,
+  ServerRedis,
+  ServerRMQ,
+  ServerTCP,
+} from '../../server';
+import { Transport } from '../../enums';
 
 describe('ServerFactory', () => {
   describe('create', () => {
     it(`should return tcp server by default`, () => {
       expect(ServerFactory.create({}) instanceof ServerTCP).to.be.true;
-    });
-
-    it(`should return redis server`, () => {
-      expect(
-        ServerFactory.create({ transport: Transport.REDIS }) instanceof
-          ServerRedis,
-      ).to.be.true;
     });
 
     it(`should return redis server`, () => {
@@ -62,6 +58,13 @@ describe('ServerFactory', () => {
           transport: Transport.GRPC,
           options: { protoPath: '', package: '' },
         }) instanceof ServerGrpc,
+      ).to.be.true;
+    });
+
+    it(`should return gc pubsub server`, () => {
+      expect(
+        ServerFactory.create({ transport: Transport.GC_PUBSUB }) instanceof
+          ServerGCPubSub,
       ).to.be.true;
     });
   });

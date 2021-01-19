@@ -7,3 +7,4 @@ export { ClientProxyFactory } from './client-proxy-factory';
 export * from './client-redis';
 export * from './client-rmq';
 export * from './client-tcp';
+export * from './client-gc-pubsub';
