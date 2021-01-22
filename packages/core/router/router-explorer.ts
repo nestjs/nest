@@ -45,7 +45,9 @@ export interface RoutePathProperties {
 export class RouterExplorer {
   private readonly executionContextCreator: RouterExecutionContext;
   private readonly routerMethodFactory = new RouterMethodFactory();
-  private readonly logger = new Logger(RouterExplorer.name, true);
+  private readonly logger = new Logger(RouterExplorer.name, {
+    timestamp: true,
+  });
   private readonly exceptionFiltersCache = new WeakMap();
 
   constructor(

@@ -43,7 +43,9 @@ const {
 export class NestApplication
   extends NestApplicationContext
   implements INestApplication {
-  private readonly logger = new Logger(NestApplication.name, true);
+  private readonly logger = new Logger(NestApplication.name, {
+    timestamp: true,
+  });
   private readonly middlewareModule = new MiddlewareModule();
   private readonly middlewareContainer = new MiddlewareContainer(
     this.container,
@@ -239,8 +241,13 @@ export class NestApplication
   ): Promise<any>;
   public async listen(port: number | string, ...args: any[]): Promise<any> {
     !this.isInitialized && (await this.init());
+
     this.isListening = true;
     this.httpAdapter.listen(port, ...args);
+
+    if (this.appOptions?.autoFlushLogs) {
+      this.flushLogs();
+    }
     return this.httpServer;
   }
 

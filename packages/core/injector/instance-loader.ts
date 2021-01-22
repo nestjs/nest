@@ -9,7 +9,9 @@ import { Module } from './module';
 
 export class InstanceLoader {
   private readonly injector = new Injector();
-  private readonly logger = new Logger(InstanceLoader.name, true);
+  private readonly logger = new Logger(InstanceLoader.name, {
+    timestamp: true,
+  });
 
   constructor(private readonly container: NestContainer) {}
 
