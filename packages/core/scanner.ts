@@ -282,21 +282,25 @@ export class DependenciesScanner {
 
   public async calculateModulesDistance(modules: ModulesContainer) {
     const modulesGenerator = modules.values();
-    const rootModule = modulesGenerator.next().value as Module;
-    const modulesStack = [rootModule];
 
-    const calculateDistance = (moduleRef: Module, distance = 1) => {
+    // Skip "InternalCoreModule" from calculating distance
+    modulesGenerator.next();
+
+    const modulesStack = [];
+    const calculateDistance = (moduleRef: Module, distance = 0) => {
       if (modulesStack.includes(moduleRef)) {
         return;
       }
       modulesStack.push(moduleRef);
 
-      const moduleImports = rootModule.relatedModules;
-      moduleImports.forEach(module => {
-        module.distance = distance;
-        calculateDistance(module, distance + 1);
+      const moduleImports = moduleRef.imports;
+      moduleImports.forEach(importedModuleRef => {
+        importedModuleRef.distance = distance;
+        calculateDistance(importedModuleRef, distance + 1);
       });
     };
+
+    const rootModule = modulesGenerator.next().value as Module;
     calculateDistance(rootModule);
   }
 
