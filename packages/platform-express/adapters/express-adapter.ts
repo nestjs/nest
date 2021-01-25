@@ -10,6 +10,7 @@ import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
+import { CorsOptionsDelegate } from '../../common/interfaces/external/cors-options.interface';
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
@@ -108,7 +109,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return request.originalUrl;
   }
 
-  public enableCors(options: CorsOptions) {
+  public enableCors(options: CorsOptions | CorsOptionsDelegate<any>) {
     return this.use(cors(options));
   }
 

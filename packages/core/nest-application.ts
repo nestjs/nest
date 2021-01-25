@@ -26,6 +26,8 @@ import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
+import { isFunction } from 'util';
+import { CorsOptionsDelegate } from '../common/interfaces/external/cors-options.interface';
 
 const { SocketModule } = optionalRequire(
   '@nestjs/websockets/socket-module',
@@ -102,11 +104,15 @@ export class NestApplication
     if (!this.appOptions || !this.appOptions.cors) {
       return undefined;
     }
-    const isCorsOptionsObj = isObject(this.appOptions.cors);
-    if (!isCorsOptionsObj) {
+    const passCustomOptions =
+      isObject(this.appOptions.cors) ||
+      typeof this.appOptions.cors === 'function';
+    if (!passCustomOptions) {
       return this.enableCors();
     }
-    return this.enableCors(this.appOptions.cors as CorsOptions);
+    return this.enableCors(
+      this.appOptions.cors as CorsOptions | CorsOptionsDelegate<any>,
+    );
   }
 
   public createServer<T = any>(): T {
@@ -224,7 +230,7 @@ export class NestApplication
     return this;
   }
 
-  public enableCors(options?: CorsOptions): void {
+  public enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void {
     this.httpAdapter.enableCors(options);
   }
 

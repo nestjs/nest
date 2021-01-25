@@ -33,6 +33,7 @@ import {
   FastifyStaticOptions,
   PointOfViewOptions,
 } from '../interfaces/external';
+import { CorsOptionsDelegate } from '../../common/interfaces/external/cors-options.interface';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -257,8 +258,18 @@ export class FastifyAdapter<
     return request.raw ? request.raw.url : request.url;
   }
 
-  public enableCors(options: CorsOptions) {
-    this.register(require('fastify-cors'), options);
+  public enableCors(
+    options:
+      | CorsOptions
+      | CorsOptionsDelegate<
+          FastifyRequest<RequestGenericInterface, TServer, TRawRequest>
+        >,
+  ) {
+    if (typeof options === 'function') {
+      this.register(require('fastify-cors'), () => options);
+    } else {
+      this.register(require('fastify-cors'), options);
+    }
   }
 
   public registerParserMiddleware() {
