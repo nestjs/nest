@@ -58,6 +58,12 @@ export abstract class AbstractHttpAdapter<
     return this.instance.patch(...args);
   }
 
+  public all(handler: RequestHandler);
+  public all(path: any, handler: RequestHandler);
+  public all(...args: any[]) {
+    return this.instance.all(...args);
+  }
+
   public options(handler: RequestHandler);
   public options(path: any, handler: RequestHandler);
   public options(...args: any[]) {

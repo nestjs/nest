@@ -38,6 +38,8 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   put(path: string, handler: RequestHandler<TRequest, TResponse>): any;
   patch(handler: RequestHandler<TRequest, TResponse>): any;
   patch(path: string, handler: RequestHandler<TRequest, TResponse>): any;
+  all(path: string, handler: RequestHandler<TRequest, TResponse>): any;
+  all(handler: RequestHandler<TRequest, TResponse>): any;
   options(handler: RequestHandler<TRequest, TResponse>): any;
   options(path: string, handler: RequestHandler<TRequest, TResponse>): any;
   listen(port: number | string, callback?: () => void): any;
