@@ -9,7 +9,10 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -26,8 +29,6 @@ import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
-import { isFunction } from 'util';
-import { CorsOptionsDelegate } from '../common/interfaces/external/cors-options.interface';
 
 const { SocketModule } = optionalRequire(
   '@nestjs/websockets/socket-module',

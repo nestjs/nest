@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { HttpStatus, Logger, RequestMethod } from '@nestjs/common';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
@@ -33,7 +36,6 @@ import {
   FastifyStaticOptions,
   PointOfViewOptions,
 } from '../interfaces/external';
-import { CorsOptionsDelegate } from '../../common/interfaces/external/cors-options.interface';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,

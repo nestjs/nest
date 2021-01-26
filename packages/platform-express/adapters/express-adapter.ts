@@ -1,5 +1,8 @@
 import { RequestMethod } from '@nestjs/common';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { isFunction, isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
@@ -10,7 +13,6 @@ import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
-import { CorsOptionsDelegate } from '../../common/interfaces/external/cors-options.interface';
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
