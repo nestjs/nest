@@ -31,7 +31,7 @@ export interface GatewayMetadata {
    * Accepted origins
    * @default '*:*'
    */
-  origins?: string;
+  origins?: string | string[];
 
   parser?: any;
 
