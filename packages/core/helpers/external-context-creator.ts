@@ -38,9 +38,7 @@ export interface ExternalContextOptions {
 export class ExternalContextCreator {
   private readonly contextUtils = new ContextUtils();
   private readonly externalErrorProxy = new ExternalErrorProxy();
-  private readonly handlerMetadataStorage = new HandlerMetadataStorage<
-    ExternalHandlerMetadata
-  >();
+  private readonly handlerMetadataStorage = new HandlerMetadataStorage<ExternalHandlerMetadata>();
   private container: NestContainer;
 
   constructor(
