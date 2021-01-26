@@ -1,7 +1,7 @@
 import { Injectable } from '../decorators/core/injectable.decorator';
 import { Optional } from '../decorators/core/optional.decorator';
 import { clc, yellow } from '../utils/cli-colors.util';
-import { isObject } from '../utils/shared.utils';
+import { isObject, isPlainObject } from '../utils/shared.utils';
 
 declare const process: any;
 
@@ -146,7 +146,7 @@ export class Logger implements LoggerService {
     isTimeDiffEnabled?: boolean,
     writeStreamType?: 'stdout' | 'stderr',
   ) {
-    const output = isObject(message)
+    const output = isPlainObject(message)
       ? `${color('Object:')}\n${JSON.stringify(message, null, 2)}\n`
       : color(message);
 
