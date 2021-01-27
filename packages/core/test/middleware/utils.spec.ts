@@ -22,7 +22,7 @@ describe('middleware utils', () => {
     beforeEach(() => {
       middleware = [Test, fnMiddleware, undefined, null];
     });
-    it('should returns filtered middleware', () => {
+    it('should return filtered middleware', () => {
       expect(filterMiddleware(middleware, [], noopAdapter)).to.have.length(2);
     });
   });
@@ -65,12 +65,12 @@ describe('middleware utils', () => {
   });
   describe('isClass', () => {
     describe('when middleware is a class', () => {
-      it('should returns true', () => {
+      it('should return true', () => {
         expect(isClass(Test)).to.be.true;
       });
     });
     describe('when middleware is a function', () => {
-      it('should returns false', () => {
+      it('should return false', () => {
         expect(isClass(fnMiddleware)).to.be.false;
       });
     });

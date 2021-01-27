@@ -125,7 +125,7 @@ describe('Server', () => {
   describe('transformToObservable', () => {
     describe('when resultOrDeferred', () => {
       describe('is Promise', () => {
-        it('should returns Observable', async () => {
+        it('should return Observable', async () => {
           const value = 100;
           expect(
             await server
@@ -135,7 +135,7 @@ describe('Server', () => {
         });
       });
       describe('is Observable', () => {
-        it('should returns Observable', async () => {
+        it('should return Observable', async () => {
           const value = 100;
           expect(
             await server.transformToObservable(of(value)).toPromise(),
@@ -143,7 +143,7 @@ describe('Server', () => {
         });
       });
       describe('is value', () => {
-        it('should returns Observable', async () => {
+        it('should return Observable', async () => {
           const value = 100;
           expect(
             await server.transformToObservable(value).toPromise(),

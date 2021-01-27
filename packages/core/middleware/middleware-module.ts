@@ -5,7 +5,6 @@ import {
   RouteInfo,
 } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middleware.interface';
-import { NestModule } from '@nestjs/common/interfaces/modules/nest-module.interface';
 import {
   addLeadingSlash,
   isUndefined,
@@ -70,28 +69,29 @@ export class MiddlewareModule {
     modules: Map<string, Module>,
   ) {
     const moduleEntries = [...modules.entries()];
-    const loadMiddlewareConfiguration = async ([name, module]: [
+    const loadMiddlewareConfiguration = async ([name, moduleRef]: [
       string,
       Module,
     ]) => {
-      const instance = module.instance;
-      await this.loadConfiguration(middlewareContainer, instance, name);
-      await this.resolver.resolveInstances(module, name);
+      await this.loadConfiguration(middlewareContainer, moduleRef, name);
+      await this.resolver.resolveInstances(moduleRef, name);
     };
     await Promise.all(moduleEntries.map(loadMiddlewareConfiguration));
   }
 
   public async loadConfiguration(
     middlewareContainer: MiddlewareContainer,
-    instance: NestModule,
+    moduleRef: Module,
     moduleKey: string,
   ) {
+    const { instance } = moduleRef;
     if (!instance.configure) {
       return;
     }
     const middlewareBuilder = new MiddlewareBuilder(
       this.routesMapper,
       this.httpAdapter,
+      this.container,
     );
     await instance.configure(middlewareBuilder);
 

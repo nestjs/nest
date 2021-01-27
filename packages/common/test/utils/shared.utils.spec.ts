@@ -9,6 +9,7 @@ import {
   isPlainObject,
   isString,
   isUndefined,
+  normalizePath,
 } from '../../utils/shared.utils';
 
 function Foo(a) {
@@ -17,34 +18,34 @@ function Foo(a) {
 
 describe('Shared utils', () => {
   describe('isUndefined', () => {
-    it('should returns true when obj is undefined', () => {
+    it('should return true when obj is undefined', () => {
       expect(isUndefined(undefined)).to.be.true;
     });
-    it('should returns false when object is not undefined', () => {
+    it('should return false when object is not undefined', () => {
       expect(isUndefined({})).to.be.false;
     });
   });
   describe('isFunction', () => {
-    it('should returns true when obj is function', () => {
+    it('should return true when obj is function', () => {
       expect(isFunction(() => ({}))).to.be.true;
     });
-    it('should returns false when object is not function', () => {
+    it('should return false when object is not function', () => {
       expect(isFunction(null)).to.be.false;
       expect(isFunction(undefined)).to.be.false;
     });
   });
   describe('isObject', () => {
-    it('should returns true when obj is object', () => {
+    it('should return true when obj is object', () => {
       expect(isObject({})).to.be.true;
     });
-    it('should returns false when object is not object', () => {
+    it('should return false when object is not object', () => {
       expect(isObject(3)).to.be.false;
       expect(isObject(null)).to.be.false;
       expect(isObject(undefined)).to.be.false;
     });
   });
   describe('isPlainObject', () => {
-    it('should returns true when obj is plain object', () => {
+    it('should return true when obj is plain object', () => {
       expect(isPlainObject({})).to.be.true;
       expect(isPlainObject({ prop: true })).to.be.true;
       expect(
@@ -54,7 +55,7 @@ describe('Shared utils', () => {
       ).to.be.true;
       expect(isPlainObject(Object.create(null))).to.be.true;
     });
-    it('should returns false when object is not object', () => {
+    it('should return false when object is not object', () => {
       expect(isPlainObject(3)).to.be.false;
       expect(isPlainObject(null)).to.be.false;
       expect(isPlainObject(undefined)).to.be.false;
@@ -64,52 +65,69 @@ describe('Shared utils', () => {
     });
   });
   describe('isString', () => {
-    it('should returns true when obj is string', () => {
+    it('should return true when obj is a string', () => {
       expect(isString('true')).to.be.true;
     });
-    it('should returns false when object is not string', () => {
+    it('should return false when object is not a string', () => {
       expect(isString(false)).to.be.false;
       expect(isString(null)).to.be.false;
       expect(isString(undefined)).to.be.false;
     });
   });
   describe('isConstructor', () => {
-    it('should returns true when string is equal constructor', () => {
+    it('should return true when string is equal to constructor', () => {
       expect(isConstructor('constructor')).to.be.true;
     });
-    it('should returns false when string is not equal constructor', () => {
+    it('should return false when string is not equal to constructor', () => {
       expect(isConstructor('nope')).to.be.false;
     });
   });
   describe('addLeadingSlash', () => {
-    it('should returns validated path ("add / if not exists")', () => {
+    it('should return the validated path ("add / if not exists")', () => {
       expect(addLeadingSlash('nope')).to.be.eql('/nope');
     });
-    it('should returns same path', () => {
+    it('should return the same path', () => {
       expect(addLeadingSlash('/nope')).to.be.eql('/nope');
     });
-    it('should returns empty path', () => {
+    it('should return empty path', () => {
       expect(addLeadingSlash('')).to.be.eql('');
       expect(addLeadingSlash(null)).to.be.eql('');
       expect(addLeadingSlash(undefined)).to.be.eql('');
     });
   });
+  describe('normalizePath', () => {
+    it('should remove all trailing slashes at the end of the path', () => {
+      expect(normalizePath('path/')).to.be.eql('/path');
+      expect(normalizePath('path///')).to.be.eql('/path');
+      expect(normalizePath('/path/path///')).to.be.eql('/path/path');
+    });
+    it('should replace all slashes with only one slash', () => {
+      expect(normalizePath('////path/')).to.be.eql('/path');
+      expect(normalizePath('///')).to.be.eql('/');
+      expect(normalizePath('/path////path///')).to.be.eql('/path/path');
+    });
+    it('should return / for empty path', () => {
+      expect(normalizePath('')).to.be.eql('/');
+      expect(normalizePath(null)).to.be.eql('/');
+      expect(normalizePath(undefined)).to.be.eql('/');
+    });
+  });
   describe('isNil', () => {
-    it('should returns true when obj is undefined or null', () => {
+    it('should return true when obj is undefined or null', () => {
       expect(isNil(undefined)).to.be.true;
       expect(isNil(null)).to.be.true;
     });
-    it('should returns false when object is not undefined and null', () => {
+    it('should return false when object is not undefined and null', () => {
       expect(isNil('3')).to.be.false;
     });
   });
   describe('isEmpty', () => {
-    it('should returns true when array is empty or not exists', () => {
+    it('should return true when array is empty or not exists', () => {
       expect(isEmpty([])).to.be.true;
       expect(isEmpty(null)).to.be.true;
       expect(isEmpty(undefined)).to.be.true;
     });
-    it('should returns false when array is not empty', () => {
+    it('should return false when array is not empty', () => {
       expect(isEmpty([1, 2])).to.be.false;
     });
   });
