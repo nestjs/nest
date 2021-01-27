@@ -51,20 +51,21 @@ export interface INestApplication extends INestApplicationContext {
   ): Promise<any>;
 
   /**
-   * Returns the url the application is listening at, based on OS and IP version. Returns as an IP value either in IPv6 or IPv4
-   *
-   * @returns {Promise<string>} The IP where the server is listening
-   */
-  getUrl(): Promise<string>;
-
-  /**
    * Starts the application (can be awaited).
+   * @deprecated use "listen" instead.
    *
    * @param {number|string} port
    * @param {string} [hostname]
    * @returns {Promise}
    */
   listenAsync(port: number | string, hostname?: string): Promise<any>;
+
+  /**
+   * Returns the url the application is listening at, based on OS and IP version. Returns as an IP value either in IPv6 or IPv4
+   *
+   * @returns {Promise<string>} The IP where the server is listening
+   */
+  getUrl(): Promise<string>;
 
   /**
    * Registers a prefix for every HTTP route path.
