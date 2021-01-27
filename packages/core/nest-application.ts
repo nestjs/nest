@@ -235,26 +235,34 @@ export class NestApplication
     this.httpAdapter.enableCors(options);
   }
 
-  public async listen(
-    port: number | string,
-    callback?: () => void,
-  ): Promise<any>;
-  public async listen(
-    port: number | string,
-    hostname: string,
-    callback?: () => void,
-  ): Promise<any>;
+  public async listen(port: number | string): Promise<any>;
+  public async listen(port: number | string, hostname: string): Promise<any>;
   public async listen(port: number | string, ...args: any[]): Promise<any> {
     !this.isInitialized && (await this.init());
-    this.isListening = true;
-    this.httpAdapter.listen(port, ...args);
-    return this.httpServer;
+
+    return new Promise((resolve, reject) => {
+      const errorHandler = (e: any) => {
+        this.logger.error(e?.toString?.());
+        reject(e);
+      };
+      this.httpServer.once('error', errorHandler);
+
+      this.httpAdapter.listen(port, ...args, () => {
+        const address = this.httpServer.address();
+        if (address) {
+          this.httpServer.removeListener('error', errorHandler);
+          this.isListening = true;
+          resolve(this.httpServer);
+        }
+      });
+    });
   }
 
-  public listenAsync(port: number | string, hostname?: string): Promise<any> {
-    return new Promise(resolve => {
-      const server: any = this.listen(port, hostname, () => resolve(server));
-    });
+  public listenAsync(port: number | string, ...args: any[]): Promise<any> {
+    this.logger.warn(
+      'DEPRECATED! "listenAsync" method is deprecated and will be removed in the next major release. Please, use "listen" instead.',
+    );
+    return this.listen(port, ...(args as [any]));
   }
 
   public async getUrl(): Promise<string> {
@@ -263,28 +271,31 @@ export class NestApplication
         this.logger.error(MESSAGES.CALL_LISTEN_FIRST);
         reject(MESSAGES.CALL_LISTEN_FIRST);
       }
-      this.httpServer.on('listening', () => {
-        const address = this.httpServer.address();
-        if (typeof address === 'string') {
-          if (platform() === 'win32') {
-            return address;
-          }
-          const basePath = encodeURIComponent(address);
-          return `${this.getProtocol()}+unix://${basePath}`;
-        }
-        let host = this.host();
-        if (address && address.family === 'IPv6') {
-          if (host === '::') {
-            host = '[::1]';
-          } else {
-            host = `[${host}]`;
-          }
-        } else if (host === '0.0.0.0') {
-          host = '127.0.0.1';
-        }
-        resolve(`${this.getProtocol()}://${host}:${address.port}`);
-      });
+      const address = this.httpServer.address();
+      resolve(this.formatAddress(address));
     });
+  }
+
+  private formatAddress(address: any): string {
+    if (typeof address === 'string') {
+      if (platform() === 'win32') {
+        return address;
+      }
+      const basePath = encodeURIComponent(address);
+      return `${this.getProtocol()}+unix://${basePath}`;
+    }
+    let host = this.host();
+    if (address && address.family === 'IPv6') {
+      if (host === '::') {
+        host = '[::1]';
+      } else {
+        host = `[${host}]`;
+      }
+    } else if (host === '0.0.0.0') {
+      host = '127.0.0.1';
+    }
+
+    return `${this.getProtocol()}://${host}:${address.port}`;
   }
 
   public setGlobalPrefix(prefix: string): this {
