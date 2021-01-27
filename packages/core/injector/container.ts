@@ -143,7 +143,10 @@ export class NestContainer {
     moduleRef.addRelatedModule(related);
   }
 
-  public addProvider(provider: Provider, token: string): string {
+  public addProvider(
+    provider: Provider,
+    token: string,
+  ): string | symbol | Function {
     if (!provider) {
       throw new CircularDependencyException();
     }

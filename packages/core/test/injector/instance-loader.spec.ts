@@ -37,10 +37,12 @@ describe('InstanceLoader', () => {
     const providerWrapper: InstanceWrapper = {
       instance: null,
       metatype: TestProvider,
+      token: 'TestProvider',
     } as any;
     const routeWrapper: InstanceWrapper = {
       instance: null,
       metatype: TestRoute,
+      token: 'TestRoute',
     } as any;
 
     module.providers.set('TestProvider', providerWrapper);
@@ -78,6 +80,7 @@ describe('InstanceLoader', () => {
       instance: null,
       metatype: TestProvider,
       name: 'TestProvider',
+      token: 'TestProvider',
     });
     module.providers.set('TestProvider', testComp);
 
@@ -109,6 +112,7 @@ describe('InstanceLoader', () => {
     };
     const wrapper = new InstanceWrapper({
       name: 'TestRoute',
+      token: 'TestRoute',
       instance: null,
       metatype: TestRoute,
     });
@@ -144,6 +148,7 @@ describe('InstanceLoader', () => {
       instance: null,
       metatype: TestProvider,
       name: 'TestProvider',
+      token: 'TestProvider',
     });
     module.injectables.set('TestProvider', testComp);
 

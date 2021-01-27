@@ -361,11 +361,10 @@ export class DependenciesScanner {
       scope,
     } as Provider;
 
-    if (
-      this.isRequestOrTransient(
-        (newProvider as FactoryProvider | ClassProvider).scope,
-      )
-    ) {
+    const factoryOrClassProvider = newProvider as
+      | FactoryProvider
+      | ClassProvider;
+    if (this.isRequestOrTransient(factoryOrClassProvider.scope)) {
       return this.container.addInjectable(newProvider, token);
     }
     this.container.addProvider(newProvider, token);

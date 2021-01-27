@@ -3,9 +3,13 @@ import { SCOPE_OPTIONS_METADATA } from '@nestjs/common/constants';
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { NestContainer } from '../injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
+import { InstanceToken } from '../injector/module';
 
 export class MiddlewareContainer {
-  private readonly middleware = new Map<string, Map<string, InstanceWrapper>>();
+  private readonly middleware = new Map<
+    string,
+    Map<InstanceToken, InstanceWrapper>
+  >();
   private readonly configurationSets = new Map<
     string,
     Set<MiddlewareConfiguration>
@@ -15,7 +19,7 @@ export class MiddlewareContainer {
 
   public getMiddlewareCollection(
     moduleKey: string,
-  ): Map<string, InstanceWrapper> {
+  ): Map<InstanceToken, InstanceWrapper> {
     if (!this.middleware.has(moduleKey)) {
       const moduleRef = this.container.getModuleByKey(moduleKey);
       this.middleware.set(moduleKey, moduleRef.middlewares);
@@ -36,13 +40,14 @@ export class MiddlewareContainer {
 
     const configurations = configList || [];
     const insertMiddleware = <T extends Type<unknown>>(metatype: T) => {
-      const token = metatype.name;
+      const token = metatype;
       middleware.set(
         token,
         new InstanceWrapper({
           scope: this.getClassScope(metatype),
-          metatype,
           name: token,
+          metatype,
+          token,
         }),
       );
     };

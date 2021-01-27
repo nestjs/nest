@@ -8,7 +8,7 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { STATIC_CONTEXT } from './constants';
-import { Module } from './module';
+import { InstanceToken, Module } from './module';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
@@ -36,6 +36,7 @@ interface InstanceMetadataStore {
 
 export class InstanceWrapper<T = any> {
   public readonly name: any;
+  public readonly token: InstanceToken;
   public readonly async?: boolean;
   public readonly host?: Module;
   public readonly isAlias: boolean = false;

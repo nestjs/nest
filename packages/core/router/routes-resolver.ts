@@ -51,7 +51,7 @@ export class RoutesResolver implements Resolver {
   }
 
   public registerRouters(
-    routes: Map<string, InstanceWrapper<Controller>>,
+    routes: Map<string | symbol | Function, InstanceWrapper<Controller>>,
     moduleName: string,
     basePath: string,
     applicationRef: HttpServer,
