@@ -13,18 +13,17 @@ export class ModuleCompiler {
   public async compile(
     metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
   ): Promise<ModuleFactory> {
-    const { type, dynamicMetadata } = await this.extractMetadata(metatype);
+    const { type, dynamicMetadata } = this.extractMetadata(await metatype);
     const token = this.moduleTokenFactory.create(type, dynamicMetadata);
     return { type, dynamicMetadata, token };
   }
 
-  public async extractMetadata(
-    metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
-  ): Promise<{
+  public extractMetadata(
+    metatype: Type<any> | DynamicModule,
+  ): {
     type: Type<any>;
     dynamicMetadata?: Partial<DynamicModule> | undefined;
-  }> {
-    metatype = await metatype;
+  } {
     if (!this.isDynamicModule(metatype)) {
       return { type: metatype };
     }

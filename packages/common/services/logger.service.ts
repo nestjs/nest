@@ -1,7 +1,7 @@
 import { Injectable } from '../decorators/core/injectable.decorator';
 import { Optional } from '../decorators/core/optional.decorator';
 import { clc, yellow } from '../utils/cli-colors.util';
-import { isObject } from '../utils/shared.utils';
+import { isObject, isPlainObject } from '../utils/shared.utils';
 
 declare const process: any;
 
@@ -83,7 +83,7 @@ export class Logger implements LoggerService {
     context = '',
     isTimeDiffEnabled = true,
   ) {
-    this.printMessage(message, clc.red, context, isTimeDiffEnabled);
+    this.printMessage(message, clc.red, context, isTimeDiffEnabled, 'stderr');
     this.printStackTrace(trace);
   }
 
@@ -144,8 +144,9 @@ export class Logger implements LoggerService {
     color: (message: string) => string,
     context = '',
     isTimeDiffEnabled?: boolean,
+    writeStreamType?: 'stdout' | 'stderr',
   ) {
-    const output = isObject(message)
+    const output = isPlainObject(message)
       ? `${color('Object:')}\n${JSON.stringify(message, null, 2)}\n`
       : color(message);
 
@@ -153,9 +154,12 @@ export class Logger implements LoggerService {
     const contextMessage = context ? yellow(`[${context}] `) : '';
     const timestampDiff = this.updateAndGetTimestampDiff(isTimeDiffEnabled);
     const instance = (this.instance as typeof Logger) ?? Logger;
-    process.stdout.write(
-      `${pidMessage}${instance.getTimestamp()}   ${contextMessage}${output}${timestampDiff}\n`,
-    );
+    const timestamp = instance.getTimestamp
+      ? instance.getTimestamp()
+      : Logger.getTimestamp?.();
+    const computedMessage = `${pidMessage}${timestamp}   ${contextMessage}${output}${timestampDiff}\n`;
+
+    process[writeStreamType ?? 'stdout'].write(computedMessage);
   }
 
   private static updateAndGetTimestampDiff(
@@ -173,6 +177,6 @@ export class Logger implements LoggerService {
     if (!trace) {
       return;
     }
-    process.stdout.write(`${trace}\n`);
+    process.stderr.write(`${trace}\n`);
   }
 }

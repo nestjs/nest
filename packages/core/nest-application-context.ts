@@ -5,7 +5,7 @@ import {
   LogLevel,
   ShutdownSignal,
 } from '@nestjs/common';
-import { Abstract, Scope } from '@nestjs/common/interfaces';
+import { Abstract, DynamicModule, Scope } from '@nestjs/common/interfaces';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
@@ -22,6 +22,7 @@ import {
   callModuleInitHook,
 } from './hooks';
 import { ContextId } from './injector';
+import { ModuleCompiler } from './injector/compiler';
 import { NestContainer } from './injector/container';
 import { Injector } from './injector/injector';
 import { InstanceLinksHost } from './injector/instance-links-host';
@@ -33,8 +34,10 @@ import { Module } from './injector/module';
 export class NestApplicationContext implements INestApplicationContext {
   protected isInitialized = false;
   protected readonly injector = new Injector();
-  private shutdownCleanupRef?: (...args: unknown[]) => unknown;
+
   private readonly activeShutdownSignals = new Array<string>();
+  private readonly moduleCompiler = new ModuleCompiler();
+  private shutdownCleanupRef?: (...args: unknown[]) => unknown;
   private _instanceLinksHost: InstanceLinksHost;
 
   private get instanceLinksHost() {
@@ -55,14 +58,20 @@ export class NestApplicationContext implements INestApplicationContext {
     this.contextModule = modules.next().value;
   }
 
-  public select<T>(moduleType: Type<T>): INestApplicationContext {
-    const modules = this.container.getModules();
-    const moduleMetatype = this.contextModule.metatype;
-    const scope = this.scope.concat(moduleMetatype);
-    const moduleTokenFactory = this.container.getModuleTokenFactory();
+  public select<T>(
+    moduleType: Type<T> | DynamicModule,
+  ): INestApplicationContext {
+    const modulesContainer = this.container.getModules();
+    const contextModuleCtor = this.contextModule.metatype;
+    const scope = this.scope.concat(contextModuleCtor);
 
-    const token = moduleTokenFactory.create(moduleType);
-    const selectedModule = modules.get(token);
+    const moduleTokenFactory = this.container.getModuleTokenFactory();
+    const { type, dynamicMetadata } = this.moduleCompiler.extractMetadata(
+      moduleType,
+    );
+    const token = moduleTokenFactory.create(type, dynamicMetadata);
+
+    const selectedModule = modulesContainer.get(token);
     if (!selectedModule) {
       throw new UnknownModuleException();
     }

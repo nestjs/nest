@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-socket.io",
-  "version": "7.6.3",
+  "version": "7.6.7",
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-socket.io)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -17,8 +17,8 @@
     "access": "public"
   },
   "dependencies": {
-    "socket.io": "2.3.0",
-    "tslib": "2.0.3"
+    "socket.io": "2.4.1",
+    "tslib": "2.1.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",
