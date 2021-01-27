@@ -57,7 +57,7 @@ export class HttpException extends Error {
         .join(' ');
     }
   }
-  
+
   public initName(): void {
     this.name = this.constructor.name;
   }
