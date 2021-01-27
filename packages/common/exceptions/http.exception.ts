@@ -78,4 +78,3 @@ export class HttpException extends Error {
       : { statusCode, message: objectOrError, error: description };
   }
 }
-

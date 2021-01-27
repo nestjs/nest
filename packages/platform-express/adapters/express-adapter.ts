@@ -1,5 +1,8 @@
 import { RequestMethod } from '@nestjs/common';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { isFunction, isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
@@ -108,7 +111,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return request.originalUrl;
   }
 
-  public enableCors(options: CorsOptions) {
+  public enableCors(options: CorsOptions | CorsOptionsDelegate<any>) {
     return this.use(cors(options));
   }
 
