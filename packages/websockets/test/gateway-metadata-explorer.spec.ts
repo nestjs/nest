@@ -67,7 +67,7 @@ describe('GatewayMetadataExplorer', () => {
     });
   });
   describe('scanForServerHooks', () => {
-    it(`should returns properties with @Client decorator`, () => {
+    it(`should return properties with @Client decorator`, () => {
       const obj = new Test();
       const servers = [...instance.scanForServerHooks(obj as any)];
 

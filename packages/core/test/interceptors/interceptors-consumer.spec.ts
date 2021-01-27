@@ -80,7 +80,7 @@ describe('InterceptorsConsumer', () => {
     });
   });
   describe('createContext', () => {
-    it('should returns execution context object', () => {
+    it('should return execution context object', () => {
       const instance = { constructor: {} };
       const callback = () => null;
       const context = consumer.createContext([], instance, callback);

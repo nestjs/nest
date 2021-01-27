@@ -7,7 +7,7 @@ describe('ClientsContainer', () => {
     instance = new ClientsContainer();
   });
   describe('getAllClients', () => {
-    it('should returns array of clients', () => {
+    it('should return array of clients', () => {
       const clients = [1, 2, 3];
       (instance as any).clients = clients;
       expect(instance.getAllClients()).to.be.eql(clients);

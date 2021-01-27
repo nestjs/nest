@@ -1,6 +1,9 @@
 import { HttpServer, RequestMethod } from '@nestjs/common';
 import { RequestHandler } from '@nestjs/common/interfaces';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 
 /**
@@ -14,6 +17,14 @@ export abstract class AbstractHttpAdapter<
   protected httpServer: TServer;
 
   constructor(protected readonly instance: any) {}
+  all(path: string, handler: RequestHandler<TRequest, TResponse>);
+  all(handler: RequestHandler<TRequest, TResponse>);
+  all(path: any, handler?: any) {
+    throw new Error('Method not implemented.');
+  }
+  setBaseViewsDir?(path: string | string[]): this {
+    throw new Error('Method not implemented.');
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   public async init() {}
@@ -97,7 +108,10 @@ export abstract class AbstractHttpAdapter<
   abstract setNotFoundHandler(handler: Function, prefix?: string);
   abstract setHeader(response, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string);
-  abstract enableCors(options: CorsOptions, prefix?: string);
+  abstract enableCors(
+    options: CorsOptions | CorsOptionsDelegate<TRequest>,
+    prefix?: string,
+  );
   abstract createMiddlewareFactory(
     requestMethod: RequestMethod,
   ):

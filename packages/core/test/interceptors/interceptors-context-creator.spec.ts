@@ -52,7 +52,7 @@ describe('InterceptorsContextCreator', () => {
   });
   describe('createConcreteContext', () => {
     describe('when `moduleContext` is nil', () => {
-      it('should returns empty array', () => {
+      it('should return empty array', () => {
         const result = interceptorsContextCreator.createConcreteContext(
           interceptors,
         );

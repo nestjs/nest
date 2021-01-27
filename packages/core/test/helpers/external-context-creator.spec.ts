@@ -243,7 +243,7 @@ describe('ExternalContextCreator', () => {
   describe('transformToResult', () => {
     describe('when resultOrDeffered', () => {
       describe('is Promise', () => {
-        it('should returns Promise', async () => {
+        it('should return Promise', async () => {
           const value = 100;
           expect(
             await contextCreator.transformToResult(Promise.resolve(value)),
@@ -252,7 +252,7 @@ describe('ExternalContextCreator', () => {
       });
 
       describe('is Observable', () => {
-        it('should returns Promise', async () => {
+        it('should return Promise', async () => {
           const value = 100;
           expect(await contextCreator.transformToResult(of(value))).to.be.eq(
             100,
@@ -261,7 +261,7 @@ describe('ExternalContextCreator', () => {
       });
 
       describe('is value', () => {
-        it('should returns Promise', async () => {
+        it('should return Promise', async () => {
           const value = 100;
           expect(await contextCreator.transformToResult(value)).to.be.eq(100);
         });

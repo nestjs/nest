@@ -280,7 +280,7 @@ describe('Module', () => {
       });
     });
     describe('when metatype exists in providers collection', () => {
-      it('should returns null', () => {
+      it('should return null', () => {
         expect(module.instance).to.be.eql(null);
       });
     });

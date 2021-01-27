@@ -1,5 +1,8 @@
 import { RequestMethod } from '../../enums';
-import { CorsOptions } from '../../interfaces/external/cors-options.interface';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '../../interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '../../interfaces/nest-application-options.interface';
 
 export type ErrorHandler<TRequest = any, TResponse = any> = (
@@ -62,7 +65,7 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   getRequestUrl?(request: TResponse): string;
   getInstance(): any;
   registerParserMiddleware(): any;
-  enableCors(options: CorsOptions): any;
+  enableCors(options: CorsOptions | CorsOptionsDelegate<TRequest>): any;
   getHttpServer(): any;
   initHttpServer(options: NestApplicationOptions): void;
   close(): any;

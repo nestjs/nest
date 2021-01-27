@@ -9,7 +9,10 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -104,11 +107,15 @@ export class NestApplication
     if (!this.appOptions || !this.appOptions.cors) {
       return undefined;
     }
-    const isCorsOptionsObj = isObject(this.appOptions.cors);
-    if (!isCorsOptionsObj) {
+    const passCustomOptions =
+      isObject(this.appOptions.cors) ||
+      typeof this.appOptions.cors === 'function';
+    if (!passCustomOptions) {
       return this.enableCors();
     }
-    return this.enableCors(this.appOptions.cors as CorsOptions);
+    return this.enableCors(
+      this.appOptions.cors as CorsOptions | CorsOptionsDelegate<any>,
+    );
   }
 
   public createServer<T = any>(): T {
@@ -226,7 +233,7 @@ export class NestApplication
     return this;
   }
 
-  public enableCors(options?: CorsOptions): void {
+  public enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void {
     this.httpAdapter.enableCors(options);
   }
 

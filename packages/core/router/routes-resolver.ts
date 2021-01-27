@@ -129,7 +129,12 @@ export class RoutesResolver implements Resolver {
   }
 
   private getModulePathMetadata(metatype: Type<unknown>): string | undefined {
-    return Reflect.getMetadata(MODULE_PATH, metatype);
+    const modulesContainer = this.container.getModules();
+    const modulePath = Reflect.getMetadata(
+      MODULE_PATH + modulesContainer.applicationId,
+      metatype,
+    );
+    return modulePath ?? Reflect.getMetadata(MODULE_PATH, metatype);
   }
 
   private getHostMetadata(

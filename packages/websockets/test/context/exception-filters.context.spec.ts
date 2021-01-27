@@ -1,9 +1,9 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
+import * as sinon from 'sinon';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
-import { ExceptionFiltersContext } from '../../context/exception-filters-context';
+import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
 import { NestContainer } from '../../../core/injector/container';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context';
 
 describe('ExceptionFiltersContext', () => {
   let moduleName: string;
@@ -25,7 +25,7 @@ describe('ExceptionFiltersContext', () => {
       beforeEach(() => {
         sinon.stub(exceptionFilter, 'createContext').returns([]);
       });
-      it('should returns plain ExceptionHandler object', () => {
+      it('should return plain ExceptionHandler object', () => {
         const filter = exceptionFilter.create(
           new EmptyMetadata(),
           () => ({} as any),
@@ -38,7 +38,7 @@ describe('ExceptionFiltersContext', () => {
       @UseFilters(new ExceptionFilter())
       class WithMetadata {}
 
-      it('should returns ExceptionHandler object with exception filters', () => {
+      it('should return ExceptionHandler object with exception filters', () => {
         const filter = exceptionFilter.create(
           new WithMetadata(),
           () => ({} as any),
