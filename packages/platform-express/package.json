@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-express",
-  "version": "7.5.5",
+  "version": "7.6.7",
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-express)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -21,11 +21,11 @@
     "cors": "2.8.5",
     "express": "4.17.1",
     "multer": "1.4.2",
-    "tslib": "2.0.3"
+    "tslib": "2.1.0"
   },
   "devDependencies": {
-    "@nestjs/common": "7.5.5",
-    "@nestjs/core": "7.5.5"
+    "@nestjs/common": "7.6.7",
+    "@nestjs/core": "7.6.7"
   },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",

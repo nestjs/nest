@@ -24,8 +24,14 @@ export const isPlainObject = (fn: any): fn is object => {
   );
 };
 
-export const validatePath = (path?: string): string =>
+export const addLeadingSlash = (path?: string): string =>
   path ? (path.charAt(0) !== '/' ? '/' + path : path) : '';
+
+/**
+ * Deprecated. Use the "addLeadingSlash" function instead.
+ * @deprecated
+ */
+export const validatePath = addLeadingSlash;
 
 export const isFunction = (fn: any): boolean => typeof fn === 'function';
 export const isString = (fn: any): fn is string => typeof fn === 'string';

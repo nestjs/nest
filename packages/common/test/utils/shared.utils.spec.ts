@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 import {
-  isUndefined,
-  isFunction,
-  isObject,
-  isString,
+  addLeadingSlash,
   isConstructor,
-  validatePath,
-  isNil,
   isEmpty,
+  isFunction,
+  isNil,
+  isObject,
   isPlainObject,
+  isString,
+  isUndefined,
 } from '../../utils/shared.utils';
 
 function Foo(a) {
@@ -81,17 +81,17 @@ describe('Shared utils', () => {
       expect(isConstructor('nope')).to.be.false;
     });
   });
-  describe('validatePath', () => {
+  describe('addLeadingSlash', () => {
     it('should returns validated path ("add / if not exists")', () => {
-      expect(validatePath('nope')).to.be.eql('/nope');
+      expect(addLeadingSlash('nope')).to.be.eql('/nope');
     });
     it('should returns same path', () => {
-      expect(validatePath('/nope')).to.be.eql('/nope');
+      expect(addLeadingSlash('/nope')).to.be.eql('/nope');
     });
     it('should returns empty path', () => {
-      expect(validatePath('')).to.be.eql('');
-      expect(validatePath(null)).to.be.eql('');
-      expect(validatePath(undefined)).to.be.eql('');
+      expect(addLeadingSlash('')).to.be.eql('');
+      expect(addLeadingSlash(null)).to.be.eql('');
+      expect(addLeadingSlash(undefined)).to.be.eql('');
     });
   });
   describe('isNil', () => {

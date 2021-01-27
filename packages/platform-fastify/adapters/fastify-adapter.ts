@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { HttpStatus, Logger, RequestMethod } from '@nestjs/common';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
@@ -59,12 +62,8 @@ type FastifyHttpsOptions<
 
 export class FastifyAdapter<
   TServer extends RawServerBase = RawServerDefault,
-  TRawRequest extends RawRequestDefaultExpression<
-    TServer
-  > = RawRequestDefaultExpression<TServer>,
-  TRawResponse extends RawReplyDefaultExpression<
-    TServer
-  > = RawReplyDefaultExpression<TServer>
+  TRawRequest extends RawRequestDefaultExpression<TServer> = RawRequestDefaultExpression<TServer>,
+  TRawResponse extends RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>
 > extends AbstractHttpAdapter<
   TServer,
   FastifyRequest<RequestGenericInterface, TServer, TRawRequest>,
@@ -113,9 +112,6 @@ export class FastifyAdapter<
     callback?: () => void,
   ): void;
   public listen(port: string | number, ...args: any[]): Promise<string> {
-    if (typeof port === 'string') {
-      port = parseInt(port);
-    }
     return this.instance.listen(port, ...args);
   }
 
@@ -264,8 +260,18 @@ export class FastifyAdapter<
     return request.raw ? request.raw.url : request.url;
   }
 
-  public enableCors(options: CorsOptions) {
-    this.register(require('fastify-cors'), options);
+  public enableCors(
+    options:
+      | CorsOptions
+      | CorsOptionsDelegate<
+          FastifyRequest<RequestGenericInterface, TServer, TRawRequest>
+        >,
+  ) {
+    if (typeof options === 'function') {
+      this.register(require('fastify-cors'), () => options);
+    } else {
+      this.register(require('fastify-cors'), options);
+    }
   }
 
   public registerParserMiddleware() {

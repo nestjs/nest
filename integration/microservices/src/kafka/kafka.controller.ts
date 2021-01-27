@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, OnModuleInit, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  OnModuleInit,
+  Post,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { Client, ClientKafka, Transport } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
@@ -6,7 +13,7 @@ import { BusinessDto } from './dtos/business.dto';
 import { UserDto } from './dtos/user.dto';
 
 @Controller()
-export class KafkaController implements OnModuleInit {
+export class KafkaController implements OnModuleInit, OnModuleDestroy {
   protected readonly logger = new Logger(KafkaController.name);
   static IS_NOTIFIED = false;
   static MATH_SUM = 0;
@@ -21,7 +28,7 @@ export class KafkaController implements OnModuleInit {
   })
   private readonly client: ClientKafka;
 
-  onModuleInit() {
+  async onModuleInit() {
     const requestPatterns = [
       'math.sum.sync.kafka.message',
       'math.sum.sync.without.key',
@@ -36,6 +43,12 @@ export class KafkaController implements OnModuleInit {
     requestPatterns.forEach(pattern => {
       this.client.subscribeToResponseOf(pattern);
     });
+
+    await this.client.connect();
+  }
+
+  async onModuleDestroy() {
+    await this.client.close();
   }
 
   // sync send kafka message

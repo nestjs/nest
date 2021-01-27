@@ -61,14 +61,16 @@ export abstract class Server {
 
   public send(
     stream$: Observable<any>,
-    respond: (data: WritePacket) => void,
+    respond: (data: WritePacket) => unknown | Promise<unknown>,
   ): Subscription {
     let dataBuffer: WritePacket[] = null;
     const scheduleOnNextTick = (data: WritePacket) => {
       if (!dataBuffer) {
         dataBuffer = [data];
-        process.nextTick(() => {
-          dataBuffer.forEach(buffer => respond(buffer));
+        process.nextTick(async () => {
+          for (const item of dataBuffer) {
+            await respond(item);
+          }
           dataBuffer = null;
         });
       } else if (!data.isDisposed) {
@@ -95,7 +97,9 @@ export abstract class Server {
   ): Promise<any> {
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
-      return this.logger.error(NO_EVENT_HANDLER);
+      return this.logger.error(
+        `${NO_EVENT_HANDLER} Event pattern: ${JSON.stringify(pattern)}.`,
+      );
     }
     const resultOrStream = await handler(packet.data, context);
     if (this.isObservable(resultOrStream)) {

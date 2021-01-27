@@ -19,6 +19,7 @@ import {
   KafkaMessage,
   Message,
   Producer,
+  RecordMetadata,
 } from '../external/kafka.interface';
 import { KafkaLogger, KafkaParser } from '../helpers';
 import {
@@ -50,17 +51,16 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       this.getOptionsProp(this.options, 'client') || ({} as KafkaConfig);
     const consumerOptions =
       this.getOptionsProp(this.options, 'consumer') || ({} as ConsumerConfig);
+    const postfixId =
+      this.getOptionsProp(this.options, 'postfixId') || '-server';
 
     this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
 
     // append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
     this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) +
-      (clientOptions.clientIdPostfix || '-server');
-    this.groupId =
-      (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) +
-      (clientOptions.clientIdPostfix || '-server');
+      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
+    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
 
     kafkaPackage = this.loadPackage('kafkajs', ServerKafka.name, () =>
       require('kafkajs'),
@@ -75,9 +75,9 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     await this.start(callback);
   }
 
-  public close(): void {
-    this.consumer && this.consumer.disconnect();
-    this.producer && this.producer.disconnect();
+  public async close(): Promise<void> {
+    this.consumer && (await this.consumer.disconnect());
+    this.producer && (await this.producer.disconnect());
     this.consumer = null;
     this.producer = null;
     this.client = null;
@@ -130,7 +130,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     replyTopic: string,
     replyPartition: string,
     correlationId: string,
-  ): (data: any) => any {
+  ): (data: any) => Promise<RecordMetadata[]> {
     return (data: any) =>
       this.sendMessage(data, replyTopic, replyPartition, correlationId);
   }
@@ -184,7 +184,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     replyTopic: string,
     replyPartition: string,
     correlationId: string,
-  ): void {
+  ): Promise<RecordMetadata[]> {
     const outgoingMessage = this.serializer.serialize(message.response);
     this.assignReplyPartition(replyPartition, outgoingMessage);
     this.assignCorrelationIdHeader(correlationId, outgoingMessage);
@@ -198,7 +198,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       },
       this.options.send || {},
     );
-    this.producer.send(replyMessage);
+    return this.producer.send(replyMessage);
   }
 
   public assignIsDisposedHeader(

@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "7.5.5",
+  "version": "7.6.7",
   "description": "Nest - modern, fast, powerful node.js web framework (@core)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -30,17 +30,31 @@
     "@nuxtjs/opencollective": "0.3.2",
     "fast-safe-stringify": "2.0.7",
     "iterare": "1.2.1",
-    "object-hash": "2.0.3",
+    "object-hash": "2.1.1",
     "path-to-regexp": "3.2.0",
-    "tslib": "2.0.3",
-    "uuid": "8.3.1"
+    "tslib": "2.1.0",
+    "uuid": "8.3.2"
   },
   "devDependencies": {
-    "@nestjs/common": "7.5.5"
+    "@nestjs/common": "7.6.7"
   },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",
+    "@nestjs/microservices": "^7.0.0",
+    "@nestjs/platform-express": "^7.0.0",
+    "@nestjs/websockets": "^7.0.0",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/websockets": {
+      "optional": true
+    },
+    "@nestjs/microservices": {
+      "optional": true
+    },
+    "@nestjs/platform-express": {
+      "optional": true
+    }
   }
 }

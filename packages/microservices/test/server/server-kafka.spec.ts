@@ -135,8 +135,8 @@ describe('ServerKafka', () => {
       (server as any).consumer = consumer;
       (server as any).producer = producer;
     });
-    it('should close server', () => {
-      server.close();
+    it('should close server', async () => {
+      await server.close();
 
       expect(consumer.disconnect.calledOnce).to.be.true;
       expect(producer.disconnect.calledOnce).to.be.true;
@@ -229,7 +229,9 @@ describe('ServerKafka', () => {
         replyPartition,
         correlationId,
       );
-      sendMessageStub = sinon.stub(server, 'sendMessage').callsFake(() => ({}));
+      sendMessageStub = sinon
+        .stub(server, 'sendMessage')
+        .callsFake(async () => []);
     });
     it(`should return function`, () => {
       expect(typeof server.getPublisher(null, null, correlationId)).to.be.eql(
@@ -258,7 +260,7 @@ describe('ServerKafka', () => {
     let getPublisherSpy: sinon.SinonSpy;
 
     beforeEach(() => {
-      sinon.stub(server, 'sendMessage').callsFake(() => ({}));
+      sinon.stub(server, 'sendMessage').callsFake(async () => []);
       getPublisherSpy = sinon.spy();
 
       sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);

@@ -25,7 +25,7 @@ describe('WebSocketGateway', () => {
     ws.emit('push', {
       test: 'test',
     });
-    await new Promise(resolve =>
+    await new Promise<void>(resolve =>
       ws.on('pop', data => {
         expect(data.test).to.be.eql('test');
         resolve();
@@ -41,7 +41,7 @@ describe('WebSocketGateway', () => {
     ws.emit('push', {
       test: 'test',
     });
-    await new Promise(resolve =>
+    await new Promise<void>(resolve =>
       ws.on('pop', data => {
         expect(data.test).to.be.eql('test');
         resolve();
@@ -58,7 +58,7 @@ describe('WebSocketGateway', () => {
     ws.emit('push', {
       test: 'test',
     });
-    await new Promise(resolve =>
+    await new Promise<void>(resolve =>
       ws.on('pop', data => {
         expect(data.test).to.be.eql('test');
         resolve();

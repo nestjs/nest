@@ -69,82 +69,6 @@ export interface InjectorDependencyContext {
 }
 
 export class Injector {
-  public async loadMiddleware(
-    wrapper: InstanceWrapper,
-    collection: Map<string, InstanceWrapper>,
-    moduleRef: Module,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
-  ) {
-    const { metatype } = wrapper;
-    const targetWrapper = collection.get(metatype.name);
-    if (!isUndefined(targetWrapper.instance)) {
-      return;
-    }
-    const loadInstance = (instances: any[]) => {
-      targetWrapper.instance = targetWrapper.isDependencyTreeStatic()
-        ? new (metatype as Type<any>)(...instances)
-        : Object.create(metatype.prototype);
-    };
-    await this.resolveConstructorParams(
-      wrapper,
-      moduleRef,
-      null,
-      loadInstance,
-      contextId,
-      inquirer,
-    );
-  }
-
-  public async loadController(
-    wrapper: InstanceWrapper<Controller>,
-    moduleRef: Module,
-    contextId = STATIC_CONTEXT,
-  ) {
-    const controllers = moduleRef.controllers;
-    await this.loadInstance<Controller>(
-      wrapper,
-      controllers,
-      moduleRef,
-      contextId,
-      wrapper,
-    );
-    await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
-  }
-
-  public async loadInjectable<T = any>(
-    wrapper: InstanceWrapper<T>,
-    moduleRef: Module,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
-  ) {
-    const injectables = moduleRef.injectables;
-    await this.loadInstance<T>(
-      wrapper,
-      injectables,
-      moduleRef,
-      contextId,
-      inquirer,
-    );
-  }
-
-  public async loadProvider(
-    wrapper: InstanceWrapper<Injectable>,
-    moduleRef: Module,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
-  ) {
-    const providers = moduleRef.providers;
-    await this.loadInstance<Injectable>(
-      wrapper,
-      providers,
-      moduleRef,
-      contextId,
-      inquirer,
-    );
-    await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
-  }
-
   public loadPrototype<T>(
     { name }: InstanceWrapper<T>,
     collection: Map<string, InstanceWrapper<T>>,
@@ -162,15 +86,6 @@ export class Injector {
       });
       collection.set(name, wrapper);
     }
-  }
-
-  public applyDoneHook<T>(wrapper: InstancePerContext<T>): () => void {
-    let done: () => void;
-    wrapper.donePromise = new Promise<void>((resolve, reject) => {
-      done = resolve;
-    });
-    wrapper.isPending = true;
-    return done;
   }
 
   public async loadInstance<T>(
@@ -225,11 +140,91 @@ export class Injector {
     );
   }
 
+  public async loadMiddleware(
+    wrapper: InstanceWrapper,
+    collection: Map<string, InstanceWrapper>,
+    moduleRef: Module,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
+  ) {
+    const { metatype } = wrapper;
+    const targetWrapper = collection.get(metatype.name);
+    if (!isUndefined(targetWrapper.instance)) {
+      return;
+    }
+    targetWrapper.instance = Object.create(metatype.prototype);
+    await this.loadInstance(
+      wrapper,
+      collection,
+      moduleRef,
+      contextId,
+      inquirer || wrapper,
+    );
+  }
+
+  public async loadController(
+    wrapper: InstanceWrapper<Controller>,
+    moduleRef: Module,
+    contextId = STATIC_CONTEXT,
+  ) {
+    const controllers = moduleRef.controllers;
+    await this.loadInstance<Controller>(
+      wrapper,
+      controllers,
+      moduleRef,
+      contextId,
+      wrapper,
+    );
+    await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
+  }
+
+  public async loadInjectable<T = any>(
+    wrapper: InstanceWrapper<T>,
+    moduleRef: Module,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
+  ) {
+    const injectables = moduleRef.injectables;
+    await this.loadInstance<T>(
+      wrapper,
+      injectables,
+      moduleRef,
+      contextId,
+      inquirer,
+    );
+  }
+
+  public async loadProvider(
+    wrapper: InstanceWrapper<Injectable>,
+    moduleRef: Module,
+    contextId = STATIC_CONTEXT,
+    inquirer?: InstanceWrapper,
+  ) {
+    const providers = moduleRef.providers;
+    await this.loadInstance<Injectable>(
+      wrapper,
+      providers,
+      moduleRef,
+      contextId,
+      inquirer,
+    );
+    await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
+  }
+
+  public applyDoneHook<T>(wrapper: InstancePerContext<T>): () => void {
+    let done: () => void;
+    wrapper.donePromise = new Promise<void>((resolve, reject) => {
+      done = resolve;
+    });
+    wrapper.isPending = true;
+    return done;
+  }
+
   public async resolveConstructorParams<T>(
     wrapper: InstanceWrapper<T>,
     moduleRef: Module,
     inject: InjectorDependency[],
-    callback: (args: unknown[]) => void,
+    callback: (args: unknown[]) => void | Promise<void>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
@@ -274,7 +269,7 @@ export class Injector {
         if (!instanceHost.isResolved && !paramWrapper.forwardRef) {
           isResolved = false;
         }
-        return instanceHost && instanceHost.instance;
+        return instanceHost?.instance;
       } catch (err) {
         const isOptional = optionalDependenciesIds.includes(index);
         if (!isOptional) {
@@ -372,7 +367,7 @@ export class Injector {
 
   public async resolveComponentHost<T>(
     moduleRef: Module,
-    instanceWrapper: InstanceWrapper<T>,
+    instanceWrapper: InstanceWrapper<T | Promise<T>>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
   ): Promise<InstanceWrapper> {

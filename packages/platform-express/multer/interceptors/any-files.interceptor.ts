@@ -39,7 +39,7 @@ export function AnyFilesInterceptor(
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
 
-      await new Promise((resolve, reject) =>
+      await new Promise<void>((resolve, reject) =>
         this.multer.any()(ctx.getRequest(), ctx.getResponse(), (err: any) => {
           if (err) {
             const error = transformException(err);

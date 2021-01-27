@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   ValidateNested,
+  IsArray,
 } from 'class-validator';
 import { HttpStatus } from '../../enums';
 import { UnprocessableEntityException } from '../../exceptions';
@@ -153,6 +154,32 @@ describe('ValidationPipe', () => {
             'prop must be a string',
             'test.prop1 must be a string',
             'test.prop2 must be a boolean value',
+          ]);
+        }
+      });
+
+      class TestModelForNestedArrayValidation {
+        @IsString()
+        public prop: string;
+
+        @IsArray()
+        @ValidateNested()
+        @Type(() => TestModel2)
+        public test: TestModel2[];
+      }
+      it('should provide complete path for nested errors', async () => {
+        try {
+          const model = new TestModelForNestedArrayValidation();
+          model.test = [new TestModel2()];
+          await target.transform(model, {
+            type: 'body',
+            metatype: TestModelForNestedArrayValidation,
+          });
+        } catch (err) {
+          expect(err.getResponse().message).to.be.eql([
+            'prop must be a string',
+            'test.0.prop1 must be a string',
+            'test.0.prop2 must be a boolean value',
           ]);
         }
       });

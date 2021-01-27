@@ -1,4 +1,7 @@
-import { CorsOptions } from './external/cors-options.interface';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from './external/cors-options.interface';
 import { CanActivate } from './features/can-activate.interface';
 import { NestInterceptor } from './features/nest-interceptor.interface';
 import { HttpServer } from './http/http-server.interface';
@@ -30,7 +33,7 @@ export interface INestApplication extends INestApplicationContext {
    *
    * @returns {void}
    */
-  enableCors(options?: CorsOptions): void;
+  enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void;
 
   /**
    * Starts the application.

@@ -20,7 +20,7 @@ describe('ErrorGateway', () => {
     ws.emit('push', {
       test: 'test',
     });
-    await new Promise(resolve =>
+    await new Promise<void>(resolve =>
       ws.on('exception', data => {
         expect(data).to.be.eql({
           status: 'error',

@@ -1,4 +1,8 @@
-import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isNil,
+  isString,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
@@ -14,13 +18,13 @@ import {
 } from '../constants';
 import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
+import { RmqUrl } from '../external/rmq-url.interface';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
 import {
   IncomingRequest,
   OutgoingResponse,
 } from '../interfaces/packet.interface';
 import { Server } from './server';
-import { RmqUrl } from '../external/rmq-url.interface';
 
 let rqmPackage: any = {};
 
@@ -111,6 +115,9 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     message: Record<string, any>,
     channel: any,
   ): Promise<void> {
+    if (isNil(message)) {
+      return;
+    }
     const { content, properties } = message;
     const rawMessage = JSON.parse(content.toString());
     const packet = this.deserializer.deserialize(rawMessage);

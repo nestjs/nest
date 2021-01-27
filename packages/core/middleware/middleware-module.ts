@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middleware.interface';
 import { NestModule } from '@nestjs/common/interfaces/modules/nest-module.interface';
-import { isUndefined, validatePath } from '@nestjs/common/utils/shared.utils';
+import {
+  addLeadingSlash,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
@@ -165,6 +168,9 @@ export class MiddlewareModule {
       if (isUndefined(instanceWrapper)) {
         throw new RuntimeException();
       }
+      if (instanceWrapper.isTransient) {
+        return;
+      }
       await this.bindHandler(
         instanceWrapper,
         applicationRef,
@@ -265,7 +271,7 @@ export class MiddlewareModule {
     ) => void,
   ) {
     const prefix = this.config.getGlobalPrefix();
-    const basePath = validatePath(prefix);
+    const basePath = addLeadingSlash(prefix);
     if (basePath && path === '/*') {
       // strip slash when a wildcard is being used
       // and global prefix has been set
