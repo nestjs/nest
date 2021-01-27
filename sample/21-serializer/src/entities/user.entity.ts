@@ -14,7 +14,7 @@ export class UserEntity {
     return `${this.firstName} ${this.lastName}`;
   }
 
-  @Transform(role => role.name)
+  @Transform(({ value }) => value.name)
   role: RoleEntity;
 
   constructor(partial: Partial<UserEntity>) {

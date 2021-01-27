@@ -41,9 +41,7 @@ export interface RpcHandlerMetadata {
 export class RpcContextCreator {
   private readonly contextUtils = new ContextUtils();
   private readonly rpcParamsFactory = new RpcParamsFactory();
-  private readonly handlerMetadataStorage = new HandlerMetadataStorage<
-    RpcHandlerMetadata
-  >();
+  private readonly handlerMetadataStorage = new HandlerMetadataStorage<RpcHandlerMetadata>();
 
   constructor(
     private readonly rpcProxy: RpcProxy,

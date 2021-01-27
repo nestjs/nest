@@ -52,3 +52,10 @@ export interface CorsOptions {
    */
   optionsSuccessStatus?: number;
 }
+
+export interface CorsOptionsCallback {
+  (error: Error, options: CorsOptions): void;
+}
+export interface CorsOptionsDelegate<T> {
+  (req: T, cb: CorsOptionsCallback): void;
+}

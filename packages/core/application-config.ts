@@ -14,12 +14,8 @@ export class ApplicationConfig {
   private globalInterceptors: NestInterceptor[] = [];
   private globalGuards: CanActivate[] = [];
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
-  private readonly globalRequestFilters: InstanceWrapper<
-    ExceptionFilter
-  >[] = [];
-  private readonly globalRequestInterceptors: InstanceWrapper<
-    NestInterceptor
-  >[] = [];
+  private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] = [];
+  private readonly globalRequestInterceptors: InstanceWrapper<NestInterceptor>[] = [];
   private readonly globalRequestGuards: InstanceWrapper<CanActivate>[] = [];
 
   constructor(private ioAdapter: WebSocketAdapter | null = null) {}
