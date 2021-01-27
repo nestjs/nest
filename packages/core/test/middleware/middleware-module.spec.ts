@@ -174,7 +174,7 @@ describe('MiddlewareModule', () => {
 
       const instance = new TestMiddleware();
       container.getMiddlewareCollection(moduleKey).set(
-        'TestMiddleware',
+        TestMiddleware,
         new InstanceWrapper({
           metatype: TestMiddleware,
           instance,

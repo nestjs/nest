@@ -9,6 +9,7 @@ import { GuardsConsumer } from '../../guards/guards-consumer';
 import { GuardsContextCreator } from '../../guards/guards-context-creator';
 import { ExternalContextCreator } from '../../helpers/external-context-creator';
 import { NestContainer } from '../../injector/container';
+import { Module } from '../../injector/module';
 import { ModulesContainer } from '../../injector/modules-container';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
@@ -50,12 +51,12 @@ describe('ExternalContextCreator', () => {
   });
   describe('create', () => {
     it('should call "getContextModuleName" with expected argument', done => {
-      const getContextModuleNameSpy = sinon.spy(
+      const getContextModuleKeySpy = sinon.spy(
         contextCreator,
-        'getContextModuleName',
+        'getContextModuleKey',
       );
       contextCreator.create({ foo: 'bar' }, callback as any, '', '', null);
-      expect(getContextModuleNameSpy.called).to.be.true;
+      expect(getContextModuleKeySpy.called).to.be.true;
       done();
     });
     describe('returns proxy function', () => {
@@ -104,67 +105,31 @@ describe('ExternalContextCreator', () => {
       });
     });
   });
-  describe('getContextModuleName', () => {
-    describe('when constructor name is undefined', () => {
+  describe('getContextModuleKey', () => {
+    describe('when constructor is undefined', () => {
       it('should return empty string', () => {
-        expect(contextCreator.getContextModuleName({} as any)).to.be.eql('');
+        expect(contextCreator.getContextModuleKey(undefined)).to.be.eql('');
       });
     });
-    describe('when provider exists', () => {
+    describe('when module reference provider exists', () => {
       it('should return module key', () => {
         const modules = new Map();
-        const providerKey = 'test';
         const moduleKey = 'key';
 
-        modules.set(moduleKey, {});
+        const moduleRef = new Module(class {}, modules as any);
+        modules.set(moduleKey, moduleRef);
         (contextCreator as any).modulesContainer = modules;
-        sinon
-          .stub(contextCreator, 'getProviderByClassName')
-          .callsFake(() => true);
+
+        sinon.stub(moduleRef, 'hasProvider').callsFake(() => true);
 
         expect(
-          contextCreator.getContextModuleName({ name: providerKey } as any),
+          contextCreator.getContextModuleKey({ randomObject: true } as any),
         ).to.be.eql(moduleKey);
       });
     });
     describe('when provider does not exists', () => {
       it('should return empty string', () => {
-        sinon
-          .stub(contextCreator, 'getProviderByClassName')
-          .callsFake(() => false);
-        expect(contextCreator.getContextModuleName({} as any)).to.be.eql('');
-      });
-    });
-  });
-  describe('getProviderByClassName', () => {
-    describe('when provider exists', () => {
-      it('should return true', () => {
-        const providers = new Map();
-        const key = 'test';
-        providers.set(key, key);
-
-        expect(
-          contextCreator.getProviderByClassName(
-            {
-              providers,
-            } as any,
-            key,
-          ),
-        ).to.be.true;
-      });
-    });
-    describe('when provider does not exists', () => {
-      it('should return false', () => {
-        const providers = new Map();
-        const key = 'test';
-        expect(
-          contextCreator.getProviderByClassName(
-            {
-              providers,
-            } as any,
-            key,
-          ),
-        ).to.be.false;
+        expect(contextCreator.getContextModuleKey({} as any)).to.be.eql('');
       });
     });
   });

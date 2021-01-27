@@ -15,7 +15,9 @@ import { RouterExplorer } from './router-explorer';
 import { RouterProxy } from './router-proxy';
 
 export class RoutesResolver implements Resolver {
-  private readonly logger = new Logger(RoutesResolver.name, true);
+  private readonly logger = new Logger(RoutesResolver.name, {
+    timestamp: true,
+  });
   private readonly routerProxy = new RouterProxy();
   private readonly routerExceptionsFilter: RouterExceptionFilters;
   private readonly routerExplorer: RouterExplorer;
@@ -51,7 +53,7 @@ export class RoutesResolver implements Resolver {
   }
 
   public registerRouters(
-    routes: Map<string, InstanceWrapper<Controller>>,
+    routes: Map<string | symbol | Function, InstanceWrapper<Controller>>,
     moduleName: string,
     basePath: string,
     applicationRef: HttpServer,

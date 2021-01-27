@@ -5,6 +5,7 @@ import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator
 import { loadAdapter } from '@nestjs/core/helpers/load-adapter';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
+import { InstanceToken } from '@nestjs/core/injector/module';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
@@ -51,7 +52,7 @@ export class SocketModule<HttpServer = any> {
   }
 
   public combineAllGateways(
-    providers: Map<string, InstanceWrapper<Injectable>>,
+    providers: Map<InstanceToken, InstanceWrapper<Injectable>>,
     moduleName: string,
   ) {
     iterate(providers.values())

@@ -57,6 +57,12 @@ export interface INestApplicationContext {
   useLogger(logger: LoggerService | LogLevel[] | false): void;
 
   /**
+   * Prints buffered logs and detaches buffer.
+   * @returns {void}
+   */
+  flushLogs(): void;
+
+  /**
    * Enables the usage of shutdown hooks. Will call the
    * `onApplicationShutdown` function of a provider if the
    * process receives a shutdown signal.
