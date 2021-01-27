@@ -75,7 +75,7 @@ describe('Shared utils', () => {
     });
   });
   describe('isConstructor', () => {
-    it('should returntrue when string is equal to constructor', () => {
+    it('should return true when string is equal to constructor', () => {
       expect(isConstructor('constructor')).to.be.true;
     });
     it('should return false when string is not equal to constructor', () => {
