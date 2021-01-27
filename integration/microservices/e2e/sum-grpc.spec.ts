@@ -4,7 +4,7 @@ import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { fail } from 'assert';
 import { expect } from 'chai';
-import * as GRPC from 'grpc';
+import * as GRPC from '@grpc/grpc-js';
 import { join } from 'path';
 import * as request from 'supertest';
 import { GrpcController } from '../src/grpc/grpc.controller';
