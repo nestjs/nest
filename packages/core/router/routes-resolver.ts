@@ -15,7 +15,9 @@ import { RouterExplorer } from './router-explorer';
 import { RouterProxy } from './router-proxy';
 
 export class RoutesResolver implements Resolver {
-  private readonly logger = new Logger(RoutesResolver.name, true);
+  private readonly logger = new Logger(RoutesResolver.name, {
+    timestamp: true,
+  });
   private readonly routerProxy = new RouterProxy();
   private readonly routerExceptionsFilter: RouterExceptionFilters;
   private readonly routerExplorer: RouterExplorer;

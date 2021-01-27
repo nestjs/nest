@@ -134,6 +134,10 @@ export class NestApplicationContext implements INestApplicationContext {
     Logger.overrideLogger(logger);
   }
 
+  public flushLogs() {
+    Logger.flush();
+  }
+
   /**
    * Enables the usage of shutdown hooks. Will call the
    * `onApplicationShutdown` function of a provider if the
