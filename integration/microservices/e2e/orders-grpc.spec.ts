@@ -6,7 +6,7 @@ import { Test } from '@nestjs/testing';
 import { fail } from 'assert';
 import { expect } from 'chai';
 import * as express from 'express';
-import * as GRPC from 'grpc';
+import * as GRPC from '@grpc/grpc-js';
 import { join } from 'path';
 import * as request from 'supertest';
 import { AdvancedGrpcController } from '../src/grpc-advanced/advanced.grpc.controller';
