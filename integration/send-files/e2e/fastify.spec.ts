@@ -48,4 +48,12 @@ describe('Fastify FileSend', () => {
       expect(payload).to.be.eq({ value: 'Hello world' });
     });
   });
+  it('should return a file from an RxJS stream', async () => {
+    return app.inject({
+      method: 'GET',
+      url: '/file/rxjs/stream'
+    }).then(({ payload }) => {
+      expect(payload.toString()).to.be.eq(readmeString);
+    });
+  });
 });

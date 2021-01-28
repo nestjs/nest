@@ -1,4 +1,5 @@
 import { Controller, Get, StreamableFile } from '@nestjs/common';
+import { Observable } from 'rxjs';
 import { AppService } from './app.service';
 import { NonFile } from './non-file';
 
@@ -19,5 +20,10 @@ export class AppController {
   @Get('non-file/pipe-method')
   getNonFile(): NonFile {
     return this.appService.getNonFile();
+  }
+
+  @Get('file/rxjs/stream')
+  getRxJSFile(): Observable<StreamableFile> {
+    return this.appService.getRxJSFile();
   }
 }

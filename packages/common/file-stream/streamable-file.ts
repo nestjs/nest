@@ -1,4 +1,3 @@
-import { buffer } from 'rxjs/operators';
 import { Readable } from 'stream';
 
 export class StreamableFile {

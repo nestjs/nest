@@ -42,4 +42,12 @@ describe('Express FileSend', () => {
       .expect(200)
       .expect({ value: 'Hello world' });
   });
+  it('should return a file from an RxJS stream', async () => {
+    return request(app.getHttpServer())
+      .get('/file/rxjs/stream/')
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.toString()).to.be.eq(readmeString);
+      });
+  });
 });
