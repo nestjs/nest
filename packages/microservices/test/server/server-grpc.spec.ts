@@ -61,6 +61,20 @@ describe('ServerGrpc', () => {
       server.close();
       expect(callback.called).to.be.true;
     });
+    describe('when "start" throws an exception', () => {
+      it('should call callback with a thrown error as an argument', async () => {
+        const error = new Error('random error');
+
+        const callbackSpy = sinon.spy();
+        sinon.stub(server, 'createClient').callsFake(async () => null);
+
+        sinon.stub(server, 'start').callsFake(() => {
+          throw error;
+        });
+        await server.listen(callbackSpy);
+        expect(callbackSpy.calledWith(error)).to.be.true;
+      });
+    });
   });
 
   describe('listen (multiple proto)', () => {

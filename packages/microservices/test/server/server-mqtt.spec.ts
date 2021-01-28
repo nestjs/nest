@@ -14,29 +14,40 @@ describe('ServerMqtt', () => {
     server = new ServerMqtt({});
   });
   describe('listen', () => {
-    let createMqttClient;
     let onSpy: sinon.SinonSpy;
-    let client;
+    let client: any;
+    let callbackSpy: sinon.SinonSpy;
 
     beforeEach(() => {
       onSpy = sinon.spy();
       client = {
         on: onSpy,
       };
-      createMqttClient = sinon
-        .stub(server, 'createMqttClient')
-        .callsFake(() => client);
-
-      server.listen(null);
+      sinon.stub(server, 'createMqttClient').callsFake(() => client);
+      callbackSpy = sinon.spy();
     });
     it('should bind "error" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onSpy.getCall(0).args[0]).to.be.equal('error');
     });
     it('should bind "message" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onSpy.getCall(1).args[0]).to.be.equal('message');
     });
     it('should bind "connect" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onSpy.getCall(2).args[0]).to.be.equal('connect');
+    });
+    describe('when "start" throws an exception', () => {
+      it('should call callback with a thrown error as an argument', () => {
+        const error = new Error('random error');
+
+        sinon.stub(server, 'start').callsFake(() => {
+          throw error;
+        });
+        server.listen(callbackSpy);
+        expect(callbackSpy.calledWith(error)).to.be.true;
+      });
     });
   });
   describe('close', () => {

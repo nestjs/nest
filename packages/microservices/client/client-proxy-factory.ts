@@ -31,7 +31,7 @@ export class ClientProxyFactory {
   ): ClientGrpcProxy;
   public static create(clientOptions: ClientOptions): ClientProxy & Closeable;
   public static create(clientOptions: ClientOptions): ClientProxy & Closeable {
-    const { transport, options } = clientOptions;
+    const { transport, options } = clientOptions || {};
     switch (transport) {
       case Transport.REDIS:
         return new ClientRedis(options as RedisOptions['options']);
