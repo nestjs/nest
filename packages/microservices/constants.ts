@@ -48,3 +48,7 @@ export const KAFKA_DEFAULT_GROUP = 'nestjs-group';
 export const MQTT_SEPARATOR = '/';
 export const MQTT_WILDCARD_SINGLE = '+';
 export const MQTT_WILDCARD_ALL = '#';
+
+export const ECONNREFUSED = 'ECONNREFUSED';
+export const CONN_ERR = 'CONN_ERR';
+export const EADDRINUSE = 'EADDRINUSE';

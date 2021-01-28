@@ -43,9 +43,15 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     this.initializeDeserializer(options);
   }
 
-  public async listen(callback: () => void) {
-    this.mqttClient = this.createMqttClient();
-    this.start(callback);
+  public async listen(
+    callback: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ) {
+    try {
+      this.mqttClient = this.createMqttClient();
+      this.start(callback);
+    } catch (err) {
+      callback(err);
+    }
   }
 
   public start(callback?: () => void) {

@@ -118,18 +118,28 @@ export class NestMicroservice
     return this;
   }
 
-  public listen(callback: () => void) {
-    this.listenAsync().then(callback);
+  public async listen() {
+    !this.isInitialized && (await this.registerModules());
+
+    return new Promise<any>((resolve, reject) => {
+      this.server.listen((err, info) => {
+        if (this.microserviceConfig?.autoFlushLogs) {
+          this.flushLogs();
+        }
+        if (err) {
+          return reject(err);
+        }
+        this.logger.log(MESSAGES.MICROSERVICE_READY);
+        resolve(info);
+      });
+    });
   }
 
   public async listenAsync(): Promise<any> {
-    !this.isInitialized && (await this.registerModules());
-
-    this.logger.log(MESSAGES.MICROSERVICE_READY);
-    if (this.microserviceConfig?.autoFlushLogs) {
-      this.flushLogs();
-    }
-    return new Promise<void>(resolve => this.server.listen(resolve));
+    this.logger.warn(
+      'DEPRECATED! "listenAsync" method is deprecated and will be removed in the next major release. Please, use "listen" instead.',
+    );
+    return this.listen();
   }
 
   public async close(): Promise<any> {

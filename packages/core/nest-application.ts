@@ -217,15 +217,16 @@ export class NestApplication
     return this.httpServer;
   }
 
-  public startAllMicroservices(callback?: () => void): this {
-    Promise.all(this.microservices.map(this.listenToPromise)).then(
-      () => callback && callback(),
-    );
+  public async startAllMicroservices(): Promise<this> {
+    await Promise.all(this.microservices.map(msvc => msvc.listen()));
     return this;
   }
 
-  public startAllMicroservicesAsync(): Promise<void> {
-    return new Promise(resolve => this.startAllMicroservices(resolve));
+  public startAllMicroservicesAsync(): Promise<this> {
+    this.logger.warn(
+      'DEPRECATED! "startAllMicroservicesAsync" method is deprecated and will be removed in the next major release. Please, use "startAllMicroservices" instead.',
+    );
+    return this.startAllMicroservices();
   }
 
   public use(...args: [any, any?]): this {
@@ -368,11 +369,5 @@ export class NestApplication
       this.middlewareContainer,
       instance,
     );
-  }
-
-  private listenToPromise(microservice: INestMicroservice) {
-    return new Promise<void>(async resolve => {
-      await microservice.listen(resolve);
-    });
   }
 }

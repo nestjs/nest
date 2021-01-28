@@ -122,17 +122,17 @@ export interface INestApplication extends INestApplicationContext {
   /**
    * Starts all connected microservices asynchronously.
    *
-   * @param {Function} [callback] Optional callback function
-   * @returns {this}
+   * @returns {Promise}
    */
-  startAllMicroservices(callback?: () => void): this;
+  startAllMicroservices(): Promise<this>;
 
   /**
    * Starts all connected microservices and can be awaited.
+   * @deprecated use "startAllMicroservices" instead.
    *
    * @returns {Promise}
    */
-  startAllMicroservicesAsync(): Promise<void>;
+  startAllMicroservicesAsync(): Promise<this>;
 
   /**
    * Registers exception filters as global filters (will be used within
