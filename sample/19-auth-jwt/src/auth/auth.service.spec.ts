@@ -29,4 +29,19 @@ describe('AuthService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+
+  it('should validateUser ok', async () => {
+    const res = await service.validateUser('maria','guess')
+    expect(res.userId).toEqual(3)
+  });
+
+  it('should validateUser fail', async () => {
+    const res = await service.validateUser('xxx','xxx')
+    expect(res).toBeNull()
+  });
+
+  it('should login', async () => {
+    const res = await service.login({username: 'maria', userId: 3})
+    expect(res.access_token).toBeDefined()
+  });
 });
