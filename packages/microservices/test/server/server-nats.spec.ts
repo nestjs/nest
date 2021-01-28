@@ -15,7 +15,6 @@ describe('ServerNats', () => {
     server = new ServerNats({});
   });
   describe('listen', () => {
-    let createNatsClient;
     let onSpy: sinon.SinonSpy;
     let client;
 
@@ -23,12 +22,11 @@ describe('ServerNats', () => {
       onSpy = sinon.spy();
       client = {
         on: onSpy,
+        once: sinon.spy(),
       };
-      createNatsClient = sinon
-        .stub(server, 'createNatsClient')
-        .callsFake(() => client);
+      sinon.stub(server, 'createNatsClient').callsFake(() => client);
 
-      server.listen(null);
+      server.listen(err => null);
     });
     it('should bind "error" event to handler', () => {
       expect(onSpy.getCall(0).args[0]).to.be.equal('error');
