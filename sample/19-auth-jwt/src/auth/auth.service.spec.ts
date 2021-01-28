@@ -29,19 +29,59 @@ describe('AuthService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+});
 
-  it('should validateUser ok', async () => {
-    const res = await service.validateUser('maria','guess')
-    expect(res.userId).toEqual(3)
+describe('ValideteUser', () => {
+  let service: AuthService;
+
+  beforeEach(async () => {
+    const moduleRef: TestingModule = await Test.createTestingModule({
+      imports: [
+        UsersModule,
+        PassportModule,
+        JwtModule.register({
+          secret: jwtConstants.secret,
+          signOptions: { expiresIn: '60s' },
+        }),
+      ],
+      providers: [AuthService, LocalStrategy, JwtStrategy],
+    }).compile();
+
+    service = moduleRef.get<AuthService>(AuthService);
   });
 
-  it('should validateUser fail', async () => {
-    const res = await service.validateUser('xxx','xxx')
-    expect(res).toBeNull()
+  it('should return a user object when credentials are valid', async () => {
+    const res = await service.validateUser('maria', 'guess');
+    expect(res.userId).toEqual(3);
   });
 
-  it('should login', async () => {
-    const res = await service.login({username: 'maria', userId: 3})
-    expect(res.access_token).toBeDefined()
+  it('should return null when credentials are invalid', async () => {
+    const res = await service.validateUser('xxx', 'xxx');
+    expect(res).toBeNull();
+  });
+});
+
+describe('ValidateLogin', () => {
+  let service: AuthService;
+
+  beforeEach(async () => {
+    const moduleRef: TestingModule = await Test.createTestingModule({
+      imports: [
+        UsersModule,
+        PassportModule,
+        JwtModule.register({
+          secret: jwtConstants.secret,
+          signOptions: { expiresIn: '60s' },
+        }),
+      ],
+      providers: [AuthService, LocalStrategy, JwtStrategy],
+    }).compile();
+
+    service = moduleRef.get<AuthService>(AuthService);
+  });
+
+  it('should return JWT object when credentials are valid', async () => {
+    const res = await service.login({ username: 'maria', userId: 3 });
+    expect(res.access_token).toBeDefined();
   });
 });
