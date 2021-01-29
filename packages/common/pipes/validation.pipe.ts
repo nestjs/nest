@@ -77,7 +77,11 @@ export class ValidationPipe implements PipeTransform<any> {
     );
   }
 
-  public async transform(value: any, metadata: ArgumentMetadata, isLast: boolean = true) {
+  public async transform(
+    value: any,
+    metadata: ArgumentMetadata,
+    isLast: boolean = true,
+  ) {
     if (this.expectedType) {
       metadata = { ...metadata, metatype: this.expectedType };
     }
@@ -113,7 +117,7 @@ export class ValidationPipe implements PipeTransform<any> {
     }
 
     const errors = await classValidator.validate(entity, this.validatorOptions);
-    this.errors.push(errors)
+    this.errors.push(errors);
     if (this.errors.length > 0 && isLast) {
       throw await this.exceptionFactory(this.errors);
     }

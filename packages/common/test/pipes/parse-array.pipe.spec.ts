@@ -109,13 +109,18 @@ describe('ParseArrayPipe', () => {
           @IsNumber()
           number: number;
         }
-        const pipe = new ParseArrayPipe({ items: ArrItemWithValidation, });
+        const pipe = new ParseArrayPipe({ items: ArrItemWithValidation });
 
         return expect(
           await pipe.transform(
-            [{number: "1"}, {number: "1"}, {number: 1}] as ArrItemWithValidation[],
+            [
+              { number: '1' },
+              { number: '1' },
+              { number: 1 },
+            ] as ArrItemWithValidation[],
             {} as ArgumentMetadata,
-          )).to.be.rejectedWith(BadRequestException);
+          ),
+        ).to.be.rejectedWith(BadRequestException);
       });
     });
   });
