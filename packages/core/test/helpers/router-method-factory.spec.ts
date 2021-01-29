@@ -29,5 +29,6 @@ describe('RouterMethodFactory', () => {
     expect(factory.get(target, RequestMethod.PATCH)).to.equal(target.patch);
     expect(factory.get(target, RequestMethod.OPTIONS)).to.equal(target.options);
     expect(factory.get(target, RequestMethod.HEAD)).to.equal(target.head);
+    expect(factory.get(target, -1)).to.equal(target.use);
   });
 });
