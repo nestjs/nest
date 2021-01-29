@@ -4,6 +4,7 @@ import { fromEvent, merge, Subject, zip } from 'rxjs';
 import { share, take, tap } from 'rxjs/operators';
 import {
   CONNECT_EVENT,
+  ECONNREFUSED,
   ERROR_EVENT,
   MESSAGE_EVENT,
   REDIS_DEFAULT_URL,
@@ -15,7 +16,6 @@ import {
 } from '../external/redis.interface';
 import { ReadPacket, RedisOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
-import { ECONNREFUSED } from './constants';
 
 let redisPackage: any = {};
 

@@ -19,6 +19,7 @@ describe('ServerRMQ', () => {
     let createChannelStub: sinon.SinonStub;
     let setupChannelStub: sinon.SinonStub;
     let client: any;
+    let callbackSpy: sinon.SinonSpy;
 
     beforeEach(() => {
       onStub = sinon
@@ -34,20 +35,33 @@ describe('ServerRMQ', () => {
         createChannel: createChannelStub,
       };
       createClient = sinon.stub(server, 'createClient').callsFake(() => client);
-
-      server.listen(null);
+      callbackSpy = sinon.spy();
     });
     afterEach(() => {
       setupChannelStub.restore();
     });
     it('should call "createClient"', () => {
+      server.listen(callbackSpy);
       expect(createClient.called).to.be.true;
     });
     it('should bind "connect" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onStub.getCall(0).args[0]).to.be.equal('connect');
     });
     it('should bind "disconnect" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onStub.getCall(1).args[0]).to.be.equal('disconnect');
+    });
+    describe('when "start" throws an exception', () => {
+      it('should call callback with a thrown error as an argument', () => {
+        const error = new Error('random error');
+
+        sinon.stub(server, 'start').callsFake(() => {
+          throw error;
+        });
+        server.listen(callbackSpy);
+        expect(callbackSpy.calledWith(error)).to.be.true;
+      });
     });
   });
   describe('close', () => {

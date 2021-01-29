@@ -33,6 +33,7 @@ describe('GraphQL Pipes', () => {
               code: 'INTERNAL_SERVER_ERROR',
               exception: {
                 message: 'Bad Request Exception',
+                name: 'BadRequestException',
                 response: {
                   message: [
                     'description must be longer than or equal to 30 characters',

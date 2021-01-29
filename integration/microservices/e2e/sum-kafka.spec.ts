@@ -14,7 +14,7 @@ describe('Kafka transport', function () {
   let app: INestApplication;
 
   // set timeout to be longer (especially for the after hook)
-  this.timeout(30000);
+  this.timeout(50000);
 
   it(`Start Kafka app`, async () => {
     const module = await Test.createTestingModule({
@@ -33,7 +33,7 @@ describe('Kafka transport', function () {
       },
     });
     app.enableShutdownHooks();
-    await app.startAllMicroservicesAsync();
+    await app.startAllMicroservices();
     await app.init();
   }).timeout(30000);
 
@@ -130,4 +130,4 @@ describe('Kafka transport', function () {
   after(`Stopping Kafka app`, async () => {
     await app.close();
   });
-}).timeout(30000);
+}).timeout(50000);

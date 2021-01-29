@@ -40,13 +40,19 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     this.initializeDeserializer(options);
   }
 
-  public listen(callback: () => void) {
-    this.subClient = this.createRedisClient();
-    this.pubClient = this.createRedisClient();
+  public listen(
+    callback: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ) {
+    try {
+      this.subClient = this.createRedisClient();
+      this.pubClient = this.createRedisClient();
 
-    this.handleError(this.pubClient);
-    this.handleError(this.subClient);
-    this.start(callback);
+      this.handleError(this.pubClient);
+      this.handleError(this.subClient);
+      this.start(callback);
+    } catch (err) {
+      callback(err);
+    }
   }
 
   public start(callback?: () => void) {

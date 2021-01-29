@@ -45,7 +45,9 @@ export interface RoutePathProperties {
 export class RouterExplorer {
   private readonly executionContextCreator: RouterExecutionContext;
   private readonly routerMethodFactory = new RouterMethodFactory();
-  private readonly logger = new Logger(RouterExplorer.name, true);
+  private readonly logger = new Logger(RouterExplorer.name, {
+    timestamp: true,
+  });
   private readonly exceptionFiltersCache = new WeakMap();
 
   constructor(
@@ -99,8 +101,7 @@ export class RouterExplorer {
     } else {
       path = [prefix + addLeadingSlash(path)];
     }
-
-    return path.map(p => addLeadingSlash(p));
+    return path.map((p: string) => addLeadingSlash(p));
   }
 
   public scanForPaths(
@@ -135,7 +136,7 @@ export class RouterExplorer {
     );
     const path = isString(routePath)
       ? [addLeadingSlash(routePath)]
-      : routePath.map(p => addLeadingSlash(p));
+      : routePath.map((p: string) => addLeadingSlash(p));
     return {
       path,
       requestMethod,

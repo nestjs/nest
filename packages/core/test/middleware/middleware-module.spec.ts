@@ -50,16 +50,19 @@ describe('MiddlewareModule', () => {
 
   describe('loadConfiguration', () => {
     it('should call "configure" method if method is implemented', async () => {
-      const configureSpy = sinon.spy();
-      const mockModule = {
-        configure: configureSpy,
-      };
-
       const stubContainer = new NestContainer();
       stubContainer
         .getModules()
         .set('Test', new Module(class {}, stubContainer));
 
+      const configureSpy = sinon.spy();
+      const mockModule = {
+        instance: {
+          configure: configureSpy,
+        },
+      };
+
+      (middlewareModule as any).container = stubContainer;
       await middlewareModule.loadConfiguration(
         new MiddlewareContainer(stubContainer),
         mockModule as any,
@@ -72,6 +75,7 @@ describe('MiddlewareModule', () => {
           new MiddlewareBuilder(
             (middlewareModule as any).routesMapper,
             undefined,
+            stubContainer,
           ),
         ),
       ).to.be.true;
@@ -170,7 +174,7 @@ describe('MiddlewareModule', () => {
 
       const instance = new TestMiddleware();
       container.getMiddlewareCollection(moduleKey).set(
-        'TestMiddleware',
+        TestMiddleware,
         new InstanceWrapper({
           metatype: TestMiddleware,
           instance,

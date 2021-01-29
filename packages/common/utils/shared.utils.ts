@@ -33,6 +33,13 @@ export const addLeadingSlash = (path?: string): string =>
  */
 export const validatePath = addLeadingSlash;
 
+export const normalizePath = (path?: string): string =>
+  path
+    ? path.startsWith('/')
+      ? ('/' + path.replace(/\/+$/, '')).replace(/\/+/g, '/')
+      : '/' + path.replace(/\/+$/, '')
+    : '/';
+
 export const isFunction = (fn: any): boolean => typeof fn === 'function';
 export const isString = (fn: any): fn is string => typeof fn === 'string';
 export const isConstructor = (fn: any): boolean => fn === 'constructor';

@@ -23,7 +23,7 @@ describe('BeforeAppShutdown', () => {
     sampleProvider = new SampleProvider();
     moduleRef = new Module(SampleModule, new NestContainer());
 
-    const moduleWrapperRef = moduleRef.getProviderByKey(SampleModule.name);
+    const moduleWrapperRef = moduleRef.getProviderByKey(SampleModule);
     moduleWrapperRef.instance = new SampleModule();
 
     moduleRef.addProvider({

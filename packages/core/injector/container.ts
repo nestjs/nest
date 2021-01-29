@@ -56,7 +56,7 @@ export class NestContainer {
     scope: Type<any>[],
   ): Promise<Module> {
     // In DependenciesScanner#scanForModules we already check for undefined or invalid modules
-    // We sill need to catch the edge-case of `forwardRef(() => undefined)`
+    // We still need to catch the edge-case of `forwardRef(() => undefined)`
     if (!metatype) {
       throw new UndefinedForwardRefException(scope);
     }
@@ -143,7 +143,10 @@ export class NestContainer {
     moduleRef.addRelatedModule(related);
   }
 
-  public addProvider(provider: Provider, token: string): string {
+  public addProvider(
+    provider: Provider,
+    token: string,
+  ): string | symbol | Function {
     if (!provider) {
       throw new CircularDependencyException();
     }

@@ -3,6 +3,7 @@ import * as net from 'net';
 import { share, tap } from 'rxjs/operators';
 import {
   CLOSE_EVENT,
+  ECONNREFUSED,
   ERROR_EVENT,
   MESSAGE_EVENT,
   TCP_DEFAULT_HOST,
@@ -12,7 +13,6 @@ import { JsonSocket } from '../helpers/json-socket';
 import { PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { TcpClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
-import { ECONNREFUSED } from './constants';
 
 export class ClientTCP extends ClientProxy {
   protected connection: Promise<any>;
