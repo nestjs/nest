@@ -16,7 +16,11 @@ import {
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { addLeadingSlash, isObject } from '@nestjs/common/utils/shared.utils';
+import {
+  addLeadingSlash,
+  isFunction,
+  isObject,
+} from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { platform } from 'os';
 import { AbstractHttpAdapter } from './adapters';
@@ -250,17 +254,29 @@ export class NestApplication
       };
       this.httpServer.once('error', errorHandler);
 
-      this.httpAdapter.listen(port, ...args, () => {
-        if (this.appOptions?.autoFlushLogs) {
-          this.flushLogs();
-        }
-        const address = this.httpServer.address();
-        if (address) {
-          this.httpServer.removeListener('error', errorHandler);
-          this.isListening = true;
-          resolve(this.httpServer);
-        }
-      });
+      const isCallbackInOriginalArgs = isFunction(args[args.length - 1]);
+      const listenFnArgs = isCallbackInOriginalArgs
+        ? args.slice(0, args.length - 1)
+        : args;
+
+      this.httpAdapter.listen(
+        port,
+        ...listenFnArgs,
+        (...originalCallbackArgs: unknown[]) => {
+          if (this.appOptions?.autoFlushLogs) {
+            this.flushLogs();
+          }
+          const address = this.httpServer.address();
+          if (address) {
+            this.httpServer.removeListener('error', errorHandler);
+            this.isListening = true;
+            resolve(this.httpServer);
+          }
+          if (isCallbackInOriginalArgs) {
+            args[args.length - 1](...originalCallbackArgs);
+          }
+        },
+      );
     });
   }
 
