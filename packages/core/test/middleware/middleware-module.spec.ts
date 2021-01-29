@@ -75,7 +75,6 @@ describe('MiddlewareModule', () => {
           new MiddlewareBuilder(
             (middlewareModule as any).routesMapper,
             undefined,
-            stubContainer,
           ),
         ),
       ).to.be.true;

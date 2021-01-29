@@ -1,4 +1,3 @@
-import { RequestMethod } from '@nestjs/common';
 import { MODULE_PATH, PATH_METADATA } from '@nestjs/common/constants';
 import { RouteInfo, Type } from '@nestjs/common/interfaces';
 import {
@@ -23,10 +22,11 @@ export class RoutesMapper {
     route: Type<any> | RouteInfo | string,
   ): RouteInfo[] {
     if (isString(route)) {
+      const defaultRequestMethod = -1;
       return [
         {
           path: addLeadingSlash(route),
-          method: RequestMethod.ALL,
+          method: defaultRequestMethod,
         },
       ];
     }
@@ -83,7 +83,7 @@ export class RoutesMapper {
   private getHostModuleOfController(
     metatype: Type<unknown>,
   ): Module | undefined {
-    if (!metatype?.name) {
+    if (!metatype) {
       return;
     }
     const modulesContainer = this.container.getModules();
@@ -95,7 +95,7 @@ export class RoutesMapper {
     const modules = Array.from(modulesContainer.values()).filter(moduleRef =>
       moduleRefsSet.has(moduleRef),
     );
-    return modules.find(({ routes }) => routes.has(metatype.name));
+    return modules.find(({ routes }) => routes.has(metatype));
   }
 
   private getModulePath(

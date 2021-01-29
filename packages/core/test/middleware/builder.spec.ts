@@ -1,4 +1,3 @@
-import { RequestMethod } from '@nestjs/common';
 import { expect } from 'chai';
 import { Controller, Get } from '../../../common';
 import { NestContainer } from '../../injector/container';
@@ -14,7 +13,6 @@ describe('MiddlewareBuilder', () => {
     builder = new MiddlewareBuilder(
       new RoutesMapper(container),
       new NoopHttpAdapter({}),
-      container,
     );
   });
   describe('apply', () => {
@@ -65,7 +63,7 @@ describe('MiddlewareBuilder', () => {
       expect(proxy.getExcludedRoutes()).to.be.eql([
         {
           path,
-          method: RequestMethod.ALL,
+          method: -1,
         },
       ]);
     });

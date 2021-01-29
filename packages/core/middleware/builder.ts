@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common/interfaces/middleware';
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { iterate } from 'iterare';
-import { NestContainer } from '../injector';
 import { RoutesMapper } from './routes-mapper';
 import { filterMiddleware } from './utils';
 
@@ -20,7 +19,6 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
   constructor(
     private readonly routesMapper: RoutesMapper,
     private readonly httpAdapter: HttpServer,
-    private readonly container: NestContainer,
   ) {}
 
   public apply(
