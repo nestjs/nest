@@ -57,7 +57,7 @@ describe('Kafka concurrent', function () {
     apps.push(app);
 
     // await the start
-    await app.startAllMicroservicesAsync();
+    await app.startAllMicroservices();
     await app.init();
   };
 
