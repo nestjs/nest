@@ -73,8 +73,7 @@ export class MiddlewareModule {
       string,
       Module,
     ]) => {
-      const instance = moduleRef.instance;
-      await this.loadConfiguration(middlewareContainer, instance, moduleName);
+      await this.loadConfiguration(middlewareContainer, moduleRef, moduleName);
       await this.resolver.resolveInstances(moduleRef, moduleName);
     };
     await Promise.all(moduleEntries.map(loadMiddlewareConfiguration));

@@ -2,6 +2,7 @@ import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
+  CONN_ERR,
   ERROR_EVENT,
   NATS_DEFAULT_URL,
   NO_MESSAGE_HANDLER,
@@ -34,15 +35,29 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     this.initializeDeserializer(options);
   }
 
-  public listen(callback: () => void) {
-    this.natsClient = this.createNatsClient();
-    this.handleError(this.natsClient);
-    this.start(callback);
+  public listen(
+    callback: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ) {
+    try {
+      this.natsClient = this.createNatsClient();
+      this.natsClient.once(ERROR_EVENT, err => {
+        if (err?.code === CONN_ERR) {
+          callback(err);
+        }
+      });
+
+      this.handleError(this.natsClient);
+      this.start(callback);
+    } catch (err) {
+      callback(err);
+    }
   }
 
-  public start(callback?: () => void) {
+  public start(
+    callback: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ) {
     this.bindEvents(this.natsClient);
-    this.natsClient.on(CONNECT_EVENT, callback);
+    this.natsClient.on(CONNECT_EVENT, (_: unknown) => callback());
   }
 
   public bindEvents(client: Client) {

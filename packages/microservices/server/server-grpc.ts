@@ -52,9 +52,15 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     grpcProtoLoaderPackage = this.loadPackage(protoLoader, ServerGrpc.name);
   }
 
-  public async listen(callback: () => void) {
-    this.grpcClient = await this.createClient();
-    await this.start(callback);
+  public async listen(
+    callback: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ) {
+    try {
+      this.grpcClient = await this.createClient();
+      await this.start(callback);
+    } catch (err) {
+      callback(err);
+    }
   }
 
   public async start(callback?: () => void) {

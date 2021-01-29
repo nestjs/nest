@@ -15,12 +15,9 @@ describe('ServerTCP', () => {
   });
 
   describe('bindHandler', () => {
-    let getSocketInstance;
     const socket = { on: sinon.spy() };
     beforeEach(() => {
-      getSocketInstance = sinon
-        .stub(server, 'getSocketInstance' as any)
-        .callsFake(() => socket);
+      sinon.stub(server, 'getSocketInstance' as any).callsFake(() => socket);
     });
     it('should bind message and error events to handler', () => {
       server.bindHandler(null);
@@ -38,7 +35,7 @@ describe('ServerTCP', () => {
     });
   });
   describe('listen', () => {
-    const serverMock = { listen: sinon.spy() };
+    const serverMock = { listen: sinon.spy(), once: sinon.spy() };
     beforeEach(() => {
       (server as any).server = serverMock;
     });
