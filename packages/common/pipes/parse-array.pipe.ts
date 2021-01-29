@@ -80,13 +80,18 @@ export class ParseArrayPipe implements PipeTransform {
         type: 'query',
       };
 
-      const toClassInstance = (item: any) => {
+      const toClassInstance = (item: any, isLast: boolean = false) => {
         try {
           item = JSON.parse(item);
         } catch {}
-        return this.validationPipe.transform(item, validationMetadata);
+        return this.validationPipe.transform(item, validationMetadata, isLast);
       };
-      value = await Promise.all(value.map(toClassInstance));
+
+      value = await Promise.all(
+        value.map((item, key) => {
+          return toClassInstance(item, value.length === key + 1);
+        }),
+      );
     }
     return value;
   }

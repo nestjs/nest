@@ -37,6 +37,7 @@ export class ValidationPipe implements PipeTransform<any> {
   protected expectedType: Type<any>;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
+  protected errors: ValidationError[] = [];
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
@@ -76,7 +77,7 @@ export class ValidationPipe implements PipeTransform<any> {
     );
   }
 
-  public async transform(value: any, metadata: ArgumentMetadata) {
+  public async transform(value: any, metadata: ArgumentMetadata, isLast: boolean = true) {
     if (this.expectedType) {
       metadata = { ...metadata, metatype: this.expectedType };
     }
@@ -112,8 +113,9 @@ export class ValidationPipe implements PipeTransform<any> {
     }
 
     const errors = await classValidator.validate(entity, this.validatorOptions);
-    if (errors.length > 0) {
-      throw await this.exceptionFactory(errors);
+    this.errors.push(errors)
+    if (this.errors.length > 0 && isLast) {
+      throw await this.exceptionFactory(this.errors);
     }
     if (isPrimitive) {
       // if the value is a primitive value and the validation process has been successfully completed

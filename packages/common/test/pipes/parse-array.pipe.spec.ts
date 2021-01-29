@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { BadRequestException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces/features/pipe-transform.interface';
 import { ParseArrayPipe } from '../../pipes/parse-array.pipe';
+import { IsNumber } from 'class-validator';
 
 describe('ParseArrayPipe', () => {
   let target: ParseArrayPipe;
@@ -101,6 +102,20 @@ describe('ParseArrayPipe', () => {
         items.forEach(item => {
           expect(item).to.be.instanceOf(ArrItem);
         });
+      });
+
+      it('should validate and transform each item with exception', async () => {
+        class ArrItemWithValidation {
+          @IsNumber()
+          number: number;
+        }
+        const pipe = new ParseArrayPipe({ items: ArrItemWithValidation, });
+
+        return expect(
+          await pipe.transform(
+            [{number: "1"}, {number: "1"}, {number: 1}] as ArrItemWithValidation[],
+            {} as ArgumentMetadata,
+          )).to.be.rejectedWith(BadRequestException);
       });
     });
   });
