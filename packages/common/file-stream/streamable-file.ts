@@ -1,7 +1,8 @@
 import { Readable } from 'stream';
 
 export class StreamableFile {
-  private stream: Readable;
+  private readonly stream: Readable;
+
   constructor(buffer: Buffer);
   constructor(readble: Readable);
   constructor(bufferOrReadStream: Buffer | Readable) {
@@ -17,7 +18,7 @@ export class StreamableFile {
     }
   }
 
-  getStream() {
+  getStream(): Readable {
     return this.stream;
   }
 }
