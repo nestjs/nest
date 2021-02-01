@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Owner } from "../../../../sample/12-graphql-schema-first/src/graphql.schema";
+import { Owner } from '../graphql.schema';
 
 @Injectable()
 export class OwnersService {

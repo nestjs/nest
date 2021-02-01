@@ -1,5 +1,5 @@
 type Query {
-  getCats: [Cat]
+  cats: [Cat]
   cat(id: ID!): Cat
 }
 
@@ -15,14 +15,14 @@ type Owner {
   id: Int!
   name: String!
   age: Int
-  cats: [Cat!]!
+  cats: [Cat!]
 }
 
 type Cat {
   id: Int
   name: String
   age: Int
-  owner: Owner!
+  owner: Owner
 }
 
 input CreateCatInput {

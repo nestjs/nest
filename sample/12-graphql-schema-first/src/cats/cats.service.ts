@@ -3,7 +3,9 @@ import { Cat } from '../graphql.schema';
 
 @Injectable()
 export class CatsService {
-  private readonly cats: Cat[] = [{ id: 1, name: 'Cat', age: 5, ownerId: 1 }];
+  private readonly cats: Array<Cat & { ownerId?: number }> = [
+    { id: 1, name: 'Cat', age: 5, ownerId: 1 },
+  ];
 
   create(cat: Cat): Cat {
     cat.id = this.cats.length + 1;
