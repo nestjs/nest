@@ -84,15 +84,23 @@ export abstract class ClientProxy {
   ): (packet: WritePacket) => void {
     return ({ err, response, isDisposed }: WritePacket) => {
       if (err) {
-        return observer.error(err);
+        return observer.error(this.serializeError(err));
       } else if (response !== undefined && isDisposed) {
-        observer.next(response);
+        observer.next(this.serializeResponse(response));
         return observer.complete();
       } else if (isDisposed) {
         return observer.complete();
       }
-      observer.next(response);
+      observer.next(this.serializeResponse(response));
     };
+  }
+
+  protected serializeError(err: any): any {
+    return err;
+  }
+
+  protected serializeResponse(response: any): any {
+    return response;
   }
 
   protected assignPacketId(packet: ReadPacket): ReadPacket & PacketId {

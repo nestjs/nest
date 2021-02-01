@@ -1,6 +1,7 @@
 import { Transport } from '../enums/transport.enum';
 import {
   ClientOptions,
+  CustomClientOptions,
   TcpClientOptions,
 } from '../interfaces/client-metadata.interface';
 import { Closeable } from '../interfaces/closeable.interface';
@@ -30,7 +31,16 @@ export class ClientProxyFactory {
     clientOptions: { transport: Transport.GRPC } & ClientOptions,
   ): ClientGrpcProxy;
   public static create(clientOptions: ClientOptions): ClientProxy & Closeable;
-  public static create(clientOptions: ClientOptions): ClientProxy & Closeable {
+  public static create(
+    clientOptions: CustomClientOptions,
+  ): ClientProxy & Closeable;
+  public static create(
+    clientOptions: ClientOptions | CustomClientOptions,
+  ): ClientProxy & Closeable {
+    if (this.isCustomClientOptions(clientOptions)) {
+      const { customClass, options } = clientOptions;
+      return new customClass(options);
+    }
     const { transport, options } = clientOptions;
     switch (transport) {
       case Transport.REDIS:
@@ -48,5 +58,11 @@ export class ClientProxyFactory {
       default:
         return new ClientTCP(options as TcpClientOptions['options']);
     }
+  }
+
+  private static isCustomClientOptions(
+    options: ClientOptions | CustomClientOptions,
+  ): options is CustomClientOptions {
+    return !!(options as CustomClientOptions).customClass;
   }
 }
