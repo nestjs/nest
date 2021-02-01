@@ -18,8 +18,10 @@ export class RouterMethodFactory {
         return target.options;
       case RequestMethod.HEAD:
         return target.head;
-      default: {
+      case RequestMethod.GET:
         return target.get;
+      default: {
+        return target.use;
       }
     }
   }

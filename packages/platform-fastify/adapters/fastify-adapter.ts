@@ -320,7 +320,8 @@ export class FastifyAdapter<
           }
           if (
             requestMethod === RequestMethod.ALL ||
-            req.method === RequestMethod[requestMethod]
+            req.method === RequestMethod[requestMethod] ||
+            requestMethod === -1
           ) {
             return callback(req, res, next);
           }

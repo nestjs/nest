@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as io from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { ErrorGateway } from '../src/error.gateway';
 
 describe('ErrorGateway', () => {
@@ -16,7 +16,7 @@ describe('ErrorGateway', () => {
   });
 
   it(`should handle error`, async () => {
-    const ws = io.connect('http://localhost:8080');
+    const ws = io('http://localhost:8080');
     ws.emit('push', {
       test: 'test',
     });
