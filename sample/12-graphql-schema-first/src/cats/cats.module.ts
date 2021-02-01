@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
-import { CatsResolvers } from './cats.resolvers';
+import { OwnersModule } from '../owners/owners.module';
+import { CatOwnerResolver } from './cat-owner.resolver';
+import { CatsResolver } from './cats.resolver';
 import { CatsService } from './cats.service';
 
 @Module({
-  providers: [CatsService, CatsResolvers],
+  imports: [OwnersModule],
+  providers: [CatsService, CatsResolver, CatOwnerResolver],
 })
 export class CatsModule {}
