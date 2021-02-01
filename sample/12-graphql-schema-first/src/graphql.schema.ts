@@ -15,6 +15,12 @@ export abstract class Cat {
   age?: number;
 }
 
+export abstract class Owner {
+  id?: number;
+  name?: string;
+  age?: number;
+}
+
 export abstract class IMutation {
   abstract createCat(createCatInput?: CreateCatInput): Cat | Promise<Cat>;
 }

@@ -1,16 +1,20 @@
 import { ParseIntPipe, UseGuards } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
+import { Args, Mutation, Parent, Query, ResolveField, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
-import { Cat } from '../graphql.schema';
+import { Cat, Owner } from '../graphql.schema';
 import { CatsGuard } from './cats.guard';
 import { CatsService } from './cats.service';
 import { CreateCatDto } from './dto/create-cat.dto';
+import { OwnersService } from "../../../../integration/graphql-schema-first/src/owners/owners.service";
 
 const pubSub = new PubSub();
 
 @Resolver('Cat')
 export class CatsResolvers {
-  constructor(private readonly catsService: CatsService) {}
+  constructor(
+    private readonly ownersService: OwnersService,
+    private readonly catsService: CatsService
+  ) {}
 
   @Query()
   @UseGuards(CatsGuard)
@@ -36,5 +40,10 @@ export class CatsResolvers {
   @Subscription('catCreated')
   catCreated() {
     return pubSub.asyncIterator('catCreated');
+  }
+
+  @ResolveField()
+  async owner(@Parent() cat: Cat): Promise<Owner>{
+    return this.ownersService.findOneById(cat.ownerId);
   }
 }
