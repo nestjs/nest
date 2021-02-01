@@ -221,7 +221,7 @@ export class WsContextCreator {
       }
       const numericType = Number(type);
       const extractValue = (...args: any[]) =>
-        paramsFactory.exchangeKeyForValue(numericType, args);
+        paramsFactory.exchangeKeyForValue(numericType, data, args);
 
       return { index, extractValue, type: numericType, data, pipes };
     });
