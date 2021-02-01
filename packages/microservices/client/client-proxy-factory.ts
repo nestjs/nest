@@ -37,7 +37,7 @@ export class ClientProxyFactory {
   public static create(
     clientOptions: ClientOptions | CustomClientOptions,
   ): ClientProxy & Closeable {
-    if (this.isCustomOptions(clientOptions)) {
+    if (this.isCustomClientOptions(clientOptions)) {
       const { customClass, options } = clientOptions;
       return new customClass(options);
     }
@@ -60,7 +60,7 @@ export class ClientProxyFactory {
     }
   }
 
-  private static isCustomOptions(
+  private static isCustomClientOptions(
     options: ClientOptions | CustomClientOptions,
   ): options is CustomClientOptions {
     return !!(options as CustomClientOptions).customClass;
