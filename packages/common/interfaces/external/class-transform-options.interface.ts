@@ -50,4 +50,9 @@ export interface ClassTransformOptions {
    * and exposing all class properties (with undefined, if nothing else is given)
    */
   excludeExtraneousValues?: boolean;
+  /**
+   * If set to true then class transformer will take default values for unprovided fields.
+   * This is useful when you convert a plain object to a class and have an optional field with a default value.
+   */
+  exposeDefaultValues?: boolean;
 }
