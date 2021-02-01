@@ -24,13 +24,13 @@
     "@types/node": "14.14.22",
     "@typescript-eslint/eslint-plugin": "4.14.1",
     "@typescript-eslint/parser": "4.14.1",
-    "eslint": "7.18.0",
+    "eslint": "7.19.0",
     "eslint-config-prettier": "7.2.0",
     "eslint-plugin-import": "2.22.1",
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "8.0.14",
     "ts-node": "9.1.1",
-    "webpack": "5.18.0",
+    "webpack": "5.19.0",
     "webpack-cli": "4.4.0",
     "webpack-node-externals": "2.5.2"
   }

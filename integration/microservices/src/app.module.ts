@@ -5,7 +5,15 @@ import {
   Transport,
   ClientsModuleOptionsFactory,
   ClientOptions,
+  ClientTCP,
+  RpcException,
 } from '@nestjs/microservices';
+
+class ErrorHandlingProxy extends ClientTCP {
+  serializeError(err) {
+    return new RpcException(err);
+  }
+}
 
 @Injectable()
 class ConfigService {
@@ -51,7 +59,14 @@ class ClientOptionService implements ClientsModuleOptionsFactory {
         name: 'USE_CLASS_CLIENT',
         useClass: ClientOptionService,
         inject: [ConfigService],
-      },
+      }, {
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        name: 'CUSTOM_PROXY_CLIENT',
+        useFactory: (config: ConfigService) => ({
+          customClass: ErrorHandlingProxy
+        })
+      }
     ]),
   ],
   controllers: [AppController],

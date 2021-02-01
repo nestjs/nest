@@ -105,6 +105,22 @@ describe('RPC transport', () => {
       });
   });
 
+  it('/POST (custom client)', () => {
+    return request(server)
+      .post('/error?client=custom')
+      .send({})
+      .expect(200)
+      .expect('true');
+  });
+
+  it('/POST (standard client)', () => {
+    return request(server)
+      .post('/error?client=standard')
+      .send({})
+      .expect(200)
+      .expect('false');
+  });
+
   afterEach(async () => {
     await app.close();
   });

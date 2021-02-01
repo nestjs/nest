@@ -9,10 +9,10 @@ import { CreateCatDto } from './dto/create-cat.dto';
 const pubSub = new PubSub();
 
 @Resolver('Cat')
-export class CatsResolvers {
+export class CatsResolver {
   constructor(private readonly catsService: CatsService) {}
 
-  @Query()
+  @Query('cats')
   @UseGuards(CatsGuard)
   async getCats() {
     return this.catsService.findAll();
