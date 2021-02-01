@@ -236,7 +236,7 @@ export class RpcContextCreator {
       }
       const numericType = Number(type);
       const extractValue = (...args: unknown[]) =>
-        paramsFactory.exchangeKeyForValue(numericType, args);
+        paramsFactory.exchangeKeyForValue(numericType, data, args);
 
       return { index, extractValue, type: numericType, data, pipes };
     });
