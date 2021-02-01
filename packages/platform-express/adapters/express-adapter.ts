@@ -1,4 +1,4 @@
-import { RequestMethod } from '@nestjs/common';
+import { RequestMethod, StreamableFile } from '@nestjs/common';
 import {
   CorsOptions,
   CorsOptionsDelegate,
@@ -13,6 +13,7 @@ import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
+import { Readable } from 'stream';
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
@@ -27,6 +28,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     }
     if (isNil(body)) {
       return response.send();
+    }
+    if (body instanceof StreamableFile) {
+      response.setHeader('Content-Type', 'application/octet-stream');
+      return body.getStream().pipe(response);
     }
     return isObject(body) ? response.json(body) : response.send(String(body));
   }
