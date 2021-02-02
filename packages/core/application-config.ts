@@ -6,9 +6,11 @@ import {
   WebSocketAdapter,
 } from '@nestjs/common';
 import { InstanceWrapper } from './injector/instance-wrapper';
+import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
 
 export class ApplicationConfig {
   private globalPrefix = '';
+  private globalPrefixOptions: GlobalPrefixOptions = {};
   private globalPipes: PipeTransform[] = [];
   private globalFilters: ExceptionFilter[] = [];
   private globalInterceptors: NestInterceptor[] = [];
@@ -26,6 +28,14 @@ export class ApplicationConfig {
 
   public getGlobalPrefix() {
     return this.globalPrefix;
+  }
+
+  public setGlobalPrefixOptions(options: GlobalPrefixOptions) {
+    this.globalPrefixOptions = options;
+  }
+
+  public getGlobalPrefixOptions(): GlobalPrefixOptions {
+    return this.globalPrefixOptions;
   }
 
   public setIoAdapter(ioAdapter: WebSocketAdapter) {
