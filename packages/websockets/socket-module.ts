@@ -105,6 +105,7 @@ export class SocketModule<HttpServer = any> {
     const { IoAdapter } = loadAdapter(
       '@nestjs/platform-socket.io',
       'WebSockets',
+      () => require('@nestjs/platform-socket.io'),
     );
     const ioAdapter = new IoAdapter(this.httpServer);
     this.applicationConfig.setIoAdapter(ioAdapter);
