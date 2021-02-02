@@ -4,6 +4,7 @@ import {
 } from './external/cors-options.interface';
 import { CanActivate } from './features/can-activate.interface';
 import { NestInterceptor } from './features/nest-interceptor.interface';
+import { GlobalPrefixOptions } from './global-prefix-options.interface';
 import { HttpServer } from './http/http-server.interface';
 import {
   ExceptionFilter,
@@ -71,9 +72,10 @@ export interface INestApplication extends INestApplicationContext {
    * Registers a prefix for every HTTP route path.
    *
    * @param {string} prefix The prefix for every HTTP route path (for example `/v1/api`)
+   * @param {GlobalPrefixOptions} options Global prefix options object
    * @returns {this}
    */
-  setGlobalPrefix(prefix: string): this;
+  setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this;
 
   /**
    * Register Ws Adapter which will be used inside Gateways.

@@ -13,6 +13,7 @@ import {
   CorsOptions,
   CorsOptionsDelegate,
 } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { GlobalPrefixOptions } from '@nestjs/common/interfaces/global-prefix-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
@@ -320,8 +321,11 @@ export class NestApplication
     return `${this.getProtocol()}://${host}:${address.port}`;
   }
 
-  public setGlobalPrefix(prefix: string): this {
+  public setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this {
     this.config.setGlobalPrefix(prefix);
+    if (options) {
+      this.config.setGlobalPrefixOptions(options);
+    }
     return this;
   }
 
