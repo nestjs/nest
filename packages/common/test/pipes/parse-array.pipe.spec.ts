@@ -1,7 +1,11 @@
+import * as chai from 'chai';
 import { expect } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+import { IsNumber } from 'class-validator';
 import { BadRequestException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces/features/pipe-transform.interface';
 import { ParseArrayPipe } from '../../pipes/parse-array.pipe';
+chai.use(chaiAsPromised);
 
 describe('ParseArrayPipe', () => {
   let target: ParseArrayPipe;
@@ -100,6 +104,34 @@ describe('ParseArrayPipe', () => {
         items = await target.transform('{},{},{}', {} as ArgumentMetadata);
         items.forEach(item => {
           expect(item).to.be.instanceOf(ArrItem);
+        });
+      });
+      describe('when "stopAtFirstError" is explicitly turned off', () => {
+        it('should validate each item and concat errors', async () => {
+          class ArrItemWithProp {
+            @IsNumber()
+            number: number;
+          }
+          const pipe = new ParseArrayPipe({
+            items: ArrItemWithProp,
+            stopAtFirstError: false,
+          });
+          try {
+            await pipe.transform(
+              [
+                { number: '1' },
+                { number: '1' },
+                { number: 1 },
+              ] as ArrItemWithProp[],
+              {} as ArgumentMetadata,
+            );
+          } catch (err) {
+            expect(err).to.be.instanceOf(BadRequestException);
+            expect(err.getResponse().message).to.deep.equal([
+              '[0] number must be a number conforming to the specified constraints',
+              '[1] number must be a number conforming to the specified constraints',
+            ]);
+          }
         });
       });
     });
