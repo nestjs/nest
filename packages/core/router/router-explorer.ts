@@ -73,7 +73,7 @@ export class RouterExplorer {
     module: string,
     applicationRef: T,
     basePath: string,
-    host: string,
+    host: string | string[],
   ) {
     const { instance } = instanceWrapper;
     const routerPaths = this.scanForPaths(instance);
@@ -150,7 +150,7 @@ export class RouterExplorer {
     instanceWrapper: InstanceWrapper,
     moduleKey: string,
     basePath: string,
-    host: string,
+    host: string | string[],
   ) {
     (routePaths || []).forEach(pathProperties => {
       const { path, requestMethod } = pathProperties;
@@ -179,7 +179,7 @@ export class RouterExplorer {
     instanceWrapper: InstanceWrapper,
     moduleKey: string,
     basePath: string,
-    host: string,
+    host: string | string[],
   ) {
     const {
       path: paths,
@@ -216,14 +216,24 @@ export class RouterExplorer {
     });
   }
 
-  private applyHostFilter(host: string, handler: Function) {
+  private applyHostFilter(host: string | string[], handler: Function) {
     if (!host) {
       return handler;
     }
 
     const httpAdapterRef = this.container.getHttpAdapterRef();
-    const keys = [];
-    const re = pathToRegexp(host, keys);
+    const hosts = Array.isArray(host) ? host : [host];
+    const hostRegExps = hosts.map((host: string) => {
+      const keys = [];
+      const regexp = pathToRegexp(host, keys);
+      return { regexp, keys };
+    });
+
+    const unsupportedFilteringErrorMessage = Array.isArray(host)
+      ? `HTTP adapter does not support filtering on hosts: ["${host.join(
+          '", "',
+        )}"]`
+      : `HTTP adapter does not support filtering on host: "${host}"`;
 
     return <TRequest extends Record<string, any> = any, TResponse = any>(
       req: TRequest,
@@ -232,14 +242,17 @@ export class RouterExplorer {
     ) => {
       (req as Record<string, any>).hosts = {};
       const hostname = httpAdapterRef.getRequestHostname(req) || '';
-      const match = hostname.match(re);
-      if (match) {
-        keys.forEach((key, i) => (req.hosts[key.name] = match[i + 1]));
-        return handler(req, res, next);
+
+      for (const exp of hostRegExps) {
+        const match = hostname.match(exp.regexp);
+        if (match) {
+          exp.keys.forEach((key, i) => (req.hosts[key.name] = match[i + 1]));
+          return handler(req, res, next);
+        }
       }
       if (!next) {
         throw new InternalServerErrorException(
-          `HTTP adapter does not support filtering on host: "${host}"`,
+          unsupportedFilteringErrorMessage,
         );
       }
       return next();

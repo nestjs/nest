@@ -132,7 +132,7 @@ export class RoutesResolver implements Resolver {
 
   private getHostMetadata(
     metatype: Type<unknown> | Function,
-  ): string | undefined {
+  ): string | string[] | undefined {
     return Reflect.getMetadata(HOST_METADATA, metatype);
   }
 }
