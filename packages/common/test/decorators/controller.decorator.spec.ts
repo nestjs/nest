@@ -4,6 +4,7 @@ import { Controller } from '../../decorators/core/controller.decorator';
 describe('@Controller', () => {
   const reflectedPath = 'test';
   const reflectedHost = 'api.example.com';
+  const reflectedHostArray = ['api1.example.com', 'api2.example.com'];
 
   @Controller(reflectedPath)
   class Test {}
@@ -13,6 +14,9 @@ describe('@Controller', () => {
 
   @Controller({ path: reflectedPath, host: reflectedHost })
   class PathAndHostDecorator {}
+
+  @Controller({ path: reflectedPath, host: reflectedHostArray })
+  class PathAndHostArrayDecorator {}
 
   @Controller({ host: reflectedHost })
   class HostOnlyDecorator {}
@@ -29,6 +33,8 @@ describe('@Controller', () => {
     expect(host).to.be.eql(reflectedHost);
     const host2 = Reflect.getMetadata('host', HostOnlyDecorator);
     expect(host2).to.be.eql(reflectedHost);
+    const host3 = Reflect.getMetadata('host', PathAndHostArrayDecorator);
+    expect(host3).to.be.eql(reflectedHostArray);
   });
 
   it('should set default path when no object passed as param', () => {
