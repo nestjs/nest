@@ -222,14 +222,18 @@ export class RouterExplorer {
     }
 
     const httpAdapterRef = this.container.getHttpAdapterRef();
-
     const hosts = Array.isArray(host) ? host : [host];
-    const expressions = hosts.map((host: string) => {
+    const hostRegExps = hosts.map((host: string) => {
       const keys = [];
-      const re = pathToRegexp(host, keys);
-
-      return { re, keys };
+      const regexp = pathToRegexp(host, keys);
+      return { regexp, keys };
     });
+
+    const unsupportedFilteringErrorMessage = Array.isArray(host)
+      ? `HTTP adapter does not support filtering on hosts: ["${host.join(
+          '", "',
+        )}"]`
+      : `HTTP adapter does not support filtering on host: "${host}"`;
 
     return <TRequest extends Record<string, any> = any, TResponse = any>(
       req: TRequest,
@@ -239,25 +243,17 @@ export class RouterExplorer {
       (req as Record<string, any>).hosts = {};
       const hostname = httpAdapterRef.getRequestHostname(req) || '';
 
-      for (const exp of expressions) {
-        const match = hostname.match(exp.re);
+      for (const exp of hostRegExps) {
+        const match = hostname.match(exp.regexp);
         if (match) {
           exp.keys.forEach((key, i) => (req.hosts[key.name] = match[i + 1]));
           return handler(req, res, next);
         }
       }
       if (!next) {
-        if (Array.isArray(host)) {
-          throw new InternalServerErrorException(
-            `HTTP adapter does not support filtering on hosts: ["${host.join(
-              '", "',
-            )}"]`,
-          );
-        } else {
-          throw new InternalServerErrorException(
-            `HTTP adapter does not support filtering on host: "${host}"`,
-          );
-        }
+        throw new InternalServerErrorException(
+          unsupportedFilteringErrorMessage,
+        );
       }
       return next();
     };
