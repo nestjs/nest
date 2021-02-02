@@ -25,6 +25,11 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
     protected readonly enumType: T,
     @Optional() options?: ParseEnumPipeOptions,
   ) {
+    if (!enumType) {
+      throw new Error(
+        `"ParseEnumPipe" requires "enumType" argument specified (to validate input values).`,
+      );
+    }
     options = options || {};
     const {
       exceptionFactory,
@@ -44,7 +49,7 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(value: T, metadata: ArgumentMetadata): Promise<T> {
-    if (!this.isEnum(value, this.enumType)) {
+    if (!this.isEnum(value)) {
       throw this.exceptionFactory(
         'Validation failed (enum string is expected)',
       );
@@ -52,8 +57,10 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
     return value;
   }
 
-  protected isEnum(value: T, entity: any): boolean {
-    const enumValues = Object.keys(entity).map(k => entity[k]);
+  protected isEnum(value: T): boolean {
+    const enumValues = Object.keys(this.enumType).map(
+      item => this.enumType[item],
+    );
     return enumValues.indexOf(value) >= 0;
   }
 }

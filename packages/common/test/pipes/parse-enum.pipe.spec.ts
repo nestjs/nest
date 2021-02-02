@@ -1,8 +1,7 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import { HttpException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseEnumPipe } from '../../pipes/parse-enum.pipe';
-import { HttpException } from '../../exceptions';
 
 class CustomTestError extends HttpException {
   constructor() {
@@ -34,6 +33,17 @@ describe('ParseEnumPipe', () => {
           target.transform('DOWN', {} as ArgumentMetadata),
         ).to.be.rejectedWith(CustomTestError);
       });
+    });
+  });
+  describe('constructor', () => {
+    it('should throw an error if "enumType" is undefined/null', () => {
+      try {
+        new ParseEnumPipe(null);
+      } catch (err) {
+        expect(err.message).to.equal(
+          `"ParseEnumPipe" requires "enumType" argument specified (to validate input values).`,
+        );
+      }
     });
   });
 });
