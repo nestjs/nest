@@ -4,7 +4,7 @@ export class StreamableFile {
   private readonly stream: Readable;
 
   constructor(buffer: Buffer);
-  constructor(readble: Readable);
+  constructor(readable: Readable);
   constructor(bufferOrReadStream: Buffer | Readable) {
     if (Buffer.isBuffer(bufferOrReadStream)) {
       this.stream = new Readable();
