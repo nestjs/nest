@@ -61,7 +61,7 @@ describe('validateUser', () => {
   });
 });
 
-describe('ValidateLogin', () => {
+describe('validateLogin', () => {
   let service: AuthService;
 
   beforeEach(async () => {
