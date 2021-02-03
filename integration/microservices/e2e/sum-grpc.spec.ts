@@ -113,6 +113,5 @@ describe('GRPC transport', () => {
 
   after(async () => {
     await app.close();
-    client.close();
   });
 });

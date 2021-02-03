@@ -1,7 +1,15 @@
 import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
-import { IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsDate,
+  IsDefined,
+  IsNumber,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { BadRequestException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces/features/pipe-transform.interface';
 import { ParseArrayPipe } from '../../pipes/parse-array.pipe';
@@ -130,6 +138,125 @@ describe('ParseArrayPipe', () => {
             expect(err.getResponse().message).to.deep.equal([
               '[0] number must be a number conforming to the specified constraints',
               '[1] number must be a number conforming to the specified constraints',
+            ]);
+          }
+        });
+
+        it('should validate each nested object and concat errors', async () => {
+          class RandomObject {
+            @IsDefined()
+            @IsBoolean()
+            isEnabled: boolean;
+
+            @IsString()
+            title: string;
+
+            @IsDate()
+            createdAt: Date;
+
+            constructor(partial: Partial<any>) {
+              Object.assign(this, partial);
+            }
+          }
+          class ArrItemObject {
+            @ValidateNested()
+            random: RandomObject;
+          }
+          const pipe = new ParseArrayPipe({
+            items: ArrItemObject,
+            stopAtFirstError: false,
+          });
+          try {
+            await pipe.transform(
+              [
+                {
+                  random: new RandomObject({
+                    isEnabled: true,
+                    title: true,
+                    createdAt: new Date(),
+                  }),
+                },
+                {
+                  random: new RandomObject({
+                    title: 'ok',
+                    createdAt: false,
+                  }),
+                },
+              ] as any[],
+              {} as ArgumentMetadata,
+            );
+          } catch (err) {
+            expect(err).to.be.instanceOf(BadRequestException);
+            expect(err.getResponse().message).to.deep.equal([
+              '[0] random.title must be a string',
+              '[1] random.isEnabled should not be null or undefined',
+              '[1] random.isEnabled must be a boolean value',
+              '[1] random.createdAt must be a Date instance',
+            ]);
+          }
+        });
+
+        it('should validate each nested array and concat errors', async () => {
+          class RandomObject {
+            @IsDefined()
+            @IsBoolean()
+            isEnabled: boolean;
+
+            @IsString()
+            title: string;
+
+            @IsDate()
+            createdAt: Date;
+
+            constructor(partial: Partial<any>) {
+              Object.assign(this, partial);
+            }
+          }
+          class ArrItemObject {
+            @Type(() => RandomObject)
+            @ValidateNested({ each: true })
+            random: RandomObject[];
+          }
+          const pipe = new ParseArrayPipe({
+            items: ArrItemObject,
+            stopAtFirstError: false,
+          });
+          try {
+            await pipe.transform(
+              [
+                {
+                  random: [
+                    new RandomObject({
+                      isEnabled: true,
+                      title: true,
+                      createdAt: new Date(),
+                    }),
+                    new RandomObject({
+                      isEnabled: true,
+                      title: true,
+                      createdAt: new Date(),
+                    }),
+                  ],
+                },
+                {
+                  random: [
+                    new RandomObject({
+                      title: 'ok',
+                      createdAt: false,
+                    }),
+                  ],
+                },
+              ] as any[],
+              {} as ArgumentMetadata,
+            );
+          } catch (err) {
+            expect(err).to.be.instanceOf(BadRequestException);
+            expect(err.getResponse().message).to.deep.equal([
+              '[0] random.0.title must be a string',
+              '[0] random.1.title must be a string',
+              '[1] random.0.isEnabled should not be null or undefined',
+              '[1] random.0.isEnabled must be a boolean value',
+              '[1] random.0.createdAt must be a Date instance',
             ]);
           }
         });

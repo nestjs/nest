@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-ws",
-  "version": "7.6.9",
+  "version": "7.6.11",
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-ws)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "tslib": "2.1.0",
-    "ws": "7.4.2"
+    "ws": "7.4.3"
   },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",

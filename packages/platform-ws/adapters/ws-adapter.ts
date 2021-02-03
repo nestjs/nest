@@ -32,6 +32,13 @@ export class WsAdapter extends AbstractWsAdapter {
     options?: any & { namespace?: string; server?: any },
   ): any {
     const { server, ...wsOptions } = options;
+    if (wsOptions?.namespace) {
+      const error = new Error(
+        '"WsAdapter" does not support namespaces. If you need namespaces in your project, consider using the "@nestjs/platform-socket.io" package instead.',
+      );
+      this.logger.error(error);
+      throw error;
+    }
     if (port === 0 && this.httpServer) {
       return this.bindErrorHandler(
         new wsPackage.Server({

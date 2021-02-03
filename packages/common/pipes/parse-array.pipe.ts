@@ -96,9 +96,19 @@ export class ParseArrayPipe implements PipeTransform {
           try {
             targetArray[i] = await toClassInstance(targetArray[i]);
           } catch (err) {
-            const message = err.getResponse
-              ? `[${i}] ` + err.getResponse().message
-              : err;
+            let message: string[] | unknown;
+            if (err.getResponse) {
+              const response = err.getResponse();
+              if (Array.isArray(response.message)) {
+                message = response.message.map(
+                  (item: string) => `[${i}] ${item}`,
+                );
+              } else {
+                message = `[${i}] ${response.message}`;
+              }
+            } else {
+              message = err;
+            }
             errors = errors.concat(message);
           }
         }
