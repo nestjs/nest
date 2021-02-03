@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/microservices",
-  "version": "7.6.9",
+  "version": "7.6.10",
   "description": "Nest - modern, fast, powerful node.js web framework (@microservices)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -22,8 +22,8 @@
     "tslib": "2.1.0"
   },
   "devDependencies": {
-    "@nestjs/common": "7.6.9",
-    "@nestjs/core": "7.6.9"
+    "@nestjs/common": "7.6.10",
+    "@nestjs/core": "7.6.10"
   },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",
