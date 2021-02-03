@@ -31,7 +31,7 @@
     "ts-loader": "8.0.14",
     "ts-node": "9.1.1",
     "webpack": "5.20.0",
-    "webpack-cli": "4.4.0",
+    "webpack-cli": "4.5.0",
     "webpack-node-externals": "2.5.2"
   }
 }
