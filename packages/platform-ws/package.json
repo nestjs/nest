@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "tslib": "2.1.0",
-    "ws": "7.4.2"
+    "ws": "7.4.3"
   },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",
