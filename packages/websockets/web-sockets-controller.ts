@@ -28,7 +28,7 @@ export class WebSocketsController {
     private readonly contextCreator: WsContextCreator,
   ) {}
 
-  public mergeGatewayAndServer(
+  public connectGatewayToServer(
     instance: NestGateway,
     metatype: Type<unknown> | Function,
     moduleKey: string,
