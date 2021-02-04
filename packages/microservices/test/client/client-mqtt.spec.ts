@@ -124,7 +124,7 @@ describe('ClientMqtt', () => {
         subscription = client.createResponseCallback();
 
         client['routingMap'].set(responseMessage.id, callback);
-        subscription('channel', new Buffer(JSON.stringify(responseMessage)));
+        subscription('channel', Buffer.from(JSON.stringify(responseMessage)));
       });
       it('should call callback with expected arguments', () => {
         expect(
@@ -143,7 +143,7 @@ describe('ClientMqtt', () => {
         client['routingMap'].set(responseMessage.id, callback);
         subscription(
           'channel',
-          new Buffer(
+          Buffer.from(
             JSON.stringify({
               ...responseMessage,
               isDisposed: true,
@@ -169,7 +169,7 @@ describe('ClientMqtt', () => {
         subscription = client.createResponseCallback();
 
         client['routingMap'].set('3', callback);
-        subscription('channel', new Buffer(JSON.stringify(responseMessage)));
+        subscription('channel', Buffer.from(JSON.stringify(responseMessage)));
       });
 
       it('should not call callback', () => {
