@@ -20,7 +20,11 @@ export class SocketServerProvider {
       path: options.path,
     });
     if (serverAndStreamsHost && options.namespace) {
-      return this.decorateWithNamespace(options, port, serverAndStreamsHost);
+      return this.decorateWithNamespace(
+        options,
+        port,
+        serverAndStreamsHost.server,
+      );
     }
     return serverAndStreamsHost
       ? serverAndStreamsHost
@@ -65,7 +69,7 @@ export class SocketServerProvider {
       namespaceServer,
     );
     this.socketsContainer.addOne(
-      { port, path: options.path },
+      { port, path: options.path, namespace: options.namespace },
       serverAndEventStreamsHost,
     );
     return serverAndEventStreamsHost;

@@ -7,6 +7,7 @@ import {
   ERROR_EVENT,
 } from '@nestjs/websockets/constants';
 import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer';
+import * as http from 'http';
 import { EMPTY as empty, fromEvent, Observable } from 'rxjs';
 import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
 
@@ -19,8 +20,23 @@ enum READY_STATE {
   CLOSED_STATE = 3,
 }
 
+type HttpServerRegistryKey = number;
+type HttpServerRegistryEntry = any;
+type WsServerRegistryKey = number;
+type WsServerRegistryEntry = any[];
+
+const UNDERLYING_HTTP_SERVER_PORT = 0;
+
 export class WsAdapter extends AbstractWsAdapter {
   protected readonly logger = new Logger(WsAdapter.name);
+  protected readonly httpServersRegistry = new Map<
+    HttpServerRegistryKey,
+    HttpServerRegistryEntry
+  >();
+  protected readonly wsServersRegistry = new Map<
+    WsServerRegistryKey,
+    WsServerRegistryEntry
+  >();
 
   constructor(appOrHttpServer?: INestApplicationContext | any) {
     super(appOrHttpServer);
@@ -39,7 +55,7 @@ export class WsAdapter extends AbstractWsAdapter {
       this.logger.error(error);
       throw error;
     }
-    if (port === 0 && this.httpServer) {
+    if (port === UNDERLYING_HTTP_SERVER_PORT && this.httpServer) {
       return this.bindErrorHandler(
         new wsPackage.Server({
           server: this.httpServer,
@@ -47,14 +63,33 @@ export class WsAdapter extends AbstractWsAdapter {
         }),
       );
     }
-    return server
-      ? server
-      : this.bindErrorHandler(
-          new wsPackage.Server({
-            port,
-            ...wsOptions,
-          }),
-        );
+
+    if (server) {
+      // When server exists already
+      return server;
+    }
+    if (options.path && port !== UNDERLYING_HTTP_SERVER_PORT) {
+      // Multiple servers with different paths
+      // sharing a single HTTP/S server running on different port
+      // than a regular HTTP application
+      this.ensureHttpServerExists(port);
+
+      const wsServer = this.bindErrorHandler(
+        new wsPackage.Server({
+          noServer: true,
+          ...wsOptions,
+        }),
+      );
+      this.addWsServerToRegistry(wsServer, port, options.path);
+      return wsServer;
+    }
+    const wsServer = this.bindErrorHandler(
+      new wsPackage.Server({
+        port,
+        ...wsOptions,
+      }),
+    );
+    return wsServer;
   }
 
   public bindMessageHandlers(
@@ -98,7 +133,7 @@ export class WsAdapter extends AbstractWsAdapter {
   }
 
   public bindErrorHandler(server: any) {
-    server.on(CONNECTION_EVENT, ws =>
+    server.on(CONNECTION_EVENT, (ws: any) =>
       ws.on(ERROR_EVENT, (err: any) => this.logger.error(err)),
     );
     server.on(ERROR_EVENT, (err: any) => this.logger.error(err));
@@ -107,5 +142,56 @@ export class WsAdapter extends AbstractWsAdapter {
 
   public bindClientDisconnect(client: any, callback: Function) {
     client.on(CLOSE_EVENT, callback);
+  }
+
+  public async dispose() {
+    const closeEvents = Array.from(this.httpServersRegistry).map(
+      ([_, server]) => new Promise(resolve => server.close(resolve)),
+    );
+    await Promise.all(closeEvents);
+    this.httpServersRegistry.clear();
+    this.wsServersRegistry.clear();
+  }
+
+  protected ensureHttpServerExists(port: number) {
+    if (this.httpServersRegistry.has(port)) {
+      return;
+    }
+    const httpServer = http.createServer();
+    this.httpServersRegistry.set(port, httpServer);
+
+    httpServer.on('upgrade', (request, socket, head) => {
+      const baseUrl = 'ws://' + request.headers.host + '/';
+      const pathname = new URL(request.url, baseUrl).pathname;
+      const wsServersCollection = this.wsServersRegistry.get(port);
+
+      let isRequestDelegated = false;
+      for (const wsServer of wsServersCollection) {
+        if (pathname === wsServer.path) {
+          wsServer.handleUpgrade(request, socket, head, (ws: unknown) => {
+            wsServer.emit('connection', ws, request);
+          });
+          isRequestDelegated = true;
+          break;
+        }
+      }
+      if (!isRequestDelegated) {
+        socket.destroy();
+      }
+    });
+
+    httpServer.listen(port);
+  }
+
+  protected addWsServerToRegistry<T extends Record<'path', string> = any>(
+    wsServer: T,
+    port: number,
+    path: string,
+  ) {
+    const entries = this.wsServersRegistry.get(port) ?? [];
+    entries.push(wsServer);
+
+    wsServer.path = path;
+    this.wsServersRegistry.set(port, entries);
   }
 }

@@ -33,10 +33,12 @@ export abstract class AbstractWsAdapter<
     client.on(DISCONNECT_EVENT, callback);
   }
 
-  public close(server: TServer) {
+  public async close(server: TServer) {
     const isCallable = server && isFunction(server.close);
-    isCallable && server.close();
+    isCallable && (await new Promise(resolve => server.close(resolve)));
   }
+
+  public async dispose() {}
 
   public abstract create(port: number, options?: TOptions): TServer;
   public abstract bindMessageHandlers(
