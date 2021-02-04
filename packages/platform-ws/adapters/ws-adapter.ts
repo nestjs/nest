@@ -45,8 +45,8 @@ export class WsAdapter extends AbstractWsAdapter {
 
   public create(
     port: number,
-    options?: any & { namespace?: string; server?: any },
-  ): any {
+    options?: Record<string, any> & { namespace?: string; server?: any },
+  ) {
     const { server, ...wsOptions } = options;
     if (wsOptions?.namespace) {
       const error = new Error(
@@ -55,24 +55,29 @@ export class WsAdapter extends AbstractWsAdapter {
       this.logger.error(error);
       throw error;
     }
+
     if (port === UNDERLYING_HTTP_SERVER_PORT && this.httpServer) {
-      return this.bindErrorHandler(
+      this.ensureHttpServerExists(port, this.httpServer);
+      const wsServer = this.bindErrorHandler(
         new wsPackage.Server({
-          server: this.httpServer,
+          noServer: true,
           ...wsOptions,
         }),
       );
+
+      this.addWsServerToRegistry(wsServer, port, options.path || '/');
+      return wsServer;
     }
 
     if (server) {
-      // When server exists already
       return server;
     }
     if (options.path && port !== UNDERLYING_HTTP_SERVER_PORT) {
       // Multiple servers with different paths
       // sharing a single HTTP/S server running on different port
       // than a regular HTTP application
-      this.ensureHttpServerExists(port);
+      const httpServer = this.ensureHttpServerExists(port);
+      httpServer?.listen(port);
 
       const wsServer = this.bindErrorHandler(
         new wsPackage.Server({
@@ -145,19 +150,22 @@ export class WsAdapter extends AbstractWsAdapter {
   }
 
   public async dispose() {
-    const closeEvents = Array.from(this.httpServersRegistry).map(
-      ([_, server]) => new Promise(resolve => server.close(resolve)),
-    );
-    await Promise.all(closeEvents);
+    const closeEventSignals = Array.from(this.httpServersRegistry)
+      .filter(([port]) => port !== UNDERLYING_HTTP_SERVER_PORT)
+      .map(([_, server]) => new Promise(resolve => server.close(resolve)));
+
+    await Promise.all(closeEventSignals);
     this.httpServersRegistry.clear();
     this.wsServersRegistry.clear();
   }
 
-  protected ensureHttpServerExists(port: number) {
+  protected ensureHttpServerExists(
+    port: number,
+    httpServer = http.createServer(),
+  ) {
     if (this.httpServersRegistry.has(port)) {
       return;
     }
-    const httpServer = http.createServer();
     this.httpServersRegistry.set(port, httpServer);
 
     httpServer.on('upgrade', (request, socket, head) => {
@@ -179,8 +187,7 @@ export class WsAdapter extends AbstractWsAdapter {
         socket.destroy();
       }
     });
-
-    httpServer.listen(port);
+    return httpServer;
   }
 
   protected addWsServerToRegistry<T extends Record<'path', string> = any>(

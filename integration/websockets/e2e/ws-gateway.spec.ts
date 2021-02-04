@@ -106,8 +106,8 @@ describe('WebSocketGateway (WsAdapter)', () => {
     // open websockets delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    ws = new WebSocket('ws://localhost:8082/example');
-    ws2 = new WebSocket('ws://localhost:8082/ws-path');
+    ws = new WebSocket('ws://localhost:3000/example');
+    ws2 = new WebSocket('ws://localhost:3000/ws-path');
 
     await new Promise<void>(resolve =>
       ws.on('open', () => {

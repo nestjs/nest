@@ -1,6 +1,6 @@
 import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 
-@WebSocketGateway(8082, {
+@WebSocketGateway({
   path: '/example',
 })
 export class ExamplePathGateway {
