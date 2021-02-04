@@ -25,7 +25,7 @@
     "format": "prettier \"**/*.ts\" --ignore-path ./.prettierignore --write && git status",
     "postinstall": "opencollective",
     "test": "nyc --require ts-node/register mocha packages/**/*.spec.ts --reporter spec --require 'node_modules/reflect-metadata/Reflect.js' --exit",
-    "test:integration": "mocha \"integration/websockets/{,!(node_modules)/**/}/*.spec.ts\" --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js' --exit",
+    "test:integration": "mocha \"integration/*/{,!(node_modules)/**/}/*.spec.ts\" --reporter spec --require ts-node/register --require 'node_modules/reflect-metadata/Reflect.js' --exit",
     "test:docker:up": "docker-compose -f integration/docker-compose.yml up -d",
     "test:docker:down": "docker-compose -f integration/docker-compose.yml down",
     "lint": "concurrently 'npm run lint:packages' 'npm run lint:integration' 'npm run lint:spec'",
