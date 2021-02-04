@@ -65,8 +65,14 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     this.initializeDeserializer(options);
   }
 
-  public async listen(callback: () => void): Promise<void> {
-    await this.start(callback);
+  public async listen(
+    callback: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ): Promise<void> {
+    try {
+      await this.start(callback);
+    } catch (err) {
+      callback(err);
+    }
   }
 
   public close(): void {

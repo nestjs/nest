@@ -4,10 +4,25 @@ import { requestProvider } from '../router/request/request-providers';
 import { Reflector } from '../services';
 import { inquirerProvider } from './inquirer/inquirer-providers';
 
+const ReflectorAliasProvider = {
+  provide: Reflector.name,
+  useExisting: Reflector,
+};
+
 @Global()
 @Module({
-  providers: [Reflector, requestProvider, inquirerProvider],
-  exports: [Reflector, requestProvider, inquirerProvider],
+  providers: [
+    Reflector,
+    ReflectorAliasProvider,
+    requestProvider,
+    inquirerProvider,
+  ],
+  exports: [
+    Reflector,
+    ReflectorAliasProvider,
+    requestProvider,
+    inquirerProvider,
+  ],
 })
 export class InternalCoreModule {
   static register(providers: ValueProvider[]): DynamicModule {

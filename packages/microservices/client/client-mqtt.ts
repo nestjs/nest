@@ -4,6 +4,7 @@ import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
 import {
   CLOSE_EVENT,
+  ECONNREFUSED,
   ERROR_EVENT,
   MESSAGE_EVENT,
   MQTT_DEFAULT_URL,
@@ -11,7 +12,6 @@ import {
 import { MqttClient } from '../external/mqtt-client.interface';
 import { MqttOptions, ReadPacket, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
-import { ECONNREFUSED } from './constants';
 
 let mqttPackage: any = {};
 

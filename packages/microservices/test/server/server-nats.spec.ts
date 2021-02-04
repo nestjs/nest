@@ -15,26 +15,37 @@ describe('ServerNats', () => {
     server = new ServerNats({});
   });
   describe('listen', () => {
-    let createNatsClient;
     let onSpy: sinon.SinonSpy;
-    let client;
+    let client: any;
+    let callbackSpy: sinon.SinonSpy;
 
     beforeEach(() => {
       onSpy = sinon.spy();
       client = {
         on: onSpy,
+        once: sinon.spy(),
       };
-      createNatsClient = sinon
-        .stub(server, 'createNatsClient')
-        .callsFake(() => client);
-
-      server.listen(null);
+      sinon.stub(server, 'createNatsClient').callsFake(() => client);
+      callbackSpy = sinon.spy();
     });
     it('should bind "error" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onSpy.getCall(0).args[0]).to.be.equal('error');
     });
     it('should bind "connect" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onSpy.getCall(1).args[0]).to.be.equal('connect');
+    });
+    describe('when "start" throws an exception', () => {
+      it('should call callback with a thrown error as an argument', () => {
+        const error = new Error('random error');
+
+        sinon.stub(server, 'start').callsFake(() => {
+          throw error;
+        });
+        server.listen(callbackSpy);
+        expect(callbackSpy.calledWith(error)).to.be.true;
+      });
     });
   });
   describe('close', () => {

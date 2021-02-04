@@ -46,15 +46,21 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     const protoLoader =
       this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
 
-    grpcPackage = this.loadPackage('grpc', ServerGrpc.name, () =>
-      require('grpc'),
+    grpcPackage = this.loadPackage('@grpc/grpc-js', ServerGrpc.name, () =>
+      require('@grpc/grpc-js'),
     );
     grpcProtoLoaderPackage = this.loadPackage(protoLoader, ServerGrpc.name);
   }
 
-  public async listen(callback: () => void) {
-    this.grpcClient = this.createClient();
-    await this.start(callback);
+  public async listen(
+    callback: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ) {
+    try {
+      this.grpcClient = await this.createClient();
+      await this.start(callback);
+    } catch (err) {
+      callback(err);
+    }
   }
 
   public async start(callback?: () => void) {
@@ -326,7 +332,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     this.messageHandlers.set(route, callback);
   }
 
-  public createClient(): any {
+  public async createClient(): Promise<any> {
     const grpcOptions = {
       'grpc.max_send_message_length': this.getOptionsProp(
         this.options,
@@ -349,10 +355,16 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     }
     const server = new grpcPackage.Server(grpcOptions);
     const credentials = this.getOptionsProp(this.options, 'credentials');
-    server.bind(
-      this.url,
-      credentials || grpcPackage.ServerCredentials.createInsecure(),
-    );
+
+    await new Promise((resolve, reject) => {
+      server.bindAsync(
+        this.url,
+        credentials || grpcPackage.ServerCredentials.createInsecure(),
+        (error: Error | null, port: number) =>
+          error ? reject(error) : resolve(port),
+      );
+    });
+
     return server;
   }
 

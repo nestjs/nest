@@ -1,12 +1,13 @@
 import { iterate } from 'iterare';
 import { InstanceWrapper } from '../instance-wrapper';
+import { InstanceToken } from '../module';
 
 /**
  * Returns the instances which are transient
  * @param instances The instances which should be checked whether they are transcient
  */
 export function getTransientInstances(
-  instances: [string, InstanceWrapper][],
+  instances: [InstanceToken, InstanceWrapper][],
 ): InstanceWrapper[] {
   return iterate(instances)
     .filter(([_, wrapper]) => wrapper.isDependencyTreeStatic())
@@ -22,7 +23,7 @@ export function getTransientInstances(
  * @param instances The instances which should be checked whether they are transcient
  */
 export function getNonTransientInstances(
-  instances: [string, InstanceWrapper][],
+  instances: [InstanceToken, InstanceWrapper][],
 ): InstanceWrapper[] {
   return iterate(instances)
     .filter(

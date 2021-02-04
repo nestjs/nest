@@ -1,5 +1,4 @@
-import { RequestMethod } from '@nestjs/common';
-import { PATH_METADATA } from '@nestjs/common/constants';
+import { MODULE_PATH, PATH_METADATA } from '@nestjs/common/constants';
 import { RouteInfo, Type } from '@nestjs/common/interfaces';
 import {
   addLeadingSlash,
@@ -7,13 +6,15 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { NestContainer } from '../injector/container';
+import { Module } from '../injector/module';
 import { MetadataScanner } from '../metadata-scanner';
 import { RouterExplorer } from '../router/router-explorer';
+import { targetModulesByContainer } from '../router/router-module';
 
 export class RoutesMapper {
   private readonly routerExplorer: RouterExplorer;
 
-  constructor(container: NestContainer) {
+  constructor(private readonly container: NestContainer) {
     this.routerExplorer = new RouterExplorer(new MetadataScanner(), container);
   }
 
@@ -21,37 +22,44 @@ export class RoutesMapper {
     route: Type<any> | RouteInfo | string,
   ): RouteInfo[] {
     if (isString(route)) {
+      const defaultRequestMethod = -1;
       return [
         {
-          path: this.validateRoutePath(route),
-          method: RequestMethod.ALL,
+          path: addLeadingSlash(route),
+          method: defaultRequestMethod,
         },
       ];
     }
-    const routePath: string = Reflect.getMetadata(PATH_METADATA, route);
+    const routePath = this.getRoutePath(route);
     if (this.isRouteInfo(routePath, route)) {
       return [
         {
-          path: this.validateRoutePath(route.path),
+          path: addLeadingSlash(route.path),
           method: route.method,
         },
       ];
     }
-    const paths = this.routerExplorer.scanForPaths(
+    const controllerPaths = this.routerExplorer.scanForPaths(
       Object.create(route),
       route.prototype,
     );
+    const moduleRef = this.getHostModuleOfController(route);
+    const modulePath = this.getModulePath(moduleRef?.metatype);
+
     const concatPaths = <T>(acc: T[], currentValue: T[]) =>
       acc.concat(currentValue);
-    return paths
-      .map(
-        item =>
-          item.path &&
-          item.path.map(p => ({
-            path:
-              this.validateGlobalPath(routePath) + this.validateRoutePath(p),
+
+    return controllerPaths
+      .map(item =>
+        item.path?.map(p => {
+          let path = modulePath ?? '';
+          path += this.normalizeGlobalPath(routePath) + addLeadingSlash(p);
+
+          return {
+            path,
             method: item.requestMethod,
-          })),
+          };
+        }),
       )
       .reduce(concatPaths, []);
   }
@@ -63,12 +71,44 @@ export class RoutesMapper {
     return isUndefined(path);
   }
 
-  private validateGlobalPath(path: string): string {
+  private normalizeGlobalPath(path: string): string {
     const prefix = addLeadingSlash(path);
     return prefix === '/' ? '' : prefix;
   }
 
-  private validateRoutePath(path: string): string {
-    return addLeadingSlash(path);
+  private getRoutePath(route: Type<any> | RouteInfo): string | undefined {
+    return Reflect.getMetadata(PATH_METADATA, route);
+  }
+
+  private getHostModuleOfController(
+    metatype: Type<unknown>,
+  ): Module | undefined {
+    if (!metatype) {
+      return;
+    }
+    const modulesContainer = this.container.getModules();
+    const moduleRefsSet = targetModulesByContainer.get(modulesContainer);
+    if (!moduleRefsSet) {
+      return;
+    }
+
+    const modules = Array.from(modulesContainer.values()).filter(moduleRef =>
+      moduleRefsSet.has(moduleRef),
+    );
+    return modules.find(({ routes }) => routes.has(metatype));
+  }
+
+  private getModulePath(
+    metatype: Type<unknown> | undefined,
+  ): string | undefined {
+    if (!metatype) {
+      return;
+    }
+    const modulesContainer = this.container.getModules();
+    const modulePath = Reflect.getMetadata(
+      MODULE_PATH + modulesContainer.applicationId,
+      metatype,
+    );
+    return modulePath ?? Reflect.getMetadata(MODULE_PATH, metatype);
   }
 }

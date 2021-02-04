@@ -17,14 +17,6 @@ export abstract class AbstractHttpAdapter<
   protected httpServer: TServer;
 
   constructor(protected readonly instance: any) {}
-  all(path: string, handler: RequestHandler<TRequest, TResponse>);
-  all(handler: RequestHandler<TRequest, TResponse>);
-  all(path: any, handler?: any) {
-    throw new Error('Method not implemented.');
-  }
-  setBaseViewsDir?(path: string | string[]): this {
-    throw new Error('Method not implemented.');
-  }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   public async init() {}
@@ -67,6 +59,12 @@ export abstract class AbstractHttpAdapter<
   public patch(path: any, handler: RequestHandler);
   public patch(...args: any[]) {
     return this.instance.patch(...args);
+  }
+
+  public all(handler: RequestHandler);
+  public all(path: any, handler: RequestHandler);
+  public all(...args: any[]) {
+    return this.instance.all(...args);
   }
 
   public options(handler: RequestHandler);

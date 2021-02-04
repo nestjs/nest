@@ -2,6 +2,7 @@ import { HttpServer } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { InternalServerErrorException } from '@nestjs/common/exceptions';
+import { RouteInfo } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
@@ -45,7 +46,9 @@ export interface RoutePathProperties {
 export class RouterExplorer {
   private readonly executionContextCreator: RouterExecutionContext;
   private readonly routerMethodFactory = new RouterMethodFactory();
-  private readonly logger = new Logger(RouterExplorer.name, true);
+  private readonly logger = new Logger(RouterExplorer.name, {
+    timestamp: true,
+  });
   private readonly exceptionFiltersCache = new WeakMap();
 
   constructor(
@@ -54,7 +57,7 @@ export class RouterExplorer {
     private readonly injector?: Injector,
     private readonly routerProxy?: RouterProxy,
     private readonly exceptionsFilter?: ExceptionsFilter,
-    config?: ApplicationConfig,
+    private readonly config?: ApplicationConfig,
   ) {
     this.executionContextCreator = new RouterExecutionContext(
       new RouteParamsFactory(),
@@ -99,8 +102,7 @@ export class RouterExplorer {
     } else {
       path = [prefix + addLeadingSlash(path)];
     }
-
-    return path.map(p => addLeadingSlash(p));
+    return path.map((p: string) => addLeadingSlash(p));
   }
 
   public scanForPaths(
@@ -135,7 +137,7 @@ export class RouterExplorer {
     );
     const path = isString(routePath)
       ? [addLeadingSlash(routePath)]
-      : routePath.map(p => addLeadingSlash(p));
+      : routePath.map((p: string) => addLeadingSlash(p));
     return {
       path,
       requestMethod,
@@ -153,7 +155,6 @@ export class RouterExplorer {
     host: string | string[],
   ) {
     (routePaths || []).forEach(pathProperties => {
-      const { path, requestMethod } = pathProperties;
       this.applyCallbackToRouter(
         router,
         pathProperties,
@@ -162,15 +163,49 @@ export class RouterExplorer {
         basePath,
         host,
       );
-      path.forEach(item => {
-        const pathStr = this.stripEndSlash(basePath) + this.stripEndSlash(item);
-        this.logger.log(ROUTE_MAPPED_MESSAGE(pathStr, requestMethod));
-      });
     });
   }
 
   public stripEndSlash(str: string) {
     return str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
+  }
+
+  public removeGlobalPrefixFromPath(path: string) {
+    const globalPrefix = addLeadingSlash(this.config.getGlobalPrefix());
+    return path.replace(globalPrefix, '');
+  }
+
+  public isRouteExcludedFromGlobalPrefix(
+    path: string,
+    requestMethod: RequestMethod,
+  ) {
+    const options = this.config.getGlobalPrefixOptions();
+    if (!options.exclude) {
+      return false;
+    }
+    const excludedRouteInfos = options.exclude.map(
+      (route: string | RouteInfo) => {
+        if (isString(route)) {
+          return {
+            path: addLeadingSlash(route),
+            method: RequestMethod.ALL,
+          };
+        }
+        return {
+          path: addLeadingSlash(route.path),
+          method: route.method,
+        };
+      },
+    );
+
+    return excludedRouteInfos.some((route: RouteInfo) => {
+      if (route.path !== path) {
+        return false;
+      }
+      return (
+        route.method === RequestMethod.ALL || route.method === requestMethod
+      );
+    });
   }
 
   private applyCallbackToRouter<T extends HttpServer>(
@@ -209,10 +244,22 @@ export class RouterExplorer {
           requestMethod,
         );
 
-    const hostHandler = this.applyHostFilter(host, proxy);
+    const routeHandler = this.applyHostFilter(host, proxy);
     paths.forEach(path => {
-      const fullPath = this.stripEndSlash(basePath) + path;
-      routerMethod(this.stripEndSlash(fullPath) || '/', hostHandler);
+      let finalPath = this.stripEndSlash(basePath) + this.stripEndSlash(path);
+
+      const isGlobalPrefixSet = !!this.config.getGlobalPrefix();
+      if (isGlobalPrefixSet) {
+        const unprefixedFullPath = this.removeGlobalPrefixFromPath(finalPath);
+
+        const isExcludedOfGlobalPrefix = this.isRouteExcludedFromGlobalPrefix(
+          unprefixedFullPath,
+          requestMethod,
+        );
+        finalPath = isExcludedOfGlobalPrefix ? unprefixedFullPath : finalPath;
+      }
+      routerMethod(finalPath || '/', routeHandler);
+      this.logger.log(ROUTE_MAPPED_MESSAGE(finalPath, requestMethod));
     });
   }
 

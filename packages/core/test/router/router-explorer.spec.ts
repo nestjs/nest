@@ -50,14 +50,16 @@ describe('RouterExplorer', () => {
   let routerBuilder: RouterExplorer;
   let injector: Injector;
   let exceptionsFilter: RouterExceptionFilters;
+  let applicationConfig: ApplicationConfig;
 
   beforeEach(() => {
     const container = new NestContainer();
 
+    applicationConfig = new ApplicationConfig();
     injector = new Injector();
     exceptionsFilter = new RouterExceptionFilters(
       container,
-      new ApplicationConfig(),
+      applicationConfig,
       null,
     );
     routerBuilder = new RouterExplorer(
@@ -66,6 +68,7 @@ describe('RouterExplorer', () => {
       injector,
       null,
       exceptionsFilter,
+      applicationConfig,
     );
   });
 
@@ -184,6 +187,103 @@ describe('RouterExplorer', () => {
 
       expect(bindStub.calledWith(null, paths[0], null)).to.be.true;
       expect(bindStub.callCount).to.be.eql(paths.length);
+    });
+  });
+
+  describe('removeGlobalPrefixFromPath', () => {
+    it('should remove global prefix from path', () => {
+      sinon
+        .stub(applicationConfig, 'getGlobalPrefix')
+        .returns('/some/prefixed');
+
+      expect(
+        routerBuilder.removeGlobalPrefixFromPath('/some/prefixed/cats'),
+      ).be.eql('/cats');
+    });
+    it('should not change path when there is no GlobalPrefix', () => {
+      sinon.stub(applicationConfig, 'getGlobalPrefix').returns('');
+      expect(routerBuilder.removeGlobalPrefixFromPath('/cats')).be.eql('/cats');
+    });
+  });
+
+  describe('stripEndSlash', () => {
+    it('should strip end slash if present', () => {
+      expect(routerBuilder.stripEndSlash('/cats/')).to.equal('/cats');
+      expect(routerBuilder.stripEndSlash('/cats')).to.equal('/cats');
+    });
+  });
+
+  describe('isRouteExcludedFromGlobalPrefix', () => {
+    describe('when there is no exclude configuration', () => {
+      it('should return false', () => {
+        sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
+          exclude: undefined,
+        });
+        expect(
+          routerBuilder.isRouteExcludedFromGlobalPrefix(
+            '/cats',
+            RequestMethod.GET,
+          ),
+        ).to.be.false;
+      });
+    });
+    describe('otherwise', () => {
+      describe('when route is not excluded', () => {
+        it('should return false', () => {
+          sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
+            exclude: [
+              {
+                path: '/random',
+                method: RequestMethod.ALL,
+              },
+            ],
+          });
+          expect(
+            routerBuilder.isRouteExcludedFromGlobalPrefix(
+              '/cats',
+              RequestMethod.GET,
+            ),
+          ).to.be.false;
+        });
+      });
+      describe('when route is excluded (by path)', () => {
+        it('should return true', () => {
+          sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
+            exclude: [
+              {
+                path: '/cats',
+                method: RequestMethod.ALL,
+              },
+              'cats',
+            ],
+          });
+          expect(
+            routerBuilder.isRouteExcludedFromGlobalPrefix(
+              '/cats',
+              RequestMethod.GET,
+            ),
+          ).to.be.true;
+        });
+
+        describe('when route is excluded (by method and path)', () => {
+          it('should return true', () => {
+            sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
+              exclude: [
+                {
+                  path: '/cats',
+                  method: RequestMethod.GET,
+                },
+              ],
+            });
+            expect(
+              routerBuilder.isRouteExcludedFromGlobalPrefix(
+                '/cats',
+                RequestMethod.GET,
+              ),
+            ).to.be.true;
+          });
+        });
+      });
     });
   });
 

@@ -13,10 +13,15 @@ import {
   CorsOptions,
   CorsOptionsDelegate,
 } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { GlobalPrefixOptions } from '@nestjs/common/interfaces/global-prefix-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { addLeadingSlash, isObject } from '@nestjs/common/utils/shared.utils';
+import {
+  addLeadingSlash,
+  isFunction,
+  isObject,
+} from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { platform } from 'os';
 import { AbstractHttpAdapter } from './adapters';
@@ -46,7 +51,9 @@ const {
 export class NestApplication
   extends NestApplicationContext
   implements INestApplication {
-  private readonly logger = new Logger(NestApplication.name, true);
+  private readonly logger = new Logger(NestApplication.name, {
+    timestamp: true,
+  });
   private readonly middlewareModule = new MiddlewareModule();
   private readonly middlewareContainer = new MiddlewareContainer(
     this.container,
@@ -216,15 +223,16 @@ export class NestApplication
     return this.httpServer;
   }
 
-  public startAllMicroservices(callback?: () => void): this {
-    Promise.all(this.microservices.map(this.listenToPromise)).then(
-      () => callback && callback(),
-    );
+  public async startAllMicroservices(): Promise<this> {
+    await Promise.all(this.microservices.map(msvc => msvc.listen()));
     return this;
   }
 
-  public startAllMicroservicesAsync(): Promise<void> {
-    return new Promise(resolve => this.startAllMicroservices(resolve));
+  public startAllMicroservicesAsync(): Promise<this> {
+    this.logger.warn(
+      'DEPRECATED! "startAllMicroservicesAsync" method is deprecated and will be removed in the next major release. Please, use "startAllMicroservices" instead.',
+    );
+    return this.startAllMicroservices();
   }
 
   public use(...args: [any, any?]): this {
@@ -236,26 +244,49 @@ export class NestApplication
     this.httpAdapter.enableCors(options);
   }
 
-  public async listen(
-    port: number | string,
-    callback?: () => void,
-  ): Promise<any>;
-  public async listen(
-    port: number | string,
-    hostname: string,
-    callback?: () => void,
-  ): Promise<any>;
+  public async listen(port: number | string): Promise<any>;
+  public async listen(port: number | string, hostname: string): Promise<any>;
   public async listen(port: number | string, ...args: any[]): Promise<any> {
     !this.isInitialized && (await this.init());
-    this.isListening = true;
-    this.httpAdapter.listen(port, ...args);
-    return this.httpServer;
+
+    return new Promise((resolve, reject) => {
+      const errorHandler = (e: any) => {
+        this.logger.error(e?.toString?.());
+        reject(e);
+      };
+      this.httpServer.once('error', errorHandler);
+
+      const isCallbackInOriginalArgs = isFunction(args[args.length - 1]);
+      const listenFnArgs = isCallbackInOriginalArgs
+        ? args.slice(0, args.length - 1)
+        : args;
+
+      this.httpAdapter.listen(
+        port,
+        ...listenFnArgs,
+        (...originalCallbackArgs: unknown[]) => {
+          if (this.appOptions?.autoFlushLogs) {
+            this.flushLogs();
+          }
+          const address = this.httpServer.address();
+          if (address) {
+            this.httpServer.removeListener('error', errorHandler);
+            this.isListening = true;
+            resolve(this.httpServer);
+          }
+          if (isCallbackInOriginalArgs) {
+            args[args.length - 1](...originalCallbackArgs);
+          }
+        },
+      );
+    });
   }
 
-  public listenAsync(port: number | string, hostname?: string): Promise<any> {
-    return new Promise(resolve => {
-      const server: any = this.listen(port, hostname, () => resolve(server));
-    });
+  public listenAsync(port: number | string, ...args: any[]): Promise<any> {
+    this.logger.warn(
+      'DEPRECATED! "listenAsync" method is deprecated and will be removed in the next major release. Please, use "listen" instead.',
+    );
+    return this.listen(port, ...(args as [any]));
   }
 
   public async getUrl(): Promise<string> {
@@ -264,32 +295,38 @@ export class NestApplication
         this.logger.error(MESSAGES.CALL_LISTEN_FIRST);
         reject(MESSAGES.CALL_LISTEN_FIRST);
       }
-      this.httpServer.on('listening', () => {
-        const address = this.httpServer.address();
-        if (typeof address === 'string') {
-          if (platform() === 'win32') {
-            return address;
-          }
-          const basePath = encodeURIComponent(address);
-          return `${this.getProtocol()}+unix://${basePath}`;
-        }
-        let host = this.host();
-        if (address && address.family === 'IPv6') {
-          if (host === '::') {
-            host = '[::1]';
-          } else {
-            host = `[${host}]`;
-          }
-        } else if (host === '0.0.0.0') {
-          host = '127.0.0.1';
-        }
-        resolve(`${this.getProtocol()}://${host}:${address.port}`);
-      });
+      const address = this.httpServer.address();
+      resolve(this.formatAddress(address));
     });
   }
 
-  public setGlobalPrefix(prefix: string): this {
+  private formatAddress(address: any): string {
+    if (typeof address === 'string') {
+      if (platform() === 'win32') {
+        return address;
+      }
+      const basePath = encodeURIComponent(address);
+      return `${this.getProtocol()}+unix://${basePath}`;
+    }
+    let host = this.host();
+    if (address && address.family === 'IPv6') {
+      if (host === '::') {
+        host = '[::1]';
+      } else {
+        host = `[${host}]`;
+      }
+    } else if (host === '0.0.0.0') {
+      host = '127.0.0.1';
+    }
+
+    return `${this.getProtocol()}://${host}:${address.port}`;
+  }
+
+  public setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this {
     this.config.setGlobalPrefix(prefix);
+    if (options) {
+      this.config.setGlobalPrefixOptions(options);
+    }
     return this;
   }
 
@@ -353,11 +390,5 @@ export class NestApplication
       this.middlewareContainer,
       instance,
     );
-  }
-
-  private listenToPromise(microservice: INestMicroservice) {
-    return new Promise<void>(async resolve => {
-      await microservice.listen(resolve);
-    });
   }
 }

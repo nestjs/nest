@@ -24,7 +24,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
 
   it(`should handle message (2nd port)`, async () => {
     app = await createNestApp(ApplicationGateway);
-    await app.listenAsync(3000);
+    await app.listen(3000);
 
     ws = new WebSocket('ws://localhost:8080');
     await new Promise(resolve => ws.on('open', resolve));
@@ -47,7 +47,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
 
   it(`should handle message (http)`, async () => {
     app = await createNestApp(ServerGateway);
-    await app.listenAsync(3000);
+    await app.listen(3000);
 
     ws = new WebSocket('ws://localhost:3000');
     await new Promise(resolve => ws.on('open', resolve));
@@ -146,7 +146,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     this.retries(10);
 
     app = await createNestApp(ApplicationGateway, CoreGateway);
-    await app.listenAsync(3000);
+    await app.listen(3000);
 
     // open websockets delay
     await new Promise(resolve => setTimeout(resolve, 1000));

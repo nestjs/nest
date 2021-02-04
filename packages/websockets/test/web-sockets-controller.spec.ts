@@ -245,7 +245,7 @@ describe('WebSocketsController', () => {
       fn(client);
     });
 
-    it('should returns function', () => {
+    it('should return function', () => {
       expect(
         instance.getConnectionHandler(null, null, null, null, null),
       ).to.be.a('function');
@@ -337,7 +337,7 @@ describe('WebSocketsController', () => {
   describe('pickResult', () => {
     describe('when defferedResult contains value which', () => {
       describe('is a Promise', () => {
-        it('should returns Promise<Observable>', async () => {
+        it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
             await (
@@ -348,7 +348,7 @@ describe('WebSocketsController', () => {
       });
 
       describe('is an Observable', () => {
-        it('should returns Promise<Observable>', async () => {
+        it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
             await (
@@ -359,7 +359,7 @@ describe('WebSocketsController', () => {
       });
 
       describe('is a value', () => {
-        it('should returns Promise<Observable>', async () => {
+        it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
             await (

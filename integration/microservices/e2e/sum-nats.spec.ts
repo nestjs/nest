@@ -23,7 +23,7 @@ describe('NATS transport', () => {
         url: 'nats://0.0.0.0:4222',
       },
     });
-    await app.startAllMicroservicesAsync();
+    await app.startAllMicroservices();
     await app.init();
   });
 

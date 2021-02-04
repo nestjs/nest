@@ -6,6 +6,7 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
+import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MESSAGES } from '@nestjs/core/constants';
@@ -27,17 +28,19 @@ const { SocketModule } = optionalRequire(
 export class NestMicroservice
   extends NestApplicationContext
   implements INestMicroservice {
-  private readonly logger = new Logger(NestMicroservice.name, true);
+  private readonly logger = new Logger(NestMicroservice.name, {
+    timestamp: true,
+  });
   private readonly microservicesModule = new MicroservicesModule();
   private readonly socketModule = SocketModule ? new SocketModule() : null;
-  private microserviceConfig: MicroserviceOptions;
+  private microserviceConfig: NestMicroserviceOptions & MicroserviceOptions;
   private server: Server & CustomTransportStrategy;
   private isTerminated = false;
   private isInitHookCalled = false;
 
   constructor(
     container: NestContainer,
-    config: MicroserviceOptions = {},
+    config: NestMicroserviceOptions & MicroserviceOptions = {},
     private readonly applicationConfig: ApplicationConfig,
   ) {
     super(container);
@@ -47,7 +50,7 @@ export class NestMicroservice
     this.selectContextModule();
   }
 
-  public createServer(config: MicroserviceOptions) {
+  public createServer(config: NestMicroserviceOptions & MicroserviceOptions) {
     try {
       this.microserviceConfig = {
         transport: Transport.TCP,
@@ -115,15 +118,28 @@ export class NestMicroservice
     return this;
   }
 
-  public listen(callback: () => void) {
-    this.listenAsync().then(callback);
+  public async listen() {
+    !this.isInitialized && (await this.registerModules());
+
+    return new Promise<any>((resolve, reject) => {
+      this.server.listen((err, info) => {
+        if (this.microserviceConfig?.autoFlushLogs) {
+          this.flushLogs();
+        }
+        if (err) {
+          return reject(err);
+        }
+        this.logger.log(MESSAGES.MICROSERVICE_READY);
+        resolve(info);
+      });
+    });
   }
 
   public async listenAsync(): Promise<any> {
-    !this.isInitialized && (await this.registerModules());
-
-    this.logger.log(MESSAGES.MICROSERVICE_READY);
-    return new Promise<void>(resolve => this.server.listen(resolve));
+    this.logger.warn(
+      'DEPRECATED! "listenAsync" method is deprecated and will be removed in the next major release. Please, use "listen" instead.',
+    );
+    return this.listen();
   }
 
   public async close(): Promise<any> {

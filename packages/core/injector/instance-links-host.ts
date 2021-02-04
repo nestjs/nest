@@ -1,11 +1,9 @@
-import { Abstract, Type } from '@nestjs/common';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
-import { Module } from './module';
+import { InstanceToken, Module } from './module';
 
-type InstanceToken = string | symbol | Type<any> | Abstract<any> | Function;
 type HostCollection = 'providers' | 'controllers' | 'injectables';
 
 export interface InstanceLink<T = any> {
@@ -23,20 +21,17 @@ export class InstanceLinksHost {
   }
 
   get<T = any>(token: InstanceToken, moduleId?: string): InstanceLink<T> {
-    const name = isFunction(token)
-      ? (token as Function).name
-      : (token as string | symbol);
-    const modulesMap = this.instanceLinks.get(name);
+    const modulesMap = this.instanceLinks.get(token);
 
     if (!modulesMap) {
-      throw new UnknownElementException(name);
+      throw new UnknownElementException(this.getInstanceNameByToken(token));
     }
     const instanceLink = moduleId
       ? modulesMap.find(item => item.moduleId === moduleId)
       : modulesMap[modulesMap.length - 1];
 
     if (!instanceLink) {
-      throw new UnknownElementException(name);
+      throw new UnknownElementException(this.getInstanceNameByToken(token));
     }
     return instanceLink;
   }
@@ -75,5 +70,9 @@ export class InstanceLinksHost {
     } else {
       existingLinks.push(instanceLink);
     }
+  }
+
+  private getInstanceNameByToken(token: InstanceToken): string {
+    return isFunction(token) ? (token as Function)?.name : (token as string);
   }
 }

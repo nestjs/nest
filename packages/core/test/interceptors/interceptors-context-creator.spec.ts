@@ -14,17 +14,24 @@ describe('InterceptorsContextCreator', () => {
   let container: any;
   let getSpy: sinon.SinonSpy;
 
+  class Interceptor1 {}
+  class Interceptor2 {}
+
   beforeEach(() => {
     interceptors = [
       {
-        name: 'test',
+        name: Interceptor1.name,
+        token: Interceptor1,
+        metatype: Interceptor1,
         getInstanceByContextId: () => interceptors[0],
         instance: {
           intercept: () => of(true),
         },
       },
       {
-        name: 'test2',
+        name: Interceptor2.name,
+        token: Interceptor2,
+        metatype: Interceptor2,
         getInstanceByContextId: () => interceptors[1],
         instance: {
           intercept: () => of(true),
@@ -35,8 +42,8 @@ describe('InterceptorsContextCreator', () => {
     ];
     getSpy = sinon.stub().returns({
       injectables: new Map([
-        ['test', interceptors[0]],
-        ['test2', interceptors[1]],
+        [Interceptor1, interceptors[0]],
+        [Interceptor2, interceptors[1]],
       ]),
     });
     container = {
@@ -52,7 +59,7 @@ describe('InterceptorsContextCreator', () => {
   });
   describe('createConcreteContext', () => {
     describe('when `moduleContext` is nil', () => {
-      it('should returns empty array', () => {
+      it('should return empty array', () => {
         const result = interceptorsContextCreator.createConcreteContext(
           interceptors,
         );
@@ -64,8 +71,12 @@ describe('InterceptorsContextCreator', () => {
         interceptorsContextCreator['moduleContext'] = 'test';
       });
       it('should filter metatypes', () => {
+        const interceptorTypeRefs = [
+          interceptors[0].metatype,
+          interceptors[1].instance,
+        ];
         expect(
-          interceptorsContextCreator.createConcreteContext(interceptors),
+          interceptorsContextCreator.createConcreteContext(interceptorTypeRefs),
         ).to.have.length(2);
       });
     });
@@ -119,8 +130,8 @@ describe('InterceptorsContextCreator', () => {
 
       describe('and when module exists', () => {
         it('should return undefined', () => {
-          expect(interceptorsContextCreator.getInstanceByMetatype({})).to.be
-            .undefined;
+          expect(interceptorsContextCreator.getInstanceByMetatype(class {})).to
+            .be.undefined;
         });
       });
     });

@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { HttpStatus, Logger, RequestMethod } from '@nestjs/common';
+import {
+  HttpStatus,
+  Logger,
+  RequestMethod,
+  StreamableFile,
+} from '@nestjs/common';
 import {
   CorsOptions,
   CorsOptionsDelegate,
@@ -138,6 +143,9 @@ export class FastifyAdapter<
 
     if (statusCode) {
       fastifyReply.status(statusCode);
+    }
+    if (body instanceof StreamableFile) {
+      body = body.getStream();
     }
     return fastifyReply.send(body);
   }
@@ -312,7 +320,8 @@ export class FastifyAdapter<
           }
           if (
             requestMethod === RequestMethod.ALL ||
-            req.method === RequestMethod[requestMethod]
+            req.method === RequestMethod[requestMethod] ||
+            requestMethod === -1
           ) {
             return callback(req, res, next);
           }

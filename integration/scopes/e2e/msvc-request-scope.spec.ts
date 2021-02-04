@@ -35,7 +35,7 @@ describe('Request scope (microservices)', () => {
 
     server = app.getHttpServer();
     await app.init();
-    await app.startAllMicroservicesAsync();
+    await app.startAllMicroservices();
   });
 
   describe('when one service is request scoped', () => {

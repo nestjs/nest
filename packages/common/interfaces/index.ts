@@ -25,3 +25,4 @@ export * from './nest-microservice.interface';
 export * from './scope-options.interface';
 export * from './type.interface';
 export * from './websockets/web-socket-adapter.interface';
+export * from './global-prefix-options.interface';

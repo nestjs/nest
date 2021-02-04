@@ -1,97 +1,122 @@
 /**
- * @external https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/socket.io/index.d.ts
+ * @external https://github.com/socketio/socket.io/blob/master/lib/index.ts
  */
+
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 export interface GatewayMetadata {
   /**
    * The name of a namespace
    */
   namespace?: string | RegExp;
-
   /**
-   * The path to ws
-   * @default '/socket.io'
+   * Name of the path to capture
+   * @default "/socket.io"
    */
   path?: string;
-
   /**
-   * Should we serve the client file?
+   * Whether to serve the client files
    * @default true
    */
   serveClient?: boolean;
-
   /**
-   * The adapter to use for handling rooms. NOTE: this should be a class,
-   * not an object
-   * @default typeof Adapter
+   * The adapter to use
+   * @default the in-memory adapter (https://github.com/socketio/socket.io-adapter)
    */
   adapter?: any;
-
   /**
-   * Accepted origins
-   * @default '*:*'
+   * The parser to use
+   * @default the default parser (https://github.com/socketio/socket.io-parser)
    */
-  origins?: string | string[];
-
   parser?: any;
-
   /**
-   * How many milliseconds without a pong packed to consider the connection closed (engine.io)
-   * @default 60000
+   * How many ms before a client without namespace is closed
+   * @default 45000
+   */
+  connectTimeout?: number;
+  /**
+   * How many ms without a pong packet to consider the connection closed
+   * @default 5000
    */
   pingTimeout?: number;
-
   /**
-   * How many milliseconds before sending a new ping packet (keep-alive) (engine.io)
+   * How many ms before sending a new ping packet
    * @default 25000
    */
   pingInterval?: number;
-
   /**
-   * How many bytes or characters a message can be when polling, before closing the session
-   * (to avoid Dos) (engine.io)
-   * @default 10E7
+   * How many ms before an uncompleted transport upgrade is cancelled
+   * @default 10000
+   */
+  upgradeTimeout?: number;
+  /**
+   * How many bytes or characters a message can be, before closing the session (to avoid DoS).
+   * @default 1e5 (100 KB)
    */
   maxHttpBufferSize?: number;
-
   /**
-   * Transports to allow connections to (engine.io)
-   * @default ['polling','websocket']
+   * A function that receives a given handshake or upgrade request as its first parameter,
+   * and can decide whether to continue or not. The second argument is a function that needs
+   * to be called with the decided information: fn(err, success), where success is a boolean
+   * value where false means that the request is rejected, and err is an error code.
    */
-  transports?: string[];
-
+  allowRequest?: (
+    req: any,
+    fn: (err: string | null | undefined, success: boolean) => void,
+  ) => void;
   /**
-   * Whether to allow transport upgrades (engine.io)
+   * The low-level transports that are enabled
+   * @default ["polling", "websocket"]
+   */
+  transports?: Transport[];
+  /**
+   * Whether to allow transport upgrades
    * @default true
    */
   allowUpgrades?: boolean;
-
   /**
-   * parameters of the WebSocket permessage-deflate extension (see ws module).
-   * Set to false to disable (engine.io)
+   * Parameters of the WebSocket permessage-deflate extension (see ws module api docs). Set to false to disable.
+   * @default false
+   */
+  perMessageDeflate?: boolean | object;
+  /**
+   * Parameters of the http compression for the polling transports (see zlib api docs). Set to false to disable.
    * @default true
    */
-  perMessageDeflate?: Record<string, any> | boolean;
-
+  httpCompression?: boolean | object;
   /**
-   * Parameters of the http compression for the polling transports (see zlib).
-   * Set to false to disable, or set an object with parameter "threshold:number"
-   * to only compress data if the byte size is above this value (1024) (engine.io)
-   * @default true|1024
+   * What WebSocket server implementation to use. Specified module must
+   * conform to the ws interface (see ws module api docs). Default value is ws.
+   * An alternative c++ addon is also available by installing uws module.
    */
-  httpCompression?: Record<string, any> | boolean;
-
+  wsEngine?: string;
   /**
-   * Name of the HTTP cookie that contains the client sid to send as part of
-   * handshake response headers. Set to false to not send one (engine.io)
-   * @default "io"
+   * An optional packet which will be concatenated to the handshake packet emitted by Engine.IO.
    */
-  cookie?: string | boolean;
-
+  initialPacket?: any;
   /**
-   * Whether to let engine.io handle the OPTIONS requests.
-   * You can also pass a custom function to handle the requests
+   * Configuration of the cookie that contains the client sid to send as part of handshake response headers. This cookie
+   * might be used for sticky-session. Defaults to not sending any cookie.
+   * @default false
+   */
+  cookie?: any | boolean;
+  /**
+   * The options that will be forwarded to the cors module
+   */
+  cors?: CorsOptions;
+  /**
+   * Whether to enable compatibility with Socket.IO v2 clients
+   * @default false
+   */
+  allowEIO3?: boolean;
+  /**
+   * Destroy unhandled upgrade requests
    * @default true
    */
-  handlePreflightRequest?: ((req: any, res: any) => void) | boolean;
+  destroyUpgrade?: boolean;
+  /**
+   * Milliseconds after which unhandled requests are ended
+   * @default 1000
+   */
+  destroyUpgradeTimeout?: number;
 }

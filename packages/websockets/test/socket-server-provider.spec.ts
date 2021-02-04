@@ -34,7 +34,6 @@ describe('SocketServerProvider', () => {
     afterEach(() => {
       mockContainer.restore();
     });
-
     it(`should return stored server`, () => {
       const server = { test: 'test' };
       mockContainer.expects('getOneByConfig').returns(server);
