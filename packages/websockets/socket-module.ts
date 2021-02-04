@@ -86,7 +86,7 @@ export class SocketModule<HttpServer = any> {
     if (!adapter) {
       return;
     }
-    const servers = this.socketsContainer.getAllSocketEventHosts();
+    const servers = this.socketsContainer.getAll();
     await Promise.all(
       iterate(servers.values())
         .filter(({ server }) => server)
