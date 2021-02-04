@@ -39,11 +39,13 @@ export class MicroservicesModule {
       new InterceptorsContextCreator(container, config),
       new InterceptorsConsumer(),
     );
+
+    const injector = new Injector();
     this.listenersController = new ListenersController(
       this.clientsContainer,
       contextCreator,
       container,
-      new Injector(),
+      injector,
       ClientProxyFactory,
       exceptionFiltersContext,
     );
@@ -96,9 +98,9 @@ export class MicroservicesModule {
     });
   }
 
-  public close() {
+  public async close() {
     const clients = this.clientsContainer.getAllClients();
-    clients.forEach(client => client.close());
+    await Promise.all(clients.map(client => client.close()));
     this.clientsContainer.clear();
   }
 }

@@ -165,6 +165,8 @@ export class NestMicroservice
 
   protected async closeApplication(): Promise<any> {
     this.socketModule && (await this.socketModule.close());
+    this.microservicesModule && (await this.microservicesModule.close());
+
     await super.close();
     this.setIsTerminated(true);
   }
@@ -175,5 +177,6 @@ export class NestMicroservice
       return;
     }
     this.socketModule && (await this.socketModule.close());
+    this.microservicesModule && (await this.microservicesModule.close());
   }
 }

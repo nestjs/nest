@@ -86,6 +86,7 @@ export class NestApplication
 
   protected async dispose(): Promise<void> {
     this.socketModule && (await this.socketModule.close());
+    this.microservicesModule && (await this.microservicesModule.close());
     this.httpAdapter && (await this.httpAdapter.close());
 
     await Promise.all(

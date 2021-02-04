@@ -47,20 +47,20 @@ export class SocketModule<HttpServer = any> {
     );
     const modules = container.getModules();
     modules.forEach(({ providers }, moduleName: string) =>
-      this.combineAllGateways(providers, moduleName),
+      this.connectAllGateways(providers, moduleName),
     );
   }
 
-  public combineAllGateways(
+  public connectAllGateways(
     providers: Map<InstanceToken, InstanceWrapper<Injectable>>,
     moduleName: string,
   ) {
     iterate(providers.values())
       .filter(wrapper => wrapper && !wrapper.isNotMetatype)
-      .forEach(wrapper => this.combineGatewayAndServer(wrapper, moduleName));
+      .forEach(wrapper => this.connectGatewayToServer(wrapper, moduleName));
   }
 
-  public combineGatewayAndServer(
+  public connectGatewayToServer(
     wrapper: InstanceWrapper<Injectable>,
     moduleName: string,
   ) {
@@ -72,7 +72,7 @@ export class SocketModule<HttpServer = any> {
     if (!this.isAdapterInitialized) {
       this.initializeAdapter();
     }
-    this.webSocketsController.mergeGatewayAndServer(
+    this.webSocketsController.connectGatewayToServer(
       instance as NestGateway,
       metatype,
       moduleName,
