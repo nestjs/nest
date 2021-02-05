@@ -50,7 +50,7 @@ describe('WebSocketsController', () => {
       contextCreator as any,
     );
   });
-  describe('mergeGatewayAndServer', () => {
+  describe('connectGatewayToServer', () => {
     let subscribeToServerEvents: sinon.SinonSpy;
 
     @WebSocketGateway('test' as any)
@@ -66,7 +66,7 @@ describe('WebSocketsController', () => {
     it('should throws "InvalidSocketPortException" when port is not a number', () => {
       Reflect.defineMetadata(PORT_METADATA, 'test', InvalidGateway);
       expect(() =>
-        instance.mergeGatewayAndServer(
+        instance.connectGatewayToServer(
           new InvalidGateway(),
           InvalidGateway,
           '',
@@ -75,12 +75,12 @@ describe('WebSocketsController', () => {
     });
     it('should call "subscribeToServerEvents" with default values when metadata is empty', () => {
       const gateway = new DefaultGateway();
-      instance.mergeGatewayAndServer(gateway, DefaultGateway, '');
+      instance.connectGatewayToServer(gateway, DefaultGateway, '');
       expect(subscribeToServerEvents.calledWith(gateway, {}, 0, '')).to.be.true;
     });
     it('should call "subscribeToServerEvents" when metadata is valid', () => {
       const gateway = new Test();
-      instance.mergeGatewayAndServer(gateway, Test, '');
+      instance.connectGatewayToServer(gateway, Test, '');
       expect(
         subscribeToServerEvents.calledWith(gateway, { namespace }, port, ''),
       ).to.be.true;
