@@ -1,3 +1,1 @@
-export interface PatternMetadata {
-  [prop: string]: any;
-}
+export type PatternMetadata = Record<string, any> | string;

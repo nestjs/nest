@@ -57,7 +57,7 @@ export class RpcContextCreator {
   public create<T extends ParamsMetadata = ParamsMetadata>(
     instance: Controller,
     callback: (...args: unknown[]) => Observable<any>,
-    module: string,
+    moduleKey: string,
     methodName: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -74,33 +74,33 @@ export class RpcContextCreator {
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
     const guards = this.guardsContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
 
-    const paramsMetadata = getParamsMetadata(module);
+    const paramsMetadata = getParamsMetadata(moduleKey);
     const paramsOptions = paramsMetadata
       ? this.contextUtils.mergeParamsMetatypes(paramsMetadata, paramtypes)
       : [];
