@@ -1,8 +1,8 @@
 import { addLeadingSlash, isString } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { ServerAndEventStreamsFactory } from './factories/server-and-event-streams-factory';
 import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
-import { SocketEventsHost } from './interfaces/socket-events-host.interface';
-import { SocketEventsHostFactory } from './socket-events-host-factory';
+import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams-host.interface';
 import { SocketsContainer } from './sockets-container';
 
 export class SocketServerProvider {
@@ -11,56 +11,74 @@ export class SocketServerProvider {
     private readonly applicationConfig: ApplicationConfig,
   ) {}
 
-  public scanForSocketServer<T extends GatewayMetadata>(
+  public scanForSocketServer<T extends GatewayMetadata = any>(
     options: T,
     port: number,
-  ): SocketEventsHost {
-    const socketEventsHost = this.socketsContainer.getSocketEventsHostByPort(
+  ): ServerAndEventStreamsHost {
+    const serverAndStreamsHost = this.socketsContainer.getOneByConfig({
       port,
-    );
-    return socketEventsHost
-      ? this.createWithNamespace(options, port, socketEventsHost)
+      path: options.path,
+    });
+    if (serverAndStreamsHost && options.namespace) {
+      return this.decorateWithNamespace(
+        options,
+        port,
+        serverAndStreamsHost.server,
+      );
+    }
+    return serverAndStreamsHost
+      ? serverAndStreamsHost
       : this.createSocketServer(options, port);
   }
 
   private createSocketServer<T extends GatewayMetadata>(
     options: T,
     port: number,
-  ): SocketEventsHost {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { namespace, server, ...partialOptions } = options as any;
+  ): ServerAndEventStreamsHost {
     const adapter = this.applicationConfig.getIoAdapter();
+    const { namespace, server, ...partialOptions } = options as Record<
+      string,
+      unknown
+    >;
     const ioServer = adapter.create(port, partialOptions);
-    const observableSocket = SocketEventsHostFactory.create(ioServer);
+    const serverAndEventStreamsHost = ServerAndEventStreamsFactory.create(
+      ioServer,
+    );
 
-    this.socketsContainer.addSocketEventsHost(null, port, observableSocket);
-    return this.createWithNamespace(options, port, observableSocket);
+    this.socketsContainer.addOne(
+      { port, path: options.path },
+      serverAndEventStreamsHost,
+    );
+    if (!namespace) {
+      return serverAndEventStreamsHost;
+    }
+    return this.decorateWithNamespace(options, port, ioServer);
   }
 
-  private createWithNamespace<T extends GatewayMetadata>(
+  private decorateWithNamespace<T extends GatewayMetadata = any>(
     options: T,
     port: number,
-    socketEventsHost: SocketEventsHost,
-  ): SocketEventsHost {
-    const { namespace } = options;
-    if (!namespace) {
-      return socketEventsHost;
-    }
+    targetServer: unknown,
+  ): ServerAndEventStreamsHost {
     const namespaceServer = this.getServerOfNamespace(
       options,
       port,
-      socketEventsHost.server,
+      targetServer,
     );
-    const eventsHost = SocketEventsHostFactory.create(namespaceServer);
-    this.socketsContainer.addSocketEventsHost(namespace, port, eventsHost);
-    return eventsHost;
+    const serverAndEventStreamsHost = ServerAndEventStreamsFactory.create(
+      namespaceServer,
+    );
+    this.socketsContainer.addOne(
+      { port, path: options.path, namespace: options.namespace },
+      serverAndEventStreamsHost,
+    );
+    return serverAndEventStreamsHost;
   }
 
-  private getServerOfNamespace<TOptions extends GatewayMetadata, TServer = any>(
-    options: TOptions,
-    port: number,
-    server: TServer,
-  ) {
+  private getServerOfNamespace<
+    TOptions extends GatewayMetadata = any,
+    TServer = any
+  >(options: TOptions, port: number, server: TServer) {
     const adapter = this.applicationConfig.getIoAdapter();
     return adapter.create(port, {
       ...options,

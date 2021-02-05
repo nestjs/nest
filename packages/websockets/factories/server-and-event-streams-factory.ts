@@ -1,8 +1,8 @@
 import { ReplaySubject, Subject } from 'rxjs';
-import { SocketEventsHost } from './interfaces/socket-events-host.interface';
+import { ServerAndEventStreamsHost } from '../interfaces/server-and-event-streams-host.interface';
 
-export class SocketEventsHostFactory {
-  public static create<T = any>(server: T): SocketEventsHost<T> {
+export class ServerAndEventStreamsFactory {
+  public static create<T = any>(server: T): ServerAndEventStreamsHost<T> {
     const init = new ReplaySubject<T>();
     init.next(server);
 

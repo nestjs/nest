@@ -1,31 +1,38 @@
-import { SocketEventsHost } from './interfaces';
+import * as hash from 'object-hash';
+import { GatewayMetadata, ServerAndEventStreamsHost } from './interfaces';
 
 export class SocketsContainer {
-  private readonly socketEventHosts = new Map<
+  private readonly serverAndEventStreamsHosts = new Map<
     string | RegExp,
-    SocketEventsHost
+    ServerAndEventStreamsHost
   >();
 
-  public getAllSocketEventHosts(): Map<string | RegExp, SocketEventsHost> {
-    return this.socketEventHosts;
+  public getAll(): Map<string | RegExp, ServerAndEventStreamsHost> {
+    return this.serverAndEventStreamsHosts;
   }
 
-  public getSocketEventsHostByPort(port: number): SocketEventsHost {
-    return this.socketEventHosts.get(`${port}`);
+  public getOneByConfig<T extends GatewayMetadata = any>(
+    options: T,
+  ): ServerAndEventStreamsHost {
+    const uniqueToken = this.generateHashByOptions(options);
+    return this.serverAndEventStreamsHosts.get(uniqueToken);
   }
 
-  public addSocketEventsHost(
-    namespace: string | RegExp,
-    port: number,
-    host: SocketEventsHost,
+  public addOne<T extends GatewayMetadata = any>(
+    options: T,
+    host: ServerAndEventStreamsHost,
   ) {
-    this.socketEventHosts.set(
-      namespace ? `${namespace}:${port}` : `${port}`,
-      host,
-    );
+    const uniqueToken = this.generateHashByOptions(options);
+    this.serverAndEventStreamsHosts.set(uniqueToken, host);
   }
 
   public clear() {
-    this.socketEventHosts.clear();
+    this.serverAndEventStreamsHosts.clear();
+  }
+
+  private generateHashByOptions<T extends GatewayMetadata = any>(
+    options: T,
+  ): string {
+    return hash(options, { ignoreUnknown: true });
   }
 }
