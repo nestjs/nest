@@ -43,9 +43,19 @@ export abstract class Server {
     callback: MessageHandler,
     isEventHandler = false,
   ) {
-    const route = this.normalizePattern(pattern);
+    const normalizedPattern = this.normalizePattern(pattern);
     callback.isEventHandler = isEventHandler;
-    this.messageHandlers.set(route, callback);
+
+    if (this.messageHandlers.has(normalizedPattern) && isEventHandler) {
+      const headRef = this.messageHandlers.get(normalizedPattern);
+      const getTail = (handler: MessageHandler) =>
+        handler?.next ? getTail(handler.next) : handler;
+
+      const tailRef = getTail(headRef);
+      tailRef.next = callback;
+    } else {
+      this.messageHandlers.set(normalizedPattern, callback);
+    }
   }
 
   public getHandlers(): Map<string, MessageHandler> {

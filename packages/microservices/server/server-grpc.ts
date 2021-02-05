@@ -323,7 +323,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public addHandler(
-    pattern: any,
+    pattern: unknown,
     callback: MessageHandler,
     isEventHandler = false,
   ) {

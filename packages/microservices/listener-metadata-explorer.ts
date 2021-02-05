@@ -18,7 +18,7 @@ export interface ClientProperties {
   metadata: ClientOptions;
 }
 
-export interface PatternProperties {
+export interface EventOrMessageListenerDefinition {
   pattern: PatternMetadata;
   methodKey: string;
   isEventHandler: boolean;
@@ -34,11 +34,11 @@ export interface MessageRequestProperties {
 export class ListenerMetadataExplorer {
   constructor(private readonly metadataScanner: MetadataScanner) {}
 
-  public explore(instance: Controller): PatternProperties[] {
+  public explore(instance: Controller): EventOrMessageListenerDefinition[] {
     const instancePrototype = Object.getPrototypeOf(instance);
     return this.metadataScanner.scanFromPrototype<
       Controller,
-      PatternProperties
+      EventOrMessageListenerDefinition
     >(instance, instancePrototype, method =>
       this.exploreMethodMetadata(instancePrototype, method),
     );
@@ -47,7 +47,7 @@ export class ListenerMetadataExplorer {
   public exploreMethodMetadata(
     instancePrototype: object,
     methodKey: string,
-  ): PatternProperties {
+  ): EventOrMessageListenerDefinition {
     const targetCallback = instancePrototype[methodKey];
     const handlerType = Reflect.getMetadata(
       PATTERN_HANDLER_METADATA,
