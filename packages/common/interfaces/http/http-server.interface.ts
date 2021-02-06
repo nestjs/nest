@@ -62,7 +62,7 @@ export interface HttpServer<TRequest = any, TResponse = any> {
     | Promise<(path: string, callback: Function) => any>;
   getRequestHostname?(request: TRequest): string;
   getRequestMethod?(request: TRequest): string;
-  getRequestUrl?(request: TResponse): string;
+  getRequestUrl?(request: TRequest): string;
   getInstance(): any;
   registerParserMiddleware(): any;
   enableCors(options: CorsOptions | CorsOptionsDelegate<TRequest>): any;

@@ -139,7 +139,7 @@
     "kafkajs": "1.15.0",
     "lerna": "2.11.0",
     "light-my-request": "4.4.1",
-    "lint-staged": "10.5.3",
+    "lint-staged": "10.5.4",
     "markdown-table": "2.0.0",
     "merge-graphql-schemas": "1.7.8",
     "middie": "5.2.0",
