@@ -179,9 +179,74 @@ export const Session: () => ParameterDecorator = createRouteParamDecorator(
  *
  * @publicApi
  */
-export const UploadedFile: (
+export function UploadedFile(): ParameterDecorator;
+
+/**
+ * Route handler parameter decorator. Extracts the `file` object
+ * and populates the decorated parameter with the value of `file`.
+ * Used in conjunction with
+ * [multer middleware](https://github.com/expressjs/multer).
+ *
+ * For example:
+ * ```typescript
+ * uploadFile(@UploadedFile() file) {
+ *   console.log(file);
+ * }
+ * ```
+ * @see [Request object](https://docs.nestjs.com/techniques/file-upload)
+ *
+ * @publicApi
+ */
+export function UploadedFile(
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator;
+
+/**
+ * Route handler parameter decorator. Extracts the `file` object
+ * and populates the decorated parameter with the value of `file`.
+ * Used in conjunction with
+ * [multer middleware](https://github.com/expressjs/multer).
+ *
+ * For example:
+ * ```typescript
+ * uploadFile(@UploadedFile() file) {
+ *   console.log(file);
+ * }
+ * ```
+ * @see [Request object](https://docs.nestjs.com/techniques/file-upload)
+ *
+ * @publicApi
+ */
+export function UploadedFile(
   fileKey?: string,
-) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.FILE);
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator;
+
+/**
+ * Route handler parameter decorator. Extracts the `file` object
+ * and populates the decorated parameter with the value of `file`.
+ * Used in conjunction with
+ * [multer middleware](https://github.com/expressjs/multer).
+ *
+ * For example:
+ * ```typescript
+ * uploadFile(@UploadedFile() file) {
+ *   console.log(file);
+ * }
+ * ```
+ * @see [Request object](https://docs.nestjs.com/techniques/file-upload)
+ *
+ * @publicApi
+ */
+export function UploadedFile(
+  fileKey?: string | (Type<PipeTransform> | PipeTransform),
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator {
+  return createPipesRouteParamDecorator(RouteParamtypes.FILE)(
+    fileKey,
+    ...pipes,
+  );
+}
 
 /**
  * Route handler parameter decorator. Extracts the `files` object
@@ -199,9 +264,52 @@ export const UploadedFile: (
  *
  * @publicApi
  */
-export const UploadedFiles: () => ParameterDecorator = createRouteParamDecorator(
-  RouteParamtypes.FILES,
-);
+export function UploadedFiles(): ParameterDecorator;
+
+/**
+ * Route handler parameter decorator. Extracts the `files` object
+ * and populates the decorated parameter with the value of `files`.
+ * Used in conjunction with
+ * [multer middleware](https://github.com/expressjs/multer).
+ *
+ * For example:
+ * ```typescript
+ * uploadFile(@UploadedFiles() files) {
+ *   console.log(files);
+ * }
+ * ```
+ * @see [Request object](https://docs.nestjs.com/techniques/file-upload)
+ *
+ * @publicApi
+ */
+export function UploadedFiles(
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator;
+
+/**
+ * Route handler parameter decorator. Extracts the `files` object
+ * and populates the decorated parameter with the value of `files`.
+ * Used in conjunction with
+ * [multer middleware](https://github.com/expressjs/multer).
+ *
+ * For example:
+ * ```typescript
+ * uploadFile(@UploadedFiles() files) {
+ *   console.log(files);
+ * }
+ * ```
+ * @see [Request object](https://docs.nestjs.com/techniques/file-upload)
+ *
+ * @publicApi
+ */
+export function UploadedFiles(
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator {
+  return createPipesRouteParamDecorator(RouteParamtypes.FILES)(
+    undefined,
+    ...pipes,
+  );
+}
 /**
  * Route handler parameter decorator. Extracts the `headers`
  * property from the `req` object and populates the decorated
