@@ -21,7 +21,9 @@ describe('Server', () => {
   describe('addHandler', () => {
     it(`should add handler`, () => {
       const handlerRoute = 'hello';
-      sandbox.stub(server as any, 'messageHandlers').value({ set() {} });
+      sandbox
+        .stub(server as any, 'messageHandlers')
+        .value({ set() {}, has() {} });
 
       const messageHandlersSetSpy = sinon.spy(
         (server as any).messageHandlers,
@@ -38,6 +40,28 @@ describe('Server', () => {
       expect(messageHandlersSetSpy.args[0][1]).to.be.equal(callback);
 
       normalizePatternStub.restore();
+    });
+    describe('when handler is an event handler', () => {
+      describe('and there are other handlers registered for the pattern already', () => {
+        it('should find tail and assign a handler ref to it', () => {
+          const handlerRoute = 'hello';
+          const headHandler: any = () => null;
+          const nextHandler: any = () => null;
+
+          headHandler.next = nextHandler;
+          (server as any)['messageHandlers'] = new Map([
+            [handlerRoute, headHandler],
+          ]);
+          const normalizePatternStub = sinon
+            .stub(server as any, 'normalizePattern')
+            .returns(handlerRoute);
+
+          server.addHandler(pattern, callback as any, true);
+
+          expect(nextHandler.next).to.equal(callback);
+          normalizePatternStub.restore();
+        });
+      });
     });
   });
 
@@ -150,6 +174,14 @@ describe('Server', () => {
           ).to.be.eq(100);
         });
       });
+    });
+  });
+
+  describe('getHandlers', () => {
+    it('should return registered handlers', () => {
+      const messageHandlers = [() => null, () => true];
+      sandbox.stub(server as any, 'messageHandlers').value(messageHandlers);
+      expect(server.getHandlers()).to.equal(messageHandlers);
     });
   });
 

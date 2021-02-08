@@ -11,6 +11,7 @@ import { InterceptorsContextCreator } from '@nestjs/core/interceptors/intercepto
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
 import { iterate } from 'iterare';
+import { AbstractWsAdapter } from './adapters';
 import { GATEWAY_METADATA } from './constants';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { WsContextCreator } from './context/ws-context-creator';
@@ -87,12 +88,14 @@ export class SocketModule<HttpServer = any> {
     if (!adapter) {
       return;
     }
-    const servers = this.socketsContainer.getAllSocketEventHosts();
+    const servers = this.socketsContainer.getAll();
     await Promise.all(
       iterate(servers.values())
         .filter(({ server }) => server)
         .map(async ({ server }) => adapter.close(server)),
     );
+    await (adapter as AbstractWsAdapter)?.dispose();
+
     this.socketsContainer.clear();
   }
 

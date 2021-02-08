@@ -24,29 +24,57 @@ describe('SocketServerProvider', () => {
   });
   describe('scanForSocketServer', () => {
     let createSocketServerSpy: sinon.SinonSpy;
-    const namespace = 'test';
+    const path = 'localhost:3030';
     const port = 30;
 
     beforeEach(() => {
       createSocketServerSpy = sinon.spy(instance, 'createSocketServer' as any);
     });
+
     afterEach(() => {
       mockContainer.restore();
     });
     it(`should return stored server`, () => {
       const server = { test: 'test' };
-      mockContainer.expects('getSocketEventsHostByPort').returns(server);
+      mockContainer.expects('getOneByConfig').returns(server);
 
       const result = instance.scanForSocketServer({ namespace: null }, port);
 
       expect(createSocketServerSpy.called).to.be.false;
       expect(result).to.eq(server);
     });
-    it(`should call "createSocketServer" when server is not stored already`, () => {
-      mockContainer.expects('getSocketEventsHostByPort').returns(null);
 
-      instance.scanForSocketServer({ namespace }, port);
+    it(`should call "createSocketServer" when server is not stored already`, () => {
+      mockContainer.expects('getOneByConfig').returns(null);
+
+      instance.scanForSocketServer({ path }, port);
       expect(createSocketServerSpy.called).to.be.true;
+    });
+
+    it(`should call "decorateWithNamespace" when namespace is specified`, () => {
+      const decorateWithNamespaceSpy = sinon.spy(
+        instance,
+        'decorateWithNamespace' as any,
+      );
+
+      instance.scanForSocketServer({ path, namespace: 'random' }, port);
+      expect(decorateWithNamespaceSpy.called).to.be.true;
+    });
+
+    describe('when namespace is specified and server does exist already', () => {
+      it(`should call "decorateWithNamespace" and not call "createSocketServer"`, () => {
+        const server = { test: 'test' };
+        mockContainer.expects('getOneByConfig').returns(server);
+
+        const decorateWithNamespaceSpy = sinon.spy(
+          instance,
+          'decorateWithNamespace' as any,
+        );
+
+        instance.scanForSocketServer({ path, namespace: 'random' }, port);
+        expect(decorateWithNamespaceSpy.called).to.be.true;
+        expect(createSocketServerSpy.called).to.be.false;
+      });
     });
   });
 });

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "iterare": "1.2.1",
+    "object-hash": "2.1.1",
     "tslib": "2.1.0"
   },
   "devDependencies": {
