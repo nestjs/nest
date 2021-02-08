@@ -1,4 +1,4 @@
-import { Type } from '@nestjs/common';
+import { ForwardReference, Type } from '@nestjs/common';
 import { isNil, isSymbol } from '@nestjs/common/utils/shared.utils';
 import {
   InjectorDependency,
@@ -10,8 +10,12 @@ import { Module } from '../injector/module';
  * Returns the name of an instance
  * @param instance The instance which should get the name from
  */
-const getInstanceName = (instance: unknown): string =>
-  instance && (instance as Type<any>).name;
+const getInstanceName = (instance: unknown): string => {
+  if ((instance as ForwardReference)?.forwardRef) {
+    return (instance as ForwardReference).forwardRef()?.name;
+  }
+  return (instance as Type<any>)?.name;
+};
 
 /**
  * Returns the name of the dependency
