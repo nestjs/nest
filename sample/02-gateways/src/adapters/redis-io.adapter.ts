@@ -1,8 +1,11 @@
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { RedisClient } from 'redis';
 import { ServerOptions } from 'socket.io';
-import redisIoAdapter from 'socket.io-redis';
+import { createAdapter } from 'socket.io-redis';
 
-const redisAdapter = redisIoAdapter({ host: 'localhost', port: 6379 });
+const pubClient = new RedisClient({ host: 'localhost', port: 6379 });
+const subClient = pubClient.duplicate();
+const redisAdapter = createAdapter({ pubClient, subClient });
 
 export class RedisIoAdapter extends IoAdapter {
   createIOServer(port: number, options?: ServerOptions): any {
