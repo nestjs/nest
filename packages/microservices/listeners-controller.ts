@@ -89,7 +89,7 @@ export class ListenersController {
                 args = args.slice(1, args.length);
               }
               const originalReturnValue = proxy(...args);
-              eventHandler?.next(
+              eventHandler.next?.(
                 ...(originalArgs as Parameters<MessageHandler>),
               );
               return originalReturnValue;
