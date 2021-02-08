@@ -7,13 +7,23 @@ import Axios, {
 } from 'axios';
 import { Observable } from 'rxjs';
 import { Inject } from '../decorators';
+import { Logger } from '../services';
 import { AXIOS_INSTANCE_TOKEN } from './http.constants';
 
+/**
+ * @deprecated "HttpModule" (from the "@nestjs/common" package) is deprecated and will be removed in the next major release. Please, use the "@nestjs/axios" package instead.
+ */
 export class HttpService {
+  private readonly logger = new Logger(HttpService.name);
+
   constructor(
     @Inject(AXIOS_INSTANCE_TOKEN)
     private readonly instance: AxiosInstance = Axios,
-  ) {}
+  ) {
+    this.logger.warn(
+      'DEPRECATED! "HttpModule" (from the "@nestjs/common" package) is deprecated and will be removed in the next major release. Please, use the "@nestjs/axios" package instead.',
+    );
+  }
 
   request<T = any>(config: AxiosRequestConfig): Observable<AxiosResponse<T>> {
     return this.makeObservable<T>(this.instance.request, config);
