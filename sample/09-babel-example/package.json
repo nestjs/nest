@@ -26,7 +26,7 @@
     "@babel/core": "7.12.13",
     "@babel/node": "7.12.13",
     "@babel/plugin-proposal-decorators": "7.12.13",
-    "@babel/plugin-transform-runtime": "7.12.13",
+    "@babel/plugin-transform-runtime": "7.12.15",
     "@babel/preset-env": "7.12.13",
     "@babel/register": "7.12.13",
     "@babel/runtime": "7.12.13",
