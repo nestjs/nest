@@ -167,7 +167,7 @@ export const Session: () => ParameterDecorator = createRouteParamDecorator(
  * Route handler parameter decorator. Extracts the `file` object
  * and populates the decorated parameter with the value of `file`.
  * Used in conjunction with
- * [multer middleware](https://github.com/expressjs/multer).
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
  *
  * For example:
  * ```typescript
@@ -180,12 +180,11 @@ export const Session: () => ParameterDecorator = createRouteParamDecorator(
  * @publicApi
  */
 export function UploadedFile(): ParameterDecorator;
-
 /**
  * Route handler parameter decorator. Extracts the `file` object
  * and populates the decorated parameter with the value of `file`.
  * Used in conjunction with
- * [multer middleware](https://github.com/expressjs/multer).
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
  *
  * For example:
  * ```typescript
@@ -205,7 +204,7 @@ export function UploadedFile(
  * Route handler parameter decorator. Extracts the `file` object
  * and populates the decorated parameter with the value of `file`.
  * Used in conjunction with
- * [multer middleware](https://github.com/expressjs/multer).
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
  *
  * For example:
  * ```typescript
@@ -221,12 +220,11 @@ export function UploadedFile(
   fileKey?: string,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator;
-
 /**
  * Route handler parameter decorator. Extracts the `file` object
  * and populates the decorated parameter with the value of `file`.
  * Used in conjunction with
- * [multer middleware](https://github.com/expressjs/multer).
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
  *
  * For example:
  * ```typescript
@@ -252,7 +250,7 @@ export function UploadedFile(
  * Route handler parameter decorator. Extracts the `files` object
  * and populates the decorated parameter with the value of `files`.
  * Used in conjunction with
- * [multer middleware](https://github.com/expressjs/multer).
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
  *
  * For example:
  * ```typescript
@@ -265,12 +263,11 @@ export function UploadedFile(
  * @publicApi
  */
 export function UploadedFiles(): ParameterDecorator;
-
 /**
  * Route handler parameter decorator. Extracts the `files` object
  * and populates the decorated parameter with the value of `files`.
  * Used in conjunction with
- * [multer middleware](https://github.com/expressjs/multer).
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
  *
  * For example:
  * ```typescript
@@ -285,12 +282,11 @@ export function UploadedFiles(): ParameterDecorator;
 export function UploadedFiles(
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator;
-
 /**
  * Route handler parameter decorator. Extracts the `files` object
  * and populates the decorated parameter with the value of `files`.
  * Used in conjunction with
- * [multer middleware](https://github.com/expressjs/multer).
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
  *
  * For example:
  * ```typescript
@@ -310,6 +306,7 @@ export function UploadedFiles(
     ...pipes,
   );
 }
+
 /**
  * Route handler parameter decorator. Extracts the `headers`
  * property from the `req` object and populates the decorated
