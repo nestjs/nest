@@ -24,7 +24,7 @@
     "@nestjs/platform-fastify": "7.6.11",
     "fastify-static": "3.4.0",
     "handlebars": "4.7.6",
-    "point-of-view": "4.11.0",
+    "point-of-view": "4.12.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "6.6.3"
@@ -43,7 +43,7 @@
     "prettier": "2.2.1",
     "supertest": "6.1.3",
     "ts-jest": "26.5.0",
-    "ts-loader": "8.0.14",
+    "ts-loader": "8.0.15",
     "ts-node": "9.1.1",
     "tsconfig-paths": "3.9.0",
     "@typescript-eslint/eslint-plugin": "4.14.2",
