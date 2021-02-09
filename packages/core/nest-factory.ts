@@ -248,14 +248,28 @@ export class NestFactoryStatic {
   }
 
   private createAdapterProxy<T>(app: NestApplication, adapter: HttpServer): T {
-    return (new Proxy(app, {
+    const proxy = new Proxy(app, {
       get: (receiver: Record<string, any>, prop: string) => {
         if (!(prop in receiver) && prop in adapter) {
-          return this.createExceptionZone(adapter, prop);
+          return (...args) => {
+            this.createExceptionZone(adapter, prop)(...args);
+            return proxy;
+          };
+        }
+        if (isFunction(receiver[prop])) {
+          const switchToProxy = result =>
+            result instanceof NestApplication ? proxy : result;
+          return (...args) => {
+            const result = receiver[prop](...args);
+            return Object.prototype.toString.call(result) === '[object Promise]'
+              ? result.then(switchToProxy)
+              : switchToProxy(result);
+          };
         }
         return receiver[prop];
       },
-    }) as unknown) as T;
+    });
+    return (proxy as unknown) as T;
   }
 }
 
