@@ -413,7 +413,11 @@ export class RouterExecutionContext {
     const renderTemplate = this.reflectRenderTemplate(callback);
     if (renderTemplate) {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
-        await this.responseController.render(result, res, renderTemplate);
+        return await this.responseController.render(
+          result,
+          res,
+          renderTemplate,
+        );
       };
     }
     if (redirectResponse && typeof redirectResponse.url === 'string') {
