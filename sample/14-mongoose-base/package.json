@@ -46,6 +46,6 @@
     "eslint": "7.19.0",
     "eslint-config-prettier": "7.2.0",
     "eslint-plugin-import": "2.22.1",
-    "typescript": "4.1.4"
+    "typescript": "4.1.5"
   }
 }
