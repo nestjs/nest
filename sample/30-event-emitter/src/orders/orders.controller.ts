@@ -1,29 +1,13 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { OrdersService } from './orders.service';
-import { OrderCreatedEvent } from "./events/order-created.event";
+import { Body, Controller, Post } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { OrdersService } from './orders.service';
 
 @Controller('orders')
 export class OrdersController {
-    constructor(
-        private ordersService: OrdersService,
-        private eventEmitter: EventEmitter2
-    ) {}
+  constructor(private ordersService: OrdersService) {}
 
-    @Get()
-    findAll() {
-        return this.ordersService.orders;
-    }
-
-    @Post()
-    create(@Body() createOrderDto: CreateOrderDto) {
-        this.eventEmitter.emit(
-            'order.created',
-            new OrderCreatedEvent(createOrderDto)
-        );
-      
-        return this.ordersService.create(createOrderDto);
-    }
+  @Post()
+  create(@Body() createOrderDto: CreateOrderDto) {
+    return this.ordersService.create(createOrderDto);
+  }
 }
-  

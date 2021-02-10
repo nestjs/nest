@@ -1,5 +1,4 @@
 export class CreateOrderDto {
-    name: string;
-    description: string;
-  }
-  
+  name: string;
+  description: string;
+}
