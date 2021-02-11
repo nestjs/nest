@@ -1,8 +1,8 @@
 import { DynamicModule, Inject, Module, Type } from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants';
 import { normalizePath } from '@nestjs/common/utils/shared.utils';
-import { ModulesContainer } from '../injector';
 import { Module as ModuleClass } from '../injector/module';
+import { ModulesContainer } from '../injector/modules-container';
 import { Routes } from './interfaces';
 import { flattenRoutePaths } from './utils';
 

@@ -13,7 +13,7 @@ import { MESSAGES } from './constants';
 import { InvalidClassScopeException } from './errors/exceptions/invalid-class-scope.exception';
 import { UnknownElementException } from './errors/exceptions/unknown-element.exception';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
-import { createContextId } from './helpers';
+import { createContextId } from './helpers/context-id-factory';
 import {
   callAppShutdownHook,
   callBeforeAppShutdownHook,
@@ -21,11 +21,11 @@ import {
   callModuleDestroyHook,
   callModuleInitHook,
 } from './hooks';
-import { ContextId } from './injector';
 import { ModuleCompiler } from './injector/compiler';
 import { NestContainer } from './injector/container';
 import { Injector } from './injector/injector';
 import { InstanceLinksHost } from './injector/instance-links-host';
+import { ContextId } from './injector/instance-wrapper';
 import { Module } from './injector/module';
 
 /**

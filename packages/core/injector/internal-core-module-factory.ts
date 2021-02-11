@@ -1,11 +1,13 @@
 import { Logger } from '@nestjs/common';
-import { LazyModuleLoader, ModulesContainer, NestContainer } from '.';
-import { HttpAdapterHost } from '..';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
+import { HttpAdapterHost } from '../helpers/http-adapter-host';
 import { DependenciesScanner } from '../scanner';
 import { ModuleCompiler } from './compiler';
+import { NestContainer } from './container';
 import { InstanceLoader } from './instance-loader';
 import { InternalCoreModule } from './internal-core-module';
+import { LazyModuleLoader } from './lazy-module-loader';
+import { ModulesContainer } from './modules-container';
 
 export class InternalCoreModuleFactory {
   static create(

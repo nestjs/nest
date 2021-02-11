@@ -24,7 +24,7 @@ import { ApplicationConfig } from '../application-config';
 import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
-import { createContextId } from '../helpers';
+import { createContextId } from '../helpers/context-id-factory';
 import { getClassScope } from '../helpers/get-class-scope';
 import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
