@@ -14,7 +14,8 @@ describe('Kafka transport', function () {
   let app: INestApplication;
 
   // set timeout to be longer (especially for the after hook)
-  this.timeout(50000);
+  this.timeout(30000);
+  this.retries(10);
 
   it(`Start Kafka app`, async () => {
     const module = await Test.createTestingModule({
