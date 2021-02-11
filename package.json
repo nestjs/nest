@@ -197,7 +197,6 @@
       "packages/core/middleware/middleware-module.ts",
       "packages/core/injector/module-ref.ts",
       "packages/core/injector/instance-links-host.ts",
-      "packages/core/injector/internal-core-module-factory.ts",
       "packages/core/helpers/context-id-factory.ts",
       "packages/common/cache/**/*",
       "packages/common/serializer/**/*",
