@@ -24,7 +24,7 @@ import { ApplicationConfig } from '../application-config';
 import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
-import { createContextId } from '../helpers';
+import { createContextId } from '../helpers/context-id-factory';
 import { getClassScope } from '../helpers/get-class-scope';
 import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
@@ -59,6 +59,7 @@ export class Module {
   >();
   private readonly _exports = new Set<InstanceToken>();
   private _distance = 0;
+  private _token: string;
 
   constructor(
     private readonly _metatype: Type<any>,
@@ -70,6 +71,14 @@ export class Module {
 
   get id(): string {
     return this._id;
+  }
+
+  get token(): string {
+    return this._token;
+  }
+
+  set token(token: string) {
+    this._token = token;
   }
 
   get providers(): Map<InstanceToken, InstanceWrapper<Injectable>> {
@@ -411,15 +420,13 @@ export class Module {
     if (this._providers.has(token)) {
       return token;
     }
-    const importsArray = [...this._imports.values()];
-    const importsNames = iterate(importsArray)
+    const imports = iterate(this._imports.values())
       .filter(item => !!item)
       .map(({ metatype }) => metatype)
       .filter(metatype => !!metatype)
-      .map(({ name }) => name)
       .toArray();
 
-    if (!importsNames.includes(token as string)) {
+    if (!imports.includes(token as Type<unknown>)) {
       const { name } = this.metatype;
       const providerName = isFunction(token) ? (token as Function).name : token;
       throw new UnknownExportException(providerName as string, name);

@@ -426,11 +426,11 @@ describe('Module', () => {
     });
     describe('when unit exists in related modules collection', () => {
       it('should behave as identity', () => {
-        const metatype = { name: token };
+        class Random {}
         (module as any)._imports = new Set([
-          new Module(metatype as any, new NestContainer()),
+          new Module(Random, new NestContainer()),
         ]);
-        expect(module.validateExportedProvider(token)).to.be.eql(token);
+        expect(module.validateExportedProvider(Random)).to.be.eql(Random);
       });
     });
     describe('when unit does not exist in both provider and related modules collections', () => {
