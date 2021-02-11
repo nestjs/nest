@@ -9,15 +9,16 @@ import { Module } from './module';
 
 export class InstanceLoader {
   private readonly injector = new Injector();
-  private readonly logger = new Logger(InstanceLoader.name, {
-    timestamp: true,
-  });
+  constructor(
+    private readonly container: NestContainer,
+    private readonly logger = new Logger(InstanceLoader.name, {
+      timestamp: true,
+    }),
+  ) {}
 
-  constructor(private readonly container: NestContainer) {}
-
-  public async createInstancesOfDependencies() {
-    const modules = this.container.getModules();
-
+  public async createInstancesOfDependencies(
+    modules: Map<string, Module> = this.container.getModules(),
+  ) {
     this.createPrototypes(modules);
     await this.createInstances(modules);
   }
