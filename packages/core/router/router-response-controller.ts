@@ -48,7 +48,7 @@ export class RouterResponseController {
     template: string,
   ) {
     const result = await this.transformToResult(resultOrDeferred);
-    this.applicationRef.render(response, template, result);
+    return this.applicationRef.render(response, template, result);
   }
 
   public async transformToResult(resultOrDeferred: any) {
