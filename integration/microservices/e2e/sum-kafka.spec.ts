@@ -14,31 +14,48 @@ describe('Kafka transport', function () {
   let app: INestApplication;
 
   // set timeout to be longer (especially for the after hook)
-  this.timeout(30000);
+  this.timeout(50000);
   this.retries(10);
 
-  it(`Start Kafka app`, async () => {
-    const module = await Test.createTestingModule({
-      controllers: [KafkaController, KafkaMessagesController],
-    }).compile();
+  before(`Start Kafka app`, async function () {
+    const startApp = async () => {
+      const module = await Test.createTestingModule({
+        controllers: [KafkaController, KafkaMessagesController],
+      }).compile();
 
-    app = module.createNestApplication();
-    server = app.getHttpAdapter().getInstance();
+      app = module.createNestApplication();
+      server = app.getHttpAdapter().getInstance();
 
-    app.connectMicroservice({
-      transport: Transport.KAFKA,
-      options: {
-        client: {
-          brokers: ['localhost:9092'],
+      app.connectMicroservice({
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            brokers: ['localhost:9092'],
+          },
         },
-      },
-    });
-    app.enableShutdownHooks();
-    await app.startAllMicroservices();
-    await app.init();
-  }).timeout(30000);
+      });
+      app.enableShutdownHooks();
+      await app.startAllMicroservices();
+      await app.init();
+    };
 
-  it(`/POST (sync sum kafka message)`, () => {
+    // since this frequently fails in the CI/CD pipeline
+    // we give it 10 retries to properly connect to Kafka & Zookepeer
+    // in the cloud
+    const MAX_RETRIES = 10;
+    for (let retries = 0; retries <= MAX_RETRIES; retries++) {
+      try {
+        await startApp();
+        break;
+      } catch (err) {
+        if (retries === MAX_RETRIES) {
+          throw err;
+        }
+      }
+    }
+  });
+
+  it(`/POST (sync sum kafka message)`, function () {
     return request(server)
       .post('/mathSumSyncKafkaMessage')
       .send([1, 2, 3, 4, 5])
