@@ -1,6 +1,9 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { defer, Observable, Observer, throwError as _throw } from 'rxjs';
+import { mergeMap, take } from 'rxjs/operators';
+import { isNil } from '../../common/utils/shared.utils';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -9,6 +12,7 @@ import {
 import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deserializer';
 import { KafkaHeaders } from '../enums';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
+import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
   BrokersFunction,
   Consumer,
@@ -38,6 +42,8 @@ import {
 import { ClientProxy } from './client-proxy';
 
 let kafkaPackage: any = {};
+const INT64_SIZE = 8;
+const INT32_SIZE = 4;
 
 export class ClientKafka extends ClientProxy {
   protected client: Kafka = null;
@@ -185,6 +191,56 @@ export class ClientKafka extends ClientProxy {
 
   public getConsumerAssignments() {
     return this.consumerAssignments;
+  }
+
+  public sendToMultiple<TResult = any, TInput = any>(
+    pattern: any,
+    data: TInput,
+  ): Observable<TResult> {
+    if (isNil(pattern) || isNil(data)) {
+      return _throw(new InvalidMessageException());
+    }
+
+    return defer(async () => {
+      await this.connect();
+      return await this.membersCountForTopic(pattern);
+    }).pipe(
+      mergeMap((value: number) =>
+        new Observable((observer: Observer<TResult>) => {
+          const callback = this.createObserverForMultipleProducers(observer);
+          return this.publish({ pattern, data }, callback);
+        }).pipe(take(value)),
+      ),
+    );
+  }
+
+  protected async membersCountForTopic(pattern: any): Promise<number> {
+    return (
+      await this.client
+        .admin()
+        .describeGroups(
+          (await this.client.admin().listGroups()).groups.map(g => g.groupId),
+        )
+    ).groups
+      .map(g =>
+        g.members.map(m =>
+          m.memberAssignment
+            .slice(INT64_SIZE, m.memberAssignment.length - INT32_SIZE * 3)
+            .toString('utf-8'),
+        ),
+      )
+      .filter(g => g.find(m => m === pattern)).length;
+  }
+
+  protected createObserverForMultipleProducers<T>(
+    observer: Observer<T>,
+  ): (packet: WritePacket) => void {
+    return ({ err, response }: WritePacket) => {
+      if (err) {
+        return observer.error(this.serializeError(err));
+      }
+      observer.next(this.serializeResponse(response));
+    };
   }
 
   protected dispatchEvent(packet: OutgoingEvent): Promise<any> {
