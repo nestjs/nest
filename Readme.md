@@ -101,7 +101,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
   <td align="center" valign="middle"><a href="https://www.najlepszeplatformyforex.pl/blog/broker-xtb/" target="_blank"><img src="https://nestjs.com/img/npf-logo.jpg" width="200" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://thestandarddaily.com/" target="_blank"><img src="https://nestjs.com/img/the-standard-daily-logo.png" width="180" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://houseofangular.io/" target="_blank"><img src="https://nestjs.com/img/house-of-angular.png" width="100" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://www.rocketech.it/" target="_blank"><img src="https://nestjs.com/img/rocketech-logo.svg" width="110" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://rocketech.it/cases/?utm_source=google&utm_medium=badge&utm_campaign=nestjs" target="_blank"><img src="https://nestjs.com/img/rocketech-logo.svg" width="110" valign="middle" /></a></td>
   </tr></table>
 
 ## Backers
