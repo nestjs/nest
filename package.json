@@ -94,7 +94,7 @@
     "@types/sinon": "9.0.10",
     "@types/socket.io": "2.1.13",
     "@types/ws": "7.4.0",
-    "@typescript-eslint/eslint-plugin": "4.15.0",
+    "@typescript-eslint/eslint-plugin": "4.15.1",
     "@typescript-eslint/parser": "4.15.0",
     "amqp-connection-manager": "3.2.2",
     "amqplib": "0.6.0",
