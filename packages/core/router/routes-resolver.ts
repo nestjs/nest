@@ -1,10 +1,18 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { HOST_METADATA, MODULE_PATH } from '@nestjs/common/constants';
+import {
+  HOST_METADATA,
+  MODULE_PATH,
+  VERSION_METADATA,
+} from '@nestjs/common/constants';
 import { HttpServer, Type } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { VersionValue } from '@nestjs/common/interfaces/version-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '../application-config';
-import { CONTROLLER_MAPPING_MESSAGE } from '../helpers/messages';
+import {
+  CONTROLLER_MAPPING_MESSAGE,
+  VERSIONED_CONTROLLER_MAPPING_MESSAGE,
+} from '../helpers/messages';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
@@ -60,6 +68,7 @@ export class RoutesResolver implements Resolver {
       const { metatype } = instanceWrapper;
 
       const host = this.getHostMetadata(metatype);
+      const controllerVersion = this.getVersionMetadata(metatype);
       const paths = this.routerExplorer.extractRouterPath(
         metatype as Type<any>,
         basePath,
@@ -67,18 +76,30 @@ export class RoutesResolver implements Resolver {
       const controllerName = metatype.name;
 
       paths.forEach(path => {
-        this.logger.log(
-          CONTROLLER_MAPPING_MESSAGE(
-            controllerName,
-            this.routerExplorer.stripEndSlash(path),
-          ),
-        );
+        if (controllerVersion) {
+          this.logger.log(
+            CONTROLLER_MAPPING_MESSAGE(
+              controllerName,
+              this.routerExplorer.stripEndSlash(path),
+            ),
+          );
+        } else {
+          this.logger.log(
+            VERSIONED_CONTROLLER_MAPPING_MESSAGE(
+              controllerName,
+              this.routerExplorer.stripEndSlash(path),
+              controllerVersion,
+            ),
+          );
+        }
         this.routerExplorer.explore(
           instanceWrapper,
           moduleName,
           applicationRef,
           path,
           host,
+          this.config.getVersioning(),
+          controllerVersion,
         );
       });
     });
@@ -134,5 +155,15 @@ export class RoutesResolver implements Resolver {
     metatype: Type<unknown> | Function,
   ): string | string[] | undefined {
     return Reflect.getMetadata(HOST_METADATA, metatype);
+  }
+
+  private getVersionMetadata(
+    metatype: Type<unknown> | Function,
+  ): VersionValue | undefined {
+    // Only return the version metadata if the application was configured for versioning
+    if (this.config.getVersioning()) {
+      return Reflect.getMetadata(VERSION_METADATA, metatype);
+    }
+    return undefined;
   }
 }

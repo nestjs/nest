@@ -106,4 +106,16 @@ describe('ApplicationConfig', () => {
       expect(appConfig.getGlobalRequestInterceptors()).to.contain(interceptor);
     });
   });
+  describe('Versioning', () => {
+    it('should set versioning', () => {
+      const options = { type: 'test' };
+      appConfig.enableVersioning(options as any);
+
+      expect(appConfig.getVersioning()).to.be.eql(options);
+    });
+
+    it('should have null as the versioning by default', () => {
+      expect(appConfig.getVersioning()).to.be.eql(null);
+    });
+  });
 });

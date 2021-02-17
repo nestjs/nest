@@ -13,6 +13,7 @@ import {
 } from './index';
 import { INestApplicationContext } from './nest-application-context.interface';
 import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
+import { VersioningOptions } from './version-options.interface';
 
 /**
  * Interface defining the core NestApplication object.
@@ -34,6 +35,14 @@ export interface INestApplication extends INestApplicationContext {
    * @returns {void}
    */
   enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void;
+
+  /**
+   * Enables Versioning for the application.
+   *
+   * @param {VersioningOptions} options
+   * @returns {this}
+   */
+  enableVersioning(options: VersioningOptions): this;
 
   /**
    * Starts the application.

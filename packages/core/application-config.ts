@@ -4,6 +4,7 @@ import {
   NestInterceptor,
   PipeTransform,
   WebSocketAdapter,
+  VersioningOptions,
 } from '@nestjs/common';
 import { InstanceWrapper } from './injector/instance-wrapper';
 
@@ -13,6 +14,7 @@ export class ApplicationConfig {
   private globalFilters: ExceptionFilter[] = [];
   private globalInterceptors: NestInterceptor[] = [];
   private globalGuards: CanActivate[] = [];
+  private versioning: VersioningOptions | null = null;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
   private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] = [];
   private readonly globalRequestInterceptors: InstanceWrapper<NestInterceptor>[] = [];
@@ -116,5 +118,13 @@ export class ApplicationConfig {
 
   public getGlobalRequestGuards(): InstanceWrapper<CanActivate>[] {
     return this.globalRequestGuards;
+  }
+
+  public enableVersioning(options: VersioningOptions): void {
+    this.versioning = options;
+  }
+
+  public getVersioning(): VersioningOptions | null {
+    return this.versioning;
   }
 }

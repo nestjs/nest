@@ -1,9 +1,19 @@
 import { HttpServer } from '@nestjs/common';
-import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import {
+  METHOD_METADATA,
+  PATH_METADATA,
+  VERSION_METADATA,
+} from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { VersioningType } from '@nestjs/common/enums/version-type.enum';
 import { InternalServerErrorException } from '@nestjs/common/exceptions';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import {
+  VERSION_NEUTRAL,
+  VersioningOptions,
+  VersionValue,
+} from '@nestjs/common/interfaces/version-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import {
   addLeadingSlash,
@@ -17,7 +27,10 @@ import { GuardsConsumer } from '../guards/guards-consumer';
 import { GuardsContextCreator } from '../guards/guards-context-creator';
 import { ContextIdFactory } from '../helpers/context-id-factory';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
-import { ROUTE_MAPPED_MESSAGE } from '../helpers/messages';
+import {
+  ROUTE_MAPPED_MESSAGE,
+  VERSIONED_ROUTE_MAPPED_MESSAGE,
+} from '../helpers/messages';
 import { RouterMethodFactory } from '../helpers/router-method-factory';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
@@ -40,6 +53,7 @@ export interface RoutePathProperties {
   requestMethod: RequestMethod;
   targetCallback: RouterProxyCallback;
   methodName: string;
+  version?: VersionValue;
 }
 
 export class RouterExplorer {
@@ -74,6 +88,8 @@ export class RouterExplorer {
     applicationRef: T,
     basePath: string,
     host: string | string[],
+    versioningOptions?: VersioningOptions,
+    controllerVersion?: VersionValue,
   ) {
     const { instance } = instanceWrapper;
     const routerPaths = this.scanForPaths(instance);
@@ -84,6 +100,8 @@ export class RouterExplorer {
       module,
       basePath,
       host,
+      versioningOptions,
+      controllerVersion,
     );
   }
 
@@ -133,6 +151,10 @@ export class RouterExplorer {
       METHOD_METADATA,
       targetCallback,
     );
+    const version: VersionValue | undefined = Reflect.getMetadata(
+      VERSION_METADATA,
+      targetCallback,
+    );
     const path = isString(routePath)
       ? [addLeadingSlash(routePath)]
       : routePath.map(p => addLeadingSlash(p));
@@ -141,6 +163,7 @@ export class RouterExplorer {
       requestMethod,
       targetCallback,
       methodName,
+      version,
     };
   }
 
@@ -151,9 +174,14 @@ export class RouterExplorer {
     moduleKey: string,
     basePath: string,
     host: string | string[],
+    versioningOptions?: VersioningOptions,
+    controllerVersion?: VersionValue,
   ) {
     (routePaths || []).forEach(pathProperties => {
-      const { path, requestMethod } = pathProperties;
+      const { path, requestMethod, version: pathVersion } = pathProperties;
+      // The version will be either the path version or the controller version,
+      // with the pathVersion taking priority.
+      const version = pathVersion || controllerVersion;
       this.applyCallbackToRouter(
         router,
         pathProperties,
@@ -161,10 +189,18 @@ export class RouterExplorer {
         moduleKey,
         basePath,
         host,
+        versioningOptions,
+        version,
       );
       path.forEach(item => {
         const pathStr = this.stripEndSlash(basePath) + this.stripEndSlash(item);
-        this.logger.log(ROUTE_MAPPED_MESSAGE(pathStr, requestMethod));
+        if (version && versioningOptions) {
+          this.logger.log(
+            VERSIONED_ROUTE_MAPPED_MESSAGE(pathStr, requestMethod, version),
+          );
+        } else {
+          this.logger.log(ROUTE_MAPPED_MESSAGE(pathStr, requestMethod));
+        }
       });
     });
   }
@@ -180,6 +216,8 @@ export class RouterExplorer {
     moduleKey: string,
     basePath: string,
     host: string | string[],
+    versioningOptions?: VersioningOptions,
+    version?: VersionValue,
   ) {
     const {
       path: paths,
@@ -209,11 +247,66 @@ export class RouterExplorer {
           requestMethod,
         );
 
-    const hostHandler = this.applyHostFilter(host, proxy);
+    let handler = this.applyHostFilter(host, proxy);
     paths.forEach(path => {
+      if (version && versioningOptions) {
+        // URI Versioning is done via adding the version into the URL
+        if (versioningOptions.type === VersioningType.URI) {
+          this.applyUriVersioningCallbacks(
+            version,
+            versioningOptions,
+            basePath,
+            path,
+            handler,
+            routerMethod,
+          );
+          return;
+        }
+        // All other versioning is done via the Version Filter
+        handler = this.applyVersionFilter(version, versioningOptions, handler);
+      }
       const fullPath = this.stripEndSlash(basePath) + path;
-      routerMethod(this.stripEndSlash(fullPath) || '/', hostHandler);
+      routerMethod(this.stripEndSlash(fullPath) || '/', handler);
     });
+  }
+
+  private applyUriVersioningCallbacks(
+    version: VersionValue,
+    versioningOptions: VersioningOptions,
+    basePath: string,
+    path: string,
+    handler: Function,
+    routerMethod: Function,
+  ) {
+    // Determine Version Prefix (defaulting to 'v')
+    let versionPrefix = 'v';
+    if (versioningOptions.type === VersioningType.URI) {
+      if (versioningOptions.prefix === false) {
+        versionPrefix = '';
+      } else if (versioningOptions.prefix !== undefined) {
+        versionPrefix = versioningOptions.prefix;
+      }
+    }
+
+    // Version Neutral - Do not include version in URL
+    if (version === VERSION_NEUTRAL) {
+      const unversionedPath = this.stripEndSlash(basePath) + path;
+      routerMethod(this.stripEndSlash(unversionedPath), handler);
+    }
+    // Multiple Versions - Add routes for each version
+    else if (Array.isArray(version)) {
+      version.forEach(v => {
+        const versionedPath =
+          this.stripEndSlash(basePath) + `/${versionPrefix}${v}` + path;
+        routerMethod(this.stripEndSlash(versionedPath), handler);
+      });
+    }
+    // Single version
+    else if (isString(version)) {
+      const versionedPath =
+        this.stripEndSlash(basePath) + `/${versionPrefix}${version}` + path;
+      routerMethod(this.stripEndSlash(versionedPath), handler);
+    }
   }
 
   private applyHostFilter(host: string | string[], handler: Function) {
@@ -253,6 +346,79 @@ export class RouterExplorer {
       if (!next) {
         throw new InternalServerErrorException(
           unsupportedFilteringErrorMessage,
+        );
+      }
+      return next();
+    };
+  }
+
+  private applyVersionFilter(
+    version: VersionValue,
+    versioningOptions: VersioningOptions,
+    handler: Function,
+  ) {
+    return <TRequest extends Record<string, any> = any, TResponse = any>(
+      req: TRequest,
+      res: TResponse,
+      next: () => void,
+    ) => {
+      // Version Neutral routes do not care about the version, so the filter continues forward
+      if (version === VERSION_NEUTRAL) {
+        return handler(req, res, next);
+      }
+
+      // URL Versioning is done via the path, so the filter continues forward
+      if (versioningOptions.type === VersioningType.URI) {
+        return handler(req, res, next);
+      }
+
+      // Media Type (Accept Header) Versioning Handler
+      if (versioningOptions.type === VersioningType.MEDIA_TYPE) {
+        const MEDIA_TYPE_HEADER = 'Accept';
+        const acceptHeaderValue: string | undefined =
+          req.headers[MEDIA_TYPE_HEADER] ||
+          req.headers[MEDIA_TYPE_HEADER.toLowerCase()];
+        const acceptHeaderVersionParameter = acceptHeaderValue
+          ? acceptHeaderValue.split(';')[1]
+          : '';
+
+        if (acceptHeaderVersionParameter) {
+          const headerVersion = acceptHeaderVersionParameter.split(
+            versioningOptions.key,
+          )[1];
+          if (Array.isArray(version)) {
+            if (version.includes(headerVersion)) {
+              return handler(req, res, next);
+            }
+          } else if (isString(version)) {
+            if (version === headerVersion) {
+              return handler(req, res, next);
+            }
+          }
+        }
+      }
+      // Header Versioning Handler
+      else if (versioningOptions.type === VersioningType.HEADER) {
+        const customHeaderVersionParameter: string | undefined =
+          req.headers[versioningOptions.header] ||
+          req.headers[versioningOptions.header.toLowerCase()];
+
+        if (customHeaderVersionParameter) {
+          if (Array.isArray(version)) {
+            if (version.includes(customHeaderVersionParameter)) {
+              return handler(req, res, next);
+            }
+          } else if (isString(version)) {
+            if (version === customHeaderVersionParameter) {
+              return handler(req, res, next);
+            }
+          }
+        }
+      }
+
+      if (!next) {
+        throw new InternalServerErrorException(
+          'HTTP adapter does not support filtering on version',
         );
       }
       return next();

@@ -7,6 +7,7 @@ import {
   NestHybridApplicationOptions,
   NestInterceptor,
   PipeTransform,
+  VersioningOptions,
   WebSocketAdapter,
 } from '@nestjs/common';
 import {
@@ -234,6 +235,11 @@ export class NestApplication
 
   public enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void {
     this.httpAdapter.enableCors(options);
+  }
+
+  public enableVersioning(options: VersioningOptions): this {
+    this.config.enableVersioning(options);
+    return this;
   }
 
   public async listen(
