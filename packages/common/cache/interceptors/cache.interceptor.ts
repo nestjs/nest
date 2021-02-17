@@ -27,6 +27,7 @@ export class CacheInterceptor implements NestInterceptor {
   @Inject(HTTP_ADAPTER_HOST)
   protected readonly httpAdapterHost: HttpAdapterHost;
 
+  protected allowedMethods = ['GET'];
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
     @Inject(REFLECTOR) protected readonly reflector: any,
@@ -75,7 +76,7 @@ export class CacheInterceptor implements NestInterceptor {
     }
 
     const request = context.getArgByIndex(0);
-    if (httpAdapter.getRequestMethod(request) !== 'GET') {
+    if (!this.allowedMethods.includes(httpAdapter.getRequestMethod(request))) {
       return undefined;
     }
     return httpAdapter.getRequestUrl(request);
