@@ -55,4 +55,11 @@ export interface ClassTransformOptions {
    * This is useful when you convert a plain object to a class and have an optional field with a default value.
    */
   exposeDefaultValues?: boolean;
+  /**
+   * When set to true, fields with `undefined` as value will be included in class to plain transformation. Otherwise
+   * those fields will be omitted from the result.
+   *
+   * DEFAULT: `true`
+   */
+  exposeUnsetFields?: boolean;
 }
