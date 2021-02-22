@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "7.6.12",
     "@nestjs/core": "7.6.12",
-    "@nestjs/event-emitter": "0.0.2",
+    "@nestjs/event-emitter": "0.0.3",
     "@nestjs/platform-express": "7.6.12",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
