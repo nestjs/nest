@@ -28,8 +28,11 @@ export class RoutesMapper {
         },
       ];
     }
-    const routePath: string = Reflect.getMetadata(PATH_METADATA, route);
-    if (this.isRouteInfo(routePath, route)) {
+    const routePathOrPaths: string | string[] = Reflect.getMetadata(
+      PATH_METADATA,
+      route,
+    );
+    if (this.isRouteInfo(routePathOrPaths, route)) {
       return [
         {
           path: this.validateRoutePath(route.path),
@@ -43,21 +46,28 @@ export class RoutesMapper {
     );
     const concatPaths = <T>(acc: T[], currentValue: T[]) =>
       acc.concat(currentValue);
-    return paths
-      .map(
-        item =>
-          item.path &&
-          item.path.map(p => ({
-            path:
-              this.validateGlobalPath(routePath) + this.validateRoutePath(p),
-            method: item.requestMethod,
-          })),
+
+    return []
+      .concat(routePathOrPaths)
+      .map(routePath =>
+        paths
+          .map(
+            item =>
+              item.path &&
+              item.path.map(p => ({
+                path:
+                  this.validateGlobalPath(routePath) +
+                  this.validateRoutePath(p),
+                method: item.requestMethod,
+              })),
+          )
+          .reduce(concatPaths, []),
       )
       .reduce(concatPaths, []);
   }
 
   private isRouteInfo(
-    path: string | undefined,
+    path: string | string[] | undefined,
     objectOrClass: Function | RouteInfo,
   ): objectOrClass is RouteInfo {
     return isUndefined(path);
