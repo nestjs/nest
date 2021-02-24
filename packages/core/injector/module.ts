@@ -413,6 +413,7 @@ export class Module {
       new InstanceWrapper({
         name: controller.name,
         metatype: controller,
+        inject: controller.inject,
         instance: null,
         isResolved: false,
         scope: getClassScope(controller),
