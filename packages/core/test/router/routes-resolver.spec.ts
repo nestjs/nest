@@ -1,4 +1,9 @@
-import { BadRequestException, Module, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Module,
+  Post,
+  VersioningType,
+} from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
@@ -23,6 +28,12 @@ describe('RoutesResolver', () => {
 
   @Controller({ host: 'api.example.com' })
   class TestHostRoute {
+    @Get()
+    public getTest() {}
+  }
+
+  @Controller({ version: '1' })
+  class TestVersionRoute {
     @Get()
     public getTest() {}
   }
@@ -125,6 +136,53 @@ describe('RoutesResolver', () => {
           appInstance,
           '',
           'api.example.com',
+        ),
+      ).to.be.true;
+    });
+
+    it('should register with version when specified', () => {
+      const applicationConfig = new ApplicationConfig();
+      applicationConfig.enableVersioning({
+        type: VersioningType.URI,
+      });
+      routesResolver = new RoutesResolver(
+        container,
+        applicationConfig,
+        new Injector(),
+      );
+
+      const routes = new Map();
+      const routeWrapper = new InstanceWrapper({
+        instance: new TestVersionRoute(),
+        metatype: TestVersionRoute,
+      });
+      routes.set('TestVersionRoute', routeWrapper);
+
+      const appInstance = new NoopHttpAdapter(router);
+      const exploreSpy = sinon.spy(
+        (routesResolver as any).routerExplorer,
+        'explore',
+      );
+      const moduleName = '';
+      modules.set(moduleName, {});
+
+      sinon
+        .stub((routesResolver as any).routerExplorer, 'extractRouterPath')
+        .callsFake(() => ['']);
+      routesResolver.registerRouters(routes, moduleName, '', appInstance);
+
+      expect(exploreSpy.called).to.be.true;
+      expect(
+        exploreSpy.calledWith(
+          routeWrapper,
+          moduleName,
+          appInstance,
+          '',
+          undefined,
+          {
+            type: VersioningType.URI,
+          },
+          '1',
         ),
       ).to.be.true;
     });

@@ -53,6 +53,8 @@ export {
   Type,
   ValidationError,
   ValueProvider,
+  VersioningOptions,
+  VERSION_NEUTRAL,
   WebSocketAdapter,
   WsExceptionFilter,
   WsMessageHandler,
