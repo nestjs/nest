@@ -18,6 +18,8 @@ export interface VersionOptions {
    * withing the controller will only be routed if the request version
    * matches the specified value.
    *
+   * Supported only by HTTP-based applications (does not apply to non-HTTP microservices).
+   *
    * @see [Versioning](https://docs.nestjs.com/techniques/versioning)
    */
   version?: VersionValue;
