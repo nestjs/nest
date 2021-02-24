@@ -7,11 +7,12 @@ import {
   NestHybridApplicationOptions,
   NestInterceptor,
   PipeTransform,
-  WebSocketAdapter,
+  VersioningOptions,
+  WebSocketAdapter
 } from '@nestjs/common';
 import {
   CorsOptions,
-  CorsOptionsDelegate,
+  CorsOptionsDelegate
 } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces/global-prefix-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
@@ -20,7 +21,7 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import {
   addLeadingSlash,
   isFunction,
-  isObject,
+  isObject
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { platform } from 'os';
@@ -242,6 +243,11 @@ export class NestApplication
 
   public enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void {
     this.httpAdapter.enableCors(options);
+  }
+
+  public enableVersioning(options: VersioningOptions): this {
+    this.config.enableVersioning(options);
+    return this;
   }
 
   public async listen(port: number | string): Promise<any>;
