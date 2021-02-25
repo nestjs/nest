@@ -108,7 +108,10 @@ export class Logger implements LoggerService {
       day: '2-digit',
       month: '2-digit',
     };
-    return new Date(Date.now()).toLocaleString(undefined, localeStringOptions);
+    return new Date(Date.now()).toLocaleString(
+      undefined,
+      localeStringOptions as Intl.DateTimeFormatOptions,
+    );
   }
 
   private callFunction(

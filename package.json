@@ -115,7 +115,7 @@
     "delete-empty": "3.0.0",
     "engine.io-client": "4.1.1",
     "eslint": "7.20.0",
-    "eslint-config-prettier": "7.2.0",
+    "eslint-config-prettier": "8.1.0",
     "eslint-plugin-import": "2.22.1",
     "eventsource": "1.0.7",
     "fancy-log": "1.3.3",
@@ -163,7 +163,7 @@
     "ts-morph": "10.0.1",
     "ts-node": "9.1.1",
     "typeorm": "0.2.31",
-    "typescript": "4.1.5",
+    "typescript": "4.2.2",
     "wrk": "1.2.1",
     "ws": "7.4.3"
   },
