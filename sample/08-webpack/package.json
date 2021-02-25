@@ -16,7 +16,7 @@
     "@nestjs/platform-express": "7.6.13",
     "reflect-metadata": "0.1.13",
     "rxjs": "6.6.6",
-    "typescript": "4.1.5"
+    "typescript": "4.2.2"
   },
   "devDependencies": {
     "@nestjs/cli": "7.5.6",
