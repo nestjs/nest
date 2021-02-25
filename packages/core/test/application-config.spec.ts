@@ -1,7 +1,7 @@
+import { RequestMethod } from '@nestjs/common';
+import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
 import { expect } from 'chai';
 import { ApplicationConfig } from '../application-config';
-import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
-import { RequestMethod } from '@nestjs/common';
 
 describe('ApplicationConfig', () => {
   let appConfig: ApplicationConfig;
@@ -127,8 +127,8 @@ describe('ApplicationConfig', () => {
       expect(appConfig.getVersioning()).to.be.eql(options);
     });
 
-    it('should have null as the versioning by default', () => {
-      expect(appConfig.getVersioning()).to.be.eql(null);
+    it('should have undefined as the versioning by default', () => {
+      expect(appConfig.getVersioning()).to.be.eql(undefined);
     });
   });
 });
