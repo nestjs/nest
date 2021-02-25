@@ -9,6 +9,8 @@ export class TestingLogger extends ConsoleLogger {
 
   log(message: string) {}
   warn(message: string) {}
+  debug(message: string) {}
+  verbose(message: string) {}
   error(message: string, ...optionalParams: unknown[]) {
     return super.error(message, ...optionalParams);
   }
