@@ -63,7 +63,7 @@ export class CacheInterceptor implements NestInterceptor {
     }
   }
 
-  trackBy(context: ExecutionContext): string | undefined {
+  protected trackBy(context: ExecutionContext): string | undefined {
     const httpAdapter = this.httpAdapterHost.httpAdapter;
     const isHttpApp = httpAdapter && !!httpAdapter.getRequestMethod;
     const cacheMetadata = this.reflector.get(
@@ -76,9 +76,14 @@ export class CacheInterceptor implements NestInterceptor {
     }
 
     const request = context.getArgByIndex(0);
-    if (!this.allowedMethods.includes(httpAdapter.getRequestMethod(request))) {
+    if (!this.isRequestCacheable(context)) {
       return undefined;
     }
     return httpAdapter.getRequestUrl(request);
+  }
+
+  protected isRequestCacheable(context: ExecutionContext): boolean {
+    const req = context.switchToHttp().getRequest();
+    return this.allowedMethods.includes(req.method);
   }
 }
