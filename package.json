@@ -113,7 +113,7 @@
     "core-js": "3.9.0",
     "coveralls": "3.1.0",
     "delete-empty": "3.0.0",
-    "engine.io-client": "4.1.1",
+    "engine.io-client": "4.1.2",
     "eslint": "7.20.0",
     "eslint-config-prettier": "8.1.0",
     "eslint-plugin-import": "2.22.1",
