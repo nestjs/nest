@@ -133,7 +133,7 @@
     "gulp-sourcemaps": "3.0.0",
     "gulp-typescript": "5.0.1",
     "gulp-watch": "5.0.1",
-    "husky": "5.1.1",
+    "husky": "5.1.2",
     "imports-loader": "2.0.0",
     "json-loader": "0.5.7",
     "kafkajs": "1.15.0",
