@@ -78,7 +78,7 @@ export class RoutesResolver implements Resolver {
       const controllerName = metatype.name;
 
       paths.forEach(path => {
-        if (controllerVersion) {
+        if (!controllerVersion) {
           this.logger.log(
             CONTROLLER_MAPPING_MESSAGE(
               controllerName,

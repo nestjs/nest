@@ -1,7 +1,7 @@
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import {
-  VERSION_NEUTRAL,
   VersionValue,
+  VERSION_NEUTRAL,
 } from '@nestjs/common/interfaces/version-options.interface';
 
 export const MODULE_INIT_MESSAGE = (
@@ -20,7 +20,7 @@ export const VERSIONED_ROUTE_MAPPED_MESSAGE = (
   if (version === VERSION_NEUTRAL) {
     version = 'Neutral';
   }
-  return `Mapped {${path}, ${RequestMethod[method]}}(Version: ${version}) route`;
+  return `Mapped {${path}, ${RequestMethod[method]}} (version: ${version}) route`;
 };
 
 export const CONTROLLER_MAPPING_MESSAGE = (name: string, path: string) =>
@@ -34,7 +34,7 @@ export const VERSIONED_CONTROLLER_MAPPING_MESSAGE = (
   if (version === VERSION_NEUTRAL) {
     version = 'Neutral';
   }
-  return `${name} {${path}}(Version: ${version}):`;
+  return `${name} {${path}} (version: ${version}):`;
 };
 
 export const INVALID_EXECUTION_CONTEXT = (
