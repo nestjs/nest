@@ -104,7 +104,7 @@
     "body-parser": "1.19.0",
     "bytes": "3.1.0",
     "cache-manager": "3.4.0",
-    "chai": "4.3.1",
+    "chai": "4.3.3",
     "chai-as-promised": "7.1.1",
     "clang-format": "1.5.0",
     "commitlint-circle": "1.0.0",
@@ -163,7 +163,7 @@
     "ts-morph": "10.0.1",
     "ts-node": "9.1.1",
     "typeorm": "0.2.31",
-    "typescript": "4.2.2",
+    "typescript": "4.2.3",
     "wrk": "1.2.1",
     "ws": "7.4.3"
   },
