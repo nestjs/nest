@@ -59,59 +59,6 @@ Nest는 효과적이고, 확장 가능한 <a href="http://nodejs.org" target="_b
 
 Nest는 MIT-licensed 오픈 소스 프로젝트 입니다. Nest는 후원자와, 놀라운 기여자들의 지원으로 성장할 수 있습니다. 참여하고 싶으시다면 [여기](https://docs.nestjs.com/support)를 방문해주세요.
 
-
-#### 주요 스폰서
-<table style="text-align:center;"><tr><td>
-<a href="https://github.com/Sanofi-IADC" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/sanofi.png" width="180" valign="middle" /></a></td>
-<td>
-<a href="https://trilon.io" target="_blank"><img src="https://nestjs.com/img/trilon.svg" width="200" valign="middle" /></a></td>
-</tr></table>
-
-#### Gold 스폰서
-
-<table style="text-align:center;"><tr><td>
-<a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td></tr></table>
-
-#### Silver 스폰서
-
-<table style="text-align:center;"><tr><td>
-<a href="https://neoteric.eu/" target="_blank"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" valign="middle" /></a> </td><td>
-  <a href="http://gojob.com" target="_blank"><img src="http://nestjs.com/img/gojob-logo.png" valign="middle" width="100" /></a> </td><td>
-<a href="http://www.leogistics.com" target="_blank"><img src="https://nestjs.com/img/leogistics-logo.jpeg" width="150" valign="middle" /></td><td>
-<a href="http://www.meetdandy.com" target="_blank"><img src="https://nestjs.com/img/dandy-wide-logo.png" width="150" valign="middle" /></td></tr></table>
-
-#### 스폰서
-
-<table><tr><td align="center" valign="middle">
-<a href="https://www.swingdev.io" target="_blank"><img src="https://nestjs.com/img/swingdev-logo.svg#1" width="110" valign="middle" /> </a></td><td align="center" valign="middle">
-<a href="https://www.novologic.com/" target="_blank"><img src="https://nestjs.com/img/novologic.png" width="110" valign="middle" /></a> </td><td align="center" valign="middle">
-<a href="https://ever.co/" target="_blank"><img src="https://nestjs.com/img/ever-logo.png" width="72" valign="middle" /></a>  </td><td align="center" valign="middle">
-<a href="https://blokt.com" target="_blank"><img src="https://nestjs.com/img/blokt-logo.png" width="120" valign="middle" /></a>  </td><td align="center" valign="middle"> 
-  <a href="http://architectnow.net/" target="_blank"><img src="https://nestjs.com/img/architectnow.png" width="125" valign="middle" /></a> </td><td align="center" valign="middle">
-  <a href="https://quander.io/" target="_blank"><img src="https://nestjs.com/img/quander.png" width="100" valign="middle" /></a> </td></tr><tr><td align="center" valign="middle">
-  <a href="https://mantro.net/" target="_blank"><img src="https://nestjs.com/img/mantro-logo.svg" width="95" valign="middle" /></a> </td><td align="center" valign="middle">
-  <a href="https://triplebyte.com/" target="_blank"><img src="https://nestjs.com/img/triplebyte.png" width="107" valign="middle" /></a> </td><td align="center" valign="middle">
-<a href="https://reposit.co.uk/" target="_blank"><img src="https://nestjs.com/img/reposit-logo.png" width="71" valign="middle" /></a></td><td align="center" valign="middle">
-<a href="https://nearpod.com/" target="_blank"><img src="https://nestjs.com/img/nearpod-logo.svg" width="100" valign="middle" /></a> </td><td align="center" valign="middle">
-<a href="https://clay.global/" target="_blank"><img src="https://nestjs.com/img/clay-logo.svg" width="75" valign="middle" /></a> </td><td align="center" valign="middle">
-<a href="https://firesticktricks.com" target="_blank"><img src="https://nestjs.com/img/firesticktricks-logo.png" width="120" valign="middle" /></a></td></tr><tr><td align="center" valign="middle">
-<a href="https://www.codeguesser.co.uk" target="_blank"><img src="https://nestjs.com/img/codeguesser-logo.svg" width="120" valign="middle" /></a> </td><td align="center" valign="middle">
-<a href="https://f-a.nz/" target="_blank"><img src="https://nestjs.com/img/franz.svg" width="80" valign="middle" /></a> </td><td align="center" valign="middle">
-<a href="https://sparkfabrik.com/" target="_blank"><img src="https://nestjs.com/img/sparkfabrik-logo.png" width="120" valign="middle" /></a></td><td align="center" valign="middle"><a href="https://www.thebigphonestore.co.uk/" target="_blank"><img src="https://nestjs.com/img/the-big-phone-store-logo.png" width="65" valign="middle" /></a></td>
-  <td align="center" valign="middle">
-  <a href="https://genuinebee.com/" target="_blank"><img src="https://nestjs.com/img/genuinebee.svg" width="97" valign="middle" /></a> </td>
-<td align="center" valign="middle"><a href="https://sanyodigital.com/" target="_blank"><img src="https://nestjs.com/img/sanyo-digital.png" width="130" valign="middle" /></a></td></tr><tr><td align="center" valign="middle"><a href="https://vpn-review.com/vpn-for-torrenting" target="_blank"><img src="https://nestjs.com/img/vpn-review-logo.png" width="85" valign="middle" /></a></td><td align="center" valign="middle"><a href="https://lambda-it.ch/" target="_blank"><img src="https://nestjs.com/img/lambda-it-logo.svg" width="115" valign="middle" /></a></td><td align="center" valign="middle"><a href="https://pickwriters.com/top-10-translation-services" target="_blank"><img src="https://nestjs.com/img/pickwriters-logo.png" width="40" valign="middle" /></a></td><td align="center" valign="middle"><a href="https://thewordpoint.com/services/localization" target="_blank"><img src="https://nestjs.com/img/thewordpoint-logo.png" width="40" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://meercode.io/" target="_blank"><img src="https://nestjs.com/img/meercode-logo.png" width="60" valign="middle" /></a></td>
-  <td align="center" valign="middle"><a href="https://www.najlepszeplatformyforex.pl/blog/broker-xtb/" target="_blank"><img src="https://nestjs.com/img/npf-logo.jpg" width="200" valign="middle" /></a></td></tr><tr>
-<td align="center" valign="middle"><a href="https://thestandarddaily.com/" target="_blank"><img src="https://nestjs.com/img/the-standard-daily-logo.png" width="180" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://houseofangular.io/" target="_blank"><img src="https://nestjs.com/img/house-of-angular.png" width="100" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://rocketech.it/cases/?utm_source=google&utm_medium=badge&utm_campaign=nestjs" target="_blank"><img src="https://nestjs.com/img/rocketech-logo.svg" width="110" valign="middle" /></a></td>
-  </tr></table>
-
-## 기여자
-
-<a href="https://opencollective.com/nest" target="_blank"><img src="https://opencollective.com/nest/backers.svg?width=1000"></a>
-
 ## Stay in touch
 
 * Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
