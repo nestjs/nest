@@ -135,9 +135,12 @@ export class ClientKafka extends ClientProxy {
     await Promise.all(this.responsePatterns.map(subscribeTo));
 
     await this.consumer.run(
-      Object.assign(this.options.run || {}, {
-        eachMessage: this.createResponseCallback(),
-      }),
+      Object.assign(
+        {
+          eachMessage: this.createResponseCallback(),
+        },
+        this.options.run || {},
+      ),
     );
   }
 
