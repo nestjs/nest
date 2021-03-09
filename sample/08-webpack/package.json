@@ -20,17 +20,17 @@
   },
   "devDependencies": {
     "@nestjs/cli": "7.5.6",
-    "@nestjs/schematics": "7.2.8",
-    "@types/node": "14.14.31",
-    "@typescript-eslint/eslint-plugin": "4.16.1",
-    "@typescript-eslint/parser": "4.16.1",
+    "@nestjs/schematics": "7.2.9",
+    "@types/node": "14.14.32",
+    "@typescript-eslint/eslint-plugin": "4.17.0",
+    "@typescript-eslint/parser": "4.17.0",
     "eslint": "7.21.0",
     "eslint-config-prettier": "8.1.0",
     "eslint-plugin-import": "2.22.1",
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "8.0.17",
     "ts-node": "9.1.1",
-    "webpack": "5.24.3",
+    "webpack": "5.24.4",
     "webpack-cli": "4.5.0",
     "webpack-node-externals": "2.5.2"
   }
