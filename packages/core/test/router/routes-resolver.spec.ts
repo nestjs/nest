@@ -100,11 +100,27 @@ describe('RoutesResolver', () => {
       sinon
         .stub((routesResolver as any).routerExplorer, 'extractRouterPath')
         .callsFake(() => ['']);
-      routesResolver.registerRouters(routes, moduleName, '', appInstance);
+      routesResolver.registerRouters(routes, moduleName, '', '', appInstance);
 
+      const routePathMetadata = {
+        ctrlPath: '',
+        modulePath: '',
+        globalPrefix: '',
+        controllerVersion: undefined,
+        versioningOptions: undefined,
+        methodVersion: undefined,
+        methodPath: '/another-test',
+      };
       expect(exploreSpy.called).to.be.true;
-      expect(exploreSpy.calledWith(routeWrapper, moduleName, appInstance, ''))
-        .to.be.true;
+      expect(
+        exploreSpy.calledWith(
+          routeWrapper,
+          moduleName,
+          appInstance,
+          undefined,
+          routePathMetadata,
+        ),
+      ).to.be.true;
     });
 
     it('should register with host when specified', () => {
@@ -126,7 +142,17 @@ describe('RoutesResolver', () => {
       sinon
         .stub((routesResolver as any).routerExplorer, 'extractRouterPath')
         .callsFake(() => ['']);
-      routesResolver.registerRouters(routes, moduleName, '', appInstance);
+      routesResolver.registerRouters(routes, moduleName, '', '', appInstance);
+
+      const routePathMetadata = {
+        ctrlPath: '',
+        modulePath: '',
+        globalPrefix: '',
+        controllerVersion: undefined,
+        versioningOptions: undefined,
+        methodVersion: undefined,
+        methodPath: '/',
+      };
 
       expect(exploreSpy.called).to.be.true;
       expect(
@@ -134,8 +160,8 @@ describe('RoutesResolver', () => {
           routeWrapper,
           moduleName,
           appInstance,
-          '',
           'api.example.com',
+          routePathMetadata,
         ),
       ).to.be.true;
     });
@@ -169,7 +195,19 @@ describe('RoutesResolver', () => {
       sinon
         .stub((routesResolver as any).routerExplorer, 'extractRouterPath')
         .callsFake(() => ['']);
-      routesResolver.registerRouters(routes, moduleName, '', appInstance);
+      routesResolver.registerRouters(routes, moduleName, '', '', appInstance);
+
+      const routePathMetadata = {
+        ctrlPath: '',
+        modulePath: '',
+        globalPrefix: '',
+        controllerVersion: '1',
+        versioningOptions: {
+          type: VersioningType.URI,
+        },
+        methodVersion: undefined,
+        methodPath: '/',
+      };
 
       expect(exploreSpy.called).to.be.true;
       expect(
@@ -177,12 +215,8 @@ describe('RoutesResolver', () => {
           routeWrapper,
           moduleName,
           appInstance,
-          '',
           undefined,
-          {
-            type: VersioningType.URI,
-          },
-          '1',
+          routePathMetadata,
         ),
       ).to.be.true;
     });
@@ -198,8 +232,8 @@ describe('RoutesResolver', () => {
           metatype: TestRoute,
         }),
       );
-      modules.set('TestModule', { routes });
-      modules.set('TestModule2', { routes });
+      modules.set('TestModule', { routes, metatype: class {} });
+      modules.set('TestModule2', { routes, metatype: class {} });
 
       const registerRoutersStub = sinon
         .stub(routesResolver, 'registerRouters')
@@ -227,18 +261,11 @@ describe('RoutesResolver', () => {
 
         routesResolver.resolve(applicationRef, 'api/v1');
 
-        // with module path
         expect(
           spy
             .getCall(0)
-            .calledWith(
-              sinon.match.any,
-              sinon.match.any,
-              'api/v1/test',
-              sinon.match.any,
-            ),
+            .calledWith(sinon.match.any, sinon.match.any, 'api/v1', '/test'),
         ).to.be.true;
-        // without module path
         expect(
           spy
             .getCall(1)
@@ -268,22 +295,16 @@ describe('RoutesResolver', () => {
 
         routesResolver.resolve(applicationRef, '');
 
-        // with module path
         expect(
           spy
             .getCall(0)
-            .calledWith(
-              sinon.match.any,
-              sinon.match.any,
-              '/test',
-              sinon.match.any,
-            ),
+            .calledWith(sinon.match.any, sinon.match.any, '', '/test'),
         ).to.be.true;
         // without module path
         expect(
           spy
             .getCall(1)
-            .calledWith(sinon.match.any, sinon.match.any, '', sinon.match.any),
+            .calledWith(sinon.match.any, sinon.match.any, '', undefined),
         ).to.be.true;
       });
     });

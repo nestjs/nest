@@ -7,11 +7,9 @@ import {
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import { VersioningType } from '@nestjs/common/enums/version-type.enum';
 import { InternalServerErrorException } from '@nestjs/common/exceptions';
-import { RouteInfo } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import {
-  VersioningOptions,
   VersionValue,
   VERSION_NEUTRAL,
 } from '@nestjs/common/interfaces/version-options.interface';
@@ -44,12 +42,14 @@ import { MetadataScanner } from '../metadata-scanner';
 import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
+import { RoutePathMetadata } from './interfaces/route-path-metadata.interface';
 import { REQUEST_CONTEXT_ID } from './request/request-constants';
 import { RouteParamsFactory } from './route-params-factory';
+import { RoutePathFactory } from './route-path-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
 
-export interface RoutePathProperties {
+export interface RouteDefinition {
   path: string[];
   requestMethod: RequestMethod;
   targetCallback: RouterProxyCallback;
@@ -72,6 +72,7 @@ export class RouterExplorer {
     private readonly routerProxy?: RouterProxy,
     private readonly exceptionsFilter?: ExceptionsFilter,
     private readonly config?: ApplicationConfig,
+    private readonly routePathFactory?: RoutePathFactory,
   ) {
     const routeParamsFactory = new RouteParamsFactory();
     const pipesContextCreator = new PipesContextCreator(container, config);
@@ -98,12 +99,10 @@ export class RouterExplorer {
 
   public explore<T extends HttpServer = any>(
     instanceWrapper: InstanceWrapper,
-    module: string,
+    moduleKey: string,
     applicationRef: T,
-    basePath: string,
     host: string | string[],
-    versioningOptions?: VersioningOptions,
-    controllerVersion?: VersionValue,
+    routePathMetadata: RoutePathMetadata,
   ) {
     const { instance } = instanceWrapper;
     const routerPaths = this.scanForPaths(instance);
@@ -111,42 +110,36 @@ export class RouterExplorer {
       applicationRef,
       routerPaths,
       instanceWrapper,
-      module,
-      basePath,
+      moduleKey,
+      routePathMetadata,
       host,
-      versioningOptions,
-      controllerVersion,
     );
   }
 
-  public extractRouterPath(metatype: Type<Controller>, prefix = ''): string[] {
-    let path = Reflect.getMetadata(PATH_METADATA, metatype);
+  public extractRouterPath(metatype: Type<Controller>): string[] {
+    const path = Reflect.getMetadata(PATH_METADATA, metatype);
 
     if (isUndefined(path)) {
       throw new UnknownRequestMappingException();
     }
-
     if (Array.isArray(path)) {
-      path = path.map(p => prefix + addLeadingSlash(p));
-    } else {
-      path = [prefix + addLeadingSlash(path)];
+      return path.map(p => addLeadingSlash(p));
     }
-    return path.map((p: string) => addLeadingSlash(p));
+    return [addLeadingSlash(path)];
   }
 
   public scanForPaths(
     instance: Controller,
     prototype?: object,
-  ): RoutePathProperties[] {
+  ): RouteDefinition[] {
     const instancePrototype = isUndefined(prototype)
       ? Object.getPrototypeOf(instance)
       : prototype;
 
-    return this.metadataScanner.scanFromPrototype<
-      Controller,
-      RoutePathProperties
-    >(instance, instancePrototype, method =>
-      this.exploreMethodMetadata(instance, instancePrototype, method),
+    return this.metadataScanner.scanFromPrototype<Controller, RouteDefinition>(
+      instance,
+      instancePrototype,
+      method => this.exploreMethodMetadata(instance, instancePrototype, method),
     );
   }
 
@@ -154,7 +147,7 @@ export class RouterExplorer {
     instance: Controller,
     prototype: object,
     methodName: string,
-  ): RoutePathProperties {
+  ): RouteDefinition {
     const targetCallback = prototype[methodName];
     const routePath = Reflect.getMetadata(PATH_METADATA, targetCallback);
     if (isUndefined(routePath)) {
@@ -183,91 +176,42 @@ export class RouterExplorer {
 
   public applyPathsToRouterProxy<T extends HttpServer>(
     router: T,
-    routePaths: RoutePathProperties[],
+    routeDefinitions: RouteDefinition[],
     instanceWrapper: InstanceWrapper,
     moduleKey: string,
-    basePath: string,
+    routePathMetadata: RoutePathMetadata,
     host: string | string[],
-    versioningOptions?: VersioningOptions,
-    controllerVersion?: VersionValue,
   ) {
-    (routePaths || []).forEach(pathProperties => {
-      const { version: pathVersion } = pathProperties;
-      // The version will be either the path version or the controller version,
-      // with the pathVersion taking priority.
-      const version = pathVersion || controllerVersion;
+    (routeDefinitions || []).forEach(routeDefinition => {
+      const { version: methodVersion } = routeDefinition;
+      routePathMetadata.methodVersion = methodVersion;
 
       this.applyCallbackToRouter(
         router,
-        pathProperties,
+        routeDefinition,
         instanceWrapper,
         moduleKey,
-        basePath,
+        routePathMetadata,
         host,
-        versioningOptions,
-        version,
-      );
-    });
-  }
-
-  public stripEndSlash(str: string) {
-    return str[str.length - 1] === '/' ? str.slice(0, str.length - 1) : str;
-  }
-
-  public removeGlobalPrefixFromPath(path: string) {
-    const globalPrefix = addLeadingSlash(this.config.getGlobalPrefix());
-    return path.replace(globalPrefix, '');
-  }
-
-  public isRouteExcludedFromGlobalPrefix(
-    path: string,
-    requestMethod: RequestMethod,
-  ) {
-    const options = this.config.getGlobalPrefixOptions();
-    if (!options.exclude) {
-      return false;
-    }
-    const excludedRouteInfos = options.exclude.map(
-      (route: string | RouteInfo) => {
-        if (isString(route)) {
-          return {
-            path: addLeadingSlash(route),
-            method: RequestMethod.ALL,
-          };
-        }
-        return {
-          path: addLeadingSlash(route.path),
-          method: route.method,
-        };
-      },
-    );
-
-    return excludedRouteInfos.some((route: RouteInfo) => {
-      if (route.path !== path) {
-        return false;
-      }
-      return (
-        route.method === RequestMethod.ALL || route.method === requestMethod
       );
     });
   }
 
   private applyCallbackToRouter<T extends HttpServer>(
     router: T,
-    pathProperties: RoutePathProperties,
+    routeDefinition: RouteDefinition,
     instanceWrapper: InstanceWrapper,
     moduleKey: string,
-    basePath: string,
+    routePathMetadata: RoutePathMetadata,
     host: string | string[],
-    versioningOptions?: VersioningOptions,
-    version?: VersionValue,
   ) {
     const {
       path: paths,
       requestMethod,
       targetCallback,
       methodName,
-    } = pathProperties;
+    } = routeDefinition;
+
     const { instance } = instanceWrapper;
     const routerMethodRef = this.routerMethodFactory
       .get(router, requestMethod)
@@ -290,101 +234,46 @@ export class RouterExplorer {
           requestMethod,
         );
 
-    const isVersioned = version && versioningOptions;
+    const isVersioned =
+      (routePathMetadata.methodVersion ||
+        routePathMetadata.controllerVersion) &&
+      routePathMetadata.versioningOptions;
     let routeHandler = this.applyHostFilter(host, proxy);
 
     paths.forEach(path => {
-      if (isVersioned) {
-        // URI Versioning is done via adding the version into the URL
-        if (versioningOptions.type === VersioningType.URI) {
-          this.applyUriVersioningCallbacks(
-            version,
-            versioningOptions,
-            basePath,
-            path,
-            routeHandler,
-            routerMethodRef,
-            requestMethod,
+      if (
+        isVersioned &&
+        routePathMetadata.versioningOptions.type !== VersioningType.URI
+      ) {
+        // All versioning (except for URI Versioning) is done via the "Version Filter"
+        routeHandler = this.applyVersionFilter(routePathMetadata, routeHandler);
+      }
+
+      routePathMetadata.methodPath = path;
+      const pathsToRegister = this.routePathFactory.create(
+        routePathMetadata,
+        requestMethod,
+      );
+      pathsToRegister.forEach(path => routerMethodRef(path, routeHandler));
+
+      const pathsToLog = this.routePathFactory.create(
+        {
+          ...routePathMetadata,
+          versioningOptions: undefined,
+        },
+        requestMethod,
+      );
+      pathsToLog.forEach(path => {
+        if (isVersioned) {
+          const version = this.routePathFactory.getVersion(routePathMetadata);
+          this.logger.log(
+            VERSIONED_ROUTE_MAPPED_MESSAGE(path, requestMethod, version),
           );
-          return;
+        } else {
+          this.logger.log(ROUTE_MAPPED_MESSAGE(path, requestMethod));
         }
-        // All other versioning is done via the Version Filter
-        routeHandler = this.applyVersionFilter(
-          version,
-          versioningOptions,
-          routeHandler,
-        );
-      }
-      let finalPath = this.stripEndSlash(basePath) + this.stripEndSlash(path);
-      finalPath = this.getUnprefixedIfExcluded(finalPath, requestMethod);
-      routerMethodRef(finalPath || '/', routeHandler);
-
-      if (isVersioned) {
-        this.logger.log(
-          VERSIONED_ROUTE_MAPPED_MESSAGE(finalPath, requestMethod, version),
-        );
-      } else {
-        this.logger.log(ROUTE_MAPPED_MESSAGE(finalPath, requestMethod));
-      }
-    });
-  }
-
-  private applyUriVersioningCallbacks(
-    version: VersionValue,
-    versioningOptions: VersioningOptions,
-    basePath: string,
-    path: string,
-    handler: Function,
-    routerMethodRef: Function,
-    requestMethod: RequestMethod,
-  ) {
-    const versionPrefix = this.getVersionPrefix(versioningOptions);
-
-    // Version Neutral - Do not include version in URL
-    if (version === VERSION_NEUTRAL) {
-      let unversionedPath = this.stripEndSlash(basePath) + path;
-      unversionedPath = this.getUnprefixedIfExcluded(
-        unversionedPath,
-        requestMethod,
-      );
-      routerMethodRef(this.stripEndSlash(unversionedPath), handler);
-    }
-    // Multiple Versions - Add routes for each version
-    else if (Array.isArray(version)) {
-      version.forEach(v => {
-        let versionedPath =
-          this.stripEndSlash(basePath) + `/${versionPrefix}${v}` + path;
-
-        versionedPath = this.getUnprefixedIfExcluded(
-          versionedPath,
-          requestMethod,
-        );
-        routerMethodRef(this.stripEndSlash(versionedPath), handler);
       });
-    }
-    // Single version
-    else if (isString(version)) {
-      let versionedPath =
-        this.stripEndSlash(basePath) + `/${versionPrefix}${version}` + path;
-
-      versionedPath = this.getUnprefixedIfExcluded(
-        versionedPath,
-        requestMethod,
-      );
-      routerMethodRef(this.stripEndSlash(versionedPath), handler);
-    }
-  }
-
-  private getVersionPrefix(versioningOptions: VersioningOptions): string {
-    const defaultPrefix = 'v';
-    if (versioningOptions.type === VersioningType.URI) {
-      if (versioningOptions.prefix === false) {
-        return '';
-      } else if (versioningOptions.prefix !== undefined) {
-        return versioningOptions.prefix;
-      }
-    }
-    return defaultPrefix;
+    });
   }
 
   private applyHostFilter(host: string | string[], handler: Function) {
@@ -431,10 +320,12 @@ export class RouterExplorer {
   }
 
   private applyVersionFilter(
-    version: VersionValue,
-    options: VersioningOptions,
+    routePathMetadata: RoutePathMetadata,
     handler: Function,
   ) {
+    const { versioningOptions } = routePathMetadata;
+    const version = this.routePathFactory.getVersion(routePathMetadata);
+
     return <TRequest extends Record<string, any> = any, TResponse = any>(
       req: TRequest,
       res: TResponse,
@@ -444,11 +335,11 @@ export class RouterExplorer {
         return handler(req, res, next);
       }
       // URL Versioning is done via the path, so the filter continues forward
-      if (options.type === VersioningType.URI) {
+      if (versioningOptions.type === VersioningType.URI) {
         return handler(req, res, next);
       }
       // Media Type (Accept Header) Versioning Handler
-      if (options.type === VersioningType.MEDIA_TYPE) {
+      if (versioningOptions.type === VersioningType.MEDIA_TYPE) {
         const MEDIA_TYPE_HEADER = 'Accept';
         const acceptHeaderValue: string | undefined =
           req.headers?.[MEDIA_TYPE_HEADER] ||
@@ -460,7 +351,7 @@ export class RouterExplorer {
 
         if (acceptHeaderVersionParameter) {
           const headerVersion = acceptHeaderVersionParameter.split(
-            options.key,
+            versioningOptions.key,
           )[1];
 
           if (Array.isArray(version)) {
@@ -475,10 +366,10 @@ export class RouterExplorer {
         }
       }
       // Header Versioning Handler
-      else if (options.type === VersioningType.HEADER) {
+      else if (versioningOptions.type === VersioningType.HEADER) {
         const customHeaderVersionParameter: string | undefined =
-          req.headers?.[options.header] ||
-          req.headers?.[options.header.toLowerCase()];
+          req.headers?.[versioningOptions.header] ||
+          req.headers?.[versioningOptions.header.toLowerCase()];
 
         if (customHeaderVersionParameter) {
           if (Array.isArray(version)) {
@@ -500,23 +391,6 @@ export class RouterExplorer {
       }
       return next();
     };
-  }
-
-  private getUnprefixedIfExcluded(
-    path: string,
-    requestMethod: RequestMethod,
-  ): string {
-    const isGlobalPrefixSet = !!this.config.getGlobalPrefix();
-    if (isGlobalPrefixSet) {
-      const unprefixedFullPath = this.removeGlobalPrefixFromPath(path);
-
-      const isExcludedOfGlobalPrefix = this.isRouteExcludedFromGlobalPrefix(
-        unprefixedFullPath,
-        requestMethod,
-      );
-      return isExcludedOfGlobalPrefix ? unprefixedFullPath : path;
-    }
-    return path;
   }
 
   private createCallbackProxy(

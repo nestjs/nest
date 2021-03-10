@@ -1,8 +1,8 @@
+import { INestApplication } from '@nestjs/common';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import { AppModule } from '../src/app.module';
-import { INestApplication } from '@nestjs/common';
 
 describe('Listen (Fastify Application)', () => {
   let testModule: TestingModule;

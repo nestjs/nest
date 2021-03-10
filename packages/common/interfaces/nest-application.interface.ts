@@ -13,8 +13,8 @@ import {
   PipeTransform,
 } from './index';
 import { INestApplicationContext } from './nest-application-context.interface';
-import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 import { VersioningOptions } from './version-options.interface';
+import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 
 /**
  * Interface defining the core NestApplication object.
@@ -39,11 +39,12 @@ export interface INestApplication extends INestApplicationContext {
 
   /**
    * Enables Versioning for the application.
+   * By default, URI-based versioning is used.
    *
    * @param {VersioningOptions} options
    * @returns {this}
    */
-  enableVersioning(options: VersioningOptions): this;
+  enableVersioning(options?: VersioningOptions): this;
 
   /**
    * Starts the application.

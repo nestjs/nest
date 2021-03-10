@@ -7,12 +7,15 @@ import {
   NestHybridApplicationOptions,
   NestInterceptor,
   PipeTransform,
+  RequestMethod,
   VersioningOptions,
-  WebSocketAdapter
+  VersioningType,
+  WebSocketAdapter,
 } from '@nestjs/common';
+import { RouteInfo } from '@nestjs/common/interfaces';
 import {
   CorsOptions,
-  CorsOptionsDelegate
+  CorsOptionsDelegate,
 } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces/global-prefix-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
@@ -21,10 +24,12 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import {
   addLeadingSlash,
   isFunction,
-  isObject
+  isObject,
+  isString,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { platform } from 'os';
+import * as pathToRegexp from 'path-to-regexp';
 import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
@@ -33,6 +38,7 @@ import { NestContainer } from './injector/container';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
+import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
 
@@ -245,7 +251,9 @@ export class NestApplication
     this.httpAdapter.enableCors(options);
   }
 
-  public enableVersioning(options: VersioningOptions): this {
+  public enableVersioning(
+    options: VersioningOptions = { type: VersioningType.URI },
+  ): this {
     this.config.enableVersioning(options);
     return this;
   }
@@ -331,7 +339,24 @@ export class NestApplication
   public setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this {
     this.config.setGlobalPrefix(prefix);
     if (options) {
-      this.config.setGlobalPrefixOptions(options);
+      const exclude = options?.exclude.map(
+        (route: string | RouteInfo): ExcludeRouteMetadata => {
+          if (isString(route)) {
+            return {
+              requestMethod: RequestMethod.ALL,
+              pathRegex: pathToRegexp(addLeadingSlash(route)),
+            };
+          }
+          return {
+            requestMethod: route.method,
+            pathRegex: pathToRegexp(addLeadingSlash(route.path)),
+          };
+        },
+      );
+      this.config.setGlobalPrefixOptions({
+        ...options,
+        exclude,
+      });
     }
     return this;
   }

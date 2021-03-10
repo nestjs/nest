@@ -41,7 +41,7 @@ export interface ControllerOptions extends ScopeOptions, VersionOptions {
  * An HTTP Controller responds to inbound HTTP Requests and produces HTTP Responses.
  * It defines a class that provides the context for one or more related route
  * handlers that correspond to HTTP request methods and associated routes
- * for example `GET /api/profile`, `POST /user/resume`.
+ * for example `GET /api/profile`, `POST /users/resume`.
  *
  * A Microservice Controller responds to requests as well as events, running over
  * a variety of transports [(read more here)](https://docs.nestjs.com/microservices/basics).
@@ -62,7 +62,7 @@ export function Controller(): ClassDecorator;
  * An HTTP Controller responds to inbound HTTP Requests and produces HTTP Responses.
  * It defines a class that provides the context for one or more related route
  * handlers that correspond to HTTP request methods and associated routes
- * for example `GET /api/profile`, `POST /user/resume`.
+ * for example `GET /api/profile`, `POST /users/resume`.
  *
  * A Microservice Controller responds to requests as well as events, running over
  * a variety of transports [(read more here)](https://docs.nestjs.com/microservices/basics).
@@ -87,7 +87,7 @@ export function Controller(prefix: string | string[]): ClassDecorator;
  * An HTTP Controller responds to inbound HTTP Requests and produces HTTP Responses.
  * It defines a class that provides the context for one or more related route
  * handlers that correspond to HTTP request methods and associated routes
- * for example `GET /api/profile`, `POST /user/resume`.
+ * for example `GET /api/profile`, `POST /users/resume`.
  *
  * A Microservice Controller responds to requests as well as events, running over
  * a variety of transports [(read more here)](https://docs.nestjs.com/microservices/basics).
@@ -121,7 +121,7 @@ export function Controller(options: ControllerOptions): ClassDecorator;
  * An HTTP Controller responds to inbound HTTP Requests and produces HTTP Responses.
  * It defines a class that provides the context for one or more related route
  * handlers that correspond to HTTP request methods and associated routes
- * for example `GET /api/profile`, `POST /user/resume`
+ * for example `GET /api/profile`, `POST /users/resume`
  *
  * A Microservice Controller responds to requests as well as events, running over
  * a variety of transports [(read more here)](https://docs.nestjs.com/microservices/basics).

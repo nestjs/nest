@@ -3,6 +3,6 @@ import { RouteInfo } from './middleware';
 /**
  * @publicApi
  */
-export interface GlobalPrefixOptions {
-  exclude?: Array<string | RouteInfo>;
+export interface GlobalPrefixOptions<T = string | RouteInfo> {
+  exclude?: T[];
 }

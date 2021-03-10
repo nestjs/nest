@@ -40,6 +40,9 @@ export const normalizePath = (path?: string): string =>
       : '/' + path.replace(/\/+$/, '')
     : '/';
 
+export const stripEndSlash = (path: string) =>
+  path[path.length - 1] === '/' ? path.slice(0, path.length - 1) : path;
+
 export const isFunction = (fn: any): boolean => typeof fn === 'function';
 export const isString = (fn: any): fn is string => typeof fn === 'string';
 export const isConstructor = (fn: any): boolean => fn === 'constructor';

@@ -18,6 +18,8 @@ import { Injector } from '../injector/injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { MetadataScanner } from '../metadata-scanner';
 import { Resolver } from './interfaces/resolver.interface';
+import { RoutePathMetadata } from './interfaces/route-path-metadata.interface';
+import { RoutePathFactory } from './route-path-factory';
 import { RouterExceptionFilters } from './router-exception-filters';
 import { RouterExplorer } from './router-explorer';
 import { RouterProxy } from './router-proxy';
@@ -27,19 +29,23 @@ export class RoutesResolver implements Resolver {
     timestamp: true,
   });
   private readonly routerProxy = new RouterProxy();
+  private readonly routePathFactory: RoutePathFactory;
   private readonly routerExceptionsFilter: RouterExceptionFilters;
   private readonly routerExplorer: RouterExplorer;
 
   constructor(
     private readonly container: NestContainer,
-    private readonly config: ApplicationConfig,
+    private readonly applicationConfig: ApplicationConfig,
     private readonly injector: Injector,
   ) {
+    const httpAdapterRef = container.getHttpAdapterRef();
     this.routerExceptionsFilter = new RouterExceptionFilters(
       container,
-      config,
-      container.getHttpAdapterRef(),
+      applicationConfig,
+      httpAdapterRef,
     );
+    this.routePathFactory = new RoutePathFactory(this.applicationConfig);
+
     const metadataScanner = new MetadataScanner();
     this.routerExplorer = new RouterExplorer(
       metadataScanner,
@@ -47,63 +53,81 @@ export class RoutesResolver implements Resolver {
       this.injector,
       this.routerProxy,
       this.routerExceptionsFilter,
-      this.config,
+      this.applicationConfig,
+      this.routePathFactory,
     );
   }
 
-  public resolve<T extends HttpServer>(applicationRef: T, basePath: string) {
+  public resolve<T extends HttpServer>(
+    applicationRef: T,
+    globalPrefix: string,
+  ) {
     const modules = this.container.getModules();
     modules.forEach(({ controllers, metatype }, moduleName) => {
-      let path = metatype ? this.getModulePathMetadata(metatype) : undefined;
-      path = path ? basePath + path : basePath;
-      this.registerRouters(controllers, moduleName, path, applicationRef);
+      const modulePath = this.getModulePathMetadata(metatype);
+      this.registerRouters(
+        controllers,
+        moduleName,
+        globalPrefix,
+        modulePath,
+        applicationRef,
+      );
     });
   }
 
   public registerRouters(
     routes: Map<string | symbol | Function, InstanceWrapper<Controller>>,
     moduleName: string,
-    basePath: string,
+    globalPrefix: string,
+    modulePath: string,
     applicationRef: HttpServer,
   ) {
     routes.forEach(instanceWrapper => {
       const { metatype } = instanceWrapper;
 
       const host = this.getHostMetadata(metatype);
-      const paths = this.routerExplorer.extractRouterPath(
+      const routerPaths = this.routerExplorer.extractRouterPath(
         metatype as Type<any>,
-        basePath,
       );
       const controllerVersion = this.getVersionMetadata(metatype);
       const controllerName = metatype.name;
 
-      paths.forEach(path => {
+      routerPaths.forEach(path => {
+        const pathsToLog = this.routePathFactory.create({
+          ctrlPath: path,
+          modulePath,
+          globalPrefix,
+        });
         if (!controllerVersion) {
-          this.logger.log(
-            CONTROLLER_MAPPING_MESSAGE(
-              controllerName,
-              this.routerExplorer.stripEndSlash(path),
-            ),
-          );
+          pathsToLog.forEach(path => {
+            const logMessage = CONTROLLER_MAPPING_MESSAGE(controllerName, path);
+            this.logger.log(logMessage);
+          });
         } else {
-          this.logger.log(
-            VERSIONED_CONTROLLER_MAPPING_MESSAGE(
+          pathsToLog.forEach(path => {
+            const logMessage = VERSIONED_CONTROLLER_MAPPING_MESSAGE(
               controllerName,
-              this.routerExplorer.stripEndSlash(path),
+              path,
               controllerVersion,
-            ),
-          );
+            );
+            this.logger.log(logMessage);
+          });
         }
 
-        const versioningOptions = this.config.getVersioning();
+        const versioningOptions = this.applicationConfig.getVersioning();
+        const routePathMetadata: RoutePathMetadata = {
+          ctrlPath: path,
+          modulePath,
+          globalPrefix,
+          controllerVersion,
+          versioningOptions,
+        };
         this.routerExplorer.explore(
           instanceWrapper,
           moduleName,
           applicationRef,
-          path,
           host,
-          versioningOptions,
-          controllerVersion,
+          routePathMetadata,
         );
       });
     });
@@ -119,7 +143,10 @@ export class RoutesResolver implements Resolver {
     const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);
     applicationRef.setNotFoundHandler &&
-      applicationRef.setNotFoundHandler(proxy, this.config.getGlobalPrefix());
+      applicationRef.setNotFoundHandler(
+        proxy,
+        this.applicationConfig.getGlobalPrefix(),
+      );
   }
 
   public registerExceptionHandler() {
@@ -139,7 +166,10 @@ export class RoutesResolver implements Resolver {
     const proxy = this.routerProxy.createExceptionLayerProxy(callback, handler);
     const applicationRef = this.container.getHttpAdapterRef();
     applicationRef.setErrorHandler &&
-      applicationRef.setErrorHandler(proxy, this.config.getGlobalPrefix());
+      applicationRef.setErrorHandler(
+        proxy,
+        this.applicationConfig.getGlobalPrefix(),
+      );
   }
 
   public mapExternalException(err: any) {
@@ -169,7 +199,7 @@ export class RoutesResolver implements Resolver {
   private getVersionMetadata(
     metatype: Type<unknown> | Function,
   ): VersionValue | undefined {
-    const isVersioningEnabled = this.config.getVersioning();
+    const isVersioningEnabled = this.applicationConfig.getVersioning();
     return isVersioningEnabled
       ? Reflect.getMetadata(VERSION_METADATA, metatype)
       : undefined;

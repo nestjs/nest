@@ -1,6 +1,7 @@
+import { VERSION_NEUTRAL } from '@nestjs/common';
+import { VersionValue } from '@nestjs/common/interfaces';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { VERSION_NEUTRAL } from '@nestjs/common';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import {
   All,
@@ -16,6 +17,8 @@ import { ExecutionContextHost } from '../../helpers/execution-context-host';
 import { NestContainer } from '../../injector/container';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { MetadataScanner } from '../../metadata-scanner';
+import { RoutePathMetadata } from '../../router/interfaces/route-path-metadata.interface';
+import { RoutePathFactory } from '../../router/route-path-factory';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { RouterExplorer } from '../../router/router-explorer';
 
@@ -54,12 +57,14 @@ describe('RouterExplorer', () => {
   let injector: Injector;
   let exceptionsFilter: RouterExceptionFilters;
   let applicationConfig: ApplicationConfig;
+  let routePathFactory: RoutePathFactory;
 
   beforeEach(() => {
     const container = new NestContainer();
 
     applicationConfig = new ApplicationConfig();
     injector = new Injector();
+    routePathFactory = new RoutePathFactory(applicationConfig);
     exceptionsFilter = new RouterExceptionFilters(
       container,
       applicationConfig,
@@ -72,6 +77,7 @@ describe('RouterExplorer', () => {
       null,
       exceptionsFilter,
       applicationConfig,
+      routePathFactory,
     );
   });
 
@@ -184,7 +190,7 @@ describe('RouterExplorer', () => {
         paths as any,
         null,
         '',
-        '',
+        {},
         '',
       );
 
@@ -203,138 +209,28 @@ describe('RouterExplorer', () => {
         { path: ['foo', 'bar'], requestMethod: RequestMethod.GET },
       ];
 
+      const routePathMetadata: RoutePathMetadata = {
+        versioningOptions: { type: VersioningType.URI },
+      };
       routerBuilder.applyPathsToRouterProxy(
         null,
         paths as any,
         null,
         '',
-        '',
-        '',
-        { type: VersioningType.URI },
+        routePathMetadata,
         '1',
       );
 
       expect(
-        bindStub.calledWith(
-          null,
-          paths[0],
-          null,
-          '',
-          '',
-          '',
-          {
-            type: VersioningType.URI,
-          },
-          '1',
-        ),
+        bindStub.calledWith(null, paths[0], null, '', routePathMetadata, '1'),
       ).to.be.true;
       expect(bindStub.callCount).to.be.eql(paths.length);
-    });
-  });
-
-  describe('removeGlobalPrefixFromPath', () => {
-    it('should remove global prefix from path', () => {
-      sinon
-        .stub(applicationConfig, 'getGlobalPrefix')
-        .returns('/some/prefixed');
-
-      expect(
-        routerBuilder.removeGlobalPrefixFromPath('/some/prefixed/cats'),
-      ).be.eql('/cats');
-    });
-    it('should not change path when there is no GlobalPrefix', () => {
-      sinon.stub(applicationConfig, 'getGlobalPrefix').returns('');
-      expect(routerBuilder.removeGlobalPrefixFromPath('/cats')).be.eql('/cats');
-    });
-  });
-
-  describe('stripEndSlash', () => {
-    it('should strip end slash if present', () => {
-      expect(routerBuilder.stripEndSlash('/cats/')).to.equal('/cats');
-      expect(routerBuilder.stripEndSlash('/cats')).to.equal('/cats');
-    });
-  });
-
-  describe('isRouteExcludedFromGlobalPrefix', () => {
-    describe('when there is no exclude configuration', () => {
-      it('should return false', () => {
-        sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
-          exclude: undefined,
-        });
-        expect(
-          routerBuilder.isRouteExcludedFromGlobalPrefix(
-            '/cats',
-            RequestMethod.GET,
-          ),
-        ).to.be.false;
-      });
-    });
-    describe('otherwise', () => {
-      describe('when route is not excluded', () => {
-        it('should return false', () => {
-          sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
-            exclude: [
-              {
-                path: '/random',
-                method: RequestMethod.ALL,
-              },
-            ],
-          });
-          expect(
-            routerBuilder.isRouteExcludedFromGlobalPrefix(
-              '/cats',
-              RequestMethod.GET,
-            ),
-          ).to.be.false;
-        });
-      });
-      describe('when route is excluded (by path)', () => {
-        it('should return true', () => {
-          sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
-            exclude: [
-              {
-                path: '/cats',
-                method: RequestMethod.ALL,
-              },
-              'cats',
-            ],
-          });
-          expect(
-            routerBuilder.isRouteExcludedFromGlobalPrefix(
-              '/cats',
-              RequestMethod.GET,
-            ),
-          ).to.be.true;
-        });
-
-        describe('when route is excluded (by method and path)', () => {
-          it('should return true', () => {
-            sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
-              exclude: [
-                {
-                  path: '/cats',
-                  method: RequestMethod.GET,
-                },
-              ],
-            });
-            expect(
-              routerBuilder.isRouteExcludedFromGlobalPrefix(
-                '/cats',
-                RequestMethod.GET,
-              ),
-            ).to.be.true;
-          });
-        });
-      });
     });
   });
 
   describe('extractRouterPath', () => {
     it('should return expected path', () => {
       expect(routerBuilder.extractRouterPath(TestRoute)).to.be.eql(['/global']);
-      expect(routerBuilder.extractRouterPath(TestRoute, '/module')).to.be.eql([
-        '/module/global',
-      ]);
     });
 
     it('should return expected path with alias', () => {
@@ -342,9 +238,6 @@ describe('RouterExplorer', () => {
         '/global',
         '/global-alias',
       ]);
-      expect(
-        routerBuilder.extractRouterPath(TestRouteAlias, '/module'),
-      ).to.be.eql(['/module/global', '/module/global-alias']);
     });
   });
 
@@ -393,164 +286,21 @@ describe('RouterExplorer', () => {
     });
   });
 
-  describe('applyUriVersioningCallbacks', () => {
-    describe('when the version is VERSION_NEUTRAL', () => {
-      it('should add the router callback for the unversioned url', () => {
-        const version = VERSION_NEUTRAL;
-        const versioningOptions: VersioningOptions = {
-          type: VersioningType.URI,
-        };
-        const basePath = '/api/';
-        const path = '/test';
-        const handler = sinon.stub();
-        const routerMethod = sinon.stub();
-
-        (routerBuilder as any).applyUriVersioningCallbacks(
-          version,
-          versioningOptions,
-          basePath,
-          path,
-          handler,
-          routerMethod,
-        );
-        expect(routerMethod.calledWith('/api/test', handler)).to.be.true;
-      });
-    });
-
-    describe('when the version prefix is configured', () => {
-      it('should add the router callbacks for the version urls with the string version prefix', () => {
-        const version = '1';
-        const versioningOptions: VersioningOptions = {
-          type: VersioningType.URI,
-          prefix: 'version',
-        };
-        const basePath = '/api/';
-        const path = '/test';
-        const handler = sinon.stub();
-        const routerMethod = sinon.stub();
-
-        (routerBuilder as any).applyUriVersioningCallbacks(
-          version,
-          versioningOptions,
-          basePath,
-          path,
-          handler,
-          routerMethod,
-        );
-
-        expect(routerMethod.calledWith('/api/version1/test', handler)).to.be
-          .true;
-      });
-
-      it('should add the router callbacks for the version urls without the version prefix when set to false', () => {
-        const version = '1';
-        const versioningOptions: VersioningOptions = {
-          type: VersioningType.URI,
-          prefix: false,
-        };
-        const basePath = '/api/';
-        const path = '/test';
-        const handler = sinon.stub();
-        const routerMethod = sinon.stub();
-
-        (routerBuilder as any).applyUriVersioningCallbacks(
-          version,
-          versioningOptions,
-          basePath,
-          path,
-          handler,
-          routerMethod,
-        );
-
-        expect(routerMethod.calledWith('/api/1/test', handler)).to.be.true;
-      });
-
-      it('should add the router callbacks for the version urls with the default version prefix', () => {
-        const version = '1';
-        const versioningOptions: VersioningOptions = {
-          type: VersioningType.URI,
-        };
-        const basePath = '/api/';
-        const path = '/test';
-        const handler = sinon.stub();
-        const routerMethod = sinon.stub();
-
-        (routerBuilder as any).applyUriVersioningCallbacks(
-          version,
-          versioningOptions,
-          basePath,
-          path,
-          handler,
-          routerMethod,
-        );
-
-        expect(routerMethod.calledWith('/api/v1/test', handler)).to.be.true;
-      });
-    });
-
-    describe('when the version is an array', () => {
-      it('should add the router callback for the version urls', () => {
-        const version = ['1', '2'];
-        const versioningOptions: VersioningOptions = {
-          type: VersioningType.URI,
-        };
-        const basePath = '/api/';
-        const path = '/test';
-        const handler = sinon.stub();
-        const routerMethod = sinon.stub();
-
-        (routerBuilder as any).applyUriVersioningCallbacks(
-          version,
-          versioningOptions,
-          basePath,
-          path,
-          handler,
-          routerMethod,
-        );
-
-        expect(routerMethod.calledWith('/api/v1/test', handler)).to.be.true;
-        expect(routerMethod.calledWith('/api/v2/test', handler)).to.be.true;
-        expect(routerMethod.callCount).to.be.eql(2);
-      });
-    });
-
-    describe('when the version is a string', () => {
-      it('should add the router callback for the version url', () => {
-        const version = '1';
-        const versioningOptions: VersioningOptions = {
-          type: VersioningType.URI,
-        };
-        const basePath = '/api/';
-        const path = '/test';
-        const handler = sinon.stub();
-        const routerMethod = sinon.stub();
-
-        (routerBuilder as any).applyUriVersioningCallbacks(
-          version,
-          versioningOptions,
-          basePath,
-          path,
-          handler,
-          routerMethod,
-        );
-
-        expect(routerMethod.calledWith('/api/v1/test', handler)).to.be.true;
-      });
-    });
-  });
-
   describe('applyVersionFilter', () => {
     describe('when the version is VERSION_NEUTRAL', () => {
       it('should return the handler', () => {
-        const version = VERSION_NEUTRAL;
+        const version = VERSION_NEUTRAL as VersionValue;
         const versioningOptions: VersioningOptions = {
           type: VersioningType.URI,
         };
         const handler = sinon.stub();
 
-        const versionFilter = (routerBuilder as any).applyVersionFilter(
-          version,
+        const routePathMetadata: RoutePathMetadata = {
+          methodVersion: version,
           versioningOptions,
+        };
+        const versionFilter = (routerBuilder as any).applyVersionFilter(
+          routePathMetadata,
           handler,
         );
 
@@ -572,9 +322,12 @@ describe('RouterExplorer', () => {
         };
         const handler = sinon.stub();
 
-        const versionFilter = (routerBuilder as any).applyVersionFilter(
-          version,
+        const routePathMetadata: RoutePathMetadata = {
+          methodVersion: version,
           versioningOptions,
+        };
+        const versionFilter = (routerBuilder as any).applyVersionFilter(
+          routePathMetadata,
           handler,
         );
 
@@ -596,9 +349,12 @@ describe('RouterExplorer', () => {
         };
         const handler = sinon.stub();
 
-        const versionFilter = (routerBuilder as any).applyVersionFilter(
-          version,
+        const routePathMetadata: RoutePathMetadata = {
+          methodVersion: version,
           versioningOptions,
+        };
+        const versionFilter = (routerBuilder as any).applyVersionFilter(
+          routePathMetadata,
           handler,
         );
 
@@ -619,9 +375,12 @@ describe('RouterExplorer', () => {
         };
         const handler = sinon.stub();
 
-        const versionFilter = (routerBuilder as any).applyVersionFilter(
-          version,
+        const routePathMetadata: RoutePathMetadata = {
+          methodVersion: version,
           versioningOptions,
+        };
+        const versionFilter = (routerBuilder as any).applyVersionFilter(
+          routePathMetadata,
           handler,
         );
 
@@ -643,9 +402,12 @@ describe('RouterExplorer', () => {
           };
           const handler = sinon.stub();
 
-          const versionFilter = (routerBuilder as any).applyVersionFilter(
-            version,
+          const routePathMetadata: RoutePathMetadata = {
+            methodVersion: version,
             versioningOptions,
+          };
+          const versionFilter = (routerBuilder as any).applyVersionFilter(
+            routePathMetadata,
             handler,
           );
 
@@ -666,9 +428,12 @@ describe('RouterExplorer', () => {
           };
           const handler = sinon.stub();
 
-          const versionFilter = (routerBuilder as any).applyVersionFilter(
-            version,
+          const routePathMetadata: RoutePathMetadata = {
+            methodVersion: version,
             versioningOptions,
+          };
+          const versionFilter = (routerBuilder as any).applyVersionFilter(
+            routePathMetadata,
             handler,
           );
 
@@ -691,9 +456,12 @@ describe('RouterExplorer', () => {
           };
           const handler = sinon.stub();
 
-          const versionFilter = (routerBuilder as any).applyVersionFilter(
-            version,
+          const routePathMetadata: RoutePathMetadata = {
+            methodVersion: version,
             versioningOptions,
+          };
+          const versionFilter = (routerBuilder as any).applyVersionFilter(
+            routePathMetadata,
             handler,
           );
 
@@ -714,9 +482,12 @@ describe('RouterExplorer', () => {
           };
           const handler = sinon.stub();
 
-          const versionFilter = (routerBuilder as any).applyVersionFilter(
-            version,
+          const routePathMetadata: RoutePathMetadata = {
+            methodVersion: version,
             versioningOptions,
+          };
+          const versionFilter = (routerBuilder as any).applyVersionFilter(
+            routePathMetadata,
             handler,
           );
 
@@ -740,9 +511,12 @@ describe('RouterExplorer', () => {
         };
         const handler = sinon.stub();
 
-        const versionFilter = (routerBuilder as any).applyVersionFilter(
-          version,
+        const routePathMetadata: RoutePathMetadata = {
+          methodVersion: version,
           versioningOptions,
+        };
+        const versionFilter = (routerBuilder as any).applyVersionFilter(
+          routePathMetadata,
           handler,
         );
 
@@ -763,9 +537,12 @@ describe('RouterExplorer', () => {
         };
         const handler = sinon.stub();
 
-        const versionFilter = (routerBuilder as any).applyVersionFilter(
-          version,
+        const routePathMetadata: RoutePathMetadata = {
+          methodVersion: version,
           versioningOptions,
+        };
+        const versionFilter = (routerBuilder as any).applyVersionFilter(
+          routePathMetadata,
           handler,
         );
 
@@ -787,9 +564,12 @@ describe('RouterExplorer', () => {
           };
           const handler = sinon.stub();
 
-          const versionFilter = (routerBuilder as any).applyVersionFilter(
-            version,
+          const routePathMetadata: RoutePathMetadata = {
+            methodVersion: version,
             versioningOptions,
+          };
+          const versionFilter = (routerBuilder as any).applyVersionFilter(
+            routePathMetadata,
             handler,
           );
 
@@ -810,9 +590,12 @@ describe('RouterExplorer', () => {
           };
           const handler = sinon.stub();
 
-          const versionFilter = (routerBuilder as any).applyVersionFilter(
-            version,
+          const routePathMetadata: RoutePathMetadata = {
+            methodVersion: version,
             versioningOptions,
+          };
+          const versionFilter = (routerBuilder as any).applyVersionFilter(
+            routePathMetadata,
             handler,
           );
 
@@ -835,9 +618,12 @@ describe('RouterExplorer', () => {
           };
           const handler = sinon.stub();
 
-          const versionFilter = (routerBuilder as any).applyVersionFilter(
-            version,
+          const routePathMetadata: RoutePathMetadata = {
+            methodVersion: version,
             versioningOptions,
+          };
+          const versionFilter = (routerBuilder as any).applyVersionFilter(
+            routePathMetadata,
             handler,
           );
 
@@ -858,9 +644,12 @@ describe('RouterExplorer', () => {
           };
           const handler = sinon.stub();
 
-          const versionFilter = (routerBuilder as any).applyVersionFilter(
-            version,
+          const routePathMetadata: RoutePathMetadata = {
+            methodVersion: version,
             versioningOptions,
+          };
+          const versionFilter = (routerBuilder as any).applyVersionFilter(
+            routePathMetadata,
             handler,
           );
 
@@ -878,14 +667,17 @@ describe('RouterExplorer', () => {
     describe('when versioning type is unrecognized', () => {
       it('should throw an error if there is no next function', () => {
         const version = '1';
-        const versioningOptions = {
+        const versioningOptions: any = {
           type: 'UNKNOWN',
         };
         const handler = sinon.stub();
 
-        const versionFilter = (routerBuilder as any).applyVersionFilter(
-          version,
+        const routePathMetadata: RoutePathMetadata = {
+          methodVersion: version,
           versioningOptions,
+        };
+        const versionFilter = (routerBuilder as any).applyVersionFilter(
+          routePathMetadata,
           handler,
         );
 
@@ -900,14 +692,17 @@ describe('RouterExplorer', () => {
 
       it('should return next', () => {
         const version = '1';
-        const versioningOptions = {
+        const versioningOptions: any = {
           type: 'UNKNOWN',
         };
         const handler = sinon.stub();
 
-        const versionFilter = (routerBuilder as any).applyVersionFilter(
-          version,
+        const routePathMetadata: RoutePathMetadata = {
+          methodVersion: version,
           versioningOptions,
+        };
+        const versionFilter = (routerBuilder as any).applyVersionFilter(
+          routePathMetadata,
           handler,
         );
 

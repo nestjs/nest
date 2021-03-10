@@ -10,6 +10,7 @@ import {
   isString,
   isUndefined,
   normalizePath,
+  stripEndSlash,
 } from '../../utils/shared.utils';
 
 function Foo(a) {
@@ -129,6 +130,12 @@ describe('Shared utils', () => {
     });
     it('should return false when array is not empty', () => {
       expect(isEmpty([1, 2])).to.be.false;
+    });
+  });
+  describe('stripEndSlash', () => {
+    it('should strip end slash if present', () => {
+      expect(stripEndSlash('/cats/')).to.equal('/cats');
+      expect(stripEndSlash('/cats')).to.equal('/cats');
     });
   });
 });

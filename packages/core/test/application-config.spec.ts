@@ -2,6 +2,7 @@ import { RequestMethod } from '@nestjs/common';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
 import { expect } from 'chai';
 import { ApplicationConfig } from '../application-config';
+import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
 
 describe('ApplicationConfig', () => {
   let appConfig: ApplicationConfig;
@@ -17,8 +18,10 @@ describe('ApplicationConfig', () => {
       expect(appConfig.getGlobalPrefix()).to.be.eql(path);
     });
     it('should set global path options', () => {
-      const options: GlobalPrefixOptions = {
-        exclude: [{ path: 'health', method: RequestMethod.GET }],
+      const options: GlobalPrefixOptions<ExcludeRouteMetadata> = {
+        exclude: [
+          { pathRegex: new RegExp(/health/), requestMethod: RequestMethod.GET },
+        ],
       };
       appConfig.setGlobalPrefixOptions(options);
 
