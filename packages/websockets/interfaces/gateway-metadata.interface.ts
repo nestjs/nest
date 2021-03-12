@@ -68,7 +68,7 @@ export interface GatewayMetadata {
    * The low-level transports that are enabled
    * @default ["polling", "websocket"]
    */
-  transports?: Transport[];
+  transports?: Array<'polling' | 'websocket'>;
   /**
    * Whether to allow transport upgrades
    * @default true
