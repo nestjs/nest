@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 import {
   assignToken,
   filterMiddleware,
-  isClass,
+  isMiddlewareClass,
   isRouteExcluded,
   mapToClass,
 } from '../../middleware/utils';
@@ -63,15 +63,15 @@ describe('middleware utils', () => {
       });
     });
   });
-  describe('isClass', () => {
+  describe('isMiddlewareClass', () => {
     describe('when middleware is a class', () => {
       it('should returns true', () => {
-        expect(isClass(Test)).to.be.true;
+        expect(isMiddlewareClass(Test)).to.be.true;
       });
     });
     describe('when middleware is a function', () => {
       it('should returns false', () => {
-        expect(isClass(fnMiddleware)).to.be.false;
+        expect(isMiddlewareClass(fnMiddleware)).to.be.false;
       });
     });
   });

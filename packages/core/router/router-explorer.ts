@@ -124,14 +124,15 @@ export class RouterExplorer {
     prototype: object,
     methodName: string,
   ): RoutePathProperties {
-    const targetCallback = prototype[methodName];
-    const routePath = Reflect.getMetadata(PATH_METADATA, targetCallback);
+    const instanceCallback = instance[methodName];
+    const prototypeCallback = prototype[methodName];
+    const routePath = Reflect.getMetadata(PATH_METADATA, prototypeCallback);
     if (isUndefined(routePath)) {
       return null;
     }
     const requestMethod: RequestMethod = Reflect.getMetadata(
       METHOD_METADATA,
-      targetCallback,
+      prototypeCallback,
     );
     const path = isString(routePath)
       ? [addLeadingSlash(routePath)]
@@ -139,7 +140,7 @@ export class RouterExplorer {
     return {
       path,
       requestMethod,
-      targetCallback,
+      targetCallback: instanceCallback,
       methodName,
     };
   }
