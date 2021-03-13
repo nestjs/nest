@@ -14,6 +14,7 @@ import {
   NotImplementedException,
   PayloadTooLargeException,
   PreconditionFailedException,
+  PreconditionRequiredException,
   RequestTimeoutException,
   ServiceUnavailableException,
   UnauthorizedException,
@@ -37,6 +38,7 @@ export type ErrorHttpStatusCode =
   | HttpStatus.NOT_IMPLEMENTED
   | HttpStatus.PAYLOAD_TOO_LARGE
   | HttpStatus.PRECONDITION_FAILED
+  | HttpStatus.PRECONDITION_REQUIRED
   | HttpStatus.REQUEST_TIMEOUT
   | HttpStatus.SERVICE_UNAVAILABLE
   | HttpStatus.UNAUTHORIZED
@@ -58,6 +60,7 @@ export const HttpErrorByCode: Record<ErrorHttpStatusCode, Type<unknown>> = {
   [HttpStatus.NOT_IMPLEMENTED]: NotImplementedException,
   [HttpStatus.PAYLOAD_TOO_LARGE]: PayloadTooLargeException,
   [HttpStatus.PRECONDITION_FAILED]: PreconditionFailedException,
+  [HttpStatus.PRECONDITION_REQUIRED]: PreconditionRequiredException,
   [HttpStatus.REQUEST_TIMEOUT]: RequestTimeoutException,
   [HttpStatus.SERVICE_UNAVAILABLE]: ServiceUnavailableException,
   [HttpStatus.UNAUTHORIZED]: UnauthorizedException,

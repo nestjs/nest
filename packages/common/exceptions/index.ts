@@ -19,4 +19,5 @@ export * from './service-unavailable.exception';
 export * from './gateway-timeout.exception';
 export * from './im-a-teapot.exception';
 export * from './precondition-failed.exception';
+export * from './precondition-required.exception';
 export * from './misdirected.exception';
