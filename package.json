@@ -104,7 +104,7 @@
     "body-parser": "1.19.0",
     "bytes": "3.1.0",
     "cache-manager": "3.4.1",
-    "chai": "4.3.3",
+    "chai": "4.3.4",
     "chai-as-promised": "7.1.1",
     "clang-format": "1.5.0",
     "commitlint-circle": "1.0.0",
