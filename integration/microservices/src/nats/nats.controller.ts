@@ -24,7 +24,7 @@ export class NatsController {
   client: ClientProxy = ClientProxyFactory.create({
     transport: Transport.NATS,
     options: {
-      url: 'nats://localhost:4222',
+      servers: 'nats://localhost:4222',
     },
   });
 

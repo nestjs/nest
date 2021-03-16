@@ -1,7 +1,7 @@
 import { expect } from 'chai';
+import { JSONCodec } from 'nats';
 import * as sinon from 'sinon';
 import { ClientNats } from '../../client/client-nats';
-import { ERROR_EVENT } from '../../constants';
 
 describe('ClientNats', () => {
   const client = new ClientNats({});
@@ -10,34 +10,30 @@ describe('ClientNats', () => {
     const pattern = 'test';
     const msg = { pattern, data: 'data' };
     const id = 3;
-    const subscriptionId = 10;
 
     let subscribeSpy: sinon.SinonSpy,
       publishSpy: sinon.SinonSpy,
-      onSpy: sinon.SinonSpy,
       removeListenerSpy: sinon.SinonSpy,
-      requestSpy: sinon.SinonSpy,
       unsubscribeSpy: sinon.SinonSpy,
       connectSpy: sinon.SinonStub,
-      natsClient,
+      natsClient: any,
+      subscription: any,
       createClient: sinon.SinonStub;
 
     beforeEach(() => {
-      subscribeSpy = sinon.spy(() => subscriptionId);
-      publishSpy = sinon.spy();
-      onSpy = sinon.spy();
-      removeListenerSpy = sinon.spy();
       unsubscribeSpy = sinon.spy();
-      requestSpy = sinon.spy(() => subscriptionId);
+      subscription = {
+        unsubscribe: unsubscribeSpy,
+      };
+      subscribeSpy = sinon.spy(() => subscription);
+      publishSpy = sinon.spy();
+      removeListenerSpy = sinon.spy();
 
       natsClient = {
         subscribe: subscribeSpy,
-        on: (type, handler) => (type === 'subscribe' ? handler() : onSpy()),
         removeListener: removeListenerSpy,
-        unsubscribe: unsubscribeSpy,
         addListener: () => ({}),
         publish: publishSpy,
-        request: requestSpy,
       };
       (client as any).natsClient = natsClient;
 
@@ -52,9 +48,9 @@ describe('ClientNats', () => {
       connectSpy.restore();
       createClient.restore();
     });
-    it('should publish stringified message to pattern name', async () => {
-      await client['publish'](msg, () => {});
-      expect(requestSpy.getCall(0).args[0]).to.be.eql(pattern);
+    it('should publish stringified message to pattern name', () => {
+      client['publish'](msg, () => {});
+      expect(publishSpy.getCall(0).args[0]).to.be.eql(pattern);
     });
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;
@@ -87,7 +83,7 @@ describe('ClientNats', () => {
           .stub(client, 'assignPacketId' as any)
           .callsFake(packet => Object.assign(packet, { id }));
 
-        subscription = await client['publish'](msg, callback);
+        subscription = client['publish'](msg, callback);
         subscription();
       });
       afterEach(() => {
@@ -95,25 +91,29 @@ describe('ClientNats', () => {
       });
 
       it('should unsubscribe', () => {
-        expect(unsubscribeSpy.calledWith(subscriptionId)).to.be.true;
+        expect(unsubscribeSpy.called).to.be.true;
       });
     });
   });
   describe('createSubscriptionHandler', () => {
     const pattern = 'test';
     const msg = { pattern, data: 'data', id: '1' };
-    let callback: sinon.SinonSpy, subscription;
     const responseMessage = {
       response: 'test',
       id: '1',
     };
+    const natsMessage = {
+      data: JSONCodec().encode(responseMessage),
+    };
+
+    let callback: sinon.SinonSpy, subscription;
 
     describe('not completed', () => {
       beforeEach(async () => {
         callback = sinon.spy();
 
         subscription = client.createSubscriptionHandler(msg, callback);
-        subscription(responseMessage);
+        subscription(undefined, natsMessage);
       });
       it('should call callback with expected arguments', () => {
         expect(
@@ -128,9 +128,11 @@ describe('ClientNats', () => {
       beforeEach(async () => {
         callback = sinon.spy();
         subscription = client.createSubscriptionHandler(msg, callback);
-        subscription({
-          ...responseMessage,
-          isDisposed: true,
+        subscription(undefined, {
+          data: JSONCodec().encode({
+            ...responseMessage,
+            isDisposed: true,
+          }),
         });
       });
 
@@ -155,7 +157,12 @@ describe('ClientNats', () => {
           },
           callback,
         );
-        subscription(responseMessage);
+        subscription(undefined, {
+          data: JSONCodec().encode({
+            ...responseMessage,
+            isDisposed: true,
+          }),
+        });
       });
 
       it('should not call callback', () => {
@@ -178,43 +185,30 @@ describe('ClientNats', () => {
   });
   describe('connect', () => {
     let createClientSpy: sinon.SinonSpy;
-    let handleErrorsSpy: sinon.SinonSpy;
-    let connect$Spy: sinon.SinonSpy;
-
-    const natsClient = {
-      addListener: sinon.spy(),
-      on: (ev, fn) => (ev === 'connect' ? fn() : null),
-      removeListener: sinon.spy(),
-      off: sinon.spy(),
-    };
+    let handleStatusUpdatesSpy: sinon.SinonSpy;
 
     beforeEach(async () => {
       createClientSpy = sinon
         .stub(client, 'createClient')
-        .callsFake(() => natsClient as any);
-      handleErrorsSpy = sinon.spy(client, 'handleError');
-      connect$Spy = sinon.spy(client, 'connect$' as any);
+        .callsFake(() => ({} as any));
+      handleStatusUpdatesSpy = sinon.spy(client, 'handleStatusUpdates');
 
       await client.connect();
     });
     afterEach(() => {
       createClientSpy.restore();
-      handleErrorsSpy.restore();
-      connect$Spy.restore();
+      handleStatusUpdatesSpy.restore();
     });
     describe('when is not connected', () => {
       beforeEach(async () => {
         client['natsClient'] = null;
         await client.connect();
       });
-      it('should call "handleError" once', async () => {
-        expect(handleErrorsSpy.called).to.be.true;
+      it('should call "handleStatusUpdatesSpy" once', async () => {
+        expect(handleStatusUpdatesSpy.called).to.be.true;
       });
       it('should call "createClient" once', async () => {
         expect(createClientSpy.called).to.be.true;
-      });
-      it('should call "connect$" once', async () => {
-        expect(connect$Spy.called).to.be.true;
       });
     });
     describe('when is connected', () => {
@@ -224,44 +218,87 @@ describe('ClientNats', () => {
       it('should not call "createClient"', () => {
         expect(createClientSpy.called).to.be.false;
       });
-      it('should not call "handleError"', () => {
-        expect(handleErrorsSpy.called).to.be.false;
-      });
-      it('should not call "connect$"', () => {
-        expect(connect$Spy.called).to.be.false;
+      it('should not call "handleStatusUpdatesSpy"', () => {
+        expect(handleStatusUpdatesSpy.called).to.be.false;
       });
     });
   });
-  describe('handleError', () => {
-    it('should bind error event handler', () => {
-      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
-      const emitter = {
-        addListener: callback,
+  describe('handleStatusUpdates', () => {
+    it('should retrieve "status()" async iterator', () => {
+      const clientMock = {
+        status: sinon.stub().returns({
+          [Symbol.asyncIterator]: [],
+        }),
       };
-      client.handleError(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
+      client.handleStatusUpdates(clientMock as any);
+      expect(clientMock.status.called).to.be.true;
+    });
+
+    it('should log "disconnect" and "error" statuses as "errors"', async () => {
+      const logErrorSpy = sinon.spy((client as any).logger, 'error');
+      const clientMock = {
+        status: sinon.stub().returns({
+          async *[Symbol.asyncIterator]() {
+            yield { type: 'disconnect', data: 'localhost' };
+            yield { type: 'error', data: {} };
+          },
+        }),
+      };
+      await client.handleStatusUpdates(clientMock as any);
+      expect(logErrorSpy.calledTwice).to.be.true;
+      expect(
+        logErrorSpy.calledWith(
+          `NatsError: type: "disconnect", data: "localhost".`,
+        ),
+      );
+      expect(
+        logErrorSpy.calledWith(`NatsError: type: "disconnect", data: "{}".`),
+      );
+    });
+    it('should log other statuses as "logs"', async () => {
+      const logSpy = sinon.spy((client as any).logger, 'log');
+      const clientMock = {
+        status: sinon.stub().returns({
+          async *[Symbol.asyncIterator]() {
+            yield { type: 'non-disconnect', data: 'localhost' };
+            yield { type: 'warn', data: {} };
+          },
+        }),
+      };
+      await client.handleStatusUpdates(clientMock as any);
+      expect(logSpy.calledTwice).to.be.true;
+      expect(
+        logSpy.calledWith(
+          `NatsStatus: type: "non-disconnect", data: "localhost".`,
+        ),
+      );
+      expect(logSpy.calledWith(`NatsStatus: type: "warn", data: "{}".`));
     });
   });
   describe('dispatchEvent', () => {
     const msg = { pattern: 'pattern', data: 'data' };
-    let publishStub: sinon.SinonStub, natsClient;
+    let subscribeStub: sinon.SinonStub, natsClient: any;
 
     beforeEach(() => {
-      publishStub = sinon.stub();
+      subscribeStub = sinon
+        .stub()
+        .callsFake((channel, options) => options.callback());
       natsClient = {
-        publish: publishStub,
+        publish: sinon.spy(),
+        subscribe: subscribeStub,
       };
       (client as any).natsClient = natsClient;
     });
 
     it('should publish packet', async () => {
-      publishStub.callsFake((a, b, c) => c());
       await client['dispatchEvent'](msg);
 
-      expect(publishStub.called).to.be.true;
+      expect(natsClient.publish.called).to.be.true;
     });
     it('should throw error', async () => {
-      publishStub.callsFake((a, b, c) => c(new Error()));
+      subscribeStub.callsFake((channel, options) =>
+        options.callback(new Error()),
+      );
       client['dispatchEvent'](msg).catch(err =>
         expect(err).to.be.instanceOf(Error),
       );

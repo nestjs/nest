@@ -1,6 +1,6 @@
 import { BaseRpcContext } from './base-rpc.context';
 
-type NatsContextArgs = [string];
+type NatsContextArgs = [string, any];
 
 export class NatsContext extends BaseRpcContext<NatsContextArgs> {
   constructor(args: NatsContextArgs) {
@@ -12,5 +12,12 @@ export class NatsContext extends BaseRpcContext<NatsContextArgs> {
    */
   getSubject() {
     return this.args[0];
+  }
+
+  /**
+   * Returns message headers (if exist).
+   */
+  getHeaders() {
+    return this.args[1];
   }
 }

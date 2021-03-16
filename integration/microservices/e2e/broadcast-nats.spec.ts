@@ -19,13 +19,13 @@ describe('NATS transport', () => {
     app.connectMicroservice({
       transport: Transport.NATS,
       options: {
-        url: 'nats://0.0.0.0:4222',
+        servers: 'nats://0.0.0.0:4222',
       },
     });
     app.connectMicroservice({
       transport: Transport.NATS,
       options: {
-        url: 'nats://0.0.0.0:4222',
+        servers: 'servers://0.0.0.0:4222',
       },
     });
     await app.startAllMicroservices();
