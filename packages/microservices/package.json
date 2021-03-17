@@ -26,13 +26,13 @@
     "@nestjs/core": "^8.0.0-alpha.3"
   },
   "peerDependencies": {
+    "@grpc/grpc-js": "*",
     "@nestjs/common": "^7.0.0",
     "@nestjs/core": "^7.0.0",
     "@nestjs/websockets": "^7.0.0",
     "amqp-connection-manager": "*",
     "amqplib": "*",
     "cache-manager": "*",
-    "grpc": "*",
     "kafkajs": "*",
     "mqtt": "*",
     "nats": "*",
@@ -41,13 +41,13 @@
     "rxjs": "^6.0.0"
   },
   "peerDependenciesMeta": {
+    "@grpc/grpc-js": {
+      "optional": true
+    },
     "@nestjs/websockets": {
       "optional": true
     },
     "cache-manager": {
-      "optional": true
-    },
-    "grpc": {
       "optional": true
     },
     "kafkajs": {
