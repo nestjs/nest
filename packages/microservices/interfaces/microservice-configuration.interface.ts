@@ -133,7 +133,7 @@ export interface NatsOptions {
     userJWT?: ()=>string | string,
     verbose?: boolean,
     waitOnFirstConnect?: boolean,
-    yieldTime?: number
+    yieldTime?: number;
     [key: string]: any;
   };
 }
