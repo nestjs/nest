@@ -15,6 +15,7 @@ import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
+import * as tls from 'tls';
 
 export type MicroserviceOptions =
   | GrpcOptions
