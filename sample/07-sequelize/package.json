@@ -27,7 +27,7 @@
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "6.6.6",
-    "sequelize": "6.5.1",
+    "sequelize": "6.6.1",
     "sequelize-typescript": "2.1.0",
     "typescript": "4.2.3"
   },
