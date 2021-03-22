@@ -31,10 +31,8 @@ export class ClientRedis extends ClientProxy {
   constructor(protected readonly options: RedisOptions['options']) {
     super();
     this.url =
-      this.getOptionsProp(options, 'url') ??
-      this.getOptionsProp(options, 'host')
-        ? undefined
-        : REDIS_DEFAULT_URL;
+      this.getOptionsProp(options, 'url') ||
+      (!this.getOptionsProp(options, 'host') && REDIS_DEFAULT_URL);
 
     redisPackage = loadPackage('redis', ClientRedis.name, () =>
       require('redis'),
