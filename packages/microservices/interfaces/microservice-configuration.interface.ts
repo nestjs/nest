@@ -104,36 +104,36 @@ export interface MqttOptions {
 export interface NatsOptions {
   transport?: Transport.NATS;
   options?: {
-    encoding?: BufferEncoding,
-    json?: boolean,
-    maxPingOut?: number,
-    maxReconnectAttempts?: number,
-    name?: string,
-    nkey?: string,
+    encoding?: BufferEncoding;
+    json?: boolean;
+    maxPingOut?: number;
+    maxReconnectAttempts?: number;
+    name?: string;
+    nkey?: string;
     noEcho?: boolean
-    noRandomize?: boolean,
-    nonceSigner?: Function,
-    pass?: string,
-    pedantic?: boolean,
-    pingInterval?: number,
-    preserveBuffers?: boolean,
-    reconnect?: boolean,
-    reconnectJitter?: number,
-    reconnectJitterTLS?: number,
-    reconnectDelayHandler?: ()=>number,
-    reconnectTimeWait?: number,
-    servers?: Array<string>,
-    timeout?: number,
-    tls?: boolean | tls.TlsOptions,
-    token?: string,
-    tokenHandler?: ()=>string,
-    url?: string,
-    useOldRequestStyle?: boolean,
-    user?: string,
-    userCreds?: string,
-    userJWT?: ()=>string | string,
-    verbose?: boolean,
-    waitOnFirstConnect?: boolean,
+    noRandomize?: boolean;
+    nonceSigner?: Function;
+    pass?: string;
+    pedantic?: boolean;
+    pingInterval?: number;
+    preserveBuffers?: boolean;
+    reconnect?: boolean;
+    reconnectJitter?: number;
+    reconnectJitterTLS?: number;
+    reconnectDelayHandler?: ()=>number;
+    reconnectTimeWait?: number;
+    servers?: Array<string>;
+    timeout?: number;
+    tls?: boolean | tls.TlsOptions;
+    token?: string;
+    tokenHandler?: ()=>string;
+    url?: string;
+    useOldRequestStyle?: boolean;
+    user?: string;
+    userCreds?: string;
+    userJWT?: ()=>string | string;
+    verbose?: boolean;
+    waitOnFirstConnect?: boolean;
     yieldTime?: number;
     [key: string]: any;
   };
