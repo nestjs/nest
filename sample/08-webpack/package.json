@@ -22,15 +22,15 @@
     "@nestjs/cli": "7.5.6",
     "@nestjs/schematics": "7.3.0",
     "@types/node": "14.14.35",
-    "@typescript-eslint/eslint-plugin": "4.18.0",
-    "@typescript-eslint/parser": "4.18.0",
+    "@typescript-eslint/eslint-plugin": "4.19.0",
+    "@typescript-eslint/parser": "4.19.0",
     "eslint": "7.22.0",
     "eslint-config-prettier": "8.1.0",
     "eslint-plugin-import": "2.22.1",
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "8.0.18",
     "ts-node": "9.1.1",
-    "webpack": "5.26.3",
+    "webpack": "5.27.2",
     "webpack-cli": "4.5.0",
     "webpack-node-externals": "2.5.2"
   }
