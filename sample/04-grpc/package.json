@@ -23,6 +23,7 @@
     "@nestjs/common": "7.6.15",
     "@nestjs/core": "7.6.15",
     "@nestjs/microservices": "7.6.15",
+    "@nestjs/platform-express": "^7.6.15",
     "class-transformer": "0.4.0",
     "class-validator": "0.13.1",
     "grpc": "1.24.6",
