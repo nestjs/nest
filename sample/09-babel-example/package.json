@@ -23,8 +23,8 @@
   },
   "devDependencies": {
     "@babel/cli": "7.13.10",
-    "@babel/core": "7.13.10",
-    "@babel/node": "7.13.12",
+    "@babel/core": "7.13.13",
+    "@babel/node": "7.13.13",
     "@babel/plugin-proposal-decorators": "7.13.5",
     "@babel/plugin-transform-runtime": "7.13.10",
     "@babel/preset-env": "7.13.12",
