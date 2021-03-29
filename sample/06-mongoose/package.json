@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@types/mongoose": "5.10.4",
-    "@nestjs/cli": "7.5.7",
+    "@nestjs/cli": "7.6.0",
     "@nestjs/schematics": "7.3.1",
     "@nestjs/testing": "7.6.15",
     "@types/express": "4.17.11",
