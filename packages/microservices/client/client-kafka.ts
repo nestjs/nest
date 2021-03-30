@@ -142,13 +142,13 @@ export class ClientKafka extends ClientProxy {
   }
 
   public createClient<T = any>(): T {
-    return new kafkaPackage.Kafka(
-      Object.assign(this.options.client || {}, {
-        clientId: this.clientId,
-        brokers: this.brokers,
-        logCreator: KafkaLogger.bind(null, this.logger),
-      }) as KafkaConfig,
+    const kafkaConfig: KafkaConfig = Object.assign(
+      { logCreator: KafkaLogger.bind(null, this.logger) },
+      this.options.client,
+      { brokers: this.brokers, clientId: this.clientId },
     );
+
+    return new kafkaPackage.Kafka(kafkaConfig);
   }
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
