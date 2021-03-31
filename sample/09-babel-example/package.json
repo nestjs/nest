@@ -22,13 +22,13 @@
     "rxjs": "6.6.6"
   },
   "devDependencies": {
-    "@babel/cli": "7.13.10",
-    "@babel/core": "7.13.13",
+    "@babel/cli": "7.13.14",
+    "@babel/core": "7.13.14",
     "@babel/node": "7.13.13",
     "@babel/plugin-proposal-decorators": "7.13.5",
     "@babel/plugin-transform-runtime": "7.13.10",
     "@babel/preset-env": "7.13.12",
-    "@babel/register": "7.13.8",
+    "@babel/register": "7.13.14",
     "@babel/runtime": "7.13.10",
     "@nestjs/testing": "7.6.15",
     "jest": "26.6.3",

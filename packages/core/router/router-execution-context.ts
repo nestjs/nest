@@ -343,6 +343,8 @@ export class RouterExecutionContext {
       type === RouteParamtypes.BODY ||
       type === RouteParamtypes.QUERY ||
       type === RouteParamtypes.PARAM ||
+      type === RouteParamtypes.FILE ||
+      type === RouteParamtypes.FILES ||
       isString(type)
     );
   }
