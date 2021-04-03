@@ -17,6 +17,7 @@ import {
   RequestTimeoutException,
   ServiceUnavailableException,
   UnauthorizedException,
+  PaymentRequiredException,
   UnprocessableEntityException,
   UnsupportedMediaTypeException,
 } from '../exceptions';
@@ -40,6 +41,7 @@ export type ErrorHttpStatusCode =
   | HttpStatus.REQUEST_TIMEOUT
   | HttpStatus.SERVICE_UNAVAILABLE
   | HttpStatus.UNAUTHORIZED
+  | HttpStatus.PAYMENT_REQUIRED
   | HttpStatus.UNPROCESSABLE_ENTITY
   | HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
@@ -61,6 +63,7 @@ export const HttpErrorByCode: Record<ErrorHttpStatusCode, Type<unknown>> = {
   [HttpStatus.REQUEST_TIMEOUT]: RequestTimeoutException,
   [HttpStatus.SERVICE_UNAVAILABLE]: ServiceUnavailableException,
   [HttpStatus.UNAUTHORIZED]: UnauthorizedException,
+  [HttpStatus.PAYMENT_REQUIRED]: PaymentRequiredException,
   [HttpStatus.UNPROCESSABLE_ENTITY]: UnprocessableEntityException,
   [HttpStatus.UNSUPPORTED_MEDIA_TYPE]: UnsupportedMediaTypeException,
 };

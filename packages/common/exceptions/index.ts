@@ -1,6 +1,7 @@
 export * from './bad-request.exception';
 export * from './http.exception';
 export * from './unauthorized.exception';
+export * from './payment-required.exception';
 export * from './method-not-allowed.exception';
 export * from './not-found.exception';
 export * from './forbidden.exception';
