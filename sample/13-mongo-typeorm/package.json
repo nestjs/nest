@@ -26,7 +26,7 @@
     "mongodb": "3.6.5",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "6.6.6",
+    "rxjs": "6.6.7",
     "typeorm": "0.2.32"
   },
   "devDependencies": {
