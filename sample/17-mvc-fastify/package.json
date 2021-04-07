@@ -27,12 +27,12 @@
     "point-of-view": "4.14.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "6.6.6"
+    "rxjs": "6.6.7"
   },
   "devDependencies": {
     "@types/socket.io": "2.1.13",
     "@types/socket.io-redis": "1.0.27",
-    "@types/ws": "7.4.0",
+    "@types/ws": "7.4.1",
     "@nestjs/cli": "7.6.0",
     "@nestjs/schematics": "7.3.1",
     "@nestjs/testing": "7.6.15",

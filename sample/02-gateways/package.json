@@ -28,13 +28,13 @@
     "class-validator": "0.13.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "6.6.6",
+    "rxjs": "6.6.7",
     "socket.io-redis": "5.4.0"
   },
   "devDependencies": {
     "@types/socket.io": "2.1.13",
     "@types/socket.io-redis": "1.0.27",
-    "@types/ws": "7.4.0",
+    "@types/ws": "7.4.1",
     "@nestjs/cli": "7.6.0",
     "@nestjs/schematics": "7.3.1",
     "@nestjs/testing": "7.6.15",

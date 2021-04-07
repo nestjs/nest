@@ -23,15 +23,15 @@
     "@nestjs/core": "7.6.15",
     "@nestjs/graphql": "7.10.3",
     "@nestjs/platform-express": "7.6.15",
-    "apollo-server": "2.22.1",
-    "apollo-server-express": "2.22.1",
+    "apollo-server": "2.22.2",
+    "apollo-server-express": "2.22.2",
     "class-transformer": "0.4.0",
     "class-validator": "0.13.1",
     "graphql": "15.5.0",
     "graphql-subscriptions": "1.2.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "6.6.6"
+    "rxjs": "6.6.7"
   },
   "devDependencies": {
     "@nestjs/cli": "7.6.0",
