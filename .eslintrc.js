@@ -27,8 +27,8 @@ module.exports = {
         groups: [
           // Side effect imports.
           ['^\\u0000'],
-          // Packages. `react` related packages come first.
-          ['^react', '^@?\\w'],
+          // Packages. packages come first.
+          ['^@?\\w'],
           // Parent imports. Put `..` last.
           ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
           // Other relative imports. Put same-folder imports and `.` last.
