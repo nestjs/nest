@@ -1,6 +1,10 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+
+import { PatternHandler } from './enums/pattern-handler.enum';
+import { ClientOptions } from './interfaces/client-metadata.interface';
+import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 import {
   CLIENT_CONFIGURATION_METADATA,
   CLIENT_METADATA,
@@ -9,9 +13,6 @@ import {
   TRANSPORT_METADATA,
 } from './constants';
 import { Transport } from './enums';
-import { PatternHandler } from './enums/pattern-handler.enum';
-import { ClientOptions } from './interfaces/client-metadata.interface';
-import { PatternMetadata } from './interfaces/pattern-metadata.interface';
 
 export interface ClientProperties {
   property: string;

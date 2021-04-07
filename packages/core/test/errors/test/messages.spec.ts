@@ -1,11 +1,12 @@
 import { expect } from 'chai';
+
 import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception';
+import {
+  INVALID_MODULE_MESSAGE,
+  UNDEFINED_MODULE_MESSAGE,
+} from '../../../errors/messages';
 import { Module } from '../../../injector/module';
 import { stringCleaner } from '../../utils/string.cleaner';
-import {
-  UNDEFINED_MODULE_MESSAGE,
-  INVALID_MODULE_MESSAGE,
-} from '../../../errors/messages';
 
 describe('Error Messages', () => {
   const CatsModule = { name: 'CatsModule' };

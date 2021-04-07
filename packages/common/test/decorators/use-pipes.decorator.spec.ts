@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { PIPES_METADATA } from '../../constants';
 import { UsePipes } from '../../decorators/core/use-pipes.decorator';
 import { InvalidDecoratorItemException } from '../../utils/validate-each.util';

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { RpcParamtype } from '../../enums/rpc-paramtype.enum';
 import { RpcParamsFactory } from '../../factories/rpc-params-factory';
 

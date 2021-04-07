@@ -19,16 +19,17 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { addLeadingSlash, isObject } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { platform } from 'os';
-import { AbstractHttpAdapter } from './adapters';
-import { ApplicationConfig } from './application-config';
-import { MESSAGES } from './constants';
+
 import { optionalRequire } from './helpers/optional-require';
 import { NestContainer } from './injector/container';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
-import { NestApplicationContext } from './nest-application-context';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutesResolver } from './router/routes-resolver';
+import { AbstractHttpAdapter } from './adapters';
+import { ApplicationConfig } from './application-config';
+import { MESSAGES } from './constants';
+import { NestApplicationContext } from './nest-application-context';
 
 const { SocketModule } = optionalRequire(
   '@nestjs/websockets/socket-module',

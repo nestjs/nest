@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { GUARDS_METADATA } from '../../common/constants';
 import { Controller } from '../../common/decorators/core/controller.decorator';
 import { UseGuards } from '../../common/decorators/core/use-guards.decorator';
@@ -8,12 +9,12 @@ import { Module } from '../../common/decorators/modules/module.decorator';
 import { Scope } from '../../common/interfaces';
 import { ApplicationConfig } from '../application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '../constants';
+import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
+import { UndefinedModuleException } from '../errors/exceptions/undefined-module.exception';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { MetadataScanner } from '../metadata-scanner';
 import { DependenciesScanner } from '../scanner';
-import { UndefinedModuleException } from '../errors/exceptions/undefined-module.exception';
-import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
 
 describe('DependenciesScanner', () => {
   class Guard {}

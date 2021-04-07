@@ -1,6 +1,7 @@
 import { BeforeApplicationShutdown } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { callBeforeAppShutdownHook } from '../../hooks/before-app-shutdown.hook';
 import { NestContainer } from '../../injector/container';
 import { Module } from '../../injector/module';

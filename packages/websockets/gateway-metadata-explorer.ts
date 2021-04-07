@@ -1,12 +1,13 @@
 import { isFunction, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { Observable } from 'rxjs';
+
+import { NestGateway } from './interfaces/nest-gateway.interface';
 import {
   GATEWAY_SERVER_METADATA,
   MESSAGE_MAPPING_METADATA,
   MESSAGE_METADATA,
 } from './constants';
-import { NestGateway } from './interfaces/nest-gateway.interface';
 
 export interface MessageMappingProperties {
   message: any;

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { ApplicationConfig } from '../application-config';
 
 describe('ApplicationConfig', () => {

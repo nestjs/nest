@@ -1,7 +1,9 @@
+import { expect } from 'chai';
+
 import { CONNECT_EVENT, MESSAGE_EVENT } from '../../constants';
 import { JsonSocket } from '../../helpers/json-socket';
+
 import * as helpers from './helpers';
-import { expect } from 'chai';
 
 describe('JsonSocket chaining', () => {
   it('should return the instance when subscribing to event', done => {

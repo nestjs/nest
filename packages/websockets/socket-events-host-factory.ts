@@ -1,4 +1,5 @@
 import { ReplaySubject, Subject } from 'rxjs';
+
 import { SocketEventsHost } from './interfaces/socket-events-host.interface';
 
 export class SocketEventsHostFactory {

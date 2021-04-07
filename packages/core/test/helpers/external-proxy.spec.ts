@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { HttpException } from '../../../common/exceptions/http.exception';
 import { ExternalExceptionsHandler } from '../../exceptions/external-exceptions-handler';
 import { ExternalErrorProxy } from '../../helpers/external-proxy';

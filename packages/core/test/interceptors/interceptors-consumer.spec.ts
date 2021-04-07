@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
+
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 
 describe('InterceptorsConsumer', () => {

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { KafkaHeaders } from '../../enums/kafka-headers.enum';
 import { KafkaParser } from '../../helpers/kafka-parser';
 

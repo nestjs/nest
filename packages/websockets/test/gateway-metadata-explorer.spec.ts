@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { WebSocketServer } from '../decorators/gateway-server.decorator';
 import { WebSocketGateway } from '../decorators/socket-gateway.decorator';

@@ -1,7 +1,7 @@
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as Sinon from 'sinon';
-import { Injectable, OnModuleInit } from '@nestjs/common';
 
 @Injectable()
 class TestInjectable implements OnModuleInit {

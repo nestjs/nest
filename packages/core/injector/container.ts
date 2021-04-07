@@ -2,6 +2,7 @@ import { DynamicModule, Provider } from '@nestjs/common';
 import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+
 import { ApplicationConfig } from '../application-config';
 import { CircularDependencyException } from '../errors/exceptions/circular-dependency.exception';
 import { UndefinedForwardRefException } from '../errors/exceptions/undefined-forwardref.exception';
@@ -9,6 +10,7 @@ import { UnknownModuleException } from '../errors/exceptions/unknown-module.exce
 import { ExternalContextCreator } from '../helpers/external-context-creator';
 import { HttpAdapterHost } from '../helpers/http-adapter-host';
 import { REQUEST } from '../router/request/request-constants';
+
 import { ModuleCompiler } from './compiler';
 import { ContextId } from './instance-wrapper';
 import { InternalCoreModule } from './internal-core-module';

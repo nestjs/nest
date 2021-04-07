@@ -3,8 +3,8 @@ import {
   PATTERN_METADATA,
   TRANSPORT_METADATA,
 } from '../constants';
-import { PatternHandler } from '../enums/pattern-handler.enum';
 import { Transport } from '../enums';
+import { PatternHandler } from '../enums/pattern-handler.enum';
 
 /**
  * Subscribes to incoming events which fulfils chosen pattern.

@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+
 import { MetadataScanner } from '../metadata-scanner';
+
 import { DiscoveryService } from './discovery-service';
 
 /**

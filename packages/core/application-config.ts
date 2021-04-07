@@ -5,6 +5,7 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
+
 import { InstanceWrapper } from './injector/instance-wrapper';
 
 export class ApplicationConfig {

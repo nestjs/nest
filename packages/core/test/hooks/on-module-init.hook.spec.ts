@@ -1,6 +1,7 @@
 import { OnModuleInit } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { callModuleInitHook } from '../../hooks/on-module-init.hook';
 import { NestContainer } from '../../injector/container';
 import { Module } from '../../injector/module';

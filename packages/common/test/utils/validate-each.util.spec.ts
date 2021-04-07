@@ -1,8 +1,9 @@
 import { expect } from 'chai';
+
 import { isFunction } from '../../utils/shared.utils';
 import {
-  validateEach,
   InvalidDecoratorItemException,
+  validateEach,
 } from '../../utils/validate-each.util';
 
 describe('validateEach', () => {

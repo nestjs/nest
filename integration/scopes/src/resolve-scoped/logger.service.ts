@@ -1,4 +1,5 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
+
 import { LOGGER_PROVIDER } from './logger.provider';
 
 @Injectable({ scope: Scope.TRANSIENT })

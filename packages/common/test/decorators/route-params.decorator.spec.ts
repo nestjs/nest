@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { Body, HostParam, Param, Query } from '../../decorators';
 import { RequestMethod } from '../../enums/request-method.enum';
 import { All, Delete, Get, Patch, Post, Put } from '../../index';

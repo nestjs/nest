@@ -4,10 +4,11 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
+
 import {
   CONNECT_EVENT,
-  DISCONNECTED_RMQ_MESSAGE,
   DISCONNECT_EVENT,
+  DISCONNECTED_RMQ_MESSAGE,
   NO_MESSAGE_HANDLER,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
   RQM_DEFAULT_NOACK,
@@ -24,6 +25,7 @@ import {
   IncomingRequest,
   OutgoingResponse,
 } from '../interfaces/packet.interface';
+
 import { Server } from './server';
 
 let rqmPackage: any = {};

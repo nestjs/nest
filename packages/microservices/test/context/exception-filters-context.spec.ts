@@ -1,6 +1,7 @@
 import { NestContainer } from '@nestjs/core/injector/container';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
 import { ApplicationConfig } from '../../../core/application-config';

@@ -4,18 +4,19 @@ import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { from as fromPromise, Observable, of, Subject } from 'rxjs';
 import { distinctUntilChanged, mergeAll } from 'rxjs/operators';
-import { GATEWAY_OPTIONS, PORT_METADATA } from './constants';
+
 import { WsContextCreator } from './context/ws-context-creator';
 import { InvalidSocketPortException } from './errors/invalid-socket-port.exception';
+import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
+import { NestGateway } from './interfaces/nest-gateway.interface';
+import { SocketEventsHost } from './interfaces/socket-events-host.interface';
+import { compareElementAt } from './utils/compare-element.util';
+import { GATEWAY_OPTIONS, PORT_METADATA } from './constants';
 import {
   GatewayMetadataExplorer,
   MessageMappingProperties,
 } from './gateway-metadata-explorer';
-import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
-import { NestGateway } from './interfaces/nest-gateway.interface';
-import { SocketEventsHost } from './interfaces/socket-events-host.interface';
 import { SocketServerProvider } from './socket-server-provider';
-import { compareElementAt } from './utils/compare-element.util';
 
 export class WebSocketsController {
   private readonly metadataExplorer = new GatewayMetadataExplorer(

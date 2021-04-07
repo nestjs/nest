@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
+
 import { ApplicationConfig } from '../../application-config';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { PATTERN_METADATA } from '../../constants';
 import {
   GrpcMethod,

@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
+
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -35,6 +36,7 @@ import {
   KafkaRequest,
   KafkaRequestSerializer,
 } from '../serializers/kafka-request.serializer';
+
 import { ClientProxy } from './client-proxy';
 
 let kafkaPackage: any = {};

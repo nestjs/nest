@@ -1,13 +1,14 @@
-import { Module, Injectable } from '@nestjs/common';
-import { AppController } from './app.controller';
+import { Injectable,Module } from '@nestjs/common';
 import {
-  ClientsModule,
-  Transport,
-  ClientsModuleOptionsFactory,
   ClientOptions,
+  ClientsModule,
+  ClientsModuleOptionsFactory,
   ClientTCP,
   RpcException,
+  Transport,
 } from '@nestjs/microservices';
+
+import { AppController } from './app.controller';
 
 class ErrorHandlingProxy extends ClientTCP {
   serializeError(err) {

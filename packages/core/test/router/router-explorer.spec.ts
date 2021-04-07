@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import {
   All,

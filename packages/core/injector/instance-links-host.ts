@@ -1,6 +1,8 @@
 import { Abstract, Type } from '@nestjs/common';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
+
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
+
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { Module } from './module';

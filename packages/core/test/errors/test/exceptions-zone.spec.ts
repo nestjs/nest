@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { ExceptionsZone } from '../../../errors/exceptions-zone';
 
 describe('ExceptionsZone', () => {

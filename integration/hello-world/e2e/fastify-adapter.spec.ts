@@ -4,6 +4,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
+
 import { ApplicationModule } from '../src/app.module';
 
 describe('Hello world (fastify adapter)', () => {

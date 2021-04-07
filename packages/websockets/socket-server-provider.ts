@@ -1,6 +1,7 @@
 import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { isString } from 'util';
+
 import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
 import { SocketEventsHost } from './interfaces/socket-events-host.interface';
 import { SocketEventsHostFactory } from './socket-events-host-factory';

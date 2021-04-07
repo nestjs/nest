@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { Injectable } from '../../../common';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';

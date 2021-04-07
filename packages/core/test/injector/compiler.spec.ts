@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { ModuleCompiler } from '../../injector/compiler';
 
 describe('ModuleCompiler', () => {

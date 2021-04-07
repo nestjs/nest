@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
+
 import { loggerProvider } from '../src/resolve-scoped/logger.provider';
 import { LoggerService } from '../src/resolve-scoped/logger.service';
 import { RequestLoggerService } from '../src/resolve-scoped/request-logger.service';

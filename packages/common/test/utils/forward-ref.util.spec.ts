@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { forwardRef } from '../../utils/forward-ref.util';
 
 describe('forwardRef', () => {

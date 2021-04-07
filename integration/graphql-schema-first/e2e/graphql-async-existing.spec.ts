@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import * as request from 'supertest';
+
 import { AsyncExistingApplicationModule } from '../src/async-options-existing.module';
 
 describe('GraphQL (async existing)', () => {

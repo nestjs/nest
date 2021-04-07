@@ -1,4 +1,5 @@
 import { RequestMethod } from '@nestjs/common';
+
 import { AbstractHttpAdapter } from '../../adapters';
 
 export class NoopHttpAdapter extends AbstractHttpAdapter {

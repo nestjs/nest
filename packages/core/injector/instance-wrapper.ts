@@ -7,6 +7,7 @@ import {
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
+
 import { STATIC_CONTEXT } from './constants';
 import { Module } from './module';
 

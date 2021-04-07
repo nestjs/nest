@@ -4,9 +4,9 @@ import {
   PATTERN_METADATA,
   TRANSPORT_METADATA,
 } from '../constants';
+import { Transport } from '../enums';
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
-import { Transport } from '../enums';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',

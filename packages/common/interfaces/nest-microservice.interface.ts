@@ -2,8 +2,8 @@ import { ExceptionFilter } from './exceptions/exception-filter.interface';
 import { CanActivate } from './features/can-activate.interface';
 import { NestInterceptor } from './features/nest-interceptor.interface';
 import { PipeTransform } from './features/pipe-transform.interface';
-import { INestApplicationContext } from './nest-application-context.interface';
 import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
+import { INestApplicationContext } from './nest-application-context.interface';
 
 /**
  * Interface describing Microservice Context.

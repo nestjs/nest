@@ -2,6 +2,7 @@ import { Scope } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
+
 import { ScopedModule, STATIC_FACTORY } from '../src/scoped/scoped.module';
 import { ScopedService } from '../src/scoped/scoped.service';
 import { TransientService } from '../src/scoped/transient.service';

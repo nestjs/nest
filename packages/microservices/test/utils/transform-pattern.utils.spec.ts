@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { MsPattern } from '../../interfaces';
 import { transformPatternToRoute } from '../../utils/transform-pattern.utils';
 

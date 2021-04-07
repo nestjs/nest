@@ -2,6 +2,7 @@ import { CanActivate } from '@nestjs/common';
 import { ContextType, Controller } from '@nestjs/common/interfaces';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
+
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 
 export class GuardsConsumer {

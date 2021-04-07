@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { IdentityDeserializer } from '../../deserializers/identity.deserializer';
 
 describe('IdentityDeserializer', () => {

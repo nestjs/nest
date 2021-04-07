@@ -1,7 +1,9 @@
 import { expect } from 'chai';
-import { NestApplication } from '../nest-application';
+
 import { ApplicationConfig } from '../application-config';
 import { NestContainer } from '../injector';
+import { NestApplication } from '../nest-application';
+
 import { NoopHttpAdapter } from './utils/noop-adapter.spec';
 
 describe('NestApplication', () => {

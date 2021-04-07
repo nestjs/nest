@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { Injectable } from '../../../common';
 import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
 import { NestContainer } from '../../injector';

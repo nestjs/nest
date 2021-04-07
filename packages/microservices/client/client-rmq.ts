@@ -4,9 +4,10 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { EventEmitter } from 'events';
 import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
+
 import {
-  DISCONNECTED_RMQ_MESSAGE,
   DISCONNECT_EVENT,
+  DISCONNECTED_RMQ_MESSAGE,
   ERROR_EVENT,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
   RQM_DEFAULT_NOACK,
@@ -18,6 +19,7 @@ import {
 } from '../constants';
 import { RmqUrl } from '../external/rmq-url.interface';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
+
 import { ClientProxy } from './client-proxy';
 
 let rqmPackage: any = {};

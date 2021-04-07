@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { CacheKey, CacheInterceptor, CacheTTL } from '../../cache';
+
+import { CacheInterceptor, CacheKey, CacheTTL } from '../../cache';
 import {
   CACHE_KEY_METADATA,
   CACHE_TTL_METADATA,

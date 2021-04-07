@@ -4,8 +4,9 @@ import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { join } from 'path';
 import * as request from 'supertest';
-import { CatsRequestScopedService } from '../src/cats/cats-request-scoped.service';
+
 import { CatsModule } from '../src/cats/cats.module';
+import { CatsRequestScopedService } from '../src/cats/cats-request-scoped.service';
 
 describe('GraphQL request scoped', () => {
   let app: INestApplication;

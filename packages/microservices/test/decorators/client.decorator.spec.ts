@@ -1,8 +1,10 @@
 import 'mocha';
+
 import { expect } from 'chai';
+
 import {
-  CLIENT_METADATA,
   CLIENT_CONFIGURATION_METADATA,
+  CLIENT_METADATA,
 } from '../../constants';
 import { Client } from '../../decorators/client.decorator';
 

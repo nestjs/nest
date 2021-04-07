@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { SetMetadata } from '../../decorators/core/set-metadata.decorator';
 
 describe('@SetMetadata', () => {

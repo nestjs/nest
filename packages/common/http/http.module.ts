@@ -1,7 +1,9 @@
 import Axios from 'axios';
+
 import { Module } from '../decorators/modules/module.decorator';
 import { DynamicModule, Provider } from '../interfaces';
 import { randomStringGenerator } from '../utils/random-string-generator.util';
+
 import {
   AXIOS_INSTANCE_TOKEN,
   HTTP_MODULE_ID,

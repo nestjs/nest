@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+
 import { ServeStaticOptions } from './serve-static-options.interface';
 
 /**

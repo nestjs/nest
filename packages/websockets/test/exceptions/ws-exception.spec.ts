@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { WsException } from '../../errors/ws-exception';
 
 describe('WsException', () => {

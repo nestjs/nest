@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { ReplaySubject, Subject } from 'rxjs';
+
 import { SocketEventsHostFactory } from '../socket-events-host-factory';
 
 describe('SocketEventsHostFactory', () => {

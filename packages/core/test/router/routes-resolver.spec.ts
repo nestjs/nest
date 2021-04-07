@@ -2,6 +2,7 @@ import { BadRequestException, Module, Post } from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { Get } from '../../../common/decorators/http/request-mapping.decorator';
 import { ApplicationConfig } from '../../application-config';

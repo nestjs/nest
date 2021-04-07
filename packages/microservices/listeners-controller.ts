@@ -13,8 +13,8 @@ import {
 import { Module } from '@nestjs/core/injector/module';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants';
+
 import { IClientProxyFactory } from './client/client-proxy-factory';
-import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { RequestContextHost } from './context/request-context-host';
 import { RpcContextCreator } from './context/rpc-context-creator';
@@ -23,6 +23,8 @@ import {
   DEFAULT_GRPC_CALLBACK_METADATA,
 } from './context/rpc-metadata-constants';
 import { BaseRpcContext } from './ctx-host/base-rpc.context';
+import { Server } from './server/server';
+import { ClientsContainer } from './container';
 import {
   CustomTransportStrategy,
   PatternMetadata,
@@ -30,7 +32,6 @@ import {
 } from './interfaces';
 import { ListenerMetadataExplorer } from './listener-metadata-explorer';
 import { ServerGrpc } from './server';
-import { Server } from './server/server';
 
 export class ListenersController {
   private readonly metadataExplorer = new ListenerMetadataExplorer(

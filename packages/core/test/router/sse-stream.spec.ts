@@ -3,6 +3,7 @@ import * as EventSource from 'eventsource';
 import { createServer, OutgoingHttpHeaders } from 'http';
 import { AddressInfo } from 'net';
 import { Writable } from 'stream';
+
 import { HeaderStream, SseStream } from '../../router/sse-stream';
 
 const noop = () => {};

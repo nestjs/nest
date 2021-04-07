@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { KafkaResponseDeserializer } from '../../deserializers/kafka-response.deserializer';
 import { KafkaHeaders } from '../../enums/kafka-headers.enum';
 

@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { Client } from '../decorators/client.decorator';
 import { MessagePattern } from '../decorators/message-pattern.decorator';

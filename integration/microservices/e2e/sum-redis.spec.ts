@@ -3,6 +3,7 @@ import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
+
 import { RedisController } from '../src/redis/redis.controller';
 
 describe('REDIS transport', () => {

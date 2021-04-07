@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { MetadataScanner } from '../metadata-scanner';
 
 describe('MetadataScanner', () => {

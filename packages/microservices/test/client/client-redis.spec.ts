@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { Subject } from 'rxjs';
 import * as sinon from 'sinon';
+
 import { ClientRedis } from '../../client/client-redis';
 import { ERROR_EVENT } from '../../constants';
 

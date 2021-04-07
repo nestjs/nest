@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable, Subscription } from 'rxjs';
+
 import {
   GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
   GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
@@ -12,6 +13,7 @@ import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exce
 import { InvalidGrpcServiceException } from '../errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { ClientGrpc, GrpcOptions } from '../interfaces';
+
 import { ClientProxy } from './client-proxy';
 import { GRPC_CANCELLED } from './constants';
 

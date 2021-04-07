@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { empty } from 'rxjs';
 import * as sinon from 'sinon';
+
 import { ClientMqtt } from '../../client/client-mqtt';
 import { ERROR_EVENT } from '../../constants';
 

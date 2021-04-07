@@ -1,5 +1,6 @@
 import { Abstract } from '../abstract.interface';
 import { Type } from '../type.interface';
+
 import { DynamicModule } from './dynamic-module.interface';
 import { ForwardReference } from './forward-reference.interface';
 import { Provider } from './provider.interface';

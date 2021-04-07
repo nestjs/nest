@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { Module } from '../../decorators/modules/module.decorator';
 
 describe('@Module', () => {

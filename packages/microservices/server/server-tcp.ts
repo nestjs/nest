@@ -2,6 +2,7 @@ import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
 import { Observable } from 'rxjs';
+
 import {
   CLOSE_EVENT,
   ERROR_EVENT,
@@ -21,6 +22,7 @@ import {
   WritePacket,
 } from '../interfaces';
 import { TcpOptions } from '../interfaces/microservice-configuration.interface';
+
 import { Server } from './server';
 
 export class ServerTCP extends Server implements CustomTransportStrategy {

@@ -1,9 +1,11 @@
 import { RequestMethod } from '@nestjs/common';
 import { expect } from 'chai';
+
 import { Controller, Get } from '../../../common';
 import { NestContainer } from '../../injector/container';
 import { MiddlewareBuilder } from '../../middleware/builder';
 import { RoutesMapper } from '../../middleware/routes-mapper';
+
 import { NoopHttpAdapter } from './../utils/noop-adapter.spec';
 
 describe('MiddlewareBuilder', () => {

@@ -1,7 +1,8 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
-import { GuardsConsumer } from '../../guards/guards-consumer';
 import { Observable, of } from 'rxjs';
+import * as sinon from 'sinon';
+
+import { GuardsConsumer } from '../../guards/guards-consumer';
 
 describe('GuardsConsumer', () => {
   let consumer: GuardsConsumer;

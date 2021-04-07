@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
+
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -28,6 +29,7 @@ import {
   OutgoingResponse,
 } from '../interfaces';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
+
 import { Server } from './server';
 
 let kafkaPackage: any = {};

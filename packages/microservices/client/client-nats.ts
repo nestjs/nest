@@ -1,9 +1,11 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { share } from 'rxjs/operators';
+
 import { ERROR_EVENT, NATS_DEFAULT_URL } from '../constants';
 import { Client } from '../external/nats-client.interface';
 import { NatsOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
+
 import { ClientProxy } from './client-proxy';
 import { CONN_ERR } from './constants';
 

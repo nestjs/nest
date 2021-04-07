@@ -1,4 +1,5 @@
 import { Type } from '../type.interface';
+
 import { MiddlewareConfigProxy } from './middleware-config-proxy.interface';
 
 /**

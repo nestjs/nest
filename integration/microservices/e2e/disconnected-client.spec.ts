@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
+
 import { DisconnectedClientController } from '../src/disconnected.controller';
 
 describe('Disconnected client', () => {

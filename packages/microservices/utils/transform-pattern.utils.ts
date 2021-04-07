@@ -1,4 +1,5 @@
 import { isObject, isString } from '@nestjs/common/utils/shared.utils';
+
 import { MsPattern } from '../interfaces';
 
 /**

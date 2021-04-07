@@ -1,5 +1,6 @@
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
+
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
@@ -12,6 +13,7 @@ import { Client } from '../external/nats-client.interface';
 import { CustomTransportStrategy, PacketId } from '../interfaces';
 import { NatsOptions } from '../interfaces/microservice-configuration.interface';
 import { IncomingRequest, ReadPacket } from '../interfaces/packet.interface';
+
 import { Server } from './server';
 
 let natsPackage: any = {};

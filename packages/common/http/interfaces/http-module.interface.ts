@@ -1,4 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
+
 import { ModuleMetadata, Provider, Type } from '../../interfaces';
 
 export type HttpModuleOptions = AxiosRequestConfig;

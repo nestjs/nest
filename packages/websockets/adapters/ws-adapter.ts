@@ -3,6 +3,7 @@ import { WsMessageHandler } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { NestApplication } from '@nestjs/core';
 import { Observable } from 'rxjs';
+
 import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
 
 export interface BaseWsInstance {

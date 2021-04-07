@@ -2,6 +2,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
+
 import { AppModule } from '../src/app.module';
 
 describe('App-level globals (Express Application)', () => {

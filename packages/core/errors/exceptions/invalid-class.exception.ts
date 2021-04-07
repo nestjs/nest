@@ -1,4 +1,5 @@
 import { INVALID_CLASS_MESSAGE } from '../messages';
+
 import { RuntimeException } from './runtime.exception';
 
 export class InvalidClassException extends RuntimeException {

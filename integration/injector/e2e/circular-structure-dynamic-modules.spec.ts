@@ -1,5 +1,6 @@
-import { expect } from 'chai';
 import { Test } from '@nestjs/testing';
+import { expect } from 'chai';
+
 import { CircularModule } from '../src/circular-structure-dynamic-module/circular.module';
 import { InputService } from '../src/circular-structure-dynamic-module/input.service';
 

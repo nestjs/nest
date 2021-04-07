@@ -1,6 +1,7 @@
 import { Injector } from '../injector/injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
+
 import { MiddlewareContainer } from './container';
 
 export class MiddlewareResolver {

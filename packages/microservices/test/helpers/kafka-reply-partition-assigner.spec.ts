@@ -1,8 +1,9 @@
 import { expect } from 'chai';
-import * as sinon from 'sinon';
 import * as Kafka from 'kafkajs';
-import { KafkaReplyPartitionAssigner } from '../../helpers/kafka-reply-partition-assigner';
+import * as sinon from 'sinon';
+
 import { ClientKafka } from '../../client/client-kafka';
+import { KafkaReplyPartitionAssigner } from '../../helpers/kafka-reply-partition-assigner';
 
 describe('kafka reply partition assigner', () => {
   let cluster, topics, metadata, assigner, client;

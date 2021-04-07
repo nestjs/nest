@@ -1,8 +1,9 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
+
 import { ExceptionHandler } from '../../../errors/exception-handler';
-import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
 import { InvalidMiddlewareException } from '../../../errors/exceptions/invalid-middleware.exception';
+import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
 
 describe('ExceptionHandler', () => {
   let instance: ExceptionHandler;

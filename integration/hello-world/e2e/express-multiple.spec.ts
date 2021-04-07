@@ -3,6 +3,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import * as express from 'express';
 import * as request from 'supertest';
+
 import { ApplicationModule } from '../src/app.module';
 
 describe('Hello world (express instance with multiple applications)', () => {

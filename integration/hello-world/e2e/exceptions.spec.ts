@@ -1,6 +1,7 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
+
 import { ErrorsController } from '../src/errors/errors.controller';
 
 describe('Error messages', () => {

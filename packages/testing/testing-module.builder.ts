@@ -5,8 +5,9 @@ import { NestContainer } from '@nestjs/core/injector/container';
 import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
-import { OverrideBy, OverrideByFactoryOptions } from './interfaces';
+
 import { TestingLogger } from './services/testing-logger.service';
+import { OverrideBy, OverrideByFactoryOptions } from './interfaces';
 import { TestingModule } from './testing-module';
 
 export class TestingModuleBuilder {

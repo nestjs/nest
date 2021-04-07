@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { METHOD_METADATA, PATH_METADATA, SSE_METADATA } from '../../constants';
 import { Sse } from '../../decorators/http/sse.decorator';
 import { RequestMethod } from '../../enums/request-method.enum';

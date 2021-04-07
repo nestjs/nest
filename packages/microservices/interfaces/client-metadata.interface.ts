@@ -1,6 +1,8 @@
 import { Type } from '@nestjs/common';
+
 import { ClientProxy } from '../client';
 import { Transport } from '../enums/transport.enum';
+
 import { Deserializer } from './deserializer.interface';
 import {
   GrpcOptions,

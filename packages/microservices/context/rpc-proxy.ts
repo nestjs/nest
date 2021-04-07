@@ -2,6 +2,7 @@ import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
 
 export class RpcProxy {

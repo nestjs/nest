@@ -6,6 +6,7 @@ import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { ClientProxyFactory } from '../client';
 import { ClientsContainer } from '../container';

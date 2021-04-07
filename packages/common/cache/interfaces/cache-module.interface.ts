@@ -1,4 +1,5 @@
 import { ModuleMetadata, Provider, Type } from '../../interfaces';
+
 import { CacheManagerOptions } from './cache-manager.interface';
 
 export interface CacheModuleOptions extends CacheManagerOptions {

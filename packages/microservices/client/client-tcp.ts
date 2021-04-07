@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import * as net from 'net';
 import { share, tap } from 'rxjs/operators';
+
 import {
   CLOSE_EVENT,
   ERROR_EVENT,
@@ -11,6 +12,7 @@ import {
 import { JsonSocket } from '../helpers/json-socket';
 import { PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { TcpClientOptions } from '../interfaces/client-metadata.interface';
+
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 

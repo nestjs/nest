@@ -10,6 +10,7 @@ import {
   throwError as _throw,
 } from 'rxjs';
 import { map, mergeMap, publish, take } from 'rxjs/operators';
+
 import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
 import { IncomingResponseDeserializer } from '../deserializers/incoming-response.deserializer';
 import { InvalidMessageException } from '../errors/invalid-message.exception';

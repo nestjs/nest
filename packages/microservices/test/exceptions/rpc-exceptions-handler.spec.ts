@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { EMPTY as empty, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import * as sinon from 'sinon';
+
 import { RpcException } from '../../exceptions/rpc-exception';
 import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler';
 

@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
+
 import { RedisBroadcastController } from '../src/redis/redis-broadcast.controller';
 
 describe('REDIS transport', () => {

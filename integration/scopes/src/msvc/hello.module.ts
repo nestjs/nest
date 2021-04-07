@@ -1,8 +1,9 @@
 import { DynamicModule, Inject, Module, Provider, Scope } from '@nestjs/common';
+
+import { UsersService } from './users/users.service';
 import { HelloController } from './hello.controller';
 import { HelloService } from './hello.service';
 import { HttpController } from './http.controller';
-import { UsersService } from './users/users.service';
 
 @Module({
   controllers: [HelloController, HttpController],

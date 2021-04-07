@@ -2,6 +2,7 @@ import { INestApplication, Scope } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
+
 import { HelloController } from '../src/circular-hello/hello.controller';
 import { HelloModule } from '../src/circular-hello/hello.module';
 import { HelloService } from '../src/circular-hello/hello.service';

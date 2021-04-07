@@ -1,7 +1,8 @@
 import { InjectorDependencyContext } from '../../injector/injector';
-import { UNKNOWN_DEPENDENCIES_MESSAGE } from '../messages';
-import { RuntimeException } from './runtime.exception';
 import { Module } from '../../injector/module';
+import { UNKNOWN_DEPENDENCIES_MESSAGE } from '../messages';
+
+import { RuntimeException } from './runtime.exception';
 
 export class UnknownDependenciesException extends RuntimeException {
   constructor(

@@ -6,7 +6,9 @@ import Axios, {
   CancelTokenSource,
 } from 'axios';
 import { Observable } from 'rxjs';
+
 import { Inject } from '../decorators';
+
 import { AXIOS_INSTANCE_TOKEN } from './http.constants';
 
 export class HttpService {

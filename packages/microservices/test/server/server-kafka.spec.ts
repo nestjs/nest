@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaHeaders } from '../../enums';
 import {

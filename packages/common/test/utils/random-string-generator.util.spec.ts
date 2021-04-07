@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { randomStringGenerator } from '../../utils/random-string-generator.util';
 
 describe('randomStringGenerator', () => {

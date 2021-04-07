@@ -1,6 +1,7 @@
 import { Scope, Type } from '@nestjs/common';
 import { SCOPE_OPTIONS_METADATA } from '@nestjs/common/constants';
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
+
 import { NestContainer } from '../injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 

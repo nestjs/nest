@@ -12,6 +12,7 @@ import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
+
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 
 export class ExpressAdapter extends AbstractHttpAdapter {

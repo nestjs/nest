@@ -13,6 +13,7 @@ import {
   RedisOptions,
   RmqOptions,
 } from '../interfaces/microservice-configuration.interface';
+
 import { ClientGrpcProxy } from './client-grpc';
 import { ClientKafka } from './client-kafka';
 import { ClientMqtt } from './client-mqtt';

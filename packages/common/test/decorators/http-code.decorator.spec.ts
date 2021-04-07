@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { HttpCode } from '../../decorators/http/http-code.decorator';
+
 import { HTTP_CODE_METADATA } from '../../constants';
+import { HttpCode } from '../../decorators/http/http-code.decorator';
 
 describe('@HttpCode', () => {
   const httpCode = 200;

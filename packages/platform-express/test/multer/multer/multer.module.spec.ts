@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { MULTER_MODULE_OPTIONS } from '../../../multer/files.constants';
 import { MulterModule } from '../../../multer/multer.module';
 

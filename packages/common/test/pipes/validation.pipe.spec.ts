@@ -3,13 +3,14 @@ import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import { Exclude, Expose, Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsDefined,
   IsOptional,
   IsString,
   ValidateNested,
-  IsArray,
 } from 'class-validator';
+
 import { HttpStatus } from '../../enums';
 import { UnprocessableEntityException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';

@@ -11,6 +11,7 @@ import {
   InjectOptions,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
+
 import { FastifyStaticOptions, PointOfViewOptions } from './external';
 
 export interface NestFastifyApplication extends INestApplication {

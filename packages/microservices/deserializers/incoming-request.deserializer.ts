@@ -1,4 +1,5 @@
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
+
 import {
   ConsumerDeserializer,
   IncomingEvent,

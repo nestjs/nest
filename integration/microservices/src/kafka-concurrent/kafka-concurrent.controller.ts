@@ -10,6 +10,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { Client, ClientKafka, Transport } from '@nestjs/microservices';
 import { PartitionerArgs } from 'kafkajs';
 import { Observable } from 'rxjs';
+
 import { SumDto } from './dto/sum.dto';
 
 /**

@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import stringify from 'fast-safe-stringify';
 import * as hash from 'object-hash';
 import * as sinon from 'sinon';
+
 import { ModuleTokenFactory } from '../../injector/module-token-factory';
 
 describe('ModuleTokenFactory', () => {

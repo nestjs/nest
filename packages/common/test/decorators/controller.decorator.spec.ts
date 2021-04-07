@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { Controller } from '../../decorators/core/controller.decorator';
 
 describe('@Controller', () => {

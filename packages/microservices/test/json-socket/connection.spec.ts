@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import { AddressInfo, createServer, Socket } from 'net';
+
 import { CONNECT_EVENT, MESSAGE_EVENT } from '../../constants';
 import { JsonSocket } from '../../helpers/json-socket';
+
 import { longPayload } from './data/long-payload-with-special-chars';
 import * as helpers from './helpers';
 import { ip } from './helpers';

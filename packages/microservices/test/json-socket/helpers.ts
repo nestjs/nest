@@ -4,6 +4,7 @@ import {
   Server,
   Socket,
 } from 'net';
+
 import { ERROR_EVENT } from '../../constants';
 import { JsonSocket } from '../../helpers/json-socket';
 

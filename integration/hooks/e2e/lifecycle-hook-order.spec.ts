@@ -1,13 +1,13 @@
-import { Test } from '@nestjs/testing';
-import * as Sinon from 'sinon';
 import {
+  BeforeApplicationShutdown,
   Injectable,
   OnApplicationBootstrap,
   OnApplicationShutdown,
   OnModuleDestroy,
   OnModuleInit,
-  BeforeApplicationShutdown,
 } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import * as Sinon from 'sinon';
 
 @Injectable()
 class TestInjectable

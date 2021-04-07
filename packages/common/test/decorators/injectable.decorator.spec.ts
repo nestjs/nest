@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { Injectable, mixin } from '../../index';
 
 describe('@Injectable', () => {

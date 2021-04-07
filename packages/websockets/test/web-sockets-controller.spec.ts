@@ -2,6 +2,7 @@ import { ApplicationConfig } from '@nestjs/core/application-config';
 import { expect } from 'chai';
 import { fromEvent, Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
+
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { AbstractWsAdapter } from '../adapters/ws-adapter';
 import { PORT_METADATA } from '../constants';

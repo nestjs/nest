@@ -1,7 +1,8 @@
 import { Controller, Get, Header, HostParam, Param } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
-import { HostArrayService } from './host-array.service';
+
 import { UserByIdPipe } from './users/user-by-id.pipe';
+import { HostArrayService } from './host-array.service';
 
 @Controller({
   path: 'host-array',

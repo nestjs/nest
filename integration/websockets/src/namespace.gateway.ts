@@ -1,4 +1,4 @@
-import { WebSocketGateway, SubscribeMessage } from '@nestjs/websockets';
+import { SubscribeMessage,WebSocketGateway } from '@nestjs/websockets';
 
 @WebSocketGateway(8080, {
   namespace: 'test',

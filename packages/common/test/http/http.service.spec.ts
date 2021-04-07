@@ -1,6 +1,7 @@
+import { AxiosInstance,AxiosRequestConfig } from 'axios';
 import { expect } from 'chai';
+
 import { HttpService } from '../../http/http.service';
-import { AxiosRequestConfig, AxiosInstance } from 'axios';
 
 describe('HttpService', () => {
   it('should not mutate user-given axios options object', done => {

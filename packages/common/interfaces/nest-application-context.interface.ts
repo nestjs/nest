@@ -1,5 +1,6 @@
 import { ShutdownSignal } from '../enums/shutdown-signal.enum';
 import { LoggerService, LogLevel } from '../services/logger.service';
+
 import { Abstract } from './abstract.interface';
 import { DynamicModule } from './modules';
 import { Type } from './type.interface';

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
+
 import { ClientProxy } from '../../client/client-proxy';
 import { ReadPacket } from '../../interfaces';
 

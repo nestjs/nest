@@ -2,6 +2,7 @@ import { INestApplication, Scope } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
+
 import { Guard } from '../src/transient/guards/request-scoped.guard';
 import { HelloController } from '../src/transient/hello.controller';
 import { HelloModule } from '../src/transient/hello.module';

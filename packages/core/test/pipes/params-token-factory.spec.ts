@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { ParamsTokenFactory } from '../../pipes/params-token-factory';
 

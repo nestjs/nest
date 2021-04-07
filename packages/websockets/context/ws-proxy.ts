@@ -2,6 +2,7 @@ import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { empty } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+
 import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
 
 export class WsProxy {

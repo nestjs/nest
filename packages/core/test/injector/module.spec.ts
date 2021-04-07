@@ -1,6 +1,7 @@
 import { Controller, Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { Injectable } from '../../../common';
 import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception';

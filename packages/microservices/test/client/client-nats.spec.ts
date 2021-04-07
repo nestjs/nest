@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { ClientNats } from '../../client/client-nats';
 import { ERROR_EVENT } from '../../constants';
 

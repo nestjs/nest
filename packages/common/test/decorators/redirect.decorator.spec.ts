@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { REDIRECT_METADATA } from '../../constants';
 import { Redirect } from '../../decorators/http/redirect.decorator';
 import { HttpStatus } from '../../index';

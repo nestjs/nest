@@ -1,7 +1,8 @@
 import { Controller, Get, Header, Param } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
-import { HelloService } from './hello.service';
+
 import { UserByIdPipe } from './users/user-by-id.pipe';
+import { HelloService } from './hello.service';
 
 @Controller('hello')
 export class HelloController {

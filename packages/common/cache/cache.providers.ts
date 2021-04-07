@@ -1,8 +1,9 @@
 import { Provider } from '../interfaces';
 import { loadPackage } from '../utils/load-package.util';
+
+import { CacheManagerOptions } from './interfaces/cache-manager.interface';
 import { CACHE_MANAGER, CACHE_MODULE_OPTIONS } from './cache.constants';
 import { defaultCacheOptions } from './default-options';
-import { CacheManagerOptions } from './interfaces/cache-manager.interface';
 
 /**
  * Creates a CacheManager Provider.

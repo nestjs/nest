@@ -1,12 +1,13 @@
 import { Module } from '../decorators';
 import { DynamicModule, Provider } from '../interfaces';
-import { CACHE_MANAGER, CACHE_MODULE_OPTIONS } from './cache.constants';
-import { createCacheManager } from './cache.providers';
+
 import {
   CacheModuleAsyncOptions,
   CacheModuleOptions,
   CacheOptionsFactory,
 } from './interfaces/cache-module.interface';
+import { CACHE_MANAGER, CACHE_MODULE_OPTIONS } from './cache.constants';
+import { createCacheManager } from './cache.providers';
 
 /**
  * Module that provides Nest cache-manager.

@@ -1,4 +1,5 @@
 import { Type } from '../type.interface';
+
 import { RouteInfo } from './middleware-configuration.interface';
 import { MiddlewareConsumer } from './middleware-consumer.interface';
 

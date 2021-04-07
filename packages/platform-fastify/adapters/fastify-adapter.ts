@@ -32,6 +32,7 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import * as pathToRegexp from 'path-to-regexp';
+
 import {
   FastifyStaticOptions,
   PointOfViewOptions,

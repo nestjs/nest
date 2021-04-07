@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { join } from 'path';
 import { Observable, Subject } from 'rxjs';
 import * as sinon from 'sinon';
+
 import { ClientGrpcProxy } from '../../client/client-grpc';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception';

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { RmqContext } from '../../ctx-host';
 
 describe('RmqContext', () => {

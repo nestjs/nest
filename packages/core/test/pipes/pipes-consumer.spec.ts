@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { PipesConsumer } from '../../pipes/pipes-consumer';
 

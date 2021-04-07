@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { Header } from '../../decorators/http';
+
 import { HEADERS_METADATA } from '../../constants';
+import { Header } from '../../decorators/http';
 
 describe('@Header', () => {
   class Test {

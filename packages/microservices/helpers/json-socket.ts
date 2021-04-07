@@ -1,5 +1,6 @@
 import { Socket } from 'net';
 import { StringDecoder } from 'string_decoder';
+
 import {
   CLOSE_EVENT,
   CONNECT_EVENT,

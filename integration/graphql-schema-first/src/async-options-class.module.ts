@@ -5,6 +5,7 @@ import {
   GraphQLModule,
 } from '@nestjs/graphql';
 import { join } from 'path';
+
 import { CatsModule } from './cats/cats.module';
 
 class ConfigService implements GqlOptionsFactory {

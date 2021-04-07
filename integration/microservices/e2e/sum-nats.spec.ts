@@ -3,6 +3,7 @@ import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
+
 import { NatsController } from '../src/nats/nats.controller';
 
 describe('NATS transport', () => {

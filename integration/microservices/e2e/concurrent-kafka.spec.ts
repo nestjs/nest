@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import { Admin, ITopicMetadata, Kafka } from 'kafkajs';
 import * as request from 'supertest';
 import * as util from 'util';
+
 import { KafkaConcurrentController } from '../src/kafka-concurrent/kafka-concurrent.controller';
 import { KafkaConcurrentMessagesController } from '../src/kafka-concurrent/kafka-concurrent.messages.controller';
 

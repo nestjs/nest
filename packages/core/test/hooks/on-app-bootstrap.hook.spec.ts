@@ -1,6 +1,7 @@
 import { OnApplicationBootstrap } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { callModuleBootstrapHook } from '../../hooks/on-app-bootstrap.hook';
 import { NestContainer } from '../../injector/container';
 import { Module } from '../../injector/module';

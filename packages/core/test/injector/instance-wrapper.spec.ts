@@ -1,6 +1,7 @@
 import { Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { STATIC_CONTEXT } from '../../injector/constants';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 

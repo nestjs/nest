@@ -1,7 +1,8 @@
+import { ApplicationConfig, ModuleRef } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
+
 import { CoreInjectablesModule } from '../src/core-injectables/core-injectables.module';
-import { ApplicationConfig, ModuleRef } from '@nestjs/core';
 
 describe('Core Injectables', () => {
   let testingModule: TestingModule;

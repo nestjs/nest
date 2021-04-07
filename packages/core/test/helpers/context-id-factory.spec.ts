@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { createContextId } from '../../helpers/context-id-factory';
 
 describe('createContextId', () => {

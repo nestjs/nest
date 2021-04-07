@@ -1,5 +1,6 @@
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
+
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
@@ -21,6 +22,7 @@ import {
   ReadPacket,
 } from '../interfaces';
 import { MqttOptions } from '../interfaces/microservice-configuration.interface';
+
 import { Server } from './server';
 
 let mqttPackage: any = {};

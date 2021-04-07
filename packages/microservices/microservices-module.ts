@@ -10,14 +10,15 @@ import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-con
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
-import { ClientProxyFactory } from './client';
-import { ClientsContainer } from './container';
+
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { RpcContextCreator } from './context/rpc-context-creator';
 import { RpcProxy } from './context/rpc-proxy';
+import { Server } from './server/server';
+import { ClientProxyFactory } from './client';
+import { ClientsContainer } from './container';
 import { CustomTransportStrategy } from './interfaces';
 import { ListenersController } from './listeners-controller';
-import { Server } from './server/server';
 
 export class MicroservicesModule {
   private readonly clientsContainer = new ClientsContainer();

@@ -4,8 +4,10 @@ import {
   OnApplicationShutdown,
   Provider,
 } from '@nestjs/common';
+
 import { ClientProxy, ClientProxyFactory } from '../client';
 import { Closeable } from '../interfaces';
+
 import {
   ClientsModuleAsyncOptions,
   ClientsModuleOptions,

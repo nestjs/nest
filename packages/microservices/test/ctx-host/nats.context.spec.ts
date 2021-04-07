@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { NatsContext } from '../../ctx-host';
 
 describe('NatsContext', () => {

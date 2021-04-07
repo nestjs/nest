@@ -1,6 +1,8 @@
+import 'reflect-metadata';
+
 import { PipeTransform, Type } from '@nestjs/common';
 import { assignMetadata } from '@nestjs/common/decorators/http/route-params.decorator';
-import 'reflect-metadata';
+
 import { PARAM_ARGS_METADATA } from '../constants';
 import { WsParamtype } from '../enums/ws-paramtype.enum';
 

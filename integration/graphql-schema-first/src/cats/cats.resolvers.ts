@@ -1,9 +1,10 @@
 import { ParseIntPipe, UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
+
+import { Cat } from './interfaces/cat.interface';
 import { CatsGuard } from './cats.guard';
 import { CatsService } from './cats.service';
-import { Cat } from './interfaces/cat.interface';
 
 const pubSub = new PubSub();
 

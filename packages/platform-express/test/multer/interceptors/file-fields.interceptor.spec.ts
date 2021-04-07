@@ -3,6 +3,7 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-hos
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
+
 import { FileFieldsInterceptor } from '../../../multer/interceptors/file-fields.interceptor';
 
 describe('FileFieldsInterceptor', () => {

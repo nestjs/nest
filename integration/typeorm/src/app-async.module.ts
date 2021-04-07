@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from './database.module';
+
 import { PhotoModule } from './photo/photo.module';
+import { DatabaseModule } from './database.module';
 
 @Module({
   imports: [DatabaseModule.forRoot(), PhotoModule],

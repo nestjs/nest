@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { Observable, of, throwError as _throw } from 'rxjs';
 import * as sinon from 'sinon';
+
 import { Server } from '../../server/server';
 
 class TestServer extends Server {

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { RpcException } from '../../exceptions/rpc-exception';
 
 describe('RpcException', () => {

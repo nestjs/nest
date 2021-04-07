@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { Module } from '../../../common/decorators/modules/module.decorator';
 import { Global } from '../../../common/index';
 import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception';

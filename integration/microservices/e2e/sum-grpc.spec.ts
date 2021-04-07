@@ -7,6 +7,7 @@ import { expect } from 'chai';
 import * as GRPC from 'grpc';
 import { join } from 'path';
 import * as request from 'supertest';
+
 import { GrpcController } from '../src/grpc/grpc.controller';
 
 describe('GRPC transport', () => {

@@ -10,6 +10,7 @@ import { Test } from '@nestjs/testing';
 import { of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import * as request from 'supertest';
+
 import { ApplicationModule } from '../src/app.module';
 
 const RETURN_VALUE = 'test';

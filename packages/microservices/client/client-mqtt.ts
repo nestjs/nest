@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { fromEvent, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
+
 import {
   CLOSE_EVENT,
   ERROR_EVENT,
@@ -10,6 +11,7 @@ import {
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
 import { MqttOptions, ReadPacket, WritePacket } from '../interfaces';
+
 import { ClientProxy } from './client-proxy';
 import { ECONNREFUSED } from './constants';
 

@@ -7,6 +7,7 @@ import {
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { defer, from as fromPromise, Observable } from 'rxjs';
 import { mergeAll, switchMap } from 'rxjs/operators';
+
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 
 export class InterceptorsConsumer {

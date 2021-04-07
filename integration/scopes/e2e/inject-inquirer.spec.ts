@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import * as request from 'supertest';
+
 import { HelloModule } from '../src/inject-inquirer/hello.module';
 
 describe('Inject Inquirer', () => {

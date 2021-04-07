@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+
 import { IncomingResponseDeserializer } from '../../deserializers/incoming-response.deserializer';
 import { IncomingResponse } from '../../interfaces';
 

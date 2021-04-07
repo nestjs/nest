@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { Dependencies } from '../../decorators/core/dependencies.decorator';
+
 import { PARAMTYPES_METADATA } from '../../constants';
+import { Dependencies } from '../../decorators/core/dependencies.decorator';
 
 describe('@Dependencies', () => {
   const dep = 'test',

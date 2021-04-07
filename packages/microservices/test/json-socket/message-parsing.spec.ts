@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { Socket } from 'net';
 import * as sinon from 'sinon';
+
 import { ERROR_EVENT, MESSAGE_EVENT } from '../../constants';
 import { JsonSocket } from '../../helpers/json-socket';
 

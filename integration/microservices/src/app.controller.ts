@@ -11,8 +11,8 @@ import {
   ClientProxy,
   EventPattern,
   MessagePattern,
-  Transport,
   RpcException,
+  Transport,
 } from '@nestjs/microservices';
 import { from, Observable, of, throwError } from 'rxjs';
 import { catchError, scan } from 'rxjs/operators';

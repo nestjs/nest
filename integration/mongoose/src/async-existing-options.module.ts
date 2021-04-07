@@ -4,6 +4,7 @@ import {
   MongooseModuleOptions,
   MongooseOptionsFactory,
 } from '@nestjs/mongoose';
+
 import { CatsModule } from './cats/cats.module';
 
 class ConfigService implements MongooseOptionsFactory {

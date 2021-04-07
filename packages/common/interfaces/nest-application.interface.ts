@@ -5,6 +5,7 @@ import {
 import { CanActivate } from './features/can-activate.interface';
 import { NestInterceptor } from './features/nest-interceptor.interface';
 import { HttpServer } from './http/http-server.interface';
+import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 import {
   ExceptionFilter,
   INestMicroservice,
@@ -12,7 +13,6 @@ import {
   PipeTransform,
 } from './index';
 import { INestApplicationContext } from './nest-application-context.interface';
-import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 
 /**
  * Interface defining the core NestApplication object.

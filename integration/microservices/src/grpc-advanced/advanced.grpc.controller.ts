@@ -7,9 +7,9 @@ import {
   GrpcStreamMethod,
   Transport,
 } from '@nestjs/microservices';
+import { Metadata } from 'grpc';
 import { join } from 'path';
 import { Observable, of, ReplaySubject, Subject } from 'rxjs';
-import { Metadata } from 'grpc';
 
 @Controller()
 export class AdvancedGrpcController {
