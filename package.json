@@ -67,7 +67,7 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "6.6.7",
     "socket.io": "2.4.1",
-    "tslib": "2.1.0",
+    "tslib": "2.2.0",
     "uuid": "8.3.2"
   },
   "devDependencies": {
@@ -144,7 +144,7 @@
     "merge-graphql-schemas": "1.7.8",
     "middie": "5.2.0",
     "mocha": "8.3.2",
-    "mongoose": "5.12.2",
+    "mongoose": "5.12.3",
     "mqtt": "4.2.6",
     "multer": "1.4.2",
     "mysql": "2.18.1",
