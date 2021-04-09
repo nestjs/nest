@@ -31,7 +31,7 @@
     "fast-safe-stringify": "2.0.7",
     "iterare": "1.2.1",
     "object-hash": "2.1.1",
-    "path-to-regexp": "3.2.0",
+    "path-to-regexp": "6.2.0",
     "tslib": "2.2.0",
     "uuid": "8.3.2"
   },
