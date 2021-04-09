@@ -1,8 +1,17 @@
 import { isNil } from '@nestjs/common/utils/shared.utils';
+import { KafkaParserConfig } from '../interfaces';
 
 export class KafkaParser {
-  public static parse<T = any>(data: any): T {
-    data.value = this.decode(data.value);
+  protected readonly keepBinary: boolean;
+
+  constructor(config?: KafkaParserConfig) {
+    this.keepBinary = (config && config.keepBinary) || false;
+  }
+
+  public parse<T = any>(data: any): T {
+    if (!this.keepBinary) {
+      data.value = this.decode(data.value);
+    }
 
     if (!isNil(data.key)) {
       data.key = this.decode(data.key);
@@ -18,7 +27,7 @@ export class KafkaParser {
     return data;
   }
 
-  public static decode(value: Buffer): object | string | null {
+  public decode(value: Buffer): object | string | null {
     if (isNil(value)) {
       return null;
     }

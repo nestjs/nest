@@ -39,6 +39,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   protected client: Kafka = null;
   protected consumer: Consumer = null;
   protected producer: Producer = null;
+  protected parser: KafkaParser = null;
 
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
@@ -65,6 +66,8 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     kafkaPackage = this.loadPackage('kafkajs', ServerKafka.name, () =>
       require('kafkajs'),
     );
+
+    this.parser = new KafkaParser((options && options.parser) || undefined);
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -137,7 +140,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
 
   public async handleMessage(payload: EachMessagePayload) {
     const channel = payload.topic;
-    const rawMessage = KafkaParser.parse<KafkaMessage>(
+    const rawMessage = this.parser.parse<KafkaMessage>(
       Object.assign(payload.message, {
         topic: payload.topic,
         partition: payload.partition,
