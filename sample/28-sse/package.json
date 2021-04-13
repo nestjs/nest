@@ -42,9 +42,9 @@
     "ts-loader": "8.1.0",
     "ts-node": "9.1.1",
     "tsconfig-paths": "3.9.0",
-    "@typescript-eslint/eslint-plugin": "4.21.0",
-    "@typescript-eslint/parser": "4.21.0",
-    "eslint": "7.23.0",
+    "@typescript-eslint/eslint-plugin": "4.22.0",
+    "@typescript-eslint/parser": "4.22.0",
+    "eslint": "7.24.0",
     "eslint-config-prettier": "8.1.0",
     "eslint-plugin-import": "2.22.1",
     "typescript": "4.2.4"
