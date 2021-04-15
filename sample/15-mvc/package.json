@@ -22,7 +22,7 @@
     "@nestjs/common": "7.6.15",
     "@nestjs/core": "7.6.15",
     "@nestjs/platform-express": "7.6.15",
-    "hbs": "4.1.1",
+    "hbs": "4.1.2",
     "pug": "3.0.2",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
