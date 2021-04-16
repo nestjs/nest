@@ -42,7 +42,7 @@
 * To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
 * 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
 * [가이드](readme_kr.md)를 확인하려면, [docs.nestjs.com](https://docs.nestjs.com)를 방문하세요.:books: 
-* チェックするには [ガイド](readme_jp.md), 詳しくは [docs.nestjs.com](https://docs.nestjs.com):books: 
+* チェックするには [ガイド](readme_jp.md), 詳しくは [docs.nestjs.com](https://docs.nestjs.com).:books:
 
 ## 質問
 
@@ -60,7 +60,7 @@ issueを開く前に、必ず[Issue Reporting Checklist](https://github.com/nest
 
 Nestは、MITライセンスのオープンソースプロジェクトです。スポンサーと支援者による素晴らしいサポートによって、その発展を支えられています。参加したい場合は[こちら](https://docs.nestjs.com/support)をご覧ください。
 
-## 連絡先
+## 連絡する
 
 * Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
 * Website - [https://nestjs.com](https://nestjs.com/)
