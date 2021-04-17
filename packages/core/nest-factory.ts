@@ -252,8 +252,7 @@ export class NestFactoryStatic {
       get: (receiver: Record<string, any>, prop: string) => {
         if (!(prop in receiver) && prop in adapter) {
           return (...args: unknown[]) => {
-            this.createExceptionZone(adapter, prop)(...args);
-            return proxy;
+            return this.createExceptionZone(adapter, prop)(...args);
           };
         }
         if (isFunction(receiver[prop])) {
