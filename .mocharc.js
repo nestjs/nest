@@ -1,5 +1,5 @@
 exports.mochaHooks = {
-  beforeEach: function() {
+  beforeAll: function() {
     require('reflect-metadata');
   }
 };
