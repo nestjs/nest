@@ -153,7 +153,7 @@
     "nyc": "15.1.0",
     "point-of-view": "4.14.0",
     "prettier": "2.2.1",
-    "redis": "3.1.1",
+    "redis": "3.1.2",
     "rxjs-compat": "6.6.7",
     "sinon": "10.0.0",
     "sinon-chai": "3.6.0",
