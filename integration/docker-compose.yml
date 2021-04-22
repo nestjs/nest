@@ -48,7 +48,7 @@ services:
   zookeeper:
     container_name: test-zookeeper
     hostname: zookeeper
-    image: confluentinc/cp-zookeeper:5.5.3
+    image: confluentinc/cp-zookeeper:5.5.4
     ports:
       - "2181:2181"
     environment:
