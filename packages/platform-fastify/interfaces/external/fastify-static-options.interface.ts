@@ -23,8 +23,21 @@ interface ListOptions {
   render: ListRender;
 }
 
-export interface FastifyStaticOptions {
-  root: string;
+// Passed on to `send`
+interface SendOptions {
+  acceptRanges?: boolean;
+  cacheControl?: boolean;
+  dotfiles?: 'allow' | 'deny' | 'ignore';
+  etag?: boolean;
+  extensions?: string[];
+  immutable?: boolean;
+  index?: string[] | false;
+  lastModified?: boolean;
+  maxAge?: string | number;
+}
+
+export interface FastifyStaticOptions extends SendOptions {
+  root: string | string[];
   prefix?: string;
   prefixAvoidTrailingSlash?: boolean;
   serve?: boolean;
@@ -32,17 +45,18 @@ export interface FastifyStaticOptions {
   schemaHide?: boolean;
   setHeaders?: (...args: any[]) => void;
   redirect?: boolean;
-  wildcard?: boolean | string;
+  wildcard?: boolean;
   list?: boolean | ListOptions;
+  allowedPath?: (pathName: string, root?: string) => boolean;
 
   // Passed on to `send`
   acceptRanges?: boolean;
   cacheControl?: boolean;
-  dotfiles?: boolean;
+  dotfiles?: 'allow' | 'deny' | 'ignore';
   etag?: boolean;
   extensions?: string[];
   immutable?: boolean;
-  index?: string[];
+  index?: string[] | false;
   lastModified?: boolean;
   maxAge?: string | number;
 }

@@ -5,6 +5,7 @@
 export interface PointOfViewOptions {
   engine: {
     ejs?: any;
+    eta?: any;
     nunjucks?: any;
     pug?: any;
     handlebars?: any;
@@ -12,6 +13,8 @@ export interface PointOfViewOptions {
     mustache?: any;
     'art-template'?: any;
     twig?: any;
+    liquid?: any;
+    dot?: any;
   };
   templates?: string;
   includeViewExtension?: boolean;
@@ -23,4 +26,5 @@ export interface PointOfViewOptions {
   layout?: string;
   root?: string;
   viewExt?: string;
+  propertyName?: string;
 }
