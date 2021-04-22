@@ -33,7 +33,7 @@
     "@nestjs/cli": "7.6.0",
     "@nestjs/schematics": "7.3.1",
     "@nestjs/testing": "7.6.15",
-    "@types/bull": "3.15.0",
+    "@types/bull": "3.15.1",
     "@types/dotenv": "8.2.0",
     "@types/express": "4.17.11",
     "@types/jest": "26.0.22",
