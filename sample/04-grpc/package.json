@@ -26,7 +26,7 @@
     "@nestjs/platform-express": "7.6.15",
     "class-transformer": "0.4.0",
     "class-validator": "0.13.1",
-    "grpc": "1.24.6",
+    "grpc": "1.24.7",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "6.6.7"
@@ -43,7 +43,7 @@
     "prettier": "2.2.1",
     "supertest": "6.1.3",
     "ts-jest": "26.5.2",
-    "ts-loader": "9.0.2",
+    "ts-loader": "9.1.0",
     "ts-node": "9.1.1",
     "tsconfig-paths": "3.9.0",
     "@typescript-eslint/eslint-plugin": "4.22.0",
