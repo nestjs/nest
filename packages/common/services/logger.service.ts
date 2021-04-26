@@ -17,7 +17,7 @@ export interface LoggerService {
 
 @Injectable()
 export class Logger implements LoggerService {
-  private static logLevels: LogLevel[] = [
+  protected static logLevels: LogLevel[] = [
     'log',
     'error',
     'warn',
