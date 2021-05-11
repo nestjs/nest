@@ -30,7 +30,7 @@ jobs:
   build:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:15
     steps:
       - checkout
       - run:
@@ -52,7 +52,7 @@ jobs:
   test_node_12:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:15
     steps:
       - checkout
       - *restore-cache
@@ -68,17 +68,17 @@ jobs:
   test_node_10:
     <<: *unit-tests-template
     docker:
-      - image: circleci/node:10
+      - image: circleci/node:15
 
   test_node_14:
     <<: *unit-tests-template
     docker:
-      - image: circleci/node:14
+      - image: circleci/node:15
 
   lint:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:15
     steps:
       - checkout
       - *restore-cache
@@ -128,7 +128,7 @@ jobs:
   codechecks_benchmarks:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:15
     steps:
       - checkout
       - *restore-cache
@@ -144,7 +144,7 @@ jobs:
   samples:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:15
     environment:
       - DISABLE_OPENCOLLECTIVE: true
     steps:
