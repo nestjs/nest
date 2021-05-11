@@ -57,7 +57,7 @@ services:
   kafka:
     container_name: test-kafka
     hostname: kafka
-    image: confluentinc/cp-kafka:5.5.4
+    image: confluentinc/cp-kafka:6.1.1
     depends_on:
       - zookeeper
     ports:
