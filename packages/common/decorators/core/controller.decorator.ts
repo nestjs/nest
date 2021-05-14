@@ -27,7 +27,7 @@ export interface ControllerOptions extends ScopeOptions {
    *
    * @see [Routing](https://docs.nestjs.com/controllers#routing)
    */
-  host?: string | string[];
+  host?: string | RegExp | Array<string | RegExp>;
 }
 
 /**

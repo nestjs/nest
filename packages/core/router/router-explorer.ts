@@ -73,7 +73,7 @@ export class RouterExplorer {
     module: string,
     applicationRef: T,
     basePath: string,
-    host: string | string[],
+    host: string | RegExp | Array<string | RegExp>,
   ) {
     const { instance } = instanceWrapper;
     const routerPaths = this.scanForPaths(instance);
@@ -151,7 +151,7 @@ export class RouterExplorer {
     instanceWrapper: InstanceWrapper,
     moduleKey: string,
     basePath: string,
-    host: string | string[],
+    host: string | RegExp | Array<string | RegExp>,
   ) {
     (routePaths || []).forEach(pathProperties => {
       const { path, requestMethod } = pathProperties;
@@ -180,7 +180,7 @@ export class RouterExplorer {
     instanceWrapper: InstanceWrapper,
     moduleKey: string,
     basePath: string,
-    host: string | string[],
+    host: string | RegExp | Array<string | RegExp>,
   ) {
     const {
       path: paths,
@@ -217,7 +217,7 @@ export class RouterExplorer {
     });
   }
 
-  private applyHostFilter(host: string | string[], handler: Function) {
+  private applyHostFilter(host: string | RegExp | Array<string | RegExp>, handler: Function) {
     if (!host) {
       return handler;
     }
