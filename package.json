@@ -88,7 +88,7 @@
     "@types/gulp": "4.0.8",
     "@types/mocha": "8.2.2",
     "@types/mongoose": "5.10.5",
-    "@types/node": "14.14.45",
+    "@types/node": "15.0.3",
     "@types/redis": "2.8.28",
     "@types/reflect-metadata": "0.1.0",
     "@types/sinon": "10.0.0",
