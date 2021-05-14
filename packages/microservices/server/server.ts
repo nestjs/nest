@@ -2,14 +2,15 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import {
-  ConnectableObservable,
+  connectable,
   EMPTY as empty,
   from as fromPromise,
   Observable,
   of,
+  Subject,
   Subscription,
 } from 'rxjs';
-import { catchError, finalize, publish } from 'rxjs/operators';
+import { catchError, finalize } from 'rxjs/operators';
 import { NO_EVENT_HANDLER } from '../constants';
 import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
@@ -113,7 +114,11 @@ export abstract class Server {
     }
     const resultOrStream = await handler(packet.data, context);
     if (this.isObservable(resultOrStream)) {
-      (resultOrStream.pipe(publish()) as ConnectableObservable<any>).connect();
+      const connectableSource = connectable(resultOrStream, {
+        connector: () => new Subject(),
+        resetOnDisconnect: false,
+      });
+      connectableSource.connect();
     }
   }
 

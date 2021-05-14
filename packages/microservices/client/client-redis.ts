@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { fromEvent, merge, Subject, zip } from 'rxjs';
+import { fromEvent, lastValueFrom, merge, Subject, zip } from 'rxjs';
 import { share, take, tap } from 'rxjs/operators';
 import {
   CONNECT_EVENT,
@@ -71,15 +71,15 @@ export class ClientRedis extends ClientProxy {
     const pubConnect$ = fromEvent(this.pubClient, CONNECT_EVENT);
     const subClient$ = fromEvent(this.subClient, CONNECT_EVENT);
 
-    this.connection = merge(error$, zip(pubConnect$, subClient$))
-      .pipe(
+    this.connection = lastValueFrom(
+      merge(error$, zip(pubConnect$, subClient$)).pipe(
         take(1),
         tap(() =>
           this.subClient.on(MESSAGE_EVENT, this.createResponseCallback()),
         ),
         share(),
-      )
-      .toPromise();
+      ),
+    );
     return this.connection;
   }
 
@@ -151,7 +151,7 @@ export class ClientRedis extends ClientProxy {
   protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Function {
+  ): () => void {
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);

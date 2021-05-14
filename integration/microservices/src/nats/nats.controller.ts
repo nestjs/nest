@@ -91,7 +91,7 @@ export class NatsController {
 
   @MessagePattern('exception')
   throwError(): Observable<number> {
-    return throwError(new RpcException('test'));
+    return throwError(() => new RpcException('test'));
   }
 
   @Post('notify')

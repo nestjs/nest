@@ -23,10 +23,10 @@ export class DisconnectedClientController {
         ),*/
         catchError(error => {
           const { code } = error || { code: 'CONN_ERR' };
-          return throwError(
+          return throwError(() =>
             code === 'ECONNREFUSED' ||
-              code === 'CONN_ERR' ||
-              code === 'CONNECTION_REFUSED'
+            code === 'CONN_ERR' ||
+            code === 'CONNECTION_REFUSED'
               ? new RequestTimeoutException('ECONNREFUSED')
               : new InternalServerErrorException(),
           );

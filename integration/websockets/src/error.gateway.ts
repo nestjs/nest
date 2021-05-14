@@ -9,6 +9,6 @@ import { throwError } from 'rxjs';
 export class ErrorGateway {
   @SubscribeMessage('push')
   onPush(client, data) {
-    return throwError(new WsException('test'));
+    return throwError(() => new WsException('test'));
   }
 }

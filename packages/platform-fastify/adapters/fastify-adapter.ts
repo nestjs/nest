@@ -179,12 +179,8 @@ export class FastifyAdapter<
     return this.instance.setErrorHandler(handler);
   }
 
-  public setNotFoundHandler(
-    handler: Parameters<
-      FastifyInstance<TServer, TRawRequest, TRawResponse>['setNotFoundHandler']
-    >[0],
-  ) {
-    return this.instance.setNotFoundHandler(handler);
+  public setNotFoundHandler(handler: Function) {
+    return this.instance.setNotFoundHandler(handler as any);
   }
 
   public getHttpServer<T = TServer>(): T {

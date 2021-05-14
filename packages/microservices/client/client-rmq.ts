@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { EventEmitter } from 'events';
-import { fromEvent, merge, Observable } from 'rxjs';
+import { fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
 import {
   DISCONNECTED_RMQ_MESSAGE,
@@ -87,12 +87,12 @@ export class ClientRMQ extends ClientProxy {
     this.handleDisconnectError(this.client);
 
     const connect$ = this.connect$(this.client);
-    this.connection = this.mergeDisconnectEvent(this.client, connect$)
-      .pipe(
+    this.connection = lastValueFrom(
+      this.mergeDisconnectEvent(this.client, connect$).pipe(
         switchMap(() => this.createChannel()),
         share(),
-      )
-      .toPromise();
+      ),
+    );
 
     return this.connection;
   }
@@ -176,7 +176,7 @@ export class ClientRMQ extends ClientProxy {
   protected publish(
     message: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Function {
+  ): () => void {
     try {
       const correlationId = randomStringGenerator();
       const listener = ({ content }: { content: any }) =>

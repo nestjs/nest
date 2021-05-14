@@ -1,7 +1,7 @@
 import { CanActivate } from '@nestjs/common';
 import { ContextType, Controller } from '@nestjs/common/interfaces';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
-import { Observable } from 'rxjs';
+import { lastValueFrom, Observable } from 'rxjs';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 
 export class GuardsConsumer {
@@ -44,7 +44,7 @@ export class GuardsConsumer {
     result: boolean | Promise<boolean> | Observable<boolean>,
   ): Promise<boolean> {
     if (result instanceof Observable) {
-      return result.toPromise();
+      return lastValueFrom(result);
     }
     return result;
   }

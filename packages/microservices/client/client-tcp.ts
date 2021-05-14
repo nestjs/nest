@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import * as net from 'net';
+import { lastValueFrom } from 'rxjs';
 import { share, tap } from 'rxjs/operators';
 import {
   CLOSE_EVENT,
@@ -49,7 +50,7 @@ export class ClientTCP extends ClientProxy {
     );
 
     this.socket.connect(this.port, this.host);
-    this.connection = source$.toPromise();
+    this.connection = lastValueFrom(source$);
     return this.connection;
   }
 
@@ -103,7 +104,7 @@ export class ClientTCP extends ClientProxy {
   protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Function {
+  ): () => void {
     try {
       const packet = this.assignPacketId(partialPacket);
       const serializedPacket = this.serializer.serialize(packet);

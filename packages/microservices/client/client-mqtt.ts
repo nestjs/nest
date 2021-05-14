@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { fromEvent, merge, Observable } from 'rxjs';
+import { fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
 import {
   CLOSE_EVENT,
@@ -54,14 +54,14 @@ export class ClientMqtt extends ClientProxy {
     this.handleError(this.mqttClient);
 
     const connect$ = this.connect$(this.mqttClient);
-    this.connection = this.mergeCloseEvent(this.mqttClient, connect$)
-      .pipe(
+    this.connection = lastValueFrom(
+      this.mergeCloseEvent(this.mqttClient, connect$).pipe(
         tap(() =>
           this.mqttClient.on(MESSAGE_EVENT, this.createResponseCallback()),
         ),
         share(),
-      )
-      .toPromise();
+      ),
+    );
     return this.connection;
   }
 
@@ -116,7 +116,7 @@ export class ClientMqtt extends ClientProxy {
   protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Function {
+  ): () => void {
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
