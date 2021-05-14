@@ -217,14 +217,17 @@ export class RouterExplorer {
     });
   }
 
-  private applyHostFilter(host: string | RegExp | Array<string | RegExp>, handler: Function) {
+  private applyHostFilter(
+    host: string | RegExp | Array<string | RegExp>,
+    handler: Function,
+  ) {
     if (!host) {
       return handler;
     }
 
     const httpAdapterRef = this.container.getHttpAdapterRef();
     const hosts = Array.isArray(host) ? host : [host];
-    const hostRegExps = hosts.map((host: string) => {
+    const hostRegExps = hosts.map((host: string | RegExp) => {
       const keys = [];
       const regexp = pathToRegexp(host, keys);
       return { regexp, keys };
