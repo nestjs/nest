@@ -11,7 +11,7 @@ export class TestingLogger extends ConsoleLogger {
   warn(message: string) {}
   debug(message: string) {}
   verbose(message: string) {}
-  error(message: string, ...optionalParams: unknown[]) {
+  error(message: string, ...optionalParams: any[]) {
     return super.error(message, ...optionalParams);
   }
 }

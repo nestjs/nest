@@ -121,13 +121,14 @@ describe('RouterExplorer', () => {
       const instanceProto = Object.getPrototypeOf(instance);
 
       const route = routerBuilder.exploreMethodMetadata(
-        new TestRoute(),
+        instance,
         instanceProto,
         'getTest',
       );
 
       expect(route.path).to.eql(['/test']);
       expect(route.requestMethod).to.eql(RequestMethod.GET);
+      expect(route.targetCallback).to.eq(instance.getTest);
     });
 
     it('should method return expected object which represent single route with alias', () => {
@@ -135,13 +136,14 @@ describe('RouterExplorer', () => {
       const instanceProto = Object.getPrototypeOf(instance);
 
       const route = routerBuilder.exploreMethodMetadata(
-        new TestRouteAlias(),
+        instance,
         instanceProto,
         'getTest',
       );
 
       expect(route.path).to.eql(['/test']);
       expect(route.requestMethod).to.eql(RequestMethod.GET);
+      expect(route.targetCallback).to.eq(instance.getTest);
     });
 
     it('should method return expected object which represent multiple routes', () => {
@@ -149,13 +151,14 @@ describe('RouterExplorer', () => {
       const instanceProto = Object.getPrototypeOf(instance);
 
       const route = routerBuilder.exploreMethodMetadata(
-        new TestRoute(),
+        instance,
         instanceProto,
         'getTestUsingArray',
       );
 
       expect(route.path).to.eql(['/foo', '/bar']);
       expect(route.requestMethod).to.eql(RequestMethod.GET);
+      expect(route.targetCallback).to.eq(instance.getTestUsingArray);
     });
 
     it('should method return expected object which represent multiple routes with alias', () => {
@@ -163,13 +166,88 @@ describe('RouterExplorer', () => {
       const instanceProto = Object.getPrototypeOf(instance);
 
       const route = routerBuilder.exploreMethodMetadata(
-        new TestRouteAlias(),
+        instance,
         instanceProto,
         'getTestUsingArray',
       );
 
       expect(route.path).to.eql(['/foo', '/bar']);
       expect(route.requestMethod).to.eql(RequestMethod.GET);
+      expect(route.targetCallback).to.eq(instance.getTestUsingArray);
+    });
+
+    describe('when new implementation is injected into router', () => {
+      it('should method return changed impl of single route', () => {
+        const instance = new TestRoute();
+        const instanceProto = Object.getPrototypeOf(instance);
+
+        const newImpl = function () {};
+        instance.getTest = newImpl;
+
+        const route = routerBuilder.exploreMethodMetadata(
+          instance,
+          instanceProto,
+          'getTest',
+        );
+
+        expect(route.targetCallback).to.eq(newImpl);
+        expect(route.path).to.eql(['/test']);
+        expect(route.requestMethod).to.eql(RequestMethod.GET);
+      });
+
+      it('should method return changed impl of single route which alias applied', () => {
+        const instance = new TestRouteAlias();
+        const instanceProto = Object.getPrototypeOf(instance);
+
+        const newImpl = function () {};
+        instance.getTest = newImpl;
+
+        const route = routerBuilder.exploreMethodMetadata(
+          instance,
+          instanceProto,
+          'getTest',
+        );
+
+        expect(route.targetCallback).to.eq(newImpl);
+        expect(route.path).to.eql(['/test']);
+        expect(route.requestMethod).to.eql(RequestMethod.GET);
+      });
+
+      it('should method return changed impl of multiple routes', () => {
+        const instance = new TestRoute();
+        const instanceProto = Object.getPrototypeOf(instance);
+
+        const newImpl = function () {};
+        instance.getTestUsingArray = newImpl;
+
+        const route = routerBuilder.exploreMethodMetadata(
+          instance,
+          instanceProto,
+          'getTestUsingArray',
+        );
+
+        expect(route.targetCallback).to.eq(newImpl);
+        expect(route.path).to.eql(['/foo', '/bar']);
+        expect(route.requestMethod).to.eql(RequestMethod.GET);
+      });
+
+      it('should method return changed impl of multiple routes which alias applied', () => {
+        const instance = new TestRouteAlias();
+        const instanceProto = Object.getPrototypeOf(instance);
+
+        const newImpl = function () {};
+        instance.getTestUsingArray = newImpl;
+
+        const route = routerBuilder.exploreMethodMetadata(
+          instance,
+          instanceProto,
+          'getTestUsingArray',
+        );
+
+        expect(route.targetCallback).to.eq(newImpl);
+        expect(route.path).to.eql(['/foo', '/bar']);
+        expect(route.requestMethod).to.eql(RequestMethod.GET);
+      });
     });
   });
 

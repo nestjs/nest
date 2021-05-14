@@ -30,8 +30,8 @@ export class RoutesMapper {
         },
       ];
     }
-    const routePath = this.getRoutePath(route);
-    if (this.isRouteInfo(routePath, route)) {
+    const routePathOrPaths = this.getRoutePath(route);
+    if (this.isRouteInfo(routePathOrPaths, route)) {
       return [
         {
           path: addLeadingSlash(route.path),
@@ -49,23 +49,28 @@ export class RoutesMapper {
     const concatPaths = <T>(acc: T[], currentValue: T[]) =>
       acc.concat(currentValue);
 
-    return controllerPaths
-      .map(item =>
-        item.path?.map(p => {
-          let path = modulePath ?? '';
-          path += this.normalizeGlobalPath(routePath) + addLeadingSlash(p);
+    return []
+      .concat(routePathOrPaths)
+      .map(routePath =>
+        controllerPaths
+          .map(item =>
+            item.path?.map(p => {
+              let path = modulePath ?? '';
+              path += this.normalizeGlobalPath(routePath) + addLeadingSlash(p);
 
-          return {
-            path,
-            method: item.requestMethod,
-          };
-        }),
+              return {
+                path,
+                method: item.requestMethod,
+              };
+            }),
+          )
+          .reduce(concatPaths, []),
       )
       .reduce(concatPaths, []);
   }
 
   private isRouteInfo(
-    path: string | undefined,
+    path: string | string[] | undefined,
     objectOrClass: Function | RouteInfo,
   ): objectOrClass is RouteInfo {
     return isUndefined(path);

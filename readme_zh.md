@@ -53,9 +53,6 @@ QQ群：489719517
 
 Nest是一个MIT许可的开源项目。它的发展得益于赞助商和支持者的支持。如果你想加入他们，请[查看更多](https://opencollective.com/nest)。谢谢！ :heart_eyes:
 
-
-<a href="https://valor-software.com/"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="300" /></a>
-
 ## 支持者
 
 <a href="https://opencollective.com/nest"><img src="https://opencollective.com/nest/backers.svg?width=890"></a>

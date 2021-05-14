@@ -17,13 +17,13 @@
     "access": "public"
   },
   "dependencies": {
-    "fastify": "3.12.0",
-    "fastify-cors": "5.2.0",
+    "fastify": "3.14.0",
+    "fastify-cors": "6.0.1",
     "fastify-formbody": "5.0.0",
     "light-my-request": "4.4.1",
     "middie": "5.2.0",
     "path-to-regexp": "3.2.0",
-    "tslib": "2.1.0"
+    "tslib": "2.2.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",

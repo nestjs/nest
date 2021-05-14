@@ -47,8 +47,8 @@ export class ConsoleLogger implements LoggerService {
    * Prints to `stdout` with newline.
    */
   log(message: any, context?: string): void;
-  log(message: any, ...optionalParams: [...any, string]): void;
-  log(message: any, ...optionalParams: [...any, string]) {
+  log(message: any, ...optionalParams: [...any, string?]): void;
+  log(message: any, ...optionalParams: any[]) {
     if (!this.isLevelEnabled('log')) {
       return;
     }
@@ -64,8 +64,8 @@ export class ConsoleLogger implements LoggerService {
    * Prints to `stderr` with newline.
    */
   error(message: any, stack?: string, context?: string): void;
-  error(message: any, ...optionalParams: [...any, string, string]): void;
-  error(message: any, ...optionalParams: [...any, string, string]) {
+  error(message: any, ...optionalParams: [...any, string?, string?]): void;
+  error(message: any, ...optionalParams: any[]) {
     if (!this.isLevelEnabled('error')) {
       return;
     }
@@ -84,8 +84,8 @@ export class ConsoleLogger implements LoggerService {
    * Prints to `stdout` with newline.
    */
   warn(message: any, context?: string): void;
-  warn(message: any, ...optionalParams: [...any, string]): void;
-  warn(message: any, ...optionalParams: [...any, string]) {
+  warn(message: any, ...optionalParams: [...any, string?]): void;
+  warn(message: any, ...optionalParams: any[]) {
     if (!this.isLevelEnabled('warn')) {
       return;
     }
@@ -101,8 +101,8 @@ export class ConsoleLogger implements LoggerService {
    * Prints to `stdout` with newline.
    */
   debug(message: any, context?: string): void;
-  debug(message: any, ...optionalParams: [...any, string]): void;
-  debug(message: any, ...optionalParams: [...any, string]) {
+  debug(message: any, ...optionalParams: [...any, string?]): void;
+  debug(message: any, ...optionalParams: any[]) {
     if (!this.isLevelEnabled('debug')) {
       return;
     }
@@ -118,8 +118,8 @@ export class ConsoleLogger implements LoggerService {
    * Prints to `stdout` with newline.
    */
   verbose(message: any, context?: string): void;
-  verbose(message: any, ...optionalParams: [...any, string]): void;
-  verbose(message: any, ...optionalParams: [...any, string]) {
+  verbose(message: any, ...optionalParams: [...any, string?]): void;
+  verbose(message: any, ...optionalParams: any[]) {
     if (!this.isLevelEnabled('verbose')) {
       return;
     }
@@ -163,7 +163,10 @@ export class ConsoleLogger implements LoggerService {
       day: '2-digit',
       month: '2-digit',
     };
-    return new Date(Date.now()).toLocaleString(undefined, localeStringOptions);
+    return new Date(Date.now()).toLocaleString(
+      undefined,
+      localeStringOptions as Intl.DateTimeFormatOptions,
+    );
   }
 
   protected printMessages(

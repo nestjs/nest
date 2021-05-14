@@ -30,10 +30,12 @@ export class MqttController {
 
   @Post('stream')
   @HttpCode(200)
-  stream(@Body() data: number[]): Observable<number> {
-    return this.client
+  async stream(@Body() data: number[]) {
+    const result = await this.client
       .send<number>({ cmd: 'streaming' }, data)
-      .pipe(scan((a, b) => a + b));
+      .pipe(scan((a, b) => a + b, 0))
+      .toPromise();
+    return result;
   }
 
   @Post('concurrent')

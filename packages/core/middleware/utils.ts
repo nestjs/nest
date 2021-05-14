@@ -29,7 +29,7 @@ export const mapToClass = <T extends Function | Type<any>>(
   excludedRoutes: RouteInfoRegex[],
   httpAdapter: HttpServer,
 ) => {
-  if (isClass(middleware)) {
+  if (isMiddlewareClass(middleware)) {
     if (excludedRoutes.length <= 0) {
       return middleware;
     }
@@ -59,8 +59,17 @@ export const mapToClass = <T extends Function | Type<any>>(
   );
 };
 
-export function isClass(middleware: any): middleware is Type<any> {
-  return middleware.toString().substring(0, 5) === 'class';
+export function isMiddlewareClass(middleware: any): middleware is Type<any> {
+  const middlewareStr = middleware.toString();
+  if (middlewareStr.substring(0, 5) === 'class') {
+    return true;
+  }
+  const middlewareArr = middlewareStr.split(' ');
+  return (
+    middlewareArr[0] === 'function' &&
+    /[A-Z]/.test(middlewareArr[1]?.[0]) &&
+    typeof middleware.prototype?.use === 'function'
+  );
 }
 
 export function assignToken(metatype: Type<any>, token = uuid()): Type<any> {
