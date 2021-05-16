@@ -8,7 +8,7 @@ import {
 } from '@nestjs/websockets/constants';
 import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer';
 import { EMPTY as empty, fromEvent, Observable } from 'rxjs';
-import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
+import { filter, first, switchMap, share, takeUntil } from 'rxjs/operators';
 
 let wsPackage: any = {};
 
@@ -64,7 +64,7 @@ export class WsAdapter extends AbstractWsAdapter {
   ) {
     const close$ = fromEvent(client, CLOSE_EVENT).pipe(share(), first());
     const source$ = fromEvent(client, 'message').pipe(
-      mergeMap(data =>
+      switchMap(data =>
         this.bindMessageHandler(data, handlers, transform).pipe(
           filter(result => result),
         ),
