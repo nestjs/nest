@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { of } from 'rxjs';
+import { lastValueFrom, of } from 'rxjs';
 import * as sinon from 'sinon';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 
@@ -63,7 +63,7 @@ describe('InterceptorsConsumer', () => {
             resultOrDeferred &&
             typeof resultOrDeferred.subscribe === 'function'
           ) {
-            return resultOrDeferred.toPromise();
+            return lastValueFrom(resultOrDeferred);
           }
           return resultOrDeferred;
         }
@@ -94,7 +94,7 @@ describe('InterceptorsConsumer', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = async () => val;
-        expect(await consumer.transformDeffered(next).toPromise()).to.be.eql(
+        expect(await lastValueFrom(consumer.transformDeffered(next))).to.be.eql(
           val,
         );
       });
@@ -103,7 +103,7 @@ describe('InterceptorsConsumer', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = async () => val;
-        expect(await consumer.transformDeffered(next).toPromise()).to.be.eql(
+        expect(await lastValueFrom(consumer.transformDeffered(next))).to.be.eql(
           val,
         );
       });
@@ -113,7 +113,7 @@ describe('InterceptorsConsumer', () => {
         const val = 3;
         const next = async () => of(val);
         expect(
-          await (await (consumer.transformDeffered(next) as any)).toPromise(),
+          await await lastValueFrom(consumer.transformDeffered(next) as any),
         ).to.be.eql(val);
       });
     });

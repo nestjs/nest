@@ -6,6 +6,7 @@ import {
   PipeTransform,
 } from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
+import { lastValueFrom } from 'rxjs';
 import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
@@ -37,7 +38,8 @@ export interface ExternalContextOptions {
 export class ExternalContextCreator {
   private readonly contextUtils = new ContextUtils();
   private readonly externalErrorProxy = new ExternalErrorProxy();
-  private readonly handlerMetadataStorage = new HandlerMetadataStorage<ExternalHandlerMetadata>();
+  private readonly handlerMetadataStorage =
+    new HandlerMetadataStorage<ExternalHandlerMetadata>();
   private container: NestContainer;
 
   constructor(
@@ -88,7 +90,7 @@ export class ExternalContextCreator {
 
   public create<
     TParamsMetadata extends ParamsMetadata = ParamsMetadata,
-    TContext extends string = ContextType
+    TContext extends string = ContextType,
   >(
     instance: Controller,
     callback: (...args: unknown[]) => unknown,
@@ -149,16 +151,15 @@ export class ExternalContextCreator {
       ? this.createGuardsFn(guards, instance, callback, contextType)
       : null;
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
-    const handler = (
-      initialArgs: unknown[],
-      ...args: unknown[]
-    ) => async () => {
-      if (fnApplyPipes) {
-        await fnApplyPipes(initialArgs, ...args);
-        return callback.apply(instance, initialArgs);
-      }
-      return callback.apply(instance, args);
-    };
+    const handler =
+      (initialArgs: unknown[], ...args: unknown[]) =>
+      async () => {
+        if (fnApplyPipes) {
+          await fnApplyPipes(initialArgs, ...args);
+          return callback.apply(instance, initialArgs);
+        }
+        return callback.apply(instance, args);
+      };
 
     const target = async (...args: any[]) => {
       const initialArgs = this.contextUtils.createNullArray(argsLength);
@@ -329,7 +330,7 @@ export class ExternalContextCreator {
 
   public async transformToResult(resultOrDeffered: any) {
     if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
-      return resultOrDeffered.toPromise();
+      return lastValueFrom(resultOrDeffered);
     }
     return resultOrDeffered;
   }

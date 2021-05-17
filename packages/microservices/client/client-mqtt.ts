@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
+import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
 import {
   CLOSE_EVENT,
@@ -61,7 +61,12 @@ export class ClientMqtt extends ClientProxy {
         ),
         share(),
       ),
-    );
+    ).catch(err => {
+      if (err instanceof EmptyError) {
+        return;
+      }
+      throw err;
+    });
     return this.connection;
   }
 
@@ -91,9 +96,8 @@ export class ClientMqtt extends ClientProxy {
   public createResponseCallback(): (channel: string, buffer: Buffer) => any {
     return (channel: string, buffer: Buffer) => {
       const packet = JSON.parse(buffer.toString());
-      const { err, response, isDisposed, id } = this.deserializer.deserialize(
-        packet,
-      );
+      const { err, response, isDisposed, id } =
+        this.deserializer.deserialize(packet);
 
       const callback = this.routingMap.get(id);
       if (!callback) {

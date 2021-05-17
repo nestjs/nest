@@ -1,6 +1,6 @@
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { expect } from 'chai';
-import { fromEvent, Observable, of } from 'rxjs';
+import { fromEvent, lastValueFrom, Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { AbstractWsAdapter } from '../adapters/ws-adapter';
@@ -340,9 +340,9 @@ describe('WebSocketsController', () => {
         it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (
+            await (lastValueFrom(
               await instance.pickResult(Promise.resolve(Promise.resolve(value)))
-            ).toPromise(),
+            )),
           ).to.be.eq(100);
         });
       });
@@ -351,9 +351,9 @@ describe('WebSocketsController', () => {
         it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (
+            await (lastValueFrom(
               await instance.pickResult(Promise.resolve(of(value)))
-            ).toPromise(),
+            )),
           ).to.be.eq(100);
         });
       });
@@ -362,9 +362,9 @@ describe('WebSocketsController', () => {
         it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (
+            await (lastValueFrom(
               await instance.pickResult(Promise.resolve(value))
-            ).toPromise(),
+            )),
           ).to.be.eq(100);
         });
       });

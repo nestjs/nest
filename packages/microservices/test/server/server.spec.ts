@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Observable, of, throwError as _throw } from 'rxjs';
+import { lastValueFrom, Observable, of, throwError as _throw } from 'rxjs';
 import * as sinon from 'sinon';
 import { Server } from '../../server/server';
 
@@ -152,9 +152,9 @@ describe('Server', () => {
         it('should return Observable', async () => {
           const value = 100;
           expect(
-            await server
-              .transformToObservable(Promise.resolve(value))
-              .toPromise(),
+            await lastValueFrom(
+              server.transformToObservable(Promise.resolve(value)),
+            ),
           ).to.be.eq(100);
         });
       });
@@ -162,7 +162,7 @@ describe('Server', () => {
         it('should return Observable', async () => {
           const value = 100;
           expect(
-            await server.transformToObservable(of(value)).toPromise(),
+            await lastValueFrom(server.transformToObservable(of(value))),
           ).to.be.eq(100);
         });
       });
@@ -170,7 +170,7 @@ describe('Server', () => {
         it('should return Observable', async () => {
           const value = 100;
           expect(
-            await server.transformToObservable(value).toPromise(),
+            await lastValueFrom(server.transformToObservable(value)),
           ).to.be.eq(100);
         });
       });

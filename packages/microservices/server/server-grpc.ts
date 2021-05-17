@@ -3,7 +3,7 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import { EMPTY, fromEvent, Subject } from 'rxjs';
+import { EMPTY, fromEvent, lastValueFrom, Subject } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
@@ -276,15 +276,15 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
         call.end();
       } else {
-        const response = await res
-          .pipe(
+        const response = await lastValueFrom(
+          res.pipe(
             takeUntil(fromEvent(call as any, CANCEL_EVENT)),
             catchError(err => {
               callback(err, null);
               return EMPTY;
             }),
-          )
-          .toPromise();
+          ),
+        );
 
         if (typeof response !== 'undefined') {
           callback(null, response);

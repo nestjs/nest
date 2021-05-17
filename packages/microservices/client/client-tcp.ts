@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import * as net from 'net';
-import { lastValueFrom } from 'rxjs';
+import { EmptyError, lastValueFrom } from 'rxjs';
 import { share, tap } from 'rxjs/operators';
 import {
   CLOSE_EVENT,
@@ -50,14 +50,19 @@ export class ClientTCP extends ClientProxy {
     );
 
     this.socket.connect(this.port, this.host);
-    this.connection = lastValueFrom(source$);
+    this.connection = lastValueFrom(source$).catch(err => {
+      if (err instanceof EmptyError) {
+        return;
+      }
+      throw err;
+    });
+
     return this.connection;
   }
 
   public handleResponse(buffer: unknown): void {
-    const { err, response, isDisposed, id } = this.deserializer.deserialize(
-      buffer,
-    );
+    const { err, response, isDisposed, id } =
+      this.deserializer.deserialize(buffer);
     const callback = this.routingMap.get(id);
     if (!callback) {
       return undefined;

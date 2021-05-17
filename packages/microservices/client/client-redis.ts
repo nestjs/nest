@@ -1,6 +1,13 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { fromEvent, lastValueFrom, merge, Subject, zip } from 'rxjs';
+import {
+  EmptyError,
+  fromEvent,
+  lastValueFrom,
+  merge,
+  Subject,
+  zip,
+} from 'rxjs';
 import { share, take, tap } from 'rxjs/operators';
 import {
   CONNECT_EVENT,
@@ -79,7 +86,12 @@ export class ClientRedis extends ClientProxy {
         ),
         share(),
       ),
-    );
+    ).catch(err => {
+      if (err instanceof EmptyError) {
+        return;
+      }
+      throw err;
+    });
     return this.connection;
   }
 
@@ -126,9 +138,8 @@ export class ClientRedis extends ClientProxy {
   public createResponseCallback(): (channel: string, buffer: string) => void {
     return (channel: string, buffer: string) => {
       const packet = JSON.parse(buffer);
-      const { err, response, isDisposed, id } = this.deserializer.deserialize(
-        packet,
-      );
+      const { err, response, isDisposed, id } =
+        this.deserializer.deserialize(packet);
 
       const callback = this.routingMap.get(id);
       if (!callback) {

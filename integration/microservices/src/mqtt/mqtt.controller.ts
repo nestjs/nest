@@ -6,7 +6,7 @@ import {
   MessagePattern,
   Transport,
 } from '@nestjs/microservices';
-import { from, Observable, of } from 'rxjs';
+import { from, lastValueFrom, Observable, of } from 'rxjs';
 import { scan } from 'rxjs/operators';
 
 @Controller()
@@ -31,10 +31,11 @@ export class MqttController {
   @Post('stream')
   @HttpCode(200)
   async stream(@Body() data: number[]) {
-    const result = await this.client
-      .send<number>({ cmd: 'streaming' }, data)
-      .pipe(scan((a, b) => a + b, 0))
-      .toPromise();
+    const result = lastValueFrom(
+      await this.client
+        .send<number>({ cmd: 'streaming' }, data)
+        .pipe(scan((a, b) => a + b, 0)),
+    );
     return result;
   }
 
@@ -43,9 +44,9 @@ export class MqttController {
   async concurrent(@Body() data: number[][]): Promise<boolean> {
     const send = async (tab: number[]) => {
       const expected = tab.reduce((a, b) => a + b);
-      const result = await this.client
-        .send<number>({ cmd: 'sum' }, tab)
-        .toPromise();
+      const result = await lastValueFrom(
+        this.client.send<number>({ cmd: 'sum' }, tab),
+      );
 
       return result === expected;
     };

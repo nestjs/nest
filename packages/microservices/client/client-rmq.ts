@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { EventEmitter } from 'events';
-import { fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
+import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
 import {
   DISCONNECTED_RMQ_MESSAGE,
@@ -92,7 +92,12 @@ export class ClientRMQ extends ClientProxy {
         switchMap(() => this.createChannel()),
         share(),
       ),
-    );
+    ).catch(err => {
+      if (err instanceof EmptyError) {
+        return;
+      }
+      throw err;
+    });
 
     return this.connection;
   }

@@ -10,7 +10,7 @@ import {
   RpcException,
   Transport,
 } from '@nestjs/microservices';
-import { from, Observable, of, throwError } from 'rxjs';
+import { from, lastValueFrom, Observable, of, throwError } from 'rxjs';
 import { catchError, scan } from 'rxjs/operators';
 import { NatsService } from './nats.service';
 
@@ -51,9 +51,9 @@ export class NatsController {
   concurrent(@Body() data: number[][]): Promise<boolean> {
     const send = async (tab: number[]) => {
       const expected = tab.reduce((a, b) => a + b);
-      const result = await this.client
-        .send<number>('math.sum', tab)
-        .toPromise();
+      const result = await lastValueFrom(
+        this.client.send<number>('math.sum', tab),
+      );
 
       return result === expected;
     };
