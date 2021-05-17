@@ -60,7 +60,7 @@ issueを開く前に、必ず[Issue Reporting Checklist](https://github.com/nest
 
 Nestは、MITライセンスのオープンソースプロジェクトです。スポンサーと支援者による素晴らしいサポートによって、その発展を支えられています。参加したい場合は[こちら](https://docs.nestjs.com/support)をご覧ください。
 
-## 連絡する
+## 連絡する
 
 * Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
 * Website - [https://nestjs.com](https://nestjs.com/)
