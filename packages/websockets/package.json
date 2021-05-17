@@ -1,10 +1,6 @@
 {
   "name": "@nestjs/websockets",
-<<<<<<< HEAD
   "version": "8.0.0-alpha.3",
-=======
-  "version": "7.6.15",
->>>>>>> master
   "description": "Nest - modern, fast, powerful node.js web framework (@websockets)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
