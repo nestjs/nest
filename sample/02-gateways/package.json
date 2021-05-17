@@ -32,7 +32,7 @@
     "socket.io-redis": "5.4.0"
   },
   "devDependencies": {
-    "@types/socket.io": "2.1.13",
+    "@types/socket.io": "3.0.1",
     "@types/socket.io-redis": "1.0.27",
     "@types/ws": "7.4.4",
     "@nestjs/cli": "7.6.0",
