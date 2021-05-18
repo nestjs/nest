@@ -29,7 +29,7 @@
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "6.6.7",
-    "socket.io-redis": "5.4.0"
+    "socket.io-redis": "6.1.1"
   },
   "devDependencies": {
     "@types/socket.io": "3.0.1",
