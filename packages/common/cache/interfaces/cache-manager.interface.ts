@@ -68,7 +68,7 @@ export interface CacheManagerOptions {
    * [Different stores](https://docs.nestjs.com/techniques/caching#different-stores)
    * for more info.
    */
-  store?: string | CacheStoreFactory;
+  store?: string | CacheStoreFactory | CacheStoreFactory[];
   /**
    * Time to live - amount of time in seconds that a response is cached before it
    * is deleted. Subsequent request will call through the route handler and refresh
