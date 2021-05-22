@@ -38,6 +38,7 @@ Nest is a framework for building efficient, scalable <a href="http://nodejs.org"
 * To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
 * 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
 * [가이드](readme_kr.md)를 확인하려면, [docs.nestjs.com](https://docs.nestjs.com)를 방문하세요.:books: 
+* チェックするには [ガイド](readme_jp.md), 詳しくは [docs.nestjs.com](https://docs.nestjs.com). :books: 
 
 ## Questions
 
@@ -74,7 +75,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://neoteric.eu/" target="_blank"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" valign="middle" /></a> </td><td>
   <a href="http://gojob.com" target="_blank"><img src="http://nestjs.com/img/gojob-logo.png" valign="middle" width="100" /></a> </td><td>
 <a href="http://www.leogistics.com" target="_blank"><img src="https://nestjs.com/img/leogistics-logo.jpeg" width="150" valign="middle" /></td><td>
-<a href="http://www.meetdandy.com" target="_blank"><img src="https://nestjs.com/img/dandy-wide-logo.png" width="150" valign="middle" /></td></tr></table>
+<a href="http://www.meetdandy.com" target="_blank"><img src="https://nestjs.com/img/dandy-wide-logo.png" width="150" valign="middle" /></td><td>
+<a href="https://www.castlecraft.in" target="_blank"><img src="https://nestjs.com/img/castlecraft-logo.png" width="150" valign="middle" /></td></tr></table>
 
 #### Sponsors
 
@@ -102,6 +104,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td align="center" valign="middle"><a href="https://thestandarddaily.com/" target="_blank"><img src="https://nestjs.com/img/the-standard-daily-logo.png" width="180" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://houseofangular.io/" target="_blank"><img src="https://nestjs.com/img/house-of-angular.png" width="100" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://rocketech.it/cases/?utm_source=google&utm_medium=badge&utm_campaign=nestjs" target="_blank"><img src="https://nestjs.com/img/rocketech-logo.svg" width="110" valign="middle" /></a></td>
+  <td align="center" valign="middle"><a href="https://www.bystored.com/" target="_blank"><img src="https://nestjs.com/img/stored-logo.svg" width="110" valign="middle" /></a></td>
+  <td align="center" valign="middle"><a href="https://studyclerk.com/pay-for-research-paper" target="_blank"><img src="https://nestjs.com/img/studyclerk-logo.png" width="125" valign="middle" /></a></td>
   </tr></table>
 
 ## Backers

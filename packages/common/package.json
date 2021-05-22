@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/common",
-  "version": "7.6.15",
+  "version": "7.6.17",
   "description": "Nest - modern, fast, powerful node.js web framework (@common)",
   "author": "Kamil Mysliwiec",
   "homepage": "https://nestjs.com",
@@ -19,7 +19,7 @@
   "dependencies": {
     "axios": "0.21.1",
     "iterare": "1.2.1",
-    "tslib": "2.1.0",
+    "tslib": "2.2.0",
     "uuid": "8.3.2"
   },
   "peerDependencies": {
