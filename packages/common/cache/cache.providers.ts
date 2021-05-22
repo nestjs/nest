@@ -17,11 +17,14 @@ export function createCacheManager(): Provider {
         require('cache-manager'),
       );
 
-      return Array.isArray(options.store)
-        ? cacheManager.multiCaching(options.store, {
-          ...defaultCacheOptions,
-          ...(options || {}),
-        })
+      return Array.isArray(options)
+        ? cacheManager.multiCaching(
+          options.map(store => cacheManager.caching({
+              ...defaultCacheOptions,
+              ...(store || {}),
+            })
+          )
+        )
         : cacheManager.caching({
           ...defaultCacheOptions,
           ...(options || {}),
