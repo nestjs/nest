@@ -1,5 +1,9 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
-import { FactoryProvider, ValueProvider } from '@nestjs/common/interfaces';
+import {
+  ExistingProvider,
+  FactoryProvider,
+  ValueProvider,
+} from '@nestjs/common/interfaces';
 import { requestProvider } from '../router/request/request-providers';
 import { Reflector } from '../services';
 import { inquirerProvider } from './inquirer/inquirer-providers';
@@ -26,7 +30,7 @@ const ReflectorAliasProvider = {
 })
 export class InternalCoreModule {
   static register(
-    providers: Array<ValueProvider | FactoryProvider>,
+    providers: Array<ValueProvider | FactoryProvider | ExistingProvider>,
   ): DynamicModule {
     return {
       module: InternalCoreModule,
