@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common/services/logger.service';
+import { Logger, LoggerService } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import {
@@ -34,7 +34,7 @@ import { transformPatternToRoute } from '../utils';
 
 export abstract class Server {
   protected readonly messageHandlers = new Map<string, MessageHandler>();
-  protected readonly logger = new Logger(Server.name);
+  protected readonly logger: LoggerService = new Logger(Server.name);
   protected serializer: ConsumerSerializer;
   protected deserializer: ConsumerDeserializer;
 
