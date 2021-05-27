@@ -149,8 +149,13 @@ export class Logger implements LoggerService {
     isTimeDiffEnabled?: boolean,
     writeStreamType?: 'stdout' | 'stderr',
   ) {
+    
     const output = isPlainObject(message)
-      ? `${color('Object:')}\n${JSON.stringify(message, null, 2)}\n`
+      ? `${color('Object:')}\n${JSON.stringify(message,  (key, value) =>
+            typeof value === 'bigint'
+                ? value.toString()
+                : value
+        , 2)}\n`
       : color(message);
 
     const pidMessage = color(`[Nest] ${process.pid}   - `);
