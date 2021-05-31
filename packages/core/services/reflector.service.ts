@@ -91,4 +91,24 @@ export class Reflector {
     );
     return metadataCollection[0];
   }
+
+  /**
+   * Retrieve metadata keys defined on the target object or its prototype chain.
+   *
+   * @param target context (decorated objects) to retrieve metadata from
+   *
+   */
+  public getKeys<TResult = any, TKey = any>(target: Type<any> | Function): string[] {
+    return Reflect.getMetadataKeys(target) as string[]
+  }
+
+  /**
+   * Retrieve metadata keys defined on the target object.
+   *
+   * @param target context (decorated objects) to retrieve metadata from
+   *
+   */
+  public getOwnKeys<TResult = any, TKey = any>(target: Type<any> | Function): string[] {
+    return Reflect.getOwnMetadataKeys(target) as string[]
+  }
 }

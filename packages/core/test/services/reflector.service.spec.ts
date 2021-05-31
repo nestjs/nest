@@ -3,7 +3,8 @@ import { Reflector } from '../../services/reflector.service';
 
 describe('Reflector', () => {
   let reflector: Reflector;
-  class Test {}
+  class TestAncestor {}
+  class Test extends TestAncestor {}
   beforeEach(() => {
     reflector = new Reflector();
   });
@@ -60,6 +61,30 @@ describe('Reflector', () => {
       const value = 'value';
       Reflect.defineMetadata(key, value, Test);
       expect(reflector.getAllAndOverride(key, [Test, Test])).to.eql(value);
+    });
+  });
+
+  describe('getKeys', () => {
+    it('should retrieve metadata keys defined on the target object or its prototype chain', () => {
+      const keyPrototype = 'key-prototype';
+      const valuePrototype = 'value-prototype';
+      Reflect.defineMetadata(keyPrototype, valuePrototype, TestAncestor);
+      const key = 'key';
+      const value = 'value';
+      Reflect.defineMetadata(key, value, Test);
+      expect(reflector.getKeys(Test)).to.eql([key, keyPrototype]);
+    });
+  });
+
+  describe('getOwnKeys', () => {
+    it('should retrieve metadata keys defined on the target object', () => {
+      const keyPrototype = 'key-prototype';
+      const valuePrototype = 'value-prototype';
+      Reflect.defineMetadata(keyPrototype, valuePrototype, TestAncestor);
+      const key = 'key';
+      const value = 'value';
+      Reflect.defineMetadata(key, value, Test);
+      expect(reflector.getOwnKeys(Test)).to.eql([key]);
     });
   });
 });
