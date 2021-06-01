@@ -50,7 +50,7 @@ export interface GrpcOptions {
     channelOptions?: ChannelOptions;
     credentials?: any;
     protoPath: string | string[];
-    package: string | string[];
+    package?: string | string[];
     protoLoader?: string;
     loader?: {
       keepCase?: boolean;
