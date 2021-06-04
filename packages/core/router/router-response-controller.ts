@@ -105,7 +105,16 @@ export class RouterResponseController {
             }),
         ),
       )
-      .subscribe();
+      .subscribe({
+        next: () => {},
+        error: err => {
+          response.end()
+          throw err
+        },
+        complete: () => {
+          response.end()
+        }
+      });
 
     request.on('close', () => {
       response.end();

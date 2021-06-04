@@ -23,7 +23,7 @@ interface WriteHeaders {
   flushHeaders?(): void;
 }
 
-export type HeaderStream = NodeJS.WritableStream & WriteHeaders;
+export type HeaderStream = NodeJS.WritableStream & WriteHeaders & ServerResponse;
 
 /**
  * Adapted from https://raw.githubusercontent.com/EventSource/node-ssestream
@@ -51,6 +51,11 @@ export class SseStream extends Transform {
   }
 
   pipe<T extends HeaderStream>(destination: T, options?: { end?: boolean }): T {
+    // It's possible that we sent headers already so don't pipe
+    if (destination.writableEnded) {
+      return
+    }
+
     if (destination.writeHead) {
       destination.writeHead(200, {
         // See https://github.com/dunglas/mercure/blob/master/hub/subscribe.go#L124-L130
@@ -65,7 +70,6 @@ export class SseStream extends Transform {
         // NGINX support https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/#x-accel-buffering
         'X-Accel-Buffering': 'no',
       });
-      destination.flushHeaders();
     }
 
     destination.write(':\n');

@@ -323,5 +323,21 @@ data: test
       );
       request.emit('close');
     });
+
+    it('should close the request when observable completes', done => {
+      const result = of('test');
+      const response = new Writable();
+      response.end = () => done();
+      response._write = () => {};
+
+      const request = new Writable();
+      request._write = () => {};
+
+      routerResponseController.sse(
+        result,
+        (response as unknown) as ServerResponse,
+        (request as unknown) as IncomingMessage,
+      );
+    });
   });
 });
