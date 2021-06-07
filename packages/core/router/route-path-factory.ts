@@ -76,13 +76,21 @@ export class RoutePathFactory {
 
   public appendToAllIfDefined(
     paths: string[],
-    fragmentToAppend: string | undefined,
+    fragmentToAppend: string | string[] | undefined,
   ): string[] {
-    return fragmentToAppend
-      ? paths.map(
-          path => stripEndSlash(path) + addLeadingSlash(fragmentToAppend),
-        )
-      : paths;
+    if (!fragmentToAppend) {
+      return paths;
+    }
+    const concatPaths = (a: string, b: string) =>
+      stripEndSlash(a) + addLeadingSlash(b);
+
+    if (Array.isArray(fragmentToAppend)) {
+      const paths2dArray = paths.map(path =>
+        fragmentToAppend.map(fragment => concatPaths(path, fragment)),
+      );
+      return flatten(paths2dArray);
+    }
+    return paths.map(path => concatPaths(path, fragmentToAppend));
   }
 
   public isExcludedFromGlobalPrefix(

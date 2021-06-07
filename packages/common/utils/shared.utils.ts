@@ -25,7 +25,11 @@ export const isPlainObject = (fn: any): fn is object => {
 };
 
 export const addLeadingSlash = (path?: string): string =>
-  path ? (path.charAt(0) !== '/' ? '/' + path : path) : '';
+  path && typeof path === 'string'
+    ? path.charAt(0) !== '/'
+      ? '/' + path
+      : path
+    : '';
 
 /**
  * Deprecated. Use the "addLeadingSlash" function instead.
