@@ -67,6 +67,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <table style="text-align:center;"><tr><td>
   <a href="https://careers.labster.com/departments/platform" target="_blank"><img src="https://nestjs.com/img/labster-logo.png" width="170" valign="middle" /></a></td><td>
+<a href="https://weld.so/" target="_blank"><img src="https://nestjs.com/img/weld-logo.svg" width="150" valign="middle" /></a></td><td>
 <a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td></tr></table>
 
 #### Silver Sponsors
