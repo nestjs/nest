@@ -18,9 +18,19 @@ export class KafkaParser {
     return data;
   }
 
-  public static decode(value: Buffer): object | string | null {
+  public static decode(value: Buffer): object | string | null | Buffer {
     if (isNil(value)) {
       return null;
+    }
+
+    // a value with leading zero byte indicates a schema payload.
+    // The content is possibly binary and should not be touched.
+    if (
+      Buffer.isBuffer(value) &&
+      value.length > 0 &&
+      value.readUInt8(0) === 0
+    ) {
+      return value;
     }
 
     let result = value.toString();
