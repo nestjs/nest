@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/testing",
-  "version": "8.0.0-alpha.6",
+  "version": "8.0.0-alpha.7",
   "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
