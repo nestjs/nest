@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-ws",
-  "version": "7.6.17",
+  "version": "7.6.18",
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-ws)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
