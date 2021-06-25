@@ -85,7 +85,7 @@
     "@types/chai": "4.2.18",
     "@types/chai-as-promised": "7.1.4",
     "@types/cors": "2.8.10",
-    "@types/express": "4.17.11",
+    "@types/express": "4.17.12",
     "@types/gulp": "4.0.8",
     "@types/http-errors": "1.8.0",
     "@types/mocha": "8.2.2",

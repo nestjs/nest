@@ -32,7 +32,7 @@
     "@nestjs/cli": "7.6.0",
     "@nestjs/schematics": "7.3.1",
     "@nestjs/testing": "7.6.15",
-    "@types/express": "4.17.11",
+    "@types/express": "4.17.12",
     "@types/jest": "26.0.23",
     "@types/multer": "1.4.5",
     "@types/node": "14.14.45",
