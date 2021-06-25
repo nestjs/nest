@@ -2,13 +2,13 @@ import {
   Body,
   Controller,
   HttpCode,
+  OnModuleDestroy,
   OnModuleInit,
   Post,
-  OnModuleDestroy,
 } from '@nestjs/common';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { Client, ClientKafka, Transport } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
+import { lastValueFrom, Observable } from 'rxjs';
 import { BusinessDto } from './dtos/business.dto';
 import { UserDto } from './dtos/user.dto';
 
@@ -57,14 +57,14 @@ export class KafkaController implements OnModuleInit, OnModuleDestroy {
   async mathSumSyncKafkaMessage(
     @Body() data: number[],
   ): Promise<Observable<any>> {
-    const result = await this.client
-      .send('math.sum.sync.kafka.message', {
+    const result = await lastValueFrom(
+      this.client.send('math.sum.sync.kafka.message', {
         key: '1',
         value: {
           numbers: data,
         },
-      })
-      .toPromise();
+      }),
+    );
     return result;
   }
 
@@ -74,13 +74,13 @@ export class KafkaController implements OnModuleInit, OnModuleDestroy {
   async mathSumSyncWithoutKey(
     @Body() data: number[],
   ): Promise<Observable<any>> {
-    const result = await this.client
-      .send('math.sum.sync.without.key', {
+    const result = await lastValueFrom(
+      this.client.send('math.sum.sync.without.key', {
         value: {
           numbers: data,
         },
-      })
-      .toPromise();
+      }),
+    );
     return result;
   }
 
@@ -90,11 +90,11 @@ export class KafkaController implements OnModuleInit, OnModuleDestroy {
   async mathSumSyncPlainObject(
     @Body() data: number[],
   ): Promise<Observable<any>> {
-    const result = await this.client
-      .send('math.sum.sync.plain.object', {
+    const result = await lastValueFrom(
+      this.client.send('math.sum.sync.plain.object', {
         numbers: data,
-      })
-      .toPromise();
+      }),
+    );
     return result;
   }
 
@@ -102,9 +102,9 @@ export class KafkaController implements OnModuleInit, OnModuleDestroy {
   @Post('mathSumSyncArray')
   @HttpCode(200)
   async mathSumSyncArray(@Body() data: number[]): Promise<Observable<any>> {
-    const result = await this.client
-      .send('math.sum.sync.array', data)
-      .toPromise();
+    const result = await lastValueFrom(
+      this.client.send('math.sum.sync.array', data),
+    );
     return result;
   }
 
@@ -112,18 +112,18 @@ export class KafkaController implements OnModuleInit, OnModuleDestroy {
   @HttpCode(200)
   async mathSumSyncString(@Body() data: number[]): Promise<Observable<any>> {
     // this.logger.error(util.format('mathSumSyncString() data: %o', data));
-    const result = await this.client
-      .send('math.sum.sync.string', data.toString())
-      .toPromise();
+    const result = await lastValueFrom(
+      this.client.send('math.sum.sync.string', data.toString()),
+    );
     return result;
   }
 
   @Post('mathSumSyncNumber')
   @HttpCode(200)
   async mathSumSyncNumber(@Body() data: number[]): Promise<Observable<any>> {
-    const result = await this.client
-      .send('math.sum.sync.number', data[0])
-      .toPromise();
+    const result = await lastValueFrom(
+      this.client.send('math.sum.sync.number', data[0]),
+    );
     return result;
   }
 
@@ -137,14 +137,14 @@ export class KafkaController implements OnModuleInit, OnModuleDestroy {
   @Post('/user')
   @HttpCode(200)
   async createUser(@Body() user: UserDto): Promise<Observable<any>> {
-    const result = await this.client
-      .send('user.create', {
+    const result = await lastValueFrom(
+      this.client.send('user.create', {
         key: '1',
         value: {
           user,
         },
-      })
-      .toPromise();
+      }),
+    );
     return result;
   }
 
@@ -152,14 +152,14 @@ export class KafkaController implements OnModuleInit, OnModuleDestroy {
   @Post('/business')
   @HttpCode(200)
   async createBusiness(@Body() business: BusinessDto) {
-    const result = await this.client
-      .send('business.create', {
+    const result = await lastValueFrom(
+      this.client.send('business.create', {
         key: '1',
         value: {
           business,
         },
-      })
-      .toPromise();
+      }),
+    );
     return result;
   }
 }

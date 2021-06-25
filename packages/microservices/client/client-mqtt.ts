@@ -1,9 +1,10 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { fromEvent, merge, Observable } from 'rxjs';
+import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
 import {
   CLOSE_EVENT,
+  ECONNREFUSED,
   ERROR_EVENT,
   MESSAGE_EVENT,
   MQTT_DEFAULT_URL,
@@ -11,7 +12,6 @@ import {
 import { MqttClient } from '../external/mqtt-client.interface';
 import { MqttOptions, ReadPacket, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
-import { ECONNREFUSED } from './constants';
 
 let mqttPackage: any = {};
 
@@ -54,14 +54,19 @@ export class ClientMqtt extends ClientProxy {
     this.handleError(this.mqttClient);
 
     const connect$ = this.connect$(this.mqttClient);
-    this.connection = this.mergeCloseEvent(this.mqttClient, connect$)
-      .pipe(
+    this.connection = lastValueFrom(
+      this.mergeCloseEvent(this.mqttClient, connect$).pipe(
         tap(() =>
           this.mqttClient.on(MESSAGE_EVENT, this.createResponseCallback()),
         ),
         share(),
-      )
-      .toPromise();
+      ),
+    ).catch(err => {
+      if (err instanceof EmptyError) {
+        return;
+      }
+      throw err;
+    });
     return this.connection;
   }
 
@@ -91,9 +96,8 @@ export class ClientMqtt extends ClientProxy {
   public createResponseCallback(): (channel: string, buffer: Buffer) => any {
     return (channel: string, buffer: Buffer) => {
       const packet = JSON.parse(buffer.toString());
-      const { err, response, isDisposed, id } = this.deserializer.deserialize(
-        packet,
-      );
+      const { err, response, isDisposed, id } =
+        this.deserializer.deserialize(packet);
 
       const callback = this.routingMap.get(id);
       if (!callback) {
@@ -116,7 +120,7 @@ export class ClientMqtt extends ClientProxy {
   protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Function {
+  ): () => void {
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);

@@ -15,13 +15,13 @@ async function bootstrap() {
    *    protoPath: join(__dirname, './hero/hero.proto'),
    *  }
    * });
-   * await app.listenAsync();
+   * await app.listen();
    *
    */
   const app = await NestFactory.create(AppModule);
   app.connectMicroservice<MicroserviceOptions>(grpcClientOptions);
 
-  await app.startAllMicroservicesAsync();
+  await app.startAllMicroservices();
   await app.listen(3001);
   console.log(`Application is running on: ${await app.getUrl()}`);
 }

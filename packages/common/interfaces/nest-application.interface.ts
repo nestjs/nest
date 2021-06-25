@@ -4,6 +4,7 @@ import {
 } from './external/cors-options.interface';
 import { CanActivate } from './features/can-activate.interface';
 import { NestInterceptor } from './features/nest-interceptor.interface';
+import { GlobalPrefixOptions } from './global-prefix-options.interface';
 import { HttpServer } from './http/http-server.interface';
 import {
   ExceptionFilter,
@@ -12,6 +13,7 @@ import {
   PipeTransform,
 } from './index';
 import { INestApplicationContext } from './nest-application-context.interface';
+import { VersioningOptions } from './version-options.interface';
 import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 
 /**
@@ -36,6 +38,15 @@ export interface INestApplication extends INestApplicationContext {
   enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void;
 
   /**
+   * Enables Versioning for the application.
+   * By default, URI-based versioning is used.
+   *
+   * @param {VersioningOptions} options
+   * @returns {this}
+   */
+  enableVersioning(options?: VersioningOptions): this;
+
+  /**
    * Starts the application.
    *
    * @param {number|string} port
@@ -51,14 +62,8 @@ export interface INestApplication extends INestApplicationContext {
   ): Promise<any>;
 
   /**
-   * Returns the url the application is listening at, based on OS and IP version. Returns as an IP value either in IPv6 or IPv4
-   *
-   * @returns {Promise<string>} The IP where the server is listening
-   */
-  getUrl(): Promise<string>;
-
-  /**
    * Starts the application (can be awaited).
+   * @deprecated use "listen" instead.
    *
    * @param {number|string} port
    * @param {string} [hostname]
@@ -67,12 +72,20 @@ export interface INestApplication extends INestApplicationContext {
   listenAsync(port: number | string, hostname?: string): Promise<any>;
 
   /**
+   * Returns the url the application is listening at, based on OS and IP version. Returns as an IP value either in IPv6 or IPv4
+   *
+   * @returns {Promise<string>} The IP where the server is listening
+   */
+  getUrl(): Promise<string>;
+
+  /**
    * Registers a prefix for every HTTP route path.
    *
    * @param {string} prefix The prefix for every HTTP route path (for example `/v1/api`)
+   * @param {GlobalPrefixOptions} options Global prefix options object
    * @returns {this}
    */
-  setGlobalPrefix(prefix: string): this;
+  setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this;
 
   /**
    * Register Ws Adapter which will be used inside Gateways.
@@ -121,17 +134,17 @@ export interface INestApplication extends INestApplicationContext {
   /**
    * Starts all connected microservices asynchronously.
    *
-   * @param {Function} [callback] Optional callback function
-   * @returns {this}
+   * @returns {Promise}
    */
-  startAllMicroservices(callback?: () => void): this;
+  startAllMicroservices(): Promise<this>;
 
   /**
    * Starts all connected microservices and can be awaited.
+   * @deprecated use "startAllMicroservices" instead.
    *
    * @returns {Promise}
    */
-  startAllMicroservicesAsync(): Promise<void>;
+  startAllMicroservicesAsync(): Promise<this>;
 
   /**
    * Registers exception filters as global filters (will be used within

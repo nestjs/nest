@@ -13,7 +13,7 @@ import {
 } from './gateway-metadata-explorer';
 import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
 import { NestGateway } from './interfaces/nest-gateway.interface';
-import { SocketEventsHost } from './interfaces/socket-events-host.interface';
+import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams-host.interface';
 import { SocketServerProvider } from './socket-server-provider';
 import { compareElementAt } from './utils/compare-element.util';
 
@@ -72,7 +72,7 @@ export class WebSocketsController {
   public subscribeEvents(
     instance: NestGateway,
     subscribersMap: MessageMappingProperties[],
-    observableServer: SocketEventsHost,
+    observableServer: ServerAndEventStreamsHost,
   ) {
     const { init, disconnect, connection, server } = observableServer;
     const adapter = this.config.getIoAdapter();

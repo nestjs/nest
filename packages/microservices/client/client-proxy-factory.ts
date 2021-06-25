@@ -41,7 +41,7 @@ export class ClientProxyFactory {
       const { customClass, options } = clientOptions;
       return new customClass(options);
     }
-    const { transport, options } = clientOptions;
+    const { transport, options } = clientOptions || {};
     switch (transport) {
       case Transport.REDIS:
         return new ClientRedis(options as RedisOptions['options']);

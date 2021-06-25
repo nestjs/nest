@@ -10,7 +10,12 @@ import { scan, take } from 'rxjs/operators';
 
 @Controller()
 export class NatsBroadcastController {
-  @Client({ transport: Transport.NATS })
+  @Client({
+    transport: Transport.NATS,
+    options: {
+      servers: 'nats://localhost:4222',
+    },
+  })
   client: ClientProxy;
 
   @Get('broadcast')

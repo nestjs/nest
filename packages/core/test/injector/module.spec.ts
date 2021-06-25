@@ -36,9 +36,10 @@ describe('Module', () => {
     module.addController(Test);
     expect(
       setSpy.calledWith(
-        'Test',
+        Test,
         new InstanceWrapper({
           host: module,
+          token: Test,
           name: 'Test',
           scope: Scope.REQUEST,
           metatype: Test,
@@ -57,10 +58,11 @@ describe('Module', () => {
     module.addInjectable(TestProvider, TestModule);
     expect(
       setSpy.calledWith(
-        'TestProvider',
+        TestProvider,
         new InstanceWrapper({
           host: module,
           name: 'TestProvider',
+          token: TestProvider,
           scope: undefined,
           metatype: TestProvider,
           instance: null,
@@ -87,10 +89,11 @@ describe('Module', () => {
     module.addProvider(TestProvider);
     expect(
       setSpy.calledWith(
-        'TestProvider',
+        TestProvider,
         new InstanceWrapper({
           host: module,
           name: 'TestProvider',
+          token: TestProvider,
           scope: undefined,
           metatype: TestProvider,
           instance: null,
@@ -152,7 +155,7 @@ describe('Module', () => {
 
   describe('addCustomClass', () => {
     const type = { name: 'TypeTest' };
-    const provider = { provide: type, useClass: type, name: 'test' };
+    const provider = { provide: type, useClass: type };
     let setSpy;
 
     beforeEach(() => {
@@ -164,10 +167,11 @@ describe('Module', () => {
       module.addCustomClass(provider as any, (module as any)._providers);
       expect(
         setSpy.calledWith(
-          provider.name,
+          provider.provide,
           new InstanceWrapper({
             host: module,
-            name: provider.name,
+            token: type as any,
+            name: provider.provide.name,
             scope: undefined,
             metatype: type as any,
             instance: null,
@@ -181,8 +185,7 @@ describe('Module', () => {
   describe('addCustomValue', () => {
     let setSpy;
     const value = () => ({});
-    const name = 'test';
-    const provider = { provide: value, name, useValue: value };
+    const provider = { provide: value, useValue: value };
 
     beforeEach(() => {
       const collection = new Map();
@@ -194,10 +197,11 @@ describe('Module', () => {
       module.addCustomValue(provider as any, (module as any)._providers);
       expect(
         setSpy.calledWith(
-          name,
+          provider.provide,
           new InstanceWrapper({
             host: module,
-            name,
+            token: provider.provide,
+            name: provider.provide.name,
             scope: Scope.DEFAULT,
             metatype: null,
             instance: value,
@@ -212,7 +216,7 @@ describe('Module', () => {
   describe('addCustomFactory', () => {
     const type = { name: 'TypeTest' };
     const inject = [1, 2, 3];
-    const provider = { provide: type, useFactory: type, name: 'test', inject };
+    const provider = { provide: type, useFactory: type, inject };
 
     let setSpy;
     beforeEach(() => {
@@ -222,12 +226,14 @@ describe('Module', () => {
     });
     it('should store provider', () => {
       module.addCustomFactory(provider as any, (module as any)._providers);
+
       expect(
         setSpy.calledWith(
-          provider.name,
+          provider.provide,
           new InstanceWrapper({
             host: module,
-            name: provider.name,
+            token: provider.provide as any,
+            name: provider.provide.name,
             scope: undefined,
             metatype: type as any,
             instance: null,
@@ -241,7 +247,7 @@ describe('Module', () => {
 
   describe('addCustomUseExisting', () => {
     const type = { name: 'TypeTest' };
-    const provider = { provide: type, useExisting: type, name: 'test' };
+    const provider = { provide: type, useExisting: type };
 
     let setSpy;
     beforeEach(() => {
@@ -251,13 +257,17 @@ describe('Module', () => {
     });
     it('should store provider', () => {
       module.addCustomUseExisting(provider as any, (module as any)._providers);
-      const factoryFn = (module as any)._providers.get(provider.name).metatype;
+      const factoryFn = (module as any)._providers.get(provider.provide)
+        .metatype;
+
+      const token = provider.provide as any;
       expect(
         setSpy.calledWith(
-          provider.name,
+          token,
           new InstanceWrapper({
             host: module,
-            name: provider.name,
+            token,
+            name: provider.provide.name,
             metatype: factoryFn,
             instance: null,
             inject: [provider.useExisting as any],
@@ -280,7 +290,7 @@ describe('Module', () => {
       });
     });
     describe('when metatype exists in providers collection', () => {
-      it('should returns null', () => {
+      it('should return null', () => {
         expect(module.instance).to.be.eql(null);
       });
     });
@@ -416,11 +426,11 @@ describe('Module', () => {
     });
     describe('when unit exists in related modules collection', () => {
       it('should behave as identity', () => {
-        const metatype = { name: token };
+        class Random {}
         (module as any)._imports = new Set([
-          new Module(metatype as any, new NestContainer()),
+          new Module(Random, new NestContainer()),
         ]);
-        expect(module.validateExportedProvider(token)).to.be.eql(token);
+        expect(module.validateExportedProvider(Random)).to.be.eql(Random);
       });
     });
     describe('when unit does not exist in both provider and related modules collections', () => {
@@ -477,7 +487,7 @@ describe('Module', () => {
     describe('otherwise', () => {
       it('should return instance wrapper', () => {
         module.addProvider(TestProvider);
-        expect(module.getProviderByKey('TestProvider')).to.not.be.undefined;
+        expect(module.getProviderByKey(TestProvider)).to.not.be.undefined;
       });
     });
   });

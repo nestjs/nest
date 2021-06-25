@@ -11,7 +11,6 @@ import {
 import { MqttClientOptions } from '../external/mqtt-options.interface';
 import { ClientOpts } from '../external/redis.interface';
 import { RmqUrl } from '../external/rmq-url.interface';
-import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
@@ -103,8 +102,11 @@ export interface MqttOptions {
 export interface NatsOptions {
   transport?: Transport.NATS;
   options?: {
+    authenticator?: any;
+    debug?: boolean;
+    ignoreClusterUpdates?: boolean;
+    inboxPrefix?: string;
     encoding?: string;
-    url?: string;
     name?: string;
     user?: string;
     pass?: string;
@@ -114,7 +116,7 @@ export interface NatsOptions {
     reconnectJitter?: number;
     reconnectJitterTLS?: number;
     reconnectDelayHandler?: any;
-    servers?: string[];
+    servers?: string[] | string;
     nkey?: any;
     reconnect?: boolean;
     pedantic?: boolean;

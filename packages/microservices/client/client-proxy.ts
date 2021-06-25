@@ -1,15 +1,16 @@
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import {
-  ConnectableObservable,
+  connectable,
   defer,
   fromEvent,
   merge,
   Observable,
   Observer,
+  Subject,
   throwError as _throw,
 } from 'rxjs';
-import { map, mergeMap, publish, take } from 'rxjs/operators';
+import { map, mergeMap, take } from 'rxjs/operators';
 import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
 import { IncomingResponseDeserializer } from '../deserializers/incoming-response.deserializer';
 import { InvalidMessageException } from '../errors/invalid-message.exception';
@@ -62,20 +63,23 @@ export abstract class ClientProxy {
     data: TInput,
   ): Observable<TResult> {
     if (isNil(pattern) || isNil(data)) {
-      return _throw(new InvalidMessageException());
+      return _throw(() => new InvalidMessageException());
     }
     const source = defer(async () => this.connect()).pipe(
       mergeMap(() => this.dispatchEvent({ pattern, data })),
-      publish(),
     );
-    (source as ConnectableObservable<TResult>).connect();
-    return source;
+    const connectableSource = connectable(source, {
+      connector: () => new Subject(),
+      resetOnDisconnect: false,
+    });
+    connectableSource.connect();
+    return connectableSource;
   }
 
   protected abstract publish(
     packet: ReadPacket,
     callback: (packet: WritePacket) => void,
-  ): Function;
+  ): () => void;
 
   protected abstract dispatchEvent<T = any>(packet: ReadPacket): Promise<T>;
 
