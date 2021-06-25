@@ -44,7 +44,7 @@ import {
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
-  Logger extends FastifyLoggerInstance = FastifyLoggerInstance
+  Logger extends FastifyLoggerInstance = FastifyLoggerInstance,
 > = FastifyServerOptions<Server, Logger> & {
   http2: true;
   https: http2.SecureServerOptions;
@@ -52,7 +52,7 @@ type FastifyHttp2SecureOptions<
 
 type FastifyHttp2Options<
   Server extends http2.Http2Server,
-  Logger extends FastifyLoggerInstance = FastifyLoggerInstance
+  Logger extends FastifyLoggerInstance = FastifyLoggerInstance,
 > = FastifyServerOptions<Server, Logger> & {
   http2: true;
   http2SessionTimeout?: number;
@@ -60,7 +60,7 @@ type FastifyHttp2Options<
 
 type FastifyHttpsOptions<
   Server extends https.Server,
-  Logger extends FastifyLoggerInstance = FastifyLoggerInstance
+  Logger extends FastifyLoggerInstance = FastifyLoggerInstance,
 > = FastifyServerOptions<Server, Logger> & {
   https: https.ServerOptions;
 };
@@ -68,7 +68,7 @@ type FastifyHttpsOptions<
 export class FastifyAdapter<
   TServer extends RawServerBase = RawServerDefault,
   TRawRequest extends RawRequestDefaultExpression<TServer> = RawRequestDefaultExpression<TServer>,
-  TRawResponse extends RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>
+  TRawResponse extends RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>,
 > extends AbstractHttpAdapter<
   TServer,
   FastifyRequest<RequestGenericInterface, TServer, TRawRequest>,
@@ -89,7 +89,7 @@ export class FastifyAdapter<
   constructor(
     instanceOrOptions:
       | FastifyInstance<TServer>
-      | FastifyHttp2Options<TServer>
+      | FastifyHttp2Options<any>
       | FastifyHttp2SecureOptions<any>
       | FastifyHttpsOptions<any>
       | FastifyServerOptions<TServer> = fastify() as any,
@@ -184,13 +184,13 @@ export class FastifyAdapter<
   }
 
   public getHttpServer<T = TServer>(): T {
-    return (this.instance.server as unknown) as T;
+    return this.instance.server as unknown as T;
   }
 
   public getInstance<
-    T = FastifyInstance<TServer, TRawRequest, TRawResponse>
+    T = FastifyInstance<TServer, TRawRequest, TRawResponse>,
   >(): T {
-    return (this.instance as unknown) as T;
+    return this.instance as unknown as T;
   }
 
   public register<Options extends FastifyPluginOptions = any>(
@@ -299,8 +299,9 @@ export class FastifyAdapter<
       // The following type assertion is valid as we enforce "middie" plugin registration
       // which enhances the FastifyInstance with the "use()" method.
       // ref https://github.com/fastify/middie/pull/55
-      const instanceWithUseFn = (this
-        .instance as unknown) as FastifyInstance & { use: Function };
+      const instanceWithUseFn = this.instance as unknown as FastifyInstance & {
+        use: Function;
+      };
 
       instanceWithUseFn.use(
         normalizedPath,

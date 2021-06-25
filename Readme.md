@@ -67,6 +67,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <table style="text-align:center;"><tr><td>
   <a href="https://careers.labster.com/departments/platform" target="_blank"><img src="https://nestjs.com/img/labster-logo.png" width="170" valign="middle" /></a></td><td>
+<a href="https://weld.so/" target="_blank"><img src="https://nestjs.com/img/weld-logo.svg" width="150" valign="middle" /></a></td><td>
 <a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td></tr></table>
 
 #### Silver Sponsors
@@ -105,7 +106,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td align="center" valign="middle"><a href="https://houseofangular.io/" target="_blank"><img src="https://nestjs.com/img/house-of-angular.png" width="100" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://rocketech.it/cases/?utm_source=google&utm_medium=badge&utm_campaign=nestjs" target="_blank"><img src="https://nestjs.com/img/rocketech-logo.svg" width="110" valign="middle" /></a></td>
   <td align="center" valign="middle"><a href="https://www.bystored.com/" target="_blank"><img src="https://nestjs.com/img/stored-logo.svg" width="110" valign="middle" /></a></td>
-  <td align="center" valign="middle"><a href="https://studyclerk.com/pay-for-research-paper" target="_blank"><img src="https://nestjs.com/img/studyclerk-logo.png" width="125" valign="middle" /></a></td>
+  <td align="center" valign="middle"><a href="https://studyclerk.com/pay-for-research-paper" target="_blank"><img src="https://nestjs.com/img/studyclerk-logo.png" width="125" valign="middle" /></a></td><td align="center" valign="middle"><a href="https://xyndata.com" target="_blank"><img src="https://nestjs.com/img/xyndata-logo.png" width="125" valign="middle" /></a></td></tr><tr>
+  <td align="center" valign="middle"><a href="https://www.anonymistic.com/" target="_blank"><img src="https://nestjs.com/img/anonymistic-logo.png" width="125" valign="middle" /></a></td>
   </tr></table>
 
 ## Backers

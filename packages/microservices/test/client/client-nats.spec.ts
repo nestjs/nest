@@ -214,6 +214,7 @@ describe('ClientNats', () => {
     describe('when is connected', () => {
       beforeEach(() => {
         client['natsClient'] = { test: true } as any;
+        client['connection'] = Promise.resolve(true);
       });
       it('should not call "createClient"', () => {
         expect(createClientSpy.called).to.be.false;
