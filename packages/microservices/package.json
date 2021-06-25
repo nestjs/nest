@@ -22,13 +22,8 @@
     "tslib": "2.2.0"
   },
   "devDependencies": {
-<<<<<<< HEAD
     "@nestjs/common": "^8.0.0-alpha.7",
     "@nestjs/core": "^8.0.0-alpha.7"
-=======
-    "@nestjs/common": "7.6.18",
-    "@nestjs/core": "7.6.18"
->>>>>>> master
   },
   "peerDependencies": {
     "@grpc/grpc-js": "*",
