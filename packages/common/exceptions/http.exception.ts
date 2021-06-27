@@ -40,6 +40,7 @@ export class HttpException extends Error {
   ) {
     super();
     this.initMessage();
+    this.initName();
   }
 
   public initMessage() {
@@ -55,6 +56,10 @@ export class HttpException extends Error {
         .match(/[A-Z][a-z]+|[0-9]+/g)
         .join(' ');
     }
+  }
+
+  public initName(): void {
+    this.name = this.constructor.name;
   }
 
   public getResponse(): string | object {

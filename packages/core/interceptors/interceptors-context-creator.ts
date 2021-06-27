@@ -1,5 +1,5 @@
 import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
-import { Controller, NestInterceptor } from '@nestjs/common/interfaces';
+import { Controller, NestInterceptor, Type } from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
@@ -59,15 +59,17 @@ export class InterceptorsContextCreator extends ContextCreator {
   }
 
   public getInterceptorInstance(
-    interceptor: Function | NestInterceptor,
+    metatype: Function | NestInterceptor,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): NestInterceptor | null {
-    const isObject = (interceptor as NestInterceptor).intercept;
+    const isObject = (metatype as NestInterceptor).intercept;
     if (isObject) {
-      return interceptor as NestInterceptor;
+      return metatype as NestInterceptor;
     }
-    const instanceWrapper = this.getInstanceByMetatype(interceptor);
+    const instanceWrapper = this.getInstanceByMetatype(
+      metatype as Type<unknown>,
+    );
     if (!instanceWrapper) {
       return null;
     }
@@ -78,8 +80,8 @@ export class InterceptorsContextCreator extends ContextCreator {
     return instanceHost && instanceHost.instance;
   }
 
-  public getInstanceByMetatype<T extends Record<string, any> = any>(
-    metatype: T,
+  public getInstanceByMetatype(
+    metatype: Type<unknown>,
   ): InstanceWrapper | undefined {
     if (!this.moduleContext) {
       return;
@@ -89,7 +91,7 @@ export class InterceptorsContextCreator extends ContextCreator {
     if (!moduleRef) {
       return;
     }
-    return moduleRef.injectables.get(metatype.name as string);
+    return moduleRef.injectables.get(metatype);
   }
 
   public getGlobalMetadata<T extends unknown[]>(

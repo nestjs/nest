@@ -26,7 +26,7 @@ describe('RabbitMQ transport', () => {
         socketOptions: { noDelay: true },
       },
     });
-    await app.startAllMicroservicesAsync();
+    await app.startAllMicroservices();
     await app.init();
   });
 

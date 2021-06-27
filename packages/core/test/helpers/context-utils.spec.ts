@@ -21,7 +21,7 @@ describe('ContextUtils', () => {
         @CustomDecorator() custom,
       ) {}
     }
-    it('should returns ROUTE_ARGS_METADATA callback metadata', () => {
+    it('should return ROUTE_ARGS_METADATA callback metadata', () => {
       const instance = new TestController();
       const metadata = contextUtils.reflectCallbackMetadata(
         instance,
@@ -63,7 +63,7 @@ describe('ContextUtils', () => {
     });
   });
   describe('getArgumentsLength', () => {
-    it('should returns maximum index + 1 (length) placed in array', () => {
+    it('should return maximum index + 1 (length) placed in array', () => {
       const max = 4;
       const metadata = {
         [RouteParamtypes.REQUEST]: { index: 0 },

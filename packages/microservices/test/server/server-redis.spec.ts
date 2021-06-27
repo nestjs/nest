@@ -14,29 +14,42 @@ describe('ServerRedis', () => {
     server = new ServerRedis({});
   });
   describe('listen', () => {
-    let createRedisClient;
     let onSpy: sinon.SinonSpy;
-    let client;
+    let client: any;
+    let callbackSpy: sinon.SinonSpy;
 
     beforeEach(() => {
       onSpy = sinon.spy();
       client = {
         on: onSpy,
       };
-      createRedisClient = sinon
-        .stub(server, 'createRedisClient')
-        .callsFake(() => client);
+      sinon.stub(server, 'createRedisClient').callsFake(() => client);
 
-      server.listen(null);
+      callbackSpy = sinon.spy();
     });
     it('should bind "error" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onSpy.getCall(0).args[0]).to.be.equal('error');
     });
     it('should bind "connect" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onSpy.getCall(3).args[0]).to.be.equal('connect');
     });
     it('should bind "message" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onSpy.getCall(2).args[0]).to.be.equal('message');
+    });
+    describe('when "start" throws an exception', () => {
+      it('should call callback with a thrown error as an argument', () => {
+        const error = new Error('random error');
+
+        const callbackSpy = sinon.spy();
+        sinon.stub(server, 'start').callsFake(() => {
+          throw error;
+        });
+        server.listen(callbackSpy);
+        expect(callbackSpy.calledWith(error)).to.be.true;
+      });
     });
   });
   describe('close', () => {

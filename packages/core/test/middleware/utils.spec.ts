@@ -22,7 +22,7 @@ describe('middleware utils', () => {
     beforeEach(() => {
       middleware = [Test, fnMiddleware, undefined, null];
     });
-    it('should returns filtered middleware', () => {
+    it('should return filtered middleware', () => {
       expect(filterMiddleware(middleware, [], noopAdapter)).to.have.length(2);
     });
   });

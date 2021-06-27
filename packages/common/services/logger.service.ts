@@ -1,102 +1,253 @@
 import { Injectable } from '../decorators/core/injectable.decorator';
 import { Optional } from '../decorators/core/optional.decorator';
-import { clc, yellow } from '../utils/cli-colors.util';
-import { isObject, isPlainObject } from '../utils/shared.utils';
-
-declare const process: any;
+import { isObject } from '../utils/shared.utils';
+import { ConsoleLogger } from './console-logger.service';
+import { isLogLevelEnabled } from './utils';
 
 export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose';
 
 export interface LoggerService {
-  log(message: any, context?: string);
-  error(message: any, trace?: string, context?: string);
-  warn(message: any, context?: string);
-  debug?(message: any, context?: string);
-  verbose?(message: any, context?: string);
+  /**
+   * Write a 'log' level log.
+   */
+  log(message: any, ...optionalParams: any[]): any;
+
+  /**
+   * Write an 'error' level log.
+   */
+  error(message: any, ...optionalParams: any[]): any;
+
+  /**
+   * Write a 'warn' level log.
+   */
+  warn(message: any, ...optionalParams: any[]): any;
+
+  /**
+   * Write a 'debug' level log.
+   */
+  debug?(message: any, ...optionalParams: any[]): any;
+
+  /**
+   * Write a 'verbose' level log.
+   */
+  verbose?(message: any, ...optionalParams: any[]): any;
+
+  /**
+   * Set log levels.
+   * @param levels log levels
+   */
+  setLogLevels?(levels: LogLevel[]): any;
 }
+
+interface LogBufferRecord {
+  /**
+   * Method to execute.
+   */
+  methodRef: Function;
+
+  /**
+   * Arguments to pass to the method.
+   */
+  arguments: unknown[];
+}
+
+const DEFAULT_LOGGER = new ConsoleLogger();
 
 @Injectable()
 export class Logger implements LoggerService {
-  private static logLevels: LogLevel[] = [
-    'log',
-    'error',
-    'warn',
-    'debug',
-    'verbose',
-  ];
-  private static lastTimestamp?: number;
-  protected static instance?: typeof Logger | LoggerService = Logger;
+  protected static logBuffer = new Array<LogBufferRecord>();
+  protected static staticInstanceRef?: LoggerService = DEFAULT_LOGGER;
+  protected static logLevels?: LogLevel[];
+  private static isBufferAttached: boolean;
 
+  protected localInstanceRef?: LoggerService;
+
+  private static WrapBuffer: MethodDecorator = (
+    target: object,
+    propertyKey: string | symbol,
+    descriptor: TypedPropertyDescriptor<any>,
+  ) => {
+    const originalFn = descriptor.value;
+    descriptor.value = function (...args: unknown[]) {
+      if (Logger.isBufferAttached) {
+        Logger.logBuffer.push({
+          methodRef: originalFn.bind(this),
+          arguments: args,
+        });
+        return;
+      }
+      return originalFn.call(this, ...args);
+    };
+  };
+
+  constructor();
+  constructor(context: string);
+  constructor(context: string, options?: { timestamp?: boolean });
   constructor(
     @Optional() protected context?: string,
-    @Optional() private readonly isTimestampEnabled = false,
+    @Optional() protected options: { timestamp?: boolean } = {},
   ) {}
 
-  error(message: any, trace = '', context?: string) {
-    const instance = this.getInstance();
-    if (!this.isLogLevelEnabled('error')) {
-      return;
+  get localInstance(): LoggerService {
+    if (Logger.staticInstanceRef === DEFAULT_LOGGER) {
+      if (this.localInstanceRef) {
+        return this.localInstanceRef;
+      }
+      this.localInstanceRef = new ConsoleLogger(this.context, {
+        timestamp: this.options?.timestamp,
+        logLevels: Logger.logLevels,
+      });
+      return this.localInstanceRef;
     }
-    instance &&
-      instance.error.call(instance, message, trace, context || this.context);
+    return Logger.staticInstanceRef;
   }
 
-  log(message: any, context?: string) {
-    this.callFunction('log', message, context);
+  /**
+   * Write an 'error' level log.
+   */
+  error(message: any, stack?: string, context?: string): void;
+  error(message: any, ...optionalParams: [...any, string?, string?]): void;
+  @Logger.WrapBuffer
+  error(message: any, ...optionalParams: any[]) {
+    optionalParams = this.context
+      ? optionalParams.concat(this.context)
+      : optionalParams;
+
+    this.localInstance?.error(message, ...optionalParams);
   }
 
-  warn(message: any, context?: string) {
-    this.callFunction('warn', message, context);
+  /**
+   * Write a 'log' level log.
+   */
+  log(message: any, context?: string): void;
+  log(message: any, ...optionalParams: [...any, string?]): void;
+  @Logger.WrapBuffer
+  log(message: any, ...optionalParams: any[]) {
+    optionalParams = this.context
+      ? optionalParams.concat(this.context)
+      : optionalParams;
+    this.localInstance?.log(message, ...optionalParams);
   }
 
-  debug(message: any, context?: string) {
-    this.callFunction('debug', message, context);
+  /**
+   * Write a 'warn' level log.
+   */
+  warn(message: any, context?: string): void;
+  warn(message: any, ...optionalParams: [...any, string?]): void;
+  @Logger.WrapBuffer
+  warn(message: any, ...optionalParams: any[]) {
+    optionalParams = this.context
+      ? optionalParams.concat(this.context)
+      : optionalParams;
+    this.localInstance?.warn(message, ...optionalParams);
   }
 
-  verbose(message: any, context?: string) {
-    this.callFunction('verbose', message, context);
+  /**
+   * Write a 'debug' level log.
+   */
+  debug(message: any, context?: string): void;
+  debug(message: any, ...optionalParams: [...any, string?]): void;
+  @Logger.WrapBuffer
+  debug(message: any, ...optionalParams: any[]) {
+    optionalParams = this.context
+      ? optionalParams.concat(this.context)
+      : optionalParams;
+    this.localInstance?.debug(message, ...optionalParams);
   }
 
-  setContext(context: string) {
-    this.context = context;
+  /**
+   * Write a 'verbose' level log.
+   */
+  verbose(message: any, context?: string): void;
+  verbose(message: any, ...optionalParams: [...any, string?]): void;
+  @Logger.WrapBuffer
+  verbose(message: any, ...optionalParams: any[]) {
+    optionalParams = this.context
+      ? optionalParams.concat(this.context)
+      : optionalParams;
+    this.localInstance?.verbose(message, ...optionalParams);
   }
 
-  getTimestamp() {
-    return Logger.getTimestamp();
-  }
-
-  static overrideLogger(logger: LoggerService | LogLevel[] | boolean) {
-    if (Array.isArray(logger)) {
-      this.logLevels = logger;
-      return;
-    }
-    this.instance = isObject(logger) ? (logger as LoggerService) : undefined;
-  }
-
-  static log(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(message, clc.green, context, isTimeDiffEnabled);
-  }
-
+  /**
+   * Write an 'error' level log.
+   */
+  static error(message: any, context?: string): void;
+  static error(message: any, stack?: string, context?: string): void;
   static error(
     message: any,
-    trace = '',
-    context = '',
-    isTimeDiffEnabled = true,
-  ) {
-    this.printMessage(message, clc.red, context, isTimeDiffEnabled, 'stderr');
-    this.printStackTrace(trace);
+    ...optionalParams: [...any, string?, string?]
+  ): void;
+  @Logger.WrapBuffer
+  static error(message: any, ...optionalParams: any[]) {
+    this.staticInstanceRef?.error(message, ...optionalParams);
   }
 
-  static warn(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(message, clc.yellow, context, isTimeDiffEnabled);
+  /**
+   * Write a 'log' level log.
+   */
+  static log(message: any, context?: string): void;
+  static log(message: any, ...optionalParams: [...any, string?]): void;
+  @Logger.WrapBuffer
+  static log(message: any, ...optionalParams: any[]) {
+    this.staticInstanceRef?.log(message, ...optionalParams);
   }
 
-  static debug(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(message, clc.magentaBright, context, isTimeDiffEnabled);
+  /**
+   * Write a 'warn' level log.
+   */
+  static warn(message: any, context?: string): void;
+  static warn(message: any, ...optionalParams: [...any, string?]): void;
+  @Logger.WrapBuffer
+  static warn(message: any, ...optionalParams: any[]) {
+    this.staticInstanceRef?.warn(message, ...optionalParams);
   }
 
-  static verbose(message: any, context = '', isTimeDiffEnabled = true) {
-    this.printMessage(message, clc.cyanBright, context, isTimeDiffEnabled);
+  /**
+   * Write a 'debug' level log, if the configured level allows for it.
+   * Prints to `stdout` with newline.
+   */
+  static debug(message: any, context?: string): void;
+  static debug(message: any, ...optionalParams: [...any, string?]): void;
+  @Logger.WrapBuffer
+  static debug(message: any, ...optionalParams: any[]) {
+    this.staticInstanceRef?.debug(message, ...optionalParams);
+  }
+
+  /**
+   * Write a 'verbose' level log.
+   */
+  static verbose(message: any, context?: string): void;
+  static verbose(message: any, ...optionalParams: [...any, string?]): void;
+  @Logger.WrapBuffer
+  static verbose(message: any, ...optionalParams: any[]) {
+    this.staticInstanceRef?.verbose(message, ...optionalParams);
+  }
+
+  /**
+   * Print buffered logs and detach buffer.
+   */
+  static flush() {
+    this.isBufferAttached = false;
+    this.logBuffer.forEach(item =>
+      item.methodRef(...(item.arguments as [string])),
+    );
+    this.logBuffer = [];
+  }
+
+  /**
+   * Attach buffer.
+   * Turns on initialisation logs buffering.
+   */
+  static attachBuffer() {
+    this.isBufferAttached = true;
+  }
+
+  /**
+   * Detach buffer.
+   * Turns off initialisation logs buffering.
+   */
+  static detachBuffer() {
+    this.isBufferAttached = false;
   }
 
   static getTimestamp() {
@@ -114,72 +265,18 @@ export class Logger implements LoggerService {
     );
   }
 
-  private callFunction(
-    name: 'log' | 'warn' | 'debug' | 'verbose',
-    message: any,
-    context?: string,
-  ) {
-    if (!this.isLogLevelEnabled(name)) {
-      return;
+  static overrideLogger(logger: LoggerService | LogLevel[] | boolean) {
+    if (Array.isArray(logger)) {
+      Logger.logLevels = logger;
+      return this.staticInstanceRef?.setLogLevels(logger);
     }
-    const instance = this.getInstance();
-    const func = instance && (instance as typeof Logger)[name];
-    func &&
-      func.call(
-        instance,
-        message,
-        context || this.context,
-        this.isTimestampEnabled,
-      );
+    this.staticInstanceRef = isObject(logger)
+      ? (logger as LoggerService)
+      : undefined;
   }
 
-  protected getInstance(): typeof Logger | LoggerService {
-    const { instance } = Logger;
-    return instance === this ? Logger : instance;
-  }
-
-  private isLogLevelEnabled(level: LogLevel): boolean {
-    return Logger.logLevels.includes(level);
-  }
-
-  private static printMessage(
-    message: any,
-    color: (message: string) => string,
-    context = '',
-    isTimeDiffEnabled?: boolean,
-    writeStreamType?: 'stdout' | 'stderr',
-  ) {
-    const output = isPlainObject(message)
-      ? `${color('Object:')}\n${JSON.stringify(message, null, 2)}\n`
-      : color(message);
-
-    const pidMessage = color(`[Nest] ${process.pid}   - `);
-    const contextMessage = context ? yellow(`[${context}] `) : '';
-    const timestampDiff = this.updateAndGetTimestampDiff(isTimeDiffEnabled);
-    const instance = (this.instance as typeof Logger) ?? Logger;
-    const timestamp = instance.getTimestamp
-      ? instance.getTimestamp()
-      : Logger.getTimestamp?.();
-    const computedMessage = `${pidMessage}${timestamp}   ${contextMessage}${output}${timestampDiff}\n`;
-
-    process[writeStreamType ?? 'stdout'].write(computedMessage);
-  }
-
-  private static updateAndGetTimestampDiff(
-    isTimeDiffEnabled?: boolean,
-  ): string {
-    const includeTimestamp = Logger.lastTimestamp && isTimeDiffEnabled;
-    const result = includeTimestamp
-      ? yellow(` +${Date.now() - Logger.lastTimestamp}ms`)
-      : '';
-    Logger.lastTimestamp = Date.now();
-    return result;
-  }
-
-  private static printStackTrace(trace: string) {
-    if (!trace) {
-      return;
-    }
-    process.stderr.write(`${trace}\n`);
+  static isLevelEnabled(level: LogLevel): boolean {
+    const logLevels = Logger.logLevels;
+    return isLogLevelEnabled(level, logLevels);
   }
 }

@@ -71,7 +71,7 @@ describe('RouterResponseController', () => {
   describe('transformToResult', () => {
     describe('when resultOrDeffered', () => {
       describe('is Promise', () => {
-        it('should returns Promise', async () => {
+        it('should return Promise', async () => {
           const value = 100;
           expect(
             await routerResponseController.transformToResult(
@@ -82,7 +82,7 @@ describe('RouterResponseController', () => {
       });
 
       describe('is Observable', () => {
-        it('should returns toPromise', async () => {
+        it('should return toPromise', async () => {
           const lastValue = 100;
           expect(
             await routerResponseController.transformToResult(
@@ -93,7 +93,7 @@ describe('RouterResponseController', () => {
       });
 
       describe('is value', () => {
-        it('should returns Promise', async () => {
+        it('should return Promise', async () => {
           const value = 100;
           expect(
             await routerResponseController.transformToResult(value),
@@ -105,14 +105,14 @@ describe('RouterResponseController', () => {
 
   describe('getStatusByMethod', () => {
     describe('when RequestMethod is POST', () => {
-      it('should returns 201', () => {
+      it('should return 201', () => {
         expect(
           routerResponseController.getStatusByMethod(RequestMethod.POST),
         ).to.be.eql(201);
       });
     });
     describe('when RequestMethod is not POST', () => {
-      it('should returns 200', () => {
+      it('should return 200', () => {
         expect(
           routerResponseController.getStatusByMethod(RequestMethod.GET),
         ).to.be.eql(200);

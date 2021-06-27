@@ -3,16 +3,21 @@ import {
   ExceptionFilter,
   NestInterceptor,
   PipeTransform,
+  VersioningOptions,
   WebSocketAdapter,
 } from '@nestjs/common';
+import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
 import { InstanceWrapper } from './injector/instance-wrapper';
+import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
 
 export class ApplicationConfig {
   private globalPrefix = '';
-  private globalPipes: PipeTransform[] = [];
-  private globalFilters: ExceptionFilter[] = [];
-  private globalInterceptors: NestInterceptor[] = [];
-  private globalGuards: CanActivate[] = [];
+  private globalPrefixOptions: GlobalPrefixOptions<ExcludeRouteMetadata> = {};
+  private globalPipes: Array<PipeTransform> = [];
+  private globalFilters: Array<ExceptionFilter> = [];
+  private globalInterceptors: Array<NestInterceptor> = [];
+  private globalGuards: Array<CanActivate> = [];
+  private versioningOptions: VersioningOptions;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
   private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] = [];
   private readonly globalRequestInterceptors: InstanceWrapper<NestInterceptor>[] = [];
@@ -26,6 +31,16 @@ export class ApplicationConfig {
 
   public getGlobalPrefix() {
     return this.globalPrefix;
+  }
+
+  public setGlobalPrefixOptions(
+    options: GlobalPrefixOptions<ExcludeRouteMetadata>,
+  ) {
+    this.globalPrefixOptions = options;
+  }
+
+  public getGlobalPrefixOptions(): GlobalPrefixOptions<ExcludeRouteMetadata> {
+    return this.globalPrefixOptions;
   }
 
   public setIoAdapter(ioAdapter: WebSocketAdapter) {
@@ -116,5 +131,13 @@ export class ApplicationConfig {
 
   public getGlobalRequestGuards(): InstanceWrapper<CanActivate>[] {
     return this.globalRequestGuards;
+  }
+
+  public enableVersioning(options: VersioningOptions): void {
+    this.versioningOptions = options;
+  }
+
+  public getVersioning(): VersioningOptions | undefined {
+    return this.versioningOptions;
   }
 }

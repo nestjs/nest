@@ -6,7 +6,7 @@ import {
   MessagePattern,
   Transport,
 } from '@nestjs/microservices';
-import { from, Observable, of } from 'rxjs';
+import { from, lastValueFrom, Observable, of } from 'rxjs';
 import { scan } from 'rxjs/operators';
 
 @Controller()
@@ -46,9 +46,9 @@ export class RMQController {
   concurrent(@Body() data: number[][]): Promise<boolean> {
     const send = async (tab: number[]) => {
       const expected = tab.reduce((a, b) => a + b);
-      const result = await this.client
-        .send<number>({ cmd: 'sum' }, tab)
-        .toPromise();
+      const result = await lastValueFrom(
+        this.client.send<number>({ cmd: 'sum' }, tab),
+      );
 
       return result === expected;
     };

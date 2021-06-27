@@ -29,7 +29,7 @@ describe('MetadataScanner', () => {
       public test2() {}
     }
 
-    it('should returns only methods', () => {
+    it('should return only methods', () => {
       const methods = scanner.scanFromPrototype(
         new Test(),
         Test.prototype,

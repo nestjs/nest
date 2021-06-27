@@ -19,14 +19,14 @@ describe('PipesContextCreator', () => {
   });
   describe('createConcreteContext', () => {
     describe('when metadata is empty or undefined', () => {
-      it('should returns empty array', () => {
+      it('should return empty array', () => {
         expect(creator.createConcreteContext(undefined)).to.be.deep.equal([]);
         expect(creator.createConcreteContext([])).to.be.deep.equal([]);
       });
     });
     describe('when metadata is not empty or undefined', () => {
       const metadata = [null, {}, { transform: () => ({}) }];
-      it('should returns expected array', () => {
+      it('should return expected array', () => {
         const transforms = creator.createConcreteContext(metadata as any);
         expect(transforms).to.have.length(1);
       });
@@ -81,7 +81,7 @@ describe('PipesContextCreator', () => {
           sinon
             .stub(container.getModules(), 'get')
             .callsFake(() => module as any);
-          expect(creator.getInstanceByMetatype({ name: 'test' })).to.be.eql(
+          expect(creator.getInstanceByMetatype(class Test {})).to.be.eql(
             instance,
           );
         });

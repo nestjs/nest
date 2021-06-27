@@ -421,7 +421,7 @@ export function Query(
  *
  * For example:
  * ```typescript
- * async create(@Body() cat: CreateCatDto)
+ * async create(@Body() createDto: CreateCatDto)
  * ```
  *
  * @see [Request object](https://docs.nestjs.com/controllers#request-object)
@@ -438,7 +438,7 @@ export function Body(): ParameterDecorator;
  *
  * For example:
  * ```typescript
- * async create(@Body(new ValidationPipe()) cat: CreateCatDto)
+ * async create(@Body(new ValidationPipe()) createDto: CreateCatDto)
  * ```
  *
  * @param pipes one or more pipes - either instances or classes - to apply to

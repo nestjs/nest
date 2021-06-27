@@ -40,9 +40,9 @@ import { CircularDependencyException } from './errors/exceptions/circular-depend
 import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 import { getClassScope } from './helpers/get-class-scope';
-import { ModulesContainer } from './injector';
 import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
+import { InternalCoreModuleFactory } from './injector/internal-core-module-factory';
 import { Module } from './injector/module';
 import { MetadataScanner } from './metadata-scanner';
 
@@ -66,6 +66,7 @@ export class DependenciesScanner {
     await this.registerCoreModule();
     await this.scanForModules(module);
     await this.scanModulesForDependencies();
+    this.calculateModulesDistance();
 
     this.addScopedEnhancersMetadata();
     this.container.bindGlobalScope();
@@ -79,7 +80,7 @@ export class DependenciesScanner {
       | Promise<DynamicModule>,
     scope: Type<unknown>[] = [],
     ctxRegistry: (ForwardReference | DynamicModule | Type<unknown>)[] = [],
-  ): Promise<Module> {
+  ): Promise<Module[]> {
     const moduleInstance = await this.insertModule(moduleDefinition, scope);
     moduleDefinition =
       moduleDefinition instanceof Promise
@@ -105,6 +106,7 @@ export class DependenciesScanner {
           ...((moduleDefinition as DynamicModule).imports || []),
         ];
 
+    let registeredModuleRefs = [];
     for (const [index, innerModule] of modules.entries()) {
       // In case of a circular dependency (ES module system), JavaScript will resolve the type to `undefined`.
       if (innerModule === undefined) {
@@ -116,35 +118,38 @@ export class DependenciesScanner {
       if (ctxRegistry.includes(innerModule)) {
         continue;
       }
-      await this.scanForModules(
+      const moduleRefs = await this.scanForModules(
         innerModule,
         [].concat(scope, moduleDefinition),
         ctxRegistry,
       );
+      registeredModuleRefs = registeredModuleRefs.concat(moduleRefs);
     }
-    return moduleInstance;
+    if (!moduleInstance) {
+      return registeredModuleRefs;
+    }
+    return [moduleInstance].concat(registeredModuleRefs);
   }
 
   public async insertModule(
     module: any,
     scope: Type<unknown>[],
-  ): Promise<Module> {
+  ): Promise<Module | undefined> {
     if (module && module.forwardRef) {
       return this.container.addModule(module.forwardRef(), scope);
     }
     return this.container.addModule(module, scope);
   }
 
-  public async scanModulesForDependencies() {
-    const modules = this.container.getModules();
-
+  public async scanModulesForDependencies(
+    modules: Map<string, Module> = this.container.getModules(),
+  ) {
     for (const [token, { metatype }] of modules) {
       await this.reflectImports(metatype, token, metatype.name);
       this.reflectProviders(metatype, token);
       this.reflectControllers(metatype, token);
       this.reflectExports(metatype, token);
     }
-    this.calculateModulesDistance(modules);
   }
 
   public async reflectImports(
@@ -280,23 +285,27 @@ export class DependenciesScanner {
     return undefined;
   }
 
-  public async calculateModulesDistance(modules: ModulesContainer) {
-    const modulesGenerator = modules.values();
-    const rootModule = modulesGenerator.next().value as Module;
-    const modulesStack = [rootModule];
+  public async calculateModulesDistance() {
+    const modulesGenerator = this.container.getModules().values();
 
-    const calculateDistance = (moduleRef: Module, distance = 1) => {
+    // Skip "InternalCoreModule" from calculating distance
+    modulesGenerator.next();
+
+    const modulesStack = [];
+    const calculateDistance = (moduleRef: Module, distance = 0) => {
       if (modulesStack.includes(moduleRef)) {
         return;
       }
       modulesStack.push(moduleRef);
 
-      const moduleImports = rootModule.relatedModules;
-      moduleImports.forEach(module => {
-        module.distance = distance;
-        calculateDistance(module, distance + 1);
+      const moduleImports = moduleRef.imports;
+      moduleImports.forEach(importedModuleRef => {
+        importedModuleRef.distance = distance;
+        calculateDistance(importedModuleRef, distance + 1);
       });
     };
+
+    const rootModule = modulesGenerator.next().value as Module;
     calculateDistance(rootModule);
   }
 
@@ -357,11 +366,10 @@ export class DependenciesScanner {
       scope,
     } as Provider;
 
-    if (
-      this.isRequestOrTransient(
-        (newProvider as FactoryProvider | ClassProvider).scope,
-      )
-    ) {
+    const factoryOrClassProvider = newProvider as
+      | FactoryProvider
+      | ClassProvider;
+    if (this.isRequestOrTransient(factoryOrClassProvider.scope)) {
       return this.container.addInjectable(newProvider, token);
     }
     this.container.addProvider(newProvider, token);
@@ -391,8 +399,13 @@ export class DependenciesScanner {
   }
 
   public async registerCoreModule() {
-    const module = this.container.createCoreModule();
-    const instance = await this.scanForModules(module);
+    const moduleDefinition = InternalCoreModuleFactory.create(
+      this.container,
+      this,
+      this.container.getModuleCompiler(),
+      this.container.getHttpAdapterHostRef(),
+    );
+    const [instance] = await this.scanForModules(moduleDefinition);
     this.container.registerCoreModuleRef(instance);
   }
 

@@ -1,5 +1,5 @@
 import { PIPES_METADATA } from '@nestjs/common/constants';
-import { Controller, PipeTransform } from '@nestjs/common/interfaces';
+import { Controller, PipeTransform, Type } from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
@@ -59,7 +59,7 @@ export class PipesContextCreator extends ContextCreator {
     if (isObject) {
       return pipe as PipeTransform;
     }
-    const instanceWrapper = this.getInstanceByMetatype(pipe as Function);
+    const instanceWrapper = this.getInstanceByMetatype(pipe as Type<unknown>);
     if (!instanceWrapper) {
       return null;
     }
@@ -70,8 +70,8 @@ export class PipesContextCreator extends ContextCreator {
     return instanceHost && instanceHost.instance;
   }
 
-  public getInstanceByMetatype<T extends Record<'name', string> = any>(
-    metatype: T,
+  public getInstanceByMetatype(
+    metatype: Type<unknown>,
   ): InstanceWrapper | undefined {
     if (!this.moduleContext) {
       return;
@@ -81,7 +81,7 @@ export class PipesContextCreator extends ContextCreator {
     if (!moduleRef) {
       return;
     }
-    return moduleRef.injectables.get(metatype.name);
+    return moduleRef.injectables.get(metatype);
   }
 
   public getGlobalMetadata<T extends unknown[]>(

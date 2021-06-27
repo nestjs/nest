@@ -1,3 +1,4 @@
+import { Metadata } from '@grpc/grpc-js';
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import {
   Client,
@@ -9,7 +10,6 @@ import {
 } from '@nestjs/microservices';
 import { join } from 'path';
 import { Observable, of, ReplaySubject, Subject } from 'rxjs';
-import { Metadata } from 'grpc';
 
 @Controller()
 export class AdvancedGrpcController {

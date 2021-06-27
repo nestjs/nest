@@ -27,7 +27,7 @@
     "class-validator": "0.13.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "6.6.7",
+    "rxjs": "7.0.1",
     "swagger-ui-express": "4.1.6"
   },
   "devDependencies": {

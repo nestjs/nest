@@ -4,6 +4,8 @@ import { Server as NetSocket, Socket } from 'net';
 import { Observable } from 'rxjs';
 import {
   CLOSE_EVENT,
+  EADDRINUSE,
+  ECONNREFUSED,
   ERROR_EVENT,
   MESSAGE_EVENT,
   NO_MESSAGE_HANDLER,
@@ -42,8 +44,15 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     this.initializeDeserializer(options);
   }
 
-  public listen(callback: () => void) {
-    this.server.listen(this.port, this.host, callback);
+  public listen(
+    callback: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ) {
+    this.server.once(ERROR_EVENT, (err: Record<string, unknown>) => {
+      if (err?.code === EADDRINUSE || err?.code === ECONNREFUSED) {
+        return callback(err);
+      }
+    });
+    this.server.listen(this.port, this.host, callback as () => void);
   }
 
   public close() {

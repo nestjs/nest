@@ -1,8 +1,10 @@
 import { Logger } from '@nestjs/common';
 import * as net from 'net';
+import { EmptyError, lastValueFrom } from 'rxjs';
 import { share, tap } from 'rxjs/operators';
 import {
   CLOSE_EVENT,
+  ECONNREFUSED,
   ERROR_EVENT,
   MESSAGE_EVENT,
   TCP_DEFAULT_HOST,
@@ -12,7 +14,6 @@ import { JsonSocket } from '../helpers/json-socket';
 import { PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { TcpClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
-import { ECONNREFUSED } from './constants';
 
 export class ClientTCP extends ClientProxy {
   protected connection: Promise<any>;
@@ -49,14 +50,19 @@ export class ClientTCP extends ClientProxy {
     );
 
     this.socket.connect(this.port, this.host);
-    this.connection = source$.toPromise();
+    this.connection = lastValueFrom(source$).catch(err => {
+      if (err instanceof EmptyError) {
+        return;
+      }
+      throw err;
+    });
+
     return this.connection;
   }
 
   public handleResponse(buffer: unknown): void {
-    const { err, response, isDisposed, id } = this.deserializer.deserialize(
-      buffer,
-    );
+    const { err, response, isDisposed, id } =
+      this.deserializer.deserialize(buffer);
     const callback = this.routingMap.get(id);
     if (!callback) {
       return undefined;
@@ -103,7 +109,7 @@ export class ClientTCP extends ClientProxy {
   protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Function {
+  ): () => void {
     try {
       const packet = this.assignPacketId(partialPacket);
       const serializedPacket = this.serializer.serialize(packet);

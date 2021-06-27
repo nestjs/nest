@@ -1,9 +1,17 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { fromEvent, merge, Subject, zip } from 'rxjs';
+import {
+  EmptyError,
+  fromEvent,
+  lastValueFrom,
+  merge,
+  Subject,
+  zip,
+} from 'rxjs';
 import { share, take, tap } from 'rxjs/operators';
 import {
   CONNECT_EVENT,
+  ECONNREFUSED,
   ERROR_EVENT,
   MESSAGE_EVENT,
   REDIS_DEFAULT_URL,
@@ -15,7 +23,6 @@ import {
 } from '../external/redis.interface';
 import { ReadPacket, RedisOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
-import { ECONNREFUSED } from './constants';
 
 let redisPackage: any = {};
 
@@ -71,15 +78,20 @@ export class ClientRedis extends ClientProxy {
     const pubConnect$ = fromEvent(this.pubClient, CONNECT_EVENT);
     const subClient$ = fromEvent(this.subClient, CONNECT_EVENT);
 
-    this.connection = merge(error$, zip(pubConnect$, subClient$))
-      .pipe(
+    this.connection = lastValueFrom(
+      merge(error$, zip(pubConnect$, subClient$)).pipe(
         take(1),
         tap(() =>
           this.subClient.on(MESSAGE_EVENT, this.createResponseCallback()),
         ),
         share(),
-      )
-      .toPromise();
+      ),
+    ).catch(err => {
+      if (err instanceof EmptyError) {
+        return;
+      }
+      throw err;
+    });
     return this.connection;
   }
 
@@ -126,9 +138,8 @@ export class ClientRedis extends ClientProxy {
   public createResponseCallback(): (channel: string, buffer: string) => void {
     return (channel: string, buffer: string) => {
       const packet = JSON.parse(buffer);
-      const { err, response, isDisposed, id } = this.deserializer.deserialize(
-        packet,
-      );
+      const { err, response, isDisposed, id } =
+        this.deserializer.deserialize(packet);
 
       const callback = this.routingMap.get(id);
       if (!callback) {
@@ -151,7 +162,7 @@ export class ClientRedis extends ClientProxy {
   protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Function {
+  ): () => void {
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);

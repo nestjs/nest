@@ -117,8 +117,7 @@ describe('ClientTCP', () => {
       beforeEach(async () => {
         client['isConnected'] = false;
         const source = {
-          subscribe: resolve => resolve(),
-          toPromise: () => source,
+          subscribe: ({ complete }) => complete(),
           pipe: () => source,
         };
         connect$Stub = sinon

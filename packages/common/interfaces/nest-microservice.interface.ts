@@ -14,13 +14,13 @@ export interface INestMicroservice extends INestApplicationContext {
   /**
    * Starts the microservice.
    *
-   * @param {Function} callback
    * @returns {void}
    */
-  listen(callback: () => void): void;
+  listen(): Promise<any>;
 
   /**
    * Starts the microservice (can be awaited).
+   * @deprecated use "listen" instead.
    *
    * @returns {Promise}
    */
