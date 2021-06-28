@@ -149,7 +149,6 @@ export class Logger implements LoggerService {
     isTimeDiffEnabled?: boolean,
     writeStreamType?: 'stdout' | 'stderr',
   ) {
-    
     const output = isPlainObject(message)
       ? `${color('Object:')}\n${JSON.stringify(message,  (key, value) =>
             typeof value === 'bigint'
