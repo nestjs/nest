@@ -155,7 +155,7 @@ export class FastifyAdapter<
       response.statusCode = statusCode;
       return response;
     }
-    return response.code(statusCode);
+    return (response as FastifyReply).code(statusCode);
   }
 
   public render(
@@ -318,7 +318,7 @@ export class FastifyAdapter<
           if (
             requestMethod === RequestMethod.ALL ||
             req.method === RequestMethod[requestMethod] ||
-            requestMethod === -1
+            (requestMethod as number) === -1
           ) {
             return callback(req, res, next);
           }

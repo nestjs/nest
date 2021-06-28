@@ -120,20 +120,21 @@ data: hello
 
   it('sets headers on destination when it looks like a HTTP Response', callback => {
     const sse = new SseStream();
-    const sink = new Sink((status: number, headers: OutgoingHttpHeaders) => {
-      expect(headers).to.deep.equal({
-        'Content-Type': 'text/event-stream',
-        Connection: 'keep-alive',
-        'Cache-Control':
-          'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
-        'Transfer-Encoding': 'identity',
-        Pragma: 'no-cache',
-        Expire: '0',
-        'X-Accel-Buffering': 'no',
-      });
-      callback();
-      return sink;
-    });
+    const sink = new Sink(
+      (status: number, headers: string | OutgoingHttpHeaders) => {
+        expect(headers).to.deep.equal({
+          'Content-Type': 'text/event-stream',
+          Connection: 'keep-alive',
+          'Cache-Control':
+            'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
+          Pragma: 'no-cache',
+          Expire: '0',
+          'X-Accel-Buffering': 'no',
+        });
+        callback();
+        return sink;
+      },
+    );
     sse.pipe(sink);
   });
 

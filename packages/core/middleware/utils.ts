@@ -97,7 +97,7 @@ export function isRouteExcluded(
     if (
       RequestMethod.ALL === method ||
       RequestMethod[method] === reqMethod ||
-      method === -1
+      (method as number) === -1
     ) {
       return regex.exec(pathname);
     }
