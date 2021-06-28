@@ -59,7 +59,6 @@ export class SseStream extends Transform {
         // Disable cache, even for old browsers and proxies
         'Cache-Control':
           'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
-        'Transfer-Encoding': 'identity',
         Pragma: 'no-cache',
         Expire: '0',
         // NGINX support https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/#x-accel-buffering
