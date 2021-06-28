@@ -69,11 +69,8 @@ export class ConsoleLogger implements LoggerService {
     if (!this.isLevelEnabled('error')) {
       return;
     }
-    const {
-      messages,
-      context,
-      stack,
-    } = this.getContextAndStackAndMessagesToPrint([message, ...optionalParams]);
+    const { messages, context, stack } =
+      this.getContextAndStackAndMessagesToPrint([message, ...optionalParams]);
 
     this.printMessages(messages, context, 'error', 'stderr');
     this.printStackTrace(stack);
@@ -178,7 +175,12 @@ export class ConsoleLogger implements LoggerService {
     const color = this.getColorByLogLevel(logLevel);
     messages.forEach(message => {
       const output = isPlainObject(message)
-        ? `${color('Object:')}\n${JSON.stringify(message, null, 2)}\n`
+        ? `${color('Object:')}\n${JSON.stringify(
+            message,
+            (key, value) =>
+              typeof value === 'bigint' ? value.toString() : value,
+            2,
+          )}\n`
         : color(message as string);
 
       const pidMessage = color(`[Nest] ${process.pid}  - `);

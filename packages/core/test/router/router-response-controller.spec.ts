@@ -1,7 +1,7 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import { IncomingMessage, ServerResponse } from 'http';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
 import { PassThrough, Writable } from 'stream';
 import { HttpStatus, RequestMethod } from '../../../common';
@@ -254,9 +254,9 @@ describe('RouterResponseController', () => {
       const result = Promise.resolve('test');
       try {
         await routerResponseController.sse(
-          (result as unknown) as any,
-          ({} as unknown) as ServerResponse,
-          ({} as unknown) as IncomingMessage,
+          result as unknown as any,
+          {} as unknown as ServerResponse,
+          {} as unknown as IncomingMessage,
         );
       } catch (e) {
         expect(e.message).to.eql(
@@ -293,8 +293,8 @@ describe('RouterResponseController', () => {
       const request = new PassThrough();
       routerResponseController.sse(
         result,
-        (response as unknown) as ServerResponse,
-        (request as unknown) as IncomingMessage,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
       );
       request.destroy();
       await written(response);
@@ -318,10 +318,45 @@ data: test
 
       routerResponseController.sse(
         result,
-        (response as unknown) as ServerResponse,
-        (request as unknown) as IncomingMessage,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
       );
       request.emit('close');
+    });
+
+    it('should close the request when observable completes', done => {
+      const result = of('test');
+      const response = new Writable();
+      response.end = done;
+      response._write = () => {};
+
+      const request = new Writable();
+      request._write = () => {};
+
+      routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+    });
+
+    it('should allow to intercept the response', done => {
+      const result = sinon.spy();
+      const response = new Writable();
+      response.end();
+      response._write = () => {};
+
+      const request = new Writable();
+      request._write = () => {};
+
+      routerResponseController.sse(
+        result as unknown as Observable<string>,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      sinon.assert.notCalled(result);
+      done();
     });
   });
 });

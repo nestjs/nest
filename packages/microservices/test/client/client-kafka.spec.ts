@@ -204,6 +204,30 @@ describe('ClientKafka', () => {
       .callsFake(() => kafkaClient);
   });
 
+  describe('createClient', () => {
+    beforeEach(() => {
+      client = new ClientKafka({});
+    });
+
+    it(`should accept a custom logCreator in client options`, () => {
+      const logCreatorSpy = sinon.spy(() => 'test');
+      const logCreator = () => logCreatorSpy;
+
+      client = new ClientKafka({
+        client: {
+          brokers: [],
+          logCreator,
+        },
+      });
+
+      const logger = client.createClient().logger();
+
+      logger.info({ namespace: '', level: 1, log: 'test' });
+
+      expect(logCreatorSpy.called).to.be.true;
+    });
+  });
+
   describe('subscribeToResponseOf', () => {
     let normalizePatternSpy: sinon.SinonSpy;
     let getResponsePatternNameSpy: sinon.SinonSpy;
