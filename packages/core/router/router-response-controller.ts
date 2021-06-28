@@ -88,6 +88,11 @@ export class RouterResponseController {
     TResponse extends HeaderStream = any,
     TRequest extends IncomingMessage = any,
   >(result: TInput, response: TResponse, request: TRequest) {
+    // It's possible that we sent headers already so don't use a stream
+    if (response.writableEnded) {
+      return;
+    }
+
     this.assertObservable(result);
 
     const stream = new SseStream(request);
@@ -105,10 +110,13 @@ export class RouterResponseController {
             }),
         ),
       )
-      .subscribe();
+      .subscribe({
+        complete: () => {
+          response.end();
+        },
+      });
 
     request.on('close', () => {
-      response.end();
       subscription.unsubscribe();
     });
   }

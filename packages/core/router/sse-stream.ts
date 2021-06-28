@@ -14,6 +14,7 @@ function toDataString(data: string | object): string {
 }
 
 interface WriteHeaders {
+  writableEnded?: boolean;
   writeHead?(
     statusCode: number,
     reasonPhrase?: string,
