@@ -23,7 +23,7 @@
     "light-my-request": "4.4.1",
     "middie": "5.2.0",
     "path-to-regexp": "3.2.0",
-    "tslib": "2.2.0"
+    "tslib": "2.3.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",
