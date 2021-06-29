@@ -29,7 +29,7 @@
     "prisma-binding": "2.3.16",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "7.0.1"
+    "rxjs": "7.1.0"
   },
   "devDependencies": {
     "@nestjs/cli": "7.6.0",

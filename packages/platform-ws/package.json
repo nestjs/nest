@@ -23,6 +23,6 @@
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",
     "@nestjs/websockets": "^7.0.0",
-    "rxjs": "^6.0.0"
+    "rxjs": "^6.0.0 || ^7.1.0"
   }
 }

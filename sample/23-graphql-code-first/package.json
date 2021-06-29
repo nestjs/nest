@@ -31,7 +31,7 @@
     "graphql-query-complexity": "0.8.1",
     "graphql-subscriptions": "1.2.1",
     "reflect-metadata": "0.1.13",
-    "rxjs": "7.0.1"
+    "rxjs": "7.1.0"
   },
   "devDependencies": {
     "@nestjs/cli": "7.6.0",
