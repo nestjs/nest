@@ -1,7 +1,7 @@
-import * as request from 'supertest';
-import { Test } from '@nestjs/testing';
-import { MultiStoreModule } from '../src/multi-store/multi-store.module';
 import { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import * as request from 'supertest';
+import { MultiStoreModule } from '../src/multi-store/multi-store.module';
 
 describe('Caching Multi Store', () => {
   let server;
@@ -17,16 +17,12 @@ describe('Caching Multi Store', () => {
     await app.init();
   });
 
-  it(`Should return empty`, async () => {
-    return request(server)
-      .get('/')
-      .expect(200, '');
+  it(`should return empty`, async () => {
+    return request(server).get('/').expect(200, '');
   });
 
-  it(`Should return data`, async () => {
-    return request(server)
-      .get('/')
-      .expect(200, 'multi-store-value');
+  it(`should return data`, async () => {
+    return request(server).get('/').expect(200, 'multi-store-value');
   });
 
   after(async () => {
