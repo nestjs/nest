@@ -159,6 +159,10 @@ export interface RmqOptions {
   };
 }
 
+export interface KafkaParserConfig {
+  keepBinary?: boolean;
+}
+
 export interface KafkaOptions {
   transport?: Transport.KAFKA;
   options?: {
@@ -171,5 +175,6 @@ export interface KafkaOptions {
     send?: Omit<ProducerRecord, 'topic' | 'messages'>;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    parser?: KafkaParserConfig;
   };
 }
