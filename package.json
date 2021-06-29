@@ -97,7 +97,7 @@
     "@types/socket.io": "3.0.2",
     "@types/ws": "7.4.5",
     "@typescript-eslint/eslint-plugin": "4.28.0",
-    "@typescript-eslint/parser": "4.28.0",
+    "@typescript-eslint/parser": "4.28.1",
     "amqp-connection-manager": "3.2.2",
     "amqplib": "0.8.0",
     "apollo-server-express": "2.25.2",
