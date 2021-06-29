@@ -43,6 +43,18 @@ describe('KafkaParser', () => {
       });
     });
 
+    it('binary buffer using kafka schema registry preamble', () => {
+      const kafkaSchemaPreambleWithSchemaId = [0x00, 0x00, 0x00, 0x00, 0x01];
+      expect(
+        KafkaParser.parse({
+          value: Buffer.from(kafkaSchemaPreambleWithSchemaId),
+        }),
+      ).to.deep.eq({
+        headers: {},
+        value: Buffer.from(kafkaSchemaPreambleWithSchemaId),
+      });
+    });
+
     it('buffer number', () => {
       expect(
         kafkaParser.parse({
