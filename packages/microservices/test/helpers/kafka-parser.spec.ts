@@ -5,11 +5,11 @@ import { KafkaParser } from '../../helpers/kafka-parser';
 describe('KafkaParser', () => {
   describe('parse', () => {
     let kafkaParser: any;
-  
+
     beforeEach(() => {
       kafkaParser = new KafkaParser();
     });
-  
+
     it('undefined', () => {
       expect(
         kafkaParser.parse({
@@ -46,7 +46,7 @@ describe('KafkaParser', () => {
     it('binary buffer using kafka schema registry preamble', () => {
       const kafkaSchemaPreambleWithSchemaId = [0x00, 0x00, 0x00, 0x00, 0x01];
       expect(
-        KafkaParser.parse({
+        kafkaParser.parse({
           value: Buffer.from(kafkaSchemaPreambleWithSchemaId),
         }),
       ).to.deep.eq({
