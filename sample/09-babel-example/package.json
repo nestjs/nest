@@ -19,7 +19,7 @@
     "@nestjs/microservices": "7.6.15",
     "@nestjs/websockets": "7.6.15",
     "reflect-metadata": "0.1.13",
-    "rxjs": "7.0.1"
+    "rxjs": "7.1.0"
   },
   "devDependencies": {
     "@babel/cli": "7.14.5",
@@ -31,9 +31,9 @@
     "@babel/register": "7.14.5",
     "@babel/runtime": "7.14.6",
     "@nestjs/testing": "7.6.15",
-    "jest": "26.6.3",
-    "nodemon": "2.0.7",
-    "prettier": "2.3.0",
+    "jest": "27.0.6",
+    "nodemon": "2.0.8",
+    "prettier": "2.3.2",
     "supertest": "6.1.3"
   },
   "jest": {

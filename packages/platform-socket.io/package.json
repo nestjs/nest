@@ -17,12 +17,12 @@
     "access": "public"
   },
   "dependencies": {
-    "socket.io": "4.0.0",
-    "tslib": "2.2.0"
+    "socket.io": "4.1.2",
+    "tslib": "2.3.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^7.0.0",
     "@nestjs/websockets": "^7.0.0",
-    "rxjs": "^6.0.0"
+    "rxjs": "^6.0.0 || ^7.1.0"
   }
 }

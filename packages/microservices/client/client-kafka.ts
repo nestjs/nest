@@ -40,10 +40,11 @@ import { ClientProxy } from './client-proxy';
 let kafkaPackage: any = {};
 
 export class ClientKafka extends ClientProxy {
+  protected logger = new Logger(ClientKafka.name);
   protected client: Kafka = null;
   protected consumer: Consumer = null;
   protected producer: Producer = null;
-  protected logger = new Logger(ClientKafka.name);
+  protected parser: KafkaParser = null;
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number } = {};
 
@@ -72,6 +73,8 @@ export class ClientKafka extends ClientProxy {
     kafkaPackage = loadPackage('kafkajs', ClientKafka.name, () =>
       require('kafkajs'),
     );
+
+    this.parser = new KafkaParser((options && options.parser) || undefined);
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -153,7 +156,7 @@ export class ClientKafka extends ClientProxy {
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
     return (payload: EachMessagePayload) => {
-      const rawMessage = KafkaParser.parse<KafkaMessage>(
+      const rawMessage = this.parser.parse<KafkaMessage>(
         Object.assign(payload.message, {
           topic: payload.topic,
           partition: payload.partition,

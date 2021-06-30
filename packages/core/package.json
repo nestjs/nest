@@ -30,9 +30,9 @@
     "@nuxtjs/opencollective": "0.3.2",
     "fast-safe-stringify": "2.0.7",
     "iterare": "1.2.1",
-    "object-hash": "2.1.1",
+    "object-hash": "2.2.0",
     "path-to-regexp": "3.2.0",
-    "tslib": "2.2.0",
+    "tslib": "2.3.0",
     "uuid": "8.3.2"
   },
   "devDependencies": {
@@ -44,7 +44,7 @@
     "@nestjs/platform-express": "^7.0.0",
     "@nestjs/websockets": "^7.0.0",
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0"
+    "rxjs": "^6.0.0 || ^7.1.0"
   },
   "peerDependenciesMeta": {
     "@nestjs/websockets": {

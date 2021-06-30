@@ -4,9 +4,15 @@ import { KafkaParser } from '../../helpers/kafka-parser';
 
 describe('KafkaParser', () => {
   describe('parse', () => {
+    let kafkaParser: any;
+
+    beforeEach(() => {
+      kafkaParser = new KafkaParser();
+    });
+
     it('undefined', () => {
       expect(
-        KafkaParser.parse({
+        kafkaParser.parse({
           value: undefined,
         }),
       ).to.deep.eq({
@@ -17,7 +23,7 @@ describe('KafkaParser', () => {
 
     it('null', () => {
       expect(
-        KafkaParser.parse({
+        kafkaParser.parse({
           value: null,
         }),
       ).to.deep.eq({
@@ -28,7 +34,7 @@ describe('KafkaParser', () => {
 
     it('buffer string', () => {
       expect(
-        KafkaParser.parse({
+        kafkaParser.parse({
           value: Buffer.from('string'),
         }),
       ).to.deep.eq({
@@ -37,9 +43,21 @@ describe('KafkaParser', () => {
       });
     });
 
+    it('binary buffer using kafka schema registry preamble', () => {
+      const kafkaSchemaPreambleWithSchemaId = [0x00, 0x00, 0x00, 0x00, 0x01];
+      expect(
+        kafkaParser.parse({
+          value: Buffer.from(kafkaSchemaPreambleWithSchemaId),
+        }),
+      ).to.deep.eq({
+        headers: {},
+        value: Buffer.from(kafkaSchemaPreambleWithSchemaId),
+      });
+    });
+
     it('buffer number', () => {
       expect(
-        KafkaParser.parse({
+        kafkaParser.parse({
           value: Buffer.from('12345'),
         }),
       ).to.deep.eq({
@@ -52,7 +70,7 @@ describe('KafkaParser', () => {
       const long = '9007199254740992';
 
       expect(
-        KafkaParser.parse({
+        kafkaParser.parse({
           value: Buffer.from(long),
         }),
       ).to.deep.eq({
@@ -63,7 +81,7 @@ describe('KafkaParser', () => {
 
     it('buffer json', () => {
       expect(
-        KafkaParser.parse({
+        kafkaParser.parse({
           value: Buffer.from(JSON.stringify({ prop: 'value' })),
         }),
       ).to.deep.eq({
@@ -76,7 +94,7 @@ describe('KafkaParser', () => {
 
     it('buffer json with key', () => {
       expect(
-        KafkaParser.parse({
+        kafkaParser.parse({
           value: Buffer.from(JSON.stringify({ prop: 'value' })),
           key: Buffer.from('1'),
         }),
@@ -91,7 +109,7 @@ describe('KafkaParser', () => {
 
     it('buffer json with key and headers', () => {
       expect(
-        KafkaParser.parse({
+        kafkaParser.parse({
           headers: {
             [KafkaHeaders.CORRELATION_ID]: Buffer.from('correlation-id'),
           },

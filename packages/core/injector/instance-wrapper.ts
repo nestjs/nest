@@ -184,9 +184,8 @@ export class InstanceWrapper<T = any> {
     }
     lookupRegistry = lookupRegistry.concat(this[INSTANCE_ID_SYMBOL]);
 
-    const { dependencies, properties, enhancers } = this[
-      INSTANCE_METADATA_SYMBOL
-    ];
+    const { dependencies, properties, enhancers } =
+      this[INSTANCE_METADATA_SYMBOL];
     let isStatic =
       (dependencies &&
         this.isWrapperListStatic(dependencies, lookupRegistry)) ||
@@ -319,7 +318,7 @@ export class InstanceWrapper<T = any> {
   }
 
   public mergeWith(provider: Provider) {
-    if ((provider as ValueProvider).useValue) {
+    if (!isUndefined((provider as ValueProvider).useValue)) {
       this.metatype = null;
       this.inject = null;
       this.scope = Scope.DEFAULT;

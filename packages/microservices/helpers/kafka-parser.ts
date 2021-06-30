@@ -1,8 +1,17 @@
 import { isNil } from '@nestjs/common/utils/shared.utils';
+import { KafkaParserConfig } from '../interfaces';
 
 export class KafkaParser {
-  public static parse<T = any>(data: any): T {
-    data.value = this.decode(data.value);
+  protected readonly keepBinary: boolean;
+
+  constructor(config?: KafkaParserConfig) {
+    this.keepBinary = (config && config.keepBinary) || false;
+  }
+
+  public parse<T = any>(data: any): T {
+    if (!this.keepBinary) {
+      data.value = this.decode(data.value);
+    }
 
     if (!isNil(data.key)) {
       data.key = this.decode(data.key);
@@ -18,9 +27,18 @@ export class KafkaParser {
     return data;
   }
 
-  public static decode(value: Buffer): object | string | null {
+  public decode(value: Buffer): object | string | null | Buffer {
     if (isNil(value)) {
       return null;
+    }
+    // A value with the "leading zero byte" indicates the schema payload.
+    // The "content" is possibly binary and should not be touched & parsed.
+    if (
+      Buffer.isBuffer(value) &&
+      value.length > 0 &&
+      value.readUInt8(0) === 0
+    ) {
+      return value;
     }
 
     let result = value.toString();

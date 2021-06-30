@@ -48,7 +48,7 @@ services:
   zookeeper:
     container_name: test-zookeeper
     hostname: zookeeper
-    image: confluentinc/cp-zookeeper:6.1.1
+    image: confluentinc/cp-zookeeper:6.2.0
     ports:
       - "2181:2181"
     environment:
@@ -57,7 +57,7 @@ services:
   kafka:
     container_name: test-kafka
     hostname: kafka
-    image: confluentinc/cp-kafka:6.1.1
+    image: confluentinc/cp-kafka:6.2.0
     depends_on:
       - zookeeper
     ports:

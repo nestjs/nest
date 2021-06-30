@@ -67,9 +67,8 @@ export class NestApplicationContext implements INestApplicationContext {
     const scope = this.scope.concat(contextModuleCtor);
 
     const moduleTokenFactory = this.container.getModuleTokenFactory();
-    const { type, dynamicMetadata } = this.moduleCompiler.extractMetadata(
-      moduleType,
-    );
+    const { type, dynamicMetadata } =
+      this.moduleCompiler.extractMetadata(moduleType);
     const token = moduleTokenFactory.create(type, dynamicMetadata);
 
     const selectedModule = modulesContainer.get(token);
@@ -304,7 +303,7 @@ export class NestApplicationContext implements INestApplicationContext {
 
     const { wrapperRef, collection } = instanceLink;
     if (wrapperRef.isDependencyTreeStatic() && !wrapperRef.isTransient) {
-      return this.get(typeOrToken);
+      return this.get(typeOrToken, options);
     }
 
     const ctorHost = wrapperRef.instance || { constructor: typeOrToken };
