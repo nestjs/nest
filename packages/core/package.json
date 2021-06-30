@@ -44,7 +44,7 @@
     "@nestjs/platform-express": "^7.0.0",
     "@nestjs/websockets": "^7.0.0",
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0"
+    "rxjs": "^6.0.0 || ^7.1.0"
   },
   "peerDependenciesMeta": {
     "@nestjs/websockets": {
