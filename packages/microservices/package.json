@@ -38,7 +38,7 @@
     "nats": "*",
     "redis": "*",
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0"
+    "rxjs": "^6.0.0 || ^7.1.0"
   },
   "peerDependenciesMeta": {
     "@grpc/grpc-js": {
