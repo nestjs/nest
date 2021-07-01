@@ -29,7 +29,7 @@
     "rxjs": "7.1.0",
     "sequelize": "6.6.4",
     "sequelize-typescript": "2.1.0",
-    "typescript": "4.2.4"
+    "typescript": "4.3.5"
   },
   "devDependencies": {
     "@types/sequelize": "4.28.9",
@@ -52,6 +52,6 @@
     "eslint": "7.29.0",
     "eslint-config-prettier": "8.3.0",
     "eslint-plugin-import": "2.23.4",
-    "typescript": "4.2.4"
+    "typescript": "4.3.5"
   }
 }
