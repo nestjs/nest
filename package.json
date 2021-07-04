@@ -95,7 +95,7 @@
     "@types/reflect-metadata": "0.1.0",
     "@types/sinon": "10.0.2",
     "@types/socket.io": "3.0.2",
-    "@types/ws": "7.4.5",
+    "@types/ws": "7.4.6",
     "@typescript-eslint/eslint-plugin": "4.28.1",
     "@typescript-eslint/parser": "4.28.1",
     "amqp-connection-manager": "3.2.2",
@@ -168,7 +168,7 @@
     "typeorm": "0.2.34",
     "typescript": "4.3.5",
     "wrk": "1.2.1",
-    "ws": "7.5.1"
+    "ws": "7.5.2"
   },
   "engines": {
     "node": ">= 10.13.0"
