@@ -25,7 +25,7 @@
     "dotenv": "10.0.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "7.1.0"
+    "rxjs": "7.2.0"
   },
   "devDependencies": {
     "@types/dotenv": "8.2.0",
