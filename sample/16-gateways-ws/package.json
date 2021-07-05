@@ -29,10 +29,10 @@
     "rimraf": "3.0.2",
     "reflect-metadata": "0.1.13",
     "rxjs": "7.1.0",
-    "ws": "7.5.1"
+    "ws": "7.5.2"
   },
   "devDependencies": {
-    "@types/ws": "7.4.5",
+    "@types/ws": "7.4.6",
     "@nestjs/cli": "7.6.0",
     "@nestjs/schematics": "7.3.1",
     "@nestjs/testing": "7.6.15",
