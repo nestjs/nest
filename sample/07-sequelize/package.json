@@ -26,7 +26,7 @@
     "mysql2": "2.2.5",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "7.1.0",
+    "rxjs": "7.2.0",
     "sequelize": "6.6.4",
     "sequelize-typescript": "2.1.0",
     "typescript": "4.3.5"
