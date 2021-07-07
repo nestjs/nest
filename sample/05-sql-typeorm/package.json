@@ -43,7 +43,7 @@
     "ts-jest": "27.0.3",
     "ts-loader": "9.2.3",
     "ts-node": "10.0.0",
-    "tsconfig-paths": "3.9.0",
+    "tsconfig-paths": "3.10.1",
     "@typescript-eslint/eslint-plugin": "4.28.2",
     "@typescript-eslint/parser": "4.28.2",
     "eslint": "7.30.0",
