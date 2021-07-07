@@ -26,7 +26,7 @@
     "mysql": "2.18.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "7.1.0",
+    "rxjs": "7.2.0",
     "typeorm": "0.2.34"
   },
   "devDependencies": {
@@ -44,8 +44,8 @@
     "ts-loader": "9.2.3",
     "ts-node": "10.0.0",
     "tsconfig-paths": "3.9.0",
-    "@typescript-eslint/eslint-plugin": "4.28.1",
-    "@typescript-eslint/parser": "4.28.1",
+    "@typescript-eslint/eslint-plugin": "4.28.2",
+    "@typescript-eslint/parser": "4.28.2",
     "eslint": "7.30.0",
     "eslint-config-prettier": "8.3.0",
     "eslint-plugin-import": "2.23.4",

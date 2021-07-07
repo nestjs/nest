@@ -28,7 +28,7 @@
     "class-validator": "0.13.1",
     "rimraf": "3.0.2",
     "reflect-metadata": "0.1.13",
-    "rxjs": "7.1.0",
+    "rxjs": "7.2.0",
     "ws": "7.5.2"
   },
   "devDependencies": {
@@ -46,8 +46,8 @@
     "ts-loader": "9.2.3",
     "ts-node": "10.0.0",
     "tsconfig-paths": "3.9.0",
-    "@typescript-eslint/eslint-plugin": "4.28.1",
-    "@typescript-eslint/parser": "4.28.1",
+    "@typescript-eslint/eslint-plugin": "4.28.2",
+    "@typescript-eslint/parser": "4.28.2",
     "eslint": "7.30.0",
     "eslint-config-prettier": "8.3.0",
     "eslint-plugin-import": "2.23.4",
