@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/websockets",
-  "version": "8.0.0-alpha.7",
+  "version": "8.0.0",
   "description": "Nest - modern, fast, powerful node.js web framework (@websockets)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
