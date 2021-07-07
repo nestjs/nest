@@ -22,14 +22,14 @@
     "tslib": "2.3.0"
   },
   "devDependencies": {
-    "@nestjs/common": "^8.0.0-alpha.7",
-    "@nestjs/core": "^8.0.0-alpha.7"
+    "@nestjs/common": "^8.0.0",
+    "@nestjs/core": "^8.0.0"
   },
   "peerDependencies": {
     "@grpc/grpc-js": "*",
-    "@nestjs/common": "^7.0.0",
-    "@nestjs/core": "^7.0.0",
-    "@nestjs/websockets": "^7.0.0",
+    "@nestjs/common": "^8.0.0",
+    "@nestjs/core": "^8.0.0",
+    "@nestjs/websockets": "^8.0.0",
     "amqp-connection-manager": "*",
     "amqplib": "*",
     "cache-manager": "*",
@@ -38,7 +38,7 @@
     "nats": "*",
     "redis": "*",
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0 || ^7.1.0"
+    "rxjs": "^7.1.0"
   },
   "peerDependenciesMeta": {
     "@grpc/grpc-js": {

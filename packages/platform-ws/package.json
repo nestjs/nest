@@ -21,8 +21,8 @@
     "ws": "7.5.2"
   },
   "peerDependencies": {
-    "@nestjs/common": "^7.0.0",
-    "@nestjs/websockets": "^7.0.0",
-    "rxjs": "^6.0.0 || ^7.1.0"
+    "@nestjs/common": "^8.0.0",
+    "@nestjs/websockets": "^8.0.0",
+    "rxjs": "^7.1.0"
   }
 }

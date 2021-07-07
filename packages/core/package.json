@@ -36,15 +36,15 @@
     "uuid": "8.3.2"
   },
   "devDependencies": {
-    "@nestjs/common": "^8.0.0-alpha.7"
+    "@nestjs/common": "^8.0.0"
   },
   "peerDependencies": {
-    "@nestjs/common": "^7.0.0",
-    "@nestjs/microservices": "^7.0.0",
-    "@nestjs/platform-express": "^7.0.0",
-    "@nestjs/websockets": "^7.0.0",
+    "@nestjs/common": "^8.0.0",
+    "@nestjs/microservices": "^8.0.0",
+    "@nestjs/platform-express": "^8.0.0",
+    "@nestjs/websockets": "^8.0.0",
     "reflect-metadata": "^0.1.12",
-    "rxjs": "^6.0.0 || ^7.1.0"
+    "rxjs": "^7.1.0"
   },
   "peerDependenciesMeta": {
     "@nestjs/websockets": {
