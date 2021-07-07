@@ -80,7 +80,7 @@
     "@nestjs/mongoose": "7.2.4",
     "@nestjs/typeorm": "7.1.5",
     "@types/amqplib": "0.8.0",
-    "@types/bytes": "3.1.0",
+    "@types/bytes": "3.1.1",
     "@types/cache-manager": "3.4.0",
     "@types/chai": "4.2.19",
     "@types/chai-as-promised": "7.1.4",
