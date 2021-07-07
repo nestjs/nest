@@ -88,7 +88,7 @@
     "@types/express": "4.17.12",
     "@types/gulp": "4.0.8",
     "@types/http-errors": "1.8.0",
-    "@types/mocha": "8.2.2",
+    "@types/mocha": "8.2.3",
     "@types/mongoose": "5.11.97",
     "@types/node": "15.14.0",
     "@types/redis": "2.8.30",
