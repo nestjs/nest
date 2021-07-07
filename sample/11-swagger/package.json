@@ -19,9 +19,9 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "7.6.15",
-    "@nestjs/core": "7.6.15",
-    "@nestjs/platform-express": "7.6.15",
+    "@nestjs/common": "8.0.0",
+    "@nestjs/core": "8.0.0",
+    "@nestjs/platform-express": "8.0.0",
     "@nestjs/swagger": "4.8.2",
     "class-transformer": "0.4.0",
     "class-validator": "0.13.1",
@@ -31,9 +31,9 @@
     "swagger-ui-express": "4.1.6"
   },
   "devDependencies": {
-    "@nestjs/cli": "7.6.0",
+    "@nestjs/cli": "8.0.2",
     "@nestjs/schematics": "7.3.1",
-    "@nestjs/testing": "7.6.15",
+    "@nestjs/testing": "8.0.0",
     "@types/express": "4.17.12",
     "@types/node": "14.17.4",
     "@types/supertest": "2.0.11",
