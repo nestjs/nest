@@ -82,7 +82,7 @@
     "@types/amqplib": "0.8.0",
     "@types/bytes": "3.1.0",
     "@types/cache-manager": "3.4.0",
-    "@types/chai": "4.2.19",
+    "@types/chai": "4.2.20",
     "@types/chai-as-promised": "7.1.4",
     "@types/cors": "2.8.10",
     "@types/express": "4.17.12",
