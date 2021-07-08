@@ -34,7 +34,7 @@
   "devDependencies": {
     "@types/sequelize": "4.28.10",
     "@nestjs/cli": "8.0.2",
-    "@nestjs/schematics": "7.3.1",
+    "@nestjs/schematics": "8.0.0",
     "@nestjs/testing": "8.0.0",
     "@types/express": "4.17.12",
     "@types/node": "14.17.4",
