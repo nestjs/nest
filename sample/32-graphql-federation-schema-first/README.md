@@ -1,6 +1,6 @@
-# GraphQL Federation - Schema First
+# GraphQL Federation - Code First
 
-A simple example of GraphQL Federation using Schema First approach
+A simple example of GraphQL Federation using Code First approach
 
 ## Execution
 

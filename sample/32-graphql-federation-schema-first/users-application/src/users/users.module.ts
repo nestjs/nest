@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
 import { GraphQLFederationModule } from '@nestjs/graphql';
-import { PostsResolver } from './posts.resolver';
-import { PostsService } from './posts.service';
 import { UsersResolver } from './users.resolver';
+import { UsersService } from './users.service';
 
 @Module({
+  providers: [UsersResolver, UsersService],
   imports: [
     GraphQLFederationModule.forRoot({
-      typePaths: ['**/*.graphql'],
+      autoSchemaFile: true,
     }),
   ],
-  providers: [PostsService, PostsResolver, UsersResolver],
 })
-export class PostsModule {}
+export class UsersModule {}
