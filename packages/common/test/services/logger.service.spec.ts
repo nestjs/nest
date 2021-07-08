@@ -375,6 +375,54 @@ describe('Logger', () => {
       });
     });
 
+    describe('when the default logger is used and global context is set and timestamp enabled (deprecated)', () => {
+      const globalContext = 'GlobalContext';
+      const logger = new Logger(globalContext, true);
+
+      let processStdoutWriteSpy: sinon.SinonSpy;
+      let processStderrWriteSpy: sinon.SinonSpy;
+
+      beforeEach(() => {
+        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+        processStderrWriteSpy = sinon.spy(process.stderr, 'write');
+      });
+
+      afterEach(() => {
+        processStdoutWriteSpy.restore();
+        processStderrWriteSpy.restore();
+      });
+
+      it('should print multiple messages to the console and append global context', () => {
+        const messages = ['message 1', 'message 2', 'message 3'];
+
+        logger.log(messages[0], messages[1], messages[2]);
+
+        expect(processStdoutWriteSpy.calledThrice).to.be.true;
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+          `[${globalContext}]`,
+        );
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+          messages[0],
+        );
+
+        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
+          `[${globalContext}]`,
+        );
+        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
+          messages[1],
+        );
+        expect(processStdoutWriteSpy.secondCall.firstArg).to.include('ms');
+
+        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
+          `[${globalContext}]`,
+        );
+        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
+          messages[2],
+        );
+        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include('ms');
+      });
+    });
+
     describe('when the default logger is used and global context is set and timestamp enabled', () => {
       const globalContext = 'GlobalContext';
       const logger = new Logger(globalContext, { timestamp: true });

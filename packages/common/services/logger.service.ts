@@ -82,13 +82,21 @@ export class Logger implements LoggerService {
 
   constructor();
   constructor(context: string);
+  /**
+   * @deprecated timestamp is deprecated. Use "{ timestamp?: boolean }" object instead.
+   */
+  constructor(context: string, timestamp?: boolean);
   constructor(context: string, options?: { timestamp?: boolean });
   constructor(
     @Optional() protected context?: string,
-    @Optional() protected options: { timestamp?: boolean } = {},
+    @Optional() protected options: { timestamp?: boolean } | boolean = {},
   ) {}
 
   get localInstance(): LoggerService {
+    if (typeof this.options === 'boolean') {
+      this.options = { timestamp: this.options };
+    }
+
     if (Logger.staticInstanceRef === DEFAULT_LOGGER) {
       if (this.localInstanceRef) {
         return this.localInstanceRef;
