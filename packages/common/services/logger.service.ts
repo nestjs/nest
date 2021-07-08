@@ -83,9 +83,9 @@ export class Logger implements LoggerService {
   constructor();
   constructor(context: string);
   /**
-   * @deprecated timestamp is deprecated. Use "{ timestamp?: boolean }" object instead.
+   * @deprecated isTimestampEnabled is deprecated. Use "{ timestamp?: boolean }" object instead.
    */
-  constructor(context: string, timestamp?: boolean);
+  constructor(context: string, isTimestampEnabled?: boolean);
   constructor(context: string, options?: { timestamp?: boolean });
   constructor(
     @Optional() protected context?: string,
