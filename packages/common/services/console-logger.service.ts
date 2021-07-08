@@ -226,7 +226,7 @@ export class ConsoleLogger implements LoggerService {
   }
 
   private getContextAndStackAndMessagesToPrint(args: unknown[]) {
-    const { messages, context } = this.getContextAndMessagesToPrint(args);
+    const { messages, context } = this.getContextAndMessagesToPrint(this.removeUndefinedFromArgs(args));
     if (messages?.length <= 1) {
       return { messages, context };
     }
@@ -240,6 +240,10 @@ export class ConsoleLogger implements LoggerService {
       messages: messages.slice(0, messages.length - 1),
       context,
     };
+  }
+
+  removeUndefinedFromArgs(args: unknown[]) {
+    return args.filter((arg => typeof arg !== 'undefined'))
   }
 
   private getColorByLogLevel(level: LogLevel) {
