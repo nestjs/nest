@@ -45,7 +45,7 @@ export class BaseExceptionFilterContext extends ContextCreator {
     if (isObject) {
       return filter as ExceptionFilter;
     }
-    const instanceWrapper = this.getInstanceByMetatype(filter);
+    const instanceWrapper = this.getInstanceByMetatype(filter as Type<unknown>);
     if (!instanceWrapper) {
       return null;
     }
@@ -56,8 +56,8 @@ export class BaseExceptionFilterContext extends ContextCreator {
     return instanceHost && instanceHost.instance;
   }
 
-  public getInstanceByMetatype<T extends Record<string, any>>(
-    filter: T,
+  public getInstanceByMetatype(
+    metatype: Type<unknown>,
   ): InstanceWrapper | undefined {
     if (!this.moduleContext) {
       return;
@@ -67,7 +67,7 @@ export class BaseExceptionFilterContext extends ContextCreator {
     if (!moduleRef) {
       return;
     }
-    return moduleRef.injectables.get(filter.name);
+    return moduleRef.injectables.get(metatype);
   }
 
   public reflectCatchExceptions(instance: ExceptionFilter): Type<any>[] {
