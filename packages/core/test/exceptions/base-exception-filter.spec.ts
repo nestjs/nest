@@ -65,7 +65,7 @@ describe('BaseExceptionFilterContext', () => {
           sinon
             .stub(container.getModules(), 'get')
             .callsFake(() => module as any);
-          expect(filter.getInstanceByMetatype({})).to.be.eql(instance);
+          expect(filter.getInstanceByMetatype(class {})).to.be.eql(instance);
         });
       });
     });
