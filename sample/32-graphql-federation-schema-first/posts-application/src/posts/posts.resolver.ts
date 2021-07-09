@@ -6,25 +6,24 @@ import {
   Parent,
   ID,
 } from '@nestjs/graphql';
-import { Post } from './models/post.model';
-import { User } from './models/user.model';
+import { Post } from './posts.interfaces';
 import { PostsService } from './posts.service';
 
-@Resolver((of) => Post)
+@Resolver('Post')
 export class PostsResolver {
   constructor(private readonly postsService: PostsService) {}
 
-  @Query((returns) => Post)
-  findPost(@Args({ name: 'id', type: () => ID }) id: number): Post {
+  @Query('findPost')
+  findPost(@Args({ name: 'id', type: () => ID }) id: number) {
     return this.postsService.findOne(id);
   }
 
-  @Query((returns) => [Post])
-  getPosts(): Post[] {
+  @Query('getPosts')
+  getPosts() {
     return this.postsService.all();
   }
 
-  @ResolveField((of) => User)
+  @ResolveField('user')
   user(@Parent() post: Post): any {
     return { __typename: 'User', id: post.authorId };
   }

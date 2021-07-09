@@ -1,13 +1,14 @@
 import { Parent, ResolveField, Resolver } from '@nestjs/graphql';
+import { Post } from './models/post.model';
+import { User } from './models/user.model';
 import { PostsService } from './posts.service';
-import { User } from './users.interfaces';
 
-@Resolver()
+@Resolver((of) => User)
 export class UsersResolver {
   constructor(private readonly postsService: PostsService) {}
 
-  @ResolveField('posts')
-  public posts(@Parent() user: User) {
+  @ResolveField((of) => [Post])
+  public posts(@Parent() user: User): Post[] {
     return this.postsService.forAuthor(user.id);
   }
 }

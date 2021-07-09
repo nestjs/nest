@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { User } from './models/user.model';
 
 @Injectable()
 export class UsersService {
-  private users: User[] = [
+  private users = [
     { id: 1, name: 'John Doe' },
     { id: 2, name: 'Richard Roe' },
   ];
 
-  findById(id: number): User {
+  findById(id: number) {
     return this.users.find((user) => user.id === Number(id));
   }
 }

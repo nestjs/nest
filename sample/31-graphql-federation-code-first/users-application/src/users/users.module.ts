@@ -7,7 +7,7 @@ import { UsersService } from './users.service';
   providers: [UsersResolver, UsersService],
   imports: [
     GraphQLFederationModule.forRoot({
-      typePaths: ['**/*.graphql'],
+      autoSchemaFile: true,
     }),
   ],
 })

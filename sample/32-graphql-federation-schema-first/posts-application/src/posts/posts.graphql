@@ -2,6 +2,7 @@ type Post @key(fields: "id") {
   id: ID!
   title: String!
   body: String!
+  authorId: Int!
   user: User
 }
 
