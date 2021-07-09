@@ -20,8 +20,8 @@
   },
   "devDependencies": {
     "@nestjs/cli": "8.0.2",
-    "@nestjs/schematics": "7.3.1",
-    "@types/node": "14.17.4",
+    "@nestjs/schematics": "8.0.0",
+    "@types/node": "14.17.5",
     "@typescript-eslint/eslint-plugin": "4.28.2",
     "@typescript-eslint/parser": "4.28.2",
     "eslint": "7.30.0",
@@ -30,7 +30,7 @@
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "9.2.3",
     "ts-node": "10.0.0",
-    "webpack": "5.43.0",
+    "webpack": "5.44.0",
     "webpack-cli": "4.7.2",
     "webpack-node-externals": "3.0.0"
   }
