@@ -1,3 +1,4 @@
+import { TlsOptions } from 'tls';
 import { Transport } from '../enums/transport.enum';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import {
@@ -67,16 +68,23 @@ export interface GrpcOptions {
   };
 }
 
+interface TcpBaseOptions {
+  host?: string;
+  port?: number;
+  retryAttempts?: number;
+  retryDelay?: number;
+  serializer?: Serializer;
+  deserializer?: Deserializer;
+}
+
 export interface TcpOptions {
   transport?: Transport.TCP;
-  options?: {
-    host?: string;
-    port?: number;
-    retryAttempts?: number;
-    retryDelay?: number;
-    serializer?: Serializer;
-    deserializer?: Deserializer;
-  };
+  options?: TcpBaseOptions & { useTls?: false | undefined };
+}
+
+export interface TcpTlsOptions {
+  transport?: Transport.TCP;
+  options: TcpBaseOptions & { useTls: true } & TlsOptions;
 }
 
 export interface RedisOptions {
