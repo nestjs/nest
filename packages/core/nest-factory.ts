@@ -239,7 +239,7 @@ export class NestFactoryStatic {
     if (bufferLogs) {
       Logger.attachBuffer();
     }
-    this.autoFlushLogs = autoFlushLogs;
+    this.autoFlushLogs = autoFlushLogs ?? true;
   }
 
   private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
@@ -294,7 +294,7 @@ export class NestFactoryStatic {
         return receiver[prop];
       },
     });
-    return (proxy as unknown) as T;
+    return proxy as unknown as T;
   }
 }
 
