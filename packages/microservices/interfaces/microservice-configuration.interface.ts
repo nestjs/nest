@@ -19,6 +19,7 @@ import { Serializer } from './serializer.interface';
 export type MicroserviceOptions =
   | GrpcOptions
   | TcpOptions
+  | TcpTlsOptions
   | RedisOptions
   | NatsOptions
   | MqttOptions
