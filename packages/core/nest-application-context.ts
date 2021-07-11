@@ -129,7 +129,7 @@ export class NestApplicationContext implements INestApplicationContext {
     this.unsubscribeFromProcessSignals();
   }
 
-  public useLogger(logger: LoggerService | LogLevel[] | false) {
+  public useLogger(logger: LoggerService | LogLevel[] | boolean) {
     Logger.overrideLogger(logger);
   }
 
