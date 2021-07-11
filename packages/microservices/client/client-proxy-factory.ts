@@ -59,18 +59,21 @@ export class ClientProxyFactory {
       default:
         const uncheckedOptions = options as
           | TcpClientOptions['options']
-          | TcpTlsClientOptions['options'];
+          | TcpTlsClientOptions['options']
+          | undefined;
         if (uncheckedOptions && uncheckedOptions.useTls === true) {
           return new ClientTCP(options as TcpTlsClientOptions['options']);
         } else {
-          return new ClientTCP(options as TcpClientOptions['options']);
+          return new ClientTCP(
+            options as TcpClientOptions['options'] | undefined,
+          );
         }
     }
   }
 
   private static isCustomClientOptions(
-    options: ClientOptions | CustomClientOptions,
+    options: ClientOptions | CustomClientOptions | undefined | null,
   ): options is CustomClientOptions {
-    return !!(options as CustomClientOptions).customClass;
+    return options && !!(options as CustomClientOptions).customClass;
   }
 }
