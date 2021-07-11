@@ -38,6 +38,9 @@ export class ClientTCP extends ClientProxy {
       | TcpTlsClientOptions['options'],
   ) {
     super();
+    if (options === undefined) {
+      this.options = {};
+    }
     this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
     this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
     this.useTls = this.getOptionsProp(options, 'useTls') || TCP_DEFAULT_USE_TLS;

@@ -37,7 +37,7 @@ export interface TcpClientBaseOptions {
 
 export interface TcpClientOptions {
   transport: Transport.TCP;
-  options?: TcpClientBaseOptions & { useTls?: false | undefined };
+  options?: (TcpClientBaseOptions & { useTls?: false | undefined }) | undefined;
 }
 
 export interface TcpTlsClientOptions {
