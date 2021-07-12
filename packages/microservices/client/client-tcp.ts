@@ -1,8 +1,8 @@
 import { Logger } from '@nestjs/common';
 import * as net from 'net';
-import { EmptyError, lastValueFrom } from 'rxjs';
+import { EmptyError, lastValueFrom, Observable } from 'rxjs';
 import { share, tap } from 'rxjs/operators';
-import { TLSSocket } from 'tls';
+import * as tls from 'tls';
 import {
   CLOSE_EVENT,
   ECONNREFUSED,
@@ -11,6 +11,7 @@ import {
   TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
   TCP_DEFAULT_USE_TLS,
+  TLS_CONNECT_EVENT,
 } from '../constants';
 import { JsonSocket } from '../helpers/json-socket';
 import { PacketId, ReadPacket, WritePacket } from '../interfaces';
@@ -28,6 +29,11 @@ export class ClientTCP extends ClientProxy {
   private readonly useTls: boolean;
   private isConnected = false;
   private socket: JsonSocket;
+
+  /**
+   * The underling netSocket used by the TLS Socket
+   */
+  private netSocket: net.Socket | null = null;
 
   constructor();
   constructor(options: TcpClientOptions['options']);
@@ -56,17 +62,35 @@ export class ClientTCP extends ClientProxy {
     this.socket = this.createSocket();
     this.bindEvents(this.socket);
 
-    const source$ = this.connect$(this.socket.netSocket).pipe(
-      tap(() => {
-        this.isConnected = true;
-        this.socket.on(MESSAGE_EVENT, (buffer: WritePacket & PacketId) =>
-          this.handleResponse(buffer),
-        );
-      }),
-      share(),
-    );
+    let source$: Observable<any>;
 
-    this.socket.connect(this.port, this.host);
+    if (this.useTls) {
+      this.netSocket.connect(this.port, this.host);
+      source$ = this.connect$(
+        this.socket.netSocket,
+        ERROR_EVENT,
+        TLS_CONNECT_EVENT,
+      ).pipe(
+        tap(() => {
+          this.isConnected = true;
+          this.socket.on(MESSAGE_EVENT, (buffer: WritePacket & PacketId) =>
+            this.handleResponse(buffer),
+          );
+        }),
+        share(),
+      );
+    } else {
+      source$ = this.connect$(this.socket.netSocket).pipe(
+        tap(() => {
+          this.isConnected = true;
+          this.socket.on(MESSAGE_EVENT, (buffer: WritePacket & PacketId) =>
+            this.handleResponse(buffer),
+          );
+        }),
+        share(),
+      );
+      this.socket.connect(this.port, this.host);
+    }
     this.connection = lastValueFrom(source$).catch(err => {
       if (err instanceof EmptyError) {
         return;
@@ -98,7 +122,7 @@ export class ClientTCP extends ClientProxy {
   }
 
   public createSocket(): JsonSocket {
-    let socket: net.Socket | TLSSocket = new net.Socket();
+    let socket: net.Socket | tls.TLSSocket = new net.Socket();
 
     /**
      * TLS enabled, "upgrade" the TCP Socket to TLS
@@ -108,7 +132,8 @@ export class ClientTCP extends ClientProxy {
        * Options are TcpTlsClientOptions
        */
       const options = this.options as TcpTlsClientOptions['options'];
-      socket = new TLSSocket(socket, options);
+      this.netSocket = socket;
+      socket = tls.connect({ ...options, socket });
     }
     return new JsonSocket(socket);
   }

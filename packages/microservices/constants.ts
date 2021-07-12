@@ -18,6 +18,7 @@ export const ERROR_EVENT = 'error';
 export const CLOSE_EVENT = 'close';
 export const SUBSCRIBE = 'subscribe';
 export const CANCEL_EVENT = 'cancelled';
+export const TLS_CONNECT_EVENT = 'secureConnect';
 
 export const PATTERN_METADATA = 'microservices:pattern';
 export const TRANSPORT_METADATA = 'microservices:transport';
