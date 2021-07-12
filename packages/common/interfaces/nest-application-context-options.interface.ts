@@ -7,7 +7,7 @@ export class NestApplicationContextOptions {
   /**
    * Specifies the logger to use.  Pass `false` to turn off logging.
    */
-  logger?: LoggerService | LogLevel[] | boolean;
+  logger?: LoggerService | LogLevel[] | false;
 
   /**
    * Whether to abort the process on Error. By default, the process is exited.

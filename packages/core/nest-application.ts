@@ -46,10 +46,9 @@ const { SocketModule } = optionalRequire(
   '@nestjs/websockets/socket-module',
   () => require('@nestjs/websockets/socket-module'),
 );
-const {
-  MicroservicesModule,
-} = optionalRequire('@nestjs/microservices/microservices-module', () =>
-  require('@nestjs/microservices/microservices-module'),
+const { MicroservicesModule } = optionalRequire(
+  '@nestjs/microservices/microservices-module',
+  () => require('@nestjs/microservices/microservices-module'),
 );
 
 /**
@@ -57,7 +56,8 @@ const {
  */
 export class NestApplication
   extends NestApplicationContext
-  implements INestApplication {
+  implements INestApplication
+{
   private readonly logger = new Logger(NestApplication.name, {
     timestamp: true,
   });
@@ -279,7 +279,7 @@ export class NestApplication
         port,
         ...listenFnArgs,
         (...originalCallbackArgs: unknown[]) => {
-          if (this.appOptions?.autoFlushLogs) {
+          if (this.appOptions?.autoFlushLogs ?? true) {
             this.flushLogs();
           }
           const address = this.httpServer.address();
