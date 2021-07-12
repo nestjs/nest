@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@nuxtjs/opencollective": "0.3.2",
-    "fast-safe-stringify": "2.0.7",
+    "fast-safe-stringify": "2.0.8",
     "iterare": "1.2.1",
     "object-hash": "2.2.0",
     "path-to-regexp": "3.2.0",
