@@ -84,7 +84,7 @@
     "@types/cache-manager": "3.4.1",
     "@types/chai": "4.2.21",
     "@types/chai-as-promised": "7.1.4",
-    "@types/cors": "2.8.11",
+    "@types/cors": "2.8.12",
     "@types/express": "4.17.13",
     "@types/gulp": "4.0.9",
     "@types/http-errors": "1.8.1",
