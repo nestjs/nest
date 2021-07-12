@@ -27,7 +27,8 @@ const { SocketModule } = optionalRequire(
 
 export class NestMicroservice
   extends NestApplicationContext
-  implements INestMicroservice {
+  implements INestMicroservice
+{
   private readonly logger = new Logger(NestMicroservice.name, {
     timestamp: true,
   });
@@ -123,7 +124,7 @@ export class NestMicroservice
 
     return new Promise<any>((resolve, reject) => {
       this.server.listen((err, info) => {
-        if (this.microserviceConfig?.autoFlushLogs) {
+        if (this.microserviceConfig?.autoFlushLogs ?? true) {
           this.flushLogs();
         }
         if (err) {

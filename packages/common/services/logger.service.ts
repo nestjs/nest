@@ -90,14 +90,12 @@ export class Logger implements LoggerService {
 
   get localInstance(): LoggerService {
     if (Logger.staticInstanceRef === DEFAULT_LOGGER) {
-      if (this.localInstanceRef) {
-        return this.localInstanceRef;
+      return this.registerLocalInstanceRef();
+    } else if (Logger.staticInstanceRef instanceof Logger) {
+      const prototype = Object.getPrototypeOf(Logger.staticInstanceRef);
+      if (prototype.constructor === Logger) {
+        return this.registerLocalInstanceRef();
       }
-      this.localInstanceRef = new ConsoleLogger(this.context, {
-        timestamp: this.options?.timestamp,
-        logLevels: Logger.logLevels,
-      });
-      return this.localInstanceRef;
     }
     return Logger.staticInstanceRef;
   }
@@ -270,13 +268,31 @@ export class Logger implements LoggerService {
       Logger.logLevels = logger;
       return this.staticInstanceRef?.setLogLevels(logger);
     }
-    this.staticInstanceRef = isObject(logger)
-      ? (logger as LoggerService)
-      : undefined;
+    if (isObject(logger)) {
+      if (logger instanceof Logger && logger.constructor !== Logger) {
+        const errorMessage = `Using the "extends Logger" instruction is not allowed in Nest v8. Please, use "extends ConsoleLogger" instead.`;
+        this.staticInstanceRef.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+      this.staticInstanceRef = logger as LoggerService;
+    } else {
+      this.staticInstanceRef = undefined;
+    }
   }
 
   static isLevelEnabled(level: LogLevel): boolean {
     const logLevels = Logger.logLevels;
     return isLogLevelEnabled(level, logLevels);
+  }
+
+  private registerLocalInstanceRef() {
+    if (this.localInstanceRef) {
+      return this.localInstanceRef;
+    }
+    this.localInstanceRef = new ConsoleLogger(this.context, {
+      timestamp: this.options?.timestamp,
+      logLevels: Logger.logLevels,
+    });
+    return this.localInstanceRef;
   }
 }

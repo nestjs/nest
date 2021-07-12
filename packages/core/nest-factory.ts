@@ -233,7 +233,7 @@ export class NestFactoryStatic {
       return;
     }
     const { logger, bufferLogs, autoFlushLogs } = options;
-    if (logger !== true && !isNil(logger)) {
+    if ((logger as boolean) !== true && !isNil(logger)) {
       Logger.overrideLogger(logger);
     }
     if (bufferLogs) {
