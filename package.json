@@ -81,7 +81,7 @@
     "@nestjs/typeorm": "8.0.1",
     "@types/amqplib": "0.8.1",
     "@types/bytes": "3.1.1",
-    "@types/cache-manager": "3.4.1",
+    "@types/cache-manager": "3.4.2",
     "@types/chai": "4.2.21",
     "@types/chai-as-promised": "7.1.4",
     "@types/cors": "2.8.11",
