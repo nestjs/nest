@@ -248,11 +248,13 @@ export class Module {
     | ValueProvider
     | ExistingProvider {
     return !isNil(
-      (provider as
-        | ClassProvider
-        | FactoryProvider
-        | ValueProvider
-        | ExistingProvider).provide,
+      (
+        provider as
+          | ClassProvider
+          | FactoryProvider
+          | ValueProvider
+          | ExistingProvider
+      ).provide,
     );
   }
 
@@ -396,8 +398,8 @@ export class Module {
     } else if (isString(provider) || isSymbol(provider)) {
       return addExportedUnit(provider);
     } else if (this.isDynamicModule(provider)) {
-      const { module } = provider;
-      return addExportedUnit(module.name);
+      const { module: moduleClassRef } = provider;
+      return addExportedUnit(moduleClassRef);
     }
     addExportedUnit(provider as Type<any>);
   }

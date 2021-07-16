@@ -54,7 +54,8 @@ interface ApplicationProviderWrapper {
 }
 
 export class DependenciesScanner {
-  private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] = [];
+  private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] =
+    [];
 
   constructor(
     private readonly container: NestContainer,
@@ -255,10 +256,9 @@ export class DependenciesScanner {
       component.prototype,
       method => Reflect.getMetadata(metadataKey, component, method),
     );
-    const paramsInjectables = this.flatten(
-      paramsMetadata,
-    ).map((param: Record<string, any>) =>
-      flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
+    const paramsInjectables = this.flatten(paramsMetadata).map(
+      (param: Record<string, any>) =>
+        flatten(Object.keys(param).map(k => param[k].pipes)).filter(isFunction),
     );
     flatten(paramsInjectables).forEach((injectable: Type<Injectable>) =>
       this.insertInjectable(injectable, token, component),
@@ -292,7 +292,7 @@ export class DependenciesScanner {
     modulesGenerator.next();
 
     const modulesStack = [];
-    const calculateDistance = (moduleRef: Module, distance = 0) => {
+    const calculateDistance = (moduleRef: Module, distance = 1) => {
       if (modulesStack.includes(moduleRef)) {
         return;
       }
@@ -336,11 +336,13 @@ export class DependenciesScanner {
     }
     const applyProvidersMap = this.getApplyProvidersMap();
     const providersKeys = Object.keys(applyProvidersMap);
-    const type = (provider as
-      | ClassProvider
-      | ValueProvider
-      | FactoryProvider
-      | ExistingProvider).provide;
+    const type = (
+      provider as
+        | ClassProvider
+        | ValueProvider
+        | FactoryProvider
+        | ExistingProvider
+    ).provide;
 
     if (!providersKeys.includes(type as string)) {
       return this.container.addProvider(provider as any, token);
