@@ -32,7 +32,7 @@ class TestController {
   test() {
     return RETURN_VALUE;
   }
-  
+
   @Get('query')
   query() {
     return RETURN_VALUE;
@@ -69,9 +69,7 @@ class TestModule {
       .apply((req, res, next) => res.end(`${REQ_URL_VALUE}${req.url}`))
       .forRoutes('req/url/')
       .apply((req, res, next) => res.end(WILDCARD_VALUE))
-      .forRoutes('express_style_wildcard/*')
-      .apply((req, res, next) => res.end(WILDCARD_VALUE))
-      .forRoutes('tests/(.*)')
+      .forRoutes('express_style_wildcard/*', 'tests/(.*)')
       .apply((req, res, next) => res.end(QUERY_VALUE))
       .forRoutes('query')
       .apply((req, res, next) => next())
@@ -81,7 +79,6 @@ class TestModule {
       .apply((req, res, next) => res.end(RETURN_VALUE))
       .exclude({ path: QUERY_VALUE, method: -1 })
       .forRoutes('(.*)');
-
   }
 }
 
@@ -122,8 +119,8 @@ describe('Middleware (FastifyAdapter)', () => {
         method: 'GET',
         url: '/query',
         query: {
-          test: QUERY_VALUE
-        }
+          test: QUERY_VALUE,
+        },
       })
       .then(({ payload }) => expect(payload).to.be.eql(QUERY_VALUE));
   });
@@ -134,8 +131,8 @@ describe('Middleware (FastifyAdapter)', () => {
         method: 'GET',
         url: QUERY_VALUE,
         query: {
-          test: QUERY_VALUE
-        }
+          test: QUERY_VALUE,
+        },
       })
       .then(({ payload }) => expect(payload).to.be.eql(QUERY_VALUE));
   });
@@ -159,13 +156,15 @@ describe('Middleware (FastifyAdapter)', () => {
   });
 
   it(`forRoutes(req/url/)`, () => {
-    const reqUrl = '/test'
+    const reqUrl = '/test';
     return app
       .inject({
         method: 'GET',
         url: `/req/url${reqUrl}`,
       })
-      .then(({ payload }) => expect(payload).to.be.eql(`${REQ_URL_VALUE}${reqUrl}`));
+      .then(({ payload }) =>
+        expect(payload).to.be.eql(`${REQ_URL_VALUE}${reqUrl}`),
+      );
   });
 
   it(`GET forRoutes(POST tests/included)`, () => {

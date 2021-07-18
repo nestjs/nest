@@ -1,10 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-import {
-  HttpStatus,
-  Logger,
-  RequestMethod,
-  StreamableFile,
-} from '@nestjs/common';
+import { HttpStatus, Logger, StreamableFile } from '@nestjs/common';
 import {
   CorsOptions,
   CorsOptionsDelegate,
@@ -17,8 +11,6 @@ import {
   FastifyLoggerInstance,
   FastifyPluginAsync,
   FastifyPluginCallback,
-  FastifyPluginOptions,
-  FastifyRegisterOptions,
   FastifyReply,
   FastifyRequest,
   FastifyServerOptions,
@@ -87,12 +79,13 @@ export class FastifyAdapter<
     TRawRequest,
     TRawResponse
   > = FastifyReply<TServer, TRawRequest, TRawResponse>,
-> extends AbstractHttpAdapter<TServer, TRequest, TReply> {
-  protected readonly instance: FastifyInstance<
+  TInstance extends FastifyInstance<
     TServer,
     TRawRequest,
     TRawResponse
-  >;
+  > = FastifyInstance<TServer, TRawRequest, TRawResponse>,
+> extends AbstractHttpAdapter<TServer, TRequest, TReply> {
+  protected readonly instance: TInstance;
   private _isParserRegistered: boolean;
   private isMiddieRegistered: boolean;
 
@@ -102,15 +95,14 @@ export class FastifyAdapter<
 
   constructor(
     instanceOrOptions:
-      | FastifyInstance<TServer>
+      | TInstance
       | FastifyHttp2Options<any>
       | FastifyHttp2SecureOptions<any>
       | FastifyHttpsOptions<any>
       | FastifyServerOptions<TServer> = fastify() as any,
   ) {
     const instance =
-      instanceOrOptions &&
-      (instanceOrOptions as FastifyInstance<TServer>).server
+      instanceOrOptions && (instanceOrOptions as TInstance).server
         ? instanceOrOptions
         : fastify(instanceOrOptions as FastifyServerOptions);
 
@@ -185,11 +177,7 @@ export class FastifyAdapter<
     return response.status(code).redirect(url);
   }
 
-  public setErrorHandler(
-    handler: Parameters<
-      FastifyInstance<TServer, TRawRequest, TRawResponse>['setErrorHandler']
-    >[0],
-  ) {
+  public setErrorHandler(handler: Parameters<TInstance['setErrorHandler']>[0]) {
     return this.instance.setErrorHandler(handler);
   }
 
@@ -201,19 +189,13 @@ export class FastifyAdapter<
     return this.instance.server as unknown as T;
   }
 
-  public getInstance<
-    T = FastifyInstance<TServer, TRawRequest, TRawResponse>,
-  >(): T {
+  public getInstance<T = TInstance>(): T {
     return this.instance as unknown as T;
   }
 
-  public register<Options extends FastifyPluginOptions = any>(
-    plugin:
-      | FastifyPluginCallback<Options>
-      | FastifyPluginAsync<Options>
-      | Promise<{ default: FastifyPluginCallback<Options> }>
-      | Promise<{ default: FastifyPluginAsync<Options> }>,
-    opts?: FastifyRegisterOptions<Options>,
+  public register<TRegister extends Parameters<TInstance['register']>>(
+    plugin: TRegister['0'],
+    opts?: TRegister['1'],
   ) {
     return this.instance.register(plugin, opts);
   }
@@ -244,7 +226,9 @@ export class FastifyAdapter<
 
   public useStaticAssets(options: FastifyStaticOptions) {
     return this.register(
-      loadPackage('fastify-static', 'FastifyAdapter.useStaticAssets()'),
+      loadPackage('fastify-static', 'FastifyAdapter.useStaticAssets()', () =>
+        require('fastify-static'),
+      ),
       options,
     );
   }
@@ -257,7 +241,9 @@ export class FastifyAdapter<
       process.exit(1);
     }
     return this.register(
-      loadPackage('point-of-view', 'FastifyAdapter.setViewEngine()'),
+      loadPackage('point-of-view', 'FastifyAdapter.setViewEngine()', () =>
+        require('point-of-view'),
+      ),
       options,
     );
   }
@@ -281,24 +267,20 @@ export class FastifyAdapter<
   }
 
   public enableCors(options: CorsOptions | CorsOptionsDelegate<TRequest>) {
-    if (typeof options === 'function') {
-      this.register(require('fastify-cors'), () => options);
-    } else {
-      this.register(require('fastify-cors'), options);
-    }
+    this.register(import('fastify-cors'), options);
   }
 
   public registerParserMiddleware() {
     if (this._isParserRegistered) {
       return;
     }
-    this.register(require('fastify-formbody'));
+    this.register(import('fastify-formbody'));
     this._isParserRegistered = true;
   }
 
-  public async createMiddlewareFactory(
-    requestMethod: RequestMethod,
-  ): Promise<(path: string, callback: Function) => any> {
+  public async createMiddlewareFactory(): Promise<
+    (path: string, callback: Function) => any
+  > {
     if (!this.isMiddieRegistered) {
       await this.registerMiddie();
     }
@@ -311,16 +293,7 @@ export class FastifyAdapter<
       // ref https://github.com/fastify/middie/pull/55
       this.instance.use(
         normalizedPath,
-        (req: any, res: any, next: Function) => {
-          if (
-            requestMethod === RequestMethod.ALL ||
-            req.method === RequestMethod[requestMethod] ||
-            (requestMethod as number) === -1
-          ) {
-            return callback(req, res, next);
-          }
-          next();
-        },
+        callback as Parameters<TInstance['use']>['1'],
       );
     };
   }
