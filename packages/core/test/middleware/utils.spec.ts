@@ -100,7 +100,7 @@ describe('middleware utils', () => {
     });
     describe('when route is excluded', () => {
       const path = '/cats/(.*)';
-      const exludedRoutes = [
+      const excludedRoutes = [
         {
           path,
           method: RequestMethod.GET,
@@ -108,7 +108,7 @@ describe('middleware utils', () => {
         },
       ];
       it('should return true', () => {
-        expect(isRouteExcluded({}, exludedRoutes, adapter)).to.be.true;
+        expect(isRouteExcluded({}, excludedRoutes, adapter)).to.be.true;
       });
     });
     describe('when route is not excluded', () => {

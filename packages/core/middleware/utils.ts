@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
 import { RequestMethod } from '@nestjs/common';
 import { HttpServer, RouteInfo, Type } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
@@ -7,6 +6,10 @@ import * as pathToRegexp from 'path-to-regexp';
 import { v4 as uuid } from 'uuid';
 
 type RouteInfoRegex = RouteInfo & { regex: RegExp };
+
+export const isRequestMethodAll = (method: RequestMethod) => {
+  return RequestMethod.ALL === method || (method as number) === -1;
+};
 
 export const filterMiddleware = <T extends Function | Type<any> = any>(
   middleware: T[],
@@ -94,11 +97,7 @@ export function isRouteExcluded(
       : originalUrl;
 
   const isExcluded = excludedRoutes.some(({ method, regex }) => {
-    if (
-      RequestMethod.ALL === method ||
-      RequestMethod[method] === reqMethod ||
-      (method as number) === -1
-    ) {
+    if (isRequestMethodAll(method) || RequestMethod[method] === reqMethod) {
       return regex.exec(pathname);
     }
     return false;
