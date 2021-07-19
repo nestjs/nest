@@ -30,7 +30,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       return response.send();
     }
     if (body instanceof StreamableFile) {
-      if (!response.getHeader('Content-Type')) {
+      if (response.getHeader('Content-Type') === undefined) {
         response.setHeader('Content-Type', 'application/octet-stream');
       }
       return body.getStream().pipe(response);
