@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import 'reflect-metadata';
 import * as sinon from 'sinon';
-import { Logger, LoggerService } from '../../services';
+import { ConsoleLogger, Logger, LoggerService } from '../../services';
 
 describe('Logger', () => {
   describe('[static methods]', () => {
@@ -236,6 +236,24 @@ describe('Logger', () => {
       });
     });
   });
+
+  describe('ConsoleLogger', () => {
+    it('should allow setting and resetting of context', () => {
+      const logger = new ConsoleLogger()
+      expect(logger['context']).to.be.undefined;
+      logger.setContext('context');
+      expect(logger['context']).to.equal('context');
+      logger.resetContext();
+      expect(logger['context']).to.be.undefined;
+
+      const loggerWithContext = new ConsoleLogger('context');
+      expect(loggerWithContext['context']).to.equal('context');
+      loggerWithContext.setContext('other')
+      expect(loggerWithContext['context']).to.equal('other');
+      loggerWithContext.resetContext();
+      expect(loggerWithContext['context']).to.equal('context');
+    })
+  })
 
   describe('[instance methods]', () => {
     describe('when the default logger is used', () => {
