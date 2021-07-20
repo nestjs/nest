@@ -27,6 +27,7 @@ const DEFAULT_LOG_LEVELS: LogLevel[] = [
 @Injectable()
 export class ConsoleLogger implements LoggerService {
   private static lastTimestampAt?: number;
+  private originalContext?: string;
 
   constructor();
   constructor(context: string);
@@ -39,6 +40,9 @@ export class ConsoleLogger implements LoggerService {
   ) {
     if (!options.logLevels) {
       options.logLevels = DEFAULT_LOG_LEVELS;
+    }
+    if (context) {
+      this.originalContext = context;
     }
   }
 
@@ -144,6 +148,13 @@ export class ConsoleLogger implements LoggerService {
    */
   setContext(context: string) {
     this.context = context;
+  }
+
+  /**
+   * Resets the logger context to the value that was passed in the constructor.
+   */
+  resetContext() {
+    this.context = this.originalContext;
   }
 
   isLevelEnabled(level: LogLevel): boolean {
