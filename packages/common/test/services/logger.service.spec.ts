@@ -134,6 +134,9 @@ describe('Logger', () => {
         expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
           stacktrace + '\n',
         );
+        expect(processStderrWriteSpy.secondCall.firstArg).to.not.include(
+          context,
+        );
       });
 
       it('should print multiple 2 errors and one stacktrace to the console', () => {
