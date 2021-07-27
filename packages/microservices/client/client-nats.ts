@@ -97,16 +97,19 @@ export class ClientNats extends ClientProxy {
       const packet = this.assignPacketId(partialPacket);
       const channel = this.normalizePattern(partialPacket.pattern);
       const serializedPacket = this.serializer.serialize(packet);
+      const inbox = natsPackage.createInbox();
 
       const subscriptionHandler = this.createSubscriptionHandler(
         packet,
         callback,
       );
-      this.natsClient.publish(channel, serializedPacket, {
-        reply: packet.id,
-      });
-      const subscription = this.natsClient.subscribe(packet.id, {
+
+      const subscription = this.natsClient.subscribe(inbox, {
         callback: subscriptionHandler,
+      });
+
+      this.natsClient.publish(channel, serializedPacket, {
+        reply: inbox,
       });
 
       return () => subscription.unsubscribe();
