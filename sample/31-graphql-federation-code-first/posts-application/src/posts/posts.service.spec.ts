@@ -17,7 +17,7 @@ describe('PostsService', () => {
   });
 
   it('should get all posts for an author', () => {
-    const result = service.forAuthor(1);
+    const result = service.findOneByAuthorId(1);
     expect(result).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -33,7 +33,7 @@ describe('PostsService', () => {
   });
 
   it('should get all posts', () => {
-    const result = service.all();
+    const result = service.findAll();
     expect(result.length).toEqual(service['posts'].length);
   });
 });

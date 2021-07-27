@@ -1,10 +1,10 @@
 import {
-  Query,
   Args,
+  ID,
+  Parent,
+  Query,
   ResolveField,
   Resolver,
-  Parent,
-  ID,
 } from '@nestjs/graphql';
 import { Post } from './models/post.model';
 import { User } from './models/user.model';
@@ -21,7 +21,7 @@ export class PostsResolver {
 
   @Query((returns) => [Post])
   getPosts(): Post[] {
-    return this.postsService.all();
+    return this.postsService.findAll();
   }
 
   @ResolveField((of) => User)

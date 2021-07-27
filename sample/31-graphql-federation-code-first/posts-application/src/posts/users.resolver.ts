@@ -9,6 +9,6 @@ export class UsersResolver {
 
   @ResolveField((of) => [Post])
   public posts(@Parent() user: User): Post[] {
-    return this.postsService.forAuthor(user.id);
+    return this.postsService.findOneByAuthorId(user.id);
   }
 }

@@ -1,10 +1,10 @@
 import {
-  Query,
   Args,
+  ID,
+  Parent,
+  Query,
   ResolveField,
   Resolver,
-  Parent,
-  ID,
 } from '@nestjs/graphql';
 import { Post } from './posts.interfaces';
 import { PostsService } from './posts.service';
@@ -20,7 +20,7 @@ export class PostsResolver {
 
   @Query('getPosts')
   getPosts() {
-    return this.postsService.all();
+    return this.postsService.findAll();
   }
 
   @ResolveField('user')
