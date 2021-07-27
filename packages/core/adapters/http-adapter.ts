@@ -110,9 +110,7 @@ export abstract class AbstractHttpAdapter<
     options: CorsOptions | CorsOptionsDelegate<TRequest>,
     prefix?: string,
   );
-  abstract createMiddlewareFactory(
-    requestMethod: RequestMethod,
-  ):
+  abstract createMiddlewareFactory():
     | ((path: string, callback: Function) => any)
     | Promise<(path: string, callback: Function) => any>;
   abstract getType(): string;
