@@ -12,7 +12,6 @@ import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
-import { Readable } from 'stream';
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   constructor(instance?: any) {
@@ -119,7 +118,9 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return this.use(cors(options));
   }
 
-  public createMiddlewareFactory(): (path: string, callback: Function) => any {
+  public createMiddlewareFactory(
+    requestMethod: RequestMethod,
+  ): (path: string, callback: Function) => any {
     return this.instance.use.bind(this.instance);
   }
 

@@ -57,7 +57,9 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   useStaticAssets?(...args: any[]): this;
   setBaseViewsDir?(path: string | string[]): this;
   setViewEngine?(engineOrOptions: any): this;
-  createMiddlewareFactory():
+  createMiddlewareFactory(
+    method: RequestMethod,
+  ):
     | ((path: string, callback: Function) => any)
     | Promise<(path: string, callback: Function) => any>;
   getRequestHostname?(request: TRequest): string;

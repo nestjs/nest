@@ -1,4 +1,9 @@
-import { HttpStatus, Logger, StreamableFile } from '@nestjs/common';
+import {
+  HttpStatus,
+  Logger,
+  RequestMethod,
+  StreamableFile,
+} from '@nestjs/common';
 import {
   CorsOptions,
   CorsOptionsDelegate,
@@ -278,9 +283,9 @@ export class FastifyAdapter<
     this._isParserRegistered = true;
   }
 
-  public async createMiddlewareFactory(): Promise<
-    (path: string, callback: Function) => any
-  > {
+  public async createMiddlewareFactory(
+    requestMethod: RequestMethod,
+  ): Promise<(path: string, callback: Function) => any> {
     if (!this.isMiddieRegistered) {
       await this.registerMiddie();
     }

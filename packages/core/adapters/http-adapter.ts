@@ -12,8 +12,9 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 export abstract class AbstractHttpAdapter<
   TServer = any,
   TRequest = any,
-  TResponse = any
-> implements HttpServer<TRequest, TResponse> {
+  TResponse = any,
+> implements HttpServer<TRequest, TResponse>
+{
   protected httpServer: TServer;
 
   constructor(protected readonly instance: any) {}
@@ -110,7 +111,9 @@ export abstract class AbstractHttpAdapter<
     options: CorsOptions | CorsOptionsDelegate<TRequest>,
     prefix?: string,
   );
-  abstract createMiddlewareFactory():
+  abstract createMiddlewareFactory(
+    requestMethod: RequestMethod,
+  ):
     | ((path: string, callback: Function) => any)
     | Promise<(path: string, callback: Function) => any>;
   abstract getType(): string;

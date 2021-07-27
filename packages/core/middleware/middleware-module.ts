@@ -197,7 +197,7 @@ export class MiddlewareModule {
     const isStatic = wrapper.isDependencyTreeStatic();
     if (isStatic) {
       const proxy = await this.createProxy(instance);
-      return await this.registerHandler(applicationRef, method, path, proxy);
+      return this.registerHandler(applicationRef, method, path, proxy);
     }
     await this.registerHandler(
       applicationRef,
@@ -273,14 +273,14 @@ export class MiddlewareModule {
   ) {
     const prefix = this.config.getGlobalPrefix();
     const basePath = addLeadingSlash(prefix);
-    if (basePath.endsWith('/') && path.startsWith('/')) {
+    if (basePath?.endsWith('/') && path?.startsWith('/')) {
       // strip slash when a wildcard is being used
       // and global prefix has been set
-      path = path.slice(1);
+      path = path?.slice(1);
     }
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
-    const router = await applicationRef.createMiddlewareFactory();
+    const router = await applicationRef.createMiddlewareFactory(method);
     router(
       basePath + path,
       isMethodAll
