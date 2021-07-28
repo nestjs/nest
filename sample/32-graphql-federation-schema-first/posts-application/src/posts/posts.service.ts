@@ -10,7 +10,7 @@ export class PostsService {
     { authorId: 2, id: 4, title: 'Hello World' },
   ];
 
-  findOneByAuhorId(authorId: number) {
+  findOneByAuthorId(authorId: number) {
     return this.posts.filter((post) => post.authorId === Number(authorId));
   }
 

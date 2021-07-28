@@ -8,6 +8,6 @@ export class UsersResolver {
 
   @ResolveField('posts')
   public posts(@Parent() user: User) {
-    return this.postsService.findOneByAuhorId(user.id);
+    return this.postsService.findOneByAuthorId(user.id);
   }
 }
