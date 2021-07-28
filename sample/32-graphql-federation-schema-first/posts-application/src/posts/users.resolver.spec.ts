@@ -4,7 +4,7 @@ import { PostsService } from './posts.service';
 import { UsersResolver } from './users.resolver';
 
 const postsServiceMock = {
-  forAuthor: jest.fn((authorId: number): Post[] => {
+  findOneByAuthorId: jest.fn((authorId: number): Post[] => {
     return [{ authorId, id: 1, title: 'Post Mock' }];
   }),
 };

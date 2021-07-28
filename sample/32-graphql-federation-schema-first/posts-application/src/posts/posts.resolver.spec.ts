@@ -11,7 +11,7 @@ const mockPost: Post = {
 
 const postsServiceMock = {
   findOne: jest.fn((id: number): Post => mockPost),
-  all: jest.fn((): Post[] => [mockPost]),
+  findAll: jest.fn((): Post[] => [mockPost]),
 };
 
 describe('PostsResolver', () => {
