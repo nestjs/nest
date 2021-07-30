@@ -12,8 +12,9 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 export abstract class AbstractHttpAdapter<
   TServer = any,
   TRequest = any,
-  TResponse = any
-> implements HttpServer<TRequest, TResponse> {
+  TResponse = any,
+> implements HttpServer<TRequest, TResponse>
+{
   protected httpServer: TServer;
 
   constructor(protected readonly instance: any) {}

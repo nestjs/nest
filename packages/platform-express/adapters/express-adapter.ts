@@ -6,18 +6,14 @@ import {
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { isFunction, isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
-import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
 import * as bodyParser from 'body-parser';
 import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
-import { Readable } from 'stream';
 
 export class ExpressAdapter extends AbstractHttpAdapter {
-  private readonly routerMethodFactory = new RouterMethodFactory();
-
   constructor(instance?: any) {
     super(instance || express());
   }
@@ -30,7 +26,9 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       return response.send();
     }
     if (body instanceof StreamableFile) {
-      response.setHeader('Content-Type', 'application/octet-stream');
+      if (response.getHeader('Content-Type') === undefined) {
+        response.setHeader('Content-Type', 'application/octet-stream');
+      }
       return body.getStream().pipe(response);
     }
     return isObject(body) ? response.json(body) : response.send(String(body));
@@ -123,9 +121,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   public createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): (path: string, callback: Function) => any {
-    return this.routerMethodFactory
-      .get(this.instance, requestMethod)
-      .bind(this.instance);
+    return this.instance.use.bind(this.instance);
   }
 
   public initHttpServer(options: NestApplicationOptions) {

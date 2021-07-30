@@ -63,14 +63,14 @@ export class ClientNats extends ClientProxy {
     packet: ReadPacket & PacketId,
     callback: (packet: WritePacket) => any,
   ) {
-    return (error: unknown | undefined, natsMsg: NatsMsg) => {
+    return async (error: unknown | undefined, natsMsg: NatsMsg) => {
       if (error) {
         return callback({
           err: error,
         });
       }
       const rawPacket = natsMsg.data;
-      const message = this.deserializer.deserialize(rawPacket);
+      const message = await this.deserializer.deserialize(rawPacket);
       if (message.id && message.id !== packet.id) {
         return undefined;
       }
@@ -97,16 +97,19 @@ export class ClientNats extends ClientProxy {
       const packet = this.assignPacketId(partialPacket);
       const channel = this.normalizePattern(partialPacket.pattern);
       const serializedPacket = this.serializer.serialize(packet);
+      const inbox = natsPackage.createInbox();
 
       const subscriptionHandler = this.createSubscriptionHandler(
         packet,
         callback,
       );
-      this.natsClient.publish(channel, serializedPacket, {
-        reply: packet.id,
-      });
-      const subscription = this.natsClient.subscribe(packet.id, {
+
+      const subscription = this.natsClient.subscribe(inbox, {
         callback: subscriptionHandler,
+      });
+
+      this.natsClient.publish(channel, serializedPacket, {
+        reply: inbox,
       });
 
       return () => subscription.unsubscribe();

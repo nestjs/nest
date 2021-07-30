@@ -21,16 +21,16 @@
   "devDependencies": {
     "@nestjs/cli": "8.0.2",
     "@nestjs/schematics": "8.0.2",
-    "@types/node": "14.17.5",
-    "@typescript-eslint/eslint-plugin": "4.28.4",
-    "@typescript-eslint/parser": "4.28.4",
+    "@types/node": "14.17.6",
+    "@typescript-eslint/eslint-plugin": "4.28.5",
+    "@typescript-eslint/parser": "4.28.5",
     "eslint": "7.31.0",
     "eslint-config-prettier": "8.3.0",
     "eslint-plugin-import": "2.23.4",
     "start-server-webpack-plugin": "2.2.5",
-    "ts-loader": "9.2.3",
+    "ts-loader": "9.2.4",
     "ts-node": "10.1.0",
-    "webpack": "5.46.0",
+    "webpack": "5.47.0",
     "webpack-cli": "4.7.2",
     "webpack-node-externals": "3.0.0"
   }
