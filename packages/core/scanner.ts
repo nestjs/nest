@@ -300,8 +300,10 @@ export class DependenciesScanner {
 
       const moduleImports = moduleRef.imports;
       moduleImports.forEach(importedModuleRef => {
-        importedModuleRef.distance = distance;
-        calculateDistance(importedModuleRef, distance + 1);
+        if (importedModuleRef) {
+          importedModuleRef.distance = distance;
+          calculateDistance(importedModuleRef, distance + 1);
+        }
       });
     };
 
