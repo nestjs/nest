@@ -165,7 +165,7 @@
     "supertest": "6.1.4",
     "ts-morph": "11.0.3",
     "ts-node": "10.1.0",
-    "typeorm": "0.2.35",
+    "typeorm": "0.2.36",
     "typescript": "4.3.5",
     "wrk": "1.2.1",
     "ws": "7.5.3"
