@@ -140,7 +140,7 @@ export function createGrpcMethodMetadata(
     };
   }
   if (service && !method) {
-    return { service, rpc: capitalizeFirstLetter(key as string), streaming };
+    return { service, rpc: key , streaming };
   }
   return { service, rpc: method, streaming };
 }

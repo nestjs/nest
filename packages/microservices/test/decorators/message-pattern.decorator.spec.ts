@@ -30,6 +30,9 @@ describe('@GrpcMethod', () => {
 
     @GrpcMethod('TestService2', 'Test2')
     public test3() {}
+
+    @GrpcMethod('TestService2', 'test2')
+    public test4() {}
   }
 
   it('should derive method and service name', () => {
@@ -48,6 +51,16 @@ describe('@GrpcMethod', () => {
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
+      streaming: GrpcMethodStreamingType.NO_STREAMING,
+    });
+  });
+
+  it('should derive method without capitalize first letter', () => {
+    const svc = new TestService();
+    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
+    expect(metadata).to.be.eql({
+      service: 'TestService2',
+      rpc: 'test2',
       streaming: GrpcMethodStreamingType.NO_STREAMING,
     });
   });
@@ -73,6 +86,9 @@ describe('@GrpcStreamMethod', () => {
 
     @GrpcStreamMethod('TestService2', 'Test2')
     public test3() {}
+
+    @GrpcStreamMethod('TestService2', 'test2')
+    public test3() {}
   }
 
   it('should derive method and service name', () => {
@@ -91,6 +107,16 @@ describe('@GrpcStreamMethod', () => {
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
+      streaming: GrpcMethodStreamingType.RX_STREAMING,
+    });
+  });
+
+  it('should derive method', () => {
+    const svc = new TestService();
+    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
+    expect(metadata).to.be.eql({
+      service: 'TestService2',
+      rpc: 'test2',
       streaming: GrpcMethodStreamingType.RX_STREAMING,
     });
   });
@@ -116,6 +142,10 @@ describe('@GrpcStreamCall', () => {
 
     @GrpcStreamCall('TestService2', 'Test2')
     public test3() {}
+
+    @GrpcStreamCall('TestService2', 'test2')
+    public test4() {}
+
   }
 
   it('should derive method and service name', () => {
@@ -134,6 +164,16 @@ describe('@GrpcStreamCall', () => {
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
+      streaming: GrpcMethodStreamingType.PT_STREAMING,
+    });
+  });
+
+  it('should derive method without capitalize first letter', () => {
+    const svc = new TestService();
+    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
+    expect(metadata).to.be.eql({
+      service: 'TestService2',
+      rpc: 'test2',
       streaming: GrpcMethodStreamingType.PT_STREAMING,
     });
   });
