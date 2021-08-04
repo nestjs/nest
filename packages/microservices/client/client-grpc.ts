@@ -232,11 +232,17 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
             callArgs.unshift(maybeMetadata);
           }
           const call = client[methodName](...callArgs);
-          upstreamSubjectOrData.subscribe(
-            (val: unknown) => call.write(val),
-            (err: unknown) => call.emit('error', err),
-            () => call.end(),
-          );
+
+          const upstreamSubscription: Subscription =
+            upstreamSubjectOrData.subscribe(
+              (val: unknown) => call.write(val),
+              (err: unknown) => call.emit('error', err),
+              () => call.end(),
+            );
+
+          return () => {
+            upstreamSubscription.unsubscribe();
+          };
         });
       }
       return new Observable(observer => {
