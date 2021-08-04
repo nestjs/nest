@@ -40,10 +40,12 @@ describe('MiddlewareBuilder', () => {
               middleware: [],
               forRoutes: [
                 {
+                  isRequestMapping: false,
                   method: 0,
                   path: route.path,
                 },
                 {
+                  isRequestMapping: true,
                   method: 0,
                   path: '/path/route',
                 },
@@ -64,6 +66,7 @@ describe('MiddlewareBuilder', () => {
         {
           path,
           method: -1,
+          isRequestMapping: false,
         },
       ]);
     });

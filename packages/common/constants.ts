@@ -14,6 +14,7 @@ export const PROPERTY_DEPS_METADATA = 'self:properties_metadata';
 export const OPTIONAL_PROPERTY_DEPS_METADATA = 'optional:properties_metadata';
 export const SCOPE_OPTIONS_METADATA = 'scope:options';
 export const METHOD_METADATA = 'method';
+export const IS_REQUEST_MAPPING_METADATA = 'isRequestMapping';
 export const ROUTE_ARGS_METADATA = '__routeArguments__';
 export const CUSTOM_ROUTE_AGRS_METADATA = '__customRouteArgs__';
 export const EXCEPTION_FILTERS_METADATA = '__exceptionFilters__';

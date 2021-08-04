@@ -23,15 +23,22 @@ describe('RoutesMapper', () => {
   it('should map @Controller() to "ControllerMetadata" in forRoutes', () => {
     const config = {
       middleware: 'Test',
-      forRoutes: [{ path: 'test', method: RequestMethod.GET }, TestRoute],
+      forRoutes: [
+        { path: 'test', method: RequestMethod.GET, isRequestMapping: false },
+        TestRoute,
+      ],
     };
 
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).to.deep.equal([
-      { path: '/test', method: RequestMethod.GET },
+      { path: '/test', method: RequestMethod.GET, isRequestMapping: false },
     ]);
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
-      { path: '/test/test', method: RequestMethod.GET },
-      { path: '/test/another', method: RequestMethod.DELETE },
+      { path: '/test/test', method: RequestMethod.GET, isRequestMapping: true },
+      {
+        path: '/test/another',
+        method: RequestMethod.DELETE,
+        isRequestMapping: true,
+      },
     ]);
   });
   @Controller(['test', 'test2'])
@@ -47,19 +54,31 @@ describe('RoutesMapper', () => {
     const config = {
       middleware: 'Test',
       forRoutes: [
-        { path: 'test', method: RequestMethod.GET },
+        { path: 'test', method: RequestMethod.GET, isRequestMapping: false },
         TestRouteWithMultiplePaths,
       ],
     };
 
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).to.deep.equal([
-      { path: '/test', method: RequestMethod.GET },
+      { path: '/test', method: RequestMethod.GET, isRequestMapping: false },
     ]);
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
-      { path: '/test/test', method: RequestMethod.GET },
-      { path: '/test/another', method: RequestMethod.DELETE },
-      { path: '/test2/test', method: RequestMethod.GET },
-      { path: '/test2/another', method: RequestMethod.DELETE },
+      { path: '/test/test', method: RequestMethod.GET, isRequestMapping: true },
+      {
+        path: '/test/another',
+        method: RequestMethod.DELETE,
+        isRequestMapping: true,
+      },
+      {
+        path: '/test2/test',
+        method: RequestMethod.GET,
+        isRequestMapping: true,
+      },
+      {
+        path: '/test2/another',
+        method: RequestMethod.DELETE,
+        isRequestMapping: true,
+      },
     ]);
   });
 });

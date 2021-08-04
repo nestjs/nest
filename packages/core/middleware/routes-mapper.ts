@@ -27,6 +27,7 @@ export class RoutesMapper {
         {
           path: addLeadingSlash(route),
           method: defaultRequestMethod,
+          isRequestMapping: false,
         },
       ];
     }
@@ -36,6 +37,7 @@ export class RoutesMapper {
         {
           path: addLeadingSlash(route.path),
           method: route.method,
+          isRequestMapping: !!route.isRequestMapping,
         },
       ];
     }
@@ -61,6 +63,7 @@ export class RoutesMapper {
               return {
                 path,
                 method: item.requestMethod,
+                isRequestMapping: true,
               };
             }),
           )

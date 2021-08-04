@@ -1,4 +1,8 @@
-import { METHOD_METADATA, PATH_METADATA } from '../../constants';
+import {
+  IS_REQUEST_MAPPING_METADATA,
+  METHOD_METADATA,
+  PATH_METADATA,
+} from '../../constants';
 import { RequestMethod } from '../../enums/request-method.enum';
 
 export interface RequestMappingMetadata {
@@ -25,6 +29,7 @@ export const RequestMapping = (
   ) => {
     Reflect.defineMetadata(PATH_METADATA, path, descriptor.value);
     Reflect.defineMetadata(METHOD_METADATA, requestMethod, descriptor.value);
+    Reflect.defineMetadata(IS_REQUEST_MAPPING_METADATA, true, descriptor.value);
     return descriptor;
   };
 };

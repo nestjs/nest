@@ -14,7 +14,9 @@ import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { ApplicationModule } from '../src/app.module';
 
+const FOR_ROUTE_VALUE = 'test_for_route';
 const INCLUDED_VALUE = 'test_included';
+const MATCH_ALL_VALUE = 'test_match_all';
 const QUERY_VALUE = 'test_query';
 const REQ_URL_VALUE = 'test_req_url';
 const RETURN_VALUE = 'test';
@@ -57,9 +59,30 @@ class TestQueryController {
   }
 }
 
+@Controller()
+class ForRouteController {
+  @Get('for_route/controller')
+  test() {
+    return RETURN_VALUE;
+  }
+}
+
+@Controller()
+class ForRouteNestedController {
+  @Get('for_route/controller/nested')
+  test() {
+    return RETURN_VALUE;
+  }
+}
+
 @Module({
   imports: [ApplicationModule],
-  controllers: [TestController, TestQueryController],
+  controllers: [
+    TestController,
+    TestQueryController,
+    ForRouteController,
+    ForRouteNestedController,
+  ],
 })
 class TestModule {
   configure(consumer: MiddlewareConsumer) {
@@ -76,7 +99,9 @@ class TestModule {
       .forRoutes(TestQueryController)
       .apply((req, res, next) => res.end(SCOPED_VALUE))
       .forRoutes(TestController)
-      .apply((req, res, next) => res.end(RETURN_VALUE))
+      .apply((req, res, next) => res.end(FOR_ROUTE_VALUE))
+      .forRoutes(ForRouteController)
+      .apply((req, res, next) => res.end(MATCH_ALL_VALUE))
       .exclude({ path: QUERY_VALUE, method: -1 })
       .forRoutes('(.*)');
   }
@@ -101,7 +126,7 @@ describe('Middleware (FastifyAdapter)', () => {
         method: 'GET',
         url: '/hello',
       })
-      .then(({ payload }) => expect(payload).to.be.eql(RETURN_VALUE));
+      .then(({ payload }) => expect(payload).to.be.eql(MATCH_ALL_VALUE));
   });
 
   it(`forRoutes(TestController)`, () => {
@@ -137,6 +162,18 @@ describe('Middleware (FastifyAdapter)', () => {
       .then(({ payload }) => expect(payload).to.be.eql(QUERY_VALUE));
   });
 
+  it(`forRoutes(req/url/)`, () => {
+    const reqUrl = '/test';
+    return app
+      .inject({
+        method: 'GET',
+        url: `/req/url${reqUrl}`,
+      })
+      .then(({ payload }) =>
+        expect(payload).to.be.eql(`${REQ_URL_VALUE}${reqUrl}`),
+      );
+  });
+
   it(`forRoutes(tests/(.*))`, () => {
     return app
       .inject({
@@ -155,18 +192,6 @@ describe('Middleware (FastifyAdapter)', () => {
       .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
   });
 
-  it(`forRoutes(req/url/)`, () => {
-    const reqUrl = '/test';
-    return app
-      .inject({
-        method: 'GET',
-        url: `/req/url${reqUrl}`,
-      })
-      .then(({ payload }) =>
-        expect(payload).to.be.eql(`${REQ_URL_VALUE}${reqUrl}`),
-      );
-  });
-
   it(`GET forRoutes(POST tests/included)`, () => {
     return app
       .inject({
@@ -183,6 +208,24 @@ describe('Middleware (FastifyAdapter)', () => {
         url: '/tests/included',
       })
       .then(({ payload }) => expect(payload).to.be.eql(INCLUDED_VALUE));
+  });
+
+  it(`GET /for_route/controller forRoutes(TestForRouteController)`, () => {
+    return app
+      .inject({
+        method: 'GET',
+        url: '/for_route/controller',
+      })
+      .then(({ payload }) => expect(payload).to.be.eql(FOR_ROUTE_VALUE));
+  });
+
+  it(`GET /for_route/controller/nested forRoutes((.*))`, () => {
+    return app
+      .inject({
+        method: 'GET',
+        url: '/for_route/controller/nested',
+      })
+      .then(({ payload }) => expect(payload).to.be.eql(MATCH_ALL_VALUE));
   });
 
   afterEach(async () => {
