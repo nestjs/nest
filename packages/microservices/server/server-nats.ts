@@ -138,7 +138,12 @@ export class ServerNats extends Server implements CustomTransportStrategy {
           `NatsError: type: "${status.type}", data: "${data}".`,
         );
       } else {
-        this.logger.log(`NatsStatus: type: "${status.type}", data: "${data}".`);
+        const message = `NatsStatus: type: "${status.type}", data: "${data}".`;
+        if (status.type === 'pingTimer') {
+          this.logger.debug(message);
+        } else {
+          this.logger.log(message);
+        }
       }
     }
   }
