@@ -150,7 +150,7 @@ export class Logger implements LoggerService {
     optionalParams = this.context
       ? optionalParams.concat(this.context)
       : optionalParams;
-    this.localInstance?.debug(message, ...optionalParams);
+    this.localInstance?.debug?.(message, ...optionalParams);
   }
 
   /**
@@ -163,7 +163,7 @@ export class Logger implements LoggerService {
     optionalParams = this.context
       ? optionalParams.concat(this.context)
       : optionalParams;
-    this.localInstance?.verbose(message, ...optionalParams);
+    this.localInstance?.verbose?.(message, ...optionalParams);
   }
 
   /**
@@ -208,7 +208,7 @@ export class Logger implements LoggerService {
   static debug(message: any, ...optionalParams: [...any, string?]): void;
   @Logger.WrapBuffer
   static debug(message: any, ...optionalParams: any[]) {
-    this.staticInstanceRef?.debug(message, ...optionalParams);
+    this.staticInstanceRef?.debug?.(message, ...optionalParams);
   }
 
   /**
@@ -218,7 +218,7 @@ export class Logger implements LoggerService {
   static verbose(message: any, ...optionalParams: [...any, string?]): void;
   @Logger.WrapBuffer
   static verbose(message: any, ...optionalParams: any[]) {
-    this.staticInstanceRef?.verbose(message, ...optionalParams);
+    this.staticInstanceRef?.verbose?.(message, ...optionalParams);
   }
 
   /**
