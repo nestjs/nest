@@ -425,4 +425,24 @@ describe('ServerKafka', () => {
       ).to.be.true;
     });
   });
+
+  describe('createClient', () => {
+    it('should accept a custom logCreator in client options', () => {
+      const logCreatorSpy = sinon.spy(() => 'test');
+      const logCreator = () => logCreatorSpy;
+
+      server = new ServerKafka({
+        client: {
+          brokers: [],
+          logCreator,
+        },
+      });
+
+      const logger = server.createClient().logger();
+
+      logger.info({ namespace: '', level: 1, log: 'test' });
+
+      expect(logCreatorSpy.called).to.be.true;
+    })
+  })
 });
