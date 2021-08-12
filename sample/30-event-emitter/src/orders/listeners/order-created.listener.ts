@@ -8,5 +8,6 @@ export class OrderCreatedListener {
   handleOrderCreatedEvent(event: OrderCreatedEvent) {
     // handle and process "OrderCreatedEvent" event
     console.log(event);
+    return 'handled event "order.created"'
   }
 }
