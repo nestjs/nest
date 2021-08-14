@@ -5,7 +5,7 @@ export class RouteParamsFactory implements IRouteParamsFactory {
   public exchangeKeyForValue<
     TRequest extends Record<string, any> = any,
     TResponse = any,
-    TResult = any
+    TResult = any,
   >(
     key: RouteParamtypes | string,
     data: string | object | any,

@@ -18,9 +18,7 @@ export class ModuleCompiler {
     return { type, dynamicMetadata, token };
   }
 
-  public extractMetadata(
-    metatype: Type<any> | DynamicModule,
-  ): {
+  public extractMetadata(metatype: Type<any> | DynamicModule): {
     type: Type<any>;
     dynamicMetadata?: Partial<DynamicModule> | undefined;
   } {

@@ -24,7 +24,7 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
   return iterate(instances)
     .filter(instance => !isNil(instance))
     .filter(hasOnModuleInitHook)
-    .map(async instance => ((instance as any) as OnModuleInit).onModuleInit())
+    .map(async instance => (instance as any as OnModuleInit).onModuleInit())
     .toArray();
 }
 

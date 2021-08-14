@@ -40,11 +40,12 @@ describe('MiddlewareModule', () => {
   beforeEach(() => {
     const appConfig = new ApplicationConfig();
     middlewareModule = new MiddlewareModule();
-    (middlewareModule as any).routerExceptionFilter = new RouterExceptionFilters(
-      new NestContainer(),
-      appConfig,
-      new NoopHttpAdapter({}),
-    );
+    (middlewareModule as any).routerExceptionFilter =
+      new RouterExceptionFilters(
+        new NestContainer(),
+        appConfig,
+        new NoopHttpAdapter({}),
+      );
     (middlewareModule as any).config = appConfig;
   });
 

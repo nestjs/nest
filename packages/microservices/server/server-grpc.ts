@@ -383,9 +383,8 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const loader = this.getOptionsProp(this.options, 'loader');
 
       const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
-      const packageObject = grpcPackage.loadPackageDefinition(
-        packageDefinition,
-      );
+      const packageObject =
+        grpcPackage.loadPackageDefinition(packageDefinition);
       return packageObject;
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException();

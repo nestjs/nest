@@ -3,7 +3,8 @@ import * as redisStore from 'cache-manager-redis-store';
 import { MultiStoreController } from './multi-store.controller';
 
 @Module({
-  imports: [CacheModule.register([
+  imports: [
+    CacheModule.register([
       {
         store: 'memory',
         max: 100,
@@ -14,10 +15,10 @@ import { MultiStoreController } from './multi-store.controller';
         host: 'localhost',
         port: 6379,
         db: 0,
-        ttl: 600
-      }
-    ],
-  )],
+        ttl: 600,
+      },
+    ]),
+  ],
   controllers: [MultiStoreController],
 })
 export class MultiStoreModule {}

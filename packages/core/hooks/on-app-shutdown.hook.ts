@@ -30,9 +30,7 @@ function callOperator(
     .filter(instance => !isNil(instance))
     .filter(hasOnAppShutdownHook)
     .map(async instance =>
-      ((instance as any) as OnApplicationShutdown).onApplicationShutdown(
-        signal,
-      ),
+      (instance as any as OnApplicationShutdown).onApplicationShutdown(signal),
     )
     .toArray();
 }

@@ -27,7 +27,7 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
     .filter(instance => !isNil(instance))
     .filter(hasOnAppBootstrapHook)
     .map(async instance =>
-      ((instance as any) as OnApplicationBootstrap).onApplicationBootstrap(),
+      (instance as any as OnApplicationBootstrap).onApplicationBootstrap(),
     )
     .toArray();
 }
@@ -62,6 +62,8 @@ export async function callModuleBootstrapHook(module: Module): Promise<any> {
     hasOnAppBootstrapHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    await (moduleClassInstance as OnApplicationBootstrap).onApplicationBootstrap();
+    await (
+      moduleClassInstance as OnApplicationBootstrap
+    ).onApplicationBootstrap();
   }
 }

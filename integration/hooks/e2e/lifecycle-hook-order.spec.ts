@@ -16,7 +16,8 @@ class TestInjectable
     OnModuleInit,
     OnModuleDestroy,
     OnApplicationShutdown,
-    BeforeApplicationShutdown {
+    BeforeApplicationShutdown
+{
   onApplicationBootstrap = Sinon.spy();
   beforeApplicationShutdown = Sinon.spy();
   onApplicationShutdown = Sinon.spy();

@@ -31,14 +31,15 @@ export class CacheInterceptor implements NestInterceptor {
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
     @Inject(REFLECTOR) protected readonly reflector: any,
-  ) { }
+  ) {}
 
   async intercept(
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<any>> {
     const key = this.trackBy(context);
-    const ttlValueOrFactory = this.reflector.get(CACHE_TTL_METADATA, context.getHandler()) ?? null;
+    const ttlValueOrFactory =
+      this.reflector.get(CACHE_TTL_METADATA, context.getHandler()) ?? null;
 
     if (!key) {
       return next.handle();

@@ -10,7 +10,8 @@ const SIGNAL_TO_LISTEN = process.argv[3];
 
 @Injectable()
 class TestInjectable
-  implements OnApplicationShutdown, BeforeApplicationShutdown {
+  implements OnApplicationShutdown, BeforeApplicationShutdown
+{
   beforeApplicationShutdown(signal: string) {
     console.log('beforeApplicationShutdown ' + signal);
   }

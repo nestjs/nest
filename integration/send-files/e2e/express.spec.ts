@@ -1,4 +1,7 @@
-import { ExpressAdapter, NestExpressApplication } from '@nestjs/platform-express';
+import {
+  ExpressAdapter,
+  NestExpressApplication,
+} from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { readFileSync } from 'fs';
@@ -24,7 +27,7 @@ describe('Express FileSend', () => {
     return request(app.getHttpServer())
       .get('/file/stream/')
       .expect(200)
-      .expect((res) => {
+      .expect(res => {
         expect(res.body.toString()).to.be.eq(readmeString);
       });
   });
@@ -32,7 +35,7 @@ describe('Express FileSend', () => {
     return request(app.getHttpServer())
       .get('/file/buffer')
       .expect(200)
-      .expect((res) => {
+      .expect(res => {
         expect(res.body.toString()).to.be.eq(readmeString);
       });
   });
@@ -46,7 +49,7 @@ describe('Express FileSend', () => {
     return request(app.getHttpServer())
       .get('/file/rxjs/stream/')
       .expect(200)
-      .expect((res) => {
+      .expect(res => {
         expect(res.body.toString()).to.be.eq(readmeString);
       });
   });

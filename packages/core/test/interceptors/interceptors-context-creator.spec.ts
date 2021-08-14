@@ -60,9 +60,8 @@ describe('InterceptorsContextCreator', () => {
   describe('createConcreteContext', () => {
     describe('when `moduleContext` is nil', () => {
       it('should return empty array', () => {
-        const result = interceptorsContextCreator.createConcreteContext(
-          interceptors,
-        );
+        const result =
+          interceptorsContextCreator.createConcreteContext(interceptors);
         expect(result).to.be.empty;
       });
     });
