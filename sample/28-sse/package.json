@@ -32,7 +32,7 @@
     "@nestjs/testing": "8.0.6",
     "@types/dotenv": "8.2.0",
     "@types/express": "4.17.13",
-    "@types/jest": "27.0.0",
+    "@types/jest": "27.0.1",
     "@types/node": "14.17.9",
     "@types/supertest": "2.0.11",
     "jest": "27.0.6",
