@@ -31,7 +31,7 @@ export class CacheInterceptor implements NestInterceptor {
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
     @Inject(REFLECTOR) protected readonly reflector: any,
-  ) {}
+  ) { }
 
   async intercept(
     context: ExecutionContext,
@@ -74,10 +74,10 @@ export class CacheInterceptor implements NestInterceptor {
       return cacheMetadata;
     }
 
-    const request = context.getArgByIndex(0);
     if (!this.isRequestCacheable(context)) {
       return undefined;
     }
+    const request = context.getArgByIndex(0);
     return httpAdapter.getRequestUrl(request);
   }
 
