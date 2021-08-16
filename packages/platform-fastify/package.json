@@ -17,7 +17,7 @@
     "access": "public"
   },
   "dependencies": {
-    "fastify": "3.20.1",
+    "fastify": "3.20.2",
     "fastify-cors": "6.0.2",
     "fastify-formbody": "5.1.0",
     "light-my-request": "4.4.1",
