@@ -52,7 +52,7 @@ export class ClassSerializerInterceptor implements NestInterceptor {
     options: ClassTransformOptions,
   ): PlainLiteralObject | PlainLiteralObject[] {
     const isArray = Array.isArray(response);
-    if (!isObject(response) && !isArray) {
+    if (!isArray && !isObject(response)) {
       return response;
     }
     return isArray

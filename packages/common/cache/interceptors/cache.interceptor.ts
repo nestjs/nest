@@ -75,10 +75,10 @@ export class CacheInterceptor implements NestInterceptor {
       return cacheMetadata;
     }
 
-    const request = context.getArgByIndex(0);
     if (!this.isRequestCacheable(context)) {
       return undefined;
     }
+    const request = context.getArgByIndex(0);
     return httpAdapter.getRequestUrl(request);
   }
 
