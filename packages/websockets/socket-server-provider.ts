@@ -41,9 +41,8 @@ export class SocketServerProvider {
       unknown
     >;
     const ioServer = adapter.create(port, partialOptions);
-    const serverAndEventStreamsHost = ServerAndEventStreamsFactory.create(
-      ioServer,
-    );
+    const serverAndEventStreamsHost =
+      ServerAndEventStreamsFactory.create(ioServer);
 
     this.socketsContainer.addOne(
       { port, path: options.path },
@@ -65,9 +64,8 @@ export class SocketServerProvider {
       port,
       targetServer,
     );
-    const serverAndEventStreamsHost = ServerAndEventStreamsFactory.create(
-      namespaceServer,
-    );
+    const serverAndEventStreamsHost =
+      ServerAndEventStreamsFactory.create(namespaceServer);
     this.socketsContainer.addOne(
       { port, path: options.path, namespace: options.namespace },
       serverAndEventStreamsHost,
@@ -77,7 +75,7 @@ export class SocketServerProvider {
 
   private getServerOfNamespace<
     TOptions extends GatewayMetadata = any,
-    TServer = any
+    TServer = any,
   >(options: TOptions, port: number, server: TServer) {
     const adapter = this.applicationConfig.getIoAdapter();
     return adapter.create(port, {

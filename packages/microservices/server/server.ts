@@ -133,7 +133,7 @@ export abstract class Server {
 
   public getOptionsProp<
     T extends MicroserviceOptions['options'],
-    K extends keyof T
+    K extends keyof T,
   >(obj: T, prop: K, defaultValue: T[K] = undefined) {
     return obj && prop in obj ? obj[prop] : defaultValue;
   }
@@ -153,26 +153,30 @@ export abstract class Server {
   protected initializeSerializer(options: ClientOptions['options']) {
     this.serializer =
       (options &&
-        (options as
-          | RedisOptions['options']
-          | NatsOptions['options']
-          | MqttOptions['options']
-          | TcpOptions['options']
-          | RmqOptions['options']
-          | KafkaOptions['options']).serializer) ||
+        (
+          options as
+            | RedisOptions['options']
+            | NatsOptions['options']
+            | MqttOptions['options']
+            | TcpOptions['options']
+            | RmqOptions['options']
+            | KafkaOptions['options']
+        ).serializer) ||
       new IdentitySerializer();
   }
 
   protected initializeDeserializer(options: ClientOptions['options']) {
     this.deserializer =
       (options &&
-        (options as
-          | RedisOptions['options']
-          | NatsOptions['options']
-          | MqttOptions['options']
-          | TcpOptions['options']
-          | RmqOptions['options']
-          | KafkaOptions['options']).deserializer) ||
+        (
+          options as
+            | RedisOptions['options']
+            | NatsOptions['options']
+            | MqttOptions['options']
+            | TcpOptions['options']
+            | RmqOptions['options']
+            | KafkaOptions['options']
+        ).deserializer) ||
       new IncomingRequestDeserializer();
   }
 

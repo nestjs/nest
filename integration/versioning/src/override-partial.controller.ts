@@ -1,7 +1,7 @@
 import { Controller, Get, Version } from '@nestjs/common';
 
 @Controller({
-  version: '1'
+  version: '1',
 })
 export class OverridePartialController {
   @Get('/override-partial')

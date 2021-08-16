@@ -91,7 +91,9 @@ describe('Exclude middleware (fastify)', () => {
   });
 
   it(`should not exclude "/test/test" endpoint`, () => {
-    return request(app.getHttpServer()).get('/test/test').expect(200, MIDDLEWARE_VALUE);
+    return request(app.getHttpServer())
+      .get('/test/test')
+      .expect(200, MIDDLEWARE_VALUE);
   });
 
   it(`should not exclude "/test2" endpoint`, () => {

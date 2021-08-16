@@ -80,9 +80,9 @@ describe('Injector', () => {
 
     it('should set "isResolved" property to true after instance initialization', async () => {
       await injector.loadInstance(mainTest, moduleDeps.providers, moduleDeps);
-      const { isResolved } = (moduleDeps.providers.get(
-        'MainTest',
-      ) as InstanceWrapper<MainTest>).getInstanceByContextId(STATIC_CONTEXT);
+      const { isResolved } = (
+        moduleDeps.providers.get('MainTest') as InstanceWrapper<MainTest>
+      ).getInstanceByContextId(STATIC_CONTEXT);
       expect(isResolved).to.be.true;
     });
 

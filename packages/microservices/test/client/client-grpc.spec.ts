@@ -267,7 +267,10 @@ describe('ClientGrpcProxy', () => {
       });
     });
     describe('when stream request', () => {
-      let clientCallback: (err: Error | null | undefined, response: any) => void;
+      let clientCallback: (
+        err: Error | null | undefined,
+        response: any,
+      ) => void;
       const writeSpy = sinon.spy();
       const methodName = 'm';
       const obj = {
@@ -291,7 +294,7 @@ describe('ClientGrpcProxy', () => {
       afterEach(() => {
         // invoke client callback to allow resources to be cleaned up
         clientCallback(null, {});
-      })
+      });
 
       it('should subscribe to request upstream', () => {
         const upstreamSubscribe = sinon.spy(upstream, 'subscribe');

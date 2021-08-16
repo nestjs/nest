@@ -11,7 +11,7 @@ export class PipesConsumer {
     pipes: PipeTransform[],
   ) {
     const token = this.paramsTokenFactory.exchangeEnumForString(
-      (type as any) as RouteParamtypes,
+      type as any as RouteParamtypes,
     );
     return this.applyPipes(value, { metatype, type: token, data }, pipes);
   }

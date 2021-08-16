@@ -101,7 +101,8 @@ export class GuardsContextCreator extends ContextCreator {
     if (contextId === STATIC_CONTEXT && !inquirerId) {
       return globalGuards;
     }
-    const scopedGuardWrappers = this.config.getGlobalRequestGuards() as InstanceWrapper[];
+    const scopedGuardWrappers =
+      this.config.getGlobalRequestGuards() as InstanceWrapper[];
     const scopedGuards = iterate(scopedGuardWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
       .filter(host => !!host)

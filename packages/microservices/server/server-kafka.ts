@@ -110,7 +110,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       Object.assign(
         { logCreator: KafkaLogger.bind(null, this.logger) },
         this.options.client,
-        { clientId: this.clientId, brokers: this.brokers }
+        { clientId: this.clientId, brokers: this.brokers },
       ) as KafkaConfig,
     );
   }

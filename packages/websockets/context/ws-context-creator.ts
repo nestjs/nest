@@ -39,7 +39,8 @@ export interface WsHandlerMetadata {
 export class WsContextCreator {
   private readonly contextUtils = new ContextUtils();
   private readonly wsParamsFactory = new WsParamsFactory();
-  private readonly handlerMetadataStorage = new HandlerMetadataStorage<WsHandlerMetadata>();
+  private readonly handlerMetadataStorage =
+    new HandlerMetadataStorage<WsHandlerMetadata>();
 
   constructor(
     private readonly wsProxy: WsProxy,
@@ -205,9 +206,8 @@ export class WsContextCreator {
 
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
-      const pipes = this.pipesContextCreator.createConcreteContext(
-        pipesCollection,
-      );
+      const pipes =
+        this.pipesContextCreator.createConcreteContext(pipesCollection);
       const type = this.contextUtils.mapParamType(key);
 
       if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {

@@ -6,7 +6,8 @@ import { Observable, throwError as _throw } from 'rxjs';
 import { RpcException } from './rpc-exception';
 
 export class BaseRpcExceptionFilter<T = any, R = any>
-  implements RpcExceptionFilter<T> {
+  implements RpcExceptionFilter<T>
+{
   private static readonly logger = new Logger('RpcExceptionsHandler');
 
   public catch(exception: T, host: ArgumentsHost): Observable<R> {
