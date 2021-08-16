@@ -105,7 +105,8 @@ export class InterceptorsContextCreator extends ContextCreator {
     if (contextId === STATIC_CONTEXT && !inquirerId) {
       return globalInterceptors;
     }
-    const scopedInterceptorWrappers = this.config.getGlobalRequestInterceptors() as InstanceWrapper[];
+    const scopedInterceptorWrappers =
+      this.config.getGlobalRequestInterceptors() as InstanceWrapper[];
     const scopedInterceptors = iterate(scopedInterceptorWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
       .filter(host => !!host)

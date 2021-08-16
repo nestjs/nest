@@ -20,7 +20,7 @@ export type HandlerResponseBasicFn = <TResult, TResponse>(
 export type HandleSseResponseFn = <
   TResult extends Observable<unknown> = any,
   TResponse extends HeaderStream = any,
-  TRequest extends IncomingMessage = any
+  TRequest extends IncomingMessage = any,
 >(
   result: TResult,
   res: TResponse,
@@ -43,7 +43,7 @@ export interface HandlerMetadata {
 
 export class HandlerMetadataStorage<
   TValue = HandlerMetadata,
-  TKey extends Type<unknown> = any
+  TKey extends Type<unknown> = any,
 > {
   private readonly [HANDLER_METADATA_SYMBOL] = new Map<string, TValue>();
 

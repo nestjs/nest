@@ -19,8 +19,10 @@ export class ApplicationConfig {
   private globalGuards: Array<CanActivate> = [];
   private versioningOptions: VersioningOptions;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
-  private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] = [];
-  private readonly globalRequestInterceptors: InstanceWrapper<NestInterceptor>[] = [];
+  private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] =
+    [];
+  private readonly globalRequestInterceptors: InstanceWrapper<NestInterceptor>[] =
+    [];
   private readonly globalRequestGuards: InstanceWrapper<CanActivate>[] = [];
 
   constructor(private ioAdapter: WebSocketAdapter | null = null) {}

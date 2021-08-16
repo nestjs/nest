@@ -14,9 +14,8 @@ describe('Core Injectables', () => {
   });
 
   it('should provide ApplicationConfig as core injectable', () => {
-    const applicationConfig = testingModule.get<ApplicationConfig>(
-      ApplicationConfig,
-    );
+    const applicationConfig =
+      testingModule.get<ApplicationConfig>(ApplicationConfig);
 
     applicationConfig.setGlobalPrefix('/api');
 

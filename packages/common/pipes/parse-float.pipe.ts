@@ -23,10 +23,8 @@ export class ParseFloatPipe implements PipeTransform<string> {
 
   constructor(@Optional() options?: ParseFloatPipeOptions) {
     options = options || {};
-    const {
-      exceptionFactory,
-      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
-    } = options;
+    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
+      options;
 
     this.exceptionFactory =
       exceptionFactory ||

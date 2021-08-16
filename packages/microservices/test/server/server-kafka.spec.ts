@@ -443,6 +443,6 @@ describe('ServerKafka', () => {
       logger.info({ namespace: '', level: 1, log: 'test' });
 
       expect(logCreatorSpy.called).to.be.true;
-    })
-  })
+    });
+  });
 });

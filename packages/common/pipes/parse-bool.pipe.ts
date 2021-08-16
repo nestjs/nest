@@ -1,7 +1,10 @@
 import { Injectable } from '../decorators/core/injectable.decorator';
 import { Optional } from '../decorators/core/optional.decorator';
 import { HttpStatus } from '../enums/http-status.enum';
-import { ArgumentMetadata, PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import {
+  ArgumentMetadata,
+  PipeTransform,
+} from '../interfaces/features/pipe-transform.interface';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
@@ -21,15 +24,14 @@ export interface ParseBoolPipeOptions {
  */
 @Injectable()
 export class ParseBoolPipe
-  implements PipeTransform<string | boolean, Promise<boolean>> {
+  implements PipeTransform<string | boolean, Promise<boolean>>
+{
   protected exceptionFactory: (error: string) => any;
 
   constructor(@Optional() options?: ParseBoolPipeOptions) {
     options = options || {};
-    const {
-      exceptionFactory,
-      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
-    } = options;
+    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
+      options;
     this.exceptionFactory =
       exceptionFactory ||
       (error => new HttpErrorByCode[errorHttpStatusCode](error));

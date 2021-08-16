@@ -136,15 +136,17 @@ export class RouterExecutionContext {
     );
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
 
-    const handler = <TRequest, TResponse>(
-      args: any[],
-      req: TRequest,
-      res: TResponse,
-      next: Function,
-    ) => async () => {
-      fnApplyPipes && (await fnApplyPipes(args, req, res, next));
-      return callback.apply(instance, args);
-    };
+    const handler =
+      <TRequest, TResponse>(
+        args: any[],
+        req: TRequest,
+        res: TResponse,
+        next: Function,
+      ) =>
+      async () => {
+        fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+        return callback.apply(instance, args);
+      };
 
     return async <TRequest, TResponse>(
       req: TRequest,
@@ -432,7 +434,7 @@ export class RouterExecutionContext {
       return async <
         TResult extends Observable<unknown> = any,
         TResponse extends HeaderStream = any,
-        TRequest extends IncomingMessage = any
+        TRequest extends IncomingMessage = any,
       >(
         result: TResult,
         res: TResponse,

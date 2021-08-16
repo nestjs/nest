@@ -95,7 +95,8 @@ export class PipesContextCreator extends ContextCreator {
     if (contextId === STATIC_CONTEXT && !inquirerId) {
       return globalPipes;
     }
-    const scopedPipeWrappers = this.config.getGlobalRequestPipes() as InstanceWrapper[];
+    const scopedPipeWrappers =
+      this.config.getGlobalRequestPipes() as InstanceWrapper[];
     const scopedPipes = iterate(scopedPipeWrappers)
       .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
       .filter(host => !!host)

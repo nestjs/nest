@@ -31,10 +31,8 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
       );
     }
     options = options || {};
-    const {
-      exceptionFactory,
-      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
-    } = options;
+    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
+      options;
 
     this.exceptionFactory =
       exceptionFactory ||

@@ -242,7 +242,7 @@ describe('Logger', () => {
 
   describe('ConsoleLogger', () => {
     it('should allow setting and resetting of context', () => {
-      const logger = new ConsoleLogger()
+      const logger = new ConsoleLogger();
       expect(logger['context']).to.be.undefined;
       logger.setContext('context');
       expect(logger['context']).to.equal('context');
@@ -251,12 +251,12 @@ describe('Logger', () => {
 
       const loggerWithContext = new ConsoleLogger('context');
       expect(loggerWithContext['context']).to.equal('context');
-      loggerWithContext.setContext('other')
+      loggerWithContext.setContext('other');
       expect(loggerWithContext['context']).to.equal('other');
       loggerWithContext.resetContext();
       expect(loggerWithContext['context']).to.equal('context');
-    })
-  })
+    });
+  });
 
   describe('[instance methods]', () => {
     describe('when the default logger is used', () => {

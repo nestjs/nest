@@ -23,7 +23,8 @@ const explicitPartitioner = () => {
 
 @Controller()
 export class KafkaConcurrentController
-  implements OnModuleInit, OnModuleDestroy {
+  implements OnModuleInit, OnModuleDestroy
+{
   protected readonly logger = new Logger(KafkaConcurrentController.name);
 
   @Client({

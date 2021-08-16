@@ -63,9 +63,8 @@ export class KafkaReplyPartitionAssigner {
     // build a collection of topics and partitions
     const topicsPartitions = group.topics
       .map(topic => {
-        const partitionMetadata = this.config.cluster.findTopicPartitionMetadata(
-          topic,
-        );
+        const partitionMetadata =
+          this.config.cluster.findTopicPartitionMetadata(topic);
         return partitionMetadata.map(m => {
           return {
             topic,
