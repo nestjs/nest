@@ -4,7 +4,10 @@ import { NATS_DEFAULT_URL } from '../constants';
 import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-json.deserializer';
 import { Client, NatsMsg } from '../external/nats-client.interface';
 import { NatsOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
-import { NatsRequestSerializer, NatsRequest } from '../serializers/nats-request.serializer';
+import {
+  NatsRequestSerializer,
+  NatsRequest,
+} from '../serializers/nats-request.serializer';
 import { ClientProxy } from './client-proxy';
 
 let natsPackage = {} as any;
@@ -115,7 +118,7 @@ export class ClientNats extends ClientProxy {
 
       this.natsClient.publish(channel, serializedPacket.value, {
         reply: inbox,
-        headers: serializedPacket.headers
+        headers: serializedPacket.headers,
       });
 
       return () => subscription.unsubscribe();
@@ -131,7 +134,7 @@ export class ClientNats extends ClientProxy {
     return new Promise<void>((resolve, reject) => {
       try {
         this.natsClient.publish(pattern, serializedPacket.value, {
-          headers: serializedPacket.headers
+          headers: serializedPacket.headers,
         });
         resolve();
       } catch (err) {

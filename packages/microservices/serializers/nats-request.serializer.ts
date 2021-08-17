@@ -25,7 +25,10 @@ export class NatsRequestSerializer implements Serializer {
     let headers: MsgHdrs | undefined;
     if (value?.data?.headers) {
       // MsgHdrs.code
-      if (Symbol.iterator in Object(value.data.headers) && 'code' in value.data.headers) {
+      if (
+        Symbol.iterator in Object(value.data.headers) &&
+        'code' in value.data.headers
+      ) {
         headers = value.data.headers;
       } else {
         headers = createHeaders();

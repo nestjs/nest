@@ -54,9 +54,7 @@ describe('NatsRequestSerializer', () => {
 
     it('object', () => {
       const serObject = { prop: 'value' };
-      expect(
-        instance.serialize({ data: serObject }),
-      ).to.deep.eq({
+      expect(instance.serialize({ data: serObject })).to.deep.eq({
         headers: undefined,
         value: jsonCodec.encode({ data: serObject }),
       });

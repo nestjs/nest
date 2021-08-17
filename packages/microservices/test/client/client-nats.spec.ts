@@ -10,7 +10,7 @@ describe('ClientNats', () => {
     const pattern = 'test';
     const headers = createHeaders();
     headers.set('1', '123');
-    const msg = { pattern, data: {headers, value:'data' }};
+    const msg = { pattern, data: { headers, value: 'data' } };
     const id = 3;
 
     let subscribeSpy: sinon.SinonSpy,
