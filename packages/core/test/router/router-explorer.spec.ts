@@ -378,6 +378,7 @@ describe('RouterExplorer', () => {
           versioningOptions,
         };
         const versionFilter = (routerBuilder as any).applyVersionFilter(
+          null,
           routePathMetadata,
           handler,
         );
@@ -405,6 +406,7 @@ describe('RouterExplorer', () => {
           versioningOptions,
         };
         const versionFilter = (routerBuilder as any).applyVersionFilter(
+          null,
           routePathMetadata,
           handler,
         );
@@ -432,6 +434,7 @@ describe('RouterExplorer', () => {
           versioningOptions,
         };
         const versionFilter = (routerBuilder as any).applyVersionFilter(
+          null,
           routePathMetadata,
           handler,
         );
@@ -458,6 +461,7 @@ describe('RouterExplorer', () => {
           versioningOptions,
         };
         const versionFilter = (routerBuilder as any).applyVersionFilter(
+          null,
           routePathMetadata,
           handler,
         );
@@ -485,6 +489,7 @@ describe('RouterExplorer', () => {
             versioningOptions,
           };
           const versionFilter = (routerBuilder as any).applyVersionFilter(
+            null,
             routePathMetadata,
             handler,
           );
@@ -511,6 +516,7 @@ describe('RouterExplorer', () => {
             versioningOptions,
           };
           const versionFilter = (routerBuilder as any).applyVersionFilter(
+            null,
             routePathMetadata,
             handler,
           );
@@ -539,6 +545,7 @@ describe('RouterExplorer', () => {
             versioningOptions,
           };
           const versionFilter = (routerBuilder as any).applyVersionFilter(
+            null,
             routePathMetadata,
             handler,
           );
@@ -565,6 +572,7 @@ describe('RouterExplorer', () => {
             versioningOptions,
           };
           const versionFilter = (routerBuilder as any).applyVersionFilter(
+            null,
             routePathMetadata,
             handler,
           );
@@ -594,6 +602,7 @@ describe('RouterExplorer', () => {
           versioningOptions,
         };
         const versionFilter = (routerBuilder as any).applyVersionFilter(
+          null,
           routePathMetadata,
           handler,
         );
@@ -620,6 +629,7 @@ describe('RouterExplorer', () => {
           versioningOptions,
         };
         const versionFilter = (routerBuilder as any).applyVersionFilter(
+          null,
           routePathMetadata,
           handler,
         );
@@ -647,6 +657,7 @@ describe('RouterExplorer', () => {
             versioningOptions,
           };
           const versionFilter = (routerBuilder as any).applyVersionFilter(
+            null,
             routePathMetadata,
             handler,
           );
@@ -673,6 +684,7 @@ describe('RouterExplorer', () => {
             versioningOptions,
           };
           const versionFilter = (routerBuilder as any).applyVersionFilter(
+            null,
             routePathMetadata,
             handler,
           );
@@ -701,6 +713,7 @@ describe('RouterExplorer', () => {
             versioningOptions,
           };
           const versionFilter = (routerBuilder as any).applyVersionFilter(
+            null,
             routePathMetadata,
             handler,
           );
@@ -727,6 +740,7 @@ describe('RouterExplorer', () => {
             versioningOptions,
           };
           const versionFilter = (routerBuilder as any).applyVersionFilter(
+            null,
             routePathMetadata,
             handler,
           );
@@ -755,6 +769,7 @@ describe('RouterExplorer', () => {
           versioningOptions,
         };
         const versionFilter = (routerBuilder as any).applyVersionFilter(
+          null,
           routePathMetadata,
           handler,
         );
@@ -780,6 +795,7 @@ describe('RouterExplorer', () => {
           versioningOptions,
         };
         const versionFilter = (routerBuilder as any).applyVersionFilter(
+          null,
           routePathMetadata,
           handler,
         );
