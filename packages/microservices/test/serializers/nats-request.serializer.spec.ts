@@ -75,9 +75,7 @@ describe('NatsRequestSerializer', () => {
       ).to.deep.eq({
         headers: natsHeaders,
         value: jsonCodec.encode({
-          data: {
-            value: 'string',
-          },
+          data: 'string',
         }),
       });
     });
@@ -95,9 +93,7 @@ describe('NatsRequestSerializer', () => {
       ).to.deep.eq({
         headers: natsHeaders,
         value: jsonCodec.encode({
-          data: {
-            value: 'string',
-          },
+          data: 'string',
         }),
       });
     });

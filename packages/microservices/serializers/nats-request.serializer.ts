@@ -21,28 +21,29 @@ export class NatsRequestSerializer implements Serializer {
     this.jsonCodec = natsPackage.JSONCodec();
   }
 
-  serialize(value: ReadPacket | any): NatsRequest {
+  serialize(packet: ReadPacket | any): NatsRequest {
     let headers: MsgHdrs | undefined;
-    if (value?.data?.headers) {
+    const value = packet.data?.value ? packet.data.value : packet.data;
+    if (packet?.data?.headers) {
       // MsgHdrs.code
       if (
-        Symbol.iterator in Object(value.data.headers) &&
-        'code' in value.data.headers
+        Symbol.iterator in Object(packet.data.headers) &&
+        'code' in packet.data.headers
       ) {
-        headers = value.data.headers;
+        headers = packet.data.headers;
       } else {
         headers = createHeaders();
-        for (const headerKey in value.data.headers) {
-          if (value.data.headers.hasOwnProperty(headerKey)) {
-            headers.set(headerKey, value.data.headers[headerKey]);
+        for (const headerKey in packet.data.headers) {
+          if (packet.data.headers.hasOwnProperty(headerKey)) {
+            headers.set(headerKey, packet.data.headers[headerKey]);
           }
         }
       }
-      delete value.data.headers;
+      delete packet.data.headers;
     }
 
     return {
-      value: this.jsonCodec.encode(value),
+      value: this.jsonCodec.encode({ ...packet, data: value }),
       headers: headers,
     };
   }
