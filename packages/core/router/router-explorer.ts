@@ -247,7 +247,11 @@ export class RouterExplorer {
         routePathMetadata.versioningOptions.type !== VersioningType.URI
       ) {
         // All versioning (except for URI Versioning) is done via the "Version Filter"
-        routeHandler = this.applyVersionFilter(routePathMetadata, routeHandler);
+        routeHandler = this.applyVersionFilter(
+          router,
+          routePathMetadata,
+          routeHandler,
+        );
       }
 
       routePathMetadata.methodPath = path;
@@ -323,13 +327,20 @@ export class RouterExplorer {
     };
   }
 
-  private applyVersionFilter(
+  private applyVersionFilter<T extends HttpServer>(
+    router: T,
     routePathMetadata: RoutePathMetadata,
     handler: Function,
   ) {
     const { versioningOptions } = routePathMetadata;
     const version = this.routePathFactory.getVersion(routePathMetadata);
-
+    if (router?.applyVersionFilter) {
+      return router.applyVersionFilter(handler, version, versioningOptions);
+    }
+    /**
+     * This can be removed in the next major release.
+     * Left for backward-compatibility.
+     */
     return <TRequest extends Record<string, any> = any, TResponse = any>(
       req: TRequest,
       res: TResponse,
