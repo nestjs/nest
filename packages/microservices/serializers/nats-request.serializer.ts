@@ -39,7 +39,6 @@ export class NatsRequestSerializer implements Serializer {
           }
         }
       }
-      delete packet.data.headers;
     }
 
     return {
