@@ -40,7 +40,7 @@
     "@typescript-eslint/parser": "4.29.2",
     "eslint": "7.32.0",
     "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-import": "2.24.0",
+    "eslint-plugin-import": "2.24.1",
     "jest": "27.0.6",
     "prettier": "2.3.2",
     "supertest": "6.1.6",
