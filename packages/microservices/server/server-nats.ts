@@ -121,7 +121,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
         Object.assign(response, { id });
         const outgoingResponse: NatsRequest =
           this.serializer.serialize(response);
-        return natsMsg.respond(outgoingResponse.value, {
+        return natsMsg.respond(outgoingResponse.data, {
           headers: outgoingResponse.headers,
         });
       };

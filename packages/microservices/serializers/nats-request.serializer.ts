@@ -7,8 +7,50 @@ import { ReadPacket } from '../interfaces';
 let natsPackage = {} as any;
 
 export interface NatsRequest {
-  value: Uint8Array;
+  data: Uint8Array;
   headers?: MsgHdrs;
+}
+
+class NatsMessage {
+  constructor(
+    public readonly headers: MsgHdrs | undefined,
+    public readonly data: any,
+  ) {}
+}
+
+export class NatsMessageBuilder<T extends any> {
+  private headers: MsgHdrs | undefined;
+  private data: T | undefined;
+
+  constructor(data: T | undefined = undefined) {
+    this.data = data;
+  }
+
+  public setHeaders(headers: MsgHdrs | undefined): NatsMessageBuilder<T> {
+    this.headers = headers;
+    return this;
+  }
+
+  public setPlainHeaders(
+    headers: Record<string, string>,
+  ): NatsMessageBuilder<T> {
+    const natsHeaders = createHeaders();
+    for (const key in headers) {
+      if (headers.hasOwnProperty(key)) {
+        natsHeaders.set(key, headers[key]);
+      }
+    }
+    return this.setHeaders(natsHeaders);
+  }
+
+  public setData(data: T | undefined): NatsMessageBuilder<T> {
+    this.data = data;
+    return this;
+  }
+
+  public build(): NatsMessage {
+    return new NatsMessage(this.headers, this.data);
+  }
 }
 
 export class NatsRequestSerializer implements Serializer {
@@ -22,28 +64,14 @@ export class NatsRequestSerializer implements Serializer {
   }
 
   serialize(packet: ReadPacket | any): NatsRequest {
-    let headers: MsgHdrs | undefined;
-    const value = packet.data?.value ? packet.data.value : packet.data;
-    if (packet?.data?.headers) {
-      // MsgHdrs.code
-      if (
-        Symbol.iterator in Object(packet.data.headers) &&
-        'code' in packet.data.headers
-      ) {
-        headers = packet.data.headers;
-      } else {
-        headers = createHeaders();
-        for (const headerKey in packet.data.headers) {
-          if (packet.data.headers.hasOwnProperty(headerKey)) {
-            headers.set(headerKey, packet.data.headers[headerKey]);
-          }
-        }
-      }
-    }
+    const natsMessage =
+      packet?.data instanceof NatsMessage
+        ? packet.data as NatsMessage
+        : new NatsMessageBuilder(packet?.data).build();
 
     return {
-      value: this.jsonCodec.encode({ ...packet, data: value }),
-      headers: headers,
+      data: this.jsonCodec.encode({ ...packet, data: natsMessage.data }),
+      headers: natsMessage.headers,
     };
   }
 }

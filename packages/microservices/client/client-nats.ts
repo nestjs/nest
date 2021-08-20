@@ -116,7 +116,7 @@ export class ClientNats extends ClientProxy {
         callback: subscriptionHandler,
       });
 
-      this.natsClient.publish(channel, serializedPacket.value, {
+      this.natsClient.publish(channel, serializedPacket.data, {
         reply: inbox,
         headers: serializedPacket.headers,
       });
@@ -133,7 +133,7 @@ export class ClientNats extends ClientProxy {
 
     return new Promise<void>((resolve, reject) => {
       try {
-        this.natsClient.publish(pattern, serializedPacket.value, {
+        this.natsClient.publish(pattern, serializedPacket.data, {
           headers: serializedPacket.headers,
         });
         resolve();
