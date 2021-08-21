@@ -1,3 +1,4 @@
+import { LoggerService } from '@nestjs/common';
 import {
   OPTIONAL_DEPS_METADATA,
   OPTIONAL_PROPERTY_DEPS_METADATA,
@@ -19,6 +20,7 @@ import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
 import { STATIC_CONTEXT } from './constants';
+import { InjectorLogger } from './injector-logger';
 import { INQUIRER } from './inquirer';
 import {
   ContextId,
@@ -68,6 +70,8 @@ export interface InjectorDependencyContext {
 }
 
 export class Injector {
+
+  private logger: LoggerService = new InjectorLogger();
   public loadPrototype<T>(
     { token }: InstanceWrapper<T>,
     collection: Map<InstanceToken, InstanceWrapper<T>>,
@@ -351,6 +355,9 @@ export class Injector {
     inquirer?: InstanceWrapper,
     keyOrIndex?: string | number,
   ): Promise<InstanceWrapper> {
+    const log = this.logger.debug.bind(this) ?? this.logger.log.bind(this);
+    const tokenName = token.toString().includes(' ') ? token.toString().split(' ')[1] : token.toString();
+    log(`Resolving dependency ${tokenName} in the ${inquirer.name} provider.`);
     const providers = moduleRef.providers;
     const instanceWrapper = await this.lookupComponent(
       providers,
