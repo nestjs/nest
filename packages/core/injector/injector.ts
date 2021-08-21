@@ -355,9 +355,9 @@ export class Injector {
     inquirer?: InstanceWrapper,
     keyOrIndex?: string | number,
   ): Promise<InstanceWrapper> {
-    const log = this.logger.debug.bind(this) ?? this.logger.log.bind(this);
     const tokenName = token.toString().includes(' ') ? token.toString().split(' ')[1] : token.toString();
-    log(`Resolving dependency ${tokenName} in the ${inquirer.name} provider.`);
+    this.logger.log(`Resolving dependency ${tokenName} in the ${inquirer.name} provider.`);
+    this.logger.log(`Looking in ${moduleRef.metatype.name} for ${tokenName}`)
     const providers = moduleRef.providers;
     const instanceWrapper = await this.lookupComponent(
       providers,
@@ -428,6 +428,7 @@ export class Injector {
     keyOrIndex?: string | number,
   ): Promise<InstanceWrapper<T>> {
     const { name } = dependencyContext;
+    const tokenName = name.toString().includes(' ') ? name.toString().split(' ')[1] : name.toString();
     if (wrapper && wrapper.name === name) {
       throw new UnknownDependenciesException(
         wrapper.name,
@@ -437,6 +438,7 @@ export class Injector {
     }
     if (providers.has(name)) {
       const instanceWrapper = providers.get(name);
+      this.logger.log(`Found ${tokenName} in ${moduleRef.metatype.name}`)
       this.addDependencyMetadata(keyOrIndex, wrapper, instanceWrapper);
       return instanceWrapper;
     }
@@ -488,6 +490,7 @@ export class Injector {
     isTraversing?: boolean,
   ): Promise<any> {
     let instanceWrapperRef: InstanceWrapper = null;
+    const tokenName = name.toString().includes(' ') ? name.toString().split(' ')[1] : name.toString();
 
     const imports = moduleRef.imports || new Set<Module>();
     const identity = (item: any) => item;
@@ -503,6 +506,7 @@ export class Injector {
       if (moduleRegistry.includes(relatedModule.id)) {
         continue;
       }
+      this.logger.log(`Looking in ${relatedModule.metatype.name} for ${tokenName}`)
       moduleRegistry.push(relatedModule.id);
       const { providers, exports } = relatedModule;
       if (!exports.has(name) || !providers.has(name)) {
@@ -522,6 +526,7 @@ export class Injector {
         }
         continue;
       }
+      this.logger.log(`Found ${tokenName} in ${relatedModule.metatype.name}`);
       instanceWrapperRef = providers.get(name);
       this.addDependencyMetadata(keyOrIndex, wrapper, instanceWrapperRef);
 

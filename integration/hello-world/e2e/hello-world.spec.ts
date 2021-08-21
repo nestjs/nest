@@ -1,6 +1,6 @@
 import * as request from 'supertest';
 import { Test } from '@nestjs/testing';
-import { INestApplication, Logger } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { ApplicationModule } from '../src/app.module';
 
 describe('Hello world (default adapter)', () => {
@@ -12,7 +12,6 @@ describe('Hello world (default adapter)', () => {
       imports: [ApplicationModule],
     }).compile();
 
-    app = module.createNestApplication(undefined, { logger: new Logger('Testing')});
     server = app.getHttpServer();
     await app.init();
   });
