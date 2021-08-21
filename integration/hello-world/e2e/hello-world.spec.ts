@@ -12,6 +12,7 @@ describe('Hello world (default adapter)', () => {
       imports: [ApplicationModule],
     }).compile();
 
+    app = module.createNestApplication();
     server = app.getHttpServer();
     await app.init();
   });
