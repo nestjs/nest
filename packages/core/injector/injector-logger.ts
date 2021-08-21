@@ -1,12 +1,12 @@
-import { Logger } from '@nestjs/common';
+import { ConsoleLogger } from '@nestjs/common';
 
-export class InjectorLogger extends Logger {
+export class InjectorLogger extends ConsoleLogger {
   constructor() {
     super(InjectorLogger.name, { timestamp: true });
   }
-  log(message: any, context?: string): void {
+  log(message: any): void {
     if (process.env.DEBUG) {
-      super.log(message, context);
+      return super.log(message);
     }
   }
 }
