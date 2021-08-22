@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { JSONCodec } from 'nats';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
@@ -24,7 +23,7 @@ describe('ServerNats', () => {
       sinon.stub(server, 'createNatsClient').callsFake(() => client);
       callbackSpy = sinon.spy();
     });
-    describe('when "start" throws an exception', async () => {
+    describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
 
@@ -32,7 +31,7 @@ describe('ServerNats', () => {
           throw error;
         });
         await server.listen(callbackSpy);
-        expect(callbackSpy.calledWith(error)).to.be.true;
+        expect(callbackSpy.calledWith(error)).toBeTruthy();
       });
     });
   });
@@ -43,7 +42,7 @@ describe('ServerNats', () => {
     });
     it('should close natsClient', () => {
       server.close();
-      expect(natsClient.close.called).to.be.true;
+      expect(natsClient.close.called).toBeTruthy();
     });
   });
   describe('bindEvents', () => {
@@ -64,12 +63,12 @@ describe('ServerNats', () => {
         [pattern]: handler,
       });
       server.bindEvents(natsClient);
-      expect(subscribeSpy.calledWith(pattern)).to.be.true;
+      expect(subscribeSpy.calledWith(pattern)).toBeTruthy();
     });
   });
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
-      expect(typeof server.getMessageHandler(null)).to.be.eql('function');
+      expect(typeof server.getMessageHandler(null)).toEqual('function');
     });
     describe('handler', () => {
       it('should call "handleMessage"', async () => {
@@ -77,7 +76,7 @@ describe('ServerNats', () => {
           .stub(server, 'handleMessage')
           .callsFake(() => null);
         await server.getMessageHandler('')('' as any, '');
-        expect(handleMessageStub.called).to.be.true;
+        expect(handleMessageStub.called).toBeTruthy();
       });
     });
   });
@@ -101,7 +100,7 @@ describe('ServerNats', () => {
         respond: sinon.spy(),
       };
       await server.handleMessage(channel, natsMsg);
-      expect(handleEventSpy.called).to.be.true;
+      expect(handleEventSpy.called).toBeTruthy();
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern does not exist in messageHandlers object`, async () => {
       const data = JSONCodec().encode({
@@ -123,7 +122,7 @@ describe('ServerNats', () => {
           status: 'error',
           err: NO_MESSAGE_HANDLER,
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
@@ -147,7 +146,7 @@ describe('ServerNats', () => {
         headers,
       };
       await server.handleMessage(channel, natsMsg);
-      expect(handler.calledWith('test', natsContext)).to.be.true;
+      expect(handler.calledWith('test', natsContext)).toBeTruthy();
     });
   });
   describe('getPublisher', () => {
@@ -160,7 +159,7 @@ describe('ServerNats', () => {
         sid: +id,
         respond: sinon.spy(),
       };
-      expect(typeof server.getPublisher(natsMsg, id)).to.be.eql('function');
+      expect(typeof server.getPublisher(natsMsg, id)).toEqual('function');
     });
     it(`should call "respond" when reply topic provided`, () => {
       const replyTo = 'test';
@@ -175,8 +174,9 @@ describe('ServerNats', () => {
 
       const respond = 'test';
       publisher({ respond, id });
-      expect(natsMsg.respond.calledWith(JSONCodec().encode({ respond, id }))).to
-        .be.true;
+      expect(
+        natsMsg.respond.calledWith(JSONCodec().encode({ respond, id })),
+      ).toBeTruthy();
     });
     it(`should not call "publish" when replyTo NOT provided`, () => {
       const replyTo = undefined;
@@ -209,7 +209,7 @@ describe('ServerNats', () => {
         { pattern: '', data },
         new BaseRpcContext([]),
       );
-      expect(handler.calledWith(data)).to.be.true;
+      expect(handler.calledWith(data)).toBeTruthy();
     });
   });
   describe('handleStatusUpdates', () => {
@@ -220,7 +220,7 @@ describe('ServerNats', () => {
         }),
       };
       server.handleStatusUpdates(serverMock as any);
-      expect(serverMock.status.called).to.be.true;
+      expect(serverMock.status.called).toBeTruthy();
     });
 
     it('should log "disconnect" and "error" statuses as "errors"', async () => {
@@ -234,7 +234,7 @@ describe('ServerNats', () => {
         }),
       };
       await server.handleStatusUpdates(serverMock as any);
-      expect(logErrorSpy.calledTwice).to.be.true;
+      expect(logErrorSpy.calledTwice).toBeTruthy();
       expect(
         logErrorSpy.calledWith(
           `NatsError: type: "disconnect", data: "localhost".`,
@@ -255,7 +255,7 @@ describe('ServerNats', () => {
         }),
       };
       await server.handleStatusUpdates(serverMock as any);
-      expect(logSpy.calledTwice).to.be.true;
+      expect(logSpy.calledTwice).toBeTruthy();
       expect(
         logSpy.calledWith(
           `NatsStatus: type: "non-disconnect", data: "localhost".`,

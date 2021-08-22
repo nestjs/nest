@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as EventSource from 'eventsource';
 import { createServer, OutgoingHttpHeaders } from 'http';
 import { AddressInfo } from 'net';
@@ -57,7 +56,7 @@ describe('SseStream', () => {
     );
     sse.end();
     await written(sink);
-    expect(sink.content).to.equal(
+    expect(sink.content).toEqual(
       `:
 id: 1
 data: hello
@@ -83,7 +82,7 @@ data: monde
     );
     sse.end();
     await written(sink);
-    expect(sink.content).to.equal(
+    expect(sink.content).toEqual(
       `:
 id: 1
 data: {"hello":"world"}
@@ -107,7 +106,7 @@ data: {"hello":"world"}
     );
     sse.end();
     await written(sink);
-    expect(sink.content).to.equal(
+    expect(sink.content).toEqual(
       `:
 event: tea-time
 id: the-id
@@ -122,7 +121,7 @@ data: hello
     const sse = new SseStream();
     const sink = new Sink(
       (status: number, headers: string | OutgoingHttpHeaders) => {
-        expect(headers).to.deep.equal({
+        expect(headers).toEqual({
           'Content-Type': 'text/event-stream',
           Connection: 'keep-alive',
           'Cache-Control':
@@ -135,6 +134,7 @@ data: hello
         return sink;
       },
     );
+    sink.flushHeaders = () => { /* no op */ };
     sse.pipe(sink);
   });
 
@@ -149,7 +149,7 @@ data: hello
         `http://localhost:${(server.address() as AddressInfo).port}`,
       );
       es.onmessage = e => {
-        expect(e.data).to.equal('hello');
+        expect(e.data).toEqual('hello');
         es.close();
         server.close(callback);
       };

@@ -1,5 +1,3 @@
-import * as sinon from 'sinon';
-import { expect } from 'chai';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseFloatPipe } from '../../pipes/parse-float.pipe';
 import { HttpException } from '../../exceptions';
@@ -21,7 +19,7 @@ describe('ParseFloatPipe', () => {
     describe('when validation passes', () => {
       it('should return number', async () => {
         const num = '3.33';
-        expect(await target.transform(num, {} as ArgumentMetadata)).to.equal(
+        expect(await target.transform(num, {} as ArgumentMetadata)).toEqual(
           parseFloat(num),
         );
       });
@@ -30,7 +28,7 @@ describe('ParseFloatPipe', () => {
       it('should throw an error', async () => {
         return expect(
           target.transform('123.123abc', {} as ArgumentMetadata),
-        ).to.be.rejectedWith(CustomTestError);
+        ).rejects.toThrow(CustomTestError);
       });
     });
   });

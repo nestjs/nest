@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseUUIDPipe } from '../../pipes/parse-uuid.pipe';
 
@@ -13,52 +12,52 @@ describe('ParseUUIDPipe', () => {
     describe('when validation passes', () => {
       it('should return string if value is uuid v3, v4 or v5', async () => {
         target = new ParseUUIDPipe();
-        expect(await target.transform(v3, {} as ArgumentMetadata)).to.equal(v3);
-        expect(await target.transform(v4, {} as ArgumentMetadata)).to.equal(v4);
-        expect(await target.transform(v5, {} as ArgumentMetadata)).to.equal(v5);
+        expect(await target.transform(v3, {} as ArgumentMetadata)).toEqual(v3);
+        expect(await target.transform(v4, {} as ArgumentMetadata)).toEqual(v4);
+        expect(await target.transform(v5, {} as ArgumentMetadata)).toEqual(v5);
       });
 
       it('should return string if value is uuid v3', async () => {
         target = new ParseUUIDPipe({ version: '3' });
-        expect(await target.transform(v3, {} as ArgumentMetadata)).to.equal(v3);
+        expect(await target.transform(v3, {} as ArgumentMetadata)).toEqual(v3);
       });
 
       it('should return string if value is uuid v4', async () => {
         target = new ParseUUIDPipe({ version: '4' });
-        expect(await target.transform(v4, {} as ArgumentMetadata)).to.equal(v4);
+        expect(await target.transform(v4, {} as ArgumentMetadata)).toEqual(v4);
       });
 
       it('should return string if value is uuid v5', async () => {
         target = new ParseUUIDPipe({ version: '5' });
-        expect(await target.transform(v5, {} as ArgumentMetadata)).to.equal(v5);
+        expect(await target.transform(v5, {} as ArgumentMetadata)).toEqual(v5);
       });
     });
 
     describe('when validation fails', () => {
       it('should throw an error', async () => {
         target = new ParseUUIDPipe();
-        expect(target.transform('123a', {} as ArgumentMetadata)).to.be.rejected;
+        expect(target.transform('123a', {} as ArgumentMetadata)).rejects.toThrow();
       });
 
       it('should throw an error - v3', async () => {
         target = new ParseUUIDPipe({ version: '3' });
-        expect(target.transform('123a', {} as ArgumentMetadata)).to.be.rejected;
-        expect(target.transform(v4, {} as ArgumentMetadata)).to.be.rejected;
-        expect(target.transform(v5, {} as ArgumentMetadata)).to.be.rejected;
+        expect(target.transform('123a', {} as ArgumentMetadata)).rejects.toThrow();
+        expect(target.transform(v4, {} as ArgumentMetadata)).rejects.toThrow();
+        expect(target.transform(v5, {} as ArgumentMetadata)).rejects.toThrow();
       });
 
       it('should throw an error - v4', async () => {
         target = new ParseUUIDPipe({ version: '4' });
-        expect(target.transform('123a', {} as ArgumentMetadata)).to.be.rejected;
-        expect(target.transform(v3, {} as ArgumentMetadata)).to.be.rejected;
-        expect(target.transform(v5, {} as ArgumentMetadata)).to.be.rejected;
+        expect(target.transform('123a', {} as ArgumentMetadata)).rejects.toThrow();
+        expect(target.transform(v3, {} as ArgumentMetadata)).rejects.toThrow();
+        expect(target.transform(v5, {} as ArgumentMetadata)).rejects.toThrow();
       });
 
       it('should throw an error - v5 ', async () => {
         target = new ParseUUIDPipe({ version: '5' });
-        expect(target.transform('123a', {} as ArgumentMetadata)).to.be.rejected;
-        expect(target.transform(v3, {} as ArgumentMetadata)).to.be.rejected;
-        expect(target.transform(v4, {} as ArgumentMetadata)).to.be.rejected;
+        expect(target.transform('123a', {} as ArgumentMetadata)).rejects.toThrow();
+        expect(target.transform(v3, {} as ArgumentMetadata)).rejects.toThrow();
+        expect(target.transform(v4, {} as ArgumentMetadata)).rejects.toThrow();
       });
     });
   });

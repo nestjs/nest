@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
@@ -70,7 +69,7 @@ describe('MiddlewareModule', () => {
         'Test',
       );
 
-      expect(configureSpy.calledOnce).to.be.true;
+      expect(configureSpy.calledOnce).toBeTruthy();
       expect(
         configureSpy.calledWith(
           new MiddlewareBuilder(
@@ -78,7 +77,7 @@ describe('MiddlewareModule', () => {
             undefined,
           ),
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
 
@@ -112,7 +111,7 @@ describe('MiddlewareModule', () => {
           'Test',
           app,
         ),
-      ).to.eventually.be.rejectedWith(RuntimeException);
+      ).rejects.toThrow(RuntimeException);
     });
 
     it('should throw "InvalidMiddlewareException" exception when middleware does not have "use" method', () => {
@@ -146,7 +145,7 @@ describe('MiddlewareModule', () => {
           moduleKey,
           app,
         ),
-      ).to.be.rejectedWith(InvalidMiddlewareException);
+      ).rejects.toThrow(InvalidMiddlewareException);
     });
 
     it('should mount middleware when is stored in container', async () => {
@@ -192,7 +191,7 @@ describe('MiddlewareModule', () => {
         moduleKey,
         app,
       );
-      expect(createMiddlewareFactoryStub.calledOnce).to.be.true;
+      expect(createMiddlewareFactoryStub.calledOnce).toBeTruthy();
     });
   });
 });

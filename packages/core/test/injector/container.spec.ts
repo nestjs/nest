@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Module } from '../../../common/decorators/modules/module.decorator';
 import { Global } from '../../../common/index';
@@ -22,31 +21,31 @@ describe('NestContainer', () => {
   });
 
   it('should "addProvider" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addProvider({} as any, 'TestModule')).throw(
+    expect(() => container.addProvider({} as any, 'TestModule')).toThrow(
       UnknownModuleException,
     );
   });
 
   it('should "addProvider" throw "CircularDependencyException" when provider is nil', () => {
-    expect(() => container.addProvider(null, 'TestModule')).throw(
+    expect(() => container.addProvider(null, 'TestModule')).toThrow(
       CircularDependencyException,
     );
   });
 
   it('should "addController" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addController(null, 'TestModule')).throw(
+    expect(() => container.addController(null, 'TestModule')).toThrow(
       UnknownModuleException,
     );
   });
 
   it('should "addExportedProvider" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addExportedProvider(null, 'TestModule')).throw(
+    expect(() => container.addExportedProvider(null, 'TestModule')).toThrow(
       UnknownModuleException,
     );
   });
 
   it('should "addInjectable" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addInjectable(null, 'TestModule', null)).throw(
+    expect(() => container.addInjectable(null, 'TestModule', null)).toThrow(
       UnknownModuleException,
     );
   });
@@ -55,7 +54,7 @@ describe('NestContainer', () => {
     it('should call `clear` on modules collection', () => {
       const clearSpy = sinon.spy((container as any).modules, 'clear');
       container.clear();
-      expect(clearSpy.called).to.be.true;
+      expect(clearSpy.called).toBeTruthy();
     });
   });
 
@@ -68,34 +67,33 @@ describe('NestContainer', () => {
       await container.addModule(TestModule as any, []);
       await container.addModule(TestModule as any, []);
 
-      expect(setSpy.calledOnce).to.be.true;
+      expect(setSpy.calledOnce).toBeTruthy();
     });
 
     it('should throws an exception when metatype is not defined', () => {
-      expect(container.addModule(undefined, [])).to.eventually.throws();
+      expect(container.addModule(undefined, [])).rejects.toThrow();
     });
 
     it('should add global module when module is global', async () => {
       const addGlobalModuleSpy = sinon.spy(container, 'addGlobalModule');
       await container.addModule(GlobalTestModule as any, []);
-      expect(addGlobalModuleSpy.calledOnce).to.be.true;
+      expect(addGlobalModuleSpy.calledOnce).toBeTruthy();
     });
   });
   describe('isGlobalModule', () => {
     describe('when module is not globally scoped', () => {
       it('should return false', () => {
-        expect(container.isGlobalModule(TestModule)).to.be.false;
+        expect(container.isGlobalModule(TestModule)).toBeFalsy();
       });
     });
     describe('when module is globally scoped', () => {
       it('should return true', () => {
-        expect(container.isGlobalModule(GlobalTestModule)).to.be.true;
+        expect(container.isGlobalModule(GlobalTestModule)).toBeTruthy();
       });
     });
     describe('when dynamic module is globally scoped', () => {
       it('should return true', () => {
-        expect(container.isGlobalModule(TestModule, { global: true })).to.be
-          .true;
+        expect(container.isGlobalModule(TestModule, { global: true })).toBeTruthy();
       });
     });
   });
@@ -115,7 +113,7 @@ describe('NestContainer', () => {
       container.bindGlobalsToImports({
         addRelatedModule: sinon.spy(),
       } as any);
-      expect(bindGlobalModuleToModuleSpy.calledTwice).to.be.true;
+      expect(bindGlobalModuleToModuleSpy.calledTwice).toBeTruthy();
     });
   });
 
@@ -124,14 +122,14 @@ describe('NestContainer', () => {
       it('should call "addRelatedModule"', () => {
         const module = { addRelatedModule: sinon.spy() };
         container.bindGlobalModuleToModule(module as any, null);
-        expect(module.addRelatedModule.calledOnce).to.be.true;
+        expect(module.addRelatedModule.calledOnce).toBeTruthy();
       });
     });
     describe('when "module" is "globalModule"', () => {
       it('should not call "addRelatedModule"', () => {
         const module = { addRelatedModule: sinon.spy() };
         container.bindGlobalModuleToModule(module as any, module as any);
-        expect(module.addRelatedModule.calledOnce).to.be.false;
+        expect(module.addRelatedModule.calledOnce).toBeFalsy();
       });
     });
   });
@@ -151,14 +149,14 @@ describe('NestContainer', () => {
         const dynamicMetadata = { module: null };
 
         container.addDynamicMetadata(token, dynamicMetadata, []);
-        expect(addSpy.calledWith(token, dynamicMetadata)).to.be.true;
+        expect(addSpy.calledWith(token, dynamicMetadata)).toBeTruthy();
       });
     });
     describe('when dynamic metadata does not exists', () => {
       it('should not add to the dynamic metadata collection', () => {
         const addSpy = sinon.spy(collection, 'set');
         container.addDynamicMetadata(token, null, []);
-        expect(addSpy.called).to.be.false;
+        expect(addSpy.called).toBeFalsy();
       });
     });
   });
@@ -169,21 +167,21 @@ describe('NestContainer', () => {
       it('should not call "addModule"', () => {
         const addModuleSpy = sinon.spy(container, 'addModule');
         container.addDynamicModules(undefined, []);
-        expect(addModuleSpy.called).to.be.false;
+        expect(addModuleSpy.called).toBeFalsy();
       });
     });
     describe('when array is not empty/undefined', () => {
       it('should call "addModule"', () => {
         const addModuleSpy = sinon.spy(container, 'addModule');
         container.addDynamicModules([Test] as any, []);
-        expect(addModuleSpy.called).to.be.true;
+        expect(addModuleSpy.called).toBeTruthy();
       });
     });
   });
 
   describe('get applicationConfig', () => {
     it('should return ApplicationConfig instance', () => {
-      expect(container.applicationConfig).to.be.eql(
+      expect(container.applicationConfig).toEqual(
         (container as any)._applicationConfig,
       );
     });
@@ -195,7 +193,7 @@ describe('NestContainer', () => {
       container.setHttpAdapter(httpAdapter);
 
       const internalStorage = (container as any).internalProvidersStorage;
-      expect(internalStorage.httpAdapter).to.be.eql(httpAdapter);
+      expect(internalStorage.httpAdapter).toEqual(httpAdapter);
     });
   });
 
@@ -205,7 +203,7 @@ describe('NestContainer', () => {
       const value = {};
       container.getModules().set(key, value as any);
 
-      expect(container.getModuleByKey(key)).to.be.eql(value);
+      expect(container.getModuleByKey(key)).toEqual(value);
     });
   });
 
@@ -213,7 +211,7 @@ describe('NestContainer', () => {
     it('should register core module ref', () => {
       const ref = {} as any;
       container.registerCoreModuleRef(ref);
-      expect((container as any).internalCoreModule).to.be.eql(ref);
+      expect((container as any).internalCoreModule).toEqual(ref);
     });
   });
 });

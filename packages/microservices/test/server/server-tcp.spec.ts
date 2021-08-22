@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
@@ -21,7 +20,7 @@ describe('ServerTCP', () => {
     });
     it('should bind message and error events to handler', () => {
       server.bindHandler(null);
-      expect(socket.on.calledTwice).to.be.true;
+      expect(socket.on.calledTwice).toBeTruthy();
     });
   });
   describe('close', () => {
@@ -31,7 +30,7 @@ describe('ServerTCP', () => {
     });
     it('should close server', () => {
       server.close();
-      expect(tcpServer.close.called).to.be.true;
+      expect(tcpServer.close.called).toBeTruthy();
     });
   });
   describe('listen', () => {
@@ -48,7 +47,7 @@ describe('ServerTCP', () => {
           (server as any).host,
           callback,
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
   describe('handleMessage', () => {
@@ -71,7 +70,7 @@ describe('ServerTCP', () => {
           status: 'error',
           err: NO_MESSAGE_HANDLER,
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     it('should call handler if exists in handlers object', async () => {
       const handler = sinon.spy();
@@ -79,7 +78,7 @@ describe('ServerTCP', () => {
         [msg.pattern]: handler as any,
       });
       await server.handleMessage(socket, msg);
-      expect(handler.calledOnce).to.be.true;
+      expect(handler.calledOnce).toBeTruthy();
     });
   });
   describe('handleClose', () => {
@@ -87,14 +86,14 @@ describe('ServerTCP', () => {
       it('should return undefined', () => {
         (server as any).isExplicitlyTerminated = true;
         const result = server.handleClose();
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('when "retryAttempts" does not exist', () => {
       it('should return undefined', () => {
         (server as any).options.retryAttempts = undefined;
         const result = server.handleClose();
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('when "retryAttemptsCount" count is max', () => {
@@ -102,7 +101,7 @@ describe('ServerTCP', () => {
         (server as any).options.retryAttempts = 3;
         (server as any).retryAttemptsCount = 3;
         const result = server.handleClose();
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('otherwise', () => {
@@ -112,8 +111,9 @@ describe('ServerTCP', () => {
         (server as any).options.retryAttempts = 3;
         (server as any).retryAttemptsCount = 2;
         (server as any).options.retryDelay = 3;
-        const result = server.handleClose();
-        expect(result).to.be.not.undefined;
+        const result = server.handleClose() as NodeJS.Timeout;
+        expect(result).toBeDefined();
+        clearTimeout(result);
       });
     });
   });
@@ -133,7 +133,7 @@ describe('ServerTCP', () => {
         { pattern: '', data },
         new BaseRpcContext([]),
       );
-      expect(handler.calledWith(data)).to.be.true;
+      expect(handler.calledWith(data)).toBeTruthy();
     });
   });
 });

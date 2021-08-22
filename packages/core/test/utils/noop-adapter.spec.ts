@@ -26,3 +26,7 @@ export class NoopHttpAdapter extends AbstractHttpAdapter {
     return '';
   }
 }
+
+it('jest needs a test', () => {
+  expect(true);
+});

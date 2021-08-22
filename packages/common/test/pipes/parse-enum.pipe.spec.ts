@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { HttpException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseEnumPipe } from '../../pipes/parse-enum.pipe';
@@ -22,7 +21,7 @@ describe('ParseEnumPipe', () => {
   describe('transform', () => {
     describe('when validation passes', () => {
       it('should return enum value', async () => {
-        expect(await target.transform('UP', {} as ArgumentMetadata)).to.equal(
+        expect(await target.transform('UP', {} as ArgumentMetadata)).toEqual(
           Direction.Up,
         );
       });
@@ -31,7 +30,7 @@ describe('ParseEnumPipe', () => {
       it('should throw an error', async () => {
         return expect(
           target.transform('DOWN', {} as ArgumentMetadata),
-        ).to.be.rejectedWith(CustomTestError);
+        ).rejects.toThrow(CustomTestError);
       });
     });
   });
@@ -40,7 +39,7 @@ describe('ParseEnumPipe', () => {
       try {
         new ParseEnumPipe(null);
       } catch (err) {
-        expect(err.message).to.equal(
+        expect(err.message).toEqual(
           `"ParseEnumPipe" requires "enumType" argument specified (to validate input values).`,
         );
       }

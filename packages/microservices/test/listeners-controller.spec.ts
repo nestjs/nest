@@ -4,7 +4,6 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-hos
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { ClientProxyFactory } from '../client';
@@ -29,7 +28,7 @@ describe('ListenersController', () => {
     rpcContextCreator: RpcContextCreator,
     exceptionFiltersContext: ExceptionFiltersContext;
 
-  before(() => {
+  beforeAll(() => {
     metadataExplorer = new ListenerMetadataExplorer(new MetadataScanner());
     explorer = sinon.mock(metadataExplorer);
   });
@@ -75,7 +74,7 @@ describe('ListenersController', () => {
     it(`should call "addHandler" method of server for each pattern handler`, () => {
       explorer.expects('explore').returns(handlers);
       instance.registerPatternHandlers(new InstanceWrapper(), server, '');
-      expect(addSpy.calledTwice).to.be.true;
+      expect(addSpy.calledTwice).toBeTruthy();
     });
     it(`should call "addHandler" method of server for each pattern handler with same transport`, () => {
       const serverHandlers = [
@@ -88,7 +87,7 @@ describe('ListenersController', () => {
       ];
       explorer.expects('explore').returns(serverHandlers);
       instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
-      expect(addSpyTCP.calledOnce).to.be.true;
+      expect(addSpyTCP.calledOnce).toBeTruthy();
     });
     it(`should call "addHandler" method of server without transportID for each pattern handler with any transport value`, () => {
       const serverHandlers = [
@@ -97,7 +96,7 @@ describe('ListenersController', () => {
       ];
       explorer.expects('explore').returns(serverHandlers);
       instance.registerPatternHandlers(new InstanceWrapper(), server, '');
-      expect(addSpy.calledTwice).to.be.true;
+      expect(addSpy.calledTwice).toBeTruthy();
     });
     it(`should call "addHandler" method of server with transportID for each pattern handler with self transport and without transport`, () => {
       const serverHandlers = [
@@ -111,12 +110,12 @@ describe('ListenersController', () => {
       ];
       explorer.expects('explore').returns(serverHandlers);
       instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
-      expect(addSpyTCP.calledTwice).to.be.true;
+      expect(addSpyTCP.calledTwice).toBeTruthy();
     });
     it(`should call "addHandler" method of server with transportID for each pattern handler without transport`, () => {
       explorer.expects('explore').returns(handlers);
       instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
-      expect(addSpyTCP.calledTwice).to.be.true;
+      expect(addSpyTCP.calledTwice).toBeTruthy();
     });
     describe('when request scoped', () => {
       it(`should call "addHandler" with deffered proxy`, () => {
@@ -126,7 +125,7 @@ describe('ListenersController', () => {
           server,
           '',
         );
-        expect(addSpy.calledTwice).to.be.true;
+        expect(addSpy.calledTwice).toBeTruthy();
       });
     });
   });
@@ -170,9 +169,9 @@ describe('ListenersController', () => {
         );
         await handler('data', 'metadata');
 
-        expect(proxySpy.called).to.be.true;
-        expect(proxySpy.getCall(0).args[0]).to.be.eql('data');
-        expect(proxySpy.getCall(0).args[1]).to.be.eql('metadata');
+        expect(proxySpy.called).toBeTruthy();
+        expect(proxySpy.getCall(0).args[0]).toEqual('data');
+        expect(proxySpy.getCall(0).args[1]).toEqual('metadata');
       });
     });
 
@@ -198,11 +197,11 @@ describe('ListenersController', () => {
         );
         await handler([]);
 
-        expect(handleSpy.called).to.be.true;
-        expect(handleSpy.getCall(0).args[0]).to.be.instanceOf(Error);
-        expect(handleSpy.getCall(0).args[1]).to.be.instanceOf(
-          ExecutionContextHost,
-        );
+        expect(handleSpy.called).toBeTruthy();
+        expect(handleSpy.getCall(0).args[0] instanceof Error).toBeTruthy();
+        expect(
+          handleSpy.getCall(0).args[1] instanceof ExecutionContextHost,
+        ).toBeTruthy();
       });
     });
   });
@@ -214,7 +213,7 @@ describe('ListenersController', () => {
       const client = { test: true };
       instance.assignClientToInstance(object, propertyKey, client);
 
-      expect(object[propertyKey]).to.be.eql(client);
+      expect(object[propertyKey]).toEqual(client);
     });
   });
 
@@ -239,7 +238,7 @@ describe('ListenersController', () => {
       );
       instance.assignClientsToProperties(controller);
 
-      expect(assignClientToInstanceSpy.calledOnce).to.be.true;
+      expect(assignClientToInstanceSpy.calledOnce).toBeTruthy();
     });
   });
 });

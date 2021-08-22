@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { lastValueFrom, Observable, of, throwError as _throw } from 'rxjs';
 import * as sinon from 'sinon';
 import { Server } from '../../server/server';
@@ -35,9 +34,9 @@ describe('Server', () => {
 
       server.addHandler(pattern, callback as any);
 
-      expect(messageHandlersSetSpy.called).to.be.true;
-      expect(messageHandlersSetSpy.args[0][0]).to.be.equal(handlerRoute);
-      expect(messageHandlersSetSpy.args[0][1]).to.be.equal(callback);
+      expect(messageHandlersSetSpy.called).toBeTruthy();
+      expect(messageHandlersSetSpy.args[0][0]).toEqual(handlerRoute);
+      expect(messageHandlersSetSpy.args[0][1]).toEqual(callback);
 
       normalizePatternStub.restore();
     });
@@ -58,7 +57,7 @@ describe('Server', () => {
 
           server.addHandler(pattern, callback as any, true);
 
-          expect(nextHandler.next).to.equal(callback);
+          expect(nextHandler.next).toEqual(callback);
           normalizePatternStub.restore();
         });
       });
@@ -82,7 +81,7 @@ describe('Server', () => {
         const transformedServerPattern = inputServerPattern;
         (server as any).getRouteFromPattern(inputServerPattern);
 
-        expect(normalizePatternStub.args[0][0]).to.be.equal(
+        expect(normalizePatternStub.args[0][0]).toEqual(
           transformedServerPattern,
         );
       });
@@ -97,7 +96,7 @@ describe('Server', () => {
         };
         (server as any).getRouteFromPattern(inputServerPattern);
 
-        expect(normalizePatternStub.args[0][0]).to.be.deep.equal(
+        expect(normalizePatternStub.args[0][0]).toEqual(
           transformedServerPattern,
         );
       });
@@ -118,14 +117,15 @@ describe('Server', () => {
         beforeEach(() => {
           server.send(_throw('test') as any, sendSpy);
         });
-        it('should send error and complete', () => {
+        it('should send error and complete', (done) => {
           process.nextTick(() => {
             expect(
               sendSpy.calledWith({
                 err: 'test',
                 isDisposed: true,
               }),
-            ).to.be.true;
+            ).toBeTruthy();
+            done();
           });
         });
       });
@@ -140,7 +140,7 @@ describe('Server', () => {
                 response: 'test',
                 isDisposed: true,
               }),
-            ).to.be.true;
+            ).toBeTruthy();
           });
         });
       });
@@ -155,7 +155,7 @@ describe('Server', () => {
             await lastValueFrom(
               server.transformToObservable(Promise.resolve(value)),
             ),
-          ).to.be.eq(100);
+          ).toEqual(100);
         });
       });
       describe('is Observable', () => {
@@ -163,7 +163,7 @@ describe('Server', () => {
           const value = 100;
           expect(
             await lastValueFrom(server.transformToObservable(of(value))),
-          ).to.be.eq(100);
+          ).toEqual(100);
         });
       });
       describe('is value', () => {
@@ -171,7 +171,7 @@ describe('Server', () => {
           const value = 100;
           expect(
             await lastValueFrom(server.transformToObservable(value)),
-          ).to.be.eq(100);
+          ).toEqual(100);
         });
       });
     });
@@ -181,7 +181,7 @@ describe('Server', () => {
     it('should return registered handlers', () => {
       const messageHandlers = [() => null, () => true];
       sandbox.stub(server as any, 'messageHandlers').value(messageHandlers);
-      expect(server.getHandlers()).to.equal(messageHandlers);
+      expect(server.getHandlers()).toEqual(messageHandlers);
     });
   });
 
@@ -216,10 +216,10 @@ describe('Server', () => {
 
         const value = server.getHandlerByPattern(handlerRoute);
 
-        expect(messageHandlersHasSpy.args[0][0]).to.be.equal(handlerRoute);
-        expect(messageHandlersGetSpy.called).to.be.true;
-        expect(messageHandlersGetSpy.args[0][0]).to.be.equal(handlerRoute);
-        expect(value).to.be.equal(callback);
+        expect(messageHandlersHasSpy.args[0][0]).toEqual(handlerRoute);
+        expect(messageHandlersGetSpy.called).toBeTruthy();
+        expect(messageHandlersGetSpy.args[0][0]).toEqual(handlerRoute);
+        expect(value).toEqual(callback);
       });
     });
 
@@ -229,9 +229,9 @@ describe('Server', () => {
 
         const value = server.getHandlerByPattern(handlerRoute);
 
-        expect(messageHandlersHasSpy.args[0][0]).to.be.equal(handlerRoute);
-        expect(messageHandlersGetSpy.called).to.be.false;
-        expect(value).to.be.null;
+        expect(messageHandlersHasSpy.args[0][0]).toEqual(handlerRoute);
+        expect(messageHandlersGetSpy.called).toBeFalsy();
+        expect(value).toBe(null);
       });
     });
   });

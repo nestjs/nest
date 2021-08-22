@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ExceptionsZone } from '../../../errors/exceptions-zone';
 
@@ -14,14 +13,14 @@ describe('ExceptionsZone', () => {
     });
     it('should call callback', () => {
       ExceptionsZone.run(callback as any, rethrow);
-      expect(callback.called).to.be.true;
+      expect(callback.called).toBeTruthy();
     });
     describe('when callback throws exception', () => {
       const exceptionHandler = {
         handle: () => {},
       };
       let handleSpy: sinon.SinonSpy;
-      before(() => {
+      beforeAll(() => {
         (ExceptionsZone as any).exceptionHandler = exceptionHandler;
         handleSpy = sinon.spy(exceptionHandler, 'handle');
       });
@@ -29,8 +28,8 @@ describe('ExceptionsZone', () => {
         const throwsCallback = () => {
           throw new Error('');
         };
-        expect(() => ExceptionsZone.run(throwsCallback, rethrow)).to.throws();
-        expect(handleSpy.called).to.be.true;
+        expect(() => ExceptionsZone.run(throwsCallback, rethrow)).toThrow();
+        expect(handleSpy.called).toBeTruthy();
       });
     });
   });
@@ -41,14 +40,14 @@ describe('ExceptionsZone', () => {
     });
     it('should call callback', async () => {
       await ExceptionsZone.asyncRun(callback as any, rethrow);
-      expect(callback.called).to.be.true;
+      expect(callback.called).toBeTruthy();
     });
     describe('when callback throws exception', () => {
       const exceptionHandler = {
         handle: () => {},
       };
       let handleSpy: sinon.SinonSpy;
-      before(() => {
+      beforeAll(() => {
         (ExceptionsZone as any).exceptionHandler = exceptionHandler;
         handleSpy = sinon.spy(exceptionHandler, 'handle');
       });
@@ -56,8 +55,9 @@ describe('ExceptionsZone', () => {
         const throwsCallback = () => {
           throw new Error('');
         };
-        expect(ExceptionsZone.asyncRun(throwsCallback, rethrow)).to.eventually
-          .be.rejected;
+        expect(
+          ExceptionsZone.asyncRun(throwsCallback, rethrow),
+        ).rejects.toThrow();
       });
     });
   });

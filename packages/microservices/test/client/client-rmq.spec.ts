@@ -1,11 +1,10 @@
-import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import { empty } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientRMQ } from '../../client/client-rmq';
 
 describe('ClientRMQ', function () {
-  this.retries(10);
+  jest.retryTimes(10);
 
   let client: ClientRMQ;
 
@@ -43,13 +42,13 @@ describe('ClientRMQ', function () {
         } catch {}
       });
       it('should call "handleError" once', async () => {
-        expect(handleErrorsSpy.called).to.be.true;
+        expect(handleErrorsSpy.called).toBeTruthy();
       });
       it('should call "createClient" once', async () => {
-        expect(createClientStub.called).to.be.true;
+        expect(createClientStub.called).toBeTruthy();
       });
       it('should call "connect$" once', async () => {
-        expect(connect$Stub.called).to.be.true;
+        expect(connect$Stub.called).toBeTruthy();
       });
     });
     describe('when is connected', () => {
@@ -58,13 +57,13 @@ describe('ClientRMQ', function () {
         client['channel'] = { test: true };
       });
       it('should not call "createClient"', () => {
-        expect(createClientStub.called).to.be.false;
+        expect(createClientStub.called).toBeFalsy();
       });
       it('should not call "handleError"', () => {
-        expect(handleErrorsSpy.called).to.be.false;
+        expect(handleErrorsSpy.called).toBeFalsy();
       });
       it('should not call "connect$"', () => {
-        expect(connect$Stub.called).to.be.false;
+        expect(connect$Stub.called).toBeFalsy();
       });
     });
   });
@@ -85,11 +84,11 @@ describe('ClientRMQ', function () {
     });
     it('should call "createChannel" method of the client instance', async () => {
       await client.createChannel();
-      expect(createChannelStub.called).to.be.true;
+      expect(createChannelStub.called).toBeTruthy();
     });
     it('should call "setupChannel" method of the client instance', async () => {
       await client.createChannel();
-      expect(setupChannelStub.called).to.be.true;
+      expect(setupChannelStub.called).toBeTruthy();
     });
   });
 
@@ -110,11 +109,11 @@ describe('ClientRMQ', function () {
     });
     it('should call "addSetup" method of the channel instance', async () => {
       await client.consumeChannel();
-      expect(addSetupStub.called).to.be.true;
+      expect(addSetupStub.called).toBeTruthy();
     });
     it('should call "consume" method of the channel instance', async () => {
       await client.consumeChannel();
-      expect(consumeStub.called).to.be.true;
+      expect(consumeStub.called).toBeTruthy();
     });
   });
 
@@ -143,21 +142,21 @@ describe('ClientRMQ', function () {
     });
     it('should call "assertQueue" with queue and queue options', async () => {
       await client.setupChannel(channel, () => null);
-      expect(channel.assertQueue.calledWith(queue, queueOptions)).to.be.true;
+      expect(channel.assertQueue.calledWith(queue, queueOptions)).toBeTruthy();
     });
     it('should call "prefetch" with prefetchCount and "isGlobalPrefetchCount"', async () => {
       await client.setupChannel(channel, () => null);
       expect(channel.prefetch.calledWith(prefetchCount, isGlobalPrefetchCount))
-        .to.be.true;
+        .toBeTruthy();
     });
     it('should call "consumeChannel" method', async () => {
       await client.setupChannel(channel, () => null);
-      expect(consumeStub.called).to.be.true;
+      expect(consumeStub.called).toBeTruthy();
     });
     it('should call "resolve" function', async () => {
       const resolve = sinon.spy();
       await client.setupChannel(channel, resolve);
-      expect(resolve.called).to.be.true;
+      expect(resolve.called).toBeTruthy();
     });
   });
 
@@ -170,7 +169,7 @@ describe('ClientRMQ', function () {
       };
       client
         .mergeDisconnectEvent(instance as any, empty())
-        .subscribe(null, (err: any) => expect(err).to.be.eql(error));
+        .subscribe(null, (err: any) => expect(err).toEqual(error));
     });
   });
 
@@ -199,15 +198,15 @@ describe('ClientRMQ', function () {
 
     it('should send message to a proper queue', () => {
       client['publish'](msg, () => {
-        expect(sendToQueueSpy.called).to.be.true;
-        expect(sendToQueueSpy.getCall(0).args[0]).to.be.eql(client['queue']);
+        expect(sendToQueueSpy.called).toBeTruthy();
+        expect(sendToQueueSpy.getCall(0).args[0]).toEqual(client['queue']);
       });
     });
 
     it('should send buffer from stringified message', () => {
       client['publish'](msg, () => {
-        expect(sendToQueueSpy.called).to.be.true;
-        expect(sendToQueueSpy.getCall(1).args[1]).to.be.eql(
+        expect(sendToQueueSpy.called).toBeTruthy();
+        expect(sendToQueueSpy.getCall(1).args[1]).toEqual(
           Buffer.from(JSON.stringify(msg)),
         );
       });
@@ -227,7 +226,7 @@ describe('ClientRMQ', function () {
         subscription();
       });
       it('should unsubscribe', () => {
-        expect(unsubscribeSpy.called).to.be.true;
+        expect(unsubscribeSpy.called).toBeTruthy();
       });
     });
   });
@@ -252,7 +251,7 @@ describe('ClientRMQ', function () {
             response: 'test',
             isDisposed: true,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('when disposed', () => {
@@ -273,7 +272,7 @@ describe('ClientRMQ', function () {
             response: 'test',
             isDisposed: true,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
 
@@ -294,7 +293,7 @@ describe('ClientRMQ', function () {
             err: undefined,
             response: packet.response,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
   });
@@ -311,12 +310,12 @@ describe('ClientRMQ', function () {
 
     it('should close channel when it is not null', () => {
       client.close();
-      expect(channelCloseSpy.called).to.be.true;
+      expect(channelCloseSpy.called).toBeTruthy();
     });
 
     it('should close client when it is not null', () => {
       client.close();
-      expect(clientCloseSpy.called).to.be.true;
+      expect(clientCloseSpy.called).toBeTruthy();
     });
   });
   describe('dispatchEvent', () => {
@@ -335,12 +334,12 @@ describe('ClientRMQ', function () {
       sendToQueueStub.callsFake((a, b, c, d) => d());
       await client['dispatchEvent'](msg);
 
-      expect(sendToQueueStub.called).to.be.true;
+      expect(sendToQueueStub.called).toBeTruthy();
     });
     it('should throw error', async () => {
       sendToQueueStub.callsFake((a, b, c, d) => d(new Error()));
       client['dispatchEvent'](msg).catch(err =>
-        expect(err).to.be.instanceOf(Error),
+        expect(err instanceof Error).toBeTruthy(),
       );
     });
   });

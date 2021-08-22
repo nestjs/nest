@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientProxy } from '../../client/client-proxy';
@@ -16,7 +15,7 @@ class TestClientProxy extends ClientProxy {
 }
 
 describe('ClientProxy', function () {
-  this.retries(10);
+  jest.retryTimes(10);
 
   let client: TestClientProxy;
   beforeEach(() => {
@@ -39,7 +38,7 @@ describe('ClientProxy', function () {
         const fn = testClient['createObserver'](observer);
 
         fn({ err });
-        expect(error.calledWith(err)).to.be.true;
+        expect(error.calledWith(err)).toBeTruthy();
       });
 
       it(`"next" when first parameter is null or undefined`, () => {
@@ -56,7 +55,7 @@ describe('ClientProxy', function () {
         const fn = testClient['createObserver'](observer);
 
         fn({ response: data });
-        expect(next.calledWith(data)).to.be.true;
+        expect(next.calledWith(data)).toBeTruthy();
       });
 
       it(`"complete" when third parameter is true`, () => {
@@ -73,7 +72,7 @@ describe('ClientProxy', function () {
         const fn = testClient['createObserver'](observer);
 
         fn({ data, isDisposed: true } as any);
-        expect(complete.called).to.be.true;
+        expect(complete.called).toBeTruthy();
       });
     });
   });
@@ -81,14 +80,14 @@ describe('ClientProxy', function () {
   describe('send', () => {
     it(`should return an observable stream`, () => {
       const stream$ = client.send({}, '');
-      expect(stream$ instanceof Observable).to.be.true;
+      expect(stream$ instanceof Observable).toBeTruthy();
     });
     it('should call "connect" on subscribe', () => {
       const connectSpy = sinon.spy(client, 'connect');
       const stream$ = client.send({ test: 3 }, 'test');
 
       stream$.subscribe();
-      expect(connectSpy.calledOnce).to.be.true;
+      expect(connectSpy.calledOnce).toBeTruthy();
     });
     describe('when "connect" throws', () => {
       it('should return Observable with error', () => {
@@ -99,7 +98,7 @@ describe('ClientProxy', function () {
         stream$.subscribe(
           () => {},
           err => {
-            expect(err).to.be.instanceof(Error);
+            expect(err).toBeInstanceOf(Error);
           },
         );
       });
@@ -116,25 +115,25 @@ describe('ClientProxy', function () {
         client.publish = publishSpy;
 
         stream$.subscribe(() => {
-          expect(publishSpy.calledOnce).to.be.true;
+          expect(publishSpy.calledOnce).toBeTruthy();
         });
       });
     });
     it('should return Observable with error', () => {
       const err$ = client.send(null, null);
-      expect(err$).to.be.instanceOf(Observable);
+      expect(err$).toBeInstanceOf(Observable);
     });
   });
 
   describe('emit', () => {
     it(`should return an observable stream`, () => {
       const stream$ = client.emit({}, '');
-      expect(stream$ instanceof Observable).to.be.true;
+      expect(stream$ instanceof Observable).toBeTruthy();
     });
     it('should call "connect" immediately', () => {
       const connectSpy = sinon.spy(client, 'connect');
       client.emit({ test: 3 }, 'test');
-      expect(connectSpy.calledOnce).to.be.true;
+      expect(connectSpy.calledOnce).toBeTruthy();
     });
     describe('when "connect" throws', () => {
       it('should return Observable with error', () => {
@@ -145,7 +144,7 @@ describe('ClientProxy', function () {
         stream$.subscribe(
           () => {},
           err => {
-            expect(err).to.be.instanceof(Error);
+            expect(err).toBeInstanceOf(Error);
           },
         );
       });
@@ -164,13 +163,13 @@ describe('ClientProxy', function () {
         client['dispatchEvent'] = dispatchEventSpy;
 
         stream$.subscribe(() => {
-          expect(dispatchEventSpy.calledOnce).to.be.true;
+          expect(dispatchEventSpy.calledOnce).toBeTruthy();
         });
       });
     });
     it('should return Observable with error', () => {
       const err$ = client.emit(null, null);
-      expect(err$).to.be.instanceOf(Observable);
+      expect(err$).toBeInstanceOf(Observable);
     });
   });
 });
