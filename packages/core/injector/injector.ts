@@ -356,8 +356,8 @@ export class Injector {
     keyOrIndex?: string | number,
   ): Promise<InstanceWrapper> {
     const tokenName = token.toString().includes(' ') ? token.toString().split(' ')[1] : token.toString();
-    this.logger.log(`Resolving dependency ${tokenName} in the ${inquirer.name} provider.`);
-    this.logger.log(`Looking in ${moduleRef.metatype.name} for ${tokenName}`)
+    this.logger.log(`Resolving dependency ${tokenName} in the ${inquirer?.name ?? 'unknown'} provider.`);
+    this.logger.log(`Looking in ${moduleRef?.metatype?.name ?? 'unknown'} for ${tokenName}`)
     const providers = moduleRef.providers;
     const instanceWrapper = await this.lookupComponent(
       providers,
@@ -438,7 +438,7 @@ export class Injector {
     }
     if (providers.has(name)) {
       const instanceWrapper = providers.get(name);
-      this.logger.log(`Found ${tokenName} in ${moduleRef.metatype.name}`)
+      this.logger.log(`Found ${tokenName} in ${moduleRef?.metatype.name ?? 'unknown'}`)
       this.addDependencyMetadata(keyOrIndex, wrapper, instanceWrapper);
       return instanceWrapper;
     }
@@ -506,7 +506,7 @@ export class Injector {
       if (moduleRegistry.includes(relatedModule.id)) {
         continue;
       }
-      this.logger.log(`Looking in ${relatedModule.metatype.name} for ${tokenName}`)
+      this.logger.log(`Looking in ${relatedModule?.metatype?.name ?? 'unknown'} for ${tokenName}`)
       moduleRegistry.push(relatedModule.id);
       const { providers, exports } = relatedModule;
       if (!exports.has(name) || !providers.has(name)) {
@@ -526,7 +526,7 @@ export class Injector {
         }
         continue;
       }
-      this.logger.log(`Found ${tokenName} in ${relatedModule.metatype.name}`);
+      this.logger.log(`Found ${tokenName} in ${relatedModule?.metatype?.name ?? 'unknown'}`);
       instanceWrapperRef = providers.get(name);
       this.addDependencyMetadata(keyOrIndex, wrapper, instanceWrapperRef);
 
