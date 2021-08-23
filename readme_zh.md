@@ -39,6 +39,7 @@
 
 * 要查看 [指南](https://docs.nestjs.cn), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
 * 要查看 [English指南](https://docs.nestjs.com), 请访问 [docs.nestjs.com](https://docs.nestjs.com). :books:
+* 要查看 [한국어指南](https://docs.nestjs.kr), 请访问 [docs.nestjs.kr](https://docs.nestjs.kr). :books:
 
 ### 国内开发者交流群
 
