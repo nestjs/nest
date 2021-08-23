@@ -33,7 +33,7 @@ describe('Resolve method', () => {
     });
   });
 
-  after(async () => {
+   afterAll(async () => {
     await app.close();
   });
 });

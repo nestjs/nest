@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as request from 'supertest';
 import { BusinessDto } from '../src/kafka/dtos/business.dto';
 import { UserDto } from '../src/kafka/dtos/user.dto';
@@ -18,10 +17,10 @@ describe.skip('Kafka transport', function () {
   let app: INestApplication;
 
   // set timeout to be longer (especially for the after hook)
-  this.timeout(50000);
-  this.retries(10);
+  jest.setTimeout(50000);
+  jest.retryTimes(10);
 
-  before(`Start Kafka app`, async function () {
+  beforeAll(async function () {
     const module = await Test.createTestingModule({
       controllers: [KafkaController, KafkaMessagesController],
     }).compile();
@@ -96,7 +95,7 @@ describe.skip('Kafka transport', function () {
       .send()
       .end(() => {
         setTimeout(() => {
-          expect(KafkaController.IS_NOTIFIED).to.be.true;
+          expect(KafkaController.IS_NOTIFIED).toBeTruthy();
           done();
         }, 1000);
       });
@@ -132,7 +131,7 @@ describe.skip('Kafka transport', function () {
     await Promise.all(promises);
   });
 
-  after(`Stopping Kafka app`, async () => {
+   afterAll(async () => {
     await app.close();
   });
 });

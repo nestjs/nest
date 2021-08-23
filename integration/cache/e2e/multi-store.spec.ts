@@ -7,7 +7,7 @@ describe('Caching Multi Store', () => {
   let server;
   let app: INestApplication;
 
-  before(async () => {
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       imports: [MultiStoreModule],
     }).compile();
@@ -25,7 +25,7 @@ describe('Caching Multi Store', () => {
     return request(server).get('/').expect(200, 'multi-store-value');
   });
 
-  after(async () => {
+  afterAll(async () => {
     await app.close();
   });
 });

@@ -66,7 +66,7 @@ describe('RouterModule', () => {
   })
   class AppModule {}
 
-  before(async () => {
+  beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [MainModule, AppModule],
     }).compile();

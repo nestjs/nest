@@ -18,7 +18,7 @@ describe('Circular request scope', () => {
   let server;
   let app: INestApplication;
 
-  before(async () => {
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       imports: [
         HelloModule.forRoot({
@@ -35,7 +35,7 @@ describe('Circular request scope', () => {
   });
 
   describe('when one service is request scoped', () => {
-    before(async () => {
+    beforeAll(async () => {
       const performHttpCall = end =>
         request(server)
           .get('/hello')
@@ -65,7 +65,7 @@ describe('Circular request scope', () => {
     });
   });
 
-  after(async () => {
+   afterAll(async () => {
     await app.close();
   });
 });

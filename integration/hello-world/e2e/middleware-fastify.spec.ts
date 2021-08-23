@@ -11,7 +11,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { ApplicationModule } from '../src/app.module';
 
 const INCLUDED_VALUE = 'test_included';
@@ -101,7 +100,7 @@ describe('Middleware (FastifyAdapter)', () => {
         method: 'GET',
         url: '/hello',
       })
-      .then(({ payload }) => expect(payload).to.be.eql(RETURN_VALUE));
+      .then(({ payload }) => expect(payload).toBe(RETURN_VALUE));
   });
 
   it(`forRoutes(TestController)`, () => {
@@ -110,7 +109,7 @@ describe('Middleware (FastifyAdapter)', () => {
         method: 'GET',
         url: '/test',
       })
-      .then(({ payload }) => expect(payload).to.be.eql(SCOPED_VALUE));
+      .then(({ payload }) => expect(payload).toBe(SCOPED_VALUE));
   });
 
   it(`query?test=${QUERY_VALUE} forRoutes(query)`, () => {
@@ -122,7 +121,7 @@ describe('Middleware (FastifyAdapter)', () => {
           test: QUERY_VALUE,
         },
       })
-      .then(({ payload }) => expect(payload).to.be.eql(QUERY_VALUE));
+      .then(({ payload }) => expect(payload).toBe(QUERY_VALUE));
   });
 
   it(`${QUERY_VALUE}?test=${QUERY_VALUE} forRoutes(${QUERY_VALUE})`, () => {
@@ -134,7 +133,7 @@ describe('Middleware (FastifyAdapter)', () => {
           test: QUERY_VALUE,
         },
       })
-      .then(({ payload }) => expect(payload).to.be.eql(QUERY_VALUE));
+      .then(({ payload }) => expect(payload).toBe(QUERY_VALUE));
   });
 
   it(`forRoutes(tests/(.*))`, () => {
@@ -143,7 +142,7 @@ describe('Middleware (FastifyAdapter)', () => {
         method: 'GET',
         url: '/tests/wildcard_nested',
       })
-      .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+      .then(({ payload }) => expect(payload).toBe(WILDCARD_VALUE));
   });
 
   it(`forRoutes(express_style_wildcard/*)`, () => {
@@ -152,7 +151,7 @@ describe('Middleware (FastifyAdapter)', () => {
         method: 'GET',
         url: '/express_style_wildcard/wildcard_nested',
       })
-      .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+      .then(({ payload }) => expect(payload).toBe(WILDCARD_VALUE));
   });
 
   it(`forRoutes(req/url/)`, () => {
@@ -163,7 +162,7 @@ describe('Middleware (FastifyAdapter)', () => {
         url: `/req/url${reqUrl}`,
       })
       .then(({ payload }) =>
-        expect(payload).to.be.eql(`${REQ_URL_VALUE}${reqUrl}`),
+        expect(payload).toBe(`${REQ_URL_VALUE}${reqUrl}`),
       );
   });
 
@@ -173,7 +172,7 @@ describe('Middleware (FastifyAdapter)', () => {
         method: 'GET',
         url: '/tests/included',
       })
-      .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+      .then(({ payload }) => expect(payload).toBe(WILDCARD_VALUE));
   });
 
   it(`POST forRoutes(POST tests/included)`, () => {
@@ -182,7 +181,7 @@ describe('Middleware (FastifyAdapter)', () => {
         method: 'POST',
         url: '/tests/included',
       })
-      .then(({ payload }) => expect(payload).to.be.eql(INCLUDED_VALUE));
+      .then(({ payload }) => expect(payload).toBe(INCLUDED_VALUE));
   });
 
   afterEach(async () => {

@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { io } from 'socket.io-client';
 import { ErrorGateway } from '../src/error.gateway';
 
@@ -22,14 +21,15 @@ describe('ErrorGateway', () => {
     });
     await new Promise<void>(resolve =>
       ws.on('exception', data => {
-        expect(data).to.be.eql({
+        expect(data).toEqual({
           status: 'error',
           message: 'test',
         });
         resolve();
       }),
     );
+    ws.close();
   });
 
-  afterEach(() => app.close());
+  afterEach(async () => app.close());
 });

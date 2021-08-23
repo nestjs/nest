@@ -98,7 +98,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
   });
 
   it(`should support 2 different gateways running on different paths`, async function () {
-    this.retries(10);
+    jest.retryTimes(10);
 
     app = await createNestApp(ExamplePathGateway, WsPathGateway2);
     await app.listenAsync(3000);
@@ -143,7 +143,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
   });
 
   it(`should support 2 different gateways running on the same path (but different ports)`, async function () {
-    this.retries(10);
+     jest.retryTimes(10);
 
     app = await createNestApp(ApplicationGateway, CoreGateway);
     await app.listen(3000);

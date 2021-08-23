@@ -1,3 +1,4 @@
+it.todo('Re-implement Fastify Multiple spec after fixing regression');
 /* Temporarily disabled due to various regressions
 
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';

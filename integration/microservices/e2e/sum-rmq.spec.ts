@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as request from 'supertest';
 import { RMQController } from '../src/rmq/rmq.controller';
 
@@ -83,7 +82,7 @@ describe('RabbitMQ transport', () => {
       .send([1, 2, 3, 4, 5])
       .end(() => {
         setTimeout(() => {
-          expect(RMQController.IS_NOTIFIED).to.be.true;
+          expect(RMQController.IS_NOTIFIED).toBeTruthy();
           done();
         }, 1000);
       });

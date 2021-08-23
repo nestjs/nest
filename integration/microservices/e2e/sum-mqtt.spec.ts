@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as request from 'supertest';
 import { MqttController } from '../src/mqtt/mqtt.controller';
 
@@ -65,7 +64,7 @@ describe('MQTT transport', () => {
         Array.from({ length: 10 }, (v, k) => k + 91),
       ])
       .expect(200, 'true');
-  }).timeout(5000);
+  }, 5000);
 
   it(`/POST (streaming)`, () => {
     return request(server)
@@ -80,7 +79,7 @@ describe('MQTT transport', () => {
       .send([1, 2, 3, 4, 5])
       .end(() => {
         setTimeout(() => {
-          expect(MqttController.IS_NOTIFIED).to.be.true;
+          expect(MqttController.IS_NOTIFIED).toBeTruthy();
           done();
         }, 1000);
       });
@@ -92,7 +91,7 @@ describe('MQTT transport', () => {
       .send([1, 2, 3, 4, 5])
       .end(() => {
         setTimeout(() => {
-          expect(MqttController.IS_WILDCARD_EVENT_RECEIVED).to.be.true;
+          expect(MqttController.IS_WILDCARD_EVENT_RECEIVED).toBeTruthy();
           done();
         }, 1000);
       });
@@ -111,7 +110,7 @@ describe('MQTT transport', () => {
       .send([1, 2, 3, 4, 5])
       .end(() => {
         setTimeout(() => {
-          expect(MqttController.IS_WILDCARD2_EVENT_RECEIVED).to.be.true;
+          expect(MqttController.IS_WILDCARD2_EVENT_RECEIVED).toBeTruthy();
           done();
         }, 1000);
       });

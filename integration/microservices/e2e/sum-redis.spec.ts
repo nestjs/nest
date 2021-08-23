@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as request from 'supertest';
 import { RedisController } from '../src/redis/redis.controller';
 
@@ -50,7 +49,7 @@ describe('REDIS transport', () => {
   });
 
   it(`/POST (concurrent)`, function () {
-    this.retries(10);
+     jest.retryTimes(10);
 
     return request(server)
       .post('/concurrent')
@@ -67,7 +66,7 @@ describe('REDIS transport', () => {
         Array.from({ length: 10 }, (v, k) => k + 91),
       ])
       .expect(200, 'true');
-  }).timeout(5000);
+  }, 5000);
 
   it(`/POST (streaming)`, () => {
     return request(server)
@@ -82,7 +81,7 @@ describe('REDIS transport', () => {
       .send([1, 2, 3, 4, 5])
       .end(() => {
         setTimeout(() => {
-          expect(RedisController.IS_NOTIFIED).to.be.true;
+          expect(RedisController.IS_NOTIFIED).toBeTruthy();
           done();
         }, 1000);
       });

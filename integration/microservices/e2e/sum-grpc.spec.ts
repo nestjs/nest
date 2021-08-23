@@ -4,7 +4,6 @@ import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { fail } from 'assert';
-import { expect } from 'chai';
 import { join } from 'path';
 import * as request from 'supertest';
 import { GrpcController } from '../src/grpc/grpc.controller';
@@ -14,7 +13,7 @@ describe('GRPC transport', () => {
   let app: INestApplication;
   let client: any;
 
-  before(async () => {
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [GrpcController],
     }).compile();
@@ -71,7 +70,7 @@ describe('GRPC transport', () => {
     const callHandler = client.SumStream();
 
     callHandler.on('data', (msg: number) => {
-      expect(msg).to.eql({ result: 15 });
+      expect(msg).toEqual({ result: 15 });
       callHandler.cancel();
     });
 
@@ -83,7 +82,7 @@ describe('GRPC transport', () => {
       }
     });
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       callHandler.write({ data: [1, 2, 3, 4, 5] });
       setTimeout(() => resolve(), 1000);
     });
@@ -93,7 +92,7 @@ describe('GRPC transport', () => {
     const callHandler = client.SumStreamPass();
 
     callHandler.on('data', (msg: number) => {
-      expect(msg).to.eql({ result: 15 });
+      expect(msg).toEqual({ result: 15 });
       callHandler.cancel();
     });
 
@@ -105,13 +104,13 @@ describe('GRPC transport', () => {
       }
     });
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       callHandler.write({ data: [1, 2, 3, 4, 5] });
       setTimeout(() => resolve(), 1000);
     });
   });
 
-  after(async () => {
+   afterAll(async () => {
     await app.close();
   });
 });

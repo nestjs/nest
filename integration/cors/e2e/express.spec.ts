@@ -25,7 +25,7 @@ describe('Express Cors', () => {
   ];
   describe('Dynamic config', () => {
     describe('enableCors', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -66,13 +66,13 @@ describe('Express Cors', () => {
           .expect('content-length', '0');
       });
 
-      after(async () => {
+      afterAll(async () => {
         await app.close();
       });
     });
 
     describe('Application Options', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -114,14 +114,14 @@ describe('Express Cors', () => {
           .expect('content-length', '0');
       });
 
-      after(async () => {
+      afterAll(async () => {
         await app.close();
       });
     });
   });
   describe('Static config', () => {
     describe('enableCors', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -143,12 +143,12 @@ describe('Express Cors', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
 
     describe('Application Options', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -169,7 +169,7 @@ describe('Express Cors', () => {
           .expect('content-length', '0');
       });
 
-      after(async () => {
+      afterAll(async () => {
         await app.close();
       });
     });

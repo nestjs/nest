@@ -6,7 +6,7 @@ import { AppModule } from '../src/app.module';
 describe('Versioning', () => {
   let app: INestApplication;
 
-  before(async () => {
+  beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -149,7 +149,7 @@ describe('Versioning', () => {
     });
   });
 
-  after(async () => {
+   afterAll(async () => {
     await app.close();
   });
 });

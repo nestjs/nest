@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as request from 'supertest';
 import { AppController } from '../src/app.controller';
 import { ApplicationModule } from '../src/app.module';
@@ -99,7 +98,7 @@ describe('RPC transport', () => {
       .send([1, 2, 3, 4, 5])
       .end(() => {
         setTimeout(() => {
-          expect(AppController.IS_NOTIFIED).to.be.true;
+          expect(AppController.IS_NOTIFIED).toBeTruthy();
           done();
         }, 1000);
       });
