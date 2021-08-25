@@ -289,13 +289,13 @@ describe('ClientMqtt', () => {
     });
 
     it('should publish packet', async () => {
-      publishStub.callsFake((a, b, c) => c());
+      publishStub.callsFake((a, b, c, d) => d());
       await client['dispatchEvent'](msg);
 
       expect(publishStub.called).to.be.true;
     });
     it('should throw error', async () => {
-      publishStub.callsFake((a, b, c) => c(new Error()));
+      publishStub.callsFake((a, b, c, d) => d(new Error()));
       client['dispatchEvent'](msg).catch(err =>
         expect(err).to.be.instanceOf(Error),
       );

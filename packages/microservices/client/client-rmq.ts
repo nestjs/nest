@@ -18,6 +18,7 @@ import {
 } from '../constants';
 import { RmqUrl } from '../external/rmq-url.interface';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
+import { RmqRecord, RmqRecordOptions } from '../records/rmq.record';
 import { ClientProxy } from './client-proxy';
 
 let rqmPackage: any = {};
@@ -185,6 +186,11 @@ export class ClientRMQ extends ClientProxy {
     callback: (packet: WritePacket) => any,
   ): () => void {
     try {
+      const recordOptions = this.unwrapRecord<RmqRecordOptions>(
+        message,
+        RmqRecord,
+      );
+
       const correlationId = randomStringGenerator();
       const listener = ({ content }: { content: any }) =>
         this.handleMessage(JSON.parse(content.toString()), callback);
@@ -198,8 +204,9 @@ export class ClientRMQ extends ClientProxy {
         Buffer.from(JSON.stringify(serializedPacket)),
         {
           replyTo: this.replyQueue,
-          correlationId,
           persistent: this.persistent,
+          ...recordOptions,
+          correlationId,
         },
       );
       return () => this.responseEmitter.removeListener(correlationId, listener);
@@ -209,6 +216,10 @@ export class ClientRMQ extends ClientProxy {
   }
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
+    const recordOptions = this.unwrapRecord<RmqRecordOptions>(
+      packet,
+      RmqRecord,
+    );
     const serializedPacket = this.serializer.serialize(packet);
 
     return new Promise<void>((resolve, reject) =>
@@ -217,6 +228,7 @@ export class ClientRMQ extends ClientProxy {
         Buffer.from(JSON.stringify(serializedPacket)),
         {
           persistent: this.persistent,
+          ...recordOptions,
         },
         (err: unknown) => (err ? reject(err) : resolve()),
       ),
