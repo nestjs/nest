@@ -17,7 +17,7 @@ export abstract class AbstractHttpAdapter<
 {
   protected httpServer: TServer;
 
-  constructor(protected readonly instance: any) {}
+  constructor(protected instance?: any) {}
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   public async init() {}
@@ -86,6 +86,10 @@ export abstract class AbstractHttpAdapter<
 
   public setHttpServer(httpServer: TServer) {
     this.httpServer = httpServer;
+  }
+
+  public setInstance<T = any>(instance: T) {
+    this.instance = instance;
   }
 
   public getInstance<T = any>(): T {
