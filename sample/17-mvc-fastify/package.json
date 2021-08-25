@@ -50,7 +50,7 @@
     "@typescript-eslint/parser": "4.29.3",
     "eslint": "7.32.0",
     "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-import": "2.24.1",
+    "eslint-plugin-import": "2.24.2",
     "typescript": "4.3.5"
   }
 }

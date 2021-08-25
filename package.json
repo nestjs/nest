@@ -119,7 +119,7 @@
     "engine.io-client": "5.1.2",
     "eslint": "7.32.0",
     "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-import": "2.24.1",
+    "eslint-plugin-import": "2.24.2",
     "eventsource": "1.1.0",
     "fancy-log": "1.3.3",
     "fastify": "3.20.2",
