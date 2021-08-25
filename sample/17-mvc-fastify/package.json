@@ -24,7 +24,7 @@
     "@nestjs/platform-fastify": "8.0.6",
     "fastify-static": "4.2.3",
     "handlebars": "4.7.7",
-    "point-of-view": "4.15.1",
+    "point-of-view": "4.15.2",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "7.3.0"
