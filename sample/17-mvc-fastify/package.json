@@ -24,7 +24,7 @@
     "@nestjs/platform-fastify": "8.0.6",
     "fastify-static": "4.2.3",
     "handlebars": "4.7.7",
-    "point-of-view": "4.15.1",
+    "point-of-view": "4.15.2",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "7.3.0"
@@ -45,12 +45,12 @@
     "ts-jest": "27.0.5",
     "ts-loader": "9.2.5",
     "ts-node": "10.2.1",
-    "tsconfig-paths": "3.10.1",
+    "tsconfig-paths": "3.11.0",
     "@typescript-eslint/eslint-plugin": "4.29.3",
     "@typescript-eslint/parser": "4.29.3",
     "eslint": "7.32.0",
     "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-import": "2.24.1",
+    "eslint-plugin-import": "2.24.2",
     "typescript": "4.3.5"
   }
 }

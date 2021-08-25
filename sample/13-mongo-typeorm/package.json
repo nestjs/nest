@@ -40,14 +40,14 @@
     "@typescript-eslint/parser": "4.29.3",
     "eslint": "7.32.0",
     "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-import": "2.24.1",
+    "eslint-plugin-import": "2.24.2",
     "jest": "27.0.6",
     "prettier": "2.3.2",
     "supertest": "6.1.6",
     "ts-jest": "27.0.5",
     "ts-loader": "9.2.5",
     "ts-node": "10.2.1",
-    "tsconfig-paths": "3.10.1",
+    "tsconfig-paths": "3.11.0",
     "typescript": "4.3.5"
   }
 }
