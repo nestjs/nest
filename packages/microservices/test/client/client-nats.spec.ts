@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { JSONCodec } from 'nats';
+import { JSONCodec, headers as createHeaders } from 'nats';
 import * as sinon from 'sinon';
 import { ClientNats } from '../../client/client-nats';
 
@@ -8,7 +8,9 @@ describe('ClientNats', () => {
 
   describe('publish', () => {
     const pattern = 'test';
-    const msg = { pattern, data: 'data' };
+    const headers = createHeaders();
+    headers.set('1', '123');
+    const msg = { pattern, data: { headers, value: 'data' } };
     const id = 3;
 
     let subscribeSpy: sinon.SinonSpy,
