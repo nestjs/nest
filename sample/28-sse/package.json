@@ -33,7 +33,7 @@
     "@types/dotenv": "8.2.0",
     "@types/express": "4.17.13",
     "@types/jest": "27.0.1",
-    "@types/node": "14.17.11",
+    "@types/node": "14.17.12",
     "@types/supertest": "2.0.11",
     "jest": "27.0.6",
     "prettier": "2.3.2",
