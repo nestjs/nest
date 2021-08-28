@@ -1,6 +1,5 @@
 import { INestApplication, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import * as request from 'supertest';
 import { HelloModule } from '../src/inject-inquirer/hello.module';
@@ -33,7 +32,7 @@ describe('Inject Inquirer', () => {
         message: 'Hello transient!',
         feature: 'transient',
       }),
-    ).to.be.true;
+    ).toBeTruthy();
   });
 
   it(`should allow the injection of the inquirer in a Request Scope`, async () => {
@@ -45,7 +44,7 @@ describe('Inject Inquirer', () => {
         requestId: sinon.match.string,
         feature: 'request',
       }),
-    ).to.be.true;
+    ).toBeTruthy();
 
     const requestId = logger.log.getCall(0).args[0].requestId;
 

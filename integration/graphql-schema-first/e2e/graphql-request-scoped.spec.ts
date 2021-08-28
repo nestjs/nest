@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { join } from 'path';
 import * as request from 'supertest';
 import { CatsRequestScopedService } from '../src/cats/cats-request-scoped.service';
@@ -51,7 +50,7 @@ describe('GraphQL request scoped', () => {
   });
 
   it(`should create resolver for each incoming request`, () => {
-    expect(CatsRequestScopedService.COUNTER).to.be.eql(3);
+    expect(CatsRequestScopedService.COUNTER).toBe(3);
   });
 
   afterEach(async () => {

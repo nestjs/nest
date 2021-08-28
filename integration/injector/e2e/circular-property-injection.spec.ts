@@ -1,5 +1,4 @@
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { CircularPropertiesModule } from '../src/circular-properties/circular-properties.module';
 import { CircularService } from '../src/circular-properties/circular.service';
 import { InputPropertiesModule } from '../src/circular-properties/input-properties.module';
@@ -14,7 +13,7 @@ describe('Circular properties dependency (modules)', () => {
     const inputService = testingModule.get<InputService>(InputService);
     const circularService = testingModule.get<CircularService>(CircularService);
 
-    expect(inputService.service).to.be.eql(circularService);
-    expect(circularService.service).to.be.eql(inputService);
+    expect(inputService.service).toEqual(circularService);
+    expect(circularService.service).toEqual(inputService);
   });
 });

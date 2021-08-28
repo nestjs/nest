@@ -1,6 +1,5 @@
 import { Injectable, Module, OnModuleDestroy } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as Sinon from 'sinon';
 
 @Injectable()
@@ -17,7 +16,7 @@ describe('OnModuleDestroy', () => {
     const app = module.createNestApplication();
     await app.close();
     const instance = module.get(TestInjectable);
-    expect(instance.onModuleDestroy.called).to.be.true;
+    expect(instance.onModuleDestroy.called).toBeTruthy();
   });
 
   it('should not throw an error when onModuleDestroy is null', async () => {
@@ -26,7 +25,7 @@ describe('OnModuleDestroy', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then(obj => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).not.toBeUndefined());
   });
 
   it('should not throw an error when onModuleDestroy is undefined', async () => {
@@ -37,7 +36,7 @@ describe('OnModuleDestroy', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then(obj => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).not.toBeUndefined());
   });
 
   it('should sort modules by distance (topological sort) - DESC order', async () => {
@@ -79,6 +78,6 @@ describe('OnModuleDestroy', () => {
     await app.close();
 
     const instance = module.get(AA);
-    expect(instance.field).to.equal('b-field_a-field');
+    expect(instance.field).toBe('b-field_a-field');
   });
 });

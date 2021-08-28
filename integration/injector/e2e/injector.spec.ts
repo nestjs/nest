@@ -1,7 +1,6 @@
 import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
 import { UnknownExportException } from '@nestjs/core/errors/exceptions/unknown-export.exception';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import {
   DYNAMIC_TOKEN,
   DYNAMIC_VALUE,
@@ -19,7 +18,7 @@ describe('Injector', () => {
         });
         await builder.compile();
       } catch (err) {
-        expect(err).to.be.instanceof(UnknownExportException);
+        expect(err).toBeInstanceOf(UnknownExportException);
       }
     });
   });
@@ -32,7 +31,7 @@ describe('Injector', () => {
         });
         await builder.compile();
       } catch (err) {
-        expect(err).to.be.instanceof(RuntimeException);
+        expect(err).toBeInstanceOf(RuntimeException);
       }
     });
   });
@@ -43,7 +42,7 @@ describe('Injector', () => {
         imports: [NestDynamicModule.byObject()],
       });
       const app = await builder.compile();
-      expect(app.get(DYNAMIC_TOKEN)).to.be.eql(DYNAMIC_VALUE);
+      expect(app.get(DYNAMIC_TOKEN)).toEqual(DYNAMIC_VALUE);
     });
 
     it(`should return provider via token (exported by token)`, async () => {
@@ -51,7 +50,7 @@ describe('Injector', () => {
         imports: [NestDynamicModule.byName()],
       });
       const app = await builder.compile();
-      expect(app.get(DYNAMIC_TOKEN)).to.be.eql(DYNAMIC_VALUE);
+      expect(app.get(DYNAMIC_TOKEN)).toEqual(DYNAMIC_VALUE);
     });
   });
 });

@@ -1,6 +1,5 @@
 import { INestApplication, Scope } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as request from 'supertest';
 import { Guard } from '../src/transient/guards/request-scoped.guard';
 import { HelloController } from '../src/transient/hello.controller';
@@ -51,27 +50,27 @@ describe('Transient scope', () => {
     });
 
     it(`should create controller for each request`, async () => {
-      expect(HelloController.COUNTER).to.be.eql(3);
+      expect(HelloController.COUNTER).toBe(3);
     });
 
     it(`should create service for each request`, async () => {
-      expect(UsersService.COUNTER).to.be.eql(3);
+      expect(UsersService.COUNTER).toBe(3);
     });
 
     it(`should create provider for each inquirer`, async () => {
-      expect(Meta.COUNTER).to.be.eql(7);
+      expect(Meta.COUNTER).toBe(7);
     });
 
     it(`should create transient pipe for each controller (3 requests, 1 static)`, async () => {
-      expect(UserByIdPipe.COUNTER).to.be.eql(4);
+      expect(UserByIdPipe.COUNTER).toBe(4);
     });
 
     it(`should create transient interceptor for each controller (3 requests, 1 static)`, async () => {
-      expect(Interceptor.COUNTER).to.be.eql(4);
+      expect(Interceptor.COUNTER).toBe(4);
     });
 
     it(`should create transient guard for each controller (3 requests, 1 static)`, async () => {
-      expect(Guard.COUNTER).to.be.eql(4);
+      expect(Guard.COUNTER).toBe(4);
     });
   });
 

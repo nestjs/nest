@@ -1,6 +1,5 @@
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test, TestingModule } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as express from 'express';
 import { AppModule } from '../src/app.module';
 import { randomPort } from './utils';
@@ -22,25 +21,25 @@ describe('Get URL (Express Application)', () => {
   it('should be able to get the IPv6 address', async () => {
     const app = testModule.createNestApplication(new ExpressAdapter(express()));
     await app.listen(port);
-    expect(await app.getUrl()).to.be.eql(`http://[::1]:${port}`);
+    expect(await app.getUrl()).toBe(`http://[::1]:${port}`);
     await app.close();
   });
   it('should be able to get the IPv4 address', async () => {
     const app = testModule.createNestApplication(new ExpressAdapter(express()));
     await app.listen(port, '127.0.0.5');
-    expect(await app.getUrl()).to.be.eql(`http://127.0.0.5:${port}`);
+    expect(await app.getUrl()).toBe(`http://127.0.0.5:${port}`);
     await app.close();
   });
   it('should return 127.0.0.1 for 0.0.0.0', async () => {
     const app = testModule.createNestApplication(new ExpressAdapter(express()));
     await app.listen(port, '0.0.0.0');
-    expect(await app.getUrl()).to.be.eql(`http://127.0.0.1:${port}`);
+    expect(await app.getUrl()).toBe(`http://127.0.0.1:${port}`);
     await app.close();
   });
   it('should return 127.0.0.1 even in a callback', () => {
     const app = testModule.createNestApplication(new ExpressAdapter(express()));
     return app.listen(port, async () => {
-      expect(await app.getUrl()).to.be.eql(`http://127.0.0.1:${port}`);
+      expect(await app.getUrl()).toBe(`http://127.0.0.1:${port}`);
       await app.close();
     });
   });
@@ -49,7 +48,7 @@ describe('Get URL (Express Application)', () => {
     try {
       await app.getUrl();
     } catch (err) {
-      expect(err).to.be.eql(
+      expect(err).toBe(
         'app.listen() needs to be called before calling app.getUrl()',
       );
     }

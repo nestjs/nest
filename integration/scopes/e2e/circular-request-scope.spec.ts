@@ -1,6 +1,5 @@
 import { INestApplication, Scope } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as request from 'supertest';
 import { HelloController } from '../src/circular-hello/hello.controller';
 import { HelloModule } from '../src/circular-hello/hello.module';
@@ -49,19 +48,19 @@ describe('Circular request scope', () => {
     });
 
     it(`should create controller for each request`, async () => {
-      expect(HelloController.COUNTER).to.be.eql(3);
+      expect(HelloController.COUNTER).toBe(3);
     });
 
     it(`should create service for each request`, async () => {
-      expect(UsersService.COUNTER).to.be.eql(3);
+      expect(UsersService.COUNTER).toBe(3);
     });
 
     it(`should create service for each request`, async () => {
-      expect(HelloService.COUNTER).to.be.eql(3);
+      expect(HelloService.COUNTER).toBe(3);
     });
 
     it(`should create provider for each inquirer`, async () => {
-      expect(Meta.COUNTER).to.be.eql(3);
+      expect(Meta.COUNTER).toBe(3);
     });
   });
 

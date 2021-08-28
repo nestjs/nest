@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as request from 'supertest';
 import { Guard } from '../src/hello/guards/request-scoped.guard';
 import { HelloController } from '../src/hello/hello.controller';
@@ -50,30 +49,30 @@ describe('Request scope', () => {
     });
 
     it(`should create controller for each request`, async () => {
-      expect(HelloController.COUNTER).to.be.eql(3);
+      expect(HelloController.COUNTER).toBe(3);
     });
 
     it(`should create service for each request`, async () => {
-      expect(UsersService.COUNTER).to.be.eql(3);
+      expect(UsersService.COUNTER).toBe(3);
     });
 
     it(`should share static provider across requests`, async () => {
-      expect(Meta.COUNTER).to.be.eql(1);
+      expect(Meta.COUNTER).toBe(1);
     });
 
     it(`should create request scoped pipe for each request`, async () => {
-      expect(UserByIdPipe.COUNTER).to.be.eql(3);
-      expect(UserByIdPipe.REQUEST_SCOPED_DATA).to.deep.equal([1, 1, 1]);
+      expect(UserByIdPipe.COUNTER).toBe(3);
+      expect(UserByIdPipe.REQUEST_SCOPED_DATA).toEqual([1, 1, 1]);
     });
 
     it(`should create request scoped interceptor for each request`, async () => {
-      expect(Interceptor.COUNTER).to.be.eql(3);
-      expect(Interceptor.REQUEST_SCOPED_DATA).to.deep.equal([1, 1, 1]);
+      expect(Interceptor.COUNTER).toBe(3);
+      expect(Interceptor.REQUEST_SCOPED_DATA).toEqual([1, 1, 1]);
     });
 
     it(`should create request scoped guard for each request`, async () => {
-      expect(Guard.COUNTER).to.be.eql(3);
-      expect(Guard.REQUEST_SCOPED_DATA).to.deep.equal([1, 1, 1]);
+      expect(Guard.COUNTER).toBe(3);
+      expect(Guard.REQUEST_SCOPED_DATA).toEqual([1, 1, 1]);
     });
   });
 

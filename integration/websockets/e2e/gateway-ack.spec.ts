@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { io } from 'socket.io-client';
 import { AckGateway } from '../src/ack.gateway';
 
@@ -22,7 +21,7 @@ describe('WebSocketGateway (ack)', () => {
     ws = io('http://localhost:8080');
     await new Promise<void>(resolve =>
       ws.emit('push', { test: 'test' }, data => {
-        expect(data).to.be.eql('pong');
+        expect(data).toBe('pong');
         resolve();
       }),
     );
@@ -35,7 +34,7 @@ describe('WebSocketGateway (ack)', () => {
     ws = io('http://localhost:8080');
     await new Promise<void>(resolve =>
       ws.emit('push', data => {
-        expect(data).to.be.eql('pong');
+        expect(data).toBe('pong');
         resolve();
       }),
     );

@@ -1,6 +1,5 @@
 import { BeforeApplicationShutdown, Injectable, Module } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as Sinon from 'sinon';
 
 @Injectable()
@@ -17,7 +16,7 @@ describe('BeforeApplicationShutdown', () => {
     const app = module.createNestApplication();
     await app.close();
     const instance = module.get(TestInjectable);
-    expect(instance.beforeApplicationShutdown.called).to.be.true;
+    expect(instance.beforeApplicationShutdown.called).toBeTruthy();
   });
 
   it('should sort modules by distance (topological sort) - DESC order', async () => {
@@ -59,6 +58,6 @@ describe('BeforeApplicationShutdown', () => {
     await app.close();
 
     const instance = module.get(AA);
-    expect(instance.field).to.equal('b-field_a-field');
+    expect(instance.field).toBe('b-field_a-field');
   });
 });

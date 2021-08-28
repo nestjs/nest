@@ -2,7 +2,8 @@ import { spawnSync } from 'child_process';
 import { join } from 'path';
 
 describe('enableShutdownHooks', () => {
-  it('should call the correct hooks if any shutdown signal gets invoked', done => {
+  it.only('should call the correct hooks if any shutdown signal gets invoked', done => {
+    console.log(__dirname);
     const result = spawnSync('ts-node', [
       join(__dirname, '../src/enable-shutdown-hooks-main.ts'),
       'SIGHUP',

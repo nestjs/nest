@@ -3,7 +3,6 @@ import {
   NestExpressApplication,
 } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import * as request from 'supertest';
@@ -28,7 +27,7 @@ describe('Express FileSend', () => {
       .get('/file/stream/')
       .expect(200)
       .expect(res => {
-        expect(res.body.toString()).to.be.eq(readmeString);
+        expect(res.body.toString()).toBe(readmeString);
       });
   });
   it('should return a file from a buffer', async () => {
@@ -36,7 +35,7 @@ describe('Express FileSend', () => {
       .get('/file/buffer')
       .expect(200)
       .expect(res => {
-        expect(res.body.toString()).to.be.eq(readmeString);
+        expect(res.body.toString()).toBe(readmeString);
       });
   });
   it('should not stream a non-file', async () => {
@@ -50,7 +49,7 @@ describe('Express FileSend', () => {
       .get('/file/rxjs/stream/')
       .expect(200)
       .expect(res => {
-        expect(res.body.toString()).to.be.eq(readmeString);
+        expect(res.body.toString()).toBe(readmeString);
       });
   });
 });

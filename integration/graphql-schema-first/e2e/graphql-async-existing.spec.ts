@@ -11,7 +11,7 @@ describe('GraphQL (async existing)', () => {
       logger: false,
     });
     await app.init();
-  });
+  }, 10000);
 
   it(`should return query result`, () => {
     return request(app.getHttpServer())

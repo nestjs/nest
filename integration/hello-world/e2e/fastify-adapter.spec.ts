@@ -3,7 +3,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { ApplicationModule } from '../src/app.module';
 
 describe('Hello world (fastify adapter)', () => {
@@ -26,7 +25,7 @@ describe('Hello world (fastify adapter)', () => {
         method: 'GET',
         url: '/hello',
       })
-      .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
+      .then(({ payload }) => expect(payload).toBe('Hello world!'));
   });
 
   it(`/GET (Promise/async)`, () => {
@@ -35,7 +34,7 @@ describe('Hello world (fastify adapter)', () => {
         method: 'GET',
         url: '/hello/async',
       })
-      .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
+      .then(({ payload }) => expect(payload).toBe('Hello world!'));
   });
 
   it(`/GET (Observable stream)`, () => {
@@ -44,7 +43,7 @@ describe('Hello world (fastify adapter)', () => {
         method: 'GET',
         url: '/hello/stream',
       })
-      .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
+      .then(({ payload }) => expect(payload).toBe('Hello world!'));
   });
 
   it(`/GET { host: ":tenant.example.com" } not matched`, () => {
@@ -54,7 +53,7 @@ describe('Hello world (fastify adapter)', () => {
         url: '/host',
       })
       .then(({ payload }) => {
-        expect(JSON.parse(payload)).to.be.eql({
+        expect(JSON.parse(payload)).toEqual({
           error: 'Internal Server Error',
           message:
             'HTTP adapter does not support filtering on host: ":tenant.example.com"',
@@ -70,7 +69,7 @@ describe('Hello world (fastify adapter)', () => {
         url: '/host-array',
       })
       .then(({ payload }) => {
-        expect(JSON.parse(payload)).to.be.eql({
+        expect(JSON.parse(payload)).toEqual({
           error: 'Internal Server Error',
           message:
             'HTTP adapter does not support filtering on hosts: [":tenant.example1.com", ":tenant.example2.com"]',
@@ -84,7 +83,7 @@ describe('Hello world (fastify adapter)', () => {
       .inject()
       .get('/hello')
       .end()
-      .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
+      .then(({ payload }) => expect(payload).toBe('Hello world!'));
   });
 
   afterEach(async () => {

@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as WebSocket from 'ws';
 import { ApplicationGateway } from '../src/app.gateway';
 import { CoreGateway } from '../src/core.gateway';
@@ -39,7 +38,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     );
     await new Promise<void>(resolve =>
       ws.on('message', data => {
-        expect(JSON.parse(data).data.test).to.be.eql('test');
+        expect(JSON.parse(data).data.test).toBe('test');
         resolve();
       }),
     );
@@ -62,7 +61,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     );
     await new Promise<void>(resolve =>
       ws.on('message', data => {
-        expect(JSON.parse(data).data.test).to.be.eql('test');
+        expect(JSON.parse(data).data.test).toBe('test');
         resolve();
       }),
     );
@@ -88,7 +87,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
       );
       await new Promise<void>(resolve =>
         ws.on('message', data => {
-          expect(JSON.parse(data).data.test).to.be.eql('test');
+          expect(JSON.parse(data).data.test).toBe('test');
           resolve();
         }),
       );
@@ -112,7 +111,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     await new Promise<void>(resolve =>
       ws.on('open', () => {
         ws.on('message', data => {
-          expect(JSON.parse(data).data.test).to.be.eql('test');
+          expect(JSON.parse(data).data.test).toBe('test');
           resolve();
         });
         ws.send(
@@ -128,7 +127,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
 
     await new Promise<void>(resolve => {
       ws2.on('message', data => {
-        expect(JSON.parse(data).data.test).to.be.eql('test');
+        expect(JSON.parse(data).data.test).toBe('test');
         resolve();
       });
       ws2.send(
@@ -157,7 +156,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     await new Promise<void>(resolve =>
       ws.on('open', () => {
         ws.on('message', data => {
-          expect(JSON.parse(data).data.test).to.be.eql('test');
+          expect(JSON.parse(data).data.test).toBe('test');
           resolve();
         });
         ws.send(
@@ -173,7 +172,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
 
     await new Promise<void>(resolve => {
       ws2.on('message', data => {
-        expect(JSON.parse(data).data.test).to.be.eql('test');
+        expect(JSON.parse(data).data.test).toBe('test');
         resolve();
       });
       ws2.send(
