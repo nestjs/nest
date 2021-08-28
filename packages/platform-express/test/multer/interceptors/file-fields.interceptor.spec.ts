@@ -1,6 +1,5 @@
 import { CallHandler } from '@nestjs/common';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { FileFieldsInterceptor } from '../../../multer/interceptors/file-fields.interceptor';
@@ -11,7 +10,7 @@ describe('FileFieldsInterceptor', () => {
       { name: 'file', maxCount: 1 },
       { name: 'anotherFile', maxCount: 1 },
     ]);
-    expect(targetClass.prototype.intercept).not.toBeUndefined();;
+    expect(targetClass.prototype.intercept).not.toBeUndefined();
   });
   describe('intercept', () => {
     let handler: CallHandler;
@@ -57,7 +56,7 @@ describe('FileFieldsInterceptor', () => {
         array: () => callback,
       };
       (target.intercept(new ExecutionContextHost([]), handler) as any).catch(
-        error => expect(error).not.toBeUndefined();,
+        error => expect(error).not.toBeUndefined(),
       );
     });
   });

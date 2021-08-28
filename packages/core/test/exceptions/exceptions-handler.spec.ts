@@ -81,8 +81,8 @@ describe('ExceptionsHandler', () => {
           new ExecutionContextHost([0, response]),
         );
 
-        expect(statusStub.calledWith(status)).toBeTruthy();toBeTruthy()
-        expect(jsonStub.calledWith(message)).to.be.true;
+        expect(statusStub.calledWith(status)).toBeTruthy()
+        expect(jsonStub.calledWith(message)).toBeTruthy();
       });
       it('should send expected response status code and transform message to json', () => {
         const status = 401;
@@ -93,8 +93,8 @@ describe('ExceptionsHandler', () => {
           new ExecutionContextHost([0, response]),
         );
 
-        expect(statusStub.calledWith(status)).toBeTruthy();toBeTruthy()
-        expect(jsonStub.calledWith({ message, statusCode: status })).to.be.true;
+        expect(statusStub.calledWith(status)).toBeTruthy()
+        expect(jsonStub.calledWith({ message, statusCode: status })).toBeTruthy();
       });
     });
     describe('when "invokeCustomFilters" returns true', () => {
@@ -102,8 +102,8 @@ describe('ExceptionsHandler', () => {
         sinon.stub(handler, 'invokeCustomFilters').returns(true);
       });
       it('should not call status and json stubs', () => {
-        expect(statusStub.notCalled).toBeTruthy();toBeTruthy()
-        expect(jsonStub.notCalled).to.be.true;
+        expect(statusStub.notCalled).toBeTruthy()
+        expect(jsonStub.notCalled).toBeTruthy();
       });
     });
   });
@@ -114,7 +114,7 @@ describe('ExceptionsHandler', () => {
       expect((handler as any).filters).toEqual(filters);
     });
     it('should throws exception when passed argument is not an array', () => {
-      expect(() => handler.setCustomFilters(null)).toThrows(
+      expect(() => handler.setCustomFilters(null)).toThrow(
         InvalidExceptionFilterException,
       );
     });
