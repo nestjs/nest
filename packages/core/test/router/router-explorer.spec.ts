@@ -100,7 +100,7 @@ describe('RouterExplorer', () => {
     it('should method return expected list of route paths alias', () => {
       const paths = routerBuilder.scanForPaths(new TestRouteAlias());
 
-      expect(paths).to.have.length(4);
+      expect(paths.length).toBe(4);
 
       expect(paths[0].path).toEqual(['/test']);
       expect(paths[1].path).toEqual(['/test']);

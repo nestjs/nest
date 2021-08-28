@@ -29,8 +29,7 @@ describe('ParseArrayPipe', () => {
         it('should return undefined', async () => {
           target = new ParseArrayPipe({ optional: true });
 
-          expect(await target.transform(undefined, {} as ArgumentMetadata)).to
-            .be.undefined;
+          expect(await target.transform(undefined, {} as ArgumentMetadata)).toBeUndefined();
         });
       });
     });

@@ -37,7 +37,7 @@ describe('FilesInterceptor', () => {
         any: () => callback,
       };
       (target.intercept(new ExecutionContextHost([]), handler) as any).catch(
-        error => expect(error).not.toBeUndefined();
+        error => expect(error).not.toBeUndefined()
       );
     });
   });

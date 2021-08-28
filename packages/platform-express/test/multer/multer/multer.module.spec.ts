@@ -16,10 +16,12 @@ describe('MulterModule', () => {
         expect.arrayContaining([MULTER_MODULE_OPTIONS]),
       );
       expect(dynamicModule.providers).toEqual(
-        expect.objectContaining({
-          provide: MULTER_MODULE_OPTIONS,
-          useValue: options,
-        }),
+        expect.arrayContaining([
+          {
+            provide: MULTER_MODULE_OPTIONS,
+            useValue: options,
+          },
+        ]),
       );
     });
   });
@@ -35,12 +37,18 @@ describe('MulterModule', () => {
 
         expect(dynamicModule.providers.length).toBe(2);
         expect(dynamicModule.imports).toBeUndefined();
-        expect(dynamicModule.exports).toEqual(expect.arrayContaining([MULTER_MODULE_OPTIONS]));
-        expect(dynamicModule.providers).toEqual(expect.objectContaining({
-          provide: MULTER_MODULE_OPTIONS,
-          useFactory: asyncOptions.useFactory,
-          inject: [],
-        }));
+        expect(dynamicModule.exports).toEqual(
+          expect.arrayContaining([MULTER_MODULE_OPTIONS]),
+        );
+        expect(dynamicModule.providers).toEqual(
+          expect.arrayContaining([
+            {
+              provide: MULTER_MODULE_OPTIONS,
+              useFactory: asyncOptions.useFactory,
+              inject: [],
+            },
+          ]),
+        );
       });
     });
 
@@ -53,7 +61,9 @@ describe('MulterModule', () => {
 
         expect(dynamicModule.providers.length).toBe(2);
         expect(dynamicModule.imports).toBeUndefined();
-        expect(dynamicModule.exports).toEqual(expect.arrayContaining([MULTER_MODULE_OPTIONS]));
+        expect(dynamicModule.exports).toEqual(
+          expect.arrayContaining([MULTER_MODULE_OPTIONS]),
+        );
       });
     });
 
@@ -66,7 +76,9 @@ describe('MulterModule', () => {
 
         expect(dynamicModule.providers.length).toBe(3);
         expect(dynamicModule.imports).toBeUndefined();
-        expect(dynamicModule.exports).toEqual(expect.arrayContaining([MULTER_MODULE_OPTIONS]));
+        expect(dynamicModule.exports).toEqual(
+          expect.arrayContaining([MULTER_MODULE_OPTIONS]),
+        );
       });
       it('provider should call "createMulterOptions"', async () => {
         const asyncOptions = {

@@ -9,7 +9,7 @@ describe('MergeWithValues', () => {
     type = MergeWithValues(data)(Test);
   });
   it('should enrich prototype with given values', () => {
-    expect(type.prototype).to.contain(data);
+    expect(type.prototype).toEqual(expect.objectContaining(data));
   });
   it('should set name of metatype', () => {
     expect(type.name).toEqual(Test.name + JSON.stringify(data));

@@ -80,7 +80,7 @@ describe('ExternalExceptionFilterContext', () => {
     });
     describe('otherwise', () => {
       it('should merge static global with request/transient scoped filters', () => {
-        const globalFilters: string[] = ['test'];
+        const globalFilters: any[] = ['test'];
         const instanceWrapper = new InstanceWrapper();
         const instance = 'request-scoped';
         const scopedFilterWrappers = [instanceWrapper];

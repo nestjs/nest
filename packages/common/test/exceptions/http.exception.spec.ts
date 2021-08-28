@@ -74,15 +74,15 @@ describe('HttpException', () => {
       expect(`${badRequestError}`).toEqual(
         `BadRequestException: Bad Request Exception`,
       );
-      expect(`${error}`.includes('[object Object]')).to.not.be.true;
-      expect(`${badRequestError}`.includes('[object Object]')).to.not.be.true;
+      expect(`${error}`.includes('[object Object]')).not.toBeTruthy();
+      expect(`${badRequestError}`.includes('[object Object]')).not.toBeTruthy();
     });
     describe('otherwise', () => {
       it('should concat strings', () => {
         const test = 'test message';
         const error = new HttpException(test, 400);
         expect(`${error}`).toEqual(`HttpException: ${test}`);
-        expect(`${error}`.includes('[object Object]')).to.not.be.true;
+        expect(`${error}`.includes('[object Object]')).not.toBeTruthy();
       });
     });
   });

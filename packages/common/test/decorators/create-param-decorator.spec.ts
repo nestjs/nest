@@ -10,7 +10,7 @@ describe('createParamDecorator', () => {
     result = createParamDecorator(fn);
   });
   it('should return a function as a first element', () => {
-    expect(result).to.be.a('function');
+    expect(typeof result).toBe('function');
   });
   describe('returned decorator', () => {
     const factoryFn = (data, req) => true;

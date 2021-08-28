@@ -295,7 +295,7 @@ describe('ClientKafka', () => {
       expect(consumerStub.calledOnce).toBeTruthy();
 
       expect(on.calledOnce).toBeTruthy();
-      expect(client['consumerAssignments']).toEqual([]);
+      expect(client['consumerAssignments']).toEqual({});
 
       expect(connect.calledTwice).toBeTruthy();
 
@@ -312,7 +312,7 @@ describe('ClientKafka', () => {
       expect(consumerStub.calledOnce).toBeFalsy();
 
       expect(on.calledOnce).toBeFalsy();
-      expect(client['consumerAssignments']).toEqual([]);
+      expect(client['consumerAssignments']).toEqual({});
 
       expect(connect.calledTwice).toBeFalsy();
 

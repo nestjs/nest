@@ -92,7 +92,7 @@ describe('MiddlewareModule', () => {
         .getModules()
         .set('Test', new Module(TestModule, nestContainer));
     });
-    it('should throw "RuntimeException" exception when middleware is not stored in container', () => {
+    it('should throw "RuntimeException" exception when middleware is not stored in container', async () => {
       const route = { path: 'Test' };
       const configuration = {
         middleware: [TestMiddleware],
@@ -103,7 +103,7 @@ describe('MiddlewareModule', () => {
 
       middlewareModule['container'] = nestContainer;
 
-      expect(
+      await expect(
         middlewareModule.registerRouteMiddleware(
           new MiddlewareContainer(nestContainer),
           route as any,
@@ -114,7 +114,7 @@ describe('MiddlewareModule', () => {
       ).rejects.toThrow(RuntimeException);
     });
 
-    it('should throw "InvalidMiddlewareException" exception when middleware does not have "use" method', () => {
+    it.only('should throw "InvalidMiddlewareException" exception when middleware does not have "use" method', async () => {
       @Injectable()
       class InvalidMiddleware {}
 
@@ -131,13 +131,13 @@ describe('MiddlewareModule', () => {
       const moduleKey = 'Test';
       container.insertConfig([configuration], moduleKey);
 
+      middlewareModule['container'] = nestContainer;
       const instance = new InvalidMiddleware();
       container.getMiddlewareCollection(moduleKey).set('InvalidMiddleware', {
         metatype: InvalidMiddleware,
         instance,
       } as any);
-
-      expect(
+      await expect(
         middlewareModule.registerRouteMiddleware(
           container,
           route as any,

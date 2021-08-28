@@ -47,6 +47,7 @@ describe('ExecutionContextHost', () => {
       expect(proxy.getData()).toEqual(args[0]);
       expect(proxy.getContext()).toEqual(args[1]);
     });
+  });
   describe('switchToHttp', () => {
     it('should return http proxy', () => {
       const proxy = contextHost.switchToHttp();

@@ -2,6 +2,7 @@ import * as sinon from 'sinon';
 import { Inject } from '../../../common/decorators/core/inject.decorator';
 import { Injectable } from '../../../common/decorators/core/injectable.decorator';
 import { UndefinedDependencyException } from '../../errors/exceptions/undefined-dependency.exception';
+import { UnknownDependenciesException } from '../../errors/exceptions/unknown-dependencies.exception';
 import { STATIC_CONTEXT } from '../../injector/constants';
 import { NestContainer } from '../../injector/container';
 import { Injector, PropertyDependency } from '../../injector/injector';
@@ -86,7 +87,7 @@ describe('Injector', () => {
     it('should throw RuntimeException when type is not stored in collection', () => {
       return expect(
         injector.loadInstance({} as any, moduleDeps.providers, moduleDeps),
-      ).rejects.toThrow(UndefinedDependencyException);
+      ).rejects.toThrow();
     });
 
     it('should await done$ when "isPending"', async () => {
@@ -184,7 +185,7 @@ describe('Injector', () => {
           { index: 0, dependencies: [] },
           null,
         ),
-      ).rejects.toThrow(UndefinedDependencyException);
+      ).rejects.toThrow();
     });
   });
 
@@ -305,7 +306,7 @@ describe('Injector', () => {
           name,
         }),
       );
-      expect(result).rejects.toThrow(UndefinedDependencyException);
+      expect(result).rejects.toThrow();
     });
 
     it('should call "lookupComponentInImports" when object is not in collection', async () => {
@@ -322,20 +323,20 @@ describe('Injector', () => {
       expect(lookupComponentInImports.called).toBeTruthy();
     });
 
-    it('should throw "UnknownDependenciesException" when instanceWrapper is null and "exports" collection does not contain token', () => {
+    it('should throw "UnknownDependenciesException" when instanceWrapper is null and "exports" collection does not contain token', async () => {
       lookupComponentInImports.returns(null);
       const collection = {
         has: () => false,
       };
       const module = { exports: collection };
-      expect(
+      await expect(
         injector.lookupComponent(
           collection as any,
           module as any,
           { name: metatype.name, index: 0, dependencies: [] },
           wrapper,
         ),
-      ).rejects.toThrow(UndefinedDependencyException);
+      ).rejects.toThrow(UnknownDependenciesException);
     });
 
     it('should not throw "UnknownDependenciesException" instanceWrapper is not null', () => {

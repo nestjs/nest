@@ -11,7 +11,6 @@ import { HttpStatus } from '../../enums';
 import { UnprocessableEntityException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ValidationPipe } from '../../pipes/validation.pipe';
-chai.use(chaiAsPromised);
 
 @Exclude()
 class TestModelInternal {
@@ -115,7 +114,7 @@ describe('ValidationPipe', () => {
       });
       it('should throw an error', async () => {
         const testObj = { prop1: 'value1' };
-        return expect(target.transform(testObj, metadata)).to.be.rejected;
+        return expect(target.transform(testObj, metadata)).rejects.toThrow();
       });
 
       class TestModel2 {
@@ -249,12 +248,12 @@ describe('ValidationPipe', () => {
         it('should return a TestModel without extra properties', async () => {
           target = new ValidationPipe({ whitelist: true });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
-          expect(
-            await target.transform(testObj, metadata),
-          ).not.toBeInstanceOf(TestModel);
-          expect(
-            await target.transform(testObj, metadata),
-          ).not.toEqual(expect.objectContaining('prop3'));
+          expect(await target.transform(testObj, metadata)).not.toBeInstanceOf(
+            TestModel,
+          );
+          expect(await target.transform(testObj, metadata)).not.toEqual(
+            expect.objectContaining({ prop3: expect.any(String) }),
+          );
         });
       });
       describe('when validation rejects', () => {
@@ -280,7 +279,9 @@ describe('ValidationPipe', () => {
           };
           expect(
             await target.transform(testObj, transformMetadata),
-          ).not.toEqual(expect.objectContaining('propInternal'));
+          ).toEqual(
+            expect.objectContaining({ propInternal: expect.any(String) }),
+          );
         });
       });
       describe('when transformation is external', () => {
@@ -296,7 +297,9 @@ describe('ValidationPipe', () => {
           };
           expect(
             await target.transform(testObj, transformMetadata),
-          ).not.toEqual(expect.objectContaining('propInternal'));
+          ).not.toEqual(
+            expect.objectContaining({ propInternal: expect.any(String) }),
+          );
         });
       });
     });
@@ -308,8 +311,12 @@ describe('ValidationPipe', () => {
           const result = await target.transform(testObj, metadata);
 
           expect(result).not.toBeInstanceOf(TestModel);
-          expect(result).not.toEqual(expect.objectContaining('prop3'));
-          expect(result).toEqual(expect.objectContaining('optionalProp'));
+          expect(result).not.toEqual(
+            expect.objectContaining({ prop3: expect.any(String) }),
+          );
+          expect(result).not.toEqual(
+            expect.objectContaining({ optionalProp: expect.any(String) }),
+          );
         });
         it('should return a plain object without extra properties if optional prop is defined', async () => {
           target = new ValidationPipe({ transform: false, whitelist: true });
@@ -321,8 +328,12 @@ describe('ValidationPipe', () => {
           };
           const result = await target.transform(testObj, metadata);
           expect(result).not.toBeInstanceOf(TestModel);
-          expect(result).not.toEqual(expect.objectContaining('prop3'));
-          expect(result).toEqual(expect.objectContaining('optionalProp'));
+          expect(result).not.toEqual(
+            expect.objectContaining({ prop3: expect.any(String) }),
+          );
+          expect(result).toEqual(
+            expect.objectContaining({ optionalProp: expect.any(String) }),
+          );
         });
         it('should return a plain object without extra properties if optional prop is undefined', async () => {
           target = new ValidationPipe({ transform: false, whitelist: true });
@@ -334,8 +345,12 @@ describe('ValidationPipe', () => {
           };
           const result = await target.transform(testObj, metadata);
           expect(result).not.toBeInstanceOf(TestModel);
-          expect(result).not.toEqual(expect.objectContaining('prop3'));
-          expect(result).toEqual(expect.objectContaining('optionalProp'));
+          expect(result).not.toEqual(
+            expect.objectContaining({ prop3: expect.any(String) }),
+          );
+          expect(result).not.toEqual(
+            expect.objectContaining({ optionalProp: expect.any(String) }),
+          );
         });
         it('should return a plain object without extra properties if optional prop is null', async () => {
           target = new ValidationPipe({ transform: false, whitelist: true });
@@ -348,8 +363,12 @@ describe('ValidationPipe', () => {
 
           const result = await target.transform(testObj, metadata);
           expect(result).not.toBeInstanceOf(TestModel);
-          expect(result).not.toEqual(expect.objectContaining('prop3'));
-          expect(result).toEqual(expect.objectContaining('optionalProp'));
+          expect(result).not.toEqual(
+            expect.objectContaining({ prop3: expect.any(String) }),
+          );
+          expect(result).not.toEqual(
+            expect.objectContaining({ optionalProp: expect.any(String) }),
+          );
         });
       });
       describe('when validation rejects', () => {
@@ -360,7 +379,7 @@ describe('ValidationPipe', () => {
             whitelist: true,
           });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
-          expect(target.transform(testObj, metadata)).rejects.toThrow()
+          expect(target.transform(testObj, metadata)).rejects.toThrow();
         });
       });
     });
@@ -372,10 +391,10 @@ describe('ValidationPipe', () => {
             { prop1: 'value1', prop2: 'value2', prop3: 'value3' },
           ];
 
-          expect(target.transform(testObj, metadata)).rejects.toThrow()
-          expect(target.transform('string', metadata)).rejects.toThrow()
-          expect(target.transform(true, metadata)).rejects.toThrow()
-          expect(target.transform(3, metadata)).rejects.toThrow()
+          expect(target.transform(testObj, metadata)).rejects.toThrow();
+          expect(target.transform('string', metadata)).rejects.toThrow();
+          expect(target.transform(true, metadata)).rejects.toThrow();
+          expect(target.transform(3, metadata)).rejects.toThrow();
         });
       });
       describe('otherwise', () => {
