@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
@@ -31,7 +30,7 @@ describe('ExceptionFiltersContext', () => {
           () => ({} as any),
           '',
         );
-        expect((filter as any).filters).to.be.empty;
+        expect((filter as any).filters).toEqual([]);
       });
     });
     describe('when filters metadata is not empty', () => {
@@ -44,7 +43,7 @@ describe('ExceptionFiltersContext', () => {
           () => ({} as any),
           '',
         );
-        expect((filter as any).filters).to.not.be.empty;
+        expect((filter as any).filters).not.toEqual([]);
       });
     });
   });

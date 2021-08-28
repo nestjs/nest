@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { GATEWAY_METADATA, GATEWAY_OPTIONS } from '../../constants';
 import { WebSocketGateway } from '../../decorators/socket-gateway.decorator';
 
@@ -11,9 +10,9 @@ describe('@WebSocketGateway', () => {
     const port = Reflect.getMetadata('port', TestGateway);
     const { namespace } = Reflect.getMetadata(GATEWAY_OPTIONS, TestGateway);
 
-    expect(isGateway).to.be.eql(true);
-    expect(port).to.be.eql(80);
-    expect(namespace).to.be.eql('/');
+    expect(isGateway).toEqual(true);
+    expect(port).toEqual(80);
+    expect(namespace).toEqual('/');
   });
 
   @WebSocketGateway()
@@ -23,8 +22,8 @@ describe('@WebSocketGateway', () => {
     const isGateway = Reflect.getMetadata(GATEWAY_METADATA, TestGateway2);
     const port = Reflect.getMetadata('port', TestGateway2);
 
-    expect(isGateway).to.be.eql(true);
-    expect(port).to.be.eql(0);
+    expect(isGateway).toEqual(true);
+    expect(port).toEqual(0);
   });
 
   @WebSocketGateway({ namespace: '/' })
@@ -35,8 +34,8 @@ describe('@WebSocketGateway', () => {
     const port = Reflect.getMetadata('port', TestGateway3);
     const { namespace } = Reflect.getMetadata(GATEWAY_OPTIONS, TestGateway3);
 
-    expect(isGateway).to.be.eql(true);
-    expect(port).to.be.eql(0);
-    expect(namespace).to.be.eql('/');
+    expect(isGateway).toEqual(true);
+    expect(port).toEqual(0);
+    expect(namespace).toEqual('/');
   });
 });

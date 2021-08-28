@@ -1,5 +1,4 @@
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { expect } from 'chai';
 import { fromEvent, lastValueFrom, Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
@@ -71,19 +70,21 @@ describe('WebSocketsController', () => {
           InvalidGateway,
           '',
         ),
-      ).throws(InvalidSocketPortException);
+      ).toThrow(InvalidSocketPortException);
     });
     it('should call "subscribeToServerEvents" with default values when metadata is empty', () => {
       const gateway = new DefaultGateway();
       instance.connectGatewayToServer(gateway, DefaultGateway, '');
-      expect(subscribeToServerEvents.calledWith(gateway, {}, 0, '')).to.be.true;
+      expect(
+        subscribeToServerEvents.calledWith(gateway, {}, 0, ''),
+      ).toBeTruthy();
     });
     it('should call "subscribeToServerEvents" when metadata is valid', () => {
       const gateway = new Test();
       instance.connectGatewayToServer(gateway, Test, '');
       expect(
         subscribeToServerEvents.calledWith(gateway, { namespace }, port, ''),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
   describe('subscribeToServerEvents', () => {
@@ -121,14 +122,15 @@ describe('WebSocketsController', () => {
     });
     it('should call "assignServerToProperties" with expected arguments', () => {
       instance.subscribeToServerEvents(gateway, { namespace }, port, '');
-      expect(assignServerToProperties.calledWith(gateway, server.server)).to.be
-        .true;
+      expect(
+        assignServerToProperties.calledWith(gateway, server.server),
+      ).toBeTruthy();
     });
     it('should call "subscribeEvents" with expected arguments', () => {
       instance.subscribeToServerEvents(gateway, { namespace }, port, '');
-      expect(subscribeEvents.firstCall.args[0]).to.be.equal(gateway);
-      expect(subscribeEvents.firstCall.args[2]).to.be.equal(server);
-      expect(subscribeEvents.firstCall.args[1]).to.be.eql([
+      expect(subscribeEvents.firstCall.args[0]).toEqual(gateway);
+      expect(subscribeEvents.firstCall.args[2]).toEqual(server);
+      expect(subscribeEvents.firstCall.args[1]).toEqual([
         {
           message: 'message',
           methodName: 'methodName',
@@ -176,21 +178,25 @@ describe('WebSocketsController', () => {
 
     it('should call "subscribeConnectionEvent" with expected arguments', () => {
       instance.subscribeEvents(gateway, handlers, server as any);
-      expect(subscribeConnectionEvent.calledWith(gateway, server.connection)).to
-        .be.true;
+      expect(
+        subscribeConnectionEvent.calledWith(gateway, server.connection),
+      ).toBeTruthy();
     });
     it('should call "subscribeDisconnectEvent" with expected arguments', () => {
       instance.subscribeEvents(gateway, handlers, server as any);
-      expect(subscribeDisconnectEvent.calledWith(gateway, server.disconnect)).to
-        .be.true;
+      expect(
+        subscribeDisconnectEvent.calledWith(gateway, server.disconnect),
+      ).toBeTruthy();
     });
     it('should call "subscribeInitEvent" with expected arguments', () => {
       instance.subscribeEvents(gateway, handlers, server as any);
-      expect(subscribeInitEvent.calledWith(gateway, server.init)).to.be.true;
+      expect(subscribeInitEvent.calledWith(gateway, server.init)).toBeTruthy();
     });
     it('should bind connection handler to server', () => {
       instance.subscribeEvents(gateway, handlers, server as any);
-      expect(onSpy.calledWith('connection', getConnectionHandler())).to.be.true;
+      expect(
+        onSpy.calledWith('connection', getConnectionHandler()),
+      ).toBeTruthy();
     });
     it('should call "getConnectionHandler" with expected arguments', () => {
       instance.subscribeEvents(gateway, handlers, server as any);
@@ -202,7 +208,7 @@ describe('WebSocketsController', () => {
           server.disconnect,
           server.connection,
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
   describe('getConnectionHandler', () => {
@@ -247,18 +253,19 @@ describe('WebSocketsController', () => {
 
     it('should return function', () => {
       expect(
-        instance.getConnectionHandler(null, null, null, null, null),
-      ).to.be.a('function');
+        typeof instance.getConnectionHandler(null, null, null, null, null),
+      ).toBe('function');
     });
     it('should call "next" method of connection object with expected argument', () => {
-      expect(nextSpy.calledWith([client])).to.be.true;
+      expect(nextSpy.calledWith([client])).toBeTruthy();
     });
     it('should call "subscribeMessages" with expected arguments', () => {
-      expect(subscribeMessages.calledWith(handlers, client, gateway)).to.be
-        .true;
+      expect(
+        subscribeMessages.calledWith(handlers, client, gateway),
+      ).toBeTruthy();
     });
     it('should call "on" method of client object with expected arguments', () => {
-      expect(onSpy.called).to.be.true;
+      expect(onSpy.called).toBeTruthy();
     });
   });
   describe('subscribeInitEvent', () => {
@@ -271,12 +278,12 @@ describe('WebSocketsController', () => {
     });
     it('should not call subscribe method when "afterInit" method not exists', () => {
       instance.subscribeInitEvent(gateway, event);
-      expect(subscribe.called).to.be.false;
+      expect(subscribe.called).toBeFalsy();
     });
     it('should call subscribe method of event object with expected arguments when "afterInit" exists', () => {
       (gateway as any).afterInit = () => {};
       instance.subscribeInitEvent(gateway, event);
-      expect(subscribe.called).to.be.true;
+      expect(subscribe.called).toBeTruthy();
     });
   });
   describe('subscribeConnectionEvent', () => {
@@ -289,12 +296,12 @@ describe('WebSocketsController', () => {
     });
     it('should not call subscribe method when "handleConnection" method not exists', () => {
       instance.subscribeConnectionEvent(gateway, event);
-      expect(subscribe.called).to.be.false;
+      expect(subscribe.called).toBeFalsy();
     });
     it('should call subscribe method of event object with expected arguments when "handleConnection" exists', () => {
       (gateway as any).handleConnection = () => {};
       instance.subscribeConnectionEvent(gateway, event);
-      expect(subscribe.called).to.be.true;
+      expect(subscribe.called).toBeTruthy();
     });
   });
   describe('subscribeDisconnectEvent', () => {
@@ -307,12 +314,12 @@ describe('WebSocketsController', () => {
     });
     it('should not call subscribe method when "handleDisconnect" method not exists', () => {
       instance.subscribeDisconnectEvent(gateway, event);
-      expect(subscribe.called).to.be.false;
+      expect(subscribe.called).toBeFalsy();
     });
     it('should call subscribe method of event object with expected arguments when "handleDisconnect" exists', () => {
       (gateway as any).handleDisconnect = () => {};
       instance.subscribeDisconnectEvent(gateway, event);
-      expect(subscribe.called).to.be.true;
+      expect(subscribe.called).toBeTruthy();
     });
   });
   describe('subscribeMessages', () => {
@@ -331,7 +338,7 @@ describe('WebSocketsController', () => {
     });
     it('should bind each handler to client', () => {
       instance.subscribeMessages(handlers, client, gateway);
-      expect(onSpy.calledTwice).to.be.true;
+      expect(onSpy.calledTwice).toBeTruthy();
     });
   });
   describe('pickResult', () => {
@@ -345,7 +352,7 @@ describe('WebSocketsController', () => {
                 Promise.resolve(Promise.resolve(value)),
               ),
             ),
-          ).to.be.eq(100);
+          ).toEqual(100);
         });
       });
 
@@ -356,7 +363,7 @@ describe('WebSocketsController', () => {
             await lastValueFrom(
               await instance.pickResult(Promise.resolve(of(value))),
             ),
-          ).to.be.eq(100);
+          ).toEqual(100);
         });
       });
 
@@ -367,7 +374,7 @@ describe('WebSocketsController', () => {
             await lastValueFrom(
               await instance.pickResult(Promise.resolve(value)),
             ),
-          ).to.be.eq(100);
+          ).toEqual(100);
         });
       });
     });

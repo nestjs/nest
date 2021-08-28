@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { of, throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { WsProxy } from '../../context/ws-proxy';
@@ -20,7 +19,7 @@ describe('WsProxy', () => {
     it('should method return thunk', async () => {
       const proxy = await routerProxy.create(async (client, data) => {},
       handler);
-      expect(typeof proxy === 'function').to.be.true;
+      expect(typeof proxy === 'function').toBeTruthy();
     });
 
     it('should method encapsulate callback passed as argument', async () => {
@@ -44,12 +43,12 @@ describe('WsProxy', () => {
   describe('isObservable', () => {
     describe('when observable', () => {
       it('should return true', () => {
-        expect(routerProxy.isObservable(of('test'))).to.be.true;
+        expect(routerProxy.isObservable(of('test'))).toBeTruthy();
       });
     });
     describe('when not observable', () => {
       it('should return false', () => {
-        expect(routerProxy.isObservable({})).to.be.false;
+        expect(routerProxy.isObservable({})).toBeFalsy();
       });
     });
   });

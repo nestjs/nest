@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { WebSocketServer } from '../decorators/gateway-server.decorator';
@@ -47,8 +46,8 @@ describe('GatewayMetadataExplorer', () => {
       instance.explore(obj as any);
 
       const [argObj, argProto] = scanFromPrototype.getCall(0).args;
-      expect(argObj).to.be.eql(obj);
-      expect(argProto).to.be.eql(Object.getPrototypeOf(obj));
+      expect(argObj).toEqual(obj);
+      expect(argProto).toEqual(Object.getPrototypeOf(obj));
     });
   });
   describe('exploreMethodMetadata', () => {
@@ -58,12 +57,12 @@ describe('GatewayMetadataExplorer', () => {
     });
     it(`should return null when "isMessageMapping" metadata is undefined`, () => {
       const metadata = instance.exploreMethodMetadata(test, 'noMessage');
-      expect(metadata).to.eq(null);
+      expect(metadata).toEqual(null);
     });
     it(`should return message mapping properties when "isMessageMapping" metadata is not undefined`, () => {
       const metadata = instance.exploreMethodMetadata(test, 'test');
-      expect(metadata).to.have.keys(['callback', 'message', 'methodName']);
-      expect(metadata.message).to.eql(message);
+      expect(Object.keys(metadata)).toEqual(expect.arrayContaining(['callback', 'message', 'methodName']));
+      expect(metadata.message).toEqual(message);
     });
   });
   describe('scanForServerHooks', () => {
@@ -71,8 +70,8 @@ describe('GatewayMetadataExplorer', () => {
       const obj = new Test();
       const servers = [...instance.scanForServerHooks(obj as any)];
 
-      expect(servers).to.have.length(2);
-      expect(servers).to.deep.eq(['server', 'anotherServer']);
+      expect(servers.length).toBe(2);
+      expect(servers).toEqual(['server', 'anotherServer']);
     });
   });
 });

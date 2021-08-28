@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as hash from 'object-hash';
 import * as sinon from 'sinon';
 import { SocketsContainer } from '../sockets-container';
@@ -24,7 +23,7 @@ describe('SocketsContainer', () => {
       instance.getOneByConfig(config);
 
       const token = hash(config);
-      expect(getSpy.calledWith(token)).to.be.true;
+      expect(getSpy.calledWith(token)).toBeTruthy();
     });
   });
   describe('addOne', () => {
@@ -35,14 +34,14 @@ describe('SocketsContainer', () => {
       instance.addOne(config, server as any);
 
       const token = hash(config);
-      expect(setSpy.calledWith(token, server)).to.be.true;
+      expect(setSpy.calledWith(token, server)).toBeTruthy();
     });
   });
   describe('getAll', () => {
     it('should return "serverAndEventStreamsHosts"', () => {
       const collection = ['test'];
       (instance as any).serverAndEventStreamsHosts = collection;
-      expect(instance.getAll()).to.be.eq(collection);
+      expect(instance.getAll()).toEqual(collection);
     });
   });
   describe('clear', () => {
@@ -50,7 +49,7 @@ describe('SocketsContainer', () => {
       const collection = { clear: sinon.spy() };
       (instance as any).serverAndEventStreamsHosts = collection;
       instance.clear();
-      expect(collection.clear.called).to.be.true;
+      expect(collection.clear.called).toBeTruthy();
     });
   });
 });

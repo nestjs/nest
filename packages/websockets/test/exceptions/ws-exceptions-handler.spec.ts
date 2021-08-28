@@ -1,5 +1,4 @@
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { WsException } from '../../errors/ws-exception';
 import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
@@ -26,7 +25,7 @@ describe('WsExceptionsHandler', () => {
           status: 'error',
           message: 'Internal server error',
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     describe('when exception is instance of WsException', () => {
       it('should method emit expected status and json object', () => {
@@ -37,7 +36,7 @@ describe('WsExceptionsHandler', () => {
           new WsException(message),
           new ExecutionContextHost([client]),
         );
-        expect(emitStub.calledWith('exception', message)).to.be.true;
+        expect(emitStub.calledWith('exception', message)).toBeTruthy();
       });
       it('should method emit expected status and transform message to json', () => {
         const message = 'Unauthorized';
@@ -47,7 +46,7 @@ describe('WsExceptionsHandler', () => {
           new ExecutionContextHost([client]),
         );
         expect(emitStub.calledWith('exception', { message, status: 'error' }))
-          .to.be.true;
+          .toBeTruthy();
       });
     });
     describe('when "invokeCustomFilters" returns true', () => {
@@ -56,7 +55,7 @@ describe('WsExceptionsHandler', () => {
       });
       it('should not call `emit`', () => {
         handler.handle(new WsException(''), new ExecutionContextHost([client]));
-        expect(emitStub.notCalled).to.be.true;
+        expect(emitStub.notCalled).toBeTruthy();
       });
     });
   });
@@ -64,16 +63,16 @@ describe('WsExceptionsHandler', () => {
     const filters = ['test', 'test2'];
     it('should set custom filters', () => {
       handler.setCustomFilters(filters as any);
-      expect((handler as any).filters).to.be.eql(filters);
+      expect((handler as any).filters).toEqual(filters);
     });
     it('should throws exception when passed argument is not an array', () => {
-      expect(() => handler.setCustomFilters(null)).to.throw();
+      expect(() => handler.setCustomFilters(null)).toThrow();
     });
   });
   describe('invokeCustomFilters', () => {
     describe('when filters array is empty', () => {
       it('should return false', () => {
-        expect(handler.invokeCustomFilters(null, null)).to.be.false;
+        expect(handler.invokeCustomFilters(null, null)).toBeFalsy();
       });
     });
     describe('when filters array is not empty', () => {
@@ -90,28 +89,26 @@ describe('WsExceptionsHandler', () => {
         });
         it('should call funcSpy', () => {
           handler.invokeCustomFilters(new TestException(), null);
-          expect(funcSpy.notCalled).to.be.false;
+          expect(funcSpy.notCalled).toBeFalsy();
         });
         it('should call funcSpy with exception and response passed as an arguments', () => {
           const exception = new TestException();
           const res = { foo: 'bar' };
 
           handler.invokeCustomFilters(exception, res as any);
-          expect(funcSpy.calledWith(exception, res)).to.be.true;
+          expect(funcSpy.calledWith(exception, res)).toBeTruthy();
         });
         it('should return true', () => {
-          expect(handler.invokeCustomFilters(new TestException(), null)).to.be
-            .true;
+          expect(handler.invokeCustomFilters(new TestException(), null)).toBeTruthy();
         });
       });
       describe('when filter does not exists in filters array', () => {
         it('should not call funcSpy', () => {
           handler.invokeCustomFilters(new TestException(), null);
-          expect(funcSpy.notCalled).to.be.true;
+          expect(funcSpy.notCalled).toBeTruthy();
         });
         it('should return false', () => {
-          expect(handler.invokeCustomFilters(new TestException(), null)).to.be
-            .false;
+          expect(handler.invokeCustomFilters(new TestException(), null)).toBeFalsy();
         });
       });
     });

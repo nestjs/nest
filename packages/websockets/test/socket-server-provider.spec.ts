@@ -1,5 +1,4 @@
 import { ApplicationConfig } from '@nestjs/core/application-config';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { AbstractWsAdapter } from '../adapters/ws-adapter';
 import { SocketServerProvider } from '../socket-server-provider';
@@ -40,15 +39,15 @@ describe('SocketServerProvider', () => {
 
       const result = instance.scanForSocketServer({ namespace: null }, port);
 
-      expect(createSocketServerSpy.called).to.be.false;
-      expect(result).to.eq(server);
+      expect(createSocketServerSpy.called).toBeFalsy();
+      expect(result).toEqual(server);
     });
 
     it(`should call "createSocketServer" when server is not stored already`, () => {
       mockContainer.expects('getOneByConfig').returns(null);
 
       instance.scanForSocketServer({ path }, port);
-      expect(createSocketServerSpy.called).to.be.true;
+      expect(createSocketServerSpy.called).toBeTruthy();
     });
 
     it(`should call "decorateWithNamespace" when namespace is specified`, () => {
@@ -58,7 +57,7 @@ describe('SocketServerProvider', () => {
       );
 
       instance.scanForSocketServer({ path, namespace: 'random' }, port);
-      expect(decorateWithNamespaceSpy.called).to.be.true;
+      expect(decorateWithNamespaceSpy.called).toBeTruthy();
     });
 
     describe('when namespace is specified and server does exist already', () => {
@@ -72,8 +71,8 @@ describe('SocketServerProvider', () => {
         );
 
         instance.scanForSocketServer({ path, namespace: 'random' }, port);
-        expect(decorateWithNamespaceSpy.called).to.be.true;
-        expect(createSocketServerSpy.called).to.be.false;
+        expect(decorateWithNamespaceSpy.called).toBeTruthy();
+        expect(createSocketServerSpy.called).toBeFalsy();
       });
     });
   });
