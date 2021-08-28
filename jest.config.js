@@ -9,7 +9,7 @@ module.exports = {
   collectCoverageFrom: ['<rootDir>/packages/**/*.ts'],
   collectCoverage: true,
   setupFiles: ['<rootDir>/global-setup.jest.js'],
-  /* moduleNameMapper: {
+  moduleNameMapper: {
     '^@nestjs\\/(.*)$': '<rootDir>/packages/$1',
-  }, */
+  },
 };
