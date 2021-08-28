@@ -1,6 +1,5 @@
 import { CallHandler } from '@nestjs/common';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { AnyFilesInterceptor } from '../../../multer/interceptors/any-files.interceptor';
@@ -8,7 +7,7 @@ import { AnyFilesInterceptor } from '../../../multer/interceptors/any-files.inte
 describe('FilesInterceptor', () => {
   it('should return metatype with expected structure', async () => {
     const targetClass = AnyFilesInterceptor();
-    expect(targetClass.prototype.intercept).to.not.be.undefined;
+    expect(targetClass.prototype.intercept).not.toBeUndefined();;
   });
   describe('intercept', () => {
     let handler: CallHandler;
@@ -27,8 +26,8 @@ describe('FilesInterceptor', () => {
 
       await target.intercept(new ExecutionContextHost([]), handler);
 
-      expect(arraySpy.called).to.be.true;
-      expect(arraySpy.calledWith()).to.be.true;
+      expect(arraySpy.called).toBeTruthy()
+      expect(arraySpy.calledWith()).toBeTruthy();
     });
     it('should transform exception', async () => {
       const target = new (AnyFilesInterceptor())();
@@ -38,7 +37,7 @@ describe('FilesInterceptor', () => {
         any: () => callback,
       };
       (target.intercept(new ExecutionContextHost([]), handler) as any).catch(
-        error => expect(error).to.not.be.undefined,
+        error => expect(error).not.toBeUndefined();
       );
     });
   });

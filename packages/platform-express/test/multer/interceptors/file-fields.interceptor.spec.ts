@@ -11,7 +11,7 @@ describe('FileFieldsInterceptor', () => {
       { name: 'file', maxCount: 1 },
       { name: 'anotherFile', maxCount: 1 },
     ]);
-    expect(targetClass.prototype.intercept).to.not.be.undefined;
+    expect(targetClass.prototype.intercept).not.toBeUndefined();;
   });
   describe('intercept', () => {
     let handler: CallHandler;
@@ -38,8 +38,8 @@ describe('FileFieldsInterceptor', () => {
 
       await target.intercept(new ExecutionContextHost([]), handler);
 
-      expect(fieldsSpy.called).to.be.true;
-      expect(fieldsSpy.calledWith(argument)).to.be.true;
+      expect(fieldsSpy.called).toBeTruthy()
+      expect(fieldsSpy.calledWith(argument)).toBeTruthy();
     });
     it('should transform exception', async () => {
       const fieldName1 = 'file';
@@ -57,7 +57,7 @@ describe('FileFieldsInterceptor', () => {
         array: () => callback,
       };
       (target.intercept(new ExecutionContextHost([]), handler) as any).catch(
-        error => expect(error).to.not.be.undefined,
+        error => expect(error).not.toBeUndefined();,
       );
     });
   });

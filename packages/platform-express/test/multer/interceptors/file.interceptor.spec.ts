@@ -8,7 +8,7 @@ import { FileInterceptor } from '../../../multer/interceptors/file.interceptor';
 describe('FileInterceptor', () => {
   it('should return metatype with expected structure', async () => {
     const targetClass = FileInterceptor('file');
-    expect(targetClass.prototype.intercept).to.not.be.undefined;
+    expect(targetClass.prototype.intercept).not.toBeUndefined();;
   });
   describe('intercept', () => {
     let handler: CallHandler;
@@ -27,8 +27,8 @@ describe('FileInterceptor', () => {
 
       await target.intercept(new ExecutionContextHost([]), handler);
 
-      expect(singleSpy.called).to.be.true;
-      expect(singleSpy.calledWith(fieldName)).to.be.true;
+      expect(singleSpy.called).toBeTruthy()
+      expect(singleSpy.calledWith(fieldName)).toBeTruthy();
     });
     it('should transform exception', async () => {
       const fieldName = 'file';
@@ -39,7 +39,7 @@ describe('FileInterceptor', () => {
         single: () => callback,
       };
       (target.intercept(new ExecutionContextHost([]), handler) as any).catch(
-        error => expect(error).to.not.be.undefined,
+        error => expect(error).not.toBeUndefined();,
       );
     });
   });
