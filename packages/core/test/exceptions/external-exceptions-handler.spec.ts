@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { ExternalExceptionsHandler } from '../../exceptions/external-exceptions-handler';
@@ -16,7 +15,7 @@ describe('ExternalExceptionsHandler', () => {
       try {
         await handler.next(error, null);
       } catch (err) {
-        expect(err).to.be.eql(error);
+        expect(err).toEqual(error);
       }
     });
     describe('when "invokeCustomFilters" returns value', () => {
@@ -26,7 +25,7 @@ describe('ExternalExceptionsHandler', () => {
       });
       it('should return observable', () => {
         const result = handler.next(new Error(), null);
-        expect(result).to.be.eql(observable$);
+        expect(result).toEqual(observable$);
       });
     });
   });
@@ -34,16 +33,16 @@ describe('ExternalExceptionsHandler', () => {
     const filters = ['test', 'test2'];
     it('should set custom filters', () => {
       handler.setCustomFilters(filters as any);
-      expect((handler as any).filters).to.be.eql(filters);
+      expect((handler as any).filters).toEqual(filters);
     });
     it('should throws exception when passed argument is not an array', () => {
-      expect(() => handler.setCustomFilters(null)).to.throw();
+      expect(() => handler.setCustomFilters(null)).toThrow();
     });
   });
   describe('invokeCustomFilters', () => {
     describe('when filters array is empty', () => {
       it('should return identity', () => {
-        expect(handler.invokeCustomFilters(null, null)).to.be.null;
+        expect(handler.invokeCustomFilters(null, null)).toBeNull();
       });
     });
     describe('when filters array is not empty', () => {
@@ -60,26 +59,28 @@ describe('ExternalExceptionsHandler', () => {
         });
         it('should call funcSpy', () => {
           handler.invokeCustomFilters(new TestException(), null);
-          expect(funcSpy.notCalled).to.be.false;
+          expect(funcSpy.notCalled).toBeFalsy();
         });
         it('should call funcSpy with exception and response passed as an arguments', () => {
           const exception = new TestException();
           handler.invokeCustomFilters(exception, null);
-          expect(funcSpy.calledWith(exception)).to.be.true;
+          expect(funcSpy.calledWith(exception)).toBeTruthy();
         });
         it('should return stream', () => {
-          expect(handler.invokeCustomFilters(new TestException(), null)).to.be
-            .not.null;
+          expect(
+            handler.invokeCustomFilters(new TestException(), null),
+          ).not.toBeNull();
         });
       });
       describe('when filter does not exists in filters array', () => {
         it('should not call funcSpy', () => {
           handler.invokeCustomFilters(new TestException(), null);
-          expect(funcSpy.notCalled).to.be.true;
+          expect(funcSpy.notCalled).toBeTruthy();
         });
         it('should return null', () => {
-          expect(handler.invokeCustomFilters(new TestException(), null)).to.be
-            .null;
+          expect(
+            handler.invokeCustomFilters(new TestException(), null),
+          ).toBeNull();
         });
       });
     });

@@ -1,5 +1,4 @@
 import { ClassProvider, FactoryProvider } from '@nestjs/common';
-import { expect } from 'chai';
 import { ExternalContextCreator } from '../../helpers/external-context-creator';
 import { HttpAdapterHost } from '../../helpers/http-adapter-host';
 import { LazyModuleLoader, ModulesContainer } from '../../injector';
@@ -16,12 +15,12 @@ describe('InternalCoreModuleFactory', () => {
       null,
     );
 
-    expect(moduleDefinition.module).to.equal(InternalCoreModule);
+    expect(moduleDefinition.module).toEqual(InternalCoreModule);
 
     const providedInjectables = moduleDefinition.providers.map(
       item => (item as ClassProvider | FactoryProvider).provide,
     );
-    expect(providedInjectables).to.deep.equal([
+    expect(providedInjectables).toEqual([
       ExternalContextCreator,
       ModulesContainer,
       HttpAdapterHost,
@@ -32,7 +31,7 @@ describe('InternalCoreModuleFactory', () => {
     const lazyModuleLoaderProvider = moduleDefinition.providers.find(
       item => (item as FactoryProvider)?.provide === LazyModuleLoader,
     ) as FactoryProvider;
-    expect(lazyModuleLoaderProvider.useFactory()).to.be.instanceOf(
+    expect(lazyModuleLoaderProvider.useFactory()).toBeInstanceOf(
       LazyModuleLoader,
     );
   });

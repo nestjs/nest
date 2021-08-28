@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { ApplicationConfig } from '../application-config';
 import { NestContainer } from '../injector/container';
 import { NestApplication } from '../nest-application';
@@ -22,12 +21,12 @@ describe('NestApplication', () => {
       );
       instance.useGlobalInterceptors(new Interceptor());
       const microservice = instance.connectMicroservice({});
-      expect((instance as any).config.getGlobalInterceptors().length).to.equal(
+      expect((instance as any).config.getGlobalInterceptors().length).toEqual(
         1,
       );
       expect(
         (microservice as any).applicationConfig.getGlobalInterceptors().length,
-      ).to.equal(0);
+      ).toEqual(0);
     });
     it('should inherit existing ApplicationConfig', () => {
       const applicationConfig = new ApplicationConfig();
@@ -43,12 +42,12 @@ describe('NestApplication', () => {
         {},
         { inheritAppConfig: true },
       );
-      expect((instance as any).config.getGlobalInterceptors().length).to.equal(
+      expect((instance as any).config.getGlobalInterceptors().length).toEqual(
         1,
       );
       expect(
         (microservice as any).applicationConfig.getGlobalInterceptors().length,
-      ).to.equal(1);
+      ).toEqual(1);
     });
   });
 });

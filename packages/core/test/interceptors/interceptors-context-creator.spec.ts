@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { ApplicationConfig } from '../../application-config';
@@ -62,7 +61,7 @@ describe('InterceptorsContextCreator', () => {
       it('should return empty array', () => {
         const result =
           interceptorsContextCreator.createConcreteContext(interceptors);
-        expect(result).to.be.empty;
+        expect(result).toEqual([]);
       });
     });
     describe('when `moduleContext` is defined', () => {
@@ -75,8 +74,9 @@ describe('InterceptorsContextCreator', () => {
           interceptors[1].instance,
         ];
         expect(
-          interceptorsContextCreator.createConcreteContext(interceptorTypeRefs),
-        ).to.have.length(2);
+          interceptorsContextCreator.createConcreteContext(interceptorTypeRefs)
+            .length,
+        ).toBe(2);
       });
     });
   });
@@ -87,7 +87,7 @@ describe('InterceptorsContextCreator', () => {
         const instance = { intercept: () => null };
         expect(
           interceptorsContextCreator.getInterceptorInstance(instance),
-        ).to.be.eql(instance);
+        ).toEqual(instance);
       });
     });
     describe('when param is a constructor', () => {
@@ -101,7 +101,7 @@ describe('InterceptorsContextCreator', () => {
           .callsFake(() => wrapper);
         expect(
           interceptorsContextCreator.getInterceptorInstance(Interceptor),
-        ).to.be.eql(wrapper.instance);
+        ).toEqual(wrapper.instance);
       });
       it('should return null', () => {
         sinon
@@ -109,7 +109,7 @@ describe('InterceptorsContextCreator', () => {
           .callsFake(() => null);
         expect(
           interceptorsContextCreator.getInterceptorInstance(Interceptor),
-        ).to.be.eql(null);
+        ).toEqual(null);
       });
     });
   });
@@ -118,8 +118,9 @@ describe('InterceptorsContextCreator', () => {
     describe('when "moduleContext" is nil', () => {
       it('should return undefined', () => {
         (interceptorsContextCreator as any).moduleContext = undefined;
-        expect(interceptorsContextCreator.getInstanceByMetatype(null)).to.be
-          .undefined;
+        expect(
+          interceptorsContextCreator.getInstanceByMetatype(null),
+        ).toBeUndefined();
       });
     });
     describe('when "moduleContext" is not nil', () => {
@@ -129,8 +130,9 @@ describe('InterceptorsContextCreator', () => {
 
       describe('and when module exists', () => {
         it('should return undefined', () => {
-          expect(interceptorsContextCreator.getInstanceByMetatype(class {})).to
-            .be.undefined;
+          expect(
+            interceptorsContextCreator.getInstanceByMetatype(class {}),
+          ).toBeUndefined();
         });
       });
     });
@@ -140,7 +142,7 @@ describe('InterceptorsContextCreator', () => {
     describe('when contextId is static and inquirerId is nil', () => {
       it('should return global interceptors', () => {
         const expectedResult = applicationConfig.getGlobalInterceptors();
-        expect(interceptorsContextCreator.getGlobalMetadata()).to.be.equal(
+        expect(interceptorsContextCreator.getGlobalMetadata()).toEqual(
           expectedResult,
         );
       });
@@ -162,9 +164,9 @@ describe('InterceptorsContextCreator', () => {
           .stub(instanceWrapper, 'getInstanceByContextId')
           .callsFake(() => ({ instance } as any));
 
-        expect(
-          interceptorsContextCreator.getGlobalMetadata({ id: 3 }),
-        ).to.contains(instance, ...globalInterceptors);
+        expect(interceptorsContextCreator.getGlobalMetadata({ id: 3 })).toEqual(
+          expect.arrayContaining([instance, ...globalInterceptors]),
+        );
       });
     });
   });

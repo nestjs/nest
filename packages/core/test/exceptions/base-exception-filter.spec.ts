@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { BaseExceptionFilterContext } from '../../exceptions/base-exception-filter-context';
 import { NestContainer } from '../../injector/container';
@@ -18,7 +17,7 @@ describe('BaseExceptionFilterContext', () => {
     describe('when param is an object', () => {
       it('should return instance', () => {
         const instance = { catch: () => null };
-        expect(filter.getFilterInstance(instance)).to.be.eql(instance);
+        expect(filter.getFilterInstance(instance)).toEqual(instance);
       });
     });
     describe('when param is a constructor', () => {
@@ -30,11 +29,11 @@ describe('BaseExceptionFilterContext', () => {
         sinon
           .stub(filter, 'getInstanceByMetatype')
           .callsFake(() => wrapper as any);
-        expect(filter.getFilterInstance(Filter)).to.be.eql(wrapper.instance);
+        expect(filter.getFilterInstance(Filter)).toEqual(wrapper.instance);
       });
       it('should return null', () => {
         sinon.stub(filter, 'getInstanceByMetatype').callsFake(() => null);
-        expect(filter.getFilterInstance(Filter)).to.be.eql(null);
+        expect(filter.getFilterInstance(Filter)).toEqual(null);
       });
     });
   });
@@ -43,7 +42,7 @@ describe('BaseExceptionFilterContext', () => {
     describe('when "moduleContext" is nil', () => {
       it('should return undefined', () => {
         (filter as any).moduleContext = undefined;
-        expect(filter.getInstanceByMetatype(null)).to.be.undefined;
+        expect(filter.getInstanceByMetatype(null)).toBeUndefined();
       });
     });
     describe('when "moduleContext" is not nil', () => {
@@ -54,7 +53,7 @@ describe('BaseExceptionFilterContext', () => {
       describe('and when module exists', () => {
         it('should return undefined', () => {
           sinon.stub(container.getModules(), 'get').callsFake(() => undefined);
-          expect(filter.getInstanceByMetatype(null)).to.be.undefined;
+          expect(filter.getInstanceByMetatype(null)).toBeUndefined();
         });
       });
 
@@ -65,7 +64,7 @@ describe('BaseExceptionFilterContext', () => {
           sinon
             .stub(container.getModules(), 'get')
             .callsFake(() => module as any);
-          expect(filter.getInstanceByMetatype(class {})).to.be.eql(instance);
+          expect(filter.getInstanceByMetatype(class {})).toEqual(instance);
         });
       });
     });

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Controller, Get } from '../../../common';
 import { NestContainer } from '../../injector/container';
 import { MiddlewareBuilder } from '../../middleware/builder';
@@ -22,7 +21,7 @@ describe('MiddlewareBuilder', () => {
     });
     it('should return configuration proxy', () => {
       const metatype = (MiddlewareBuilder as any).ConfigProxy;
-      expect(configProxy instanceof metatype).to.be.true;
+      expect(configProxy instanceof metatype).toBeTruthy();
     });
     describe('configuration proxy', () => {
       describe('when "forRoutes()" called', () => {
@@ -35,7 +34,7 @@ describe('MiddlewareBuilder', () => {
         it('should store configuration passed as argument', () => {
           configProxy.forRoutes(route, Test);
 
-          expect(builder.build()).to.deep.equal([
+          expect(builder.build()).toEqual([
             {
               middleware: [],
               forRoutes: [
@@ -60,7 +59,7 @@ describe('MiddlewareBuilder', () => {
       const path = '/test';
       const proxy: any = builder.apply().exclude(path);
 
-      expect(proxy.getExcludedRoutes()).to.be.eql([
+      expect(proxy.getExcludedRoutes()).toEqual([
         {
           path,
           method: -1,

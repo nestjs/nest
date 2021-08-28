@@ -1,6 +1,5 @@
 import { HttpException } from '@nestjs/common';
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
-import { expect } from 'chai';
 import * as createHttpError from 'http-errors';
 import * as sinon from 'sinon';
 import { AbstractHttpAdapter } from '../../adapters';
@@ -49,26 +48,26 @@ describe('ExceptionsHandler', () => {
     it('should send expected response status code and message when exception is unknown', () => {
       handler.next(new Error(), new ExecutionContextHost([0, response]));
 
-      expect(statusStub.calledWith(500)).to.be.true;
+      expect(statusStub.calledWith(500)).toBeTruthy();
       expect(
         jsonStub.calledWith({
           statusCode: 500,
           message: 'Internal server error',
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     describe('when exception is instantiated by "http-errors" library', () => {
       it('should send expected response status code and message', () => {
         const error = new createHttpError.NotFound('User does not exist');
         handler.next(error, new ExecutionContextHost([0, response]));
 
-        expect(statusStub.calledWith(404)).to.be.true;
+        expect(statusStub.calledWith(404)).toBeTruthy();
         expect(
           jsonStub.calledWith({
             statusCode: 404,
             message: 'User does not exist',
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('when exception is an instance of HttpException', () => {
@@ -82,7 +81,7 @@ describe('ExceptionsHandler', () => {
           new ExecutionContextHost([0, response]),
         );
 
-        expect(statusStub.calledWith(status)).to.be.true;
+        expect(statusStub.calledWith(status)).toBeTruthy();toBeTruthy()
         expect(jsonStub.calledWith(message)).to.be.true;
       });
       it('should send expected response status code and transform message to json', () => {
@@ -94,7 +93,7 @@ describe('ExceptionsHandler', () => {
           new ExecutionContextHost([0, response]),
         );
 
-        expect(statusStub.calledWith(status)).to.be.true;
+        expect(statusStub.calledWith(status)).toBeTruthy();toBeTruthy()
         expect(jsonStub.calledWith({ message, statusCode: status })).to.be.true;
       });
     });
@@ -103,7 +102,7 @@ describe('ExceptionsHandler', () => {
         sinon.stub(handler, 'invokeCustomFilters').returns(true);
       });
       it('should not call status and json stubs', () => {
-        expect(statusStub.notCalled).to.be.true;
+        expect(statusStub.notCalled).toBeTruthy();toBeTruthy()
         expect(jsonStub.notCalled).to.be.true;
       });
     });
@@ -112,10 +111,10 @@ describe('ExceptionsHandler', () => {
     const filters = ['test', 'test2'];
     it('should set custom filters', () => {
       handler.setCustomFilters(filters as any);
-      expect((handler as any).filters).to.be.eql(filters);
+      expect((handler as any).filters).toEqual(filters);
     });
     it('should throws exception when passed argument is not an array', () => {
-      expect(() => handler.setCustomFilters(null)).to.throws(
+      expect(() => handler.setCustomFilters(null)).toThrows(
         InvalidExceptionFilterException,
       );
     });
@@ -123,7 +122,7 @@ describe('ExceptionsHandler', () => {
   describe('invokeCustomFilters', () => {
     describe('when filters array is empty', () => {
       it('should return false', () => {
-        expect(handler.invokeCustomFilters(null, null)).to.be.false;
+        expect(handler.invokeCustomFilters(null, null)).toBeFalsy();
       });
     });
     describe('when filters array is not empty', () => {
@@ -140,28 +139,26 @@ describe('ExceptionsHandler', () => {
         });
         it('should call funcSpy', () => {
           handler.invokeCustomFilters(new TestException(), null);
-          expect(funcSpy.notCalled).to.be.false;
+          expect(funcSpy.notCalled).toBeFalsy();
         });
         it('should call funcSpy with exception and response passed as an arguments', () => {
           const exception = new TestException();
           const res = { foo: 'bar' };
 
           handler.invokeCustomFilters(exception, res as any);
-          expect(funcSpy.calledWith(exception, res)).to.be.true;
+          expect(funcSpy.calledWith(exception, res)).toBeTruthy();
         });
         it('should return true', () => {
-          expect(handler.invokeCustomFilters(new TestException(), null)).to.be
-            .true;
+          expect(handler.invokeCustomFilters(new TestException(), null)).toBeTruthy();
         });
       });
       describe('when filter does not exists in filters array', () => {
         it('should not call funcSpy', () => {
           handler.invokeCustomFilters(new TestException(), null);
-          expect(funcSpy.notCalled).to.be.true;
+          expect(funcSpy.notCalled).toBeTruthy();
         });
         it('should return false', () => {
-          expect(handler.invokeCustomFilters(new TestException(), null)).to.be
-            .false;
+          expect(handler.invokeCustomFilters(new TestException(), null)).toBeFalsy();
         });
       });
     });

@@ -1,7 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context';
@@ -56,7 +55,7 @@ describe('ExternalContextCreator', () => {
         'getContextModuleKey',
       );
       contextCreator.create({ foo: 'bar' }, callback as any, '', '', null);
-      expect(getContextModuleKeySpy.called).to.be.true;
+      expect(getContextModuleKeySpy.called).toBeTruthy();
       done();
     });
     describe('returns proxy function', () => {
@@ -74,7 +73,7 @@ describe('ExternalContextCreator', () => {
         );
       });
       it('should be a function', () => {
-        expect(proxyContext).to.be.a('function');
+        expect(typeof proxyContext).toBe('function');
       });
       describe('when proxy function called', () => {
         describe('when can not activate', () => {
@@ -88,7 +87,7 @@ describe('ExternalContextCreator', () => {
             } catch (e) {
               err = e;
             }
-            expect(err).to.be.instanceOf(ForbiddenException);
+            expect(err).toBeInstanceOf(ForbiddenException);
           });
         });
         describe('when can activate', () => {
@@ -99,7 +98,7 @@ describe('ExternalContextCreator', () => {
               .callsFake(async () => true);
 
             await proxyContext(...args);
-            expect(applySpy.called).to.be.true;
+            expect(applySpy.called).toBeTruthy();
           });
         });
       });
@@ -108,7 +107,7 @@ describe('ExternalContextCreator', () => {
   describe('getContextModuleKey', () => {
     describe('when constructor is undefined', () => {
       it('should return empty string', () => {
-        expect(contextCreator.getContextModuleKey(undefined)).to.be.eql('');
+        expect(contextCreator.getContextModuleKey(undefined)).toEqual('');
       });
     });
     describe('when module reference provider exists', () => {
@@ -124,12 +123,12 @@ describe('ExternalContextCreator', () => {
 
         expect(
           contextCreator.getContextModuleKey({ randomObject: true } as any),
-        ).to.be.eql(moduleKey);
+        ).toEqual(moduleKey);
       });
     });
     describe('when provider does not exists', () => {
       it('should return empty string', () => {
-        expect(contextCreator.getContextModuleKey({} as any)).to.be.eql('');
+        expect(contextCreator.getContextModuleKey({} as any)).toEqual('');
       });
     });
   });
@@ -156,8 +155,8 @@ describe('ExternalContextCreator', () => {
         { index: 2, type: RouteParamtypes.BODY, data: 'test' },
         { index: 3, type: `key${CUSTOM_ROUTE_AGRS_METADATA}`, data: 'custom' },
       ];
-      expect(values[0]).to.deep.include(expectedValues[0]);
-      expect(values[1]).to.deep.include(expectedValues[1]);
+      expect(values[0]).toEqual(expect.objectContaining(expectedValues[0]));
+      expect(values[1]).toEqual(expect.objectContaining(expectedValues[1]));
     });
   });
   describe('getParamValue', () => {
@@ -175,14 +174,14 @@ describe('ExternalContextCreator', () => {
         { metatype, type: RouteParamtypes.NEXT, data: null },
         transforms,
       );
-      expect(consumerApplySpy.called).to.be.true;
+      expect(consumerApplySpy.called).toBeTruthy();
     });
   });
   describe('createPipesFn', () => {
     describe('when "paramsOptions" is empty', () => {
       it('returns null', async () => {
         const pipesFn = contextCreator.createPipesFn([], []);
-        expect(pipesFn).to.be.null;
+        expect(pipesFn).toBeNull();
       });
     });
     describe('when "paramsOptions" is not empty', () => {
@@ -200,7 +199,7 @@ describe('ExternalContextCreator', () => {
           ],
         );
         await pipesFn([]);
-        expect(pipesFn).to.be.a('function');
+        expect(typeof pipesFn).toBe('function');
       });
     });
   });
@@ -212,14 +211,14 @@ describe('ExternalContextCreator', () => {
           const value = 100;
           expect(
             await contextCreator.transformToResult(Promise.resolve(value)),
-          ).to.be.eq(100);
+          ).toEqual(100);
         });
       });
 
       describe('is Observable', () => {
         it('should return Promise', async () => {
           const value = 100;
-          expect(await contextCreator.transformToResult(of(value))).to.be.eq(
+          expect(await contextCreator.transformToResult(of(value))).toEqual(
             100,
           );
         });
@@ -228,7 +227,7 @@ describe('ExternalContextCreator', () => {
       describe('is value', () => {
         it('should return Promise', async () => {
           const value = 100;
-          expect(await contextCreator.transformToResult(value)).to.be.eq(100);
+          expect(await contextCreator.transformToResult(value)).toEqual(100);
         });
       });
     });

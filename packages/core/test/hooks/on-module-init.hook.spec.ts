@@ -1,5 +1,4 @@
 import { OnModuleInit } from '@nestjs/common';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { callModuleInitHook } from '../../hooks/on-module-init.hook';
 import { NestContainer } from '../../injector/container';
@@ -41,7 +40,7 @@ describe('OnModuleInit', () => {
       const hookSpy = sinon.spy(sampleProvider, 'onModuleInit');
       await callModuleInitHook(moduleRef);
 
-      expect(hookSpy.called).to.be.true;
+      expect(hookSpy.called).toBeTruthy();
     });
   });
 });

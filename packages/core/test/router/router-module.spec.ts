@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { ModulesContainer, NestContainer } from '../../injector';
 import { Module } from '../../injector/module';
 import { Routes } from '../../router/interfaces';
@@ -15,7 +14,7 @@ describe('RouterModule', () => {
 
   describe('register', () => {
     it('should return a dynamic module with routes registered as a provider', () => {
-      expect(RouterModule.register(routes)).to.deep.equal({
+      expect(RouterModule.register(routes)).toEqual({
         module: RouterModule,
         providers: [
           {
@@ -44,7 +43,7 @@ describe('RouterModule', () => {
         },
       ]);
 
-      expect(targetModulesByContainer.get(container).has(moduleRef)).to.be.true;
+      expect(targetModulesByContainer.get(container).has(moduleRef)).toBeTruthy();
     });
   });
 });

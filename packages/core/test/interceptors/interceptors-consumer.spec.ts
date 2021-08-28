@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { lastValueFrom, of } from 'rxjs';
 import * as sinon from 'sinon';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
@@ -27,7 +26,7 @@ describe('InterceptorsConsumer', () => {
       });
       it('should call next()', async () => {
         await consumer.intercept([], null, { constructor: null }, null, next);
-        expect(next.calledOnce).to.be.true;
+        expect(next.calledOnce).toBeTruthy();
       });
     });
     describe('when interceptors array is not empty', () => {
@@ -44,8 +43,8 @@ describe('InterceptorsConsumer', () => {
           next,
         );
 
-        expect(interceptors[0].intercept.calledOnce).to.be.true;
-        expect(interceptors[1].intercept.calledOnce).to.be.true;
+        expect(interceptors[0].intercept.calledOnce).toBeTruthy();
+        expect(interceptors[1].intercept.calledOnce).toBeTruthy();
       });
       it('should not call `next` (lazy evaluation)', async () => {
         await consumer.intercept(
@@ -55,7 +54,7 @@ describe('InterceptorsConsumer', () => {
           null,
           next,
         );
-        expect(next.called).to.be.false;
+        expect(next.called).toBeFalsy();
       });
       it('should call `next` when subscribe', async () => {
         async function transformToResult(resultOrDeferred: any) {
@@ -75,7 +74,7 @@ describe('InterceptorsConsumer', () => {
           next,
         );
         await transformToResult(intercepted);
-        expect(next.called).to.be.true;
+        expect(next.called).toBeTruthy();
       });
     });
   });
@@ -85,8 +84,8 @@ describe('InterceptorsConsumer', () => {
       const callback = () => null;
       const context = consumer.createContext([], instance, callback);
 
-      expect(context.getClass()).to.be.eql(instance.constructor);
-      expect(context.getHandler()).to.be.eql(callback);
+      expect(context.getClass()).toEqual(instance.constructor);
+      expect(context.getHandler()).toEqual(callback);
     });
   });
   describe('transformDeffered', () => {
@@ -94,7 +93,7 @@ describe('InterceptorsConsumer', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = async () => val;
-        expect(await lastValueFrom(consumer.transformDeffered(next))).to.be.eql(
+        expect(await lastValueFrom(consumer.transformDeffered(next))).toEqual(
           val,
         );
       });
@@ -103,7 +102,7 @@ describe('InterceptorsConsumer', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = async () => val;
-        expect(await lastValueFrom(consumer.transformDeffered(next))).to.be.eql(
+        expect(await lastValueFrom(consumer.transformDeffered(next))).toEqual(
           val,
         );
       });
@@ -114,7 +113,7 @@ describe('InterceptorsConsumer', () => {
         const next = async () => of(val);
         expect(
           await await lastValueFrom(consumer.transformDeffered(next) as any),
-        ).to.be.eql(val);
+        ).toEqual(val);
       });
     });
   });

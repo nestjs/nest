@@ -1,6 +1,5 @@
 import { VERSION_NEUTRAL } from '@nestjs/common';
 import { VersionValue } from '@nestjs/common/interfaces';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import {
@@ -85,17 +84,17 @@ describe('RouterExplorer', () => {
     it('should method return expected list of route paths', () => {
       const paths = routerBuilder.scanForPaths(new TestRoute());
 
-      expect(paths).to.have.length(4);
+      expect(paths.length).toBe(4);
 
-      expect(paths[0].path).to.eql(['/test']);
-      expect(paths[1].path).to.eql(['/test']);
-      expect(paths[2].path).to.eql(['/another-test']);
-      expect(paths[3].path).to.eql(['/foo', '/bar']);
+      expect(paths[0].path).toEqual(['/test']);
+      expect(paths[1].path).toEqual(['/test']);
+      expect(paths[2].path).toEqual(['/another-test']);
+      expect(paths[3].path).toEqual(['/foo', '/bar']);
 
-      expect(paths[0].requestMethod).to.eql(RequestMethod.GET);
-      expect(paths[1].requestMethod).to.eql(RequestMethod.POST);
-      expect(paths[2].requestMethod).to.eql(RequestMethod.ALL);
-      expect(paths[3].requestMethod).to.eql(RequestMethod.GET);
+      expect(paths[0].requestMethod).toEqual(RequestMethod.GET);
+      expect(paths[1].requestMethod).toEqual(RequestMethod.POST);
+      expect(paths[2].requestMethod).toEqual(RequestMethod.ALL);
+      expect(paths[3].requestMethod).toEqual(RequestMethod.GET);
     });
 
     it('should method return expected list of route paths alias', () => {
@@ -103,15 +102,15 @@ describe('RouterExplorer', () => {
 
       expect(paths).to.have.length(4);
 
-      expect(paths[0].path).to.eql(['/test']);
-      expect(paths[1].path).to.eql(['/test']);
-      expect(paths[2].path).to.eql(['/another-test']);
-      expect(paths[3].path).to.eql(['/foo', '/bar']);
+      expect(paths[0].path).toEqual(['/test']);
+      expect(paths[1].path).toEqual(['/test']);
+      expect(paths[2].path).toEqual(['/another-test']);
+      expect(paths[3].path).toEqual(['/foo', '/bar']);
 
-      expect(paths[0].requestMethod).to.eql(RequestMethod.GET);
-      expect(paths[1].requestMethod).to.eql(RequestMethod.POST);
-      expect(paths[2].requestMethod).to.eql(RequestMethod.ALL);
-      expect(paths[3].requestMethod).to.eql(RequestMethod.GET);
+      expect(paths[0].requestMethod).toEqual(RequestMethod.GET);
+      expect(paths[1].requestMethod).toEqual(RequestMethod.POST);
+      expect(paths[2].requestMethod).toEqual(RequestMethod.ALL);
+      expect(paths[3].requestMethod).toEqual(RequestMethod.GET);
     });
   });
 
@@ -126,9 +125,9 @@ describe('RouterExplorer', () => {
         'getTest',
       );
 
-      expect(route.path).to.eql(['/test']);
-      expect(route.requestMethod).to.eql(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTest);
+      expect(route.path).toEqual(['/test']);
+      expect(route.requestMethod).toEqual(RequestMethod.GET);
+      expect(route.targetCallback).toEqual(instance.getTest);
     });
 
     it('should method return expected object which represent single route with alias', () => {
@@ -141,9 +140,9 @@ describe('RouterExplorer', () => {
         'getTest',
       );
 
-      expect(route.path).to.eql(['/test']);
-      expect(route.requestMethod).to.eql(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTest);
+      expect(route.path).toEqual(['/test']);
+      expect(route.requestMethod).toEqual(RequestMethod.GET);
+      expect(route.targetCallback).toEqual(instance.getTest);
     });
 
     it('should method return expected object which represent multiple routes', () => {
@@ -156,9 +155,9 @@ describe('RouterExplorer', () => {
         'getTestUsingArray',
       );
 
-      expect(route.path).to.eql(['/foo', '/bar']);
-      expect(route.requestMethod).to.eql(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTestUsingArray);
+      expect(route.path).toEqual(['/foo', '/bar']);
+      expect(route.requestMethod).toEqual(RequestMethod.GET);
+      expect(route.targetCallback).toEqual(instance.getTestUsingArray);
     });
 
     it('should method return expected object which represent multiple routes with alias', () => {
@@ -171,9 +170,9 @@ describe('RouterExplorer', () => {
         'getTestUsingArray',
       );
 
-      expect(route.path).to.eql(['/foo', '/bar']);
-      expect(route.requestMethod).to.eql(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTestUsingArray);
+      expect(route.path).toEqual(['/foo', '/bar']);
+      expect(route.requestMethod).toEqual(RequestMethod.GET);
+      expect(route.targetCallback).toEqual(instance.getTestUsingArray);
     });
 
     describe('when new implementation is injected into router', () => {
@@ -190,9 +189,9 @@ describe('RouterExplorer', () => {
           'getTest',
         );
 
-        expect(route.targetCallback).to.eq(newImpl);
-        expect(route.path).to.eql(['/test']);
-        expect(route.requestMethod).to.eql(RequestMethod.GET);
+        expect(route.targetCallback).toEqual(newImpl);
+        expect(route.path).toEqual(['/test']);
+        expect(route.requestMethod).toEqual(RequestMethod.GET);
       });
 
       it('should method return changed impl of single route which alias applied', () => {
@@ -208,9 +207,9 @@ describe('RouterExplorer', () => {
           'getTest',
         );
 
-        expect(route.targetCallback).to.eq(newImpl);
-        expect(route.path).to.eql(['/test']);
-        expect(route.requestMethod).to.eql(RequestMethod.GET);
+        expect(route.targetCallback).toEqual(newImpl);
+        expect(route.path).toEqual(['/test']);
+        expect(route.requestMethod).toEqual(RequestMethod.GET);
       });
 
       it('should method return changed impl of multiple routes', () => {
@@ -226,9 +225,9 @@ describe('RouterExplorer', () => {
           'getTestUsingArray',
         );
 
-        expect(route.targetCallback).to.eq(newImpl);
-        expect(route.path).to.eql(['/foo', '/bar']);
-        expect(route.requestMethod).to.eql(RequestMethod.GET);
+        expect(route.targetCallback).toEqual(newImpl);
+        expect(route.path).toEqual(['/foo', '/bar']);
+        expect(route.requestMethod).toEqual(RequestMethod.GET);
       });
 
       it('should method return changed impl of multiple routes which alias applied', () => {
@@ -244,9 +243,9 @@ describe('RouterExplorer', () => {
           'getTestUsingArray',
         );
 
-        expect(route.targetCallback).to.eq(newImpl);
-        expect(route.path).to.eql(['/foo', '/bar']);
-        expect(route.requestMethod).to.eql(RequestMethod.GET);
+        expect(route.targetCallback).toEqual(newImpl);
+        expect(route.path).toEqual(['/foo', '/bar']);
+        expect(route.requestMethod).toEqual(RequestMethod.GET);
       });
     });
   });
@@ -272,8 +271,8 @@ describe('RouterExplorer', () => {
         '',
       );
 
-      expect(bindStub.calledWith(null, paths[0], null)).to.be.true;
-      expect(bindStub.callCount).to.be.eql(paths.length);
+      expect(bindStub.calledWith(null, paths[0], null)).toBeTruthy();
+      expect(bindStub.callCount).toEqual(paths.length);
     });
 
     it('should method return expected object which represents a single versioned route', () => {
@@ -301,18 +300,18 @@ describe('RouterExplorer', () => {
 
       expect(
         bindStub.calledWith(null, paths[0], null, '', routePathMetadata, '1'),
-      ).to.be.true;
-      expect(bindStub.callCount).to.be.eql(paths.length);
+      ).toBeTruthy();
+      expect(bindStub.callCount).toEqual(paths.length);
     });
   });
 
   describe('extractRouterPath', () => {
     it('should return expected path', () => {
-      expect(routerBuilder.extractRouterPath(TestRoute)).to.be.eql(['/global']);
+      expect(routerBuilder.extractRouterPath(TestRoute)).toEqual(['/global']);
     });
 
     it('should return expected path with alias', () => {
-      expect(routerBuilder.extractRouterPath(TestRouteAlias)).to.be.eql([
+      expect(routerBuilder.extractRouterPath(TestRouteAlias)).toEqual([
         '/global',
         '/global-alias',
       ]);
@@ -355,9 +354,9 @@ describe('RouterExplorer', () => {
         );
         await handler(null, null, null);
 
-        expect(nextSpy.called).to.be.true;
-        expect(nextSpy.getCall(0).args[0]).to.be.instanceOf(Error);
-        expect(nextSpy.getCall(0).args[1]).to.be.instanceOf(
+        expect(nextSpy.called).toBeTruthy();
+        expect(nextSpy.getCall(0).args[0]).toBeInstanceOf(Error);
+        expect(nextSpy.getCall(0).args[1]).toBeInstanceOf(
           ExecutionContextHost,
         );
       });
@@ -389,7 +388,7 @@ describe('RouterExplorer', () => {
 
         versionFilter(req, res, next);
 
-        expect(handler.calledWith(req, res, next)).to.be.true;
+        expect(handler.calledWith(req, res, next)).toBeTruthy();
       });
     });
 
@@ -416,7 +415,7 @@ describe('RouterExplorer', () => {
         const next = sinon.stub();
 
         versionFilter(req, res, next);
-        expect(handler.calledWith(req, res, next)).to.be.true;
+        expect(handler.calledWith(req, res, next)).toBeTruthy();
       });
     });
 
@@ -445,7 +444,7 @@ describe('RouterExplorer', () => {
 
         versionFilter(req, res, next);
 
-        expect(next.called).to.be.true;
+        expect(next.called).toBeTruthy();
       });
 
       it('should return next if there is no version in the Media Type header', () => {
@@ -472,7 +471,7 @@ describe('RouterExplorer', () => {
 
         versionFilter(req, res, next);
 
-        expect(next.called).to.be.true;
+        expect(next.called).toBeTruthy();
       });
 
       describe('when the handler version is an array', () => {
@@ -500,7 +499,7 @@ describe('RouterExplorer', () => {
 
           versionFilter(req, res, next);
 
-          expect(next.called).to.be.true;
+          expect(next.called).toBeTruthy();
         });
 
         it('should return the handler if the version in the Media Type header matches the handler version', () => {
@@ -527,7 +526,7 @@ describe('RouterExplorer', () => {
 
           versionFilter(req, res, next);
 
-          expect(handler.calledWith(req, res, next)).to.be.true;
+          expect(handler.calledWith(req, res, next)).toBeTruthy();
         });
       });
 
@@ -556,7 +555,7 @@ describe('RouterExplorer', () => {
 
           versionFilter(req, res, next);
 
-          expect(next.called).to.be.true;
+          expect(next.called).toBeTruthy();
         });
 
         it('should return the handler if the version in the Media Type header matches the handler version', () => {
@@ -583,7 +582,7 @@ describe('RouterExplorer', () => {
 
           versionFilter(req, res, next);
 
-          expect(handler.calledWith(req, res, next)).to.be.true;
+          expect(handler.calledWith(req, res, next)).toBeTruthy();
         });
       });
     });
@@ -613,7 +612,7 @@ describe('RouterExplorer', () => {
 
         versionFilter(req, res, next);
 
-        expect(next.called).to.be.true;
+        expect(next.called).toBeTruthy();
       });
 
       it('should return next if there is no version in the Custom Header', () => {
@@ -640,7 +639,7 @@ describe('RouterExplorer', () => {
 
         versionFilter(req, res, next);
 
-        expect(next.called).to.be.true;
+        expect(next.called).toBeTruthy();
       });
 
       describe('when the handler version is an array', () => {
@@ -668,7 +667,7 @@ describe('RouterExplorer', () => {
 
           versionFilter(req, res, next);
 
-          expect(next.called).to.be.true;
+          expect(next.called).toBeTruthy();
         });
 
         it('should return the handler if the version in the Custom Header matches the handler version', () => {
@@ -695,7 +694,7 @@ describe('RouterExplorer', () => {
 
           versionFilter(req, res, next);
 
-          expect(handler.calledWith(req, res, next)).to.be.true;
+          expect(handler.calledWith(req, res, next)).toBeTruthy();
         });
       });
 
@@ -724,7 +723,7 @@ describe('RouterExplorer', () => {
 
           versionFilter(req, res, next);
 
-          expect(next.called).to.be.true;
+          expect(next.called).toBeTruthy();
         });
 
         it('should return the handler if the version in the Custom Header matches the handler version', () => {
@@ -751,7 +750,7 @@ describe('RouterExplorer', () => {
 
           versionFilter(req, res, next);
 
-          expect(handler.calledWith(req, res, next)).to.be.true;
+          expect(handler.calledWith(req, res, next)).toBeTruthy();
         });
       });
     });
@@ -778,7 +777,7 @@ describe('RouterExplorer', () => {
         const res = {};
         const next = null;
 
-        expect(() => versionFilter(req, res, next)).to.throw(
+        expect(() => versionFilter(req, res, next)).toThrow(
           'HTTP adapter does not support filtering on version',
         );
       });
@@ -806,7 +805,7 @@ describe('RouterExplorer', () => {
 
         versionFilter(req, res, next);
 
-        expect(next.called).to.be.true;
+        expect(next.called).toBeTruthy();
       });
     });
   });

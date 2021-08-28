@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { PipesConsumer } from '../../pipes/pipes-consumer';
@@ -30,7 +29,7 @@ describe('PipesConsumer', () => {
             (prev, next) => prev && next.transform.called,
             true,
           ),
-        ).to.be.true;
+        ).toBeTruthy();
         done();
       });
     });
@@ -39,7 +38,7 @@ describe('PipesConsumer', () => {
       consumer
         .apply(value, { metatype, type, data }, transforms)
         .then(result => {
-          expect(result).to.be.eql(expectedResult);
+          expect(result).toEqual(expectedResult);
           done();
         });
     });

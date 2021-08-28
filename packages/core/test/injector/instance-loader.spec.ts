@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Injectable } from '../../../common';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
@@ -60,10 +59,10 @@ describe('InstanceLoader', () => {
     await loader.createInstancesOfDependencies();
     expect(
       loadProviderPrototypeStub.calledWith(providerWrapper, module.providers),
-    ).to.be.true;
+    ).toBeTruthy();
     expect(
       loadProviderPrototypeStub.calledWith(routeWrapper, module.controllers),
-    ).to.be.true;
+    ).toBeTruthy();
   });
 
   it('should call "loadProvider" for each provider in each module', async () => {
@@ -97,7 +96,7 @@ describe('InstanceLoader', () => {
         module.providers.get('TestProvider'),
         module as any,
       ),
-    ).to.be.true;
+    ).toBeTruthy();
   });
 
   it('should call "loadController" for each route in each module', async () => {
@@ -131,7 +130,7 @@ describe('InstanceLoader', () => {
         module.controllers.get('TestRoute'),
         module as any,
       ),
-    ).to.be.true;
+    ).toBeTruthy();
   });
 
   it('should call "loadInjectable" for each injectable in each module', async () => {
@@ -165,6 +164,6 @@ describe('InstanceLoader', () => {
         module.injectables.get('TestProvider'),
         module as any,
       ),
-    ).to.be.true;
+    ).toBeTruthy();
   });
 });

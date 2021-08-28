@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ApplicationConfig } from '../../application-config';
 import { NestContainer } from '../../injector/container';
@@ -20,15 +19,15 @@ describe('PipesContextCreator', () => {
   describe('createConcreteContext', () => {
     describe('when metadata is empty or undefined', () => {
       it('should return empty array', () => {
-        expect(creator.createConcreteContext(undefined)).to.be.deep.equal([]);
-        expect(creator.createConcreteContext([])).to.be.deep.equal([]);
+        expect(creator.createConcreteContext(undefined)).toEqual([]);
+        expect(creator.createConcreteContext([])).toEqual([]);
       });
     });
     describe('when metadata is not empty or undefined', () => {
       const metadata = [null, {}, { transform: () => ({}) }];
       it('should return expected array', () => {
         const transforms = creator.createConcreteContext(metadata as any);
-        expect(transforms).to.have.length(1);
+        expect(transforms.length).toBe(1);
       });
     });
   });
@@ -36,7 +35,7 @@ describe('PipesContextCreator', () => {
     describe('when param is an object', () => {
       it('should return instance', () => {
         const instance = { transform: () => null };
-        expect(creator.getPipeInstance(instance)).to.be.eql(instance);
+        expect(creator.getPipeInstance(instance)).toEqual(instance);
       });
     });
     describe('when param is a constructor', () => {
@@ -46,11 +45,11 @@ describe('PipesContextCreator', () => {
           getInstanceByContextId: () => wrapper,
         } as any;
         sinon.stub(creator, 'getInstanceByMetatype').callsFake(() => wrapper);
-        expect(creator.getPipeInstance(Pipe)).to.be.eql(wrapper.instance);
+        expect(creator.getPipeInstance(Pipe)).toEqual(wrapper.instance);
       });
       it('should return null', () => {
         sinon.stub(creator, 'getInstanceByMetatype').callsFake(() => null);
-        expect(creator.getPipeInstance(Pipe)).to.be.eql(null);
+        expect(creator.getPipeInstance(Pipe)).toEqual(null);
       });
     });
   });
@@ -59,7 +58,7 @@ describe('PipesContextCreator', () => {
     describe('when "moduleContext" is nil', () => {
       it('should return undefined', () => {
         (creator as any).moduleContext = undefined;
-        expect(creator.getInstanceByMetatype(null)).to.be.undefined;
+        expect(creator.getInstanceByMetatype(null)).toBeUndefined();
       });
     });
     describe('when "moduleContext" is not nil', () => {
@@ -70,7 +69,7 @@ describe('PipesContextCreator', () => {
       describe('and when module exists', () => {
         it('should return undefined', () => {
           sinon.stub(container.getModules(), 'get').callsFake(() => undefined);
-          expect(creator.getInstanceByMetatype(null)).to.be.undefined;
+          expect(creator.getInstanceByMetatype(null)).toBeUndefined();
         });
       });
 
@@ -81,7 +80,7 @@ describe('PipesContextCreator', () => {
           sinon
             .stub(container.getModules(), 'get')
             .callsFake(() => module as any);
-          expect(creator.getInstanceByMetatype(class Test {})).to.be.eql(
+          expect(creator.getInstanceByMetatype(class Test {})).toEqual(
             instance,
           );
         });
@@ -93,7 +92,7 @@ describe('PipesContextCreator', () => {
     describe('when contextId is static and inquirerId is nil', () => {
       it('should return global pipes', () => {
         const expectedResult = applicationConfig.getGlobalPipes();
-        expect(creator.getGlobalMetadata()).to.be.equal(expectedResult);
+        expect(creator.getGlobalMetadata()).toEqual(expectedResult);
       });
     });
     describe('otherwise', () => {
@@ -113,9 +112,8 @@ describe('PipesContextCreator', () => {
           .stub(instanceWrapper, 'getInstanceByContextId')
           .callsFake(() => ({ instance } as any));
 
-        expect(creator.getGlobalMetadata({ id: 3 })).to.contains(
-          instance,
-          ...globalPipes,
+        expect(creator.getGlobalMetadata({ id: 3 })).toEqual(
+          expect.arrayContaining([instance, ...globalPipes]),
         );
       });
     });

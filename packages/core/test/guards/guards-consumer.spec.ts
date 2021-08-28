@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { of } from 'rxjs';
 import { GuardsConsumer } from '../../guards/guards-consumer';
 
@@ -18,7 +17,7 @@ describe('GuardsConsumer', () => {
           { constructor: null },
           null,
         );
-        expect(canActivate).to.be.true;
+        expect(canActivate).toBeTruthy();
       });
     });
     describe('when guards array is not empty', () => {
@@ -30,7 +29,7 @@ describe('GuardsConsumer', () => {
             { constructor: null },
             null,
           );
-          expect(canActivate).to.be.false;
+          expect(canActivate).toBeFalsy();
         });
       });
       describe('when each guard returns true', () => {
@@ -41,7 +40,7 @@ describe('GuardsConsumer', () => {
             { constructor: null },
             null,
           );
-          expect(canActivate).to.be.true;
+          expect(canActivate).toBeTruthy();
         });
       });
     });
@@ -49,12 +48,12 @@ describe('GuardsConsumer', () => {
   describe('pickResult', () => {
     describe('when result is Observable', () => {
       it('should return result', async () => {
-        expect(await consumer.pickResult(of(true))).to.be.true;
+        expect(await consumer.pickResult(of(true))).toBeTruthy();
       });
     });
     describe('when result is Promise', () => {
       it('should await promise', async () => {
-        expect(await consumer.pickResult(Promise.resolve(true))).to.be.true;
+        expect(await consumer.pickResult(Promise.resolve(true))).toBeTruthy();
       });
     });
   });

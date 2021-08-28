@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Injectable } from '../../../common';
 import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
@@ -38,9 +37,8 @@ describe('MiddlewareResolver', () => {
     mockContainer.expects('getMiddlewareCollection').returns(middleware);
     resolver.resolveInstances(module, null);
 
-    expect(loadMiddleware.callCount).to.be.equal(middleware.size);
-    expect(loadMiddleware.calledWith(wrapper as any, middleware, module)).to.be
-      .true;
+    expect(loadMiddleware.callCount).toEqual(middleware.size);
+    expect(loadMiddleware.calledWith(wrapper as any, middleware, module)).toBeTruthy();
 
     loadMiddleware.restore();
   });

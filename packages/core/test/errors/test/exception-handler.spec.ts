@@ -1,5 +1,4 @@
 import * as sinon from 'sinon';
-import { expect } from 'chai';
 import { ExceptionHandler } from '../../../errors/exception-handler';
 import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
 import { InvalidMiddlewareException } from '../../../errors/exceptions/invalid-middleware.exception';
@@ -22,13 +21,12 @@ describe('ExceptionHandler', () => {
     it('when exception is instanceof RuntimeException', () => {
       const exception = new RuntimeException('msg');
       instance.handle(exception);
-      expect(errorSpy.calledWith(exception.message, exception.stack)).to.be
-        .true;
+      expect(errorSpy.calledWith(exception.message, exception.stack)).toBeTruthy();
     });
     it('when exception is not instanceof RuntimeException', () => {
       const exception = new InvalidMiddlewareException('msg');
       instance.handle(exception);
-      expect(errorSpy.calledWith(exception.what(), exception.stack)).to.be.true;
+      expect(errorSpy.calledWith(exception.what(), exception.stack)).toBeTruthy();
     });
   });
 });

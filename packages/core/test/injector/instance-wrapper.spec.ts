@@ -1,5 +1,4 @@
 import { Scope } from '@nestjs/common';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { STATIC_CONTEXT } from '../../injector/constants';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
@@ -17,16 +16,16 @@ describe('InstanceWrapper', () => {
     it('should assign partial', () => {
       const instance = new InstanceWrapper(partial);
 
-      expect(instance.name).to.be.eql(partial.name);
-      expect(instance.scope).to.be.eql(partial.scope);
-      expect(instance.metatype).to.be.eql(partial.metatype);
+      expect(instance.name).toEqual(partial.name);
+      expect(instance.scope).toEqual(partial.scope);
+      expect(instance.metatype).toEqual(partial.metatype);
     });
     it('should set instance by context id', () => {
       const instance = new InstanceWrapper(partial);
 
       expect(
         instance.getInstanceByContextId(STATIC_CONTEXT).instance,
-      ).to.be.eql(partial.instance);
+      ).toEqual(partial.instance);
     });
   });
 
@@ -36,7 +35,7 @@ describe('InstanceWrapper', () => {
         const wrapper = new InstanceWrapper({
           scope: Scope.REQUEST,
         });
-        expect(wrapper.isDependencyTreeStatic()).to.be.false;
+        expect(wrapper.isDependencyTreeStatic()).toBeFalsy();
       });
     });
     describe('when statically scoped', () => {
@@ -45,7 +44,7 @@ describe('InstanceWrapper', () => {
           it('should return true', () => {
             const wrapper = new InstanceWrapper();
             wrapper.addCtorMetadata(0, new InstanceWrapper());
-            expect(wrapper.isDependencyTreeStatic()).to.be.true;
+            expect(wrapper.isDependencyTreeStatic()).toBeTruthy();
           });
         });
         describe('when one is not static', () => {
@@ -58,7 +57,7 @@ describe('InstanceWrapper', () => {
                 scope: Scope.REQUEST,
               }),
             );
-            expect(wrapper.isDependencyTreeStatic()).to.be.false;
+            expect(wrapper.isDependencyTreeStatic()).toBeFalsy();
           });
         });
       });
@@ -68,7 +67,7 @@ describe('InstanceWrapper', () => {
             const wrapper = new InstanceWrapper();
             wrapper.addPropertiesMetadata('key1', new InstanceWrapper());
             wrapper.addPropertiesMetadata('key2', new InstanceWrapper());
-            expect(wrapper.isDependencyTreeStatic()).to.be.true;
+            expect(wrapper.isDependencyTreeStatic()).toBeTruthy();
           });
         });
         describe('when one is not static', () => {
@@ -79,7 +78,7 @@ describe('InstanceWrapper', () => {
               new InstanceWrapper({ scope: Scope.REQUEST }),
             );
             wrapper.addPropertiesMetadata('key2', new InstanceWrapper());
-            expect(wrapper.isDependencyTreeStatic()).to.be.false;
+            expect(wrapper.isDependencyTreeStatic()).toBeFalsy();
           });
         });
       });
@@ -89,7 +88,7 @@ describe('InstanceWrapper', () => {
             const wrapper = new InstanceWrapper();
             wrapper.addEnhancerMetadata(new InstanceWrapper());
             wrapper.addEnhancerMetadata(new InstanceWrapper());
-            expect(wrapper.isDependencyTreeStatic()).to.be.true;
+            expect(wrapper.isDependencyTreeStatic()).toBeTruthy();
           });
         });
         describe('when one is not static', () => {
@@ -99,7 +98,7 @@ describe('InstanceWrapper', () => {
               new InstanceWrapper({ scope: Scope.REQUEST }),
             );
             wrapper.addEnhancerMetadata(new InstanceWrapper());
-            expect(wrapper.isDependencyTreeStatic()).to.be.false;
+            expect(wrapper.isDependencyTreeStatic()).toBeFalsy();
           });
         });
       });
@@ -110,13 +109,13 @@ describe('InstanceWrapper', () => {
     describe('when metatype is nil', () => {
       it('should return true', () => {
         const instance = new InstanceWrapper({ metatype: null });
-        expect(instance.isNotMetatype).to.be.true;
+        expect(instance.isNotMetatype).toBeTruthy();
       });
     });
     describe('when metatype is not nil', () => {
       it('should return false', () => {
         const instance = new InstanceWrapper({ metatype: TestClass });
-        expect(instance.isNotMetatype).to.be.false;
+        expect(instance.isNotMetatype).toBeFalsy();
       });
     });
   });
@@ -126,7 +125,7 @@ describe('InstanceWrapper', () => {
       const instance = new InstanceWrapper();
       const enhancers = [new InstanceWrapper()];
       instance.addEnhancerMetadata(enhancers[0]);
-      expect(instance.getEnhancersMetadata()).to.be.eql(enhancers);
+      expect(instance.getEnhancersMetadata()).toEqual(enhancers);
     });
   });
 
@@ -136,7 +135,7 @@ describe('InstanceWrapper', () => {
       const wrapper = new InstanceWrapper();
       wrapper.instance = instance;
 
-      expect(wrapper.getInstanceByContextId(STATIC_CONTEXT).instance).to.be.eql(
+      expect(wrapper.getInstanceByContextId(STATIC_CONTEXT).instance).toEqual(
         instance,
       );
     });
@@ -148,7 +147,7 @@ describe('InstanceWrapper', () => {
         const instance = { test: true };
         const wrapper = new InstanceWrapper({ instance });
 
-        expect(wrapper.cloneStaticInstance({ id: 0 }).instance).to.be.eql(
+        expect(wrapper.cloneStaticInstance({ id: 0 }).instance).toEqual(
           instance,
         );
       });
@@ -158,7 +157,7 @@ describe('InstanceWrapper', () => {
         const instance = { test: true };
         const wrapper = new InstanceWrapper({ instance, scope: Scope.REQUEST });
 
-        expect(wrapper.cloneStaticInstance({ id: 0 }).instance).to.be.undefined;
+        expect(wrapper.cloneStaticInstance({ id: 0 }).instance).toBeUndefined();
       });
     });
   });
@@ -174,7 +173,7 @@ describe('InstanceWrapper', () => {
           'getInstanceByInquirerId',
         );
         wrapper.getInstanceByContextId(STATIC_CONTEXT, 'inquirerId');
-        expect(getInstanceByInquirerIdSpy.called).to.be.true;
+        expect(getInstanceByInquirerIdSpy.called).toBeTruthy();
       });
     });
   });
@@ -194,7 +193,7 @@ describe('InstanceWrapper', () => {
           { instance: {} },
           'inquirerId',
         );
-        expect(setInstanceByInquirerIdSpy.called).to.be.true;
+        expect(setInstanceByInquirerIdSpy.called).toBeTruthy();
       });
     });
   });
@@ -205,7 +204,7 @@ describe('InstanceWrapper', () => {
         const wrapper = new InstanceWrapper({
           scope: Scope.REQUEST,
         });
-        expect(wrapper.isInRequestScope({ id: 3 })).to.be.true;
+        expect(wrapper.isInRequestScope({ id: 3 })).toBeTruthy();
       });
     });
     describe('otherwise', () => {
@@ -213,12 +212,12 @@ describe('InstanceWrapper', () => {
         const wrapper = new InstanceWrapper({
           scope: Scope.TRANSIENT,
         });
-        expect(wrapper.isInRequestScope({ id: 3 })).to.be.false;
+        expect(wrapper.isInRequestScope({ id: 3 })).toBeFalsy();
 
         const wrapper2 = new InstanceWrapper({
           scope: Scope.REQUEST,
         });
-        expect(wrapper2.isInRequestScope(STATIC_CONTEXT)).to.be.false;
+        expect(wrapper2.isInRequestScope(STATIC_CONTEXT)).toBeFalsy();
       });
     });
   });
@@ -236,7 +235,7 @@ describe('InstanceWrapper', () => {
               scope: Scope.REQUEST,
             }),
           ),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('otherwise', () => {
@@ -244,8 +243,7 @@ describe('InstanceWrapper', () => {
         const wrapper = new InstanceWrapper({
           scope: Scope.TRANSIENT,
         });
-        expect(wrapper.isLazyTransient({ id: 3 }, new InstanceWrapper())).to.be
-          .false;
+        expect(wrapper.isLazyTransient({ id: 3 }, new InstanceWrapper())).toBeFalsy();
 
         const wrapper2 = new InstanceWrapper({
           scope: Scope.REQUEST,
@@ -257,7 +255,7 @@ describe('InstanceWrapper', () => {
               scope: Scope.TRANSIENT,
             }),
           ),
-        ).to.be.false;
+        ).toBeFalsy();
       });
     });
   });
@@ -275,7 +273,7 @@ describe('InstanceWrapper', () => {
               scope: Scope.DEFAULT,
             }),
           ),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('otherwise', () => {
@@ -283,7 +281,7 @@ describe('InstanceWrapper', () => {
         const wrapper = new InstanceWrapper({
           scope: Scope.REQUEST,
         });
-        expect(wrapper.isStatic({ id: 3 }, new InstanceWrapper())).to.be.false;
+        expect(wrapper.isStatic({ id: 3 }, new InstanceWrapper())).toBeFalsy();
 
         const wrapper2 = new InstanceWrapper({
           scope: Scope.TRANSIENT,
@@ -295,7 +293,7 @@ describe('InstanceWrapper', () => {
               scope: Scope.REQUEST,
             }),
           ),
-        ).to.be.false;
+        ).toBeFalsy();
       });
     });
   });
@@ -306,7 +304,7 @@ describe('InstanceWrapper', () => {
         const wrapper = new InstanceWrapper({
           scope: Scope.DEFAULT,
         });
-        expect(wrapper.getStaticTransientInstances()).to.be.eql([]);
+        expect(wrapper.getStaticTransientInstances()).toEqual([]);
       });
     });
     describe('when instance is transient', () => {
@@ -318,7 +316,7 @@ describe('InstanceWrapper', () => {
           instance: {},
         };
         wrapper.setInstanceByInquirerId(STATIC_CONTEXT, 'test', instanceHost);
-        expect(wrapper.getStaticTransientInstances()).to.be.eql([instanceHost]);
+        expect(wrapper.getStaticTransientInstances()).toEqual([instanceHost]);
       });
     });
   });

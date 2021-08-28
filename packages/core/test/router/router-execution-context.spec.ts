@@ -1,5 +1,4 @@
 import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
-import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { PassThrough } from 'stream';
@@ -84,8 +83,10 @@ describe('RouterExecutionContext', () => {
         const keys = Object.keys(metadata);
 
         contextCreator.create({ foo: 'bar' }, callback as any, '', '', 0);
-        expect(exchangeKeysForValuesSpy.called).to.be.true;
-        expect(exchangeKeysForValuesSpy.calledWith(keys, metadata)).to.be.true;
+        expect(exchangeKeysForValuesSpy.called).toBeTruthy();
+        expect(
+          exchangeKeysForValuesSpy.calledWith(keys, metadata),
+        ).toBeTruthy();
         done();
       });
       describe('returns proxy function', () => {
@@ -113,7 +114,7 @@ describe('RouterExecutionContext', () => {
           );
         });
         it('should be a function', () => {
-          expect(proxyContext).to.be.a('function');
+          expect(typeof proxyContext).toBe('function');
         });
         describe('when proxy function called', () => {
           let request;
@@ -135,8 +136,8 @@ describe('RouterExecutionContext', () => {
             tryActivateStub.callsFake(async () => true);
             proxyContext(request, response, next).then(() => {
               const args = [next, undefined, request.body.test];
-              expect(applySpy.called).to.be.true;
-              expect(applySpy.calledWith(instance, args)).to.be.true;
+              expect(applySpy.called).toBeTruthy();
+              expect(applySpy.calledWith(instance, args)).toBeTruthy();
               done();
             });
           });
@@ -149,9 +150,9 @@ describe('RouterExecutionContext', () => {
             } catch (e) {
               error = e;
             }
-            expect(error).to.be.instanceOf(ForbiddenException);
-            expect(error.message).to.be.eql('Forbidden resource');
-            expect(error.getResponse()).to.be.eql({
+            expect(error).toBeInstanceOf(ForbiddenException);
+            expect(error.message).toEqual('Forbidden resource');
+            expect(error.getResponse()).toEqual({
               statusCode: HttpStatus.FORBIDDEN,
               error: 'Forbidden',
               message: FORBIDDEN_MESSAGE,
@@ -159,17 +160,17 @@ describe('RouterExecutionContext', () => {
           });
           it('should apply expected context when "canActivateFn" apply', () => {
             proxyContext(request, response, next).then(() => {
-              expect(tryActivateStub.args[0][1][0]).to.equals(request);
-              expect(tryActivateStub.args[0][1][1]).to.equals(response);
-              expect(tryActivateStub.args[0][1][2]).to.equals(next);
+              expect(tryActivateStub.args[0][1][0]).toEqual(request);
+              expect(tryActivateStub.args[0][1][1]).toEqual(response);
+              expect(tryActivateStub.args[0][1][2]).toEqual(next);
             });
           });
           it('should apply expected context when "intercept" apply', () => {
             const interceptStub = sinon.stub(interceptorsConsumer, 'intercept');
             proxyContext(request, response, next).then(() => {
-              expect(interceptStub.args[0][1][0]).to.equals(request);
-              expect(interceptStub.args[0][1][1]).to.equals(response);
-              expect(interceptStub.args[0][1][2]).to.equals(next);
+              expect(interceptStub.args[0][1][0]).toEqual(request);
+              expect(interceptStub.args[0][1][1]).toEqual(response);
+              expect(interceptStub.args[0][1][2]).toEqual(next);
             });
           });
         });
@@ -195,8 +196,8 @@ describe('RouterExecutionContext', () => {
         { index: 2, type: RouteParamtypes.BODY, data: 'test' },
         { index: 3, type: `key${CUSTOM_ROUTE_AGRS_METADATA}`, data: 'custom' },
       ];
-      expect(values[0]).to.deep.include(expectedValues[0]);
-      expect(values[1]).to.deep.include(expectedValues[1]);
+      expect(values[0]).toEqual(expect.objectContaining(expectedValues[0]));
+      expect(values[1]).toEqual(expect.objectContaining(expectedValues[1]));
     });
   });
 
@@ -222,7 +223,7 @@ describe('RouterExecutionContext', () => {
             { metatype, type: RouteParamtypes.QUERY, data: null },
             transforms,
           ),
-        ).to.be.true;
+        ).toBeTruthy();
 
         contextCreator.getParamValue(
           value,
@@ -235,7 +236,7 @@ describe('RouterExecutionContext', () => {
             { metatype, type: RouteParamtypes.BODY, data: null },
             transforms,
           ),
-        ).to.be.true;
+        ).toBeTruthy();
 
         contextCreator.getParamValue(
           value,
@@ -248,7 +249,7 @@ describe('RouterExecutionContext', () => {
             { metatype, type: RouteParamtypes.PARAM, data: null },
             transforms,
           ),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
   });
@@ -256,15 +257,15 @@ describe('RouterExecutionContext', () => {
     describe('when paramtype is not query, body, param and custom', () => {
       it('should return false', () => {
         const result = contextCreator.isPipeable(RouteParamtypes.NEXT);
-        expect(result).to.be.false;
+        expect(result).toBeFalsy();
       });
       it('otherwise', () => {
-        expect(contextCreator.isPipeable(RouteParamtypes.BODY)).to.be.true;
-        expect(contextCreator.isPipeable(RouteParamtypes.QUERY)).to.be.true;
-        expect(contextCreator.isPipeable(RouteParamtypes.PARAM)).to.be.true;
-        expect(contextCreator.isPipeable(RouteParamtypes.FILE)).to.be.true;
-        expect(contextCreator.isPipeable(RouteParamtypes.FILES)).to.be.true;
-        expect(contextCreator.isPipeable('custom')).to.be.true;
+        expect(contextCreator.isPipeable(RouteParamtypes.BODY)).toBeTruthy();
+        expect(contextCreator.isPipeable(RouteParamtypes.QUERY)).toBeTruthy();
+        expect(contextCreator.isPipeable(RouteParamtypes.PARAM)).toBeTruthy();
+        expect(contextCreator.isPipeable(RouteParamtypes.FILE)).toBeTruthy();
+        expect(contextCreator.isPipeable(RouteParamtypes.FILES)).toBeTruthy();
+        expect(contextCreator.isPipeable('custom')).toBeTruthy();
       });
     });
   });
@@ -272,7 +273,7 @@ describe('RouterExecutionContext', () => {
     describe('when "paramsOptions" is empty', () => {
       it('returns null', async () => {
         const pipesFn = contextCreator.createPipesFn([], []);
-        expect(pipesFn).to.be.null;
+        expect(pipesFn).toBeNull();
       });
     });
   });
@@ -288,9 +289,9 @@ describe('RouterExecutionContext', () => {
         error = e;
       }
 
-      expect(error).to.be.instanceOf(ForbiddenException);
-      expect(error.message).to.be.eql('Forbidden resource');
-      expect(error.getResponse()).to.be.eql({
+      expect(error).toBeInstanceOf(ForbiddenException);
+      expect(error.message).toEqual('Forbidden resource');
+      expect(error.getResponse()).toEqual({
         statusCode: HttpStatus.FORBIDDEN,
         message: FORBIDDEN_MESSAGE,
         error: 'Forbidden',
@@ -321,7 +322,7 @@ describe('RouterExecutionContext', () => {
         ) as HandlerResponseBasicFn;
         await handler(value, response);
 
-        expect(response.render.calledWith(template, value)).to.be.true;
+        expect(response.render.calledWith(template, value)).toBeTruthy();
       });
     });
     describe('when "renderTemplate" is undefined', () => {
@@ -341,7 +342,7 @@ describe('RouterExecutionContext', () => {
         ) as HandlerResponseBasicFn;
         await handler(result, response);
 
-        expect(response.render.called).to.be.false;
+        expect(response.render.called).toBeFalsy();
       });
     });
     describe('when "redirectResponse" is present', () => {
@@ -372,7 +373,7 @@ describe('RouterExecutionContext', () => {
             redirectResponse.statusCode,
             redirectResponse.url,
           ),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
 
@@ -393,7 +394,7 @@ describe('RouterExecutionContext', () => {
         ) as HandlerResponseBasicFn;
         await handler(result, response);
 
-        expect(response.redirect.called).to.be.false;
+        expect(response.redirect.called).toBeFalsy();
       });
     });
 
@@ -419,7 +420,7 @@ describe('RouterExecutionContext', () => {
             'test',
             1234,
           ),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
 
@@ -443,8 +444,8 @@ describe('RouterExecutionContext', () => {
         ) as HandlerResponseBasicFn;
         await handler(result, response, request);
 
-        expect((response.write as any).called).to.be.true;
-        expect((request.on as any).called).to.be.true;
+        expect((response.write as any).called).toBeTruthy();
+        expect((request.on as any).called).toBeTruthy();
       });
 
       it('should not allow a non-observable result', async () => {
@@ -465,7 +466,7 @@ describe('RouterExecutionContext', () => {
         try {
           await handler(result, response, request);
         } catch (e) {
-          expect(e.message).to.equal(
+          expect(e.message).toEqual(
             'You must return an Observable stream to use Server-Sent Events (SSE).',
           );
         }

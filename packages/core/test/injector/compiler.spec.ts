@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { ModuleCompiler } from '../../injector/compiler';
 
 describe('ModuleCompiler', () => {
@@ -12,7 +11,7 @@ describe('ModuleCompiler', () => {
       it('should return object with "type" and "dynamicMetadata" property', async () => {
         const obj = { module: 'test', providers: [] };
         const { module, ...dynamicMetadata } = obj;
-        expect(await compiler.extractMetadata(obj as any)).to.be.deep.equal({
+        expect(await compiler.extractMetadata(obj as any)).toEqual({
           type: module,
           dynamicMetadata,
         });
@@ -21,7 +20,7 @@ describe('ModuleCompiler', () => {
     describe('when module is a not dynamic module', () => {
       it('should return object with "type" property', async () => {
         const type = 'test';
-        expect(await compiler.extractMetadata(type as any)).to.be.deep.equal({
+        expect(await compiler.extractMetadata(type as any)).toEqual({
           type,
         });
       });
@@ -31,12 +30,12 @@ describe('ModuleCompiler', () => {
   describe('isDynamicModule', () => {
     describe('when module is a dynamic module', () => {
       it('should return true', () => {
-        expect(compiler.isDynamicModule({ module: true } as any)).to.be.true;
+        expect(compiler.isDynamicModule({ module: true } as any)).toBeTruthy();
       });
     });
     describe('when module is a dynamic module', () => {
       it('should return false', () => {
-        expect(compiler.isDynamicModule({ x: true } as any)).to.be.false;
+        expect(compiler.isDynamicModule({ x: true } as any)).toBeFalsy();
       });
     });
   });

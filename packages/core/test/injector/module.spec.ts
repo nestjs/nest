@@ -1,5 +1,4 @@
 import { Controller, Scope } from '@nestjs/common';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Injectable } from '../../../common';
 import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator';
@@ -47,7 +46,7 @@ describe('Module', () => {
           isResolved: false,
         }),
       ),
-    ).to.be.true;
+    ).toBeTruthy();
   });
 
   it('should add injectable', () => {
@@ -69,7 +68,7 @@ describe('Module', () => {
           isResolved: false,
         }),
       ),
-    ).to.be.true;
+    ).toBeTruthy();
   });
 
   describe('when injectable is custom provided', () => {
@@ -77,7 +76,7 @@ describe('Module', () => {
       const addCustomProviderSpy = sinon.spy(module, 'addCustomProvider');
 
       module.addInjectable({ provide: 'test' } as any);
-      expect(addCustomProviderSpy.called).to.be.true;
+      expect(addCustomProviderSpy.called).toBeTruthy();
     });
   });
 
@@ -100,7 +99,7 @@ describe('Module', () => {
           isResolved: false,
         }),
       ),
-    ).to.be.true;
+    ).toBeTruthy();
   });
 
   it('should call "addCustomProvider" when "provide" property exists', () => {
@@ -110,7 +109,7 @@ describe('Module', () => {
     const provider = { provide: 'test', useValue: 'test' };
 
     module.addProvider(provider as any);
-    expect((addCustomProvider as sinon.SinonSpy).called).to.be.true;
+    expect((addCustomProvider as sinon.SinonSpy).called).toBeTruthy();
   });
 
   it('should call "addCustomClass" when "useClass" property exists', () => {
@@ -120,7 +119,7 @@ describe('Module', () => {
     const provider = { provide: 'test', useClass: () => null };
 
     module.addCustomProvider(provider as any, new Map());
-    expect((addCustomClass as sinon.SinonSpy).called).to.be.true;
+    expect((addCustomClass as sinon.SinonSpy).called).toBeTruthy();
   });
 
   it('should call "addCustomValue" when "useValue" property exists', () => {
@@ -130,7 +129,7 @@ describe('Module', () => {
     const provider = { provide: 'test', useValue: () => null };
 
     module.addCustomProvider(provider as any, new Map());
-    expect((addCustomValue as sinon.SinonSpy).called).to.be.true;
+    expect((addCustomValue as sinon.SinonSpy).called).toBeTruthy();
   });
 
   it('should call "addCustomFactory" when "useFactory" property exists', () => {
@@ -140,7 +139,7 @@ describe('Module', () => {
     const provider = { provide: 'test', useFactory: () => null };
 
     module.addCustomProvider(provider as any, new Map());
-    expect((addCustomFactory as sinon.SinonSpy).called).to.be.true;
+    expect((addCustomFactory as sinon.SinonSpy).called).toBeTruthy();
   });
 
   it('should call "addCustomUseExisting" when "useExisting" property exists', () => {
@@ -150,7 +149,7 @@ describe('Module', () => {
     const provider = { provide: 'test', useExisting: () => null };
 
     module.addCustomUseExisting(provider as any, new Map());
-    expect((addCustomUseExisting as sinon.SinonSpy).called).to.be.true;
+    expect((addCustomUseExisting as sinon.SinonSpy).called).toBeTruthy();
   });
 
   describe('addCustomClass', () => {
@@ -178,7 +177,7 @@ describe('Module', () => {
             isResolved: false,
           }),
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
 
@@ -209,7 +208,7 @@ describe('Module', () => {
             async: false,
           }),
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
 
@@ -241,7 +240,7 @@ describe('Module', () => {
             inject: inject as any,
           }),
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
 
@@ -276,8 +275,8 @@ describe('Module', () => {
             isAlias: true,
           }),
         ),
-      ).to.be.true;
-      expect(factoryFn(provider.useExisting)).to.be.eql(type);
+      ).toBeTruthy();
+      expect(factoryFn(provider.useExisting)).toEqual(type);
     });
   });
 
@@ -287,12 +286,12 @@ describe('Module', () => {
         sinon.stub((module as any)._providers, 'has').returns(false);
       });
       it('should throws RuntimeException', () => {
-        expect(() => module.instance).to.throws(RuntimeException);
+        expect(() => module.instance).toThrow(RuntimeException);
       });
     });
     describe('when metatype exists in providers collection', () => {
       it('should return null', () => {
-        expect(module.instance).to.be.eql(null);
+        expect(module.instance).toEqual(null);
       });
     });
   });
@@ -308,7 +307,7 @@ describe('Module', () => {
       );
 
       module.addExportedProvider({ provide: 'test' } as any);
-      expect(addCustomExportedProviderSpy.called).to.be.true;
+      expect(addCustomExportedProviderSpy.called).toBeTruthy();
     });
     it('should support symbols', () => {
       const addCustomExportedProviderSpy = sinon.spy(
@@ -317,8 +316,8 @@ describe('Module', () => {
       );
       const symb = Symbol('test');
       module.addExportedProvider({ provide: symb } as any);
-      expect(addCustomExportedProviderSpy.called).to.be.true;
-      expect((module as any)._exports.has(symb)).to.be.true;
+      expect(addCustomExportedProviderSpy.called).toBeTruthy();
+      expect((module as any)._exports.has(symb)).toBeTruthy();
     });
   });
 
@@ -332,7 +331,7 @@ describe('Module', () => {
         sinon.stub(module.providers, 'get').callsFake(() => wrapper as any);
 
         module.replace(null, { isProvider: true });
-        expect(wrapper.mergeWith.called).to.be.true;
+        expect(wrapper.mergeWith.called).toBeTruthy();
       });
     });
     describe('when guard', () => {
@@ -345,7 +344,7 @@ describe('Module', () => {
         sinon.stub(module.injectables, 'get').callsFake(() => wrapper as any);
 
         module.replace(null, {});
-        expect(wrapper.mergeWith.called).to.be.true;
+        expect(wrapper.mergeWith.called).toBeTruthy();
       });
     });
   });
@@ -355,8 +354,8 @@ describe('Module', () => {
       const test = ['test'];
       (module as any)._imports = test;
 
-      expect(module.imports).to.be.eql(test);
-      expect(module.relatedModules).to.be.eql(test);
+      expect(module.imports).toEqual(test);
+      expect(module.relatedModules).toEqual(test);
     });
   });
 
@@ -364,7 +363,7 @@ describe('Module', () => {
     it('should return injectables', () => {
       const test = ['test'];
       (module as any)._injectables = test;
-      expect(module.injectables).to.be.eql(test);
+      expect(module.injectables).toEqual(test);
     });
   });
 
@@ -373,8 +372,8 @@ describe('Module', () => {
       const test = ['test'];
       (module as any)._controllers = test;
 
-      expect(module.controllers).to.be.eql(test);
-      expect(module.routes).to.be.eql(test);
+      expect(module.controllers).toEqual(test);
+      expect(module.routes).toEqual(test);
     });
   });
 
@@ -383,7 +382,7 @@ describe('Module', () => {
       const test = ['test'];
       (module as any)._exports = test;
 
-      expect(module.exports).to.be.eql(test);
+      expect(module.exports).toEqual(test);
     });
   });
 
@@ -392,8 +391,8 @@ describe('Module', () => {
       const test = ['test'];
       (module as any)._providers = test;
 
-      expect(module.providers).to.be.eql(test);
-      expect(module.components).to.be.eql(test);
+      expect(module.providers).toEqual(test);
+      expect(module.components).toEqual(test);
     });
   });
 
@@ -408,11 +407,11 @@ describe('Module', () => {
     });
 
     it('should return metatype with "get" method', () => {
-      expect(!!moduleRef.get).to.be.true;
+      expect(!!moduleRef.get).toBeTruthy();
     });
     describe('get', () => {
       it('should throw exception if not exists', () => {
-        expect(() => moduleRef.get('fail')).to.throws(UnknownElementException);
+        expect(() => moduleRef.get('fail')).toThrow(UnknownElementException);
       });
     });
   });
@@ -422,7 +421,7 @@ describe('Module', () => {
     describe('when unit exists in provider collection', () => {
       it('should behave as identity', () => {
         (module as any)._providers = new Map([[token, true]]);
-        expect(module.validateExportedProvider(token)).to.be.eql(token);
+        expect(module.validateExportedProvider(token)).toEqual(token);
       });
     });
     describe('when unit exists in related modules collection', () => {
@@ -431,12 +430,12 @@ describe('Module', () => {
         (module as any)._imports = new Set([
           new Module(Random, new NestContainer()),
         ]);
-        expect(module.validateExportedProvider(Random)).to.be.eql(Random);
+        expect(module.validateExportedProvider(Random)).toEqual(Random);
       });
     });
     describe('when unit does not exist in both provider and related modules collections', () => {
       it('should throw UnknownExportException', () => {
-        expect(() => module.validateExportedProvider(token)).to.throws(
+        expect(() => module.validateExportedProvider(token)).toThrow(
           UnknownExportException,
         );
       });
@@ -448,12 +447,12 @@ describe('Module', () => {
       it('should return true', () => {
         const token = 'test';
         module.providers.set(token, new InstanceWrapper());
-        expect(module.hasProvider(token)).to.be.true;
+        expect(module.hasProvider(token)).toBeTruthy();
       });
     });
     describe('otherwise', () => {
       it('should return false', () => {
-        expect(module.hasProvider('_')).to.be.false;
+        expect(module.hasProvider('_')).toBeFalsy();
       });
     });
   });
@@ -463,32 +462,32 @@ describe('Module', () => {
       it('should return true', () => {
         const token = 'test';
         module.injectables.set(token, new InstanceWrapper());
-        expect(module.hasInjectable(token)).to.be.true;
+        expect(module.hasInjectable(token)).toBeTruthy();
       });
     });
     describe('otherwise', () => {
       it('should return false', () => {
-        expect(module.hasInjectable('_')).to.be.false;
+        expect(module.hasInjectable('_')).toBeFalsy();
       });
     });
   });
 
   describe('getter "id"', () => {
     it('should return module id', () => {
-      expect(module.id).to.be.equal(module['_id']);
+      expect(module.id).toEqual(module['_id']);
     });
   });
 
   describe('getProviderByKey', () => {
     describe('when does not exist', () => {
       it('should return undefined', () => {
-        expect(module.getProviderByKey('test')).to.be.undefined;
+        expect(module.getProviderByKey('test')).toBeUndefined();
       });
     });
     describe('otherwise', () => {
       it('should return instance wrapper', () => {
         module.addProvider(TestProvider);
-        expect(module.getProviderByKey(TestProvider)).to.not.be.undefined;
+        expect(module.getProviderByKey(TestProvider)).toBeDefined();
       });
     });
   });

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
@@ -38,7 +37,7 @@ describe('RouterExceptionFilters', () => {
           () => ({} as any),
           undefined,
         );
-        expect((filter as any).filters).to.be.empty;
+        expect((filter as any).filters).toEqual([]);
       });
     });
     describe('when filters metadata is not empty', () => {
@@ -51,7 +50,7 @@ describe('RouterExceptionFilters', () => {
           () => ({} as any),
           undefined,
         );
-        expect((filter as any).filters).to.not.be.empty;
+        expect((filter as any).filters).not.toEqual([]);
       });
     });
   });
@@ -59,7 +58,7 @@ describe('RouterExceptionFilters', () => {
     it('should return FILTER_CATCH_EXCEPTIONS metadata', () => {
       expect(
         exceptionFilter.reflectCatchExceptions(new ExceptionFilter()),
-      ).to.be.eql([CustomException]);
+      ).toEqual([CustomException]);
     });
   });
   describe('createConcreteContext', () => {
@@ -68,18 +67,16 @@ describe('RouterExceptionFilters', () => {
 
     it('should return expected exception filters metadata', () => {
       const resolved = exceptionFilter.createConcreteContext(filters as any);
-      expect(resolved).to.have.length(1);
-      expect(resolved[0].exceptionMetatypes).to.be.deep.equal([
-        CustomException,
-      ]);
-      expect(resolved[0].func).to.be.a('function');
+      expect(resolved.length).toBe(1);
+      expect(resolved[0].exceptionMetatypes).toEqual([CustomException]);
+      expect(typeof resolved[0].func).toBe('function');
     });
   });
   describe('getGlobalMetadata', () => {
     describe('when contextId is static and inquirerId is nil', () => {
       it('should return global filters', () => {
         const expectedResult = applicationConfig.getGlobalFilters();
-        expect(exceptionFilter.getGlobalMetadata()).to.be.equal(expectedResult);
+        expect(exceptionFilter.getGlobalMetadata()).toEqual(expectedResult);
       });
     });
     describe('otherwise', () => {
@@ -99,9 +96,8 @@ describe('RouterExceptionFilters', () => {
           .stub(instanceWrapper, 'getInstanceByContextId')
           .callsFake(() => ({ instance } as any));
 
-        expect(exceptionFilter.getGlobalMetadata({ id: 3 })).to.contains(
-          instance,
-          ...globalFilters,
+        expect(exceptionFilter.getGlobalMetadata({ id: 3 })).toEqual(
+          expect.arrayContaining([instance, ...globalFilters]),
         );
       });
     });

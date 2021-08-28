@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
@@ -26,10 +25,10 @@ describe('RoutesMapper', () => {
       forRoutes: [{ path: 'test', method: RequestMethod.GET }, TestRoute],
     };
 
-    expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).to.deep.equal([
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).toEqual([
       { path: '/test', method: RequestMethod.GET },
     ]);
-    expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).toEqual([
       { path: '/test/test', method: RequestMethod.GET },
       { path: '/test/another', method: RequestMethod.DELETE },
     ]);
@@ -52,10 +51,10 @@ describe('RoutesMapper', () => {
       ],
     };
 
-    expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).to.deep.equal([
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).toEqual([
       { path: '/test', method: RequestMethod.GET },
     ]);
-    expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).toEqual([
       { path: '/test/test', method: RequestMethod.GET },
       { path: '/test/another', method: RequestMethod.DELETE },
       { path: '/test2/test', method: RequestMethod.GET },

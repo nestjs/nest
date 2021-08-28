@@ -1,5 +1,4 @@
 import { BeforeApplicationShutdown } from '@nestjs/common';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { callBeforeAppShutdownHook } from '../../hooks/before-app-shutdown.hook';
 import { NestContainer } from '../../injector/container';
@@ -43,7 +42,7 @@ describe('BeforeAppShutdown', () => {
       const hookSpy = sinon.spy(sampleProvider, 'beforeApplicationShutdown');
       await callBeforeAppShutdownHook(moduleRef, signal);
 
-      expect(hookSpy.calledWith(signal)).to.be.true;
+      expect(hookSpy.calledWith(signal)).toBeTruthy();
     });
   });
 });

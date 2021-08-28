@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { MetadataScanner } from '../metadata-scanner';
 
 describe('MetadataScanner', () => {
@@ -35,7 +34,7 @@ describe('MetadataScanner', () => {
         Test.prototype,
         a => a,
       );
-      expect(methods).to.eql(['test', 'test2', 'testParent', 'testParent2']);
+      expect(methods).toEqual(['test', 'test2', 'testParent', 'testParent2']);
     });
   });
 });

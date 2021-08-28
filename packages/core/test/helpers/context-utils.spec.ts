@@ -1,7 +1,6 @@
 import { CUSTOM_ROUTE_AGRS_METADATA } from '@nestjs/common/constants';
 import { Body, createParamDecorator, Request } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { expect } from 'chai';
 import { ROUTE_ARGS_METADATA } from '../../../common/constants';
 import { ContextUtils } from '../../helpers/context-utils';
 import { ExecutionContextHost } from '../../helpers/execution-context-host';
@@ -46,20 +45,20 @@ describe('ContextUtils', () => {
           data: undefined,
         },
       };
-      expect(metadata[`${RouteParamtypes.REQUEST}:0`]).to.deep.equal(
+      expect(metadata[`${RouteParamtypes.REQUEST}:0`]).toEqual(
         expectedMetadata[`${RouteParamtypes.REQUEST}:0`],
       );
-      expect(metadata[`${RouteParamtypes.REQUEST}:1`]).to.deep.equal(
+      expect(metadata[`${RouteParamtypes.REQUEST}:1`]).toEqual(
         expectedMetadata[`${RouteParamtypes.REQUEST}:1`],
       );
 
       const keys = Object.keys(metadata);
       const custom = keys.find(key => key.includes(CUSTOM_ROUTE_AGRS_METADATA));
 
-      expect(metadata[custom]).to.be.an('object');
-      expect(metadata[custom].index).to.be.eq(2);
-      expect(metadata[custom].data).to.be.eq(undefined);
-      expect(metadata[custom].factory).to.be.a('function');
+      expect(typeof metadata[custom]).toBe('object');
+      expect(metadata[custom].index).toBe(2)
+      expect(metadata[custom].data).toBeUndefined()
+      expect(typeof metadata[custom].factory).toBe('function');
     });
   });
   describe('getArgumentsLength', () => {
@@ -73,13 +72,13 @@ describe('ContextUtils', () => {
       };
       expect(
         contextUtils.getArgumentsLength(Object.keys(metadata), metadata),
-      ).to.be.eq(max + 1);
+      ).toBe(max + 1);
     });
   });
   describe('createNullArray', () => {
     it('should create N size array filled with null', () => {
       const size = 3;
-      expect(contextUtils.createNullArray(size)).to.be.deep.eq([
+      expect(contextUtils.createNullArray(size)).toEqual([
         undefined,
         undefined,
         undefined,
@@ -91,7 +90,7 @@ describe('ContextUtils', () => {
       const paramsProperties = ['1'];
       expect(
         contextUtils.mergeParamsMetatypes(paramsProperties as any, null),
-      ).to.be.eql(paramsProperties);
+      ).toEqual(paramsProperties);
     });
   });
   describe('getCustomFactory', () => {
@@ -105,7 +104,7 @@ describe('ContextUtils', () => {
 
         expect(
           contextUtils.getCustomFactory(customFactory, data, contextFactory)(),
-        ).to.be.eql(result);
+        ).toEqual(result);
       });
     });
     describe('when factory is undefined / is not a function', () => {
@@ -117,7 +116,7 @@ describe('ContextUtils', () => {
             undefined,
             contextFactory,
           )(),
-        ).to.be.eql(null);
+        ).toEqual(null);
       });
     });
   });

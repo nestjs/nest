@@ -5,7 +5,6 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { Get } from '../../../common/decorators/http/request-mapping.decorator';
@@ -111,7 +110,7 @@ describe('RoutesResolver', () => {
         methodVersion: undefined,
         methodPath: '/another-test',
       };
-      expect(exploreSpy.called).to.be.true;
+      expect(exploreSpy.called).toBeTruthy();
       expect(
         exploreSpy.calledWith(
           routeWrapper,
@@ -120,7 +119,7 @@ describe('RoutesResolver', () => {
           undefined,
           routePathMetadata,
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
 
     it('should register with host when specified', () => {
@@ -154,7 +153,7 @@ describe('RoutesResolver', () => {
         methodPath: '/',
       };
 
-      expect(exploreSpy.called).to.be.true;
+      expect(exploreSpy.called).toBeTruthy();
       expect(
         exploreSpy.calledWith(
           routeWrapper,
@@ -163,7 +162,7 @@ describe('RoutesResolver', () => {
           'api.example.com',
           routePathMetadata,
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
 
     it('should register with version when specified', () => {
@@ -209,7 +208,7 @@ describe('RoutesResolver', () => {
         methodPath: '/',
       };
 
-      expect(exploreSpy.called).to.be.true;
+      expect(exploreSpy.called).toBeTruthy();
       expect(
         exploreSpy.calledWith(
           routeWrapper,
@@ -218,7 +217,7 @@ describe('RoutesResolver', () => {
           undefined,
           routePathMetadata,
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
 
@@ -240,7 +239,7 @@ describe('RoutesResolver', () => {
         .callsFake(() => undefined);
 
       routesResolver.resolve({ use: sinon.spy() } as any, 'basePath');
-      expect(registerRoutersStub.calledTwice).to.be.true;
+      expect(registerRoutersStub.calledTwice).toBeTruthy();
     });
 
     describe('registerRouters', () => {
@@ -265,7 +264,7 @@ describe('RoutesResolver', () => {
           spy
             .getCall(0)
             .calledWith(sinon.match.any, sinon.match.any, 'api/v1', '/test'),
-        ).to.be.true;
+        ).toBeTruthy();
         expect(
           spy
             .getCall(1)
@@ -275,7 +274,7 @@ describe('RoutesResolver', () => {
               'api/v1',
               sinon.match.any,
             ),
-        ).to.be.true;
+        ).toBeTruthy();
       });
 
       it('should register each module with the module path if present', () => {
@@ -299,13 +298,13 @@ describe('RoutesResolver', () => {
           spy
             .getCall(0)
             .calledWith(sinon.match.any, sinon.match.any, '', '/test'),
-        ).to.be.true;
+        ).toBeTruthy();
         // without module path
         expect(
           spy
             .getCall(1)
             .calledWith(sinon.match.any, sinon.match.any, '', undefined),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
   });
@@ -316,14 +315,14 @@ describe('RoutesResolver', () => {
         it('should map to BadRequestException', () => {
           const err = new SyntaxError();
           const outputErr = routesResolver.mapExternalException(err);
-          expect(outputErr).to.be.instanceof(BadRequestException);
+          expect(outputErr).toBeInstanceOf(BadRequestException);
         });
       });
       describe('other', () => {
         it('should behave as an identity', () => {
           const err = new Error();
           const outputErr = routesResolver.mapExternalException(err);
-          expect(outputErr).to.be.eql(err);
+          expect(outputErr).toEqual(err);
         });
       });
     });
@@ -333,7 +332,7 @@ describe('RoutesResolver', () => {
     it('should register not found handler', () => {
       routesResolver.registerNotFoundHandler();
 
-      expect(applicationRef.setNotFoundHandler.called).to.be.true;
+      expect(applicationRef.setNotFoundHandler.called).toBeTruthy();
     });
   });
 
@@ -341,7 +340,7 @@ describe('RoutesResolver', () => {
     it('should register exception handler', () => {
       routesResolver.registerExceptionHandler();
 
-      expect(applicationRef.setErrorHandler.called).to.be.true;
+      expect(applicationRef.setErrorHandler.called).toBeTruthy();
     });
   });
 });

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { HttpException } from '../../../common/exceptions/http.exception';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
@@ -21,7 +20,7 @@ describe('RouterProxy', () => {
   describe('createProxy', () => {
     it('should method return thunk', () => {
       const proxy = routerProxy.createProxy(() => {}, handler);
-      expect(typeof proxy === 'function').to.be.true;
+      expect(typeof proxy === 'function').toBeTruthy();
     });
 
     it('should method encapsulate callback passed as argument', () => {
@@ -30,13 +29,13 @@ describe('RouterProxy', () => {
       }, handler);
       proxy(null, null, null);
 
-      expect(nextStub.calledOnce).to.be.true;
+      expect(nextStub.calledOnce).toBeTruthy();
       expect(
         nextStub.calledWith(
           httpException,
           new ExecutionContextHost([null, null, null]),
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
 
     it('should method encapsulate async callback passed as argument', done => {
@@ -46,13 +45,13 @@ describe('RouterProxy', () => {
       proxy(null, null, null);
 
       setTimeout(() => {
-        expect(nextStub.calledOnce).to.be.true;
+        expect(nextStub.calledOnce).toBeTruthy();
         expect(
           nextStub.calledWith(
             httpException,
             new ExecutionContextHost([null, null, null]),
           ),
-        ).to.be.true;
+        ).toBeTruthy();
         done();
       }, 0);
     });
@@ -61,7 +60,7 @@ describe('RouterProxy', () => {
   describe('createExceptionLayerProxy', () => {
     it('should method return thunk', () => {
       const proxy = routerProxy.createExceptionLayerProxy(() => {}, handler);
-      expect(typeof proxy === 'function').to.be.true;
+      expect(typeof proxy === 'function').toBeTruthy();
     });
 
     it('should method encapsulate callback passed as argument', () => {
@@ -73,13 +72,13 @@ describe('RouterProxy', () => {
       );
       proxy(null, null, null, null);
 
-      expect(nextStub.calledOnce).to.be.true;
+      expect(nextStub.calledOnce).toBeTruthy();
       expect(
         nextStub.calledWith(
           httpException,
           new ExecutionContextHost([null, null, null]),
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
 
     it('should method encapsulate async callback passed as argument', done => {
@@ -92,13 +91,13 @@ describe('RouterProxy', () => {
       proxy(null, null, null, null);
 
       setTimeout(() => {
-        expect(nextStub.calledOnce).to.be.true;
+        expect(nextStub.calledOnce).toBeTruthy();
         expect(
           nextStub.calledWith(
             httpException,
             new ExecutionContextHost([null, null, null]),
           ),
-        ).to.be.true;
+        ).toBeTruthy();
         done();
       }, 0);
     });

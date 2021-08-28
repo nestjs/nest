@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { RouteParamsFactory } from '../../router/route-params-factory';
 
@@ -37,7 +36,7 @@ describe('RouteParamsFactory', () => {
         it('should return next object', () => {
           expect(
             (factory as any).exchangeKeyForValue(RouteParamtypes.NEXT, ...args),
-          ).to.be.eql(next);
+          ).toEqual(next);
         });
       });
       describe(`RouteParamtypes.RESPONSE`, () => {
@@ -47,7 +46,7 @@ describe('RouteParamsFactory', () => {
               RouteParamtypes.RESPONSE,
               ...args,
             ),
-          ).to.be.eql(res);
+          ).toEqual(res);
         });
       });
       describe(`RouteParamtypes.REQUEST`, () => {
@@ -57,14 +56,14 @@ describe('RouteParamsFactory', () => {
               RouteParamtypes.REQUEST,
               ...args,
             ),
-          ).to.be.eql(req);
+          ).toEqual(req);
         });
       });
       describe(`RouteParamtypes.BODY`, () => {
         it('should return body object', () => {
           expect(
             (factory as any).exchangeKeyForValue(RouteParamtypes.BODY, ...args),
-          ).to.be.eql(req.body);
+          ).toEqual(req.body);
         });
       });
       describe(`RouteParamtypes.HEADERS`, () => {
@@ -74,14 +73,14 @@ describe('RouteParamsFactory', () => {
               RouteParamtypes.HEADERS,
               ...args,
             ),
-          ).to.be.eql(req.headers);
+          ).toEqual(req.headers);
         });
       });
       describe(`RouteParamtypes.IP`, () => {
         it('should return ip property', () => {
           expect(
             (factory as any).exchangeKeyForValue(RouteParamtypes.IP, ...args),
-          ).to.be.equal(req.ip);
+          ).toEqual(req.ip);
         });
       });
       describe(`RouteParamtypes.SESSION`, () => {
@@ -91,7 +90,7 @@ describe('RouteParamsFactory', () => {
               RouteParamtypes.SESSION,
               ...args,
             ),
-          ).to.be.eql(req.session);
+          ).toEqual(req.session);
         });
       });
       describe(`RouteParamtypes.QUERY`, () => {
@@ -101,7 +100,7 @@ describe('RouteParamsFactory', () => {
               RouteParamtypes.QUERY,
               ...args,
             ),
-          ).to.be.eql(req.query);
+          ).toEqual(req.query);
         });
       });
       describe(`RouteParamtypes.PARAM`, () => {
@@ -111,21 +110,21 @@ describe('RouteParamsFactory', () => {
               RouteParamtypes.PARAM,
               ...args,
             ),
-          ).to.be.eql(req.params);
+          ).toEqual(req.params);
         });
       });
       describe(`RouteParamtypes.HOST`, () => {
         it('should return hosts object', () => {
           expect(
             (factory as any).exchangeKeyForValue(RouteParamtypes.HOST, ...args),
-          ).to.be.eql(req.hosts);
+          ).toEqual(req.hosts);
         });
       });
       describe(`RouteParamtypes.FILE`, () => {
         it('should return file object', () => {
           expect(
             (factory as any).exchangeKeyForValue(RouteParamtypes.FILE, ...args),
-          ).to.be.eql(req.file);
+          ).toEqual(req.file);
         });
       });
       describe(`RouteParamtypes.FILES`, () => {
@@ -135,12 +134,12 @@ describe('RouteParamsFactory', () => {
               RouteParamtypes.FILES,
               ...args,
             ),
-          ).to.be.eql(req.files);
+          ).toEqual(req.files);
         });
       });
       describe('not available', () => {
         it('should return null', () => {
-          expect((factory as any).exchangeKeyForValue(-1, ...args)).to.be.eql(
+          expect((factory as any).exchangeKeyForValue(-1, ...args)).toEqual(
             null,
           );
         });

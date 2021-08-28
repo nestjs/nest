@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { HttpException } from '../../../common/exceptions/http.exception';
 import { ExternalExceptionsHandler } from '../../exceptions/external-exceptions-handler';
@@ -18,7 +17,7 @@ describe('ExternalErrorProxy', () => {
   describe('createProxy', () => {
     it('should method return thunk', () => {
       const proxy = externalErrorProxy.createProxy(() => {}, handler);
-      expect(typeof proxy === 'function').to.be.true;
+      expect(typeof proxy === 'function').toBeTruthy();
     });
 
     it('should method encapsulate callback passed as argument', () => {

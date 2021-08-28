@@ -1,5 +1,4 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
-import { expect } from 'chai';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
@@ -46,23 +45,23 @@ describe('RouterResponseController', () => {
         it('should call send()', async () => {
           const value = null;
           await routerResponseController.apply(value, response, 200);
-          expect(response.send.called).to.be.true;
+          expect(response.send.called).toBeTruthy();
         });
       });
       describe('string', () => {
         it('should call send(value)', async () => {
           const value = 'string';
           await routerResponseController.apply(value, response, 200);
-          expect(response.send.called).to.be.true;
-          expect(response.send.calledWith(String(value))).to.be.true;
+          expect(response.send.called).toBeTruthy();
+          expect(response.send.calledWith(String(value))).toBeTruthy();
         });
       });
       describe('object', () => {
         it('should call json(value)', async () => {
           const value = { test: 'test' };
           await routerResponseController.apply(value, response, 200);
-          expect(response.json.called).to.be.true;
-          expect(response.json.calledWith(value)).to.be.true;
+          expect(response.json.called).toBeTruthy();
+          expect(response.json.calledWith(value)).toBeTruthy();
         });
       });
     });
@@ -77,7 +76,7 @@ describe('RouterResponseController', () => {
             await routerResponseController.transformToResult(
               Promise.resolve(value),
             ),
-          ).to.be.eq(100);
+          ).toEqual(100);
         });
       });
 
@@ -88,7 +87,7 @@ describe('RouterResponseController', () => {
             await routerResponseController.transformToResult(
               of(1, 2, 3, lastValue),
             ),
-          ).to.be.eq(100);
+          ).toEqual(100);
         });
       });
 
@@ -97,7 +96,7 @@ describe('RouterResponseController', () => {
           const value = 100;
           expect(
             await routerResponseController.transformToResult(value),
-          ).to.be.eq(100);
+          ).toEqual(100);
         });
       });
     });
@@ -108,14 +107,14 @@ describe('RouterResponseController', () => {
       it('should return 201', () => {
         expect(
           routerResponseController.getStatusByMethod(RequestMethod.POST),
-        ).to.be.eql(201);
+        ).toEqual(201);
       });
     });
     describe('when RequestMethod is not POST', () => {
       it('should return 200', () => {
         expect(
           routerResponseController.getStatusByMethod(RequestMethod.GET),
-        ).to.be.eql(200);
+        ).toEqual(200);
       });
     });
   });
@@ -135,7 +134,7 @@ describe('RouterResponseController', () => {
       const response = { render: sinon.spy() };
 
       await routerResponseController.render(result, response, template);
-      expect(response.render.calledWith(template, value)).to.be.true;
+      expect(response.render.calledWith(template, value)).toBeTruthy();
     });
   });
 
@@ -153,7 +152,7 @@ describe('RouterResponseController', () => {
       routerResponseController.setHeaders(response, headers);
       expect(
         setHeaderStub.calledWith(response, headers[0].name, headers[0].value),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
 
@@ -169,7 +168,7 @@ describe('RouterResponseController', () => {
       const statusCode = 400;
 
       routerResponseController.setStatus(response, statusCode);
-      expect(statusStub.calledWith(response, statusCode)).to.be.true;
+      expect(statusStub.calledWith(response, statusCode)).toBeTruthy();
     });
   });
 
@@ -180,7 +179,7 @@ describe('RouterResponseController', () => {
         .returns(Promise.resolve({ statusCode: 123, url: 'redirect url' }));
       const result = {};
       await routerResponseController.redirect(result, null, null);
-      expect(transformToResultSpy.firstCall.args[0]).to.be.equal(result);
+      expect(transformToResultSpy.firstCall.args[0]).toEqual(result);
     });
     it('should pass the response to redirect', async () => {
       sinon
@@ -189,7 +188,7 @@ describe('RouterResponseController', () => {
       const redirectSpy = sinon.spy(adapter, 'redirect');
       const response = {};
       await routerResponseController.redirect(null, response, null);
-      expect(redirectSpy.firstCall.args[0]).to.be.equal(response);
+      expect(redirectSpy.firstCall.args[0]).toEqual(response);
     });
     describe('status code', () => {
       it('should come from the transformed result if present', async () => {
@@ -201,7 +200,7 @@ describe('RouterResponseController', () => {
           statusCode: 999,
           url: 'not form here',
         });
-        expect(redirectSpy.firstCall.args[1]).to.be.eql(123);
+        expect(redirectSpy.firstCall.args[1]).toEqual(123);
       });
       it('should come from the redirectResponse if not on the transformed result', async () => {
         sinon
@@ -212,7 +211,7 @@ describe('RouterResponseController', () => {
           statusCode: 123,
           url: 'redirect url',
         });
-        expect(redirectSpy.firstCall.args[1]).to.be.eql(123);
+        expect(redirectSpy.firstCall.args[1]).toEqual(123);
       });
       it('should default to HttpStatus.FOUND', async () => {
         sinon
@@ -222,7 +221,7 @@ describe('RouterResponseController', () => {
         await routerResponseController.redirect(null, null, {
           url: 'redirect url',
         });
-        expect(redirectSpy.firstCall.args[1]).to.be.eql(HttpStatus.FOUND);
+        expect(redirectSpy.firstCall.args[1]).toEqual(HttpStatus.FOUND);
       });
     });
     describe('url', () => {
@@ -234,7 +233,7 @@ describe('RouterResponseController', () => {
         await routerResponseController.redirect(null, null, {
           url: 'not from here',
         });
-        expect(redirectSpy.firstCall.args[2]).to.be.eql('redirect url');
+        expect(redirectSpy.firstCall.args[2]).toEqual('redirect url');
       });
       it('should come from the redirectResponse if not on the transformed result', async () => {
         sinon
@@ -245,7 +244,7 @@ describe('RouterResponseController', () => {
           statusCode: 123,
           url: 'redirect url',
         });
-        expect(redirectSpy.firstCall.args[2]).to.be.eql('redirect url');
+        expect(redirectSpy.firstCall.args[2]).toEqual('redirect url');
       });
     });
   });
@@ -259,7 +258,7 @@ describe('RouterResponseController', () => {
           {} as unknown as IncomingMessage,
         );
       } catch (e) {
-        expect(e.message).to.eql(
+        expect(e.message).toEqual(
           'You must return an Observable stream to use Server-Sent Events (SSE).',
         );
       }
@@ -298,7 +297,7 @@ describe('RouterResponseController', () => {
       );
       request.destroy();
       await written(response);
-      expect(response.content).to.eql(
+      expect(response.content).toEqual(
         `:
 id: 1
 data: test

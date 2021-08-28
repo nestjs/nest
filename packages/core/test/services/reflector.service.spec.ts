@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Reflector } from '../../services/reflector.service';
 
 describe('Reflector', () => {
@@ -12,7 +11,7 @@ describe('Reflector', () => {
       const key = 'key';
       const value = 'value';
       Reflect.defineMetadata(key, value, Test);
-      expect(reflector.get(key, Test)).to.eql(value);
+      expect(reflector.get(key, Test)).toEqual(value);
     });
   });
 
@@ -21,7 +20,7 @@ describe('Reflector', () => {
       const key = 'key';
       const value = 'value';
       Reflect.defineMetadata(key, value, Test);
-      expect(reflector.getAll(key, [Test])).to.eql([value]);
+      expect(reflector.getAll(key, [Test])).toEqual([value]);
     });
   });
 
@@ -30,7 +29,7 @@ describe('Reflector', () => {
       const key = 'key';
       const value = 'value';
       Reflect.defineMetadata(key, [value], Test);
-      expect(reflector.getAllAndMerge(key, [Test, Test])).to.eql([
+      expect(reflector.getAllAndMerge(key, [Test, Test])).toEqual([
         value,
         value,
       ]);
@@ -39,7 +38,7 @@ describe('Reflector', () => {
       const key = 'key';
       const value = 'value';
       Reflect.defineMetadata(key, value, Test);
-      expect(reflector.getAllAndMerge(key, [Test, Test])).to.eql([
+      expect(reflector.getAllAndMerge(key, [Test, Test])).toEqual([
         value,
         value,
       ]);
@@ -48,7 +47,7 @@ describe('Reflector', () => {
       const key = 'key';
       const value = { test: 'test' };
       Reflect.defineMetadata(key, value, Test);
-      expect(reflector.getAllAndMerge(key, [Test, Test])).to.eql({
+      expect(reflector.getAllAndMerge(key, [Test, Test])).toEqual({
         ...value,
       });
     });
@@ -59,7 +58,7 @@ describe('Reflector', () => {
       const key = 'key';
       const value = 'value';
       Reflect.defineMetadata(key, value, Test);
-      expect(reflector.getAllAndOverride(key, [Test, Test])).to.eql(value);
+      expect(reflector.getAllAndOverride(key, [Test, Test])).toEqual(value);
     });
   });
 });

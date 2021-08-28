@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { HttpAdapterHost } from '../../helpers/http-adapter-host';
 
 describe('HttpAdapterHost', () => {
@@ -7,6 +6,6 @@ describe('HttpAdapterHost', () => {
     const ref = {};
     applicationRefHost.httpAdapter = ref as any;
 
-    expect(applicationRefHost.httpAdapter).to.be.eql(ref);
+    expect(applicationRefHost.httpAdapter).toEqual(ref);
   });
 });

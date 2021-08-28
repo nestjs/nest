@@ -1,5 +1,4 @@
 import { RequestMethod, Type } from '@nestjs/common';
-import { expect } from 'chai';
 import * as pathToRegexp from 'path-to-regexp';
 import * as sinon from 'sinon';
 import {
@@ -23,7 +22,7 @@ describe('middleware utils', () => {
       middleware = [Test, fnMiddleware, undefined, null];
     });
     it('should return filtered middleware', () => {
-      expect(filterMiddleware(middleware, [], noopAdapter)).to.have.length(2);
+      expect(filterMiddleware(middleware, [], noopAdapter).length).toBe(2);
     });
   });
   describe('mapToClass', () => {
@@ -31,7 +30,7 @@ describe('middleware utils', () => {
       describe('when there is no excluded routes', () => {
         it('should return an identity', () => {
           const type = mapToClass(Test, [], noopAdapter);
-          expect(type).to.eql(Test);
+          expect(type).toEqual(Test);
         });
       });
       describe('when there are excluded routes', () => {
@@ -41,37 +40,37 @@ describe('middleware utils', () => {
             [{ path: '*', method: RequestMethod.ALL, regex: /./ }],
             noopAdapter,
           );
-          expect(type).to.not.eql(Test);
-          expect(type.name).to.eql(Test.name);
+          expect(type).not.toEqual(Test);
+          expect(type.name).toEqual(Test.name);
         });
       });
     });
     describe('when middleware is a function', () => {
       it('should return a metatype', () => {
         const metatype = mapToClass(fnMiddleware, [], noopAdapter);
-        expect(metatype).to.not.eql(fnMiddleware);
+        expect(metatype).not.toEqual(fnMiddleware);
       });
       it('should define a `use` method', () => {
         const metatype = mapToClass(fnMiddleware, [], noopAdapter) as Type<any>;
-        expect(new metatype().use).to.exist;
+        expect(new metatype().use).toBeDefined();
       });
       it('should encapsulate a function', () => {
         const spy = sinon.spy();
         const metatype = mapToClass(spy, [], noopAdapter) as Type<any>;
         new metatype().use();
-        expect(spy.called).to.be.true;
+        expect(spy.called).toBeTruthy();
       });
     });
   });
   describe('isMiddlewareClass', () => {
     describe('when middleware is a class', () => {
       it('should returns true', () => {
-        expect(isMiddlewareClass(Test)).to.be.true;
+        expect(isMiddlewareClass(Test)).toBeTruthy();
       });
     });
     describe('when middleware is a function', () => {
       it('should returns false', () => {
-        expect(isMiddlewareClass(fnMiddleware)).to.be.false;
+        expect(isMiddlewareClass(fnMiddleware)).toBeFalsy();
       });
     });
   });
@@ -79,14 +78,14 @@ describe('middleware utils', () => {
     describe('should define `name` property on metatype', () => {
       const AnonymousType = class {};
       assignToken(AnonymousType);
-      expect(AnonymousType.name).to.exist;
+      expect(AnonymousType.name).toBeDefined()
     });
     describe('should use passed token as `name`', () => {
       const AnonymousType = class {};
       const token = 'token';
 
       assignToken(AnonymousType, token);
-      expect(AnonymousType.name).to.eq(token);
+      expect(AnonymousType.name).toBe(token);
     });
   });
 
@@ -108,12 +107,12 @@ describe('middleware utils', () => {
         },
       ];
       it('should return true', () => {
-        expect(isRouteExcluded({}, excludedRoutes, adapter)).to.be.true;
+        expect(isRouteExcluded({}, excludedRoutes, adapter)).toBeTruthy();
       });
     });
     describe('when route is not excluded', () => {
       it('should return false', () => {
-        expect(isRouteExcluded({}, [], adapter)).to.be.false;
+        expect(isRouteExcluded({}, [], adapter)).toBeFalsy();
       });
     });
   });

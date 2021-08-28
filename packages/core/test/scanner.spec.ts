@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { GUARDS_METADATA } from '../../common/constants';
 import { Controller } from '../../common/decorators/core/controller.decorator';
@@ -108,8 +107,8 @@ describe('DependenciesScanner', () => {
           .callsFake(() => undefined);
 
         scanner.reflectDynamicMetadata({ prototype: true } as any, '');
-        expect(reflectInjectables.called).to.be.true;
-        expect(reflectParamInjectables.called).to.be.true;
+        expect(reflectInjectables.called).toBeTruthy();
+        expect(reflectParamInjectables.called).toBeTruthy();
       });
     });
     describe('when param has not prototype', () => {
@@ -123,8 +122,8 @@ describe('DependenciesScanner', () => {
           .callsFake(() => undefined);
         scanner.reflectDynamicMetadata({} as any, '');
 
-        expect(reflectInjectables.called).to.be.false;
-        expect(reflectParamInjectables.called).to.be.false;
+        expect(reflectInjectables.called).toBeFalsy();
+        expect(reflectParamInjectables.called).toBeFalsy();
       });
     });
   });
@@ -138,7 +137,7 @@ describe('DependenciesScanner', () => {
       const token = 'token';
 
       scanner.insertInjectable(comp as any, token, null);
-      expect(addInjectable.calledWith(comp, token)).to.be.true;
+      expect(addInjectable.calledWith(comp, token)).toBeTruthy();
     });
   });
 
@@ -149,7 +148,7 @@ describe('DependenciesScanner', () => {
   describe('reflectKeyMetadata', () => {
     it('should return undefined', () => {
       const result = scanner.reflectKeyMetadata(TestComponent, 'key', 'method');
-      expect(result).to.be.undefined;
+      expect(result).toBeUndefined();
     });
     it('should return array', () => {
       const result = scanner.reflectKeyMetadata(
@@ -157,7 +156,7 @@ describe('DependenciesScanner', () => {
         GUARDS_METADATA,
         'method',
       );
-      expect(result).to.be.eql([Guard]);
+      expect(result).toEqual([Guard]);
     });
   });
 
@@ -167,7 +166,7 @@ describe('DependenciesScanner', () => {
 
       sinon.stub(container, 'addModule').returns({} as any);
       scanner.insertModule(module as any, [] as any);
-      expect(module.forwardRef.called).to.be.true;
+      expect(module.forwardRef.called).toBeTruthy();
     });
   });
 
@@ -177,7 +176,7 @@ describe('DependenciesScanner', () => {
 
       sinon.stub(container, 'addImport').returns({} as any);
       await scanner.insertImport(module as any, [] as any, 'test');
-      expect(module.forwardRef.called).to.be.true;
+      expect(module.forwardRef.called).toBeTruthy();
     });
     describe('when "related" is nil', () => {
       it('should throw exception', async () => {
@@ -187,7 +186,7 @@ describe('DependenciesScanner', () => {
         } catch (e) {
           error = e;
         }
-        expect(error).to.not.be.undefined;
+        expect(error).not.toBeUndefined();
       });
     });
   });
@@ -228,8 +227,8 @@ describe('DependenciesScanner', () => {
           scanner.insertProvider(provider, token);
           const applyMap = (scanner as any).applicationProvidersApplyMap;
 
-          expect(applyMap).to.have.length(1);
-          expect(applyMap[0].moduleKey).to.be.eql(token);
+          expect(applyMap.length).toBe(1);
+          expect(applyMap[0].moduleKey).toEqual(token);
         });
       });
       describe('and is global and request/transient scoped', () => {
@@ -263,13 +262,13 @@ describe('DependenciesScanner', () => {
           expectation.verify();
         });
         it('should not push new object to "applicationProvidersApplyMap" array', () => {
-          expect((scanner as any).applicationProvidersApplyMap).to.have.length(
+          expect((scanner as any).applicationProvidersApplyMap.length).toBe(
             0,
           );
 
           mockContainer.expects('addProvider').callsFake(() => false);
           scanner.insertProvider(component, token);
-          expect((scanner as any).applicationProvidersApplyMap).to.have.length(
+          expect((scanner as any).applicationProvidersApplyMap.length).toBe(
             0,
           );
         });
@@ -296,8 +295,8 @@ describe('DependenciesScanner', () => {
         [provider.type]: applySpy,
       }));
       scanner.applyApplicationProviders();
-      expect(applySpy.called).to.be.true;
-      expect(applySpy.calledWith(expectedInstance)).to.be.true;
+      expect(applySpy.called).toBeTruthy();
+      expect(applySpy.calledWith(expectedInstance)).toBeTruthy()
     });
     it('should apply each globally scoped provider', () => {
       const provider = {
@@ -319,8 +318,8 @@ describe('DependenciesScanner', () => {
         [provider.type]: applySpy,
       }));
       scanner.applyApplicationProviders();
-      expect(applySpy.called).to.be.true;
-      expect(applySpy.calledWith(expectedInstanceWrapper)).to.be.true;
+      expect(applySpy.called).toBeTruthy();
+      expect(applySpy.calledWith(expectedInstanceWrapper)).toBeTruthy()
     });
   });
 
@@ -355,8 +354,8 @@ describe('DependenciesScanner', () => {
       );
       scanner.addScopedEnhancersMetadata();
 
-      expect(addEnhancerMetadataSpy.called).to.be.true;
-      expect(addEnhancerMetadataSpy.calledWith(instance)).to.be.true;
+      expect(addEnhancerMetadataSpy.called).toBeTruthy();
+      expect(addEnhancerMetadataSpy.calledWith(instance)).toBeTruthy();
     });
   });
 
@@ -368,7 +367,7 @@ describe('DependenciesScanner', () => {
           'addGlobalInterceptor',
         );
         scanner.getApplyProvidersMap()[APP_INTERCEPTOR](null);
-        expect(addSpy.called).to.be.true;
+        expect(addSpy.called).toBeTruthy();
       });
     });
     describe(`when token is ${APP_GUARD}`, () => {
@@ -378,7 +377,7 @@ describe('DependenciesScanner', () => {
           'addGlobalGuard',
         );
         scanner.getApplyProvidersMap()[APP_GUARD](null);
-        expect(addSpy.called).to.be.true;
+        expect(addSpy.called).toBeTruthy();
       });
     });
     describe(`when token is ${APP_PIPE}`, () => {
@@ -388,7 +387,7 @@ describe('DependenciesScanner', () => {
           'addGlobalPipe',
         );
         scanner.getApplyProvidersMap()[APP_PIPE](null);
-        expect(addSpy.called).to.be.true;
+        expect(addSpy.called).toBeTruthy();
       });
     });
     describe(`when token is ${APP_FILTER}`, () => {
@@ -398,7 +397,7 @@ describe('DependenciesScanner', () => {
           'addGlobalFilter',
         );
         scanner.getApplyProvidersMap()[APP_FILTER](null);
-        expect(addSpy.called).to.be.true;
+        expect(addSpy.called).toBeTruthy();
       });
     });
   });
@@ -410,7 +409,7 @@ describe('DependenciesScanner', () => {
           'addGlobalRequestInterceptor',
         );
         scanner.getApplyRequestProvidersMap()[APP_INTERCEPTOR](null);
-        expect(addSpy.called).to.be.true;
+        expect(addSpy.called).toBeTruthy();
       });
     });
     describe(`when token is ${APP_GUARD}`, () => {
@@ -420,7 +419,7 @@ describe('DependenciesScanner', () => {
           'addGlobalRequestGuard',
         );
         scanner.getApplyRequestProvidersMap()[APP_GUARD](null);
-        expect(addSpy.called).to.be.true;
+        expect(addSpy.called).toBeTruthy();
       });
     });
     describe(`when token is ${APP_PIPE}`, () => {
@@ -430,7 +429,7 @@ describe('DependenciesScanner', () => {
           'addGlobalRequestPipe',
         );
         scanner.getApplyRequestProvidersMap()[APP_PIPE](null);
-        expect(addSpy.called).to.be.true;
+        expect(addSpy.called).toBeTruthy();
       });
     });
     describe(`when token is ${APP_FILTER}`, () => {
@@ -440,7 +439,7 @@ describe('DependenciesScanner', () => {
           'addGlobalRequestFilter',
         );
         scanner.getApplyRequestProvidersMap()[APP_FILTER](null);
-        expect(addSpy.called).to.be.true;
+        expect(addSpy.called).toBeTruthy();
       });
     });
   });
@@ -449,14 +448,14 @@ describe('DependenciesScanner', () => {
       try {
         scanner.scanForModules(UndefinedModule, [UndefinedModule]);
       } catch (exception) {
-        expect(exception instanceof UndefinedModuleException).to.be.true;
+        expect(exception instanceof UndefinedModuleException).toBeTruthy();
       }
     });
     it('should throw an exception when the imports array includes an invalid value', () => {
       try {
         scanner.scanForModules(InvalidModule, [InvalidModule]);
       } catch (exception) {
-        expect(exception instanceof InvalidModuleException).to.be.true;
+        expect(exception instanceof InvalidModuleException).toBeTruthy();
       }
     });
   });
