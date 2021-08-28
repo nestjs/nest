@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { loadPackage } from '../../utils/load-package.util';
 
 describe('loadPackage', () => {

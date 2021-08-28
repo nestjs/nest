@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Readable } from 'stream';
 import { StreamableFile } from '../../file-stream';
 
@@ -7,14 +6,14 @@ describe('StreamableFile', () => {
     it('should assing it to a stream class property', () => {
       const stream = new Readable();
       const streamableFile = new StreamableFile(stream);
-      expect(streamableFile.getStream()).to.equal(stream);
+      expect(streamableFile.getStream()).toEqual(stream);
     });
   });
   describe('when input is an object with "pipe" method', () => {
     it('should assing it to a stream class property', () => {
       const stream = { pipe: () => {} };
       const streamableFile = new StreamableFile(stream as any);
-      expect(streamableFile.getStream()).to.equal(stream);
+      expect(streamableFile.getStream()).toEqual(stream);
     });
   });
   describe('otherwise', () => {
@@ -22,7 +21,7 @@ describe('StreamableFile', () => {
       const buffer = Buffer.from('test');
       const streamableFile = new StreamableFile(buffer);
       const stream = streamableFile.getStream();
-      expect(stream.read()).to.equal(buffer);
+      expect(stream.read()).toEqual(buffer);
     });
   });
 });

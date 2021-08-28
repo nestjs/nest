@@ -1,5 +1,4 @@
 import { AxiosRequestConfig } from 'axios';
-import { expect } from 'chai';
 import { lastValueFrom } from 'rxjs';
 import { HttpService } from '../../http/http.service';
 
@@ -9,7 +8,7 @@ describe('HttpService', () => {
     const options: AxiosRequestConfig = {};
 
     lastValueFrom(http.get('/', options)).then(() => {
-      expect(options.cancelToken).toBeUndefined;
+      expect(options.cancelToken).toBeUndefined();
       done();
     });
   });

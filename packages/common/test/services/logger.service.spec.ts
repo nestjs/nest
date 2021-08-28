@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import 'reflect-metadata';
 import * as sinon from 'sinon';
 import { ConsoleLogger, Logger, LoggerService } from '../../services';
@@ -25,11 +24,11 @@ describe('Logger', () => {
 
         Logger.log(message, context);
 
-        expect(processStdoutWriteSpy.calledOnce).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.calledOnce).toBeTruthy();
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(message);
       });
 
       it('should print one message without context to the console', () => {
@@ -37,8 +36,8 @@ describe('Logger', () => {
 
         Logger.log(message);
 
-        expect(processStdoutWriteSpy.calledOnce).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStdoutWriteSpy.calledOnce).toBeTruthy();
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(message);
       });
 
       it('should print multiple messages to the console', () => {
@@ -47,25 +46,25 @@ describe('Logger', () => {
 
         Logger.log(messages[0], messages[1], messages[2], context);
 
-        expect(processStdoutWriteSpy.calledThrice).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.calledThrice).toBeTruthy();
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(
           messages[0],
         );
 
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.secondCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.secondCall.firstArg).toContain(
           messages[1],
         );
 
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.thirdCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.thirdCall.firstArg).toContain(
           messages[2],
         );
       });
@@ -76,11 +75,11 @@ describe('Logger', () => {
 
         Logger.error(message, context);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.calledOnce).toBeTruthy();
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(message);
       });
 
       it('should print one error without context to the console', () => {
@@ -88,8 +87,8 @@ describe('Logger', () => {
 
         Logger.error(message);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.calledOnce).toBeTruthy();
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(message);
       });
 
       it('should print error object without context to the console', () => {
@@ -97,8 +96,8 @@ describe('Logger', () => {
 
         Logger.error(error);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.calledOnce).toBeTruthy();
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(
           `Error: Random text here`,
         );
       });
@@ -110,9 +109,9 @@ describe('Logger', () => {
 
         Logger.error(error);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(`Object:`);
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.calledOnce).toBeTruthy();
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(`Object:`);
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(
           `{\n  "randomError": true\n}`,
         );
       });
@@ -124,17 +123,17 @@ describe('Logger', () => {
 
         Logger.error(message, stacktrace, context);
 
-        expect(processStderrWriteSpy.calledTwice).to.be.true;
+        expect(processStderrWriteSpy.calledTwice).toBeTruthy();
 
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(message);
 
-        expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
+        expect(processStderrWriteSpy.secondCall.firstArg).toEqual(
           stacktrace + '\n',
         );
-        expect(processStderrWriteSpy.secondCall.firstArg).to.not.include(
+        expect(processStderrWriteSpy.secondCall.firstArg).not.toContain(
           context,
         );
       });
@@ -146,25 +145,25 @@ describe('Logger', () => {
 
         Logger.error(messages[0], messages[1], stack, context);
 
-        expect(processStderrWriteSpy.calledThrice).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.calledThrice).toBeTruthy();
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(
           messages[0],
         );
 
-        expect(processStderrWriteSpy.secondCall.firstArg).to.include(
+        expect(processStderrWriteSpy.secondCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.secondCall.firstArg).to.include(
+        expect(processStderrWriteSpy.secondCall.firstArg).toContain(
           messages[1],
         );
 
-        expect(processStderrWriteSpy.thirdCall.firstArg).to.not.include(
+        expect(processStderrWriteSpy.thirdCall.firstArg).not.toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.thirdCall.firstArg).to.equal(stack + '\n');
+        expect(processStderrWriteSpy.thirdCall.firstArg).toEqual(stack + '\n');
       });
     });
     describe('when logging is disabled', () => {
@@ -191,7 +190,7 @@ describe('Logger', () => {
 
         Logger.log(message, context);
 
-        expect(processStdoutWriteSpy.called).to.be.false;
+        expect(processStdoutWriteSpy.called).toBeFalsy();
       });
     });
     describe('when custom logger is being used', () => {
@@ -222,8 +221,8 @@ describe('Logger', () => {
 
         Logger.log(message, context);
 
-        expect(customLoggerLogSpy.called).to.be.true;
-        expect(customLoggerLogSpy.calledWith(message, context)).to.be.true;
+        expect(customLoggerLogSpy.called).toBeTruthy();
+        expect(customLoggerLogSpy.calledWith(message, context)).toBeTruthy();
       });
 
       it('should call custom logger "#error()" method', () => {
@@ -234,8 +233,8 @@ describe('Logger', () => {
 
         Logger.error(message, context);
 
-        expect(customLoggerErrorSpy.called).to.be.true;
-        expect(customLoggerErrorSpy.calledWith(message, context)).to.be.true;
+        expect(customLoggerErrorSpy.called).toBeTruthy();
+        expect(customLoggerErrorSpy.calledWith(message, context)).toBeTruthy();
       });
     });
   });
@@ -243,18 +242,18 @@ describe('Logger', () => {
   describe('ConsoleLogger', () => {
     it('should allow setting and resetting of context', () => {
       const logger = new ConsoleLogger();
-      expect(logger['context']).toBeUndefined;
+      expect(logger['context']).toBeUndefined();
       logger.setContext('context');
-      expect(logger['context']).to.equal('context');
+      expect(logger['context']).toEqual('context');
       logger.resetContext();
-      expect(logger['context']).toBeUndefined;
+      expect(logger['context']).toBeUndefined();
 
       const loggerWithContext = new ConsoleLogger('context');
-      expect(loggerWithContext['context']).to.equal('context');
+      expect(loggerWithContext['context']).toEqual('context');
       loggerWithContext.setContext('other');
-      expect(loggerWithContext['context']).to.equal('other');
+      expect(loggerWithContext['context']).toEqual('other');
       loggerWithContext.resetContext();
-      expect(loggerWithContext['context']).to.equal('context');
+      expect(loggerWithContext['context']).toEqual('context');
     });
   });
 
@@ -281,11 +280,11 @@ describe('Logger', () => {
 
         logger.log(message, context);
 
-        expect(processStdoutWriteSpy.calledOnce).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.calledOnce).toBeTruthy();
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(message);
       });
 
       it('should print one message without context to the console', () => {
@@ -293,8 +292,8 @@ describe('Logger', () => {
 
         logger.log(message);
 
-        expect(processStdoutWriteSpy.calledOnce).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStdoutWriteSpy.calledOnce).toBeTruthy();
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(message);
       });
 
       it('should print multiple messages to the console', () => {
@@ -303,25 +302,25 @@ describe('Logger', () => {
 
         logger.log(messages[0], messages[1], messages[2], context);
 
-        expect(processStdoutWriteSpy.calledThrice).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.calledThrice).toBeTruthy();
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(
           messages[0],
         );
 
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.secondCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.secondCall.firstArg).toContain(
           messages[1],
         );
 
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.thirdCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.thirdCall.firstArg).toContain(
           messages[2],
         );
       });
@@ -332,11 +331,11 @@ describe('Logger', () => {
 
         logger.error(message, context);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.calledOnce).toBeTruthy();
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(message);
       });
 
       it('should print one error without context to the console', () => {
@@ -344,8 +343,8 @@ describe('Logger', () => {
 
         logger.error(message);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.calledOnce).toBeTruthy();
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(message);
       });
 
       it('should print one error with stacktrace and context to the console', () => {
@@ -355,14 +354,14 @@ describe('Logger', () => {
 
         logger.error(message, stacktrace, context);
 
-        expect(processStderrWriteSpy.calledTwice).to.be.true;
+        expect(processStderrWriteSpy.calledTwice).toBeTruthy();
 
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(message);
 
-        expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
+        expect(processStderrWriteSpy.secondCall.firstArg).toEqual(
           stacktrace + '\n',
         );
       });
@@ -374,25 +373,25 @@ describe('Logger', () => {
 
         logger.error(messages[0], messages[1], stack, context);
 
-        expect(processStderrWriteSpy.calledThrice).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.calledThrice).toBeTruthy();
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.firstCall.firstArg).toContain(
           messages[0],
         );
 
-        expect(processStderrWriteSpy.secondCall.firstArg).to.include(
+        expect(processStderrWriteSpy.secondCall.firstArg).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.secondCall.firstArg).to.include(
+        expect(processStderrWriteSpy.secondCall.firstArg).toContain(
           messages[1],
         );
 
-        expect(processStderrWriteSpy.thirdCall.firstArg).to.not.include(
+        expect(processStderrWriteSpy.thirdCall.firstArg).not.toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.thirdCall.firstArg).to.equal(stack + '\n');
+        expect(processStderrWriteSpy.thirdCall.firstArg).toEqual(stack + '\n');
       });
     });
 
@@ -418,29 +417,29 @@ describe('Logger', () => {
 
         logger.log(messages[0], messages[1], messages[2]);
 
-        expect(processStdoutWriteSpy.calledThrice).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.calledThrice).toBeTruthy();
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(
           `[${globalContext}]`,
         );
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.firstCall.firstArg).toContain(
           messages[0],
         );
 
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.secondCall.firstArg).toContain(
           `[${globalContext}]`,
         );
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.secondCall.firstArg).toContain(
           messages[1],
         );
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include('ms');
+        expect(processStdoutWriteSpy.secondCall.firstArg).toContain('ms');
 
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.thirdCall.firstArg).toContain(
           `[${globalContext}]`,
         );
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.thirdCall.firstArg).toContain(
           messages[2],
         );
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include('ms');
+        expect(processStdoutWriteSpy.thirdCall.firstArg).toContain('ms');
       });
     });
 
@@ -470,7 +469,7 @@ describe('Logger', () => {
 
         logger.log(message, context);
 
-        expect(processStdoutWriteSpy.called).to.be.false;
+        expect(processStdoutWriteSpy.called).toBeFalsy();
       });
     });
     describe('when custom logger is being used', () => {
@@ -503,8 +502,8 @@ describe('Logger', () => {
 
         originalLogger.log(message, context);
 
-        expect(customLoggerLogSpy.called).to.be.true;
-        expect(customLoggerLogSpy.calledWith(message, context)).to.be.true;
+        expect(customLoggerLogSpy.called).toBeTruthy();
+        expect(customLoggerLogSpy.calledWith(message, context)).toBeTruthy();
       });
 
       it('should call custom logger "#error()" method', () => {
@@ -515,8 +514,8 @@ describe('Logger', () => {
 
         originalLogger.error(message, context);
 
-        expect(customLoggerErrorSpy.called).to.be.true;
-        expect(customLoggerErrorSpy.calledWith(message, context)).to.be.true;
+        expect(customLoggerErrorSpy.called).toBeTruthy();
+        expect(customLoggerErrorSpy.calledWith(message, context)).toBeTruthy();
       });
     });
   });

@@ -49,6 +49,6 @@ describe('@UseInterceptors', () => {
     } catch (e) {
       error = e;
     }
-    expect(error).toBeUndefined;
+    expect(error).toBeUndefined();
   });
 });

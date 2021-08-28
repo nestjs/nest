@@ -76,15 +76,15 @@ describe('@Controller', () => {
 
   it('should not set host when no host passed as param', () => {
     const host = Reflect.getMetadata('host', Test);
-    expect(host).toBeUndefined;
+    expect(host).toBeUndefined();
     const host2 = Reflect.getMetadata('host', EmptyDecorator);
-    expect(host2).toBeUndefined;
+    expect(host2).toBeUndefined();
   });
 
   it('should not set version when no version passed as param', () => {
     const version = Reflect.getMetadata(VERSION_METADATA, Test);
-    expect(version).toBeUndefined;
+    expect(version).toBeUndefined();
     const version2 = Reflect.getMetadata(VERSION_METADATA, EmptyDecorator);
-    expect(version2).toBeUndefined;
+    expect(version2).toBeUndefined();
   });
 });

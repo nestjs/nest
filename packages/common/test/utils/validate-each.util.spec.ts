@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { isFunction } from '../../utils/shared.utils';
 import {
   validateEach,
@@ -10,13 +9,12 @@ describe('validateEach', () => {
     it('should throw exception', () => {
       expect(() =>
         validateEach({ name: 'test' } as any, ['test'], isFunction, '', ''),
-      ).to.throws(InvalidDecoratorItemException);
+      ).toThrow(InvalidDecoratorItemException);
     });
   });
   describe('when all items passed predicate', () => {
     it('should return true', () => {
-      expect(validateEach({} as any, [() => null], isFunction, '', '')).to.be
-        .true;
+      expect(validateEach({} as any, [() => null], isFunction, '', '')).toBeTruthy();
     });
   });
 });

@@ -1,6 +1,3 @@
-import * as chai from 'chai';
-import { expect } from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -13,7 +10,6 @@ import {
 import { BadRequestException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces/features/pipe-transform.interface';
 import { ParseArrayPipe } from '../../pipes/parse-array.pipe';
-chai.use(chaiAsPromised);
 
 describe('ParseArrayPipe', () => {
   let target: ParseArrayPipe;
@@ -26,7 +22,7 @@ describe('ParseArrayPipe', () => {
 
           return expect(
             target.transform(undefined, {} as ArgumentMetadata),
-          ).to.to.be.rejectedWith(BadRequestException);
+          ).rejects.toThrow(BadRequestException);
         });
       });
       describe('and optional enabled', () => {
@@ -46,17 +42,17 @@ describe('ParseArrayPipe', () => {
       it('should throw an exception (boolean)', async () => {
         return expect(
           target.transform(true, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(BadRequestException);
+        ).rejects.toThrow(BadRequestException);
       });
       it('should throw an exception (number)', async () => {
         return expect(
           target.transform(3, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(BadRequestException);
+        ).rejects.toThrow(BadRequestException);
       });
       it('should throw an exception (object)', async () => {
         return expect(
           target.transform({}, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(BadRequestException);
+        ).rejects.toThrow(BadRequestException);
       });
 
       describe('and "optional" is enabled', () => {
@@ -68,7 +64,7 @@ describe('ParseArrayPipe', () => {
           });
           return expect(
             pipe.transform({}, {} as ArgumentMetadata),
-          ).to.be.rejectedWith(BadRequestException);
+          ).rejects.toThrow(BadRequestException);
         });
       });
     });
@@ -135,7 +131,7 @@ describe('ParseArrayPipe', () => {
             );
           } catch (err) {
             expect(err).toBeInstanceOf(BadRequestException);
-            expect(err.getResponse().message).to.deep.equal([
+            expect(err.getResponse().message).toEqual([
               '[0] number must be a number conforming to the specified constraints',
               '[1] number must be a number conforming to the specified constraints',
             ]);
@@ -187,7 +183,7 @@ describe('ParseArrayPipe', () => {
             );
           } catch (err) {
             expect(err).toBeInstanceOf(BadRequestException);
-            expect(err.getResponse().message).to.deep.equal([
+            expect(err.getResponse().message).toEqual([
               '[0] random.title must be a string',
               '[1] random.isEnabled should not be null or undefined',
               '[1] random.isEnabled must be a boolean value',
@@ -251,7 +247,7 @@ describe('ParseArrayPipe', () => {
             );
           } catch (err) {
             expect(err).toBeInstanceOf(BadRequestException);
-            expect(err.getResponse().message).to.deep.equal([
+            expect(err.getResponse().message).toEqual([
               '[0] random.0.title must be a string',
               '[0] random.1.title must be a string',
               '[1] random.0.isEnabled should not be null or undefined',

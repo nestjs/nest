@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { DefaultValuePipe } from '../../pipes/default-value.pipe';
 
 describe('DefaultValuePipe', () => {
@@ -9,12 +8,12 @@ describe('DefaultValuePipe', () => {
     it('should return original value if one was provided', () => {
       const value = 'value';
       const result = target.transform(value);
-      expect(result).to.equal(value);
+      expect(result).toEqual(value);
     });
 
     it('should return default value if no value was provided', () => {
       const result = target.transform(undefined);
-      expect(result).to.equal(defaultValue);
+      expect(result).toEqual(defaultValue);
     });
   });
 });

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import {
   BadRequestException,
   HttpException,
@@ -56,7 +55,7 @@ describe('HttpException', () => {
 
   it('should inherit from error', () => {
     const error = new HttpException('', 400);
-    expect(error instanceof Error).to.be.true;
+    expect(error instanceof Error).toBeTruthy();
   });
 
   it('should be serializable', () => {
@@ -122,7 +121,7 @@ describe('HttpException', () => {
     it('should not override pre-defined body if message is array', () => {
       expect(
         HttpException.createBody(['a', 'random', 'array'], 'error', 200),
-      ).to.eql({
+      ).toEqual({
         message: ['a', 'random', 'array'],
         error: 'error',
         statusCode: 200,

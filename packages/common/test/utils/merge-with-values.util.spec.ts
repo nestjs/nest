@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { MergeWithValues } from '../../utils/merge-with-values.util';
 
 describe('MergeWithValues', () => {
@@ -13,6 +12,6 @@ describe('MergeWithValues', () => {
     expect(type.prototype).to.contain(data);
   });
   it('should set name of metatype', () => {
-    expect(type.name).to.eq(Test.name + JSON.stringify(data));
+    expect(type.name).toEqual(Test.name + JSON.stringify(data));
   });
 });
