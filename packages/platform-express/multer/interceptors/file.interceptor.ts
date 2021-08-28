@@ -6,6 +6,7 @@ import {
   NestInterceptor,
   Optional,
   Type,
+  BadRequestException,
 } from '@nestjs/common';
 import * as multer from 'multer';
 import { Observable } from 'rxjs';
@@ -18,6 +19,7 @@ type MulterInstance = any;
 
 export function FileInterceptor(
   fieldName: string,
+  errorOptions: { throwsOnNotFound: boolean } = { throwsOnNotFound: false },
   localOptions?: MulterOptions,
 ): Type<NestInterceptor> {
   class MixinInterceptor implements NestInterceptor {
@@ -48,6 +50,12 @@ export function FileInterceptor(
             if (err) {
               const error = transformException(err);
               return reject(error);
+            }
+            if (errorOptions.throwsOnNotFound) {
+              const req = ctx.getRequest();
+              if (req.file?.fieldname !== fieldName) {
+                return reject(new BadRequestException(`Unexpected field`));
+              }
             }
             resolve();
           },

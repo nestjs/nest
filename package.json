@@ -108,7 +108,7 @@
     "cache-manager": "3.4.4",
     "cache-manager-redis-store": "2.0.0",
     "chai": "4.3.4",
-    "chai-as-promised": "7.1.1",
+    "chai-as-promised": "^7.1.1",
     "clang-format": "1.5.0",
     "commitlint-circle": "1.0.0",
     "concurrently": "6.2.1",
