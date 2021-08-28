@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Injectable, mixin } from '../../index';
 
 describe('@Injectable', () => {
@@ -13,8 +12,8 @@ describe('@Injectable', () => {
       TestMiddleware,
     );
 
-    expect(constructorParams[0]).to.be.eql(Number);
-    expect(constructorParams[1]).to.be.eql(String);
+    expect(constructorParams[0]).toEqual(Number);
+    expect(constructorParams[1]).toEqual(String);
   });
 });
 
@@ -26,13 +25,13 @@ describe('mixin', () => {
 
   it('should set name of metatype', () => {
     const type = mixin(Test);
-    expect(type.name).to.not.eql('Test');
+    expect(type.name).not.toBe('Test');
   });
 
   it('should not lost the design:parmatypes metadata', () => {
     const type = mixin(Test);
     const constructorParams = Reflect.getMetadata('design:paramtypes', type);
-    expect(constructorParams[0]).to.be.eql(Number);
-    expect(constructorParams[1]).to.be.eql(String);
+    expect(constructorParams[0]).toEqual(Number);
+    expect(constructorParams[1]).toEqual(String);
   });
 });

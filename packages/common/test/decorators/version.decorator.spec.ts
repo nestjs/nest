@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { VERSION_METADATA } from '../../constants';
 import { Version } from '../../decorators/core/version.decorator';
 
@@ -12,6 +11,6 @@ describe('@Version', () => {
 
   it('should enhance method with expected version string', () => {
     const metadata = Reflect.getMetadata(VERSION_METADATA, Test.test);
-    expect(metadata).to.be.eql(version);
+    expect(metadata).toEqual(version);
   });
 });

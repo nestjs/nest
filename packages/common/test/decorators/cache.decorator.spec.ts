@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { CacheKey, CacheInterceptor, CacheTTL } from '../../cache';
 import {
   CACHE_KEY_METADATA,
@@ -25,22 +24,22 @@ describe('@Cache', () => {
   class TestTTL {}
 
   it('should override global defaults for CacheKey and CacheTTL', () => {
-    expect(Reflect.getMetadata(CACHE_KEY_METADATA, TestAll)).to.be.eql(
+    expect(Reflect.getMetadata(CACHE_KEY_METADATA, TestAll)).toEqual(
       '/a_different_cache_key',
     );
-    expect(Reflect.getMetadata(CACHE_TTL_METADATA, TestAll)).to.be.greaterThan(
+    expect(Reflect.getMetadata(CACHE_TTL_METADATA, TestAll)).toBeGreaterThan(
       9999,
     );
   });
 
   it('should override only the TTL', () => {
-    expect(Reflect.getMetadata(CACHE_TTL_METADATA, TestTTL)).to.be.greaterThan(
+    expect(Reflect.getMetadata(CACHE_TTL_METADATA, TestTTL)).toBeGreaterThan(
       9999,
     );
   });
 
   it('should override only the Key', () => {
-    expect(Reflect.getMetadata(CACHE_KEY_METADATA, TestKey)).to.be.eql(
+    expect(Reflect.getMetadata(CACHE_KEY_METADATA, TestKey)).toEqual(
       '/a_different_cache_key',
     );
   });

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { GLOBAL_MODULE_METADATA } from '../../constants';
 import { Global } from '../../index';
 
@@ -8,6 +7,6 @@ describe('@Global', () => {
 
   it('should enrich metatype with GlobalModule metadata', () => {
     const isGlobal = Reflect.getMetadata(GLOBAL_MODULE_METADATA, Test);
-    expect(isGlobal).to.be.true;
+    expect(isGlobal).toBeTruthy();
   });
 });

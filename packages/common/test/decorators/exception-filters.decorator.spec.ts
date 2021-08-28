@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { EXCEPTION_FILTERS_METADATA } from '../../constants';
 import { UseFilters } from '../../decorators/core/exception-filters.decorator';
 import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
@@ -20,7 +19,7 @@ describe('@UseFilters', () => {
 
   it('should enhance class with expected exception filters array', () => {
     const metadata = Reflect.getMetadata(EXCEPTION_FILTERS_METADATA, Test);
-    expect(metadata).to.be.eql(filters);
+    expect(metadata).toEqual(filters);
   });
 
   it('should enhance method with expected exception filters array', () => {
@@ -28,14 +27,14 @@ describe('@UseFilters', () => {
       EXCEPTION_FILTERS_METADATA,
       TestWithMethod.test,
     );
-    expect(metadata).to.be.eql(filters);
+    expect(metadata).toEqual(filters);
   });
 
   it('when object is invalid should throw exception', () => {
     try {
       UseFilters('test' as any)(() => {});
     } catch (e) {
-      expect(e).to.be.instanceof(InvalidDecoratorItemException);
+      expect(e).toBeInstanceOf(InvalidDecoratorItemException);
     }
   });
 });

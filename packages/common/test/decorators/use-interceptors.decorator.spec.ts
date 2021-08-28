@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { INTERCEPTORS_METADATA } from '../../constants';
 import { UseInterceptors } from '../../decorators/core/use-interceptors.decorator';
 import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
@@ -18,7 +17,7 @@ describe('@UseInterceptors', () => {
 
   it('should enhance class with expected interceptors array', () => {
     const metadata = Reflect.getMetadata(INTERCEPTORS_METADATA, Test);
-    expect(metadata).to.be.eql(interceptors);
+    expect(metadata).toEqual(interceptors);
   });
 
   it('should enhance method with expected interceptors array', () => {
@@ -26,7 +25,7 @@ describe('@UseInterceptors', () => {
       INTERCEPTORS_METADATA,
       TestWithMethod.test,
     );
-    expect(metadata).to.be.eql(interceptors);
+    expect(metadata).toEqual(interceptors);
   });
 
   it('when object is invalid should throw exception', () => {
@@ -36,7 +35,7 @@ describe('@UseInterceptors', () => {
     } catch (e) {
       error = e;
     }
-    expect(error).to.be.instanceof(InvalidDecoratorItemException);
+    expect(error).toBeInstanceOf(InvalidDecoratorItemException);
   });
 
   it('when object is valid should not throw exception', () => {
@@ -50,6 +49,6 @@ describe('@UseInterceptors', () => {
     } catch (e) {
       error = e;
     }
-    expect(error).to.be.undefined;
+    expect(error).toBeUndefined;
   });
 });

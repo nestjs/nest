@@ -79,19 +79,19 @@ describe('ParseArrayPipe', () => {
 
         expect(
           await target.transform('1,2,3', {} as ArgumentMetadata),
-        ).to.be.deep.equal(['1', '2', '3']);
+        ).toEqual(['1', '2', '3']);
 
         target = new ParseArrayPipe({ separator: '/' });
 
         expect(
           await target.transform('1/2/3', {} as ArgumentMetadata),
-        ).to.be.deep.equal(['1', '2', '3']);
+        ).toEqual(['1', '2', '3']);
 
         target = new ParseArrayPipe({ separator: '.' });
 
         expect(
           await target.transform('1.2.3', {} as ArgumentMetadata),
-        ).to.be.deep.equal(['1', '2', '3']);
+        ).toEqual(['1', '2', '3']);
       });
     });
 
@@ -106,12 +106,12 @@ describe('ParseArrayPipe', () => {
           {} as ArgumentMetadata,
         );
         items.forEach(item => {
-          expect(item).to.be.instanceOf(ArrItem);
+          expect(item).toBeInstanceOf(ArrItem);
         });
 
         items = await target.transform('{},{},{}', {} as ArgumentMetadata);
         items.forEach(item => {
-          expect(item).to.be.instanceOf(ArrItem);
+          expect(item).toBeInstanceOf(ArrItem);
         });
       });
       describe('when "stopAtFirstError" is explicitly turned off', () => {
@@ -134,7 +134,7 @@ describe('ParseArrayPipe', () => {
               {} as ArgumentMetadata,
             );
           } catch (err) {
-            expect(err).to.be.instanceOf(BadRequestException);
+            expect(err).toBeInstanceOf(BadRequestException);
             expect(err.getResponse().message).to.deep.equal([
               '[0] number must be a number conforming to the specified constraints',
               '[1] number must be a number conforming to the specified constraints',
@@ -186,7 +186,7 @@ describe('ParseArrayPipe', () => {
               {} as ArgumentMetadata,
             );
           } catch (err) {
-            expect(err).to.be.instanceOf(BadRequestException);
+            expect(err).toBeInstanceOf(BadRequestException);
             expect(err.getResponse().message).to.deep.equal([
               '[0] random.title must be a string',
               '[1] random.isEnabled should not be null or undefined',
@@ -250,7 +250,7 @@ describe('ParseArrayPipe', () => {
               {} as ArgumentMetadata,
             );
           } catch (err) {
-            expect(err).to.be.instanceOf(BadRequestException);
+            expect(err).toBeInstanceOf(BadRequestException);
             expect(err.getResponse().message).to.deep.equal([
               '[0] random.0.title must be a string',
               '[0] random.1.title must be a string',

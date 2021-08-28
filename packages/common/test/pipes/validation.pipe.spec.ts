@@ -150,7 +150,7 @@ describe('ValidationPipe', () => {
             metatype: TestModelWithNested,
           });
         } catch (err) {
-          expect(err.getResponse().message).to.be.eql([
+          expect(err.getResponse().message).toEqual([
             'prop must be a string',
             'test.prop1 must be a string',
             'test.prop2 must be a boolean value',
@@ -176,7 +176,7 @@ describe('ValidationPipe', () => {
             metatype: TestModelForNestedArrayValidation,
           });
         } catch (err) {
-          expect(err.getResponse().message).to.be.eql([
+          expect(err.getResponse().message).toEqual([
             'prop must be a string',
             'test.0.prop1 must be a string',
             'test.0.prop2 must be a boolean value',
@@ -188,7 +188,7 @@ describe('ValidationPipe', () => {
       it('should return a TestModel instance', async () => {
         target = new ValidationPipe({ transform: true });
         const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
-        expect(await target.transform(testObj, metadata)).to.be.instanceOf(
+        expect(await target.transform(testObj, metadata)).toBeInstanceOf(
           TestModel,
         );
       });
@@ -393,14 +393,14 @@ describe('ValidationPipe', () => {
           const result = await target.transform(testObj, objMetadata);
 
           expect(result).to.not.be.instanceOf(TestModel);
-          expect(result).to.be.eql(testObj);
+          expect(result).toEqual(testObj);
 
           // primitives
-          expect(await target.transform('string', objMetadata)).to.be.eql(
+          expect(await target.transform('string', objMetadata)).toEqual(
             'string',
           );
-          expect(await target.transform(3, objMetadata)).to.be.eql(3);
-          expect(await target.transform(true, objMetadata)).to.be.eql(true);
+          expect(await target.transform(3, objMetadata)).toEqual(3);
+          expect(await target.transform(true, objMetadata)).toEqual(true);
         });
       });
     });
@@ -418,7 +418,7 @@ describe('ValidationPipe', () => {
         try {
           await target.transform(testObj, metadata);
         } catch (err) {
-          expect(err).to.be.instanceOf(UnprocessableEntityException);
+          expect(err).toBeInstanceOf(UnprocessableEntityException);
         }
       });
     });

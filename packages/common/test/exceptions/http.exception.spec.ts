@@ -8,7 +8,7 @@ import {
 describe('HttpException', () => {
   it('should return a response as a string when input is a string', () => {
     const message = 'My error message';
-    expect(new HttpException(message, 404).getResponse()).to.be.eql(
+    expect(new HttpException(message, 404).getResponse()).toEqual(
       'My error message',
     );
   });
@@ -19,12 +19,12 @@ describe('HttpException', () => {
       reason: 'this can be a human readable reason',
       anything: 'else',
     };
-    expect(new HttpException(message, 404).getResponse()).to.be.eql(message);
+    expect(new HttpException(message, 404).getResponse()).toEqual(message);
   });
 
   it('should return a message from a built-in exception as an object', () => {
     const message = 'My error message';
-    expect(new BadRequestException(message).getResponse()).to.be.eql({
+    expect(new BadRequestException(message).getResponse()).toEqual({
       statusCode: 400,
       error: 'Bad Request',
       message: 'My error message',
@@ -32,23 +32,23 @@ describe('HttpException', () => {
   });
 
   it('should return an object even when the message is undefined', () => {
-    expect(new BadRequestException().getResponse()).to.be.eql({
+    expect(new BadRequestException().getResponse()).toEqual({
       statusCode: 400,
       message: 'Bad Request',
     });
   });
 
   it('should return a status code', () => {
-    expect(new BadRequestException().getStatus()).to.be.eql(400);
-    expect(new NotFoundException().getStatus()).to.be.eql(404);
+    expect(new BadRequestException().getStatus()).toEqual(400);
+    expect(new NotFoundException().getStatus()).toEqual(404);
   });
 
   it('should return a response', () => {
-    expect(new BadRequestException().getResponse()).to.be.eql({
+    expect(new BadRequestException().getResponse()).toEqual({
       message: 'Bad Request',
       statusCode: 400,
     });
-    expect(new NotFoundException().getResponse()).to.be.eql({
+    expect(new NotFoundException().getResponse()).toEqual({
       message: 'Not Found',
       statusCode: 404,
     });
@@ -62,7 +62,7 @@ describe('HttpException', () => {
   it('should be serializable', () => {
     const message = 'Some Error';
     const error = new HttpException(message, 400);
-    expect(`${error}`).to.be.eql(`HttpException: ${message}`);
+    expect(`${error}`).toEqual(`HttpException: ${message}`);
   });
 
   describe('when "response" is an object', () => {
@@ -71,8 +71,8 @@ describe('HttpException', () => {
       const error = new HttpException(obj, 400);
       const badRequestError = new BadRequestException(obj);
 
-      expect(`${error}`).to.be.eql(`HttpException: Http Exception`);
-      expect(`${badRequestError}`).to.be.eql(
+      expect(`${error}`).toEqual(`HttpException: Http Exception`);
+      expect(`${badRequestError}`).toEqual(
         `BadRequestException: Bad Request Exception`,
       );
       expect(`${error}`.includes('[object Object]')).to.not.be.true;
@@ -82,7 +82,7 @@ describe('HttpException', () => {
       it('should concat strings', () => {
         const test = 'test message';
         const error = new HttpException(test, 400);
-        expect(`${error}`).to.be.eql(`HttpException: ${test}`);
+        expect(`${error}`).toEqual(`HttpException: ${test}`);
         expect(`${error}`.includes('[object Object]')).to.not.be.true;
       });
     });
@@ -94,7 +94,7 @@ describe('HttpException', () => {
         const object = {
           message: 'test',
         };
-        expect(HttpException.createBody(object)).to.be.eql(object);
+        expect(HttpException.createBody(object)).toEqual(object);
       });
     });
     describe('when string has been passed', () => {
@@ -102,7 +102,7 @@ describe('HttpException', () => {
         const error = 'test';
         const status = 500;
         const message = 'error';
-        expect(HttpException.createBody(message, error, status)).to.be.eql({
+        expect(HttpException.createBody(message, error, status)).toEqual({
           error,
           message,
           statusCode: status,
@@ -113,7 +113,7 @@ describe('HttpException', () => {
       it('should return expected object', () => {
         const status = 500;
         const error = 'error';
-        expect(HttpException.createBody(null, error, status)).to.be.eql({
+        expect(HttpException.createBody(null, error, status)).toEqual({
           message: error,
           statusCode: status,
         });

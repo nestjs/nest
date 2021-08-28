@@ -243,11 +243,11 @@ describe('Logger', () => {
   describe('ConsoleLogger', () => {
     it('should allow setting and resetting of context', () => {
       const logger = new ConsoleLogger();
-      expect(logger['context']).to.be.undefined;
+      expect(logger['context']).toBeUndefined;
       logger.setContext('context');
       expect(logger['context']).to.equal('context');
       logger.resetContext();
-      expect(logger['context']).to.be.undefined;
+      expect(logger['context']).toBeUndefined;
 
       const loggerWithContext = new ConsoleLogger('context');
       expect(loggerWithContext['context']).to.equal('context');

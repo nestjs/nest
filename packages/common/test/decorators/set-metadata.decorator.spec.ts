@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { SetMetadata } from '../../decorators/core/set-metadata.decorator';
 
 describe('@SetMetadata', () => {
@@ -15,11 +14,11 @@ describe('@SetMetadata', () => {
 
   it('should enhance class with expected metadata', () => {
     const metadata = Reflect.getMetadata(key, Test);
-    expect(metadata).to.be.eql(value);
+    expect(metadata).toEqual(value);
   });
 
   it('should enhance method with expected metadata', () => {
     const metadata = Reflect.getMetadata(key, TestWithMethod.test);
-    expect(metadata).to.be.eql(value);
+    expect(metadata).toEqual(value);
   });
 });

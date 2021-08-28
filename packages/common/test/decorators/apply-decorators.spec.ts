@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { applyDecorators, UseGuards } from '../../decorators';
 import { GUARDS_METADATA } from '../../constants';
 import { CanActivate } from '../../interfaces';
@@ -54,8 +53,8 @@ describe('applyDecorators', () => {
       myParam3: 0,
     };
 
-    expect(decoratedTarget).to.be.deep.equal(expectedTarget);
-    expect(customDecoratedTarget).to.be.deep.equal(expectedTarget);
+    expect(decoratedTarget).toEqual(expectedTarget);
+    expect(customDecoratedTarget).toEqual(expectedTarget);
   });
 });
 
@@ -89,7 +88,7 @@ describe('applyDecorators @GuardCompositeDecorator', () => {
 
   it('should be using the guard defined on the class', () => {
     const classMetadata = Reflect.getMetadata(GUARDS_METADATA, Test);
-    expect(classMetadata).to.deep.equal([Guard]);
+    expect(classMetadata).toEqual([Guard]);
   });
 
   it('should be using the guard defined on the prototype method', () => {
@@ -99,9 +98,9 @@ describe('applyDecorators @GuardCompositeDecorator', () => {
     const methodMetadata = Reflect.getMetadata(GUARDS_METADATA, instance.test);
     const instanceMetadata = Reflect.getMetadata(GUARDS_METADATA, instance);
 
-    expect(classMetadata).to.be.undefined;
-    expect(methodMetadata).to.deep.equal([Guard]);
-    expect(instanceMetadata).to.be.undefined;
+    expect(classMetadata).toBeUndefined();
+    expect(methodMetadata).toEqual([Guard]);
+    expect(instanceMetadata).toBeUndefined();
   });
 
   it('should be using the guard defined on the static method', () => {
@@ -114,7 +113,7 @@ describe('applyDecorators @GuardCompositeDecorator', () => {
       TestWithStaticMethod.test,
     );
 
-    expect(classMetadata).to.be.undefined;
-    expect(methodMetadata).to.deep.equal([Guard]);
+    expect(classMetadata).toBeUndefined();
+    expect(methodMetadata).toEqual([Guard]);
   });
 });

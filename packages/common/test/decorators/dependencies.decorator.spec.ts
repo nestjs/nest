@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Dependencies } from '../../decorators/core/dependencies.decorator';
 import { PARAMTYPES_METADATA } from '../../constants';
 
@@ -14,11 +13,11 @@ describe('@Dependencies', () => {
 
   it('should enhance class with expected dependencies array', () => {
     const metadata = Reflect.getMetadata(PARAMTYPES_METADATA, Test);
-    expect(metadata).to.be.eql(deps);
+    expect(metadata).toEqual(deps);
   });
 
   it('should makes passed array flatten', () => {
     const metadata = Reflect.getMetadata(PARAMTYPES_METADATA, Test2);
-    expect(metadata).to.be.eql([dep, dep2]);
+    expect(metadata).toEqual([dep, dep2]);
   });
 });

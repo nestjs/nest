@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { ROUTE_ARGS_METADATA } from '../../constants';
 import { createParamDecorator } from '../../decorators/http/create-route-param-metadata.decorator';
 import { ParseIntPipe } from '../../index';
@@ -25,7 +24,7 @@ describe('createParamDecorator', () => {
       it('should enhance param with "data"', () => {
         const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
         const key = Object.keys(metadata)[0];
-        expect(metadata[key]).to.be.eql({
+        expect(metadata[key]).toEqual({
           data,
           factory: factoryFn,
           index: 0,
@@ -50,7 +49,7 @@ describe('createParamDecorator', () => {
       it('should enhance param with "data" and ParseIntPipe', () => {
         const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
         const key = Object.keys(metadata)[0];
-        expect(metadata[key]).to.be.eql({
+        expect(metadata[key]).toEqual({
           data: 'test',
           factory: factoryFn,
           index: 0,
@@ -65,7 +64,7 @@ describe('createParamDecorator', () => {
           'testNoData',
         );
         const key = Object.keys(metadata)[0];
-        expect(metadata[key]).to.be.eql({
+        expect(metadata[key]).toEqual({
           data: undefined,
           factory: factoryFn,
           index: 0,
@@ -80,7 +79,7 @@ describe('createParamDecorator', () => {
           'testNoDataClass',
         );
         const key = Object.keys(metadata)[0];
-        expect(metadata[key]).to.be.eql({
+        expect(metadata[key]).toEqual({
           data: undefined,
           factory: factoryFn,
           index: 0,
@@ -98,7 +97,7 @@ describe('createParamDecorator', () => {
       it('should return class type as data parameter', () => {
         const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
         const key = Object.keys(metadata)[0];
-        expect(metadata[key].data).to.equal(Data);
+        expect(metadata[key].data).toEqual(Data);
       });
     });
   });
@@ -126,7 +125,7 @@ describe('createParamDecorator', () => {
       it('should enhance param with "data" as string', () => {
         const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
         const key = Object.keys(metadata)[0];
-        expect(metadata[key]).to.be.eql({
+        expect(metadata[key]).toEqual({
           data: 'test',
           factory: factoryFn,
           index: 0,
@@ -146,7 +145,7 @@ describe('createParamDecorator', () => {
       it('should enhance param with "data" as number', () => {
         const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
         const key = Object.keys(metadata)[0];
-        expect(metadata[key]).to.be.eql({
+        expect(metadata[key]).toEqual({
           data: 10,
           factory: factoryFn,
           index: 0,
@@ -165,7 +164,7 @@ describe('createParamDecorator', () => {
       it('should enhance param with "data" as custom Type', () => {
         const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
         const key = Object.keys(metadata)[0];
-        expect(metadata[key]).to.be.eql({
+        expect(metadata[key]).toEqual({
           data: { name: 'john' },
           factory: factoryFn,
           index: 0,

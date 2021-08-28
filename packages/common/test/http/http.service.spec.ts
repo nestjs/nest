@@ -9,7 +9,7 @@ describe('HttpService', () => {
     const options: AxiosRequestConfig = {};
 
     lastValueFrom(http.get('/', options)).then(() => {
-      expect(options.cancelToken).to.be.undefined;
+      expect(options.cancelToken).toBeUndefined;
       done();
     });
   });

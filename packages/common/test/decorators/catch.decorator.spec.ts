@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { FILTER_CATCH_EXCEPTIONS } from '../../constants';
 import { Catch } from '../../decorators/core/catch.decorator';
 
@@ -10,6 +9,6 @@ describe('@Catch', () => {
 
   it('should enhance class with expected exceptions array', () => {
     const metadata = Reflect.getMetadata(FILTER_CATCH_EXCEPTIONS, Test);
-    expect(metadata).to.be.eql(exceptions);
+    expect(metadata).toEqual(exceptions);
   });
 });

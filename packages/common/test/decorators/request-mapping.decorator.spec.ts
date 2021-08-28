@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { RequestMapping } from '../../decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../enums/request-method.enum';
 
@@ -27,10 +26,10 @@ describe('@RequestMapping', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestProps.path);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPropsUsingArray.path);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestProps.path);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPropsUsingArray.path);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set request method on GET by default', () => {
@@ -41,7 +40,7 @@ describe('@RequestMapping', () => {
 
     const method = Reflect.getMetadata('method', Test.test);
 
-    expect(method).to.be.eql(RequestMethod.GET);
+    expect(method).toEqual(RequestMethod.GET);
   });
 
   it('should set path on "/" by default', () => {
@@ -56,7 +55,7 @@ describe('@RequestMapping', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });

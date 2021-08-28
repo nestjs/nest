@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Module } from '../../decorators/modules/module.decorator';
 
 describe('@Module', () => {
@@ -18,10 +17,10 @@ describe('@Module', () => {
     const exports = Reflect.getMetadata('exports', TestModule);
     const controllers = Reflect.getMetadata('controllers', TestModule);
 
-    expect(imports).to.be.eql(moduleProps.imports);
-    expect(providers).to.be.eql(moduleProps.providers);
-    expect(controllers).to.be.eql(moduleProps.controllers);
-    expect(exports).to.be.eql(moduleProps.exports);
+    expect(imports).toEqual(moduleProps.imports);
+    expect(providers).toEqual(moduleProps.providers);
+    expect(controllers).toEqual(moduleProps.controllers);
+    expect(exports).toEqual(moduleProps.exports);
   });
 
   it('should throw exception when module properties are invalid', () => {
@@ -30,6 +29,6 @@ describe('@Module', () => {
       test: [],
     };
 
-    expect(Module.bind(null, invalidProps)).to.throw(Error);
+    expect(Module.bind(null, invalidProps)).toThrow(Error);
   });
 });

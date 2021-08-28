@@ -85,32 +85,32 @@ describe('Shared utils', () => {
   });
   describe('addLeadingSlash', () => {
     it('should return the validated path ("add / if not exists")', () => {
-      expect(addLeadingSlash('nope')).to.be.eql('/nope');
+      expect(addLeadingSlash('nope')).toEqual('/nope');
     });
     it('should return the same path', () => {
-      expect(addLeadingSlash('/nope')).to.be.eql('/nope');
+      expect(addLeadingSlash('/nope')).toEqual('/nope');
     });
     it('should return empty path', () => {
-      expect(addLeadingSlash('')).to.be.eql('');
-      expect(addLeadingSlash(null)).to.be.eql('');
-      expect(addLeadingSlash(undefined)).to.be.eql('');
+      expect(addLeadingSlash('')).toEqual('');
+      expect(addLeadingSlash(null)).toEqual('');
+      expect(addLeadingSlash(undefined)).toEqual('');
     });
   });
   describe('normalizePath', () => {
     it('should remove all trailing slashes at the end of the path', () => {
-      expect(normalizePath('path/')).to.be.eql('/path');
-      expect(normalizePath('path///')).to.be.eql('/path');
-      expect(normalizePath('/path/path///')).to.be.eql('/path/path');
+      expect(normalizePath('path/')).toEqual('/path');
+      expect(normalizePath('path///')).toEqual('/path');
+      expect(normalizePath('/path/path///')).toEqual('/path/path');
     });
     it('should replace all slashes with only one slash', () => {
-      expect(normalizePath('////path/')).to.be.eql('/path');
-      expect(normalizePath('///')).to.be.eql('/');
-      expect(normalizePath('/path////path///')).to.be.eql('/path/path');
+      expect(normalizePath('////path/')).toEqual('/path');
+      expect(normalizePath('///')).toEqual('/');
+      expect(normalizePath('/path////path///')).toEqual('/path/path');
     });
     it('should return / for empty path', () => {
-      expect(normalizePath('')).to.be.eql('/');
-      expect(normalizePath(null)).to.be.eql('/');
-      expect(normalizePath(undefined)).to.be.eql('/');
+      expect(normalizePath('')).toEqual('/');
+      expect(normalizePath(null)).toEqual('/');
+      expect(normalizePath(undefined)).toEqual('/');
     });
   });
   describe('isNil', () => {
